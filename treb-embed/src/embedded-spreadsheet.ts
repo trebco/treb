@@ -305,10 +305,14 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     target.focus();
 
     // console.info(target.document.readyState);
-    target.addEventListener('DOMContentLoaded', () => {
+    if (target.addEventListener) { // !IE11
+      target.addEventListener('DOMContentLoaded', () => {
+        try_post(target.document.location.origin);
+      });
+    }
+    else {
       try_post(target.document.location.origin);
-    });
-
+    }
   }
 
   /**
