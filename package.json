@@ -1,0 +1,46 @@
+{
+  "name": "monolith",
+  "version": "4.0.0",
+  "main": "dist/index.js",
+  "devDependencies": {
+    "@types/elementtree": "^0.1.0",
+    "@types/file-saver": "^2.0.1",
+    "@types/js-base64": "^2.3.1",
+    "@types/jszip": "^3.1.6",
+    "@types/node": "^12.0.4",
+    "archiver": "^3.0.0",
+    "core-js": "^3.1.3",
+    "css-loader": "^2.1.1",
+    "cssnano": "^4.1.10",
+    "elementtree": "^0.1.7",
+    "file-saver": "^2.0.2",
+    "js-base64": "^2.5.1",
+    "jszip": "^3.2.1",
+    "license-checker-webpack-plugin": "0.0.9",
+    "node-sass": "^4.12.0",
+    "riskampjs-mc": "file:../../riskampjs/riskampjs-mc",
+    "sass-loader": "^7.1.0",
+    "style-loader": "^0.23.1",
+    "ts-loader": "^6.0.2",
+    "tslint": "^5.15.0",
+    "typescript": "^3.4.2",
+    "webpack": "^4.32.2",
+    "webpack-cli": "^3.3.2"
+  },
+  "scripts": {
+    "build": "webpack -p",
+    "dev": "webpack -d",
+    "watch": "webpack -w",
+    "watch-dev": "webpack -w -d",
+    "build-modern": "webpack -p --modern",
+    "dev-modern": "webpack -d --modern",
+    "watch-modern": "webpack -w --modern",
+    "watch-dev-modern": "webpack -w -d --modern"
+  },
+  "build-entry-points": {
+    "main": "embedded-treb-bundle",
+    "toolbar": "embedded-treb-toolbar",
+    "calculation-worker": "embedded-treb-worker",
+    "export-worker": "embedded-treb-export-worker"
+  }
+}

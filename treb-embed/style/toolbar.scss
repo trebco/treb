@@ -1,0 +1,324 @@
+
+// ...
+
+
+$button-size: 32px;
+$button-background: transparent;
+$button-foreground: #777;
+$button-border: #ddd;
+$color-item-size: 20px;
+
+.treb-toolbar-menu {
+
+  position: fixed;
+  width: 160px;
+  max-height: 240px;
+  border-radius: 3px;
+  border: 1px solid $button-border;
+  background: #fff;
+  z-index: 200;
+  display: none;
+  box-shadow: 0px 1px 3px 3px rgba(0,0,0,0.05);
+  outline: none;
+
+  &.popup-border {
+    width: auto;
+    max-height: none;
+  }
+
+  padding: 3px;
+
+  .color-chooser {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
+  }
+
+  .list-holder {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    max-height: 210px;
+  }
+
+  .list {
+    overflow-x: hidden;
+    font-size: 14px;
+    position: relative;
+
+    .separator {
+      position: relative;
+      width: 100%;
+      height: 6px;
+      border-bottom: 1px solid #ddd;
+      margin-bottom: 3px;
+    }
+   
+
+    a {
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      max-width: 100%;
+      width: 100%;
+      cursor: default;
+      padding: 3px 6px;
+      white-space: nowrap;
+
+      &:hover {
+        background: #f6f6f6;
+      }
+    }
+  }
+
+  .color-chooser-items {
+    overflow-y: scroll;
+    flex-grow: 1;
+  }
+
+  .color-chooser-item {
+    display: inline-block;
+    border: 1px solid #ccc;
+    width: $color-item-size;
+    height: $color-item-size;
+    min-width: $color-item-size;
+    min-height: $color-item-size;
+    border-radius: 3px;
+    margin: 3px;
+    margin-bottom: 0;
+
+    &.no-color {
+      border-style: dashed;
+    }
+
+  }
+
+  input[type=text] {
+    margin: 3px;
+    margin-top: 10px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+    padding: 3px;
+    font-family: inherit;
+  }
+
+}
+
+// these are split out because we reuse them in popup...
+
+.treb-formatting-toolbar svg, .treb-toolbar-menu .border-list-holder button svg {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+    fill: $button-foreground;
+    -moz-transform: scale(1); // fixes ffx blurry svg, not sure why
+    // -ms-transform: scale(1); // doesn't un-blurry IE11
+}
+
+.border-list-holder .list {
+  display: flex;
+  flex-direction: column;
+}
+
+.border-list-holder button {
+
+  border-radius: 3px;
+  overflow: hidden;
+  font-size: 1.5em;
+  color: $button-foreground;
+  min-width: $button-size;
+  min-height: $button-size;
+  width: $button-size;
+  height: $button-size;
+  border: 1px solid $button-border;
+  background: $button-background;
+  background: none;
+  position: relative;
+  padding: 0; // ios
+  margin: 3px;
+
+}
+
+// back to the original
+
+.treb-formatting-toolbar {
+
+    padding: 0 10px;
+    display: none;
+    flex-direction: row;
+    overflow: hidden;
+
+    .toolbar-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    
+    button {
+      border-radius: 3px;
+      overflow: hidden;
+      font-size: 1.5em;
+      color: $button-foreground;
+      min-width: $button-size;
+      // max-width: 12px; // $button-size;
+      min-height: $button-size;
+      width: $button-size;
+      height: $button-size;
+      border: 1px solid $button-border;
+      background: $button-background;
+      background: none;
+      position: relative;
+      margin-left: 5px;
+      padding:0;
+      overflow: hidden;
+
+      &:hover {
+        background: #f6f2f8;
+      }
+
+      &.active {
+        background: #f6f2f8;
+      }
+
+      &.drop-down {
+        position: relative;
+        width: 11px;
+        max-width: 11px;
+        min-width: 11px;
+        overflow: hidden;
+        padding: 0;
+        margin-left: 2px;
+        &::after {
+          left: 1px;
+          position: absolute;
+          content: '';
+          border: 3.5px solid transparent;
+          border-top-color: #777;
+        }
+
+      }
+
+      &.input-header {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+    }
+
+    .split-button {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+
+      button {
+        height: $button-size / 2;
+        min-height: $button-size / 2;
+        position: relative;
+        font-size: .7em;
+        overflow: hidden;
+        padding: 0;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        // fucking IE11, again // ...what?
+        span {
+          display: block;
+          margin: 0;
+          line-height: 0;
+          position: relative;
+          cursor: pointer;
+        }
+
+
+        &:first-child {
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
+          border-bottom-color: transparent;
+        }
+        &:last-child {
+          border-top-left-radius: 0;
+          border-top-right-radius: 0;
+        }
+
+      }
+
+    }
+
+    .input {
+      display: flex;
+      flex-direction: row;
+      position: relative;
+
+      > button {
+        /*
+        background: $button-background;
+        border: 1px solid $button-border;
+        font-size: 1.5em;
+        color: $button-foreground;
+        */
+        width: auto;
+        min-width: auto;
+        max-width: auto;
+        padding-left: 6px;
+        padding-right: 5px;
+        line-height: 1.4;
+        margin-left: 6px;
+        border-top-left-radius: 3px;
+        border-bottom-left-radius: 3px;
+        border-top-right-radius: 0px;
+        border-bottom-right-radius: 0px;
+      }
+
+      > input[type=text] {
+        border: 1px solid $button-border;
+        font-size: 14px;
+        color: darken($button-foreground, 20%);
+        border-left: 0px;
+        border-top-right-radius: 3px;
+        border-bottom-right-radius: 3px;
+        padding: 0 4px;
+        margin-top: 0;
+        margin-bottom: 0;
+        border-style: single;
+        width: 8em;
+        font-family: inherit;
+        -webkit-appearance: none;
+
+        &::-ms-clear {
+          display: none;
+        }
+      }
+
+    }
+
+    .separator {
+      width: 8px;
+      height: $button-size;
+      position: relative;
+
+      &::after {
+        border-right: 1px solid $button-border;
+        content: ' ';
+        height: 90%;
+        min-height: 90%;
+        top: 5%;
+        left: 6px;
+        position: absolute;
+      }
+
+    }
+
+  // }
+
+  //
+
+}

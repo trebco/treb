@@ -1,0 +1,88 @@
+
+/**
+ * this is getting attached to the document (why? b/c fixed pos?)
+ * so it inherits a lot. that's not good.
+ */
+.treb-ac-list {
+
+  box-sizing: border-box;
+  * { box-sizing: border-box; }
+
+  background: #fff;
+  border-radius: 2px;
+  border: 1px solid #ccc;
+  position: fixed;
+  top: -1000px;
+  // font-size: .9em;
+  font-size: inherit;
+  font-weight: 400;
+  line-height: normal;
+
+  max-height: 10em;
+  overflow-y: auto;
+  box-shadow: $default-box-shadow;
+  
+  z-index: $z-index-autocomplete;
+
+  ul {
+    font-size: inherit;
+    font-weight: 400;
+
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    li {
+      font-size: inherit;
+      font-weight: 400;
+
+      padding: 0;
+      margin: 0;
+      color: #000;
+
+      a {
+        font-weight: 400;
+        display: inline-block;
+        width: 100%;
+        padding: 3px 6px;
+        text-decoration: none;
+        cursor: default;
+        color: inherit;
+
+        &:hover, &.selected {
+          background: #339966;
+          color: #fff;
+        }
+
+      }
+    }
+
+    // here we unwind the selected style if there's a hover,
+    // unless you're hovering over the selection. and so on.
+
+    &:hover li a.selected {
+      background: inherit;
+      color: inherit;
+
+      &:hover {
+        background: #339966;
+        color: #fff;
+      }
+
+    }
+
+  }
+}
+
+.treb-ac-tooltip {
+  z-index: $z-index-autocomplete;
+  top: -1000px;
+  background: #fffbb5;
+  border-radius: 2px;
+  position: fixed;
+  padding: 3px 8px;
+  margin: 4px 0px;
+  // font-size: .9em;
+  font-size: inherit;
+  line-height: normal;
+
+}

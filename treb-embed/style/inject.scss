@@ -1,0 +1,40 @@
+
+/**
+ * class defs for auto-injection.
+ * FIXME: scope
+ */
+
+ .treb-embedded-spreadsheet {
+  display: flex;
+  flex-direction: row;
+  margin: 14px;
+
+  .sheet-container {
+    position: relative;
+
+    /* default size, will be overridden if there's a size on the containing node */
+    width: 600px;
+    height: 400px;
+  }
+
+  .sheet-control-icons {
+    padding-top: 3.5px;
+
+    .svg-icon-container {
+      padding: 3.5px 14px;
+    }
+
+    svg {
+      fill: #ccc;
+      width: 24px; // 32px;
+      height: 24px; // 32px;
+      transition: fill .1s;
+
+      &:hover {
+        fill: #666;
+      }
+
+    }
+  }
+  
+}

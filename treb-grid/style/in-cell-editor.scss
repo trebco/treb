@@ -1,0 +1,32 @@
+
+.treb-main {
+  .treb-grid {
+
+    // --- in-cell editor ---------------------------------------------------
+
+    /** double node stucture for better control */
+    .in-cell-editor-container {
+      position: absolute;
+      display: none;
+      outline: none;
+      overflow: hidden;
+      background: orange;
+    }
+
+    /** double node stucture for better control */
+    .in-cell-editor {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      overflow: hidden;
+      padding: 2px 3px;
+      white-space: nowrap;
+      display: table-cell;
+      vertical-align: bottom;
+      border: 1px solid red;
+      z-index: $z-index-cell-editor;
+    }
+
+  }
+}

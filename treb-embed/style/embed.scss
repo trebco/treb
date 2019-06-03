@@ -1,0 +1,55 @@
+
+.treb-embed-container {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.treb-embed-mask {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  background: rgba(255, 255, 255, .5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity .2s;  
+  pointer-events: none;
+
+  &.visible {
+    pointer-events: auto;
+    opacity: 1;
+  }
+
+  .treb-embed-dialog {
+    font-family:
+      -apple-system, 
+      BlinkMacSystemFont, 
+      "Segoe UI", 
+      Roboto, 
+      Oxygen,
+      Ubuntu,
+      Cantarell,
+      "Open Sans",
+      "Helvetica Neue", 
+      sans-serif;
+    font-size: 16px;
+  }
+
+}
+
+.treb-embed-dialog {
+  border: 1px solid #aaa;
+  padding: 1em;
+  background: #fff;
+  text-align: center;
+  border-radius: 2px;
+  font-family: inherit;
+}

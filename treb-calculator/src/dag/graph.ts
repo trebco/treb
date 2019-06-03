@@ -1,0 +1,242 @@
+
+import { VertexType } from './vertex_type';
+import { SpreadsheetVertex, CalculationResult } from './spreadsheet_vertex';
+import { LeafVertex } from './leaf_vertex';
+import { Cells, CellAddress, Area } from 'treb-base-types';
+
+// FIXME: this is a bad habit if you're testing on falsy for OK.
+
+export enum GraphStatus {
+  OK = 0,
+  Loop,
+  CalculationError,
+}
+
+/**
+ * graph is now abstract, as we are extending it with the calculator.
+ */
+export abstract class Graph {
+
+  public vertices: Array<Array<SpreadsheetVertex|null>> = [];
+  public dirty_list: SpreadsheetVertex[] = [];
+  public volatile_list: SpreadsheetVertex[] = [];
+  public cells?: Cells;
+
+  // special
+  public leaf_vertices: LeafVertex[] = [];
+
+  public AttachData(cells: Cells){
+    this.cells = cells;
+  }
+
+  public FlushTree() {
+    this.dirty_list = [];
+    this.volatile_list = [];
+    this.vertices = [];
+    this.leaf_vertices = [];
+    this.cells = undefined;
+  }
+
+  // public DumpEdges() {}
+
+  /** returns the vertex at this address. creates it if necessary. */
+  public GetVertex(address: CellAddress) {
+    if (!this.cells) return null;
+
+    if (!this.vertices[address.column]) this.vertices[address.column] = [];
+    let vertex = this.vertices[address.column][address.row];
+    if (vertex) return vertex;
+    vertex = new SpreadsheetVertex();
+    vertex.address = {column: address.column, row: address.row};
+    vertex.reference = this.cells.data[address.column][address.row];
+    this.vertices[address.column][address.row] = vertex;
+    return vertex;
+  }
+
+  /** returns the vertex at this address, but doesn't create it. */
+  public GetVertexOrUndefined(address: CellAddress) {
+    if (!this.vertices[address.column]) return undefined;
+    return this.vertices[address.column][address.row];
+  }
+
+  /** deletes the vertex at this address. */
+  public RemoveVertex(address: CellAddress) {
+    const vertex = this.GetVertexOrUndefined(address);
+    if (!vertex) return;
+    vertex.Reset();
+    this.vertices[address.column][address.row] = null;
+  }
+
+  /** removes all edges, for rebuilding. leaves value/formula as-is. */
+  public ResetVertex(address: CellAddress) {
+    const vertex = this.GetVertexOrUndefined(address);
+    if (vertex) vertex.Reset();
+  }
+
+  /**
+   * resets the vertex by removing inbound edges and clearing formula flag.
+   * we have an option to set dirty because they get called together
+   * frequently, saves a lookup.
+   */
+  public ResetInbound(address: CellAddress, set_dirty = false){
+    const vertex = this.GetVertex(address);
+    if (null === vertex) return;
+    vertex.ClearDependencies();
+    if (set_dirty) {
+      this.dirty_list.push(vertex);
+      vertex.SetDirty();
+    }
+  }
+
+  /** adds an edge from u -> v */
+  public AddEdge(u: CellAddress, v: CellAddress): GraphStatus {
+
+    const v_u = this.GetVertex(u);
+    const v_v = this.GetVertex(v);
+
+    if (null === v_v || null === v_u) return GraphStatus.OK; // not possible to loop -> null
+
+    // loop check
+    // FIXME: move to vertex class
+
+    // let tcc = 0;
+
+    const check_list: VertexType[] = [];
+
+    const tail = (vertex: VertexType, depth = ''): boolean => {
+
+      if (vertex === v_u) {
+        console.info('MATCH', vertex, v_v, v_u);
+        return true;
+      }
+
+      // switch to non-functional loop
+      for (const check of check_list) if (check === vertex) return false; // already checked this branch
+
+      check_list.push(vertex);
+
+      return vertex.edges_out.some((edge) => tail(edge, depth + '  '));
+    };
+
+    // throw or return value? [A: return value]
+
+    if (tail(v_v)) return GraphStatus.Loop; // throw( "not adding, loop");
+
+    v_u.AddDependent(v_v);
+    v_v.AddDependency(v_u);
+
+    return GraphStatus.OK;
+  }
+
+  /** removes edge from u -> v */
+  public RemoveEdge(u: CellAddress, v: CellAddress) {
+    const v_u = this.GetVertexOrUndefined(u);
+    const v_v = this.GetVertexOrUndefined(v);
+
+    if (!v_u || !v_v) return;
+
+    v_u.RemoveDependent(v_v);
+    v_v.RemoveDependency(v_u);
+
+  }
+
+  /** sets area dirty, convenience shortcut */
+  public SetAreaDirty(area: Area) {
+    area.Iterate((address: CellAddress) => {
+      const vertex = this.GetVertexOrUndefined(address);
+      if (vertex) this.SetDirty(address);
+    });
+  }
+
+  /** sets dirty */
+  public SetDirty(address: CellAddress) {
+    const vertex = this.GetVertex(address);
+    if (null === vertex) return;
+
+    // is it safe to assume that, if the dirty flag is set, it's
+    // on the dirty list? I'm not sure that's the case if there's
+    // an error.
+
+    this.dirty_list.push(vertex);
+    vertex.SetDirty();
+  }
+
+
+  // --- leaf vertex api ---
+
+  /**
+   * adds a leaf vertex to the graph. this implies that someone else is
+   * managing and maintaining these vertices: we only need references.
+   */
+  public AddLeafVertex(vertex: LeafVertex){
+    this.leaf_vertices.push(vertex);
+  }
+
+  /** removes vertex, by match */
+  public RemoveLeafVertex(vertex: LeafVertex){
+    this.leaf_vertices = this.leaf_vertices.filter((test) => test !== vertex);
+  }
+
+  /**
+   * adds an edge from u -> v where v is a leaf vertex. this doesn't use
+   * the normal semantics, and you must pass in the actual vertex instead
+   * of an address.
+   *
+   * there is no loop check (leaves are not allowed to have outbound
+   * edges).
+   */
+  public AddLeafVertexEdge(u: CellAddress, v: LeafVertex) {
+
+    const v_u = this.GetVertex(u);
+
+    if (null === v_u) return GraphStatus.OK; // not possible to loop -> null
+
+    v_u.AddDependent(v);
+    v.AddDependency(v_u);
+
+    return GraphStatus.OK;
+
+  }
+
+  /** removes edge from u -> v */
+  public RemoveLeafVertexEdge(u: CellAddress, v: LeafVertex) {
+    const v_u = this.GetVertexOrUndefined(u);
+
+    if (!v_u) return;
+
+    v_u.RemoveDependent(v);
+    v.RemoveDependency(v_u);
+
+  }
+
+  // --- calculation ---
+
+  /** runs calculation */
+  public Recalculate() {
+
+    for (const vertex of this.volatile_list) {
+
+      // FIXME: use method, add parameter?
+      this.dirty_list.push(vertex);
+      vertex.SetDirty();
+    }
+
+    this.volatile_list = [];
+
+    // recalculate everything that's dirty. FIXME: optimize path
+    // so we do fewer wasted checks of "are all my deps clean"?
+
+    for (const vertex of this.dirty_list) {
+      vertex.Calculate(this, this.CalculationCallback, this.SpreadCallback);
+    }
+
+    // reset the list
+
+    this.dirty_list = [];
+
+  }
+
+  protected abstract CalculationCallback(vertex: SpreadsheetVertex): CalculationResult;
+  protected abstract SpreadCallback(vertex: SpreadsheetVertex, value: any): void;
+
+}

@@ -1,0 +1,114 @@
+
+.treb-main {
+  .treb-grid {
+
+    &.grid-layout {
+
+      display: grid;
+      grid-template-columns: 100px auto;
+      grid-template-rows: 20px auto;
+
+      .tile-cover {
+
+        /** specific layout for main grid cover */
+        &.grid-cover {
+          grid-row-start: 2;
+          grid-row-end: 3;
+          grid-column-start: 2;
+          grid-column-end: 3;
+        }
+
+        /** specific layout for column header cover */
+        &.column-header-cover {
+          grid-row-start: 1;
+          grid-row-end: 2;
+          grid-column-start: 2;
+          grid-column-end: 3;
+          position: sticky;
+          position: -webkit-sticky;
+          top: 0px;
+        }
+
+        /** specific layout for row header cover */
+        &.row-header-cover {
+          grid-row-start: 2;
+          grid-row-end: 3;
+          grid-column-start: 1;
+          grid-column-end: 2;
+          position: sticky;
+          position: -webkit-sticky;
+          left: 0px;
+        }
+      }
+
+      .annotation-container {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+
+        .annotation {
+          position: absolute;
+          overflow: hidden;
+        }
+
+      }
+
+      /** selection stacks over the grid but under the cover */
+      .grid-selection {
+        grid-row-start: 1;
+        grid-row-end: 2;
+        grid-column-start: 1;
+        grid-column-end: 2;
+      }
+
+      /** corner node to cover headers as they scroll across/down */
+      .corner {
+        grid-row-start: 1;
+        grid-row-end: 2;
+        grid-column-start: 1;
+        grid-column-end: 2;
+        position: sticky;
+        position: -webkit-sticky;
+      }
+
+      /** contains row header tiles */
+      .left-header {
+        grid-row-start: 2;
+        grid-row-end: 3;
+        grid-column-start: 1;
+        grid-column-end: 2;
+        position: sticky;
+        position: -webkit-sticky;
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: auto;
+      }
+
+      /** contains column header tiles */
+      .top-header {
+        grid-row-start: 1;
+        grid-row-end: 2;
+        grid-column-start: 2;
+        grid-column-end: 3;
+        position: sticky;
+        position: -webkit-sticky;
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: auto;
+      }
+
+      /** contains main grid tiles */
+      .contents {
+        grid-row-start: 2;
+        grid-row-end: 3;
+        grid-column-start: 2;
+        grid-column-end: 3;
+        display: grid;
+        grid-template-columns: auto;
+        grid-template-rows: auto;
+      }
+
+    }    
+
+  }
+}

@@ -1,0 +1,36 @@
+
+.treb-embed-mouse-mask {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  background: transparent;
+  z-index: 1000;
+  display: none;
+  cursor: nwse-resize;
+}
+
+.treb-embed-resize-rect {
+  box-sizing: border-box;
+  position: absolute;
+  border: 1px dotted #339966;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.treb-embed-resize-handle {
+  box-sizing: border-box;
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  min-height: 16px;
+  min-width: 16px;
+  border: 8px solid #339966;
+  border-top-color: transparent;
+  border-left-color: transparent;
+  cursor: nwse-resize;
+  bottom: 1px;
+  right: 1px;
+  z-index: 999;
+}

@@ -1,0 +1,134 @@
+
+$font-stack:  "-apple-system",
+              "BlinkMacSystemFont",
+              "Segoe UI",
+              "Roboto",
+              "Oxygen-Sans",
+              "Ubuntu",
+              "Cantarell",
+              "Helvetica Neue",
+              "sans-serif";
+
+/**
+ * theme defaults, as css. experimenting.
+ */
+
+.treb-theme {
+
+  // primary selection
+
+  .primary-selection {
+    stroke: rgb(64, 192, 64);
+  }
+
+  // additional selections, global and then individual colors
+
+  .additional-selections {
+    stroke-dasharray: 3 2;
+  }
+
+  .additional-selection-1 {
+    stroke: rgba(251, 177, 60, 1);
+  }
+
+  .additional-selection-2 {
+    stroke: rgba(87, 184, 255, 1);
+  }
+
+  .additional-selection-3 {
+    stroke: rgba(182, 109, 13, 1);
+  }
+
+  .additional-selection-4 {
+    stroke: rgba(33, 118, 174, 1);
+  }
+
+  .additional-selection-5 {
+    stroke: rgba(254, 104, 71, 1);
+  }
+
+  // headers
+
+  .header {
+    fill: #eee;
+    stroke: #666;
+  }
+
+  // grid
+
+  .grid {
+    stroke: #ccc;
+  }
+
+  // cells 
+
+  .cell {
+    font-family: "calibri", $font-stack;
+    fill: #fff;
+    font-size: 14px;
+    border-color: #666;
+    stroke: #333;
+
+    &.override-windows {
+      font-size: 16px;
+      // stroke: #000;
+    }
+
+  }
+
+  // formula bar/address label
+
+  .formula-bar {
+    font-family: $font-stack;
+    font-size: 16px;
+    fill: transparent; // #fff;
+    stroke: #333;
+
+    &.locked {
+      fill: #def;
+    }
+
+  }
+
+  // interface 
+
+  .interface {
+    font-family: $font-stack;
+    font-size: 10pt;
+
+    &.dialog {
+      fill: #fff;
+      stroke: #333;
+      border-color: #666;
+    }
+
+    &.mask {
+      fill: rgba(255, 255, 255, .5);
+    }
+
+  }
+
+  // column/row resize tooltip
+
+  .tooltip {
+    stroke: #fff;
+    fill: rgba(0, 0, 0, .8);    
+    font-size: 11pt;
+    font-family: $font-stack;
+  }
+
+  // ac
+
+  .autocomplete {
+
+    fill: #fff;
+    stroke: #333;
+
+    &.highlight {
+      fill: #339966;
+      stroke: #fff;
+    }
+
+  }
+
+}

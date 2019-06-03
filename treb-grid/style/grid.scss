@@ -1,0 +1,146 @@
+
+@import 'z-index';
+@import 'defaults';
+@import 'mouse-mask';
+@import 'tooltip';
+@import 'autocomplete';
+@import 'formula-bar';
+@import 'in-cell-editor';
+@import 'legacy-layout';
+@import 'grid-layout';
+
+@import 'theme-container';
+@import 'theme-defaults';
+
+/*
+ * NOTE: grid layout uses explicit properties (grid-start-row, &c)
+ * to preclude less from turning compound properties (1/2) into division
+ *
+ * preclude? you mean prevent? (...)
+ */
+
+/** container and style root */
+.treb-main {
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  line-height: normal;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  .treb-grid {
+
+    flex-grow: 1;
+    order: 2;
+    position: relative;
+    overflow: scroll;
+    -webkit-overflow-scrolling: touch;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+
+    canvas {
+      border: 0;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+    }
+
+    .nub-select {
+      cursor: crosshair;
+    }
+
+    .mock-selection-node {
+      background: red;
+      position: fixed;
+      left: -100px;
+      top: -100px;
+    }
+
+    /** covers for canvas nodes to intercept events */
+    .tile-cover {
+      background: transparent;
+      position: relative;
+      z-index: $z-index-tile-cover;
+
+      /** specific layout for column header cover */
+      &.column-header-cover {
+
+        /** style is attached when mousing over a column boundary */
+        &.resize {
+          cursor: col-resize;
+        }
+      }
+
+      /** specific layout for row header cover */
+      &.row-header-cover {
+
+        /** style is attached when mousing over a row boundary */
+        &.resize {
+          cursor: row-resize;
+        }
+      }
+
+    }
+
+    /** selection stacks over the grid but under the cover */
+    .grid-selection {
+      background: transparent;
+      position: absolute;
+      z-index: $z-index-grid-selection;
+      -moz-transform: scale(1); // firefox anti-blur
+    }
+
+    /** separate selection node for frozen rows/columns (needs different stacking) */
+    .frozen-selection {
+      background: transparent;
+      position: absolute;
+      z-index: $z-index-frozen-selection;
+      overflow: hidden; // needed for IE11 (put in legacy?)
+      -moz-transform: scale(1); // firefox anti-blur
+    }
+
+    /**
+     * corner node to cover headers as they scroll across/down. this is now
+     * used for freeze panes; row/column headers are rendered in the corner
+     * and in the case of both frozen rows and columns, the fixed bit is
+     * rendered to the corner.
+     */
+    .corner {
+
+      top: 0px;
+      left: 0px;
+      z-index: $z-index-corner;
+
+      canvas {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+      }
+
+    }
+
+    /** contains row header tiles */
+    .left-header {
+      left: 0px;
+      z-index: $z-index-headers;
+    }
+
+    /** contains column header tiles */
+    .top-header {
+      top: 0px;
+      z-index: $z-index-headers;
+    }
+
+    /** contains main grid tiles */
+    .contents {
+      height: 2000px;
+      width: 2000px;
+    }
+
+  }
+
+}
+

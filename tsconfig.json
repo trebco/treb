@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "resolveJsonModule": true,
+    "module": "commonjs",
+    "strict": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "outDir": "dist/",
+    "declaration": true,
+    "lib": [
+      "dom", "es2015"
+    ],
+    "baseUrl": "./",
+    "paths": {
+      "@root/*": ["./*"],
+      "treb-grid": [ "./treb-grid" ],
+      "treb-utils": [ "./treb-utils" ],
+      "treb-export": [ "./treb-export" ],
+      "treb-format": [ "./treb-format" ],
+      "treb-parser": [ "./treb-parser" ],
+      "treb-calculator": [ "./treb-calculator" ],
+      "treb-sparkline": [ "./treb-sparkline" ],
+      "treb-base-types": [ "./treb-base-types" ]
+    },
+    "declarationDir": "dist/"
+  },
+  "include": [
+    "treb-embed/src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

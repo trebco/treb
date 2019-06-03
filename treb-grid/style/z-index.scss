@@ -1,0 +1,14 @@
+
+// z-index stacking
+
+$z-index-contents:                    8;
+$z-index-grid-selection:              9;
+$z-index-frozen-selection:           10;
+$z-index-headers:                    11;
+$z-index-corner:                     15;
+$z-index-tile-cover:                 16;
+$z-index-cell-editor:                17;
+$z-index-scroller:                   21; // legacy only
+$z-index-autocomplete:               99;
+$z-index-tooltip:                    99;
+$z-index-mask:                     9999;

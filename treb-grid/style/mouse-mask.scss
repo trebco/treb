@@ -1,0 +1,31 @@
+
+/**
+ * event mask for mouse drag. this is added to body, 
+ * outside of the node structure.
+ */
+ .treb-mouse-mask {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  background: transparent;
+  z-index: $z-index-mask;
+  display: none;
+
+  /** style is attached when drag operation is a resize */
+  &.column-resize {
+    cursor: col-resize;
+  }
+
+  /** style is attached when drag operation is a resize */
+  &.row-resize {
+    cursor: row-resize;
+  }
+
+  /** when resizing a grid selection via the nub */
+  &.nub-select {
+    cursor: crosshair;
+  }
+
+}

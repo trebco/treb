@@ -1,0 +1,21 @@
+
+/**
+ * this container is used for testing theme values from css. we only
+ * do that on startup (FIXME: update?)
+ *
+ * since we only care about absolute properties, we don't really need
+ * to worry about conflicts.
+ */
+.treb-theme-container {
+
+  position: fixed;
+  left: -1000px;
+  top: 0;
+  width: 200px;
+  overflow: hidden;
+
+  > * {
+    position: relative;
+  }
+
+}

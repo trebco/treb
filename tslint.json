@@ -1,0 +1,25 @@
+{
+  "defaultSeverity": "warning",
+  "extends": [
+    "tslint:recommended"
+  ],
+  "linterOptions": {
+    "exclude": [
+      "node_modules/**"
+    ]
+  },
+  "rules": {
+    "quotemark": [true, "single"],
+    "indent": [true, "spaces", 2],
+    "align": [false],
+    "interface-name": false,
+    "one-line": [true, "check-open-brace"],
+    "ordered-imports": false,
+    "object-literal-sort-keys": false,
+    "no-consecutive-blank-lines": false,
+    "no-console": false,
+    "object-literal-key-quotes": [true, "as-needed"],
+    "curly": [true, "ignore-same-line"],
+    "variable-name": [true, "allow-snake-case", "allow-pascal-case"]
+  }
+}

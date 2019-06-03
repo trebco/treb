@@ -1,0 +1,108 @@
+
+
+.treb-main {
+
+  // flex patch for chrome
+
+  .treb-formula-bar-container {
+
+    display: block;
+    order: 1;
+
+    & > div {
+
+      display: flex;
+      flex-direction: row;
+      padding: 6px;
+      max-width: 100%;
+      overflow-x: hidden; // last ditch for IE11
+      
+      /** label for selection address */
+      .address-label {
+        width: 100px;
+        min-width: 70px;
+        min-height: 1.5em;
+        height: 1.75em;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-left: 3px;
+      }
+
+      .editor-container {
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        flex-grow: 1;
+        flex-shrink: 1;
+        height: 1.75em; // 3.5em; // 1.75em;
+        margin-left: 6px;
+        display: flex;
+        min-width: 0px;
+        flex-direction: column;
+        justify-content: center;
+
+
+        &.locked {
+          background: blue;
+        }
+        
+      }
+
+      .formula-editor {
+        width: 100%;
+        margin: 2px;
+        outline: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        line-height: normal;
+
+        min-height: 1em;
+
+        // I don't like this, let's figure out a better way w/ wrapping
+
+        /**
+         * FIXME: we're using this for a single-line formula, but
+         * it needs to come out for multiline (if we do that).
+         */
+
+        /*
+        white-space: nowrap;
+        text-overflow: ellipsis;
+
+        &:focus {
+          text-overflow: clip;
+        }
+        */
+
+      }
+
+      /** f(x) button, optional */
+      .formula-button {
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        margin-left: 6px;
+        height: 1.75em;
+        overflow: hidden;
+        white-space: nowrap;
+
+        .text-1 {
+          font-style: italic;
+          &:after {
+            content: 'f';
+          }
+          padding-right: .1em;
+        }
+        .text-2 {
+          font-size: .7em;
+          &:after {
+            content: '(x)';
+          }
+        }
+        
+      }
+    }
+  }
+
+}
