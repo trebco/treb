@@ -1,6 +1,6 @@
 {
   "name": "monolith",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "main": "dist/index.js",
   "devDependencies": {
     "@types/elementtree": "^0.1.0",
@@ -35,7 +35,8 @@
     "build-modern": "webpack -p --modern",
     "dev-modern": "webpack -d --modern",
     "watch-modern": "webpack -w --modern",
-    "watch-dev-modern": "webpack -w -d --modern"
+    "watch-dev-modern": "webpack -w -d --modern",
+    "release": "webpack -p && webpack -p --modern && node zip-package.js"
   },
   "build-entry-points": {
     "main": "embedded-treb-bundle",

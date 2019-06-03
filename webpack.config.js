@@ -40,22 +40,35 @@ const entry = {};
 
 // new -- dropping polyfills!
 
+/*
+entry[package['build-entry-points']['main'] + '-es6'] = './treb-embed/src/index-modern.ts';
+entry[package['build-entry-points']['export-worker'] + '-es6' + '-' + package.version] = './treb-embed/src/export-worker/index-modern.ts';
+entry[package['build-entry-points']['calculation-worker'] + '-es6' + '-' + package.version] = './treb-embed/src/calculation-worker/index-modern.ts';
+entry[package['build-entry-points']['toolbar'] + '-es6' + '-' + package.version] = './treb-embed/src/toolbar-main.ts';
+
+entry[package['build-entry-points']['main']] = './treb-embed/src/index.ts';
+entry[package['build-entry-points']['export-worker'] + '-' + package.version] = './treb-embed/src/export-worker/index.ts';
+entry[package['build-entry-points']['calculation-worker'] + '-' + package.version] = './treb-embed/src/calculation-worker/index.ts';
+entry[package['build-entry-points']['toolbar'] + '-' + package.version] = './treb-embed/src/toolbar-main.ts';
+*/
+
 if (modern) {
   entry[package['build-entry-points']['main'] + '-es6'] = './treb-embed/src/index-modern.ts';
   entry[package['build-entry-points']['export-worker'] + '-es6' + '-' + package.version] = './treb-embed/src/export-worker/index-modern.ts';
   entry[package['build-entry-points']['calculation-worker'] + '-es6' + '-' + package.version] = './treb-embed/src/calculation-worker/index-modern.ts';
-
+  entry[package['build-entry-points']['toolbar'] + '-es6' + '-' + package.version] = './treb-embed/src/toolbar-main.ts';
 }
 else {
   entry[package['build-entry-points']['main']] = './treb-embed/src/index.ts';
   entry[package['build-entry-points']['export-worker'] + '-' + package.version] = './treb-embed/src/export-worker/index.ts';
   entry[package['build-entry-points']['calculation-worker'] + '-' + package.version] = './treb-embed/src/calculation-worker/index.ts';
+  entry[package['build-entry-points']['toolbar'] + '-' + package.version] = './treb-embed/src/toolbar-main.ts';
 }
 
 // entry[package['build-entry-points']['main'] + (modern ? '-es6' : '')] = './treb-embed/src/index.ts';
 // entry[package['build-entry-points']['calculation-worker'] + (modern ? '-es6' : '') + '-' + package.version] = './treb-embed/src/calculation-worker/calculation-worker.ts';
 // entry[package['build-entry-points']['export-worker'] + (modern ? '-es6' : '') + '-' + package.version] = './treb-embed/src/export-worker.ts';
-entry[package['build-entry-points']['toolbar'] + (modern ? '-es6' : '') + '-' + package.version] = './treb-embed/src/toolbar-main.ts';
+// entry[package['build-entry-points']['toolbar'] + (modern ? '-es6' : '') + '-' + package.version] = './treb-embed/src/toolbar-main.ts';
 
 const build_dir = path.resolve(__dirname, dist_dir, package.version);
 const current_dir = path.resolve(__dirname, dist_dir, 'current');
@@ -148,6 +161,7 @@ module.exports = {
         exclude: /node_modules/,
         options: {
           configFile: modern ? 'modern.tsconfig.json' : 'tsconfig.json'
+          // configFile: 'tsconfig.json'
         }
       },
       {
