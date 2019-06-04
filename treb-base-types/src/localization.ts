@@ -1,37 +1,36 @@
 
-// import * as LocaleCurrency from 'locale-currency';
-
+/**
+ * the point of localization is to have a central, single source of truth
+ * for the current locale. this can come from the browser, via a GET
+ * parameter (mostly for testing), or explicitly from a method call.
+ *
+ * based on locale we report settings for decimal separator, digit grouping,
+ * and argument separator.
+ */
 export class Localization {
 
-  public static decimal_separator: ('.' | ',') = '.';
   public static locale = 'en-us'; // default, for node
-  // public static currency = '';
 
-  /* * read-only argument separator, based on decimal separator * /
-  public static get argument_separator() {
-    return this.decimal_separator === ',' ? ';' : ',';
-  }
-
-  / ** read-only grouping separator, based on decimal separator * /
-  public static get grouping_separator() {
-    return this.decimal_separator === ',' ? ' ' : ',';
-  }
-  */
-
+  public static decimal_separator: ('.' | ',') = '.';
   public static argument_separator: ','|';' = ',';
   public static grouping_separator: ','|' ' = ',';
 
+  /**
+   * update the locale. this will be called on module load (should
+   * be just once), but can be called subsequently to update.
+   *
+   * priority:
+   * (1) function argument
+   * (2) get parameter
+   * (3) navigator.languages[0]
+   * (4) navigator.language
+   *
+   * regarding languages[0] vs language, see
+   * https://stackoverflow.com/a/33204290
+   *
+   * @param locale explicitly set locale
+   */
   public static UpdateLocale(locale?: string) {
-
-    // priority:
-
-    // (1) function argument
-    // (2) get parameter
-    // (3) navigator.languages[0]
-    // (4) navigator.language
-
-    // regarding languages[0] vs language, see
-    // https://stackoverflow.com/a/33204290
 
     if (locale) {
       this.locale = locale; // 1
@@ -57,7 +56,6 @@ export class Localization {
         }
       }
     }
-    // this.currency = LocaleCurrency.getCurrency(this.locale || 'en-us') || 'USD';
 
     const decimal_separator = new Intl.NumberFormat(this.locale,
       {minimumFractionDigits: 1}).format(3.3).replace(/\d/g, '');
@@ -74,4 +72,3 @@ export class Localization {
 }
 
 Localization.UpdateLocale(); // always call
-// (self as any).LX = Localization;
