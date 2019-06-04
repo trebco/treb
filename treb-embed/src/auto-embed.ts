@@ -180,10 +180,8 @@ class AutoEmbedManager {
       'https://treb.app';
 
     this.AddIcon(control_icons, 'treb-fork-icon', 'Fork and Edit', () => {
-
       const new_window = window.open(host + '/edit?fork');
       if (new_window) { sheet.PostDocument(new_window, host); }
-
     });
 
     // Regarding pop-out: the issue is that if we create an empty window
