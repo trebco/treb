@@ -81,7 +81,7 @@ const CreateConfig = (config, entry) => {
           loader: 'ts-loader',
           exclude: /node_modules/,
           options: {
-            configFile: 'modern.tsconfig.json', // modern ? 'modern.tsconfig.json' : 'tsconfig.json'
+            configFile: /modern/i.test(config) ? 'modern.tsconfig.json' : 'tsconfig.json'
           }
         },
         {
