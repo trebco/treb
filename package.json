@@ -28,15 +28,11 @@
     "webpack-cli": "^3.3.2"
   },
   "scripts": {
-    "build": "webpack -p",
-    "dev": "webpack -d",
-    "watch": "webpack -w",
-    "watch-dev": "webpack -w -d",
-    "build-modern": "webpack -p --modern",
-    "dev-modern": "webpack -d --modern",
-    "watch-modern": "webpack -w --modern",
-    "watch-dev-modern": "webpack -w -d --modern",
-    "release": "webpack -p && webpack -p --modern && node zip-package.js"
+    "build": "node compile.js",
+    "dev": "node compile.js -d",
+    "watch": "node compile.js -w",
+    "watch-dev": "node compile.js -w -d",
+    "release": "node compile.js && node zip-package.js"
   },
   "build-entry-points": {
     "main": "embedded-treb-bundle",
