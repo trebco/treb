@@ -175,12 +175,15 @@ class AutoEmbedManager {
 
     // can we switch this with an env var, cookie, or something?
 
-    const host = /^http:\/\/192\.168\./.test(document.location.origin || '') ?
-      document.location.origin : 'https://treb.app';
+    const host = // /^http:\/\/192\.168\./.test(document.location.origin || '') ?
+      // document.location.origin :
+      'https://treb.app';
 
     this.AddIcon(control_icons, 'treb-fork-icon', 'Fork and Edit', () => {
+
       const new_window = window.open(host + '/edit?fork');
-      if (new_window) { sheet.PostDocument(new_window); }
+      if (new_window) { sheet.PostDocument(new_window, host); }
+
     });
 
     // Regarding pop-out: the issue is that if we create an empty window
@@ -205,7 +208,7 @@ class AutoEmbedManager {
           Object.keys(window_options).map((key) => `${key}=${window_options[key]}`).join(','));
 
         if (new_window) {
-          sheet.PostDocument(new_window);
+          sheet.PostDocument(new_window, host);
         }
 
       });

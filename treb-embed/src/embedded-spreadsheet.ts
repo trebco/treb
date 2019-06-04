@@ -278,7 +278,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   /**
    * sends data to a new window. used for popout and fork.
    */
-  public PostDocument(target: Window) {
+  public PostDocument(target: Window, host: string) {
 
     let ack = false;
     let counter = 0;
@@ -290,29 +290,28 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         window.removeEventListener('message', listener);
       }
     };
+
     window.addEventListener('message', listener);
 
-    const try_post = (host: string, delay = 250) => {
-      if (counter++ > 20) {
+    const try_post = (delay = 100) => {
+      if (counter++ > 30) {
         console.warn('timeout');
         return;
       }
-      target.postMessage(data, host);
+      try {
+        target.postMessage(data, host);
+      }
+      catch (e) {
+        console.error(e);
+      }
       setTimeout(() => {
-        if (!ack) try_post(host, delay);
+        if (!ack) try_post(delay);
       }, delay);
     };
-    target.focus();
 
-    // console.info(target.document.readyState);
-    if (target.addEventListener) { // !IE11
-      target.addEventListener('DOMContentLoaded', () => {
-        try_post(target.document.location.origin);
-      });
-    }
-    else {
-      try_post(target.document.location.origin);
-    }
+    target.focus();
+    try_post();
+
   }
 
   /**

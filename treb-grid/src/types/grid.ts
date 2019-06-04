@@ -317,6 +317,12 @@ export class Grid {
 
     data.primary_selection = JSON.parse(JSON.stringify(this.primary_selection));
 
+    // frozen, but omit if empty/no data
+
+    if (this.layout.freeze.rows || this.layout.freeze.columns) {
+      data.freeze = {...this.layout.freeze};
+    }
+
     // annotations: also copy
 
     data.annotations = JSON.parse(JSON.stringify(this.annotations));
@@ -334,14 +340,23 @@ export class Grid {
     return this.model.sheet.CellData(address);
   }
 
+  /**
+   * clear sheet, reset all data
+   */
   public Clear() {
     this.UpdateSheet(new Sheet().toJSON(), true);
   }
 
+  /**
+   * reset sheet, set data from CSV
+   */
   public FromCSV(text: string) {
     this.UpdateSheet(Sheet.FromCSV(text).toJSON());
   }
 
+  /**
+   * show or hide headers
+   */
   public ShowHeaders(show = true) {
     this.model.sheet.SetHeaderSize(show ? undefined : 1, show ? undefined : 1);
     this.QueueLayoutUpdate();
@@ -411,6 +426,12 @@ export class Grid {
         this.Select(this.primary_selection,
           new Area(selection.area.start, selection.area.end), selection.target);
       }
+    }
+
+    // restore document freeze
+
+    if ((data as any).freeze) {
+      this.Freeze((data as any).freeze.rows || 0, (data as any).freeze.columns || 0);
     }
 
     // scrub, then add any sheet annotations. note the caller will
