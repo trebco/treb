@@ -71,6 +71,29 @@ export class SpreadsheetVertex extends VertexType {
   }
 
   /**
+   * to support restoring cached values (from file), we need a way to get
+   * the value from the reference (cell). normally this is done during
+   * calculation, and in reverse (we set the value).
+   *
+   * some additional implications of this:
+   *
+   * - does not set volatile/nonvolatile, which is usually managed as a
+   *   side-effect of the calculation.
+   *
+   * - does not remove the entry from the dirty list (but does set the
+   *   internal dirty flag).
+   *
+   * so the caller needs to explicitly address the dirty and volatile lists
+   * for this vertex.
+   */
+  public TakeReferenceValue() {
+    if (this.reference) {
+      this.result = this.reference.GetValue();
+    }
+    this.dirty = false;
+  }
+
+  /**
    * calculates the function, but only if all dependencies are clean.
    * if one or more dependencies are dirty, just exit. this should work out
    * so that when the last dependency is satisfied, the propagation will

@@ -332,6 +332,53 @@ export class Cells {
 
   }
 
+  /**
+   * get raw values (i.e. not calculated). anything outside of actual
+   * range will be undefined OR not populated. 
+   *
+   * to match GetRange, we return a single value in the case of a single cell,
+   * or a matrix.
+   *
+   * NOTE that I'm not sure this is good behavior. if you're going to
+   * return a single value for one cell, you should return a vector for
+   * a single row OR a single column. alternatively, you should always
+   * return a matrix.
+   * 
+   * @param from
+   * @param to
+   * @param transpose
+   */
+  public RawValue(from: CellAddress, to: CellAddress = from) {
+
+    if (from.row === to.row && from.column === to.column) {
+      if (this.data[from.column] && this.data[from.column][from.row]) {
+        return this.data[from.column][from.row].value;
+      }
+      return undefined;
+    }
+
+    const result: any[][] = [];
+
+    // grab columns
+    const columns = this.data.slice(from.column, to.column + 1);
+
+    // now rows
+    const start = from.row;
+    const end = to.row + 1;
+
+    for (const source of columns) {
+      const target: any[] = [];
+      for (let row = start, index = 0; row < end; row++, index++ ) {
+        const cell = source[row];
+        target.push(cell.value);
+      }
+      result.push(target);
+    }
+
+    return result;
+
+  }
+
   /** gets range as values */
   public GetRange(from: CellAddress, to?: CellAddress, transpose = false){
 

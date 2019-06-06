@@ -419,7 +419,7 @@ export class FormattingToolbar {
         if (!this.selection_style) break; // nothing selected
 
         // style, or generic
-        const number_format = this.selection_style.number_format || 'generic';
+        const number_format = this.selection_style.number_format || 'generic'; // shouldn't that be 'general'?
         const format_base = NumberFormatCache.Get(number_format);
         const format_instance = new NumberFormat(format_base.pattern); // clone, basically
 
@@ -441,7 +441,7 @@ export class FormattingToolbar {
     }
 
     if (Object.keys(style).length) {
-      this.sheet.ApplyStyle(style, true);
+      this.sheet.ApplyStyle(undefined, style, true);
     }
 
     this.UpdateFromSelection();

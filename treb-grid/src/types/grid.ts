@@ -675,12 +675,167 @@ export class Grid {
   }
 
   /**
-   * applies the given style properties to the current primary selection
+   * set data in given range
+   * API method
+   *
+   * @param range target range. if range is smaller than data, range controls.
+   * if range is larger, behavior depends on the recycle parameter.
+   * @param data single value, array (column), or 2d array
+   * @param recycle recycle values. we only recycle single values or single
+   * rows/columns -- we will not recycle a matrix.
+   * @param transpose transpose before inserting (data is row-major)
+   */
+  public SetRange(range: Area, data: any, recycle = false, transpose = false) {
+
+    // single value, easiest
+    if (!Array.isArray(data) && !ArrayBuffer.isView(data)) {
+      if (recycle) {
+        this.model.sheet.SetAreaValue(range, data);
+      }
+      else {
+        this.model.sheet.SetCellValue(range.start, data);
+      }
+      return;
+    }
+
+    // flat array -- we can recycle. recycling is R style (values, not rows)
+    if (!Array.isArray((data as any)[0]) && !ArrayBuffer.isView((data as any)[0])) {
+
+      if (recycle) {
+
+        const rows = range.entire_column ? this.model.sheet.rows : range.rows;
+        const columns = range.entire_row ? this.model.sheet.columns : range.columns;
+        const count = rows * columns;
+
+        if (count > (data as any).length) {
+          let tmp = (data as any).slice(0);
+          const multiple = Math.ceil(count / tmp.length);
+          for (let i = 1; i < multiple; i++ ){
+            tmp = tmp.concat((data as any).slice(0));
+          }
+          data = tmp;
+        }
+
+        // reshape
+        const reshaped: any[][] = [];
+        for (let c = 0, index = 0; c < columns; c++, index += rows) {
+          reshaped[c] = data.slice(index, index + rows);
+        }
+        data = reshaped;
+
+      }
+      else {
+        data = [data];
+      }
+
+    }
+
+    // transpose. might not be square
+    if (transpose) {
+      const tmp: any[][] = [];
+      const inner_length = (data as any)[0].length;
+      for (let i = 0; i < inner_length; i++ ){
+        tmp[i] = [];
+        for (let j = 0; j < data.length; j++ ){
+          if (typeof data[j][i] !== 'undefined') {
+            tmp[i][j] = data[j][i];
+          }
+        }
+      }
+      data = tmp;
+    }
+
+    this.model.sheet.SetAreaValues(range, data as any[][]);
+
+  }
+
+  /**
    * API method
    */
-  public ApplyStyle(properties: Style.Properties, delta = true) {
-    if (this.primary_selection.empty) { return; }
-    this.model.sheet.UpdateAreaStyle(this.primary_selection.area, properties, delta, true, false);
+  public SetRowHeight(row?: number|number[], height?: number) {
+
+    if (typeof row === 'undefined') {
+      row = [];
+      for (let i = 0; i < this.model.sheet.rows; i++) row.push(i);
+    }
+
+    if (typeof row === 'number') row = [row];
+    if (typeof height === 'number') {
+      for (const entry of row) {
+        this.model.sheet.RowHeight(entry, height, true);
+      }
+    }
+    else {
+      for (const entry of row) {
+        this.model.sheet.AutoSizeRow(entry);
+      }
+    }
+
+    const area = new Area(
+      {column: Infinity, row: row[0]},
+      {column: Infinity, row: row[row.length - 1]});
+
+    this.layout.UpdateTileHeights(true);
+    this.Repaint(false, true); // repaint full tiles
+    this.layout.UpdateAnnotation(this.annotations);
+    this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
+
+  }
+
+  /**
+   * API method
+   *
+   * @param column column, columns, or undefined means all columns
+   * @param width target width, or undefined means auto-size
+   */
+  public SetColumnWidth(column?: number|number[], width?: number) {
+
+    if (typeof column === 'undefined') {
+      column = [];
+      for (let i = 0; i < this.model.sheet.columns; i++) column.push(i);
+    }
+
+    if (typeof column === 'number') column = [column];
+    if (typeof width === 'number') {
+      for (const entry of column) {
+        this.model.sheet.ColumnWidth(entry, width, true);
+      }
+    }
+    else {
+      for (const entry of column) {
+        this.model.sheet.AutoSizeColumn(entry, false, true);
+      }
+    }
+
+    const area = new Area(
+      {row: Infinity, column: column[0]},
+      {row: Infinity, column: column[column.length - 1]});
+
+    this.layout.UpdateTileWidths(true);
+    this.Repaint(false, true); // repaint full tiles
+    this.layout.UpdateAnnotation(this.annotations);
+    this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
+
+  }
+
+  /**
+   * applies the given style properties to the passed array, or to the
+   * current primary selection
+   *
+   * API method
+   */
+  public ApplyStyle(area?: Area, properties: Style.Properties = {}, delta = true) {
+
+    if (!area) {
+      if (this.primary_selection.empty) {
+        return;
+      }
+      else area = this.primary_selection.area;
+    }
+
+    // console.info('A', area);
+
+    this.model.sheet.UpdateAreaStyle(area, properties, delta, true, false);
   }
 
   /**
@@ -693,13 +848,13 @@ export class Grid {
    *
    * FIXME: is that right? perhaps we should just leave whatever the user
    * did -- with the exception of clearing, which should always mirror.
-   *
    */
-  public ApplyBorders(borders: BorderConstants, color?: string, width = 1) {
+  public ApplyBorders(area?: Area, borders: BorderConstants = BorderConstants.None, color?: string, width = 1) {
 
-    if (this.primary_selection.empty) { return; }
-
-    const area = this.primary_selection.area;
+    if (!area) {
+      if (this.primary_selection.empty) { return; }
+      area = this.primary_selection.area;
+    }
 
     if (borders === BorderConstants.None) {
       width = 0;
@@ -1991,7 +2146,7 @@ export class Grid {
         }
 
         if (Object.keys(applied_style).length) {
-          this.ApplyStyle(applied_style);
+          this.ApplyStyle(undefined, applied_style);
         }
 
       }

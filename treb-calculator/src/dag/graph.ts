@@ -25,10 +25,19 @@ export abstract class Graph {
   // special
   public leaf_vertices: LeafVertex[] = [];
 
+  /**
+   * attach data. normally this is done as part of a calculation, but we can
+   * do it without a calculation to support annotations that use leaf vertices
+   *
+   * @param cells
+   */
   public AttachData(cells: Cells){
     this.cells = cells;
   }
 
+  /**
+   * flush the graph, calculation tree and cells reference
+   */
   public FlushTree() {
     this.dirty_list = [];
     this.volatile_list = [];

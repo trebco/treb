@@ -38,6 +38,9 @@ enum ToolbarLoadState {
 
 /**
  * embedded spreadsheet, suitable for one-line embedding in a web page
+ *
+ * FIXME: let's encapsulate the event source and just expose
+ * subscribe/cancel methods
  */
 export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
@@ -315,9 +318,46 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   }
 
   /**
-   * returns range as array (column-first)
+   * set data in given range
+   *
+   * @param range target range. if range is smaller than data, range controls.
+   * if range is larger, behavior depends on the recycle parameter.
+   * @param data single value, array (column), or 2d array
+   * @param recycle recycle values. we only recycle single values or vectors -- we will not recycle a matrix.
+   * @param transpose transpose before inserting (data is row-major)
    */
-  public GetRange(range: CellAddress|IArea|string) {
+  public SetRange(range: CellAddress|IArea|string, data: any, recycle = false, transpose = false) {
+
+    let area: Area;
+
+    if (typeof range === 'string') {
+      const addresses = range.split(':');
+      if (addresses.length < 2) {
+        area = new Area(this.EnsureAddress(addresses[0]));
+      }
+      else {
+        area = new Area(
+          this.EnsureAddress(addresses[0]),
+          this.EnsureAddress(addresses[1]));
+      }
+    }
+    else if (IsCellAddress(range)) {
+      area = new Area(range);
+    }
+    else {
+      area = new Area(range.start, range.end);
+    }
+
+    this.grid.SetRange(area, data, recycle, transpose);
+
+  }
+
+  /**
+   * returns range as array (column-major). optionally return raw values (formulae)
+   *
+   * @param formula set to true to return underlying formula, instead of calculated value
+   */
+  public GetRange(range: CellAddress|IArea|string, formula = false) {
     if (typeof range === 'string') {
       const addresses = range.split(':');
       if (addresses.length < 2) {
@@ -328,14 +368,38 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           this.EnsureAddress(addresses[0]),
           this.EnsureAddress(addresses[1]));
       }
-      return this.grid.cells.GetRange(range.start, range.end);
+      return formula
+        ? this.grid.cells.RawValue(range.start, range.end)
+        : this.grid.cells.GetRange(range.start, range.end);
     }
     else if (IsCellAddress(range)) {
-      return this.grid.cells.GetRange(range);
+      return formula
+        ? this.grid.cells.RawValue(range)
+        : this.grid.cells.GetRange(range);
     }
     else {
-      return this.grid.cells.GetRange(range.start, range.end);
+      return formula
+        ? this.grid.cells.RawValue(range.start, range.end)
+        : this.grid.cells.GetRange(range.start, range.end);
     }
+  }
+
+  /**
+   *
+   * @param column column, or columns (array), or undefined means all columns
+   * @param width desired width (can be 0) or undefined means 'auto-size'
+   */
+  public SetColumnWidth(column?: number|number[], width?: number) {
+    this.grid.SetColumnWidth(column, width);
+  }
+
+  /**
+   *
+   * @param row row, or rows (array), or undefined means all rows
+   * @param height desired height (can be 0) or undefined means 'auto-size'
+   */
+  public SetRowHeight(row?: number|number[], height?: number) {
+    this.grid.SetRowHeight(row, height);
   }
 
   /**
@@ -382,6 +446,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.grid.ScrollTo(this.EnsureAddress(address));
   }
 
+  /**
+   * why is this public?
+   */
   public async ImportXLSX(data: string) {
 
     if (!this.export_worker) {
@@ -537,11 +604,37 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.Publish({ type: 'reset' });
   }
 
-  public ApplyStyle(style: Style.Properties, delta = true) {
-    this.grid.ApplyStyle(style, delta);
+  public ApplyStyle(range?: IArea|CellAddress|string, style: Style.Properties = {}, delta = true) {
+
+    let area: Area|undefined;
+
+    if (range) {
+      if (typeof range === 'string') {
+        const addresses = range.split(':');
+        if (addresses.length < 2) {
+          area = new Area(this.EnsureAddress(addresses[0]));
+        }
+        else {
+          area = new Area(
+            this.EnsureAddress(addresses[0]),
+            this.EnsureAddress(addresses[1]));
+        }
+      }
+      else if (IsCellAddress(range)) {
+        area = new Area(range);
+      }
+      else {
+        area = new Area(range.start, range.end);
+      }
+    }
+
+    this.grid.ApplyStyle(area, style, delta);
   }
 
-  /** replacement for fetch */
+  /**
+   * replacement for fetch
+   * FIXME: move to utils or other lib
+   */
   public async Fetch(uri: string) {
     return new Promise<string>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -839,9 +932,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // reference to cells. this happens in calculation, but if we don't calculate
     // we need to attach directly.
 
+    // UPDATE: we can use the rebuild/clean method to do this, it will ensure
+    // cells are attached
+
     if (data.rendered_values && !recalculate) {
       this.grid.Update();
-      this.calculator.AttachData(this.grid.cells);
+      this.calculator.RebuildClean(this.grid.cells);
     }
     else {
       this.Recalculate();
@@ -1080,7 +1176,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     await this.calculator.Calculate(this.grid.cells, area, { formula_only });
     this.grid.Update(true); // , area);
     this.UpdateAnnotations();
-    this.Publish({ type: 'recalculate' });
+    this.Publish({ type: 'data' });
   }
 
   /** save sheet to local storage */

@@ -362,6 +362,43 @@ export class Calculator extends Graph {
   }
 
   /**
+   * rebuild the graph, and set cells as clean. the vertices need internal
+   * references to the calculated value, so that's set via the vertex method.
+   *
+   * we also need to manage the list of volatile cells, which is normally
+   * built as a side-effect of calculation.
+   */
+  public RebuildClean(cells: Cells) {
+
+    const json_options: CellSerializationOptions = {
+      preserve_type: true,
+      calculated_value: true };
+
+    this.full_rebuild_required = false; // unset
+    const flat = cells.toJSON(json_options);
+
+    this.AttachData(cells);
+    this.expression_calculator.SetCells(cells);
+
+    const result = this.RebuildGraph(flat.data, {});
+
+    this.status = result ? result.status : GraphStatus.OK;
+
+    if (this.status !== GraphStatus.OK){
+      console.error( 'Loop detected, stopping');
+      return result;
+    }
+    else {
+      for (const vertex of this.dirty_list) {
+        vertex.TakeReferenceValue();
+        if (this.CheckVolatile(vertex)) this.volatile_list.push(vertex);
+      }
+      this.dirty_list = []; // reset, essentially saying we're clean
+    }
+
+  }
+
+  /**
    * if this is a known function and that function provides a canonical name,
    * returns that. otherwise (optionally) UPPER-CASES the function name.
    */
@@ -614,6 +651,15 @@ export class Calculator extends Graph {
     }
 
     // console.info("Spread array value", value, vertex.reference_)
+  }
+
+  /**
+   * check if a cell is volatile. normally this falls out of the calculation,
+   * but if we build the graph and set values explicitly, we need to check.
+   */
+  protected CheckVolatile(vertex: SpreadsheetVertex) {
+    if (!vertex.expression || vertex.expression_error) return false;
+    return this.expression_calculator.CheckVolatile(vertex.expression);
   }
 
   /**

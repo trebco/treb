@@ -47,6 +47,25 @@ export class ExpressionCalculator {
     this.cells = cells;
   }
 
+  /**
+   * instead of calculating, just check if the cell is volatile. this is
+   * done by walking the expression, and checking any function calls.
+   * everything else is ignored.
+   */
+  public CheckVolatile(expr: ExpressionUnit) {
+    let volatile = false;
+
+    this.parser.Walk(expr, (unit: ExpressionUnit) => {
+      if (unit.type === 'call') {
+        const func = FunctionLibrary.Get(unit.name);
+        if (func && func.volatile) volatile = true;
+      }
+      return !volatile; // short circuit
+    });
+
+    return volatile;
+  }
+
   public Calculate(expr: ExpressionUnit, addr: CellAddress){
     Model.address = addr;
     Model.volatile = false;

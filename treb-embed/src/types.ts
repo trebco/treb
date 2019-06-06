@@ -39,8 +39,8 @@ export interface DocumentResetEvent {
   type: 'reset';
 }
 
-export interface RecalculateEvent {
-  type: 'recalculate';
+export interface DataChangeEvent {
+  type: 'data';
 }
 
 export interface SimulationCompleteEvent {
@@ -54,7 +54,7 @@ export interface SelectionEvent {
 export type EmbeddedSheetEvent =
   DocumentLoadEvent |
   DocumentResetEvent |
-  RecalculateEvent |
+  DataChangeEvent |
   SimulationCompleteEvent |
   ResizeEvent |
   SelectionEvent;
