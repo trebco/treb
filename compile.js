@@ -65,11 +65,13 @@ if (tsconfig && tsconfig.compilerOptions && tsconfig.compilerOptions.paths) {
 const CreateConfig = (config, entry) => {
   return {
 
+    /*
     stats: {
       all: false,
       builtAt: true,
       errors: true,
     },
+    */
 
     entry, // : modern_entry,
 
@@ -137,6 +139,8 @@ let legacy_compiler = webpack(CreateConfig('legacy', legacy_entry));
 
 const postbuild = async (config, err, stats) => {
 
+  // console.info(config, err, stats);
+
   if (err) {
     console.info('error building', config);
     console.error(err.stack || err);
@@ -146,11 +150,12 @@ const postbuild = async (config, err, stats) => {
     return;
   }
 
-  console.info("\n" + stats.toString({
-    all: false,
-    builtAt: true,
-    colors: true,
-  }));
+    console.info("\n" + stats.toString({
+      all: false,
+      builtAt: true,
+      colors: true,
+      errors: true,
+    }));
 
   if (!stats.hasErrors()) {
 
