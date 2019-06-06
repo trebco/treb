@@ -1,5 +1,6 @@
 
 import { Yield } from './dispatch';
+import { IEventSource } from './ievent_source';
 
 let subscription_token_generator = 1000;
 
@@ -12,7 +13,7 @@ interface EventSubscription<T> {
  * relatively simple event publish/subscribe mechanism.
  * not as simple as it used to be.
  */
-export class EventSource<T> {
+export class EventSource<T> implements IEventSource<T> {
 
   /** pending events */
   private queue: T[] = [];
