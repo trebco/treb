@@ -92,5 +92,3 @@ export class NumberFormatCache {
 // concerned that an optimizer might remove the method.
 
 (NumberFormatCache as any).InitCache();
-
-(self as any).NFC = NumberFormatCache;
