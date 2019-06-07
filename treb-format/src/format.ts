@@ -180,10 +180,10 @@ export class NumberFormat {
         }
         if (section.grouping){
           if (nf.length < 4) nf = ('####' + nf).slice(-4);
-          nf = nf.replace(/[\d#]{1,3}(?=([\d#]{3})+(?![\d#]))/g, '$&' + Localization.grouping_separator);
+          nf = nf.replace(/[\d#]{1,3}(?=([\d#]{3})+(?![\d#]))/g, '$&' + ','); // Localization.grouping_separator);
         }
         if (section.decimal_max_digits || section.decimal_min_digits){
-          nf += Localization.decimal_separator;
+          nf += '.'; // Localization.decimal_separator;
           for (i = 0; i < section.decimal_min_digits; i++) { nf += '0'; }
           for (; i < section.decimal_max_digits; i++) { nf += '#'; }
         }
