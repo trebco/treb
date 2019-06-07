@@ -613,18 +613,18 @@ export class Calculator extends Graph {
           for (let r = 0; r < value.length && r < area.rows; r++, row++ ){
             if (this.IsNativeOrTypedArray(value[r])){
               for (let c = 0; c < value[r].length && c < area.columns; c++, column++ ){
-                this.cells.data[column][row].SetCalculatedValueOrError(value[r][c]);
+                this.cells.data2[row][column].SetCalculatedValueOrError(value[r][c]);
               }
               column = area.start.column;
             }
-            else this.cells.data[column][row].SetCalculatedValueOrError(value[r]);
+            else this.cells.data2[row][column].SetCalculatedValueOrError(value[r]);
           }
         }
         else {
           for (let c = value.length; c < area.columns; c++ ) value[c] = []; // padding columns for loop
           for (let c = 0, column = area.start.column; c < area.columns; c++, column++ ){
             for (let r = 0, row = area.start.row; r < area.rows; r++, row++ ){
-              this.cells.data[column][row].SetCalculatedValueOrError(value[c][r]);
+              this.cells.data2[row][column].SetCalculatedValueOrError(value[c][r]);
             }
           }
         }
@@ -635,7 +635,7 @@ export class Calculator extends Graph {
         if (calculation_error) {
           for (let c = area.start.column; c <= area.end.column; c++){
             for (let r = area.start.row; r <= area.end.row; r++){
-              this.cells.data[c][r].SetCalculationError(value.error);
+              this.cells.data2[r][c].SetCalculationError(value.error);
             }
           }
         }
@@ -643,7 +643,7 @@ export class Calculator extends Graph {
           const value_type = Cell.GetValueType(value);
           for (let c = area.start.column; c <= area.end.column; c++){
             for (let r = area.start.row; r <= area.end.row; r++){
-              this.cells.data[c][r].SetCalculatedValue(value, value_type);
+              this.cells.data2[r][c].SetCalculatedValue(value, value_type);
             }
           }
         }

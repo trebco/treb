@@ -704,7 +704,7 @@ export class Sheet {
       cell.rendered_type = ValueType.error;
     }
     else if (type === ValueType.boolean) {
-      cell.formatted = value ? 'True' : 'False';
+      cell.formatted = value.toString().toUpperCase(); // implicit locale?
       cell.rendered_type = ValueType.boolean;
     }
     else {
@@ -1123,8 +1123,8 @@ export class Sheet {
       // c -= offset.c;
       // r -= offset.r;
 
-      if (values[c]) {
-        let value: any = values[c][r];
+      if (values[r]) {
+        let value: any = values[r][c];
         if (parse_numbers && typeof value === 'string') {
           value = ValueParser.TryParse(value).value;
         }
@@ -1402,7 +1402,7 @@ export class Sheet {
   public ExportValueData(transpose = false, dates_as_strings = false, export_functions = false): any[][] {
 
     const arr = [];
-    const data = this.cells.data;
+    const data = this.cells.data2;
 
     if (transpose) {
       const rowcount = data[0].length; // assuming it's a rectangle

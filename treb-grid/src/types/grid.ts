@@ -680,7 +680,7 @@ export class Grid {
    * @param data single value, array (column), or 2d array
    * @param recycle recycle values. we only recycle single values or single
    * rows/columns -- we will not recycle a matrix.
-   * @param transpose transpose before inserting (data is row-major)
+   * @param transpose transpose before inserting (data is column-major)
    */
   public SetRange(range: Area, data: any, recycle = false, transpose = false) {
 
@@ -2514,15 +2514,15 @@ export class Grid {
         else this.model.sheet.UpdateCellStyle(target, { number_format }, true, true);
       }
 
-      value = parse_result.value;
+      // always use // value = parse_result.value;
 
     }
-
+    
     if (array) {
-      this.model.sheet.SetArrayValue(selection.area, value);
+      this.model.sheet.SetArrayValue(selection.area, parse_result.value);
     }
     else {
-      this.model.sheet.SetCellValue(target, value);
+      this.model.sheet.SetCellValue(target, parse_result.value);
     }
 
   }
@@ -2627,6 +2627,9 @@ export class Grid {
           cell_value = cell.value.toString().replace(/\./, ',');
         }
       }
+    }
+    else if (cell.type === ValueType.boolean) {
+      return cell_value.toString().toUpperCase(); // ? 'True' : 'False';
     }
     else if (cell.type === ValueType.number) { // no style: I think this is no longer possible
       if (cell_value && Localization.decimal_separator === ',') {

@@ -57,7 +57,7 @@ export abstract class Graph {
     if (vertex) return vertex;
     vertex = new SpreadsheetVertex();
     vertex.address = {column: address.column, row: address.row};
-    vertex.reference = this.cells.data[address.column][address.row];
+    vertex.reference = this.cells.data2[address.row][address.column];
     this.vertices[address.column][address.row] = vertex;
     return vertex;
   }
