@@ -2,7 +2,7 @@
 import { NumberFormatSection } from './number_format_section';
 import { TextPartFlag, TextPart } from 'treb-base-types';
 
-const ASTERISK =   0x2A;  // TODO
+const ASTERISK = 0x2A;  // TODO
 const UNDERSCORE = 0x5F;  // TODO
 
 const QUESTION_MARK = 0x3F;
@@ -48,7 +48,7 @@ export class FormatParser {
    * luckily we don't have to parse that often; only when a format
    * is created. so we will do some extra work here.
    */
-   public static Parse(pattern: string) {
+  public static Parse(pattern: string) {
 
     // local
     this.pattern = pattern;
@@ -132,16 +132,16 @@ export class FormatParser {
     for (++this.char_index; this.char_index < this.characters.length; this.char_index++) {
       const char = this.characters[this.char_index];
       switch (char) {
-      case BACKSLASH:
-        throw new Error('invalid escape character in formatting block');
+        case BACKSLASH:
+          throw new Error('invalid escape character in formatting block');
 
-      case RIGHT_BRACE:
-        this.char_index++;
-        return text;
+        case RIGHT_BRACE:
+          this.char_index++;
+          return text;
 
-      default:
-        text += this.pattern[this.char_index];
-        break;
+        default:
+          text += this.pattern[this.char_index];
+          break;
       }
     }
     throw new Error('unterminated format');
@@ -170,8 +170,8 @@ export class FormatParser {
           for (let i = this.char_index + 1; !lookahead_digit && i < this.characters.length; i++) {
             const next_char = this.characters[i];
             if (next_char === this.decimal_mark
-                || next_char === NUMBER_SIGN
-                || next_char === ZERO ) {
+              || next_char === NUMBER_SIGN
+              || next_char === ZERO) {
               lookahead_digit = true;
             }
             else if (next_char !== COMMA) { break; }
@@ -233,7 +233,7 @@ export class FormatParser {
 
   }
 
-  protected static AppendCharAsText(advance_pointer = true){
+  protected static AppendCharAsText(advance_pointer = true) {
     if (this.current_section.has_number_format) {
       this.current_section.suffix[this.current_section.suffix.length - 1].text += this.pattern[this.char_index];
     }
@@ -245,7 +245,7 @@ export class FormatParser {
     }
   }
 
-  protected static AppendString(text: string){
+  protected static AppendString(text: string) {
     if (this.current_section.has_number_format) {
       this.current_section.suffix[this.current_section.suffix.length - 1].text += text;
     }
@@ -254,14 +254,14 @@ export class FormatParser {
     }
   }
 
-  protected static AppendTextPart(part: TextPart){
+  protected static AppendTextPart(part: TextPart) {
     if (this.current_section.has_number_format) {
       this.current_section.suffix.push(part);
-      this.current_section.suffix.push({text: ''});
+      this.current_section.suffix.push({ text: '' });
     }
     else {
       this.current_section.prefix.push(part);
-      this.current_section.prefix.push({text: ''});
+      this.current_section.prefix.push({ text: '' });
     }
   }
 
@@ -371,8 +371,8 @@ export class FormatParser {
       case UPPERCASE_E:
 
         if (this.current_section.percent ||
-            this.current_section.exponential ||
-            this.current_section.string_format) {
+          this.current_section.exponential ||
+          this.current_section.string_format) {
           this.AppendCharAsText();
         }
         else {
@@ -383,7 +383,7 @@ export class FormatParser {
 
       case PERCENT:
 
-        if (!this.current_section.exponential && !this.current_section.string_format){
+        if (!this.current_section.exponential && !this.current_section.string_format) {
           this.current_section.percent = true;
         }
         this.AppendCharAsText();
@@ -416,6 +416,19 @@ export class FormatParser {
       this.DatePatternConsumeChar();
     }
 
+    // one more check: there has to be a date format part in there
+    if (this.date_pattern) {
+      this.date_pattern = false;
+      for (const section of this.sections) {
+        for (const part of section.prefix) {
+          // tslint:disable-next-line: no-bitwise
+          if (part.flag && (part.flag & (TextPartFlag.date_component | TextPartFlag.date_component_minutes))) {
+            this.date_pattern = true;
+          }
+        }
+      }
+    }
+
     // if it _is_ a date pattern, set the section flag.
     if (this.date_pattern) {
       this.sections[0].date_format = true;
@@ -427,7 +440,7 @@ export class FormatParser {
       this.sections[0].prefix.forEach((item, index) => {
         if (item.flag === TextPartFlag.date_component && (item.text === 'mm' || item.text === 'm')) {
           if (index) {
-            for (let i = index - 1; i; i--){
+            for (let i = index - 1; i; i--) {
               const test = this.sections[0].prefix[i];
               if (test.flag === TextPartFlag.date_component) {
                 if (/h/i.test(test.text)) {
@@ -439,7 +452,7 @@ export class FormatParser {
             }
           }
           if (index < this.sections[0].prefix.length - 1) {
-            for (let i = index + 1; i < this.sections[0].prefix.length; i++){
+            for (let i = index + 1; i < this.sections[0].prefix.length; i++) {
               const test = this.sections[0].prefix[i];
               if (test.flag === TextPartFlag.date_component) {
                 if (/s/i.test(test.text)) {
@@ -495,14 +508,14 @@ export class FormatParser {
     if (test === 'am/pm' || test === 'AM/PM') {
       this.char_index += 5;
       this.sections[0].twelve_hour = true;
-      return {text: test, flag: TextPartFlag.date_component};
+      return { text: test, flag: TextPartFlag.date_component };
     }
 
     test = this.pattern.substr(this.char_index, 3);
     if (test === 'a/p' || test === 'A/P') {
       this.char_index += 3;
       this.sections[0].twelve_hour = true;
-      return {text: test, flag: TextPartFlag.date_component};
+      return { text: test, flag: TextPartFlag.date_component };
     }
 
     return undefined;
@@ -552,7 +565,7 @@ export class FormatParser {
         if (!!ampm) this.AppendTextPart(ampm);
         else this.AppendCharAsText();
         break;
-      
+
       case DOUBLE_QUOTE:
         const text = this.ConsumeString();
         this.AppendString(text);
@@ -620,5 +633,5 @@ export class FormatParser {
 
     }
   }
-  
+
 }

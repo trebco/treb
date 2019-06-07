@@ -1,7 +1,6 @@
 
 import { FormatParser } from './format_parser';
 import { NumberFormatSection } from './number_format_section';
-import { DateComponents } from './date_components';
 import { Localization, TextPartFlag, TextPart } from 'treb-base-types';
 
 /**
@@ -244,7 +243,7 @@ export class NumberFormat {
         ...(section.prefix.map((text_part) => {
           return {...text_part};
         })),
-        {text: parts.join(Localization.decimal_separator)},
+        {text: section.has_number_format ? parts.join(Localization.decimal_separator) : ''},
         ...(section.suffix.map((text_part) => {
           return {...text_part};
         })),
@@ -337,17 +336,17 @@ export class NumberFormat {
           return {text: date.getHours() > 12 ? elements[1] : elements[0]};
 
         case 'mmmmm':
-          return { text: DateComponents.long_months[date.getMonth()][0] };
+          return { text: Localization.date_components.long_months[date.getMonth()][0] };
         case 'mmmm':
           if (part.text === 'MMMM') {
-            return { text: DateComponents.long_months[date.getMonth()].toUpperCase() };
+            return { text: Localization.date_components.long_months[date.getMonth()].toUpperCase() };
           }
-          return { text: DateComponents.long_months[date.getMonth()] };
+          return { text: Localization.date_components.long_months[date.getMonth()] };
         case 'mmm':
           if (part.text === 'MMM') {
-            return { text: DateComponents.short_months[date.getMonth()].toUpperCase() };
+            return { text: Localization.date_components.short_months[date.getMonth()].toUpperCase() };
           }
-          return { text: DateComponents.short_months[date.getMonth()] };
+          return { text: Localization.date_components.short_months[date.getMonth()] };
         case 'mm':
           return { text: this.ZeroPad((date.getMonth() + 1).toString(), 2) };
         case 'm':
@@ -356,14 +355,14 @@ export class NumberFormat {
         case 'ddddd':
         case 'dddd':
           if (part.text === 'DDDDD' || part.text === 'DDDD') {
-            return { text: DateComponents.long_days[date.getDay()].toUpperCase() };
+            return { text: Localization.date_components.long_days[date.getDay()].toUpperCase() };
           }
-          return { text: DateComponents.long_days[date.getDay()] };
+          return { text: Localization.date_components.long_days[date.getDay()] };
         case 'ddd':
           if (part.text === 'DDD') {
-            return { text: DateComponents.short_days[date.getDay()].toUpperCase() };
+            return { text: Localization.date_components.short_days[date.getDay()].toUpperCase() };
           }
-          return { text: DateComponents.short_days[date.getDay()] };
+          return { text: Localization.date_components.short_days[date.getDay()] };
         case 'dd':
           return { text: this.ZeroPad((date.getDate()).toString(), 2) };
         case 'd':
