@@ -588,9 +588,6 @@ export class Grid {
       }
     }
 
-    // this.layout.scale = this.options.scale || 1;
-    // this.tile_renderer.scale = this.options.scale || 1;
-
     // create dom structure
 
     this.layout.Initialize(container, () => this.OnScroll(), this.options.scrollbars);
@@ -2706,43 +2703,7 @@ export class Grid {
       }
     }
     else {
-
       cell_value = this.NormalizeCellValue(cell);
-
-      /*
-      
-      if (cell.type === ValueType.number && cell.style && cell.style.number_format) {
-        const format = NumberFormatCache.Get(cell.style.number_format);
-        if (format.date_format) {
-          const date = new Date(cell_value * RDateScale);
-          const number_format = (date.getHours() || date.getMinutes() || date.getSeconds()) ?
-            'timestamp' : 'short date';
-          cell_value = NumberFormatCache.Get(number_format).Format(cell_value);
-        }
-        else if (/(?:%|percent)/.test(cell.style.number_format)) {
-
-          // FIXME do this properly
-
-          cell_value = (cell_value * 100).toString() + '%';
-          if (Localization.decimal_separator === ',') {
-            cell_value = cell.value.toString().replace(/\./, ',');
-          }
-
-        }
-        else {
-          if (cell_value && Localization.decimal_separator === ',') {
-            cell_value = cell.value.toString().replace(/\./, ',');
-          }
-        }
-      }
-      else if (cell.type === ValueType.number) { // no style: I think this is no longer possible
-        if (cell_value && Localization.decimal_separator === ',') {
-          cell_value = cell.value.toString().replace(/\./, ',');
-        }
-      }
-
-      */
-
     }
 
     // const value: any = flush ? undefined : cell_value;

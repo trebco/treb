@@ -45,8 +45,6 @@ interface OverflowRecord {
 
 export class TileRenderer {
 
-  // public scale = 1;
-
   protected last_font?: string;
   protected readonly cell_edge_buffer = 4;
 
@@ -74,8 +72,8 @@ export class TileRenderer {
     const context = this.buffer_canvas.getContext('2d', { alpha: false });
 
     if (context) {
+      const scale = this.layout.dpr;
       this.buffer_context = context;
-      const scale = Math.max(1, this.layout.dpr || 1);
       this.buffer_context.setTransform(scale, 0, 0, scale, 0, 0);
       this.buffer_context.textAlign = 'left';
       this.buffer_context.textBaseline = 'alphabetic';
@@ -89,7 +87,7 @@ export class TileRenderer {
    */
   public EnsureBuffer(width = 0, height = 0, offset = 0) {
 
-    const scale = Math.max(1, this.layout.dpr || 1);
+    const scale = this.layout.dpr;
     width = width * scale;
     height = height * scale;
     offset = offset * scale;
@@ -316,7 +314,6 @@ export class TileRenderer {
    */
   public RenderHeaders(tiles: TileRange /*, selection: GridSelection*/, force = false) {
 
-    // const scale = this.options.scale || 1;
     const scale = this.layout.dpr;
 
     const header_size = this.model.sheet.header_offset;
@@ -491,7 +488,7 @@ export class TileRenderer {
     const context = tile.getContext('2d', { alpha: false });
     if (!context) { return; } // should throw
 
-    const scale = Math.max(1, this.layout.dpr || 1);
+    const scale = this.layout.dpr;
 
     this.last_font = undefined;
     context.setTransform(scale, 0, 0, scale, 0, 0);
@@ -1461,7 +1458,7 @@ export class TileRenderer {
       context.restore();
     }
     else if (buffering) {
-      const scale = Math.max(1, this.layout.dpr || 1);
+      const scale = this.layout.dpr;
       original_context.drawImage(this.buffer_canvas,
         0, 0, (result.width || 0) * scale,
         height * scale, paint_left, 0, result.width || 0, height);

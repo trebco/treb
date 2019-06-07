@@ -78,7 +78,11 @@ export abstract class BaseLayout {
   public dpr = Math.max(1, self.devicePixelRatio || 1);
 
   /** separate scale, user-controlled (testing...) */
-  // public scale = 1;
+  // public scale = .75;
+
+  // public get composite_scale() {
+  //  return this.dpr * this.scale;
+  // }
 
   /**
    * this is a reference to the node that handles scrolling. it needs
@@ -90,7 +94,8 @@ export abstract class BaseLayout {
   private trident = ((typeof navigator !== 'undefined') &&
     navigator.userAgent && /trident/i.test(navigator.userAgent));
 
-  private default_tile_size: Size = { width: 600, height: 400 };
+  // private default_tile_size: Size = { width: 600, height: 400 };
+  private default_tile_size: Size = { width: 1200, height: 800 };
 
   private tooltip_state?: 'up'|'left';
 
