@@ -135,6 +135,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   /** document name */
   private document_name?: string = undefined;
 
+  /**
+   * these (practically speaking, there should only be one) are resolve()
+   * functions from running simulations. when a simulation is complete or
+   * canceled, we will resolve and clear the list.
+   */
+  private simulation_resolution: Array<() => void> = [];
+
   constructor(options: EmbeddedSpreadsheetOptions) { // }, theme: Theme = {}) {
 
     super();
@@ -1345,11 +1352,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       },
     });
 
-    // setTimeout(() => {
     this.worker.postMessage({
       type: WorkerMessageType.Start, data: { trials, lhs },
     });
-    // }, 250);
+
+    await new Promise((resolve) => {
+      this.simulation_resolution.push(resolve);
+    });
 
   }
 
@@ -1586,6 +1595,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           setTimeout(() => {
             this.ShowDialog(false);
             this.Publish({ type: 'simulation-complete' });
+
+            for (const entry of this.simulation_resolution) {
+              entry.call(this);
+            }
+            this.simulation_resolution = [];
+
           }, 500);
         });
         break;
