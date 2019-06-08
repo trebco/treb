@@ -369,35 +369,35 @@ export class FormattingToolbar {
 
       case 'border-bottom':
         if (this.selection_style && this.selection_style.border_bottom === 1) {
-          (this.sheet as any).grid.ApplyBorders('bottom', undefined, 2);
+          (this.sheet as any).grid.ApplyBorders(undefined, 'bottom', undefined, 2);
         }
         else {
-          (this.sheet as any).grid.ApplyBorders('bottom');
+          (this.sheet as any).grid.ApplyBorders(undefined, 'bottom');
         }
         break;
 
       case 'border-all':
-        (this.sheet as any).grid.ApplyBorders('all');
+        (this.sheet as any).grid.ApplyBorders(undefined, 'all');
         break;
 
       case 'border-outer':
-        (this.sheet as any).grid.ApplyBorders('outside');
+        (this.sheet as any).grid.ApplyBorders(undefined, 'outside');
         break;
 
       case 'border-right':
-        (this.sheet as any).grid.ApplyBorders('right');
+        (this.sheet as any).grid.ApplyBorders(undefined, 'right');
         break;
 
       case 'border-left':
-        (this.sheet as any).grid.ApplyBorders('left');
+        (this.sheet as any).grid.ApplyBorders(undefined, 'left');
         break;
 
       case 'border-top':
-        (this.sheet as any).grid.ApplyBorders('top');
+        (this.sheet as any).grid.ApplyBorders(undefined, 'top');
         break;
 
       case 'border-none':
-        (this.sheet as any).grid.ApplyBorders('none');
+        (this.sheet as any).grid.ApplyBorders(undefined, 'none');
         break;
 
       case 'flush-simulation-results':

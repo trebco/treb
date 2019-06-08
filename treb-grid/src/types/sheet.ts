@@ -131,7 +131,7 @@ export class Sheet {
       });
     });
 
-    return this.FromArray(arr, true);
+    return this.FromArray(arr, false); // true);
 
   }
 
@@ -1366,6 +1366,7 @@ export class Sheet {
       calculated_value: !!options.rendered_values,
       expand_arrays: !!options.expand_arrays,
       decorated_cells: !!options.decorated_cells,
+      // nested: true,
     };
 
     return {
