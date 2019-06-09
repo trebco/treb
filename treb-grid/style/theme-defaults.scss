@@ -54,6 +54,13 @@ $font-stack:  "-apple-system",
     stroke: #666;
   }
 
+  // highlight
+
+  .freeze-highlight {
+    fill: rgba(87, 184, 255, .25);
+    stroke: rgba(33, 118, 174, 1);
+  }
+
   // grid
 
   .grid {

@@ -36,11 +36,13 @@ export class GridLayout extends BaseLayout {
     // selection node for frozen rows
     this.row_header_selection = document.createElementNS(SVGNS, 'svg');
     this.row_header_selection.classList.add('frozen-selection');
+    this.row_header_selection.classList.add('frozen-selection-rows');
     this.column_header.appendChild(this.row_header_selection);
 
     // ...columns
     this.column_header_selection = document.createElementNS(SVGNS, 'svg');
     this.column_header_selection.classList.add('frozen-selection');
+    this.column_header_selection.classList.add('frozen-selection-columns');
     this.row_header.appendChild(this.column_header_selection);
 
     // ...corner

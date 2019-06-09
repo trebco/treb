@@ -99,6 +99,12 @@ export interface Theme {
   /** optional line dashes for selection */
   additional_selection_line_dash_array?: string; // number[];
 
+  /** flashing color (overlay) to highlight frozen rows/columns */
+  frozen_highlight_overlay?: string;
+
+  /** flashing color (border) to highlight frozen rows/columns */
+  frozen_highlight_border?: string;
+
   /** color(s) for argument highlight selections. will recycle */
   // argument_selection_colors?: string[];
 
@@ -279,6 +285,10 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
 
   if (!theme.border_color && cell[5]) theme.border_color = cell[5];
 
+  const highlight = TestNode('freeze-highlight', ['fill', 'stroke']);
+  theme.frozen_highlight_overlay = highlight[0];
+  theme.frozen_highlight_border = highlight[1];
+  
   // tslint:disable-next-line:variable-name
   const interface_ = TestNode('interface', ['font-family', 'font-size']);
   theme.interface_font_face = interface_[0];

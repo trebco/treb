@@ -95,13 +95,23 @@
 
     /** separate selection node for frozen rows/columns (needs different stacking) */
     .frozen-selection {
+      
       background: transparent;
       position: absolute;
       z-index: $z-index-frozen-selection;
       overflow: hidden; // needed for IE11 (put in legacy?)
       -moz-transform: scale(1); // firefox anti-blur
-    }
 
+      &.frozen-selection-rows {
+        border-bottom: 1px solid transparent;
+      }
+
+      &.frozen-selection-columns {
+        border-right: 1px solid transparent;
+      }
+
+    }
+    
     /**
      * corner node to cover headers as they scroll across/down. this is now
      * used for freeze panes; row/column headers are rendered in the corner

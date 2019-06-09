@@ -428,10 +428,10 @@ export class Grid {
       }
     }
 
-    // restore document freeze
+    // restore document freeze. don't show highlight
 
     if ((data as any).freeze) {
-      this.Freeze((data as any).freeze.rows || 0, (data as any).freeze.columns || 0);
+      this.Freeze((data as any).freeze.rows || 0, (data as any).freeze.columns || 0, false);
     }
 
     // scrub, then add any sheet annotations. note the caller will
@@ -1036,13 +1036,52 @@ export class Grid {
     this.DelayedRender(force, area);
   }
 
+
+  /**
+   *
+   */
+  public HighlightFreezeArea() {
+
+    if (this.theme.frozen_highlight_overlay) {
+
+      for (const node of [
+          this.layout.corner_selection,
+          this.layout.row_header_selection,
+          this.layout.column_header_selection ]) {
+
+        node.style.transition = 'background .33s, border-bottom-color .33s, border-right-color .33s';
+        node.style.background = this.theme.frozen_highlight_overlay;
+
+        if (this.theme.frozen_highlight_border) {
+          node.style.borderBottomColor = this.theme.frozen_highlight_border;
+          node.style.borderRightColor = this.theme.frozen_highlight_border;
+        }
+
+        setTimeout(() => {
+          node.style.background = 'transparent';
+          node.style.borderBottomColor = 'transparent';
+          node.style.borderRightColor = 'transparent';
+        }, 400);
+      }
+
+    }
+
+  }
+
   /**
    * freeze rows or columns. set to 0 (or call with no arguments) to un-freeze.
+   *
+   * highglight is shown by default, but we can hide it(mostly for document load)
    */
-  public Freeze(rows = 0, columns = 0) {
+  public Freeze(rows = 0, columns = 0, highlight_transition = true) {
 
     if (rows === this.layout.freeze.rows &&
         columns === this.layout.freeze.columns) {
+
+      if (highlight_transition) {
+        this.HighlightFreezeArea();
+      }
+
       return;
     }
 
@@ -1052,7 +1091,10 @@ export class Grid {
     this.QueueLayoutUpdate();
     this.Repaint();
 
-    // this.grid_events.Publish({type: 'structure'});
+
+    if (highlight_transition) {
+      this.HighlightFreezeArea();
+    }
 
   }
 
