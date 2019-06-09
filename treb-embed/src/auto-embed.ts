@@ -60,6 +60,10 @@ class AutoEmbedManager {
         }
       }
 
+      if (options.freeze_columns || options.freeze_rows) {
+        console.info('freeze options are deprecated. spreadsheet files will preserve frozen rows/columns.')
+      }
+
       const sheet = this.CreateSheet(options as CreateSheetOptions);
       const load = options.load || element.getAttribute('data-load');
       if (load) {
