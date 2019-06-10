@@ -3086,7 +3086,19 @@ export class Grid {
             this.model.sheet.columns - 1),
         }));
 
+        // we're calling renderselections early, to avoid jitter when
+        // scrolling. FIXME: create a method to just update the given
+        // selection, to minimize work here (maybe that's over-optimizing?)
+
+        // at the least, we could flag that we've already done this so
+        // it doesn't get called again on the next render
+
+        this.selection_renderer.RenderSelections();
+
+        // then scroll.
+
         this.ScrollIntoView(selection.target);
+
       }
     }
 
