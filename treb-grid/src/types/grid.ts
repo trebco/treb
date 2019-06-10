@@ -428,10 +428,14 @@ export class Grid {
       }
     }
 
-    // restore document freeze. don't show highlight
+    // restore document freeze. don't show highlight. ALSO unfreeze if not
+    // set, as this might be a reset/clear
 
     if ((data as any).freeze) {
       this.Freeze((data as any).freeze.rows || 0, (data as any).freeze.columns || 0, false);
+    }
+    else {
+      this.Freeze(0, 0, false);
     }
 
     // scrub, then add any sheet annotations. note the caller will

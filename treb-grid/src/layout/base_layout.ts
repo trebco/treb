@@ -290,6 +290,11 @@ export abstract class BaseLayout {
     if (context) {
       context.textAlign = 'left';
       context.textBaseline = 'alphabetic';
+
+      // prepaint -- firefox is a little slow so flashes empty tiles sometimes
+
+      context.fillStyle = '#fff'; // FIXME: use theme color
+      context.fillRect(0, 0, tile.width, tile.height);
     }
 
     return tile;
