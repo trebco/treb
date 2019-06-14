@@ -204,7 +204,6 @@ export abstract class BaseLayout {
     }
 
     if (!this.note_node.parentElement) {
-      console.info('ctr', container);
       container.appendChild(this.note_node);
     }
 
