@@ -1,14 +1,4 @@
 
-$font-stack:  "-apple-system",
-              "BlinkMacSystemFont",
-              "Segoe UI",
-              "Roboto",
-              "Oxygen-Sans",
-              "Ubuntu",
-              "Cantarell",
-              "Helvetica Neue",
-              "sans-serif";
-
 /**
  * theme defaults, as css. experimenting.
  */
@@ -136,6 +126,12 @@ $font-stack:  "-apple-system",
       stroke: #fff;
     }
 
+  }
+
+  // notes
+
+  .note-marker {
+    fill: #d2c500;
   }
 
 }

@@ -159,6 +159,16 @@ export class Grid {
   private nub_select_flag = false;
 
   /**
+   * current mouse move cell
+   */
+  private hover_cell: CellAddress = {row: -1, column: -1};
+
+  /**
+   * flag indicating we're showing a note, so we can stop
+   */
+  private hover_note_visible = false;
+
+  /**
    * additional selections that are rendered but not otherwise used.
    * this array is now readonly, so we can bind it to the selection
    * renderer (we do this with the primary selection as well)
@@ -1488,6 +1498,10 @@ export class Grid {
     // this is used for the grid, but we can cheat and use it for the header
     const rect = this.layout.OffsetCellAddressToRectangle({ row: header.row, column: 0 });
 
+    if (this.hover_cell.row !== -1 || this.hover_cell.column !== -1) {
+      this.HoverCell({row: -1, column: -1});
+    }
+
     let resize_row = -1;
 
     if (event.offsetY - rect.top <= this.RESIZE_PIXEL_BUFFER && header.row > 0) {
@@ -1514,6 +1528,10 @@ export class Grid {
 
     // this is used for the grid, but we can cheat and use it for the header
     const rect = this.layout.OffsetCellAddressToRectangle({ row: 0, column: header.column });
+
+    if (this.hover_cell.row !== -1 || this.hover_cell.column !== -1) {
+      this.HoverCell({row: -1, column: -1});
+    }
 
     let resize_column = -1;
 
@@ -1788,6 +1806,32 @@ export class Grid {
     }
   }
 
+  private HoverCell(address: CellAddress, event?: MouseEvent) {
+
+    // does this cell have a note?
+
+    const cell = this.cells.GetCell(address, false);
+    const note = cell ? cell.note : undefined;
+
+    if (note) {
+
+      // move and show
+      this.layout.ShowNote(note, address, event);
+      this.hover_note_visible = true;
+    }
+    else if (this.hover_note_visible) {
+
+      // hide
+      this.layout.HideNote();
+      this.hover_note_visible = false;
+    }
+
+    // set
+
+    this.hover_cell = {...address};
+
+  }
+
   /**
    * grid move handler for hit-testing various areas
    */
@@ -1800,6 +1844,15 @@ export class Grid {
 
     if (this.cell_resize.row >= 0 || this.cell_resize.column >= 0) {
       this.layout.ResizeCursor();
+    }
+
+    // don't show hints if we are editing
+
+    if (!(this.cell_editor && this.cell_editor.visible)) {
+      const address = this.layout.PointToAddress_Grid({ x: event.offsetX, y: event.offsetY });
+      if (this.hover_cell.row !== address.row || this.hover_cell.column !== address.column) {
+        this.HoverCell(address, event);
+      }
     }
 
     if (this.primary_selection.empty || !this.selection_renderer.nub_rectangle) {
@@ -1919,7 +1972,6 @@ export class Grid {
     }
 
     this.selection_renderer.RenderSelections();
-    // this.tile_renderer.RenderHeaders(this.render_state.render_tiles);
 
     if (selecting_argument) this.UpdateSelectedArgument(selection);
 
@@ -2703,6 +2755,12 @@ export class Grid {
     let address = selection.target || selection.area.start;
     let cell = this.model.sheet.CellData(address);
     let rect: Rectangle;
+
+    // new, hide note if visible
+
+    if (this.hover_note_visible) {
+      this.layout.HideNote();
+    }
 
     // merged cell, make sure we get/set value from the head
     // also get full rect for the editor

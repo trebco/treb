@@ -220,6 +220,9 @@ export class Cells {
         cell.calculated = obj.calculated;
         cell.calculated_type = obj.calculated_type;
       }
+      if (typeof obj.note !== 'undefined') {
+        cell.note = obj.note;
+      }
       this.data2[obj.row][obj.column] = cell;
 
       if (obj.area){
@@ -270,88 +273,7 @@ export class Cells {
     // call, and then re-order? that also makes it easier to pivot
     // (order by rows or columns)
 
-    /*
-    const SerializeCell = (cell: Cell, row: number, column: number) => {
-
-      // because only the array head will have a value, this test
-      // will filter out empty cells and non-head array cells
-
-      // update: also add merge heads
-      const merge_head = cell && cell.merge_area
-        && cell.merge_area.start.row === row
-        && cell.merge_area.start.column === column;
-
-      const is_empty = cell ? (cell.type === ValueType.string && !cell.value) : true;
-
-      // NOTE: we added the check on calculated && calculated_value,
-      // so we preserve rendered data for arrays. but that actually writes
-      // the array data as well, which is unnecessary (?) -- FIXME
-      //
-      // actually, check how that's interpreted on load, because it might
-      // break if we have a value but not the array area (...)
-
-      if (cell && (!is_empty || options.preserve_empty_strings) &&
-          (merge_head || cell.type || (cell.calculated && options.expand_arrays) ||
-            (cell.calculated && options.calculated_value) ||
-            (options.decorated_cells && cell.style &&
-              ( cell.style.background || cell.style.border_bottom ||
-                cell.style.border_top || cell.style.border_left || cell.style.border_right)))){
-
-        const obj: any = { / * row, column, * / value: cell.value };
-        if ( options.preserve_type ) obj.type = cell.type;
-        if ( options.calculated_value &&
-            typeof cell.calculated !== 'undefined' ) { // && cell.calculated_type !== ValueType.error) {
-          obj.calculated = cell.calculated;
-          obj.calculated_type = cell.calculated_type;
-        }
-        if (cell.area) obj.area = cell.area.toJSON();
-        if (cell.merge_area) obj.merge_area = cell.merge_area.toJSON();
-
-        return obj;
-      }
-
-      return null;
-
-    };
-    */
-
-    //
-
-    /*
-    if (options.nested) {
-
-      const row_count = options.subset ?
-        options.subset.end.row - options.subset.start.row :
-        this.rows;
-
-      const column_count = options.subset ?
-        options.subset.end.column - options.subset.start.column :
-        this.columns;
-
-      for ( let row = start_row; row <= end_row; row++ ){
-        if ( this.data2[row]){
-          const ref = this.data2[row];
-          const nested_row: { row: number, cells: any[] } = { row, cells: [] };
-
-          end_column = ref.length - 1;
-          if (options.subset) end_column = options.subset.end.column;
-
-          for ( let column = start_column; column <= end_column; column++ ){
-            const cell = ref[column];
-            const serialized = SerializeCell(cell, row, column);
-            if (serialized) {
-              serialized.column = column;
-              nested_row.cells.push(serialized);
-            }
-          }
-
-          if (nested_row.cells.length) data.push(nested_row);
-        }
-      }
-  
-      return {data};
-    }
-    */
+    // ... (we did that)
 
     const row_keys: {[index: number]: number} = {};
     const column_keys: {[index: number]: number} = {};
@@ -391,9 +313,10 @@ export class Cells {
                     cell.style.border_top || cell.style.border_left || cell.style.border_right)))){
 
             const obj: any = { row, column, value: cell.value };
-            if ( options.preserve_type ) obj.type = cell.type;
-            if ( options.calculated_value &&
-                typeof cell.calculated !== 'undefined' ) { // && cell.calculated_type !== ValueType.error) {
+            if (cell.note) obj.note = cell.note;
+            if (options.preserve_type) obj.type = cell.type;
+            if (options.calculated_value &&
+                typeof cell.calculated !== 'undefined') { // && cell.calculated_type !== ValueType.error) {
               obj.calculated = cell.calculated;
               obj.calculated_type = cell.calculated_type;
             }

@@ -490,6 +490,8 @@ export class TileRenderer {
 
     const scale = this.layout.dpr;
 
+    // const render_list: Array<{row: number, column: number, cell: Cell}> = [];
+
     this.last_font = undefined;
     context.setTransform(scale, 0, 0, scale, 0, 0);
 
@@ -510,7 +512,9 @@ export class TileRenderer {
           const cell = this.model.sheet.CellData({ row, column });
 
           if (tile.needs_full_repaint || cell.render_dirty) {
+
             const result = this.RenderCell(tile, cell, context, { row, column }, width, height);
+            // render_list.push({row, column, cell});
 
             if (result.tile_overflow_right) {
               this.CopyToAdjacent(tile, scale, 1, 0, left, top, result);
@@ -530,7 +534,7 @@ export class TileRenderer {
       left += (width * scale);
     }
 
-    if (!this.layout.freeze.rows && !this.layout.freeze.columns) return;
+    if (!this.layout.freeze.rows && !this.layout.freeze.columns) return; // render_list;
 
     // paint to headers
 
@@ -597,6 +601,8 @@ export class TileRenderer {
         copy_height * scale, 0, 0, copy_width, copy_height);
 
     }
+
+    return; // render_list;
 
   }
 
@@ -742,7 +748,7 @@ export class TileRenderer {
 
   }
 
-  protected RenderCellBorders2(
+  protected RenderCellBorders(
     address: CellAddress,
     context: CanvasRenderingContext2D,
     style: Style.Properties,
@@ -846,65 +852,8 @@ export class TileRenderer {
 
   }
 
-  /*
-  protected RenderCellBorders(
-    context: CanvasRenderingContext2D,
-    style: Style.Properties,
-    left = 0, top = 0, width = 0, height = 0) {
-
-    context.lineWidth = 1;
-
-    if (style.border_bottom && style.border_bottom_color) {
-      context.strokeStyle = style.border_bottom_color;
-      context.beginPath();
-
-      if (style.border_bottom > 1) {
-        context.moveTo(left + 0.5, top + height - 1.5);
-        context.lineTo(left + width - 0.5, top + height - 1.5);
-      }
-      else {
-        context.moveTo(left + 0.5, top + height - 0.5);
-        context.lineTo(left + width - 0.5, top + height - 0.5);
-      }
-
-      context.stroke();
-    }
-    if (style.border_top && style.border_top_color) {
-      // context.lineWidth = style.border_top;
-      context.strokeStyle = style.border_top_color;
-      context.beginPath();
-
-      if (style.border_top > 1) {
-        context.moveTo(left + 0.5, top + 0.5);
-        context.lineTo(left + width - 0.5, top + 0.5);
-      }
-      else {
-        context.moveTo(left + 0.5, top - 0.5);
-        context.lineTo(left + width - 0.5, top - 0.5);
-      }
-      context.stroke();
-    }
-    if (style.border_left && style.border_left_color) {
-      // context.lineWidth = style.border_left;
-      context.strokeStyle = style.border_left_color;
-      context.beginPath();
-      context.moveTo(left - 0.5, top + 0.5);
-      context.lineTo(left - 0.5, top + height - 0.5);
-      context.stroke();
-    }
-    if (style.border_right && style.border_right_color) {
-      // context.lineWidth = style.border_right;
-      context.strokeStyle = style.border_right_color;
-      context.beginPath();
-      context.moveTo(left + width - 0.5, top + 0.5);
-      context.lineTo(left + width - 0.5, top + height - 0.5);
-      context.stroke();
-    }
-
-  }
-  */
-
-  protected RenderCellBackground2(
+  protected RenderCellBackground(
+    note: boolean,
     address: CellAddress,
     context: CanvasRenderingContext2D,
     style: Style.Properties,
@@ -935,45 +884,24 @@ export class TileRenderer {
       context.fillRect(0, 0, width - 1, height - 1);
     }
 
-    this.RenderCellBorders2(address, context, style, 0, 0, width, height);
+    if (note) {
 
-  }
+      const offset_x = 2;
+      const offset_y = 1;
+      const length = 8;
 
-  /*
-  protected RenderCellBackground(
-    context: CanvasRenderingContext2D,
-    style: Style.Properties,
-    width: number, height: number) {
-
-    // we now flow the painted background over the grid, so
-    // we only need to paint the grid if there's no active
-    // background. still not sure I like this...
-
-    // UPDATE: now optional
-
-    if (style.background) {
-      if (this.options.grid_over_background) {
-        context.fillStyle = this.theme.grid_color || '';
-        context.fillRect(0, 0, width, height);
-        context.fillStyle = style.background;
-        context.fillRect(0, 0, width - 1, height - 1);
-      }
-      else {
-        context.fillStyle = style.background;
-        context.fillRect(0, 0, width, height);
-      }
-    }
-    else {
-      context.fillStyle = this.theme.grid_color || '';
-      context.fillRect(0, 0, width, height);
-      context.fillStyle = this.theme.cell_background_color || '';
-      context.fillRect(0, 0, width - 1, height - 1);
+      context.fillStyle = this.theme.note_marker_color || '#d2c500';
+      context.beginPath();
+      context.moveTo(width - offset_x, offset_y);
+      context.lineTo(width - offset_x - length, offset_y);
+      context.lineTo(width - offset_x, offset_y + length);
+      context.lineTo(width - offset_x, offset_y);
+      context.fill();
     }
 
-    this.RenderCellBorders(context, style, 0, 0, width, height);
+    this.RenderCellBorders(address, context, style, 0, 0, width, height);
 
   }
-  */
 
   /**
    * refactoring render to allow rendering to buffered canvas, in the
@@ -1100,7 +1028,8 @@ export class TileRenderer {
     // and border; but it still might be overflowed (via merge)
 
     if (!cell.formatted) {
-      this.RenderCellBackground2(
+      this.RenderCellBackground(
+        !!cell.note,
         address,
         (result.tile_overflow_bottom || result.tile_overflow_right) ?
           this.buffer_context : context, style, width, height);
@@ -1300,7 +1229,7 @@ export class TileRenderer {
 
     }
 
-    this.RenderCellBackground2(address, context, style, width, height);
+    this.RenderCellBackground(!!cell.note, address, context, style, width, height);
 
     for (const element of overflow_backgrounds) {
 
@@ -1317,7 +1246,7 @@ export class TileRenderer {
       }
 
       if (element.cell.style) {
-        this.RenderCellBorders2(element.address, context, element.cell.style,
+        this.RenderCellBorders(element.address, context, element.cell.style,
           element.border.left, element.border.top, element.border.width, element.border.height);
       }
     }

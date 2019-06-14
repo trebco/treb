@@ -129,6 +129,9 @@ export interface Theme {
   /** default cell text color */
   cell_color?: string;
 
+  /** color of in-cell note marker */
+  note_marker_color?: string;
+
 }
 
 export interface ExtendedTheme extends Theme {
@@ -328,6 +331,9 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
   const ac_highlight = TestNode(['autocomplete', 'highlight'], ['stroke', 'fill']);
   theme.autocomplete_highlight_color = ac_highlight[0];
   theme.autocomplete_highlight_background = ac_highlight[1];
+
+  const note_marker = TestNode(['note-marker'], ['fill']);
+  theme.note_marker_color = note_marker[0];
 
   // console.info(theme);
   // document.body.removeChild(node);

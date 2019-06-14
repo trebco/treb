@@ -162,6 +162,7 @@ export class Cell {
 
   public render_dirty = true;
 
+  public note?: string;
 
   // --- class methods --------------------------------------------------------
 
@@ -189,6 +190,7 @@ export class Cell {
   public Reset(){
     this.type = ValueType.undefined;
     this.value
+      = this.note
       = this.formatted
       = this.rendered_type
       = this.style
@@ -266,6 +268,14 @@ export class Cell {
     if (this.type === ValueType.string &&
         this.value && this.value[0] === '\'') return this.value.slice(1);
     return this.value;
+  }
+
+  /**
+   * set note. set undefined to clear.
+   */
+  public SetNote(note?: string) {
+    this.note = note;
+    this.render_dirty = true;
   }
 
   /** sets error (FIXME: error type) */

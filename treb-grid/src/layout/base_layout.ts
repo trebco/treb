@@ -103,6 +103,8 @@ export abstract class BaseLayout {
 
   private selection_layout_token?: any;
 
+  private note_node: HTMLDivElement;
+
   /**
    * cache of lookup rectangles (address -> canvas rect)
    */
@@ -125,6 +127,35 @@ export abstract class BaseLayout {
 
     this.mock_selection = DOMUtilities.CreateDiv('mock-selection-node');
     this.mock_selection.innerHTML = '&nbsp;';
+
+    this.note_node = // (document.querySelector('.treb-note') ||
+      DOMUtilities.CreateDiv('treb-note');
+
+  }
+
+  public HideNote() {
+    this.note_node.style.opacity = '0';
+  }
+
+  public ShowNote(note: string, address: CellAddress, event?: MouseEvent) {
+    this.note_node.textContent = note;
+
+    if (!this.note_node.parentElement) return;
+
+    const note_size = this.note_node.getBoundingClientRect();
+    const container = this.note_node.parentElement.getBoundingClientRect();
+
+    const offset = { x: 3, y: 2 };
+
+    const rect = this.OffsetCellAddressToRectangle(address).Shift(
+      this.header_size.width, this.header_size.height);
+
+    this.note_node.style.left = (
+      container.left + rect.right - this.scroll_reference_node.scrollLeft + offset.x) + 'px';
+    this.note_node.style.top = (
+      container.top + rect.top - this.scroll_reference_node.scrollTop - note_size.height - offset.y) + 'px';
+
+    this.note_node.style.opacity = '1';
   }
 
   public UpdateAnnotation(elements: Annotation|Annotation[]) {
@@ -170,6 +201,11 @@ export abstract class BaseLayout {
 
     if (!this.tooltip.parentElement) {
       container.appendChild(this.tooltip);
+    }
+
+    if (!this.note_node.parentElement) {
+      console.info('ctr', container);
+      container.appendChild(this.note_node);
     }
 
     this.InitializeInternal(container, scroll_callback);
