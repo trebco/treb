@@ -244,6 +244,27 @@ export class Grid {
 
   // --- public methods --------------------------------------------------------
 
+  /**
+   * set note at the given address, or current selection
+   * @param address optional address; if not used, note will be set/cleared
+   * at current selection
+   * @param note new note, or undefined to clear note
+   */
+  public SetNote(address?: CellAddress, note?: string) {
+
+    if (!address) {
+      if (this.primary_selection.empty) return;
+      address = this.primary_selection.target;
+    }
+
+    const cell = this.cells.GetCell(address, true);
+    if (cell) {
+      cell.SetNote(note);
+      this.DelayedRender(false, new Area(address));
+    }
+
+  }
+
   /** find an annotation, given a node */
   public FindAnnotation(node: HTMLElement) {
     for (const annotation of this.annotations) {
