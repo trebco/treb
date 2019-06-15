@@ -261,6 +261,11 @@ export class Grid {
     if (cell) {
       cell.SetNote(note);
       this.DelayedRender(false, new Area(address));
+
+      // don't publish, this is ornamentation, not data. caller
+      // should rely on some other notification mechanism. (... FIXME?)
+
+      // this.grid_events.Publish({type: 'data', area: new Area(address), })
     }
 
   }

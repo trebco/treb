@@ -971,6 +971,19 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  /**
+   * set note for current selection. set as undefined or empty
+   * string to clear existing note.
+   */
+  public SetNote(note?: string) {
+    this.grid.SetNote(undefined, note);
+
+    // set note does not publish, so we need to directly trigger undo/autosave
+
+    this.DocumentChange();
+
+  }
+
   /** testing
    *
    * this is called after recalc, check any annotations

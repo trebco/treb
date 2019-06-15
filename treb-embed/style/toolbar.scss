@@ -21,6 +21,39 @@ $color-item-size: 20px;
   box-shadow: 0px 1px 3px 3px rgba(0,0,0,0.05);
   outline: none;
 
+  &.popup-note {
+
+    width: auto;
+    max-height: none;
+
+    &>div {
+
+      display: flex;
+      flex-direction: column;
+
+      textarea {
+        height: 200px;
+        font: inherit;
+        flex-grow: 1;
+      }
+
+      a {
+        white-space: nowrap;
+        border-radius: 2px;
+        border: none; // 1px solid $button-border;
+        color: $button-foreground;
+        background: #fff;
+        margin: 4px;
+        margin-left: 0;
+        cursor: pointer;
+        font: inherit;
+        display: inline-block;
+      }
+
+    }
+
+  }
+
   &.popup-border {
     width: auto;
     max-height: none;

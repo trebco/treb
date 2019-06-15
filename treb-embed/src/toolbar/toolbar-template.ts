@@ -42,6 +42,9 @@ export const toolbar_template: Array<ToolbarItem|ToolbarItem[]> = [
   */
 
   { type: 'separator' },
+  { icon: 'icon-chat_bubble_outline', id: 'note', title: 'Add Note' },
+
+  { type: 'separator' },
   { type: 'input', text: '#', id: 'number-format', title: 'Number Format', submenu: [
     // 'general', 'percent', 'accounting', 'currency', 'scientific',
   ]},

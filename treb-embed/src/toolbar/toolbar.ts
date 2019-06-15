@@ -4,6 +4,7 @@ import { toolbar_template } from './toolbar-template';
 import { ToolbarItem } from './toolbar-item';
 import { NumberFormatCache, NumberFormat } from 'treb-format';
 import { Measurement } from 'treb-utils';
+import { CellAddress, Area } from 'treb-base-types';
 
 export type EventHandler = (id: string, data?: any) => void;
 
@@ -20,6 +21,16 @@ interface ToolbarItemImpl extends ToolbarItem {
 }
 
 export class Toolbar {
+
+  public current_note = '';
+  public current_cell: CellAddress = {row: -1, column: -1};
+
+  // we use different fields for the dialog to cover the (maybe rare)
+  // case where the selection switches after the dialog closes but before
+  // we handle the event
+
+  public dialog_cell: CellAddress = {row: -1, column: -1};
+  public dialog_note = '';
 
   private handlers: EventHandler[] = [];
   private items: {[index: string]: ToolbarItemImpl} = {};
@@ -190,6 +201,9 @@ export class Toolbar {
               }
             }
             else if (item.submenu) {
+              this.ShowPopup(item.node, item);
+            }
+            else if (item.id === 'note') {
               this.ShowPopup(item.node, item);
             }
             else {
@@ -407,6 +421,16 @@ export class Toolbar {
         const color = node.style.backgroundColor || '';
         this.SetSecondColor(this.popup_item.id, color);
       }
+      else if (this.popup_item.id === 'note') {
+        if (node.id === 'ok-button') {
+          const textarea = this.popup.querySelector('textarea');
+          if (!textarea) throw new Error('missing node');
+          this.dialog_note = textarea.value || '';
+        }
+        else if (node.id === 'clear-button') {
+          this.dialog_note = '';
+        }
+      }
       else {
         this.popup_item.value = node.textContent || '';
       }
@@ -468,6 +492,37 @@ export class Toolbar {
     chooser.appendChild(input);
 
     this.popup.appendChild(chooser);
+
+  }
+
+  private NotePopup(item: ToolbarItemImpl) {
+
+    const container = document.createElement('div');
+    this.popup.appendChild(container);
+
+    const header = document.createElement('div');
+    header.textContent = Area.CellAddressToLabel(this.current_cell);
+
+    // cache
+    this.dialog_cell = {...this.current_cell};
+    container.appendChild(header);
+
+    const textarea = document.createElement('textarea');
+    textarea.textContent = this.current_note;
+    container.appendChild(textarea);
+
+    const buttons = document.createElement('div');
+    container.appendChild(buttons);
+
+    const ok = document.createElement('a');
+    ok.textContent = 'OK';
+    ok.setAttribute('id', 'ok-button');
+    buttons.appendChild(ok);
+
+    const clear = document.createElement('a');
+    clear.textContent = 'Clear Note';
+    clear.setAttribute('id', 'clear-button');
+    buttons.appendChild(clear);
 
   }
 
@@ -564,6 +619,7 @@ export class Toolbar {
     this.popup.classList.remove('popup-color');
     this.popup.classList.remove('popup-border');
     this.popup.classList.remove('popup-submenu');
+    this.popup.classList.remove('popup-note');
 
     if (item.color) {
       this.ColorPopup(item);
@@ -572,6 +628,10 @@ export class Toolbar {
     else if (item.border) {
       this.BorderPopup(item);
       this.popup.classList.add('popup-border');
+    }
+    else if (item.id === 'note') {
+      this.NotePopup(item);
+      this.popup.classList.add('popup-note');
     }
     else {
       this.SubmenuPopup(item);

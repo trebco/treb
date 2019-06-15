@@ -3,7 +3,7 @@
 /**
  * generated file, do not edit (or don't expect your edits to survive)
  *
- * Sat Jun 15 2019 07:15:15 GMT-0700 (Pacific Daylight Time)
+ * Sat Jun 15 2019 07:26:09 GMT-0700 (Pacific Daylight Time)
  * C:\Program Files\nodejs\node.exe H:\TREB\TREB\treb-embed\script\svg-to-js.js -i symbols.svg -o symbol-defs.ts
  */
 
@@ -318,11 +318,19 @@ export const symbol_defs: {[index: string]: SymbolDef} = {
       }
     ]
   },
-  "icon-note": {
-    "viewbox": "0 0 24 24",
+  "icon-chat_bubble_outline": {
+    "viewbox": "0 0 48 48",
     "paths": [
       {
-        "d": "M15 5.484v5.531h5.484zM21.984 9.984v8.016c0 1.078-0.891 1.969-1.969 1.969l-16.031 0.047c-1.078 0-1.969-0.938-1.969-2.016v-12c0-1.078 0.891-2.016 1.969-2.016h12z"
+        "d": "M40.031 31.969v-24h-32.063v28.031l4.031-4.031h28.031zM40.031 4.031c2.156 0 3.938 1.781 3.938 3.938v24c0 2.156-1.781 4.031-3.938 4.031h-28.031l-7.969 7.969v-36c0-2.156 1.781-3.938 3.938-3.938h32.063z"
+      }
+    ]
+  },
+  "icon-mode_edit": {
+    "viewbox": "0 0 48 48",
+    "paths": [
+      {
+        "d": "M41.438 14.063l-3.656 3.656-7.5-7.5 3.656-3.656c0.75-0.75 2.063-0.75 2.813 0l4.688 4.688c0.75 0.75 0.75 2.063 0 2.813zM6 34.5l22.125-22.125 7.5 7.5-22.125 22.125h-7.5v-7.5z"
       }
     ]
   },

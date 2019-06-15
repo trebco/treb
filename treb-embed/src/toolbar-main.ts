@@ -245,6 +245,17 @@ export class FormattingToolbar {
       if (format) {
         format = NumberFormatCache.SymbolicName(format) || format;
       }
+
+      if (data.note) {
+        this.toolbar.UpdateTitle('note', 'Edit Note');
+      }
+      else {
+        this.toolbar.UpdateTitle('note', 'Add Note');
+      }
+
+      this.toolbar.current_cell = {...sheet_selection.target};
+      this.toolbar.current_note = data.note;
+
     }
     this.toolbar.Update('number-format', format);
     this.toolbar.Show('merge', !merged);
@@ -434,6 +445,10 @@ export class FormattingToolbar {
         // get the mutated pattern. also: FIXME (in format)
         style.number_format = format_instance.toString();
 
+        break;
+
+      case 'note':
+        this.sheet.SetNote(this.toolbar.dialog_note);
         break;
 
       default:
