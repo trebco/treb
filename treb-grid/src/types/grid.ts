@@ -1,5 +1,6 @@
 
-import { Rectangle, ValueType, Style, Area, Cell, Extent, CellAddress, Localization } from 'treb-base-types';
+import { Rectangle, ValueType, Style, Area, Cell, Extent, CellAddress, 
+         IsCellAddress, Localization } from 'treb-base-types';
 import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType } from 'treb-parser';
 import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, RDateScale } from 'treb-format';
@@ -40,6 +41,13 @@ export class Grid {
 
   public grid_events = new EventSource<GridEvent>();
 
+  /**
+   * this should not be public -- clients should only interact with the API.
+   * so why is it public? we need to access it in the calculator (and in the
+   * calculator in the worker, for simulations).
+   *
+   * FIXME: find a solution for this.
+   */
   public get cells() {
     return this.model.sheet.cells;
   }
@@ -709,6 +717,24 @@ export class Grid {
     if (this.container) {
       this.container.focus();
     }
+  }
+
+  /**
+   * get data in a given range, optionally formulas
+   * API method
+   */
+  public GetRange(range: CellAddress|Area, formula = false) {
+
+    if (IsCellAddress(range)) {
+      return formula
+        ? this.cells.RawValue(range)
+        : this.cells.GetRange(range);
+    }
+
+    return formula
+      ? this.cells.RawValue(range.start, range.end)
+      : this.cells.GetRange(range.start, range.end);
+
   }
 
   /**

@@ -7,7 +7,7 @@ import { Calculator, CalculationWorker, WorkerMessage, WorkerMessageType,
 import { IsCellAddress, Localization, CellSerializationOptions, Style,
          CellAddress, Area, IArea } from 'treb-base-types';
 import { EventSource, Resizable, Yield } from 'treb-utils';
-import { Sparkline } from 'treb-sparkline';
+// import { Sparkline } from 'treb-sparkline';
 
 // local
 import { MaskDialog } from './mask-dialog';
@@ -365,30 +365,25 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * @param formula set to true to return underlying formula, instead of calculated value
    */
   public GetRange(range: CellAddress|IArea|string, formula = false) {
+
     if (typeof range === 'string') {
       const addresses = range.split(':');
       if (addresses.length < 2) {
-        range = new Area(this.EnsureAddress(addresses[0]));
+        return this.grid.GetRange(new Area(this.EnsureAddress(addresses[0])), formula);
       }
       else {
-        range = new Area(
+        return this.grid.GetRange(new Area(
           this.EnsureAddress(addresses[0]),
-          this.EnsureAddress(addresses[1]));
+          this.EnsureAddress(addresses[1])), formula);
       }
-      return formula
-        ? this.grid.cells.RawValue(range.start, range.end)
-        : this.grid.cells.GetRange(range.start, range.end);
     }
     else if (IsCellAddress(range)) {
-      return formula
-        ? this.grid.cells.RawValue(range)
-        : this.grid.cells.GetRange(range);
+      return this.grid.GetRange(range);
     }
     else {
-      return formula
-        ? this.grid.cells.RawValue(range.start, range.end)
-        : this.grid.cells.GetRange(range.start, range.end);
+      return this.grid.GetRange(new Area(range.start, range.end));
     }
+
   }
 
   /**
@@ -475,6 +470,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
             const sheet_data = event.data.result;
             // console.info(event.data);
 
+            // NOTE: this is not grid.cells, it's the cells
+            // property of the imported data -- this is ok (for now)
+
             this.grid.FromData(
                 sheet_data.cells || [],
                 sheet_data.column_widths || [],
@@ -489,6 +487,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
             this.calculator.Reset(false);
             this.FlushUndo();
             this.grid.Update();
+
+            // this one _is_ the grid cells
+
             this.calculator.AttachData(this.grid.cells);
             this.Publish({ type: 'load' });
 
@@ -606,6 +607,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.user_data = undefined;
     this.additional_cells = [];
     this.calculator.Reset(false);
+
+    // NOTE: accessing grid.cells, find a better approach
+
     this.calculator.AttachData(this.grid.cells); // for leaf nodes
     this.FlushUndo();
     this.Publish({ type: 'reset' });
@@ -942,6 +946,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // UPDATE: we can use the rebuild/clean method to do this, it will ensure
     // cells are attached
 
+    // NOTE: accessing grid.cells, find a better approach
+
     if (data.rendered_values && !recalculate) {
       this.grid.Update();
       this.calculator.RebuildClean(this.grid.cells);
@@ -995,6 +1001,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         const vertex = annotation.data.vertex as LeafVertex;
         if (vertex.state_id !== annotation.data.state) {
           annotation.data.state = vertex.state_id;
+          /*
           if (annotation.data &&
               annotation.data.sparkline &&
               annotation.data.range &&
@@ -1002,16 +1009,17 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
             this.UpdateSparkline(
               annotation.data.sparkline, annotation.data.range, annotation.node);
           }
+          */
         }
       }
     }
   }
 
-  /**
+  /* *
    * re-render a sparkline on data change (after recalc)
    *
    * FIXME: move to class
-   */
+   * /
   public UpdateSparkline(sparkline: Sparkline, range: Area, target: HTMLElement) {
 
     const real_range = this.grid.RealArea(range);
@@ -1039,11 +1047,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     target.appendChild(svg_root);
 
   }
+  */
 
-  /**
+  /* *
    * FIXME: move to class
    * FIXME: this needs to get called on structure changes (add/remove row/column)
-   */
+   * /
   public RebuildSparkline(range: Area, vertex: LeafVertex) {
 
     const real_range = this.grid.RealArea(range);
@@ -1057,12 +1066,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     });
 
   }
+  */
 
-  /**
+  /* *
    * testing
    *
    * FIXME: move to class
-   */
+   * /
   public AddSparkline(
       source: string|CellAddress|IArea,
       target: string|CellAddress,
@@ -1125,11 +1135,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     }
 
   }
+  */
 
   public InflateAnnotations() {
 
     for (const annotation of this.grid.annotations) {
       console.info('needs inflation', annotation);
+      /*
       if (annotation.data &&
           annotation.cell_address &&
           annotation.data.range &&
@@ -1138,6 +1150,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           new Area(annotation.data.range.start, annotation.data.range.end),
           annotation.cell_address.start, annotation);
       }
+      */
     }
 
   }
@@ -1193,6 +1206,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     if (event && event.type === 'data' && event.area) {
       area = event.area;
     }
+
+    // NOTE: accessing grid.cells, find a better approach
+
     await this.calculator.Calculate(this.grid.cells, area, { formula_only });
     this.grid.Update(true); // , area);
     this.UpdateAnnotations();
@@ -1354,13 +1370,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       calculated_value: true,
     };
 
-    const cells = this.grid.cells;
+    // NOTE: accessing grid.cells, find a better approach
 
     this.worker.postMessage({
       type: WorkerMessageType.Configure,
       data: {
         locale: Localization.locale,
-        data: cells.toJSON(json_options).data,
+        data: this.grid.cells.toJSON(json_options).data,
         additional_cells: this.additional_cells,
       },
     });
