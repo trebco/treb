@@ -4,7 +4,7 @@ import { template } from './base-template';
 import { Base64 as JSBase64 } from 'js-base64';
 import { Workbook } from './workbook';
 
-import { Style, Area, CellAddress, Cell, Cells } from 'treb-base-types';
+import { Style, Area, ICellAddress, Cell, Cells } from 'treb-base-types';
 import { StyleOptions, Font, BorderStyle, Fill } from './style';
 import { Parser, ArgumentSeparatorType, DecimalMarkType } from 'treb-parser';
 import { NumberFormatCache } from 'treb-format';

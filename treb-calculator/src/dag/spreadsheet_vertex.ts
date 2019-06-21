@@ -1,7 +1,7 @@
 
 import { VertexType } from './vertex_type';
 
-import { Cell, CellAddress, ValueType } from 'treb-base-types';
+import { Cell, ICellAddress, ValueType } from 'treb-base-types';
 import { Parser, ExpressionUnit } from 'treb-parser';
 
 export enum SpreadsheetError {
@@ -22,7 +22,7 @@ export class SpreadsheetVertex extends VertexType {
   public reference?: Cell;
   public dirty = false;
   public error = SpreadsheetError.None;
-  public address?: CellAddress;
+  public address?: ICellAddress;
   public result: any;
   public expression: ExpressionUnit = { type: 'missing', id: -1 };
   public expression_error = false;

@@ -1,5 +1,5 @@
 
-export interface CellAddress {
+export interface ICellAddress {
   row: number;
   column: number;
   absolute_row?: boolean;
@@ -7,15 +7,15 @@ export interface CellAddress {
 }
 
 export interface IArea {
-  start: CellAddress;
-  end: CellAddress;
+  start: ICellAddress;
+  end: ICellAddress;
 }
 
 /**
  * type guard function
  * FIXME: is there a naming convention for these?
  */
-export const IsCellAddress = (obj: any): obj is CellAddress => {
+export const IsCellAddress = (obj: any): obj is ICellAddress => {
   return (
     typeof obj === 'object' &&
     typeof obj.row !== 'undefined' &&
@@ -55,30 +55,44 @@ export class Area implements IArea {
     return s;
   }
 
-  public static CellAddressToLabel(address: CellAddress){
+  public static CellAddressToLabel(address: ICellAddress){
     return (address.absolute_column ? '$' : '')
       + this.ColumnToLabel(address.column)
       + (address.absolute_row ? '$' : '')
       + (address.row + 1);
   }
 
-  // tslint:disable-next-line:variable-name
-  private start_: CellAddress;
+  /**
+   * merge two areas and return a new area.
+   * @param a
+   * @param b
+   */
+  public static Join(a: IArea, b?: IArea) {
+    const area = new Area(a.start, a.end);
+    if (b) {
+      area.ConsumeAddress(b.start);
+      area.ConsumeAddress(b.end);
+    }
+    return area;
+  }
 
   // tslint:disable-next-line:variable-name
-  private end_: CellAddress;
+  private start_: ICellAddress;
+
+  // tslint:disable-next-line:variable-name
+  private end_: ICellAddress;
 
   /** accessor returns a _copy_ of the start address */
   public get start(){ return { row: this.start_.row, column: this.start_.column }; }
 
   /** accessor */
-  public set start(value: CellAddress){ this.start_ = value; }
+  public set start(value: ICellAddress){ this.start_ = value; }
 
   /** accessor returns a _copy_ of the end address */
   public get end(){ return { row: this.end_.row, column: this.end_.column }; }
 
   /** accessor */
-  public set end(value: CellAddress){ this.end_ = value; }
+  public set end(value: ICellAddress){ this.end_ = value; }
 
   /** returns number of rows, possibly infinity */
   public get rows(): number {
@@ -118,7 +132,7 @@ export class Area implements IArea {
    * @param end
    * @param normalize: calls the normalize function
    */
-  constructor(start: CellAddress, end: CellAddress = start, normalize = false){
+  constructor(start: ICellAddress, end: ICellAddress = start, normalize = false){
 
     // copy
     this.start_ = {
@@ -188,7 +202,7 @@ export class Area implements IArea {
   }
 
   /** returns the top-left cell in the area */
-  public TopLeft(): CellAddress {
+  public TopLeft(): ICellAddress {
     const address = {row: 0, column: 0};
     if (!this.entire_row) address.column = this.start.column;
     if (!this.entire_column) address.row = this.start.row;
@@ -196,7 +210,7 @@ export class Area implements IArea {
   }
 
   /** returns the bottom-right cell in the area */
-  public BottomRight(): CellAddress {
+  public BottomRight(): ICellAddress {
     const address = {row: 0, column: 0};
     if (!this.entire_row) address.column = this.end.column;
     if (!this.entire_column) address.row = this.end.row;
@@ -211,7 +225,7 @@ export class Area implements IArea {
     return this.entire_row || (column >= this.start_.column && column <= this.end_.column);
   }
 
-  public Contains(address: CellAddress): boolean {
+  public Contains(address: ICellAddress): boolean {
     return (this.entire_column || (address.row >= this.start_.row && address.row <= this.end_.row))
       && (this.entire_row || (address.column >= this.start_.column && address.column <= this.end_.column));
   }
@@ -250,9 +264,9 @@ export class Area implements IArea {
     return new Area(this.start, this.end); // ensure copies
   }
 
-  public Array(): CellAddress[] {
+  public Array(): ICellAddress[] {
     if (this.entire_column || this.entire_row) throw new Error('can\'t convert infinite area to array');
-    const array: CellAddress[] = new Array<CellAddress>(this.rows * this.columns);
+    const array: ICellAddress[] = new Array<ICellAddress>(this.rows * this.columns);
     let index = 0;
 
     for (let row = this.start_.row; row <= this.end_.row; row++){
@@ -297,7 +311,7 @@ export class Area implements IArea {
   }
 
   /** Resizes range in place so that it includes the given address */
-  public ConsumeAddress(addr: CellAddress){
+  public ConsumeAddress(addr: ICellAddress){
     if (!this.entire_row){
       if (addr.column < this.start_.column) this.start_.column = addr.column;
       if (addr.column > this.end_.column) this.end_.column = addr.column;
@@ -309,7 +323,7 @@ export class Area implements IArea {
   }
 
   /** Resizes range in place so that it includes the given area (merge) */
-  public ConsumeArea(area: Area){
+  public ConsumeArea(area: IArea){
     this.ConsumeAddress(area.start);
     this.ConsumeAddress(area.end);
   }

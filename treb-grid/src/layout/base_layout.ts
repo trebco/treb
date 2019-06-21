@@ -4,7 +4,7 @@ import { ExtendedTheme } from '../types/theme';
 import { DataModel } from '../types/data_model';
 
 import { Tile } from '../types/tile';
-import { Point, Extent, Size, Position, Area, CellAddress, Rectangle } from 'treb-base-types';
+import { Point, Extent, Size, Position, Area, ICellAddress, Rectangle } from 'treb-base-types';
 import { RectangleCache } from './rectangle_cache';
 
 // aliasing Area as TileRange. this seemed like a good idea, initially, because
@@ -110,6 +110,12 @@ export abstract class BaseLayout {
    */
   private rectangle_cache = new RectangleCache();
 
+  /**
+   * flag so we don't try to paint before we have tiles
+   */
+  private initialized = false;
+
+
   constructor(protected model: DataModel) {
 
     // now attaching to node... no longer global
@@ -137,7 +143,7 @@ export abstract class BaseLayout {
     this.note_node.style.opacity = '0';
   }
 
-  public ShowNote(note: string, address: CellAddress, event?: MouseEvent) {
+  public ShowNote(note: string, address: ICellAddress, event?: MouseEvent) {
     this.note_node.textContent = note;
 
     if (!this.note_node.parentElement) return;
@@ -211,6 +217,9 @@ export abstract class BaseLayout {
     if (!scroll && this.scroll_reference_node) {
       this.scroll_reference_node.style.overflow = 'hidden';
     }
+
+    this.initialized = true;
+
   }
 
   /**
@@ -389,7 +398,7 @@ export abstract class BaseLayout {
     this.UpdateTooltip(options);
   }
 
-  public ScrollTo(address: CellAddress){
+  public ScrollTo(address: ICellAddress){
     const target_rect = this.CellAddressToRectangle(address);
     this.scroll_reference_node.scrollTop = target_rect.top;
     this.scroll_reference_node.scrollLeft = target_rect.left;
@@ -399,7 +408,7 @@ export abstract class BaseLayout {
    * scroll address into view, at top-left or bottom-right depending on
    * target and current position. also offsets for frozen rows, columns.
    */
-  public ScrollIntoView(address: CellAddress){
+  public ScrollIntoView(address: ICellAddress){
 
     const target_rect = this.CellAddressToRectangle(address);
 
@@ -478,7 +487,7 @@ export abstract class BaseLayout {
   /**
    * y coordinate to row header. for consistency we return an address.
    */
-  public CoordinateToRowHeader(y: number): CellAddress {
+  public CoordinateToRowHeader(y: number): ICellAddress {
     const result = { column: Infinity, row: 0 };
 
     if (this.freeze.rows &&
@@ -522,7 +531,7 @@ export abstract class BaseLayout {
   /**
    * x coordinate to colum header. for consistency we return an address.
    */
-  public CoordinateToColumnHeader(x: number): CellAddress {
+  public CoordinateToColumnHeader(x: number): ICellAddress {
     const result = { row: Infinity, column: 0 };
 
     if (this.freeze.columns &&
@@ -566,7 +575,7 @@ export abstract class BaseLayout {
   /**
    * point to cell address (grid only)
    */
-  public PointToAddress_Grid(point: Point, cap_maximum = false): CellAddress {
+  public PointToAddress_Grid(point: Point, cap_maximum = false): ICellAddress {
 
     // offset for freeze pane
 
@@ -980,6 +989,8 @@ export abstract class BaseLayout {
 
   public DirtyArea(area: Area){
 
+    if (!this.initialized) return;
+
     const start = {row: 0, column: 0};
     const end = {row: this.grid_tiles[0].length - 1, column: this.grid_tiles.length - 1};
 
@@ -1254,7 +1265,7 @@ export abstract class BaseLayout {
    * the underlying method is still visible (and cache contains the raw
    * rectangles, not offset).
    */
-  public OffsetCellAddressToRectangle(address: CellAddress): Rectangle {
+  public OffsetCellAddressToRectangle(address: ICellAddress): Rectangle {
 
     let rect = this.CellAddressToRectangle(address);
 
@@ -1274,7 +1285,7 @@ export abstract class BaseLayout {
    * of the cell with the given address. uses a cache since we wind
    * up looking up the same rectangles a lot.
    */
-  public CellAddressToRectangle(address: CellAddress): Rectangle {
+  public CellAddressToRectangle(address: ICellAddress): Rectangle {
 
     // limit. create a working object
 

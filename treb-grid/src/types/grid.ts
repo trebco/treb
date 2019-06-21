@@ -1,5 +1,5 @@
 
-import { Rectangle, ValueType, Style, Area, Cell, Extent, CellAddress, 
+import { Rectangle, ValueType, Style, Area, Cell, Extent, ICellAddress, 
          IsCellAddress, Localization } from 'treb-base-types';
 import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType } from 'treb-parser';
 import { EventSource, Yield } from 'treb-utils';
@@ -28,11 +28,12 @@ import { UA } from '../util/ua';
 import { Annotation } from './annotation';
 import { Autocomplete } from '../editors/autocomplete';
 
+import { Command, CommandKey, SetRangeCommand } from './commands';
 import { DataModel } from './data_model';
 
 interface DoubleClickData {
   timeout?: any;
-  address?: CellAddress;
+  address?: ICellAddress;
 }
 
 export class Grid {
@@ -169,7 +170,7 @@ export class Grid {
   /**
    * current mouse move cell
    */
-  private hover_cell: CellAddress = {row: -1, column: -1};
+  private hover_cell: ICellAddress = {row: -1, column: -1};
 
   /**
    * flag indicating we're showing a note, so we can stop
@@ -258,7 +259,7 @@ export class Grid {
    * at current selection
    * @param note new note, or undefined to clear note
    */
-  public SetNote(address?: CellAddress, note?: string) {
+  public SetNote(address?: ICellAddress, note?: string) {
 
     if (!address) {
       if (this.primary_selection.empty) return;
@@ -380,7 +381,7 @@ export class Grid {
   }
 
   // pass through
-  public CellRenderData(address: CellAddress) {
+  public CellRenderData(address: ICellAddress) {
     return this.model.sheet.CellData(address);
   }
 
@@ -388,7 +389,7 @@ export class Grid {
    * clear sheet, reset all data
    */
   public Clear() {
-    this.UpdateSheet(new Sheet().toJSON(), true);
+    this.ExecCommand({ key: CommandKey.Clear });
   }
 
   /**
@@ -444,10 +445,25 @@ export class Grid {
 
     this.QueueLayoutUpdate();
 
+    /*
     this.model.sheet.UpdateSheetStyle({
       font_face: this.theme.cell_font,
       font_size: this.theme.cell_font_size,
     }, true, true);
+    */
+
+    this.ExecCommand({
+      key: CommandKey.UpdateStyle,
+      area: new Area(
+        { row: Infinity, column: Infinity },
+        { row: Infinity, column: Infinity },
+      ),
+      style: {
+        font_face: this.theme.cell_font,
+        font_size: this.theme.cell_font_size,
+      },
+      delta: true,
+    });
 
     if (render) {
       this.Repaint(false, false); // true, true);
@@ -501,10 +517,25 @@ export class Grid {
 
     this.QueueLayoutUpdate();
 
+    /*
     this.model.sheet.UpdateSheetStyle({
       font_face: this.theme.cell_font,
       font_size: this.theme.cell_font_size,
     }, true, true);
+    */
+
+    this.ExecCommand({
+      key: CommandKey.UpdateStyle,
+      area: new Area(
+        { row: Infinity, column: Infinity },
+        { row: Infinity, column: Infinity },
+      ),
+      style: {
+        font_face: this.theme.cell_font,
+        font_size: this.theme.cell_font_size,
+      },
+      delta: true,
+    });
 
     if (render) {
       // this.Repaint(true, true);
@@ -572,9 +603,28 @@ export class Grid {
 
     // update style for theme
 
+    /*
     this.model.sheet.UpdateSheetStyle({
       font_face: this.theme.cell_font,
       font_size: this.theme.cell_font_size,
+    });
+    */
+
+    // FIXME: this should be a composite command...
+    // FIXME: there should be a more generic "set sheet theme" thing,
+    // like with the editors
+
+    this.ExecCommand({
+      key: CommandKey.UpdateStyle,
+      area: new Area(
+        { row: Infinity, column: Infinity },
+        { row: Infinity, column: Infinity },
+      ),
+      style: {
+        font_face: this.theme.cell_font,
+        font_size: this.theme.cell_font_size,
+      },
+      delta: true,
     });
 
     this.layout.ApplyTheme(this.theme);
@@ -669,44 +719,31 @@ export class Grid {
    * merges selected cells
    */
   public MergeSelection() {
+
     if (this.primary_selection.empty) {
       return; // FIXME: warn?
     }
-    this.model.sheet.MergeCells(this.primary_selection.area);
-    this.DelayedRender(false, this.primary_selection.area);
+
+    this.ExecCommand({
+      key: CommandKey.MergeCells,
+      area: this.primary_selection.area,
+    });
   }
 
   /**
    * unmerges selected cells
    */
   public UnmergeSelection() {
+
     if (this.primary_selection.empty) {
       return; // FIXME: warn?
     }
 
-    // the sheet unmerge routine requires a single, contiguous merge area.
-    // we want to support multiple unmerges at the same time, though,
-    // so let's check for multiple. create a list.
+    this.ExecCommand({
+      key: CommandKey.UnmergeCells,
+      area: this.primary_selection.area,
+    });
 
-    const list: { [index: string]: Area } = {};
-
-    this.model.sheet.cells.IterateArea(this.primary_selection.area, (cell: Cell) => {
-      if (cell.merge_area) {
-        const label = Area.CellAddressToLabel(cell.merge_area.start) + ':'
-          + Area.CellAddressToLabel(cell.merge_area.end);
-        list[label] = cell.merge_area;
-      }
-    }, false);
-
-    const keys = Object.keys(list);
-
-    // suppress events until the last one
-
-    for (let i = 0; i < keys.length; i++) {
-      this.model.sheet.UnmergeCells(list[keys[i]], i !== keys.length - 1);
-    }
-
-    this.DelayedRender(false, this.primary_selection.area);
   }
 
   /**
@@ -723,7 +760,7 @@ export class Grid {
    * get data in a given range, optionally formulas
    * API method
    */
-  public GetRange(range: CellAddress|Area, formula = false) {
+  public GetRange(range: ICellAddress|Area, formula = false) {
 
     if (IsCellAddress(range)) {
       return formula
@@ -753,10 +790,12 @@ export class Grid {
     // single value, easiest
     if (!Array.isArray(data) && !ArrayBuffer.isView(data)) {
       if (recycle) {
-        this.model.sheet.SetAreaValue(range, data);
+        // this.model.sheet.SetAreaValue(range, data);
+        this.ExecCommand({key: CommandKey.SetRange, area: range, value: data});
       }
       else {
-        this.model.sheet.SetCellValue(range.start, data);
+        // this.model.sheet.SetCellValue(range.start, data);
+        this.ExecCommand({key: CommandKey.SetRange, area: range.start, value: data});
       }
       return;
     }
@@ -808,7 +847,8 @@ export class Grid {
       data = tmp;
     }
 
-    this.model.sheet.SetAreaValues(range, data as any[][]);
+    // this.model.sheet.SetAreaValues(range, data as any[][]);
+    this.ExecCommand({key: CommandKey.SetRange, area: range, value: data});
 
   }
 
@@ -817,6 +857,13 @@ export class Grid {
    */
   public SetRowHeight(row?: number|number[], height?: number) {
 
+    this.ExecCommand({
+      key: CommandKey.ResizeRows,
+      row,
+      height,
+    });
+
+    /*
     if (typeof row === 'undefined') {
       row = [];
       for (let i = 0; i < this.model.sheet.rows; i++) row.push(i);
@@ -842,6 +889,7 @@ export class Grid {
     this.Repaint(false, true); // repaint full tiles
     this.layout.UpdateAnnotation(this.annotations);
     this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
+      */
 
   }
 
@@ -851,8 +899,15 @@ export class Grid {
    * @param column column, columns, or undefined means all columns
    * @param width target width, or undefined means auto-size
    */
-  public SetColumnWidth(column?: number|number[], width?: number) {
+  public SetColumnWidth(column?: number|number[], width = 0) {
 
+    this.ExecCommand({
+      key: CommandKey.ResizeColumns,
+      column,
+      width,
+    });
+
+    /*
     if (typeof column === 'undefined') {
       column = [];
       for (let i = 0; i < this.model.sheet.columns; i++) column.push(i);
@@ -878,6 +933,7 @@ export class Grid {
     this.Repaint(false, true); // repaint full tiles
     this.layout.UpdateAnnotation(this.annotations);
     this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
+    */
 
   }
 
@@ -896,196 +952,14 @@ export class Grid {
       else area = this.primary_selection.area;
     }
 
-    // console.info('A', area);
+    this.ExecCommand({
+      key: CommandKey.UpdateStyle,
+      area,
+      style: properties,
+      delta,
+    });
 
-    this.model.sheet.UpdateAreaStyle(area, properties, delta, true, false);
-  }
-
-  /**
-   * these are all addative except for "none", which removes all borders.
-   *
-   * we no longer put borders into two cells at once (hurrah!). however
-   * we still need to do some maintenance on the mirror cells -- because
-   * if you apply a border to cell A1, then that should take precedence
-   * over any border previously applied to cell A2.
-   *
-   * FIXME: is that right? perhaps we should just leave whatever the user
-   * did -- with the exception of clearing, which should always mirror.
-   */
-  public ApplyBorders(area?: Area, borders: BorderConstants = BorderConstants.None, color?: string, width = 1) {
-
-    if (!area) {
-      if (this.primary_selection.empty) { return; }
-      area = this.primary_selection.area;
-    }
-
-    if (borders === BorderConstants.None) {
-      width = 0;
-    }
-
-    const top: Style.Properties = { border_top: width };
-    const bottom: Style.Properties = { border_bottom: width };
-    const left: Style.Properties = { border_left: width };
-    const right: Style.Properties = { border_right: width };
-
-    const clear_top: Style.Properties = { border_top: 0 };
-    const clear_bottom: Style.Properties = { border_bottom: 0 };
-    const clear_left: Style.Properties = { border_left: 0 };
-    const clear_right: Style.Properties = { border_right: 0 };
-
-    if (typeof color !== 'undefined') {
-      top.border_top_color = color;
-      bottom.border_bottom_color = color;
-      left.border_left_color = color;
-      right.border_right_color = color;
-    }
-
-    // inside all/none
-    if (borders === BorderConstants.None || borders === BorderConstants.All) {
-      this.model.sheet.UpdateAreaStyle(area, {
-        ...top, ...bottom, ...left, ...right,
-      }, true, false, true);
-    }
-
-    // top
-    if (borders === BorderConstants.Top || borders === BorderConstants.Outside) {
-      if (!area.entire_column) {
-        this.model.sheet.UpdateAreaStyle(area.top, { ...top }, true, false, true);
-      }
-    }
-
-    /*
-    // mirror top
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Top) {
-      if (!area.entire_column) {
-        if (area.start.row) {
-          this.model.sheet.UpdateAreaStyle(new Area(
-            { row: area.start.row - 1, column: area.start.column },
-            { row: area.start.row - 1, column: area.end.column }), { ...bottom }, true, false, true);
-        }
-      }
-    }
-    */
-
-    // mirror top (CLEAR)
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Top) {
-      if (!area.entire_column) {
-        if (area.start.row) {
-          this.model.sheet.UpdateAreaStyle(new Area(
-            { row: area.start.row - 1, column: area.start.column },
-            { row: area.start.row - 1, column: area.end.column }), { ...clear_bottom }, true, false, true);
-        }
-      }
-    }
-
-    // bottom
-    if (borders === BorderConstants.Bottom || borders === BorderConstants.Outside) {
-      if (!area.entire_column) {
-        this.model.sheet.UpdateAreaStyle(area.bottom, { ...bottom }, true, false, true);
-      }
-    }
-
-    /*
-    // mirror bottom
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Bottom) {
-      if (!area.entire_column) {
-        this.model.sheet.UpdateAreaStyle(new Area(
-          { row: area.end.row + 1, column: area.start.column },
-          { row: area.end.row + 1, column: area.end.column }), { ...top }, true, false, true);
-      }
-    }
-    */
-
-    // mirror bottom (CLEAR)
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Bottom) {
-      if (!area.entire_column) {
-        this.model.sheet.UpdateAreaStyle(new Area(
-          { row: area.end.row + 1, column: area.start.column },
-          { row: area.end.row + 1, column: area.end.column }), { ...clear_top }, true, false, true);
-      }
-    }
-
-    // left
-    if (borders === BorderConstants.Left || borders === BorderConstants.Outside) {
-      if (!area.entire_column) {
-        this.model.sheet.UpdateAreaStyle(area.left, { ...left }, true, false, true);
-      }
-    }
-
-    /*
-    // mirror left
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Left) {
-      if (!area.entire_row) {
-        if (area.start.column) {
-          this.model.sheet.UpdateAreaStyle(new Area(
-            { row: area.start.row, column: area.start.column - 1 },
-            { row: area.end.row, column: area.start.column - 1 }), { ...right }, true, false, true);
-        }
-      }
-    }
-    */
-
-    // mirror left (CLEAR)
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Left) {
-      if (!area.entire_row) {
-        if (area.start.column) {
-          this.model.sheet.UpdateAreaStyle(new Area(
-            { row: area.start.row, column: area.start.column - 1 },
-            { row: area.end.row, column: area.start.column - 1 }), { ...clear_right }, true, false, true);
-        }
-      }
-    }
-
-    // right
-    if (borders === BorderConstants.Right || borders === BorderConstants.Outside) {
-      if (!area.entire_column) {
-        this.model.sheet.UpdateAreaStyle(area.right, { ...right }, true, false, true);
-      }
-    }
-
-    /*
-    // mirror right
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Right) {
-      if (!area.entire_row) {
-        this.model.sheet.UpdateAreaStyle(new Area(
-          { row: area.start.row, column: area.end.column + 1 },
-          { row: area.end.row, column: area.end.column + 1 }), { ...left }, true, false, true);
-      }
-    }
-    */
-
-    // mirror right (CLEAR)
-    if (borders === BorderConstants.None || borders === BorderConstants.All ||
-      borders === BorderConstants.Outside || borders === BorderConstants.Right) {
-      if (!area.entire_row) {
-        this.model.sheet.UpdateAreaStyle(new Area(
-          { row: area.start.row, column: area.end.column + 1 },
-          { row: area.end.row, column: area.end.column + 1 }), { ...clear_left }, true, false, true);
-      }
-    }
-
-    // why is there not an expand method on area? (FIXME)
-
-    this.DelayedRender(false, new Area({
-      row: Math.max(0, area.start.row - 1),
-      column: Math.max(0, area.start.column - 1),
-    }, {
-      row: area.end.row + 1,
-      column: area.end.column + 1,
-    }));
-
-    // NOTE: we don't have to route through the sheet. we are the only client
-    // (we republish). we can just publish directly.
-
-    this.grid_events.Publish({ type: 'style', area });
-
+    // this.model.sheet.UpdateAreaStyle(area, properties, delta, true, false);
   }
 
   /**
@@ -1102,6 +976,26 @@ export class Grid {
     this.DelayedRender(force, area);
   }
 
+  public ApplyBorders(area?: Area, borders: BorderConstants = BorderConstants.None, color?: string, width = 1) {
+
+    if (!area) {
+      if (this.primary_selection.empty) { return; }
+      area = this.primary_selection.area;
+    }
+
+    if (borders === BorderConstants.None) {
+      width = 0;
+    }
+
+    this.ExecCommand({
+      key: CommandKey.UpdateBorders,
+      color,
+      area,
+      borders,
+      width,
+    });
+
+  }
 
   /**
    *
@@ -1175,8 +1069,13 @@ export class Grid {
     }
     else {
       const before_column = area.start.column;
-      const count = area.columns;
-      this.InsertColumnsInternal(before_column, -count);
+      const count = -area.columns; // negative means remove
+      // this.InsertColumnsInternal(before_column, -count);
+      this.ExecCommand({
+        key: CommandKey.InsertColumns,
+        before_column,
+        count,
+      });
     }
   }
 
@@ -1191,43 +1090,59 @@ export class Grid {
     }
     else {
       const before_row = area.start.row;
-      const count = area.rows;
-      this.InsertRowsInternal(before_row, -count);
+      const count = -area.rows; // negative means remove
+      // this.InsertRowsInternal(before_row, -count);
+      this.ExecCommand({
+        key: CommandKey.InsertRows,
+        before_row,
+        count,
+      });
     }
   }
 
-  /**
+  /* *
    * insert column at cursor
-   */
+   * /
   public InsertColumn() {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
     const before_column = area.entire_row ? 0 : area.start.column;
     this.InsertColumnsInternal(before_column, 1);
   }
+  */
 
   /**
-   * insert row at cursor
+   * insert column(s) at some specific point
    */
+  public InsertColumns(before_column = 0, count = 1) {
+    this.ExecCommand({
+      key: CommandKey.InsertColumns,
+      before_column, 
+      count,
+    });
+  }
+
+  /* *
+   * insert row at cursor
+   * /
   public InsertRow() {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
     const before_row = area.entire_column ? 0 : area.start.row;
     this.InsertRowsInternal(before_row, 1);
   }
-
-  /**
-   * insert column(s) at some specific point
-   */
-  public InsertColumns(before_column = 0, count = 1) {
-    this.InsertColumnsInternal(before_column, count);
-  }
+  */
 
   /**
    * insert rows(s) at some specific point
    */
   public InsertRows(before_row = 0, count = 1) {
-    this.InsertRowsInternal(before_row, count);
+    // this.InsertRowsInternal(before_row, count);
+    this.ExecCommand({
+      key: CommandKey.InsertRows,
+      before_row,
+      count,
+    });
   }
 
   /**
@@ -1242,7 +1157,7 @@ export class Grid {
    * scrolls so that the given cell is in the top-left (assuming that is
    * possible)
    */
-  public ScrollTo(address: CellAddress) {
+  public ScrollTo(address: ICellAddress) {
     this.layout.ScrollTo(address);
   }
 
@@ -1252,7 +1167,7 @@ export class Grid {
    * FIXME: we need a way to do this without scrolling the containing
    * page, in the event we do a scroll-on-load. small problem.
    */
-  public ScrollIntoView(address: CellAddress) {
+  public ScrollIntoView(address: ICellAddress) {
     if (this.options.scrollbars) {
       this.layout.ScrollIntoView(address);
     }
@@ -1625,7 +1540,7 @@ export class Grid {
     };
 
     if (this.cell_resize.row >= 0) {
-      let row = this.cell_resize.row;
+      const row = this.cell_resize.row;
       const base = offset.y + event.offsetY;
 
       // height of ROW
@@ -1656,6 +1571,9 @@ export class Grid {
           });
 
           requestAnimationFrame(() => {
+
+            // FIXME: use command
+
             this.layout.UpdateTileHeights(true, row);
             this.Repaint(false, true); // repaint full tiles
             this.layout.UpdateAnnotation(this.annotations);
@@ -1667,6 +1585,13 @@ export class Grid {
         this.layout.HideTooltip();
 
         requestAnimationFrame(() => {
+
+          // this bit updates rows if more than one are selected, because
+          // the resize routine only "live" resizes the first one. we can
+          // pass everything into the command.
+
+          let rows = [row];
+
           if (!this.primary_selection.empty &&
             this.primary_selection.area.rows > 1 &&
             this.primary_selection.area.start.column === Infinity &&
@@ -1676,14 +1601,23 @@ export class Grid {
 
             const area = this.model.sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
 
+            rows = [];
             for (let r = area.start.row; r <= area.end.row; r++) {
-              this.model.sheet.RowHeight(r, height, true);
+              // this.model.sheet.RowHeight(r, height, true);
+              rows.push(r);
             }
 
-            row = area.start.row;
+            // row = area.start.row; // ??
 
           }
 
+          this.ExecCommand({
+            key: CommandKey.ResizeRows,
+            row: rows,
+            height,
+          });
+
+          /*
           // need a full layout in the event we have to add tiles
           // this.layout.UpdateTileHeights(true, row);
           this.layout.UpdateTiles();
@@ -1691,6 +1625,7 @@ export class Grid {
           this.Repaint(false, true); // repaint full tiles
           this.layout.UpdateAnnotation(this.annotations);
           this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
+          */
         });
 
       });
@@ -1745,17 +1680,46 @@ export class Grid {
     };
 
     if (this.cell_resize.column >= 0) {
-      let column = this.cell_resize.column;
+      const column = this.cell_resize.column;
       const base = offset.x + event.offsetX;
 
       // doubleclick
 
       if (this.IsDoubleClick({row: -1, column})) {
+
+        let columns = [column];
+
+        if (!this.primary_selection.empty &&
+          this.primary_selection.area.columns > 1 &&
+          this.primary_selection.area.start.row === Infinity &&
+          this.primary_selection.area.ContainsColumn(column)) {
+
+          // update all selected columns. these could be in different tiles.
+
+          const area = this.model.sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
+
+          columns = [];
+          for (let c = area.start.column; c <= area.end.column; c++) {
+            columns.push(c);
+          }
+
+        }
+
+        // call with width = undefined, means auto-size
+
+        this.ExecCommand({
+          key: CommandKey.ResizeColumns,
+          column: columns,
+        });
+
+        /*
         this.model.sheet.AutoSizeColumn(column, false);
         this.layout.UpdateTileWidths(true, column);
         this.Repaint(false, true); // repaint full tiles
         this.layout.UpdateAnnotation(this.annotations);
         this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
+        */
+        return;
       }
 
       //
@@ -1766,7 +1730,7 @@ export class Grid {
 
       const rect = this.layout.OffsetCellAddressToRectangle({ row: 0, column });
       const tooltip_base = offset.x + rect.right;
-      
+
       this.layout.ShowTooltip({
         up: true,
         text: `${width}px`,
@@ -1802,6 +1766,10 @@ export class Grid {
 
         requestAnimationFrame(() => {
 
+          // @see MouseDown_RowHeader
+
+          const columns = [column];
+
           if (!this.primary_selection.empty &&
             this.primary_selection.area.columns > 1 &&
             this.primary_selection.area.start.row === Infinity &&
@@ -1812,14 +1780,22 @@ export class Grid {
             const area = this.model.sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
 
             for (let c = area.start.column; c <= area.end.column; c++) {
-              this.model.sheet.ColumnWidth(c, width, true);
+              // this.model.sheet.ColumnWidth(c, width, true);
+              columns.push(c);
             }
 
             // for next call
-            column = area.start.column;
+            // column = area.start.column; // ??
 
           }
 
+          this.ExecCommand({
+            key: CommandKey.ResizeColumns,
+            column: columns,
+            width,
+          });
+
+          /*
           // need a full layout in the event we have to add tiles
           // this.layout.UpdateTileWidths(true, column);
           this.layout.UpdateTiles();
@@ -1827,6 +1803,7 @@ export class Grid {
           this.Repaint(true, true); // repaint ALL tiles
           this.layout.UpdateAnnotation(this.annotations);
           this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
+          */
 
         });
 
@@ -1858,7 +1835,7 @@ export class Grid {
     }
   }
 
-  private HoverCell(address: CellAddress, event?: MouseEvent) {
+  private HoverCell(address: ICellAddress, event?: MouseEvent) {
 
     // does this cell have a note?
 
@@ -1934,7 +1911,7 @@ export class Grid {
    *
    * FIXME: parameterize timeout?
    */
-  private IsDoubleClick(address: CellAddress, timeout = 300){
+  private IsDoubleClick(address: ICellAddress, timeout = 300){
 
     if (this.double_click_data.address
       && this.double_click_data.address.row === address.row
@@ -2402,7 +2379,7 @@ export class Grid {
     // the case of BOTH rows and columns.
 
     if (selection.empty) return false;
-    const start: CellAddress = { ...selection.target };
+    const start: ICellAddress = { ...selection.target };
 
     // the starting cell for the purposes of a block depends on the
     // direction we're heading
@@ -2538,9 +2515,9 @@ export class Grid {
    */
   private DeleteSelection(selection: GridSelection) {
     if (selection.empty) return;
-    // this.DelayedRender(false, selection.area);
-    this.model.sheet.ClearArea(selection.area);
-  }
+    // this.model.sheet.ClearArea(selection.area);
+    this.ExecCommand({ key: CommandKey.Clear, area: selection.area });
+3  }
 
   /**
    * sets cell value, inferring type and (possibly) inferring cell style
@@ -2550,8 +2527,12 @@ export class Grid {
    * @param address cell address
    * @param value value entered, usually this will be a string (we will try
    * to parse numbers/booleans)
+   *
+   * @param exec execute commands immediately; alternatively, return the list
+   * of commands. the former is the default for editor commits; the latter
+   * is used for paste.
    */
-  private SetInferredType(selection: GridSelection, value: any, array = false) {
+  private SetInferredType(selection: GridSelection, value: any, array = false, exec = true) {
 
     // validation: cannot change part of an array without changing the
     // whole array. so check the array. separately, if you are entering
@@ -2591,6 +2572,7 @@ export class Grid {
     // first check functions
 
     const is_function = (typeof value === 'string' && value.trim()[0] === '=');
+    const commands: Command[] = [];
 
     if (is_function) {
       value = this.FixFormula(value);
@@ -2615,8 +2597,10 @@ export class Grid {
                 const style: Style.Properties = {
                   number_format: test.style.number_format,
                 };
-                if (array) this.model.sheet.UpdateAreaStyle(selection.area, style, true, true);
-                else this.model.sheet.UpdateCellStyle(target, style, true, true);
+                // if (array) this.model.sheet.UpdateAreaStyle(selection.area, style, true, true);
+                // else this.model.sheet.UpdateCellStyle(target, style, true, true);
+                commands.push({key: CommandKey.UpdateStyle,
+                  area: array ? selection.area : target, style, delta: true});
               }
               break;
             }
@@ -2660,21 +2644,42 @@ export class Grid {
       }
 
       if (number_format) {
-        if (array) this.model.sheet.UpdateAreaStyle(selection.area, { number_format }, true, true);
-        else this.model.sheet.UpdateCellStyle(target, { number_format }, true, true);
+        // if (array) this.model.sheet.UpdateAreaStyle(selection.area, { number_format }, true, true);
+        // else this.model.sheet.UpdateCellStyle(target, { number_format }, true, true);
+        commands.push({
+            key: CommandKey.UpdateStyle,
+            area: array ? selection.area : target,
+            style: { number_format },
+            delta: true,
+          });
       }
 
       // always use // value = parse_result.value;
 
     }
-    
+
+    /*
     if (array) {
       this.model.sheet.SetArrayValue(selection.area, parse_result.value);
     }
     else {
       this.model.sheet.SetCellValue(target, parse_result.value);
     }
+    */
 
+    commands.push({
+      key: CommandKey.SetRange,
+      area: array ? selection.area : target,
+      array,
+      value: parse_result.value,
+    });
+
+    if (exec) {
+      this.ExecCommand(commands);
+    }
+    else {
+      return commands;
+    }
   }
 
 
@@ -2874,7 +2879,7 @@ export class Grid {
 
   }
 
-  private BoundAddressArea(address: CellAddress, area: Area) {
+  private BoundAddressArea(address: ICellAddress, area: Area) {
 
     // order of overflow is different for vertical/horizontal movement.
     // also we don't want to double-step. so there are four separate,
@@ -3257,7 +3262,7 @@ export class Grid {
    * add an additional selection to the list. don't add it if already
    * on the list (don't stack).
    */
-  private AddAdditionalSelection(target: CellAddress, area: Area) {
+  private AddAdditionalSelection(target: ICellAddress, area: Area) {
     const label = area.spreadsheet_label;
     if (this.additional_selections.some((test) => {
       return (test.area.spreadsheet_label === label);
@@ -3299,7 +3304,7 @@ export class Grid {
    * cell of the selection area
    * @param preserve_target preserve existing selection target
    */
-  private Select(selection: GridSelection, area?: Area, target?: CellAddress, preserve_target = false) {
+  private Select(selection: GridSelection, area?: Area, target?: ICellAddress, preserve_target = false) {
     if (!selection.empty) {
       if (preserve_target) target = selection.target;
     }
@@ -3557,7 +3562,8 @@ export class Grid {
     this.HandleCopy(event);
     if (!this.primary_selection.empty) {
       const area = this.model.sheet.RealArea(this.primary_selection.area);
-      this.model.sheet.ClearArea(area);
+      // this.model.sheet.ClearArea(area);
+      this.ExecCommand({ key: CommandKey.Clear, area });
     }
   }
 
@@ -3616,6 +3622,7 @@ export class Grid {
     if (!event.clipboardData) return;
 
     const area = this.model.sheet.RealArea(this.primary_selection.area);
+    const commands: Command[] = [];
 
     // FIXME: these iterate. that causes lots of events.
 
@@ -3642,11 +3649,16 @@ export class Grid {
         // paste in, offsetting for the paste area. this part loops
         // when recycling, so that the offsets are corrected
 
+        // UPDATE: use commands...
+
         // const paste_area = new Area(area.start, area.end);
         for (const paste_area of paste_areas) {
 
           this.model.sheet.cells.EnsureCell(paste_area.end);
-          this.model.sheet.ClearArea(paste_area, true);
+          
+          // FIXME: command
+          // this.model.sheet.ClearArea(paste_area, true);
+          commands.push({ key: CommandKey.Clear, area: paste_area });
 
           const offsets = {
             rows: paste_area.start.row - source_area.start.row,
@@ -3668,20 +3680,24 @@ export class Grid {
               }
             }
 
+            /*
             const cell = this.model.sheet.cells.GetCell(target_address, true);
             if (cell) {
               cell.Set(data);
               this.model.sheet.UpdateCellStyle(target_address, cell_info.style, false, true);
             }
+            */
+            commands.push({ key: CommandKey.SetRange, value: data, area: target_address });
+            commands.push({ key: CommandKey.UpdateStyle, style: cell_info.style, area: target_address });
+
           });
 
         }
 
-        this.Select(this.primary_selection, area);
-
       }
       catch (e) {
         console.error('invalid treb data on clipboard');
+        return;
       }
     }
     else {
@@ -3705,17 +3721,26 @@ export class Grid {
           for (let c = 0; c < lines[0].length; c++) {
             const target_area = new Area({ row: r + paste_area.start.row, column: c + paste_area.start.column });
             this.model.sheet.cells.EnsureCell(target_area.end);
-            this.SetInferredType({ area: target_area, target: target_area.start, empty: false }, cells[r][c]);
+            const tmp = this.SetInferredType({ area: target_area, target: target_area.start, empty: false },
+              cells[r][c], false, true);
+            if (tmp) {
+              for (const command of tmp) commands.push(command);
+            }
           }
         }
       }
 
-      this.Select(this.primary_selection, area);
+      // this.Select(this.primary_selection, area);
     }
 
+    this.ExecCommand(commands);
+    this.Select(this.primary_selection, area);
+
+    /*
     this.grid_events.Publish({
       type: 'data', area,
     });
+    */
 
   }
 
@@ -3925,6 +3950,429 @@ export class Grid {
     this.Repaint();
 
     // this.grid_events.Publish({type: 'structure'});
+
+  }
+
+
+  /**
+   * these are all addative except for "none", which removes all borders.
+   *
+   * we no longer put borders into two cells at once (hurrah!). however
+   * we still need to do some maintenance on the mirror cells -- because
+   * if you apply a border to cell A1, then that should take precedence
+   * over any border previously applied to cell A2.
+   *
+   * FIXME: is that right? perhaps we should just leave whatever the user
+   * did -- with the exception of clearing, which should always mirror.
+   *
+   *
+   * UPDATE: modifying function for use with ExecCommand. runs the style
+   * updates and returns the affected area.
+   * 
+   */
+  private ApplyBordersInternal(area: Area, borders: BorderConstants = BorderConstants.None,
+      color?: string, width = 1) {
+
+    if (borders === BorderConstants.None) {
+      width = 0;
+    }
+
+    const top: Style.Properties = { border_top: width };
+    const bottom: Style.Properties = { border_bottom: width };
+    const left: Style.Properties = { border_left: width };
+    const right: Style.Properties = { border_right: width };
+
+    const clear_top: Style.Properties = { border_top: 0 };
+    const clear_bottom: Style.Properties = { border_bottom: 0 };
+    const clear_left: Style.Properties = { border_left: 0 };
+    const clear_right: Style.Properties = { border_right: 0 };
+
+    if (typeof color !== 'undefined') {
+      top.border_top_color = color;
+      bottom.border_bottom_color = color;
+      left.border_left_color = color;
+      right.border_right_color = color;
+    }
+
+    // inside all/none
+    if (borders === BorderConstants.None || borders === BorderConstants.All) {
+      this.model.sheet.UpdateAreaStyle(area, {
+        ...top, ...bottom, ...left, ...right,
+      }, true, false, true);
+    }
+
+    // top
+    if (borders === BorderConstants.Top || borders === BorderConstants.Outside) {
+      if (!area.entire_column) {
+        this.model.sheet.UpdateAreaStyle(area.top, { ...top }, true, false, true);
+      }
+    }
+
+    // mirror top (CLEAR)
+    if (borders === BorderConstants.None || borders === BorderConstants.All ||
+      borders === BorderConstants.Outside || borders === BorderConstants.Top) {
+      if (!area.entire_column) {
+        if (area.start.row) {
+          this.model.sheet.UpdateAreaStyle(new Area(
+            { row: area.start.row - 1, column: area.start.column },
+            { row: area.start.row - 1, column: area.end.column }), { ...clear_bottom }, true, false, true);
+        }
+      }
+    }
+
+    // bottom
+    if (borders === BorderConstants.Bottom || borders === BorderConstants.Outside) {
+      if (!area.entire_column) {
+        this.model.sheet.UpdateAreaStyle(area.bottom, { ...bottom }, true, false, true);
+      }
+    }
+
+    // mirror bottom (CLEAR)
+    if (borders === BorderConstants.None || borders === BorderConstants.All ||
+      borders === BorderConstants.Outside || borders === BorderConstants.Bottom) {
+      if (!area.entire_column) {
+        this.model.sheet.UpdateAreaStyle(new Area(
+          { row: area.end.row + 1, column: area.start.column },
+          { row: area.end.row + 1, column: area.end.column }), { ...clear_top }, true, false, true);
+      }
+    }
+
+    // left
+    if (borders === BorderConstants.Left || borders === BorderConstants.Outside) {
+      if (!area.entire_column) {
+        this.model.sheet.UpdateAreaStyle(area.left, { ...left }, true, false, true);
+      }
+    }
+
+    // mirror left (CLEAR)
+    if (borders === BorderConstants.None || borders === BorderConstants.All ||
+      borders === BorderConstants.Outside || borders === BorderConstants.Left) {
+      if (!area.entire_row) {
+        if (area.start.column) {
+          this.model.sheet.UpdateAreaStyle(new Area(
+            { row: area.start.row, column: area.start.column - 1 },
+            { row: area.end.row, column: area.start.column - 1 }), { ...clear_right }, true, false, true);
+        }
+      }
+    }
+
+    // right
+    if (borders === BorderConstants.Right || borders === BorderConstants.Outside) {
+      if (!area.entire_column) {
+        this.model.sheet.UpdateAreaStyle(area.right, { ...right }, true, false, true);
+      }
+    }
+
+    // mirror right (CLEAR)
+    if (borders === BorderConstants.None || borders === BorderConstants.All ||
+      borders === BorderConstants.Outside || borders === BorderConstants.Right) {
+      if (!area.entire_row) {
+        this.model.sheet.UpdateAreaStyle(new Area(
+          { row: area.start.row, column: area.end.column + 1 },
+          { row: area.end.row, column: area.end.column + 1 }), { ...clear_left }, true, false, true);
+      }
+    }
+
+    /*
+    // why is there not an expand method on area? (FIXME)
+
+    this.DelayedRender(false, new Area({
+      row: Math.max(0, area.start.row - 1),
+      column: Math.max(0, area.start.column - 1),
+    }, {
+      row: area.end.row + 1,
+      column: area.end.column + 1,
+    }));
+
+    // NOTE: we don't have to route through the sheet. we are the only client
+    // (we republish). we can just publish directly.
+
+    this.grid_events.Publish({ type: 'style', area });
+    */
+
+    return new Area(
+      {
+        row: Math.max(0, area.start.row - 1),
+        column: Math.max(0, area.start.column - 1),
+      }, {
+        row: area.end.row + 1,
+        column: area.end.column + 1,
+      },
+    );
+
+  }
+
+  /**
+   * set range, via command. returns affected area.
+   */
+  private SetRangeInternal(command: SetRangeCommand) {
+
+    // originall we called sheet methods here, but all the sheet
+    // does is call methods on the cells object -- we can shortcut.
+
+    // is that a good idea? (...)
+
+    // at a minimum we can consolidate...
+
+    if (IsCellAddress(command.area)) {
+
+      // single cell
+
+      this.model.sheet.SetCellValue2(command.area, command.value);
+      return new Area(command.area);
+    }
+    else {
+
+      // there are a couple of options here, from the methods that
+      // have accumulated in Sheet.
+
+      // SetArrayValue -- set data as an array
+      // SetAreaValues -- set values from data one-to-one
+      // SetAreaValue -- single value repeated in range
+
+      // FIXME: clean this up!
+
+      const area = new Area(command.area.start, command.area.end);
+
+      if (command.array) {
+        this.model.sheet.SetArrayValue2(area, command.value);
+      }
+      else if (!Array.isArray(command.value) && !ArrayBuffer.isView(command.value)) {
+        this.model.sheet.SetAreaValue2(area, command.value);
+      }
+      else {
+        this.model.sheet.SetAreaValues2(area, command.value as any[][]);
+      }
+
+      return area;
+
+    }
+
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * pass all data/style/structure operations through a command mechanism.
+   * this method should optimally act as a dispatcher, so try to minimize
+   * inline code in favor of method calls.
+   *
+   * [NOTE: don't go crazy with that, some simple operations can be inlined]
+   *
+   */
+  private ExecCommand(commands: Command|Command[]) {
+
+    // FIXME: support ephemeral commands (...)
+
+    let render_area: Area|undefined;
+    let data_area: Area|undefined;
+    let style_area: Area|undefined;
+    let structure_event = false;
+
+    const events: GridEvent[] = [];
+
+    // this seems like the dumb way to do this... maybe?
+    if (!Array.isArray(commands)) commands = [commands];
+
+    for (const command of commands) {
+
+      // console.log(CommandKey[command.key], JSON.stringify(command));
+
+      switch (command.key) {
+      case CommandKey.Clear:
+        if (command.area) {
+          const area = new Area(command.area.start, command.area.end);
+          this.model.sheet.ClearArea(area, true);
+          data_area = Area.Join(area, data_area);
+        }
+        else {
+          this.UpdateSheet(new Sheet().toJSON(), true);
+        }
+        break;
+
+      case CommandKey.Select:
+        // ...
+        break;
+
+      case CommandKey.MergeCells:
+        this.model.sheet.MergeCells(
+          new Area(command.area.start, command.area.end));
+        render_area = Area.Join(command.area, render_area);
+        // events.push({type: 'structure'});
+        structure_event = true;
+        break;
+
+      case CommandKey.UnmergeCells:
+        {
+          // the sheet unmerge routine requires a single, contiguous merge area.
+          // we want to support multiple unmerges at the same time, though,
+          // so let's check for multiple. create a list.
+
+          const list: { [index: string]: Area } = {};
+          const area = new Area(command.area.start, command.area.end);
+
+          this.model.sheet.cells.IterateArea(area, (cell: Cell) => {
+            if (cell.merge_area) {
+              const label = Area.CellAddressToLabel(cell.merge_area.start) + ':'
+                + Area.CellAddressToLabel(cell.merge_area.end);
+              list[label] = cell.merge_area;
+            }
+          }, false);
+
+          const keys = Object.keys(list);
+
+          // suppress events until the last one
+
+          for (let i = 0; i < keys.length; i++) {
+            this.model.sheet.UnmergeCells(list[keys[i]], i !== keys.length - 1);
+          }
+
+          render_area = Area.Join(command.area, render_area);
+          // events.push({type: 'structure'});
+          structure_event = true;
+        }
+        break;
+
+      case CommandKey.UpdateStyle:
+        if (IsCellAddress(command.area)) {
+          const area = new Area(command.area);
+          this.model.sheet.UpdateCellStyle(command.area, command.style, !!command.delta, true);
+          // events.push({type: 'style', area});
+          style_area = Area.Join(area, style_area);
+          render_area = Area.Join(area, render_area);
+        }
+        else {
+          const area = new Area(command.area.start, command.area.end);
+          this.model.sheet.UpdateAreaStyle(area, command.style, !!command.delta, false, true);
+          // events.push({type: 'style', area});
+          style_area = Area.Join(area, style_area);
+          render_area = Area.Join(area, render_area);
+        }
+        break;
+
+      case CommandKey.UpdateBorders:
+        {
+          const area = IsCellAddress(command.area)
+            ? new Area(command.area)
+            : new Area(command.area.start, command.area.end);
+          const applied_area = this.ApplyBordersInternal(area, command.borders, command.color, command.width);
+          render_area = Area.Join(applied_area, render_area);
+        }
+        break;
+
+      case CommandKey.ResizeRows:
+        {
+          let row = command.row;
+          if (typeof row === 'undefined') {
+            row = [];
+            for (let i = 0; i < this.model.sheet.rows; i++) row.push(i);
+          }
+
+          if (typeof row === 'number') row = [row];
+          if (typeof command.height === 'number') {
+            for (const entry of row) {
+              this.model.sheet.RowHeight(entry, command.height, true);
+            }
+          }
+          else {
+            for (const entry of row) {
+              this.model.sheet.AutoSizeRow(entry);
+            }
+          }
+
+          const area = new Area(
+            {column: Infinity, row: row[0]},
+            {column: Infinity, row: row[row.length - 1]});
+
+          this.layout.UpdateTileHeights(true);
+          this.Repaint(false, true); // repaint full tiles
+          this.layout.UpdateAnnotation(this.annotations);
+          // events.push({type: 'structure'}); // FIXME: no queued update?
+          structure_event = true;
+        }
+        break;
+
+      case CommandKey.ResizeColumns:
+        {
+          let column = command.column;
+
+          if (typeof column === 'undefined') {
+            column = [];
+            for (let i = 0; i < this.model.sheet.columns; i++) column.push(i);
+          }
+
+          if (typeof column === 'number') column = [column];
+
+          if (typeof command.width === 'number') {
+            for (const entry of column) {
+              this.model.sheet.ColumnWidth(entry, command.width, true);
+            }
+          }
+          else {
+            for (const entry of column) {
+              this.model.sheet.AutoSizeColumn(entry, false, true);
+            }
+          }
+
+          const area = new Area(
+            {row: Infinity, column: column[0]},
+            {row: Infinity, column: column[column.length - 1]});
+
+          this.layout.UpdateTileWidths(true);
+          this.Repaint(false, true); // repaint full tiles
+          this.layout.UpdateAnnotation(this.annotations);
+          // events.push({type: 'structure'}); // FIXME: no queued update?
+          structure_event = true;
+
+        }
+        break;
+
+      case CommandKey.InsertRows:
+        this.InsertRowsInternal(command.before_row, command.count);
+        break;
+
+      case CommandKey.InsertColumns:
+        this.InsertColumnsInternal(command.before_column, command.count);
+        break;
+
+      case CommandKey.SetRange:
+        {
+          const area = this.SetRangeInternal(command);
+          data_area = Area.Join(area, data_area);
+
+          // normally we don't paint, we wait for the calculator to resolve
+
+          if (this.options.repaint_on_cell_change) {
+            render_area = Area.Join(area, render_area);
+          }
+
+        }
+        break;
+
+      default:
+        console.warn('unhandled command:', command.key);
+      }
+    }
+
+    // consolidate events and merge areas
+
+    if (data_area) {
+      events.push({ type: 'data', area: data_area });
+    }
+
+    if (style_area) {
+      events.push({ type: 'style', area: style_area });
+    }
+
+    if (structure_event) {
+      events.push({type: 'structure'});
+    }
+
+    this.grid_events.Publish(events);
+
+    if (render_area) {
+      this.DelayedRender(false, render_area);
+    }
 
   }
 

@@ -1,5 +1,5 @@
 
-import { Area, CellAddress } from 'treb-base-types';
+import { Area, ICellAddress } from 'treb-base-types';
 
 /**
  *
@@ -7,7 +7,7 @@ import { Area, CellAddress } from 'treb-base-types';
 export interface GridSelection {
 
   /** target or main cell in the selection */
-  target: CellAddress;
+  target: ICellAddress;
 
   /** selection area */
   area: Area;

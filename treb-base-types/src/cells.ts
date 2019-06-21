@@ -3,7 +3,7 @@
  * (not sure if there are benefits yet either)
  */
 
-import { Area, CellAddress } from './area';
+import { Area, ICellAddress } from './area';
 import { Cell, ValueType } from './cell';
 
 export interface CellSerializationOptions {
@@ -116,7 +116,7 @@ export class Cells {
    * of using a parameter. of course we will leave the parameter
    * here for backwards compatibility.
    */
-  public GetCell(address: CellAddress, create_new = false){
+  public GetCell(address: ICellAddress, create_new = false){
     const { row, column } = address;
     let ref = this.data2[row];
     if (!ref) {
@@ -134,7 +134,7 @@ export class Cells {
   }
 
   /** returns an existing cell or creates a new cell. */
-  public EnsureCell(address: CellAddress){
+  public EnsureCell(address: ICellAddress){
     const { row, column } = address;
     let ref = this.data2[row];
     if (!ref) {
@@ -449,7 +449,7 @@ export class Cells {
    * @param to
    * @param transpose
    */
-  public RawValue(from: CellAddress, to: CellAddress = from) {
+  public RawValue(from: ICellAddress, to: ICellAddress = from) {
 
     if (from.row === to.row && from.column === to.column) {
       if (this.data2[from.row] && this.data2[from.row][from.column]) {
@@ -481,7 +481,7 @@ export class Cells {
   }
 
   /** gets range as values */
-  public GetRange(from: CellAddress, to?: CellAddress, transpose = false){
+  public GetRange(from: ICellAddress, to?: ICellAddress, transpose = false){
 
     // console.info("getrange", from, to, transpose);
 
@@ -524,7 +524,7 @@ export class Cells {
    * updated version of GetRange that preserves errors, by calling
    * the GetValue2 cell function.
    */
-  public GetRange2(from: CellAddress, to?: CellAddress, transpose = false) {
+  public GetRange2(from: ICellAddress, to?: ICellAddress, transpose = false) {
 
     if (!to || from === to || (from.column === to.column && from.row === to.row )){
       if (this.data2[from.row] && this.data2[from.row][from.column]){

@@ -4,7 +4,7 @@
  */
 
 import { WorkerMessage, WorkerMessageType } from './worker-types';
-import { Localization, Cells, Cell, CellAddress, Area } from 'treb-base-types';
+import { Localization, Cells, Cell, ICellAddress, Area } from 'treb-base-types';
 import { Calculator } from './calculator';
 import { Model } from './simulation-model';
 
@@ -21,7 +21,7 @@ export class WorkerImpl {
   protected calculator = new Calculator();
   protected start_time = 0;
 
-  protected additional_cells: CellAddress[] = [];
+  protected additional_cells: ICellAddress[] = [];
 
   /** iteration count for screen updating */
   protected iteration = 0;

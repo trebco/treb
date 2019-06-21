@@ -5,11 +5,11 @@
 import { Model, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 
-import { Localization, Cells, CellAddress, ValueType } from 'treb-base-types';
+import { Localization, Cells, ICellAddress, ValueType } from 'treb-base-types';
 import { Parser, ExpressionUnit, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 
 export interface CalculationContext {
-  address: CellAddress;
+  address: ICellAddress;
 }
 
 export class ExpressionCalculator {
@@ -66,7 +66,7 @@ export class ExpressionCalculator {
     return volatile;
   }
 
-  public Calculate(expr: ExpressionUnit, addr: CellAddress){
+  public Calculate(expr: ExpressionUnit, addr: ICellAddress){
     Model.address = addr;
     Model.volatile = false;
 

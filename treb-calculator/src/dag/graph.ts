@@ -2,7 +2,7 @@
 import { VertexType } from './vertex_type';
 import { SpreadsheetVertex, CalculationResult } from './spreadsheet_vertex';
 import { LeafVertex } from './leaf_vertex';
-import { Cells, CellAddress, Area } from 'treb-base-types';
+import { Cells, ICellAddress, Area } from 'treb-base-types';
 
 // FIXME: this is a bad habit if you're testing on falsy for OK.
 
@@ -49,7 +49,7 @@ export abstract class Graph {
   // public DumpEdges() {}
 
   /** returns the vertex at this address. creates it if necessary. */
-  public GetVertex(address: CellAddress) {
+  public GetVertex(address: ICellAddress) {
     if (!this.cells) return null;
 
     if (!this.vertices[address.column]) this.vertices[address.column] = [];
@@ -57,19 +57,39 @@ export abstract class Graph {
     if (vertex) return vertex;
     vertex = new SpreadsheetVertex();
     vertex.address = {column: address.column, row: address.row};
-    vertex.reference = this.cells.data2[address.row][address.column];
+
+    // this breaks if the cell reference does not point to a cell; that
+    // happens if a formula references an empty cell, and we run through
+    // a serialize/unserialize pass.
+
+    // FIXME: ensuring the cell will work, but that seems like unecessary
+    // work; is there a way we can just let this reference dangle? the only
+    // thing we need to worry about is maintaining the dependency, so if the
+    // cell _is_ created later we get the update. (...)
+
+    // vertex.reference = this.cells.data2[address.row][address.column];
+    // vertex.reference = this.cells.EnsureCell(address);
+
+    // works ok, maybe a little verbose
+
+    const row = this.cells.data2[address.row];
+    if (row) {
+      const cell = row[address.column];
+      if (cell) vertex.reference = cell;
+    }
+
     this.vertices[address.column][address.row] = vertex;
     return vertex;
   }
 
   /** returns the vertex at this address, but doesn't create it. */
-  public GetVertexOrUndefined(address: CellAddress) {
+  public GetVertexOrUndefined(address: ICellAddress) {
     if (!this.vertices[address.column]) return undefined;
     return this.vertices[address.column][address.row];
   }
 
   /** deletes the vertex at this address. */
-  public RemoveVertex(address: CellAddress) {
+  public RemoveVertex(address: ICellAddress) {
     const vertex = this.GetVertexOrUndefined(address);
     if (!vertex) return;
     vertex.Reset();
@@ -77,7 +97,7 @@ export abstract class Graph {
   }
 
   /** removes all edges, for rebuilding. leaves value/formula as-is. */
-  public ResetVertex(address: CellAddress) {
+  public ResetVertex(address: ICellAddress) {
     const vertex = this.GetVertexOrUndefined(address);
     if (vertex) vertex.Reset();
   }
@@ -87,7 +107,7 @@ export abstract class Graph {
    * we have an option to set dirty because they get called together
    * frequently, saves a lookup.
    */
-  public ResetInbound(address: CellAddress, set_dirty = false){
+  public ResetInbound(address: ICellAddress, set_dirty = false){
     const vertex = this.GetVertex(address);
     if (null === vertex) return;
     vertex.ClearDependencies();
@@ -98,7 +118,7 @@ export abstract class Graph {
   }
 
   /** adds an edge from u -> v */
-  public AddEdge(u: CellAddress, v: CellAddress): GraphStatus {
+  public AddEdge(u: ICellAddress, v: ICellAddress): GraphStatus {
 
     const v_u = this.GetVertex(u);
     const v_v = this.GetVertex(v);
@@ -138,7 +158,7 @@ export abstract class Graph {
   }
 
   /** removes edge from u -> v */
-  public RemoveEdge(u: CellAddress, v: CellAddress) {
+  public RemoveEdge(u: ICellAddress, v: ICellAddress) {
     const v_u = this.GetVertexOrUndefined(u);
     const v_v = this.GetVertexOrUndefined(v);
 
@@ -151,14 +171,14 @@ export abstract class Graph {
 
   /** sets area dirty, convenience shortcut */
   public SetAreaDirty(area: Area) {
-    area.Iterate((address: CellAddress) => {
+    area.Iterate((address: ICellAddress) => {
       const vertex = this.GetVertexOrUndefined(address);
       if (vertex) this.SetDirty(address);
     });
   }
 
   /** sets dirty */
-  public SetDirty(address: CellAddress) {
+  public SetDirty(address: ICellAddress) {
     const vertex = this.GetVertex(address);
     if (null === vertex) return;
 
@@ -194,7 +214,7 @@ export abstract class Graph {
    * there is no loop check (leaves are not allowed to have outbound
    * edges).
    */
-  public AddLeafVertexEdge(u: CellAddress, v: LeafVertex) {
+  public AddLeafVertexEdge(u: ICellAddress, v: LeafVertex) {
 
     const v_u = this.GetVertex(u);
 
@@ -208,7 +228,7 @@ export abstract class Graph {
   }
 
   /** removes edge from u -> v */
-  public RemoveLeafVertexEdge(u: CellAddress, v: LeafVertex) {
+  public RemoveLeafVertexEdge(u: ICellAddress, v: LeafVertex) {
     const v_u = this.GetVertexOrUndefined(u);
 
     if (!v_u) return;

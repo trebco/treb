@@ -1,5 +1,5 @@
 
-import { TextPartFlag, CellAddress, Style, ValueType, Cell, Area, Size, Rectangle } from 'treb-base-types';
+import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectangle } from 'treb-base-types';
 
 import { Tile } from '../types/tile';
 import { ExtendedTheme } from '../types/theme';
@@ -10,7 +10,7 @@ import { DataModel } from '../types/data_model';
 import { GridOptions } from '../types/grid_options';
 
 interface OverflowCellInfo {
-  address: CellAddress;
+  address: ICellAddress;
   cell: Cell;
   border: Rectangle;
   background: Rectangle;
@@ -38,7 +38,7 @@ interface RenderCellResult {
 }
 
 interface OverflowRecord {
-  head: CellAddress;
+  head: ICellAddress;
   area: Area;
   tile: Tile;
 }
@@ -749,7 +749,7 @@ export class TileRenderer {
   }
 
   protected RenderCellBorders(
-    address: CellAddress,
+    address: ICellAddress,
     context: CanvasRenderingContext2D,
     style: Style.Properties,
     left = 0, top = 0, width = 0, height = 0) {
@@ -854,7 +854,7 @@ export class TileRenderer {
 
   protected RenderCellBackground(
     note: boolean,
-    address: CellAddress,
+    address: ICellAddress,
     context: CanvasRenderingContext2D,
     style: Style.Properties,
     width: number, height: number) {
@@ -913,7 +913,7 @@ export class TileRenderer {
     tile: Tile,
     cell: Cell,
     context: CanvasRenderingContext2D,
-    address: CellAddress,
+    address: ICellAddress,
     width: number,
     height: number): RenderCellResult {
 

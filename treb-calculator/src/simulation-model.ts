@@ -1,5 +1,5 @@
 
-import { CellAddress } from 'treb-base-types';
+import { ICellAddress } from 'treb-base-types';
 import * as Utils from './utilities';
 import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
 import { FunctionLibrary, CompositeFunctionDescriptor } from './function-library';
@@ -8,7 +8,7 @@ export enum SimulationState {
   Null, Prep, Simulation, Post,
 }
 
-interface DistributionKey extends CellAddress {
+interface DistributionKey extends ICellAddress {
   call_index: number;
 }
 
@@ -24,7 +24,7 @@ export class SimulationModel {
   public call_index = 0;
   public lhs = false;
   public state = SimulationState.Null;
-  public address: CellAddress = { row: 0, column: 0 };
+  public address: ICellAddress = { row: 0, column: 0 };
   public volatile = false;
   public results: number[][][] = [];
   public elapsed = 0;
@@ -62,7 +62,7 @@ export class SimulationModel {
     if (!cell) cell = [];
   }
 
-  public CellData(address?: CellAddress) {
+  public CellData(address?: ICellAddress) {
 
     // this is equivalent to "add shared rs"
     if (!address) address = this.address;

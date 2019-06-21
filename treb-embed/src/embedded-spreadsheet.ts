@@ -5,7 +5,7 @@ import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { Calculator, CalculationWorker, WorkerMessage, WorkerMessageType,
          LeafVertex } from 'treb-calculator';
 import { IsCellAddress, Localization, CellSerializationOptions, Style,
-         CellAddress, Area, IArea } from 'treb-base-types';
+         ICellAddress, Area, IArea } from 'treb-base-types';
 import { EventSource, Resizable, Yield } from 'treb-utils';
 // import { Sparkline } from 'treb-sparkline';
 
@@ -93,7 +93,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   private node: HTMLElement;
   private file_chooser?: HTMLInputElement;
   private dialog: MaskDialog;
-  private additional_cells: CellAddress[] = [];
+  private additional_cells: ICellAddress[] = [];
 
   /** toggle control for formatting toolbar */
   // private formatting_toolbar_visible = false;
@@ -333,7 +333,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * @param recycle recycle values. we only recycle single values or vectors -- we will not recycle a matrix.
    * @param transpose transpose before inserting (data is row-major)
    */
-  public SetRange(range: CellAddress|IArea|string, data: any, recycle = false, transpose = false) {
+  public SetRange(range: ICellAddress|IArea|string, data: any, recycle = false, transpose = false) {
 
     let area: Area;
 
@@ -364,7 +364,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    *
    * @param formula set to true to return underlying formula, instead of calculated value
    */
-  public GetRange(range: CellAddress|IArea|string, formula = false) {
+  public GetRange(range: ICellAddress|IArea|string, formula = false) {
 
     if (typeof range === 'string') {
       const addresses = range.split(':');
@@ -407,7 +407,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   /**
    * returns simulation data for a cell (if any)
    */
-  public SimulationData(address: string | CellAddress) {
+  public SimulationData(address: string | ICellAddress) {
     address = this.EnsureAddress(address);
     const data = this.calculator.GetResults();
     if (!data) return undefined;
@@ -424,7 +424,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   /**
    * convert A1 address to CellAddress type
    */
-  public EnsureAddress(address: string | CellAddress): CellAddress {
+  public EnsureAddress(address: string | ICellAddress): ICellAddress {
     const result = { row: 0, column: 0 };
     if (typeof address === 'string') {
       const parse_result = this.parser.Parse(address);
@@ -444,7 +444,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     return result;
   }
 
-  public ScrollTo(address: string | CellAddress) {
+  public ScrollTo(address: string | ICellAddress) {
     this.grid.ScrollTo(this.EnsureAddress(address));
   }
 
@@ -615,7 +615,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.Publish({ type: 'reset' });
   }
 
-  public ApplyStyle(range?: IArea|CellAddress|string, style: Style.Properties = {}, delta = true) {
+  public ApplyStyle(range?: IArea|ICellAddress|string, style: Style.Properties = {}, delta = true) {
 
     let area: Area|undefined;
 
@@ -661,7 +661,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * load a network document. using xhr/fetch, this will be
    * limited to local or CORS.
    */
-  public async LoadNetworkDocument(uri: string, scroll?: string|CellAddress, recalculate = false) {
+  public async LoadNetworkDocument(uri: string, scroll?: string|ICellAddress, recalculate = false) {
 
     // NOTE: dropping fetch, in favor of XHR; fetch requires a
     // pretty large polyfill for IE11, not worth it
@@ -869,7 +869,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * flag is set in the document (assuming it's correct), because we can
    * display those values.
    */
-  public LoadDocument(data: TREBDocument, scroll?: string|CellAddress, flush = true, recalculate = false) {
+  public LoadDocument(data: TREBDocument, scroll?: string|ICellAddress, flush = true, recalculate = false) {
 
     // FIXME: version check
 

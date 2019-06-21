@@ -2,7 +2,7 @@
 // --- treb imports -----------------------------------------------------------
 
 import { Cell, ValueType, Cells, Style,
-  Area, CellAddress, CellSerializationOptions } from 'treb-base-types';
+  Area, ICellAddress, CellSerializationOptions } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { EventSource, Measurement } from 'treb-utils';
 
@@ -161,7 +161,11 @@ export class Sheet {
 
   public cells: Cells = new Cells();
 
-  public readonly sheet_events = new EventSource<SheetEvent>();
+  /**
+   * adding verbose flag so we can figure out who is publishing
+   * (and stop -- part of the ExecCommand switchover)
+   */
+  public readonly sheet_events = new EventSource<SheetEvent>(true, 'sheet-events');
 
   // tslint:disable-next-line:variable-name
   private row_height_: number[] = [];
@@ -326,7 +330,7 @@ export class Sheet {
   public UpdateDefaultRowHeight(suppress_event = false) {
     this.default_row_height = Math.round(
       this.StyleFontSize(Style.Composite([this.sheet_style])) * 2.4); // ?
-    if (!suppress_event) this.PublishStyleEvent();
+    if (!suppress_event) this.PublishStyleEvent(undefined, 1);
   }
 
   /** returns aggregate width of all (known) columns */
@@ -408,7 +412,7 @@ export class Sheet {
       this.row_height_[row] = value;
       this.cells.EnsureRow(row);
       if (!inline) {
-        this.PublishStyleEvent(); // console.info("PSE 2");
+        this.PublishStyleEvent(undefined, 2); // console.info("PSE 2");
       }
       return value;
     }
@@ -426,7 +430,7 @@ export class Sheet {
       this.column_width_[column] = value;
       this.cells.EnsureColumn(column);
       if (!inline) {
-        this.PublishStyleEvent(); // console.info("PSE 1");
+        this.PublishStyleEvent(undefined, 3); // console.info("PSE 1");
       }
       return value;
     }
@@ -443,7 +447,7 @@ export class Sheet {
    * expect that the unbold style will control. instead of explicitly setting
    * the cell style, we go up the chain and remove any matching properties.
    */
-  public UpdateSheetStyle(properties: Style.Properties, delta = true, inline = false) {
+  private UpdateSheetStyle(properties: Style.Properties, delta = true, inline = false) {
     this.sheet_style = Style.Merge(this.sheet_style, properties, delta);
 
     // reverse-override...
@@ -472,7 +476,7 @@ export class Sheet {
 
     if (inline) return;
 
-    this.PublishStyleEvent(); // console.info("PSE 4");
+    this.PublishStyleEvent(undefined, 4); // console.info("PSE 4");
 
   }
 
@@ -483,7 +487,7 @@ export class Sheet {
    * there's an overriding column property (columns have priority), we will
    * need to update the cell property to match the desired output.
    */
-  public UpdateRowStyle(row: number, properties: Style.Properties, delta = true, inline = false) {
+  private UpdateRowStyle(row: number, properties: Style.Properties, delta = true, inline = false) {
     this.row_styles[row] = Style.Merge(this.row_styles[row] || {}, properties, delta);
 
     // reverse-override... remove matching properties from cells in this row
@@ -523,12 +527,12 @@ export class Sheet {
 
     if (inline) return;
 
-    this.PublishStyleEvent(); // console.info("PSE 5");
+    this.PublishStyleEvent(undefined, 5); // console.info("PSE 5");
 
   }
 
   /** updates column properties. reverse-overrides cells (@see UpdateSheetStyle). */
-  public UpdateColumnStyle(column: number, properties: Style.Properties, delta = true, inline = false) {
+  private UpdateColumnStyle(column: number, properties: Style.Properties, delta = true, inline = false) {
     this.column_styles[column] = Style.Merge(this.column_styles[column] || {}, properties, delta);
 
     // reverse-override... I think we only need to override _cell_ values.
@@ -547,7 +551,7 @@ export class Sheet {
 
     if (inline) return;
 
-    this.PublishStyleEvent(); // console.info("PSE 6");
+    this.PublishStyleEvent(undefined, 6); // console.info("PSE 6");
   }
 
   /**
@@ -556,7 +560,7 @@ export class Sheet {
    * @param delta merge with existing properties (we will win conflicts)
    * @param inline this is part of another operation, don't do any undo/state updates
    */
-  public UpdateCellStyle(address: CellAddress, properties: Style.Properties, delta = true, inline = false) {
+  public UpdateCellStyle(address: ICellAddress, properties: Style.Properties, delta = true, inline = false) {
     const { row, column } = address;
 
     if (!this.cell_style[column]) this.cell_style[column] = [];
@@ -568,7 +572,7 @@ export class Sheet {
     if (inline) return;
 
 
-    this.PublishStyleEvent(); // console.info("PSE 7");
+    this.PublishStyleEvent(undefined, 7); // console.info("PSE 7");
   }
 
   /**
@@ -599,7 +603,7 @@ export class Sheet {
 
     if (inline) return;
 
-    this.PublishStyleEvent(area); // console.info("PSE 10");
+    this.PublishStyleEvent(area, 8); // console.info("PSE 10");
 
   }
 
@@ -607,7 +611,7 @@ export class Sheet {
    * checks if the given cell has been assigned a specific style, either for
    * the cell itself, or for row and column.
    */
-  public HasCellStyle(address: CellAddress) {
+  public HasCellStyle(address: ICellAddress) {
     return ((this.cell_style[address.column] && this.cell_style[address.column][address.row]) ||
       this.row_styles[address.row] || this.column_styles[address.column]);
   }
@@ -617,7 +621,7 @@ export class Sheet {
    * no case where this was useful without calculated value as well; but we
    * now have a case: fixing borders by checking neighboring cells. (testing).
    */
-  public CellStyleData(address: CellAddress) {
+  public CellStyleData(address: ICellAddress) {
 
     // don't create if it doesn't exist
     const cell = this.cells.GetCell(address);
@@ -649,7 +653,7 @@ export class Sheet {
    * NOTE: actually GetCellFormula resolves array formulae, so maybe not --
    * or the caller needs to check.
    */
-  public CellData(address: CellAddress): Cell {
+  public CellData(address: ICellAddress): Cell {
 
     const cell = this.cells.EnsureCell(address);
 
@@ -770,7 +774,7 @@ export class Sheet {
     }
 
     this.RowHeight(row, height);
-    this.PublishStyleEvent(); // console.info("PSE 12");
+    this.PublishStyleEvent(undefined, 9); // console.info("PSE 12");
 
   }
 
@@ -806,7 +810,7 @@ export class Sheet {
     this.ColumnWidth(column, width);
 
     if (inline) return;
-    this.PublishStyleEvent(); // console.info("PSE 13");
+    this.PublishStyleEvent(undefined, 10); // console.info("PSE 13");
 
   }
 
@@ -819,7 +823,7 @@ export class Sheet {
    * if the cell is in an array, returns the array as an Area.
    * if not, returns falsy (null or undefined).
    */
-  public ContainingArray(address: CellAddress): Area | undefined {
+  public ContainingArray(address: ICellAddress): Area | undefined {
     const cell = this.cells.GetCell(address);
     if (cell) return cell.area;
     return undefined;
@@ -1100,6 +1104,14 @@ export class Sheet {
     return this.sheet_events.Publish({ type: 'data', area });
   }
 
+  /** @see SetCellValue2 */
+  public SetAreaValue2(area: Area, value: any) {
+    area = this.RealArea(area);
+    const type = Cell.GetValueType(value);
+    this.cells.IterateArea(area, (cell) => cell.Set(value, type), true);
+    // return this.sheet_events.Publish({ type: 'data', area });
+  }
+
   /**
    * sets an area from a range. the area controls. if the value range is
    * larger than the area, values will be clipped. if the range is smaller,
@@ -1138,6 +1150,35 @@ export class Sheet {
 
   }
 
+  /** @see SetCellValue2 */
+  public SetAreaValues2(area: Area, values: any[][], parse_numbers = false) {
+
+    area = this.RealArea(area);
+
+    const offset = { r: area.start.row, c: area.start.column };
+
+    this.cells.IterateArea(area, (cell, c, r) => {
+      c = (c || 0) - offset.c;
+      r = (r || 0) - offset.r;
+
+      // c -= offset.c;
+      // r -= offset.r;
+
+      if (values[r]) {
+        let value: any = values[r][c];
+        if (parse_numbers && typeof value === 'string') {
+          value = ValueParser.TryParse(value).value;
+        }
+        cell.Set(value);
+      }
+      else cell.Set(undefined);
+    }, true);
+
+
+    // return this.sheet_events.Publish({ type: 'data', area });
+
+  }
+
   /**
    * sets an array value.
    */
@@ -1149,6 +1190,15 @@ export class Sheet {
     return this.sheet_events.Publish({ type: 'data', area });
   }
 
+  /** @see SetCellValue2 */
+  public SetArrayValue2(area: Area, value: any) {
+    area = this.RealArea(area);
+    this.cells.IterateArea(area, (element) => element.SetArray(area), true);
+    const cell = this.cells.GetCell(area.start);
+    if (cell) cell.SetArrayHead(area, value);
+    // return this.sheet_events.Publish({ type: 'data', area });
+  }
+
   /**
    * sets cell value. returns a promise, which is the result of
    * publishing the data change event. this can be used to schedule
@@ -1157,13 +1207,22 @@ export class Sheet {
    * @param address
    * @param value
    */
-  public SetCellValue(address: CellAddress, value: any, area?: Area) {
+  public SetCellValue(address: ICellAddress, value: any, area?: Area) {
 
     const cell = this.cells.GetCell(address, true);
     if (cell) cell.Set(value);
 
     if (!area) area = new Area(address);
     return this.sheet_events.Publish({ type: 'data', area });
+  }
+
+  /**
+   * temporary: set cell value without notifying
+   * to support ExecCommand; this should become default (deprecate the other one)
+   */
+  public SetCellValue2(address: ICellAddress, value: any) {
+    const cell = this.cells.GetCell(address, true);
+    if (cell) cell.Set(value);
   }
 
   public Flush() {
@@ -1213,7 +1272,7 @@ export class Sheet {
    * gets the formula for a given cell (instead of the
    * rendered value), accounting for arrays.
    */
-  public GetCellFormula(address: CellAddress) {
+  public GetCellFormula(address: ICellAddress) {
     let cell = this.cells.GetCell(address);
     if (!cell) return undefined;
     if (cell.area) cell = this.cells.GetCell(cell.area.start);
@@ -1484,12 +1543,14 @@ export class Sheet {
     this.FlushCellStyles();
   }
 
-  private PublishStyleEvent(area?: Area) {
+  private PublishStyleEvent(area?: Area, log?: any) {
 
     // block on undo batching; but note that the undo batch won't
     // publish an event later, so you need to do that manually
 
     this.sheet_events.Publish({ type: 'style', area });
+
+    if (log) console.info("PSE", log);
 
   }
 
@@ -1501,7 +1562,7 @@ export class Sheet {
    * what happens if the cell style is not applied; if nothing happens, then
    * we can drop the cell style (or the property in the style).
    */
-  private CompositeStyleForCell(address: CellAddress, apply_cell_style = true) {
+  private CompositeStyleForCell(address: ICellAddress, apply_cell_style = true) {
     const { row, column } = address;
     const stack = [this.sheet_style];
     if (this.row_styles[row]) stack.push(this.row_styles[row]);

@@ -2,7 +2,7 @@
 import * as JSZip from 'jszip';
 import * as ElementTree from 'elementtree';
 import { Workbook } from './workbook';
-import { Style, Area, CellAddress, Cell, Cells, ValueType } from 'treb-base-types';
+import { Style, Area, ICellAddress, Cell, Cells, ValueType } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { is_range, RangeType, ShiftRange, InRange, AddressType } from './address-type';
 import { Parser, ParseResult } from 'treb-parser';

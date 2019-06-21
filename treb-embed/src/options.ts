@@ -1,5 +1,5 @@
 
-import { CellAddress } from 'treb-base-types';
+import { ICellAddress } from 'treb-base-types';
 
 /** base options excludes node, so we can create a default */
 export interface BaseOptions {
@@ -14,7 +14,7 @@ export interface BaseOptions {
   formula_bar?: boolean;
 
   /** scroll to cell on load */
-  scroll?: string | CellAddress;
+  scroll?: string | ICellAddress;
 
   /** add resizable wrapper */
   resizable?: boolean;

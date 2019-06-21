@@ -1,5 +1,5 @@
 
-import { Localization, Cell, Cells, Area, CellAddress, ValueType, CellSerializationOptions } from 'treb-base-types';
+import { Localization, Cell, Cells, Area, ICellAddress, ValueType, CellSerializationOptions } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 
 import { Graph, GraphStatus } from './dag/graph';
@@ -156,7 +156,7 @@ export class Calculator extends Graph {
   }
 
   public InitSimulation(iterations: number, lhs: boolean, cells: Cells,
-    additional_cells?: CellAddress[]){
+    additional_cells?: ICellAddress[]){
 
     Model.iterations = iterations;
     Model.results = [];
@@ -321,7 +321,7 @@ export class Calculator extends Graph {
    * calculate an expression, optionally setting a fake cell address.
    * this may have weird side-effects.
    */
-  public CalculateExpression(expression: ExpressionUnit, address: CellAddress = {row: 0, column: 0}): any {
+  public CalculateExpression(expression: ExpressionUnit, address: ICellAddress = {row: 0, column: 0}): any {
     return this.expression_calculator.Calculate(expression, address);
   }
 
@@ -476,13 +476,13 @@ export class Calculator extends Graph {
    * initialize edges between nodes.
    */
   protected RebuildGraph(data: any[], options: CalculationOptions = {}):
-      {status: GraphStatus, reference?: CellAddress} {
+      {status: GraphStatus, reference?: ICellAddress} {
 
     // we're finishing the dep/dirty check so we don't miss something
     // later, but we won't add the loop and we won't calculate.
 
     let global_status = GraphStatus.OK;
-    let initial_reference: CellAddress|null = null;
+    let initial_reference: ICellAddress|null = null;
 
     for (const cell of data){
 
@@ -522,7 +522,7 @@ export class Calculator extends Graph {
         for (const key of Object.keys(new_dependencies.ranges)){
           const unit = new_dependencies.ranges[key];
           const range = new Area(unit.start, unit.end);
-          range.Iterate((address: CellAddress) => {
+          range.Iterate((address: ICellAddress) => {
             const status = this.AddEdge(address, cell);
             if (status !== GraphStatus.OK) {
               global_status = status;
@@ -698,7 +698,7 @@ export class Calculator extends Graph {
     this.AttachData(cells);
     this.expression_calculator.SetCells(cells);
 
-    let result: {status: GraphStatus, reference?: CellAddress} = {
+    let result: {status: GraphStatus, reference?: ICellAddress} = {
       status: GraphStatus.OK,
     };
 
@@ -709,7 +709,7 @@ export class Calculator extends Graph {
       // merged cells. in this case we still need to reset, but it
       // will happen in the RebuildGraph function.
 
-      area.Iterate((address: CellAddress) => {
+      area.Iterate((address: ICellAddress) => {
         this.ResetInbound(address, true);
       });
 

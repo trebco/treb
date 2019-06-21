@@ -27,11 +27,19 @@ export class EventSource<T> implements IEventSource<T> {
   /** pass-through modules: these are peers */
   private pass_through: Array<EventSource<T>> = [];
 
+  constructor(private verbose = false, private log_id = 'undefined') {
+
+  }
+
   /**
    * FIXME: does anybody call this with an array? it's no longer
    * necessary for multiple messages to prevent extra callbacks...
    */
   public Publish(event: T | T[]) {
+
+    if (this.verbose) {
+      console.info(`es publish (${this.log_id})`, event);
+    }
 
     // here's our updated synchronous mechanism, passing through
 

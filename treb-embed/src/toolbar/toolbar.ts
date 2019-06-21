@@ -4,7 +4,7 @@ import { toolbar_template } from './toolbar-template';
 import { ToolbarItem } from './toolbar-item';
 import { NumberFormatCache, NumberFormat } from 'treb-format';
 import { Measurement } from 'treb-utils';
-import { CellAddress, Area } from 'treb-base-types';
+import { ICellAddress, Area } from 'treb-base-types';
 
 export type EventHandler = (id: string, data?: any) => void;
 
@@ -23,13 +23,13 @@ interface ToolbarItemImpl extends ToolbarItem {
 export class Toolbar {
 
   public current_note = '';
-  public current_cell: CellAddress = {row: -1, column: -1};
+  public current_cell: ICellAddress = {row: -1, column: -1};
 
   // we use different fields for the dialog to cover the (maybe rare)
   // case where the selection switches after the dialog closes but before
   // we handle the event
 
-  public dialog_cell: CellAddress = {row: -1, column: -1};
+  public dialog_cell: ICellAddress = {row: -1, column: -1};
   public dialog_note = '';
 
   private handlers: EventHandler[] = [];
