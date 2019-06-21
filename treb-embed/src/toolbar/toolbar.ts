@@ -503,18 +503,27 @@ export class Toolbar {
     const header = document.createElement('div');
     header.textContent = Area.CellAddressToLabel(this.current_cell);
 
+    // early, so we can click it
+    const ok = document.createElement('a');
+
     // cache
     this.dialog_cell = {...this.current_cell};
     container.appendChild(header);
 
     const textarea = document.createElement('textarea');
     textarea.textContent = this.current_note;
+    textarea.addEventListener('keydown', (event: KeyboardEvent) => {
+      if ((event.keyCode === 13 || event.which === 13) && event.ctrlKey) {
+        event.stopPropagation();
+        event.preventDefault();
+        ok.click();
+      }
+    });
     container.appendChild(textarea);
 
     const buttons = document.createElement('div');
     container.appendChild(buttons);
 
-    const ok = document.createElement('a');
     ok.textContent = 'OK';
     ok.setAttribute('id', 'ok-button');
     buttons.appendChild(ok);
@@ -640,7 +649,9 @@ export class Toolbar {
 
     this.popup.style.display = 'block';
 
-    const focus_node = this.popup.querySelector('input');
+    let focus_node: HTMLElement|null = this.popup.querySelector('input');
+    if (!focus_node) focus_node = this.popup.querySelector('textarea');
+
     if (focus_node) focus_node.focus();
     else this.popup.focus();
 
