@@ -203,9 +203,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     }
     this.FlushUndo();
 
+    // FIXME: this is deprecated
+
     if (options.freeze_rows || options.freeze_columns) {
       this.grid.Freeze(options.freeze_rows || 0, options.freeze_columns || 0);
     }
+
     if (typeof options.show_headers !== 'undefined') {
       this.grid.ShowHeaders(options.show_headers);
     }
@@ -270,6 +273,14 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     });
 
   }
+
+  /** set freeze area */
+  public Freeze(rows = 0, columns = 0) {
+    this.grid.Freeze(rows, columns, true);
+  }
+
+  /** return current freeze area */
+  public GetFreeze() { return this.grid.GetFreeze(); }
 
   /**
    * update theme if any css properties have changed. this calls
@@ -576,12 +587,17 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   }
 
   /**
-   * get selection.
+   * get selection
    */
   public GetSelection() {
     const selection = this.grid.GetSelection();
     if (selection.empty) return '';
     return selection.area.spreadsheet_label;
+  }
+
+  /** return "live" reference to selection */
+  public GetSelectionReference() {
+    return this.grid.GetSelection();
   }
 
   /**

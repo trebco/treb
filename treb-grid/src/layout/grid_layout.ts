@@ -112,11 +112,11 @@ export class GridLayout extends BaseLayout {
     let x = this.model.sheet.header_offset.x;
     let y = this.model.sheet.header_offset.y;
 
-    if (this.freeze.columns) {
-      for (let i = 0; i < this.freeze.columns; i++) x += this.model.sheet.ColumnWidth(i);
+    if (this.model.sheet.freeze.columns) {
+      for (let i = 0; i < this.model.sheet.freeze.columns; i++) x += this.model.sheet.ColumnWidth(i);
     }
-    if (this.freeze.rows) {
-      for (let i = 0; i < this.freeze.rows; i++) y += this.model.sheet.RowHeight(i);
+    if (this.model.sheet.freeze.rows) {
+      for (let i = 0; i < this.model.sheet.freeze.rows; i++) y += this.model.sheet.RowHeight(i);
     }
 
     // this.container.style.gridTemplateColumns = `${x}px auto`;
@@ -159,9 +159,9 @@ export class GridLayout extends BaseLayout {
     // as well (moved from render headers)
 
     let y = this.model.sheet.header_offset.y;
-    if (this.freeze.rows) {
+    if (this.model.sheet.freeze.rows) {
       // let y = 0;
-      for (let i = 0; i < this.freeze.rows; i++) {
+      for (let i = 0; i < this.model.sheet.freeze.rows; i++) {
         y += this.model.sheet.RowHeight(i);
       }
     }
@@ -175,8 +175,8 @@ export class GridLayout extends BaseLayout {
     this.row_header_selection.style.left = `0px`;
 
     let x = this.model.sheet.header_offset.x;
-    if (this.freeze.columns) {
-      for (let i = 0; i < this.freeze.columns; i++) {
+    if (this.model.sheet.freeze.columns) {
+      for (let i = 0; i < this.model.sheet.freeze.columns; i++) {
         x += this.model.sheet.ColumnWidth(i);
       }
     }
@@ -191,7 +191,7 @@ export class GridLayout extends BaseLayout {
     this.corner_selection.style.display = 'block';
 
     /*
-    if (this.freeze.rows && this.freeze.columns) {
+    if (this.model.sheet.freeze.rows && this.model.sheet.freeze.columns) {
       this.frozen_corner_selection.style.display = 'block';
     }
     else {

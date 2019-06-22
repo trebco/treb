@@ -53,6 +53,7 @@ export class FormattingToolbar {
   private node: HTMLElement;
   private toolbar: Toolbar;
   private selection_style?: Style.Properties;
+  private primary_selection: any;
 
   constructor(
       private sheet: EmbeddedSpreadsheet,
@@ -80,6 +81,12 @@ export class FormattingToolbar {
     (this.sheet as any).grid.grid_events.Subscribe((event: any) => this.HandleGridEvent(event));
     this.sheet.Subscribe((event: any) => this.HandleEvent(event));
 
+    // we now hold a live reference to the selection. we don't need to query
+    // every time. this should survive any document changes, since selection
+    // is const/readonly.
+
+    this.primary_selection = sheet.GetSelectionReference();
+
     // called in case there's no document. "clear" actually sets
     // root number formats (could skip colors)
 
@@ -88,7 +95,6 @@ export class FormattingToolbar {
 
     this.UpdateDocumentStyles();
     this.UpdateFreezeState();
-
     this.UpdateFromSelection();
 
   }
@@ -151,27 +157,26 @@ export class FormattingToolbar {
 
   private Freeze() { // freeze: boolean) {
 
-    const frozen = (this.sheet as any).grid.layout.freeze.rows
-      || (this.sheet as any).grid.layout.freeze.columns;
+    const freeze = this.sheet.GetFreeze();
+    const frozen = freeze.rows || freeze.columns;
 
     if (frozen) {
-      (this.sheet as any).grid.Freeze(0, 0);
+      this.sheet.Freeze(0, 0);
     }
     else {
-      const sheet_selection = (this.sheet as any).grid.GetSelection();
-      if (sheet_selection && !sheet_selection.empty) {
-        const area = sheet_selection.area as Area;
+      if (this.primary_selection && !this.primary_selection.empty) {
+        const area = this.primary_selection.area as Area;
         if (area.entire_sheet) {
           // ?
         }
         else if (area.entire_row) {
-          (this.sheet as any).grid.Freeze(area.end.row + 1, 0);
+          this.sheet.Freeze(area.end.row + 1, 0);
         }
         else if (area.entire_column) {
-          (this.sheet as any).grid.Freeze(0, area.end.column + 1);
+          this.sheet.Freeze(0, area.end.column + 1);
         }
         else {
-          (this.sheet as any).grid.Freeze(area.end.row + 1, area.end.column + 1);
+          this.sheet.Freeze(area.end.row + 1, area.end.column + 1);
         }
       }
     }
@@ -181,13 +186,10 @@ export class FormattingToolbar {
   }
 
   private UpdateFreezeState() {
-    const frozen = (this.sheet as any).grid.layout.freeze.rows
-      || (this.sheet as any).grid.layout.freeze.columns;
 
-    // this.toolbar.Show('freeze', !frozen);
-    // this.toolbar.Show('unfreeze', frozen);
+    const freeze = this.sheet.GetFreeze();
 
-    if (frozen) {
+    if (freeze.rows || freeze.columns) {
       this.toolbar.Activate('freeze2');
       this.toolbar.UpdateTitle('freeze2', 'Unfreeze');
     }
@@ -216,13 +218,12 @@ export class FormattingToolbar {
 
     this.toolbar.DeactivateAll();
 
-    const sheet_selection = (this.sheet as any).grid.GetSelection();
-    if (sheet_selection && !sheet_selection.empty) {
-      let data = (this.sheet as any).grid.model.sheet.CellData(sheet_selection.target);
+    if (this.primary_selection && !this.primary_selection.empty) {
+      let data = (this.sheet as any).grid.model.sheet.CellData(this.primary_selection.target);
       merged = !!data.merge_area;
       if (merged && (
-          data.merge_area.start.row !== sheet_selection.target.row ||
-          data.merge_area.start.column !== sheet_selection.target.column)) {
+          data.merge_area.start.row !== this.primary_selection.target.row ||
+          data.merge_area.start.column !== this.primary_selection.target.column)) {
         data = (this.sheet as any).grid.model.sheet.CellData(data.merge_area.start);
       }
 
@@ -253,7 +254,7 @@ export class FormattingToolbar {
         this.toolbar.UpdateTitle('note', 'Add Note');
       }
 
-      this.toolbar.current_cell = {...sheet_selection.target};
+      this.toolbar.current_cell = {...this.primary_selection.target};
       this.toolbar.current_note = data.note;
 
     }

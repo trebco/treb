@@ -171,12 +171,12 @@ export class TileRenderer {
     const header_size = this.model.sheet.header_offset;
 
     let x = header_size.x;
-    for (let i = 0; i < this.layout.freeze.columns; i++) {
+    for (let i = 0; i < this.model.sheet.freeze.columns; i++) {
       x += this.model.sheet.ColumnWidth(i);
     }
 
     let y = header_size.y;
-    for (let i = 0; i < this.layout.freeze.rows; i++) {
+    for (let i = 0; i < this.model.sheet.freeze.rows; i++) {
       y += this.model.sheet.RowHeight(i);
     }
 
@@ -194,7 +194,7 @@ export class TileRenderer {
     context.lineTo(x, header_size.y - 0.5);
     context.stroke();
 
-    if (!this.layout.freeze.columns && !this.layout.freeze.rows) return;
+    if (!this.model.sheet.freeze.columns && !this.model.sheet.freeze.rows) return;
 
     // NOTE: if headers are hidden (which is done by setting width/height to
     // 0 or 1 pixel) we don't want to render them here.
@@ -206,7 +206,7 @@ export class TileRenderer {
     context.font = `${this.theme.interface_font_size} ${this.theme.interface_font_face}`;
     context.fillStyle = this.theme.header_text_color || '';
 
-    if (this.layout.freeze.rows && this.model.sheet.header_offset.x > 1) {
+    if (this.model.sheet.freeze.rows && this.model.sheet.header_offset.x > 1) {
 
       context.setTransform(scale, 0, 0, scale, 0, 0);
       context.translate(0, header_size.y);
@@ -215,7 +215,7 @@ export class TileRenderer {
       context.lineTo(header_size.x, 0 - 0.5);
 
       let row_index = 0;
-      for (; row_index < this.layout.freeze.rows; row_index++) {
+      for (; row_index < this.model.sheet.freeze.rows; row_index++) {
         const height = this.model.sheet.RowHeight(row_index);
         context.fillStyle = this.theme.header_text_color || '';
         if (height >= font_metrics.block) {
@@ -233,7 +233,7 @@ export class TileRenderer {
         }
         else */
         {
-          // if (row_index < this.layout.freeze.rows - 1) {
+          // if (row_index < this.model.sheet.freeze.rows - 1) {
           context.moveTo(0, height - 0.5);
           context.lineTo(header_size.x, height - 0.5);
           // }
@@ -255,7 +255,7 @@ export class TileRenderer {
 
     }
 
-    if (this.layout.freeze.columns && this.model.sheet.header_offset.y > 1) {
+    if (this.model.sheet.freeze.columns && this.model.sheet.header_offset.y > 1) {
 
       context.strokeStyle = this.theme.grid_color || '';
       context.setTransform(scale, 0, 0, scale, 0, 0);
@@ -265,7 +265,7 @@ export class TileRenderer {
       context.lineTo(0 - 0.5, header_size.y);
 
       let column_index = 0;
-      for (; column_index < this.layout.freeze.columns; column_index++) {
+      for (; column_index < this.model.sheet.freeze.columns; column_index++) {
         const width = this.model.sheet.ColumnWidth(column_index);
         const text = Area.ColumnToLabel(column_index);
         const metrics = context.measureText(text);
@@ -284,7 +284,7 @@ export class TileRenderer {
         }
         else */
         {
-          // if (column_index < this.layout.freeze.columns - 1) {
+          // if (column_index < this.model.sheet.freeze.columns - 1) {
           context.moveTo(width - 0.5, 0);
           context.lineTo(width - 0.5, header_size.y);
           // }
@@ -431,7 +431,7 @@ export class TileRenderer {
       }
     }
 
-    if (this.layout.freeze.rows || this.layout.freeze.columns) {
+    if (this.model.sheet.freeze.rows || this.model.sheet.freeze.columns) {
       this.RenderCorner();
     }
 
@@ -534,20 +534,20 @@ export class TileRenderer {
       left += (width * scale);
     }
 
-    if (!this.layout.freeze.rows && !this.layout.freeze.columns) return; // render_list;
+    if (!this.model.sheet.freeze.rows && !this.model.sheet.freeze.columns) return; // render_list;
 
     // paint to headers
 
     let copy_height = 0;
     let copy_width = 0;
 
-    if (tile.first_cell.row <= this.layout.freeze.rows - 1) {
-      for (let i = tile.first_cell.row; i < this.layout.freeze.rows && i <= tile.last_cell.row; i++) {
+    if (tile.first_cell.row <= this.model.sheet.freeze.rows - 1) {
+      for (let i = tile.first_cell.row; i < this.model.sheet.freeze.rows && i <= tile.last_cell.row; i++) {
         copy_height += this.model.sheet.RowHeight(i);
       }
     }
-    if (tile.first_cell.column <= this.layout.freeze.columns - 1) {
-      for (let i = tile.first_cell.column; i < this.layout.freeze.columns && i <= tile.last_cell.column; i++) {
+    if (tile.first_cell.column <= this.model.sheet.freeze.columns - 1) {
+      for (let i = tile.first_cell.column; i < this.model.sheet.freeze.columns && i <= tile.last_cell.column; i++) {
         copy_width += this.model.sheet.ColumnWidth(i);
       }
     }

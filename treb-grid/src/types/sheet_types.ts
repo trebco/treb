@@ -6,6 +6,7 @@ export interface UpdateHints {
   layout?: boolean;
   style?: boolean;
   annotations?: boolean;
+  freeze?: boolean;
 }
 
 export interface DataEvent {

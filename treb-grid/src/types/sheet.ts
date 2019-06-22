@@ -56,6 +56,20 @@ export class Sheet {
       if (obj.columns) sheet.cells.EnsureColumn(obj.columns - 1);
     }
 
+    // freeze
+
+    if (!hints || hints.freeze) {
+
+      sheet.freeze.rows = 0;
+      sheet.freeze.columns = 0;
+
+      if (obj.freeze) {
+        sheet.freeze.rows = obj.freeze.rows || 0;
+        sheet.freeze.columns = obj.freeze.columns || 0;
+      }
+
+    }
+
     // styles
 
     if (!hints || hints.style) {
@@ -113,14 +127,14 @@ export class Sheet {
 
   }
 
-  /**
+  /* *
    * factory method creates a sheet from a csv file. note this
    * method takes the file contents, it doesn't open a file. in order
    * to limit deps, we're doing this manually (which is not a good idea).
    *
    * also in memory, which is not a good idea. but this method is (for
    * now) really just for testing.
-   */
+   * /
   public static FromCSV(text: string): Sheet {
 
     const lines = text.split(/\n/);
@@ -134,6 +148,7 @@ export class Sheet {
     return this.FromArray(arr, false); // true);
 
   }
+  */
 
   /**
    * factory method creates a sheet from a 2D array.
@@ -152,6 +167,12 @@ export class Sheet {
   private static measurement_canvas: HTMLCanvasElement;
 
   // --- instance members -----------------------------------------------------
+
+  // moved from layout
+  public freeze = {
+    rows: 0,
+    columns: 0,
+  };
 
   // public named_ranges: {[index: string]: Area} = {};
 
@@ -440,121 +461,6 @@ export class Sheet {
   }
 
   /**
-   * update style properties. merge by default.
-   *
-   * this method will reverse-override properties, meaning if you have set (for
-   * example) a cell style to bold, then you set the whole sheet to unbold, we
-   * expect that the unbold style will control. instead of explicitly setting
-   * the cell style, we go up the chain and remove any matching properties.
-   */
-  private UpdateSheetStyle(properties: Style.Properties, delta = true, inline = false) {
-    this.sheet_style = Style.Merge(this.sheet_style, properties, delta);
-
-    // reverse-override...
-
-    const keys = Object.keys(properties);
-
-    for (const style_column of this.cell_style) {
-      if (style_column) {
-        for (const style_ref of style_column) {
-          if (style_ref) {
-            keys.forEach((key) => delete style_ref[key]);
-          }
-        }
-      }
-    }
-
-    for (const index of Object.keys(this.row_styles)) {
-      keys.forEach((key) => delete this.row_styles[index as unknown as number][key]);
-    }
-
-    for (const index of Object.keys(this.column_styles)) {
-      keys.forEach((key) => delete this.column_styles[index as unknown as number][key]);
-    }
-
-    this.FlushCellStyles(); // not targeted
-
-    if (inline) return;
-
-    this.PublishStyleEvent(undefined, 4); // console.info("PSE 4");
-
-  }
-
-  /**
-   * updates row properties. reverse-overrides cells (@see UpdateSheetStyle).
-   *
-   * we also need to ensure that the desired effect takes hold, meaning if
-   * there's an overriding column property (columns have priority), we will
-   * need to update the cell property to match the desired output.
-   */
-  private UpdateRowStyle(row: number, properties: Style.Properties, delta = true, inline = false) {
-    this.row_styles[row] = Style.Merge(this.row_styles[row] || {}, properties, delta);
-
-    // reverse-override... remove matching properties from cells in this row
-    // (we can do this in-place)
-
-    const keys = Object.keys(properties);
-    for (const column of this.cell_style) {
-      if (column && column[row]) {
-
-        // FIXME: we don't want to delete. reverse-add.
-        keys.forEach((key) => delete column[row][key]);
-
-      }
-    }
-
-    // if there's a column style, it will override the row
-    // style; so we need to set a cell style to compensate.
-
-    for (let i = 0; i < this.cells.columns; i++) {
-      if (this.column_styles[i]) {
-        const column_style = this.column_styles[i];
-        const override: Style.Properties = this.cell_style[i] ? this.cell_style[i][row] || {} : {};
-        keys.forEach((key) => {
-          if (typeof column_style[key] !== 'undefined') {
-            override[key] = properties[key];
-          }
-        });
-        if (Object.keys(override).length) {
-          // console.info(override);
-          if (!this.cell_style[i]) this.cell_style[i] = [];
-          this.cell_style[i][row] = override;
-        }
-      }
-    }
-
-    this.cells.IterateArea(this.RealArea(Area.FromRow(row)), (cell) => cell.FlushStyle());
-
-    if (inline) return;
-
-    this.PublishStyleEvent(undefined, 5); // console.info("PSE 5");
-
-  }
-
-  /** updates column properties. reverse-overrides cells (@see UpdateSheetStyle). */
-  private UpdateColumnStyle(column: number, properties: Style.Properties, delta = true, inline = false) {
-    this.column_styles[column] = Style.Merge(this.column_styles[column] || {}, properties, delta);
-
-    // reverse-override... I think we only need to override _cell_ values.
-
-    const keys = Object.keys(properties);
-    if (this.cell_style[column]) {
-      for (const ref of this.cell_style[column]) {
-        if (ref) {
-          // FIXME: we don't want to delete. reverse-add.
-          keys.forEach((key) => delete ref[key]);
-        }
-      }
-    }
-
-    this.cells.IterateArea(this.RealArea(Area.FromColumn(column)), (cell) => cell.FlushStyle());
-
-    if (inline) return;
-
-    this.PublishStyleEvent(undefined, 6); // console.info("PSE 6");
-  }
-
-  /**
    * updates cell styles. flushes cached style.
    *
    * @param delta merge with existing properties (we will win conflicts)
@@ -751,7 +657,7 @@ export class Sheet {
    * resize row to match character hight, taking into
    * account multi-line values.
    */
-  public AutoSizeRow(row: number) {
+  public AutoSizeRow(row: number, inline = false) {
 
     let height = this.default_row_height;
     const padding = 9;
@@ -773,7 +679,9 @@ export class Sheet {
       }
     }
 
-    this.RowHeight(row, height);
+    this.RowHeight(row, height, inline);
+
+    if (inline) return;
     this.PublishStyleEvent(undefined, 9); // console.info("PSE 12");
 
   }
@@ -807,7 +715,7 @@ export class Sheet {
       }
     }
 
-    this.ColumnWidth(column, width);
+    this.ColumnWidth(column, width, inline);
 
     if (inline) return;
     this.PublishStyleEvent(undefined, 10); // console.info("PSE 13");
@@ -1150,8 +1058,11 @@ export class Sheet {
 
   }
 
-  /** @see SetCellValue2 */
-  public SetAreaValues2(area: Area, values: any[][], parse_numbers = false) {
+  /** 
+   * @see SetCellValue2
+   * removing old parameter
+   */
+  public SetAreaValues2(area: Area, values: any[][]) { // }, parse_numbers = false) {
 
     area = this.RealArea(area);
 
@@ -1165,11 +1076,14 @@ export class Sheet {
       // r -= offset.r;
 
       if (values[r]) {
+        /*
         let value: any = values[r][c];
         if (parse_numbers && typeof value === 'string') {
           value = ValueParser.TryParse(value).value;
         }
         cell.Set(value);
+        */
+        cell.Set(values[r][c]);
       }
       else cell.Set(undefined);
     }, true);
@@ -1428,7 +1342,7 @@ export class Sheet {
       // nested: true,
     };
 
-    return {
+    const result: {[index: string]: any} = {
 
       // not used atm, but in the event we need to gate
       // or swap importers on versions in the future
@@ -1456,6 +1370,13 @@ export class Sheet {
 
     };
 
+    // only put in freeze if used
+
+    if (this.freeze.rows || this.freeze.columns) {
+      result.freeze = this.freeze;
+    }
+
+    return result;
   }
 
   /** export values and calcualted values; as for csv export (which is what it's for) */
@@ -1521,7 +1442,7 @@ export class Sheet {
     this.cells.IterateAll((cell: Cell) => cell.FlushStyle());
   }
 
-  // --- private methods ------------------------------------------------------
+  // --- protected ------------------------------------------------------------
 
   /**
    * when checking style properties, check falsy but not '' or 0
@@ -1542,6 +1463,128 @@ export class Sheet {
     this.FlushCachedValues();
     this.FlushCellStyles();
   }
+
+  // --- private methods ------------------------------------------------------
+
+
+  /**
+   * update style properties. merge by default.
+   *
+   * this method will reverse-override properties, meaning if you have set (for
+   * example) a cell style to bold, then you set the whole sheet to unbold, we
+   * expect that the unbold style will control. instead of explicitly setting
+   * the cell style, we go up the chain and remove any matching properties.
+   */
+  private UpdateSheetStyle(properties: Style.Properties, delta = true, inline = false) {
+    this.sheet_style = Style.Merge(this.sheet_style, properties, delta);
+
+    // reverse-override...
+
+    const keys = Object.keys(properties);
+
+    for (const style_column of this.cell_style) {
+      if (style_column) {
+        for (const style_ref of style_column) {
+          if (style_ref) {
+            keys.forEach((key) => delete style_ref[key]);
+          }
+        }
+      }
+    }
+
+    for (const index of Object.keys(this.row_styles)) {
+      keys.forEach((key) => delete this.row_styles[index as unknown as number][key]);
+    }
+
+    for (const index of Object.keys(this.column_styles)) {
+      keys.forEach((key) => delete this.column_styles[index as unknown as number][key]);
+    }
+
+    this.FlushCellStyles(); // not targeted
+
+    if (inline) return;
+
+    this.PublishStyleEvent(undefined, 4); // console.info("PSE 4");
+
+  }
+
+  /**
+   * updates row properties. reverse-overrides cells (@see UpdateSheetStyle).
+   *
+   * we also need to ensure that the desired effect takes hold, meaning if
+   * there's an overriding column property (columns have priority), we will
+   * need to update the cell property to match the desired output.
+   */
+  private UpdateRowStyle(row: number, properties: Style.Properties, delta = true, inline = false) {
+    this.row_styles[row] = Style.Merge(this.row_styles[row] || {}, properties, delta);
+
+    // reverse-override... remove matching properties from cells in this row
+    // (we can do this in-place)
+
+    const keys = Object.keys(properties);
+    for (const column of this.cell_style) {
+      if (column && column[row]) {
+
+        // FIXME: we don't want to delete. reverse-add.
+        keys.forEach((key) => delete column[row][key]);
+
+      }
+    }
+
+    // if there's a column style, it will override the row
+    // style; so we need to set a cell style to compensate.
+
+    for (let i = 0; i < this.cells.columns; i++) {
+      if (this.column_styles[i]) {
+        const column_style = this.column_styles[i];
+        const override: Style.Properties = this.cell_style[i] ? this.cell_style[i][row] || {} : {};
+        keys.forEach((key) => {
+          if (typeof column_style[key] !== 'undefined') {
+            override[key] = properties[key];
+          }
+        });
+        if (Object.keys(override).length) {
+          // console.info(override);
+          if (!this.cell_style[i]) this.cell_style[i] = [];
+          this.cell_style[i][row] = override;
+        }
+      }
+    }
+
+    this.cells.IterateArea(this.RealArea(Area.FromRow(row)), (cell) => cell.FlushStyle());
+
+    if (inline) return;
+
+    this.PublishStyleEvent(undefined, 5); // console.info("PSE 5");
+
+  }
+
+  /** updates column properties. reverse-overrides cells (@see UpdateSheetStyle). */
+  private UpdateColumnStyle(column: number, properties: Style.Properties, delta = true, inline = false) {
+    this.column_styles[column] = Style.Merge(this.column_styles[column] || {}, properties, delta);
+
+    // reverse-override... I think we only need to override _cell_ values.
+
+    const keys = Object.keys(properties);
+    if (this.cell_style[column]) {
+      for (const ref of this.cell_style[column]) {
+        if (ref) {
+          // FIXME: we don't want to delete. reverse-add.
+          keys.forEach((key) => delete ref[key]);
+        }
+      }
+    }
+
+    this.cells.IterateArea(this.RealArea(Area.FromColumn(column)), (cell) => cell.FlushStyle());
+
+    if (inline) return;
+
+    this.PublishStyleEvent(undefined, 6); // console.info("PSE 6");
+  }
+
+
+  //
+
 
   private PublishStyleEvent(area?: Area, log?: any) {
 

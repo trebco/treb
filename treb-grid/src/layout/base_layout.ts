@@ -68,7 +68,7 @@ export abstract class BaseLayout {
   public header_size: Size = {width: 0, height: 0};
 
   /** freeze rows/columns */
-  public freeze = { rows: 0, columns: 0 };
+  // public freeze = { rows: 0, columns: 0 };
 
   /**
    * NOTE: dpr can probably change, on zoom; but I'm not sure there's
@@ -427,16 +427,16 @@ export abstract class BaseLayout {
     // cell is visible outside of the frozen area. but only if we're *outside*
     // the frozen area, because otherwise we're on screen essentially by default.
 
-    if (this.freeze.rows || this.freeze.columns) {
-      if (this.freeze.rows && address.row >= this.freeze.rows) {
+    if (this.model.sheet.freeze.rows || this.model.sheet.freeze.columns) {
+      if (this.model.sheet.freeze.rows && address.row >= this.model.sheet.freeze.rows) {
         offset.y = this.frozen_row_tiles[0].logical_size.height;
       }
-      else if (this.freeze.rows) lock.y = true;
+      else if (this.model.sheet.freeze.rows) lock.y = true;
 
-      if (this.freeze.columns && address.column >= this.freeze.columns) {
+      if (this.model.sheet.freeze.columns && address.column >= this.model.sheet.freeze.columns) {
         offset.x = this.frozen_column_tiles[0].logical_size.width;
       }
-      else if (this.freeze.columns) lock.x = true;
+      else if (this.model.sheet.freeze.columns) lock.x = true;
     }
 
     // NOTE: in theory it's possible we scroll twice, which would result
@@ -490,13 +490,13 @@ export abstract class BaseLayout {
   public CoordinateToRowHeader(y: number): ICellAddress {
     const result = { column: Infinity, row: 0 };
 
-    if (this.freeze.rows &&
+    if (this.model.sheet.freeze.rows &&
         this.frozen_row_tiles[0].pixel_end.y >= y - this.scroll_reference_node.scrollTop) {
 
       let height = 0;
       y -= this.scroll_reference_node.scrollTop;
 
-      for (let i = 0; i < this.freeze.rows; i++ ){
+      for (let i = 0; i < this.model.sheet.freeze.rows; i++ ){
         height += this.model.sheet.RowHeight(i);
         if (height >= y) {
           result.row = i;
@@ -534,13 +534,13 @@ export abstract class BaseLayout {
   public CoordinateToColumnHeader(x: number): ICellAddress {
     const result = { row: Infinity, column: 0 };
 
-    if (this.freeze.columns &&
+    if (this.model.sheet.freeze.columns &&
         this.frozen_column_tiles[0].pixel_end.x >= x - this.scroll_reference_node.scrollLeft) {
 
       let width = 0;
       x -= this.scroll_reference_node.scrollLeft;
 
-      for (let i = 0; i < this.freeze.columns; i++){
+      for (let i = 0; i < this.model.sheet.freeze.columns; i++){
         width += this.model.sheet.ColumnWidth(i);
         if (width >= x) {
           result.column = i;
@@ -579,14 +579,14 @@ export abstract class BaseLayout {
 
     // offset for freeze pane
 
-    if (this.freeze.rows) {
+    if (this.model.sheet.freeze.rows) {
       const frozen_height = this.frozen_row_tiles[0].logical_size.height;
       if (point.y - this.scroll_reference_node.scrollTop < frozen_height) {
         point.y -= this.scroll_reference_node.scrollTop;
       }
     }
 
-    if (this.freeze.columns) {
+    if (this.model.sheet.freeze.columns) {
       const frozen_width = this.frozen_column_tiles[0].logical_size.width;
       if (point.x - this.scroll_reference_node.scrollLeft < frozen_width) {
         point.x -= this.scroll_reference_node.scrollLeft;
@@ -827,10 +827,10 @@ export abstract class BaseLayout {
     let header_height = 0;
     let header_width = 0;
 
-    for (let i = 0; i < this.freeze.rows; i++) {
+    for (let i = 0; i < this.model.sheet.freeze.rows; i++) {
       header_height += this.model.sheet.RowHeight(i);
     }
-    for (let i = 0; i < this.freeze.columns; i++) {
+    for (let i = 0; i < this.model.sheet.freeze.columns; i++) {
       header_width += this.model.sheet.ColumnWidth(i);
     }
 
@@ -853,7 +853,7 @@ export abstract class BaseLayout {
         this.column_header));
 
       // also frozen
-      if (this.freeze.rows) {
+      if (this.model.sheet.freeze.rows) {
         this.frozen_row_tiles.push(this.CreateTile('frozen-row-tile',
           {height: header_height, width: tile_widths[c]},
           {row: 1, column: c},
@@ -881,7 +881,7 @@ export abstract class BaseLayout {
             this.row_header));
 
           // also frozen
-          if (this.freeze.columns) {
+          if (this.model.sheet.freeze.columns) {
             this.frozen_column_tiles.push(this.CreateTile('frozen-column-tile',
             {height: tile_heights[r], width: header_width},
             {row: r, column: 1},
@@ -1101,7 +1101,7 @@ export abstract class BaseLayout {
         tile.style.height = `${height}px`;
         tile.height = this.dpr * height;
 
-        if (this.freeze.columns) {
+        if (this.model.sheet.freeze.columns) {
           const frozen_tile = this.frozen_column_tiles[i];
           frozen_tile.logical_size.height = height;
           frozen_tile.style.height = `${height}px`;
@@ -1135,9 +1135,9 @@ export abstract class BaseLayout {
 
     }
 
-    if (this.freeze.rows) {
+    if (this.model.sheet.freeze.rows) {
       let freeze_height = 0;
-      for (let i = 0; i < this.freeze.rows; i++) freeze_height += this.model.sheet.RowHeight(i);
+      for (let i = 0; i < this.model.sheet.freeze.rows; i++) freeze_height += this.model.sheet.RowHeight(i);
       for (const tile of this.frozen_row_tiles) {
         tile.style.height = `${freeze_height}px`;
         tile.height = freeze_height * this.dpr;
@@ -1197,7 +1197,7 @@ export abstract class BaseLayout {
         tile.style.width = `${width}px`;
         tile.width = this.dpr * width;
 
-        if (this.freeze.rows) {
+        if (this.model.sheet.freeze.rows) {
           const frozen_tile = this.frozen_row_tiles[i];
           frozen_tile.logical_size.width = width;
           frozen_tile.style.width = `${width}px`;
@@ -1231,9 +1231,9 @@ export abstract class BaseLayout {
 
     }
 
-    if (this.freeze.columns) {
+    if (this.model.sheet.freeze.columns) {
       let freeze_width = 0;
-      for (let i = 0; i < this.freeze.columns; i++) freeze_width += this.model.sheet.ColumnWidth(i);
+      for (let i = 0; i < this.model.sheet.freeze.columns; i++) freeze_width += this.model.sheet.ColumnWidth(i);
       for (const tile of this.frozen_column_tiles) {
         tile.style.width = `${freeze_width}px`;
         tile.width = freeze_width * this.dpr;
@@ -1269,10 +1269,10 @@ export abstract class BaseLayout {
 
     let rect = this.CellAddressToRectangle(address);
 
-    if (address.column >= 0 && address.column < this.freeze.columns) {
+    if (address.column >= 0 && address.column < this.model.sheet.freeze.columns) {
       rect = rect.Shift(this.scroll_reference_node.scrollLeft, 0);
     }
-    if (address.row >= 0 && address.row < this.freeze.rows) {
+    if (address.row >= 0 && address.row < this.model.sheet.freeze.rows) {
       rect = rect.Shift(0, this.scroll_reference_node.scrollTop);
     }
 

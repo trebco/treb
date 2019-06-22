@@ -143,7 +143,7 @@ export class SelectionRenderer {
       this.corner_column_overlay.Hide();
     }
 
-    if (!this.layout.freeze.columns && !this.layout.freeze.rows) return;
+    if (!this.model.sheet.freeze.columns && !this.model.sheet.freeze.rows) return;
 
     // check visibility for selections in frozen rows, columns
 
@@ -156,28 +156,28 @@ export class SelectionRenderer {
     }
     else {
       const start = this.primary_selection.area.start;
-      visible_row.push(start.row <= this.layout.freeze.rows || start.row === Infinity);
-      visible_column.push(start.column <= this.layout.freeze.columns || start.column === Infinity);
+      visible_row.push(start.row <= this.model.sheet.freeze.rows || start.row === Infinity);
+      visible_column.push(start.column <= this.model.sheet.freeze.columns || start.column === Infinity);
     }
 
     for (const {area} of this.additional_selections) {
-      visible_row.push(area.start.row <= this.layout.freeze.rows || area.start.row === Infinity);
-      visible_column.push(area.start.column <= this.layout.freeze.columns || area.start.column === Infinity);
+      visible_row.push(area.start.row <= this.model.sheet.freeze.rows || area.start.row === Infinity);
+      visible_column.push(area.start.column <= this.model.sheet.freeze.columns || area.start.column === Infinity);
     }
 
     // selections...
 
-    if (this.layout.freeze.rows) {
+    if (this.model.sheet.freeze.rows) {
       this.RenderSelectionGroup(aggregate, this.layout.row_header_selection,
         visible_row, undefined, this.row_header_selections, {x: 0, y: this.model.sheet.header_offset.y});
     }
 
-    if (this.layout.freeze.columns) {
+    if (this.model.sheet.freeze.columns) {
       this.RenderSelectionGroup(aggregate, this.layout.column_header_selection,
         visible_column, undefined, this.column_header_selections, {x: this.model.sheet.header_offset.x, y: 0});
     }
 
-    if (this.layout.freeze.rows && this.layout.freeze.columns) {
+    if (this.model.sheet.freeze.rows && this.model.sheet.freeze.columns) {
       this.RenderSelectionGroup(aggregate, this.layout.corner_selection,
         visible_column, visible_row, this.corner_selections, {...this.model.sheet.header_offset});
     }

@@ -285,11 +285,11 @@ export class LegacyLayout extends BaseLayout {
     let x = this.model.sheet.header_offset.x;
     let y = this.model.sheet.header_offset.y;
 
-    if (this.freeze.columns) {
-      for (let i = 0; i < this.freeze.columns; i++) x += this.model.sheet.ColumnWidth(i);
+    if (this.model.sheet.freeze.columns) {
+      for (let i = 0; i < this.model.sheet.freeze.columns; i++) x += this.model.sheet.ColumnWidth(i);
     }
-    if (this.freeze.rows) {
-      for (let i = 0; i < this.freeze.rows; i++) y += this.model.sheet.RowHeight(i);
+    if (this.model.sheet.freeze.rows) {
+      for (let i = 0; i < this.model.sheet.freeze.rows; i++) y += this.model.sheet.RowHeight(i);
     }
 
     this.column_header.style.left = `${this.model.sheet.header_offset.x + this.scroller.scrollLeft}px`;
@@ -379,7 +379,7 @@ export class LegacyLayout extends BaseLayout {
     }
 
     let y = this.model.sheet.header_offset.y;
-    for (let i = 0; i < this.freeze.rows; i++) {
+    for (let i = 0; i < this.model.sheet.freeze.rows; i++) {
       y += this.model.sheet.RowHeight(i);
     }
     this.row_header_selection.style.display = 'block';
@@ -391,7 +391,7 @@ export class LegacyLayout extends BaseLayout {
     this.row_header_selection.style.left = `0px`;
 
     let x = this.model.sheet.header_offset.x;
-    for (let i = 0; i < this.freeze.columns; i++) {
+    for (let i = 0; i < this.model.sheet.freeze.columns; i++) {
       x += this.model.sheet.ColumnWidth(i);
     }
     this.column_header_selection.style.display = 'block';
@@ -405,7 +405,7 @@ export class LegacyLayout extends BaseLayout {
     this.corner_selection.style.display = 'block';
 
     /*
-    if (this.freeze.rows && this.freeze.columns) {
+    if (this.model.sheet.freeze.rows && this.model.sheet.freeze.columns) {
       this.corner_selection.style.display = 'block';
     }
     else {

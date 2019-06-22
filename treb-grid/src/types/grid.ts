@@ -1,5 +1,5 @@
 
-import { Rectangle, ValueType, Style, Area, Cell, Extent, ICellAddress, 
+import { Rectangle, ValueType, Style, Area, Cell, Extent, ICellAddress,
          IsCellAddress, Localization } from 'treb-base-types';
 import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType } from 'treb-parser';
 import { EventSource, Yield } from 'treb-utils';
@@ -28,7 +28,8 @@ import { UA } from '../util/ua';
 import { Annotation } from './annotation';
 import { Autocomplete } from '../editors/autocomplete';
 
-import { Command, CommandKey, SetRangeCommand } from './commands';
+import { Command, CommandKey, SetRangeCommand, FreezeCommand, UpdateBordersCommand,
+         InsertRowsCommand, InsertColumnsCommand } from './grid-command';
 import { DataModel } from './data_model';
 
 interface DoubleClickData {
@@ -123,18 +124,11 @@ export class Grid {
    */
   private cell_resize = { row: -1, column: -1 };
 
-  private readonly render_state = {
-
-    /** render area as TILE RANGE */
-    render_tiles: new TileRange({ row: 0, column: 0 }),
-
-    /** selection as TILE RANGE */
-    // selection_tiles: new TileRange({row: -1, column: -1}),
-
-    /** selection canvas as CELL RANGE */
-    // selection_canvas_area: new Area({row: -1, column: -1}),
-
-  };
+  /**
+   * this is the only thing that was used in the old 'render state',
+   * so we dropped the container.
+   */
+  private render_tiles = new TileRange({ row: 0, column: 0 });
 
   // primary and active selections now _always_ exist. we use flags
   // to indicate that they're empty (i.e. nothing is selected). this
@@ -266,16 +260,11 @@ export class Grid {
       address = this.primary_selection.target;
     }
 
-    const cell = this.cells.GetCell(address, true);
-    if (cell) {
-      cell.SetNote(note);
-      this.DelayedRender(false, new Area(address));
-
-      // don't publish, this is ornamentation, not data. caller
-      // should rely on some other notification mechanism. (... FIXME?)
-
-      // this.grid_events.Publish({type: 'data', area: new Area(address), })
-    }
+    this.ExecCommand({
+      key: CommandKey.SetNote,
+      address,
+      note,
+    });
 
   }
 
@@ -357,6 +346,12 @@ export class Grid {
   public Serialize(options: SerializeOptions = {}) {
     const data: any = this.model.sheet.toJSON(options);
 
+    // FIXME: if these things (selection, freeze) are "data" for purposes
+    // of serialization, then they should be in the data class (sheet),
+    // right? this gets sloppy if we have data in lots of different places.
+
+    // FIXME
+
     // add selection to data, so we can restore it (primarily used for undo)
     // COPY SO IT'S NOT LINKED
 
@@ -364,9 +359,11 @@ export class Grid {
 
     // frozen, but omit if empty/no data
 
+    /*
     if (this.layout.freeze.rows || this.layout.freeze.columns) {
       data.freeze = {...this.layout.freeze};
     }
+    */
 
     // annotations: also copy
 
@@ -394,20 +391,66 @@ export class Grid {
 
   /**
    * reset sheet, set data from CSV
+   *
+   * FIXME: this is problematic, because it runs around the exec command
+   * system. however it doesn't seem like a good candidate for a separate
+   * command. it should maybe move to the import class? (...)
+   *
+   * one problem with that is that import is really, really heavy (jszip).
+   * it seems wasteful to require all that just to import csv.
    */
   public FromCSV(text: string) {
-    this.UpdateSheet(Sheet.FromCSV(text).toJSON());
+
+    // this.UpdateSheet(Sheet.FromCSV(text).toJSON());
+
+    // the old method said "this is just for testing". don't use this.
+    // use a proper csv parser.
+
+    const lines = text.split(/\n/);
+    const arr = lines.map((line) => {
+      return line.trim().split(/,/).map((x) => {
+        if (/^".*"$/.test(x)) x = x.substr(1, x.length - 2);
+        return ValueParser.TryParse(x).value;
+      });
+    });
+
+    const end = {
+      row: arr.length,
+      column: arr.reduce((max, row) => Math.max(max, row.length), 0),
+    };
+
+    // console.info(arr);
+
+    this.ExecCommand([
+      { key: CommandKey.Clear },
+      { key: CommandKey.SetRange,
+        area: {start: {row: 0, column: 0}, end },
+        value: arr,
+      },
+
+      // we took this out because the data may require a layout update
+      // (rebuilding tiles); in that case, this will be duplicative. maybe
+      // should use setTimeout or some sort of queue...
+
+      // { key: CommandKey.ResizeColumns }, // auto
+    ]);
+
   }
 
   /**
    * show or hide headers
    */
   public ShowHeaders(show = true) {
-    this.model.sheet.SetHeaderSize(show ? undefined : 1, show ? undefined : 1);
-    this.QueueLayoutUpdate();
-    this.Repaint();
+    this.ExecCommand({
+      key: CommandKey.ShowHeaders,
+      show,
+    });
   }
 
+  /**
+   * why does this not take the composite object? (...)
+   * A: it's used for xlsx import. still, we could wrap it.
+   */
   public FromData(
       cell_data: any[],
       column_widths: number[],
@@ -488,16 +531,6 @@ export class Grid {
       }
     }
 
-    // restore document freeze. don't show highlight. ALSO unfreeze if not
-    // set, as this might be a reset/clear
-
-    if ((data as any).freeze) {
-      this.Freeze((data as any).freeze.rows || 0, (data as any).freeze.columns || 0, false);
-    }
-    else {
-      this.Freeze(0, 0, false);
-    }
-
     // scrub, then add any sheet annotations. note the caller will
     // still have to inflate these or do whatever step is necessary to
     // render.
@@ -538,9 +571,7 @@ export class Grid {
     });
 
     if (render) {
-      // this.Repaint(true, true);
-      this.Repaint(false, false); // true, true);
-      // this.DelayedRender(true);
+      this.Repaint(false, false);
     }
   }
 
@@ -551,7 +582,7 @@ export class Grid {
    */
   public UpdateLayout() {
     this.layout.UpdateTiles();
-    this.render_state.render_tiles = this.layout.VisibleTiles();
+    this.render_tiles = this.layout.VisibleTiles();
     this.Repaint(true);
   }
 
@@ -707,7 +738,7 @@ export class Grid {
 
     // set local state and update
 
-    this.render_state.render_tiles = this.layout.VisibleTiles();
+    this.render_tiles = this.layout.VisibleTiles();
 
     // don't delay this, it looks terrible
 
@@ -963,9 +994,11 @@ export class Grid {
   }
 
   /**
-   * returns the primary selection
+   * returns the primary selection. we use a reference to the real selection
+   * sp callers can track; however, you can break things if you modify it.
+   * so don't modify it. FIXME: proxy view? (...)
+   *
    * API method
-   * FIXME: clone?
    */
   public GetSelection() {
     return this.primary_selection;
@@ -976,6 +1009,14 @@ export class Grid {
     this.DelayedRender(force, area);
   }
 
+  /**
+   * API method
+   *
+   * @param area
+   * @param borders
+   * @param color
+   * @param width
+   */
   public ApplyBorders(area?: Area, borders: BorderConstants = BorderConstants.None, color?: string, width = 1) {
 
     if (!area) {
@@ -997,35 +1038,9 @@ export class Grid {
 
   }
 
-  /**
-   *
-   */
-  public HighlightFreezeArea() {
-
-    if (this.theme.frozen_highlight_overlay) {
-
-      for (const node of [
-          this.layout.corner_selection,
-          this.layout.row_header_selection,
-          this.layout.column_header_selection ]) {
-
-        node.style.transition = 'background .33s, border-bottom-color .33s, border-right-color .33s';
-        node.style.background = this.theme.frozen_highlight_overlay;
-
-        if (this.theme.frozen_highlight_border) {
-          node.style.borderBottomColor = this.theme.frozen_highlight_border;
-          node.style.borderRightColor = this.theme.frozen_highlight_border;
-        }
-
-        setTimeout(() => {
-          node.style.background = 'transparent';
-          node.style.borderBottomColor = 'transparent';
-          node.style.borderRightColor = 'transparent';
-        }, 400);
-      }
-
-    }
-
+  /** return freeze area */
+  public GetFreeze() {
+    return {...this.model.sheet.freeze};
   }
 
   /**
@@ -1034,28 +1049,12 @@ export class Grid {
    * highglight is shown by default, but we can hide it(mostly for document load)
    */
   public Freeze(rows = 0, columns = 0, highlight_transition = true) {
-
-    if (rows === this.layout.freeze.rows &&
-        columns === this.layout.freeze.columns) {
-
-      if (highlight_transition) {
-        this.HighlightFreezeArea();
-      }
-
-      return;
-    }
-
-    this.layout.freeze.rows = rows;
-    this.layout.freeze.columns = columns;
-
-    this.QueueLayoutUpdate();
-    this.Repaint();
-
-
-    if (highlight_transition) {
-      this.HighlightFreezeArea();
-    }
-
+    this.ExecCommand({
+      key: CommandKey.Freeze,
+      rows,
+      columns,
+      highlight_transition,
+    });
   }
 
   /**
@@ -1091,7 +1090,6 @@ export class Grid {
     else {
       const before_row = area.start.row;
       const count = -area.rows; // negative means remove
-      // this.InsertRowsInternal(before_row, -count);
       this.ExecCommand({
         key: CommandKey.InsertRows,
         before_row,
@@ -1122,22 +1120,10 @@ export class Grid {
     });
   }
 
-  /* *
-   * insert row at cursor
-   * /
-  public InsertRow() {
-    if (this.primary_selection.empty) { return; }
-    const area = this.primary_selection.area;
-    const before_row = area.entire_column ? 0 : area.start.row;
-    this.InsertRowsInternal(before_row, 1);
-  }
-  */
-
   /**
    * insert rows(s) at some specific point
    */
   public InsertRows(before_row = 0, count = 1) {
-    // this.InsertRowsInternal(before_row, count);
     this.ExecCommand({
       key: CommandKey.InsertRows,
       before_row,
@@ -1174,6 +1160,38 @@ export class Grid {
   }
 
   // --- private methods -------------------------------------------------------
+
+  /**
+   * why is this not in layout? (...)
+   * how is this layout? it's an effect. make an effects class.
+   */
+  private HighlightFreezeArea() {
+
+    if (this.theme.frozen_highlight_overlay) {
+
+      for (const node of [
+          this.layout.corner_selection,
+          this.layout.row_header_selection,
+          this.layout.column_header_selection ]) {
+
+        node.style.transition = 'background .33s, border-bottom-color .33s, border-right-color .33s';
+        node.style.background = this.theme.frozen_highlight_overlay;
+
+        if (this.theme.frozen_highlight_border) {
+          node.style.borderBottomColor = this.theme.frozen_highlight_border;
+          node.style.borderRightColor = this.theme.frozen_highlight_border;
+        }
+
+        setTimeout(() => {
+          node.style.background = 'transparent';
+          node.style.borderBottomColor = 'transparent';
+          node.style.borderRightColor = 'transparent';
+        }, 400);
+      }
+
+    }
+
+  }
 
   /**
    * layout has changed, and needs update. we clear the rectangle cache
@@ -1360,7 +1378,7 @@ export class Grid {
     if (this.tile_update_pending) {
       this.tile_update_pending = false;
       this.layout.UpdateTiles();
-      this.render_state.render_tiles = this.layout.VisibleTiles();
+      this.render_tiles = this.layout.VisibleTiles();
       this.layout.UpdateAnnotation(this.annotations);
       this.grid_events.Publish({type: 'structure'});
     }
@@ -1381,8 +1399,8 @@ export class Grid {
       }
     }
 
-    const start = this.render_state.render_tiles.start;
-    const end = this.render_state.render_tiles.end;
+    const start = this.render_tiles.start;
+    const end = this.render_tiles.end;
 
     const row_list = [];
     for (let row = start.row; row <= end.row; row++) row_list.push(row);
@@ -1391,8 +1409,8 @@ export class Grid {
     for (let column = start.column; column <= end.column; column++) column_list.push(column);
 
     // FIXME: multiple tiles
-    if (start.row > 0 && this.layout.freeze.rows) row_list.push(0);
-    if (start.column > 0 && this.layout.freeze.columns) column_list.push(0);
+    if (start.row > 0 && this.model.sheet.freeze.rows) row_list.push(0);
+    if (start.column > 0 && this.model.sheet.freeze.columns) column_list.push(0);
 
     for (const column of column_list) {
       for (const row of row_list) {
@@ -1404,7 +1422,7 @@ export class Grid {
       }
     }
 
-    this.tile_renderer.RenderHeaders(this.render_state.render_tiles, force_headers);
+    this.tile_renderer.RenderHeaders(this.render_tiles, force_headers);
     this.tile_renderer.RenderCorner();
 
   }
@@ -2371,6 +2389,10 @@ export class Grid {
   /**
    * select a block. returns true if we've handled it; returns false
    * if we want to revert to the standard behavior.
+   *
+   * (block selection refers to selecting more than one cell at once,
+   * using ctrl+arrow. selection jumps across all populated cells in
+   * a given direction for a given row/column).
    */
   private BlockSelection(selection: GridSelection, expand_selection: boolean,
     columns: number, rows: number, render = true): boolean {
@@ -3421,8 +3443,8 @@ export class Grid {
 
   private OnScroll() {
     const tiles = this.layout.VisibleTiles();
-    if (!tiles.Equals(this.render_state.render_tiles)) {
-      this.render_state.render_tiles = tiles;
+    if (!tiles.Equals(this.render_tiles)) {
+      this.render_tiles = tiles;
       if (!this.layout_token) {
 
         // why raf here and not dispatcher?
@@ -3438,8 +3460,8 @@ export class Grid {
     /*
     this.container.addEventListener('scroll', (event) => {
       const tiles = this.layout.VisibleTiles();
-      if (!tiles.Equals(this.render_state.render_tiles)) {
-        this.render_state.render_tiles = tiles;
+      if (!tiles.Equals(this.render_tiles)) {
+        this.render_tiles = tiles;
         if (!this.layout_token) {
           this.layout_token = requestAnimationFrame(() => this.Repaint());
         }
@@ -3755,15 +3777,48 @@ export class Grid {
     return selections.filter((selection) => !selection.empty);
   }
 
+  private FreezeInternal(command: FreezeCommand) {
+
+    // default true
+    const highlight = ((typeof command.highlight_transition) === 'boolean')
+      ? command.highlight_transition
+      : true;
+
+//    if (command.rows === this.layout.freeze.rows &&
+//      command.columns === this.layout.freeze.columns) {
+    if (command.rows === this.model.sheet.freeze.rows &&
+        command.columns === this.model.sheet.freeze.columns) {
+          if (highlight) {
+        this.HighlightFreezeArea();
+      }
+      return;
+    }
+
+    // this.layout.freeze.rows = command.rows;
+    // this.layout.freeze.columns = command.columns;
+    this.model.sheet.freeze.rows = command.rows;
+    this.model.sheet.freeze.columns = command.columns;
+
+    // FIXME: should we do this via events? (...)
+
+    this.QueueLayoutUpdate();
+    this.Repaint();
+
+    if (highlight) {
+      this.HighlightFreezeArea();
+    }
+
+  }
+
   /**
    * FIXME: should be API method
    * FIXME: need to handle annotations that are address-based
    * 
    * @see InsertColumns for inline comments
    */
-  private InsertRowsInternal(before_row = 0, count = 1) {
+  private InsertRowsInternal(command: InsertRowsCommand) { // before_row = 0, count = 1) {
 
-    this.model.sheet.InsertRows(before_row, count);
+    this.model.sheet.InsertRows(command.before_row, command.count);
 
     // snip
 
@@ -3774,12 +3829,12 @@ export class Grid {
         if (parsed.expression) {
           this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
             if (element.type === 'address') {
-              if (element.row >= before_row) {
-                if (count < 0 && element.row + count < before_row) {
+              if (element.row >= command.before_row) {
+                if (command.count < 0 && element.row + command.count < command.before_row) {
                   element.column = element.row = -1;
                 }
                 else {
-                  element.row += count;
+                  element.row += command.count;
                 }
                 modified = true;
               }
@@ -3795,23 +3850,23 @@ export class Grid {
 
     // fix selections
 
-    if (count < 0) {
+    if (command.count < 0) {
       for (const selection of this.AllSelections()) {
         selection.empty = true; // lazy
       }
     }
     else {
       for (const selection of this.AllSelections()) {
-        if (selection.target.row >= before_row) {
-          selection.target.row += count;
+        if (selection.target.row >= command.before_row) {
+          selection.target.row += command.count;
         }
         if (!selection.area.entire_column) {
-          if (selection.area.start.row >= before_row) {
-            selection.area.Shift(count, 0);
+          if (selection.area.start.row >= command.before_row) {
+            selection.area.Shift(command.count, 0);
           }
-          else if (selection.area.end.row >= before_row) {
+          else if (selection.area.end.row >= command.before_row) {
             selection.area.ConsumeAddress({
-              row: selection.area.end.row + count,
+              row: selection.area.end.row + command.count,
               column: selection.area.end.column,
             }); // expand
           }
@@ -3840,9 +3895,9 @@ export class Grid {
    * FIXME: should be API method
    * FIXME: need to handle annotations that are address-based
    */
-  private InsertColumnsInternal(before_column = 0, count = 1) {
+  private InsertColumnsInternal(command: InsertColumnsCommand) { // before_column = 0, count = 1) {
 
-    this.model.sheet.InsertColumns(before_column, count);
+    this.model.sheet.InsertColumns(command.before_column, command.count);
 
     // snip
 
@@ -3853,12 +3908,12 @@ export class Grid {
         if (parsed.expression) {
           this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
             if (element.type === 'address') {
-              if (element.column >= before_column) {
-                if (count < 0 && element.column + count < before_column) {
+              if (element.column >= command.before_column) {
+                if (command.count < 0 && element.column + command.count < command.before_column) {
                   element.column = element.row = -1;
                 }
                 else {
-                  element.column += count;
+                  element.column += command.count;
                 }
                 modified = true;
               }
@@ -3919,24 +3974,24 @@ export class Grid {
    
     // fix selection(s)
 
-    if (count < 0) {
+    if (command.count < 0) {
       for (const selection of this.AllSelections()) {
         selection.empty = true; // lazy
       }
     }
     else {
       for (const selection of this.AllSelections()) {
-        if (selection.target.column >= before_column) {
-          selection.target.column += count;
+        if (selection.target.column >= command.before_column) {
+          selection.target.column += command.count;
         }
         if (!selection.area.entire_row) {
-          if (selection.area.start.column >= before_column) {
-            selection.area.Shift(0, count);
+          if (selection.area.start.column >= command.before_column) {
+            selection.area.Shift(0, command.count);
           }
-          else if (selection.area.end.column >= before_column) {
+          else if (selection.area.end.column >= command.before_column) {
             selection.area.ConsumeAddress({
               row: selection.area.end.row,
-              column: selection.area.end.column + count,
+              column: selection.area.end.column + command.count,
             }); // expand
           }
         }
@@ -3970,12 +4025,13 @@ export class Grid {
    * updates and returns the affected area.
    * 
    */
-  private ApplyBordersInternal(area: Area, borders: BorderConstants = BorderConstants.None,
-      color?: string, width = 1) {
+  private ApplyBordersInternal(command: UpdateBordersCommand) {
 
-    if (borders === BorderConstants.None) {
-      width = 0;
-    }
+    const borders = command.borders;
+    const width = (command.borders === BorderConstants.None)
+      ? 0 : command.width;
+
+    const area = new Area(command.area.start, command.area.end);
 
     const top: Style.Properties = { border_top: width };
     const bottom: Style.Properties = { border_bottom: width };
@@ -3987,11 +4043,11 @@ export class Grid {
     const clear_left: Style.Properties = { border_left: 0 };
     const clear_right: Style.Properties = { border_right: 0 };
 
-    if (typeof color !== 'undefined') {
-      top.border_top_color = color;
-      bottom.border_bottom_color = color;
-      left.border_left_color = color;
-      right.border_right_color = color;
+    if (typeof command.color !== 'undefined') {
+      top.border_top_color =
+        bottom.border_bottom_color =
+        left.border_left_color =
+        right.border_right_color = command.color;
     }
 
     // inside all/none
@@ -4107,6 +4163,20 @@ export class Grid {
    */
   private SetRangeInternal(command: SetRangeCommand) {
 
+    const area = IsCellAddress(command.area)
+      ? new Area(command.area)
+      : new Area(command.area.start, command.area.end);
+
+    if ( !area.entire_row && !area.entire_column && (
+        area.end.row >= this.model.sheet.rows
+        || area.end.column >= this.model.sheet.columns)) {
+
+      // we have to call this because the 'set area' method calls RealArea
+      this.model.sheet.cells.EnsureCell(area.end);
+      this.QueueLayoutUpdate();
+
+    }
+
     // originall we called sheet methods here, but all the sheet
     // does is call methods on the cells object -- we can shortcut.
 
@@ -4119,7 +4189,7 @@ export class Grid {
       // single cell
 
       this.model.sheet.SetCellValue2(command.area, command.value);
-      return new Area(command.area);
+      return area;
     }
     else {
 
@@ -4131,8 +4201,6 @@ export class Grid {
       // SetAreaValue -- single value repeated in range
 
       // FIXME: clean this up!
-
-      const area = new Area(command.area.start, command.area.end);
 
       if (command.array) {
         this.model.sheet.SetArrayValue2(area, command.value);
@@ -4187,11 +4255,19 @@ export class Grid {
         }
         else {
           this.UpdateSheet(new Sheet().toJSON(), true);
+          this.RemoveAllAnnotations();
+          this.ClearSelection(this.primary_selection);
+          this.ScrollIntoView({row: 0, column: 0});
+          this.QueueLayoutUpdate(); // necessary? (...)
         }
         break;
 
       case CommandKey.Select:
         // ...
+        break;
+
+      case CommandKey.Freeze:
+        this.FreezeInternal(command);
         break;
 
       case CommandKey.MergeCells:
@@ -4251,13 +4327,7 @@ export class Grid {
         break;
 
       case CommandKey.UpdateBorders:
-        {
-          const area = IsCellAddress(command.area)
-            ? new Area(command.area)
-            : new Area(command.area.start, command.area.end);
-          const applied_area = this.ApplyBordersInternal(area, command.borders, command.color, command.width);
-          render_area = Area.Join(applied_area, render_area);
-        }
+        render_area = Area.Join(this.ApplyBordersInternal(command), render_area);
         break;
 
       case CommandKey.ResizeRows:
@@ -4276,7 +4346,7 @@ export class Grid {
           }
           else {
             for (const entry of row) {
-              this.model.sheet.AutoSizeRow(entry);
+              this.model.sheet.AutoSizeRow(entry, true);
             }
           }
 
@@ -4327,12 +4397,42 @@ export class Grid {
         }
         break;
 
+      case CommandKey.ShowHeaders:
+
+        // FIXME: now that we don't support 2-level headers (or anything
+        // other than 1-level headers), headers should be managed by/move into
+        // the grid class.
+
+        this.model.sheet.SetHeaderSize(command.show ? undefined : 1, command.show ? undefined : 1);
+        this.QueueLayoutUpdate();
+        this.Repaint();
+        break;
+
       case CommandKey.InsertRows:
-        this.InsertRowsInternal(command.before_row, command.count);
+        this.InsertRowsInternal(command);
         break;
 
       case CommandKey.InsertColumns:
-        this.InsertColumnsInternal(command.before_column, command.count);
+        this.InsertColumnsInternal(command);
+        break;
+
+      case CommandKey.SetNote:
+        {
+          const cell = this.cells.GetCell(command.address, true);
+          if (cell) {
+            const area = new Area(command.address);
+
+            cell.SetNote(command.note);
+            this.DelayedRender(false, area);
+
+            // treat this as style, because it affects painting but
+            // does not require calculation.
+
+            style_area = Area.Join(area, style_area);
+            render_area = Area.Join(area, render_area);
+
+          }
+        }
         break;
 
       case CommandKey.SetRange:
@@ -4350,7 +4450,7 @@ export class Grid {
         break;
 
       default:
-        console.warn('unhandled command:', command.key);
+        console.warn(`unhandled command: ${CommandKey[command.key]} (${command.key})`);
       }
     }
 

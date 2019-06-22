@@ -34,6 +34,9 @@ export enum CommandKey {
   UnmergeCells,
   Clear,
   UpdateTheme,
+  SetNote,
+  Freeze,
+  ShowHeaders,
 
 }
 
@@ -84,6 +87,11 @@ export interface InsertColumnsCommand extends CommandBase {
   count: number;
 }
 
+/** show or hide headers */
+export interface ShowHeadersCommand extends CommandBase {
+  key: CommandKey.ShowHeaders;
+  show: boolean;
+}
 
 /**
  * not sure if we should be serializing selections...
@@ -150,9 +158,30 @@ export interface UnmergeCellsCommand extends CommandBase {
   area: IArea;
 }
 
+/** set or clear note at given address. */
+export interface SetNoteCommand extends CommandBase {
+  key: CommandKey.SetNote;
+  address: ICellAddress;
+  note?: string;
+}
+
+/**
+ * clear an area, or the entire sheet
+ */
 export interface ClearCommand extends CommandBase {
   key: CommandKey.Clear;
   area?: IArea;
+}
+
+/**
+ * set freeze area. set rows and columns to 0 to unfreeze.
+ * highlight defaults to TRUE.
+ */
+export interface FreezeCommand extends CommandBase {
+  key: CommandKey.Freeze;
+  rows: number;
+  columns: number;
+  highlight_transition?: boolean;
 }
 
 /**
@@ -168,19 +197,21 @@ export interface NullCommand extends CommandBase {
   key: CommandKey.Null;
 }
 
-
 export type Command
-  = InsertRowsCommand
-  | InsertColumnsCommand
-  | ResizeRowsCommand
-  | ResizeColumnsCommand
-  | SetRangeCommand
-  | SelectCommand
-  | MergeCellsCommand
-  | UnmergeCellsCommand
-  | UpdateStyleCommand
-  | UpdateBordersCommand
+  = NullCommand
   | ClearCommand
-  | NullCommand
+  | SelectCommand
+  | FreezeCommand
+  | SetNoteCommand
+  | SetRangeCommand
+  | MergeCellsCommand
+  | ResizeRowsCommand
+  | InsertRowsCommand
+  | UpdateStyleCommand
+  | UnmergeCellsCommand
+  | ResizeColumnsCommand
+  | ShowHeadersCommand
+  | InsertColumnsCommand
+  | UpdateBordersCommand
   ;
 
