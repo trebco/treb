@@ -197,14 +197,16 @@ export class Sheet {
   /**
    * optionally, custom row headers (instead of 1...2...3...)
    * FIXME: should maybe be a function instead?
+   * FIXME: why is this any type? just sloppiness?
    */
-  private row_headers: any[] = [];
+  private row_headers: string[] = [];
 
   /**
    * optionally, custom column headers (instead of A...B...C...)
    * FIXME: should maybe be a function instead?
+   * FIXME: why is this any type? just sloppiness?
    */
-  private column_headers: any[] = [];
+  private column_headers: string[] = [];
 
   /** size of header */
   private row_header_width = 100;
@@ -238,6 +240,7 @@ export class Sheet {
   private column_styles: { [index: number]: Style.Properties } = {};
 
   // and finally any cell-specific styles. [FIXME: this is sparse]
+  // [why FIXME? sparse is OK in js]
 
   private cell_style: Style.Properties[][] = [];
 
@@ -249,8 +252,10 @@ export class Sheet {
     return { x: this.row_header_width, y: this.column_header_height };
   }
 
+  /** accessor: now just a wrapper for the call on cells */
   public get rows() { return this.cells.rows; }
 
+  /** accessor: now just a wrapper for the call on cells */
   public get columns() { return this.cells.columns; }
 
   // --- public methods -------------------------------------------------------
@@ -730,6 +735,9 @@ export class Sheet {
   /**
    * if the cell is in an array, returns the array as an Area.
    * if not, returns falsy (null or undefined).
+   *
+   * FIXME: is this used? seems like the caller could do this
+   * calculation.
    */
   public ContainingArray(address: ICellAddress): Area | undefined {
     const cell = this.cells.GetCell(address);
@@ -1439,6 +1447,10 @@ export class Sheet {
   public FlushCellStyles() {
     this.style_map = [];
     this.style_json_map = [];
+
+    // it seems like we could add a method to cells to do this without
+    // all the overhead. @see FlushCachedValues
+
     this.cells.IterateAll((cell: Cell) => cell.FlushStyle());
   }
 
@@ -1593,6 +1605,8 @@ export class Sheet {
 
     this.sheet_events.Publish({ type: 'style', area });
 
+    // trace (we are trying to remove all calls)
+
     if (log) console.info("PSE", log);
 
   }
@@ -1640,6 +1654,12 @@ export class Sheet {
   }
 
   private FlushCachedValues() {
+
+    // it seems like we could add a method to cells that
+    // would do this without the overhead.
+
+    // ...
+
     this.cells.IterateAll((cell: Cell) => cell.FlushCache());
   }
 
