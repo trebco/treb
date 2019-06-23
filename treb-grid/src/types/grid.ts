@@ -37,11 +37,20 @@ interface DoubleClickData {
   address?: ICellAddress;
 }
 
+export interface CommandRecord {
+  command: Command[];
+  timestamp: number;
+}
+
 export class Grid {
 
   // --- public members --------------------------------------------------------
 
+  /** events */
   public grid_events = new EventSource<GridEvent>();
+
+  /** for recording */
+  public command_log = new EventSource<CommandRecord>();
 
   /**
    * this should not be public -- clients should only interact with the API.
@@ -88,7 +97,7 @@ export class Grid {
    * switch the member to an accessor (DM will have to become a class)
    */
   private readonly model: DataModel = {
-    sheet: this.BlankSheet(),
+    sheet: Sheet.Blank(100, 26),
   };
 
   /** containing element, passed in */
@@ -1334,18 +1343,6 @@ export class Grid {
       }
     });
   }
-
-  private BlankSheet() {
-
-    const data: any[][] = [];
-    const column: any[] = [];
-
-    for (let r = 0; r < 100; r++) column.push('');
-    for (let c = 0; c < 26; c++) data.push(column.slice(0));
-
-    return Sheet.FromArray(data);
-  }
-
 
   private DelayedRender(force = false, area?: Area, full_tile = false) {
 
@@ -4241,6 +4238,9 @@ export class Grid {
 
     // this seems like the dumb way to do this... maybe?
     if (!Array.isArray(commands)) commands = [commands];
+
+    // gate on subscribers? (...)
+    this.command_log.Publish({command: commands, timestamp: new Date().getTime()});
 
     for (const command of commands) {
 

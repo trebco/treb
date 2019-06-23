@@ -24,6 +24,14 @@ export class Sheet {
 
   // --- class methods --------------------------------------------------------
 
+  public static Blank(rows = 100, columns = 26) {
+    const sheet = new Sheet();
+    rows = Math.max(rows, 1);
+    columns = Math.max(columns, 1);
+    sheet.cells.EnsureCell({row: rows - 1, column: columns - 1});
+    return sheet;
+  }
+
   /**
    * deserialize json representation. returns new instance or updates
    * passed instance.

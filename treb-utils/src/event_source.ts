@@ -42,8 +42,16 @@ export class EventSource<T> implements IEventSource<T> {
     }
 
     // here's our updated synchronous mechanism, passing through
+    // FIXME: no one uses this (I think). drop it.
 
     this.pass_through.forEach((source) => source.Publish(event));
+
+    // don't bother if there are no subscribers (implies you must
+    // subscribe before first event... not sure if that's reasonable)
+
+    if (!this.subscribers.length) {
+      return; // ...
+    }
 
     // queue event or events
 
