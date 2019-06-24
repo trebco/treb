@@ -13,6 +13,7 @@ import { SheetEvent, UpdateHints } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
 
 import * as ModuleInfo from '@root/package.json';
+import { Theme } from './theme';
 
 // --- constants --------------------------------------------------------------
 
@@ -471,6 +472,17 @@ export class Sheet {
     const width = this.column_width_[column];
     if (typeof width === 'undefined') return this.default_column_width;
     return width;
+  }
+
+  /**
+   * apply theme. sets some fonts in sheet.
+   * @param theme
+   */
+  public ApplyTheme(theme: Theme) {
+    this.UpdateSheetStyle({
+      font_face: theme.cell_font,
+      font_size: theme.cell_font_size,
+    }, true, true);
   }
 
   /**

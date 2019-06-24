@@ -494,25 +494,7 @@ export class Grid {
 
     this.QueueLayoutUpdate();
 
-    /*
-    this.model.sheet.UpdateSheetStyle({
-      font_face: this.theme.cell_font,
-      font_size: this.theme.cell_font_size,
-    }, true, true);
-    */
-
-    this.ExecCommand({
-      key: CommandKey.UpdateStyle,
-      area: new Area(
-        { row: Infinity, column: Infinity },
-        { row: Infinity, column: Infinity },
-      ),
-      style: {
-        font_face: this.theme.cell_font,
-        font_size: this.theme.cell_font_size,
-      },
-      delta: true,
-    });
+    this.model.sheet.ApplyTheme(this.theme);
 
     if (render) {
       this.Repaint(false, false); // true, true);
@@ -556,25 +538,7 @@ export class Grid {
 
     this.QueueLayoutUpdate();
 
-    /*
-    this.model.sheet.UpdateSheetStyle({
-      font_face: this.theme.cell_font,
-      font_size: this.theme.cell_font_size,
-    }, true, true);
-    */
-
-    this.ExecCommand({
-      key: CommandKey.UpdateStyle,
-      area: new Area(
-        { row: Infinity, column: Infinity },
-        { row: Infinity, column: Infinity },
-      ),
-      style: {
-        font_face: this.theme.cell_font,
-        font_size: this.theme.cell_font_size,
-      },
-      delta: true,
-    });
+    this.model.sheet.ApplyTheme(this.theme);
 
     if (render) {
       this.Repaint(false, false);
@@ -640,30 +604,7 @@ export class Grid {
 
     // update style for theme
 
-    /*
-    this.model.sheet.UpdateSheetStyle({
-      font_face: this.theme.cell_font,
-      font_size: this.theme.cell_font_size,
-    });
-    */
-
-    // FIXME: this should be a composite command...
-    // FIXME: there should be a more generic "set sheet theme" thing,
-    // like with the editors
-
-    this.ExecCommand({
-      key: CommandKey.UpdateStyle,
-      area: new Area(
-        { row: Infinity, column: Infinity },
-        { row: Infinity, column: Infinity },
-      ),
-      style: {
-        font_face: this.theme.cell_font,
-        font_size: this.theme.cell_font_size,
-      },
-      delta: true,
-    });
-
+    this.model.sheet.ApplyTheme(this.theme);
     this.layout.ApplyTheme(this.theme);
 
     if (!initial) {
