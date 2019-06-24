@@ -215,3 +215,10 @@ export type Command
   | UpdateBordersCommand
   ;
 
+/**
+ * record type for recording/logging commands
+ */
+export interface CommandRecord {
+  command: Command[];
+  timestamp: number;
+}

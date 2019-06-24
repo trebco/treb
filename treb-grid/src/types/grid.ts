@@ -28,7 +28,8 @@ import { UA } from '../util/ua';
 import { Annotation } from './annotation';
 import { Autocomplete } from '../editors/autocomplete';
 
-import { Command, CommandKey, SetRangeCommand, FreezeCommand, UpdateBordersCommand,
+import { Command, CommandKey, CommandRecord,
+         SetRangeCommand, FreezeCommand, UpdateBordersCommand,
          InsertRowsCommand, InsertColumnsCommand } from './grid-command';
 import { DataModel } from './data_model';
 
@@ -37,10 +38,6 @@ interface DoubleClickData {
   address?: ICellAddress;
 }
 
-export interface CommandRecord {
-  command: Command[];
-  timestamp: number;
-}
 
 export class Grid {
 
@@ -1107,16 +1104,15 @@ export class Grid {
     }
   }
 
-  /* *
+  /**
    * insert column at cursor
-   * /
+   */
   public InsertColumn() {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
     const before_column = area.entire_row ? 0 : area.start.column;
-    this.InsertColumnsInternal(before_column, 1);
+    this.InsertColumns(before_column, 1);
   }
-  */
 
   /**
    * insert column(s) at some specific point
@@ -1124,9 +1120,19 @@ export class Grid {
   public InsertColumns(before_column = 0, count = 1) {
     this.ExecCommand({
       key: CommandKey.InsertColumns,
-      before_column, 
+      before_column,
       count,
     });
+  }
+
+  /**
+   * insert row at cursor
+   */
+  public InsertRow() {
+    if (this.primary_selection.empty) { return; }
+    const area = this.primary_selection.area;
+    const before_row = area.entire_column ? 0 : area.start.row;
+    this.InsertRows(before_row, 1);
   }
 
   /**
@@ -4355,9 +4361,10 @@ export class Grid {
             {column: Infinity, row: row[row.length - 1]});
 
           this.layout.UpdateTileHeights(true);
+          this.render_tiles = this.layout.VisibleTiles();
+
           this.Repaint(false, true); // repaint full tiles
           this.layout.UpdateAnnotation(this.annotations);
-          // events.push({type: 'structure'}); // FIXME: no queued update?
           structure_event = true;
         }
         break;
@@ -4389,9 +4396,10 @@ export class Grid {
             {row: Infinity, column: column[column.length - 1]});
 
           this.layout.UpdateTileWidths(true);
+          this.render_tiles = this.layout.VisibleTiles();
+
           this.Repaint(false, true); // repaint full tiles
           this.layout.UpdateAnnotation(this.annotations);
-          // events.push({type: 'structure'}); // FIXME: no queued update?
           structure_event = true;
 
         }
