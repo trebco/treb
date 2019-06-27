@@ -1,6 +1,6 @@
 
 // treb imports
-import { Grid, GridEvent, SerializeOptions, Annotation } from 'treb-grid';
+import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { Calculator, CalculationWorker, WorkerMessage, WorkerMessageType,
          LeafVertex } from 'treb-calculator';
@@ -457,6 +457,59 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   public ScrollTo(address: string | ICellAddress) {
     this.grid.ScrollTo(this.EnsureAddress(address));
+  }
+
+  /**
+   * API function: insert at current cursor
+   */
+  public InsertRow() {
+    this.grid.InsertRow();
+    this.calculator.Reset(false); // FIXME: why not run this off the 'structure' event, which will be sent? (...)
+  }
+
+  /**
+   * API function: insert at current cursor
+   */
+  public InsertColumn() {
+    this.grid.InsertColumn();
+    this.calculator.Reset(false);
+  }
+
+  /**
+   * API function: delete selection
+   */
+  public DeleteRows() {
+    this.grid.DeleteRows();
+    this.calculator.Reset(false);
+  }
+
+  /**
+   * API function: delete selection
+   */
+  public DeleteColumns() {
+    this.grid.DeleteColumns();
+    this.calculator.Reset(false);
+  }
+
+  /**
+   * API function: apply borders to current selection
+   */
+  public ApplyBorders(borders: BorderConstants, width = 1) {
+    this.grid.ApplyBorders(undefined, borders, undefined, width);
+  }
+
+  /**
+   * API function: merge current selection
+   */
+  public MergeCells() {
+    this.grid.MergeSelection();
+  }
+
+  /**
+   * API function: unmerge current selection
+   */
+  public UnmergeCells() {
+    this.grid.UnmergeSelection();
   }
 
   /**

@@ -301,7 +301,7 @@ export class Sheet {
       if (c !== area.start.column || r !== area.start.row) cell.Reset();
     }, true);
 
-    return this.sheet_events.Publish({ type: 'data', area });
+    // caller // return this.sheet_events.Publish({ type: 'data', area });
 
   }
 
@@ -329,7 +329,7 @@ export class Sheet {
 
     if (inline) return; // support batching events
 
-    return this.sheet_events.Publish({ type: 'data', area });
+    // caller // return this.sheet_events.Publish({ type: 'data', area });
 
   }
 

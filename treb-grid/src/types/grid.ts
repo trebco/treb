@@ -834,41 +834,11 @@ export class Grid {
    * API method
    */
   public SetRowHeight(row?: number|number[], height?: number) {
-
     this.ExecCommand({
       key: CommandKey.ResizeRows,
       row,
       height,
     });
-
-    /*
-    if (typeof row === 'undefined') {
-      row = [];
-      for (let i = 0; i < this.model.sheet.rows; i++) row.push(i);
-    }
-
-    if (typeof row === 'number') row = [row];
-    if (typeof height === 'number') {
-      for (const entry of row) {
-        this.model.sheet.RowHeight(entry, height, true);
-      }
-    }
-    else {
-      for (const entry of row) {
-        this.model.sheet.AutoSizeRow(entry);
-      }
-    }
-
-    const area = new Area(
-      {column: Infinity, row: row[0]},
-      {column: Infinity, row: row[row.length - 1]});
-
-    this.layout.UpdateTileHeights(true);
-    this.Repaint(false, true); // repaint full tiles
-    this.layout.UpdateAnnotation(this.annotations);
-    this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
-      */
-
   }
 
   /**
@@ -878,41 +848,11 @@ export class Grid {
    * @param width target width, or undefined means auto-size
    */
   public SetColumnWidth(column?: number|number[], width = 0) {
-
     this.ExecCommand({
       key: CommandKey.ResizeColumns,
       column,
       width,
     });
-
-    /*
-    if (typeof column === 'undefined') {
-      column = [];
-      for (let i = 0; i < this.model.sheet.columns; i++) column.push(i);
-    }
-
-    if (typeof column === 'number') column = [column];
-    if (typeof width === 'number') {
-      for (const entry of column) {
-        this.model.sheet.ColumnWidth(entry, width, true);
-      }
-    }
-    else {
-      for (const entry of column) {
-        this.model.sheet.AutoSizeColumn(entry, false, true);
-      }
-    }
-
-    const area = new Area(
-      {row: Infinity, column: column[0]},
-      {row: Infinity, column: column[column.length - 1]});
-
-    this.layout.UpdateTileWidths(true);
-    this.Repaint(false, true); // repaint full tiles
-    this.layout.UpdateAnnotation(this.annotations);
-    this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
-    */
-
   }
 
   /**
@@ -937,7 +877,6 @@ export class Grid {
       delta,
     });
 
-    // this.model.sheet.UpdateAreaStyle(area, properties, delta, true, false);
   }
 
   /**
@@ -4220,9 +4159,15 @@ export class Grid {
       case CommandKey.MergeCells:
         this.model.sheet.MergeCells(
           new Area(command.area.start, command.area.end));
+
         render_area = Area.Join(command.area, render_area);
-        // events.push({type: 'structure'});
+
+        // FIXME: sheet publishes a data event here, too. probably a good
+        // idea because references to the secondary (non-head) merge cells
+        // will break.
+
         structure_event = true;
+        data_area = Area.Join(command.area, data_area);
         break;
 
       case CommandKey.UnmergeCells:
@@ -4250,8 +4195,10 @@ export class Grid {
             this.model.sheet.UnmergeCells(list[keys[i]], i !== keys.length - 1);
           }
 
+          // see above
+
           render_area = Area.Join(command.area, render_area);
-          // events.push({type: 'structure'});
+          data_area = Area.Join(command.area, data_area);
           structure_event = true;
         }
         break;

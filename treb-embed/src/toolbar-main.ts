@@ -14,6 +14,7 @@ const XlinkNS = 'http://www.w3.org/1999/xlink';
 
 import { symbol_defs } from './toolbar/symbol-defs';
 import { Area } from 'treb-base-types';
+import { BorderConstants } from '@root/treb-grid/src';
 
 export class FormattingToolbar {
 
@@ -224,6 +225,9 @@ export class FormattingToolbar {
       if (merged && (
           data.merge_area.start.row !== this.primary_selection.target.row ||
           data.merge_area.start.column !== this.primary_selection.target.column)) {
+
+          console.info('check: ma');
+
         data = (this.sheet as any).grid.model.sheet.CellData(data.merge_area.start);
       }
 
@@ -276,19 +280,18 @@ export class FormattingToolbar {
       case 'structure':
         switch (template.value) {
           case 'insert row':
-            (this.sheet as any).grid.InsertRow();
+            this.sheet.InsertRow();
             break;
           case 'insert column':
-            (this.sheet as any).grid.InsertColumn();
+            this.sheet.InsertColumn();
             break;
           case 'delete row':
-            (this.sheet as any).grid.DeleteRows();
+            this.sheet.DeleteRows();
             break;
           case 'delete column':
-            (this.sheet as any).grid.DeleteColumns();
+            this.sheet.DeleteColumns();
             break;
         }
-        (this.sheet as any).calculator.Reset(false);
         break;
 
       case 'run':
@@ -336,11 +339,11 @@ export class FormattingToolbar {
       */
 
       case 'merge':
-        (this.sheet as any).grid.MergeSelection();
+        this.sheet.MergeCells();
         break;
 
       case 'unmerge':
-        (this.sheet as any).grid.UnmergeSelection();
+        this.sheet.UnmergeCells();
         break;
 
       case 'number-format':
@@ -381,35 +384,35 @@ export class FormattingToolbar {
 
       case 'border-bottom':
         if (this.selection_style && this.selection_style.border_bottom === 1) {
-          (this.sheet as any).grid.ApplyBorders(undefined, 'bottom', undefined, 2);
+          this.sheet.ApplyBorders(BorderConstants.Bottom, 2);
         }
         else {
-          (this.sheet as any).grid.ApplyBorders(undefined, 'bottom');
+          this.sheet.ApplyBorders(BorderConstants.Bottom);
         }
         break;
 
       case 'border-all':
-        (this.sheet as any).grid.ApplyBorders(undefined, 'all');
+        this.sheet.ApplyBorders(BorderConstants.All);
         break;
 
       case 'border-outer':
-        (this.sheet as any).grid.ApplyBorders(undefined, 'outside');
+        this.sheet.ApplyBorders(BorderConstants.Outside);
         break;
 
       case 'border-right':
-        (this.sheet as any).grid.ApplyBorders(undefined, 'right');
+        this.sheet.ApplyBorders(BorderConstants.Right);
         break;
 
       case 'border-left':
-        (this.sheet as any).grid.ApplyBorders(undefined, 'left');
+        this.sheet.ApplyBorders(BorderConstants.Left);
         break;
 
       case 'border-top':
-        (this.sheet as any).grid.ApplyBorders(undefined, 'top');
+        this.sheet.ApplyBorders(BorderConstants.Top);
         break;
 
       case 'border-none':
-        (this.sheet as any).grid.ApplyBorders(undefined, 'none');
+        this.sheet.ApplyBorders(BorderConstants.None);
         break;
 
       case 'flush-simulation-results':
