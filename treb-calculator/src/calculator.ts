@@ -325,6 +325,7 @@ export class Calculator extends Graph {
     return this.expression_calculator.Calculate(expression, address);
   }
 
+  /*
   public StyleHints(expression: ExpressionUnit){
 
     let count = 0;
@@ -360,6 +361,7 @@ export class Calculator extends Graph {
     };
 
   }
+  */
 
   /**
    * rebuild the graph, and set cells as clean. the vertices need internal

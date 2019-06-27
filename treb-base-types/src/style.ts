@@ -55,10 +55,13 @@ export namespace Style {
     border_bottom_color?: string;
 
     // NEW
+    // FIXME: change name to editable, default true? (...)
 
     locked?: boolean;
 
-    [index: string]: any;
+    // ??
+
+    // [index: string]: any;
   }
 
   const ColorKeys = [
@@ -94,14 +97,21 @@ export namespace Style {
    * merge. returns a new object, does not update dest in place.
    */
   export const Merge = (dest: Properties, src: Properties, delta= true) => {
+
+    const properties: Properties = delta ? {...dest, ...src} : {...src};
+
+    /*
     const properties: Properties = {};
     if (delta) Object.keys(dest).forEach((key) => properties[key] = dest[key]);
     Object.keys(src).forEach((key) => properties[key] = src[key]);
+    */
+
     ColorKeys.forEach((key) => {
-      if (properties[key] === '') {
-        delete properties[key]; // rather not delete...
+      if ((properties as any)[key] === '') {
+        delete (properties as any)[key]; // rather not delete...
       }
     });
+
     return properties;
   };
 
@@ -110,21 +120,39 @@ export namespace Style {
    */
   export const Composite = (list: Properties[]) => {
 
-    const properties: Properties = {};
-    Object.keys(DefaultProperties).forEach((key) => properties[key] = DefaultProperties[key]);
+    // const properties: Properties = {};
+    // Object.keys(DefaultProperties).forEach((key) => properties[key] = DefaultProperties[key]);
 
+    /*
     list.forEach((item) => {
       Object.keys(item).forEach((key) => properties[key] = item[key]);
     });
+    */
 
-    return properties;
+    /*
+    for (const item of list) {
+      properties = { ...properties, ...item };
+    }
+    */
+
+    // return properties;
+
+    return list.reduce((composite, item) => ({...composite, ...item}),
+      {...DefaultProperties});
 
   };
 
   export const UpdateDefaultProperties = (opts: Properties) => {
-    Object.keys(opts).forEach((key) => {
-      DefaultProperties[key] = opts[key];
-    });
+
+    // can we assign this directly? (...)
+
+    const tmp = {
+      ...DefaultProperties,
+      ...opts,
+    };
+
+    DefaultProperties = tmp;
+
   };
 
   export const Font = (properties: Properties) => {

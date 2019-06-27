@@ -21,6 +21,17 @@ const DEFAULT_COLUMN_WIDTH = 100;
 const DEFAULT_ROW_HEIGHT = 22; // not used because it's based on font (theoretically)
 const DEFAULT_ROW_HEADER_WIDTH = 60;
 
+// ...
+
+type StyleKeys = keyof Style.Properties;
+
+interface CellStyleRef {
+  row: number;
+  column: number;
+  ref?: number;
+  style?: Style.Properties;
+}
+
 export class Sheet {
 
   // --- class methods --------------------------------------------------------
@@ -86,17 +97,20 @@ export class Sheet {
       sheet.cell_style = [];
 
       if (obj.cell_style_refs) {
-        (obj.cell_styles || []).forEach((cell_style: Style.Properties) => {
-          if (typeof cell_style.ref === 'number') {
+        // (obj.cell_styles || []).forEach((cell_style: Style.Properties) => {
+        (obj.cell_styles || []).forEach((cell_style: CellStyleRef) => {
+            if (typeof cell_style.ref === 'number') {
             cell_style.style =
               JSON.parse(JSON.stringify(obj.cell_style_refs[cell_style.ref])); // clone
           }
         });
       }
 
-      for (const cell_style of (obj.cell_styles || []) as Style.Properties[]) {
-        if (!sheet.cell_style[cell_style.column]) sheet.cell_style[cell_style.column] = [];
-        sheet.cell_style[cell_style.column][cell_style.row] = cell_style.style;
+      for (const cell_style of ((obj.cell_styles || []) as CellStyleRef[])) {
+        if (cell_style.style) {
+          if (!sheet.cell_style[cell_style.column]) sheet.cell_style[cell_style.column] = [];
+          sheet.cell_style[cell_style.column][cell_style.row] = cell_style.style;
+        }
       }
 
       sheet.sheet_style = obj.sheet_style;
@@ -1191,11 +1205,13 @@ export class Sheet {
             const with_style = this.CompositeStyleForCell({ row, column });
             const without_style = this.CompositeStyleForCell({ row, column }, false);
 
+            // ??? what does this do? It's hard to follow
+
             const refrow = ref[row];
             if (refrow) {
-              for (const key of Object.keys(refrow)) {
+              for (const key of Object.keys(refrow) as StyleKeys[]) {
                 if (!this.StyleEquals(with_style[key], without_style[key])) {
-                  replacement[key] = refrow[key];
+                  (replacement as any)[key] = refrow[key];
                 }
               }
             }
@@ -1512,7 +1528,9 @@ export class Sheet {
 
     // reverse-override...
 
-    const keys = Object.keys(properties);
+    // const keys = Object.keys(properties);
+    const keys = Object.keys(properties) as StyleKeys[];
+    // const keys = Object.keys(this.sheet_style) as StyleKeys[];
 
     for (const style_column of this.cell_style) {
       if (style_column) {
@@ -1553,7 +1571,10 @@ export class Sheet {
     // reverse-override... remove matching properties from cells in this row
     // (we can do this in-place)
 
-    const keys = Object.keys(properties);
+    // const keys = Object.keys(properties);
+    const keys = Object.keys(properties) as StyleKeys[];
+    // const keys = Object.keys(this.row_styles[row]) as StyleKeys[];
+
     for (const column of this.cell_style) {
       if (column && column[row]) {
 
@@ -1572,7 +1593,7 @@ export class Sheet {
         const override: Style.Properties = this.cell_style[i] ? this.cell_style[i][row] || {} : {};
         keys.forEach((key) => {
           if (typeof column_style[key] !== 'undefined') {
-            override[key] = properties[key];
+            (override as any)[key] = properties[key];
           }
         });
         if (Object.keys(override).length) {
@@ -1595,9 +1616,35 @@ export class Sheet {
   private UpdateColumnStyle(column: number, properties: Style.Properties, delta = true, inline = false) {
     this.column_styles[column] = Style.Merge(this.column_styles[column] || {}, properties, delta);
 
+    // returning to this function after a long time. so what this is doing
+    // is removing unecessary properties from style objects higher in the
+    // style chain, if those properties are overridden. note that this doesn't
+    // seem to prune now-empty styles, which it probably should...
+
+    // in essence, we have a containing style object
+    // { a: 1, c: 2 }
+    //
+    // then we iterate all cells in the column, and if there are any
+    // matching properties they're deleted; so if a cell has
+    // { a: 0, b: 1 }
+    //
+    // we drop the a property, so it becomes
+    // { b: 1 }
+    //
+    // note you can drop and re-create the cell style object, because the cell's
+    // reference is actually to a separate object (composited with the stack),
+    // and the reference is cleared so the composite will be rebuilt when it's
+    // needed next.
+
+    // NOTE this was broken anyway; it wasn't taking the merge into account...
+    // ALTHOUGH that breaks "remove-color" operations. I think the old way
+    // took into account that the styles would be relatively in sync already.
+
     // reverse-override... I think we only need to override _cell_ values.
 
-    const keys = Object.keys(properties);
+    const keys = Object.keys(properties) as StyleKeys[];
+    // const keys = Object.keys(this.column_styles[column]) as StyleKeys[];
+
     if (this.cell_style[column]) {
       for (const ref of this.cell_style[column]) {
         if (ref) {
