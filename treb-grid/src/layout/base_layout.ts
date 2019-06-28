@@ -497,7 +497,7 @@ export abstract class BaseLayout {
       y -= this.scroll_reference_node.scrollTop;
 
       for (let i = 0; i < this.model.sheet.freeze.rows; i++ ){
-        height += this.model.sheet.RowHeight(i);
+        height += this.model.sheet.GetRowHeight(i);
         if (height >= y) {
           result.row = i;
           return result;
@@ -515,7 +515,7 @@ export abstract class BaseLayout {
 
         result.row = tile.first_cell.row;
         for (; result.row <= tile.last_cell.row; result.row++ , top -= height) {
-          height = this.model.sheet.RowHeight(result.row);
+          height = this.model.sheet.GetRowHeight(result.row);
           if (height > top) {
             return result;
           }
@@ -541,7 +541,7 @@ export abstract class BaseLayout {
       x -= this.scroll_reference_node.scrollLeft;
 
       for (let i = 0; i < this.model.sheet.freeze.columns; i++){
-        width += this.model.sheet.ColumnWidth(i);
+        width += this.model.sheet.GetColumnWidth(i);
         if (width >= x) {
           result.column = i;
           return result;
@@ -560,7 +560,7 @@ export abstract class BaseLayout {
         result.column = tile.first_cell.column;
 
         for (; result.column <= tile.last_cell.column; result.column++ , left -= width) {
-          width = this.model.sheet.ColumnWidth(result.column);
+          width = this.model.sheet.GetColumnWidth(result.column);
           if (width > left) return result;
         }
 
@@ -613,10 +613,10 @@ export abstract class BaseLayout {
             result.column = cell.first_cell.column;
 
             for (; result.column <= cell.last_cell.column; result.column++ , left -= width) {
-              width = this.model.sheet.ColumnWidth(result.column);
+              width = this.model.sheet.GetColumnWidth(result.column);
               if (width > left) {
                 for (; result.row <= cell.last_cell.row; result.row++ , top -= height) {
-                  height = this.model.sheet.RowHeight(result.row);
+                  height = this.model.sheet.GetRowHeight(result.row);
                   if (height > top) {
                     return result;
                   }
@@ -775,7 +775,7 @@ export abstract class BaseLayout {
     let tile_column = 0;
 
     for (let c = 0; c < columns; c++){
-      const column_width = this.model.sheet.ColumnWidth(c);
+      const column_width = this.model.sheet.GetColumnWidth(c);
       if (tile_width && tile_width + column_width > this.default_tile_size.width){
 
         // push and move to the next tile, starting with this column
@@ -802,7 +802,7 @@ export abstract class BaseLayout {
     let tile_row = 0;
 
     for (let r = 0; r < rows; r++){
-      const row_height = this.model.sheet.RowHeight(r);
+      const row_height = this.model.sheet.GetRowHeight(r);
       if (tile_height && tile_height + row_height > this.default_tile_size.height){
         tile_heights.push(tile_height);
         tile_rows.push(tile_row);
@@ -828,10 +828,10 @@ export abstract class BaseLayout {
     let header_width = 0;
 
     for (let i = 0; i < this.model.sheet.freeze.rows; i++) {
-      header_height += this.model.sheet.RowHeight(i);
+      header_height += this.model.sheet.GetRowHeight(i);
     }
     for (let i = 0; i < this.model.sheet.freeze.columns; i++) {
-      header_width += this.model.sheet.ColumnWidth(i);
+      header_width += this.model.sheet.GetColumnWidth(i);
     }
 
     for (let c = 0; c < column_tile_count; c++ ) {
@@ -1086,7 +1086,7 @@ export abstract class BaseLayout {
       let height = 0;
 
       for (let r = tile.first_cell.row; r <= tile.last_cell.row; r++){
-        height += this.model.sheet.RowHeight(r);
+        height += this.model.sheet.GetRowHeight(r);
       }
 
       const height_match = (tile.logical_size.height === height);
@@ -1137,7 +1137,7 @@ export abstract class BaseLayout {
 
     if (this.model.sheet.freeze.rows) {
       let freeze_height = 0;
-      for (let i = 0; i < this.model.sheet.freeze.rows; i++) freeze_height += this.model.sheet.RowHeight(i);
+      for (let i = 0; i < this.model.sheet.freeze.rows; i++) freeze_height += this.model.sheet.GetRowHeight(i);
       for (const tile of this.frozen_row_tiles) {
         tile.style.height = `${freeze_height}px`;
         tile.height = freeze_height * this.dpr;
@@ -1182,7 +1182,7 @@ export abstract class BaseLayout {
       let width = 0;
 
       for (let c = tile.first_cell.column; c <= tile.last_cell.column; c++){
-        width += this.model.sheet.ColumnWidth(c);
+        width += this.model.sheet.GetColumnWidth(c);
       }
 
       const width_match = (tile.logical_size.width === width);
@@ -1233,7 +1233,7 @@ export abstract class BaseLayout {
 
     if (this.model.sheet.freeze.columns) {
       let freeze_width = 0;
-      for (let i = 0; i < this.model.sheet.freeze.columns; i++) freeze_width += this.model.sheet.ColumnWidth(i);
+      for (let i = 0; i < this.model.sheet.freeze.columns; i++) freeze_width += this.model.sheet.GetColumnWidth(i);
       for (const tile of this.frozen_column_tiles) {
         tile.style.width = `${freeze_width}px`;
         tile.width = freeze_width * this.dpr;
@@ -1310,14 +1310,14 @@ export abstract class BaseLayout {
 
             // offset to cell
             for (let c = cell.first_cell.column; c < clone.column; c++){
-              rect.left += this.model.sheet.ColumnWidth(c);
+              rect.left += this.model.sheet.GetColumnWidth(c);
             }
             for (let r = cell.first_cell.row; r < clone.row; r++){
-              rect.top += this.model.sheet.RowHeight(r);
+              rect.top += this.model.sheet.GetRowHeight(r);
             }
 
-            rect.width = this.model.sheet.ColumnWidth(clone.column);
-            rect.height = this.model.sheet.RowHeight(clone.row);
+            rect.width = this.model.sheet.GetColumnWidth(clone.column);
+            rect.height = this.model.sheet.GetRowHeight(clone.row);
 
             this.rectangle_cache.Set(clone.column, clone.row, rect);
 

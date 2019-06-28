@@ -115,7 +115,14 @@ export class Cells {
     this.rows_ += count;
   }
 
+  /**
+   * return or create cell at the given address
+   */
   public GetCell(address: ICellAddress, create_new: true): Cell;
+
+  /**
+   * return the cell at the given address or undefined if it doesn't exist
+   */
   public GetCell(address: ICellAddress, create_new?: false): Cell | undefined;
 
   /**

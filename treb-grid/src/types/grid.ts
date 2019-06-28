@@ -482,13 +482,13 @@ export class Grid {
 
     for (let i = 0; i < column_widths.length; i++ ){
       if (typeof column_widths[i] !== 'undefined') {
-        this.model.sheet.ColumnWidth(i, column_widths[i], true);
+        this.model.sheet.SetColumnWidth(i, column_widths[i]);
       }
     }
 
     for (let i = 0; i < row_heights.length; i++ ){
       if (typeof row_heights[i] !== 'undefined') {
-        this.model.sheet.RowHeight(i, row_heights[i], true);
+        this.model.sheet.SetRowHeight(i, row_heights[i]);
       }
     }
 
@@ -1445,7 +1445,7 @@ export class Grid {
       const base = offset.y + event.offsetY;
 
       // height of ROW
-      const original_height = this.model.sheet.RowHeight(row);
+      const original_height = this.model.sheet.GetRowHeight(row);
       let height = original_height;
 
       const rect = this.layout.OffsetCellAddressToRectangle({ row, column: 0 });
@@ -1464,7 +1464,7 @@ export class Grid {
 
           height = delta + original_height;
           // tile_sizes[tile_index] = tile_height + delta;
-          this.model.sheet.RowHeight(row, height, true);
+          this.model.sheet.SetRowHeight(row, height);
 
           this.layout.UpdateTooltip({
             text: `${height}px`,
@@ -1626,7 +1626,7 @@ export class Grid {
       //
 
       // width of COLUMN
-      const original_width = this.model.sheet.ColumnWidth(column);
+      const original_width = this.model.sheet.GetColumnWidth(column);
       let width = original_width;
 
       const rect = this.layout.OffsetCellAddressToRectangle({ row: 0, column });
@@ -1652,7 +1652,7 @@ export class Grid {
           });
 
           // tile_sizes[tile_index] = tile_width + delta;
-          this.model.sheet.ColumnWidth(column, width, true);
+          this.model.sheet.SetColumnWidth(column, width);
 
           requestAnimationFrame(() => {
             this.layout.UpdateTileWidths(true, column);
@@ -2829,12 +2829,12 @@ export class Grid {
   private StepVisibleRows(start: number, step: number) {
     if (step > 0) {
       for (let i = 0; i < step; i++) {
-        if (!this.model.sheet.RowHeight(++start)) i--;
+        if (!this.model.sheet.GetRowHeight(++start)) i--;
       }
     }
     else if (step < 0) {
       for (let i = 0; i > step; i--) {
-        if (--start >= 0 && !this.model.sheet.RowHeight(start)) i++;
+        if (--start >= 0 && !this.model.sheet.GetRowHeight(start)) i++;
       }
     }
     return start;
@@ -2847,12 +2847,12 @@ export class Grid {
   private StepVisibleColumns(start: number, step: number) {
     if (step > 0) {
       for (let i = 0; i < step; i++) {
-        if (!this.model.sheet.ColumnWidth(++start)) i--;
+        if (!this.model.sheet.GetColumnWidth(++start)) i--;
       }
     }
     else if (step < 0) {
       for (let i = 0; i > step; i--) {
-        if (--start >= 0 && !this.model.sheet.ColumnWidth(start)) i++;
+        if (--start >= 0 && !this.model.sheet.GetColumnWidth(start)) i++;
       }
     }
     return start;
@@ -4240,7 +4240,7 @@ export class Grid {
           if (typeof row === 'number') row = [row];
           if (typeof command.height === 'number') {
             for (const entry of row) {
-              this.model.sheet.RowHeight(entry, command.height, true);
+              this.model.sheet.SetRowHeight(entry, command.height);
             }
           }
           else {
@@ -4275,7 +4275,7 @@ export class Grid {
 
           if (typeof command.width === 'number') {
             for (const entry of column) {
-              this.model.sheet.ColumnWidth(entry, command.width, true);
+              this.model.sheet.SetColumnWidth(entry, command.width);
             }
           }
           else {

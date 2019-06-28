@@ -405,14 +405,14 @@ export class Sheet {
   /** returns aggregate width of all (known) columns */
   public get total_width() {
     let width = 0;
-    for (let i = 0; i < this.cells.columns; i++) width += this.ColumnWidth(i);
+    for (let i = 0; i < this.cells.columns; i++) width += this.GetColumnWidth(i);
     return width;
   }
 
   /** returns aggregate height of all (known) rows */
   public get total_height() {
     let height = 0;
-    for (let i = 0; i < this.cells.rows; i++) height += this.RowHeight(i);
+    for (let i = 0; i < this.cells.rows; i++) height += this.GetRowHeight(i);
     return height;
   }
 
@@ -471,42 +471,61 @@ export class Sheet {
     return s;
   }
 
-  /**
+  public GetRowHeight(row: number) {
+    const height = this.row_height_[row];
+    if (typeof height === 'undefined') return this.default_row_height;
+    return height;
+  }
+
+  public SetRowHeight(row: number, height: number) {
+    this.row_height_[row] = height;
+    this.cells.EnsureRow(row);
+    return height;
+  }
+
+  public GetColumnWidth(column: number) {
+    const width = this.column_width_[column];
+    if (typeof width === 'undefined') return this.default_column_width;
+    return width;
+  }
+
+  public SetColumnWidth(column: number, width: number) {
+    this.column_width_[column] = width;
+    this.cells.EnsureColumn(column);
+    return width;
+  }
+
+  /* *
    * get or set row height. we call this a lot -- I feel like we should
    * split into separate accessor methods, to avoid the test. or is that
    * over-optimization? (...)
-   */
-  public RowHeight(row: number, value?: number, inline = false): number {
+   * /
+  public RowHeight(row: number, value?: number): number {
     if (typeof value !== 'undefined') {
       this.row_height_[row] = value;
       this.cells.EnsureRow(row);
-      if (!inline) {
-        this.PublishStyleEvent(undefined, 2); // console.info("PSE 2");
-      }
       return value;
     }
     const height = this.row_height_[row];
     if (typeof height === 'undefined') return this.default_row_height;
     return height;
   }
+  */
 
-  /**
-   * get or set column width.
-   * @see RowHeight
-   */
-  public ColumnWidth(column: number, value?: number, inline = false): number {
+  /* *
+   * get or set column width
+   * /
+  public ColumnWidth(column: number, value?: number): number {
     if (typeof value !== 'undefined') {
       this.column_width_[column] = value;
       this.cells.EnsureColumn(column);
-      if (!inline) {
-        this.PublishStyleEvent(undefined, 3); // console.info("PSE 1");
-      }
       return value;
     }
     const width = this.column_width_[column];
     if (typeof width === 'undefined') return this.default_column_width;
     return width;
   }
+  */
 
   /**
    * apply theme. sets some fonts in sheet.
@@ -739,7 +758,7 @@ export class Sheet {
       }
     }
 
-    this.RowHeight(row, height, inline);
+    this.SetRowHeight(row, height);
 
     if (inline) return;
     this.PublishStyleEvent(undefined, 9); // console.info("PSE 12");
@@ -760,7 +779,7 @@ export class Sheet {
     let width = 12;
     const padding = 4 * 2; // FIXME: parameterize
 
-    if (!allow_shrink) width = this.ColumnWidth(column);
+    if (!allow_shrink) width = this.GetColumnWidth(column);
 
     for (let row = 0; row < this.cells.rows; row++) {
       const cell = this.CellData({ row, column });
@@ -775,7 +794,7 @@ export class Sheet {
       }
     }
 
-    this.ColumnWidth(column, width, inline);
+    this.SetColumnWidth(column, width);
 
     if (inline) return;
     this.PublishStyleEvent(undefined, 10); // console.info("PSE 13");
