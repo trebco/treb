@@ -19,6 +19,12 @@ export interface CellSerializationOptions {
    * nest rows in columns, or vice-versa, depending on which is smaller.
    */
   nested?: boolean;
+
+  /**
+   * cell style refs to pack into cells
+   */
+  cell_style_refs?: number[][];
+
 }
 
 /**
@@ -305,6 +311,10 @@ export class Cells {
           // actually, check how that's interpreted on load, because it might
           // break if we have a value but not the array area (...)
 
+          // FIXME: what's up with this? we check style? (...) can't recall
+          // why we do that, because we should ensure empty cells if there's
+          // a style (separately).
+
           if (cell && (!is_empty || options.preserve_empty_strings) &&
               (merge_head || cell.type || (cell.calculated && options.expand_arrays) ||
                 (cell.calculated && options.calculated_value) ||
@@ -322,6 +332,17 @@ export class Cells {
             }
             if (cell.area) obj.area = cell.area.toJSON();
             if (cell.merge_area) obj.merge_area = cell.merge_area.toJSON();
+
+            if (options.cell_style_refs &&
+                options.cell_style_refs[column] &&
+                options.cell_style_refs[column][row]) {
+
+              obj.style_ref = options.cell_style_refs[column][row];
+              options.cell_style_refs[column][row] = 0; // consume
+
+              // console.info(`consume @ ${column}, ${row}: ${obj.style_ref } => ${options.cell_style_refs[column][row]}`);
+
+            }
 
             row_keys[row] = row;
             column_keys[column] = column;

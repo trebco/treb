@@ -55,6 +55,8 @@ export class Sheet {
    */
   public static FromJSON(json: string | object, sheet?: Sheet, hints?: UpdateHints) {
 
+    if (hints) console.warn( '(using hints)', hints);
+
     let obj: any = {};
     if (typeof json === 'string') obj = JSON.parse(json);
     else obj = json;
@@ -68,12 +70,78 @@ export class Sheet {
 
     if (!sheet) sheet = new Sheet();
 
-    // data: cells
+    // styles (part 1) -- moved up in case we use inlined style refs
+
+    if (!hints || hints.style) {
+
+      sheet.cell_style = [];
+
+      if (obj.cell_style_refs) {
+        // (obj.cell_styles || []).forEach((cell_style: Style.Properties) => {
+        (obj.cell_styles || []).forEach((cell_style: CellStyleRef) => {
+            if (typeof cell_style.ref === 'number') {
+            cell_style.style =
+              JSON.parse(JSON.stringify(obj.cell_style_refs[cell_style.ref])); // clone
+          }
+        });
+      }
+
+    }
+
+    // data: cells (moved after style)
 
     if (!hints || hints.data) {
       sheet.cells.FromJSON(obj.data);
       if (obj.rows) sheet.cells.EnsureRow(obj.rows - 1);
       if (obj.columns) sheet.cells.EnsureColumn(obj.columns - 1);
+
+      // new style stuff
+      if (!hints || hints.style) {
+
+        // different handling for nested, flat, but we only have to
+        // check once because data is either nested or it isn't.
+
+        if (obj.data && obj.data[0]) {
+          if (obj.data[0].cells) {
+            if (typeof obj.data[0].row !== 'undefined') {
+              for (const block of obj.data) {
+                const row = block.row;
+                for (const entry of block.cells) {
+                  const column = entry.column;
+                  if (entry.style_ref) {
+                    if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
+                    sheet.cell_style[column][row] = // entry.style;
+                      JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+                  }
+                }
+              }
+            }
+            else {
+              for (const block of obj.data) {
+                const column = block.column;
+                for (const entry of block.cells) {
+                  const row = entry.row;
+                  if (entry.style_ref) {
+                    if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
+                    sheet.cell_style[column][row] = // entry.style;
+                      JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+                  }
+                }
+              }
+            }
+          }
+          else {
+            for (const entry of obj.data) {
+              if (entry.style_ref) {
+                if (!sheet.cell_style[entry.column]) sheet.cell_style[entry.column] = [];
+                sheet.cell_style[entry.column][entry.row] = // entry.style;
+                  JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+              }
+            }
+          }
+        }
+      }
+
     }
 
     // freeze
@@ -90,9 +158,13 @@ export class Sheet {
 
     }
 
-    // styles
+    // wrap up styles
 
     if (!hints || hints.style) {
+
+      /*
+
+      // moved
 
       sheet.cell_style = [];
 
@@ -105,10 +177,12 @@ export class Sheet {
           }
         });
       }
+      */
 
       for (const cell_style of ((obj.cell_styles || []) as CellStyleRef[])) {
         if (cell_style.style) {
           if (!sheet.cell_style[cell_style.column]) sheet.cell_style[cell_style.column] = [];
+          // console.info("@2", cell_style.column, cell_style.row, cell_style.style);
           sheet.cell_style[cell_style.column][cell_style.row] = cell_style.style;
         }
       }
@@ -1319,8 +1393,70 @@ export class Sheet {
     // flatten cell styles, which is a sparse array
     // UPDATE: ref table
 
-    let cell_style_refs = [];
+    // NOTE: we originally did this (I think) because it's possible for a
+    // cell to have a style but have no other data, and therefore not be
+    // represented. but we should be able to store the data in the cell object
+    // if we have it...
+
+    let cell_style_refs = [{}]; // include an empty entry at zero
+
     const cell_style_map: { [index: string]: number } = {};
+
+    const cell_reference_map: number[][] = [];
+
+    // (1) create a map of cells -> references, and build the reference
+    //     table at the same time. preserve indexes? (...)
+
+    // it would be nice if we could use some sort of numeric test, rather
+    // than leaving empty indexes as undefined -- that requires a type test
+    // (to avoid zeros).
+
+    // actually we could just offset the index by 1... (see above)
+
+    for (let c = 0; c < this.cell_style.length; c++) {
+      const column = this.cell_style[c];
+      if (column) {
+        cell_reference_map[c] = [];
+        for (let r = 0; r < column.length; r++) {
+          if (column[r]) {
+            const style_as_json = JSON.stringify(column[r]);
+            let reference_index = cell_style_map[style_as_json];
+            if (typeof reference_index !== 'number') {
+              cell_style_map[style_as_json] = reference_index = cell_style_refs.length;
+              cell_style_refs.push(column[r]);
+            }
+            cell_reference_map[c][r] = reference_index;
+          }
+        }
+      }
+    }
+
+    // console.info("CRM1", cell_reference_map);
+
+    /*
+    // (3) for anything that hasn't been consumed, create a cell style
+    //     map. FIXME: optional
+
+    const cell_styles: Array<{row: number, column: number, ref: number}> = [];
+
+    for (let c = 0; c < cell_reference_map.length; c++) {
+      const column = cell_reference_map[c];
+      if (column) {
+        for (let r = 0; r < column.length; r++) {
+          if (column[r]) {
+            cell_styles.push({ row: r, column: c, ref: column[r] });
+          }
+        }
+      }
+    }
+
+    console.info("CRM2", cell_reference_map);
+    console.info("CS", cell_styles);
+    */
+
+    /*
+
+    const cell_style_data_map: number[][] = [];
 
     const cell_styles: any = [];
     for (let column = 0; column < this.cell_style.length; column++) {
@@ -1339,6 +1475,8 @@ export class Sheet {
         }
       }
     }
+
+    */
 
     // ensure we're not linked
     cell_style_refs = JSON.parse(JSON.stringify(cell_style_refs));
@@ -1383,8 +1521,31 @@ export class Sheet {
       calculated_value: !!options.rendered_values,
       expand_arrays: !!options.expand_arrays,
       decorated_cells: !!options.decorated_cells,
-      // nested: true,
+      nested: true,
+      cell_style_refs: cell_reference_map,
     };
+
+    const data = this.cells.toJSON(serialization_options).data;
+
+    // (3) (style) for anything that hasn't been consumed, create a
+    //     cell style map. FIXME: optional [?]
+
+    const cell_styles: Array<{row: number, column: number, ref: number}> = [];
+
+    for (let c = 0; c < cell_reference_map.length; c++) {
+      const column = cell_reference_map[c];
+      if (column) {
+        for (let r = 0; r < column.length; r++) {
+          if (column[r]) {
+            cell_styles.push({ row: r, column: c, ref: column[r] });
+          }
+        }
+      }
+    }
+
+    /*
+    console.info("CRM2", cell_reference_map);
+    */
 
     const result: {[index: string]: any} = {
 
@@ -1396,7 +1557,8 @@ export class Sheet {
 
       version: (ModuleInfo as any).version,
 
-      data: this.cells.toJSON(serialization_options).data,
+      // data: this.cells.toJSON(serialization_options).data,
+      data,
       sheet_style, // : this.sheet_style,
       rows: this.rows,
       columns: this.columns,
@@ -1419,6 +1581,8 @@ export class Sheet {
     if (this.freeze.rows || this.freeze.columns) {
       result.freeze = this.freeze;
     }
+
+    // console.info(JSON.stringify(result, undefined, 2));
 
     return result;
   }

@@ -2420,8 +2420,8 @@ export class Grid {
    */
   private DeleteSelection(selection: GridSelection) {
     if (selection.empty) return;
-    // this.model.sheet.ClearArea(selection.area);
-    this.ExecCommand({ key: CommandKey.Clear, area: selection.area });
+    const area = this.model.sheet.RealArea(selection.area);
+    this.ExecCommand({ key: CommandKey.Clear, area });
 3  }
 
   /**
