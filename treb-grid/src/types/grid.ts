@@ -2576,7 +2576,7 @@ export class Grid {
       key: CommandKey.SetRange,
       area: array ? selection.area : target,
       array,
-      value: parse_result.value,
+      value: is_function ? value : parse_result.value,
     });
 
     if (exec) {
