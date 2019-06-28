@@ -4071,7 +4071,7 @@ export class Grid {
 
       // single cell
 
-      this.model.sheet.SetCellValue2(command.area, command.value);
+      this.model.sheet.SetCellValue(command.area, command.value);
       return area;
     }
     else {
@@ -4086,14 +4086,19 @@ export class Grid {
       // FIXME: clean this up!
 
       if (command.array) {
-        this.model.sheet.SetArrayValue2(area, command.value);
-      }
-      else if (!Array.isArray(command.value) && !ArrayBuffer.isView(command.value)) {
-        this.model.sheet.SetAreaValue2(area, command.value);
+        this.model.sheet.SetArrayValue(area, command.value);
       }
       else {
-        this.model.sheet.SetAreaValues2(area, command.value as any[][]);
+        this.model.sheet.SetAreaValues2(area, command.value);
       }
+      /*
+      else if (!Array.isArray(command.value) && !ArrayBuffer.isView(command.value)) {
+        this.model.sheet.SetAreaValue(area, command.value);
+      }
+      else {
+        this.model.sheet.SetAreaValues(area, command.value as any[][]);
+      }
+      */
 
       return area;
 

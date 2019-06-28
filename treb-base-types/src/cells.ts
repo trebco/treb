@@ -115,14 +115,46 @@ export class Cells {
     this.rows_ += count;
   }
 
+  public GetCell(address: ICellAddress, create_new: true): Cell;
+  public GetCell(address: ICellAddress, create_new?: false): Cell | undefined;
+
   /**
+   * return the given cell or `undefined`, optionally creating
+   * new cells as necessary
+   *
+   * @param create_new always return a cell
+   */
+  public GetCell(address: ICellAddress, create_new?: boolean) {
+
+    const { row, column } = address;
+
+    if (!this.data2[row]) {
+      if (create_new) {
+        this.data2[row] = [];
+        this.rows_ = Math.max(this.rows_, row + 1);
+      }
+      else return undefined;
+    }
+
+    if (!this.data2[row][column]) {
+      if (create_new) {
+        this.data2[row][column] = new Cell();
+        this.columns_ = Math.max(this.columns_, column + 1);
+      }
+    }
+
+    return this.data2[row][column];
+
+  }
+
+  /* *
    * this method supports returning a new cell OR null if
    * the object doesn't exist. but that's hard for TS to
    * understand, so we should create a second method instead
    * of using a parameter. of course we will leave the parameter
    * here for backwards compatibility.
-   */
-  public GetCell(address: ICellAddress, create_new = false){
+   * /
+  public GetCell(address: ICellAddress, create_new?: boolean){
     const { row, column } = address;
     let ref = this.data2[row];
     if (!ref) {
@@ -138,6 +170,7 @@ export class Cells {
     }
     return cell;
   }
+  */
 
   /** returns an existing cell or creates a new cell. */
   public EnsureCell(address: ICellAddress){
@@ -613,16 +646,90 @@ export class Cells {
   }
 
   /**
+   * set area. shortcut to reduce overhead. consolidates single value
+   * and array value methods, although the implementation is separate.
+   *
+   * watch out for typed arrays, which do not satisfy Array.isArray
+   */
+  public SetArea(area: Area, values: any[][]) {
+
+    if (Array.isArray(values) || ArrayBuffer.isView(values)) {
+      for (let r = area.start.row, i = 0; r <= area.end.row; r++, i++) {
+        if (!this.data2[r]) this.data2[r] = [];
+        const row = this.data2[r];
+        for (let c = area.start.column, j = 0; c <= area.end.column; c++, j++) {
+          if (!row[c]) row[c] = new Cell();
+          row[c].Set(values[i][j]); // undefined should be implicit
+        }
+      }
+    }
+    else {
+      const value_type = Cell.GetValueType(values); // otherwise we'd just call it every time
+
+      for (let r = area.start.row; r <= area.end.row; r++) {
+        if (!this.data2[r]) this.data2[r] = [];
+        const row = this.data2[r];
+        for (let c = area.start.column; c <= area.end.column; c++) {
+          if (!row[c]) row[c] = new Cell();
+          row[c].Set(values, value_type);
+        }
+      }
+    }
+
+    this.rows_ = Math.max(this.rows_, area.end.row + 1);
+    this.columns_ = Math.max(this.columns_, area.end.column + 1);
+
+  }
+
+  /**
    * iterates over all cells (using loops) and runs function per-cell.
    * FIXME: switch to indexing on empty indexes? (...)
    */
-  public IterateAll(f: (cell: Cell) => void){
+  public IterateAll(func: (cell: Cell) => void){
+    /*
     const row_keys = Object.keys(this.data2);
     for (const row of row_keys){
       const n_row = Number(row) || 0;
       const column_keys = Object.keys(this.data2[n_row]);
       for (const column_key of column_keys){
         f(this.data2[n_row][Number(column_key)]);
+      }
+    }
+    */
+    for (const row of this.data2) {
+      if (row) {
+        for (const cell of row) {
+          if (cell) {
+            func(cell);
+          }
+        }
+      }
+    }
+
+  }
+
+  /** moved from sheet, so we can do it non-functional style (for perf) */
+  public FlushCellStyles() {
+    for (const row of this.data2) {
+      if (row) {
+        for (const cell of row) {
+          if (cell) {
+            cell.FlushStyle();
+          }
+        }
+      }
+    }
+  }
+
+  /** moved from sheet, so we can do it non-functional style (for perf) */
+  public FlushCachedValues() {
+    for (const row of this.data2) {
+      if (row) {
+        for (const cell of row) {
+          if (cell) {
+            cell.FlushCache();
+          }
+        }
       }
     }
   }

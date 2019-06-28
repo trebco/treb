@@ -8,7 +8,6 @@ import { EventSource, Measurement } from 'treb-utils';
 
 // --- local imports ----------------------------------------------------------
 
-import { ValueParser } from '../util/value_parser';
 import { SheetEvent, UpdateHints } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
 
@@ -20,10 +19,6 @@ import { Theme } from './theme';
 const DEFAULT_COLUMN_WIDTH = 100;
 const DEFAULT_ROW_HEIGHT = 22; // not used because it's based on font (theoretically)
 const DEFAULT_ROW_HEADER_WIDTH = 60;
-
-// ...
-
-type StyleKeys = keyof Style.Properties;
 
 interface CellStyleRef {
   row: number;
@@ -162,23 +157,6 @@ export class Sheet {
 
     if (!hints || hints.style) {
 
-      /*
-
-      // moved
-
-      sheet.cell_style = [];
-
-      if (obj.cell_style_refs) {
-        // (obj.cell_styles || []).forEach((cell_style: Style.Properties) => {
-        (obj.cell_styles || []).forEach((cell_style: CellStyleRef) => {
-            if (typeof cell_style.ref === 'number') {
-            cell_style.style =
-              JSON.parse(JSON.stringify(obj.cell_style_refs[cell_style.ref])); // clone
-          }
-        });
-      }
-      */
-
       for (const cell_style of ((obj.cell_styles || []) as CellStyleRef[])) {
         if (cell_style.style) {
           if (!sheet.cell_style[cell_style.column]) sheet.cell_style[cell_style.column] = [];
@@ -210,42 +188,9 @@ export class Sheet {
 
     }
 
-    /*
-    sheet.named_ranges = {};
-    if (obj.named_ranges) {
-      for (const key of Object.keys(obj.named_ranges)) {
-        const ref = obj.named_ranges[key];
-        sheet.named_ranges[key] = new Area(ref.start || {}, ref.end || {});
-      }
-    }
-    */
-
     return sheet;
 
   }
-
-  /* *
-   * factory method creates a sheet from a csv file. note this
-   * method takes the file contents, it doesn't open a file. in order
-   * to limit deps, we're doing this manually (which is not a good idea).
-   *
-   * also in memory, which is not a good idea. but this method is (for
-   * now) really just for testing.
-   * /
-  public static FromCSV(text: string): Sheet {
-
-    const lines = text.split(/\n/);
-    const arr = lines.map((line) => {
-      return line.trim().split(/,/).map((x) => {
-        if (/^".*"$/.test(x)) x = x.substr(1, x.length - 2);
-        return ValueParser.TryParse(x).value;
-      });
-    });
-
-    return this.FromArray(arr, false); // true);
-
-  }
-  */
 
   /**
    * factory method creates a sheet from a 2D array.
@@ -271,12 +216,13 @@ export class Sheet {
     columns: 0,
   };
 
-  // public named_ranges: {[index: string]: Area} = {};
-
+  /** standard width */
   public default_column_width = 100;
 
+  /** standard height */
   public default_row_height = 22;
 
+  /** cells data */
   public cells: Cells = new Cells();
 
   /**
@@ -646,6 +592,7 @@ export class Sheet {
     const cell = this.cells.GetCell(address);
     if (!cell) return null;
 
+    // composite style if necessary
     if (!cell.style) {
       const index = this.GetStyleIndex(this.CompositeStyleForCell(address));
       cell.style = this.style_map[index];
@@ -926,7 +873,7 @@ export class Sheet {
         { row: head.end.row + count, column: head.end.column });
       patched.Iterate((address) => {
         const cell = this.cells.GetCell(address, true);
-        if (cell) cell.area = patched;
+        cell.area = patched;
       });
     }
 
@@ -939,7 +886,7 @@ export class Sheet {
         { row: head.end.row + count, column: head.end.column });
       patched.Iterate((address) => {
         const cell = this.cells.GetCell(address, true);
-        if (cell) cell.merge_area = patched;
+        cell.merge_area = patched;
       });
     }
 
@@ -1043,7 +990,7 @@ export class Sheet {
         { row: head.end.row, column: head.end.column + count });
       patched.Iterate((address) => {
         const cell = this.cells.GetCell(address, true);
-        if (cell) cell.area = patched;
+        cell.area = patched;
       });
     }
 
@@ -1056,7 +1003,7 @@ export class Sheet {
         { row: head.end.row, column: head.end.column + count });
       patched.Iterate((address) => {
         const cell = this.cells.GetCell(address, true);
-        if (cell) cell.merge_area = patched;
+        cell.merge_area = patched;
       });
     }
 
@@ -1117,150 +1064,64 @@ export class Sheet {
     return this.sheet_events.Publish({ type: 'data', area });
   }
 
-  /**
-   * sets an area value. unlike an array, this just puts the same
-   * value into all the cells in the area.
-   */
+  // ATM we have 4 methods to set value/values. we need a distinction for
+  // arrays, but that could be a parameter. the single-value/multi-value
+  // area functions could probably be consolidated, also the single-cell-
+  // single-value function... you need logic either on the outside or the
+  // inside, put that logic where it makes the most sense.
+
+  // also some of this could be moved to the Cells class... if for no
+  // other reason than to remove the iteration overhead
+
+  /* *
+   * set a single value in an area (1 cell or more)
+   * /
   public SetAreaValue(area: Area, value: any) {
     area = this.RealArea(area);
-    const type = Cell.GetValueType(value);
-    this.cells.IterateArea(area, (cell) => cell.Set(value, type), true);
-    return this.sheet_events.Publish({ type: 'data', area });
+    this.cells.SetArea(area, value);
+    // const type = Cell.GetValueType(value);
+    // this.cells.IterateArea(area, (cell) => cell.Set(value, type), true);
   }
 
-  /** @see SetCellValue2 */
-  public SetAreaValue2(area: Area, value: any) {
+  /* *
+   * set different values (via array) in an area. mst be the
+   * same shape at this point, caller should ensure.
+   * /
+  public SetAreaValues(area: Area, values: any[][]) { // }, parse_numbers = false) {
     area = this.RealArea(area);
-    const type = Cell.GetValueType(value);
-    this.cells.IterateArea(area, (cell) => cell.Set(value, type), true);
-    // return this.sheet_events.Publish({ type: 'data', area });
+    this.cells.SetArea(area, values);
+  }
+  */
+
+  public SetAreaValues2(area: Area, values: any|any[][]) {
+
+    // we don't want to limit this to the existing area, we only
+    // want to remove infinities (if set). it's possible to expand
+    // the grid here (maybe -- check option?)
+
+    // actually, realarea already does exactly that -- which is not
+    // what I thought. we may need a new, different method to clip.
+
+    area = this.RealArea(area);
+    this.cells.SetArea(area, values);
   }
 
   /**
-   * sets an area from a range. the area controls. if the value range is
-   * larger than the area, values will be clipped. if the range is smaller,
-   * we will affirmatively insert undefined values, clearing the cell.
-   *
-   * this function had a parameter for inferring styles, using older logic
-   * (and older styles). that's been removed. we should add a method in
-   * grid to use the new inference logic for types, if desired. this method
-   * just sets values.
-   */
-  public SetAreaValues(area: Area, values: any[][], parse_numbers = false) {
-
-    area = this.RealArea(area);
-
-    const offset = { r: area.start.row, c: area.start.column };
-
-    this.cells.IterateArea(area, (cell, c, r) => {
-      c = (c || 0) - offset.c;
-      r = (r || 0) - offset.r;
-
-      // c -= offset.c;
-      // r -= offset.r;
-
-      if (values[r]) {
-        let value: any = values[r][c];
-        if (parse_numbers && typeof value === 'string') {
-          value = ValueParser.TryParse(value).value;
-        }
-        cell.Set(value);
-      }
-      else cell.Set(undefined);
-    }, true);
-
-
-    return this.sheet_events.Publish({ type: 'data', area });
-
-  }
-
-  /** 
-   * @see SetCellValue2
-   * removing old parameter
-   */
-  public SetAreaValues2(area: Area, values: any[][]) { // }, parse_numbers = false) {
-
-    area = this.RealArea(area);
-
-    const offset = { r: area.start.row, c: area.start.column };
-
-    this.cells.IterateArea(area, (cell, c, r) => {
-      c = (c || 0) - offset.c;
-      r = (r || 0) - offset.r;
-
-      // c -= offset.c;
-      // r -= offset.r;
-
-      if (values[r]) {
-        /*
-        let value: any = values[r][c];
-        if (parse_numbers && typeof value === 'string') {
-          value = ValueParser.TryParse(value).value;
-        }
-        cell.Set(value);
-        */
-        cell.Set(values[r][c]);
-      }
-      else cell.Set(undefined);
-    }, true);
-
-
-    // return this.sheet_events.Publish({ type: 'data', area });
-
-  }
-
-  /**
-   * sets an array value.
+   * set the area as an array formula, based in the top-left cell
    */
   public SetArrayValue(area: Area, value: any) {
     area = this.RealArea(area);
     this.cells.IterateArea(area, (element) => element.SetArray(area), true);
-    const cell = this.cells.GetCell(area.start);
-    if (cell) cell.SetArrayHead(area, value);
-    return this.sheet_events.Publish({ type: 'data', area });
-  }
-
-  /** @see SetCellValue2 */
-  public SetArrayValue2(area: Area, value: any) {
-    area = this.RealArea(area);
-    this.cells.IterateArea(area, (element) => element.SetArray(area), true);
-    const cell = this.cells.GetCell(area.start);
-    if (cell) cell.SetArrayHead(area, value);
-    // return this.sheet_events.Publish({ type: 'data', area });
+    const cell = this.cells.GetCell(area.start, true);
+    cell.SetArrayHead(area, value);
   }
 
   /**
-   * sets cell value. returns a promise, which is the result of
-   * publishing the data change event. this can be used to schedule
-   * repaint following recalc.
-   *
-   * @param address
-   * @param value
+   * set a single value in a single cell
    */
-  public SetCellValue(address: ICellAddress, value: any, area?: Area) {
-
+  public SetCellValue(address: ICellAddress, value: any) {
     const cell = this.cells.GetCell(address, true);
-    if (cell) cell.Set(value);
-
-    if (!area) area = new Area(address);
-    return this.sheet_events.Publish({ type: 'data', area });
-  }
-
-  /**
-   * temporary: set cell value without notifying
-   * to support ExecCommand; this should become default (deprecate the other one)
-   */
-  public SetCellValue2(address: ICellAddress, value: any) {
-    const cell = this.cells.GetCell(address, true);
-    if (cell) cell.Set(value);
-  }
-
-  public Flush() {
-    this.sheet_events.Publish({ type: 'flush' });
-  }
-
-  public DataChange(area?: Area) {
-    this.sheet_events.Publish({ type: 'data', area });
+    cell.Set(value);
   }
 
   /**
@@ -1283,7 +1144,7 @@ export class Sheet {
 
             const refrow = ref[row];
             if (refrow) {
-              for (const key of Object.keys(refrow) as StyleKeys[]) {
+              for (const key of Object.keys(refrow) as Style.PropertyKeys[]) {
                 if (!this.StyleEquals(with_style[key], without_style[key])) {
                   (replacement as any)[key] = refrow[key];
                 }
@@ -1431,53 +1292,6 @@ export class Sheet {
       }
     }
 
-    // console.info("CRM1", cell_reference_map);
-
-    /*
-    // (3) for anything that hasn't been consumed, create a cell style
-    //     map. FIXME: optional
-
-    const cell_styles: Array<{row: number, column: number, ref: number}> = [];
-
-    for (let c = 0; c < cell_reference_map.length; c++) {
-      const column = cell_reference_map[c];
-      if (column) {
-        for (let r = 0; r < column.length; r++) {
-          if (column[r]) {
-            cell_styles.push({ row: r, column: c, ref: column[r] });
-          }
-        }
-      }
-    }
-
-    console.info("CRM2", cell_reference_map);
-    console.info("CS", cell_styles);
-    */
-
-    /*
-
-    const cell_style_data_map: number[][] = [];
-
-    const cell_styles: any = [];
-    for (let column = 0; column < this.cell_style.length; column++) {
-      if (this.cell_style[column]) {
-        const ref = this.cell_style[column];
-        for (let row = 0; row < ref.length; row++) {
-          if (ref[row]) {
-            const as_json = JSON.stringify(ref[row]);
-            let ref_index = cell_style_map[as_json];
-            if (typeof ref_index !== 'number') {
-              cell_style_map[as_json] = ref_index = cell_style_refs.length;
-              cell_style_refs.push(ref[row]);
-            }
-            cell_styles.push({ row, column, ref: ref_index });
-          }
-        }
-      }
-    }
-
-    */
-
     // ensure we're not linked
     cell_style_refs = JSON.parse(JSON.stringify(cell_style_refs));
 
@@ -1542,10 +1356,6 @@ export class Sheet {
         }
       }
     }
-
-    /*
-    console.info("CRM2", cell_reference_map);
-    */
 
     const result: {[index: string]: any} = {
 
@@ -1647,11 +1457,7 @@ export class Sheet {
   public FlushCellStyles() {
     this.style_map = [];
     this.style_json_map = [];
-
-    // it seems like we could add a method to cells to do this without
-    // all the overhead. @see FlushCachedValues
-
-    this.cells.IterateAll((cell: Cell) => cell.FlushStyle());
+    this.cells.FlushCellStyles();
   }
 
   // --- protected ------------------------------------------------------------
@@ -1672,7 +1478,11 @@ export class Sheet {
 
   protected Deserialize(data: any) {
     Sheet.FromJSON(data, this);
-    this.FlushCachedValues();
+
+    // some overlap here... consolidate? actually, doesn't
+    // fromJSON call flush styles? [A: sometimes...]
+
+    this.cells.FlushCachedValues();
     this.FlushCellStyles();
   }
 
@@ -1693,8 +1503,8 @@ export class Sheet {
     // reverse-override...
 
     // const keys = Object.keys(properties);
-    const keys = Object.keys(properties) as StyleKeys[];
-    // const keys = Object.keys(this.sheet_style) as StyleKeys[];
+    const keys = Object.keys(properties) as Style.PropertyKeys[];
+    // const keys = Object.keys(this.sheet_style) as Style.PropertyKeys[];
 
     for (const style_column of this.cell_style) {
       if (style_column) {
@@ -1736,8 +1546,8 @@ export class Sheet {
     // (we can do this in-place)
 
     // const keys = Object.keys(properties);
-    const keys = Object.keys(properties) as StyleKeys[];
-    // const keys = Object.keys(this.row_styles[row]) as StyleKeys[];
+    const keys = Object.keys(properties) as Style.PropertyKeys[];
+    // const keys = Object.keys(this.row_styles[row]) as Style.PropertyKeys[];
 
     for (const column of this.cell_style) {
       if (column && column[row]) {
@@ -1806,8 +1616,8 @@ export class Sheet {
 
     // reverse-override... I think we only need to override _cell_ values.
 
-    const keys = Object.keys(properties) as StyleKeys[];
-    // const keys = Object.keys(this.column_styles[column]) as StyleKeys[];
+    const keys = Object.keys(properties) as Style.PropertyKeys[];
+    // const keys = Object.keys(this.column_styles[column]) as Style.PropertyKeys[];
 
     if (this.cell_style[column]) {
       for (const ref of this.cell_style[column]) {
@@ -1869,6 +1679,7 @@ export class Sheet {
   private GetStyleIndex(style: Style.Properties) {
 
     const json = JSON.stringify(style);
+
     for (let i = 0; i < this.style_json_map.length; i++) {
       if (json === this.style_json_map[i]) return i; // match
     }
@@ -1882,16 +1693,6 @@ export class Sheet {
 
     return new_index;
 
-  }
-
-  private FlushCachedValues() {
-
-    // it seems like we could add a method to cells that
-    // would do this without the overhead.
-
-    // ...
-
-    this.cells.IterateAll((cell: Cell) => cell.FlushCache());
   }
 
 }

@@ -69,9 +69,9 @@ export namespace Style {
     // [index: string]: any;
   }
 
-  type StyleKeys = keyof Style.Properties;
+  export type PropertyKeys = keyof Style.Properties;
 
-  const ColorKeys: StyleKeys[] = [
+  const ColorKeys: PropertyKeys[] = [
     'background',
     'text_color',
     'nan_color',
