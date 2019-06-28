@@ -32,11 +32,16 @@ export namespace Style {
     number_format?: string;
 
     wrap?: boolean;
+
+    // FIXME: we should use CSS font styling, parse as necessary
+    // (in the alternative, maybe have a method to set from a CSS def)
+
     font_size?: number|string;
     font_face?: string;
     font_bold?: boolean;
     font_italic?: boolean;
     font_underline?: boolean;
+
     border_top?: number;
     border_right?: number;
     border_left?: number;
@@ -64,7 +69,9 @@ export namespace Style {
     // [index: string]: any;
   }
 
-  const ColorKeys = [
+  type StyleKeys = keyof Style.Properties;
+
+  const ColorKeys: StyleKeys[] = [
     'background',
     'text_color',
     'nan_color',
@@ -97,21 +104,12 @@ export namespace Style {
    * merge. returns a new object, does not update dest in place.
    */
   export const Merge = (dest: Properties, src: Properties, delta= true) => {
-
     const properties: Properties = delta ? {...dest, ...src} : {...src};
-
-    /*
-    const properties: Properties = {};
-    if (delta) Object.keys(dest).forEach((key) => properties[key] = dest[key]);
-    Object.keys(src).forEach((key) => properties[key] = src[key]);
-    */
-
     ColorKeys.forEach((key) => {
-      if ((properties as any)[key] === '') {
-        delete (properties as any)[key]; // rather not delete...
+      if (properties[key] === '') {
+        delete properties[key]; // rather not delete...
       }
     });
-
     return properties;
   };
 
@@ -119,31 +117,13 @@ export namespace Style {
    * overlay. will always put defaults at the bottom.
    */
   export const Composite = (list: Properties[]) => {
-
-    // const properties: Properties = {};
-    // Object.keys(DefaultProperties).forEach((key) => properties[key] = DefaultProperties[key]);
-
-    /*
-    list.forEach((item) => {
-      Object.keys(item).forEach((key) => properties[key] = item[key]);
-    });
-    */
-
-    /*
-    for (const item of list) {
-      properties = { ...properties, ...item };
-    }
-    */
-
-    // return properties;
-
     return list.reduce((composite, item) => ({...composite, ...item}),
       {...DefaultProperties});
-
   };
 
   export const UpdateDefaultProperties = (opts: Properties) => {
 
+    /*
     // can we assign this directly? (...)
 
     const tmp = {
@@ -152,6 +132,11 @@ export namespace Style {
     };
 
     DefaultProperties = tmp;
+    */
+
+    DefaultProperties = {
+      ...DefaultProperties, ...opts,
+    };
 
   };
 
