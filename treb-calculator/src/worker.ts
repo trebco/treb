@@ -5,6 +5,7 @@
 
 import { WorkerMessage, WorkerMessageType } from './worker-types';
 import { Localization, Cells, Cell, ICellAddress, Area } from 'treb-base-types';
+import { DataModel, NamedRangeCollection, Sheet } from 'treb-grid';
 import { Calculator } from './calculator';
 import { Model } from './simulation-model';
 
@@ -15,7 +16,10 @@ export class WorkerImpl {
 
   protected trials = 0;
   protected lhs = false;
-  protected cells = new Cells();
+//  protected cells = new Cells();
+  protected data_model: DataModel = {
+    sheet: Sheet.Blank(),
+  };
   protected screen_updates = false;
 
   protected calculator = new Calculator();
@@ -66,7 +70,9 @@ export class WorkerImpl {
 
         }
 
-        this.cells.FromJSON(message.data.data);
+        Sheet.FromJSON(message.data.sheet, this.data_model.sheet);
+
+        // this.cells.FromJSON(message.data.data);
         if (message.data.additional_cells) this.additional_cells = message.data.additional_cells;
       }
       break;
@@ -146,7 +152,7 @@ export class WorkerImpl {
       type: WorkerMessageType.Update,
       data: {
         percent_complete,
-        cells: this.cells.toJSON(),
+        cells: this.data_model.sheet.cells.toJSON(), // this.cells.toJSON(),
         trial_data: {
           results: flattened,
           trials: this.iteration,
@@ -171,7 +177,7 @@ export class WorkerImpl {
 
     // first, full calc
 
-    const status = this.calculator.InitSimulation(this.trials, this.lhs, this.cells, this.additional_cells);
+    const status = this.calculator.InitSimulation(this.trials, this.lhs, this.data_model, this.additional_cells);
 
     if (status !== GraphStatus.OK) throw(new Error('graph failed'));
 

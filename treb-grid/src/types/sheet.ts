@@ -66,12 +66,20 @@ export class Sheet {
 
     if (!sheet) sheet = new Sheet();
 
-    // styles (part 1) -- moved up in case we use inlined style refs
+    // new, named ranges [FIXME: move to container?] -- these are
+    // serialized so create objects
 
     if (!hints || hints.names) {
-      sheet.named_ranges = obj.named_ranges ?
-        JSON.parse(JSON.stringify(obj.named_ranges)) : {};
+      sheet.named_ranges = {};
+      if (obj.named_ranges) {
+        for (const key of Object.keys(obj.named_ranges)) {
+          sheet.named_ranges[key] = new Area(
+            obj.named_ranges[key].start, obj.named_ranges[key].end);
+        }
+      }
     }
+
+    // styles (part 1) -- moved up in case we use inlined style refs
 
     if (!hints || hints.style) {
 
@@ -212,7 +220,7 @@ export class Sheet {
   // --- static members -------------------------------------------------------
 
   // FIXME: use the external measurement object (from utils)
-  private static measurement_canvas: HTMLCanvasElement;
+  private static measurement_canvas?: HTMLCanvasElement;
 
   // --- instance members -----------------------------------------------------
 
@@ -317,8 +325,6 @@ export class Sheet {
   // --- public methods -------------------------------------------------------
 
   constructor() {
-
-    if (!Sheet.measurement_canvas) Sheet.measurement_canvas = document.createElement('canvas');
 
     // FIXME: the below should be called in a separate 'init' method
     // that can be called after we change styles (since it will measure)
@@ -786,6 +792,7 @@ export class Sheet {
    */
   public AutoSizeColumn(column: number, allow_shrink = true, inline = false) {
 
+    if (!Sheet.measurement_canvas) Sheet.measurement_canvas = document.createElement('canvas');
     const context = Sheet.measurement_canvas.getContext('2d');
     if (!context) return;
 
@@ -1365,6 +1372,7 @@ export class Sheet {
 
     const serialization_options: CellSerializationOptions = {
       calculated_value: !!options.rendered_values,
+      preserve_type: !!options.preserve_type,
       expand_arrays: !!options.expand_arrays,
       decorated_cells: !!options.decorated_cells,
       nested: true,

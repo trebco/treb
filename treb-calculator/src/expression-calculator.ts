@@ -8,6 +8,8 @@ import { FunctionLibrary } from './function-library';
 import { Localization, Cells, ICellAddress, ValueType } from 'treb-base-types';
 import { Parser, ExpressionUnit, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 
+import { DataModel, NamedRangeCollection } from 'treb-grid';
+
 export interface CalculationContext {
   address: ICellAddress;
 }
@@ -21,6 +23,7 @@ export class ExpressionCalculator {
 
   private call_index = 0;
   private cells: Cells = new Cells();
+  private named_ranges: NamedRangeCollection = {};
   private parser: Parser; // = new Parser();
 
   constructor(){
@@ -43,8 +46,15 @@ export class ExpressionCalculator {
     }
   }
 
+  /*
   public SetCells(cells: Cells){
     this.cells = cells;
+  }
+  */
+
+  public SetModel(model: DataModel) {
+    this.cells = model.sheet.cells;
+    this.named_ranges = model.sheet.named_ranges;
   }
 
   /**
@@ -458,6 +468,24 @@ export class ExpressionCalculator {
 
     case 'undefined':
       return undefined;
+    }
+
+    const named_range = this.named_ranges[name.toUpperCase()];
+    if (named_range) {
+      if (named_range.count === 1) {
+        return this.CellFunction(
+          named_range.start.column,
+          named_range.start.row,
+        );
+      }
+      else {
+        return this.CellFunction(
+          named_range.start.column,
+          named_range.start.row,
+          named_range.end.column,
+          named_range.end.row,
+        );
+      }
     }
 
     // FIXME: named ranges?

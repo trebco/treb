@@ -49,17 +49,6 @@ export class Grid {
   /** for recording */
   public command_log = new EventSource<CommandRecord>();
 
-  /**
-   * this should not be public -- clients should only interact with the API.
-   * so why is it public? we need to access it in the calculator (and in the
-   * calculator in the worker, for simulations).
-   *
-   * FIXME: find a solution for this.
-   */
-  public get cells() {
-    return this.model.sheet.cells;
-  }
-
   /** list of annotations */
   public readonly annotations: Annotation[] = [];
 
@@ -69,10 +58,6 @@ export class Grid {
    * initialization step (when we have a node).
    */
   public readonly theme: ExtendedTheme;
-
-  // --- private members -------------------------------------------------------
-
-  private grid_container?: HTMLElement;
 
   /**
    * local sheet instance. we always have a sheet, change the data
@@ -93,9 +78,24 @@ export class Grid {
    * also a nice way to transition... we now have a wrapper object, and we can
    * switch the member to an accessor (DM will have to become a class)
    */
-  private readonly model: DataModel = {
+  public readonly model: DataModel = {
     sheet: Sheet.Blank(100, 26),
   };
+
+  // --- private members -------------------------------------------------------
+
+  /**
+   * this should not be public -- clients should only interact with the API.
+   * so why is it public? we need to access it in the calculator (and in the
+   * calculator in the worker, for simulations).
+   *
+   * FIXME: find a solution for this.
+   */
+  private get cells() {
+    return this.model.sheet.cells;
+  }
+
+  private grid_container?: HTMLElement;
 
   /** containing element, passed in */
   private container?: HTMLElement;

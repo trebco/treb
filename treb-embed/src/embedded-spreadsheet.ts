@@ -554,7 +554,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
             // this one _is_ the grid cells
 
-            this.calculator.AttachData(this.grid.cells);
+            this.calculator.AttachData(this.grid.model);
             this.Publish({ type: 'load' });
 
           }
@@ -679,7 +679,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     // NOTE: accessing grid.cells, find a better approach
 
-    this.calculator.AttachData(this.grid.cells); // for leaf nodes
+    this.calculator.AttachData(this.grid.model); // for leaf nodes
     this.FlushUndo();
     this.Publish({ type: 'reset' });
   }
@@ -834,7 +834,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
                 contents = reader.result;
               }
               else {  // IE11
-                
+
                 /* can break on large blob
                 contents = String.fromCharCode.apply(null,
                   (new Uint8Array(reader.result as ArrayBuffer) as any));
@@ -1019,7 +1019,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     if (data.rendered_values && !recalculate) {
       this.grid.Update();
-      this.calculator.RebuildClean(this.grid.cells);
+      this.calculator.RebuildClean(this.grid.model);
     }
     else {
       this.Recalculate();
@@ -1278,7 +1278,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     // NOTE: accessing grid.cells, find a better approach
 
-    await this.calculator.Calculate(this.grid.cells, area, { formula_only });
+    await this.calculator.Calculate(this.grid.model, area, { formula_only });
     this.grid.Update(true); // , area);
     this.UpdateAnnotations();
     this.Publish({ type: 'data' });
@@ -1445,7 +1445,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       type: WorkerMessageType.Configure,
       data: {
         locale: Localization.locale,
-        data: this.grid.cells.toJSON(json_options).data,
+        // data: this.grid.model.sheet.cells.toJSON(json_options).data,
+        // names: this.grid.model.sheet.named_ranges,
+        sheet: this.grid.model.sheet.toJSON({
+          rendered_values: true, // has a different name, for some reason
+          preserve_type: true,
+        }),
         additional_cells: this.additional_cells,
       },
     });

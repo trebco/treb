@@ -3,6 +3,7 @@ import { VertexType } from './vertex_type';
 import { SpreadsheetVertex, CalculationResult } from './spreadsheet_vertex';
 import { LeafVertex } from './leaf_vertex';
 import { Cells, ICellAddress, Area } from 'treb-base-types';
+import { DataModel } from 'treb-grid';
 
 // FIXME: this is a bad habit if you're testing on falsy for OK.
 
@@ -21,6 +22,7 @@ export abstract class Graph {
   public dirty_list: SpreadsheetVertex[] = [];
   public volatile_list: SpreadsheetVertex[] = [];
   public cells?: Cells;
+  public model?: DataModel;
 
   // special
   public leaf_vertices: LeafVertex[] = [];
@@ -31,8 +33,9 @@ export abstract class Graph {
    *
    * @param cells
    */
-  public AttachData(cells: Cells){
-    this.cells = cells;
+  public AttachData(model: DataModel){
+    this.model = model;
+    this.cells = model.sheet.cells;
   }
 
   /**

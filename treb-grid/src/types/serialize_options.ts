@@ -13,6 +13,9 @@ export interface SerializeOptions {
   /** include the rendered/calculated value in export, a la excel */
   rendered_values?: boolean;
 
+  /** for simulation */
+  preserve_type?: boolean;
+
   expand_arrays?: boolean;
 
   /** translate colors to excel-friendly values */

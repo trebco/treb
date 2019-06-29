@@ -1,6 +1,6 @@
 
 import { Localization, Cell, Cells, Area, ICellAddress, ValueType, CellSerializationOptions } from 'treb-base-types';
-import { Parser, ExpressionUnit, DependencyList, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
+import { Parser, ExpressionUnit, DependencyList, DecimalMarkType, ArgumentSeparatorType, UnitAddress } from 'treb-parser';
 
 import { Graph, GraphStatus } from './dag/graph';
 import { SpreadsheetVertex, CalculationResult } from './dag/spreadsheet_vertex';
@@ -13,6 +13,7 @@ import { FunctionLibrary, FunctionMap } from './function-library';
 import './base-functions';
 
 import * as PackResults from './pack-results';
+import { DataModel } from '@root/treb-grid/src';
 
 /**
  * options for unparsing (cleaning up) expressions
@@ -155,21 +156,27 @@ export class Calculator extends Graph {
 
   }
 
-  public InitSimulation(iterations: number, lhs: boolean, cells: Cells,
-    additional_cells?: ICellAddress[]){
+  public InitSimulation(
+      iterations: number,
+      lhs: boolean,
+      // cells: Cells,
+      model: DataModel,
+      additional_cells?: ICellAddress[] ){
 
     Model.iterations = iterations;
     Model.results = [];
     Model.lhs = lhs;
     Model.correlated_distributions = {};
 
+    const cells = model.sheet.cells;
+
     // calling the flush method, instead of flushing tree directly,
     // will also set status -> OK. note that (atm, at least) we don't
     // need to deal with spreadsheet leaf nodes in the worker thread.
 
     this.Reset();
-    this.AttachData(cells);
-    this.expression_calculator.SetCells(cells);
+    this.AttachData(model);
+    this.expression_calculator.SetModel(model);
 
     // add additional cells to monitor, but only if they actually
     // exist; otherwise they will generate calc errors.
@@ -216,8 +223,8 @@ export class Calculator extends Graph {
    * wrapper method for calculation. this should be used for 1-time
    * calculations (i.e. not in a simulation).
    */
-  public async Calculate(cells: Cells, area?: Area, options?: CalculationOptions){
-    const result = await this.CalculateInternal(cells, area, options);
+  public async Calculate(model: DataModel, area?: Area, options?: CalculationOptions){
+    const result = await this.CalculateInternal(model, area, options);
     return result;
   }
 
@@ -370,17 +377,19 @@ export class Calculator extends Graph {
    * we also need to manage the list of volatile cells, which is normally
    * built as a side-effect of calculation.
    */
-  public RebuildClean(cells: Cells) {
+  public RebuildClean(model: DataModel) {
 
     const json_options: CellSerializationOptions = {
       preserve_type: true,
       calculated_value: true };
 
+    const cells = model.sheet.cells;
+
     this.full_rebuild_required = false; // unset
     const flat = cells.toJSON(json_options);
 
-    this.AttachData(cells);
-    this.expression_calculator.SetCells(cells);
+    this.AttachData(model);
+    this.expression_calculator.SetModel(model);
 
     const result = this.RebuildGraph(flat.data, {});
 
@@ -421,14 +430,52 @@ export class Calculator extends Graph {
     return name;
   }
 
+  /** named range support */
+  protected NamedRangeToAddressUnit(address: ICellAddress, label: string, id: number, position: number) {
+    return {
+      type: 'address',
+      row: address.row,
+      column: address.column,
+      label,
+      id,
+      position,
+    } as UnitAddress;
+  }
+
   protected RebuildDependencies(unit: ExpressionUnit, dependencies: DependencyList){
 
     switch (unit.type){
 
       case 'literal':
       case 'missing':
-      case 'identifier':
       case 'operator':
+        return;
+
+      case 'identifier':
+        {
+          if (!this.model) return;
+          const normalized = unit.name.toUpperCase();
+          const named_range = this.model.sheet.named_ranges[normalized];
+          if (named_range) {
+            if (named_range.count === 1) {
+              dependencies.addresses[normalized] =
+                this.NamedRangeToAddressUnit(named_range.start, normalized,
+                  unit.id, unit.position);
+            }
+            else {
+              dependencies.ranges[normalized] = {
+                type: 'range',
+                start: this.NamedRangeToAddressUnit(named_range.start, normalized,
+                  unit.id, unit.position),
+                end: this.NamedRangeToAddressUnit(named_range.end, normalized,
+                  unit.id, unit.position),
+                label: normalized,
+                id: unit.id,
+                position: unit.position,
+              };
+            }
+          }
+        }
         return;
 
       case 'address':
@@ -684,7 +731,9 @@ export class Calculator extends Graph {
     return this.expression_calculator.Calculate(vertex.expression, vertex.address);
   }
 
-  protected async CalculateInternal(cells: Cells, area?: Area, options?: CalculationOptions){
+  protected async CalculateInternal(model: DataModel, area?: Area, options?: CalculationOptions){
+
+    const cells = model.sheet.cells;
 
     const json_options: CellSerializationOptions = {
       preserve_type: true,
@@ -697,8 +746,8 @@ export class Calculator extends Graph {
 
     let flat = cells.toJSON(json_options);
 
-    this.AttachData(cells);
-    this.expression_calculator.SetCells(cells);
+    this.AttachData(model);
+    this.expression_calculator.SetModel(model);
 
     let result: {status: GraphStatus, reference?: ICellAddress} = {
       status: GraphStatus.OK,
