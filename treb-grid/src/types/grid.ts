@@ -2791,26 +2791,22 @@ export class Grid {
     // double tests... it seems redundant.
 
     if (address.column > area.end.column) {
-      // address.row++;
       address.row = this.StepVisibleRows(address.row, 1);
       if (address.row > area.end.row) address.row = area.start.row;
       address.column = area.start.column;
     }
     else if (address.column < area.start.column) {
-      // address.row--;
       address.row = this.StepVisibleRows(address.row, -1);
       if (address.row < area.start.row) address.row = area.end.row;
       address.column = area.end.column;
     }
     else if (address.row > area.end.row) {
-      // address.column++;
-      address.column = this.StepVisibleColumns(address.row, 1);
+      address.column = this.StepVisibleColumns(address.column, 1);
       if (address.column > area.end.column) address.column = area.start.column;
       address.row = area.start.row;
     }
     else if (address.row < area.start.row) {
-      // address.column--;
-      address.column = this.StepVisibleColumns(address.row, -1);
+      address.column = this.StepVisibleColumns(address.column, -1);
       if (address.column < area.start.column) address.column = area.end.column;
       address.row = area.end.row;
     }
@@ -2883,8 +2879,6 @@ export class Grid {
       // different behavior
       if (selecting_argument) {
         const target = {
-          // row: Math.max(0, this.primary_selection.target.row + delta.rows),
-          // column: Math.max(0, this.primary_selection.target.column + delta.columns),
           row: Math.max(0, this.StepVisibleRows(this.primary_selection.target.row, delta.rows)),
           column: Math.max(0, this.StepVisibleColumns(this.primary_selection.target.column, delta.columns)),
         };
@@ -2936,8 +2930,6 @@ export class Grid {
 
           // step
 
-          // address.row += delta.rows;
-          // address.column += delta.columns;
           address.row = this.StepVisibleRows(address.row, delta.rows);
           address.column = this.StepVisibleColumns(address.column, delta.columns);
 
@@ -2975,23 +2967,19 @@ export class Grid {
         if (delta.columns) {
           if (area.columns === 1) {
             if (delta.columns > 0) {
-              // end.column++;
               end.column = this.StepVisibleColumns(end.column, 1);
               scroll_target.column = end.column;
             }
             else {
-              // start.column--;
               start.column = this.StepVisibleColumns(start.column, -1);
               scroll_target.column = start.column;
             }
           }
           else if (area.end.column > target.column) {
-            // end.column += delta.columns;
             end.column = this.StepVisibleColumns(end.column, delta.columns);
             scroll_target.column = end.column;
           }
           else if (area.start.column < target.column) {
-            // start.column += delta.columns;
             start.column = this.StepVisibleColumns(start.column, delta.columns);
             scroll_target.column = start.column;
           }
@@ -3002,23 +2990,19 @@ export class Grid {
         if (delta.rows) {
           if (area.rows === 1) {
             if (delta.rows > 0) {
-              // end.row++;
               end.row = this.StepVisibleRows(end.row, 1);
               scroll_target.row = end.row;
             }
             else {
-              // start.row--;
               start.row = this.StepVisibleRows(start.row, -1);
               scroll_target.row = start.row;
             }
           }
           else if (area.end.row > target.row) {
-            // end.row += delta.rows;
             end.row = this.StepVisibleRows(end.row, delta.rows);
             scroll_target.row = end.row;
           }
           else if (area.start.row < target.row) {
-            // start.row += delta.rows;
             start.row = this.StepVisibleRows(start.row, delta.rows);
             scroll_target.row = start.row;
           }
@@ -3049,25 +3033,19 @@ export class Grid {
 
         if (target_cell.merge_area) {
           if (delta.columns < 0) {
-            address.column = // target_cell.merge_area.start.column - 1;
-              this.StepVisibleColumns(target_cell.merge_area.start.column, -1);
+            address.column = this.StepVisibleColumns(target_cell.merge_area.start.column, -1);
           }
           else if (delta.columns > 0) {
-            address.column = // target_cell.merge_area.end.column + 1;
-              this.StepVisibleColumns(target_cell.merge_area.end.column, 1);
+            address.column = this.StepVisibleColumns(target_cell.merge_area.end.column, 1);
           }
           if (delta.rows < 0) {
-            address.row = // target_cell.merge_area.start.row - 1;
-              this.StepVisibleRows(target_cell.merge_area.start.row, -1);
+            address.row = this.StepVisibleRows(target_cell.merge_area.start.row, -1);
           }
           else if (delta.rows > 0) {
-            address.row = // target_cell.merge_area.end.row + 1;
-              this.StepVisibleRows(target_cell.merge_area.end.row, 1);
+            address.row = this.StepVisibleRows(target_cell.merge_area.end.row, 1);
           }
         }
         else {
-          // address.row += delta.rows;
-          // address.column += delta.columns;
           address.row = this.StepVisibleRows(address.row, delta.rows);
           address.column = this.StepVisibleColumns(address.column, delta.columns);
         }
