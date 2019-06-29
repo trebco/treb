@@ -8,7 +8,7 @@ import { EventSource, Measurement } from 'treb-utils';
 
 // --- local imports ----------------------------------------------------------
 
-import { SheetEvent, UpdateHints } from './sheet_types';
+import { SheetEvent, UpdateHints, FreezePane, SerializedSheet } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
 import { NamedRangeCollection } from './named_range';
 
@@ -53,9 +53,9 @@ export class Sheet {
 
     if (hints) console.warn( '(using hints)', hints);
 
-    let obj: any = {};
+    let obj: SerializedSheet;
     if (typeof json === 'string') obj = JSON.parse(json);
-    else obj = json;
+    else obj = json as SerializedSheet;
 
     const unflatten_numeric_array = (target: number[], data: { [index: string]: number }, default_value: number) => {
       Object.keys(data).forEach((key) => {
@@ -67,6 +67,11 @@ export class Sheet {
     if (!sheet) sheet = new Sheet();
 
     // styles (part 1) -- moved up in case we use inlined style refs
+
+    if (!hints || hints.names) {
+      sheet.named_ranges = obj.named_ranges ?
+        JSON.parse(JSON.stringify(obj.named_ranges)) : {};
+    }
 
     if (!hints || hints.style) {
 
@@ -212,7 +217,7 @@ export class Sheet {
   // --- instance members -----------------------------------------------------
 
   // moved from layout
-  public freeze = {
+  public freeze: FreezePane = {
     rows: 0,
     columns: 0,
   };
@@ -228,6 +233,8 @@ export class Sheet {
 
   /**
    * named ranges: name -> area
+   * FIXME: this needs to move to an outer container, otherwise we
+   * may get conflicts w/ multiple sheets. unless we want to allow that...
    */
   public named_ranges: NamedRangeCollection = {};
 
@@ -1382,7 +1389,7 @@ export class Sheet {
       }
     }
 
-    const result: {[index: string]: any} = {
+    const result: SerializedSheet = {
 
       // not used atm, but in the event we need to gate
       // or swap importers on versions in the future
@@ -1392,32 +1399,32 @@ export class Sheet {
 
       version: (ModuleInfo as any).version,
 
-      // data: this.cells.toJSON(serialization_options).data,
       data,
-      sheet_style, // : this.sheet_style,
+      sheet_style,
       rows: this.rows,
       columns: this.columns,
       cell_styles,
       cell_style_refs,
-      row_style, // row_style: this.row_styles, // <- naming?
-      column_style, // column_style: this.column_styles,
+      row_style,
+      column_style,
       default_row_height: this.default_row_height,
       default_column_width: this.default_column_width,
       row_height: flatten_numeric_array(this.row_height_, this.default_row_height),
       column_width: flatten_numeric_array(this.column_width_, this.default_column_width),
 
-      named_ranges: JSON.parse(JSON.stringify(this.named_ranges)),
-      // named_ranges: this.named_ranges,
-
     };
+
+    // omit if empty
+
+    if (Object.keys(this.named_ranges).length) {
+      result.named_ranges = JSON.parse(JSON.stringify(this.named_ranges));
+    }
 
     // only put in freeze if used
 
     if (this.freeze.rows || this.freeze.columns) {
       result.freeze = this.freeze;
     }
-
-    // console.info(JSON.stringify(result, undefined, 2));
 
     return result;
   }
@@ -1501,7 +1508,7 @@ export class Sheet {
     return JSON.stringify(this);
   }
 
-  protected Deserialize(data: any) {
+  protected Deserialize(data: SerializedSheet) {
     Sheet.FromJSON(data, this);
 
     // some overlap here... consolidate? actually, doesn't

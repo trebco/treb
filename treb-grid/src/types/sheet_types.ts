@@ -1,5 +1,5 @@
 
-import { Area } from 'treb-base-types';
+import { Area, IArea, Style } from 'treb-base-types';
 
 export interface UpdateHints {
   data?: boolean;
@@ -7,6 +7,7 @@ export interface UpdateHints {
   style?: boolean;
   annotations?: boolean;
   freeze?: boolean;
+  names?: boolean;
 }
 
 export interface DataEvent {
@@ -28,3 +29,31 @@ export type SheetEvent
   | StyleEvent
   | FlushEvent
   ;
+
+export interface FreezePane {
+  rows: number;
+  columns: number;
+}
+
+export interface SerializedSheet {
+
+  version: string;
+  data: any; // FIXME
+  sheet_style: Style.Properties;
+  rows: number;
+  columns: number;
+  cell_styles: Array<{row: number, column: number, ref: number}>;
+
+  cell_style_refs: Style.Properties[];
+  row_style: Style.Properties[];
+  column_style: Style.Properties[];
+
+  default_row_height: number;
+  default_column_width: number;
+
+  row_height?: {[index: number]: number};
+  column_width?: {[index: number]: number};
+  named_ranges?: {[index: string]: IArea};
+  freeze?: FreezePane;
+
+}
