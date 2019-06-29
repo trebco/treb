@@ -30,7 +30,7 @@ import { Autocomplete } from '../editors/autocomplete';
 
 import { Command, CommandKey, CommandRecord,
          SetRangeCommand, FreezeCommand, UpdateBordersCommand,
-         InsertRowsCommand, InsertColumnsCommand } from './grid-command';
+         InsertRowsCommand, InsertColumnsCommand } from './grid_command';
 import { DataModel } from './data_model';
 
 interface DoubleClickData {

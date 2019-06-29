@@ -10,6 +10,7 @@ import { EventSource, Measurement } from 'treb-utils';
 
 import { SheetEvent, UpdateHints } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
+import { NamedRangeCollection } from './named_range';
 
 import * as ModuleInfo from '@root/package.json';
 import { Theme } from './theme';
@@ -224,6 +225,11 @@ export class Sheet {
 
   /** cells data */
   public cells: Cells = new Cells();
+
+  /**
+   * named ranges: name -> area
+   */
+  public named_ranges: NamedRangeCollection = {};
 
   /**
    * adding verbose flag so we can figure out who is publishing
@@ -1400,7 +1406,7 @@ export class Sheet {
       row_height: flatten_numeric_array(this.row_height_, this.default_row_height),
       column_width: flatten_numeric_array(this.column_width_, this.default_column_width),
 
-      // named_ranges: JSON.parse(JSON.stringify(this.named_ranges)),
+      named_ranges: JSON.parse(JSON.stringify(this.named_ranges)),
       // named_ranges: this.named_ranges,
 
     };

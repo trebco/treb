@@ -1049,11 +1049,14 @@ export class Parser {
    */
   protected ConsumeAddressColumn(position: number) {
     let column = -1; // clever
+    let length = 0; // max 3 chars for column
 
     const absolute = this.data[position] === DOLLAR_SIGN;
     if (absolute) position++;
 
-    for (; ; position++) {
+    for (; ; position++, length++) {
+      if (length >= 4) return false; // max 3 chars for column
+
       const char = this.data[position];
       if (char >= UC_A && char <= UC_Z) {
         column = 26 * (1 + column) + (char - UC_A);
