@@ -29,6 +29,12 @@
         flex-direction: column;
         justify-content: center;
         padding-left: 3px;
+
+        & > div {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
       }
 
       .editor-container {

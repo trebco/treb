@@ -70,10 +70,24 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     return this.editor_node ? this.editor_node.textContent || '' : '';
   }
 
-  /** set address label text */
+  /**
+   * set address label text. if the label is too long for the box,
+   * add a title attribute for a tooltip.
+   */
   public set label(text: string) {
-    if (!text.trim().length) this.address_label.innerHTML = '&nbsp;';
-    else this.address_label.textContent = text;
+    if (!text.trim().length) {
+      this.address_label.innerHTML = '&nbsp;';
+      this.address_label.removeAttribute('title');
+    }
+    else {
+      this.address_label.textContent = text;
+      if (this.address_label.scrollWidth > this.address_label.offsetWidth) {
+        this.address_label.setAttribute('title', text);
+      }
+      else {
+        this.address_label.removeAttribute('title');
+      }
+    }
   }
 
   /** get address label text */
