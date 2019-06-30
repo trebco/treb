@@ -349,14 +349,20 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     let area: Area;
 
     if (typeof range === 'string') {
-      const addresses = range.split(':');
-      if (addresses.length < 2) {
-        area = new Area(this.EnsureAddress(addresses[0]));
+      const named_range = this.grid.model.sheet.named_ranges.Get(range);
+      if (named_range) {
+        area = named_range.Clone();
       }
       else {
-        area = new Area(
-          this.EnsureAddress(addresses[0]),
-          this.EnsureAddress(addresses[1]));
+        const addresses = range.split(':');
+        if (addresses.length < 2) {
+          area = new Area(this.EnsureAddress(addresses[0]));
+        }
+        else {
+          area = new Area(
+            this.EnsureAddress(addresses[0]),
+            this.EnsureAddress(addresses[1]));
+        }
       }
     }
     else if (IsCellAddress(range)) {
@@ -378,14 +384,20 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   public GetRange(range: ICellAddress|IArea|string, formula = false) {
 
     if (typeof range === 'string') {
-      const addresses = range.split(':');
-      if (addresses.length < 2) {
-        return this.grid.GetRange(new Area(this.EnsureAddress(addresses[0])), formula);
+      const named_range = this.grid.model.sheet.named_ranges.Get(range);
+      if (named_range) {
+        return this.grid.GetRange(named_range, formula);
       }
       else {
-        return this.grid.GetRange(new Area(
-          this.EnsureAddress(addresses[0]),
-          this.EnsureAddress(addresses[1])), formula);
+        const addresses = range.split(':');
+        if (addresses.length < 2) {
+          return this.grid.GetRange(new Area(this.EnsureAddress(addresses[0])), formula);
+        }
+        else {
+          return this.grid.GetRange(new Area(
+            this.EnsureAddress(addresses[0]),
+            this.EnsureAddress(addresses[1])), formula);
+        }
       }
     }
     else if (IsCellAddress(range)) {
@@ -446,6 +458,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       else if (parse_result.expression && parse_result.expression.type === 'range') {
         result.row = parse_result.expression.start.row;
         result.column = parse_result.expression.start.column;
+      }
+      else if (parse_result.expression && parse_result.expression.type === 'identifier') {
+        const named_range = this.grid.model.sheet.named_ranges.Get(parse_result.expression.name);
+        if (named_range) {
+          return named_range.start;
+        }
       }
     }
     else {
@@ -690,14 +708,20 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     if (range) {
       if (typeof range === 'string') {
-        const addresses = range.split(':');
-        if (addresses.length < 2) {
-          area = new Area(this.EnsureAddress(addresses[0]));
+        const named_range = this.grid.model.sheet.named_ranges.Get(range);
+        if (named_range) {
+          area = named_range.Clone();
         }
         else {
-          area = new Area(
-            this.EnsureAddress(addresses[0]),
-            this.EnsureAddress(addresses[1]));
+          const addresses = range.split(':');
+          if (addresses.length < 2) {
+            area = new Area(this.EnsureAddress(addresses[0]));
+          }
+          else {
+            area = new Area(
+              this.EnsureAddress(addresses[0]),
+              this.EnsureAddress(addresses[1]));
+          }
         }
       }
       else if (IsCellAddress(range)) {
