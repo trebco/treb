@@ -36,6 +36,7 @@ export enum CommandKey {
   UpdateTheme,
   SetNote,
   Freeze,
+  SetName,
   ShowHeaders,
 
 }
@@ -91,6 +92,13 @@ export interface InsertColumnsCommand extends CommandBase {
 export interface ShowHeadersCommand extends CommandBase {
   key: CommandKey.ShowHeaders;
   show: boolean;
+}
+
+/** set or clear name (omit range to clear) */
+export interface SetNameCommand extends CommandBase {
+  key: CommandKey.SetName;
+  name: string;
+  area?: IArea;
 }
 
 /**
@@ -213,6 +221,7 @@ export type Command
   | ShowHeadersCommand
   | InsertColumnsCommand
   | UpdateBordersCommand
+  | SetNameCommand
   ;
 
 /**

@@ -1083,6 +1083,17 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  public ClearName(name: string) {
+    this.grid.SetName(name);
+  }
+
+  public SetName(name: string) {
+    const selection = this.grid.GetSelection();
+    if (!selection.empty) {
+      this.grid.SetName(name, selection.area);
+    }
+  }
+
   /** testing
    *
    * this is called after recalc, check any annotations

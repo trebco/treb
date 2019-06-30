@@ -30,7 +30,7 @@ import { Autocomplete } from '../editors/autocomplete';
 
 import { Command, CommandKey, CommandRecord,
          SetRangeCommand, FreezeCommand, UpdateBordersCommand,
-         InsertRowsCommand, InsertColumnsCommand } from './grid_command';
+         InsertRowsCommand, InsertColumnsCommand, SetNameCommand } from './grid_command';
 import { DataModel } from './data_model';
 
 interface DoubleClickData {
@@ -732,6 +732,25 @@ export class Grid {
     if (this.container) {
       this.container.focus();
     }
+  }
+
+  /**
+   * set or clear name
+   */
+  public SetName(name: string, range?: ICellAddress|Area) {
+    const command: SetNameCommand = {
+      key: CommandKey.SetName,
+      name,
+    };
+    if (range) {
+      if (IsCellAddress(range)) {
+        command.area = new Area(range);
+      }
+      else {
+        command.area = new Area(range.start, range.end);
+      }
+    }
+    this.ExecCommand(command);
   }
 
   /**
@@ -4216,6 +4235,17 @@ export class Grid {
           style_area = Area.Join(area, style_area);
           render_area = Area.Join(area, render_area);
         }
+        break;
+
+      case CommandKey.SetName:
+        if (command.area) {
+          this.model.sheet.named_ranges.SetName(command.name,
+            new Area(command.area.start, command.area.end));
+        }
+        else {
+          this.model.sheet.named_ranges.ClearName(command.name);
+        }
+        structure_event = true;
         break;
 
       case CommandKey.UpdateBorders:
