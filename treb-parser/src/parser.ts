@@ -119,7 +119,10 @@ export class Parser {
   protected error_position: number | undefined;
   protected error: string | undefined;
 
-  protected dependencies: DependencyList = { addresses: {}, ranges: {} };
+  protected dependencies: DependencyList = {
+    addresses: {},
+    ranges: {},
+  };
 
   // referenced addresses -- used to merge ranges/addresses, although I'm
   // not sure that's actually all that useful

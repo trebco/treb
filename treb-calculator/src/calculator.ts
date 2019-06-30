@@ -455,7 +455,8 @@ export class Calculator extends Graph {
         {
           if (!this.model) return;
           const normalized = unit.name.toUpperCase();
-          const named_range = this.model.sheet.named_ranges[normalized];
+          // const named_range = this.model.sheet.named_ranges[normalized];
+          const named_range = this.model.sheet.named_ranges.Get(normalized);
           if (named_range) {
             if (named_range.count === 1) {
               dependencies.addresses[normalized] =

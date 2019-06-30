@@ -5,7 +5,7 @@
 import { Model, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 
-import { Localization, Cells, ICellAddress, ValueType } from 'treb-base-types';
+import { Localization, Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
 import { Parser, ExpressionUnit, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 
 import { DataModel, NamedRangeCollection } from 'treb-grid';
@@ -23,7 +23,7 @@ export class ExpressionCalculator {
 
   private call_index = 0;
   private cells: Cells = new Cells();
-  private named_ranges: NamedRangeCollection = {};
+  private named_range_map: {[index: string]: Area} = {};
   private parser: Parser; // = new Parser();
 
   constructor(){
@@ -54,7 +54,7 @@ export class ExpressionCalculator {
 
   public SetModel(model: DataModel) {
     this.cells = model.sheet.cells;
-    this.named_ranges = model.sheet.named_ranges;
+    this.named_range_map = model.sheet.named_ranges.Map();
   }
 
   /**
@@ -470,7 +470,8 @@ export class ExpressionCalculator {
       return undefined;
     }
 
-    const named_range = this.named_ranges[name.toUpperCase()];
+    const named_range = this.named_range_map[name.toUpperCase()];
+
     if (named_range) {
       if (named_range.count === 1) {
         return this.CellFunction(

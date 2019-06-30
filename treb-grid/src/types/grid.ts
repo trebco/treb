@@ -3292,12 +3292,27 @@ export class Grid {
     else {
 
       const data = this.model.sheet.CellData(this.primary_selection.target);
+      const target = new Area(data.merge_area ? data.merge_area.start : selection.target);
+
+      /*
       if (data.merge_area) {
         this.formula_bar.label = Area.CellAddressToLabel(data.merge_area.start);
       }
       else {
         this.formula_bar.label = Area.CellAddressToLabel(selection.target);
       }
+      */
+
+      let label = Area.CellAddressToLabel(target.start);
+
+      for (const entry of this.model.sheet.named_ranges.List()) {
+        if (entry.range.Equals(target)) {
+          label = entry.name;
+          break;
+        }
+      }
+
+      this.formula_bar.label = label;
     }
 
   }
