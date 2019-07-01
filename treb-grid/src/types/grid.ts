@@ -494,7 +494,7 @@ export class Grid {
   }
 
   public ResetMetadata() {
-    this.model.name = undefined;
+    this.model.document_name = undefined;
     this.model.user_data = undefined;
   }
 
