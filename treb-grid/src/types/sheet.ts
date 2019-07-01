@@ -87,7 +87,6 @@ export class Sheet {
       sheet.cell_style = [];
 
       if (obj.cell_style_refs) {
-        // (obj.cell_styles || []).forEach((cell_style: Style.Properties) => {
         (obj.cell_styles || []).forEach((cell_style: CellStyleRef) => {
             if (typeof cell_style.ref === 'number') {
             cell_style.style =

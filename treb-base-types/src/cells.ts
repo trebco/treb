@@ -664,9 +664,11 @@ export class Cells {
       for (let r = area.start.row, i = 0; r <= area.end.row; r++, i++) {
         if (!this.data2[r]) this.data2[r] = [];
         const row = this.data2[r];
-        for (let c = area.start.column, j = 0; c <= area.end.column; c++, j++) {
-          if (!row[c]) row[c] = new Cell();
-          row[c].Set(values[i][j]); // undefined should be implicit
+        if (values[i]) {
+          for (let c = area.start.column, j = 0; c <= area.end.column; c++, j++) {
+            if (!row[c]) row[c] = new Cell();
+            row[c].Set(values[i][j]); // undefined should be implicit
+          }
         }
       }
     }

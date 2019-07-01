@@ -55,17 +55,17 @@ export class NumberFormatCache {
   private static cache: {[index: string]: NumberFormat} = {};
 
   private static base_formats: {[index: string]: string} = {
-    accounting: '_(#,##0.00_);(#,##0.00);-???',
-    number: '0.00',
-    integer: '0',
-    percent: '0.00%',
-    general: '0.00###',
-    dollar: '$* _(#,##0.00_);$* (#,##0.00);$* -???',
-    exponential: '0.000e',
+    Accounting: '_(#,##0.00_);(#,##0.00);-???',
+    Number: '0.00',
+    Integer: '0',
+    Percent: '0.00%',
+    General: '0.00###',
+    Dollar: '$* _(#,##0.00_);$* (#,##0.00);$* -???',
+    Exponential: '0.000e',
 
-    'short date': 'mm/dd/yy',
-    'long date': 'dddd, mmm d yyyy',
-    timestamp: 'mm-dd-yy hh:mm:ss',
+    'Short Date': 'mm/dd/yy',
+    'Long Date': 'dddd, mmm d yyyy',
+    Timestamp: 'mm-dd-yy hh:mm:ss',
   };
 
   private static InitCache(){
@@ -75,9 +75,22 @@ export class NumberFormatCache {
     }
 
     const aliases: {[index: string]: string} = {
-      scientific: 'exponential',
-      percentage: 'percent',
-      currency: 'dollar',
+      Scientific: 'Exponential',
+      Percentage: 'Percent',
+      Currency: 'Dollar',
+
+      // we switched to Uppercase symbolic names to better
+      // match imported files, but we have legacy stuff using
+      // lowercase, so add aliases.
+
+      accounting: 'Accounting',
+      number: 'Number',
+      integer: 'Integer',
+      percent: 'Percent',
+      general: 'General',
+      dollar: 'Dollar',
+      exponential: 'Exponential',
+
     };
 
     for (const key of Object.keys(aliases)) {

@@ -827,9 +827,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   public LoadFileInternal(file: File) {
 
     const reader = new FileReader();
-    // const name = file.name;
-
-    // this.busy = true;
 
     return new Promise<void>((resolve, reject) => {
 

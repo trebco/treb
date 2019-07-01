@@ -1,7 +1,7 @@
 
 import { Rectangle, ValueType, Style, Area, Cell, Extent, ICellAddress,
          IsCellAddress, Localization } from 'treb-base-types';
-import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType } from 'treb-parser';
+import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV } from 'treb-parser';
 import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, RDateScale } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
@@ -407,25 +407,16 @@ export class Grid {
    */
   public FromCSV(text: string) {
 
-    // this.UpdateSheet(Sheet.FromCSV(text).toJSON());
-
-    // the old method said "this is just for testing". don't use this.
-    // use a proper csv parser.
-
-    const lines = text.split(/\n/);
-    const arr = lines.map((line) => {
-      return line.trim().split(/,/).map((x) => {
-        if (/^".*"$/.test(x)) x = x.substr(1, x.length - 2);
-        return ValueParser.TryParse(x).value;
-      });
-    });
+    const records = ParseCSV(text);
+    const arr = records.map((record) =>
+      record.map((field) => ValueParser.TryParse(field).value));
 
     const end = {
-      row: arr.length,
-      column: arr.reduce((max, row) => Math.max(max, row.length), 0),
+      row: Math.max(0, arr.length - 1),
+      column: arr.reduce((max, row) => Math.max(max, Math.max(0, row.length - 1)), 0),
     };
 
-    // console.info(arr);
+    // console.info(arr, end);
 
     this.ExecCommand([
       { key: CommandKey.Clear },
@@ -3999,7 +3990,7 @@ export class Grid {
 
     // left
     if (borders === BorderConstants.Left || borders === BorderConstants.Outside) {
-      if (!area.entire_column) {
+      if (!area.entire_row) {
         this.model.sheet.UpdateAreaStyle(area.left, { ...left }, true, false, true);
       }
     }
@@ -4018,7 +4009,7 @@ export class Grid {
 
     // right
     if (borders === BorderConstants.Right || borders === BorderConstants.Outside) {
-      if (!area.entire_column) {
+      if (!area.entire_row) {
         this.model.sheet.UpdateAreaStyle(area.right, { ...right }, true, false, true);
       }
     }
@@ -4258,7 +4249,11 @@ export class Grid {
         break;
 
       case CommandKey.UpdateBorders:
-        render_area = Area.Join(this.ApplyBordersInternal(command), render_area);
+        {
+          const area = this.ApplyBordersInternal(command);
+          render_area = Area.Join(area, render_area);
+          style_area = Area.Join(area, style_area);
+        }
         break;
 
       case CommandKey.ResizeRows:

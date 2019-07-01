@@ -250,9 +250,9 @@ export class Toolbar {
 
   public ClearDocumentFormats() {
     this.formats = [
-      'general', 'number', 'integer', 'percent', 'accounting', 'currency', 'scientific',
+      'General', 'Number', 'Integer', 'Percent', 'Accounting', 'Currency', 'Scientific',
       { type: 'separator' },
-      'timestamp', 'long date', 'short date',
+      'Timestamp', 'Long Date', 'Short Date',
     ];
     const item = this.items['number-format'];
     if (item) item.submenu = this.formats;

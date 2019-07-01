@@ -34,6 +34,8 @@ export interface ParseResult {
   type: ValueType;
 }
 
+const this_year = new Date().getUTCFullYear();
+
 /**
  * value parser class is a singleton, instance is exported
  */
@@ -104,22 +106,29 @@ class ValueParserType {
       if (lc === 'false') return { value: false, type: ValueType.boolean };
       if (lc === 'true' ) return { value: true, type: ValueType.boolean };
 
-      // check date
+      // check date, but bound on reasonable years...
+      // also maybe parameterize, make this optional
+
       const date = Date.parse(s);
 
       if (!isNaN(date)) {
-        hints = Hints.Date;
-
         const check = new Date(date);
-        if (check.getHours() || check.getMinutes() || check.getSeconds()) {
-          hints |= Hints.Time;
+        const year = check.getUTCFullYear();
+
+        if (year >= (this_year - 200) && year <= (this_year + 200)) {
+          hints = Hints.Date;
+
+          if (check.getHours() || check.getMinutes() || check.getSeconds()) {
+            hints |= Hints.Time;
+          }
+
+          return {
+            value: date / RDateScale,
+            type: ValueType.number,
+            hints,
+          };
         }
 
-        return {
-          value: date / RDateScale,
-          type: ValueType.number,
-          hints,
-        };
       }
 
       return { value: s, type: ValueType.string };
