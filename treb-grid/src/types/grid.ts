@@ -493,6 +493,11 @@ export class Grid {
 
   }
 
+  public ResetMetadata() {
+    this.model.name = undefined;
+    this.model.user_data = undefined;
+  }
+
   public UpdateSheet(data: any, render = false) {
 
     if (typeof data === 'string') {
@@ -510,11 +515,14 @@ export class Grid {
       }
     }
 
+    this.ResetMetadata();
+
     // scrub, then add any sheet annotations. note the caller will
     // still have to inflate these or do whatever step is necessary to
     // render.
 
     this.RemoveAllAnnotations();
+
     const annotations = (data as any).annotations;
     if (annotations && Array.isArray(annotations)) {
       for (const element of annotations) {

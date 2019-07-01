@@ -81,6 +81,23 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  public get document_name() {
+    return this.grid.model.name;
+  }
+
+  public set document_name(name: string|undefined) {
+    this.grid.model.name = name;
+    this.DocumentChange();
+  }
+
+  public get user_data() {
+    return this.grid.model.user_data;
+  }
+
+  public set user_data(data: any|undefined) {
+    this.grid.model.user_data = data;
+  }
+
   /** state of toolbar load. this is dynamic, but we are not using webpack chunks. */
   private static formatting_toolbar_state: ToolbarLoadState = ToolbarLoadState.NotLoaded;
 
@@ -130,10 +147,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   private block_undo = false;
 
   /** opaque user data associated with document */
-  private user_data?: any;
+  // private user_data?: any;
 
   /** document name */
-  private document_name?: string = undefined;
+  // private document_name?: string = undefined;
 
   /**
    * these (practically speaking, there should only be one) are resolve()
@@ -563,8 +580,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
                 undefined,
               );
 
-            this.document_name = undefined;
-            this.user_data = undefined;
+            // this.document_name = undefined;
+            // this.user_data = undefined;
+
             this.additional_cells = [];
             this.calculator.Reset(false);
             this.FlushUndo();
@@ -648,8 +666,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   public Export(){
     this.ExportBlob().then((blob) => {
       let filename = 'export';
-      if (this.document_name) {
-        filename = this.document_name.toLowerCase().replace(/\s+/g, '-');
+      if (this.grid.model.name) {
+        filename = this.grid.model.name.toLowerCase().replace(/\s+/g, '-');
       }
       if (blob) {
         FileSaver.saveAs(blob, filename + '.xlsx', true);
@@ -690,8 +708,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   /** clear/reset sheet, back to initial state */
   public Reset() {
     this.grid.Clear();
-    this.document_name = undefined;
-    this.user_data = undefined;
+    // this.document_name = undefined;
+    // this.user_data = undefined;
     this.additional_cells = [];
     this.calculator.Reset(false);
 
@@ -915,7 +933,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   /** save a file to desktop */
   public SaveLocalFile(type: SaveFileType = SaveFileType.treb) {
 
-    const document_name = this.document_name || 'document'; // FIXME: options
+    const document_name = this.grid.model.name || 'document'; // FIXME: options
 
     let data: any;
     let blob: Blob;
@@ -937,8 +955,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   }
 
   public LoadCSV(csv: string) {
-    this.document_name = undefined;
-    this.user_data = undefined;
+    // this.document_name = undefined;
+    // this.user_data = undefined;
     this.grid.FromCSV(csv);
     this.additional_cells = [];
     this.calculator.Reset(false);
@@ -966,8 +984,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // FIXME: it's not necessary to call reset here unless the
     // document fails, do that with a trap?
 
-    this.document_name = data.name;
-    this.user_data = data.user_data;
+//    this.document_name = data.name;
+//    this.user_data = data.user_data;
 
     // FIXME: replace decimal mark, argument separator if necessary
     // console.info(data);
@@ -1025,6 +1043,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     }
 
     this.grid.UpdateSheet(data.sheet_data); // don't paint -- wait for calculate
+
+    this.grid.model.name = data.name;
+    this.grid.model.user_data = data.user_data;
 
     this.additional_cells = [];
     this.calculator.Reset(false);
@@ -1278,8 +1299,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       app: (build as any).name,
       // document_id: this.document_id,
       version: (build as any).version,
-      name: this.document_name, // may be undefined
-      user_data: this.user_data, // may be undefined
+      name: this.grid.model.name, // may be undefined
+      user_data: this.grid.model.user_data, // may be undefined
       sheet_data: this.grid.Serialize(serialize_options),
       decimal_mark: Localization.decimal_separator,
     };
@@ -1297,15 +1318,16 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     return serialized;
   }
 
-  /**  */
+  /* *  * /
   public GetUserData() {
-    return this.user_data;
+    return this.grid.model.user_data;
   }
 
-  /**  */
+  /* *  * /
   public SetUserData(data: any) {
-    this.user_data = data;
+    this.grid.model.user_data = data;
   }
+  */
 
   /** recalc sheet */
   public async Recalculate(event?: GridEvent, formula_only = false) {
