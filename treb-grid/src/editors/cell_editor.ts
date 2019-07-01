@@ -7,6 +7,7 @@ import { ExtendedTheme } from '../types/theme';
 import { GridSelection } from '../types/grid_selection';
 import { FormulaEditorBase } from './formula_editor_base';
 import { Autocomplete } from './autocomplete';
+import { DataModel } from '../types/data_model';
 
 export class CellEditor extends FormulaEditorBase {
 
@@ -22,9 +23,9 @@ export class CellEditor extends FormulaEditorBase {
   /** accessor for editor visible */
   public get visible(){ return this.visible_; }
 
-  constructor(private container: HTMLElement, theme: ExtendedTheme, autocomplete: Autocomplete){
+  constructor(private container: HTMLElement, theme: ExtendedTheme, model: DataModel, autocomplete: Autocomplete){
 
-    super(theme, autocomplete);
+    super(theme, model, autocomplete);
 
     // this.autocomplete = new Autocomplete({
     //  theme: this.theme,

@@ -164,5 +164,5 @@ export interface ParseResult {
   dependencies: DependencyList;
   separator?: string;
   decimal_mark?: string;
-  full_reference_list?: Array<UnitRange | UnitAddress>;
+  full_reference_list?: Array<UnitRange | UnitAddress | UnitIdentifier>;
 }

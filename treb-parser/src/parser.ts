@@ -140,8 +140,12 @@ export class Parser {
    *
    * because that's a big API change it's going to have to wait. for now,
    * use a second list.
+   *
+   * UPDATE: adding (otherwise unused) tokens, which could be named ranges.
+   * in the future we may pass in a list of names at parse time, and resolve
+   * them; for now we are just listing names.
    */
-  protected full_reference_list: Array<UnitAddress | UnitRange> = [];
+  protected full_reference_list: Array<UnitAddress | UnitRange | UnitIdentifier> = [];
 
   /**
    * recursive tree walk.
@@ -962,6 +966,9 @@ export class Parser {
       name: str,
       position,
     };
+
+    this.full_reference_list.push(identifier);
+
     return identifier;
   }
 

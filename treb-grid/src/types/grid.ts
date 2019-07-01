@@ -1137,7 +1137,12 @@ export class Grid {
 
   private InitFormulaBar(grid_container: HTMLElement, autocomplete: Autocomplete) {
 
-    this.formula_bar = new FormulaBar(grid_container, this.theme, this.options, autocomplete);
+    this.formula_bar = new FormulaBar(
+        grid_container,
+        this.theme,
+        this.model,
+        this.options, autocomplete);
+
     this.formula_bar.autocomplete_matcher = this.autocomplete_matcher;
 
     this.formula_bar.Subscribe((event) => {
@@ -1208,8 +1213,12 @@ export class Grid {
     // for some reason it expands nicely in the cover node, but not in the
     // container node. not sure why. can probably be fixed?
 
-    // this.cell_editor = new CellEditor2(this.layout.grid_cover, this.theme);
-    this.cell_editor = new CellEditor(this.layout.scroll_reference_node, this.theme, autocomplete);
+    this.cell_editor = new CellEditor(
+        this.layout.scroll_reference_node,
+        this.theme,
+        this.model,
+        autocomplete);
+
     this.cell_editor.autocomplete_matcher = this.autocomplete_matcher;
 
     this.cell_editor.Subscribe((event) => {

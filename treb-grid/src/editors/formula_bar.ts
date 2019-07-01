@@ -6,6 +6,7 @@ import { ExtendedTheme } from '../types/theme';
 import { FormulaEditorBase, FormulaEditorEvent } from './formula_editor_base';
 import { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
+import { DataModel } from '../types/data_model';
 
 export interface FormulaBarResizeEvent {
   type: 'formula-bar-resize';
@@ -116,11 +117,12 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   constructor(
     private container: HTMLElement,
     theme: ExtendedTheme,
+    model: DataModel,
     private options: GridOptions,
     autocomplete: Autocomplete,
     ) {
 
-    super(theme, autocomplete);
+    super(theme, model, autocomplete);
 
     /*
     this.autocomplete = new Autocomplete({

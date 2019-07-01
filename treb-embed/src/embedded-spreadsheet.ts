@@ -1083,10 +1083,16 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  /**
+   * clear name
+   */
   public ClearName(name: string) {
     this.grid.SetName(name);
   }
 
+  /**
+   * set name at selection
+   */
   public SetName(name: string) {
     const selection = this.grid.GetSelection();
     if (!selection.empty) {

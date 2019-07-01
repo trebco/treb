@@ -8,6 +8,7 @@ import { Autocomplete, AutocompleteResult } from './autocomplete';
 import { AutocompleteMatcher } from './autocomplete_matcher';
 
 import { ExtendedTheme } from '../types/theme';
+import { DataModel } from '../types/data_model';
 
 /** event on commit, either enter or tab */
 export interface FormulaEditorCommitEvent {
@@ -172,7 +173,9 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     }
   }
 
-  constructor(protected readonly theme: ExtendedTheme,
+  constructor(
+      protected readonly theme: ExtendedTheme,
+      protected readonly model: DataModel,
       protected readonly autocomplete: Autocomplete){
 
     super();
@@ -480,7 +483,53 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
       if (text) {
         const parse_result = FormulaEditorBase.Parser.Parse(text);
         this.last_parse_string = text;
-        this.reference_list = parse_result.full_reference_list;
+
+        this.reference_list = []; // parse_result.full_reference_list;
+
+        if (parse_result.full_reference_list) {
+          for (const unit of parse_result.full_reference_list) {
+            if (unit.type === 'address' || unit.type === 'range') {
+              this.reference_list.push(unit);
+            }
+            else {
+              const named_range = this.model.sheet.named_ranges.Get(unit.name);
+              if (named_range) {
+                if (named_range.count === 1) {
+                  this.reference_list.push({
+                    type: 'address',
+                    ...named_range.start,
+                    label: unit.name,
+                    position: unit.position,
+                    id: unit.id,
+                  });
+                }
+                else {
+                  this.reference_list.push({
+                    type: 'range',
+                    start: {
+                      type: 'address',
+                      position: unit.position,
+                      id: unit.id,
+                      label: unit.name,
+                        ...named_range.start,
+                    },
+                    end: {
+                      type: 'address',
+                      position: unit.position,
+                      label: unit.name,
+                      id: unit.id,
+                        ...named_range.end,
+                    },
+                    label: unit.name,
+                    position: unit.position,
+                    id: unit.id,
+                  });
+                }
+              }
+            }
+          }
+        }
+
         if (this.reference_list) {
           this.reference_list.sort((a, b) => a.position - b.position);
 
