@@ -1062,6 +1062,9 @@ export class Grid {
   /**
    * set functions for AC matcher. should be called by calculator on init,
    * or when any functions are added/removed.
+   * 
+   * FIXME: we should use this to normalize function names, on insert and
+   * on paste (if we're doing that).
    */
   public SetAutocompleteFunctions(functions: FunctionDescriptor[]) {
     this.autocomplete_matcher.SetFunctions(functions);
@@ -2678,6 +2681,36 @@ export class Grid {
       paren--;
     }
 
+    formula = this.NormalizeFormula(formula);
+
+    return formula;
+  }
+
+  /**
+   * normalize addresses (UC), function names (-> canonical) and
+   * defined names (UC, for now)
+   */
+  private NormalizeFormula(formula: string) {
+    const parse_result = this.parser.Parse(formula);
+    if (parse_result && parse_result.expression) {
+      this.parser.Walk(parse_result.expression, (unit) => {
+        switch (unit.type) {
+
+        case 'call':
+          unit.name = this.autocomplete_matcher.NormalizeIdentifier(unit.name) || unit.name;
+          break;
+
+        case 'identifier':
+          if (this.model.sheet.named_ranges.Get(unit.name)) {
+            unit.name = unit.name.toUpperCase();
+          }
+          break;
+
+        }
+        return true;
+      });
+      formula = '=' + this.parser.Render(parse_result.expression);
+    }
     return formula;
   }
 

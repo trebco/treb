@@ -5,7 +5,7 @@
  * in lists.
  *
  * TODO: structure
- * TODO: other symbols...
+ * TODO: other symbols... [FIXME: defined names need to go in here]
  */
 
 export interface ArgumentDescriptor {
@@ -33,6 +33,11 @@ export class AutocompleteMatcher {
       this.function_map[fn.name.toLowerCase()] = fn;
       return fn.name;
     }).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  }
+
+  public NormalizeIdentifier(name: string) {
+    const identifier = this.function_map[name.toLowerCase()];
+    return identifier ? identifier.name : undefined;
   }
 
   public Exec(data: AutocompleteMatchData) {

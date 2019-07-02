@@ -674,7 +674,7 @@ FunctionLibrary.Register({
     fn: Model.samplevalue.bind(Model),
   },
 
-  SampleValue_Weighted: {
+  'SampleValue.Weighted': {
     description: 'Returns one of a set of values, with equal probability and with replacement',
     simulation_volatile: true,
     arguments: [
