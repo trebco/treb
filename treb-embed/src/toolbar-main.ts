@@ -225,9 +225,6 @@ export class FormattingToolbar {
       if (merged && (
           data.merge_area.start.row !== this.primary_selection.target.row ||
           data.merge_area.start.column !== this.primary_selection.target.column)) {
-
-          console.info('check: ma');
-
         data = (this.sheet as any).grid.model.sheet.CellData(data.merge_area.start);
       }
 
