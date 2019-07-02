@@ -48,8 +48,8 @@ export interface SerializedSheet {
   row_style: Style.Properties[];
   column_style: Style.Properties[];
 
-  default_row_height: number;
-  default_column_width: number;
+  default_row_height?: number;
+  default_column_width?: number;
 
   row_height?: {[index: number]: number};
   column_width?: {[index: number]: number};

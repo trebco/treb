@@ -618,6 +618,7 @@ export class Grid {
       font_size: this.theme.cell_font_size,
     });
     this.model.sheet.UpdateDefaultRowHeight(true);
+    this.model.sheet.FlushCellStyles();
 
     this.layout.ApplyTheme(this.theme);
 

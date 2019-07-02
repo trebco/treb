@@ -189,14 +189,18 @@ export class Sheet {
 
     if (!hints || hints.layout) {
 
-      sheet.default_row_height = obj.default_row_height;
-      sheet.default_column_width = obj.default_column_width;
+      // sheet.default_row_height = obj.default_row_height;
+      // sheet.default_column_width = obj.default_column_width;
 
       sheet.row_height_ = [];
-      unflatten_numeric_array(sheet.row_height_, obj.row_height || {}, obj.default_row_height);
+      unflatten_numeric_array(sheet.row_height_, obj.row_height || {},
+        sheet.default_row_height);
+        // obj.default_row_height);
 
       sheet.column_width_ = [];
-      unflatten_numeric_array(sheet.column_width_, obj.column_width || {}, obj.default_column_width);
+      unflatten_numeric_array(sheet.column_width_, obj.column_width || {},
+        sheet.default_column_width);
+        // obj.default_column_width);
 
       if (hints && !hints.data) sheet.FlushCellStyles();
 
@@ -419,9 +423,7 @@ export class Sheet {
     const composite = Style.Composite([this.sheet_style]);
     if (typeof window !== 'undefined') {
       const measurement = Measurement.MeasureText(Style.Font(composite), 'M');
-      // this.column_header_height = Math.ceil(measurement.height * 1.3);
-      this.default_row_height = Math.ceil(measurement.height * 1.4);
-
+      this.default_row_height = Math.round(measurement.height * 1.4);
     }
     else {
       // console.info('worker?');
@@ -1609,8 +1611,12 @@ export class Sheet {
       cell_style_refs,
       row_style,
       column_style,
-      default_row_height: this.default_row_height,
-      default_column_width: this.default_column_width,
+
+      // why are these serialized? (...)
+
+      // default_row_height: this.default_row_height,
+      // default_column_width: this.default_column_width,
+
       row_height: flatten_numeric_array(this.row_height_, this.default_row_height),
       column_width: flatten_numeric_array(this.column_width_, this.default_column_width),
 
