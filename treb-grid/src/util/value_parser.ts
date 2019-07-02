@@ -79,7 +79,7 @@ class ValueParserType {
       hints |= Hints.Parens;
     }
 
-    const pct = x.match(/^(.*?)%/);
+    const pct = x.match(/^(.*?)%\s*$/);
     if (pct) {
       x = pct[1];
       hints |= Hints.Percent;

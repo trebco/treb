@@ -28,6 +28,9 @@ export interface BaseOptions {
   /** fetch network document (URI) */
   network_document?: string;
 
+  /** load this document if the storage document isn't found (fallback) */
+  alternate_document?: string;
+
   /** freeze rows */
   freeze_rows?: number;
 

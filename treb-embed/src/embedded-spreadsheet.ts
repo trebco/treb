@@ -174,11 +174,16 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     this.options = { ...DefaultOptions, ...options };
 
-    // optionally data from storage
+    let network_document = this.options.network_document;
+
+    // optionally data from storage, with fallback
 
     let data: any;
     if (this.options.storage_key && !this.options.toll_initial_load) {
       data = localStorage.getItem(this.options.storage_key);
+      if (!data && this.options.alternate_document) {
+        network_document = this.options.alternate_document;
+      }
     }
 
     let container: HTMLElement;
@@ -280,8 +285,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       (self as any)[this.options.global_name] = this;
     }
 
-    if (this.options.network_document) {
-      this.LoadNetworkDocument(this.options.network_document, this.options.scroll, !!this.options.recalculate);
+    if (network_document) {
+      this.LoadNetworkDocument(network_document, this.options.scroll, !!this.options.recalculate);
     }
 
     // create mask dialog
@@ -935,7 +940,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** save a file to desktop */
-  public SaveLocalFile(type: SaveFileType = SaveFileType.treb) {
+  public SaveLocalFile(type: SaveFileType = SaveFileType.treb, preserve_simulation_data = true) {
 
     const document_name = this.grid.model.document_name || 'document'; // FIXME: options
 
@@ -946,7 +951,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     switch (type) {
       case SaveFileType.treb:
       default:
-        data = this.SerializeDocument();
+        data = this.SerializeDocument(preserve_simulation_data);
         console.info(data);
         blob = new Blob([JSON.stringify(data)], { type: 'text/plain;charset=utf-8' });
         filename = (document_name).toLowerCase().replace(/\s+/g, '-') + '.treb';

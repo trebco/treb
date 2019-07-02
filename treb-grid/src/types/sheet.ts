@@ -18,7 +18,7 @@ import { Theme } from './theme';
 // --- constants --------------------------------------------------------------
 
 const DEFAULT_COLUMN_WIDTH = 100;
-const DEFAULT_ROW_HEIGHT = 22; // not used because it's based on font (theoretically)
+const DEFAULT_ROW_HEIGHT = 26; // not used because it's based on font (theoretically)
 const DEFAULT_ROW_HEADER_WIDTH = 60;
 
 interface CellStyleRef {
@@ -234,7 +234,7 @@ export class Sheet {
   public default_column_width = 100;
 
   /** standard height */
-  public default_row_height = 22;
+  public default_row_height = 26;
 
   /** cells data */
   public cells: Cells = new Cells();
@@ -276,7 +276,7 @@ export class Sheet {
   private row_header_width = 100;
 
   /** size of header */
-  private column_header_height = 22;
+  private column_header_height = 25;
 
   // we cache composite styles so we don't wind up with objects
   // for every cell, when all we need is a single reference.
@@ -332,7 +332,6 @@ export class Sheet {
     this.default_column_width = DEFAULT_COLUMN_WIDTH;
     this.row_header_width = DEFAULT_ROW_HEADER_WIDTH;
     this.UpdateDefaultRowHeight(true);
-    this.column_header_height = this.default_row_height;
 
   }
 
@@ -416,9 +415,19 @@ export class Sheet {
    * this when we change sheet style.
    */
   public UpdateDefaultRowHeight(suppress_event = false) {
-    this.default_row_height = Math.round(
-      this.StyleFontSize(Style.Composite([this.sheet_style])) * 2.4); // ?
+
+    const composite = Style.Composite([this.sheet_style]);
+    if (typeof window !== 'undefined') {
+      const measurement = Measurement.MeasureText(Style.Font(composite), 'M');
+      // this.column_header_height = Math.ceil(measurement.height * 1.3);
+      this.default_row_height = Math.ceil(measurement.height * 1.4);
+
+    }
+    else {
+      // console.info('worker?');
+    }
     if (!suppress_event) this.PublishStyleEvent(undefined, 1);
+
   }
 
   /** returns aggregate width of all (known) columns */
@@ -546,16 +555,18 @@ export class Sheet {
   }
   */
 
-  /**
+  /* *
    * apply theme. sets some fonts in sheet.
    * @param theme
-   */
+   * /
   public ApplyTheme(theme: Theme) {
+   
     this.UpdateSheetStyle({
       font_face: theme.cell_font,
       font_size: theme.cell_font_size,
     }, true, true);
   }
+  */
 
   /**
    * updates cell styles. flushes cached style.

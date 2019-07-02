@@ -485,7 +485,11 @@ export class Grid {
 
     this.QueueLayoutUpdate();
 
-    this.model.sheet.ApplyTheme(this.theme);
+    // this.model.sheet.ApplyTheme(this.theme);
+    Style.UpdateDefaultProperties({
+      font_face: this.theme.cell_font,
+      font_size: this.theme.cell_font_size,
+    });
 
     if (render) {
       this.Repaint(false, false); // true, true);
@@ -537,7 +541,11 @@ export class Grid {
 
     this.QueueLayoutUpdate();
 
-    this.model.sheet.ApplyTheme(this.theme);
+    // this.model.sheet.ApplyTheme(this.theme);
+    Style.UpdateDefaultProperties({
+      font_face: this.theme.cell_font,
+      font_size: this.theme.cell_font_size,
+    });
 
     if (render) {
       this.Repaint(false, false);
@@ -594,6 +602,7 @@ export class Grid {
 
     // set defaults from style. why are these not set in
     // the sheet style, like fonts (below)? [...FIXME]
+    // actually, this is correct, the other one was wrong
 
     Style.DefaultProperties.border_bottom_color =
         Style.DefaultProperties.border_top_color =
@@ -603,7 +612,13 @@ export class Grid {
 
     // update style for theme
 
-    this.model.sheet.ApplyTheme(this.theme);
+    // this.model.sheet.ApplyTheme(this.theme);
+    Style.UpdateDefaultProperties({
+      font_face: this.theme.cell_font,
+      font_size: this.theme.cell_font_size,
+    });
+    this.model.sheet.UpdateDefaultRowHeight(true);
+
     this.layout.ApplyTheme(this.theme);
 
     if (!initial) {
