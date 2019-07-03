@@ -87,6 +87,18 @@
 
     }
 
+    .annotation-container {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+
+      .annotation {
+        position: absolute;
+        overflow: hidden;
+      }
+      z-index: $z-index-annotations;
+    }
+
     /** selection stacks over the grid but under the cover */
     .grid-selection {
       background: transparent;

@@ -530,6 +530,7 @@ export class Grid {
     const annotations = (data as any).annotations;
     if (annotations && Array.isArray(annotations)) {
       for (const element of annotations) {
+        console.info('inflate', JSON.stringify(element));
         this.AddAnnotation(new Annotation(element));
       }
     }
