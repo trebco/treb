@@ -39,6 +39,7 @@
     "main": "embedded-treb-bundle",
     "toolbar": "embedded-treb-toolbar",
     "calculation-worker": "embedded-treb-worker",
-    "export-worker": "embedded-treb-export-worker"
+    "export-worker": "embedded-treb-export-worker",
+    "charts": "embedded-treb-charts"
   }
 }
