@@ -224,6 +224,50 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     this.grid.Initialize(this.node);
 
+    // set up grid events
+
+    this.grid.grid_events.Subscribe((event) => {
+      switch (event.type) {
+
+        case 'selection':
+          this.UpdateSelection(event.selection);
+          break;
+
+        case 'data':
+          // console.info('calling recalc', event);
+          this.Recalculate(event).then(() => {
+            this.DocumentChange();
+          });
+          break;
+
+        case 'style':
+          this.DocumentChange();
+          break;
+
+        case 'annotation':
+          this.DocumentChange();
+          if (event.annotation) {
+            switch (event.event) {
+              case 'create':
+                this.InflateAnnotation(event.annotation);
+                break;
+              case 'resize':
+                if (event.annotation.temp.resize) {
+                  event.annotation.temp.resize();
+                }
+                break;
+            }
+          }
+          break;
+
+        case 'structure':
+          this.DocumentChange();
+          // FIXME: necessary? (...)
+          // this.calculator.Reset(false);
+          break;
+      }
+    });
+
     if (data) {
       this.LoadDocument(JSON.parse(data), undefined, undefined, !!options.recalculate);
     }
@@ -251,34 +295,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // init AC
 
     this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
-
-    // set up grid events
-
-    this.grid.grid_events.Subscribe((event) => {
-      switch (event.type) {
-
-        case 'selection':
-          this.UpdateSelection(event.selection);
-          break;
-
-        case 'data':
-          // console.info('calling recalc', event);
-          this.Recalculate(event).then(() => {
-            this.DocumentChange();
-          });
-          break;
-
-        case 'style':
-          this.DocumentChange();
-          break;
-
-        case 'structure':
-          this.DocumentChange();
-          // FIXME: necessary? (...)
-          // this.calculator.Reset(false);
-          break;
-      }
-    });
 
     // dev
     if (this.options.global_name) {
@@ -1079,7 +1095,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // the note regarding leaves (above) is important for annotations, which
     // use leaf nodes to manage dependencies. so make sure cells are attached.
 
-    this.InflateAnnotations();
+    // this.InflateAnnotations();
 
     if (flush) {
       this.FlushUndo();
@@ -1148,6 +1164,11 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           }
           */
         }
+      }
+
+      // FIXME: check dirty
+      if (annotation.temp.update) {
+        annotation.temp.update();
       }
     }
   }
@@ -1274,22 +1295,92 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   }
   */
 
-  public InflateAnnotations() {
+  public InflateAnnotation(annotation: Annotation) {
+    if (annotation.node && 1 > 2) {
+      if (annotation.data && annotation.data.type === 'treb-chart') {
+        const subnode = document.createElement('div');
+        subnode.style.position = 'relative';
+        subnode.style.width = '100%';
+        subnode.style.height = '100%';
+        subnode.style.top = '0px';
+        subnode.style.left = '0px';
+        annotation.node.appendChild(subnode);
+        const chart = (self as any).TREB.CreateChart(subnode, false);
 
-    for (const annotation of this.grid.annotations) {
-      console.info('needs inflation', annotation);
-      /*
-      if (annotation.data &&
-          annotation.cell_address &&
-          annotation.data.range &&
-          annotation.data.type === 'sparkline') {
-        this.AddSparkline(
-          new Area(annotation.data.range.start, annotation.data.range.end),
-          annotation.cell_address.start, annotation);
+        const font_stack = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif";
+        chart.options.type = 'histogram';
+        chart.options.floor = 0;
+        chart.options.series_colors = ['#69c'];
+        chart.options.title = {
+            text: 'Histogram',
+            font: "12pt " + font_stack,
+            color: '#333',
+        };
+        var options: {[index: string]: any} = {
+            // format: '0%',
+            values: '#333',
+            font: "9pt " + font_stack,
+        };
+        for (var _i = 0, _a = Object.keys(options); _i < _a.length; _i++) {
+            var key = _a[_i];
+            chart.options.x_axis[key] = options[key];
+            chart.options.y_axis[key] = options[key];
+        }
+
+        // chart.options.y_axis.format
+        chart.options.x_axis.format = this.grid.GetNumberFormat(this.EnsureAddress("F19"));
+
+        /*
+        chart.options.x_axis.label = {
+            // text: 'Target Return',
+            font: "12pt " + font_stack,
+            color: '#333',
+        };
+        * /
+        chart.options.y_axis.label = {
+            // text: 'Probability',
+            font: "12pt " + font_stack,
+            color: '#333',
+        };
+        */
+
+        const y = this.SimulationData('F19') || [];
+        chart.data.series = [{ type: 'histogram', y }];
+        // var labels = sheet.GetRange('F14:F18');
+        // chart.data.labels = labels[0];
+        // chart.options.x_axis.label.text = sheet.GetRange('F13').toString();
+        // chart.options.y_axis.label.text = sheet.GetRange('H13').toString();
+        chart.Render();
+
+        annotation.temp.resize = () => {
+          // console.info('resize');
+
+          /*
+          bounding_box = container.getBoundingClientRect();
+          this.svg.setAttribute('width', bounding_box.width.toString());
+          this.svg.setAttribute('height', bounding_box.height.toString());
+          */
+          // console.info(chart);
+
+          chart.Render();
+        };
+
+        console.info(annotation);
+
+        annotation.temp.update = () => {
+          chart.data.series = [{ type: 'histogram', y: this.SimulationData('F19') || [] }];
+          chart.Render();
+        };
+
       }
+      /*
+      const img = document.createElement('img');
+      img.setAttribute('src', 'https://riskamp.com/img/scap/conditional-risk.png');
+      img.style.width = '100%';
+      img.style.height = '100%';
+      annotation.node.appendChild(img);
       */
     }
-
   }
 
   /**
@@ -1763,6 +1854,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           this.calculator.UpdateResults(message.data);
           this.Recalculate().then(() => {
             this.Focus();
+            this.UpdateAnnotations();
           });
           setTimeout(() => {
             this.ShowDialog(false);

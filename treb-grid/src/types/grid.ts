@@ -1,5 +1,6 @@
 
-import { Rectangle, ValueType, Style, Area, Cell, Extent, ICellAddress,
+import { Rectangle, ValueType, Style, Area, Cell,
+         Extent, ICellAddress, Point,
          IsCellAddress, Localization } from 'treb-base-types';
 import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV } from 'treb-parser';
 import { EventSource, Yield } from 'treb-utils';
@@ -17,7 +18,7 @@ import { CellEditor } from '../editors/cell_editor';
 import { ValueParser, Hints } from '../util/value_parser';
 
 import { TileRenderer } from '../render/tile_renderer';
-import { GridEvent } from './grid_events';
+import { GridEvent, AnnotationEvent } from './grid_events';
 import { SheetEvent } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
 import { GridOptions, DefaultGridOptions } from './grid_options';
@@ -83,6 +84,9 @@ export class Grid {
   };
 
   // --- private members -------------------------------------------------------
+
+  /**  */
+  private selected_annotation?: Annotation;
 
   /**
    * this should not be public -- clients should only interact with the API.
@@ -306,12 +310,111 @@ export class Grid {
 
     if (!annotation.node) {
       annotation.node = document.createElement('div');
+
+      if (annotation.node && annotation.rect) {
+        const node = annotation.node;
+        const rect = annotation.rect;
+
+        // support focus
+        node.setAttribute('tabindex', '-1');
+
+        node.addEventListener('mousedown', (event) => {
+
+          // FIXME: these 13s come from the stylesheet, we need to
+          // either read these or make them dynamic somehow
+
+          if (event.offsetY <= 13) { // move
+            event.stopPropagation();
+            event.preventDefault();
+            node.focus();
+
+            const start = {x: rect.left, y: rect.top};
+
+            this.MouseDrag([], (move_event) => {
+              const delta = {
+                x: move_event.screenX - event.screenX,
+                y: move_event.screenY - event.screenY,
+              };
+              rect.top = start.y + delta.y;
+              rect.left = start.x + delta.x;
+              node.style.top = (rect.top) + 'px';
+              node.style.left = (rect.left) + 'px';
+            }, () => {
+              this.grid_events.Publish({type: 'annotation', annotation, event: 'move'});
+            });
+
+            return;
+          }
+
+          const bounding_rect = node.getBoundingClientRect();
+          if ((bounding_rect.width - event.offsetX <= 13) &&
+              (bounding_rect.height - event.offsetY <= 13)) {
+            event.stopPropagation();
+            event.preventDefault();
+            node.focus();
+
+            const start = {x: rect.width, y: rect.height};
+
+            this.MouseDrag([], (move_event) => {
+              const delta = {
+                x: move_event.screenX - event.screenX,
+                y: move_event.screenY - event.screenY,
+              };
+              rect.height = start.y + delta.y;
+              rect.width = start.x + delta.x;
+              node.style.height = (rect.height) + 'px';
+              node.style.width = (rect.width) + 'px';
+            }, () => {
+              this.grid_events.Publish({type: 'annotation', annotation, event: 'resize'});
+            });
+
+            return;
+          }
+
+        });
+
+        /*
+        annotation.node.addEventListener('focusin', (event) => {
+          // console.info('a in');
+        });
+        annotation.node.addEventListener('focusout', (event) => {
+          // console.info('a out');
+        });
+        */
+
+        annotation.node.addEventListener('keydown', (event) => {
+          switch (event.key) {
+            case 'Escape':
+            case 'Esc':
+              this.Focus();
+              break;
+
+            case 'Delete':
+            case 'Del':
+              this.Focus();
+              this.RemoveAnnotation(annotation);
+              break;
+
+            default:
+              return;
+          }
+
+          event.stopPropagation();
+          event.preventDefault();
+
+        });
+      }
     }
 
     annotation.node.classList.add('annotation');
     this.layout.AddAnnotation(annotation);
-
     this.annotations.push(annotation);
+
+    this.grid_events.Publish({
+      type: 'annotation',
+      annotation,
+      event: 'create',
+    });
 
   }
 
@@ -327,6 +430,11 @@ export class Grid {
         if (annotation.node && annotation.node.parentElement) {
           annotation.node.parentElement.removeChild(annotation.node);
         }
+        this.grid_events.Publish({
+          type: 'annotation',
+          annotation,
+          event: 'delete',
+        });
         return;
       }
     }
@@ -530,7 +638,7 @@ export class Grid {
     const annotations = (data as any).annotations;
     if (annotations && Array.isArray(annotations)) {
       for (const element of annotations) {
-        console.info('inflate', JSON.stringify(element));
+        // console.info('inflate', JSON.stringify(element));
         this.AddAnnotation(new Annotation(element));
       }
     }
@@ -767,6 +875,13 @@ export class Grid {
       }
     }
     this.ExecCommand(command);
+  }
+
+  public GetNumberFormat(address: ICellAddress) {
+    const style = this.model.sheet.CellStyleData(address);
+    if (style && style.number_format) {
+      return NumberFormatCache.Get(style.number_format).toString();
+    }
   }
 
   /**
@@ -1093,6 +1208,34 @@ export class Grid {
   }
 
   // --- private methods -------------------------------------------------------
+
+  /**
+   *
+   */
+  private PointToAnnotation(point: Point) {
+
+    /*
+    if (this.active_annotation &&
+        this.active_annotation.rect &&
+        this.active_annotation.rect.Contains(point.x, point.y)) {
+      return;
+    }
+
+    this.active_annotation = undefined;
+    */
+
+    // console.info(point);
+    for (const annotation of this.annotations) {
+      if (annotation.rect && annotation.rect.Contains(point.x, point.y)) {
+
+        // FIXME: z-ordering (or make that implicit in the stack? ...)
+
+        // this.active_annotation = annotation;
+        return annotation;
+      }
+    }
+
+  }
 
   /**
    * why is this not in layout? (...)
@@ -1823,10 +1966,21 @@ export class Grid {
       this.layout.ResizeCursor();
     }
 
+    const offset_point = {
+      x: event.offsetX,
+      y: event.offsetY,
+    };
+
+    /*
+    if (this.annotations.length) {
+      this.PointToAnnotation(offset_point);
+    }
+    */
+
     // don't show hints if we are editing
 
     if (!(this.cell_editor && this.cell_editor.visible)) {
-      const address = this.layout.PointToAddress_Grid({ x: event.offsetX, y: event.offsetY });
+      const address = this.layout.PointToAddress_Grid(offset_point);
       if (this.hover_cell.row !== address.row || this.hover_cell.column !== address.column) {
         this.HoverCell(address, event);
       }
@@ -1904,7 +2058,23 @@ export class Grid {
 
     if (this.cell_editor && this.cell_editor.visible && !this.cell_editor.selecting) this.DismissEditor();
 
-    let base_address = this.layout.PointToAddress_Grid({ x: event.offsetX, y: event.offsetY });
+    const offset_point = {x: event.offsetX, y: event.offsetY};
+
+    /*
+    // FIXME: trident
+
+    if (!selecting_argument) {
+      const annotation = this.PointToAnnotation(offset_point);
+      if (annotation && annotation.node) {
+        this.selected_annotation = annotation;
+        const cloned_event = new MouseEvent(event.type, event);
+        annotation.node.dispatchEvent(cloned_event);
+        return;
+      }
+    }
+    */
+
+    let base_address = this.layout.PointToAddress_Grid(offset_point);
 
     const selection = selecting_argument ? this.active_selection : this.primary_selection;
 

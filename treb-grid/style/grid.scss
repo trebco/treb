@@ -74,6 +74,7 @@
         &.resize {
           cursor: col-resize;
         }
+        z-index: $z-index-header-tile-cover;
       }
 
       /** specific layout for row header cover */
@@ -83,6 +84,7 @@
         &.resize {
           cursor: row-resize;
         }
+        z-index: $z-index-header-tile-cover;
       }
 
     }
@@ -95,8 +97,51 @@
       .annotation {
         position: absolute;
         overflow: hidden;
+        pointer-events: auto;
+        background: rgba(255, 255, 255, .5);
+        border: 1px solid #999;
+        z-index: 1;
+
+        &::before {
+          content: '';
+          position: absolute;
+          background: transparent;
+          top: 0px;
+          left: 0px;
+          width: 100%;
+          height: 13px;
+          cursor: move;
+          z-index: 999;
+        }
+
+        &::after {
+          content: '';
+          position: absolute;
+          background: transparent;
+          bottom: 0px;
+          right: 0px;
+          width: 13px;
+          height: 13px;
+          cursor: nw-resize;
+          z-index: 999;
+          box-sizing: border-box;
+          border: 7px solid transparent;
+          // transition: border-color .5s;
+        }
+
+        &:focus::after {
+          // border-bottom-color: #ddd;
+          // border-right-color: #ddd;
+        }
+
+        &:focus {
+          outline: 2px solid lightblue;
+        }
+
       }
+
       z-index: $z-index-annotations;
+      pointer-events: none;
     }
 
     /** selection stacks over the grid but under the cover */

@@ -24,8 +24,11 @@ export class Annotation {
    */
   public cell_address?: Area;
 
-  /** opaque data */
+  /** opaque data. this is serialized, so it's persistent data */
   public data: any = {};
+
+  /** also opaque data, but not serialized. */
+  public temp: any = {};
 
   /** annotation can be resized. this is advisory, for UI */
   public resizable = true;
