@@ -27,7 +27,8 @@
     "declarationDir": "dist/"
   },
   "include": [
-    "treb-embed/src/**/*.ts"
+    "treb-embed/src/**/*.ts",
+    "treb-charts/src/**/*.ts"
   ],
   "exclude": [
     "node_modules"
