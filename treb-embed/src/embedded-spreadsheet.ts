@@ -7,6 +7,7 @@ import { Calculator, CalculationWorker, WorkerMessage, WorkerMessageType,
 import { IsCellAddress, Localization, CellSerializationOptions, Style,
          ICellAddress, Area, IArea } from 'treb-base-types';
 import { EventSource, Resizable, Yield } from 'treb-utils';
+import { NumberFormatCache } from 'treb-format';
 // import { Sparkline } from 'treb-sparkline';
 
 // local
@@ -16,6 +17,9 @@ import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 
 // TYPE ONLY (also this is circular)
 type FormattingToolbar = import('./toolbar-main').FormattingToolbar;
+
+// TYPE ONLY
+type Chart = import('../../treb-charts/src/index').Chart;
 
 // 3d party modules
 import { Base64 } from 'js-base64';
@@ -1039,17 +1043,23 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         target_argument_separator = ArgumentSeparatorType.Comma;
       }
 
-      if (data.sheet_data && data.sheet_data.data) {
-        for (const cell of data.sheet_data.data) {
-          if (cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
-            const parse_result = parser.Parse(cell.value.slice(1));
-            if (parse_result.expression) {
-              const translated = parser.Render(parse_result.expression, undefined, undefined,
-                target_decimal_mark, target_argument_separator);
-              cell.value = '=' + translated;
+      if (data.sheet_data && data.sheet_data.data && data.sheet_data.data.length) {
+
+        // update for grouped data (v5+)
+        for (const block of data.sheet_data.data) {
+          const cells = block.cells ? block.cells : [block];
+          for (const cell of cells) {
+            if (cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
+              const parse_result = parser.Parse(cell.value.slice(1));
+              if (parse_result.expression) {
+                const translated = parser.Render(parse_result.expression, undefined, undefined,
+                  target_decimal_mark, target_argument_separator);
+                cell.value = '=' + translated;
+              }
             }
           }
         }
+
       }
 
     }
@@ -1296,90 +1306,64 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   */
 
   public InflateAnnotation(annotation: Annotation) {
-    if (annotation.node && 1 > 2) {
-      if (annotation.data && annotation.data.type === 'treb-chart') {
-        const subnode = document.createElement('div');
-        subnode.style.position = 'relative';
-        subnode.style.width = '100%';
-        subnode.style.height = '100%';
-        subnode.style.top = '0px';
-        subnode.style.left = '0px';
-        annotation.node.appendChild(subnode);
-        const chart = (self as any).TREB.CreateChart(subnode, false);
+    if (annotation.node && annotation.data) {
+      if (annotation.data.type === 'treb-chart') {
+        if (!(self as any).TREB || !(self as any).TREB.CreateChart) {
+          console.warn('missing chart library');
+        }
+        else {
+          const chart = (self as any).TREB.CreateChart(annotation.node, {
+            axes: {x: {labels: true}, y: {labels: true}},
+          }) as Chart;
 
-        const font_stack = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif";
-        chart.options.type = 'histogram';
-        chart.options.floor = 0;
-        chart.options.series_colors = ['#69c'];
-        chart.options.title = {
-            text: 'Histogram',
-            font: "12pt " + font_stack,
-            color: '#333',
-        };
-        var options: {[index: string]: any} = {
-            // format: '0%',
-            values: '#333',
-            font: "9pt " + font_stack,
-        };
-        for (var _i = 0, _a = Object.keys(options); _i < _a.length; _i++) {
-            var key = _a[_i];
-            chart.options.x_axis[key] = options[key];
-            chart.options.y_axis[key] = options[key];
+          const update_chart = () => {
+            if (annotation.data.chart_data) {
+              if (annotation.data.chart_data.src) {
+                const data = this.SimulationData(annotation.data.chart_data.src);
+                chart.CreateHistogram((data || []) as number[]);
+
+                const format = this.grid.GetNumberFormat(
+                  this.EnsureAddress(annotation.data.chart_data.src));
+
+                if (format) {
+                  if (!chart.options.axes) chart.options.axes = {};
+                  if (!chart.options.axes.x) chart.options.axes.x = {};
+                  chart.options.axes.x.format = NumberFormatCache.Get(format).toString();
+                }
+
+              }
+              else {
+                chart.CreateHistogram([]); // FIXME: clear method
+              }
+              chart.options.title = annotation.data.chart_data.title || undefined;
+              chart.Update();
+            }
+          };
+
+          /** resize callback */
+          annotation.temp.resize = () => {
+            chart.Resize();
+            chart.Update();
+          };
+
+          /** update callback */
+          annotation.temp.update = () => {
+            update_chart();
+          };
+
+          /** call once */
+          update_chart();
+
         }
 
-        // chart.options.y_axis.format
-        chart.options.x_axis.format = this.grid.GetNumberFormat(this.EnsureAddress("F19"));
-
-        /*
-        chart.options.x_axis.label = {
-            // text: 'Target Return',
-            font: "12pt " + font_stack,
-            color: '#333',
-        };
-        * /
-        chart.options.y_axis.label = {
-            // text: 'Probability',
-            font: "12pt " + font_stack,
-            color: '#333',
-        };
-        */
-
-        const y = this.SimulationData('F19') || [];
-        chart.data.series = [{ type: 'histogram', y }];
-        // var labels = sheet.GetRange('F14:F18');
-        // chart.data.labels = labels[0];
-        // chart.options.x_axis.label.text = sheet.GetRange('F13').toString();
-        // chart.options.y_axis.label.text = sheet.GetRange('H13').toString();
-        chart.Render();
-
-        annotation.temp.resize = () => {
-          // console.info('resize');
-
-          /*
-          bounding_box = container.getBoundingClientRect();
-          this.svg.setAttribute('width', bounding_box.width.toString());
-          this.svg.setAttribute('height', bounding_box.height.toString());
-          */
-          // console.info(chart);
-
-          chart.Render();
-        };
-
-        console.info(annotation);
-
-        annotation.temp.update = () => {
-          chart.data.series = [{ type: 'histogram', y: this.SimulationData('F19') || [] }];
-          chart.Render();
-        };
-
       }
-      /*
-      const img = document.createElement('img');
-      img.setAttribute('src', 'https://riskamp.com/img/scap/conditional-risk.png');
-      img.style.width = '100%';
-      img.style.height = '100%';
-      annotation.node.appendChild(img);
-      */
+      else if (annotation.data.type === 'image') {
+        const img = document.createElement('img');
+        img.setAttribute('src', annotation.data.src);
+        img.style.width = '100%';
+        img.style.height = '100%';
+        annotation.node.appendChild(img);
+      }
     }
   }
 

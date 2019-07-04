@@ -89,6 +89,11 @@ export class Chart {
 
   }
 
+  /** pass-through */
+  public Resize() {
+    this.renderer.Resize();
+  }
+
   /**
    * redraw
    */
