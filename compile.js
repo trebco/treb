@@ -22,11 +22,15 @@ let dev = false;
 // optionally limit build to one module
 const build = { legacy: false, modern: false };
 
+// dev, limit to charts module
+let only_charts = false;
+
 for (const arg of process.argv) {
   if (arg === '-d') dev = true;
   if (arg === '-w') watch = true;
   if (arg === '--legacy') build.legacy = true;
   if (arg === '--modern') build.modern = true;
+  if (arg === '--only-charts') only_charts = true;
 }
 
 // default is build both
@@ -34,17 +38,31 @@ if (!build.legacy && !build.modern) {
   build.legacy = build.modern = true;
 }
 
-const modern_entry = {};
+let modern_entry = {};
 modern_entry[package['build-entry-points']['main'] + '-es6'] = './treb-embed/src/index-modern.ts';
 modern_entry[package['build-entry-points']['export-worker'] + '-es6' + '-' + package.version] = './treb-embed/src/export-worker/index-modern.ts';
 modern_entry[package['build-entry-points']['calculation-worker'] + '-es6' + '-' + package.version] = './treb-embed/src/calculation-worker/index-modern.ts';
 modern_entry[package['build-entry-points']['toolbar'] + '-es6' + '-' + package.version] = './treb-embed/src/toolbar-main.ts';
 
-const legacy_entry = {};
+let legacy_entry = {};
 legacy_entry[package['build-entry-points']['main']] = './treb-embed/src/index.ts';
 legacy_entry[package['build-entry-points']['export-worker'] + '-' + package.version] = './treb-embed/src/export-worker/index.ts';
 legacy_entry[package['build-entry-points']['calculation-worker'] + '-' + package.version] = './treb-embed/src/calculation-worker/index.ts';
 legacy_entry[package['build-entry-points']['toolbar'] + '-' + package.version] = './treb-embed/src/toolbar-main.ts';
+
+if (only_charts) {
+  legacy_entry = {};
+  build.modern = false;
+  build.legacy = true;
+}
+
+// unified (for now), so only do this once
+if (build.modern) {
+  modern_entry[package['build-entry-points']['charts']] = './treb-charts/src/main.ts';
+}
+else {
+  legacy_entry[package['build-entry-points']['charts']] = './treb-charts/src/main.ts';
+}
 
 const dist_dir = 'build';
 const build_dir = path.resolve(__dirname, dist_dir, package.version);
