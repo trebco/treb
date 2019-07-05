@@ -1237,7 +1237,7 @@ export class Grid {
   /**
    * set functions for AC matcher. should be called by calculator on init,
    * or when any functions are added/removed.
-   * 
+   *
    * FIXME: we should use this to normalize function names, on insert and
    * on paste (if we're doing that).
    */
@@ -1282,12 +1282,12 @@ export class Grid {
 
   }
 
-  /**
+  /* *
    *
-   */
+   * /
   private PointToAnnotation(point: Point) {
 
-    /*
+    / *
     if (this.active_annotation &&
         this.active_annotation.rect &&
         this.active_annotation.rect.Contains(point.x, point.y)) {
@@ -1295,7 +1295,7 @@ export class Grid {
     }
 
     this.active_annotation = undefined;
-    */
+    * /
 
     // console.info(point);
     for (const annotation of this.model.annotations) {
@@ -1309,6 +1309,8 @@ export class Grid {
     }
 
   }
+  */
+
 
   /**
    * why is this not in layout? (...)
