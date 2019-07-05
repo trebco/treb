@@ -48,8 +48,12 @@ export class Annotation {
   /** additional classes */
   // public class_list = '';
 
-  /** callback method for constructing formula bar formula, optional */
-  public formula?: (data: any) => string;
+  /**
+   * optional formula. the formula will be updated on structure events
+   * (insert/delete row/column).
+   */
+  public formula = '';
+
 
   /**
    * constructor takes a property bag (from json, generally). note that
@@ -72,6 +76,7 @@ export class Annotation {
 
     if (this.data) result.data = this.data;
     // if (this.class_list) result.class_list = this.class_list;
+    if (this.formula) result.formula = this.formula;
 
     if (!this.resizable) result.resizable = this.resizable;
     if (!this.movable) result.movable = this.movable;

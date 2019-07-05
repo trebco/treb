@@ -129,12 +129,7 @@
           // transition: border-color .5s;
         }
 
-        &:focus::after {
-          // border-bottom-color: #ddd;
-          // border-right-color: #ddd;
-        }
-
-        &:focus {
+        &:focus, &.retain-focus {
           outline: 2px solid lightblue;
         }
 

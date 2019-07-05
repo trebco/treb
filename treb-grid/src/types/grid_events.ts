@@ -15,7 +15,7 @@ export interface StructureEvent {
 export interface AnnotationEvent {
   type: 'annotation';
   annotation?: Annotation;
-  event?: 'move'|'resize'|'create'|'delete';
+  event?: 'move'|'resize'|'create'|'delete'|'update';
 }
 
 export type GridEvent

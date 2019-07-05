@@ -571,6 +571,13 @@ export const Model = new SimulationModel();
 
 FunctionLibrary.Register({
 
+  'MC.Histogram': {
+    address: [0],
+    fn: (...args: any[]) => {
+      return args;
+    },
+  },
+
   // this is based on model because it uses address;
   // FIXME consolidate types so this can go in the base object
 

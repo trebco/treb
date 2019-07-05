@@ -37,9 +37,6 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   /** accessor for focused field */
   public get focused() { return this.focused_; }
 
-  /** main node for the formula bar */
-  private node!: HTMLDivElement;
-
   /** address label (may also show other things... ?) */
   private address_label_container!: HTMLDivElement;
 
@@ -218,6 +215,10 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     // this.drag_corner.addEventListener('mousedown', (event) => this.StartDrag(event));
 
     this.UpdateTheme();
+  }
+
+  public IsElement(element: HTMLElement) {
+    return element === this.editor_node;
   }
 
   /**

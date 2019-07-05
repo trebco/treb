@@ -139,8 +139,17 @@ export abstract class BaseLayout {
 
   }
 
+  /**
+   * show/hide grid selections. used when selecting annotations.
+   */
+  public ShowSelections(show = true) {
+    this.grid_selection.style.display = show ? 'block' : 'none';
+  }
+
+
   public HideNote() {
     this.note_node.style.opacity = '0';
+    this.note_node.style.pointerEvents = 'none';
   }
 
   public ShowNote(note: string, address: ICellAddress, event?: MouseEvent) {
@@ -162,6 +171,7 @@ export abstract class BaseLayout {
       container.top + rect.top - this.scroll_reference_node.scrollTop - note_size.height - offset.y) + 'px';
 
     this.note_node.style.opacity = '1';
+    this.note_node.style.pointerEvents = 'auto';
   }
 
   public UpdateAnnotation(elements: Annotation|Annotation[]) {

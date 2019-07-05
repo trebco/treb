@@ -88,6 +88,9 @@ export class Grid {
   /**  */
   private selected_annotation?: Annotation;
 
+  /** */
+  private editing_annotation?: Annotation;
+
   /**
    * this should not be public -- clients should only interact with the API.
    * so why is it public? we need to access it in the calculator (and in the
@@ -373,14 +376,26 @@ export class Grid {
 
         });
 
-        /*
         annotation.node.addEventListener('focusin', (event) => {
-          // console.info('a in');
+          this.selected_annotation = annotation;
+          this.HideGridSelection();
         });
+
         annotation.node.addEventListener('focusout', (event) => {
-          // console.info('a out');
+          if (this.formula_bar && this.formula_bar.IsElement((event as FocusEvent).relatedTarget as HTMLElement)) {
+            console.info('editing...');
+            this.primary_selection.empty = true;
+            this.selection_renderer.RenderSelections();
+            this.editing_annotation = annotation;
+            this.layout.ShowSelections(true);
+          }
+          else {
+            if (this.selected_annotation === annotation) {
+              this.selected_annotation = undefined;
+            }
+            this.ShowGridSelection();
+          }
         });
-        */
 
         annotation.node.addEventListener('keydown', (event) => {
           switch (event.key) {
@@ -1311,6 +1326,19 @@ export class Grid {
 
       switch (event.type) {
         case 'discard':
+
+          if (this.editing_annotation) {
+            this.ClearAdditionalSelections();
+            this.ClearSelection(this.active_selection);
+            if (this.editing_annotation.node) {
+              this.editing_annotation.node.focus();
+            }
+            this.editing_annotation = undefined;
+            this.UpdateFormulaBarFormula();
+            this.DelayedRender();
+              return;
+          }
+  
           if (this.container) this.Focus();
           this.ClearAdditionalSelections();
           this.ClearSelection(this.active_selection);
@@ -1319,6 +1347,21 @@ export class Grid {
           break;
 
         case 'commit':
+
+            if (this.editing_annotation) {
+              const annotation = this.editing_annotation;
+              this.ClearAdditionalSelections();
+              this.ClearSelection(this.active_selection);
+              annotation.formula = event.value || '';
+              if (annotation.node) {
+                annotation.node.focus();
+              }
+              this.grid_events.Publish({type: 'annotation', event: 'update', annotation});
+              this.editing_annotation = undefined;
+              this.DelayedRender();
+              return;
+            }
+  
           if (this.container) this.Focus();
           this.SetInferredType(this.primary_selection, event.value, event.array);
           this.ClearAdditionalSelections();
@@ -3421,6 +3464,23 @@ export class Grid {
     this.Select(selection);
   }
 
+  private HideGridSelection() {
+    this.UpdateAddressLabel(undefined, '');
+
+    const formula = (this.selected_annotation && this.selected_annotation.formula) ?
+      this.selected_annotation.formula : '';
+
+    this.UpdateFormulaBarFormula(formula);
+    this.layout.ShowSelections(false);
+  }
+
+  private ShowGridSelection() {
+    this.UpdateAddressLabel();
+    this.UpdateFormulaBarFormula();
+    this.layout.ShowSelections(true);
+  }
+
+
   /**
    * updates a selection, and handles marking headers as dirty
    * for subsequent renders (including any old selection).
@@ -3490,9 +3550,14 @@ export class Grid {
   /**
    *
    */
-  private UpdateFormulaBarFormula(formula_cell?: Cell) {
+  private UpdateFormulaBarFormula(override?: string) {
 
     if (!this.formula_bar) { return; }
+
+    if (override) {
+      this.formula_bar.formula = override;
+      return;
+    }
 
     if (this.primary_selection.empty) {
       this.formula_bar.formula = '';
@@ -3971,6 +4036,32 @@ export class Grid {
       }
     });
 
+    for (const annotation of this.annotations) {
+      if (annotation.formula) {
+        let modified = false;
+        const parsed = this.parser.Parse(annotation.formula || '');
+        if (parsed.expression) {
+          this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
+            if (element.type === 'address') {
+              if (element.row >= command.before_row) {
+                if (command.count < 0 && element.row + command.count < command.before_row) {
+                  element.column = element.row = -1;
+                }
+                else {
+                  element.row += command.count;
+                }
+                modified = true;
+              }
+            }
+            return true; // continue
+          });
+          if (modified) {
+            annotation.formula = '=' + this.parser.Render(parsed.expression);
+          }
+        }
+      }
+    }
+
     // fix selections
 
     if (command.count < 0) {
@@ -4049,6 +4140,32 @@ export class Grid {
         }
       }
     });
+
+    for (const annotation of this.annotations) {
+      if (annotation.formula) {
+        let modified = false;
+        const parsed = this.parser.Parse(annotation.formula);
+        if (parsed.expression) {
+          this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
+            if (element.type === 'address') {
+              if (element.column >= command.before_column) {
+                if (command.count < 0 && element.column + command.count < command.before_column) {
+                  element.column = element.row = -1;
+                }
+                else {
+                  element.column += command.count;
+                }
+                modified = true;
+              }
+            }
+            return true; // continue
+          });
+          if (modified) {
+            annotation.formula = '=' + this.parser.Render(parsed.expression);
+          }
+        }
+      }
+    }
 
     /*
     // fix annotations

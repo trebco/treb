@@ -255,6 +255,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
               case 'create':
                 this.InflateAnnotation(event.annotation);
                 break;
+              case 'update':
+                if (event.annotation.temp.update) {
+                  event.annotation.temp.update();
+                }
               case 'resize':
                 if (event.annotation.temp.resize) {
                   event.annotation.temp.resize();
@@ -1043,6 +1047,19 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         target_argument_separator = ArgumentSeparatorType.Comma;
       }
 
+      if (data.sheet_data && data.sheet_data.annotations) {
+        for (const annotation of (data.sheet_data.annotations as Annotation[])) {
+          if (annotation.formula) {
+            const parse_result = parser.Parse(annotation.formula);
+            if (parse_result.expression) {
+              const translated = parser.Render(parse_result.expression, undefined, undefined,
+                target_decimal_mark, target_argument_separator);
+              annotation.formula = '=' + translated;
+            }
+          }
+        }
+      }
+
       if (data.sheet_data && data.sheet_data.data && data.sheet_data.data.length) {
 
         // update for grouped data (v5+)
@@ -1313,31 +1330,66 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         }
         else {
           const chart = (self as any).TREB.CreateChart(annotation.node, {
-            axes: {x: {labels: true}, y: {labels: true}},
+            axes: {
+              x: {labels: true},
+              y: {labels: true}},
+            histogram_bins: 10,
           }) as Chart;
 
           const update_chart = () => {
-            if (annotation.data.chart_data) {
-              if (annotation.data.chart_data.src) {
-                const data = this.SimulationData(annotation.data.chart_data.src);
-                chart.CreateHistogram((data || []) as number[]);
 
-                const format = this.grid.GetNumberFormat(
-                  this.EnsureAddress(annotation.data.chart_data.src));
+            let src: ICellAddress|undefined;
+            let format = '';
 
-                if (format) {
-                  if (!chart.options.axes) chart.options.axes = {};
-                  if (!chart.options.axes.x) chart.options.axes.x = {};
-                  chart.options.axes.x.format = NumberFormatCache.Get(format).toString();
+            chart.options.title = undefined;
+
+            annotation.temp.additional_cells = [];
+
+            if (annotation.formula) {
+              const parse_result = this.parser.Parse(annotation.formula);
+              if (parse_result &&
+                  parse_result.expression &&
+                  parse_result.expression.type === 'call' &&
+                  parse_result.expression.name.toLowerCase() === 'mc.histogram') {
+
+                const result = this.calculator.CalculateExpression(parse_result.expression);
+                if (result.value) {
+                  const p2 = this.parser.Parse(result.value[0] || '');
+
+                  if (p2.expression && p2.expression.type === 'address') {
+                    src = p2.expression;
+                    annotation.temp.additional_cells.push(src);
+                  }
+                  chart.options.title = result.value[1] || undefined;
+
+                  if (result.value[2]) {
+                    format = result.value[2];
+                  }
                 }
-
               }
-              else {
-                chart.CreateHistogram([]); // FIXME: clear method
-              }
-              chart.options.title = annotation.data.chart_data.title || undefined;
-              chart.Update();
             }
+
+            if (src) {
+
+              if (!format) {
+                format = this.grid.GetNumberFormat(src) || '';
+              }
+
+              if (format) {
+                if (!chart.options.axes) chart.options.axes = {};
+                if (!chart.options.axes.x) chart.options.axes.x = {};
+                chart.options.axes.x.format = NumberFormatCache.Get(format).toString();
+              }
+
+              const data = this.SimulationData(src);
+              chart.CreateHistogram((data || []) as number[]);
+
+            }
+            else {
+              chart.CreateHistogram([]); // FIXME: clear method
+            }
+
+             chart.Update();
           };
 
           /** resize callback */
@@ -1585,6 +1637,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     // NOTE: accessing grid.cells, find a better approach
 
+    let additional_cells = this.additional_cells.slice(0);
+    for (const annotation of this.grid.annotations) {
+      if (annotation.temp.additional_cells) {
+        additional_cells = additional_cells.concat(annotation.temp.additional_cells);
+      }
+    }
+
     this.worker.postMessage({
       type: WorkerMessageType.Configure,
       data: {
@@ -1595,7 +1654,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           rendered_values: true, // has a different name, for some reason
           preserve_type: true,
         }),
-        additional_cells: this.additional_cells,
+        additional_cells, // : this.additional_cells,
       },
     });
 
