@@ -584,7 +584,29 @@ export class Sheet {
     const { row, column } = address;
 
     if (!this.cell_style[column]) this.cell_style[column] = [];
-    this.cell_style[column][row] = Style.Merge(this.cell_style[column][row] || {}, properties, delta);
+
+    const underlying = this.CompositeStyleForCell(address, false);
+    const merged = Style.Composite([
+      underlying,
+      Style.Merge(this.cell_style[column][row] || {}, properties, delta)
+    ]);
+
+    const composite: any = {};
+
+    // find properties that are different, those will be the cell style.
+
+    for (const key of Object.keys(merged) as Style.PropertyKeys[]) {
+      if (merged[key] !== underlying[key]) {
+        composite[key] = merged[key];
+      }
+    }
+    for (const key of Object.keys(underlying) as Style.PropertyKeys[]) {
+      if (merged[key] !== underlying[key]) {
+        composite[key] = merged[key];
+      }
+    }
+
+    this.cell_style[column][row] = composite; // merged;
 
     // targeted flush
     this.CellData(address).FlushStyle();

@@ -26,8 +26,8 @@ export namespace Style {
     vertical_align?: VerticalAlign;
 
     nan?: string;
-    nan_color?: string;
-    negative_color?: string;
+//    nan_color?: string;
+//    negative_color?: string;
 
     number_format?: string;
 
@@ -71,7 +71,8 @@ export namespace Style {
 
   export type PropertyKeys = keyof Style.Properties;
 
-  const ColorKeys: PropertyKeys[] = [
+  /*
+  export const ColorKeys: PropertyKeys[] = [
     'background',
     'text_color',
     'nan_color',
@@ -81,6 +82,7 @@ export namespace Style {
     'border_right_color',
     'border_bottom_color',
   ];
+  */
 
   /**
    * note that there are no default colors; those should be set
@@ -98,6 +100,14 @@ export namespace Style {
     font_bold: false,
     font_italic: false,
     font_underline: false,
+    background: 'none',
+    text_color: 'none',
+//    nan_color: 'none',
+//    negative_color: 'none',
+    border_top_color: 'none',
+    border_left_color: 'none',
+    border_right_color: 'none',
+    border_bottom_color: 'none',
   };
 
   /**
@@ -105,11 +115,13 @@ export namespace Style {
    */
   export const Merge = (dest: Properties, src: Properties, delta= true) => {
     const properties: Properties = delta ? {...dest, ...src} : {...src};
+    /*
     ColorKeys.forEach((key) => {
       if (properties[key] === '') {
         delete properties[key]; // rather not delete...
       }
     });
+    */
     return properties;
   };
 

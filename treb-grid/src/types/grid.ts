@@ -663,11 +663,7 @@ export class Grid {
 
     this.QueueLayoutUpdate();
 
-    // this.model.sheet.ApplyTheme(this.theme);
-    Style.UpdateDefaultProperties({
-      font_face: this.theme.cell_font,
-      font_size: this.theme.cell_font_size,
-    });
+    this.StyleDefaultFromTheme();
 
     if (render) {
       this.Repaint(false, false); // true, true);
@@ -720,11 +716,7 @@ export class Grid {
 
     this.QueueLayoutUpdate();
 
-    // this.model.sheet.ApplyTheme(this.theme);
-    Style.UpdateDefaultProperties({
-      font_face: this.theme.cell_font,
-      font_size: this.theme.cell_font_size,
-    });
+    this.StyleDefaultFromTheme();
 
     if (render) {
       this.Repaint(false, false);
@@ -779,23 +771,9 @@ export class Grid {
       (this.theme as any)[key] = (composite as any)[key];
     }
 
-    // set defaults from style. why are these not set in
-    // the sheet style, like fonts (below)? [...FIXME]
-    // actually, this is correct, the other one was wrong
-
-    Style.DefaultProperties.border_bottom_color =
-        Style.DefaultProperties.border_top_color =
-        Style.DefaultProperties.border_left_color =
-        Style.DefaultProperties.border_right_color =
-      this.theme.border_color || '';
-
     // update style for theme
+    this.StyleDefaultFromTheme();
 
-    // this.model.sheet.ApplyTheme(this.theme);
-    Style.UpdateDefaultProperties({
-      font_face: this.theme.cell_font,
-      font_size: this.theme.cell_font_size,
-    });
     this.model.sheet.UpdateDefaultRowHeight(true);
     this.model.sheet.FlushCellStyles();
 
@@ -841,6 +819,16 @@ export class Grid {
 
     this.container = container;
     this.container.classList.add('treb-grid');
+
+    /*
+
+    // we can force scrollbars, but it breaks sticky (apparently)
+
+    if (UA.is_mac && UA.is_safari) {
+      this.container.classList.add('safari');
+    }
+
+    */
 
     // accept focus, keyboard input
 
@@ -1278,6 +1266,21 @@ export class Grid {
   }
 
   // --- private methods -------------------------------------------------------
+
+  private StyleDefaultFromTheme() {
+
+    Style.UpdateDefaultProperties({
+      font_face: this.theme.cell_font,
+      font_size: this.theme.cell_font_size,
+      // background: this.theme.cell_background_color || 'none',
+      text_color: this.theme.cell_color || 'none',
+      border_top_color: this.theme.border_color || 'none',
+      border_left_color: this.theme.border_color || 'none',
+      border_right_color: this.theme.border_color || 'none',
+      border_bottom_color: this.theme.border_color || 'none',
+    });
+
+  }
 
   /**
    *

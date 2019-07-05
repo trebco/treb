@@ -803,7 +803,7 @@ export class TileRenderer {
       }
     }
 
-    if (composite.border_bottom && composite.border_bottom_color) {
+    if (composite.border_bottom && composite.border_bottom_color && composite.border_bottom_color !== 'none') {
       context.strokeStyle = composite.border_bottom_color;
       context.beginPath();
 
@@ -819,7 +819,7 @@ export class TileRenderer {
       context.stroke();
     }
 
-    if (composite.border_top && composite.border_top_color) {
+    if (composite.border_top && composite.border_top_color && composite.border_top_color !== 'none') {
       context.strokeStyle = composite.border_top_color;
       context.beginPath();
 
@@ -834,7 +834,7 @@ export class TileRenderer {
       context.stroke();
     }
 
-    if (composite.border_left && composite.border_left_color) {
+    if (composite.border_left && composite.border_left_color && composite.border_left_color !== 'none') {
       context.strokeStyle = composite.border_left_color;
       context.beginPath();
       context.moveTo(left - 0.5, top);
@@ -842,7 +842,7 @@ export class TileRenderer {
       context.stroke();
     }
 
-    if (composite.border_right && composite.border_right_color) {
+    if (composite.border_right && composite.border_right_color && composite.border_right_color !== 'none') {
       context.strokeStyle = composite.border_right_color;
       context.beginPath();
       context.moveTo(left + width - 0.5, top);
@@ -865,16 +865,21 @@ export class TileRenderer {
 
     // UPDATE: now optional
 
-    if (style.background) {
+    if (style.background && style.background !== 'none') {
       if (this.options.grid_over_background) {
         context.fillStyle = this.theme.grid_color || '';
         context.fillRect(0, 0, width, height);
-        context.fillStyle = style.background;
-        context.fillRect(0, 0, width - 1, height - 1);
+
+        if (style.background !== 'none') {
+          context.fillStyle = style.background;
+          context.fillRect(0, 0, width - 1, height - 1);
+        }
       }
       else {
-        context.fillStyle = style.background;
-        context.fillRect(0, 0, width, height);
+        if (style.background !== 'none') {
+          context.fillStyle = style.background;
+          context.fillRect(0, 0, width, height);
+        }
       }
     }
     else {
@@ -1233,14 +1238,24 @@ export class TileRenderer {
 
     for (const element of overflow_backgrounds) {
 
-      if (element.cell.style && element.cell.style.background && !this.options.grid_over_background) {
+      if (element.cell.style &&
+          element.cell.style.background &&
+          element.cell.style.background !== 'none' &&
+          !this.options.grid_over_background) {
         context.fillStyle = (element.cell.style || {}).background || this.theme.cell_background_color || '';
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
       }
       else {
         context.fillStyle = this.theme.grid_color || '';
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
-        context.fillStyle = (element.cell.style || {}).background || this.theme.cell_background_color || '';
+
+        if (element.cell.style && element.cell.style.background && element.cell.style.background !== 'none') {
+          context.fillStyle = element.cell.style.background;
+        }
+        else {
+          context.fillStyle = this.theme.cell_background_color || '';
+        }
+
         context.fillRect(element.background.left, element.background.top,
           element.background.width, element.background.height);
       }
@@ -1256,9 +1271,11 @@ export class TileRenderer {
     // set stroke for underline
 
     context.lineWidth = 1;
+    const style_text_color = style.text_color === 'none' ? '' : style.text_color;
+
     context.strokeStyle = context.fillStyle =
       text_data.format ? text_data.format :
-        style.text_color || this.theme.cell_color || '';
+        style_text_color || this.theme.cell_color || '';
 
     context.beginPath();
 

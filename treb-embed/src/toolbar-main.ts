@@ -419,11 +419,13 @@ export class FormattingToolbar {
       case 'text-color':
         style.text_color = this.toolbar.GetSecondColor(id);
         if (style.text_color) this.toolbar.AddDocumentColor(style.text_color);
+        else style.text_color = 'none';
         break;
 
       case 'fill-color':
         style.background = this.toolbar.GetSecondColor(id);
         if (style.background) this.toolbar.AddDocumentColor(style.background);
+        else style.background = 'none';
         break;
 
       case 'increase-decimal':

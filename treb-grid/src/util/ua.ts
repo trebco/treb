@@ -18,6 +18,9 @@ class UAType {
   public readonly is_firefox = /firefox/i.test(navigator.userAgent);
 
   /** ... */
+  public readonly is_safari = /safari/i.test(navigator.userAgent);
+
+  /** ... */
   public readonly is_mac = /macintosh/i.test(navigator.userAgent);
 
   /** ... */
