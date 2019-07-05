@@ -57,11 +57,11 @@ if (only_charts) {
 }
 
 // unified (for now), so only do this once
-if (build.modern) {
-  modern_entry[package['build-entry-points']['charts']] = './treb-charts/src/main.ts';
+if (build.legacy) {
+  legacy_entry[package['build-entry-points']['charts']] = './treb-charts/src/main.ts';
 }
 else {
-  legacy_entry[package['build-entry-points']['charts']] = './treb-charts/src/main.ts';
+  modern_entry[package['build-entry-points']['charts']] = './treb-charts/src/main.ts';
 }
 
 const dist_dir = 'build';

@@ -1176,7 +1176,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * (just sparklines atm) and update if necessary.
    */
   public UpdateAnnotations() {
-    for (const annotation of this.grid.annotations) {
+    for (const annotation of this.grid.model.annotations) {
       if (annotation.data && annotation.data.vertex) {
         const vertex = annotation.data.vertex as LeafVertex;
         if (vertex.state_id !== annotation.data.state) {
@@ -1638,7 +1638,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // NOTE: accessing grid.cells, find a better approach
 
     let additional_cells = this.additional_cells.slice(0);
-    for (const annotation of this.grid.annotations) {
+    for (const annotation of this.grid.model.annotations) {
       if (annotation.temp.additional_cells) {
         additional_cells = additional_cells.concat(annotation.temp.additional_cells);
       }

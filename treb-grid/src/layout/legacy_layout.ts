@@ -53,6 +53,8 @@ export class LegacyLayout extends BaseLayout {
     this.corner_selection.setAttribute('class', 'frozen-selection');
     this.corner.appendChild(this.corner_selection);
 
+    this.annotation_container = DOMUtilities.CreateDiv('annotation-container');
+
     this.grid_cover = DOMUtilities.CreateDiv('tile-cover grid-cover');
     this.column_header_cover = DOMUtilities.CreateDiv('tile-cover column-header-cover');
     this.row_header_cover = DOMUtilities.CreateDiv('tile-cover row-header-cover');
@@ -111,6 +113,8 @@ export class LegacyLayout extends BaseLayout {
     container.appendChild(this.mock_selection);
 
     container.appendChild(this.grid_cover);
+    this.grid_cover.appendChild(this.annotation_container);
+
     container.appendChild(this.column_header_cover);
     container.appendChild(this.row_header_cover);
 
@@ -165,13 +169,13 @@ export class LegacyLayout extends BaseLayout {
         return undefined;
       }
 
-      event.stopPropagation();
-      event.preventDefault();
-
       // IE doesn't support cloning events
       // const cloned_event = new MouseEvent(event.type, event);
 
-      const cloned_event = this.CreateMouseEvent(event.type, event);
+      const cloned_event = this.CreateMouseEvent(event.type, event, true);
+
+      event.stopPropagation();
+      event.preventDefault();
 
       if (x < this.model.sheet.header_offset.x) {
         if (y < this.model.sheet.header_offset.y) {
@@ -190,6 +194,12 @@ export class LegacyLayout extends BaseLayout {
         this.column_header_cover.dispatchEvent(cloned_event);
       }
       else {
+        for (const annotation of this.model.annotations) {
+          if (annotation.rect && annotation.node && annotation.rect.Contains(x, y)) {
+            annotation.node.dispatchEvent(cloned_event);
+            return;
+          }
+        }
         this.grid_cover.dispatchEvent(cloned_event);
       }
 
@@ -217,11 +227,11 @@ export class LegacyLayout extends BaseLayout {
     }
   }
 
-  protected CreateMouseEvent(eventType: string, params: any = {}) {
+  protected CreateMouseEvent(eventType: string, params: any = {}, override_bubbles = false) {
     params = params || { bubbles: false, cancelable: false };
     const mouseEvent = document.createEvent('MouseEvent');
     mouseEvent.initMouseEvent(eventType,
-      false, // true, // params.bubbles,
+      override_bubbles, // false, // true, // params.bubbles,
       true, // params.cancelable,
       window,
       0,

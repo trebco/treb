@@ -1269,6 +1269,27 @@ export abstract class BaseLayout {
 
   }
 
+  public ClampToGrid(point: Point) {
+    const address = this.PointToAddress_Grid(point);
+    const rect = this.OffsetCellAddressToRectangle(address);
+
+    if (point.x > rect.left + rect.width / 2) {
+      point.x = rect.left + rect.width - 1;
+    }
+    else {
+      point.x = rect.left - 1;
+    }
+
+    if (point.y > rect.top + rect.height / 2) {
+      point.y = rect.top + rect.height - 1;
+    }
+    else {
+      point.y = rect.top - 1;
+    }
+
+    return point;
+  }
+
   /**
    * wrapper method for CellAddressToRectangle allows us to offset for
    * frozen rows/columns. in some cases we may not want to do this, so

@@ -51,7 +51,7 @@ export class Grid {
   public command_log = new EventSource<CommandRecord>();
 
   /** list of annotations */
-  public readonly annotations: Annotation[] = [];
+  // public readonly annotations: Annotation[] = [];
 
   /**
    * the theme object exists so we can pass it to constructors for
@@ -81,6 +81,7 @@ export class Grid {
    */
   public readonly model: DataModel = {
     sheet: Sheet.Blank(100, 26),
+    annotations: [],
   };
 
   // --- private members -------------------------------------------------------
@@ -283,7 +284,7 @@ export class Grid {
 
   /** find an annotation, given a node */
   public FindAnnotation(node: HTMLElement) {
-    for (const annotation of this.annotations) {
+    for (const annotation of this.model.annotations) {
       if (annotation.node === node) {
         return annotation;
       }
@@ -307,7 +308,7 @@ export class Grid {
   public AddAnnotation(annotation: Annotation) {
 
     // ensure we haven't already added this
-    for (const test of this.annotations) {
+    for (const test of this.model.annotations) {
       if (test === annotation) return;
     }
 
@@ -331,17 +332,28 @@ export class Grid {
             event.preventDefault();
             node.focus();
 
-            const start = {x: rect.left, y: rect.top};
+            const bounds = node.getBoundingClientRect();
+            const offset = {
+              x: bounds.left + event.offsetX - rect.left,
+              y: bounds.top + event.offsetY - rect.top,
+            };
 
-            this.MouseDrag([], (move_event) => {
-              const delta = {
-                x: move_event.screenX - event.screenX,
-                y: move_event.screenY - event.screenY,
-              };
-              rect.top = start.y + delta.y;
-              rect.left = start.x + delta.x;
+            this.MouseDrag('move', (move_event) => {
+
+              rect.top = move_event.offsetY - offset.y;
+              rect.left = move_event.offsetX - offset.x;
+
+              if (move_event.ctrlKey) {
+                const point = this.layout.ClampToGrid({
+                  x: rect.left, y: rect.top,
+                });
+                rect.left = point.x;
+                rect.top = point.y;
+              }
+
               node.style.top = (rect.top) + 'px';
               node.style.left = (rect.left) + 'px';
+
             }, () => {
               this.grid_events.Publish({type: 'annotation', annotation, event: 'move'});
             });
@@ -356,17 +368,28 @@ export class Grid {
             event.preventDefault();
             node.focus();
 
-            const start = {x: rect.width, y: rect.height};
+            const bounds = node.getBoundingClientRect();
+            const offset = {
+              x: bounds.left + event.offsetX - rect.width,
+              y: bounds.top + event.offsetY - rect.height,
+            };
 
-            this.MouseDrag([], (move_event) => {
-              const delta = {
-                x: move_event.screenX - event.screenX,
-                y: move_event.screenY - event.screenY,
-              };
-              rect.height = start.y + delta.y;
-              rect.width = start.x + delta.x;
+            this.MouseDrag('nw-resize', (move_event) => {
+
+              rect.height = move_event.offsetY - offset.y;
+              rect.width = move_event.offsetX - offset.x;
+
+              if (move_event.ctrlKey) {
+                const point = this.layout.ClampToGrid({
+                  x: rect.right, y: rect.bottom,
+                });
+                rect.width = point.x - rect.left + 1;
+                rect.height = point.y - rect.top + 1;
+              }
+
               node.style.height = (rect.height) + 'px';
               node.style.width = (rect.width) + 'px';
+
             }, () => {
               this.grid_events.Publish({type: 'annotation', annotation, event: 'resize'});
             });
@@ -423,7 +446,7 @@ export class Grid {
 
     annotation.node.classList.add('annotation');
     this.layout.AddAnnotation(annotation);
-    this.annotations.push(annotation);
+    this.model.annotations.push(annotation);
 
     this.grid_events.Publish({
       type: 'annotation',
@@ -439,9 +462,9 @@ export class Grid {
    * it existed before).
    */
   public RemoveAnnotation(annotation: Annotation) {
-    for (let i = 0; i < this.annotations.length; i++){
-      if (annotation === this.annotations[i]) {
-        this.annotations.splice(i, 1);
+    for (let i = 0; i < this.model.annotations.length; i++){
+      if (annotation === this.model.annotations[i]) {
+        this.model.annotations.splice(i, 1);
         if (annotation.node && annotation.node.parentElement) {
           annotation.node.parentElement.removeChild(annotation.node);
         }
@@ -459,12 +482,12 @@ export class Grid {
    * remove all annotations
    */
   public RemoveAllAnnotations() {
-    for (const annotation of this.annotations) {
+    for (const annotation of this.model.annotations) {
       if (annotation.node && annotation.node.parentElement) {
         annotation.node.parentElement.removeChild(annotation.node);
       }
     }
-    this.annotations.splice(0, this.annotations.length);
+    this.model.annotations.splice(0, this.model.annotations.length);
   }
 
   /**
@@ -496,7 +519,7 @@ export class Grid {
 
     // annotations: also copy
 
-    data.annotations = JSON.parse(JSON.stringify(this.annotations));
+    data.annotations = JSON.parse(JSON.stringify(this.model.annotations));
 
     return data;
   }
@@ -1240,7 +1263,7 @@ export class Grid {
     */
 
     // console.info(point);
-    for (const annotation of this.annotations) {
+    for (const annotation of this.model.annotations) {
       if (annotation.rect && annotation.rect.Contains(point.x, point.y)) {
 
         // FIXME: z-ordering (or make that implicit in the stack? ...)
@@ -1495,7 +1518,7 @@ export class Grid {
       this.tile_update_pending = false;
       this.layout.UpdateTiles();
       this.render_tiles = this.layout.VisibleTiles();
-      this.layout.UpdateAnnotation(this.annotations);
+      this.layout.UpdateAnnotation(this.model.annotations);
       this.grid_events.Publish({type: 'structure'});
     }
 
@@ -1552,7 +1575,14 @@ export class Grid {
    * @param move callback function on mouse move events
    * @param end callback function on end (mouse up or button up)
    */
-  private MouseDrag(classes: string[] = [], move?: (event: MouseEvent) => void, end?: (event: MouseEvent) => void) {
+  private MouseDrag(
+      classes: string|string[] = [],
+      move?: (event: MouseEvent) => void,
+      end?: (event: MouseEvent) => void) {
+
+    if (typeof classes === 'string') {
+      classes = [classes];
+    }
 
     let cleanup: () => void;
 
@@ -1691,7 +1721,7 @@ export class Grid {
         y: tooltip_base,
       });
 
-      this.MouseDrag(['row-resize'], (move_event: MouseEvent) => {
+      this.MouseDrag('row-resize', (move_event: MouseEvent) => {
         const delta = Math.max(-original_height, Math.round(move_event.offsetY - base));
         if (delta + original_height !== height) {
 
@@ -1710,7 +1740,7 @@ export class Grid {
 
             this.layout.UpdateTileHeights(true, row);
             this.Repaint(false, true); // repaint full tiles
-            this.layout.UpdateAnnotation(this.annotations);
+            this.layout.UpdateAnnotation(this.model.annotations);
           });
 
         }
@@ -1757,7 +1787,7 @@ export class Grid {
           this.layout.UpdateTiles();
 
           this.Repaint(false, true); // repaint full tiles
-          this.layout.UpdateAnnotation(this.annotations);
+          this.layout.UpdateAnnotation(this.model.annotations);
           this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
           */
         });
@@ -1850,7 +1880,7 @@ export class Grid {
         this.model.sheet.AutoSizeColumn(column, false);
         this.layout.UpdateTileWidths(true, column);
         this.Repaint(false, true); // repaint full tiles
-        this.layout.UpdateAnnotation(this.annotations);
+        this.layout.UpdateAnnotation(this.model.annotations);
         this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
         */
         return;
@@ -1872,7 +1902,7 @@ export class Grid {
         y: Math.round(bounding_rect.bottom + 10),
       });
 
-      this.MouseDrag(['column-resize'], (move_event: MouseEvent) => {
+      this.MouseDrag('column-resize', (move_event: MouseEvent) => {
         const delta = Math.max(-original_width, Math.round(move_event.offsetX - base));
 
         if (delta + original_width !== width) {
@@ -1890,7 +1920,7 @@ export class Grid {
           requestAnimationFrame(() => {
             this.layout.UpdateTileWidths(true, column);
             this.Repaint(false, true); // repaint full tiles
-            this.layout.UpdateAnnotation(this.annotations);
+            this.layout.UpdateAnnotation(this.model.annotations);
           });
 
         }
@@ -1935,7 +1965,7 @@ export class Grid {
           this.layout.UpdateTiles();
 
           this.Repaint(true, true); // repaint ALL tiles
-          this.layout.UpdateAnnotation(this.annotations);
+          this.layout.UpdateAnnotation(this.model.annotations);
           this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
           */
 
@@ -2015,7 +2045,7 @@ export class Grid {
     };
 
     /*
-    if (this.annotations.length) {
+    if (this.model.annotations.length) {
       this.PointToAnnotation(offset_point);
     }
     */
@@ -4036,7 +4066,7 @@ export class Grid {
       }
     });
 
-    for (const annotation of this.annotations) {
+    for (const annotation of this.model.annotations) {
       if (annotation.formula) {
         let modified = false;
         const parsed = this.parser.Parse(annotation.formula || '');
@@ -4141,7 +4171,7 @@ export class Grid {
       }
     });
 
-    for (const annotation of this.annotations) {
+    for (const annotation of this.model.annotations) {
       if (annotation.formula) {
         let modified = false;
         const parsed = this.parser.Parse(annotation.formula);
@@ -4166,51 +4196,6 @@ export class Grid {
         }
       }
     }
-
-    /*
-    // fix annotations
-
-    const update_annotations: Annotation[] = [];
-    const remove_annotations: Annotation[] = [];
-    for (const annotation of this.annotations) {
-
-      // not connected to a cell
-      if (!annotation.cell_address) continue; // FIXME: move?
-      const area = annotation.cell_address;
-
-      // to the left
-      if (area.end.column < before_column) {
-        continue;
-      }
-
-      if (count < 0) {
-
-        // remove columns X to Y
-        const start = before_column;
-        const end = start - count - 1;
-
-        if (start > area.end.column) continue; // to the right
-        else if (start <= area.start.column && end >= area.end.column) { // subsumed
-          remove_annotations.push(annotation);
-        }
-        else if (start >= area.start.column && end < area.end.column) { // clip
-          annotation.cell_address = new Area({
-            row: area.start.row, column: end + 1 }, area.end);
-          update_annotations.push(annotation);
-        }
-        else { // start < area.start.column
-          annotation.cell_address = new Area({
-
-          });
-        }
-
-      }
-      else if (count > 0) {
-
-      }
-      
-    }
-    */
    
     // fix selection(s)
 
@@ -4629,7 +4614,7 @@ export class Grid {
           this.render_tiles = this.layout.VisibleTiles();
 
           this.Repaint(false, true); // repaint full tiles
-          this.layout.UpdateAnnotation(this.annotations);
+          this.layout.UpdateAnnotation(this.model.annotations);
           structure_event = true;
         }
         break;
@@ -4664,7 +4649,7 @@ export class Grid {
           this.render_tiles = this.layout.VisibleTiles();
 
           this.Repaint(false, true); // repaint full tiles
-          this.layout.UpdateAnnotation(this.annotations);
+          this.layout.UpdateAnnotation(this.model.annotations);
           structure_event = true;
 
         }

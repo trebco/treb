@@ -19,6 +19,7 @@ export class WorkerImpl {
 //  protected cells = new Cells();
   protected data_model: DataModel = {
     sheet: Sheet.Blank(),
+    annotations: [],
   };
   protected screen_updates = false;
 

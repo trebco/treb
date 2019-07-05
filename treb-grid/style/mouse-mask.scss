@@ -28,4 +28,14 @@
     cursor: crosshair;
   }
 
+  /** for moving annotations */
+  &.move {
+    cursor: move;
+  }
+
+  /** for resizing annotations */
+  &.nw-resize {
+    cursor: nw-resize;
+  }
+
 }
