@@ -459,6 +459,18 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  public InsertHistogram(address: string|ICellAddress) {
+    address = this.EnsureAddress(address);
+    const x = 30;
+    const y = 30;
+    const label = Area.CellAddressToLabel(address);
+    this.grid.CreateAnnotation({
+      type: 'treb-chart',
+      rect: {top: y, left: x, width: 300, height: 300},
+      formula: `=MC.Histogram(${label}, Concatenate("Histogram: ", Cell("address", ${label})))`,
+    });
+  }
+
   /**
    *
    * @param column column, or columns (array), or undefined means all columns
@@ -1324,7 +1336,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   public InflateAnnotation(annotation: Annotation) {
     if (annotation.node && annotation.data) {
-      if (annotation.data.type === 'treb-chart') {
+      if (annotation.type === 'treb-chart') {
         if (!(self as any).TREB || !(self as any).TREB.CreateChart) {
           console.warn('missing chart library');
         }
@@ -1409,7 +1421,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         }
 
       }
-      else if (annotation.data.type === 'image') {
+      else if (annotation.type === 'image') {
         const img = document.createElement('img');
         img.setAttribute('src', annotation.data.src);
         img.style.width = '100%';

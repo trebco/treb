@@ -422,6 +422,32 @@ export class Grid {
 
         annotation.node.addEventListener('keydown', (event) => {
           switch (event.key) {
+            case 'ArrowUp':
+            case 'Up':
+              if (event.ctrlKey) {
+                if (this.layout.AnnotationLayoutOrder(annotation, 1)) {
+                  this.grid_events.Publish({type: 'annotation', event: 'move', annotation});
+                }
+                node.focus();
+              }
+              else {
+                return;
+              }
+              break;
+
+            case 'ArrowDown':
+            case 'Down':
+              if (event.ctrlKey) {
+                if (this.layout.AnnotationLayoutOrder(annotation, -1)) {
+                  this.grid_events.Publish({type: 'annotation', event: 'move', annotation});
+                }
+                node.focus();
+              }
+              else {
+                return;
+              }
+              break;
+
             case 'Escape':
             case 'Esc':
               this.Focus();
@@ -1371,19 +1397,22 @@ export class Grid {
 
         case 'commit':
 
-            if (this.editing_annotation) {
-              const annotation = this.editing_annotation;
-              this.ClearAdditionalSelections();
-              this.ClearSelection(this.active_selection);
-              annotation.formula = event.value || '';
-              if (annotation.node) {
-                annotation.node.focus();
-              }
-              this.grid_events.Publish({type: 'annotation', event: 'update', annotation});
-              this.editing_annotation = undefined;
-              this.DelayedRender();
-              return;
+          // we added annotations to the formula bar, so there's some
+          // logic here that's not in the ICE commit handler
+
+          if (this.editing_annotation) {
+            const annotation = this.editing_annotation;
+            this.ClearAdditionalSelections();
+            this.ClearSelection(this.active_selection);
+            annotation.formula = event.value ? this.FixFormula(event.value) : '';
+            if (annotation.node) {
+              annotation.node.focus();
             }
+            this.grid_events.Publish({type: 'annotation', event: 'update', annotation});
+            this.editing_annotation = undefined;
+            this.DelayedRender();
+            return;
+          }
   
           if (this.container) this.Focus();
           this.SetInferredType(this.primary_selection, event.value, event.array);
@@ -2329,6 +2358,10 @@ export class Grid {
     const selecting_argument = this.SelectingArgument();
 
     if (this.formula_bar && this.formula_bar.focused && !selecting_argument) {
+      return;
+    }
+
+    if (this.selected_annotation && !selecting_argument) {
       return;
     }
 

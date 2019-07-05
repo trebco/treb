@@ -174,6 +174,51 @@ export abstract class BaseLayout {
     this.note_node.style.pointerEvents = 'auto';
   }
 
+  /**
+   * raise or lower annotation in z-order (implicit)
+   *
+   * returns true if we've made changes, so you can trigger any necessary
+   * events or side-effects
+   */
+  public AnnotationLayoutOrder(annotation: Annotation, delta: number) {
+
+    // find index
+    let index = -1;
+    for (let i = 0; i < this.model.annotations.length; i++ ){
+      if  (this.model.annotations[i] === annotation) {
+        index = i;
+        break;
+      }
+    }
+
+    if (index < 0) {
+      return false; // not found
+    }
+
+    const target = Math.min(Math.max(0, index + delta), this.model.annotations.length - 1);
+
+    if (target === index) {
+      return false; // not moving (probably at edge)
+    }
+
+    // change in array order, so it's preserved
+
+    this.model.annotations.splice(index, 1);
+    this.model.annotations.splice(target, 0, annotation);
+
+    // update layout, use z-indexes
+
+    for (let i = 0; i < this.model.annotations.length; i++ ){
+      const node = this.model.annotations[i].node;
+      if (node) {
+        node.style.zIndex = (i + 1).toString();
+      }
+    }
+
+    return true;
+
+  }
+
   public UpdateAnnotation(elements: Annotation|Annotation[]) {
     if (!Array.isArray(elements)) elements = [elements];
     for (const annotation of elements) {

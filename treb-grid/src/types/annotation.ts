@@ -27,6 +27,9 @@ export class Annotation {
   /** opaque data. this is serialized, so it's persistent data */
   public data: any = {};
 
+  /** type, for filtering. ensure a value */
+  public type = '';
+
   /** also opaque data, but not serialized. */
   public temp: any = {};
 
@@ -77,6 +80,7 @@ export class Annotation {
     if (this.data) result.data = this.data;
     // if (this.class_list) result.class_list = this.class_list;
     if (this.formula) result.formula = this.formula;
+    if (this.type) result.type = this.type;
 
     if (!this.resizable) result.resizable = this.resizable;
     if (!this.movable) result.movable = this.movable;
