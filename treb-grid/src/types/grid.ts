@@ -322,8 +322,14 @@ export class Grid {
         // support focus
         node.setAttribute('tabindex', '-1');
 
-        node.addEventListener('mousedown', (event) => {
+        /*
+        node.addEventListener('mousemove', (event) => {
+          console.info(event.screenX, event.screenY, event.offsetX, event.offsetY);
+        })
+        */
 
+        node.addEventListener('mousedown', (event) => {
+         
           // FIXME: these 13s come from the stylesheet, we need to
           // either read these or make them dynamic somehow
 
@@ -406,7 +412,7 @@ export class Grid {
 
         annotation.node.addEventListener('focusout', (event) => {
           if (this.formula_bar && this.formula_bar.IsElement((event as FocusEvent).relatedTarget as HTMLElement)) {
-            console.info('editing...');
+            // console.info('editing...');
             this.primary_selection.empty = true;
             this.selection_renderer.RenderSelections();
             this.editing_annotation = annotation;

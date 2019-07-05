@@ -174,6 +174,12 @@ export abstract class BaseLayout {
     this.note_node.style.pointerEvents = 'auto';
   }
 
+  /* * needed for IE11, legacy only * /
+  public FixBrokenSelection() {
+    // ...
+  }
+  */
+
   /**
    * raise or lower annotation in z-order (implicit)
    *

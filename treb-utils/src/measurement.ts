@@ -108,3 +108,4 @@ export class Measurement {
   private static color_cache: {[index: string]: Uint8ClampedArray} = {};
 
 }
+

@@ -153,6 +153,14 @@ export class LegacyLayout extends BaseLayout {
 
     });
 
+    this.container.addEventListener('scroll', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      if (this.container) {
+        this.container.scrollLeft = this.container.scrollTop = 0;
+      }
+    });
+
     const PassThroughMouseEvent = (event: MouseEvent) => {
 
       // don't cache, this rect is live in chrome but not IE11
@@ -169,10 +177,10 @@ export class LegacyLayout extends BaseLayout {
         return undefined;
       }
 
-      // IE doesn't support cloning events
+      // IE11 doesn't support event constructor
       // const cloned_event = new MouseEvent(event.type, event);
 
-      const cloned_event = this.CreateMouseEvent(event.type, event, true);
+      const cloned_event = this.CreateMouseEvent(event.type, event); // , true);
 
       event.stopPropagation();
       event.preventDefault();
@@ -194,8 +202,18 @@ export class LegacyLayout extends BaseLayout {
         this.column_header_cover.dispatchEvent(cloned_event);
       }
       else {
+        const x2 = x - this.model.sheet.header_offset.x + this.scroll_reference_node.scrollLeft;
+        const y2 = y - this.model.sheet.header_offset.y + this.scroll_reference_node.scrollTop;
         for (const annotation of this.model.annotations) {
-          if (annotation.rect && annotation.node && annotation.rect.Contains(x, y)) {
+          if (annotation.rect &&
+              annotation.node &&
+              annotation.rect.Contains(x2, y2)) {
+            if (event.type === 'mousedown' && document.activeElement !== annotation.node) {
+              annotation.node.focus();
+              if (this.container) {
+                this.container.scrollTop = this.container.scrollLeft = 0;
+              }
+            }
             annotation.node.dispatchEvent(cloned_event);
             return;
           }
@@ -207,8 +225,19 @@ export class LegacyLayout extends BaseLayout {
 
     this.scroller.addEventListener('mousemove', (event: MouseEvent) => PassThroughMouseEvent(event));
     this.scroller.addEventListener('mousedown', (event: MouseEvent) => PassThroughMouseEvent(event));
+    // this.scroller.addEventListener('mouseup', (event: MouseEvent) => PassThroughMouseEvent(event));
 
   }
+
+  /* * needed for IE11, legacy only * /
+  public FixBrokenSelection() {
+    if (this.container) {
+      console.info('legacy fbs');
+      this.container.scrollTop = 0;
+      this.container.scrollLeft = 0;
+    }
+  }
+  */
 
   public ResizeCursor(resize?: 'row' | 'column') {
     switch (resize) {
@@ -227,25 +256,30 @@ export class LegacyLayout extends BaseLayout {
     }
   }
 
-  protected CreateMouseEvent(eventType: string, params: any = {}, override_bubbles = false) {
-    params = params || { bubbles: false, cancelable: false };
+  protected CreateMouseEvent(eventType: string, params: any = {}, override_params: any = {}) {
+
     const mouseEvent = document.createEvent('MouseEvent');
+    // const composite = {...params, ...override_params};
+    // console.info("COMP", composite);
+    const composite = params;
+
     mouseEvent.initMouseEvent(eventType,
-      override_bubbles, // false, // true, // params.bubbles,
+      false, // true, // params.bubbles,
       true, // params.cancelable,
       window,
-      0,
-      params.screenX || 0,
-      params.screenY || 0,
-      params.clientX || 0,
-      params.clientY || 0,
-      params.ctrlKey || false,
-      params.altKey || false,
-      params.shiftKey || false,
-      params.metaKey || false,
-      params.button || 0,
-      params.relatedTarget || null,
+      composite.detail || 0,
+      composite.screenX || 0,
+      composite.screenY || 0,
+      composite.clientX || 0,
+      composite.clientY || 0,
+      composite.ctrlKey || false,
+      composite.altKey || false,
+      composite.shiftKey || false,
+      composite.metaKey || false,
+      composite.button || 0,
+      composite.relatedTarget || null,
     );
+
     return mouseEvent;
   }
 
@@ -307,6 +341,9 @@ export class LegacyLayout extends BaseLayout {
 
     this.contents.style.left = `${this.model.sheet.header_offset.x + this.scroller.scrollLeft}px`;
     this.contents.style.top = `${this.model.sheet.header_offset.y + this.scroller.scrollTop}px`;
+
+    // this.annotation_container.style.left = `${this.scroller.scrollLeft}px`;
+    // this.annotation_container.style.top = `${this.scroller.scrollTop}px`;
 
     this.corner_canvas.setAttribute('width', `${this.dpr * x}`);
     this.corner_canvas.setAttribute('height', `${this.dpr * y}`);

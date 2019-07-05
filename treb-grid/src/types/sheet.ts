@@ -238,7 +238,7 @@ export class Sheet {
   public default_column_width = 100;
 
   /** standard height */
-  public default_row_height = 26;
+  public default_row_height = 25;
 
   /** cells data */
   public cells: Cells = new Cells();
@@ -423,7 +423,11 @@ export class Sheet {
     const composite = Style.Composite([this.sheet_style]);
     if (typeof window !== 'undefined') {
       const measurement = Measurement.MeasureText(Style.Font(composite), 'M');
-      this.default_row_height = Math.round(measurement.height * 1.4);
+      const height = Math.round(measurement.height * 1.4);
+      // console.info("DRH", this.default_row_height, Style.Font(composite), measurement);
+      if (this.default_row_height < height) {
+        this.default_row_height = height;
+      }
     }
     else {
       // console.info('worker?');
