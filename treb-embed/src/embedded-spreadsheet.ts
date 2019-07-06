@@ -1337,11 +1337,11 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   public InflateAnnotation(annotation: Annotation) {
     if (annotation.node && annotation.data) {
       if (annotation.type === 'treb-chart') {
-        if (!(self as any).TREB || !(self as any).TREB.CreateChart) {
+        if (!(self as any).TREB || !(self as any).TREB.CreateChart2) {
           console.warn('missing chart library');
         }
         else {
-          const chart = (self as any).TREB.CreateChart(annotation.node, {
+          const chart = (self as any).TREB.CreateChart2(annotation.node, {
             axes: {
               x: {labels: true},
               y: {labels: true}},
@@ -1351,7 +1351,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           const update_chart = () => {
 
             let src: ICellAddress|undefined;
-            let format = '';
+
+            let format_x: any;
+            let format_y: any;
+            let bins: any;
 
             chart.options.title = undefined;
 
@@ -1374,23 +1377,44 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
                   }
                   chart.options.title = result.value[1] || undefined;
 
-                  if (result.value[2]) {
-                    format = result.value[2];
-                  }
+                  format_x = result.value[2];
+                  format_y = result.value[3];
+                  bins = result.value[4];
+
                 }
               }
             }
 
             if (src) {
 
-              if (!format) {
-                format = this.grid.GetNumberFormat(src) || '';
+              if (typeof format_x === 'undefined') {
+                format_x = this.grid.GetNumberFormat(src) || '';
               }
 
-              if (format) {
-                if (!chart.options.axes) chart.options.axes = {};
-                if (!chart.options.axes.x) chart.options.axes.x = {};
-                chart.options.axes.x.format = NumberFormatCache.Get(format).toString();
+              if (!chart.options.axes) chart.options.axes = {};
+              if (!chart.options.axes.x) chart.options.axes.x = {};
+              if (!chart.options.axes.y) chart.options.axes.y = {};
+
+              if (format_x === false) {
+                chart.options.axes.x.labels = false;
+              }
+              else {
+                chart.options.axes.x.labels = true;
+                chart.options.axes.x.format = format_x || '';
+              }
+
+              if (format_y === false) {
+                chart.options.axes.y.labels = false;
+              }
+              else {
+                chart.options.axes.y.labels = true;
+              }
+
+              if (typeof bins === 'number' && bins) {
+                chart.options.histogram_bins = bins;
+              }
+              else {
+                chart.options.histogram_bins = undefined;
               }
 
               const data = this.SimulationData(src);

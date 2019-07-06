@@ -163,11 +163,11 @@ export class ChartRenderer {
     // now render, with skips -- stop at bounds
     for (let i = 0; i < count; i += (skip_count + 1)){
       const center = Math.round(area.left + step / 2 + step * i);
-      const extent = center + metrics[i].width / 2;
-      if (extent < area.right) {
+//      const extent = center + metrics[i].width / 2;
+//      if (extent < area.right) {
         this.RenderText(labels[i], 'center', {
           x: center, y: area.bottom, }, classes);
-      }
+//      }
     }
 
   }

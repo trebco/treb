@@ -329,7 +329,7 @@ export class Grid {
         */
 
         node.addEventListener('mousedown', (event) => {
-         
+
           // FIXME: these 13s come from the stylesheet, we need to
           // either read these or make them dynamic somehow
 
@@ -427,6 +427,7 @@ export class Grid {
         });
 
         annotation.node.addEventListener('keydown', (event) => {
+          const target = { x: rect.left, y: rect.top };
           switch (event.key) {
             case 'ArrowUp':
             case 'Up':
@@ -437,7 +438,27 @@ export class Grid {
                 node.focus();
               }
               else {
+                target.y--;
+              }
+              break;
+
+            case 'ArrowLeft':
+            case 'Left':
+              if (event.ctrlKey) {
                 return;
+              }
+              else {
+                target.x--;
+              }
+              break;
+
+            case 'ArrowRight':
+            case 'Right':
+              if (event.ctrlKey) {
+                return;
+              }
+              else {
+                target.x++;
               }
               break;
 
@@ -450,7 +471,7 @@ export class Grid {
                 node.focus();
               }
               else {
-                return;
+                target.y++;
               }
               break;
 
@@ -471,6 +492,17 @@ export class Grid {
 
           event.stopPropagation();
           event.preventDefault();
+
+          target.x = Math.max(target.x, 0);
+          target.y = Math.max(target.y, 0);
+
+          if (rect.left !== target.x || rect.top !== target.y) {
+            rect.left = target.x;
+            rect.top = target.y;
+            node.style.top = (rect.top) + 'px';
+            node.style.left = (rect.left) + 'px';
+            this.grid_events.Publish({type: 'annotation', event: 'move', annotation});
+          }
 
         });
       }
@@ -2998,7 +3030,7 @@ export class Grid {
         }
         return true;
       });
-      formula = '=' + this.parser.Render(parse_result.expression);
+      formula = '=' + this.parser.Render(parse_result.expression, undefined, '');
     }
     return formula;
   }
