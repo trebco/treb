@@ -263,8 +263,9 @@ export class Cells {
       if (!this.data2[obj.row]) this.data2[obj.row] = [];
       const cell = new Cell(obj.value);
       if (typeof obj.calculated !== 'undefined') {
-        cell.calculated = obj.calculated;
-        cell.calculated_type = obj.calculated_type;
+        // cell.calculated = obj.calculated;
+        // cell.calculated_type = obj.calculated_type;
+        cell.SetCalculatedValue(obj.calculated, obj.calculated_type);
       }
       if (typeof obj.note !== 'undefined') {
         cell.note = obj.note;
@@ -368,7 +369,9 @@ export class Cells {
             if (options.calculated_value &&
                 typeof cell.calculated !== 'undefined') { // && cell.calculated_type !== ValueType.error) {
               obj.calculated = cell.calculated;
-              obj.calculated_type = cell.calculated_type;
+              if (options.preserve_type) {
+                obj.calculated_type = cell.calculated_type;
+              }
             }
             if (cell.area) obj.area = cell.area.toJSON();
             if (cell.merge_area) obj.merge_area = cell.merge_area.toJSON();
