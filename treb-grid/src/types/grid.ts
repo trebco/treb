@@ -519,9 +519,11 @@ export class Grid {
         event: 'create',
       });
     }
+    /*
     else {
       console.info('not sending annotation event');
     }
+    */
 
   }
 
@@ -4028,6 +4030,7 @@ export class Grid {
       if (!text_data) return true;
 
       const lines = text_data.trim().split('\n');
+        // text_data.split('\n');
       const cells = lines.map((line) => line.split('\t').map((x) => x.trim()));
 
       const paste_areas = this.RecyclePasteAreas(
@@ -4043,8 +4046,10 @@ export class Grid {
           for (let c = 0; c < lines[0].length; c++) {
             const target_area = new Area({ row: r + paste_area.start.row, column: c + paste_area.start.column });
             this.model.sheet.cells.EnsureCell(target_area.end);
+            const value = (cells[r][c] === '') ? undefined : cells[r][c];
             const tmp = this.SetInferredType({ area: target_area, target: target_area.start, empty: false },
-              cells[r][c], false, true);
+              // cells[r][c], false, true);
+              value, false, true);
             if (tmp) {
               for (const command of tmp) commands.push(command);
             }
