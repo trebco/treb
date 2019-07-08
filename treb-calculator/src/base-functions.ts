@@ -39,7 +39,9 @@ const erf = (x: number) => {
 
 // --- create and register functions -------------------------------------------
 
-FunctionLibrary.Register({
+export const RegisterBaseFunctions = (lib: FunctionLibrary) => {
+
+lib.Register({
 
   IsError: {
     description: 'Checks if another cell contains an error',
@@ -381,7 +383,7 @@ for (const name of Object.getOwnPropertyNames(Math)) {
   // check if it exists (we have already registered something
   // with the same name) -- don't override existing
 
-  const test = FunctionLibrary.Get(name);
+  const test = lib.Get(name);
   if (test) {
     continue;
   }
@@ -395,10 +397,10 @@ for (const name of Object.getOwnPropertyNames(Math)) {
   const type = typeof(value);
 
   if (type === 'number'){
-    FunctionLibrary.Register({[name]: {fn: () => value}});
+    lib.Register({[name]: {fn: () => value}});
   }
   else if (type === 'function'){
-    FunctionLibrary.Register({[name]: {fn: value}});
+    lib.Register({[name]: {fn: value}});
   }
   else {
     console.info('unexpected type:', type, name);
@@ -408,5 +410,6 @@ for (const name of Object.getOwnPropertyNames(Math)) {
 
 // --- aliases -----------------------------------------------------------------
 
-FunctionLibrary.Alias('Mean', 'Average');
+lib.Alias('Mean', 'Average');
 
+};

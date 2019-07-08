@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "5.2.1",
+  "version": "5.2.3",
   "main": "dist/index.js",
   "devDependencies": {
     "@types/elementtree": "^0.1.0",
@@ -32,6 +32,7 @@
     "dev": "node compile.js -d",
     "watch": "node compile.js -w",
     "watch-modern": "node compile.js -w --modern",
+    "watch-legacy": "node compile.js -w --legacy",
     "watch-dev": "node compile.js -w -d",
     "release": "node compile.js && node zip-package.js"
   },

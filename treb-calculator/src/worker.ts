@@ -7,7 +7,7 @@ import { WorkerMessage, WorkerMessageType } from './worker-types';
 import { Localization, Cells, Cell, ICellAddress, Area } from 'treb-base-types';
 import { DataModel, NamedRangeCollection, Sheet } from 'treb-grid';
 import { Calculator } from './calculator';
-import { Model } from './simulation-model';
+import { SimulationModel } from './simulation-model';
 
 import { GraphStatus } from './dag/graph';
 import * as PackResults from './pack-results';
@@ -105,6 +105,7 @@ export class WorkerImpl {
 
   /**
    * generates flattened results suitable for passing to the main thread.
+   * FIXME: move to calculator so we can hide simulation_model
    */
   protected FlattenedResults(){
 
@@ -112,8 +113,8 @@ export class WorkerImpl {
     const flattened: any[] = [];
 
     // tslint:disable-next-line:forin
-    for (const c in Model.results) {
-      const column = Model.results[c];
+    for (const c in this.calculator.simulation_model.results) {
+      const column = this.calculator.simulation_model.results[c];
 
       // tslint:disable-next-line:forin
       for (const r in column) {

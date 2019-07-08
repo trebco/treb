@@ -38,10 +38,16 @@ export class SimulationModel {
       const distributions = desc.addresses.map((address) => {
         return this.distributions[address.column][address.row][address.call_index];
       });
-      const result = MC.CorrelateCDM(desc.correlation, distributions, true);
-      desc.addresses.forEach((address, index) => {
-        this.distributions[address.column][address.row][address.call_index] = result[index];
-      });
+      try {
+        const result = MC.CorrelateCDM(desc.correlation, distributions, true);
+        desc.addresses.forEach((address, index) => {
+          this.distributions[address.column][address.row][address.call_index] = result[index];
+        });
+      }
+      catch (err) {
+        // FIXME: put some zeros in there or something? (...)
+        console.warn(err);
+      }
     }
   }
 
@@ -564,12 +570,14 @@ export class SimulationModel {
 
 // instance
 
-export const Model = new SimulationModel();
+// export 
+// const Model = new SimulationModel();
 
 // ---
 
+export const RegisterSimlationFunctions = (lib: FunctionLibrary, Model: SimulationModel) => {
 
-FunctionLibrary.Register({
+lib.Register({
 
   'MC.Histogram': {
     address: [0],
@@ -1013,3 +1021,4 @@ FunctionLibrary.Register({
 
 });
 
+};

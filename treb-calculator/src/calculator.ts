@@ -1,16 +1,17 @@
 
 import { Localization, Cell, Cells, Area, ICellAddress, ValueType, CellSerializationOptions } from 'treb-base-types';
-import { Parser, ExpressionUnit, DependencyList, DecimalMarkType, ArgumentSeparatorType, UnitAddress } from 'treb-parser';
+import { Parser, ExpressionUnit, DependencyList,
+         DecimalMarkType, ArgumentSeparatorType, UnitAddress } from 'treb-parser';
 
 import { Graph, GraphStatus } from './dag/graph';
 import { SpreadsheetVertex, CalculationResult } from './dag/spreadsheet_vertex';
 import { ExpressionCalculator } from './expression-calculator';
 import * as Utilities from './utilities';
 
-import { Model, SimulationState } from './simulation-model';
+import { SimulationModel, SimulationState, RegisterSimlationFunctions } from './simulation-model';
 import { FunctionLibrary, FunctionMap } from './function-library';
 
-import './base-functions';
+import { RegisterBaseFunctions } from './base-functions';
 
 import * as PackResults from './pack-results';
 import { DataModel } from '@root/treb-grid/src';
@@ -80,9 +81,18 @@ export class Calculator extends Graph {
   /** the next calculation must do a full rebuild -- set on reset */
   protected full_rebuild_required = false;
 
+  protected library = new FunctionLibrary();
+
+  /** FIXME visibility */
+  public simulation_model = new SimulationModel();
+
   constructor() {
     super();
     this.UpdateLocale();
+
+    RegisterBaseFunctions(this.library);
+    RegisterSimlationFunctions(this.library, this.simulation_model);
+
   }
 
   /**
@@ -111,7 +121,7 @@ export class Calculator extends Graph {
 
   public SupportedFunctions(){
 
-    const list = FunctionLibrary.List();
+    const list = this.library.List();
 
     const function_list = Object.keys(list).map((key) => {
       let name = list[key].canonical_name;
@@ -147,11 +157,11 @@ export class Calculator extends Graph {
 
       descriptor.fn = (...args: any[]) => {
         return original_function.apply({
-          address: { ...Model.address},
+          address: { ...this.simulation_model.address},
         }, args);
       };
 
-      FunctionLibrary.Register({[name]: descriptor});
+      this.library.Register({[name]: descriptor});
     }
 
   }
@@ -163,10 +173,10 @@ export class Calculator extends Graph {
       model: DataModel,
       additional_cells?: ICellAddress[] ){
 
-    Model.iterations = iterations;
-    Model.results = [];
-    Model.lhs = lhs;
-    Model.correlated_distributions = {};
+    this.simulation_model.iterations = iterations;
+    this.simulation_model.results = [];
+    this.simulation_model.lhs = lhs;
+    this.simulation_model.correlated_distributions = {};
 
     const cells = model.sheet.cells;
 
@@ -176,7 +186,7 @@ export class Calculator extends Graph {
 
     this.Reset();
     this.AttachData(model);
-    this.expression_calculator.SetModel(model);
+    this.expression_calculator.SetModel(model, this.simulation_model, this.library);
 
     // add additional cells to monitor, but only if they actually
     // exist; otherwise they will generate calc errors.
@@ -184,7 +194,7 @@ export class Calculator extends Graph {
     if (additional_cells && additional_cells.length){
       for (const address of additional_cells){
         const cell = cells.GetCell(address, false);
-        if (cell) Model.CellData(address);
+        if (cell) this.simulation_model.CellData(address);
         // else console.info( 'Skipping empty cell', address);
       }
     }
@@ -198,14 +208,14 @@ export class Calculator extends Graph {
 
     // FIXME: consolidate with trial method
 
-    Model.state = SimulationState.Prep;
+    this.simulation_model.state = SimulationState.Prep;
 
-    Model.iteration = 0;
+    this.simulation_model.iteration = 0;
     this.Recalculate();
 
-    Model.CorrelateDistributions();
+    this.simulation_model.CorrelateDistributions();
 
-    Model.state = SimulationState.Simulation;
+    this.simulation_model.state = SimulationState.Simulation;
 
     return result.status;
 
@@ -216,7 +226,7 @@ export class Calculator extends Graph {
    * will be returned from the worker(s) back to the main thread.
    */
   public GetResults(){
-    return Model.results;
+    return this.simulation_model.results;
   }
 
   /**
@@ -238,7 +248,7 @@ export class Calculator extends Graph {
 
     if (!this.cells) throw(new Error('called trial without cells'));
 
-    Model.iteration = iteration;
+    this.simulation_model.iteration = iteration;
 
     // now handled in graph/calc via volatile and simulationvolatile
     // Model.volatile_functions.forEach((addr) => this.SetDirty(addr));
@@ -251,8 +261,8 @@ export class Calculator extends Graph {
       // unecessary.
 
       // tslint:disable-next-line:forin
-      for (const c in Model.results){
-        const column = Model.results[c];
+      for (const c in this.simulation_model.results){
+        const column = this.simulation_model.results[c];
 
         // tslint:disable-next-line:forin
         for (const r in column){
@@ -296,9 +306,9 @@ export class Calculator extends Graph {
 
   /** basically set null results */
   public FlushSimulationResults() {
-    Model.results = [];
-    Model.elapsed = 0;
-    Model.trials = 0;
+    this.simulation_model.results = [];
+    this.simulation_model.elapsed = 0;
+    this.simulation_model.trials = 0;
   }
 
   /**
@@ -311,14 +321,16 @@ export class Calculator extends Graph {
    */
   public UpdateResults(data: any){
 
-    Model.results = [];
-    Model.elapsed = data.elapsed;
-    Model.trials = data.trials;
+    this.simulation_model.results = [];
+    this.simulation_model.elapsed = data.elapsed;
+    this.simulation_model.trials = data.trials;
 
     data.results.map((result: any) => {
       const entry = (result instanceof ArrayBuffer) ? PackResults.UnpackOne(new Float64Array(result)) : result;
-      if (!Model.results[entry.column]) Model.results[entry.column] = [];
-      Model.results[entry.column][entry.row] = entry.data;
+      if (!this.simulation_model.results[entry.column]) {
+        this.simulation_model.results[entry.column] = [];
+      }
+      this.simulation_model.results[entry.column][entry.row] = entry.data;
       this.SetDirty(entry);
     });
 
@@ -389,7 +401,7 @@ export class Calculator extends Graph {
     const flat = cells.toJSON(json_options);
 
     this.AttachData(model);
-    this.expression_calculator.SetModel(model);
+    this.expression_calculator.SetModel(model, this.simulation_model, this.library);
 
     const result = this.RebuildGraph(flat.data, {});
 
@@ -420,7 +432,7 @@ export class Calculator extends Graph {
       // if (check){
       //   if (check.canonical_name) return check.canonical_name;
       // }
-      const check = FunctionLibrary.Get(name);
+      const check = this.library.Get(name);
       if (check.canonical_name) {
         return check.canonical_name;
       }
@@ -508,7 +520,7 @@ export class Calculator extends Graph {
 
         const args: ExpressionUnit[] = unit.args.slice(0);
         // const func = SpreadsheetFunctions[unit.name.toLowerCase().replace(/\./g, '_')];
-        const func = FunctionLibrary.Get(unit.name);
+        const func = this.library.Get(unit.name);
         if (func){
           if (func.address && func.address.length){
             func.address.forEach((index) => args[index] = {type: 'missing', id: -1});
@@ -748,7 +760,7 @@ export class Calculator extends Graph {
     let flat = cells.toJSON(json_options);
 
     this.AttachData(model);
-    this.expression_calculator.SetModel(model);
+    this.expression_calculator.SetModel(model, this.simulation_model, this.library);
 
     let result: {status: GraphStatus, reference?: ICellAddress} = {
       status: GraphStatus.OK,

@@ -2,7 +2,7 @@
 // import { Model, SpreadsheetFunctions, SimulationState } from './spreadsheet-functions';
 // import { Model, SimulationState } from './spreadsheet-functions';
 
-import { Model, SimulationState } from './simulation-model';
+import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 
 import { Localization, Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
@@ -25,6 +25,9 @@ export class ExpressionCalculator {
   private cells: Cells = new Cells();
   private named_range_map: {[index: string]: Area} = {};
   private parser: Parser; // = new Parser();
+
+  private simulation_model!: SimulationModel;
+  private library!: FunctionLibrary;
 
   constructor(){
     this.parser = new Parser();
@@ -52,9 +55,11 @@ export class ExpressionCalculator {
   }
   */
 
-  public SetModel(model: DataModel) {
+  public SetModel(model: DataModel, simulation_model: SimulationModel, library: FunctionLibrary) {
     this.cells = model.sheet.cells;
     this.named_range_map = model.sheet.named_ranges.Map();
+    this.simulation_model = simulation_model;
+    this.library = library;
   }
 
   /**
@@ -67,7 +72,7 @@ export class ExpressionCalculator {
 
     this.parser.Walk(expr, (unit: ExpressionUnit) => {
       if (unit.type === 'call') {
-        const func = FunctionLibrary.Get(unit.name);
+        const func = this.library.Get(unit.name);
         if (func && func.volatile) volatile = true;
       }
       return !volatile; // short circuit
@@ -77,15 +82,15 @@ export class ExpressionCalculator {
   }
 
   public Calculate(expr: ExpressionUnit, addr: ICellAddress){
-    Model.address = addr;
-    Model.volatile = false;
+    this.simulation_model.address = addr;
+    this.simulation_model.volatile = false;
 
     this.context.address = addr;
 
     this.call_index = 0; // why not in model? A: timing (nested)
     return {
       value: this.CalculateExpression(expr),
-      volatile: Model.volatile,
+      volatile: this.simulation_model.volatile,
     };
   }
 
@@ -116,6 +121,7 @@ export class ExpressionCalculator {
       return(this.cells.GetRange2(
         {row: r1, column: c1},
         {row: r2, column: c2},
+        true,
       ));
     }
   }
@@ -128,12 +134,12 @@ export class ExpressionCalculator {
     // expr = expr.toLowerCase().replace(/\./g, '_');
     // const func = SpreadsheetFunctions[expr];
 
-    const func = FunctionLibrary.Get(expr);
+    const func = this.library.Get(expr);
 
     if (!func) return { error: 'NAME' };
 
-    Model.volatile = Model.volatile || (!!func.volatile) ||
-      ((!!func.simulation_volatile) && Model.state !== SimulationState.Null);
+    this.simulation_model.volatile = this.simulation_model.volatile || (!!func.volatile) ||
+      ((!!func.simulation_volatile) && this.simulation_model.state !== SimulationState.Null);
 
     // NOTE: this is (possibly) calculating unecessary operations,
     // if there's an IF statement. although that is the exception
@@ -171,7 +177,7 @@ export class ExpressionCalculator {
     // we're now doing this at all times except during a simulation;
     // it's done largely to support the "cell" function. check cost.
 
-    if (Model.state !== SimulationState.Simulation){
+    if (this.simulation_model.state !== SimulationState.Simulation){
       if (func.address){
         func.address.forEach((addr_index: number) => {
           mapped_args[addr_index] = this.parser.Render(args[addr_index]).replace(/\$/g, '');
@@ -179,7 +185,7 @@ export class ExpressionCalculator {
       }
     }
 
-    if (Model.state === SimulationState.Prep){
+    if (this.simulation_model.state === SimulationState.Prep){
 
       // these functions want addresses instead of resolved values
       // (even though we've already resolved it, that's not super important)
@@ -197,13 +203,13 @@ export class ExpressionCalculator {
 
       // FIXME: this can move to parsing stage
 
-      // Model.volatile = Model.volatile || (!!func.simulation_volatile);
+      // this.simulation_model.volatile = this.simulation_model.volatile || (!!func.simulation_volatile);
 
       /*
       if (func.simulation_volatile){
-        const addr = Model.address || {row: 0, column: 0};
-        if (!Model.volatile_functions.some((test) => (addr.row === test.row && addr.column === test.column))){
-          Model.volatile_functions.push(addr);
+        const addr = this.simulation_model.address || {row: 0, column: 0};
+        if (!this.simulation_model.volatile_functions.some((test) => (addr.row === test.row && addr.column === test.column))){
+          this.simulation_model.volatile_functions.push(addr);
         }
       }
       */
@@ -213,18 +219,18 @@ export class ExpressionCalculator {
       if (func.collector){
         for ( const collector_index of func.collector ){
           const arg = args[collector_index];
-          if (arg.type === 'address') Model.CellData(arg);
+          if (arg.type === 'address') this.simulation_model.CellData(arg);
         }
       }
     }
 
-    Model.call_index = call_index;
+    this.simulation_model.call_index = call_index;
 
-    if (func.collector && Model.state === SimulationState.Null){
+    if (func.collector && this.simulation_model.state === SimulationState.Null){
       for (const collector_index of func.collector ){
         const arg = args[collector_index];
         if (arg.type === 'address'){
-          mapped_args[collector_index] = Model.CellData(arg);
+          mapped_args[collector_index] = this.simulation_model.CellData(arg);
         }
       }
     }

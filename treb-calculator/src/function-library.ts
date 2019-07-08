@@ -91,11 +91,14 @@ interface ExtendedFunctionMap {
  */
 export class FunctionLibrary {
 
+  /** the actual functions */
+  protected functions: ExtendedFunctionMap = {};
+
   /**
    * register one or more functions. keys in the passed object are
    * considered the canonical function names, and must be (icase) unique.
    */
-  public static Register(map: FunctionMap) {
+  public Register(map: FunctionMap) {
 
     for (const name of Object.keys(map)) {
 
@@ -129,13 +132,13 @@ export class FunctionLibrary {
   }
 
   /** lookup function (actual map is protected) */
-  public static Get(name: string) {
+  public Get(name: string) {
     const normalized = name.toLowerCase();
     return this.functions[normalized];
   }
 
   /** get a list, for AC services */
-  public static List() {
+  public List() {
     const list: ExtendedFunctionMap = {};
     for (const key of Object.keys(this.functions)) {
       list[key] = this.functions[key];
@@ -147,15 +150,12 @@ export class FunctionLibrary {
    * create an alias. we clone the descriptor and use the alias as the
    * canonical name, so should work better than just a pointer.
    */
-  public static Alias(name: string, reference: string) {
+  public Alias(name: string, reference: string) {
     const ref = this.Get(reference);
     if (!ref) {
       throw new Error(`referenced function ${reference} does not exist`);
     }
     this.Register({[name]: {...ref} as CompositeFunctionDescriptor});
   }
-
-  /** the actual functions */
-  protected static functions: ExtendedFunctionMap = {};
 
 }
