@@ -305,7 +305,7 @@ export class Grid {
   }
 
   /** add an annotation. it will be returned with a usable node. */
-  public AddAnnotation(annotation: Annotation) {
+  public AddAnnotation(annotation: Annotation, toll_events = false) {
 
     // ensure we haven't already added this
     for (const test of this.model.annotations) {
@@ -512,11 +512,16 @@ export class Grid {
     this.layout.AddAnnotation(annotation);
     this.model.annotations.push(annotation);
 
-    this.grid_events.Publish({
-      type: 'annotation',
-      annotation,
-      event: 'create',
-    });
+    if (!toll_events) {
+      this.grid_events.Publish({
+        type: 'annotation',
+        annotation,
+        event: 'create',
+      });
+    }
+    else {
+      console.info('not sending annotation event');
+    }
 
   }
 
@@ -544,6 +549,8 @@ export class Grid {
 
   /**
    * remove all annotations
+   * 
+   * FIXME: should this have an attached event? (...)
    */
   public RemoveAllAnnotations() {
     for (const annotation of this.model.annotations) {
@@ -736,8 +743,7 @@ export class Grid {
     const annotations = (data as any).annotations;
     if (annotations && Array.isArray(annotations)) {
       for (const element of annotations) {
-        // console.info('inflate', JSON.stringify(element));
-        this.AddAnnotation(new Annotation(element));
+        this.AddAnnotation(new Annotation(element), true);
       }
     }
 

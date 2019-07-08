@@ -249,8 +249,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           break;
 
         case 'annotation':
-          this.DocumentChange();
           if (event.annotation) {
+            this.DocumentChange();
             switch (event.event) {
               case 'create':
                 this.InflateAnnotation(event.annotation);
@@ -1134,7 +1134,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // the note regarding leaves (above) is important for annotations, which
     // use leaf nodes to manage dependencies. so make sure cells are attached.
 
-    // this.InflateAnnotations();
+    this.InflateAnnotations();
 
     if (flush) {
       this.FlushUndo();
@@ -1333,6 +1333,16 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   }
   */
+
+  /**
+   * inflate all annotations. intended to be called after a document
+   * load (including undo), which does not send `create` events.
+   */
+  public InflateAnnotations(){
+    for (const annotation of this.grid.model.annotations) {
+      this.InflateAnnotation(annotation);
+    }
+  }
 
   public InflateAnnotation(annotation: Annotation) {
     if (annotation.node && annotation.data) {
