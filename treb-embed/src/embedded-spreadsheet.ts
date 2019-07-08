@@ -276,6 +276,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       }
     });
 
+    // FIXME: this should yield so we can subscribe to events before the initial load
+
     if (data) {
       this.LoadDocument(JSON.parse(data), undefined, undefined, !!options.recalculate);
     }
