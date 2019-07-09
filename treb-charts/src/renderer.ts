@@ -132,7 +132,11 @@ export class ChartRenderer {
 
   }
 
-  public RenderXAxis(area: Area,
+  /**
+   * render x axis labels; skips over labels to prevent overlap
+   */
+  public RenderXAxis(
+      area: Area,
       labels: string[],
       metrics: Metrics[],
       classes?: string|string[]) {
@@ -140,38 +144,43 @@ export class ChartRenderer {
     const count = labels.length;
     if (!count) return;
 
+    // FIXME: base on font, ' ' character
+    const label_buffer = 4;
+
     const step = area.width / (count);
 
-    // calculate skip count
-    let skip_count = 0;
+    // calculate increment (skip_count)
+    let increment = 1;
     let repeat = true;
+
     while (repeat) {
       repeat = false;
       let extent = 0;
-      for (let i = 0; i < count; i += (skip_count + 1)){
+      for (let i = 0; i < count; i += increment) {
         const center = Math.round(area.left + step / 2 + step * i);
         const left = center - metrics[i].width / 2;
         if (extent && (left <= extent)) {
-          skip_count++;
+          increment++;
           repeat = true;
           break;
         }
-        extent = center + metrics[i].width / 2;
+
+        // FIXME: buffer? they get pretty tight sometimes
+
+        extent = center + (metrics[i].width / 2) + label_buffer;
       }
     }
 
-    // now render, with skips -- stop at bounds
-    for (let i = 0; i < count; i += (skip_count + 1)){
-      const center = Math.round(area.left + step / 2 + step * i);
-//      const extent = center + metrics[i].width / 2;
-//      if (extent < area.right) {
-        this.RenderText(labels[i], 'center', {
-          x: center, y: area.bottom, }, classes);
-//      }
+    for (let i = 0; i < count; i += increment) {
+      const x = Math.round(area.left + step / 2 + step * i);
+      this.RenderText(labels[i], 'center', { x, y: area.bottom }, classes);
     }
 
   }
 
+  /**
+   * render y axis labels; skips over labels to prevent overlap
+   */
   public RenderYAxis(area: Area, left: number,
     labels: Array<{label: string, metrics: Metrics}>, classes?: string|string[]) {
 
@@ -179,13 +188,30 @@ export class ChartRenderer {
     if (!count) return;
 
     const step = area.height / (count - 1);
-    for (let i = 0; i < count; i++) {
-      const y = Math.round(area.bottom - step * i);
+
+    // calculate increment (skip count)
+    let increment = 1;
+    let repeat = true;
+
+    while(repeat) {
+      repeat = false;
+      let extent = 0;
+      for (let i = 0; i < count; i += increment) {
+        const label = labels[i];
+        const y = Math.round(area.bottom - step * i + label.metrics.height / 4);
+        if (extent && y >= extent) {
+          increment++;
+          repeat = true;
+          break;
+        }
+        extent = y - label.metrics.height;
+      }
+    }
+
+    for (let i = 0; i < count; i += increment) {
       const label = labels[i];
-      this.RenderText(label.label, 'right', {
-        x: left,
-        y: Math.round(y + (label.metrics.height / 4)),
-      }, classes);
+      const y = Math.round(area.bottom - step * i + label.metrics.height / 4);
+      this.RenderText(label.label, 'right', { x: left, y }, classes);
     }
 
   }
