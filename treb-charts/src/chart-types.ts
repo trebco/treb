@@ -41,9 +41,11 @@ export interface LayoutOptions {
 
 export interface DataRange {
   data: number[];
+  data2?: number[];
   labels?: string[];
   min: number;
   max: number;
   count: number;
   scale: RangeScale;
+  scale2?: RangeScale;
 }

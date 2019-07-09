@@ -29,6 +29,7 @@ export class SelectionRenderer {
       private layout: BaseLayout,
       private model: DataModel,
       private primary_selection: GridSelection,
+      // private highlight_selection: GridSelection,
       private additional_selections: GridSelection[]) {
 
   }

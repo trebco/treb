@@ -579,8 +579,26 @@ export const RegisterSimlationFunctions = (lib: FunctionLibrary, Model: Simulati
 
 lib.Register({
 
+  // FIXME: make this self-registering
+
   'MC.Histogram': {
     address: [0],
+    arguments: [
+      { name: 'Reference Cell' },
+      { name: 'Title' },
+    ],
+    fn: (...args: any[]) => {
+      return args;
+    },
+  },
+
+  'MC.Correlation': {
+    address: [0, 1],
+    arguments: [
+      { name: 'Reference Cell 1' },
+      { name: 'Reference Cell 2' },
+      { name: 'Title' },
+    ],
     fn: (...args: any[]) => {
       return args;
     },

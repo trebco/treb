@@ -214,6 +214,51 @@ export class ChartRenderer {
 
   }
 
+  public RenderPoints(area: Area, x: number[], y: number[], classes?: string|string[]) {
+
+    const node = document.createElementNS(SVGNS, 'path');
+    const d: string[] = [];
+
+    for (let i = 0; i < x.length; i++ ){
+      const px = x[i] * area.width + area.left;
+      const py = area.bottom - y[i] * area.height;
+      d.push(`M${px - 1},${py - 1} L${px + 1},${py + 1}`);
+      d.push(`M${px - 1},${py + 1} L${px + 1},${py - 1}`);
+    }
+
+    // console.info(d);
+    node.setAttribute('d', d.join(' '));
+
+    if (typeof classes !== 'undefined') {
+      if (typeof classes === 'string') {
+        classes = [classes];
+      }
+      node.setAttribute('class', classes.join(' '));
+    }
+
+    // if (title) node.setAttribute('title', title);
+    this.group.appendChild(node);
+    
+  }
+
+  public RenderPoint(x: number, y: number, classes?: string|string[]) {
+
+    const node = document.createElementNS(SVGNS, 'circle');
+    node.setAttribute('cx', x.toString());
+    node.setAttribute('cy', y.toString());
+    node.setAttribute('r', '1');
+
+    if (typeof classes !== 'undefined') {
+      if (typeof classes === 'string') {
+        classes = [classes];
+      }
+      node.setAttribute('class', classes.join(' '));
+    }
+
+    // if (title) node.setAttribute('title', title);
+    this.group.appendChild(node);
+  }
+
   public RenderRectangle(area: Area, classes?: string|string[], title?: string) {
 
     const node = document.createElementNS(SVGNS, 'rect');

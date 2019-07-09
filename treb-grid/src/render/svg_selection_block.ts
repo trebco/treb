@@ -26,7 +26,9 @@ export class SVGSelectionBlock {
   public fill?: SVGPathElement;
   public nub?: SVGRectElement;
 
-  constructor(primary = true, private theme: ExtendedTheme, private offset: SelectionOffset = {x: 0, y: 0}) {
+  constructor( primary: boolean,
+               private theme: ExtendedTheme,
+               private offset: SelectionOffset = {x: 0, y: 0}) {
 
     this.g = document.createElementNS(SVGNS, 'g');
     this.g.setAttribute('transform', `translate(${offset.x}, ${offset.y})`);

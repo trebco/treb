@@ -161,6 +161,16 @@ export class Grid {
     empty: true,
   };
 
+  /* *
+   * this selection is for highlighting only
+   * /
+  private readonly highlight_selection: GridSelection = {
+    target: { row: 0, column: 0 },
+    area: new Area({ row: 0, column: 0 }),
+    empty: true,
+  };
+  */
+
   /**
    * active selection when selecting arguments (while editing)
    */
@@ -244,8 +254,13 @@ export class Grid {
       new LegacyLayout(this.model);
 
     this.tile_renderer = new TileRenderer(this.theme, this.layout, this.model, this.options);
-    this.selection_renderer = new SelectionRenderer(this.theme, this.layout, this.model,
-      this.primary_selection, this.additional_selections);
+    this.selection_renderer = new SelectionRenderer(
+      this.theme,
+      this.layout,
+      this.model,
+      this.primary_selection,
+      // this.highlight_selection,
+      this.additional_selections);
 
     if (Localization.decimal_separator === '.') {
       this.parser.decimal_mark = DecimalMarkType.Period;

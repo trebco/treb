@@ -188,6 +188,11 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       if (!data && this.options.alternate_document) {
         network_document = this.options.alternate_document;
       }
+      window.addEventListener('beforeunload', () => {
+        if (this.options.storage_key) {
+          this.SaveLocalStorage(this.options.storage_key);
+        }
+      });
     }
 
     let container: HTMLElement;
@@ -1365,12 +1370,18 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           const update_chart = () => {
 
             let src: ICellAddress|undefined;
+            let src2: ICellAddress|undefined;
 
             let format_x: any;
             let format_y: any;
             let bins: any;
+            let chart_type = '';
 
             chart.options.title = undefined;
+
+            if (!chart.options.axes) chart.options.axes = {};
+            if (!chart.options.axes.x) chart.options.axes.x = {};
+            if (!chart.options.axes.y) chart.options.axes.y = {};
 
             annotation.temp.additional_cells = [];
 
@@ -1378,65 +1389,103 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
               const parse_result = this.parser.Parse(annotation.formula);
               if (parse_result &&
                   parse_result.expression &&
-                  parse_result.expression.type === 'call' &&
-                  parse_result.expression.name.toLowerCase() === 'mc.histogram') {
+                  parse_result.expression.type === 'call' ){
 
-                const result = this.calculator.CalculateExpression(parse_result.expression);
-                if (result.value) {
-                  const p2 = this.parser.Parse(result.value[0] || '');
+                const expr_name = parse_result.expression.name.toLowerCase();
 
-                  if (p2.expression && p2.expression.type === 'address') {
-                    src = p2.expression;
-                    annotation.temp.additional_cells.push(src);
+                if ( expr_name === 'mc.histogram') {
+
+                  chart_type = 'histogram';
+                  const result = this.calculator.CalculateExpression(parse_result.expression);
+                  if (result.value) {
+                    const p2 = this.parser.Parse(result.value[0] || '');
+
+                    if (p2.expression && p2.expression.type === 'address') {
+                      src = p2.expression;
+                      annotation.temp.additional_cells.push(src);
+                    }
+                    chart.options.title = result.value[1] || undefined;
+                    chart.options.axes.x.labels = true;
+                    chart.options.axes.y.labels = true;
+
+                    format_x = result.value[2];
+                    format_y = result.value[3];
+                    bins = result.value[4];
+
                   }
-                  chart.options.title = result.value[1] || undefined;
-
-                  format_x = result.value[2];
-                  format_y = result.value[3];
-                  bins = result.value[4];
-
                 }
+                else if ( expr_name === 'mc.correlation') {
+
+                  chart_type = 'correlation';
+                  const result = this.calculator.CalculateExpression(parse_result.expression);
+                  if (result.value) {
+                    const p2 = this.parser.Parse(result.value[0] || '');
+                    if (p2.expression && p2.expression.type === 'address') {
+                      src = p2.expression;
+                      annotation.temp.additional_cells.push(src);
+                    }
+                    const p3 = this.parser.Parse(result.value[1] || '');
+                    if (p3.expression && p3.expression.type === 'address') {
+                      src2 = p3.expression;
+                      annotation.temp.additional_cells.push(src2);
+                    }
+                    chart.options.title = result.value[2] || undefined;
+                    chart.options.axes.x.labels = false;
+                    chart.options.axes.y.labels = false;
+
+                    format_x = false; // result.value[2];
+                    format_y = false; // result.value[3];
+                    bins = result.value[4];
+
+                  }
+                }
+
+
               }
             }
 
-            if (src) {
+            if (src && typeof format_x === 'undefined') {
+              format_x = this.grid.GetNumberFormat(src) || '';
+            }
 
-              if (typeof format_x === 'undefined') {
-                format_x = this.grid.GetNumberFormat(src) || '';
-              }
+            if (!chart.options.axes) chart.options.axes = {};
+            if (!chart.options.axes.x) chart.options.axes.x = {};
+            if (!chart.options.axes.y) chart.options.axes.y = {};
 
-              if (!chart.options.axes) chart.options.axes = {};
-              if (!chart.options.axes.x) chart.options.axes.x = {};
-              if (!chart.options.axes.y) chart.options.axes.y = {};
-
-              if (format_x === false) {
-                chart.options.axes.x.labels = false;
-              }
-              else {
-                chart.options.axes.x.labels = true;
-                chart.options.axes.x.format = format_x || '';
-              }
-
-              if (format_y === false) {
-                chart.options.axes.y.labels = false;
-              }
-              else {
-                chart.options.axes.y.labels = true;
-              }
-
-              if (typeof bins === 'number' && bins) {
-                chart.options.histogram_bins = bins;
-              }
-              else {
-                chart.options.histogram_bins = undefined;
-              }
-
-              const data = this.SimulationData(src);
-              chart.CreateHistogram((data || []) as number[]);
-
+            if (format_x === false) {
+              chart.options.axes.x.labels = false;
             }
             else {
-              chart.CreateHistogram([]); // FIXME: clear method
+              chart.options.axes.x.labels = true;
+              chart.options.axes.x.format = format_x || '';
+            }
+
+            if (format_y === false) {
+              chart.options.axes.y.labels = false;
+            }
+            else {
+              chart.options.axes.y.labels = true;
+            }
+
+            if (typeof bins === 'number' && bins) {
+              chart.options.histogram_bins = bins;
+            }
+            else {
+              chart.options.histogram_bins = undefined;
+            }
+
+            if (src && chart_type === 'histogram') {
+              const data = this.SimulationData(src);
+              chart.CreateHistogram((data || []) as number[]);
+            }
+            else if (src && src2 && chart_type === 'correlation') {
+              const data1 = this.SimulationData(src);
+              const data2 = this.SimulationData(src2);
+              chart.CreateScatter((data1 || []) as number[], (data2 || []) as number[]);
+            }
+            else {
+              // chart.CreateHistogram([]); // FIXME: clear method
+              chart.Clear();
             }
 
              chart.Update();
@@ -1528,6 +1577,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.grid.Update(true); // , area);
     this.UpdateAnnotations();
     this.Publish({ type: 'data' });
+  }
+
+  public SaveLocalStorage(key: string) {
+    const json = JSON.stringify(this.SerializeDocument(true, true, {
+      rendered_values: true, expand_arrays: true}));
+    localStorage.setItem(key, json);
   }
 
   /** save sheet to local storage */

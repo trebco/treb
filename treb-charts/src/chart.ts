@@ -5,6 +5,12 @@ import { Area } from './rectangle';
 import { Util, RangeScale } from './util';
 import { DataRange, LayoutOptions } from './chart-types';
 
+enum ChartType {
+  undefined,
+  histogram,
+  scatter,
+}
+
 export class Chart {
 
   private data: DataRange = {
@@ -19,8 +25,10 @@ export class Chart {
       count: 1,
       min: 0,
       max: 1,
-    },
+    }
   };
+
+  private chart_type: ChartType = ChartType.histogram;
 
   constructor(
     public options: LayoutOptions = {},
@@ -34,6 +42,36 @@ export class Chart {
 
   public Scale(value: number, range: number, scale: RangeScale) {
     return range * (value - scale.min) / (scale.max - scale.min);
+  }
+
+  public Clear() {
+    this.data.data = [];
+    this.data.labels = [];
+    this.data.count = 0;
+  }
+
+  public CreateScatter(data1: number[], data2: number[]) {
+    this.chart_type = ChartType.scatter;
+
+    data1 = data1.slice(0); // , 500);
+    data2 = data2.slice(0); // , 500);
+
+    const min1 = Math.min.apply(0, data1);
+    const max1 = Math.max.apply(0, data1);
+    const range1 = max1 - min1;
+    data1 = data1.map((value) => (value - min1) / range1);
+
+    const min2 = Math.min.apply(0, data2);
+    const max2 = Math.max.apply(0, data2);
+    const range2 = max2 - min2;
+    data2 = data2.map((value) => (value - min2) / range2);
+
+    const length = Math.min(data1.length, data2.length);
+    this.data.count = length;
+
+    this.data.data = data1; // .slice(0);
+    this.data.data2 = data2; // .slice(0);
+
   }
 
   /**
@@ -86,6 +124,8 @@ export class Chart {
     this.data.max = Math.max.apply(0, bins);
     this.data.scale = Util.Scale(0, this.data.max, 8); // histogram force min = 0
     this.data.count = bins.length;
+
+    this.chart_type = ChartType.histogram;
 
   }
 
@@ -218,24 +258,53 @@ export class Chart {
 
     }
 
-    // gridlines
-    this.renderer.RenderGrid(area, this.data.scale.count, 'chart-grid');
+    // --- 8< --- here's where we need to split for different chart types... --- >8 ---
 
-    // columns
-    const column_width = area.width / this.data.count;
-    const column_pct = (typeof this.options.column_width === 'number') ?
-      this.options.column_width : 0.8;
+    if (this.chart_type === ChartType.scatter ) {
 
-    const space = column_width * (1 - column_pct) / 2;
+      if (this.data.data.length && this.data.data2 && this.data.data2.length ) {
 
-    for (let i = 0; i < this.data.count; i++ ){
-      const x = Math.round(area.left + i * column_width + space);
-      const width = column_width - space * 2;
-      const height = this.Scale(this.data.data[i], area.height, this.data.scale);
-      const y = area.bottom - height;
-      this.renderer.RenderRectangle(new Area(
-        x, y, x + width, y + height,
-      ), 'chart-column', this.data.data[i].toString());
+        this.renderer.RenderPoints(area, this.data.data, this.data.data2, 'points');
+
+        /*
+        for (let i = 0; i < this.data.count; i++ ){
+          const a = this.data.data[i];
+          const b = this.data.data2[i];
+
+          if (typeof a === 'number' && typeof b === 'number') {
+            const x = a * area.width + area.left;
+            const y = b * area.height + area.top;
+            this.renderer.RenderPoint(x, y, 'dot');
+          }
+
+        }
+        */
+
+      }
+
+    }
+    else if (this.chart_type === ChartType.histogram) {
+
+      // gridlines
+      this.renderer.RenderGrid(area, this.data.scale.count, 'chart-grid');
+
+      // columns
+      const column_width = area.width / this.data.count;
+      const column_pct = (typeof this.options.column_width === 'number') ?
+        this.options.column_width : 0.8;
+
+      const space = column_width * (1 - column_pct) / 2;
+
+      for (let i = 0; i < this.data.count; i++ ){
+        const x = Math.round(area.left + i * column_width + space);
+        const width = column_width - space * 2;
+        const height = this.Scale(this.data.data[i], area.height, this.data.scale);
+        const y = area.bottom - height;
+        this.renderer.RenderRectangle(new Area(
+          x, y, x + width, y + height,
+        ), 'chart-column', this.data.data[i].toString());
+      }
+
     }
 
   }
