@@ -433,7 +433,11 @@ export class NumberFormat {
       section = this.sections[1];
     }
 
-    const epsilon = Math.pow(10, -section.decimal_max_digits) / 2;
+    const max_digits = section.percent ?
+      section.decimal_max_digits + 2 :
+      section.decimal_max_digits;
+
+    const epsilon = Math.pow(10, -max_digits) / 2;
     let abs_value = Math.abs(value);
 
     if (abs_value < epsilon) {
