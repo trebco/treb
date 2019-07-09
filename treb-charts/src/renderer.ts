@@ -274,7 +274,14 @@ export class ChartRenderer {
       node.setAttribute('class', classes.join(' '));
     }
 
-    if (title) node.setAttribute('title', title);
+    if (title) {
+      node.addEventListener('mouseenter', (event) => {
+        this.parent.setAttribute('title', title);
+      });
+      node.addEventListener('mouseleave', (event) => {
+        this.parent.setAttribute('title', '');
+      });
+    }
     this.group.appendChild(node);
   }
 

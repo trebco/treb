@@ -77,7 +77,7 @@ export interface FunctionMap {
  * from the registered name (because those were functions, and had to adhere
  * to language rules) but now we use arbitrary tokens, so we can consolidate.
  */
-interface ExtendedFunctionDescriptor extends CompositeFunctionDescriptor {
+export interface ExtendedFunctionDescriptor extends CompositeFunctionDescriptor {
   canonical_name: string;
 }
 

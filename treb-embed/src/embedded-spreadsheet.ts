@@ -1360,15 +1360,19 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           console.warn('missing chart library');
         }
         else {
+
+          /*
           const chart = (self as any).TREB.CreateChart2(annotation.node, {
             axes: {
               x: {labels: true},
               y: {labels: true}},
             histogram_bins: 10,
           }) as Chart;
-
+          */
+          const chart = (self as any).TREB.CreateChart2(annotation.node) as Chart;
           const update_chart = () => {
 
+            /*
             let src: ICellAddress|undefined;
             let src2: ICellAddress|undefined;
 
@@ -1382,6 +1386,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
             if (!chart.options.axes) chart.options.axes = {};
             if (!chart.options.axes.x) chart.options.axes.x = {};
             if (!chart.options.axes.y) chart.options.axes.y = {};
+            */
 
             annotation.temp.additional_cells = [];
 
@@ -1392,11 +1397,55 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
                   parse_result.expression.type === 'call' ){
 
                 const expr_name = parse_result.expression.name.toLowerCase();
+                const result = this.calculator.CalculateExpression(parse_result.expression);
+                const descriptor = this.calculator.GetFunction(expr_name);
+
+                // convert addresses to chart "CellData" types
+                // TODO: ranges
+
+                for (const index of (descriptor.address || [])) {
+                  const pr = this.parser.Parse(result.value[index]);
+                  if (pr.expression) {
+                    let address: ICellAddress|undefined;
+                    if (pr.expression.type === 'address') {
+                      address = {...pr.expression};
+                    }
+                    else if (pr.expression.type === 'identifier') {
+                      const lookup = this.grid.model.sheet.named_ranges.Get(pr.expression.name);
+                      if (lookup) {
+                        address = {...lookup.start};
+                      }
+                    }
+                    if (address) {
+                      const cell_data = this.grid.model.sheet.CellData(address);
+                      result.value[index] = {
+                        address,
+                        value: cell_data.calculated,
+                        format: cell_data.style ? cell_data.style.number_format : undefined,
+                        simulation_data: this.SimulationData(address),
+                      };
+                      annotation.temp.additional_cells.push(address);
+                    }
+                  }
+                }
+
+                chart.Exec(expr_name, result.value);
+
+              }
+            }
+
+            chart.Update();
+
+          };
+
+                /*
+                console.info(descriptor);
 
                 if ( expr_name === 'mc.histogram') {
 
                   chart_type = 'histogram';
                   const result = this.calculator.CalculateExpression(parse_result.expression);
+                  console.info(result);
                   if (result.value) {
                     const p2 = this.parser.Parse(result.value[0] || '');
 
@@ -1490,6 +1539,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
              chart.Update();
           };
+          */
 
           /** resize callback */
           annotation.temp.resize = () => {

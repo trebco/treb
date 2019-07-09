@@ -69,6 +69,9 @@ export interface CalculationOptions {
  */
 export class Calculator extends Graph {
 
+  /** FIXME visibility */
+  public simulation_model = new SimulationModel();
+
   // protected graph: Graph = new Graph(); // |null = null;
 
   protected status: GraphStatus = GraphStatus.OK;
@@ -82,9 +85,6 @@ export class Calculator extends Graph {
   protected full_rebuild_required = false;
 
   protected library = new FunctionLibrary();
-
-  /** FIXME visibility */
-  public simulation_model = new SimulationModel();
 
   constructor() {
     super();
@@ -117,6 +117,11 @@ export class Calculator extends Graph {
 
     this.expression_calculator.UpdateLocale();
 
+  }
+
+  /** lookup in function library */
+  public GetFunction(name: string) {
+    return this.library.Get(name);
   }
 
   public SupportedFunctions(){

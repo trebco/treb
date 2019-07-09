@@ -14,29 +14,38 @@ export interface AxisOptions {
 
 }
 
+/*
 export interface LayoutOptions {
 
-  /** chart title */
+  / ** chart title * /
   title?: string;
 
-  /** title top/bottom */
+  / ** title top/bottom * /
   title_layout?: 'top'|'bottom';
 
-  /** axis-specific options */
+  / ** axis-specific options * /
   axes?: {
     x?: AxisOptions;
     y?: AxisOptions;
   };
 
-  /** column width relative to available space, as % */
+  / ** column width relative to available space, as % * /
   column_width?: number;
 
-  /** margin around chart elements, as a % of total size */
+  / ** margin around chart elements, as a % of total size * /
   margin?: number;
 
-  /** desired bin count (suggestion only) */
+  / ** desired bin count (suggestion only) * /
   histogram_bins?: number;
 
+}
+*/
+
+export interface CellData {
+  address: { row: number, column: number };
+  value?: any;
+  simulation_data?: number[];
+  format?: string;
 }
 
 export interface DataRange {
