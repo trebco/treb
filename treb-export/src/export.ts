@@ -85,7 +85,8 @@ export class Exporter {
 
       // console.info(JSON.stringify(source.data, undefined, 2));
 
-      for (const cell of source.data) {
+      // for (const cell of source.data) {
+      const HandleCell = (cell: any) => {
         if (typeof cell.row === 'number' && typeof cell.column === 'number') {
 
           last_column = Math.max(last_column, cell.column);
@@ -94,9 +95,22 @@ export class Exporter {
           const list: Style.Properties[] = [];
           if (source.column_style && source.column_style[cell.column]) list.push(source.column_style[cell.column]);
           if (source.row_style && source.row_style[cell.row]) list.push(source.row_style[cell.row]);
-          if (style_map[cell.column] && style_map[cell.column][cell.row]) list.push(style_map[cell.column][cell.row]);
+
+          if (cell.style_ref) {
+            const cs = source.cell_style_refs[cell.style_ref];
+            list.push(cs);
+          }
+          else if (style_map[cell.column] && style_map[cell.column][cell.row]) {
+            list.push(style_map[cell.column][cell.row]);
+          }
 
           const composite = Style.Composite(list);
+          for (const key of Object.keys(composite) as Style.PropertyKeys []) {
+            if (composite[key] === 'none') {
+              delete composite[key];
+            }
+          }
+
           const font: Font = {};
           const fill: Fill = {};
           const border: BorderStyle = {};
@@ -204,7 +218,30 @@ export class Exporter {
 
           sheet.SetRange({row: cell.row + 1, col: cell.column + 1}, cell.value, range_options);
         }
+        else {
+          // console.info("NO", cell);
+        }
+      };
+
+      for (const block of source.data) {
+        if (block.cells) {
+          const row = block.row;
+          const column = block.column;
+          for (const cell of block.cells) {
+            if (typeof cell.row === 'number') {
+              cell.column = column;
+            }
+            else if (typeof cell.column === 'number') {
+              cell.row = row;
+            }
+            HandleCell(cell);
+          }
+        }
+        else {
+          HandleCell(block);
+        }
       }
+
     }
 
     if (last_column >= 0 && source.default_column_width) {

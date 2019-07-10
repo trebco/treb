@@ -30,8 +30,8 @@ export class Chart {
     titles: [] as string[],
   };
 
-  private y_labels: string[] = [];
-  private x_labels: string[] = [];
+  private y_labels?: string[];
+  private x_labels?: string[];
 
   // ex options
 
@@ -65,13 +65,16 @@ export class Chart {
       case 'mc.histogram':
         this.CreateHistogram(args);
         break;
+
       case 'mc.correlation':
-        // this.Create
+        this.CreateScatter(args);
         break;
+
       default:
         this.Clear();
         break;
     }
+
     return;
   }
 
@@ -79,19 +82,40 @@ export class Chart {
 
     // make sure to clear enough that we don't render anything.
 
-    this.y_labels = [];
-    this.x_labels = [];
+    this.y_labels = undefined;
+    this.x_labels = undefined;
 
     this.data.data = [];
     this.data.count = 0;
     this.title = '';
   }
 
-  public CreateScatter(data1: number[], data2: number[]) {
-    this.chart_type = ChartType.scatter;
+  public CreateScatter(args: any[]) { // data1: number[], data2: number[]) {
 
-    data1 = data1.slice(0); // , 500);
-    data2 = data2.slice(0); // , 500);
+    // validate first 2 args
+
+    if (!this.IsCellData(args[0])) {
+      console.warn('invalid args [0]');
+      this.Clear();
+      return;
+    }
+
+    if (!this.IsCellData(args[1])) {
+      console.warn('invalid args [1]');
+      this.Clear();
+      return;
+    }
+
+    this.title = args[2] || '';
+
+    const A: CellData = args[0];
+    const B: CellData = args[1];
+
+    this.x_labels = undefined;
+    this.y_labels = undefined;
+
+    let data1 = (A.simulation_data || []).slice(0);
+    let data2 = (B.simulation_data || []).slice(0);
 
     const min1 = Math.min.apply(0, data1);
     const max1 = Math.max.apply(0, data1);
@@ -108,6 +132,8 @@ export class Chart {
 
     this.data.data = data1; // .slice(0);
     this.data.data2 = data2; // .slice(0);
+
+    this.chart_type = ChartType.scatter;
 
   }
 
@@ -173,7 +199,7 @@ export class Chart {
     }
 
     if (args[2] === false) {
-      this.x_labels = [];
+      this.x_labels = undefined;
     }
     else {
       this.x_labels = x_format ? label_values.map((value) => {
@@ -207,8 +233,9 @@ export class Chart {
       }
     }
 
-    this.y_labels = [];
+    this.y_labels = undefined;
     if (args[3] !== false) {
+      this.y_labels = [];
       for (let i = 0; i <= this.data.scale.count; i++) {
         const y = this.data.scale.min + i * this.data.scale.step;
         this.y_labels.push(y_format.Format(y));
@@ -288,7 +315,7 @@ export class Chart {
     let x_metrics: Metrics[] = [];
     let max_x_height = 0;
 
-    if (this.x_labels) {
+    if (this.x_labels && this.x_labels.length) {
       x_metrics = this.x_labels.map((text) => {
         const metrics = this.renderer.MeasureText(text, ['axis-label', 'x-axis-label'], true);
         max_x_height = Math.max(max_x_height, metrics.height);
@@ -298,7 +325,7 @@ export class Chart {
 
     // measure & render y axis
 
-    if (this.y_labels) {
+    if (this.y_labels && this.y_labels.length) {
 
       const y_labels: Array<{label: string, metrics: Metrics}> = [];
       let max_width = 0;
@@ -324,7 +351,7 @@ export class Chart {
 
     // now render x axis
 
-    if (x_metrics.length && this.x_labels) {
+    if (x_metrics.length && this.x_labels && this.x_labels.length) {
 
       if (this.y_labels) {
         // undo, temp
