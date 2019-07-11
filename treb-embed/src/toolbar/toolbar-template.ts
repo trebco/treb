@@ -1,5 +1,6 @@
 
 import { ToolbarItem } from './toolbar-item';
+import { Localization } from 'treb-base-types';
 
 export const toolbar_template: Array<ToolbarItem|ToolbarItem[]> = [
 
@@ -12,6 +13,12 @@ export const toolbar_template: Array<ToolbarItem|ToolbarItem[]> = [
   { icon: 'icon-vertical_align_center', id: 'align-middle', title: 'Align Middle' },
   { icon: 'icon-vertical_align_bottom', id: 'align-bottom', title: 'Align Bottom' },
 
+
+  { type: 'separator' },
+  { icon: 'icon-wrap_text', id: 'wrap', title: 'Wrap Text'},
+  { icon: 'icon-chat_bubble_outline', id: 'note', title: 'Add Note' },
+
+
   { type: 'separator' },
   { icon: 'icon-format_color_fill', color: true, id: 'fill-color', title: 'Background Color',
     'default-string': 'No fill'},
@@ -23,9 +30,6 @@ export const toolbar_template: Array<ToolbarItem|ToolbarItem[]> = [
   { icon: 'icon-border_bottom', id: 'border-option', title: 'Bottom Border',
      border: true, alternate_id: 'border-bottom' },
   { type: 'drop-down', 'related-id': 'border-option', id: 'border-dropdown' },
-
-  { type: 'separator' },
-  { icon: 'icon-wrap_text', id: 'wrap', title: 'Wrap Text'},
 
   { type: 'separator' },
   { icon: 'icon-fullscreen_exit', id: 'merge', title: 'Merge Cells' },
@@ -41,16 +45,15 @@ export const toolbar_template: Array<ToolbarItem|ToolbarItem[]> = [
   { icon: 'icon-thermometer', id: 'unfreeze', title: 'Unfreeze' },
   */
 
-  { type: 'separator' },
-  { icon: 'icon-chat_bubble_outline', id: 'note', title: 'Add Note' },
+//  { type: 'separator' },
 
   { type: 'separator' },
   { type: 'input', text: '#', id: 'number-format', title: 'Number Format', submenu: [
     // 'general', 'percent', 'accounting', 'currency', 'scientific',
   ]},
   { type: 'split', submenu: [
-    { id: 'decrease-decimal', text: '0.0', title: 'Decrease Precision' },
-    { id: 'increase-decimal', text: '0.00', title: 'Increase Precision' },
+    { id: 'decrease-decimal', text: `0${Localization.decimal_separator}0`, title: 'Decrease Precision' },
+    { id: 'increase-decimal', text: `0${Localization.decimal_separator}00`, title: 'Increase Precision' },
   ]},
 
   /*

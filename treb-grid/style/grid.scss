@@ -170,6 +170,7 @@
       z-index: $z-index-frozen-selection;
       overflow: hidden; // needed for IE11 (put in legacy?)
       -moz-transform: scale(1); // firefox anti-blur
+      pointer-events: none;
 
       &.frozen-selection-rows {
         border-bottom: 1px solid transparent;
@@ -197,6 +198,7 @@
         position: absolute;
         top: 0px;
         left: 0px;
+        pointer-events: none;
       }
 
     }
@@ -205,12 +207,14 @@
     .left-header {
       left: 0px;
       z-index: $z-index-headers;
+      pointer-events: none;
     }
 
     /** contains column header tiles */
     .top-header {
       top: 0px;
       z-index: $z-index-headers;
+      pointer-events: none;
     }
 
     /** contains main grid tiles */

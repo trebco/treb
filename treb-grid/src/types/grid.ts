@@ -997,6 +997,11 @@ export class Grid {
     }
   }
 
+  public SelectAll() {
+    this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
+    this.selection_renderer.RenderSelections();
+  }
+
   /**
    * get data in a given range, optionally formulas
    * API method
@@ -2540,8 +2545,9 @@ export class Grid {
             break;
 
           case 'a':
-            this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
-            this.selection_renderer.RenderSelections();
+            // this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
+            // this.selection_renderer.RenderSelections();
+            this.SelectAll();
             break;
 
           // handle Ctrl+Alt+0 = select nothing
@@ -3804,6 +3810,11 @@ export class Grid {
 
     // key handler
     this.container.addEventListener('keydown', (event) => this.KeyDown(event));
+
+    // select all?
+    this.layout.corner.addEventListener('dblclick', (event) => {
+      this.SelectAll();
+    });
 
   }
 

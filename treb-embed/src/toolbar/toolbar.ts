@@ -339,7 +339,7 @@ export class Toolbar {
 
   public Show(id: string, show = true){
     if (this.items[id]){
-      this.items[id].node.style.display = show ? 'block' : 'none';
+      this.items[id].node.style.display = show ? 'inline-block' : 'none';
     }
     else console.warn(`can't show id ${id}`);
   }

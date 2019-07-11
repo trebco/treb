@@ -1,11 +1,10 @@
 
-// ...
-
 
 $button-size: 32px;
 $button-background: transparent;
 $button-foreground: #777;
-$button-border: #ddd;
+//$button-border: #ddd;
+$button-border: transparent;
 $color-item-size: 20px;
 
 .treb-toolbar-menu {
@@ -193,7 +192,8 @@ $color-item-size: 20px;
 
     
     button {
-      border-radius: 3px;
+      display: inline-block;
+      // border-radius: 3px;
       overflow: hidden;
       font-size: 1.5em;
       color: $button-foreground;
@@ -203,6 +203,7 @@ $color-item-size: 20px;
       width: $button-size;
       height: $button-size;
       border: 1px solid $button-border;
+
       background: $button-background;
       background: none;
       position: relative;
@@ -292,12 +293,6 @@ $color-item-size: 20px;
       position: relative;
 
       > button {
-        /*
-        background: $button-background;
-        border: 1px solid $button-border;
-        font-size: 1.5em;
-        color: $button-foreground;
-        */
         width: auto;
         min-width: auto;
         max-width: auto;
@@ -305,10 +300,11 @@ $color-item-size: 20px;
         padding-right: 5px;
         line-height: 1.4;
         margin-left: 6px;
-        border-top-left-radius: 3px;
-        border-bottom-left-radius: 3px;
-        border-top-right-radius: 0px;
-        border-bottom-right-radius: 0px;
+        //border-top-left-radius: 3px;
+        //border-bottom-left-radius: 3px;
+        //border-top-right-radius: 0px;
+        //border-bottom-right-radius: 0px;
+        border-radius: 0px;
       }
 
       > input[type=text] {
@@ -337,6 +333,7 @@ $color-item-size: 20px;
       width: 8px;
       height: $button-size;
       position: relative;
+      display: inline-block;
 
       &::after {
         border-right: 1px solid $button-border;
@@ -349,9 +346,5 @@ $color-item-size: 20px;
       }
 
     }
-
-  // }
-
-  //
 
 }
