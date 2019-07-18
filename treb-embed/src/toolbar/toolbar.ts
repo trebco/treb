@@ -283,7 +283,7 @@ export class Toolbar {
     else {
       this.formats.splice(splitter_index, 0, format);
     }
-    
+
     const item = this.items['number-format'];
     if (item) item.submenu = this.formats;
   }

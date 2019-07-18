@@ -72,10 +72,11 @@ $color-item-size: 20px;
     flex-direction: column;
     position: relative;
     max-height: 210px;
+    overflow-y: scroll;
   }
 
   .list {
-    overflow-x: hidden;
+    // overflow-x: hidden;
     font-size: 14px;
     position: relative;
 

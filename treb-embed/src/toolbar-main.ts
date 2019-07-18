@@ -103,7 +103,7 @@ export class FormattingToolbar {
   public Show(show = true) {
     this.visible = show;
     this.node.style.display = this.visible ?
-      'flex' : 'none';
+      'inline-flex' : 'none';
   }
 
   public Hide() {
