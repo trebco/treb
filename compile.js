@@ -27,7 +27,7 @@ let only_charts = false;
 
 for (const arg of process.argv) {
   if (arg === '-d') dev = true;
-  if (arg === '-w') watch = true;
+  if (arg === '-w' || arg === '--watch') watch = true;
   if (arg === '--legacy') build.legacy = true;
   if (arg === '--modern') build.modern = true;
   if (arg === '--only-charts') only_charts = true;
