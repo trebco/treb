@@ -347,4 +347,88 @@ export class ChartRenderer {
 
   }
 
+  /**
+   * render a donut, given a list of slices (as %)
+   * @param values
+   */
+  public RenderDonut(
+      values: number[],
+      center: Point,
+      outer_radius: number,
+      inner_radius: number,
+      classes?: string|string[]) {
+
+    let start_angle = -Math.PI / 2; // start at 12:00
+    let end_angle = 0;
+
+    // we're creating a containing group so that we can nth-child the slices,
+    // otherwise they'll be in the same group as the title
+
+    const donut = document.createElementNS(SVGNS, 'g');
+
+    for (const value of values) {
+
+      const node = document.createElementNS(SVGNS, 'path');
+      const d: string[] = [];
+
+      if (value > 0.5) {
+        // split into two segments
+
+        const half_angle = start_angle + (value / 2) * Math.PI * 2;
+        end_angle = start_angle + value * Math.PI * 2;
+
+        const delta1 = half_angle - start_angle;
+        const delta2 = end_angle - half_angle;
+
+        d.push(`M${this.PointOnCircle(start_angle, center, outer_radius)}`);
+        d.push(`A${outer_radius},${outer_radius},${delta1},0,1,`
+          + `${this.PointOnCircle(half_angle, center, outer_radius)}`);
+        d.push(`A${outer_radius},${outer_radius},${delta2},0,1,`
+          + `${this.PointOnCircle(end_angle, center, outer_radius)}`);
+        d.push(`L${this.PointOnCircle(end_angle, center, inner_radius)}`)
+        d.push(`A${inner_radius},${inner_radius},${delta2},0,0,`
+          + `${this.PointOnCircle(half_angle, center, inner_radius)}`);
+        d.push(`A${inner_radius},${inner_radius},${delta1},0,0,`
+          + `${this.PointOnCircle(start_angle, center, inner_radius)}`);
+        d.push('Z');
+
+      }
+      else {
+
+        end_angle = start_angle + value * Math.PI * 2;
+        const delta = end_angle - start_angle;
+        d.push(`M${this.PointOnCircle(start_angle, center, outer_radius)}`);
+        d.push(`A${outer_radius},${outer_radius},${delta},0,1,`
+          + `${this.PointOnCircle(end_angle, center, outer_radius)}`);
+        d.push(`L${this.PointOnCircle(end_angle, center, inner_radius)}`)
+        d.push(`A${inner_radius},${inner_radius},${delta},0,0,`
+          + `${this.PointOnCircle(start_angle, center, inner_radius)}`);
+        d.push('Z');
+
+      }
+
+      node.setAttribute('d', d.join(' '));
+      donut.appendChild(node);
+
+      start_angle = end_angle;
+    }
+
+    if (typeof classes !== 'undefined') {
+      if (typeof classes === 'string') {
+        classes = [classes];
+      }
+      donut.setAttribute('class', classes.join(' '));
+    }
+
+    this.group.appendChild(donut);
+
+  }
+
+  protected PointOnCircle(angle: number, center: Point, radius: number) {
+    return [
+      Math.cos(angle) * radius + center.x,
+      Math.sin(angle) * radius + center.y,
+    ];
+  }
+
 }

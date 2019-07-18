@@ -581,6 +581,30 @@ lib.Register({
 
   // FIXME: make this self-registering
 
+  'Pie.Chart': {
+    arguments: [
+      { name: 'Values' },
+      { name: 'Labels' },
+      { name: 'Title' },
+      { name: 'Sort' },
+    ],
+    fn: (...args: any[]) => {
+      return args;
+    },
+  },
+
+  'Donut.Chart': {
+    arguments: [
+      { name: 'Values' },
+      { name: 'Labels' },
+      { name: 'Title' },
+      { name: 'Sort' },
+    ],
+    fn: (...args: any[]) => {
+      return args;
+    },
+  },
+
   'MC.Histogram': {
     address: [0],
     arguments: [

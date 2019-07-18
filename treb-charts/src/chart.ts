@@ -9,6 +9,8 @@ enum ChartType {
   undefined,
   histogram,
   scatter,
+  donut,
+  pie,
 }
 
 export class Chart {
@@ -70,6 +72,11 @@ export class Chart {
         this.CreateScatter(args);
         break;
 
+      case 'donut.chart':
+      case 'pie.chart':
+        this.CreateDonut(args, func.toLowerCase() === 'pie.chart');
+        break;
+
       default:
         this.Clear();
         break;
@@ -88,6 +95,54 @@ export class Chart {
     this.data.data = [];
     this.data.count = 0;
     this.title = '';
+  }
+
+  /**
+   * arguments are values, labels, title, sort, ...
+   */
+  public CreateDonut(args: any[], pie_chart = false) {
+
+    // data -> number or undefined
+
+    const data = this.Flatten(args[0]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
+    const labels = this.Flatten(args[1]).map((x) => x.toString());
+
+    let sum = 0;
+
+    const tuples: Array<{value: number|undefined, label?: string}> = data.map((value, i) => {
+      if (typeof value !== 'undefined') sum += value;
+      return { value, label: labels[i] || '' };
+    });
+
+    // optionally sort...
+
+    const sort = (args[3] || '').toString().trim();
+
+    if (/^(asc|inc)/i.test(sort)) {
+      tuples.sort((a, b) => {
+        return (a.value || 0) - (b.value || 0);
+      });
+    }
+    else if (/^(desc|dec)/i.test(sort)) {
+      tuples.sort((a, b) => {
+        return (b.value || 0) - (a.value || 0);
+      });
+    }
+
+    this.data.data = [];
+    this.data.data2 = [];
+    this.data.labels = [];
+
+    for (const tuple of tuples) {
+      this.data.data.push(tuple.value || 0);
+      this.data.data2.push(sum ? (tuple.value || 0) / sum : 0);
+      this.data.labels.push(tuple.label || '');
+    }
+
+    this.chart_type = pie_chart
+      ? ChartType.pie
+      : ChartType.donut;
+
   }
 
   public CreateScatter(args: any[]) { // data1: number[], data2: number[]) {
@@ -306,6 +361,15 @@ export class Chart {
     area.bottom -= chart_margin.bottom;
     area.right -= chart_margin.right;
 
+    if (this.chart_type === ChartType.donut || this.chart_type === ChartType.pie) {
+
+      const outer = (Math.min(area.height, area.width) / 2) * .9;
+      const inner = this.chart_type === ChartType.pie ? 0 : outer * .8;
+      this.renderer.RenderDonut(this.data.data2, area.center, outer, inner, 'donut');
+
+      return;
+    }
+
     // we need to measure first, then lay out the other axis, then we
     // can come back and render. it doesn't really matter which one you
     // do first.
@@ -407,6 +471,31 @@ export class Chart {
       typeof candidate.address === 'object' &&
       typeof candidate.address.row === 'number' &&
       typeof candidate.address.column === 'number');
+  }
+
+  /**
+   * flatten. we support holes in data, which means undefined values
+   * in arrays, but don't push an empty value at the top level (if
+   * that makes sense).
+   *
+   * @param args
+   */
+  protected Flatten(args: any) {
+    let flat: any[] = [];
+    if (Array.isArray(args)) {
+      for (const element of args) {
+        if (Array.isArray(element)) {
+          flat = flat.concat(this.Flatten(element));
+        }
+        else {
+          flat.push(element);
+        }
+      }
+    }
+    else if (typeof args !== 'undefined') {
+      flat.push(args);
+    }
+    return flat;
   }
 
 }
