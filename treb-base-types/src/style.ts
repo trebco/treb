@@ -88,6 +88,10 @@ export namespace Style {
     border_left_color: 'none',
     border_right_color: 'none',
     border_bottom_color: 'none',
+    border_top: 0,               // adding defaults so these prune propery
+    border_left: 0,
+    border_right: 0,
+    border_bottom: 0,
   };
 
   /**
