@@ -26,8 +26,6 @@ export namespace Style {
     vertical_align?: VerticalAlign;
 
     nan?: string;
-//    nan_color?: string;
-//    negative_color?: string;
 
     number_format?: string;
 
@@ -64,25 +62,9 @@ export namespace Style {
 
     locked?: boolean;
 
-    // ??
-
-    // [index: string]: any;
   }
 
   export type PropertyKeys = keyof Style.Properties;
-
-  /*
-  export const ColorKeys: PropertyKeys[] = [
-    'background',
-    'text_color',
-    'nan_color',
-    'negative_color',
-    'border_top_color',
-    'border_left_color',
-    'border_right_color',
-    'border_bottom_color',
-  ];
-  */
 
   /**
    * note that there are no default colors; those should be set
@@ -102,8 +84,6 @@ export namespace Style {
     font_underline: false,
     background: 'none',
     text_color: 'none',
-//    nan_color: 'none',
-//    negative_color: 'none',
     border_top_color: 'none',
     border_left_color: 'none',
     border_right_color: 'none',
@@ -115,13 +95,6 @@ export namespace Style {
    */
   export const Merge = (dest: Properties, src: Properties, delta= true) => {
     const properties: Properties = delta ? {...dest, ...src} : {...src};
-    /*
-    ColorKeys.forEach((key) => {
-      if (properties[key] === '') {
-        delete properties[key]; // rather not delete...
-      }
-    });
-    */
     return properties;
   };
 
@@ -134,24 +107,14 @@ export namespace Style {
   };
 
   export const UpdateDefaultProperties = (opts: Properties) => {
-
-    /*
-    // can we assign this directly? (...)
-
-    const tmp = {
-      ...DefaultProperties,
-      ...opts,
-    };
-
-    DefaultProperties = tmp;
-    */
-
     DefaultProperties = {
       ...DefaultProperties, ...opts,
     };
-
   };
 
+  /**
+   * returns a string representation suitable for canvas (or style)
+   */
   export const Font = (properties: Properties) => {
 
     let font_size = properties.font_size;
