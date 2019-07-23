@@ -1,6 +1,8 @@
 
 import { Chart } from './';
 
+require('../style/charts.scss');
+
 if (!(self as any).TREB) {
   (self as any).TREB = {};
 }

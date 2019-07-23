@@ -1,0 +1,44 @@
+
+.treb-chart {
+
+  background: #fff;
+
+  .axis-label {
+    font-size: 8.5pt;
+  }
+
+  .chart-title {
+    font-size: 13pt;
+  }
+
+  .chart-column {
+    fill: #39f;
+  }
+
+  .chart-grid, .chart-ticks {
+    stroke: #ddd;
+  }
+
+  .points {
+    stroke-width: 1;
+    stroke: #39f;
+  }
+
+  .donut path {
+
+    stroke: none;
+
+    // don't use child ordering for color, use explicit series values.
+    // we want to tie color to input order, even if the chart sorts the
+    // data.
+
+    &.series-1 { fill: #39f; }
+    &.series-2 { fill: orange; }
+    &.series-3 { fill: red; }
+    &.series-4 { fill: yellow; }
+    &.series-5 { fill: purple; }
+    &.series-6 { fill: skyblue; }
+
+  }  
+
+}

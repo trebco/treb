@@ -1,5 +1,6 @@
 
 import { Area, Size, Point } from './rectangle';
+import { DonutSlice } from './chart-types';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -352,7 +353,7 @@ export class ChartRenderer {
    * @param values
    */
   public RenderDonut(
-      values: number[],
+      slices: DonutSlice[],
       center: Point,
       outer_radius: number,
       inner_radius: number,
@@ -366,7 +367,12 @@ export class ChartRenderer {
 
     const donut = document.createElementNS(SVGNS, 'g');
 
-    for (const value of values) {
+    for (const slice of slices) {
+
+      const title = slice.title || '';
+
+      const value = slice.percent;
+      const index = slice.index;
 
       const node = document.createElementNS(SVGNS, 'path');
       const d: string[] = [];
@@ -408,6 +414,19 @@ export class ChartRenderer {
       }
 
       node.setAttribute('d', d.join(' '));
+      if (typeof index !== 'undefined') {
+        node.classList.add(`series-${index}`);
+      }
+
+      if (title) {
+        node.addEventListener('mouseenter', (event) => {
+          this.parent.setAttribute('title', title);
+        });
+        node.addEventListener('mouseleave', (event) => {
+          this.parent.setAttribute('title', '');
+        });
+      }
+
       donut.appendChild(node);
 
       start_angle = end_angle;

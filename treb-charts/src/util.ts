@@ -48,4 +48,30 @@ export class Util {
 
   }
 
+
+  /**
+   * flatten. we support holes in data, which means undefined values
+   * in arrays, but don't push an empty value at the top level (if
+   * that makes sense).
+   *
+   * @param args
+   */
+  public static Flatten(args: any) {
+    let flat: any[] = [];
+    if (Array.isArray(args)) {
+      for (const element of args) {
+        if (Array.isArray(element)) {
+          flat = flat.concat(this.Flatten(element));
+        }
+        else {
+          flat.push(element);
+        }
+      }
+    }
+    else if (typeof args !== 'undefined') {
+      flat.push(args);
+    }
+    return flat;
+  }
+
 }
