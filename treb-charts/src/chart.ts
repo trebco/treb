@@ -23,10 +23,6 @@ export class Chart {
     this.renderer.Initialize(node);
   }
 
-  public Scale(value: number, range: number, scale: RangeScale) {
-    return range * (value - scale.min) / (scale.max - scale.min);
-  }
-
   public Exec(func: string, args: any[] = []) {
 
     switch (func.toLowerCase()) {
@@ -309,7 +305,6 @@ export class Chart {
     };
 
     // title, top or bottom
-
     const title = this.chart_data.title;
 
     if (title) {
@@ -440,7 +435,7 @@ export class Chart {
         for (let i = 0; i < this.chart_data.count; i++ ){
           const x = Math.round(area.left + i * column_width + space);
           const width = column_width - space * 2;
-          const height = this.Scale(this.chart_data.bins[i], area.height, this.chart_data.scale);
+          const height = Util.ApplyScale(this.chart_data.bins[i], area.height, this.chart_data.scale);
           const y = area.bottom - height;
           const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
 

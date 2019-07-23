@@ -48,6 +48,9 @@ export class Util {
 
   }
 
+  public static ApplyScale(value: number, range: number, scale: RangeScale) {
+    return range * (value - scale.min) / (scale.max - scale.min);
+  }
 
   /**
    * flatten. we support holes in data, which means undefined values
