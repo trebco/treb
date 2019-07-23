@@ -75,13 +75,13 @@ export namespace Style {
   export let DefaultProperties: Properties = {
     horizontal_align: HorizontalAlign.None,
     vertical_align: VerticalAlign.None,
-    number_format: '0.00###',
+    number_format: '0.00###',   // use symbolic, e.g. "general"
     nan: 'NaN',
-    font_size: 10,
-    font_face: 'calibri',
-    font_bold: false,
-    font_italic: false,
-    font_underline: false,
+    font_size: 10,              // should have units
+    font_face: 'calibri',       // switch to something generic "sans serif"
+    font_bold: false,           // drop "font_"
+    font_italic: false,         // ...
+    font_underline: false,      // ...
     background: 'none',
     text_color: 'none',
     border_top_color: 'none',
