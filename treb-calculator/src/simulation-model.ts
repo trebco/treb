@@ -2,7 +2,7 @@
 import { ICellAddress } from 'treb-base-types';
 import * as Utils from './utilities';
 import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
-import { FunctionLibrary, CompositeFunctionDescriptor } from './function-library';
+import { FunctionMap } from './descriptors';
 
 export enum SimulationState {
   Null, Prep, Simulation, Post,
@@ -16,21 +16,510 @@ interface DistributionKey extends ICellAddress {
  * class represents a model, including simulation data and functions. the
  * spreadsheet functions refer to an instance of the model, which retains
  * state.
+ *
+ * FIXME: split state and model so we can have a non-MC model
+ *
+ * making a non-MC model might require moving some logic in here from
+ * the various calculator classes (I think)
  */
 export class SimulationModel {
+
+  // I think these two are the only ones we might need outside of
+  // simulation/MC functions
+
+  public address: ICellAddress = { row: 0, column: 0 };
+  public volatile = false;
+
+  // the rest are specific to MC, I think
 
   public iteration = 0;
   public iterations = 0;
   public call_index = 0;
   public lhs = false;
   public state = SimulationState.Null;
-  public address: ICellAddress = { row: 0, column: 0 };
-  public volatile = false;
   public results: number[][][] = [];
   public elapsed = 0;
   public trials = 0;
   public distributions: any = [];
   public correlated_distributions: { [index: string]: { addresses: DistributionKey[], correlation: any } } = {};
+
+  /**
+   * returns a list of functions for registration. would be nice to move
+   * this out of the class (it's long) but we need references to the instance.
+   *
+   * FIXME: not in love with binding everything, although that may be the only
+   * way (OR: add a 'target' to the func descriptor, then executor can call
+   * against the instance. didn't we do that in the past?)
+   *
+   * note that if you do that, then you will need a test in every function
+   * call (is there a target?) -- or perhaps you could _always_ have a target,
+   * just restructure base functions...
+   *
+   * one nice thing about binding is that it supports composing functions
+   * (if we ever do that), without juggling this pointers.
+   *
+   */
+  public get functions(): FunctionMap {
+
+    return {
+
+      'Multivariate.Normal': {
+        description: 'Returns a sample from the multivariate normal distribution',
+        simulation_volatile: true,
+        address: [0],
+        arguments: [
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
+          { name: 'correlation', description: 'Correlation Matrix (NxN)' },
+          { name: 'mean', description: 'Distribution Mean', default: 0 },
+          { name: 'stdev', description: 'Standard Deviation', default: 1 },
+        ],
+        fn: this.multivariate_normal.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      'Multivariate.Uniform': {
+        description: 'Returns a sample from the multivariate uniform distribution',
+        simulation_volatile: true,
+        address: [0],
+        arguments: [
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
+          { name: 'correlation', description: 'Correlation Matrix (NxN)' },
+          { name: 'min', description: 'Minimum Value', default: 0 },
+          { name: 'max', description: 'Maximum Value', default: 1 },
+        ],
+        fn: this.multivariate_uniform.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      'Multivariate.Beta': {
+        description: 'Returns a sample from the multivariate beta distribution',
+        simulation_volatile: true,
+        address: [0],
+        arguments: [
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
+          { name: 'correlation', description: 'Correlation Matrix (NxN)' },
+          { name: 'w', description: 'Shape Parameter' },
+          { name: 'v', description: 'Shape Parameter' },
+        ],
+        fn: this.multivariate_beta.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      'Multivariate.PERT': {
+        description: 'Returns a sample from the multivariate PERT distribution',
+        simulation_volatile: true,
+        address: [0],
+        arguments: [
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
+          { name: 'correlation', description: 'Correlation Matrix (NxN)' },
+          { name: 'min', description: 'Minimum Value' },
+          { name: 'mode', description: 'Most-Likely Value' },
+          { name: 'max', description: 'Maximum Value' },
+          { name: 'lambda', default: 4 },
+        ],
+        fn: this.multivariate_pert.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      'Multivariate.Triangular': {
+        description: 'Returns a sample from the multivariate triangular distribution',
+        simulation_volatile: true,
+        address: [0],
+        arguments: [
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
+          { name: 'correlation', description: 'Correlation Matrix (NxN)' },
+          { name: 'min', description: 'Minimum Value' },
+          { name: 'mode', description: 'Most-Likely Value' },
+          { name: 'max', description: 'Maximum Value' },
+        ],
+        fn: this.multivariate_triangular.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      // basic distributions
+
+      UniformRangeSample: {
+        description: 'Returns one of a set of values, with equal probability and with replacement',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'range', description: 'Range of Values' },
+        ],
+        fn: this.uniformrangesample.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      SampleValue: {
+        description: 'Returns one of a set of values, with equal probability and with replacement',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'range', description: 'Range of Values' },
+        ],
+        fn: this.samplevalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      'SampleValue.Weighted': {
+        description: 'Returns one of a set of values, with equal probability and with replacement',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'range', description: 'Range of Values' },
+        ],
+        fn: this.samplevalue_weighted.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      BernoulliValue: {
+        description: 'Returns true or false (boolean) based on the given probability',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'p', description: 'Probability to return True', default: 0.5 },
+        ],
+        fn: this.bernoullivalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      ProbabilityValue: {
+        description: 'Returns true or false (boolean) based on the given probability',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'p', description: 'Probability to return True', default: 0.5 },
+        ],
+        fn: this.probabilityvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      UniformValue: {
+        description: 'Returns a sample from the uniform distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'min', description: 'Minimum', default: 0 },
+          { name: 'max', description: 'Maximum', default: 1 },
+        ],
+        fn: this.uniformvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      BetaValue: {
+        description: 'Returns a sample from the beta distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'w', description: 'Shape Parameter' },
+          { name: 'v', description: 'Shape Parameter' },
+        ],
+        fn: this.betavalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      NormalValue: {
+        description: 'Returns a sample from the normal distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'mean', description: 'Mean', default: 0 },
+          { name: 'stdev', description: 'Standard Deviation', default: 1 },
+        ],
+        fn: this.normalvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      SequentialValue: {
+        description: 'Returns one from a set of values, in order',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'values', description: 'Data Array' },
+          { name: 'count', description: 'Count', default: 0 },
+        ],
+        fn: this.sequentialvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      IndexValue: {
+        description: 'Returns a monotonically increasing value',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'max', description: 'Maximum', default: 0 },
+        ],
+        fn: this.indexvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      'PERTValue.P': {
+        description: 'Returns a sample from the beta-PERT distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'p10', description: '10th-Percentile Value', default: 0 },
+          { name: 'mode', description: 'Most-Likely Value', default: 0.5 },
+          { name: 'p90', description: '90th-Percentile Value', default: 1 },
+          { name: 'lambda', default: 4 },
+        ],
+        fn: this.pertvalue_p.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      PERTValue: {
+        description: 'Returns a sample from the beta-PERT distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'min', description: 'Minimum Value', default: 0 },
+          { name: 'mode', description: 'Most-Likely Value', default: 0.5 },
+          { name: 'max', description: 'Maximum Value', default: 1 },
+          { name: 'lambda', default: 4 },
+        ],
+        fn: this.pertvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      TriangularValue: {
+        description: 'Returns a sample from the triangular distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'min', description: 'Minimum Value', default: 0 },
+          { name: 'mode', description: 'Most Likely Value', default: 0.5 },
+          { name: 'max', description: 'Maximum Value', default: 1 },
+        ],
+        fn: this.triangularvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      // stats
+
+      SimulationCorrelation: {
+        description: 'Returns the correlation between the data from two cells in the simulation',
+        arguments: [
+          { name: 'reference cell', description: 'Cell 1' },
+          { name: 'reference cell', description: 'Cell 2' },
+        ],
+        collector: [0, 1],
+        fn: this.simulationcorrelation.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationRSquared: {
+        // tslint:disable-next-line:max-line-length
+        description: 'Returns the r-squared value (coefficient of correlation) of the data from two cells in the simulation',
+        arguments: [
+          { name: 'dependent', description: 'Dependent Value' },
+          { name: 'independent', description: 'Indepdendent Value' },
+        ],
+        collector: [0, 1],
+        fn: this.simulationrsquared.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationSkewness: {
+        description: 'Returns the skewness of data from this cell in the simulation',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+        ],
+        collector: [0],
+        fn: this.simulationskewness.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationKurtosis: {
+        description: 'Returns the kurtosis (peakedness) of data from this cell in the simulation',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+        ],
+        collector: [0],
+        fn: this.simulationkurtosis.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationPercentile: {
+        description: 'Returns the value of a cell at a given percentile in the simulation',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'percentile', description: 'Percentile (as %)' },
+        ],
+        collector: [0],
+        fn: this.simulationpercentile.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationInterval: {
+        description: 'Returns the portion of results in the simulation that fall within some bounds (as a percentage)',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'min', description: 'Minimum Value (optional, inclusive)' },
+          { name: 'max', description: 'Maximum Value (optional, inclusive)' },
+        ],
+        collector: [0],
+        fn: this.simulationinterval.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationMean: {
+        description: 'Returns the mean (average) value of the data from this cell in the simulation',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+        ],
+        collector: [0],
+        fn: this.simulationmean.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationValue: {
+        description: 'Returns the value of this cell in the simulation at the given trial number',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'iteration', description: 'Trial Number' },
+        ],
+        collector: [0],
+        fn: this.simulationvalue.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationValuesArray: {
+        description: 'Returns all value of this cell in the simulation, as an array',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+        ],
+        collector: [0],
+        fn: this.simulationvaluesarray.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SortedSimulationIndex: {
+        description: 'Returns the iteration number of a sorted value for this cell',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+        ],
+        collector: [0],
+        fn: this.sortedsimulationindex.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      'SimulationValuesArray.Ordered': {
+        description: 'Returns all value of this cell in the simulation, as an array, ordered by a second cell',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'order by', description: 'Reference Cell for Ordering' },
+        ],
+        collector: [0, 1],
+        fn: this.simulationvaluesarray_ordered.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationMin: {
+        description: 'Returns the minimum value of the data from this cell in the simulation',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+        ],
+        collector: [0],
+        fn: this.simulationmin.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationMax: {
+        description: 'Returns the maximum value of the data from this cell in the simulation',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+        ],
+        collector: [0],
+        fn: this.simulationmax.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationStandardError: {
+        description: 'Returns the standard error of the mean from this cell in the simulation',
+        arguments: [
+          { name: 'reference cell' },
+        ],
+        collector: [0],
+        fn: this.simulationstandarderror.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationStandardDeviation: {
+        description: 'Returns the standard deviation of the data from this cell in the simulation',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+        ],
+        collector: [0],
+        fn: this.simulationstandarddeviation.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationVariance: {
+        description: 'Returns the variance of the data from this cell in the simulation',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell' },
+        ],
+        collector: [0],
+        fn: this.simulationvariance.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      // special
+
+      SimulationTrials: {
+        description: 'Returns the number of trials from the last simulation',
+        fn: this.simulationtrials.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      SimulationTime: {
+        description: 'Returns the elapsed time of the last simulation',
+        fn: this.simulationtime.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
+      // some extra random functions, available because we have the matrix classes
+
+      IsPosDef: {
+        description: 'Checks that a matrix is positive-definite',
+        arguments: [{ name: 'matrix' }],
+        fn: (mat: number[][]) => {
+          if (mat.some((arr) => {
+            return arr.some((v) => typeof v !== 'number');
+          })) return { error: 'VALUE' };
+          const m = Matrix.FromArray(mat);
+          return m.IsPosDef();
+        },
+      },
+
+      Cholesky: {
+        arguments: [{ name: 'matrix' }, { name: 'transpose', default: false }],
+        fn: (mat: number[][], transpose = false) => {
+          return Matrix.FromArray(mat).Cholesky(transpose).ToArray();
+        },
+      },
+
+      EigenValues: {
+        description: 'Returns the eigenvalues of the matrix (as column vector)',
+        arguments: [{ name: 'matrix' }],
+        fn: (mat: number[][]) => {
+
+          if (mat.some((arr) => {
+            return arr.some((v) => typeof v !== 'number');
+          })) return { error: 'VALUE' };
+
+          const m = Matrix.FromArray(mat);
+          const e = m.EigenSystem();
+          return e.realvalues;
+        },
+
+      },
+
+      EigenVectors: {
+        description: 'Returns the eigenvectors of the matrix (as matrix)',
+        arguments: [{ name: 'matrix' }],
+        fn: (mat: number[][]) => {
+
+          if (mat.some((arr) => {
+            return arr.some((v) => typeof v !== 'number');
+          })) return { error: 'VALUE' };
+
+          const m = Matrix.FromArray(mat);
+          const e = m.EigenSystem();
+          return e.vectors;
+        },
+
+      },
+
+    };
+
+  }
 
   public CorrelateDistributions() {
     for (const key of Object.keys(this.correlated_distributions)) {
@@ -136,7 +625,7 @@ export class SimulationModel {
     else if (this.state === SimulationState.Simulation) {
       return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return '#ERR'; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return { error: 'DATA' }; }
 
     return MC.Normal(1, { mean, sd })[0];
   }
@@ -150,7 +639,7 @@ export class SimulationModel {
     else if (this.state === SimulationState.Simulation) {
       return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return '#ERR'; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return { error: 'DATA' }; }
     return MC.Beta(1, { a, b })[0];
   }
 
@@ -163,7 +652,7 @@ export class SimulationModel {
     else if (this.state === SimulationState.Simulation) {
       return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return '#ERR'; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return { error: 'DATA' }; }
     return MC.Uniform(1, { min, max })[0];
   }
 
@@ -178,7 +667,7 @@ export class SimulationModel {
     else if (this.state === SimulationState.Simulation) {
       return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return '#ERR'; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return { error: 'DATA' }; }
     return MC.PERT(1, { a: min, b: max, c: mode, lambda })[0];
   }
 
@@ -193,7 +682,7 @@ export class SimulationModel {
     else if (this.state === SimulationState.Simulation) {
       return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return '#ERR'; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return { error: 'DATA' }; }
     return MC.Triangular(1, { a: min, b: max, c: mode })[0];
   }
 
@@ -445,7 +934,7 @@ export class SimulationModel {
   public sortedsimulationindex(data?: number[], index = 1) {
     if (this.state !== SimulationState.Null) return 0;
     if (!data || !data.length) return { error: 'DATA' };
-    if (index < 1 || index > data.length) return '#ARG';
+    if (index < 1 || index > data.length) return { error: 'ARG' };
 
     const pairs = Array.from(data).map((x, i) => [x, i + 1]);
     pairs.sort((a, b) => a[0] - b[0]);
@@ -456,7 +945,7 @@ export class SimulationModel {
   public simulationvalue(data?: number[], index = 1) {
     if (this.state !== SimulationState.Null) return 0;
     if (!data || !data.length) return { error: 'DATA' };
-    if (index < 1 || index > data.length) return '#ARG';
+    if (index < 1 || index > data.length) return { error: 'ARG' };
     return data[index - 1];
   }
 
@@ -555,512 +1044,5 @@ export class SimulationModel {
 
   }
 
-  // --- special ---
-
-  public cell(type: string, reference: any) {
-    switch (type.toLowerCase()) {
-      case 'address':
-        return reference;
-        break;
-    }
-    return '#NOTIMPL';
-  }
-
 }
 
-// instance
-
-// export 
-// const Model = new SimulationModel();
-
-// ---
-
-export const RegisterSimlationFunctions = (lib: FunctionLibrary, Model: SimulationModel) => {
-
-lib.Register({
-
-  // FIXME: make this self-registering
-
-  'Pie.Chart': {
-    arguments: [
-      { name: 'Values' },
-      { name: 'Labels' },
-      { name: 'Title' },
-      { name: 'Sort' },
-    ],
-    fn: (...args: any[]) => {
-      return args;
-    },
-  },
-
-  'Donut.Chart': {
-    arguments: [
-      { name: 'Values' },
-      { name: 'Labels' },
-      { name: 'Title' },
-      { name: 'Sort' },
-    ],
-    fn: (...args: any[]) => {
-      return args;
-    },
-  },
-
-  'MC.Histogram': {
-    address: [0],
-    arguments: [
-      { name: 'Reference Cell' },
-      { name: 'Title' },
-    ],
-    fn: (...args: any[]) => {
-      return args;
-    },
-  },
-
-  'MC.Correlation': {
-    address: [0, 1],
-    arguments: [
-      { name: 'Reference Cell 1' },
-      { name: 'Reference Cell 2' },
-      { name: 'Title' },
-    ],
-    fn: (...args: any[]) => {
-      return args;
-    },
-  },
-
-  // this is based on model because it uses address;
-  // FIXME consolidate types so this can go in the base object
-
-  Cell: {
-    description: 'Returns data about a cell',
-    address: [1],
-    arguments: [
-      { name: 'type', description: 'Type of data to return' },
-      { name: 'reference', description: 'Cell reference' },
-    ],
-    fn: Model.cell.bind(Model),
-  },
-
-  // mv distributions
-
-  'Multivariate.Normal': {
-    description: 'Returns a sample from the multivariate normal distribution',
-    simulation_volatile: true,
-    address: [0],
-    arguments: [
-      { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
-      { name: 'correlation', description: 'Correlation Matrix (NxN)' },
-      { name: 'mean', description: 'Distribution Mean', default: 0 },
-      { name: 'stdev', description: 'Standard Deviation', default: 1 },
-    ],
-    fn: Model.multivariate_normal.bind(Model),
-  },
-
-  'Multivariate.Uniform': {
-    description: 'Returns a sample from the multivariate uniform distribution',
-    simulation_volatile: true,
-    address: [0],
-    arguments: [
-      { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
-      { name: 'correlation', description: 'Correlation Matrix (NxN)' },
-      { name: 'min', description: 'Minimum Value', default: 0 },
-      { name: 'max', description: 'Maximum Value', default: 1 },
-    ],
-    fn: Model.multivariate_uniform.bind(Model),
-  },
-
-  'Multivariate.Beta': {
-    description: 'Returns a sample from the multivariate beta distribution',
-    simulation_volatile: true,
-    address: [0],
-    arguments: [
-      { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
-      { name: 'correlation', description: 'Correlation Matrix (NxN)' },
-      { name: 'w', description: 'Shape Parameter' },
-      { name: 'v', description: 'Shape Parameter' },
-    ],
-    fn: Model.multivariate_beta.bind(Model),
-  },
-
-  'Multivariate.PERT': {
-    description: 'Returns a sample from the multivariate PERT distribution',
-    simulation_volatile: true,
-    address: [0],
-    arguments: [
-      { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
-      { name: 'correlation', description: 'Correlation Matrix (NxN)' },
-      { name: 'min', description: 'Minimum Value' },
-      { name: 'mode', description: 'Most-Likely Value' },
-      { name: 'max', description: 'Maximum Value' },
-      { name: 'lambda', default: 4 },
-    ],
-    fn: Model.multivariate_pert.bind(Model),
-  },
-
-  'Multivariate.Triangular': {
-    description: 'Returns a sample from the multivariate triangular distribution',
-    simulation_volatile: true,
-    address: [0],
-    arguments: [
-      { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
-      { name: 'correlation', description: 'Correlation Matrix (NxN)' },
-      { name: 'min', description: 'Minimum Value' },
-      { name: 'mode', description: 'Most-Likely Value' },
-      { name: 'max', description: 'Maximum Value' },
-    ],
-    fn: Model.multivariate_triangular.bind(Model),
-  },
-
-  // basic distributions
-
-  UniformRangeSample: {
-    description: 'Returns one of a set of values, with equal probability and with replacement',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'range', description: 'Range of Values' },
-    ],
-    fn: Model.uniformrangesample.bind(Model),
-  },
-
-  SampleValue: {
-    description: 'Returns one of a set of values, with equal probability and with replacement',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'range', description: 'Range of Values' },
-    ],
-    fn: Model.samplevalue.bind(Model),
-  },
-
-  'SampleValue.Weighted': {
-    description: 'Returns one of a set of values, with equal probability and with replacement',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'range', description: 'Range of Values' },
-    ],
-    fn: Model.samplevalue_weighted.bind(Model),
-  },
-
-  BernoulliValue: {
-    description: 'Returns true or false (boolean) based on the given probability',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'p', description: 'Probability to return True', default: 0.5 },
-    ],
-    fn: Model.bernoullivalue.bind(Model),
-  },
-
-  ProbabilityValue: {
-    description: 'Returns true or false (boolean) based on the given probability',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'p', description: 'Probability to return True', default: 0.5 },
-    ],
-    fn: Model.probabilityvalue.bind(Model),
-  },
-
-  UniformValue: {
-    description: 'Returns a sample from the uniform distribution',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'min', description: 'Minimum', default: 0 },
-      { name: 'max', description: 'Maximum', default: 1 },
-    ],
-    fn: Model.uniformvalue.bind(Model),
-  },
-
-  BetaValue: {
-    description: 'Returns a sample from the beta distribution',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'w', description: 'Shape Parameter' },
-      { name: 'v', description: 'Shape Parameter' },
-    ],
-    fn: Model.betavalue.bind(Model),
-  },
-
-  NormalValue: {
-    description: 'Returns a sample from the normal distribution',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'mean', description: 'Mean', default: 0 },
-      { name: 'stdev', description: 'Standard Deviation', default: 1 },
-    ],
-    fn: Model.normalvalue.bind(Model),
-  },
-
-  SequentialValue: {
-    description: 'Returns one from a set of values, in order',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'values', description: 'Data Array' },
-      { name: 'count', description: 'Count', default: 0 },
-    ],
-    fn: Model.sequentialvalue.bind(Model),
-  },
-
-  IndexValue: {
-    description: 'Returns a monotonically increasing value',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'max', description: 'Maximum', default: 0 },
-    ],
-    fn: Model.indexvalue.bind(Model),
-  },
-
-  'PERTValue.P': {
-    description: 'Returns a sample from the beta-PERT distribution',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'p10', description: '10th-Percentile Value', default: 0 },
-      { name: 'mode', description: 'Most-Likely Value', default: 0.5 },
-      { name: 'p90', description: '90th-Percentile Value', default: 1 },
-      { name: 'lambda', default: 4 },
-    ],
-    fn: Model.pertvalue_p.bind(Model),
-  },
-
-  PERTValue: {
-    description: 'Returns a sample from the beta-PERT distribution',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'min', description: 'Minimum Value', default: 0 },
-      { name: 'mode', description: 'Most-Likely Value', default: 0.5 },
-      { name: 'max', description: 'Maximum Value', default: 1 },
-      { name: 'lambda', default: 4 },
-    ],
-    fn: Model.pertvalue.bind(Model),
-  },
-
-  TriangularValue: {
-    description: 'Returns a sample from the triangular distribution',
-    simulation_volatile: true,
-    arguments: [
-      { name: 'min', description: 'Minimum Value', default: 0 },
-      { name: 'mode', description: 'Most Likely Value', default: 0.5 },
-      { name: 'max', description: 'Maximum Value', default: 1 },
-    ],
-    fn: Model.triangularvalue.bind(Model),
-  },
-
-  // stats
-
-  SimulationCorrelation: {
-    description: 'Returns the correlation between the data from two cells in the simulation',
-    arguments: [
-      { name: 'reference cell', description: 'Cell 1' },
-      { name: 'reference cell', description: 'Cell 2' },
-    ],
-    collector: [0, 1],
-    fn: Model.simulationcorrelation.bind(Model),
-  },
-
-  SimulationRSquared: {
-    // tslint:disable-next-line:max-line-length
-    description: 'Returns the r-squared value (coefficient of correlation) of the data from two cells in the simulation',
-    arguments: [
-      { name: 'dependent', description: 'Dependent Value' },
-      { name: 'independent', description: 'Indepdendent Value' },
-    ],
-    collector: [0, 1],
-    fn: Model.simulationrsquared.bind(Model),
-  },
-
-  SimulationSkewness: {
-    description: 'Returns the skewness of data from this cell in the simulation',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-    ],
-    collector: [0],
-    fn: Model.simulationskewness.bind(Model),
-  },
-
-  SimulationKurtosis: {
-    description: 'Returns the kurtosis (peakedness) of data from this cell in the simulation',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-    ],
-    collector: [0],
-    fn: Model.simulationkurtosis.bind(Model),
-  },
-
-  SimulationPercentile: {
-    description: 'Returns the value of a cell at a given percentile in the simulation',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-      { name: 'percentile', description: 'Percentile (as %)' },
-    ],
-    collector: [0],
-    fn: Model.simulationpercentile.bind(Model),
-  },
-
-  SimulationInterval: {
-    description: 'Returns the portion of results in the simulation that fall within some bounds (as a percentage)',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-      { name: 'min', description: 'Minimum Value (optional, inclusive)' },
-      { name: 'max', description: 'Maximum Value (optional, inclusive)' },
-    ],
-    collector: [0],
-    fn: Model.simulationinterval.bind(Model),
-  },
-
-  SimulationMean: {
-    description: 'Returns the mean (average) value of the data from this cell in the simulation',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-    ],
-    collector: [0],
-    fn: Model.simulationmean.bind(Model),
-  },
-
-  SimulationValue: {
-    description: 'Returns the value of this cell in the simulation at the given trial number',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-      { name: 'iteration', description: 'Trial Number' },
-    ],
-    collector: [0],
-    fn: Model.simulationvalue.bind(Model),
-  },
-
-  SimulationValuesArray: {
-    description: 'Returns all value of this cell in the simulation, as an array',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-    ],
-    collector: [0],
-    fn: Model.simulationvaluesarray.bind(Model),
-  },
-
-  SortedSimulationIndex: {
-    description: 'Returns the iteration number of a sorted value for this cell',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-    ],
-    collector: [0],
-    fn: Model.sortedsimulationindex.bind(Model),
-  },
-
-  'SimulationValuesArray.Ordered': {
-    description: 'Returns all value of this cell in the simulation, as an array, ordered by a second cell',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-      { name: 'order by', description: 'Reference Cell for Ordering' },
-    ],
-    collector: [0, 1],
-    fn: Model.simulationvaluesarray_ordered.bind(Model),
-  },
-
-  SimulationMin: {
-    description: 'Returns the minimum value of the data from this cell in the simulation',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-    ],
-    collector: [0],
-    fn: Model.simulationmin.bind(Model),
-  },
-
-  SimulationMax: {
-    description: 'Returns the maximum value of the data from this cell in the simulation',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-    ],
-    collector: [0],
-    fn: Model.simulationmax.bind(Model),
-  },
-
-  SimulationStandardError: {
-    description: 'Returns the standard error of the mean from this cell in the simulation',
-    arguments: [
-      { name: 'reference cell' },
-    ],
-    collector: [0],
-    fn: Model.simulationstandarderror.bind(Model),
-  },
-
-  SimulationStandardDeviation: {
-    description: 'Returns the standard deviation of the data from this cell in the simulation',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-    ],
-    collector: [0],
-    fn: Model.simulationstandarddeviation.bind(Model),
-  },
-
-  SimulationVariance: {
-    description: 'Returns the variance of the data from this cell in the simulation',
-    arguments: [
-      { name: 'reference cell', description: 'Source Cell' },
-    ],
-    collector: [0],
-    fn: Model.simulationvariance.bind(Model),
-  },
-
-  // special
-
-  SimulationTrials: {
-    description: 'Returns the number of trials from the last simulation',
-    fn: Model.simulationtrials.bind(Model),
-  },
-
-  SimulationTime: {
-    description: 'Returns the elapsed time of the last simulation',
-    fn: Model.simulationtime.bind(Model),
-  },
-
-  // some extra random functions, available because we have the matrix classes
-
-  IsPosDef: {
-    description: 'Checks that a matrix is positive-definite',
-    arguments: [{ name: 'matrix' }],
-    fn: (mat: number[][]) => {
-      if (mat.some((arr) => {
-        return arr.some((v) => typeof v !== 'number');
-      })) return '#VALUE';
-      const m = Matrix.FromArray(mat);
-      return m.IsPosDef();
-    },
-  },
-
-  Cholesky: {
-    arguments: [{ name: 'matrix' }, { name: 'transpose', default: false }],
-    fn: (mat: number[][], transpose = false) => {
-      return Matrix.FromArray(mat).Cholesky(transpose).ToArray();
-    },
-  },
-
-  EigenValues: {
-    description: 'Returns the eigenvalues of the matrix (as column vector)',
-    arguments: [{ name: 'matrix' }],
-    fn: (mat: number[][]) => {
-
-      if (mat.some((arr) => {
-        return arr.some((v) => typeof v !== 'number');
-      })) return '#VALUE';
-
-      const m = Matrix.FromArray(mat);
-      const e = m.EigenSystem();
-      return e.realvalues;
-    },
-
-  },
-
-  EigenVectors: {
-    description: 'Returns the eigenvectors of the matrix (as matrix)',
-    arguments: [{ name: 'matrix' }],
-    fn: (mat: number[][]) => {
-
-      if (mat.some((arr) => {
-        return arr.some((v) => typeof v !== 'number');
-      })) return '#VALUE';
-
-      const m = Matrix.FromArray(mat);
-      const e = m.EigenSystem();
-      return e.vectors;
-    },
-
-  },
-
-});
-
-};

@@ -5,7 +5,15 @@ import { Area } from './rectangle';
 import { Util, RangeScale } from './util';
 import { CellData, ChartData, DonutSlice } from './chart-types';
 
+import { ChartFunctions } from './chart-functions';
+
 export class Chart {
+
+  /** function descriptors to register with the calculator */
+  public static chart_functions = ChartFunctions;
+
+  /** flag indicating we've registered at least once */
+  public static functions_registered = false;
 
   // always exists; default null type, no title
 

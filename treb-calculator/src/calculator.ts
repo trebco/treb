@@ -8,10 +8,12 @@ import { SpreadsheetVertex, CalculationResult } from './dag/spreadsheet_vertex';
 import { ExpressionCalculator } from './expression-calculator';
 import * as Utilities from './utilities';
 
-import { SimulationModel, SimulationState, RegisterSimlationFunctions } from './simulation-model';
-import { FunctionLibrary, FunctionMap } from './function-library';
+import { SimulationModel, SimulationState } from './simulation-model';
+import { FunctionLibrary } from './function-library';
+import { FunctionMap } from './descriptors';
 
-import { RegisterBaseFunctions } from './base-functions';
+// import { RegisterBaseFunctions } from './base-functions';
+import { BaseFunctionLibrary, BaseFunctionAliases } from './base-functions';
 
 import * as PackResults from './pack-results';
 import { DataModel } from '@root/treb-grid/src';
@@ -90,8 +92,12 @@ export class Calculator extends Graph {
     super();
     this.UpdateLocale();
 
-    RegisterBaseFunctions(this.library);
-    RegisterSimlationFunctions(this.library, this.simulation_model);
+    this.library.Register(BaseFunctionLibrary);
+    for (const key of Object.keys(BaseFunctionAliases)) {
+      this.library.Alias(key, BaseFunctionAliases[key]);
+    }
+
+    this.library.Register(this.simulation_model.functions);
 
   }
 
@@ -541,6 +547,9 @@ export class Calculator extends Graph {
   /**
    * rebuild the graph; parse expressions, build a dependency map,
    * initialize edges between nodes.
+   *
+   * FIXME: if we want to compose functions, we could do that here,
+   * which might result in some savings
    */
   protected RebuildGraph(data: any[], options: CalculationOptions = {}):
       {status: GraphStatus, reference?: ICellAddress} {
@@ -585,7 +594,6 @@ export class Calculator extends Graph {
           this.RebuildDependencies(parse_result.expression, new_dependencies);
         }
 
-        // for (const unit of Object.values(new_dependencies.ranges)){
         for (const key of Object.keys(new_dependencies.ranges)){
           const unit = new_dependencies.ranges[key];
           const range = new Area(unit.start, unit.end);
@@ -598,7 +606,6 @@ export class Calculator extends Graph {
           });
         }
 
-        // for (const address of Object.values(new_dependencies.addresses)){
         for (const key of Object.keys(new_dependencies.addresses)){
           const address = new_dependencies.addresses[key];
           const status = this.AddEdge(address, cell);

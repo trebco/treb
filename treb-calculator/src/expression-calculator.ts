@@ -131,9 +131,6 @@ export class ExpressionCalculator {
 
     const call_index = this.call_index; // trap value, it may increment
 
-    // expr = expr.toLowerCase().replace(/\./g, '_');
-    // const func = SpreadsheetFunctions[expr];
-
     const func = this.library.Get(expr);
 
     if (!func) return { error: 'NAME' };
@@ -177,44 +174,22 @@ export class ExpressionCalculator {
     // we're now doing this at all times except during a simulation;
     // it's done largely to support the "cell" function. check cost.
 
-    if (this.simulation_model.state !== SimulationState.Simulation){
-      if (func.address){
-        func.address.forEach((addr_index: number) => {
-          mapped_args[addr_index] = this.parser.Render(args[addr_index]).replace(/\$/g, '');
-        });
-      }
+    // NOTE this now also supports (MC) charts. however this should be
+    // called during simulations as well, otherwise you might get divergent
+    // behavior (not sure of the use case, but there probably is one)
+
+    // not gating this is good because we want to separate out all the
+    // simulation stuff
+
+    if (func.address){
+      func.address.forEach((addr_index: number) => {
+        mapped_args[addr_index] = this.parser.Render(args[addr_index]).replace(/\$/g, '');
+      });
     }
 
     if (this.simulation_model.state === SimulationState.Prep){
 
-      // these functions want addresses instead of resolved values
-      // (even though we've already resolved it, that's not super important)
-
-      /*
-      // this function removes the reference from the function so it doesn't
-      // cause a circular reference
-
-      if (func.address){
-        func.address.forEach((addr_index: number) => {
-          mapped_args[addr_index] = this.parser.Render(args[addr_index]).replace(/\$/g, '');
-        });
-      }
-      */
-
-      // FIXME: this can move to parsing stage
-
-      // this.simulation_model.volatile = this.simulation_model.volatile || (!!func.simulation_volatile);
-
-      /*
-      if (func.simulation_volatile){
-        const addr = this.simulation_model.address || {row: 0, column: 0};
-        if (!this.simulation_model.volatile_functions.some((test) => (addr.row === test.row && addr.column === test.column))){
-          this.simulation_model.volatile_functions.push(addr);
-        }
-      }
-      */
-
-      // FIXME: probably this too, with a flag
+      // FIXME: can this move to parsing stage? (old note: probably this too, with a flag)
 
       if (func.collector){
         for ( const collector_index of func.collector ){
@@ -223,6 +198,8 @@ export class ExpressionCalculator {
         }
       }
     }
+
+    // why holding this twice? (...) has to do with timing, apparently...
 
     this.simulation_model.call_index = call_index;
 
@@ -235,10 +212,11 @@ export class ExpressionCalculator {
       }
     }
 
-    // I thought we were passing the model as this (...) ?
+    // I thought we were passing the model as this (...) ? actually
+    // now we bind functions that need this, so maybe we should pass
+    // null here.
 
     return func.fn.apply(FunctionLibrary, mapped_args);
-    // return func.apply(SpreadsheetFunctions, mapped_args);
 
   }
 
@@ -255,9 +233,11 @@ export class ExpressionCalculator {
       case '+':
         break;
       default:
-        console.warn('unexpected unary argument:', operator);
+        console.warn('unexpected unary operator:', operator);
         for (const column of operand){
-          for (let r = 0; r < column.length; r++) column[r] = '#ERR';
+          for (let r = 0; r < column.length; r++) {
+            column[r] = { error: 'EXPR' }; // '#ERR';
+          }
         }
       }
       return operand;

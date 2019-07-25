@@ -475,4 +475,3 @@ if (!(self as any).TREB) {
   (self as any).TREB = {} as any;
 }
 (self as any).TREB['treb-toolbar'] = FormattingToolbar;
-

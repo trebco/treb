@@ -1201,16 +1201,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       if (annotation.data && annotation.data.vertex) {
         const vertex = annotation.data.vertex as LeafVertex;
         if (vertex.state_id !== annotation.data.state) {
+          console.info('leaf vertex dirty');
           annotation.data.state = vertex.state_id;
-          /*
-          if (annotation.data &&
-              annotation.data.sparkline &&
-              annotation.data.range &&
-              annotation.node) {
-            this.UpdateSparkline(
-              annotation.data.sparkline, annotation.data.range, annotation.node);
-          }
-          */
         }
       }
 
@@ -1362,6 +1354,15 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         else {
 
           const chart = (self as any).TREB.CreateChart2(annotation.node) as Chart;
+
+          // we may need to register library functions. we only need to do
+          // that once. not sure I like this as the place for the test, though.
+
+          if (!(chart.constructor as any).functions_registered) {
+            this.calculator.RegisterFunction((chart.constructor as any).chart_functions);
+            (chart.constructor as any).functions_registered = true;
+          }
+
           const update_chart = () => {
 
             annotation.temp.additional_cells = [];
@@ -1422,6 +1423,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
           /** update callback */
           annotation.temp.update = () => {
+            // console.info('atu');
             update_chart();
           };
 

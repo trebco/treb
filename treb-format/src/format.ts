@@ -191,6 +191,9 @@ export class NumberFormat {
           const count = Math.log10(section.scaling) / 3;
           for (i = 0; i < count; i++) { nf += ','; }
         }
+        if (section.exponential) {
+          nf += 'e';
+        }
       }
 
       return section.prefix.map((part) => {

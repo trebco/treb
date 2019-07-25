@@ -1,6 +1,7 @@
 
 import { Chart } from './';
 
+// tslint:disable-next-line: no-var-requires
 require('../style/charts.scss');
 
 if (!(self as any).TREB) {
