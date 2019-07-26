@@ -1380,6 +1380,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
                 // convert addresses to chart "CellData" types
                 // TODO: ranges
 
+                // FIXME: why not just let the function do this? (tip: collector)
+
                 for (const index of (descriptor.address || [])) {
                   const pr = this.parser.Parse(result.value[index]);
                   if (pr.expression) {
