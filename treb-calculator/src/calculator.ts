@@ -351,47 +351,9 @@ export class Calculator extends Graph {
    * calculate an expression, optionally setting a fake cell address.
    * this may have weird side-effects.
    */
-  public CalculateExpression(expression: ExpressionUnit, address: ICellAddress = {row: 0, column: 0}): any {
-    return this.expression_calculator.Calculate(expression, address);
+  public CalculateExpression(expression: ExpressionUnit, address: ICellAddress = {row: -1, column: -1}) {
+    return this.expression_calculator.Calculate(expression, address).value; // dropping volatile flag
   }
-
-  /*
-  public StyleHints(expression: ExpressionUnit){
-
-    let count = 0;
-    let percent = 0;
-    let currency = 0;
-    let precision = 0;
-
-    let area: Area|null = null;
-
-    if (this.cells){
-      if (expression.type === 'address'){
-        area = new Area(expression);
-      }
-      if (expression.type === 'range'){
-        area = new Area(expression.start, expression.end);
-      }
-      if (area) {
-        this.cells.IterateArea(area, (cell) => {
-          count++;
-          if (cell.style) {
-            if (cell.style.percent) percent++;
-            if (cell.style.currency) currency++;
-            precision += (cell.style.precision || 0);
-          }
-        });
-      }
-    }
-
-    return {
-      percent: (count && (percent / count > .5)),
-      currency: (count && (currency / count > .5)),
-      precision: (count ? Math.round(precision / count) : 0),
-    };
-
-  }
-  */
 
   /**
    * rebuild the graph, and set cells as clean. the vertices need internal

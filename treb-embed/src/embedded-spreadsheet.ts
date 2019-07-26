@@ -1375,40 +1375,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
                 const expr_name = parse_result.expression.name.toLowerCase();
                 const result = this.calculator.CalculateExpression(parse_result.expression);
-                const descriptor = this.calculator.GetFunction(expr_name);
 
-                // convert addresses to chart "CellData" types
-                // TODO: ranges
-
-                // FIXME: why not just let the function do this? (tip: collector)
-
-                for (const index of (descriptor.address || [])) {
-                  const pr = this.parser.Parse(result.value[index]);
-                  if (pr.expression) {
-                    let address: ICellAddress|undefined;
-                    if (pr.expression.type === 'address') {
-                      address = {...pr.expression};
-                    }
-                    else if (pr.expression.type === 'identifier') {
-                      const lookup = this.grid.model.sheet.named_ranges.Get(pr.expression.name);
-                      if (lookup) {
-                        address = {...lookup.start};
-                      }
-                    }
-                    if (address) {
-                      const cell_data = this.grid.model.sheet.CellData(address);
-                      result.value[index] = {
-                        address,
-                        value: cell_data.calculated,
-                        format: cell_data.style ? cell_data.style.number_format : undefined,
-                        simulation_data: this.SimulationData(address),
-                      };
-                      annotation.temp.additional_cells.push(address);
-                    }
-                  }
-                }
-
-                chart.Exec(expr_name, result.value);
+                chart.Exec(expr_name, result);
 
               }
             }

@@ -69,6 +69,24 @@ export interface CompositeFunctionDescriptor {
   fn: (...args: any[]) => any;
 
   /**
+   * similar to collector, this flag will return metadata about the cell
+   * argument: address, value, number format, simulation data, (...)
+   *
+   * supported in annotations only, not spreadsheet cells (atm)
+   *
+   * returns cell data type defined in chart (FIXME: move)
+   *
+   * {
+   *   address,
+   *   value: calculated value,
+   *   simulation_data: [],
+   *   format: number format
+   * }
+   *
+   */
+  metadata?: number[];
+
+  /**
    * for the future. some functions should not be available in 
    * spreadsheet cells (charts, basically)
    */

@@ -23,6 +23,7 @@ export class ExpressionCalculator {
 
   private call_index = 0;
   private cells: Cells = new Cells();
+  private data_model!: DataModel;
   private named_range_map: {[index: string]: Area} = {};
   private parser: Parser; // = new Parser();
 
@@ -49,14 +50,9 @@ export class ExpressionCalculator {
     }
   }
 
-  /*
-  public SetCells(cells: Cells){
-    this.cells = cells;
-  }
-  */
-
   public SetModel(model: DataModel, simulation_model: SimulationModel, library: FunctionLibrary) {
     this.cells = model.sheet.cells;
+    this.data_model = model;
     this.named_range_map = model.sheet.named_ranges.Map();
     this.simulation_model = simulation_model;
     this.library = library;
@@ -226,6 +222,32 @@ export class ExpressionCalculator {
           }
         }
       }
+    }
+
+    if (func.metadata && this.simulation_model.address.row === -1 && this.simulation_model.address.column === -1) {
+      for (const metadata_index of func.metadata) {
+        let address: ICellAddress|undefined;
+        const arg = args[metadata_index];
+        if (arg.type === 'address') {
+          address = arg;
+        }
+        else if (arg.type === 'identifier') {
+          const named_range = this.named_range_map[arg.name.toUpperCase()];
+          if (named_range) {
+            address = named_range.start; // FIXME: range?
+          }
+        }
+        if (address) {
+          const cell_data = this.data_model.sheet.CellData(address);
+          mapped_args[metadata_index] = {
+            address: {...address},
+            value: cell_data.calculated,
+            format: cell_data.style ? cell_data.style.number_format : undefined,
+            simulation_data: this.simulation_model.CellData(address),
+          };
+        }
+      }
+
     }
 
     // I thought we were passing the model as this (...) ? actually

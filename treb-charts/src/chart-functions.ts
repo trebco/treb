@@ -1,4 +1,6 @@
 
+const Identity = (...args: any[]) => args;
+
 /**
  * chart functions for registration
  */
@@ -11,9 +13,7 @@ export const ChartFunctions = {
       { name: 'Title' },
       { name: 'Sort' },
     ],
-    fn: (...args: any[]) => {
-      return args;
-    },
+    fn: Identity,
   },
 
   'Donut.Chart': {
@@ -23,32 +23,26 @@ export const ChartFunctions = {
       { name: 'Title' },
       { name: 'Sort' },
     ],
-    fn: (...args: any[]) => {
-      return args;
-    },
+    fn: Identity,
   },
 
   'MC.Histogram': {
-    address: [0],
+    metadata: [0],
     arguments: [
       { name: 'Reference Cell' },
       { name: 'Title' },
     ],
-    fn: (...args: any[]) => {
-      return args;
-    },
+    fn: Identity,
   },
 
   'MC.Correlation': {
-    address: [0, 1],
+    metadata: [0, 1],
     arguments: [
       { name: 'Reference Cell 1' },
       { name: 'Reference Cell 2' },
       { name: 'Title' },
     ],
-    fn: (...args: any[]) => {
-      return args;
-    },
+    fn: Identity,
   },
 
 };
