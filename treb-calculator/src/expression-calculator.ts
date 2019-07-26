@@ -191,10 +191,20 @@ export class ExpressionCalculator {
 
       // FIXME: can this move to parsing stage? (old note: probably this too, with a flag)
 
+      // FIXME: support named ranges
+
       if (func.collector){
-        for ( const collector_index of func.collector ){
+        for (const collector_index of func.collector ){
           const arg = args[collector_index];
-          if (arg.type === 'address') this.simulation_model.CellData(arg);
+          if (arg.type === 'address') {
+            this.simulation_model.CellData(arg);
+          }
+          else if (arg.type === 'identifier') {
+            const named_range = this.named_range_map[arg.name.toUpperCase()];
+            if (named_range) {
+              this.simulation_model.CellData(named_range.start);
+            }
+          }
         }
       }
     }
@@ -208,6 +218,12 @@ export class ExpressionCalculator {
         const arg = args[collector_index];
         if (arg.type === 'address'){
           mapped_args[collector_index] = this.simulation_model.CellData(arg);
+        }
+        else if (arg.type === 'identifier') {
+          const named_range = this.named_range_map[arg.name.toUpperCase()];
+          if (named_range) {
+            mapped_args[collector_index] = this.simulation_model.CellData(named_range.start);
+          }
         }
       }
     }
