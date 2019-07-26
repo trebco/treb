@@ -475,8 +475,6 @@ export class ExpressionCalculator {
       }
     }
 
-    // FIXME: named ranges?
-
     console.info( '** identifier', name);
     return {error: 'NAME'};
 
