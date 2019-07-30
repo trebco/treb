@@ -33,6 +33,12 @@ export class Annotation {
   /** also opaque data, but not serialized. */
   public temp: any = {};
 
+  /** if function exists, will be called when the annotation is resized */
+  public resize_callback?: () => void;
+
+  /** if function exists, will be called when the annotation needs to update */
+  public update_callback?: () => void;
+
   /** annotation can be resized. this is advisory, for UI */
   public resizable = true;
 
@@ -47,9 +53,6 @@ export class Annotation {
 
   /** layout node, obviously not serialized */
   public node?: HTMLDivElement;
-
-  /** additional classes */
-  // public class_list = '';
 
   /**
    * optional formula. the formula will be updated on structure events
@@ -73,12 +76,13 @@ export class Annotation {
     }
   }
 
-  /** serialization method drops node and trims */
+  /**
+   * serialization method drops node and trims
+   */
   public toJSON(){
     const result: any = { rect: this.rect, cell_address: this.cell_address };
 
     if (this.data) result.data = this.data;
-    // if (this.class_list) result.class_list = this.class_list;
     if (this.formula) result.formula = this.formula;
     if (this.type) result.type = this.type;
 

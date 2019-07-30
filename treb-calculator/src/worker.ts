@@ -3,12 +3,10 @@
  * worker for simulation
  */
 
-import { WorkerMessage, WorkerMessageType } from './worker-types';
-import { Localization, Cells, Cell, ICellAddress, Area } from 'treb-base-types';
-import { DataModel, NamedRangeCollection, Sheet } from 'treb-grid';
+import { WorkerMessage } from './worker-types';
+import { Localization, ICellAddress } from 'treb-base-types';
+import { DataModel, Sheet } from 'treb-grid';
 import { Calculator } from './calculator';
-import { SimulationModel } from './simulation-model';
-
 import { GraphStatus } from './dag/graph';
 import * as PackResults from './pack-results';
 
@@ -16,13 +14,11 @@ export class WorkerImpl {
 
   protected trials = 0;
   protected lhs = false;
-//  protected cells = new Cells();
   protected data_model: DataModel = {
     sheet: Sheet.Blank(),
     annotations: [],
   };
   protected screen_updates = false;
-
   protected calculator = new Calculator();
   protected start_time = 0;
 
@@ -57,42 +53,25 @@ export class WorkerImpl {
       break;
       */
 
-    case WorkerMessageType.Configure:
-      if (message.data) {
-
-        if (message.data.locale && message.data.locale !== Localization.locale){
-
-          // console.info('worker: update locale (looking at you, chrome)');
-          Localization.UpdateLocale(message.data.locale);
-
-          // need to reinitialize calculator on locale change
-          // this.calculator = new Calculator();
-          this.calculator.UpdateLocale();
-
-        }
-
-        Sheet.FromJSON(message.data.sheet, this.data_model.sheet);
-
-        // this.cells.FromJSON(message.data.data);
-        if (message.data.additional_cells) this.additional_cells = message.data.additional_cells;
+    case 'configure':
+      if (message.locale && message.locale !== Localization.locale){
+        Localization.UpdateLocale(message.locale);
+        this.calculator.UpdateLocale();
+      }
+      Sheet.FromJSON(message.sheet, this.data_model.sheet);
+      if (message.additional_cells) {
+        this.additional_cells = message.additional_cells;
       }
       break;
 
-    case WorkerMessageType.Step:
+    case 'step':
       this.SimulationStep();
       break;
 
-    case WorkerMessageType.Start:
-      if (message.data) {
-        this.trials = message.data.trials || 1000;
-        this.lhs = !!message.data.lhs;
-        this.screen_updates = message.data.screen_updates;
-      }
-      else {
-        this.trials = 1000;
-        this.lhs = false;
-        this.screen_updates = false;
-      }
+    case 'start':
+      this.trials = message.trials || 1000;
+      this.lhs = !!message.lhs;
+      this.screen_updates = !!message.screen_updates;
       this.Start();
       break;
     }
@@ -151,15 +130,13 @@ export class WorkerImpl {
     const elapsed = this.Timestamp() - this.start_time;
 
     this.Post({
-      type: WorkerMessageType.Update,
-      data: {
-        percent_complete,
-        cells: this.data_model.sheet.cells.toJSON(), // this.cells.toJSON(),
-        trial_data: {
-          results: flattened,
-          trials: this.iteration,
-          elapsed,
-        },
+      type: 'update',
+      percent_complete,
+      cells: this.data_model.sheet.cells.toJSON(), // this.cells.toJSON(),
+      trial_data: {
+        results: flattened,
+        trials: this.iteration,
+        elapsed,
       },
     }, flattened);
 
@@ -196,8 +173,8 @@ export class WorkerImpl {
         if ( p !== percent_complete) {
           percent_complete = p;
           this.Post({
-            type: WorkerMessageType.Progress,
-            data: percent_complete,
+            type: 'progress',
+            percent_complete,
           });
         }
       }
@@ -215,8 +192,8 @@ export class WorkerImpl {
     // because this will never get sent (floor):
 
     this.Post({
-      type: WorkerMessageType.Progress,
-      data: 100,
+      type: 'progress',
+      percent_complete: 100,
     });
 
     // now send results
@@ -228,9 +205,14 @@ export class WorkerImpl {
     // this to a non-typed array, or it will pass through all the indexes
 
     // return w/ transfer
-    this.Post({ type: WorkerMessageType.Complete, data: {
-      results: flattened, trials: this.trials, elapsed,
-    }}, flattened);
+    this.Post({
+      type: 'complete',
+      trial_data: {
+        results: flattened,
+        trials: this.trials,
+        elapsed,
+      },
+    }, flattened);
 
   }
 

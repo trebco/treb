@@ -1,10 +1,14 @@
 
+// TYPE ONLY
+type FunctionMap = import('../../treb-calculator/src/descriptors').FunctionMap;
+
+/** function returns its arguments */
 const Identity = (...args: any[]) => args;
 
 /**
  * chart functions for registration
  */
-export const ChartFunctions = {
+export const ChartFunctions: FunctionMap = {
 
   'Pie.Chart': {
     arguments: [

@@ -2,8 +2,7 @@
 // treb imports
 import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
-import { Calculator, CalculationWorker, WorkerMessage, WorkerMessageType,
-         LeafVertex } from 'treb-calculator';
+import { Calculator, CalculationWorker, WorkerMessage, LeafVertex } from 'treb-calculator';
 import { IsCellAddress, Localization, CellSerializationOptions, Style,
          ICellAddress, Area, IArea } from 'treb-base-types';
 import { EventSource, Resizable, Yield } from 'treb-utils';
@@ -261,12 +260,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
                 this.InflateAnnotation(event.annotation);
                 break;
               case 'update':
-                if (event.annotation.temp.update) {
-                  event.annotation.temp.update();
+                if (event.annotation.update_callback) {
+                  event.annotation.update_callback();
                 }
               case 'resize':
-                if (event.annotation.temp.resize) {
-                  event.annotation.temp.resize();
+                if (event.annotation.resize_callback) {
+                  event.annotation.resize_callback();
                 }
                 break;
             }
@@ -1207,8 +1206,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       }
 
       // FIXME: check dirty
-      if (annotation.temp.update) {
-        annotation.temp.update();
+      if (annotation.update_callback) {
+        annotation.update_callback();
       }
     }
   }
@@ -1365,7 +1364,16 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
           const update_chart = () => {
 
-            annotation.temp.additional_cells = [];
+            annotation.temp.additional_cells = []; // ??
+
+            /*
+            let vertex: LeafVertex = annotation.temp.vertex;
+            if (!vertex) {
+              vertex = new LeafVertex();
+              annotation.temp.vertex = vertex;
+              this.calculator.AddLeafVertex(vertex);
+            }
+            */
 
             if (annotation.formula) {
               const parse_result = this.parser.Parse(annotation.formula);
@@ -1376,8 +1384,14 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
                 const expr_name = parse_result.expression.name.toLowerCase();
                 const result = this.calculator.CalculateExpression(parse_result.expression);
 
-                chart.Exec(expr_name, result);
+                annotation.temp.additional_cells = chart.Exec(expr_name, result);
 
+                /*
+                const cells = chart.Exec(expr_name, result);
+                for (const cell of cells) {
+                  this.calculator.AddLeafVertexEdge(cell, vertex);
+                }
+                */
               }
             }
 
@@ -1386,13 +1400,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           };
 
           /** resize callback */
-          annotation.temp.resize = () => {
+          annotation.resize_callback = () => {
             chart.Resize();
             chart.Update();
           };
 
           /** update callback */
-          annotation.temp.update = () => {
+          annotation.update_callback = () => {
             // console.info('atu');
             update_chart();
           };
@@ -1645,21 +1659,17 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     }
 
     this.worker.postMessage({
-      type: WorkerMessageType.Configure,
-      data: {
-        locale: Localization.locale,
-        // data: this.grid.model.sheet.cells.toJSON(json_options).data,
-        // names: this.grid.model.sheet.named_ranges,
-        sheet: this.grid.model.sheet.toJSON({
-          rendered_values: true, // has a different name, for some reason
-          preserve_type: true,
-        }),
-        additional_cells, // : this.additional_cells,
-      },
+      type: 'configure',
+      locale: Localization.locale,
+      sheet: this.grid.model.sheet.toJSON({
+        rendered_values: true, // has a different name, for some reason
+        preserve_type: true,
+      }),
+      additional_cells,
     });
 
     this.worker.postMessage({
-      type: WorkerMessageType.Start, data: { trials, lhs },
+      type: 'start', trials, lhs,
     });
 
     await new Promise((resolve) => {
@@ -1870,31 +1880,29 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   /**
    * rx handler for worker messages
    */
-  private HandleWorkerMessage(message?: WorkerMessage) {
-
-    if (!message) return;
+  private HandleWorkerMessage(message: WorkerMessage) {
 
     switch (message.type) {
-      case WorkerMessageType.Update:
-        this.UpdateMCDialog(Number(message.data.percent_complete || 0));
-        this.last_simulation_data = message.data.trial_data;
-        this.calculator.UpdateResults(message.data.trial_data);
+      case 'update':
+        this.UpdateMCDialog(Number(message.percent_complete || 0));
+        this.last_simulation_data = message.trial_data;
+        this.calculator.UpdateResults(message.trial_data);
         this.Recalculate();
 
         // not actually possible for this not to exist at this
         // point -- is there a way to express that in ts?
 
-        if (this.worker) this.worker.postMessage({ type: WorkerMessageType.Step });
+        if (this.worker) this.worker.postMessage({ type: 'step' });
         break;
 
-      case WorkerMessageType.Progress:
-        this.UpdateMCDialog(Number(message.data || 0));
+      case 'progress':
+        this.UpdateMCDialog(Number(message.percent_complete || 0));
         break;
 
-      case WorkerMessageType.Complete:
-        this.last_simulation_data = message.data;
+      case 'complete':
+        this.last_simulation_data = message.trial_data;
         requestAnimationFrame(() => {
-          this.calculator.UpdateResults(message.data);
+          this.calculator.UpdateResults(message.trial_data);
           this.Recalculate().then(() => {
             this.Focus();
             this.UpdateAnnotations();
