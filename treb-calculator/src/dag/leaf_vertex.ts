@@ -33,6 +33,18 @@ export class LeafVertex extends SpreadsheetVertex {
    * FIXME: what's more expensive, generating this state field or
    * re-rendering a chart with the same data? (...?)
    * especially since it's only called on dirty...
+   *
+   * what is the case where the depenendency is dirty but state
+   * does not change? you type in the same value? (...) or maybe
+   * there's a volatile function that doesn't change value (e.g. Today())
+   *
+   * still, it seems like a waste here. let's test without the state.
+   * (meaning just update the flag anytime it's dirty)
+   *
+   * Actually I think the case is manual recalc, when values don't change
+   * (especially true for MC charts).
+   *
+   * TODO: perf
    */
   public UpdateState(){
 

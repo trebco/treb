@@ -201,6 +201,15 @@ export abstract class Graph {
    * managing and maintaining these vertices: we only need references.
    */
   public AddLeafVertex(vertex: LeafVertex){
+
+    // ... don't add more than once. this is expensive but
+    // the list should (generally speaking) be short, so not
+    // a serious problem atm
+
+    if (this.leaf_vertices.some((test) => test === vertex)) {
+      return;
+    }
+
     this.leaf_vertices.push(vertex);
   }
 

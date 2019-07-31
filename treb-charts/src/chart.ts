@@ -52,16 +52,6 @@ export class Chart {
         break;
     }
 
-    // TEMP only, until we can better manage dependencies
-
-    const addresses: Array<{row: number, column: number}> = [];
-    for (const arg of args) {
-      if (this.IsCellData(arg)) {
-        addresses.push(arg.address);
-      }
-    }
-
-    return addresses;
   }
 
   public Clear() {

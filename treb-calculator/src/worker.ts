@@ -5,7 +5,7 @@
 
 import { WorkerMessage } from './worker-types';
 import { Localization, ICellAddress } from 'treb-base-types';
-import { DataModel, Sheet } from 'treb-grid';
+import { DataModel, Sheet, Annotation } from 'treb-grid';
 import { Calculator } from './calculator';
 import { GraphStatus } from './dag/graph';
 import * as PackResults from './pack-results';

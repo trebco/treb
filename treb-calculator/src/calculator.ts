@@ -16,7 +16,8 @@ import { FunctionMap } from './descriptors';
 import { BaseFunctionLibrary, BaseFunctionAliases } from './base-functions';
 
 import * as PackResults from './pack-results';
-import { DataModel } from '@root/treb-grid/src';
+import { DataModel, Annotation } from '@root/treb-grid/src';
+import { LeafVertex } from './dag/leaf_vertex';
 
 /**
  * options for unparsing (cleaning up) expressions
@@ -217,15 +218,18 @@ export class Calculator extends Graph {
     const flat = cells.toJSON(json_options);
     const result = this.RebuildGraph(flat.data, {});
 
+    // NOTE: not dealing with annotations here. the rationale is that these
+    // may have external function definitions, so we can't reliably get the
+    // metadata. there should really be no reason to do this anyway... so
+    // dropping annotations from simulation. someone else needs to get the
+    // metadata for collecting results and pass it in (via additional_cells)
+
     // FIXME: consolidate with trial method
 
     this.simulation_model.state = SimulationState.Prep;
-
     this.simulation_model.iteration = 0;
     this.Recalculate();
-
     this.simulation_model.CorrelateDistributions();
-
     this.simulation_model.state = SimulationState.Simulation;
 
     return result.status;
@@ -306,6 +310,7 @@ export class Calculator extends Graph {
    * resets graph and graph status
    */
   public Reset(flush_results = true){
+
     this.status = GraphStatus.OK;
     this.FlushTree();
     this.full_rebuild_required = true;
@@ -320,6 +325,10 @@ export class Calculator extends Graph {
     this.simulation_model.results = [];
     this.simulation_model.elapsed = 0;
     this.simulation_model.trials = 0;
+  }
+
+  public ShiftSimulationResults(before_row: number, before_column: number, rows: number, columns: number) {
+    // ...
   }
 
   /**
@@ -368,15 +377,17 @@ export class Calculator extends Graph {
       preserve_type: true,
       calculated_value: true };
 
-    const cells = model.sheet.cells;
-
     this.full_rebuild_required = false; // unset
-    const flat = cells.toJSON(json_options);
+    const flat = model.sheet.cells.toJSON(json_options);
 
     this.AttachData(model);
     this.expression_calculator.SetModel(model, this.simulation_model, this.library);
 
     const result = this.RebuildGraph(flat.data, {});
+
+    // add leaf vertices for annotations
+
+    this.UpdateAnnotations(); // all
 
     this.status = result ? result.status : GraphStatus.OK;
 
@@ -393,6 +404,103 @@ export class Calculator extends Graph {
     }
 
   }
+
+
+  /**
+   * remove duplicates from list, dropping absolute
+   */
+  public FlattenCellList(list: ICellAddress[]) {
+
+    const map: {[index: string]: string} = {};
+    const flattened: ICellAddress[] = [];
+
+    for (const entry of list) {
+      const address = {
+        column: entry.column,
+        row: entry.row,
+      };
+      const label = Area.CellAddressToLabel(address);
+      if (map[label]) { continue; }
+      map[label] = label;
+      flattened.push(address);
+    }
+
+    return flattened;
+  }
+
+  /**
+   * get a list of cells that need metadata. this is for passing to
+   * the simulation as additional cells
+   */
+  public MetadataReferences(formula: string) {
+    const references: ICellAddress[] = [];
+    if (!this.model) { return references; }
+    const parse_result = this.parser.Parse(formula);
+    if (parse_result.expression && parse_result.expression.type === 'call') {
+      const func = this.GetFunction(parse_result.expression.name);
+      if (!func || !func.metadata) { return references; }
+      for (const index of func.metadata) {
+        const arg = parse_result.expression.args[index];
+        if (!arg) { continue; }
+
+        /*
+        // dynamic; not yet, call this a TODO
+        if (arg.type === 'call') {
+          const result = this.CalculateExpression(arg);
+        }
+        */
+
+        switch (arg.type) {
+          case 'identifier':
+            const normalized = arg.name.toUpperCase();
+            const named_range = this.model.sheet.named_ranges.Get(normalized);
+            if (named_range) {
+              references.push(named_range.start); // ATM just one cell
+            }
+            break;
+          case 'address':
+            references.push(arg);
+            break;
+          case 'range':
+            references.push(arg.start); // ATM just one cell
+            break;
+        }
+
+      }
+    }
+    return references;
+  }
+
+  public RemoveAnnotation(annotation: Annotation) {
+    const vertex = (annotation.temp.vertex as LeafVertex);
+    if (!vertex) { return; }
+    vertex.Reset();
+    this.RemoveLeafVertex(vertex);
+  }
+
+  public UpdateAnnotations(list?: Annotation|Annotation[]) {
+
+    if (!list && this.model) list = this.model.annotations;
+    if (!list) return;
+
+    if (typeof list !== 'undefined' && !Array.isArray(list)) {
+      list = [list];
+    }
+
+    for (const entry of list) {
+      if (entry.formula) {
+        if (!entry.temp.vertex) {
+          entry.temp.vertex = new LeafVertex();
+        }
+        const vertex = entry.temp.vertex as LeafVertex;
+        this.AddLeafVertex(vertex);
+        this.UpdateLeafVertex(vertex, entry.formula);
+      }
+    }
+
+  }
+
+  // --- protected -------------------------------------------------------------
 
   /**
    * if this is a known function and that function provides a canonical name,
@@ -504,6 +612,36 @@ export class Calculator extends Graph {
         break;
 
     }
+  }
+
+  protected UpdateLeafVertex(vertex: LeafVertex, formula: string){
+
+    vertex.Reset();
+
+    const parse_result = this.parser.Parse(formula);
+    const new_dependencies: DependencyList = {addresses: {}, ranges: {}};
+    if (parse_result.expression) {
+      this.RebuildDependencies(parse_result.expression, new_dependencies);
+    }
+
+    for (const key of Object.keys(new_dependencies.ranges)){
+      const unit = new_dependencies.ranges[key];
+      const range = new Area(unit.start, unit.end);
+      range.Iterate((address: ICellAddress) => {
+        this.AddLeafVertexEdge(address, vertex);
+      });
+    }
+
+    for (const key of Object.keys(new_dependencies.addresses)){
+      const address = new_dependencies.addresses[key];
+      this.AddLeafVertexEdge(address, vertex);
+    }
+
+    vertex.expression = parse_result.expression || {type: 'missing', id: -1};
+    vertex.expression_error = !parse_result.valid;
+
+    // vertex.UpdateState();
+
   }
 
   /**
@@ -721,6 +859,7 @@ export class Calculator extends Graph {
   protected async CalculateInternal(model: DataModel, area?: Area, options?: CalculationOptions){
 
     const cells = model.sheet.cells;
+    this.AttachData(model); // for graph. FIXME
 
     const json_options: CellSerializationOptions = {
       preserve_type: true,
@@ -729,11 +868,14 @@ export class Calculator extends Graph {
       subset: this.full_rebuild_required ? undefined : area,
       calculated_value: true };
 
+    if (this.full_rebuild_required) {
+      this.UpdateAnnotations();
+    }
+
     this.full_rebuild_required = false; // unset
 
     let flat = cells.toJSON(json_options);
 
-    this.AttachData(model);
     this.expression_calculator.SetModel(model, this.simulation_model, this.library);
 
     let result: {status: GraphStatus, reference?: ICellAddress} = {

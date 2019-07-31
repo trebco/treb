@@ -1619,7 +1619,10 @@ export class Grid {
       this.layout.UpdateTiles();
       this.render_tiles = this.layout.VisibleTiles();
       this.layout.UpdateAnnotation(this.model.annotations);
-      this.grid_events.Publish({type: 'structure'});
+      this.grid_events.Publish({
+        type: 'structure',
+        rebuild_required: true
+      });
     }
 
     this.layout_token = 0;
@@ -4579,6 +4582,7 @@ export class Grid {
     let data_area: Area|undefined;
     let style_area: Area|undefined;
     let structure_event = false;
+    let structure_rebuild_required = false;
 
     const events: GridEvent[] = [];
 
@@ -4627,6 +4631,7 @@ export class Grid {
         // will break.
 
         structure_event = true;
+        structure_rebuild_required = true;
         data_area = Area.Join(command.area, data_area);
         break;
 
@@ -4660,6 +4665,7 @@ export class Grid {
           render_area = Area.Join(command.area, render_area);
           data_area = Area.Join(command.area, data_area);
           structure_event = true;
+          structure_rebuild_required = true;
         }
         break;
 
@@ -4689,6 +4695,7 @@ export class Grid {
           this.model.sheet.named_ranges.ClearName(command.name);
         }
         structure_event = true;
+        structure_rebuild_required = true;
         break;
 
       case CommandKey.UpdateBorders:
@@ -4836,7 +4843,10 @@ export class Grid {
     }
 
     if (structure_event) {
-      events.push({type: 'structure'});
+      events.push({
+        type: 'structure',
+        rebuild_required: structure_rebuild_required,
+      });
     }
 
     this.grid_events.Publish(events);

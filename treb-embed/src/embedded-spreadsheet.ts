@@ -253,16 +253,26 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           break;
 
         case 'annotation':
+
+          // FIXME: maybe need to update vertices (on create, update, delete,
+          // not on move or resize)
+
           if (event.annotation) {
             this.DocumentChange();
             switch (event.event) {
               case 'create':
                 this.InflateAnnotation(event.annotation);
+                this.calculator.UpdateAnnotations(event.annotation);
+                break;
+              case 'delete':
+                this.calculator.RemoveAnnotation(event.annotation); // clean up vertex
                 break;
               case 'update':
                 if (event.annotation.update_callback) {
                   event.annotation.update_callback();
                 }
+                this.calculator.UpdateAnnotations(event.annotation);
+                break;
               case 'resize':
                 if (event.annotation.resize_callback) {
                   event.annotation.resize_callback();
@@ -274,8 +284,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
         case 'structure':
           this.DocumentChange();
-          // FIXME: necessary? (...)
-          // this.calculator.Reset(false);
+          if (event.rebuild_required) {
+            this.calculator.Reset(false);
+          }
           break;
       }
     });
@@ -287,7 +298,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     }
     this.FlushUndo();
 
-    // FIXME: this is deprecated
+    // FIXME: this is deprecated [what?]
+    // [this is now a file property, not an option]
 
     if (options.freeze_rows || options.freeze_columns) {
       this.grid.Freeze(options.freeze_rows || 0, options.freeze_columns || 0);
@@ -549,16 +561,28 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * API function: insert at current cursor
    */
   public InsertRow() {
+    /*
+    const selection = this.grid.GetSelection();
+    const area = selection.area;
+    const before_row = area.entire_column ? 0 : area.start.row;
+    */
+
     this.grid.InsertRow();
-    this.calculator.Reset(false); // FIXME: why not run this off the 'structure' event, which will be sent? (...)
+    // this.calculator.ShiftSimulationResults(before_row, 0, 1, 0);
   }
 
   /**
    * API function: insert at current cursor
    */
   public InsertColumn() {
+    /*
+    const selection = this.grid.GetSelection();
+    const area = selection.area;
+    const before_column = area.entire_row ? 0 : area.start.column;
+    */
+
     this.grid.InsertColumn();
-    this.calculator.Reset(false);
+    // this.calculator.ShiftSimulationResults(0, before_column, 0, 1);
   }
 
   /**
@@ -566,7 +590,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    */
   public DeleteRows() {
     this.grid.DeleteRows();
-    this.calculator.Reset(false);
   }
 
   /**
@@ -574,7 +597,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    */
   public DeleteColumns() {
     this.grid.DeleteColumns();
-    this.calculator.Reset(false);
   }
 
   /**
@@ -1197,17 +1219,14 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    */
   public UpdateAnnotations() {
     for (const annotation of this.grid.model.annotations) {
-      if (annotation.data && annotation.data.vertex) {
-        const vertex = annotation.data.vertex as LeafVertex;
-        if (vertex.state_id !== annotation.data.state) {
-          console.info('leaf vertex dirty');
-          annotation.data.state = vertex.state_id;
+      if (annotation.temp.vertex) {
+        const vertex = annotation.temp.vertex as LeafVertex;
+        if (vertex.state_id !== annotation.temp.state) {
+          annotation.temp.state = vertex.state_id;
+          if (annotation.update_callback) {
+            annotation.update_callback();
+          }
         }
-      }
-
-      // FIXME: check dirty
-      if (annotation.update_callback) {
-        annotation.update_callback();
       }
     }
   }
@@ -1364,17 +1383,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
           const update_chart = () => {
 
-            annotation.temp.additional_cells = []; // ??
-
-            /*
-            let vertex: LeafVertex = annotation.temp.vertex;
-            if (!vertex) {
-              vertex = new LeafVertex();
-              annotation.temp.vertex = vertex;
-              this.calculator.AddLeafVertex(vertex);
-            }
-            */
-
             if (annotation.formula) {
               const parse_result = this.parser.Parse(annotation.formula);
               if (parse_result &&
@@ -1384,14 +1392,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
                 const expr_name = parse_result.expression.name.toLowerCase();
                 const result = this.calculator.CalculateExpression(parse_result.expression);
 
-                annotation.temp.additional_cells = chart.Exec(expr_name, result);
+                chart.Exec(expr_name, result);
 
-                /*
-                const cells = chart.Exec(expr_name, result);
-                for (const cell of cells) {
-                  this.calculator.AddLeafVertexEdge(cell, vertex);
-                }
-                */
               }
             }
 
@@ -1577,7 +1579,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.LoadDocument(JSON.parse(data), undefined, false);
 
     // this.grid.UpdateSheet(data, true);
-    // this.calculator.Reset(false);
+    // this.calculator.Reset(false); // called in loadDocumnet
 
     // this.Recalculate();
 
@@ -1644,19 +1646,20 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       throw new Error('worker not initialized');
     }
 
-    const json_options: CellSerializationOptions = {
-      preserve_type: true,
-      calculated_value: true,
-    };
-
-    // NOTE: accessing grid.cells, find a better approach
+    // NOTE: accessing grid.cells, find a better approach [??]
 
     let additional_cells = this.additional_cells.slice(0);
+
+    // add any required additional collector cells from annotations (charts)
+
     for (const annotation of this.grid.model.annotations) {
-      if (annotation.temp.additional_cells) {
-        additional_cells = additional_cells.concat(annotation.temp.additional_cells);
+      if (annotation.formula) {
+        additional_cells = additional_cells.concat(
+          this.calculator.MetadataReferences(annotation.formula));
       }
     }
+
+    additional_cells = this.calculator.FlattenCellList(additional_cells);
 
     this.worker.postMessage({
       type: 'configure',
@@ -1903,10 +1906,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         this.last_simulation_data = message.trial_data;
         requestAnimationFrame(() => {
           this.calculator.UpdateResults(message.trial_data);
-          this.Recalculate().then(() => {
-            this.Focus();
-            this.UpdateAnnotations();
-          });
+          this.Recalculate().then(() => this.Focus());
           setTimeout(() => {
             this.ShowDialog(false);
             this.Publish({ type: 'simulation-complete' });
