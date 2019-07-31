@@ -255,6 +255,9 @@ export abstract class Graph {
   /** runs calculation */
   public Recalculate() {
 
+    // FIXME: volatiles should proabbly be caclucated first,
+    // not last, because they're probably primary.
+
     for (const vertex of this.volatile_list) {
 
       // FIXME: use method, add parameter?
