@@ -157,6 +157,10 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
     this.editor_node.addEventListener('focusin', (event) => {
 
+      if (this.editor_node) {
+        this.editor_node.setAttribute('spellcheck', 'false');
+      }
+
       // console.info('focus in');
 
       let text = this.editor_node ? this.editor_node.textContent || '' : '';

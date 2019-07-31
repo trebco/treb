@@ -89,6 +89,8 @@ export class CellEditor extends FormulaEditorBase {
 
     if (!this.editor_node || !this.container_node) return;
 
+    this.editor_node.setAttribute('spellcheck', 'false');
+
     // ensure clear
     this.FlushReference();
 

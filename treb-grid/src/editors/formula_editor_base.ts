@@ -360,7 +360,10 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     if (!this.reference_list ) return;
 
     const text = this.editor_node.textContent || '';
-    if (text.trim()[0] !== '=') return;
+    if (text.trim()[0] !== '=') {
+      this.editor_node.setAttribute('spellcheck', 'true');
+      return;
+    }
 
     // we might not have to do this, if the text hasn't changed
     // (or the text has only changed slightly...) this might actually
