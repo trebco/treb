@@ -58,10 +58,20 @@ export class SimulationModel {
    * one nice thing about binding is that it supports composing functions
    * (if we ever do that), without juggling this pointers.
    *
+   * NOTE: moved initialization into ctor, since we are potentially calling
+   * this more than once. And you could move it out of this file, and use a
+   * reference when constructing it. although that would require making various
+   * functions public, probably (they are already public, for some reason).
+   *
+   * alternatively (to moving this to another file) you could consolidate the
+   * map and the actual functions. kind of hard to write them in that format,
+   * though.
    */
-  public get functions(): FunctionMap {
+  public readonly functions: FunctionMap;
 
-    return {
+  constructor() {
+
+    this.functions = {
 
       'Multivariate.Normal': {
         description: 'Returns a sample from the multivariate normal distribution',
@@ -783,7 +793,27 @@ export class SimulationModel {
     }
   }
 
+  /**
+   * unified function for distributions. it works, but all this indirection
+   * seems like wasted cycles. since this is interpreted, it's probably better
+   * to err on the side of extra code plus efficiency (not that any of this is
+   * all that efficient to begin with; no need to make it any worse).
+   */
+  public CommonDistributionFunction(fun: (...args: any[]) => any, instance: any, args: any) {
+    if (this.state === SimulationState.Prep) {
+      this.InitDistribution();
+      this.distributions[this.address.column][this.address.row][this.call_index] =
+        fun.apply(instance, [this.iterations].concat(args));
+    }
+    else if (this.state === SimulationState.Simulation) {
+      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+    }
+    return fun.apply(instance, [1].concat(args))[0];
+  }
+
   public triangularvalue(min = 0, mode = .5, max = 1) {
+    // return this.CommonDistributionFunction(MC.Triangular, MC, [{a: min, b: max, c: mode, lhs: this.lhs}]);
+
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
       this.distributions[this.address.column][this.address.row][this.call_index] =
