@@ -437,11 +437,17 @@ for (const name of Object.getOwnPropertyNames(Math)) {
 
   switch (type) {
   case 'number':
-    BaseFunctionLibrary[name] = { fn: () => value };
+    BaseFunctionLibrary[name] = {
+      fn: () => value,
+      category: ['Math Functions'],
+    };
     break;
 
   case 'function':
-    BaseFunctionLibrary[name] = { fn: value };
+    BaseFunctionLibrary[name] = {
+      fn: value,
+      category: ['Math Functions'],
+    };
     break;
 
   default:
