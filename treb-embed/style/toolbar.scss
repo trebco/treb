@@ -313,8 +313,13 @@ $color-item-size: 20px;
         font-size: 14px;
         color: darken($button-foreground, 20%);
         border-left: 0px;
-        border-top-right-radius: 3px;
-        border-bottom-right-radius: 3px;
+        // border-top-right-radius: 3px;
+        // border-bottom-right-radius: 3px;
+        
+        border-radius: 3px;
+        background: #f9f9fc;
+        outline: none;
+
         padding: 0 4px;
         margin-top: 0;
         margin-bottom: 0;
