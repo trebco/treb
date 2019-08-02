@@ -76,9 +76,9 @@ export class SimulationModel {
       'Multivariate.Normal': {
         description: 'Returns a sample from the multivariate normal distribution',
         simulation_volatile: true,
-        address: [0],
+        // address: [0],
         arguments: [
-          { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)', address: true },
           { name: 'correlation', description: 'Correlation Matrix (NxN)' },
           { name: 'mean', description: 'Distribution Mean', default: 0 },
           { name: 'stdev', description: 'Standard Deviation', default: 1 },
@@ -90,9 +90,9 @@ export class SimulationModel {
       'Multivariate.Uniform': {
         description: 'Returns a sample from the multivariate uniform distribution',
         simulation_volatile: true,
-        address: [0],
+        // address: [0],
         arguments: [
-          { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)', address: true },
           { name: 'correlation', description: 'Correlation Matrix (NxN)' },
           { name: 'min', description: 'Minimum Value', default: 0 },
           { name: 'max', description: 'Maximum Value', default: 1 },
@@ -104,9 +104,9 @@ export class SimulationModel {
       'Multivariate.Beta': {
         description: 'Returns a sample from the multivariate beta distribution',
         simulation_volatile: true,
-        address: [0],
+        // address: [0],
         arguments: [
-          { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)', address: true },
           { name: 'correlation', description: 'Correlation Matrix (NxN)' },
           { name: 'w', description: 'Shape Parameter' },
           { name: 'v', description: 'Shape Parameter' },
@@ -118,9 +118,9 @@ export class SimulationModel {
       'Multivariate.PERT': {
         description: 'Returns a sample from the multivariate PERT distribution',
         simulation_volatile: true,
-        address: [0],
+        // address: [0],
         arguments: [
-          { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)', address: true },
           { name: 'correlation', description: 'Correlation Matrix (NxN)' },
           { name: 'min', description: 'Minimum Value' },
           { name: 'mode', description: 'Most-Likely Value' },
@@ -134,9 +134,9 @@ export class SimulationModel {
       'Multivariate.Triangular': {
         description: 'Returns a sample from the multivariate triangular distribution',
         simulation_volatile: true,
-        address: [0],
+        // address: [0],
         arguments: [
-          { name: 'range of values', description: 'Set of Correlated Distributions (N)' },
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)', address: true },
           { name: 'correlation', description: 'Correlation Matrix (NxN)' },
           { name: 'min', description: 'Minimum Value' },
           { name: 'mode', description: 'Most-Likely Value' },
@@ -295,10 +295,10 @@ export class SimulationModel {
       SimulationCorrelation: {
         description: 'Returns the correlation between the data from two cells in the simulation',
         arguments: [
-          { name: 'reference cell', description: 'Cell 1' },
-          { name: 'reference cell', description: 'Cell 2' },
+          { name: 'reference cell', description: 'Cell 1', collector: true },
+          { name: 'reference cell', description: 'Cell 2', collector: true },
         ],
-        collector: [0, 1],
+        // collector: [0, 1],
         fn: this.simulationcorrelation.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -307,10 +307,10 @@ export class SimulationModel {
         // tslint:disable-next-line:max-line-length
         description: 'Returns the r-squared value (coefficient of correlation) of the data from two cells in the simulation',
         arguments: [
-          { name: 'dependent', description: 'Dependent Value' },
-          { name: 'independent', description: 'Indepdendent Value' },
+          { name: 'dependent', description: 'Dependent Value', collector: true },
+          { name: 'independent', description: 'Indepdendent Value', collector: true },
         ],
-        collector: [0, 1],
+        // collector: [0, 1],
         fn: this.simulationrsquared.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -318,9 +318,9 @@ export class SimulationModel {
       SimulationSkewness: {
         description: 'Returns the skewness of data from this cell in the simulation',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationskewness.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -328,9 +328,9 @@ export class SimulationModel {
       SimulationKurtosis: {
         description: 'Returns the kurtosis (peakedness) of data from this cell in the simulation',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationkurtosis.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -338,10 +338,10 @@ export class SimulationModel {
       SimulationPercentile: {
         description: 'Returns the value of a cell at a given percentile in the simulation',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
           { name: 'percentile', description: 'Percentile (as %)' },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationpercentile.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -349,11 +349,11 @@ export class SimulationModel {
       SimulationInterval: {
         description: 'Returns the portion of results in the simulation that fall within some bounds (as a percentage)',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
           { name: 'min', description: 'Minimum Value (optional, inclusive)' },
           { name: 'max', description: 'Maximum Value (optional, inclusive)' },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationinterval.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -361,9 +361,9 @@ export class SimulationModel {
       SimulationMean: {
         description: 'Returns the mean (average) value of the data from this cell in the simulation',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationmean.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -371,10 +371,10 @@ export class SimulationModel {
       SimulationValue: {
         description: 'Returns the value of this cell in the simulation at the given trial number',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
           { name: 'iteration', description: 'Trial Number' },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationvalue.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -382,9 +382,9 @@ export class SimulationModel {
       SimulationValuesArray: {
         description: 'Returns all value of this cell in the simulation, as an array',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationvaluesarray.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -392,9 +392,9 @@ export class SimulationModel {
       SortedSimulationIndex: {
         description: 'Returns the iteration number of a sorted value for this cell',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.sortedsimulationindex.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -402,10 +402,10 @@ export class SimulationModel {
       'SimulationValuesArray.Ordered': {
         description: 'Returns all value of this cell in the simulation, as an array, ordered by a second cell',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
-          { name: 'order by', description: 'Reference Cell for Ordering' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
+          { name: 'order by', description: 'Reference Cell for Ordering', collector: true },
         ],
-        collector: [0, 1],
+        // collector: [0, 1],
         fn: this.simulationvaluesarray_ordered.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -413,9 +413,9 @@ export class SimulationModel {
       SimulationMin: {
         description: 'Returns the minimum value of the data from this cell in the simulation',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationmin.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -423,9 +423,9 @@ export class SimulationModel {
       SimulationMax: {
         description: 'Returns the maximum value of the data from this cell in the simulation',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationmax.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -433,9 +433,9 @@ export class SimulationModel {
       SimulationStandardError: {
         description: 'Returns the standard error of the mean from this cell in the simulation',
         arguments: [
-          { name: 'reference cell' },
+          { name: 'reference cell', collector: true },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationstandarderror.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -443,9 +443,9 @@ export class SimulationModel {
       SimulationStandardDeviation: {
         description: 'Returns the standard deviation of the data from this cell in the simulation',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationstandarddeviation.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -453,9 +453,9 @@ export class SimulationModel {
       SimulationVariance: {
         description: 'Returns the variance of the data from this cell in the simulation',
         arguments: [
-          { name: 'reference cell', description: 'Source Cell' },
+          { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
-        collector: [0],
+        // collector: [0],
         fn: this.simulationvariance.bind(this),
         category: ['RiskAMP Simulation Functions'],
       },
@@ -587,6 +587,9 @@ export class SimulationModel {
   // --- multivariate distributions --------------------------------------------
 
   public PrepMultivariate(range_of_values: any, correlation_matrix: number[][]) {
+
+    // if (range_of_values.area) range_of_values = range_of_values.area.spreadsheet_label;
+
     if (!this.correlated_distributions[range_of_values]) {
 
       // support lower-triangular
@@ -938,10 +941,20 @@ export class SimulationModel {
     return data;
   }
 
+  /**
+   * now defaults to ordering by source cell
+   */
   public simulationvaluesarray_ordered(data?: number[], order_by?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
     if (!data || !data.length) return { error: 'DATA' };
-    if (!order_by || !order_by.length) return { error: 'DATA' };
+
+    if (!order_by || !order_by.length) {
+
+      // can use a simpler sort method in this case
+      // be sure to copy so we don't munge the original data
+
+      return data.slice(0).sort((a, b) => a - b);
+    }
 
     const tuples = Array.from(data).map((x, i) => [x, order_by[i]]);
     tuples.sort((a, b) => a[1] - b[1]);

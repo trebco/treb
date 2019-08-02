@@ -45,25 +45,28 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     Cell: {
       description: 'Returns data about a cell',
-      address: [1],
       arguments: [
         { name: 'type', description: 'Type of data to return' },
-        { name: 'reference', description: 'Cell reference' },
+        { name: 'reference', description: 'Cell reference', metadata: true },
       ],
       fn: (type: string, reference: any) => {
+
+        if (!reference || !reference.address) return { error: 'REF' };
+
         switch (type.toLowerCase()) {
+          case 'format':
+            return reference.format || { error: 'REF' };
+
           case 'address':
-            return reference;
-            break;
+            return reference.address.label.replace(/\$/g, '');
         }
-        return {error: 'NOTIMPL'};
+        return { error: 'NOTIMPL' };
       },
     },
 
     IsError: {
       description: 'Checks if another cell contains an error',
-      arguments: [{ name: 'reference' }],
-      allow_error: [0],
+      arguments: [{ name: 'reference', allow_error: true }],
       fn: (ref: any) => {
         return (!!ref && !!ref.error);
       },
@@ -71,8 +74,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     IfError: {
       description: 'Returns the original value, or the alternate value if the original value contains an error',
-      arguments: [{ name: 'original value' }, { name: 'alternate value' }],
-      allow_error: [0],
+      arguments: [{ name: 'original value', allow_error: true }, { name: 'alternate value' }],
       fn: (ref: any, value_if_error: any) => {
         if (!!ref && !!ref.error) return value_if_error;
         return ref;

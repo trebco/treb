@@ -10,6 +10,22 @@ const Identity = (...args: any[]) => args;
  */
 export const ChartFunctions: FunctionMap = {
 
+  'Line.Chart': {
+    arguments: [
+      { name: 'Values' },
+      { name: 'Title' },
+    ],
+    fn: Identity,
+  },
+
+  'Area.Chart': {
+    arguments: [
+      { name: 'Values' },
+      { name: 'Title' },
+    ],
+    fn: Identity,
+  },
+
   'Pie.Chart': {
     arguments: [
       { name: 'Values' },
@@ -33,19 +49,17 @@ export const ChartFunctions: FunctionMap = {
   },
 
   'MC.Histogram': {
-    metadata: [0],
     arguments: [
-      { name: 'Reference Cell' },
+      { name: 'Reference Cell', metadata: true },
       { name: 'Title' },
     ],
     fn: Identity,
   },
 
   'MC.Correlation': {
-    metadata: [0, 1],
     arguments: [
-      { name: 'Reference Cell 1' },
-      { name: 'Reference Cell 2' },
+      { name: 'Reference Cell 1', metadata: true },
+      { name: 'Reference Cell 2', metadata: true },
       { name: 'Title' },
     ],
     fn: Identity,

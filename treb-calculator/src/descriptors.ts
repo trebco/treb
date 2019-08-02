@@ -8,6 +8,13 @@ export interface ArgumentDescriptor {
   name?: string;
   description?: string;
   default?: any;
+
+  // moved from function arrays:
+
+  collector?: boolean;
+  address?: boolean;
+  metadata?: boolean;
+  allow_error?: boolean;
 }
 
 /**
@@ -46,21 +53,21 @@ export interface CompositeFunctionDescriptor {
    * collect results for the given argument (should be a reference)
    * FIXME: MC calculator only
    */
-  collector?: number[];
+  // collector?: number[]; // moved to argument descriptor
 
   /**
    * allows error values to propagate. otherwise, a function will
    * return an #ARG error if any arguments contain errors. used for
    * IsError and IfError, atm
    */
-  allow_error?: number[];
+  // allow_error?: number[]; // moved to argument descriptor
 
   /**
    * the given argument (reference) should be treated as an address,
    * not resolved. this allows us to support IsError and related functions,
    * otherwise they would return #ARG errors
    */
-  address?: number[];
+  // address?: number[]; // moved to argument descriptor
 
   /**
    * the actual function. if this is an object member and needs access
@@ -84,7 +91,7 @@ export interface CompositeFunctionDescriptor {
    * }
    *
    */
-  metadata?: number[];
+  // metadata?: number[]; // moved to argument descriptor
 
   /**
    * for the future. some functions should not be available in 

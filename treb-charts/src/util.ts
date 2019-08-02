@@ -48,6 +48,22 @@ export class Util {
 
   }
 
+  public static Range(data: Array<number|undefined>) {
+
+    let min: number|undefined;
+    let max: number|undefined;
+
+    for (const value of data) {
+      if (typeof value === 'undefined') { continue; }
+      if (typeof min === 'undefined' || min > value) { min = value; }
+      if (typeof max === 'undefined' || max < value) { max = value; }
+    }
+
+    const range = (typeof min === 'undefined' || typeof max === 'undefined') ? 0 : max - min;
+
+    return { min, max, range };
+  }
+
   public static ApplyScale(value: number, range: number, scale: RangeScale) {
     return range * (value - scale.min) / (scale.max - scale.min);
   }

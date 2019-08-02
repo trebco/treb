@@ -19,6 +19,24 @@
     stroke: #ddd;
   }
 
+  .chart-line {
+
+    .line {
+      fill: none;
+      stroke-width: 2px;
+      stroke: #39f;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .fill {
+      fill: rgba(51, 153, 255, .25);
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+  }
+
   .points {
     stroke-width: 1;
     stroke: #39f;

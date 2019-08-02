@@ -131,67 +131,118 @@ export class ExpressionCalculator {
 
     if (!func) return { error: 'NAME' };
 
+    // yeah so this is clear
+
     this.simulation_model.volatile = this.simulation_model.volatile || (!!func.volatile) ||
       ((!!func.simulation_volatile) && this.simulation_model.state !== SimulationState.Null);
 
-    // NOTE: this is (possibly) calculating unecessary operations,
-    // if there's an IF statement. although that is the exception
-    // rather than the rule...
+    // NOTE: this is (possibly) calculating unecessary operations, if there's
+    // an IF statement. although that is the exception rather than the rule...
 
-    // although that would be the only way to keep per-function data
-    // organized properly.
+    let argument_errors = false; // maybe short-circuit
 
-    // FIXME: also if it's a collector (see below), this is wasted
-
-    const map_map: boolean[] = [];
-    if (func.address) func.address.forEach((arg_index) => map_map[arg_index] = true);
-
-    // update: we now have an explicit flag to allow errors in arguments,
-    // for methods that want to process them.
-
-    let argument_errors = false;
-    const permitted_errors: boolean[] = [];
-    if (func.allow_error) {
-      for (const i of func.allow_error) permitted_errors[i] = true;
-    }
+    const argument_descriptors = func.arguments || []; // map
 
     const mapped_args = args.map((arg, arg_index) => {
-      const result = map_map[arg_index] ? 0 : this.CalculateExpression(arg);
-      if (typeof result === 'object' && result.error && !permitted_errors[arg_index]) {
-        argument_errors = true;
+
+      if (typeof arg === 'undefined') { return undefined; } // FIXME: required?
+
+      const descriptor = argument_descriptors[arg_index] || {};
+
+      // FIXME (address): what about named ranges (actually those will work),
+      // constructed references (we don't support them atm)?
+
+      // NOTE: named ranges will _not_ work, because the address will be an
+      // object, not a string. so FIXME.
+
+      if (descriptor.address) {
+        return this.parser.Render(arg).replace(/\$/g, '');
       }
-      return result;
+      else if (descriptor.metadata) {
+
+        // FIXME: we used to restrict this to non-cell functions, now
+        // we are using it for the cell function (we used to use address,
+        // which just returns the label)
+
+        let address: ICellAddress|undefined;
+
+        switch (arg.type) {
+        case 'address':
+          address = arg;
+          break;
+
+        case 'range':
+          address = arg.start;
+          break;
+
+        case 'identifier':
+          const named_range = this.named_range_map[arg.name.toUpperCase()];
+          if (named_range) {
+            address = named_range.start; // FIXME: range?
+          }
+        }
+
+        if (address) {
+
+          const cell_data = this.data_model.sheet.CellData(address);
+          const simulation_data =
+            (this.simulation_model.state === SimulationState.Null) ?
+            this.simulation_model.CellData(address) :
+            [];
+
+          return {
+            address: {...address},
+            value: cell_data.calculated,
+            format: cell_data.style ? cell_data.style.number_format : undefined,
+            simulation_data,
+          };
+        }
+
+      }
+      else if (descriptor.collector && this.simulation_model.state === SimulationState.Null) {
+
+        // why holding this twice? (...) has to do with timing, apparently...
+        this.simulation_model.call_index = call_index;
+
+        if (arg.type === 'address'){
+          return this.simulation_model.CellData(arg);
+        }
+        else if (arg.type === 'range') {
+          return this.simulation_model.CellData(arg.start);
+        }
+        else if (arg.type === 'identifier') {
+          const named_range = this.named_range_map[arg.name.toUpperCase()];
+          if (named_range) {
+            return this.simulation_model.CellData(named_range.start);
+          }
+        }
+
+
+      }
+      else {
+        const result = this.CalculateExpression(arg);
+        if (typeof result === 'object' && result.error && !descriptor.allow_error) {
+          argument_errors = true;
+        }
+        return result;
+      }
+
+      return undefined; // default
+
     });
 
     if (argument_errors) {
       return { error: 'ARG' };
     }
 
-    // we're now doing this at all times except during a simulation;
-    // it's done largely to support the "cell" function. check cost.
-
-    // NOTE this now also supports (MC) charts. however this should be
-    // called during simulations as well, otherwise you might get divergent
-    // behavior (not sure of the use case, but there probably is one)
-
-    // not gating this is good because we want to separate out all the
-    // simulation stuff
-
-    if (func.address){
-      func.address.forEach((addr_index: number) => {
-        mapped_args[addr_index] = this.parser.Render(args[addr_index]).replace(/\$/g, '');
-      });
-    }
-
     if (this.simulation_model.state === SimulationState.Prep){
 
+      // this is a separate loop because we only need to call it on prep
       // FIXME: can this move to parsing stage? (old note: probably this too, with a flag)
 
-      // FIXME: support named ranges
-
-      if (func.collector){
-        for (const collector_index of func.collector ){
-          const arg = args[collector_index];
+      args.forEach((arg, arg_index) => {
+        const descriptor = argument_descriptors[arg_index] || {};
+        if (arg && descriptor.collector) {
           if (arg.type === 'address') {
             this.simulation_model.CellData(arg);
           }
@@ -202,51 +253,7 @@ export class ExpressionCalculator {
             }
           }
         }
-      }
-    }
-
-    // why holding this twice? (...) has to do with timing, apparently...
-
-    this.simulation_model.call_index = call_index;
-
-    if (func.collector && this.simulation_model.state === SimulationState.Null){
-      for (const collector_index of func.collector ){
-        const arg = args[collector_index];
-        if (arg.type === 'address'){
-          mapped_args[collector_index] = this.simulation_model.CellData(arg);
-        }
-        else if (arg.type === 'identifier') {
-          const named_range = this.named_range_map[arg.name.toUpperCase()];
-          if (named_range) {
-            mapped_args[collector_index] = this.simulation_model.CellData(named_range.start);
-          }
-        }
-      }
-    }
-
-    if (func.metadata && this.simulation_model.address.row === -1 && this.simulation_model.address.column === -1) {
-      for (const metadata_index of func.metadata) {
-        let address: ICellAddress|undefined;
-        const arg = args[metadata_index];
-        if (arg.type === 'address') {
-          address = arg;
-        }
-        else if (arg.type === 'identifier') {
-          const named_range = this.named_range_map[arg.name.toUpperCase()];
-          if (named_range) {
-            address = named_range.start; // FIXME: range?
-          }
-        }
-        if (address) {
-          const cell_data = this.data_model.sheet.CellData(address);
-          mapped_args[metadata_index] = {
-            address: {...address},
-            value: cell_data.calculated,
-            format: cell_data.style ? cell_data.style.number_format : undefined,
-            simulation_data: this.simulation_model.CellData(address),
-          };
-        }
-      }
+      });
 
     }
 

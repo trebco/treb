@@ -42,6 +42,14 @@ export class Chart {
         this.CreateScatter(args);
         break;
 
+      case 'line.chart':
+        this.CreateLineChart(args);
+        break;
+
+      case 'area.chart':
+        this.CreateLineChart(args, 'area');
+        break;
+
       case 'donut.chart':
       case 'pie.chart':
         this.CreateDonut(args, func.toLowerCase() === 'pie.chart');
@@ -56,6 +64,36 @@ export class Chart {
 
   public Clear() {
     this.chart_data = { type: 'null' };
+  }
+
+  public CreateLineChart(args: any[], type: 'line'|'area' = 'line') {
+
+    const title = args[1] || '';
+    const data = Util.Flatten(args[0]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
+    const range = Util.Range(data);
+
+    // FIXME: optionally force 0 min
+    if (range.min) {
+      range.min = Math.min(0, range.min);
+    }
+
+    const scale = Util.Scale(range.min || 0, range.max || 0, 7);
+
+    const y_format = NumberFormatCache.Get('#,##0.00');
+    const y_labels: string[] = [];
+
+    for (let i = 0; i <= scale.count; i++) {
+      y_labels.push(y_format.Format(scale.min + i * scale.step));
+    }
+
+    this.chart_data = {
+      type,
+      data,
+      scale,
+      title,
+      y_labels,
+    };
+
   }
 
   /**
@@ -358,7 +396,9 @@ export class Chart {
     // FIXME: for now this is used for histogram only, but it's probably
     // applicable to some other types as well, so leave it here...
 
-    if (this.chart_data.type === 'histogram') {
+    if (this.chart_data.type === 'histogram'
+        || this.chart_data.type === 'line'
+        || this.chart_data.type === 'area') {
 
       // we need to measure first, then lay out the other axis, then we
       // can come back and render. it doesn't really matter which one you
@@ -435,6 +475,21 @@ export class Chart {
         const outer = (Math.min(area.height, area.width) / 2) * .9;
         const inner = this.chart_data.type === 'pie' ? 0 : outer * .8;
         this.renderer.RenderDonut(this.chart_data.slices, area.center, outer, inner, 'donut');
+      }
+      break;
+
+    case 'line':
+    case 'area':
+      {
+        // gridlines
+        this.renderer.RenderGrid(area, this.chart_data.scale.count, 'chart-grid');
+        const scale = this.chart_data.scale;
+        const y = this.chart_data.data.map((point) => {
+          if (typeof point === 'undefined') { return undefined; }
+          return Util.ApplyScale(point, area.height, scale);
+        });
+
+        this.renderer.RenderLine(area, y, (this.chart_data.type === 'area'), 'chart-line');
       }
       break;
 

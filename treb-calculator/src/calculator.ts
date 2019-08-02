@@ -438,8 +438,11 @@ export class Calculator extends Graph {
     const parse_result = this.parser.Parse(formula);
     if (parse_result.expression && parse_result.expression.type === 'call') {
       const func = this.GetFunction(parse_result.expression.name);
-      if (!func || !func.metadata) { return references; }
-      for (const index of func.metadata) {
+      if (!func || !func.arguments) { return references; }
+      for (let index = 0; index < func.arguments.length; index++ ){
+        const descriptor = func.arguments[index];
+        if (!descriptor || !descriptor.metadata) { continue; }
+
         const arg = parse_result.expression.args[index];
         if (!arg) { continue; }
 
@@ -600,12 +603,13 @@ export class Calculator extends Graph {
         // to support our weird MV syntax (weird here, but useful in Excel).
 
         const args: ExpressionUnit[] = unit.args.slice(0);
-        // const func = SpreadsheetFunctions[unit.name.toLowerCase().replace(/\./g, '_')];
         const func = this.library.Get(unit.name);
-        if (func){
-          if (func.address && func.address.length){
-            func.address.forEach((index) => args[index] = {type: 'missing', id: -1});
-          }
+        if (func && func.arguments){
+          func.arguments.forEach((descriptor, index) => {
+            if (descriptor && descriptor.address) {
+              args[index] = { type: 'missing', id: -1 };
+            }
+          });
         }
         args.forEach((arg) => this.RebuildDependencies(arg, dependencies));
 

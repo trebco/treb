@@ -79,6 +79,21 @@ export interface HistogramData extends ColumnDataBaseType {
   titles?: string[];
 }
 
+export interface LineBaseData extends ChartDataBaseType {
+  data: Array<number|undefined>;
+  scale: RangeScale;
+  x_labels?: string[];
+  y_labels?: string[];
+}
+
+export interface LineData extends LineBaseData {
+  type: 'line';
+}
+
+export interface AreaData extends LineBaseData {
+  type: 'area';
+}
+
 export interface DonutDataBaseType extends ChartDataBaseType {
   slices: DonutSlice[];
 }
@@ -100,5 +115,7 @@ export type ChartData
   | HistogramData
   | PieChartData
   | ScatterData
+  | LineData
+  | AreaData
   ;
 

@@ -369,7 +369,9 @@ export class Cells {
             if (options.calculated_value &&
                 typeof cell.calculated !== 'undefined') { // && cell.calculated_type !== ValueType.error) {
               obj.calculated = cell.calculated;
-              if (options.preserve_type) {
+
+              // always preserve error type, because we can't infer
+              if (options.preserve_type || cell.calculated_type === ValueType.error) {
                 obj.calculated_type = cell.calculated_type;
               }
             }
@@ -604,7 +606,7 @@ export class Cells {
         const column = [];
         for ( let r = from.row; r <= to.row; r++ ){
           if (this.data2[r] && this.data2[r][c]) column.push(this.data2[r][c].GetValue2());
-          else column.push(null);
+          else column.push(undefined);
         }
         value.push(column);
       }
@@ -614,7 +616,7 @@ export class Cells {
         const row = [];
         for ( let c = from.column; c <= to.column; c++ ){
           if (this.data2[r] && this.data2[r][c]) row.push(this.data2[r][c].GetValue2());
-          else row.push(null);
+          else row.push(undefined);
         }
         value.push(row);
       }

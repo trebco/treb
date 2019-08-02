@@ -217,6 +217,78 @@ export class ChartRenderer {
 
   }
 
+  public RenderLine(area: Area, data: Array<number|undefined>, fill = false, classes?: string|string[]){
+
+    // const node = document.createElementNS(SVGNS, 'path');
+    const group = document.createElementNS(SVGNS, 'g');
+
+    const d1: string[] = [];
+    const d2: string[] = [];
+
+    const count = data.length;
+    const steps = count;
+    const step = (area.width / count) / 2;
+
+    let i = 0;
+    let move = true;
+    let last_x: number|undefined;
+
+    for (; i < count; i++ ){
+      const point = data[i];
+      if (typeof point === 'undefined') {
+        move = true;
+        if (fill && (typeof last_x !== 'undefined')) {
+          d2.push(`L${last_x} ${area.bottom}Z`);
+        }
+        last_x = undefined;
+        continue;
+      }
+      const x = Math.round(step + area.left + area.width / steps * i);
+      if (move) {
+        if (fill) {
+          d2.push(`M${x} ${area.bottom} L${x} ${area.bottom - point}`);
+        }
+        d1.push(`M${x} ${area.bottom - point}`);
+      }
+      else {
+        d1.push(`L${x} ${area.bottom - point}`);
+        d2.push(`L${x} ${area.bottom - point}`);
+      }
+      last_x = x;
+      move = false;
+    }
+
+    if (fill && (typeof last_x !== 'undefined')) {
+      d2.push(`L${last_x} ${area.bottom}Z`);
+    }
+
+    // fill first, under line
+
+    if (fill) {
+      const p2 = document.createElementNS(SVGNS, 'path');
+      p2.setAttribute('d', d2.join(' '));
+      p2.setAttribute('class', 'fill');
+      group.appendChild(p2);
+    }
+
+    // then line
+
+    const p1 = document.createElementNS(SVGNS, 'path');
+    p1.setAttribute('d', d1.join(' '));
+    p1.setAttribute('class', 'line');
+    group.appendChild(p1);
+
+    if (typeof classes !== 'undefined') {
+      if (typeof classes === 'string') {
+        classes = [classes];
+      }
+      group.setAttribute('class', classes.join(' '));
+    }
+
+    this.group.appendChild(group);
+
+  }
+
   public RenderGrid(area: Area, y_count: number, classes?: string|string[]) {
 
     const node = document.createElementNS(SVGNS, 'path');
