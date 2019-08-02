@@ -65,8 +65,18 @@ export class Chart {
 
     // data -> number or undefined
 
-    const data = Util.Flatten(args[0]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
+    let data = Util.Flatten(args[0]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
     const labels = Util.Flatten(args[1]).map((x) => x.toString());
+
+    // no negative numbers
+
+    data = data.map((check) => {
+      if (check < 0) {
+        console.warn('pie/donut chart does not support negative values (omitted)');
+        return 0;
+      }
+      return check;
+    });
 
     const title = args[2] || '';
 
