@@ -21,6 +21,7 @@ export interface CellData {
   format?: string;
 }
 
+/*
 export interface DataRange {
   data: number[];
   data2?: number[];
@@ -31,6 +32,7 @@ export interface DataRange {
   scale: RangeScale;
   scale2?: RangeScale;
 }
+*/
 
 export interface DonutSlice {
   index: number;
