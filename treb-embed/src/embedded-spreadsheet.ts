@@ -1379,6 +1379,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           if (!(chart.constructor as any).functions_registered) {
             this.calculator.RegisterFunction((chart.constructor as any).chart_functions);
             (chart.constructor as any).functions_registered = true;
+
+            // update AC list
+            this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
           }
 
           const update_chart = () => {
