@@ -12,13 +12,51 @@ export interface ArgumentDescriptor {
 
   // moved from function arrays:
 
+  /**
+   * collect results for this argument (should be a reference).
+   * FIXME: MC calculator only
+   */
   collector?: boolean;
-  address?: boolean;
-  metadata?: boolean;
+
+  /**
+   * allows error values to propagate. otherwise, a function will
+   * return an #ARG error if any arguments contain errors. used for
+   * IsError and IfError, atm.
+   */
   allow_error?: boolean;
 
-  // new (in progress)
+  /**
+   * this argument (reference) should be treated as an address, not resolved.
+   * it's used for identifying multivariate groups.
+   * FIXME: MC calculator only
+   */
+  address?: boolean;
 
+  /**
+   * similar to collector, this flag will return metadata about the cell
+   * argument: address, value, number format, simulation data, (...)
+   *
+   * supported in annotations only, not spreadsheet cells (atm)
+   *
+   * returns cell data type defined in chart (FIXME: move)
+   *
+   * {
+   *   address,
+   *   value: calculated value,
+   *   simulation_data: [],
+   *   format: number format
+   * }
+   *
+   * atm simulation data is only returned in null state (i.e. not during
+   * a simulation, or in prep state).
+   */
+  metadata?: boolean;
+
+  /**
+   * new (in progress): argument is a reference/dependency, but can't be
+   * resolved when the graph is constructed. we need to resolve it at
+   * calculation time.
+   */
   dynamic_dependency?: boolean;
 
 }
@@ -55,25 +93,6 @@ export interface CompositeFunctionDescriptor {
    */
   simulation_volatile?: boolean;
 
-  /**
-   * collect results for the given argument (should be a reference)
-   * FIXME: MC calculator only
-   */
-  // collector?: number[]; // moved to argument descriptor
-
-  /**
-   * allows error values to propagate. otherwise, a function will
-   * return an #ARG error if any arguments contain errors. used for
-   * IsError and IfError, atm
-   */
-  // allow_error?: number[]; // moved to argument descriptor
-
-  /**
-   * the given argument (reference) should be treated as an address,
-   * not resolved. this allows us to support IsError and related functions,
-   * otherwise they would return #ARG errors
-   */
-  // address?: number[]; // moved to argument descriptor
 
   /**
    * the actual function. if this is an object member and needs access
@@ -82,30 +101,14 @@ export interface CompositeFunctionDescriptor {
   fn: (...args: any[]) => any;
 
   /**
-   * similar to collector, this flag will return metadata about the cell
-   * argument: address, value, number format, simulation data, (...)
-   *
-   * supported in annotations only, not spreadsheet cells (atm)
-   *
-   * returns cell data type defined in chart (FIXME: move)
-   *
-   * {
-   *   address,
-   *   value: calculated value,
-   *   simulation_data: [],
-   *   format: number format
-   * }
-   *
-   */
-  // metadata?: number[]; // moved to argument descriptor
-
-  /**
-   * for the future. some functions should not be available in 
+   * for the future. some functions should not be available in
    * spreadsheet cells (charts, basically)
    */
   visibility?: string;
 
-  /** for the future */
+  /**
+   * for the future
+   */
   category?: string[];
 
 }
