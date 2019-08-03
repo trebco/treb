@@ -50,13 +50,10 @@ export const BaseFunctionLibrary: FunctionMap = {
         { name: 'reference', description: 'Cell reference', metadata: true },
       ],
       fn: (type: string, reference: any) => {
-
         if (!reference || !reference.address) return { error: 'REF' };
-
         switch (type.toLowerCase()) {
           case 'format':
             return reference.format || { error: 'REF' };
-
           case 'address':
             return reference.address.label.replace(/\$/g, '');
         }

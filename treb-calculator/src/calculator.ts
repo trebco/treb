@@ -100,6 +100,44 @@ export class Calculator extends Graph {
 
     this.library.Register(this.simulation_model.functions);
 
+    // special functions...
+
+    this.library.Register({
+
+      /**
+       * FIXME: this isn't guaranteed to work properly, because it doesn't
+       * generate a dependency in the graph. we need some notion of "soft"
+       * dependencies that can be built at calculation time, although that
+       * will be crazy wasteful for a rarely used function.
+       *
+       * call that a TODO. maybe add an argument flag.
+       */
+      Indirect: {
+        arguments: [
+          { name: 'reference', description: 'Cell reference (string)', dynamic_dependency: true},
+        ],
+        volatile: true,
+        fn: ((reference: string) => {
+          if (!reference) return { error: 'ARG' };
+          const result = this.parser.Parse(reference);
+          if (result.error || !result.expression) return { error: 'VALUE' };
+          switch (result.expression.type) {
+            case 'address':
+            case 'range':
+            case 'identifier':
+
+              // this is a little disorganized (read: bad); because we're using
+              // the call semantics here, the volatile flag is getting unset.
+              // need some sort of side-effect-free call.
+
+              return this.CalculateExpression(result.expression, undefined, true);
+
+          }
+          return { error: 'REF' };
+        }).bind(this),
+      },
+    });
+
   }
 
   /**
@@ -360,8 +398,11 @@ export class Calculator extends Graph {
    * calculate an expression, optionally setting a fake cell address.
    * this may have weird side-effects.
    */
-  public CalculateExpression(expression: ExpressionUnit, address: ICellAddress = {row: -1, column: -1}) {
-    return this.expression_calculator.Calculate(expression, address).value; // dropping volatile flag
+  public CalculateExpression(
+      expression: ExpressionUnit,
+      address: ICellAddress = {row: -1, column: -1},
+      preserve_flags = false) {
+    return this.expression_calculator.Calculate(expression, address, preserve_flags).value; // dropping volatile flag
   }
 
   /**
@@ -398,7 +439,9 @@ export class Calculator extends Graph {
     else {
       for (const vertex of this.dirty_list) {
         vertex.TakeReferenceValue();
-        if (this.CheckVolatile(vertex)) this.volatile_list.push(vertex);
+        if (this.CheckVolatile(vertex)) {
+          this.volatile_list.push(vertex);
+        }
       }
       this.dirty_list = []; // reset, essentially saying we're clean
     }

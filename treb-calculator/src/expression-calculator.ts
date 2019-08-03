@@ -77,13 +77,19 @@ export class ExpressionCalculator {
     return volatile;
   }
 
-  public Calculate(expr: ExpressionUnit, addr: ICellAddress){
-    this.simulation_model.address = addr;
-    this.simulation_model.volatile = false;
+  /**
+   * there's a case where we are calling this from within a function
+   * (which is weird, but hey) and to do that we need to preserve flags.
+   */
+  public Calculate(expr: ExpressionUnit, addr: ICellAddress, preserve_flags = false){
 
-    this.context.address = addr;
+    if (!preserve_flags) {
+      this.simulation_model.address = addr;
+      this.simulation_model.volatile = false;
+      this.context.address = addr;
+      this.call_index = 0; // why not in model? A: timing (nested)
+    }
 
-    this.call_index = 0; // why not in model? A: timing (nested)
     return {
       value: this.CalculateExpression(expr),
       volatile: this.simulation_model.volatile,

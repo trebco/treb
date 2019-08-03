@@ -5,6 +5,7 @@
  * descriptor for an individual argument
  */
 export interface ArgumentDescriptor {
+
   name?: string;
   description?: string;
   default?: any;
@@ -15,6 +16,11 @@ export interface ArgumentDescriptor {
   address?: boolean;
   metadata?: boolean;
   allow_error?: boolean;
+
+  // new (in progress)
+
+  dynamic_dependency?: boolean;
+
 }
 
 /**
