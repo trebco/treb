@@ -26,6 +26,7 @@ export class SpreadsheetVertex extends VertexType {
   public result: any;
   public expression: ExpressionUnit = { type: 'missing', id: -1 };
   public expression_error = false;
+  public short_circuit = false;
 
   public type = 'spreadsheet-vertex'; // for type guard
 
@@ -126,8 +127,16 @@ export class SpreadsheetVertex extends VertexType {
     if (this.reference) {
 
       if (this.reference.type === ValueType.formula) {
+        this.short_circuit = false;
         const result = callback.call(graph, this);
         this.result = result.value;
+
+        // this test is a waste for 99% of calls
+        if (this.short_circuit) {
+          return;
+        }
+
+        // and this one for ~75%?
         if (result.volatile) graph.volatile_list.push(this);
       }
       else this.result = this.reference.GetValue();

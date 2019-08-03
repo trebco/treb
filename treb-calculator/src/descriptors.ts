@@ -52,13 +52,6 @@ export interface ArgumentDescriptor {
    */
   metadata?: boolean;
 
-  /**
-   * new (in progress): argument is a reference/dependency, but can't be
-   * resolved when the graph is constructed. we need to resolve it at
-   * calculation time.
-   */
-  dynamic_dependency?: boolean;
-
 }
 
 /**

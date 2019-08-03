@@ -114,29 +114,116 @@ export class Calculator extends Graph {
        */
       Indirect: {
         arguments: [
-          { name: 'reference', description: 'Cell reference (string)', dynamic_dependency: true},
+          { name: 'reference', description: 'Cell reference (string)' },
         ],
         volatile: true,
         fn: ((reference: string) => {
+
           if (!reference) return { error: 'ARG' };
-          const result = this.parser.Parse(reference);
-          if (result.error || !result.expression) return { error: 'VALUE' };
-          switch (result.expression.type) {
-            case 'address':
-            case 'range':
-            case 'identifier':
 
-              // this is a little disorganized (read: bad); because we're using
-              // the call semantics here, the volatile flag is getting unset.
-              // need some sort of side-effect-free call.
-
-              return this.CalculateExpression(result.expression, undefined, true);
-
+          const parse_result = this.parser.Parse(reference);
+          if (parse_result.error || !parse_result.expression) {
+            return { error: 'REF' };
           }
-          return { error: 'REF' };
+
+          const check_result = this.DynamicDependencies(parse_result.expression);
+          if (check_result.error) return check_result;
+          if (check_result.dirty) {
+            const current_vertex = this.GetVertex(this.simulation_model.address) as SpreadsheetVertex;
+            current_vertex.short_circuit = true;
+            return undefined;
+          }
+
+          return this.CalculateExpression(parse_result.expression, undefined, true);
+
         }).bind(this),
       },
     });
+
+  }
+
+  /**
+   * generic function, broken out from the Indirect function. checks dynamic
+   * dependency for missing edges, and adds those edges.
+   *
+   * returns error on bad reference or circular dependency. this method
+   * does not set the "short circuit" flag, callers should set as appropriate.
+   */
+  public DynamicDependencies(expression: ExpressionUnit) {
+
+    if (!this.model) return { error: 'ERR' };
+
+    let area: Area | undefined;
+
+    switch (expression.type) {
+      case 'address':
+        area = new Area(expression);
+        break;
+
+      case 'range':
+        area = new Area(expression.start, expression.end);
+        break;
+
+      case 'identifier':
+        const named_range =
+          this.model.sheet.named_ranges.Get(expression.name.toUpperCase());
+        if (named_range) {
+          area = new Area(named_range.start, named_range.end);
+        }
+        break;
+    }
+
+    // flag. we're going to check _all_ dependencies at once, just in
+    // case (for this function this would only happen if the argument
+    // is an array).
+
+    let dirty = false;
+
+    if (area) {
+
+      // check any dirty...
+
+      area = this.model.sheet.RealArea(area);
+
+      for (let row = area.start.row; row <= area.end.row; row++ ){
+        for (let column = area.start.column; column <= area.end.column; column++ ){
+          const vertex = this.GetVertexOrUndefined({row, column});
+          if (vertex && vertex.dirty) {
+
+            // so we know, given the structure of calculation, that there
+            // is not an edge between these two vertices. we know that
+            // because calculate() is never called on a vertex that has
+            // dirty dependencies.
+
+            // so if we create an edge here, the calculate method can
+            // short-circuit, and then this cell will be re-evaluated
+            // when that cell is calculated.
+
+            // so all we have to do is add the edge. the question is,
+            // do we need to remove that edge after the calculation?
+            // or can we just wait for it to clean up on a rebuild?
+            // (...) don't know for sure atm, test.
+
+            // actually we have to set some flag to tell the vertex to
+            // short-circuit...
+
+            // before you set the short-circuit flag, test result so we
+            // can error on circular ref
+
+            const edge_result = this.AddEdge({row, column}, this.simulation_model.address);
+
+            if (edge_result) {
+              return { error: 'REF' };
+            }
+
+            dirty = true;
+
+          }
+        }
+      }
+    }
+
+    return { dirty };
 
   }
 
