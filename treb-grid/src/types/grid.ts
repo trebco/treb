@@ -3,7 +3,7 @@ import { Rectangle, ValueType, Style, Area, Cell,
          Extent, ICellAddress, Point,
          IsCellAddress, Localization } from 'treb-base-types';
 import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV } from 'treb-parser';
-import { EventSource, Yield } from 'treb-utils';
+import { EventSource, Yield, SerializeHTML } from 'treb-utils';
 import { NumberFormatCache, RDateScale } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
@@ -310,9 +310,28 @@ export class Grid {
   /**
    * create an annotation, with properties, without an original object.
    * optionally (and by default) add to sheet.
+   * 
+   * @param offset check for a matching position (top-left) and if found,
+   * shift by (X) pixels. intended for copy-paste, where we don't want to
+   * paste immediately on top of the original.
    */
-  public CreateAnnotation(properties: object = {}, add_to_sheet = true) {
+  public CreateAnnotation(properties: object = {}, add_to_sheet = true, offset = false) {
     const annotation = new Annotation(properties);
+    if (offset && annotation.rect) {
+      let recheck = true;
+      while (recheck) {
+        recheck = false;
+        for (const test of this.model.annotations) {
+          if (test === annotation) { continue; }
+          if (test.rect && test.rect.top === annotation.rect.top && test.rect.left === annotation.rect.left) {
+            annotation.rect = annotation.rect.Shift(20, 20);
+            recheck = true;
+            break;
+          }
+        }
+      }
+    }
+
     if (add_to_sheet) {
       this.AddAnnotation(annotation);
     }
@@ -422,6 +441,7 @@ export class Grid {
 
         annotation.node.addEventListener('focusin', (event) => {
           this.selected_annotation = annotation;
+          this.primary_selection.empty = true; // FIXME: not using method? (...)
           this.HideGridSelection();
         });
 
@@ -3853,7 +3873,7 @@ export class Grid {
 
   private HandleCopy(event: ClipboardEvent) {
 
-    // console.info('handle copy', event);
+    // console.info('handle copy', event, this.primary_selection);
 
     event.stopPropagation();
     event.preventDefault();
@@ -3861,6 +3881,26 @@ export class Grid {
     if (this.primary_selection.empty) {
       if (event.clipboardData) {
         event.clipboardData.clearData();
+      }
+      if (this.selected_annotation) {
+        if (event.clipboardData) {
+
+          const data = JSON.stringify(this.selected_annotation);
+          event.clipboardData.setData('text/x-treb-annotation', data);
+
+          if (this.selected_annotation.node) {
+            // this.selected_annotation.node.innerHTML;
+            const node = this.selected_annotation.node.firstChild;
+            if (node) {
+              const html = (SerializeHTML(node as Element) as HTMLElement).outerHTML;
+
+              // no other format supported? (...)
+              const type = 'text/plain';
+              event.clipboardData.setData(type, html);
+              // console.info(html);
+            }
+          }
+        }
       }
     }
     else {
@@ -3913,11 +3953,16 @@ export class Grid {
     event.preventDefault();
 
     this.HandleCopy(event);
+
     if (!this.primary_selection.empty) {
       const area = this.model.sheet.RealArea(this.primary_selection.area);
       // this.model.sheet.ClearArea(area);
       this.ExecCommand({ key: CommandKey.Clear, area });
     }
+    else if (this.selected_annotation) {
+      this.RemoveAnnotation(this.selected_annotation);
+    }
+
   }
 
   private RecyclePasteAreas(source_area: Area, target_area: Area) {
@@ -3968,11 +4013,29 @@ export class Grid {
     event.stopPropagation();
     event.preventDefault();
 
-    if (this.primary_selection.empty) {
+    if (!event.clipboardData) return;
+
+    const annotation_data = event.clipboardData.getData('text/x-treb-annotation');
+    if (annotation_data) {
+      try {
+        const data = JSON.parse(annotation_data);
+        const annotation = this.CreateAnnotation(data, true, true);
+        if (annotation.node) {
+          const node = annotation.node;
+          setTimeout(() => {
+            node.focus();
+          }, 1);
+        }
+      }
+      catch (e) {
+        console.error(e);
+      }
       return;
     }
 
-    if (!event.clipboardData) return;
+    if (this.primary_selection.empty) {
+      return;
+    }
 
     const area = this.model.sheet.RealArea(this.primary_selection.area);
     const commands: Command[] = [];

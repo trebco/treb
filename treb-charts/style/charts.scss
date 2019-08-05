@@ -50,12 +50,19 @@
     // we want to tie color to input order, even if the chart sorts the
     // data.
 
-    &.series-1 { fill: #39f; }
-    &.series-2 { fill: orange; }
-    &.series-3 { fill: red; }
-    &.series-4 { fill: yellow; }
-    &.series-5 { fill: purple; }
-    &.series-6 { fill: skyblue; }
+
+    &.series-1  { fill: red; }
+    &.series-2  { fill: orange; }
+    &.series-3  { fill: yellow; }
+    &.series-4  { fill: blanchedalmond; }
+    &.series-5  { fill: greenyellow; }
+    &.series-6  { fill: darkcyan; }
+    &.series-7  { fill: aquamarine; }
+    &.series-8  { fill: skyblue; }
+    &.series-9  { fill: #39f; }
+    &.series-10 { fill: purple; }
+    &.series-11 { fill: rebeccapurple; }
+    &.series-12 { fill: black; }
 
   }  
 
