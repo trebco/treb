@@ -222,7 +222,7 @@ export class Chart {
     // validate args (actually we only care about the first one)
 
     if (!this.IsCellData(args[0])) {
-      console.warn('invalid args');
+      console.warn('invalid args', args);
       this.Clear();
       return;
     }

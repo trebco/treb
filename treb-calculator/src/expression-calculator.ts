@@ -135,7 +135,10 @@ export class ExpressionCalculator {
 
     const func = this.library.Get(expr);
 
-    if (!func) return { error: 'NAME' };
+    if (!func) {
+      console.info("mx1", expr);
+      return { error: 'NAME' };
+    }
 
     // yeah so this is clear
 

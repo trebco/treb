@@ -3,10 +3,8 @@
 import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { Calculator, CalculationWorker, WorkerMessage, LeafVertex } from 'treb-calculator';
-import { IsCellAddress, Localization, CellSerializationOptions, Style,
-         ICellAddress, Area, IArea } from 'treb-base-types';
+import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
 import { EventSource, Resizable, Yield } from 'treb-utils';
-import { NumberFormatCache } from 'treb-format';
 // import { Sparkline } from 'treb-sparkline';
 
 // local
@@ -138,6 +136,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * export worker is loaded on demand, not by default.
    */
   private export_worker?: Worker;
+
+  /**
+   * keep track of what we've registered, for external libraries
+   * (currently charts), which is per sheet instance.
+   */
+  private registered_libraries: {[index: string]: any} = {};
 
   /**
    * undo pointer points to the next insert spot. that means that when
@@ -1376,9 +1380,16 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           // we may need to register library functions. we only need to do
           // that once. not sure I like this as the place for the test, though.
 
-          if (!(chart.constructor as any).functions_registered) {
+          // HEADS UP: this breaks when there are multiple sheet instances on
+          // the page, because the register flag is in the other lib (!)
+
+          // we need a local flag...
+
+          if (!this.registered_libraries['treb-charts']) {
+          // if (!(chart.constructor as any).functions_registered) {
             this.calculator.RegisterFunction((chart.constructor as any).chart_functions);
-            (chart.constructor as any).functions_registered = true;
+            // (chart.constructor as any).functions_registered = true;
+            this.registered_libraries['treb-charts'] = true;
 
             // update AC list
             this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
