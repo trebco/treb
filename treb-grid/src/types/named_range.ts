@@ -54,10 +54,12 @@ export class NamedRangeCollection {
     return this.forward[name.toUpperCase()];
   }
 
+  /** FIXME: accessor */
   public Map() {
     return this.forward;
   }
 
+  /** FIXME: accessor */
   public List() {
     return this.backward;
   }

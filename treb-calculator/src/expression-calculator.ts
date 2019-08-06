@@ -1,80 +1,46 @@
 
-// import { Model, SpreadsheetFunctions, SimulationState } from './spreadsheet-functions';
-// import { Model, SimulationState } from './spreadsheet-functions';
-
 import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
+import { Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
+import { Parser, ExpressionUnit } from 'treb-parser';
+import { DataModel } from 'treb-grid';
 
-import { Localization, Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
-import { Parser, ExpressionUnit, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
-
-import { DataModel, NamedRangeCollection } from 'treb-grid';
-
+/*
 export interface CalculationContext {
   address: ICellAddress;
 }
+*/
 
 export class ExpressionCalculator {
 
   /** context for function call reference */
-  public context: CalculationContext = {
-    address: {row: -1, column: -1},
-  };
+  // public context: CalculationContext = {
+  //  address: {row: -1, column: -1},
+  // };
 
   private call_index = 0;
+
+  // local reference
   private cells: Cells = new Cells();
-  private data_model!: DataModel;
+
+  // local reference
   private named_range_map: {[index: string]: Area} = {};
-  private parser: Parser; // = new Parser();
 
-  private simulation_model!: SimulationModel;
-  private library!: FunctionLibrary;
+  //
+  private data_model!: DataModel;
 
-  constructor(){
-    this.parser = new Parser();
-    this.UpdateLocale();
+  // --- public API -----------------------------------------------------------
+
+  constructor(
+      protected readonly simulation_model: SimulationModel,
+      protected readonly library: FunctionLibrary,
+      protected readonly parser: Parser) {
   }
 
-  /**
-   * FIXME: we should unify with calculator, which also has a parser
-   * and which also has to manage locale. we only need one.
-   */
-  public UpdateLocale(){
-    if (Localization.decimal_separator === ',') {
-      this.parser.decimal_mark = DecimalMarkType.Comma;
-      this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-    }
-    else {
-      this.parser.decimal_mark = DecimalMarkType.Period;
-      this.parser.argument_separator = ArgumentSeparatorType.Comma;
-    }
-  }
-
-  public SetModel(model: DataModel, simulation_model: SimulationModel, library: FunctionLibrary) {
+  public SetModel(model: DataModel) {
     this.cells = model.sheet.cells;
     this.data_model = model;
     this.named_range_map = model.sheet.named_ranges.Map();
-    this.simulation_model = simulation_model;
-    this.library = library;
-  }
-
-  /**
-   * instead of calculating, just check if the cell is volatile. this is
-   * done by walking the expression, and checking any function calls.
-   * everything else is ignored.
-   */
-  public CheckVolatile(expr: ExpressionUnit) {
-    let volatile = false;
-
-    this.parser.Walk(expr, (unit: ExpressionUnit) => {
-      if (unit.type === 'call') {
-        const func = this.library.Get(unit.name);
-        if (func && func.volatile) volatile = true;
-      }
-      return !volatile; // short circuit
-    });
-
-    return volatile;
   }
 
   /**
@@ -86,7 +52,6 @@ export class ExpressionCalculator {
     if (!preserve_flags) {
       this.simulation_model.address = addr;
       this.simulation_model.volatile = false;
-      this.context.address = addr;
       this.call_index = 0; // why not in model? A: timing (nested)
     }
 
@@ -95,6 +60,8 @@ export class ExpressionCalculator {
       volatile: this.simulation_model.volatile,
     };
   }
+
+  // --- /public API ----------------------------------------------------------
 
   /**
    * we pass around errors as objects with an error (string) field.
@@ -136,7 +103,6 @@ export class ExpressionCalculator {
     const func = this.library.Get(expr);
 
     if (!func) {
-      console.info("mx1", expr);
       return { error: 'NAME' };
     }
 
@@ -270,7 +236,7 @@ export class ExpressionCalculator {
     // now we bind functions that need this, so maybe we should pass
     // null here.
 
-    return func.fn.apply(FunctionLibrary, mapped_args);
+    return func.fn.apply(null, mapped_args);
 
   }
 
@@ -488,29 +454,24 @@ export class ExpressionCalculator {
 
   }
 
-  /*
-  protected ConditionalExpression(test: any, consequent: any, alternate: any){
-    console.info( '** conditional expression', test);
-    return 3;
-  }
-  */
-
   protected Identifier(name: string){
 
-    switch (name.toLowerCase()){
-    case 'false':
-    case 'f':
+    const upper_case = name.toUpperCase();
+
+    switch (upper_case){
+    case 'FALSE':
+    case 'F':
       return false;
 
-    case 'true':
-    case 't':
+    case 'TRUE':
+    case 'T':
       return true;
 
-    case 'undefined':
+    case 'UNDEFINED':
       return undefined;
     }
 
-    const named_range = this.named_range_map[name.toUpperCase()];
+    const named_range = this.named_range_map[upper_case];
 
     if (named_range) {
       if (named_range.count === 1) {
@@ -566,7 +527,7 @@ export class ExpressionCalculator {
 
     case 'group':
       if (!expr.elements || expr.elements.length !== 1){
-        console.warn( 'Can\'t handle group !== 1' );
+        console.warn( `Can't handle group !== 1` );
         return 0;
       }
       return this.CalculateExpression(expr.elements[0]);

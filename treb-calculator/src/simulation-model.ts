@@ -41,7 +41,12 @@ export class SimulationModel {
   public elapsed = 0;
   public trials = 0;
   public distributions: any = [];
-  public correlated_distributions: { [index: string]: { addresses: DistributionKey[], correlation: any } } = {};
+  public correlated_distributions: {
+    [index: string]: {
+      addresses: DistributionKey[],
+      correlation: any,
+    }
+  } = {};
 
   /**
    * returns a list of functions for registration. would be nice to move

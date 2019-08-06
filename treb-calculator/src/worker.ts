@@ -82,10 +82,10 @@ export class WorkerImpl {
     this.base_worker.postMessage(message, transfer);
   }
 
-  /**
+  /* *
    * generates flattened results suitable for passing to the main thread.
    * FIXME: move to calculator so we can hide simulation_model
-   */
+   * /
   protected FlattenedResults(){
 
     // flatten into buffers
@@ -104,6 +104,7 @@ export class WorkerImpl {
 
     return flattened;
   }
+  */
 
   /**
    * runs a single step in a stepped simulation (used for screen updates)
@@ -126,7 +127,7 @@ export class WorkerImpl {
     // we shouldn't have to send this; we should be able to build it up.
     // not sure that it's worth writing the code to do that, though.
 
-    const flattened = this.FlattenedResults();
+    const flattened = this.calculator.FlattenedResults();
     const elapsed = this.Timestamp() - this.start_time;
 
     this.Post({
@@ -198,7 +199,7 @@ export class WorkerImpl {
 
     // now send results
 
-    const flattened = this.FlattenedResults();
+    const flattened = this.calculator.FlattenedResults();
     const elapsed = this.Timestamp() - this.start_time;
 
     // FIXME: for IE (and edge?) we are probably going to have to convert

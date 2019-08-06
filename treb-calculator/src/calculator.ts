@@ -73,21 +73,24 @@ export interface CalculationOptions {
 export class Calculator extends Graph {
 
   /** FIXME visibility */
-  public simulation_model = new SimulationModel();
+  protected readonly simulation_model = new SimulationModel();
+
+  protected readonly library = new FunctionLibrary();
+
+  protected readonly parser: Parser = new Parser();
 
   // protected graph: Graph = new Graph(); // |null = null;
 
   protected status: GraphStatus = GraphStatus.OK;
 
   // FIXME: why is this a separate class? [actually is this a composition issue?]
-  protected expression_calculator: ExpressionCalculator = new ExpressionCalculator();
-
-  protected parser: Parser = new Parser();
+  protected expression_calculator = new ExpressionCalculator(
+      this.simulation_model,
+      this.library,
+      this.parser);
 
   /** the next calculation must do a full rebuild -- set on reset */
   protected full_rebuild_required = false;
-
-  protected library = new FunctionLibrary();
 
   constructor() {
     super();
@@ -247,7 +250,7 @@ export class Calculator extends Graph {
       this.parser.argument_separator = ArgumentSeparatorType.Comma;
     }
 
-    this.expression_calculator.UpdateLocale();
+    // this.expression_calculator.UpdateLocale();
 
   }
 
@@ -323,7 +326,7 @@ export class Calculator extends Graph {
 
     this.Reset();
     this.AttachData(model);
-    this.expression_calculator.SetModel(model, this.simulation_model, this.library);
+    this.expression_calculator.SetModel(model);
 
     // add additional cells to monitor, but only if they actually
     // exist; otherwise they will generate calc errors.
@@ -445,6 +448,28 @@ export class Calculator extends Graph {
     }
   }
 
+  /**
+   * flattens results for passing to the main thread from worker
+   */
+  public FlattenedResults(){
+
+    // flatten into buffers
+    const flattened: any[] = [];
+
+    // tslint:disable-next-line:forin
+    for (const c in this.simulation_model.results) {
+      const column = this.simulation_model.results[c];
+
+      // tslint:disable-next-line:forin
+      for (const r in column) {
+        flattened.push(PackResults.PackOne({
+          row: Number(r), column: Number(c), data: column[r] }).buffer);
+      }
+    }
+
+    return flattened;
+  }
+
   /** basically set null results */
   public FlushSimulationResults() {
     this.simulation_model.results = [];
@@ -509,7 +534,7 @@ export class Calculator extends Graph {
     const flat = model.sheet.cells.toJSON(json_options);
 
     this.AttachData(model);
-    this.expression_calculator.SetModel(model, this.simulation_model, this.library);
+    this.expression_calculator.SetModel(model);
 
     const result = this.RebuildGraph(flat.data, {});
 
@@ -967,7 +992,19 @@ export class Calculator extends Graph {
    */
   protected CheckVolatile(vertex: SpreadsheetVertex) {
     if (!vertex.expression || vertex.expression_error) return false;
-    return this.expression_calculator.CheckVolatile(vertex.expression);
+
+    let volatile = false;
+
+    this.parser.Walk(vertex.expression, (unit: ExpressionUnit) => {
+      if (unit.type === 'call') {
+        const func = this.library.Get(unit.name);
+        if (func && func.volatile) volatile = true;
+      }
+      return !volatile; // short circuit
+    });
+
+    return volatile;
+
   }
 
   /**
@@ -1010,7 +1047,7 @@ export class Calculator extends Graph {
 
     let flat = cells.toJSON(json_options);
 
-    this.expression_calculator.SetModel(model, this.simulation_model, this.library);
+    this.expression_calculator.SetModel(model);
 
     let result: {status: GraphStatus, reference?: ICellAddress} = {
       status: GraphStatus.OK,
