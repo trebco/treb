@@ -74,7 +74,6 @@ export interface CalculationOptions {
  */
 export class Calculator extends Graph {
 
-  /** FIXME visibility */
   protected readonly simulation_model = new SimulationModel();
 
   protected readonly library = new FunctionLibrary();
@@ -267,6 +266,10 @@ export class Calculator extends Graph {
     return this.library.Get(name);
   }
 
+  /**
+   * returns a list of available functions, for AC/tooltips
+   * FIXME: categories?
+   */
   public SupportedFunctions(){
 
     const list = this.library.List();
@@ -673,17 +676,11 @@ export class Calculator extends Graph {
    * returns that. otherwise (optionally) UPPER-CASES the function name.
    */
   protected NormalizeFunctionCall(name: string, options: UnparseOptions) {
-
     if (options.normalize_functions){
-      // const check: DecoratedFunction = SpreadsheetFunctions[name.toLowerCase()];
-      // if (check){
-      //   if (check.canonical_name) return check.canonical_name;
-      // }
       const check = this.library.Get(name);
       if (check.canonical_name) {
         return check.canonical_name;
       }
-
     }
     if (options.default_capitalize_functions) return name.toUpperCase();
     return name;
