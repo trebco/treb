@@ -19,6 +19,8 @@ import * as PackResults from './pack-results';
 import { DataModel, Annotation } from '@root/treb-grid/src';
 import { LeafVertex } from './dag/leaf_vertex';
 
+import { ArgumentError, ReferenceError, ValueError, UnknownError, IsError } from './function-error';
+
 /**
  * options for unparsing (cleaning up) expressions
  */
@@ -122,15 +124,19 @@ export class Calculator extends Graph {
         volatile: true,
         fn: ((reference: string) => {
 
-          if (!reference) return { error: 'ARG' };
+          if (!reference) return ArgumentError;
 
           const parse_result = this.parser.Parse(reference);
           if (parse_result.error || !parse_result.expression) {
-            return { error: 'REF' };
+            return ReferenceError;
           }
 
           const check_result = this.DynamicDependencies(parse_result.expression);
-          if (check_result.error) return check_result;
+
+          if (IsError(check_result)) {
+            return check_result;
+          }
+
           if (check_result.dirty) {
             const current_vertex = this.GetVertex(this.simulation_model.address) as SpreadsheetVertex;
             current_vertex.short_circuit = true;
@@ -154,7 +160,9 @@ export class Calculator extends Graph {
    */
   public DynamicDependencies(expression: ExpressionUnit) {
 
-    if (!this.model) return { error: 'ERR' };
+    if (!this.model) {
+      return UnknownError;
+    }
 
     let area: Area | undefined;
 
@@ -216,7 +224,7 @@ export class Calculator extends Graph {
             const edge_result = this.AddEdge({row, column}, this.simulation_model.address);
 
             if (edge_result) {
-              return { error: 'REF' };
+              return ReferenceError;
             }
 
             dirty = true;
@@ -1018,9 +1026,7 @@ export class Calculator extends Graph {
     if (!vertex.address) throw(new Error('vertex missing address'));
     if (vertex.expression_error) {
       return {
-        value: {
-          error: 'ERR',
-        },
+        value: UnknownError,
       };
     }
 

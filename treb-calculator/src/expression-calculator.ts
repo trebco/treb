@@ -4,6 +4,7 @@ import { FunctionLibrary } from './function-library';
 import { Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
 import { Parser, ExpressionUnit } from 'treb-parser';
 import { DataModel } from 'treb-grid';
+import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
 
 /*
 export interface CalculationContext {
@@ -13,11 +14,17 @@ export interface CalculationContext {
 
 export class ExpressionCalculator {
 
-  /** context for function call reference */
-  // public context: CalculationContext = {
-  //  address: {row: -1, column: -1},
-  // };
-
+  /**
+   * this refers to the number of function call within a single cell.
+   * so if you have a function like
+   *
+   * =A(B())
+   *
+   * then when calculating A call index should be set to 1; and when
+   * calculating B, call index is 2. and so on. this is used for keeping
+   * track of data in the simulation model, where we may have per-distribution
+   * data (generally LHS fields or correlation blocks).
+   */
   private call_index = 0;
 
   // local reference
@@ -52,6 +59,8 @@ export class ExpressionCalculator {
     if (!preserve_flags) {
       this.simulation_model.address = addr;
       this.simulation_model.volatile = false;
+
+      // reset for this cell
       this.call_index = 0; // why not in model? A: timing (nested)
     }
 
@@ -98,27 +107,36 @@ export class ExpressionCalculator {
   /** excutes a function call */
   protected CallExpression(expr: string, args: ExpressionUnit[] = []){
 
-    const call_index = this.call_index; // trap value, it may increment
+    // get an index we can use for this call (we may recurse when
+    // calculating arguments), then increment for the next call.
+
+    const call_index = this.call_index++;
+
+    // get the function descriptor so we can figure out what to do with arguments
 
     const func = this.library.Get(expr);
 
     if (!func) {
-      return { error: 'NAME' };
+      return NameError;
     }
 
-    // yeah so this is clear
+    // yeah so this is clear. just checking volatile.
 
     this.simulation_model.volatile = this.simulation_model.volatile || (!!func.volatile) ||
       ((!!func.simulation_volatile) && this.simulation_model.state !== SimulationState.Null);
 
-    // NOTE: this is (possibly) calculating unecessary operations, if there's
-    // an IF statement. although that is the exception rather than the rule...
+    // NOTE: the argument logic is (possibly) calculating unecessary operations,
+    // if there's a conditional (like an IF function). although that is the
+    // exception rather than the rule...
 
-    let argument_errors = false; // maybe short-circuit
+    let argument_error: FunctionError|undefined;
 
     const argument_descriptors = func.arguments || []; // map
 
     const mapped_args = args.map((arg, arg_index) => {
+
+      // short circuit
+      if (argument_error) { return undefined; }
 
       if (typeof arg === 'undefined') { return undefined; } // FIXME: required?
 
@@ -176,8 +194,32 @@ export class ExpressionCalculator {
       }
       else if (descriptor.collector && this.simulation_model.state === SimulationState.Null) {
 
+        /*
         // why holding this twice? (...) has to do with timing, apparently...
+
+        // I don't think this can actually happen. we should verify that this
+        // is necessary. look at it like this: the only thing that can cause
+        // this value to increment is a nested call to CallExpression (this
+        // method), which is only ever called by CalculateExpression.
+
+        // We can see from the code that CalculateExpression is _not_ called
+        // prior to this line. there's a small possibility that CalculateExpression
+        // is called, via Calculate, from a method call, but that is also below
+        // this line (at the end of the method).
+
+        // NOTE: that is 100% wrong. this is a loop. you might call
+        // CalculateExpression on loop 1 and then get here on loop 2. that's
+        // exactly why we capture this field. it might be rare, but if it
+        // happens it would be a mess. keep the captured value.
+        // do not remove this.
+
+        // actually you're both 100% wrong; because the CellData function doesn't
+        // actually use call_index. not sure how this got misaligned. it's needed
+        // for prep (correlation, lhs) and storing results during a simulation.
+        // so it needs to go in front of the function call and the prep step.
+
         this.simulation_model.call_index = call_index;
+        */
 
         if (arg.type === 'address'){
           return this.simulation_model.CellData(arg);
@@ -192,12 +234,14 @@ export class ExpressionCalculator {
           }
         }
 
+        // if we didn't have a valid reference it's an error
+        argument_error = ReferenceError;
 
       }
       else {
         const result = this.CalculateExpression(arg);
         if (typeof result === 'object' && result.error && !descriptor.allow_error) {
-          argument_errors = true;
+          argument_error = result;
         }
         return result;
       }
@@ -206,14 +250,21 @@ export class ExpressionCalculator {
 
     });
 
-    if (argument_errors) {
-      return { error: 'ARG' };
+    if (argument_error) {
+      return argument_error;
     }
 
     if (this.simulation_model.state === SimulationState.Prep){
 
       // this is a separate loop because we only need to call it on prep
-      // FIXME: can this move to parsing stage? (old note: probably this too, with a flag)
+      // FIXME: can this move to parsing stage? (old note: probably this too,
+      // with a flag)
+
+      // we could split the simulation functions into regular and prep stage,
+      // which would drop a test inside the function.
+
+      // if you do that, though, make sure to set the captured call_index here
+      // (currently that's set below for the function call).
 
       args.forEach((arg, arg_index) => {
         const descriptor = argument_descriptors[arg_index] || {};
@@ -231,6 +282,11 @@ export class ExpressionCalculator {
       });
 
     }
+
+    // if we have any nested calls, they may have updated the index so
+    // we use the captured value here.
+
+    this.simulation_model.call_index = call_index;
 
     // I thought we were passing the model as this (...) ? actually
     // now we bind functions that need this, so maybe we should pass
@@ -256,7 +312,7 @@ export class ExpressionCalculator {
         console.warn('unexpected unary operator:', operator);
         for (const column of operand){
           for (let r = 0; r < column.length; r++) {
-            column[r] = { error: 'EXPR' }; // '#ERR';
+            column[r] = ExpressionError;
           }
         }
       }
@@ -272,7 +328,7 @@ export class ExpressionCalculator {
       console.warn('unexpected unary operator:', operator);
     }
 
-    return { error: 'EXPR' };
+    return ExpressionError;
   }
 
   /**
@@ -293,7 +349,7 @@ export class ExpressionCalculator {
 
 
     console.info(`(unexpected logical operator: ${operator})`);
-    return {error: 'EXPR'};
+    return ExpressionError;
 
   }
 
@@ -338,7 +394,7 @@ export class ExpressionCalculator {
       }
 
       console.info(`(unexpected binary operator: ${operator})`);
-      return {error: 'EXPR'};
+      return ExpressionError;
 
   }
 
@@ -450,7 +506,7 @@ export class ExpressionCalculator {
     }
 
     console.info(`(unexpected binary expr: ${operator})`);
-    return {error: 'EXPR'};
+    return ExpressionError;
 
   }
 
@@ -491,7 +547,7 @@ export class ExpressionCalculator {
     }
 
     console.info( '** identifier', name);
-    return {error: 'NAME'};
+    return NameError;
 
   }
 
@@ -499,7 +555,6 @@ export class ExpressionCalculator {
 
     switch (expr.type){
     case 'call':
-      this.call_index++;
       return this.CallExpression(expr.name, expr.args);
 
     case 'address':

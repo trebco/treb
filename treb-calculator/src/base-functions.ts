@@ -3,6 +3,7 @@ import { FunctionMap } from './descriptors';
 import * as Utils from './utilities';
 import { Localization } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
+import { ReferenceError, NotImplError } from './function-error';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -50,14 +51,14 @@ export const BaseFunctionLibrary: FunctionMap = {
         { name: 'reference', description: 'Cell reference', metadata: true },
       ],
       fn: (type: string, reference: any) => {
-        if (!reference || !reference.address) return { error: 'REF' };
+        if (!reference || !reference.address) return ReferenceError;
         switch (type.toLowerCase()) {
           case 'format':
-            return reference.format || { error: 'REF' };
+            return reference.format || ReferenceError;
           case 'address':
             return reference.address.label.replace(/\$/g, '');
         }
-        return { error: 'NOTIMPL' };
+        return NotImplError;
       },
     },
 
@@ -214,7 +215,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         const cols = args[0].length;
         const rows = args[0][0].length;
-        if (!rows) return { error: 'RANGE' };
+        if (!rows) return ReferenceError;
 
         let sum = 0;
         for (let c = 0; c < cols; c++) {

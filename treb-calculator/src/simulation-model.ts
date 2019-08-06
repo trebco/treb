@@ -3,6 +3,7 @@ import { ICellAddress } from 'treb-base-types';
 import * as Utils from './utilities';
 import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
 import { FunctionMap } from './descriptors';
+import { DataError, ArgumentError, ValueError } from './function-error';
 
 export enum SimulationState {
   Null, Prep, Simulation, Post,
@@ -466,7 +467,7 @@ export class SimulationModel {
         fn: (mat: number[][]) => {
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
-          })) return { error: 'VALUE' };
+          })) return ValueError;
           const m = Matrix.FromArray(mat);
           return m.IsPosDef();
         },
@@ -486,7 +487,7 @@ export class SimulationModel {
 
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
-          })) return { error: 'VALUE' };
+          })) return ValueError;
 
           const m = Matrix.FromArray(mat);
           const e = m.EigenSystem();
@@ -502,7 +503,7 @@ export class SimulationModel {
 
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
-          })) return { error: 'VALUE' };
+          })) return ValueError;
 
           const m = Matrix.FromArray(mat);
           const e = m.EigenSystem();
@@ -622,7 +623,7 @@ export class SimulationModel {
     else if (this.state === SimulationState.Simulation) {
       return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return { error: 'DATA' }; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
 
     return MC.Normal(1, { mean, sd })[0];
   }
@@ -636,7 +637,7 @@ export class SimulationModel {
     else if (this.state === SimulationState.Simulation) {
       return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return { error: 'DATA' }; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
     return MC.Beta(1, { a, b })[0];
   }
 
@@ -649,7 +650,7 @@ export class SimulationModel {
     else if (this.state === SimulationState.Simulation) {
       return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return { error: 'DATA' }; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
     return MC.Uniform(1, { min, max })[0];
   }
 
@@ -664,7 +665,7 @@ export class SimulationModel {
     else if (this.state === SimulationState.Simulation) {
       return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return { error: 'DATA' }; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
     return MC.PERT(1, { a: min, b: max, c: mode, lambda })[0];
   }
 
@@ -679,7 +680,7 @@ export class SimulationModel {
     else if (this.state === SimulationState.Simulation) {
       return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return { error: 'DATA' }; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
     return MC.Triangular(1, { a: min, b: max, c: mode })[0];
   }
 
@@ -921,7 +922,7 @@ export class SimulationModel {
 
   public simulationvaluesarray(data?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
     return data;
   }
 
@@ -930,7 +931,7 @@ export class SimulationModel {
    */
   public simulationvaluesarray_ordered(data?: number[], order_by?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
 
     if (!order_by || !order_by.length) {
 
@@ -948,20 +949,20 @@ export class SimulationModel {
 
   public simulationrsquared(dependent?: number[], independent?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!dependent || !dependent.length || !independent || !independent.length) return { error: 'DATA' };
+    if (!dependent || !dependent.length || !independent || !independent.length) return DataError;
     return Stats.R2(dependent, independent);
   }
 
   public simulationcorrelation(a?: number[], b?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!a || !a.length || !b || !b.length) return { error: 'DATA' };
+    if (!a || !a.length || !b || !b.length) return DataError;
     return Stats.Correlation(a, b);
   }
 
   public sortedsimulationindex(data?: number[], index = 1) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
-    if (index < 1 || index > data.length) return { error: 'ARG' };
+    if (!data || !data.length) return DataError;
+    if (index < 1 || index > data.length) return ArgumentError;
 
     const pairs = Array.from(data).map((x, i) => [x, i + 1]);
     pairs.sort((a, b) => a[0] - b[0]);
@@ -971,55 +972,55 @@ export class SimulationModel {
 
   public simulationvalue(data?: number[], index = 1) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
-    if (index < 1 || index > data.length) return { error: 'ARG' };
+    if (!data || !data.length) return DataError;
+    if (index < 1 || index > data.length) return ArgumentError;
     return data[index - 1];
   }
 
   public simulationpercentile(data?: number[], percentile: number = .5) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
     return Stats.Percentile(data, percentile);
   }
 
   public simulationstandarddeviation(data?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
     const stats = Stats.Statistics(data);
     return stats.stdev;
   }
 
   public simulationvariance(data?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
     const stats = Stats.Statistics(data);
     return stats.variance;
   }
 
   public simulationskewness(data?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
     const stats = Stats.Statistics(data);
     return stats.skewness;
   }
 
   public simulationkurtosis(data?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
     const stats = Stats.Statistics(data);
     return stats.kurtosis;
   }
 
   public simulationinterval(data?: number[], min?: number, max?: number) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
     return Stats.Interval({ data, min, max });
   }
 
   public simulationstandarderror(data?: number[]) {
 
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
 
     let sum = 0;
     let variance = 0;
@@ -1040,19 +1041,19 @@ export class SimulationModel {
 
   public simulationmin(data?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
     return Math.min.apply(0, data);
   }
 
   public simulationmax(data?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
     return Math.max.apply(0, data);
   }
 
   public simulationmean(data?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
 
     // return data.reduce((a: number, b: number) => a + b, 0) / data.length;
     let sum = 0;
@@ -1063,7 +1064,7 @@ export class SimulationModel {
 
   public simulationmedian(data?: number[]) {
     if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return { error: 'DATA' };
+    if (!data || !data.length) return DataError;
 
     const copy = data.filter((element: any) => typeof element === 'number' ? element : 0);
     copy.sort((a: number, b: number) => a - b);
