@@ -18,7 +18,7 @@ export enum GraphStatus {
  */
 export abstract class Graph {
 
-  public vertices: Array<Array<SpreadsheetVertex|null>> = [];
+  public vertices: Array<Array<SpreadsheetVertex|undefined>> = [];
   public dirty_list: SpreadsheetVertex[] = [];
   public volatile_list: SpreadsheetVertex[] = [];
   public cells?: Cells;
@@ -49,17 +49,27 @@ export abstract class Graph {
     this.cells = undefined;
   }
 
-  // public DumpEdges() {}
-
   /** returns the vertex at this address. creates it if necessary. */
-  public GetVertex(address: ICellAddress) {
-    if (!this.cells) return null;
+  public GetVertex(address: ICellAddress, create: boolean) {
 
-    if (!this.vertices[address.column]) this.vertices[address.column] = [];
-    let vertex = this.vertices[address.column][address.row];
-    if (vertex) return vertex;
-    vertex = new SpreadsheetVertex();
-    vertex.address = {column: address.column, row: address.row};
+    if (!this.cells) return undefined;
+
+    if (!this.vertices[address.column]) {
+      if (!create) {
+        return undefined;
+      }
+      this.vertices[address.column] = [];
+    }
+    else {
+      const existing_vertex = this.vertices[address.column][address.row];
+      if (existing_vertex) {
+        return existing_vertex;
+      }
+      if (!create) return undefined;
+    }
+
+    const vertex = new SpreadsheetVertex();
+    vertex.address = { ...address };
 
     // this breaks if the cell reference does not point to a cell; that
     // happens if a formula references an empty cell, and we run through
@@ -78,30 +88,34 @@ export abstract class Graph {
     const row = this.cells.data2[address.row];
     if (row) {
       const cell = row[address.column];
-      if (cell) vertex.reference = cell;
+      if (cell) {
+        vertex.reference = cell;
+      }
     }
 
     this.vertices[address.column][address.row] = vertex;
     return vertex;
+
   }
 
-  /** returns the vertex at this address, but doesn't create it. */
+  /* * returns the vertex at this address, but doesn't create it. * /
   public GetVertexOrUndefined(address: ICellAddress) {
     if (!this.vertices[address.column]) return undefined;
     return this.vertices[address.column][address.row];
   }
+  */
 
   /** deletes the vertex at this address. */
   public RemoveVertex(address: ICellAddress) {
-    const vertex = this.GetVertexOrUndefined(address);
+    const vertex = this.GetVertex(address, false);
     if (!vertex) return;
     vertex.Reset();
-    this.vertices[address.column][address.row] = null;
+    this.vertices[address.column][address.row] = undefined;
   }
 
   /** removes all edges, for rebuilding. leaves value/formula as-is. */
   public ResetVertex(address: ICellAddress) {
-    const vertex = this.GetVertexOrUndefined(address);
+    const vertex = this.GetVertex(address, false);
     if (vertex) vertex.Reset();
   }
 
@@ -111,8 +125,8 @@ export abstract class Graph {
    * frequently, saves a lookup.
    */
   public ResetInbound(address: ICellAddress, set_dirty = false){
-    const vertex = this.GetVertex(address);
-    if (null === vertex) return;
+    const vertex = this.GetVertex(address, true);
+    if (!vertex) return;
     vertex.ClearDependencies();
 
     if (set_dirty) {
@@ -124,10 +138,10 @@ export abstract class Graph {
   /** adds an edge from u -> v */
   public AddEdge(u: ICellAddress, v: ICellAddress): GraphStatus {
 
-    const v_u = this.GetVertex(u);
-    const v_v = this.GetVertex(v);
+    const v_u = this.GetVertex(u, true);
+    const v_v = this.GetVertex(v, true);
 
-    if (null === v_v || null === v_u) return GraphStatus.OK; // not possible to loop -> null
+    if (!v_v || !v_u) return GraphStatus.OK; // not possible to loop -> null
 
     // loop check
     // FIXME: move to vertex class
@@ -163,8 +177,8 @@ export abstract class Graph {
 
   /** removes edge from u -> v */
   public RemoveEdge(u: ICellAddress, v: ICellAddress) {
-    const v_u = this.GetVertexOrUndefined(u);
-    const v_v = this.GetVertexOrUndefined(v);
+    const v_u = this.GetVertex(u, false);
+    const v_v = this.GetVertex(v, false);
 
     if (!v_u || !v_v) return;
 
@@ -176,15 +190,15 @@ export abstract class Graph {
   /** sets area dirty, convenience shortcut */
   public SetAreaDirty(area: Area) {
     area.Iterate((address: ICellAddress) => {
-      const vertex = this.GetVertexOrUndefined(address);
+      const vertex = this.GetVertex(address, false);
       if (vertex) this.SetDirty(address);
     });
   }
 
   /** sets dirty */
   public SetDirty(address: ICellAddress) {
-    const vertex = this.GetVertex(address);
-    if (null === vertex) return;
+    const vertex = this.GetVertex(address, true);
+    if (!vertex) return;
 
     // is it safe to assume that, if the dirty flag is set, it's
     // on the dirty list? I'm not sure that's the case if there's
@@ -207,9 +221,16 @@ export abstract class Graph {
     // the list should (generally speaking) be short, so not
     // a serious problem atm
 
+    /*
     if (this.leaf_vertices.some((test) => test === vertex)) {
       return;
     }
+    */
+   for (const test of this.leaf_vertices) {
+     if (test === vertex) {
+       return;
+     }
+   }
 
     this.leaf_vertices.push(vertex);
   }
@@ -229,9 +250,9 @@ export abstract class Graph {
    */
   public AddLeafVertexEdge(u: ICellAddress, v: LeafVertex) {
 
-    const v_u = this.GetVertex(u);
+    const v_u = this.GetVertex(u, true);
 
-    if (null === v_u) return GraphStatus.OK; // not possible to loop -> null
+    if (!v_u) return GraphStatus.OK; // not possible to loop -> null
 
     v_u.AddDependent(v);
     v.AddDependency(v_u);
@@ -242,7 +263,7 @@ export abstract class Graph {
 
   /** removes edge from u -> v */
   public RemoveLeafVertexEdge(u: ICellAddress, v: LeafVertex) {
-    const v_u = this.GetVertexOrUndefined(u);
+    const v_u = this.GetVertex(u, false);
 
     if (!v_u) return;
 
@@ -263,7 +284,7 @@ export abstract class Graph {
       vertex.SetDirty();
     }
 
-    const tmp = this.volatile_list.slice(0).concat(this.dirty_list);
+    const calculation_list = this.volatile_list.slice(0).concat(this.dirty_list);
 
     this.volatile_list = [];
     this.dirty_list = [];
@@ -271,7 +292,7 @@ export abstract class Graph {
     // recalculate everything that's dirty. FIXME: optimize path
     // so we do fewer wasted checks of "are all my deps clean"?
 
-    for (const vertex of tmp) {
+    for (const vertex of calculation_list) {
       vertex.Calculate(this, this.CalculationCallback, this.SpreadCallback);
     }
 

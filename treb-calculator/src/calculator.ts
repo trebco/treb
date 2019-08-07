@@ -109,7 +109,8 @@ export class Calculator extends Graph {
           }
 
           if (check_result.dirty) {
-            const current_vertex = this.GetVertex(this.expression_calculator.context.address) as SpreadsheetVertex;
+            const current_vertex =
+              this.GetVertex(this.expression_calculator.context.address, true) as SpreadsheetVertex;
             current_vertex.short_circuit = true;
             return undefined;
           }
@@ -169,7 +170,7 @@ export class Calculator extends Graph {
 
       for (let row = area.start.row; row <= area.end.row; row++ ){
         for (let column = area.start.column; column <= area.end.column; column++ ){
-          const vertex = this.GetVertexOrUndefined({row, column});
+          const vertex = this.GetVertex({row, column}, false);
           if (vertex && vertex.dirty) {
 
             // so we know, given the structure of calculation, that there
@@ -869,7 +870,8 @@ export class Calculator extends Graph {
 
         }
 
-        const vertex = this.GetVertex(cell);
+        const vertex = this.GetVertex(cell, true);
+
         if (vertex) {
           vertex.expression = parse_result.expression || {type: 'missing', id: -1};
           vertex.expression_error = !parse_result.valid;
