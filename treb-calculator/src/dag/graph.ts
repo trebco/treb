@@ -114,7 +114,7 @@ export abstract class Graph {
     const vertex = this.GetVertex(address);
     if (null === vertex) return;
     vertex.ClearDependencies();
-    
+
     if (set_dirty) {
       this.dirty_list.push(vertex);
       vertex.SetDirty();
