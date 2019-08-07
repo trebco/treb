@@ -1,5 +1,5 @@
 
-import { VertexType } from './vertex_type';
+import { Vertex } from './vertex';
 import { SpreadsheetVertex, CalculationResult } from './spreadsheet_vertex';
 import { LeafVertex } from './leaf_vertex';
 import { Cells, ICellAddress, Area } from 'treb-base-types';
@@ -133,9 +133,9 @@ export abstract class Graph {
 
     // let tcc = 0;
 
-    const check_list: VertexType[] = [];
+    const check_list: Vertex[] = [];
 
-    const tail = (vertex: VertexType, depth = ''): boolean => {
+    const tail = (vertex: Vertex, depth = ''): boolean => {
 
       if (vertex === v_u) {
         console.info('MATCH', vertex, v_v, v_u);

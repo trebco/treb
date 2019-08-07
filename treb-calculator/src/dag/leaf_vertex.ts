@@ -1,6 +1,6 @@
 
 import { SpreadsheetVertex } from './spreadsheet_vertex';
-import { VertexType } from './vertex_type';
+import { Vertex } from './vertex';
 
 /**
  * second specialization of vertex: this class is for non-cell elements
@@ -77,7 +77,7 @@ export class LeafVertex extends SpreadsheetVertex {
     // we are not allowed to have edges out, so nothing to do
   }
 
-  public AddDependent(edge: VertexType){
+  public AddDependent(edge: Vertex){
     throw(new Error('leaf vertex cannot have dependents'));
   }
 

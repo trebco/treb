@@ -1,8 +1,8 @@
 
-import { VertexType } from './vertex_type';
+import { Vertex } from './vertex';
 
 import { Cell, ICellAddress, ValueType } from 'treb-base-types';
-import { Parser, ExpressionUnit } from 'treb-parser';
+import { ExpressionUnit } from 'treb-parser';
 
 export enum SpreadsheetError {
   None,
@@ -17,7 +17,7 @@ export interface CalculationResult {
 /**
  * specialization of vertex with attached data and calculation metadata
  */
-export class SpreadsheetVertex extends VertexType {
+export class SpreadsheetVertex extends Vertex {
 
   public reference?: Cell;
   public dirty = false;

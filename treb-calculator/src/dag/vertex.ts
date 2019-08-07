@@ -1,15 +1,15 @@
 
-export class VertexType {
+export class Vertex {
 
   // --- members ---
 
   public type = 'vertex'; // for type guard
 
   /** dependencies */
-  public edges_in: VertexType[] = [];
+  public edges_in: Vertex[] = [];
 
   /** dependents */
-  public edges_out: VertexType[] = [];
+  public edges_out: Vertex[] = [];
 
   // --- accessors ---
 
@@ -36,26 +36,26 @@ export class VertexType {
   // --- basic node operations ---
 
   /** add a dependent. doesn't add if already in the list */
-  public AddDependent(edge: VertexType) {
+  public AddDependent(edge: Vertex) {
     if (edge === this) return; // circular
     if (this.edges_out.some((check) => check === edge)) return; // already in there
     this.edges_out.push(edge);
   }
 
   /** remove a dependent */
-  public RemoveDependent(edge: VertexType) {
+  public RemoveDependent(edge: Vertex) {
     this.edges_out = this.edges_out.filter((check) => check !== edge);
   }
 
   /** add a dependency. doesn't add if already in the list */
-  public AddDependency(edge: VertexType) {
+  public AddDependency(edge: Vertex) {
     if (edge === this) return; // circular
     if (this.edges_in.some((check) => check === edge)) return; // already in there
     this.edges_in.push(edge);
   }
 
   /** remove a dependency */
-  public RemoveDependency(edge: VertexType) {
+  public RemoveDependency(edge: Vertex) {
     this.edges_in = this.edges_in.filter((check) => check !== edge);
   }
 

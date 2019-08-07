@@ -552,7 +552,7 @@ export class SimulationModel {
     if (!cell) cell = [];
   }
 
-  public CellData(address?: ICellAddress) {
+  public StoreCellResults(address?: ICellAddress) {
 
     // this is equivalent to "add shared rs"
     if (!address) address = this.address;

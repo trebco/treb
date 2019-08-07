@@ -137,7 +137,7 @@ export class Calculator extends Graph {
           }
 
           if (check_result.dirty) {
-            const current_vertex = this.GetVertex(this.simulation_model.address) as SpreadsheetVertex;
+            const current_vertex = this.GetVertex(this.expression_calculator.context.address) as SpreadsheetVertex;
             current_vertex.short_circuit = true;
             return undefined;
           }
@@ -220,7 +220,7 @@ export class Calculator extends Graph {
             // before you set the short-circuit flag, test result so we
             // can error on circular ref
 
-            const edge_result = this.AddEdge({row, column}, this.simulation_model.address);
+            const edge_result = this.AddEdge({row, column}, this.expression_calculator.context.address);
 
             if (edge_result) {
               return ReferenceError;
@@ -308,7 +308,7 @@ export class Calculator extends Graph {
 
       descriptor.fn = (...args: any[]) => {
         return original_function.apply({
-          address: { ...this.simulation_model.address},
+          address: { ...this.expression_calculator.context.address},
         }, args);
       };
 
@@ -345,7 +345,7 @@ export class Calculator extends Graph {
     if (additional_cells && additional_cells.length){
       for (const address of additional_cells){
         const cell = cells.GetCell(address, false);
-        if (cell) this.simulation_model.CellData(address);
+        if (cell) this.simulation_model.StoreCellResults(address);
         // else console.info( 'Skipping empty cell', address);
       }
     }
@@ -400,7 +400,7 @@ export class Calculator extends Graph {
    */
   public SimulationTrial(iteration: number){
 
-    if (!this.cells) throw(new Error('called trial without cells'));
+    if (!this.cells) throw(new Error('called trial without cells')); // this is an assert, right? should remove for prod
 
     this.simulation_model.iteration = iteration;
 
@@ -421,6 +421,11 @@ export class Calculator extends Graph {
         // tslint:disable-next-line:forin
         for (const r in column){
           const cell = this.cells.GetCell({row: Number(r), column: Number(c)});
+
+          // it seems like this is a waste -- if the cell doesn't exist,
+          // we should remove it from the list (or not add it in the first
+          // place). that prevents it from getting tested every loop.
+
           if (cell){
             const value = cell.GetValue();
             switch (typeof value){
@@ -432,16 +437,14 @@ export class Calculator extends Graph {
         }
       }
 
-      return {status: GraphStatus.OK, reference: null};
+      return { status: GraphStatus.OK, reference: null };
     }
     catch (err){
       console.info('calculation error trapped', err);
-      return {status: GraphStatus.CalculationError, reference: null};
+      return { status: GraphStatus.CalculationError, reference: null };
     }
-    // expand ranges
 
-
-    return {status: GraphStatus.OK, reference: null};
+    // expand ranges [?]
 
   }
 
@@ -488,6 +491,7 @@ export class Calculator extends Graph {
     this.simulation_model.trials = 0;
   }
 
+  /** TODO */
   public ShiftSimulationResults(before_row: number, before_column: number, rows: number, columns: number) {
     // ...
   }
@@ -671,10 +675,13 @@ export class Calculator extends Graph {
 
   // --- protected -------------------------------------------------------------
 
-  /**
+  /* *
    * if this is a known function and that function provides a canonical name,
    * returns that. otherwise (optionally) UPPER-CASES the function name.
-   */
+   *
+   * I don;t think anyone uses this. it looks like it got updated for the named
+   * range map, though (probably just because it broke)
+   * /
   protected NormalizeFunctionCall(name: string, options: UnparseOptions) {
     if (options.normalize_functions){
       const check = this.library.Get(name);
@@ -685,6 +692,7 @@ export class Calculator extends Graph {
     if (options.default_capitalize_functions) return name.toUpperCase();
     return name;
   }
+  */
 
   /** named range support */
   protected NamedRangeToAddressUnit(address: ICellAddress, label: string, id: number, position: number) {
@@ -698,20 +706,28 @@ export class Calculator extends Graph {
     } as UnitAddress;
   }
 
-  protected RebuildDependencies(unit: ExpressionUnit, dependencies: DependencyList){
+  /**
+   * rebuild dependencies for a single expression (might be a cell, or an
+   * annotation/leaf node). can recurse on elements, so the return value
+   * is passed through. the first (outer) call can just leave it blank and
+   * use the return value.
+   */
+  protected RebuildDependencies(
+      unit: ExpressionUnit,
+      dependencies: DependencyList = {addresses: {}, ranges: {}},
+    ){
 
     switch (unit.type){
 
       case 'literal':
       case 'missing':
       case 'operator':
-        return;
+        break;
 
       case 'identifier':
         {
-          if (!this.model) return;
+          if (!this.model) break;
           const normalized = unit.name.toUpperCase();
-          // const named_range = this.model.sheet.named_ranges[normalized];
           const named_range = this.model.sheet.named_ranges.Get(normalized);
           if (named_range) {
             if (named_range.count === 1) {
@@ -733,28 +749,28 @@ export class Calculator extends Graph {
             }
           }
         }
-        return;
+        break;
 
       case 'address':
         dependencies.addresses[unit.label] = unit;
-        return; // this.AddressLabel(unit, offset);
+        break; // this.AddressLabel(unit, offset);
 
       case 'range':
         dependencies.ranges[unit.start.label + ':' + unit.end.label] = unit;
-        return;
+        break;
 
       case 'unary':
         this.RebuildDependencies(unit.operand, dependencies);
-        return;
+        break;
 
       case 'binary':
         this.RebuildDependencies(unit.left, dependencies);
         this.RebuildDependencies(unit.right, dependencies);
-        return;
+        break;
 
       case 'group':
         unit.elements.forEach((element) => this.RebuildDependencies(element, dependencies));
-        return;
+        break;
 
       case 'call':
 
@@ -776,6 +792,8 @@ export class Calculator extends Graph {
         break;
 
     }
+
+    return dependencies;
   }
 
   protected UpdateLeafVertex(vertex: LeafVertex, formula: string){
@@ -783,22 +801,22 @@ export class Calculator extends Graph {
     vertex.Reset();
 
     const parse_result = this.parser.Parse(formula);
-    const new_dependencies: DependencyList = {addresses: {}, ranges: {}};
     if (parse_result.expression) {
-      this.RebuildDependencies(parse_result.expression, new_dependencies);
-    }
+      const dependencies = this.RebuildDependencies(parse_result.expression);
 
-    for (const key of Object.keys(new_dependencies.ranges)){
-      const unit = new_dependencies.ranges[key];
-      const range = new Area(unit.start, unit.end);
-      range.Iterate((address: ICellAddress) => {
+      for (const key of Object.keys(dependencies.ranges)){
+        const unit = dependencies.ranges[key];
+        const range = new Area(unit.start, unit.end);
+        range.Iterate((address: ICellAddress) => {
+          this.AddLeafVertexEdge(address, vertex);
+        });
+      }
+
+      for (const key of Object.keys(dependencies.addresses)){
+        const address = dependencies.addresses[key];
         this.AddLeafVertexEdge(address, vertex);
-      });
-    }
+      }
 
-    for (const key of Object.keys(new_dependencies.addresses)){
-      const address = new_dependencies.addresses[key];
-      this.AddLeafVertexEdge(address, vertex);
     }
 
     vertex.expression = parse_result.expression || {type: 'missing', id: -1};
@@ -853,30 +871,30 @@ export class Calculator extends Graph {
         // but shouldn't trigger circular references. we need to check
         // for those here...
 
-        const new_dependencies: DependencyList = {addresses: {}, ranges: {}};
         if (parse_result.expression) {
-          this.RebuildDependencies(parse_result.expression, new_dependencies);
-        }
+          const dependencies = this.RebuildDependencies(parse_result.expression);
 
-        for (const key of Object.keys(new_dependencies.ranges)){
-          const unit = new_dependencies.ranges[key];
-          const range = new Area(unit.start, unit.end);
-          range.Iterate((address: ICellAddress) => {
+          for (const key of Object.keys(dependencies.ranges)){
+            const unit = dependencies.ranges[key];
+            const range = new Area(unit.start, unit.end);
+            range.Iterate((address: ICellAddress) => {
+              const status = this.AddEdge(address, cell);
+              if (status !== GraphStatus.OK) {
+                global_status = status;
+                if (!initial_reference) initial_reference = {column: cell.column, row: cell.row};
+              }
+            });
+          }
+
+          for (const key of Object.keys(dependencies.addresses)){
+            const address = dependencies.addresses[key];
             const status = this.AddEdge(address, cell);
             if (status !== GraphStatus.OK) {
               global_status = status;
               if (!initial_reference) initial_reference = {column: cell.column, row: cell.row};
             }
-          });
-        }
-
-        for (const key of Object.keys(new_dependencies.addresses)){
-          const address = new_dependencies.addresses[key];
-          const status = this.AddEdge(address, cell);
-          if (status !== GraphStatus.OK) {
-            global_status = status;
-            if (!initial_reference) initial_reference = {column: cell.column, row: cell.row};
           }
+
         }
 
         const vertex = this.GetVertex(cell);

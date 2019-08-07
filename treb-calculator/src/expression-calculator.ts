@@ -6,13 +6,15 @@ import { Parser, ExpressionUnit } from 'treb-parser';
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
 
-/*
 export interface CalculationContext {
   address: ICellAddress;
 }
-*/
 
 export class ExpressionCalculator {
+
+  public context: CalculationContext = {
+    address: { row: -1, column: -1 },
+  };
 
   /**
    * this refers to the number of function call within a single cell.
@@ -57,6 +59,9 @@ export class ExpressionCalculator {
   public Calculate(expr: ExpressionUnit, addr: ICellAddress, preserve_flags = false){
 
     if (!preserve_flags) {
+
+      this.context.address = addr;
+
       this.simulation_model.address = addr;
       this.simulation_model.volatile = false;
 
@@ -180,7 +185,7 @@ export class ExpressionCalculator {
           const cell_data = this.data_model.sheet.CellData(address);
           const simulation_data =
             (this.simulation_model.state === SimulationState.Null) ?
-            this.simulation_model.CellData(address) :
+            this.simulation_model.StoreCellResults(address) :
             [];
 
           return {
@@ -222,15 +227,15 @@ export class ExpressionCalculator {
         */
 
         if (arg.type === 'address'){
-          return this.simulation_model.CellData(arg);
+          return this.simulation_model.StoreCellResults(arg);
         }
         else if (arg.type === 'range') {
-          return this.simulation_model.CellData(arg.start);
+          return this.simulation_model.StoreCellResults(arg.start);
         }
         else if (arg.type === 'identifier') {
           const named_range = this.named_range_map[arg.name.toUpperCase()];
           if (named_range) {
-            return this.simulation_model.CellData(named_range.start);
+            return this.simulation_model.StoreCellResults(named_range.start);
           }
         }
 
@@ -270,12 +275,12 @@ export class ExpressionCalculator {
         const descriptor = argument_descriptors[arg_index] || {};
         if (arg && descriptor.collector) {
           if (arg.type === 'address') {
-            this.simulation_model.CellData(arg);
+            this.simulation_model.StoreCellResults(arg);
           }
           else if (arg.type === 'identifier') {
             const named_range = this.named_range_map[arg.name.toUpperCase()];
             if (named_range) {
-              this.simulation_model.CellData(named_range.start);
+              this.simulation_model.StoreCellResults(named_range.start);
             }
           }
         }
