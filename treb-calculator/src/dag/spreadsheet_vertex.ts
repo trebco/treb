@@ -42,8 +42,6 @@ export class SpreadsheetVertex extends Vertex {
   }
 
   /**
-   * sets dirty. this propagates. @see Calculate.
-   *
    * NOTE: DO NOT CALL THIS. call the graph method, which updates the
    * dirty list.
    *
@@ -51,6 +49,7 @@ export class SpreadsheetVertex extends Vertex {
    * edges are public, so there's no encapsulation problem. and if we're
    * doing propagation, why are edges public?
    *
+   * sets dirty, propagates.
    */
   public SetDirty() {
 
@@ -64,12 +63,13 @@ export class SpreadsheetVertex extends Vertex {
     this.dirty = true;
 
     // special case: if there's a loop, we don't want to propagate
+    // ...that should be handled when the edge is added, no?
 
-    // ...
+    // propagate
 
-    // otherwise propagate
-
-    this.edges_out.forEach((edge) => (edge as SpreadsheetVertex).SetDirty());
+    for (const edge of this.edges_out) {
+      (edge as SpreadsheetVertex).SetDirty();
+    }
 
   }
 
@@ -121,7 +121,11 @@ export class SpreadsheetVertex extends Vertex {
     // the head calculation should take care of setting this value, that is,
     // we don't need to do the actual lookup.
 
-    if (this.edges_in.some((edge) => (edge as SpreadsheetVertex).dirty)) return;
+    for (const edge of this.edges_in) {
+      if ((edge as SpreadsheetVertex).dirty) {
+        return;
+      }
+    }
 
     // we won't have a reference if the reference is to an empty cell,
     // so check that.

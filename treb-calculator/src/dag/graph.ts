@@ -114,6 +114,7 @@ export abstract class Graph {
     const vertex = this.GetVertex(address);
     if (null === vertex) return;
     vertex.ClearDependencies();
+    
     if (set_dirty) {
       this.dirty_list.push(vertex);
       vertex.SetDirty();
@@ -259,10 +260,6 @@ export abstract class Graph {
     // not last, because they're probably primary.
 
     for (const vertex of this.volatile_list) {
-
-      // FIXME: use method, add parameter?
-      // this.dirty_list.push(vertex);
-
       vertex.SetDirty();
     }
 

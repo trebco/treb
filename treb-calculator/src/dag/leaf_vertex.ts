@@ -68,7 +68,11 @@ export class LeafVertex extends SpreadsheetVertex {
     if (!this.dirty) return;
 
     // check deps
-    if (this.edges_in.some((edge) => (edge as SpreadsheetVertex).dirty)) return;
+    for (const edge of this.edges_in) {
+      if ((edge as SpreadsheetVertex).dirty) {
+        return;
+      }
+    }
 
     // ok, we can evaluate... all we are doing here is checking state consistency
     this.UpdateState();

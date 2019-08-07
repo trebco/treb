@@ -877,6 +877,10 @@ export class Calculator extends Graph {
 
       }
       else if (cell.value !== cell.calculated && !options.formula_only){
+
+        // sets dirty and removes inbound edges (in case the cell
+        // previously contained a formula and now it contains a constant).
+
         this.ResetInbound(cell, true); // NOTE: sets dirty
       }
       else if (cell.type === ValueType.undefined){

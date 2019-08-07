@@ -21,15 +21,25 @@ export class Vertex {
 
   /** reset this node */
   public Reset() {
-    this.edges_out.forEach((edge) => edge.RemoveDependency(this));
+
+    for (const edge of this.edges_out) {
+      edge.RemoveDependency(this);
+    }
+
+    for (const edge of this.edges_in) {
+      edge.RemoveDependent(this);
+    }
+
     this.edges_out = [];
-    this.edges_in.forEach((edge) => edge.RemoveDependent(this));
     this.edges_in = [];
+
   }
 
   /** removes all inbound edges (dependencies) */
   public ClearDependencies() {
-    this.edges_in.forEach((edge) => edge.RemoveDependent(this));
+    for (const edge of this.edges_in) {
+      edge.RemoveDependent(this);
+    }
     this.edges_in = [];
   }
 
@@ -38,7 +48,11 @@ export class Vertex {
   /** add a dependent. doesn't add if already in the list */
   public AddDependent(edge: Vertex) {
     if (edge === this) return; // circular
-    if (this.edges_out.some((check) => check === edge)) return; // already in there
+    for (const check of this.edges_out) {
+      if (check === edge) {
+        return;
+      }
+    }
     this.edges_out.push(edge);
   }
 
@@ -50,7 +64,12 @@ export class Vertex {
   /** add a dependency. doesn't add if already in the list */
   public AddDependency(edge: Vertex) {
     if (edge === this) return; // circular
-    if (this.edges_in.some((check) => check === edge)) return; // already in there
+    for (const check of this.edges_in) {
+      if (check === edge) {
+        return;
+      }
+    }
+
     this.edges_in.push(edge);
   }
 
