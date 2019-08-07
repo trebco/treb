@@ -1,5 +1,6 @@
 
-import { Localization, Cell, Cells, Area, ICellAddress, ValueType, CellSerializationOptions } from 'treb-base-types';
+import { Localization, Cell, Area, ICellAddress,
+         ValueType, CellSerializationOptions } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress } from 'treb-parser';
 
@@ -11,42 +12,13 @@ import * as Utilities from './utilities';
 import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 import { FunctionMap } from './descriptors';
-
-// import { RegisterBaseFunctions } from './base-functions';
 import { BaseFunctionLibrary, BaseFunctionAliases } from './base-functions';
 
 import * as PackResults from './pack-results';
 import { DataModel, Annotation } from '@root/treb-grid/src';
 import { LeafVertex } from './dag/leaf_vertex';
 
-import { ArgumentError, ReferenceError, ValueError, UnknownError, IsError } from './function-error';
-
-/**
- * options for unparsing (cleaning up) expressions
- */
-interface UnparseOptions {
-
-  /** insert "undefined" symbol for missing arguments */
-  insert_undefined?: boolean;
-
-  /** normalize addresses (just uppercase) */
-  normalize_addresses?: boolean;
-
-  /** convert booleans to TRUE and FALSE */
-  normalize_booleans?: boolean;
-
-  /**
-   * insert canonical name (if available). this takes precedence
-   * over function name capitalization, if both are set.
-   */
-  normalize_functions?: boolean;
-
-  /** capitalize function names by default */
-  default_capitalize_functions?: boolean;
-
-  /** throw on call to unknown function */
-  throw_on_invalid_function?: boolean;
-}
+import { ArgumentError, ReferenceError, UnknownError, IsError } from './function-error';
 
 export interface CalculationOptions {
 

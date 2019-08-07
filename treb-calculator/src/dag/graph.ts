@@ -261,22 +261,22 @@ export abstract class Graph {
     for (const vertex of this.volatile_list) {
 
       // FIXME: use method, add parameter?
-      this.dirty_list.push(vertex);
+      // this.dirty_list.push(vertex);
+
       vertex.SetDirty();
     }
 
+    const tmp = this.volatile_list.slice(0).concat(this.dirty_list);
+
     this.volatile_list = [];
+    this.dirty_list = [];
 
     // recalculate everything that's dirty. FIXME: optimize path
     // so we do fewer wasted checks of "are all my deps clean"?
 
-    for (const vertex of this.dirty_list) {
+    for (const vertex of tmp) {
       vertex.Calculate(this, this.CalculationCallback, this.SpreadCallback);
     }
-
-    // reset the list
-
-    this.dirty_list = [];
 
   }
 

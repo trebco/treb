@@ -4,6 +4,8 @@ import { Vertex } from './vertex';
 import { Cell, ICellAddress, ValueType } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 
+type Graph = import('./graph').Graph;
+
 export enum SpreadsheetError {
   None,
   CalculationError,
@@ -105,7 +107,7 @@ export class SpreadsheetVertex extends Vertex {
    * calculation routine.
    */
   public Calculate(
-    graph: any, // any? because circular reference? (...)
+    graph: Graph, // any? because circular reference? (...)
     callback: (vertex: SpreadsheetVertex) => CalculationResult,
     spread_callback: (vertex: SpreadsheetVertex, value: any) => void){
 
@@ -127,6 +129,7 @@ export class SpreadsheetVertex extends Vertex {
     if (this.reference) {
 
       if (this.reference.type === ValueType.formula) {
+
         this.short_circuit = false;
         const result = callback.call(graph, this);
         this.result = result.value;
