@@ -12,8 +12,8 @@ export const Validate = (fn: (x: any, y: any) => any, a: number|object, b: numbe
   return fn(a, b);
 };
 
-export const Add2 = Validate.bind(0, (x: any, y: any) => x + y);
-export const Subtract2 = Validate.bind(0, (x: any, y: any) => x - y);
+export const Add = Validate.bind(0, (x: any, y: any) => x + y);
+export const Subtract = Validate.bind(0, (x: any, y: any) => x - y);
 
 */
 
