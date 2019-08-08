@@ -2,9 +2,12 @@
 import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 import { Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
-import { Parser, ExpressionUnit } from 'treb-parser';
+import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier, UnitGroup, UnitUnary } from 'treb-parser';
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
+
+// import { compose, pipe } from './compose';
+import * as Primitives from './primitives';
 
 export interface CalculationContext {
   address: ICellAddress;
@@ -301,7 +304,42 @@ export class ExpressionCalculator {
 
   }
 
-  protected UnaryExpression(operator: string, operand: any){
+  protected UnaryExpression(x: UnitUnary) { // operator: string, operand: any){
+
+    // there are basically three code paths here: negate, identity, and error.
+    // they have very different semantics so we're going to do them completely
+    // separately.
+
+    switch (x.operator) {
+    case '+':
+      return (expr: UnitUnary) => {
+        return this.CalculateExpression(expr.operand);
+      };
+
+    case '-':
+      return (expr: UnitUnary) => {
+        const operand = this.CalculateExpression(expr.operand);
+        if (Array.isArray(operand)){
+          for (const column of operand){
+            for (let r = 0; r < column.length; r++) column[r] = -column[r];
+          }
+          return operand;
+        }
+        return -operand;
+      };
+
+    default:
+      const operator = x.operator;
+      return () => {
+        console.warn('unexpected unary operator:', operator);
+        return ExpressionError;
+      };
+    }
+
+  }
+
+  /*
+
     operand = this.CalculateExpression(operand);
 
     if (Array.isArray(operand)){
@@ -335,6 +373,7 @@ export class ExpressionCalculator {
 
     return ExpressionError;
   }
+  */
 
   /**
    * FIXME: did we drop this from the parser? I think we may have.
@@ -352,54 +391,8 @@ export class ExpressionCalculator {
     case '&&': return left && right;
     }
 
-
     console.info(`(unexpected logical operator: ${operator})`);
     return ExpressionError;
-
-  }
-
-  /**
-   * applies operation over values (guaranteed to be scalars). this is wasteful
-   * when applied to matrices, because we do the test over and over. TODO: inline.
-   *
-   * @param operator
-   * @param left scalar
-   * @param right scalar
-   */
-  protected ElementalBinaryExpression(operator: string, left: any, right: any){
-
-    // propagate errors
-
-    if (typeof left === 'object' && left.error) return {...left};
-    if (typeof right === 'object' && right.error) return {...right};
-
-    switch (operator){
-      case '+': return left + right;
-      case '-': return left - right;
-      case '*': return left * right;
-      case '/': return left / right;
-      case '^': return Math.pow(left, right);
-      case '%': return left % right;
-      case '>': return left > right;
-      case '<': return left < right;
-      case '>=': return left >= right;
-      case '<=': return left <= right;
-
-      // tslint:disable-next-line:triple-equals
-      case '!==': return left != right;
-
-      // tslint:disable-next-line:triple-equals
-      case '<>': return left != right;
-
-      // tslint:disable-next-line:triple-equals
-      case '=': return left == right;
-
-      // tslint:disable-next-line:triple-equals
-      case '==': return left == right;
-      }
-
-      console.info(`(unexpected binary operator: ${operator})`);
-      return ExpressionError;
 
   }
 
@@ -438,7 +431,7 @@ export class ExpressionCalculator {
    * @param left guaranteed to be 2d array
    * @param right guaranteed to be 2d array
    */
-  protected ElementwiseBinaryExpression(operator: string, left: any[][], right: any[][]){
+  protected ElementwiseBinaryExpression(fn: Primitives.PrimitiveBinaryExpression, left: any[][], right: any[][]){
 
     const columns = Math.max(left.length, right.length);
     const rows = Math.max(left[0].length, right[0].length);
@@ -451,7 +444,8 @@ export class ExpressionCalculator {
     for (let c = 0; c < columns; c++) {
       const col = [];
       for (let r = 0; r < rows; r++ ) {
-        col[r] = this.ElementalBinaryExpression(operator, left[c][r], right[c][r]);
+        // col[r] = this.ElementalBinaryExpression(operator, left[c][r], right[c][r]);
+        col[r] = fn(left[c][r], right[c][r]);
       }
       result.push(col);
     }
@@ -459,104 +453,134 @@ export class ExpressionCalculator {
     return result;
   }
 
-  protected BinaryExpression(operator: string, left: any, right: any){
+  protected BinaryExpression(x: UnitBinary) {
 
-    // sloppy typing, to support operators? (...)
+    // we are constructing and caching functions for binary expressions.
+    // this should simplify calls when parameters change. eventually I'd
+    // like to do this for other dynamic calls as well...
 
-    left = this.CalculateExpression(left);
-    right = this.CalculateExpression(right);
+    // the idea is that we can start composing compound expressions. still
+    // not sure if that will work (or if it's a good idea).
 
-    // check for arrays. do elementwise operations.
+    // NOTE (for the future?) if one or both of the operands is a literal,
+    // we can bind that directly. literals in the expression won't change
+    // unless the expression changes, which will discard the generated
+    // function (along with the expression itself).
 
-    if (Array.isArray(left)){
-      if (Array.isArray(right)){
-        return this.ElementwiseBinaryExpression(operator, left, right);
-      }
-      else {
-        return this.ElementwiseBinaryExpression(operator, left, [[right]]);
-      }
+    const fn = Primitives.MapOperator(x.operator);
+
+    if (!fn) {
+      return (expr: UnitBinary) => {
+        console.info(`(unexpected binary operator: ${x.operator})`);
+        return ExpressionError;
+      };
     }
-    else if (Array.isArray(right)) {
-      return this.ElementwiseBinaryExpression(operator, [[left]], right);
+    else {
+      return (expr: UnitBinary) => {
+
+        // sloppy typing, to support operators? (...)
+
+        const left = this.CalculateExpression(expr.left);
+        const right = this.CalculateExpression(expr.right);
+
+        // check for arrays. do elementwise operations.
+
+        if (Array.isArray(left)){
+          if (Array.isArray(right)){
+            return this.ElementwiseBinaryExpression(fn, left, right);
+          }
+          else {
+            return this.ElementwiseBinaryExpression(fn, left, [[right]]);
+          }
+        }
+        else if (Array.isArray(right)) {
+          return this.ElementwiseBinaryExpression(fn, [[left]], right);
+        }
+
+        return fn(left, right);
+
+      };
     }
-
-    // propagate errors
-
-    if (typeof left === 'object' && left.error) return {...left};
-    if (typeof right === 'object' && right.error) return {...right};
-
-    switch (operator){
-    case '+': return left + right;
-    case '-': return left - right;
-    case '*': return left * right;
-    case '/': return left / right;
-    case '^': return Math.pow(left, right);
-    case '%': return left % right;
-    case '>': return left > right;
-    case '<': return left < right;
-    case '>=': return left >= right;
-    case '<=': return left <= right;
-
-    // tslint:disable-next-line:triple-equals
-    case '!==': return left != right;
-
-    // tslint:disable-next-line:triple-equals
-    case '<>': return left != right;
-
-    // tslint:disable-next-line:triple-equals
-    case '=': return left == right;
-
-    // tslint:disable-next-line:triple-equals
-    case '==': return left == right;
-    }
-
-    console.info(`(unexpected binary expr: ${operator})`);
-    return ExpressionError;
 
   }
 
-  protected Identifier(name: string){
+  protected Identifier(expr: UnitIdentifier){
 
-    const upper_case = name.toUpperCase();
+    // the function we create here binds the name because
+    // this is a literal identifier. if the value were to change,
+    // the expression would be discarded.
+
+    // however we have to do the lookup dynamically because the
+    // underlying reference (in the named range map) might change.
+
+    // although it's worth noting that, atm at least, that wouldn't
+    // trigger an update because it's not considered a value change.
+    // FIXME? (...)
+
+    const upper_case = expr.name.toUpperCase();
 
     switch (upper_case){
     case 'FALSE':
     case 'F':
-      return false;
+      return () => false;
 
     case 'TRUE':
     case 'T':
-      return true;
+      return () => true;
 
     case 'UNDEFINED':
-      return undefined;
+      return () => undefined; // why do we support this?
     }
 
-    const named_range = this.named_range_map[upper_case];
+    return () => {
 
-    if (named_range) {
-      if (named_range.count === 1) {
-        return this.CellFunction(
-          named_range.start.column,
-          named_range.start.row,
-        );
-      }
-      else {
-        return this.CellFunction(
-          named_range.start.column,
-          named_range.start.row,
-          named_range.end.column,
-          named_range.end.row,
-        );
-      }
-    }
+      const named_range = this.named_range_map[upper_case];
 
-    console.info( '** identifier', name);
-    return NameError;
+      if (named_range) {
+        if (named_range.count === 1) {
+          return this.CellFunction(
+            named_range.start.column,
+            named_range.start.row,
+          );
+        }
+        else {
+          return this.CellFunction(
+            named_range.start.column,
+            named_range.start.row,
+            named_range.end.column,
+            named_range.end.row,
+          );
+        }
+      }
+
+      console.info( '** identifier', name);
+      return NameError;
+
+    };
 
   }
 
+  protected GroupExpression(x: UnitGroup) {
+    if (!x.elements || x.elements.length !== 1){
+      return () => {
+        console.warn( `Can't handle group !== 1` );
+        return 0;
+      };
+    }
+    return (expr: UnitGroup) => this.CalculateExpression(expr.elements[0]);
+  }
+
   protected CalculateExpression(expr: ExpressionUnit): any {
+
+    // user data is a generated function for the expression, at least
+    // for the simple ones (atm). see BinaryExpression for more. the
+    // aim is to remove as many tests and lookups as possible.
+
+    // may be over-optimizing here.
+
+    if (expr.user_data) {
+      return expr.user_data(expr);
+    }
 
     switch (expr.type){
     case 'call':
@@ -571,26 +595,24 @@ export class ExpressionCalculator {
         expr.end.column, expr.end.row );
 
     case 'binary':
-      return this.BinaryExpression(expr.operator, expr.left, expr.right);
+      return (expr.user_data = this.BinaryExpression(expr))(expr);
 
     case 'unary':
-      return this.UnaryExpression(expr.operator, expr.operand);
+      return (expr.user_data = this.UnaryExpression(expr))(expr);
 
     case 'identifier':
-      return this.Identifier(expr.name);
+      return (expr.user_data = this.Identifier(expr))();
 
     case 'missing':
+      expr.user_data = () => undefined;
       return undefined;
 
     case 'literal':
+      expr.user_data = () => expr.value;
       return expr.value;
 
     case 'group':
-      if (!expr.elements || expr.elements.length !== 1){
-        console.warn( `Can't handle group !== 1` );
-        return 0;
-      }
-      return this.CalculateExpression(expr.elements[0]);
+      return (expr.user_data = this.GroupExpression(expr))(expr);
 
     default:
       console.warn( 'Unhandled parse expr:', expr);
