@@ -6,6 +6,7 @@
  */
 export interface BaseUnit {
   id: number;
+  user_data?: any;
 }
 
 /**
