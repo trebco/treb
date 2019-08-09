@@ -2,7 +2,7 @@
 import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 import { Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
-import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier, UnitGroup, UnitUnary } from 'treb-parser';
+import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier, UnitGroup, UnitUnary, UnitAddress, UnitRange } from 'treb-parser';
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
 
@@ -587,12 +587,14 @@ export class ExpressionCalculator {
       return this.CallExpression(expr.name, expr.args);
 
     case 'address':
-      return this.CellFunction(expr.column, expr.row);
+      return (expr.user_data = (x: UnitAddress) => this.CellFunction(x.column, x.row))(expr);
 
     case 'range':
-      return this.CellFunction(
-        expr.start.column, expr.start.row,
-        expr.end.column, expr.end.row );
+      // return this.CellFunction(
+      //  expr.start.column, expr.start.row,
+      //  expr.end.column, expr.end.row );
+      return (expr.user_data = (x: UnitRange) =>
+        this.CellFunction(x.start.column, x.start.row, x.end.column, x.end.row))(expr);
 
     case 'binary':
       return (expr.user_data = this.BinaryExpression(expr))(expr);
