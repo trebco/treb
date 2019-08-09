@@ -2,7 +2,6 @@
 import { FunctionMap } from './descriptors';
 import * as Utils from './utilities';
 import { Localization } from 'treb-base-types';
-import { NumberFormatCache } from 'treb-format';
 import { ReferenceError, NotImplError } from './function-error';
 
 /**
@@ -356,14 +355,6 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: Utils.ApplyArrayFunc(Math.abs),
     },
 
-    Text: {
-      fn: (value: number, format?: string) => {
-        if (!format || typeof format !== 'string') {
-          format = '0.00####';
-        }
-        return NumberFormatCache.Get(format).Format(value || 0);
-      },
-    },
 
     Simplify: {
       fn: (value: number, significant_digits = 2) => {
@@ -395,6 +386,13 @@ export const BaseFunctionLibrary: FunctionMap = {
         const sign = (x < mean) ? -1 : 1;
         return 0.5 * (1.0 + sign * erf((Math.abs(x - mean)) / (stdev * Math.sqrt(2))));
 
+      },
+    },
+
+    HexToDec: {
+      arguments: [{ description: 'hexadecimal string' }],
+      fn: (hex: string) => {
+        return parseInt(hex, 16);
       },
     },
 

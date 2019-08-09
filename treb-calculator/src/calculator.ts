@@ -13,6 +13,7 @@ import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 import { FunctionMap } from './descriptors';
 import { BaseFunctionLibrary, BaseFunctionAliases } from './base-functions';
+import { TextFunctionLibrary } from './text-functions';
 
 import * as PackResults from './pack-results';
 import { DataModel, Annotation } from '@root/treb-grid/src';
@@ -69,11 +70,16 @@ export class Calculator extends Graph {
     super();
     this.UpdateLocale();
 
+    // base functions (plus aliases)
     this.library.Register(BaseFunctionLibrary);
     for (const key of Object.keys(BaseFunctionAliases)) {
       this.library.Alias(key, BaseFunctionAliases[key]);
     }
 
+    // we split out text functions
+    this.library.Register(TextFunctionLibrary);
+
+    // mc functions
     this.library.Register(this.simulation_model.functions);
 
     // special functions...
