@@ -2,7 +2,8 @@
 import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 import { Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
-import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier, UnitGroup, UnitUnary, UnitAddress, UnitRange } from 'treb-parser';
+import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
+         UnitGroup, UnitUnary, UnitAddress, UnitRange } from 'treb-parser';
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
 
@@ -99,8 +100,12 @@ export class ExpressionCalculator {
   protected CellFunction(c1: number, r1: number, c2?: number, r2?: number){
     if (typeof c2 === 'undefined' || typeof r2 === 'undefined') {
       const cell = this.cells.GetCell({row: r1, column: c1});
-      if (!cell) return undefined;
-      if (cell.calculated_type === ValueType.error) return { error: cell.GetValue() };
+      if (!cell) {
+        return undefined;
+      }
+      if (cell.calculated_type === ValueType.error) {
+        return { error: cell.GetValue() };
+      }
       return cell.GetValue();
     }
     else {
