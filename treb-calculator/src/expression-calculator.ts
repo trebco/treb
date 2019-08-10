@@ -597,9 +597,6 @@ export class ExpressionCalculator {
       return (expr.user_data = (x: UnitAddress) => this.CellFunction(x.column, x.row))(expr);
 
     case 'range':
-      // return this.CellFunction(
-      //  expr.start.column, expr.start.row,
-      //  expr.end.column, expr.end.row );
       return (expr.user_data = (x: UnitRange) =>
         this.CellFunction(x.start.column, x.start.row, x.end.column, x.end.row))(expr);
 
