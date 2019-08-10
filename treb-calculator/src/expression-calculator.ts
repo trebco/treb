@@ -520,9 +520,11 @@ export class ExpressionCalculator {
 
     // although it's worth noting that, atm at least, that wouldn't
     // trigger an update because it's not considered a value change.
-    // FIXME? (...)
+    // you'd have to recalc, which would rebuild the expression anyway.
+    // call that a FIXME? (...)
 
-    const upper_case = expr.name.toUpperCase();
+    const identifier = expr.name;
+    const upper_case = identifier.toUpperCase();
 
     switch (upper_case){
     case 'FALSE':
@@ -558,7 +560,7 @@ export class ExpressionCalculator {
         }
       }
 
-      console.info( '** identifier', name);
+      console.info( '** identifier', identifier);
       return NameError;
 
     };

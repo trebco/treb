@@ -396,6 +396,13 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    DecToHex: {
+      arguments: [{ description: 'number' }],
+      fn: (num: number) => {
+        return num.toString(16);
+      },
+    },
+
 };
 
 export const BaseFunctionAliases: {[index: string]: string} = {
