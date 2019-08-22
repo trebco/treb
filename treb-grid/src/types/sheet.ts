@@ -754,10 +754,17 @@ export class Sheet {
       cell.formatted = value.toString().toUpperCase(); // implicit locale?
       cell.rendered_type = ValueType.boolean;
     }
+    else if (type === ValueType.formula && cell.calculated === undefined) {
+      cell.formatted = '';
+      cell.rendered_type = ValueType.string;
+    }
     else {
-      cell.formatted = // Style.Format(cell.style, value);
-        this.FormatNumber(value, cell.style.number_format);
-      // cell.formatted = value.toString();
+
+      // why is this being treated as a number? (...)
+      // A: it's not, number format has a text section. defaults
+      //    to @ (just show the text), but could be different
+
+      cell.formatted = this.FormatNumber(value, cell.style.number_format);
       cell.rendered_type = ValueType.string;
     }
 
