@@ -4,6 +4,9 @@ import { ICellAddress } from 'treb-base-types';
 /** base options excludes node, so we can create a default */
 export interface BaseOptions {
 
+  /** */
+  dnd?: boolean;
+
   /** key in localStorage for persisting document */
   storage_key?: string;
 
@@ -65,6 +68,7 @@ export const DefaultOptions: BaseOptions = {
   in_cell_editor: true,
   undo: true,
   scrollbars: true,
+  dnd: false,
 };
 
 /**

@@ -236,6 +236,14 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     this.grid.Initialize(this.node);
 
+    // dnd
+
+    if (this.options.dnd) {
+      this.node.addEventListener('dragenter', (event) => this.HandleDrag(event));
+      this.node.addEventListener('dragover', (event) => this.HandleDrag(event));
+      this.node.addEventListener('drop', (event) => this.HandleDrop(event));
+    }
+
     // set up grid events
 
     this.grid.grid_events.Subscribe((event) => {
@@ -344,6 +352,24 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       text: this.grid.theme.interface_dialog_color,
     });
 
+  }
+
+  public HandleDrag(event: DragEvent) {
+    if (event.dataTransfer && event.dataTransfer.types && event.dataTransfer.types[0] === 'Files') {
+      event.preventDefault();
+    }
+  }
+
+  public HandleDrop(event: DragEvent) {
+    if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
+      event.preventDefault();
+      console.info(event.dataTransfer.files[0]);
+      this.LoadFileInternal(event.dataTransfer.files[0]).then(() => {
+        // ...
+      }).catch((err) => {
+        console.error(err);
+      });
+    }
   }
 
   /** set freeze area */
@@ -943,7 +969,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
             if (/\.csv$/i.test(file.name)) {
               this.LoadCSV(reader.result as string);
             }
-            else if (/\.xlsx$/i.test(file.name)) {
+            else if (/\.xls[xm]$/i.test(file.name)) {
               let contents: string;
 
               if (typeof reader.result === 'string') {
