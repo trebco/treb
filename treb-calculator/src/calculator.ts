@@ -86,6 +86,47 @@ export class Calculator extends Graph {
 
     this.library.Register({
 
+      /**
+       * this one does not have to be here, it's just here because
+       * the rest of the reference/lookup functions are here
+       */
+      Rows: {
+        arguments: [{
+          name: 'reference', description: 'Array or reference' },
+        ],
+        volatile: false,
+        fn: (reference: any) => {
+          if (!reference) return ArgumentError;
+          if (Array.isArray(reference)) {
+            const column = reference[0];
+            if (Array.isArray(column)) {
+              return column.length;
+            }
+            return ValueError;
+          }
+          return 1;
+        },
+      },
+
+      /**
+       * this one does not have to be here, it's just here because
+       * the rest of the reference/lookup functions are here
+       */
+      Columns: {
+        arguments: [{
+          name: 'reference', description: 'Array or reference' },
+        ],
+        volatile: false,
+        fn: (reference: any) => {
+          if (!reference) return ArgumentError;
+          if (Array.isArray(reference)) {
+            return reference.length;
+          }
+          return 1;
+        },
+      },
+
+      /** like indirect, this creates dependencies at calc time */
       Offset: {
         arguments: [{
           name: 'reference', description: 'Base reference', address: true, }, {
