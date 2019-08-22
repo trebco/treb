@@ -614,7 +614,6 @@ export class TileRenderer {
    * NOTE: style font must already be set in context
    */
   protected PrepText(context: CanvasRenderingContext2D, cell: Cell, cell_width: number) {
-
     const strings: RenderTextPart[] = [];
     const style: Style.Properties = cell.style || {};
 
@@ -672,6 +671,13 @@ export class TileRenderer {
 
       max_width = composite_width;
       single = true;
+
+    }
+    else if (cell.formatted === '') {
+
+      // undefined cells return this value; we don't need to do any calculation
+
+      strings.push({ text: '', hidden: false, width: 0 });
 
     }
     else if (cell.formatted) {
