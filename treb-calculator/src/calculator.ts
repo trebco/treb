@@ -19,7 +19,7 @@ import * as PackResults from './pack-results';
 import { DataModel, Annotation } from '@root/treb-grid/src';
 import { LeafVertex } from './dag/leaf_vertex';
 
-import { ArgumentError, ReferenceError, UnknownError, IsError } from './function-error';
+import { ArgumentError, ReferenceError, UnknownError, IsError, ValueError } from './function-error';
 
 export interface CalculationOptions {
 
@@ -82,18 +82,67 @@ export class Calculator extends Graph {
     // mc functions
     this.library.Register(this.simulation_model.functions);
 
-    // special functions...
+    // special functions... need reference to the graph (this)
 
     this.library.Register({
 
-      /**
-       * FIXME: this isn't guaranteed to work properly, because it doesn't
-       * generate a dependency in the graph. we need some notion of "soft"
-       * dependencies that can be built at calculation time, although that
-       * will be crazy wasteful for a rarely used function.
-       *
-       * call that a TODO. maybe add an argument flag.
-       */
+      Offset: {
+        arguments: [{
+          name: 'reference', description: 'Base reference', address: true, }, {
+          name: 'rows', description: 'number of rows to offset' }, {
+          name: 'columns', description: 'number of columns to offset' },
+        ],
+        volatile: true,
+        fn: ((reference: string, rows = 0, columns = 0, width = 1, height = 1) => {
+
+          if (!reference) return ArgumentError;
+
+          const parse_result = this.parser.Parse(reference);
+          if (parse_result.error || !parse_result.expression) {
+            return ReferenceError;
+          }
+
+          const check_result = this.DynamicDependencies(
+            parse_result.expression,
+            true, rows, columns, width, height);
+
+          if (IsError(check_result)) {
+            return check_result;
+          }
+
+          if (check_result.dirty) {
+            const current_vertex =
+              this.GetVertex(this.expression_calculator.context.address, true) as SpreadsheetVertex;
+            current_vertex.short_circuit = true;
+            return undefined;
+          }
+
+          if (check_result.area) {
+
+            const start: ExpressionUnit = {
+              type: 'address', ...check_result.area.start,
+              label: '', position: 0,
+              id: parse_result.expression.id,
+            };
+            const end: ExpressionUnit = {
+              type: 'address', ...check_result.area.end,
+              label: '', position: 0,
+              id: parse_result.expression.id,
+            };
+            const expression: ExpressionUnit = check_result.area.count === 1 ? start : {
+              type: 'range', start, end,
+              label: '', position: 0,
+              id: parse_result.expression.id,
+            };
+
+            return this.CalculateExpression(expression, undefined, true);
+          }
+
+          return ValueError;
+
+        }).bind(this),
+      },
+
       Indirect: {
         arguments: [
           { name: 'reference', description: 'Cell reference (string)' },
@@ -136,7 +185,14 @@ export class Calculator extends Graph {
    * returns error on bad reference or circular dependency. this method
    * does not set the "short circuit" flag, callers should set as appropriate.
    */
-  public DynamicDependencies(expression: ExpressionUnit) {
+  public DynamicDependencies(
+      expression: ExpressionUnit,
+      offset = false,
+      offset_rows = 0,
+      offset_columns = 0,
+      resize_rows = 1,
+      resize_columns = 1,
+    ) {
 
     if (!this.model) {
       return UnknownError;
@@ -173,6 +229,16 @@ export class Calculator extends Graph {
       // check any dirty...
 
       area = this.model.sheet.RealArea(area);
+
+      if (offset) {
+        area = new Area({
+          column: area.start.column + offset_columns,
+          row: area.start.row + offset_rows,
+        }, {
+          column: area.start.column + offset_columns + resize_rows - 1,
+          row: area.start.row + offset_rows + resize_columns - 1,
+        });
+      }
 
       for (let row = area.start.row; row <= area.end.row; row++ ){
         for (let column = area.start.column; column <= area.end.column; column++ ){
@@ -212,7 +278,7 @@ export class Calculator extends Graph {
       }
     }
 
-    return { dirty };
+    return { dirty, area };
 
   }
 
