@@ -155,7 +155,9 @@ export class SpreadsheetVertex extends Vertex {
         if (typeof this.result === 'object' && this.result.error) {
           this.reference.SetCalculationError(this.result.error);
         }
-        else this.reference.SetCalculatedValue(this.result);
+        else {
+          this.reference.SetCalculatedValue(this.result);
+        }
       }
 
     }

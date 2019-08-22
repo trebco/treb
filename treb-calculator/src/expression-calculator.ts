@@ -100,12 +100,17 @@ export class ExpressionCalculator {
   protected CellFunction(c1: number, r1: number, c2?: number, r2?: number){
     if (typeof c2 === 'undefined' || typeof r2 === 'undefined') {
       const cell = this.cells.GetCell({row: r1, column: c1});
+
       if (!cell) {
         return undefined;
       }
       if (cell.calculated_type === ValueType.error) {
         return { error: cell.GetValue() };
       }
+      if (cell.type === ValueType.undefined) {
+        return 0;
+      }
+
       return cell.GetValue();
     }
     else {
