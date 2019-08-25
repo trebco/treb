@@ -48,10 +48,15 @@ export class FormattingToolbar {
     this.svg_injected = true;
   }
 
+  public get visible() { return this.visible_; }
+
   private static svg_injected = false;
 
-  private visible = false;
+  // tslint:disable-next-line: variable-name
+  private visible_ = false;
+
   private node: HTMLElement;
+  private outer: HTMLElement;
   private toolbar: Toolbar;
   private selection_style?: Style.Properties;
   private primary_selection: any;
@@ -60,9 +65,15 @@ export class FormattingToolbar {
       private sheet: EmbeddedSpreadsheet,
       private container: HTMLElement) {
 
+    this.outer = document.createElement('div');
+    this.outer.classList.add('treb-formatting-toolbar');
+
     this.node = document.createElement('div');
-    this.node.classList.add('treb-formatting-toolbar');
-    container.insertBefore(this.node, container.firstChild);
+    this.node.classList.add('treb-formatting-toolbar-inner');
+
+    // container.insertBefore(this.node, container.firstChild);
+    container.insertBefore(this.outer, container.firstChild);
+    this.outer.appendChild(this.node);
 
     FormattingToolbar.InjectSVG();
 
@@ -101,9 +112,24 @@ export class FormattingToolbar {
   }
 
   public Show(show = true) {
-    this.visible = show;
-    this.node.style.display = this.visible ?
-      'inline-flex' : 'none';
+    this.visible_ = show;
+    this.outer.style.display = this.visible_ ? 'block' : 'none';
+
+    if (show) {
+
+      const toolbar_rect = this.node.getBoundingClientRect();
+      const container_rect = this.container.getBoundingClientRect();
+
+      if (toolbar_rect.width > container_rect.width) {
+        console.info('centering');
+        this.outer.classList.add('centered');
+      }
+      else {
+        this.outer.classList.remove('centered');
+      }
+
+    }
+
   }
 
   public Hide() {
@@ -111,7 +137,7 @@ export class FormattingToolbar {
   }
 
   public Toggle() {
-    this.Show(!this.visible);
+    this.Show(!this.visible_);
   }
 
   ///

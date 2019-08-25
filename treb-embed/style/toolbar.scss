@@ -195,8 +195,20 @@ $font_stack: -apple-system,
 
 .treb-formatting-toolbar {
 
+  height: 30px;
+
+  &.centered {
+    text-align: center;
+    & .treb-formatting-toolbar-inner {
+      transform: translateX(-50%);
+    }
+  }
+
+  .treb-formatting-toolbar-inner {
+
+    position: absolute;
     padding: 0 10px;
-    display: none;
+    display: inline-flex;
     flex-direction: row;
     overflow: hidden;
 
@@ -372,4 +384,5 @@ $font_stack: -apple-system,
 
     }
 
+}
 }

@@ -23,6 +23,8 @@ const DAY_MS = 1000 * 60 * 60 * 24;
 // some functions have semantics that can't be represented inline,
 // or we may want to refer to them from other functions.
 
+// OK, just one.
+
 /** error function (for gaussian distribution) */
 const erf = (x: number) => {
 
@@ -143,6 +145,16 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    CountA: {
+      description: 'Counts cells that are not empty',
+      fn: (...args: any[]) => {
+        return Utils.Flatten(args).reduce((a: number, b: any) => {
+          if (typeof b === 'undefined') return a;
+          return a + 1;
+        }, 0);
+      },
+    },
+
     Count: {
       description: 'Counts cells that contain numbers',
       fn: (...args: any[]) => {
@@ -229,6 +241,10 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    /**
+     * FIXME: does not implement inexact matching (what's the algo for
+     * that, anyway? nearest? price is right style? what about ties?)
+     */
     VLookup: {
       fn: (value: any, table: any[][], col: number, exact = false) => {
 

@@ -1,8 +1,8 @@
 
 import { Localization, Cell, Area, ICellAddress,
          ValueType, CellSerializationOptions } from 'treb-base-types';
-import { Parser, ExpressionUnit, DependencyList,
-         DecimalMarkType, ArgumentSeparatorType, UnitAddress } from 'treb-parser';
+import { Parser, ExpressionUnit, DependencyList, UnitRange,
+         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier } from 'treb-parser';
 
 import { Graph, GraphStatus } from './dag/graph';
 import { SpreadsheetVertex, CalculationResult } from './dag/spreadsheet_vertex';
@@ -239,25 +239,7 @@ export class Calculator extends Graph {
       return UnknownError;
     }
 
-    let area: Area | undefined;
-
-    switch (expression.type) {
-      case 'address':
-        area = new Area(expression);
-        break;
-
-      case 'range':
-        area = new Area(expression.start, expression.end);
-        break;
-
-      case 'identifier':
-        const named_range =
-          this.model.sheet.named_ranges.Get(expression.name.toUpperCase());
-        if (named_range) {
-          area = new Area(named_range.start, named_range.end);
-        }
-        break;
-    }
+    let area = this.ResolveExpressionAddress(expression);
 
     // flag. we're going to check _all_ dependencies at once, just in
     // case (for this function this would only happen if the argument
@@ -702,27 +684,10 @@ export class Calculator extends Graph {
         const arg = parse_result.expression.args[index];
         if (!arg) { continue; }
 
-        /*
-        // dynamic; not yet, call this a TODO
-        if (arg.type === 'call') {
-          const result = this.CalculateExpression(arg);
-        }
-        */
+        const area = this.ResolveExpressionAddress(arg);
 
-        switch (arg.type) {
-          case 'identifier':
-            const normalized = arg.name.toUpperCase();
-            const named_range = this.model.sheet.named_ranges.Get(normalized);
-            if (named_range) {
-              references.push(named_range.start); // ATM just one cell
-            }
-            break;
-          case 'address':
-            references.push(arg);
-            break;
-          case 'range':
-            references.push(arg.start); // ATM just one cell
-            break;
+        if (area) {
+          references.push(area.start);
         }
 
       }
@@ -780,8 +745,60 @@ export class Calculator extends Graph {
   }
   */
 
+  /**
+   * assuming the expression is an address, range, or named range, resolve
+   * to an address/area. returns undefined if the expression can't be resolved.
+   */
+  protected ResolveExpressionAddress(expr: ExpressionUnit) {
+
+    switch (expr.type) {
+      case 'address':
+        return new Area(expr);
+
+      case 'range':
+        return new Area(expr.start, expr.end);
+
+      case 'identifier':
+        if (this.model) {
+          const named_range =
+            this.model.sheet.named_ranges.Get(expr.name.toUpperCase());
+          if (named_range) {
+            return new Area(named_range.start, named_range.end);
+          }
+        }
+        break;
+    }
+
+    return undefined;
+
+  }
+
+  protected NamedRangeToAddressUnit(unit: UnitIdentifier): UnitAddress|UnitRange|undefined {
+    if (!this.model) return undefined;
+
+    const normalized = unit.name.toUpperCase();
+    const named_range = this.model.sheet.named_ranges.Get(normalized);
+    if (named_range) {
+      if (named_range.count === 1) {
+        return this.ConstructAddressUnit(named_range.start, normalized, unit.id, unit.position);
+      }
+      else {
+        return {
+          type: 'range',
+          start: this.ConstructAddressUnit(named_range.start, normalized, unit.id, unit.position),
+          end: this.ConstructAddressUnit(named_range.end, normalized, unit.id, unit.position),
+          label: normalized,
+          id: unit.id,
+          position: unit.position,
+        };
+      }
+    }
+
+    return undefined;
+  }
+
   /** named range support */
-  protected NamedRangeToAddressUnit(address: ICellAddress, label: string, id: number, position: number) {
+  protected ConstructAddressUnit(address: ICellAddress, label: string, id: number, position: number) {
     return {
       type: 'address',
       row: address.row,
@@ -812,26 +829,13 @@ export class Calculator extends Graph {
 
       case 'identifier':
         {
-          if (!this.model) break;
-          const normalized = unit.name.toUpperCase();
-          const named_range = this.model.sheet.named_ranges.Get(normalized);
-          if (named_range) {
-            if (named_range.count === 1) {
-              dependencies.addresses[normalized] =
-                this.NamedRangeToAddressUnit(named_range.start, normalized,
-                  unit.id, unit.position);
+          const resolved = this.NamedRangeToAddressUnit(unit);
+          if (resolved) {
+            if (resolved.type === 'address') {
+              dependencies.addresses[resolved.label] = resolved;
             }
             else {
-              dependencies.ranges[normalized] = {
-                type: 'range',
-                start: this.NamedRangeToAddressUnit(named_range.start, normalized,
-                  unit.id, unit.position),
-                end: this.NamedRangeToAddressUnit(named_range.end, normalized,
-                  unit.id, unit.position),
-                label: normalized,
-                id: unit.id,
-                position: unit.position,
-              };
+              dependencies.ranges[resolved.label] = resolved;
             }
           }
         }
@@ -863,6 +867,8 @@ export class Calculator extends Graph {
         // this is where we diverge. if there's a known function that has
         // an "address" parameter, we don't treat it as a dependency. this is
         // to support our weird MV syntax (weird here, but useful in Excel).
+
+        // UPDATE: this is broadly useful for some other functions, like OFFSET.
 
         const args: ExpressionUnit[] = unit.args.slice(0);
         const func = this.library.Get(unit.name);

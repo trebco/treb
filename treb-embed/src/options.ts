@@ -7,6 +7,9 @@ export interface BaseOptions {
   /** */
   dnd?: boolean;
 
+  /** */
+  // await_fonts?: string|string[];
+
   /** key in localStorage for persisting document */
   storage_key?: string;
 

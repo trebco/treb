@@ -4,7 +4,7 @@ import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants } from '
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { Calculator, CalculationWorker, WorkerMessage, LeafVertex } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
-import { EventSource, Resizable, Yield } from 'treb-utils';
+import { EventSource, Resizable, Yield, Measurement } from 'treb-utils';
 // import { Sparkline } from 'treb-sparkline';
 
 // local
@@ -122,13 +122,18 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   private toolbar?: FormattingToolbar;
 
-  /** do we need a reference to this? */
-  private resizable?: Resizable;
+  /** do we need a reference to this? [apparently not] */
+  // private resizable?: Resizable;
 
   /* for storing; also inefficient. pack, zip, do something. */
   private last_simulation_data: any = {};
 
-  /** calculation worker (no longer using worker-loader) */
+  /**
+   * calculation worker (no longer using worker-loader)
+   *
+   * NOTE: why is this managed by this class, and not by calculator?
+   * it seems like that would better encapsulate the calculation.
+   */
   private worker?: CalculationWorker;
 
   /**
@@ -174,8 +179,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     super();
 
-    // this.RegisterFunctions();
-
     // consolidate options w/ defaults. note that this does not
     // support nested options, for that you need a proper merge
 
@@ -212,7 +215,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     container.appendChild(this.node);
 
     if (this.options.resizable) {
-      this.resizable = new Resizable(container, this.node, () => {
+      // this.resizable
+      const resizable = new Resizable(container, this.node, () => {
         this.Resize();
       });
     }
@@ -352,10 +356,73 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       text: this.grid.theme.interface_dialog_color,
     });
 
+    /*
+    if (options.await_fonts) {
+      if (!Array.isArray(options.await_fonts)) {
+        options.await_fonts = [options.await_fonts];
+        this.AwaitFonts(options.await_fonts);
+      }
+    }
+    */
+
   }
 
+  /*
+  public AwaitFonts(list: string[]) {
+    Promise.all(list.map((font) => this.AwaitFont(font))).then((results) => {
+      console.info(results);
+    });
+  }
+
+  public AwaitFont(font: string, timeout = 1000, poll = 100){
+
+    let bold = false;
+    let italic = false;
+
+    let face = font;
+
+    if (/bold/i.test(face)) {
+      face = face.replace(/bold/i, '').trim();
+      bold = true;
+    }
+
+    if (/bold/i.test(face)) {
+      face = face.replace(/bold/i, '').trim();
+      bold = true;
+    }
+
+    if (/italic/i.test(face)) {
+      face = face.replace(/italic/i, '').trim();
+      italic = true;
+    }
+
+    return new Promise((resolve, reject) => {
+      let passed = 0;
+      const check = () => {
+        if (Measurement.FontLoaded(face, italic, bold)) {
+          console.info('font loaded', font);
+          resolve(true);
+        }
+        else {
+          passed += poll;
+          if (passed < timeout) {
+            setTimeout(check, poll);
+          }
+          else {
+            console.warn('abandoning font on timeout', font);
+            resolve(false);
+          }
+        }
+      };
+      check();
+
+    });
+
+  }
+  */
+
   public HandleDrag(event: DragEvent) {
-    if (event.dataTransfer && event.dataTransfer.types && event.dataTransfer.types[0] === 'Files') {
+    if (event.dataTransfer && event.dataTransfer.types && event.dataTransfer.types.some((check) => check === 'Files')) {
       event.preventDefault();
     }
   }
@@ -363,10 +430,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   public HandleDrop(event: DragEvent) {
     if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
       event.preventDefault();
-      console.info(event.dataTransfer.files[0]);
       this.LoadFileInternal(event.dataTransfer.files[0]).then(() => {
         // ...
       }).catch((err) => {
+        this.ShowDialog(true,
+            'Reading the file failed. Make sure your\n' +
+            'file is a valid XLSX, CSV or TREB file.', 2500);
         console.error(err);
       });
     }
@@ -803,9 +872,14 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * client calls when the container is resized; handle any required layout
    */
   public Resize() {
-    // console.info('...');
+
     this.grid.UpdateLayout();
     this.Publish({ type: 'resize' });
+
+    if (this.toolbar && this.toolbar.visible) {
+      this.toolbar.Show(true);
+    }
+
   }
 
   /** clear/reset sheet, back to initial state */

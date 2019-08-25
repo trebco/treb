@@ -3,7 +3,7 @@ import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 import { Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
 import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
-         UnitGroup, UnitUnary, UnitAddress, UnitRange } from 'treb-parser';
+         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
 
@@ -15,6 +15,9 @@ export interface CalculationContext {
 }
 
 export class ExpressionCalculator {
+
+  // if there's nothing in context but the address, we don't
+  // need the wrapper object
 
   public context: CalculationContext = {
     address: { row: -1, column: -1 },
@@ -123,20 +126,22 @@ export class ExpressionCalculator {
   }
 
   /** excutes a function call */
-  protected CallExpression(expr: string, args: ExpressionUnit[] = []){
+  protected CallExpression(expr: UnitCall) {
+
+    // get the function descriptor so we can figure out what to do with arguments
+
+    // FIXME: could be cached
+    const func = this.library.Get(expr.name);
+
+    // FIXME: could be cached
+    if (!func) {
+      return NameError;
+    }
 
     // get an index we can use for this call (we may recurse when
     // calculating arguments), then increment for the next call.
 
     const call_index = this.call_index++;
-
-    // get the function descriptor so we can figure out what to do with arguments
-
-    const func = this.library.Get(expr);
-
-    if (!func) {
-      return NameError;
-    }
 
     // yeah so this is clear. just checking volatile.
 
@@ -151,7 +156,7 @@ export class ExpressionCalculator {
 
     const argument_descriptors = func.arguments || []; // map
 
-    const mapped_args = args.map((arg, arg_index) => {
+    const mapped_args = expr.args.map((arg, arg_index) => {
 
       // short circuit
       if (argument_error) { return undefined; }
@@ -284,7 +289,7 @@ export class ExpressionCalculator {
       // if you do that, though, make sure to set the captured call_index here
       // (currently that's set below for the function call).
 
-      args.forEach((arg, arg_index) => {
+      expr.args.forEach((arg, arg_index) => {
         const descriptor = argument_descriptors[arg_index] || {};
         if (arg && descriptor.collector) {
           if (arg.type === 'address') {
@@ -596,7 +601,12 @@ export class ExpressionCalculator {
 
     switch (expr.type){
     case 'call':
-      return this.CallExpression(expr.name, expr.args);
+      // return this.CallExpression(expr.name, expr.args);
+
+      // this should work (not sure how useful it is) because the
+      // arrow function will bind (this) to this instance
+
+      return (expr.user_data = (x: UnitCall) => this.CallExpression(x))(expr);
 
     case 'address':
       return (expr.user_data = (x: UnitAddress) => this.CellFunction(x.column, x.row))(expr);
