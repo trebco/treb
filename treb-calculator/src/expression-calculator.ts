@@ -172,7 +172,7 @@ export class ExpressionCalculator {
 
       // this does mean that the nonvolatile function will be treated differently
       // if it's an argument to a volatile function, but I think that's reasonable
-      // behavior; also it's symmetric with the oppostie case (inner volatile.)
+      // behavior; also it's symmetric with the opposite case (inner volatile.)
 
       // so leave this as-is, or you can move it -- should be immaterial
 
@@ -384,43 +384,6 @@ export class ExpressionCalculator {
     }
 
   }
-
-  /*
-
-    operand = this.CalculateExpression(operand);
-
-    if (Array.isArray(operand)){
-      switch (operator){
-      case '-':
-        for (const column of operand){
-          for (let r = 0; r < column.length; r++) column[r] = -column[r];
-        }
-        break;
-      case '+':
-        break;
-      default:
-        console.warn('unexpected unary operator:', operator);
-        for (const column of operand){
-          for (let r = 0; r < column.length; r++) {
-            column[r] = ExpressionError;
-          }
-        }
-      }
-      return operand;
-    }
-
-    if (typeof operand === 'object' && operand.error) return {...operand}; // propagate
-
-    switch (operator){
-    case '-': return -operand;
-    case '+': return operand;
-    default:
-      console.warn('unexpected unary operator:', operator);
-    }
-
-    return ExpressionError;
-  }
-  */
 
   /**
    * FIXME: did we drop this from the parser? I think we may have.
