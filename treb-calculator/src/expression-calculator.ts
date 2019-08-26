@@ -78,8 +78,6 @@ export class ExpressionCalculator {
 
     const value = this.CalculateExpression(expr);
 
-    console.info('calc', expr, 'vol?', this.simulation_model.volatile);
-
     return {
       value, // : this.CalculateExpression(expr),
       volatile: this.simulation_model.volatile,
