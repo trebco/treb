@@ -895,15 +895,14 @@ export class Grid {
     this.container = container;
     this.container.classList.add('treb-grid');
 
-    /*
-
     // we can force scrollbars, but it breaks sticky (apparently)
+    //
+    // ...doesn't break sticky, at least AFAICT; also necessary for
+    // horizontal scrolling.
 
     if (UA.is_mac && UA.is_safari) {
       this.container.classList.add('safari');
     }
-
-    */
 
     // accept focus, keyboard input
 

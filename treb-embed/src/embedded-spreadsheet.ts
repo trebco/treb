@@ -1589,6 +1589,15 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   }
   */
 
+  /*
+  // for testing, temp
+  public async RecalculateX(x = 100) {
+    for (let i = 0; i < x; i++) {
+      await this.Recalculate();
+    }
+  }
+  */
+
   /** recalc sheet */
   public async Recalculate(event?: GridEvent, formula_only = false) {
     let area: Area | undefined;
