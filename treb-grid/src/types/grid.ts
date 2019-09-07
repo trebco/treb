@@ -2253,7 +2253,10 @@ export class Grid {
 
     if (this.cell_editor && this.cell_editor.visible && !this.cell_editor.selecting) this.DismissEditor();
 
-    const offset_point = {x: event.offsetX, y: event.offsetY};
+    const offset_point = {
+      x: event.offsetX,
+      y: event.offsetY,
+    };
 
     /*
     // FIXME: trident
@@ -4792,12 +4795,20 @@ export class Grid {
             {column: Infinity, row: row[0]},
             {column: Infinity, row: row[row.length - 1]});
 
-          this.layout.UpdateTileHeights(true);
-          this.render_tiles = this.layout.VisibleTiles();
+          if (this.layout.container
+              && this.layout.container.offsetHeight
+              && this.layout.container.offsetHeight > this.model.sheet.total_height) {
+            this.UpdateLayout();
+          }
+          else {
+            this.layout.UpdateTileHeights(true);
+            this.render_tiles = this.layout.VisibleTiles();
+            this.Repaint(false, true); // repaint full tiles
+          }
 
-          this.Repaint(false, true); // repaint full tiles
           this.layout.UpdateAnnotation(this.model.annotations);
           structure_event = true;
+
         }
         break;
 
@@ -4823,14 +4834,28 @@ export class Grid {
             }
           }
 
+          /*
+           why are we not tracking this? is it because one of the subsequent
+           calls fires its own event? (...) if so, why are we setting the
+           structure_event flag? (...)
+
           const area = new Area(
             {row: Infinity, column: column[0]},
             {row: Infinity, column: column[column.length - 1]});
 
-          this.layout.UpdateTileWidths(true);
-          this.render_tiles = this.layout.VisibleTiles();
+          */
 
-          this.Repaint(false, true); // repaint full tiles
+          if (this.layout.container
+              && this.layout.container.offsetWidth
+              && this.layout.container.offsetWidth > this.model.sheet.total_width) {
+            this.UpdateLayout();
+          }
+          else {
+            this.layout.UpdateTileWidths(true);
+            this.render_tiles = this.layout.VisibleTiles();
+            this.Repaint(false, true); // repaint full tiles
+          }
+
           this.layout.UpdateAnnotation(this.model.annotations);
           structure_event = true;
 
