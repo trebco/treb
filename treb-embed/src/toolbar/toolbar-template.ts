@@ -34,7 +34,7 @@ export const toolbar_template: Array<ToolbarItem|ToolbarItem[]> = [
   { type: 'separator' },
   { icon: 'icon-fullscreen_exit', id: 'merge', title: 'Merge Cells' },
   { icon: 'icon-fullscreen', id: 'unmerge', title: 'Unmerge Cells' },
-  { icon: 'icon-crop', id: 'structure', title: 'Structure', submenu: [
+  { icon: 'icon-crop', id: 'structure', title: 'Grid Rows/Columns', submenu: [
     'insert row', 'insert column', 'delete row', 'delete column',
   ]},
 
