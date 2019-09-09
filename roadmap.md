@@ -18,6 +18,9 @@ todo list, instead of scattering among projects.
  + export modules
  + clean up dependency structure so format is easier to reuse
 
+ + rollup? initial testing was mixed, although it's definitely fast. have to
+   explore IE11 support.
+
 ## Done
 
  + named ranges
