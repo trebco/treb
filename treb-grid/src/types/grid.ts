@@ -737,6 +737,8 @@ export class Grid {
       }
     }
 
+    // no longer sending explicit layout event here
+
     this.QueueLayoutUpdate();
 
     this.StyleDefaultFromTheme();
@@ -788,6 +790,8 @@ export class Grid {
     // flashing. seems to be stable but needs more testing. note that
     // if you call this with render = true, that will happen immediately,
     // synchronously.
+
+    // no longer sending layout event here
 
     this.QueueLayoutUpdate();
 
@@ -1640,10 +1644,27 @@ export class Grid {
       this.layout.UpdateTiles();
       this.render_tiles = this.layout.VisibleTiles();
       this.layout.UpdateAnnotation(this.model.annotations);
+
+      // FIXME: why is this here, as opposed to coming from the command
+      // exec method? are we doubling up? (...)
+
+      // I think we are correctly handing all cases. not 100% sure, though.
+      // add/remove rows/columns is handled correctly. loading and resetting
+      // documents should not need this event, because there is implicit
+      // rebuild required.
+
+      // we should trace back every call that sets tile_update_pending (which
+      // is in queue layout update) and make sure the event is either sent
+      // or unecessary.
+
+
+      /*
       this.grid_events.Publish({
         type: 'structure',
-        rebuild_required: true
+        rebuild_required: true,
       });
+      */
+
     }
 
     this.layout_token = 0;
@@ -1905,15 +1926,6 @@ export class Grid {
             height,
           });
 
-          /*
-          // need a full layout in the event we have to add tiles
-          // this.layout.UpdateTileHeights(true, row);
-          this.layout.UpdateTiles();
-
-          this.Repaint(false, true); // repaint full tiles
-          this.layout.UpdateAnnotation(this.model.annotations);
-          this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
-          */
         });
 
       });
@@ -2000,13 +2012,6 @@ export class Grid {
           column: columns,
         });
 
-        /*
-        this.model.sheet.AutoSizeColumn(column, false);
-        this.layout.UpdateTileWidths(true, column);
-        this.Repaint(false, true); // repaint full tiles
-        this.layout.UpdateAnnotation(this.model.annotations);
-        this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
-        */
         return;
       }
 
@@ -2082,16 +2087,6 @@ export class Grid {
             column: columns,
             width,
           });
-
-          /*
-          // need a full layout in the event we have to add tiles
-          // this.layout.UpdateTileWidths(true, column);
-          this.layout.UpdateTiles();
-
-          this.Repaint(true, true); // repaint ALL tiles
-          this.layout.UpdateAnnotation(this.model.annotations);
-          this.grid_events.Publish({type: 'structure'}); // FIXME: no queued update?
-          */
 
         });
 
@@ -3970,6 +3965,7 @@ export class Grid {
   }
 
   private RecyclePasteAreas(source_area: Area, target_area: Area) {
+
     const paste_areas: Area[] = [];
 
     if (source_area.count === 1) {
@@ -4054,6 +4050,7 @@ export class Grid {
 
     const treb_data = event.clipboardData.getData('text/x-treb');
     if (treb_data) {
+
       try {
         const object_data = JSON.parse(treb_data);
         const source_area = new Area(object_data.source.start, object_data.source.end);
@@ -4075,7 +4072,7 @@ export class Grid {
         for (const paste_area of paste_areas) {
 
           this.model.sheet.cells.EnsureCell(paste_area.end);
-          
+
           // FIXME: command
           // this.model.sheet.ClearArea(paste_area, true);
           commands.push({ key: CommandKey.Clear, area: paste_area });
@@ -4117,6 +4114,7 @@ export class Grid {
       }
       catch (e) {
         console.error('invalid treb data on clipboard');
+        console.info(e);
         return;
       }
     }
@@ -4201,6 +4199,9 @@ export class Grid {
     this.model.sheet.freeze.columns = command.columns;
 
     // FIXME: should we do this via events? (...)
+
+    // we are sending an event via the exec command method that calls
+    // this method, so we are not relying on the side-effect event anymore
 
     this.QueueLayoutUpdate();
     this.Repaint();
@@ -4303,6 +4304,8 @@ export class Grid {
 
     // force update
 
+    // note event is sent in exec command, not implicit here
+
     this.QueueLayoutUpdate();
 
     // we need to repaint (not render) because repaint adjusts the selection
@@ -4313,8 +4316,6 @@ export class Grid {
 
     // FIXME: this should move to the _actual_ layout update, so we have
     // current data. (...)
-
-    // this.grid_events.Publish({type: 'structure'});
 
   }
 
@@ -4406,13 +4407,13 @@ export class Grid {
       }
     }
 
+    // note event is sent in exec command, not implicit here
+
     this.QueueLayoutUpdate();
 
     // @see InsertColumnsInternal re: why repaint
 
     this.Repaint();
-
-    // this.grid_events.Publish({type: 'structure'});
 
   }
 
@@ -4581,6 +4582,11 @@ export class Grid {
 
       // we have to call this because the 'set area' method calls RealArea
       this.model.sheet.cells.EnsureCell(area.end);
+
+      // should we send a structure event here? we may be increasing the
+      // size, in which case we should send the event. even though no addresses
+      // change, there are new cells.
+
       this.QueueLayoutUpdate();
 
     }
@@ -4685,6 +4691,16 @@ export class Grid {
 
       case CommandKey.Freeze:
         this.FreezeInternal(command);
+
+        // is the event necessary here? not sure. we were sending it as a
+        // side effect, so it was added here in case there was some reason
+        // it was necessary. at a minimum, it should not require a rebuild
+        // because no addresses change. (although we leave it in case someone
+        // else sets it).)
+
+        structure_event = true;
+        // structure_rebuild_required = true;
+
         break;
 
       case CommandKey.MergeCells:
@@ -4877,10 +4893,14 @@ export class Grid {
 
       case CommandKey.InsertRows:
         this.InsertRowsInternal(command);
+        structure_event = true;
+        structure_rebuild_required = true;
         break;
 
       case CommandKey.InsertColumns:
         this.InsertColumnsInternal(command);
+        structure_event = true;
+        structure_rebuild_required = true;
         break;
 
       case CommandKey.SetNote:

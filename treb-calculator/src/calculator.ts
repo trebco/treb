@@ -643,7 +643,6 @@ export class Calculator extends Graph {
 
   }
 
-
   /**
    * remove duplicates from list, dropping absolute
    */

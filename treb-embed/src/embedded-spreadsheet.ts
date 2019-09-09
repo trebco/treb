@@ -1163,11 +1163,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // FIXME: it's not necessary to call reset here unless the
     // document fails, do that with a trap?
 
-//    this.document_name = data.name;
-//    this.user_data = data.user_data;
-
-    // FIXME: replace decimal mark, argument separator if necessary
-    // console.info(data);
+    // FIXME: move this to a separate function/lib
 
     if (data.decimal_mark && data.decimal_mark !== Localization.decimal_separator) {
 
@@ -1225,7 +1221,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
       }
 
-    }
+    } // end l10n conversion
 
     if (data.simulation_data) {
       this.last_simulation_data = data.simulation_data;
@@ -1248,6 +1244,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.additional_cells = [];
     this.calculator.Reset(false);
 
+
     // in order to support leaf vertices, we need calculator to have a valid
     // reference to cells. this happens in calculation, but if we don't calculate
     // we need to attach directly.
@@ -1256,6 +1253,16 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // cells are attached
 
     // NOTE: accessing grid.cells, find a better approach
+
+    // so what is happening here is we call update, which triggers a delayed
+    // repaint/relayout. then we call rebuildclean, which does the initial
+    // graph build. BUT, after that, the event from the grid relayout winds
+    // up back in here, and we flush the grid. we need to either ignore this
+    // event or suppress it.
+
+    // I guess what we really need is to figure out if that event is actually
+    // necessary, at least from that point. if we could drop it that would 
+    // resolve this problem in the cleanest way.
 
     if (data.rendered_values && !recalculate) {
       this.grid.Update();
