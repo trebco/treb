@@ -101,6 +101,14 @@ const CreateConfig = (config, entry) => {
           loader: 'ts-loader',
           exclude: /node_modules/,
           options: {
+
+            /** 
+             * experimented with transpileOnly; does not seem significantly
+             * faster, and adds a good deal of complexity (requires separate
+             * type checking). so removed.
+             */
+
+            // transpileOnly: true,
             configFile: /modern/i.test(config) ? 'modern.tsconfig.json' : 'tsconfig.json'
           }
         },
@@ -139,7 +147,7 @@ const CreateConfig = (config, entry) => {
       {
         apply: (compiler) => {
           compiler.hooks.beforeCompile.tap('BeforeCompilePlugin', () => {
-            console.info('starting ' + config + ' build...')
+            console.info('starting ' + config + ' build...', new Date().toString());
           });
           /*
           compiler.hooks.afterEmit.tap('AfterEmitPlugin', (compilation) => {
