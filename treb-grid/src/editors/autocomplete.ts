@@ -72,7 +72,7 @@ export class Autocomplete {
 
       this.completion_list.style.fontFamily =
         this.tooltip.style.fontFamily = this.options.theme.cell_font ?
-        this.options.theme.cell_font : null;
+        this.options.theme.cell_font : '';
 
       let font_size: string|null = null;
       if (typeof this.options.theme.cell_font_size === 'string') {
@@ -84,7 +84,7 @@ export class Autocomplete {
 
       this.completion_list.style.fontSize =
         this.tooltip.style.fontSize =
-        font_size;
+        font_size || '';
 
       this.stylesheet.textContent = `
 

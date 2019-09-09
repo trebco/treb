@@ -72,7 +72,7 @@ export class CellEditor extends FormulaEditorBase {
 
     if (this.editor_node) {
       this.editor_node.style.color = this.theme.cell_color || null;
-      this.editor_node.style.fontFamily = this.theme.cell_font || null;
+      this.editor_node.style.fontFamily = this.theme.cell_font || '';
       this.editor_node.style.fontSize = `${this.theme.cell_font_size}`;
       this.editor_node.style.borderColor = this.theme.grid_color || null;
       this.editor_node.style.backgroundColor = this.theme.cell_background_color || null;
@@ -195,7 +195,9 @@ export class CellEditor extends FormulaEditorBase {
         if (event.shiftKey) { modifiers.push('Shift'); }
         if (event.altKey) { modifiers.push('Alt'); }
         const cloned_event = document.createEvent('KeyboardEvent');
-        cloned_event.initKeyboardEvent(event.type,
+
+        // need to mask type for trident
+        (cloned_event as any).initKeyboardEvent(event.type,
           true,
           true,
           event.view,

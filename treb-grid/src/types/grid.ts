@@ -1520,7 +1520,9 @@ export class Grid {
               if (event.event.ctrlKey) modifiers.push('Control');
               if (event.event.altKey) modifiers.push('Alt');
               if (event.event.shiftKey) modifiers.push('Shift');
-              cloned_event.initKeyboardEvent(
+
+              // have to mask type for trident
+              (cloned_event as any).initKeyboardEvent(
                 event.event.type,
                 false,
                 false,
