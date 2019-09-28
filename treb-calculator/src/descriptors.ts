@@ -13,12 +13,6 @@ export interface ArgumentDescriptor {
   // moved from function arrays:
 
   /**
-   * collect results for this argument (should be a reference).
-   * FIXME: MC calculator only
-   */
-  collector?: boolean;
-
-  /**
    * allows error values to propagate. otherwise, a function will
    * return an #ARG error if any arguments contain errors. used for
    * IsError and IfError, atm.
@@ -28,7 +22,9 @@ export interface ArgumentDescriptor {
   /**
    * this argument (reference) should be treated as an address, not resolved.
    * it's used for identifying multivariate groups.
-   * FIXME: MC calculator only
+   *
+   * UPDATE: this is used in reference + lookup functions (Offset, specifically)
+   * so don't move to MC lib.
    */
   address?: boolean;
 
@@ -84,7 +80,7 @@ export interface CompositeFunctionDescriptor {
    * volatile during a simulation only
    * FIXME: MC calculator only
    */
-  simulation_volatile?: boolean;
+  // simulation_volatile?: boolean;
 
 
   /**

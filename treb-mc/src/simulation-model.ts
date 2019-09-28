@@ -1,9 +1,9 @@
 
 import { ICellAddress } from 'treb-base-types';
-import * as Utils from './utilities';
+import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
-import { FunctionMap } from './descriptors';
-import { DataError, ArgumentError, ValueError } from './function-error';
+import { MCFunctionMap } from './descriptors';
+import { DataError, ArgumentError, ValueError } from '../../treb-calculator/src/function-error';
 
 export enum SimulationState {
   Null, Prep, Simulation, Post,
@@ -73,7 +73,7 @@ export class SimulationModel {
    * map and the actual functions. kind of hard to write them in that format,
    * though.
    */
-  public readonly functions: FunctionMap;
+  public readonly functions: MCFunctionMap;
 
   constructor() {
 

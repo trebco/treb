@@ -15,6 +15,7 @@
     "baseUrl": "./",
     "paths": {
       "@root/*": ["./*"],
+      "treb-mc": [ "./treb-mc" ],
       "treb-grid": [ "./treb-grid" ],
       "treb-utils": [ "./treb-utils" ],
       "treb-export": [ "./treb-export" ],

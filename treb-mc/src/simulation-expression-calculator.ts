@@ -1,15 +1,14 @@
 
-import { ExpressionCalculator } from './expression-calculator';
+import { ExpressionCalculator } from '../../treb-calculator/src/expression-calculator';
 import { SimulationModel, SimulationState } from './simulation-model';
-import { FunctionLibrary } from './function-library';
+import { FunctionLibrary } from '../../treb-calculator/src/function-library';
 import { Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
-import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
-         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
-import { DataModel } from 'treb-grid';
-import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
+import { Parser, UnitCall } from 'treb-parser';
+import { FunctionError, NameError, ReferenceError, ExpressionError } from '../../treb-calculator/src/function-error';
+import { MCArgumentDescriptor, MCCompositeFunctionDescriptor } from './descriptors';
 
 
-export class SimulationExpressionCalculator extends ExpressionCalculator {
+export class MCExpressionCalculator extends ExpressionCalculator {
 
   public readonly simulation_model = new SimulationModel();
 
@@ -25,7 +24,7 @@ export class SimulationExpressionCalculator extends ExpressionCalculator {
     // we can bind in closure (also short-circuit check for 
     // invalid name)
 
-    const func = this.library.Get(outer.name);
+    const func = this.library.Get(outer.name) as MCCompositeFunctionDescriptor;
 
     if (!func) {
       return (expr: UnitCall) => NameError;
@@ -75,7 +74,7 @@ export class SimulationExpressionCalculator extends ExpressionCalculator {
       let argument_error: FunctionError|undefined;
       const argument_descriptors = func.arguments || []; // map
 
-      const mapped_args = expr.args.map((arg, arg_index) => {
+      const mapped_args = (expr.args).map((arg, arg_index) => {
 
         // short circuit
         if (argument_error) { return undefined; }

@@ -6,9 +6,9 @@
 import { WorkerMessage } from './worker-types';
 import { Localization, ICellAddress } from 'treb-base-types';
 import { DataModel, Sheet, Annotation } from 'treb-grid';
-import { SimulationCalculator } from './simulation-calculator';
-import { GraphStatus } from './dag/graph';
-import * as PackResults from './pack-results';
+import { MCCalculator } from './simulation-calculator';
+import { GraphStatus } from '../../treb-calculator/src/dag/graph';
+import * as PackResults from '../../treb-calculator/src/pack-results';
 
 export class WorkerImpl {
 
@@ -19,7 +19,7 @@ export class WorkerImpl {
     annotations: [],
   };
   protected screen_updates = false;
-  protected calculator = new SimulationCalculator();
+  protected calculator = new MCCalculator();
   protected start_time = 0;
 
   protected additional_cells: ICellAddress[] = [];

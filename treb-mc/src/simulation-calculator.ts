@@ -1,28 +1,27 @@
 
 // this will move to a new subdir eventually so we can enforce isolation
 
-import { Calculator } from './calculator';
-import { SimulationModel, SimulationState } from './simulation-model';
-import { Localization, Cell, Area, ICellAddress,
-  ValueType, CellSerializationOptions } from 'treb-base-types';
-import { DataModel, Annotation } from '@root/treb-grid/src';
-import { Graph, GraphStatus } from './dag/graph';
-import * as PackResults from './pack-results';
-import { SimulationExpressionCalculator } from './simulation-expression-calculator';
+import { Calculator } from '../../treb-calculator/src/calculator';
+import { SimulationState } from './simulation-model';
+import { ICellAddress, CellSerializationOptions } from 'treb-base-types';
+import { DataModel } from '@root/treb-grid/src';
+import { GraphStatus } from '../../treb-calculator/src/dag/graph';
+import * as PackResults from '../../treb-calculator/src/pack-results';
+import { MCExpressionCalculator } from './simulation-expression-calculator';
 
-export class SimulationCalculator extends Calculator {
+export class MCCalculator extends Calculator {
 
   // FIXME: remove from calculator class
   // protected readonly simulation_model = new SimulationModel();
 
   // reference
-  protected simulation_expression_calculator: SimulationExpressionCalculator;
+  protected simulation_expression_calculator: MCExpressionCalculator;
 
   constructor() {
     super();
 
     this.expression_calculator =
-      this.simulation_expression_calculator = new SimulationExpressionCalculator(
+      this.simulation_expression_calculator = new MCExpressionCalculator(
         this.library,
         this.parser);
 
