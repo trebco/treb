@@ -2,7 +2,8 @@
 // treb imports
 import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
-import { Calculator, CalculationWorker, WorkerMessage, LeafVertex } from 'treb-calculator';
+import { /* Calculator, */ CalculationWorker, WorkerMessage, LeafVertex } from 'treb-calculator';
+import { SimulationCalculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
 import { EventSource, Resizable, Yield, Measurement } from 'treb-utils';
 // import { Sparkline } from 'treb-sparkline';
@@ -111,7 +112,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   private options: EmbeddedSpreadsheetOptions;
 
-  private calculator = new Calculator();
+  private calculator = new SimulationCalculator();
   private node: HTMLElement;
   private file_chooser?: HTMLInputElement;
   private dialog: MaskDialog;

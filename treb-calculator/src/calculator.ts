@@ -9,13 +9,12 @@ import { SpreadsheetVertex, CalculationResult } from './dag/spreadsheet_vertex';
 import { ExpressionCalculator } from './expression-calculator';
 import * as Utilities from './utilities';
 
-import { SimulationModel, SimulationState } from './simulation-model';
+// import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 import { FunctionMap } from './descriptors';
 import { BaseFunctionLibrary, BaseFunctionAliases } from './base-functions';
 import { TextFunctionLibrary } from './text-functions';
 
-import * as PackResults from './pack-results';
 import { DataModel, Annotation } from '@root/treb-grid/src';
 import { LeafVertex } from './dag/leaf_vertex';
 
@@ -47,7 +46,8 @@ export interface CalculationOptions {
  */
 export class Calculator extends Graph {
 
-  protected readonly simulation_model = new SimulationModel();
+  // FIXME: remove from calculator class
+  // protected readonly simulation_model = new SimulationModel();
 
   protected readonly library = new FunctionLibrary();
 
@@ -59,7 +59,7 @@ export class Calculator extends Graph {
 
   // FIXME: why is this a separate class? [actually is this a composition issue?]
   protected expression_calculator = new ExpressionCalculator(
-      this.simulation_model,
+      // this.simulation_model,
       this.library,
       this.parser);
 
@@ -78,9 +78,6 @@ export class Calculator extends Graph {
 
     // we split out text functions
     this.library.Register(TextFunctionLibrary);
-
-    // mc functions
-    this.library.Register(this.simulation_model.functions);
 
     // special functions... need reference to the graph (this)
 
@@ -385,72 +382,6 @@ export class Calculator extends Graph {
 
   }
 
-  public InitSimulation(
-      iterations: number,
-      lhs: boolean,
-      // cells: Cells,
-      model: DataModel,
-      additional_cells?: ICellAddress[] ){
-
-    this.simulation_model.iterations = iterations;
-    this.simulation_model.results = [];
-    this.simulation_model.lhs = lhs;
-    this.simulation_model.correlated_distributions = {};
-
-    const cells = model.sheet.cells;
-
-    // calling the flush method, instead of flushing tree directly,
-    // will also set status -> OK. note that (atm, at least) we don't
-    // need to deal with spreadsheet leaf nodes in the worker thread.
-
-    this.Reset();
-    this.AttachData(model);
-    this.expression_calculator.SetModel(model);
-
-    // add additional cells to monitor, but only if they actually
-    // exist; otherwise they will generate calc errors.
-
-    if (additional_cells && additional_cells.length){
-      for (const address of additional_cells){
-        const cell = cells.GetCell(address, false);
-        if (cell) this.simulation_model.StoreCellResults(address);
-        // else console.info( 'Skipping empty cell', address);
-      }
-    }
-
-    const json_options: CellSerializationOptions = {
-      preserve_type: true,
-      calculated_value: true };
-
-    const flat = cells.toJSON(json_options);
-    const result = this.RebuildGraph(flat.data, {});
-
-    // NOTE: not dealing with annotations here. the rationale is that these
-    // may have external function definitions, so we can't reliably get the
-    // metadata. there should really be no reason to do this anyway... so
-    // dropping annotations from simulation. someone else needs to get the
-    // metadata for collecting results and pass it in (via additional_cells)
-
-    // FIXME: consolidate with trial method
-
-    this.simulation_model.state = SimulationState.Prep;
-    this.simulation_model.iteration = 0;
-    this.Recalculate();
-    this.simulation_model.CorrelateDistributions();
-    this.simulation_model.state = SimulationState.Simulation;
-
-    return result.status;
-
-  }
-
-  /**
-   * returns simulation results. this is called after a simulation, results
-   * will be returned from the worker(s) back to the main thread.
-   */
-  public GetResults(){
-    return this.simulation_model.results;
-  }
-
   /**
    * wrapper method for calculation. this should be used for 1-time
    * calculations (i.e. not in a simulation).
@@ -461,131 +392,17 @@ export class Calculator extends Graph {
   }
 
   /**
-   * runs a single iteration in a simulation. calculation is simpler because
-   * we know that nothing has changed in the graph since the last calculation
-   * (since we set up the graph). the only things that are going to be dirty
-   * are the volatile cells, which set set explicitly.
-   */
-  public SimulationTrial(iteration: number){
-
-    if (!this.cells) throw(new Error('called trial without cells')); // this is an assert, right? should remove for prod
-
-    this.simulation_model.iteration = iteration;
-
-    // now handled in graph/calc via volatile and simulationvolatile
-    // Model.volatile_functions.forEach((addr) => this.SetDirty(addr));
-
-    try {
-      this.Recalculate();
-
-      // FIXME: we should pull out index pairs once, then refer
-      // to the list. while this probably isn't slow, it seems
-      // unecessary.
-
-      // tslint:disable-next-line:forin
-      for (const c in this.simulation_model.results){
-        const column = this.simulation_model.results[c];
-
-        // tslint:disable-next-line:forin
-        for (const r in column){
-          const cell = this.cells.GetCell({row: Number(r), column: Number(c)});
-
-          // it seems like this is a waste -- if the cell doesn't exist,
-          // we should remove it from the list (or not add it in the first
-          // place). that prevents it from getting tested every loop.
-
-          if (cell){
-            const value = cell.GetValue();
-            switch (typeof value){
-              case 'number': column[r][iteration] = value; break;
-              case 'boolean': column[r][iteration] = value ? 1 : 0; break;
-              default: column[r][iteration] = 0;
-            }
-          }
-        }
-      }
-
-      return { status: GraphStatus.OK, reference: null };
-    }
-    catch (err){
-      console.info('calculation error trapped', err);
-      return { status: GraphStatus.CalculationError, reference: null };
-    }
-
-    // expand ranges [?]
-
-  }
-
-  /**
    * resets graph and graph status
    */
-  public Reset(flush_results = true){
+  public Reset(){
 
     this.status = GraphStatus.OK;
     this.FlushTree();
     this.full_rebuild_required = true;
 
-    if (flush_results){
-      this.FlushSimulationResults(); // to prevent ghost data
-    }
-  }
-
-  /**
-   * flattens results for passing to the main thread from worker
-   */
-  public FlattenedResults(){
-
-    // flatten into buffers
-    const flattened: any[] = [];
-
-    // tslint:disable-next-line:forin
-    for (const c in this.simulation_model.results) {
-      const column = this.simulation_model.results[c];
-
-      // tslint:disable-next-line:forin
-      for (const r in column) {
-        flattened.push(PackResults.PackOne({
-          row: Number(r), column: Number(c), data: column[r] }).buffer);
-      }
-    }
-
-    return flattened;
-  }
-
-  /** basically set null results */
-  public FlushSimulationResults() {
-    this.simulation_model.results = [];
-    this.simulation_model.elapsed = 0;
-    this.simulation_model.trials = 0;
-  }
-
-  /** TODO */
-  public ShiftSimulationResults(before_row: number, before_column: number, rows: number, columns: number) {
-    // ...
-  }
-
-  /**
-   * updates simulation results for watched cells. after a simulation,
-   * these will generally come in from the worker thread. FIXME: move
-   * worker in here?
-   *
-   * once these are set, simulation functions (e.g. mean) can return
-   * results
-   */
-  public UpdateResults(data: any){
-
-    this.simulation_model.results = [];
-    this.simulation_model.elapsed = data.elapsed;
-    this.simulation_model.trials = data.trials;
-
-    data.results.map((result: any) => {
-      const entry = (result instanceof ArrayBuffer) ? PackResults.UnpackOne(new Float64Array(result)) : result;
-      if (!this.simulation_model.results[entry.column]) {
-        this.simulation_model.results[entry.column] = [];
-      }
-      this.simulation_model.results[entry.column][entry.row] = entry.data;
-      this.SetDirty(entry);
-    });
+//    if (flush_results){
+//      this.FlushSimulationResults(); // to prevent ghost data
+//    }
 
   }
 
@@ -724,25 +541,6 @@ export class Calculator extends Graph {
   }
 
   // --- protected -------------------------------------------------------------
-
-  /* *
-   * if this is a known function and that function provides a canonical name,
-   * returns that. otherwise (optionally) UPPER-CASES the function name.
-   *
-   * I don;t think anyone uses this. it looks like it got updated for the named
-   * range map, though (probably just because it broke)
-   * /
-  protected NormalizeFunctionCall(name: string, options: UnparseOptions) {
-    if (options.normalize_functions){
-      const check = this.library.Get(name);
-      if (check.canonical_name) {
-        return check.canonical_name;
-      }
-    }
-    if (options.default_capitalize_functions) return name.toUpperCase();
-    return name;
-  }
-  */
 
   /**
    * assuming the expression is an address, range, or named range, resolve

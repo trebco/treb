@@ -1,5 +1,4 @@
 
-import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 import { Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
 import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
@@ -7,20 +6,20 @@ import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
 
-// import { compose, pipe } from './compose';
 import * as Primitives from './primitives';
 
 export interface CalculationContext {
   address: ICellAddress;
+  volatile: boolean;
+  call_index: number;
 }
 
 export class ExpressionCalculator {
 
-  // if there's nothing in context but the address, we don't
-  // need the wrapper object
-
   public context: CalculationContext = {
     address: { row: -1, column: -1 },
+    volatile: false,
+    call_index: 0,
   };
 
   /**
@@ -34,21 +33,22 @@ export class ExpressionCalculator {
    * track of data in the simulation model, where we may have per-distribution
    * data (generally LHS fields or correlation blocks).
    */
-  private call_index = 0;
+  protected call_index = 0;
 
   // local reference
-  private cells: Cells = new Cells();
+  protected cells: Cells = new Cells();
 
   // local reference
-  private named_range_map: {[index: string]: Area} = {};
+  protected named_range_map: {[index: string]: Area} = {};
 
   //
-  private data_model!: DataModel;
+  protected data_model!: DataModel;
+
 
   // --- public API -----------------------------------------------------------
 
   constructor(
-      protected readonly simulation_model: SimulationModel,
+      // protected readonly simulation_model: SimulationModel,
       protected readonly library: FunctionLibrary,
       protected readonly parser: Parser) {
   }
@@ -66,11 +66,9 @@ export class ExpressionCalculator {
   public Calculate(expr: ExpressionUnit, addr: ICellAddress, preserve_flags = false){
 
     if (!preserve_flags) {
-
       this.context.address = addr;
-
-      this.simulation_model.address = addr;
-      this.simulation_model.volatile = false;
+      this.context.volatile = false;
+      this.context.call_index = 0;
 
       // reset for this cell
       this.call_index = 0; // why not in model? A: timing (nested)
@@ -79,9 +77,10 @@ export class ExpressionCalculator {
     const value = this.CalculateExpression(expr);
 
     return {
-      value, // : this.CalculateExpression(expr),
-      volatile: this.simulation_model.volatile,
+      value,
+      volatile: this.context.volatile,
     };
+
   }
 
   // --- /public API ----------------------------------------------------------
@@ -174,8 +173,7 @@ export class ExpressionCalculator {
 
       // so leave this as-is, or you can move it -- should be immaterial
 
-      this.simulation_model.volatile = this.simulation_model.volatile || (!!func.volatile) ||
-        ((!!func.simulation_volatile) && this.simulation_model.state !== SimulationState.Null);
+      this.context.volatile = this.context.volatile || (!!func.volatile);
 
       // NOTE: the argument logic is (possibly) calculating unecessary operations,
       // if there's a conditional (like an IF function). although that is the
@@ -229,23 +227,26 @@ export class ExpressionCalculator {
           if (address) {
 
             const cell_data = this.data_model.sheet.CellData(address);
+            /*
             const simulation_data =
               (this.simulation_model.state === SimulationState.Null) ?
               this.simulation_model.StoreCellResults(address) :
               [];
+            */
 
             return {
               address: {...address},
               value: cell_data.calculated,
               format: cell_data.style ? cell_data.style.number_format : undefined,
-              simulation_data,
+              // simulation_data,
             };
           }
 
         }
+        /*
         else if (descriptor.collector && this.simulation_model.state === SimulationState.Null) {
 
-          /*
+          / *
           // why holding this twice? (...) has to do with timing, apparently...
 
           // I don't think this can actually happen. we should verify that this
@@ -270,7 +271,7 @@ export class ExpressionCalculator {
           // so it needs to go in front of the function call and the prep step.
 
           this.simulation_model.call_index = call_index;
-          */
+          * /
 
           if (arg.type === 'address'){
             return this.simulation_model.StoreCellResults(arg);
@@ -289,6 +290,7 @@ export class ExpressionCalculator {
           argument_error = ReferenceError;
 
         }
+        */
         else {
           const result = this.CalculateExpression(arg);
           if (typeof result === 'object' && result.error && !descriptor.allow_error) {
@@ -305,6 +307,7 @@ export class ExpressionCalculator {
         return argument_error;
       }
 
+      /*
       if (this.simulation_model.state === SimulationState.Prep){
 
         // this is a separate loop because we only need to call it on prep
@@ -333,11 +336,12 @@ export class ExpressionCalculator {
         });
 
       }
+      */
 
       // if we have any nested calls, they may have updated the index so
       // we use the captured value here.
 
-      this.simulation_model.call_index = call_index;
+      this.context.call_index = call_index;
 
       // I thought we were passing the model as this (...) ? actually
       // now we bind functions that need this, so maybe we should pass

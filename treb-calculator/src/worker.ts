@@ -6,7 +6,7 @@
 import { WorkerMessage } from './worker-types';
 import { Localization, ICellAddress } from 'treb-base-types';
 import { DataModel, Sheet, Annotation } from 'treb-grid';
-import { Calculator } from './calculator';
+import { SimulationCalculator } from './simulation-calculator';
 import { GraphStatus } from './dag/graph';
 import * as PackResults from './pack-results';
 
@@ -19,7 +19,7 @@ export class WorkerImpl {
     annotations: [],
   };
   protected screen_updates = false;
-  protected calculator = new Calculator();
+  protected calculator = new SimulationCalculator();
   protected start_time = 0;
 
   protected additional_cells: ICellAddress[] = [];
