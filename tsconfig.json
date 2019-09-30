@@ -21,6 +21,7 @@
       "treb-export": [ "./treb-export" ],
       "treb-format": [ "./treb-format" ],
       "treb-parser": [ "./treb-parser" ],
+      "treb-toolbar": [ "./treb-toolbar" ],
       "treb-calculator": [ "./treb-calculator" ],
       "treb-sparkline": [ "./treb-sparkline" ],
       "treb-base-types": [ "./treb-base-types" ]

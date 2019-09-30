@@ -1,28 +1,41 @@
 
 
-type EmbeddedSpreadsheet = import('./index').EmbeddedSpreadsheet;
+// type EmbeddedSpreadsheet = import('treb-embed/src/index').EmbeddedSpreadsheet;
 
-import { Toolbar } from './toolbar/toolbar';
-import { ToolbarItem } from './toolbar/toolbar-item';
+import { Toolbar } from './toolbar';
+import { ToolbarItem } from './toolbar-item';
 import { NumberFormat, NumberFormatCache } from 'treb-format';
 import { Style } from 'treb-base-types';
+import { EventSource } from 'treb-utils';
 
 import '../style/toolbar.scss';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
-const XlinkNS = 'http://www.w3.org/1999/xlink';
 
-import { symbol_defs } from './toolbar/symbol-defs';
+import { symbol_defs } from './symbol-defs';
 import { Area } from 'treb-base-types';
-import { BorderConstants } from '@root/treb-grid/src';
+import { BorderConstants, Grid } from 'treb-grid';
 
+/**
+ * FIXME: why do we have the two-class structure? (...) the event passing
+ * seems unecessary...
+ *
+ * legacy? this originally came from an older codebase
+ *
+ * OTOH it adds some compartmentalization, which is useful, and the cost is
+ * not super high
+ */
 export class FormattingToolbar {
 
-  /** factory method */
-  public static CreateInstance(sheet: EmbeddedSpreadsheet, container: HTMLElement) {
-    return new FormattingToolbar(sheet, container);
+  /**
+   * factory method
+   * FIXME: why?
+   */
+  public static CreateInstance(sheet: EventSource<any>, grid: Grid, container: HTMLElement) {
+    return new FormattingToolbar(sheet, grid, container);
   }
 
+  /** inject SVG, once, and lazily */
   public static InjectSVG() {
     if (this.svg_injected) return;
 
@@ -62,8 +75,11 @@ export class FormattingToolbar {
   private primary_selection: any;
 
   constructor(
-      private sheet: EmbeddedSpreadsheet,
+      private sheet: EventSource<any>, // FIXME: lock down this type? (...)
+      private grid: Grid, // reference
       private container: HTMLElement) {
+
+    // dom layout
 
     this.outer = document.createElement('div');
     this.outer.classList.add('treb-formatting-toolbar');
@@ -71,39 +87,33 @@ export class FormattingToolbar {
     this.node = document.createElement('div');
     this.node.classList.add('treb-formatting-toolbar-inner');
 
-    // container.insertBefore(this.node, container.firstChild);
     container.insertBefore(this.outer, container.firstChild);
     this.outer.appendChild(this.node);
 
     FormattingToolbar.InjectSVG();
 
+    // internal objects
+
     this.toolbar = new Toolbar(this.node);
 
     this.toolbar.Show('merge', true);
     this.toolbar.Show('unmerge', false);
-
-    // this.toolbar.Show('freeze', true);
-    // this.toolbar.Show('unfreeze', false);
-
     this.toolbar.SetSecondColor('fill-color', 'yellow');
     this.toolbar.SetSecondColor('text-color', 'red');
 
-    this.toolbar.On(this.HandleToolbar.bind(this));
+    // events
 
-    (this.sheet as any).grid.grid_events.Subscribe((event: any) => this.HandleGridEvent(event));
+    this.toolbar.On(this.HandleToolbar.bind(this));
+    this.grid.grid_events.Subscribe((event: any) => this.HandleGridEvent(event));
     this.sheet.Subscribe((event: any) => this.HandleEvent(event));
 
     // we now hold a live reference to the selection. we don't need to query
     // every time. this should survive any document changes, since selection
     // is const/readonly.
 
-    this.primary_selection = sheet.GetSelectionReference();
+    this.primary_selection = this.grid.GetSelection(); // live reference
 
-    // called in case there's no document. "clear" actually sets
-    // root number formats (could skip colors)
-
-    // this.toolbar.ClearDocumentColors();
-    // this.toolbar.ClearDocumentFormats();
+    // update state
 
     this.UpdateDocumentStyles();
     this.UpdateFreezeState();
@@ -111,7 +121,11 @@ export class FormattingToolbar {
 
   }
 
+  /**
+   * show or hide toolbar. this can also be called on resize to update layout.
+   */
   public Show(show = true) {
+
     this.visible_ = show;
     this.outer.style.display = this.visible_ ? 'block' : 'none';
 
@@ -132,23 +146,23 @@ export class FormattingToolbar {
 
   }
 
+  /** explicit hide method */
   public Hide() {
     this.Show(false);
   }
 
+  /** toggle visibility (useful if you do not store state) */
   public Toggle() {
     this.Show(!this.visible_);
   }
 
-  ///
-
-
+  /** get colors and number formats that are in the document */
   private UpdateDocumentStyles() {
 
     this.toolbar.ClearDocumentColors();
     this.toolbar.ClearDocumentFormats();
 
-    const serialized = (this.sheet as any).grid.model.sheet.toJSON();
+    const serialized = this.grid.model.sheet.toJSON();
 
     for (const style of serialized.cell_style_refs) {
       if (style.background) this.toolbar.AddDocumentColor(style.background);
@@ -157,14 +171,14 @@ export class FormattingToolbar {
     }
 
     for (const key of Object.keys(serialized.column_style)) {
-      const style = serialized.column_style[key];
+      const style = serialized.column_style[Number(key)];
       if (style.background) this.toolbar.AddDocumentColor(style.background);
       if (style.text_color) this.toolbar.AddDocumentColor(style.text_color);
       if (style.number_format) this.toolbar.AddDocumentFormat(style.number_format);
     }
 
     for (const key of Object.keys(serialized.row_style)) {
-      const style = serialized.row_style[key];
+      const style = serialized.row_style[Number(key)];
       if (style.background) this.toolbar.AddDocumentColor(style.background);
       if (style.text_color) this.toolbar.AddDocumentColor(style.text_color);
       if (style.number_format) this.toolbar.AddDocumentFormat(style.number_format);
@@ -172,6 +186,13 @@ export class FormattingToolbar {
 
   }
 
+  /**
+   * handle sheet events. we are really only concerned with new documents,
+   * so we can update state
+   *
+   * UPDATE: also handling resize events
+   * FIXME: lock down type
+   */
   private HandleEvent(event: any) {
     switch (event.type) {
     case 'load':
@@ -179,16 +200,25 @@ export class FormattingToolbar {
       this.UpdateDocumentStyles();
       this.UpdateFreezeState();
       break;
+
+    case 'resize':
+      if (this.visible) {
+        this.Show(true);
+      }
+      break;
     }
   }
 
-  private Freeze() { // freeze: boolean) {
+  /**
+   * toggle freeze, depending on current state. uses selection.
+   */
+  private Freeze() {
 
-    const freeze = this.sheet.GetFreeze();
+    const freeze = this.grid.GetFreeze();
     const frozen = freeze.rows || freeze.columns;
 
     if (frozen) {
-      this.sheet.Freeze(0, 0);
+      this.grid.Freeze(0, 0);
     }
     else {
       if (this.primary_selection && !this.primary_selection.empty) {
@@ -197,13 +227,13 @@ export class FormattingToolbar {
           // ?
         }
         else if (area.entire_row) {
-          this.sheet.Freeze(area.end.row + 1, 0);
+          this.grid.Freeze(area.end.row + 1, 0);
         }
         else if (area.entire_column) {
-          this.sheet.Freeze(0, area.end.column + 1);
+          this.grid.Freeze(0, area.end.column + 1);
         }
         else {
-          this.sheet.Freeze(area.end.row + 1, area.end.column + 1);
+          this.grid.Freeze(area.end.row + 1, area.end.column + 1);
         }
       }
     }
@@ -214,7 +244,7 @@ export class FormattingToolbar {
 
   private UpdateFreezeState() {
 
-    const freeze = this.sheet.GetFreeze();
+    const freeze = this.grid.GetFreeze();
 
     if (freeze.rows || freeze.columns) {
       this.toolbar.Activate('freeze2');
@@ -227,31 +257,42 @@ export class FormattingToolbar {
 
   }
 
+  /**
+   * handle grid events. we are only concerned about selection changes,
+   * so we can update the toolbar button states
+   */
   private HandleGridEvent(event: any) {
     if (event.type === 'selection') {
       this.UpdateFromSelection();
     }
+    /*
     else if (event.type === 'data' || event.type === 'style') {
       // console.info('dirty', event);
       // if (this.current_file) {
       //   this.file_list.State(this.current_file, FileState.dirty);
       // }
     }
+    */
   }
 
+  /**
+   * update toolbar buttons -- essentially set toggle buttons for various
+   * styles (alignment, merge, number format, &c).
+   */
   private UpdateFromSelection() {
+
     let format = '';
     let merged = false;
 
     this.toolbar.DeactivateAll();
 
     if (this.primary_selection && !this.primary_selection.empty) {
-      let data = (this.sheet as any).grid.model.sheet.CellData(this.primary_selection.target);
+      let data = this.grid.model.sheet.CellData(this.primary_selection.target);
       merged = !!data.merge_area;
-      if (merged && (
+      if (merged && data.merge_area && (
           data.merge_area.start.row !== this.primary_selection.target.row ||
           data.merge_area.start.column !== this.primary_selection.target.column)) {
-        data = (this.sheet as any).grid.model.sheet.CellData(data.merge_area.start);
+        data = this.grid.model.sheet.CellData(data.merge_area.start);
       }
 
       const style = data.style;
@@ -282,7 +323,7 @@ export class FormattingToolbar {
       }
 
       this.toolbar.current_cell = {...this.primary_selection.target};
-      this.toolbar.current_note = data.note;
+      this.toolbar.current_note = data.note || '';
 
     }
     this.toolbar.Update('number-format', format);
@@ -303,70 +344,34 @@ export class FormattingToolbar {
       case 'structure':
         switch (template.value) {
           case 'insert row':
-            this.sheet.InsertRow();
+            this.grid.InsertRow();
             break;
+
           case 'insert column':
-            this.sheet.InsertColumn();
+            this.grid.InsertColumn();
             break;
+
           case 'delete row':
-            this.sheet.DeleteRows();
+            this.grid.DeleteRows();
             break;
+
           case 'delete column':
-            this.sheet.DeleteColumns();
+            this.grid.DeleteColumns();
             break;
+
         }
         break;
-
-      case 'run':
-        this.sheet.RunSimulation(5000);
-        break;
-
-      /*
-      case 'export':
-        this.Export();
-        break;
-
-      case 'save':
-        this.SaveFile();
-        break;
-
-      case 'save-as':
-        this.SaveAs();
-        break;
-
-      case 'clear':
-        this.Clear();
-        break;
-
-      case 'new':
-        this.NewFile();
-        break;
-
-      case 'load':
-        this.OpenFile();
-        break;
-      */
 
       case 'freeze2':
         this.Freeze();
         break;
 
-      /*
-      case 'freeze':
-        this.Freeze(true);
-        break;
-
-      case 'unfreeze':
-        this.Freeze(false);
-        break;
-      */
-
       case 'merge':
-        this.sheet.MergeCells();
+        this.grid.MergeSelection();
         break;
 
       case 'unmerge':
-        this.sheet.UnmergeCells();
+        this.grid.UnmergeSelection();
         break;
 
       case 'number-format':
@@ -407,39 +412,35 @@ export class FormattingToolbar {
 
       case 'border-bottom':
         if (this.selection_style && this.selection_style.border_bottom === 1) {
-          this.sheet.ApplyBorders(BorderConstants.Bottom, 2);
+          this.grid.ApplyBorders(undefined, BorderConstants.Bottom, undefined, 2);
         }
         else {
-          this.sheet.ApplyBorders(BorderConstants.Bottom);
+          this.grid.ApplyBorders(undefined, BorderConstants.Bottom);
         }
         break;
 
       case 'border-all':
-        this.sheet.ApplyBorders(BorderConstants.All);
+        this.grid.ApplyBorders(undefined, BorderConstants.All);
         break;
 
       case 'border-outer':
-        this.sheet.ApplyBorders(BorderConstants.Outside);
+        this.grid.ApplyBorders(undefined, BorderConstants.Outside);
         break;
 
       case 'border-right':
-        this.sheet.ApplyBorders(BorderConstants.Right);
+        this.grid.ApplyBorders(undefined, BorderConstants.Right);
         break;
 
       case 'border-left':
-        this.sheet.ApplyBorders(BorderConstants.Left);
+        this.grid.ApplyBorders(undefined, BorderConstants.Left);
         break;
 
       case 'border-top':
-        this.sheet.ApplyBorders(BorderConstants.Top);
+        this.grid.ApplyBorders(undefined, BorderConstants.Top);
         break;
 
       case 'border-none':
-        this.sheet.ApplyBorders(BorderConstants.None);
-        break;
-
-      case 'flush-simulation-results':
-        this.sheet.FlushSimulationResults();
+        this.grid.ApplyBorders(undefined, BorderConstants.None);
         break;
 
       case 'text-color':
@@ -477,7 +478,7 @@ export class FormattingToolbar {
         break;
 
       case 'note':
-        this.sheet.SetNote(this.toolbar.dialog_note);
+        this.grid.SetNote(undefined, this.toolbar.dialog_note);
         break;
 
       default:
@@ -485,11 +486,11 @@ export class FormattingToolbar {
     }
 
     if (Object.keys(style).length) {
-      this.sheet.ApplyStyle(undefined, style, true);
+      this.grid.ApplyStyle(undefined, style, true);
     }
 
     this.UpdateFromSelection();
-    this.sheet.Focus();
+    this.grid.Focus();
 
   }
 

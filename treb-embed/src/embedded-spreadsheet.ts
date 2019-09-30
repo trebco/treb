@@ -13,8 +13,8 @@ import { MaskDialog } from './mask-dialog';
 import { EmbeddedSpreadsheetOptions, DefaultOptions } from './options';
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 
-// TYPE ONLY (also this is circular)
-type FormattingToolbar = import('./toolbar-main').FormattingToolbar;
+// TYPE ONLY
+type FormattingToolbar = import('treb-toolbar/src/toolbar-main').FormattingToolbar;
 
 // TYPE ONLY
 type Chart = import('../../treb-charts/src/index').Chart;
@@ -877,9 +877,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.grid.UpdateLayout();
     this.Publish({ type: 'resize' });
 
+    // moved to toolbar, it will RX the event
+
+    /*
     if (this.toolbar && this.toolbar.visible) {
       this.toolbar.Show(true);
     }
+    */
 
   }
 
@@ -1302,8 +1306,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.grid.SetNote(undefined, note);
 
     // set note does not publish, so we need to directly trigger undo/autosave
+    // not true anymore?
 
-    this.DocumentChange();
+    // this.DocumentChange();
 
   }
 
@@ -1630,6 +1635,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   /** save sheet to local storage */
   public DocumentChange() {
 
+    console.info("DC");
+
     // FIXME: switch to yield?
     requestAnimationFrame(() => {
       const json = JSON.stringify(this.SerializeDocument(false, true, {
@@ -1887,7 +1894,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     if (!this.toolbar) {
       const load = await this.LoadToolbar();
       if (load) {
-        this.toolbar = (self as any).TREB['treb-toolbar'].CreateInstance(this, container);
+        this.toolbar = (self as any).TREB['treb-toolbar'].CreateInstance(this, this.grid, container);
       }
     }
 
@@ -1938,11 +1945,15 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     // now wait until it loads, or there's a timeout.
     const result = await new Promise((resolve) => {
-      if ((self as any).TREB['treb-toolbar']) return resolve(true);
+      if ((self as any).TREB['treb-toolbar']) {
+        return resolve(true);
+      }
       let counter = 0;
       const delay = (timeout: number) => {
         setTimeout(() => {
-          if ((self as any).TREB['treb-toolbar']) return resolve(true);
+          if ((self as any).TREB['treb-toolbar']) {
+            return resolve(true);
+          }
           if (counter++ >= 12) {
             console.info('timeout loading module');
             return resolve(false);

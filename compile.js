@@ -42,13 +42,13 @@ let modern_entry = {};
 modern_entry[package['build-entry-points']['main'] + '-es6'] = './treb-embed/src/index-modern.ts';
 modern_entry[package['build-entry-points']['export-worker'] + '-es6' + '-' + package.version] = './treb-embed/src/export-worker/index-modern.ts';
 modern_entry[package['build-entry-points']['calculation-worker'] + '-es6' + '-' + package.version] = './treb-embed/src/calculation-worker/index-modern.ts';
-modern_entry[package['build-entry-points']['toolbar'] + '-es6' + '-' + package.version] = './treb-embed/src/toolbar-main.ts';
+modern_entry[package['build-entry-points']['toolbar'] + '-es6' + '-' + package.version] = './treb-toolbar/src/toolbar-main.ts';
 
 let legacy_entry = {};
 legacy_entry[package['build-entry-points']['main']] = './treb-embed/src/index.ts';
 legacy_entry[package['build-entry-points']['export-worker'] + '-' + package.version] = './treb-embed/src/export-worker/index.ts';
 legacy_entry[package['build-entry-points']['calculation-worker'] + '-' + package.version] = './treb-embed/src/calculation-worker/index.ts';
-legacy_entry[package['build-entry-points']['toolbar'] + '-' + package.version] = './treb-embed/src/toolbar-main.ts';
+legacy_entry[package['build-entry-points']['toolbar'] + '-' + package.version] = './treb-toolbar/src/toolbar-main.ts';
 
 if (only_charts) {
   legacy_entry = {};

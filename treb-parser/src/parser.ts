@@ -11,6 +11,10 @@ import {
   DecimalMarkType,
 } from './parser-types';
 
+interface PrecedenceList {
+  [index: string]: number;
+}
+
 const DOUBLE_QUOTE = '"'.charCodeAt(0);
 
 const NON_BREAKING_SPACE = 0xa0;
@@ -46,7 +50,7 @@ const LC_E = 0x65;
 const UC_Z = 0x5a;
 const LC_Z = 0x7a;
 
-const binary_operators_precendence: { [index: string]: number } = {
+const binary_operators_precendence: PrecedenceList = {
   '==': 6,
   '!=': 6, // FIXME: we should not support these (legacy)
   '<>': 6,
@@ -70,7 +74,7 @@ const binary_operators = Object.keys(binary_operators_precendence).sort(
 
 // unary operators. atm we have no precedence issues, unary operators
 // always have absolute precedence
-const unary_operators: { [index: string]: number } = { '-': 100, '+': 100 };
+const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
 
 /**
  * parser for spreadsheet language.
