@@ -417,6 +417,20 @@ export class Parser {
         break;
     }
 
+    // NOTE on this function: charCodeAt returns UTF-16. codePointAt returns
+    // unicode. length returns UTF-16 length. any characters that are not
+    // representable as a single character in UTF-16 will be 'the first unit
+    // of a surrogate pair...' and so on.
+    //
+    // we want UTF-16, not unicode. for the parser itself, we are only really
+    // looking for ASCII, so it's not material. for anything else, if we
+    // construct strings from the original data we want to map the UTF-16,
+    // otherwise we will construct the string incorrectly. this applies to
+    // strings, function names, and anything else.
+    //
+    // which is all a long way of saying, don't be tempted to replace this
+    // with codePointAt.
+
     for (let i = 0; i < this.length; i++) {
       this.data[i] = expression.charCodeAt(i);
     }
