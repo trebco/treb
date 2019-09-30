@@ -1,8 +1,8 @@
 
-import { FunctionMap } from './descriptors';
-import * as Utils from './utilities';
+import { FunctionMap } from '../descriptors';
+import * as Utils from '../utilities';
 import { Localization } from 'treb-base-types';
-import { ReferenceError, NotImplError } from './function-error';
+import { ReferenceError, NotImplError } from '../function-error';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet

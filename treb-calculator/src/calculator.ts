@@ -9,11 +9,10 @@ import { SpreadsheetVertex, CalculationResult } from './dag/spreadsheet_vertex';
 import { ExpressionCalculator } from './expression-calculator';
 import * as Utilities from './utilities';
 
-// import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from './function-library';
 import { FunctionMap } from './descriptors';
-import { BaseFunctionLibrary, BaseFunctionAliases } from './base-functions';
-import { TextFunctionLibrary } from './text-functions';
+import { BaseFunctionLibrary, BaseFunctionAliases } from './functions/base-functions';
+import { TextFunctionLibrary } from './functions/text-functions';
 
 import { DataModel, Annotation } from '@root/treb-grid/src';
 import { LeafVertex } from './dag/leaf_vertex';

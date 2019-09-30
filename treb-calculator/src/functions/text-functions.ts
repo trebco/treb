@@ -1,5 +1,5 @@
 
-import { FunctionMap } from './descriptors';
+import { FunctionMap } from '../descriptors';
 import { NumberFormatCache } from 'treb-format';
 
 export const TextFunctionLibrary: FunctionMap = {
