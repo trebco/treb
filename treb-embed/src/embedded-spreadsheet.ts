@@ -2,7 +2,7 @@
 // treb imports
 import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
-import { /* Calculator, CalculationWorker, WorkerMessage, */ LeafVertex } from 'treb-calculator';
+import { LeafVertex } from 'treb-calculator';
 import { MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
 import { EventSource, Resizable, Yield, Measurement } from 'treb-utils';

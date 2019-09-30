@@ -14,7 +14,7 @@ const SVGNS = 'http://www.w3.org/2000/svg';
 
 import { symbol_defs } from './symbol-defs';
 import { Area } from 'treb-base-types';
-import { BorderConstants, Grid } from 'treb-grid';
+import { BorderConstants, Grid, GridSelection } from 'treb-grid';
 
 /**
  * FIXME: why do we have the two-class structure? (...) the event passing
@@ -61,23 +61,41 @@ export class FormattingToolbar {
     this.svg_injected = true;
   }
 
-  public get visible() { return this.visible_; }
-
+  /** flag indicating we've done this */
   private static svg_injected = false;
+
+  /** accessor */
+  public get visible() { return this.visible_; }
 
   // tslint:disable-next-line: variable-name
   private visible_ = false;
 
+  /** node for the actual toolbar */
   private node: HTMLElement;
+
+  /** containing node */
   private outer: HTMLElement;
+
+  /** instance of the toolbar class */
   private toolbar: Toolbar;
+
+  /** cache (a copy of) the current active style */
   private selection_style?: Style.Properties;
-  private primary_selection: any;
+
+  /**
+   * live reference to selection, so we don't have to constantly retrieve
+   * it (this is less important now that we have a reference to the grid)
+   */
+  private primary_selection: GridSelection;
 
   constructor(
       private sheet: EventSource<any>, // FIXME: lock down this type? (...)
       private grid: Grid, // reference
       private container: HTMLElement) {
+
+    // prep
+
+    FormattingToolbar.InjectSVG();
 
     // dom layout
 
@@ -90,9 +108,7 @@ export class FormattingToolbar {
     container.insertBefore(this.outer, container.firstChild);
     this.outer.appendChild(this.node);
 
-    FormattingToolbar.InjectSVG();
-
-    // internal objects
+    // internal objects, initial state
 
     this.toolbar = new Toolbar(this.node);
 
