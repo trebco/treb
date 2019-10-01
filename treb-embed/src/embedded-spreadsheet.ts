@@ -1635,8 +1635,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   /** save sheet to local storage */
   public DocumentChange() {
 
-    console.info("DC");
-
     // FIXME: switch to yield?
     requestAnimationFrame(() => {
       const json = JSON.stringify(this.SerializeDocument(false, true, {

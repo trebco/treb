@@ -508,7 +508,14 @@ export class Parser {
 
     if (row < 0 || column < 0) return '#REF';
 
+    let label = '';
+    if (address.sheet) {
+      label = (/\s/.test(address.sheet) ?
+        '\'' + address.sheet + '\'' : address.sheet) + '!';
+    }
+
     return (
+      label +
       (address.absolute_column ? '$' : '') +
       this.ColumnLabel(column) +
       (address.absolute_row ? '$' : '') +

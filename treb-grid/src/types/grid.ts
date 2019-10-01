@@ -2897,6 +2897,7 @@ export class Grid {
     const commands: Command[] = [];
 
     if (is_function) {
+
       value = this.FixFormula(value);
 
       // so what we are doing now is copying style from a function argument,
