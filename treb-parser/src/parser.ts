@@ -1,3 +1,4 @@
+
 import {
   ExpressionUnit,
   UnitAddress,
@@ -15,9 +16,8 @@ interface PrecedenceList {
   [index: string]: number;
 }
 
-const DOUBLE_QUOTE = '"'.charCodeAt(0);
-const SINGLE_QUOTE = `'`.charCodeAt(0);
-const APOSTROPHE = SINGLE_QUOTE;
+const DOUBLE_QUOTE = 0x22; // '"'.charCodeAt(0);
+const SINGLE_QUOTE = 0x27; // `'`.charCodeAt(0);
 
 const NON_BREAKING_SPACE = 0xa0;
 const SPACE = 0x20;
@@ -42,7 +42,7 @@ const UNDERSCORE = 0x5f;
 const DOLLAR_SIGN = 0x24;
 
 const EXCLAMATION_MARK = 0x21;
-const COLON = 0x3a;
+// const COLON = 0x3a; // became an operator
 const SEMICOLON = 0x3b; // not used atm, but maybe for i18n
 
 const UC_A = 0x41;
@@ -52,6 +52,9 @@ const LC_E = 0x65;
 const UC_Z = 0x5a;
 const LC_Z = 0x7a;
 
+/**
+ * precedence map
+ */
 const binary_operators_precendence: PrecedenceList = {
   '==': 6,
   '!=': 6, // FIXME: we should not support these (legacy)
@@ -69,13 +72,18 @@ const binary_operators_precendence: PrecedenceList = {
   ':': 13, // range operator
 };
 
-// binary ops are sorted by length so we can compare long ops first
+/**
+ * binary ops are sorted by length so we can compare long ops first
+ */
 const binary_operators = Object.keys(binary_operators_precendence).sort(
   (a, b) => b.length - a.length,
 );
 
-// unary operators. atm we have no precedence issues, unary operators
-// always have absolute precedence
+/**
+ * unary operators. atm we have no precedence issues, unary operators
+ * always have absolute precedence. (for numbers, these are properly part
+ * of the number, but consider `=-SUM(1,2)` -- this is an operator).
+ */
 const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
 
 /**
@@ -84,7 +92,8 @@ const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
  * FIXME: this is stateless, think about exporting a singleton.
  *
  * (there is internal state, but it's only used during a Parse() call,
- * which runs synchronously).
+ * which runs synchronously). one benefit of using a singleton would be
+ * consistency in decimal mark, we'd only have to set once.
  *
  * FIXME: split rendering into a separate class? would be a little cleaner.
  */
@@ -121,8 +130,14 @@ export class Parser {
   protected data: number[] = [];
   protected index = 0;
   protected length = 0;
+
+  /** success flag */
   protected valid = true;
+
+  /** rolling error state */
   protected error_position: number | undefined;
+
+  /** rolling error state */
   protected error: string | undefined;
 
   protected dependencies: DependencyList = {
