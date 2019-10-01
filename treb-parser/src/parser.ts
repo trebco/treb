@@ -16,6 +16,8 @@ interface PrecedenceList {
 }
 
 const DOUBLE_QUOTE = '"'.charCodeAt(0);
+const SINGLE_QUOTE = `'`.charCodeAt(0);
+const APOSTROPHE = SINGLE_QUOTE;
 
 const NON_BREAKING_SPACE = 0xa0;
 const SPACE = 0x20;
@@ -847,8 +849,12 @@ export class Parser {
       (char >= UC_A && char <= UC_Z) ||
       (char >= LC_A && char <= LC_Z) ||
       char === UNDERSCORE ||
+      char === SINGLE_QUOTE ||
       char === DOLLAR_SIGN
     ) {
+
+      // FIXME: this only tests for ASCII tokens? (...)
+
       return this.ConsumeToken(char);
     }
     // else throw(new Error('Unexpected character: ' + char));
@@ -914,10 +920,17 @@ export class Parser {
    * cannot start with a period.
    *
    * NOTE: that's true irrespective of decimal mark type.
+   *
+   * you can have tokens (addresses) with single quotes; these are used
+   * to escape sheet names with spaces (which is a bad idea, but hey). this
+   * should only be legal if the token starts with a single quote, and only
+   * for one (closing) quote.
    */
   protected ConsumeToken(initial_char: number): ExpressionUnit {
     const token: number[] = [initial_char];
     const position = this.index;
+
+    let single_quote = (initial_char === SINGLE_QUOTE);
 
     for (++this.index; this.index < this.length; this.index++) {
       const char = this.data[this.index];
@@ -928,13 +941,35 @@ export class Parser {
         char === DOLLAR_SIGN ||
         char === PERIOD ||
         char === EXCLAMATION_MARK ||
+        ((char === SINGLE_QUOTE || char === SPACE) && single_quote) ||
         (char >= ZERO && char <= NINE) // tokens can't start with a number, but this loop starts at index 1
       ) {
         token.push(char);
+        if (char === SINGLE_QUOTE) {
+          single_quote = false; // one only
+        }
       } else break;
     }
 
     const str = token.map((num) => String.fromCharCode(num)).join('');
+
+    // special handling: unbalanced single quote (probably sheet name),
+    // this is an error
+
+    if (single_quote) { // unbalanced
+
+      this.error = `unbalanced single quote`;
+      this.error_position = position;
+      this.valid = false;
+
+      return {
+        type: 'identifier',
+        id: this.id_counter++,
+        name: str,
+        position,
+      } as UnitIdentifier;
+
+    }
 
     // special handling
 
@@ -1008,6 +1043,16 @@ export class Parser {
     const index = position;
     const token_length = token.length;
 
+    // FIXME: should mark this (!) when it hits, rather than search
+
+    let sheet: string|undefined;
+    const tokens = token.split('!');
+
+    if (tokens.length === 2) {
+      sheet = tokens[0];
+      position += (tokens[0].length + 1);
+    }
+
     // FIXME: can inline
 
     const c = this.ConsumeAddressColumn(position);
@@ -1018,15 +1063,24 @@ export class Parser {
     if (!r) return null;
     position = r.position;
 
+    const label = sheet ?
+      sheet + token.substr(sheet.length, position - index).toUpperCase() :
+      token.substr(0, position - index).toUpperCase();
+
+    if (sheet && sheet[0] === '\'') {
+      sheet = sheet.substr(1, sheet.length - 2);
+    }
+
     const addr: UnitAddress = {
       type: 'address',
       id: this.id_counter++,
-      label: token.substr(0, position - index).toUpperCase(),
+      label, // : token.substr(0, position - index).toUpperCase(),
       row: r.row,
       column: c.column,
       absolute_row: r.absolute,
       absolute_column: c.absolute,
       position: index,
+      sheet,
     };
 
     // if that's not the complete token, then it's invalid
