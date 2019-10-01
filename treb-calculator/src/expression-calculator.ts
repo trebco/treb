@@ -94,6 +94,34 @@ export class ExpressionCalculator {
   }
 
   /**
+   * testing: can we cache (or close) the reference direcly, saving lookups?
+   * 
+   * A: probably not, if the lookup is calculated... does that ever happen?
+   * A: it does happen, in the Indirect and Offset functions, but those are
+   *    constructed dynamically so they won't be cached. so should be ok to
+   *    close.
+   */
+  protected CellFunction2(expr: UnitAddress) {
+
+    // TEMP
+    if (expr.sheet) {
+      return () => ReferenceError;
+    }
+
+    // reference
+    const cell = this.cells.GetCell(expr);
+
+    // this is not an error, just a reference to an empty cell
+    if (!cell) {
+      return () => undefined;
+    }
+
+    // close
+    return () => cell.GetValue();
+
+  }
+
+  /**
    * returns value for address/range
    *
    * note we are "fixing" strings with leading apostrophes. that should
@@ -101,9 +129,12 @@ export class ExpressionCalculator {
    *
    * UPDATE: propagate cell errors
    */
-  protected CellFunction(c1: number, r1: number, c2?: number, r2?: number){
-    if (typeof c2 === 'undefined' || typeof r2 === 'undefined') {
-      const cell = this.cells.GetCell({row: r1, column: c1});
+//  protected CellFunction(c1: number, r1: number, c2?: number, r2?: number){
+  protected CellFunction(start: ICellAddress, end?: ICellAddress){
+
+    // if (typeof c2 === 'undefined' || typeof r2 === 'undefined') {
+    if (!end) {
+      const cell = this.cells.GetCell(start);
 
       if (!cell) {
         return undefined;
@@ -119,8 +150,8 @@ export class ExpressionCalculator {
     }
     else {
       return(this.cells.GetRange2(
-        {row: r1, column: c1},
-        {row: r2, column: c2},
+        start, // {row: r1, column: c1},
+        end, // {row: r2, column: c2},
         true,
       ));
     }
@@ -552,18 +583,24 @@ export class ExpressionCalculator {
 
       if (named_range) {
         if (named_range.count === 1) {
+          return this.CellFunction(named_range.start);
+          /*
           return this.CellFunction(
             named_range.start.column,
             named_range.start.row,
           );
+          */
         }
         else {
+          return this.CellFunction(named_range.start, named_range.end);
+          /*
           return this.CellFunction(
             named_range.start.column,
             named_range.start.row,
             named_range.end.column,
             named_range.end.row,
           );
+          */
         }
       }
 
@@ -609,11 +646,10 @@ export class ExpressionCalculator {
       return (expr.user_data = this.CallExpression(expr))(expr);
 
     case 'address':
-      return (expr.user_data = (x: UnitAddress) => this.CellFunction(x.column, x.row))(expr);
+      return (expr.user_data = this.CellFunction2(expr))();
 
     case 'range':
-      return (expr.user_data = (x: UnitRange) =>
-        this.CellFunction(x.start.column, x.start.row, x.end.column, x.end.row))(expr);
+      return (expr.user_data = (x: UnitRange) => this.CellFunction(x.start, x.end))(expr);
 
     case 'binary':
       return (expr.user_data = this.BinaryExpression(expr))(expr);
