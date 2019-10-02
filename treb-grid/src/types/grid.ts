@@ -631,10 +631,10 @@ export class Grid {
     // structured, of course) but we are moving things out of sheet
 
     const result: {
-      sheet_data: SerializedSheet,
+      sheet_data: SerializedSheet[],
       named_ranges?: {[index: string]: IArea},
     } = {
-      sheet_data: data,
+      sheet_data: [data],
     };
 
     if (this.model.named_ranges.Count()) {

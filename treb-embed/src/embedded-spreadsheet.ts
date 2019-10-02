@@ -1166,6 +1166,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     // FIXME: version check
 
+    // new structure has this in an array; support old structure.
+    // for now, pull out sheet[0]. multi-sheet pending.
+
+    const sheet_data = (data.sheet_data && Array.isArray(data.sheet_data)) ?
+      data.sheet_data[0] : data.sheet_data;
+
     // FIXME: it's not necessary to call reset here unless the
     // document fails, do that with a trap?
 
@@ -1195,8 +1201,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         target_argument_separator = ArgumentSeparatorType.Comma;
       }
 
-      if (data.sheet_data && data.sheet_data.annotations) {
-        for (const annotation of (data.sheet_data.annotations as Annotation[])) {
+     
+
+      if (sheet_data && sheet_data.annotations) {
+        for (const annotation of (sheet_data.annotations as Annotation[])) {
           if (annotation.formula) {
             const parse_result = parser.Parse(annotation.formula);
             if (parse_result.expression) {
@@ -1208,10 +1216,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         }
       }
 
-      if (data.sheet_data && data.sheet_data.data && data.sheet_data.data.length) {
+      if (sheet_data && sheet_data.data && sheet_data.data.length) {
 
         // update for grouped data (v5+)
-        for (const block of data.sheet_data.data) {
+        for (const block of sheet_data.data) {
           const cells = block.cells ? block.cells : [block];
           for (const cell of cells) {
             if (cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
@@ -1242,7 +1250,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       this.calculator.UpdateResults(this.last_simulation_data);
     }
 
-    this.grid.UpdateSheet(data.sheet_data); // don't paint -- wait for calculate
+    this.grid.UpdateSheet(sheet_data); // don't paint -- wait for calculate
 
     const model = this.grid.model;
 
@@ -1253,8 +1261,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // old models have it in sheet, new models have at top level -- we can
     // support old models, but write in the new syntax
 
-    if (data.named_ranges || data.sheet_data.named_ranges) {
-      model.named_ranges.Deserialize(data.named_ranges || data.sheet_data.named_ranges);
+    if (data.named_ranges || sheet_data.named_ranges) {
+      model.named_ranges.Deserialize(data.named_ranges || sheet_data.named_ranges);
     }
 
     this.additional_cells = [];
