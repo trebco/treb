@@ -1167,10 +1167,12 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // FIXME: version check
 
     // new structure has this in an array; support old structure.
-    // for now, pull out sheet[0]. multi-sheet pending.
+    // for now, pull out sheet[0]. multi-sheet pending. you still
+    // need to test that this object is not undefined.
 
     const sheet_data = (data.sheet_data && Array.isArray(data.sheet_data)) ?
-      data.sheet_data[0] : data.sheet_data;
+      data.sheet_data[0] :
+      data.sheet_data;
 
     // FIXME: it's not necessary to call reset here unless the
     // document fails, do that with a trap?
@@ -1200,8 +1202,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         target_decimal_mark = DecimalMarkType.Period;
         target_argument_separator = ArgumentSeparatorType.Comma;
       }
-
-     
 
       if (sheet_data && sheet_data.annotations) {
         for (const annotation of (sheet_data.annotations as Annotation[])) {
