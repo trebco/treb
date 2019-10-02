@@ -890,11 +890,11 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   /** clear/reset sheet, back to initial state */
   public Reset() {
+
     this.grid.Clear();
-    // this.document_name = undefined;
-    // this.user_data = undefined;
     this.additional_cells = [];
-    this.calculator.Reset(false);
+    // this.calculator.Reset(false); // why flush false? (...)
+    this.calculator.Reset(true);
 
     // NOTE: accessing grid.cells, find a better approach
 
