@@ -4,8 +4,8 @@
  */
 
 import { WorkerMessage } from './worker-types';
-import { Localization, ICellAddress } from 'treb-base-types';
-import { DataModel, Sheet, Annotation } from 'treb-grid';
+import { Localization, ICellAddress, Area } from 'treb-base-types';
+import { DataModel, Sheet, Annotation, NamedRangeCollection } from 'treb-grid';
 import { MCCalculator } from './simulation-calculator';
 import { GraphStatus } from '../../treb-calculator/src/dag/graph';
 import * as PackResults from '../../treb-calculator/src/pack-results';
@@ -17,6 +17,7 @@ export class WorkerImpl {
   protected data_model: DataModel = {
     sheet: Sheet.Blank(),
     annotations: [],
+    named_ranges: new NamedRangeCollection(),
   };
   protected screen_updates = false;
   protected calculator = new MCCalculator();
@@ -62,6 +63,7 @@ export class WorkerImpl {
       if (message.additional_cells) {
         this.additional_cells = message.additional_cells;
       }
+      this.data_model.named_ranges.Deserialize(message.named_ranges); // implicit reset
       break;
 
     case 'step':

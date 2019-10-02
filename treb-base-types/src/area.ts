@@ -4,6 +4,7 @@ export interface ICellAddress {
   column: number;
   absolute_row?: boolean;
   absolute_column?: boolean;
+  sheet_id?: number;
 }
 
 export interface IArea {

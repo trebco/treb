@@ -6,8 +6,23 @@ export class NamedRangeCollection {
   private forward: {[index: string]: Area} = {};
   private backward: Array<{name: string, range: Area}> = [];
 
+  /** FIXME: why not an accessor? */
   public Count() {
     return this.backward.length;
+  }
+
+  public Serialize() {
+    return JSON.parse(JSON.stringify(this.Map()));
+  }
+
+  public Deserialize(data?: {[index: string]: IArea}) {
+    this.Reset();
+    if (data) {
+      for (const key of Object.keys(data)) {
+        this.SetName(key, new Area(data[key].start, data[key].end), false);
+      }
+      this.RebuildList();
+    }
   }
 
   /**
@@ -62,13 +77,6 @@ export class NamedRangeCollection {
   /** FIXME: accessor */
   public List() {
     return this.backward;
-  }
-
-  public RebuildList() {
-    this.backward = [];
-    for (const key of Object.keys(this.forward)) {
-      this.backward.push({ name: key, range: this.forward[key] });
-    }
   }
 
   /**
@@ -266,5 +274,11 @@ export class NamedRangeCollection {
 
   }
 
+  private RebuildList() {
+    this.backward = [];
+    for (const key of Object.keys(this.forward)) {
+      this.backward.push({ name: key, range: this.forward[key] });
+    }
+  }
 
 }

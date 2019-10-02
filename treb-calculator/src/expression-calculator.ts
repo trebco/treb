@@ -56,7 +56,7 @@ export class ExpressionCalculator {
   public SetModel(model: DataModel) {
     this.cells = model.sheet.cells;
     this.data_model = model;
-    this.named_range_map = model.sheet.named_ranges.Map();
+    this.named_range_map = model.named_ranges.Map();
   }
 
   /**

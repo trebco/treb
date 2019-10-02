@@ -93,16 +93,27 @@ export class Cell {
   public static GetValueType(value: any){
     const type = typeof value;
     switch (type){
-      case 'undefined': return ValueType.undefined;
-      case 'number': return ValueType.number;
-      case 'boolean': return ValueType.boolean;
-      case 'object': {
-        if ( value === null ) return ValueType.undefined;
+      case 'undefined':
+        return ValueType.undefined;
+
+      case 'number':
+        return ValueType.number;
+
+      case 'boolean':
+        return ValueType.boolean;
+
+      case 'object':
+        if (value === null) {
+          return ValueType.undefined;
+        }
         return ValueType.object;
-      }
+
       case 'string':
-        if (value[0] === '=' ) return ValueType.formula;
+        if (value[0] === '=') {
+          return ValueType.formula;
+        }
         return ValueType.string;
+
       default: // function or symbol
         return ValueType.error;
     }

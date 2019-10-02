@@ -557,7 +557,7 @@ export class Calculator extends Graph {
       case 'identifier':
         if (this.model) {
           const named_range =
-            this.model.sheet.named_ranges.Get(expr.name.toUpperCase());
+            this.model.named_ranges.Get(expr.name.toUpperCase());
           if (named_range) {
             return new Area(named_range.start, named_range.end);
           }
@@ -573,7 +573,7 @@ export class Calculator extends Graph {
     if (!this.model) return undefined;
 
     const normalized = unit.name.toUpperCase();
-    const named_range = this.model.sheet.named_ranges.Get(normalized);
+    const named_range = this.model.named_ranges.Get(normalized);
     if (named_range) {
       if (named_range.count === 1) {
         return this.ConstructAddressUnit(named_range.start, normalized, unit.id, unit.position);

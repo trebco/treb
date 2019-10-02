@@ -517,7 +517,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     let area: Area;
 
     if (typeof range === 'string') {
-      const named_range = this.grid.model.sheet.named_ranges.Get(range);
+      const named_range = this.grid.model.named_ranges.Get(range);
       if (named_range) {
         area = named_range.Clone();
       }
@@ -552,7 +552,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   public GetRange(range: ICellAddress|IArea|string, formula = false) {
 
     if (typeof range === 'string') {
-      const named_range = this.grid.model.sheet.named_ranges.Get(range);
+      const named_range = this.grid.model.named_ranges.Get(range);
       if (named_range) {
         return this.grid.GetRange(named_range, formula);
       }
@@ -640,7 +640,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         result.column = parse_result.expression.start.column;
       }
       else if (parse_result.expression && parse_result.expression.type === 'identifier') {
-        const named_range = this.grid.model.sheet.named_ranges.Get(parse_result.expression.name);
+        const named_range = this.grid.model.named_ranges.Get(parse_result.expression.name);
         if (named_range) {
           return named_range.start;
         }
@@ -808,6 +808,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           console.info(event);
           reject(event);
         };
+
         const serialized = this.grid.Serialize({
           rendered_values: true,
           expand_arrays: true,
@@ -815,9 +816,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           decorated_cells: true,
         });
 
-        serialized.decimal_mark = Localization.decimal_separator;
+        (serialized.sheet_data as any).decimal_mark = Localization.decimal_separator;
         this.export_worker.postMessage({
-          command: 'export', sheet: serialized,
+          command: 'export', sheet: serialized.sheet_data,
         });
       }
       else {
@@ -908,7 +909,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     if (range) {
       if (typeof range === 'string') {
-        const named_range = this.grid.model.sheet.named_ranges.Get(range);
+        const named_range = this.grid.model.named_ranges.Get(range);
         if (named_range) {
           area = named_range.Clone();
         }
@@ -1243,8 +1244,18 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     this.grid.UpdateSheet(data.sheet_data); // don't paint -- wait for calculate
 
-    this.grid.model.document_name = data.name;
-    this.grid.model.user_data = data.user_data;
+    const model = this.grid.model;
+
+    model.document_name = data.name;
+    model.user_data = data.user_data;
+    model.named_ranges.Reset();
+
+    // old models have it in sheet, new models have at top level -- we can
+    // support old models, but write in the new syntax
+
+    if (data.named_ranges || data.sheet_data.named_ranges) {
+      model.named_ranges.Deserialize(data.named_ranges || data.sheet_data.named_ranges);
+    }
 
     this.additional_cells = [];
     this.calculator.Reset(false);
@@ -1568,17 +1579,22 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       ...additional_options,
       rendered_values,
     };
+
+    const grid_data = this.grid.Serialize(serialize_options);
+
     const serialized: TREBDocument = {
       app: (build as any).name,
       // document_id: this.document_id,
       version: (build as any).version,
       name: this.grid.model.document_name, // may be undefined
       user_data: this.grid.model.user_data, // may be undefined
-      sheet_data: this.grid.Serialize(serialize_options),
       decimal_mark: Localization.decimal_separator,
+      ...grid_data,
     };
-    if (rendered_values) serialized.rendered_values = true;
 
+    if (rendered_values) {
+      serialized.rendered_values = true;
+    }
     if (preserve_simulation_data) {
       serialized.simulation_data = {
         elapsed: this.last_simulation_data.elapsed,
@@ -1714,11 +1730,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     this.LoadDocument(JSON.parse(data), undefined, false);
 
-    // this.grid.UpdateSheet(data, true);
-    // this.calculator.Reset(false); // called in loadDocumnet
-
-    // this.Recalculate();
-
   }
 
   /** update selection: used for updating toolbar (i.e. highlight bold button) */
@@ -1804,6 +1815,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         rendered_values: true, // has a different name, for some reason
         preserve_type: true,
       }),
+      named_ranges: this.grid.model.named_ranges.Serialize(),
       additional_cells,
     });
 

@@ -34,8 +34,11 @@ export class Sheet {
 
   // --- class methods --------------------------------------------------------
 
-  public static Blank(rows = 100, columns = 26) {
+  public static Blank(rows = 100, columns = 26, name?: string) {
     const sheet = new Sheet();
+    if (name) {
+      sheet.name = name;
+    }
     rows = Math.max(rows, 1);
     columns = Math.max(columns, 1);
     sheet.cells.EnsureCell({row: rows - 1, column: columns - 1});
@@ -71,6 +74,7 @@ export class Sheet {
     // new, named ranges [FIXME: move to container?] -- these are
     // serialized so create objects
 
+    /*
     if (!hints || hints.names) {
       sheet.named_ranges.Reset();
       if (obj.named_ranges) {
@@ -81,11 +85,15 @@ export class Sheet {
       }
       sheet.named_ranges.RebuildList();
     }
+    */
 
-    // persist ID
+    // persist ID, name
 
     if (obj.id) {
       sheet.id = obj.id;
+    }
+    if (obj.name) {
+      sheet.name = obj.name;
     }
 
     // styles (part 1) -- moved up in case we use inlined style refs
@@ -256,7 +264,9 @@ export class Sheet {
    * FIXME: this needs to move to an outer container, otherwise we
    * may get conflicts w/ multiple sheets. unless we want to allow that...
    */
-  public named_ranges = new NamedRangeCollection();
+  // public named_ranges = new NamedRangeCollection();
+
+  public name?: string;
 
   /**
    * adding verbose flag so we can figure out who is publishing
@@ -938,7 +948,7 @@ export class Sheet {
       }
     }
 
-    this.named_ranges.PatchNamedRanges(0, 0, before_row, count);
+    // this.named_ranges.PatchNamedRanges(0, 0, before_row, count);
 
     // ok we can insert...
 
@@ -1060,7 +1070,7 @@ export class Sheet {
       }
     }
 
-    this.named_ranges.PatchNamedRanges(before_column, count, 0, 0);
+    // this.named_ranges.PatchNamedRanges(before_column, count, 0, 0);
 
     // ok we can insert...
 
@@ -1477,8 +1487,10 @@ export class Sheet {
       // FIXME: drop, in favor of container versioning. there's no point
       // in this submodule versioning (is there? ...)
 
-      version: (ModuleInfo as any).version,
+      // version: (ModuleInfo as any).version,
+
       id: this.id,
+      name: this.name,
 
       data,
       sheet_style,
@@ -1499,16 +1511,15 @@ export class Sheet {
 
     };
 
-    // omit if empty
+    // moved to outer container (data model)
 
     /*
-    if (Object.keys(this.named_ranges).length) {
-      result.named_ranges = JSON.parse(JSON.stringify(this.named_ranges));
+    // omit if empty
+
+    if (this.named_ranges.Count()) {
+      result.named_ranges = JSON.parse(JSON.stringify(this.named_ranges.Map()));
     }
     */
-   if (this.named_ranges.Count()) {
-     result.named_ranges = JSON.parse(JSON.stringify(this.named_ranges.Map()));
-   }
 
     // only put in freeze if used
 

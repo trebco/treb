@@ -1,5 +1,5 @@
 
-import { ICellAddress } from 'treb-base-types/src';
+import { ICellAddress, IArea } from 'treb-base-types/src';
 import { Annotation } from 'treb-grid/src';
 
 export interface TrialData {
@@ -20,6 +20,7 @@ export interface ConfigMessage {
   locale: string;
   sheet: any;
   additional_cells?: ICellAddress[];
+  named_ranges?: {[index: string]: IArea};
 }
 
 export interface StepMessage {

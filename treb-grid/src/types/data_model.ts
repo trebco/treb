@@ -1,6 +1,7 @@
 
 import { Sheet } from './sheet';
 import { Annotation } from './annotation';
+import { NamedRangeCollection } from './named_range';
 
 /**
  * transition support
@@ -16,4 +17,5 @@ export interface DataModel {
   user_data?: any;
   sheet: Sheet;
   annotations: Annotation[];
+  named_ranges: NamedRangeCollection;
 }

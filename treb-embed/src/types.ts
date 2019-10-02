@@ -1,3 +1,4 @@
+import { IArea } from 'treb-base-types';
 
 export enum SaveFileType {
   treb = 'treb', tsv = 'tsv', xlsx = 'xlsx',
@@ -25,6 +26,7 @@ export interface TREBDocument {
   decimal_mark?: '.' | ',';
   simulation_data?: TREBSimulationData;
   rendered_values?: boolean;
+  named_ranges?: {[index: string]: IArea};
 }
 
 export interface ResizeEvent {

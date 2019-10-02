@@ -37,7 +37,7 @@ export interface FreezePane {
 
 export interface SerializedSheet {
 
-  version: string;
+  // version: string;
   data: any; // FIXME
   sheet_style: Style.Properties;
   rows: number;
@@ -57,5 +57,6 @@ export interface SerializedSheet {
   freeze?: FreezePane;
 
   id?: number;
+  name?: string;
 
 }

@@ -1,7 +1,7 @@
 
 import { Rectangle, ValueType, Style, Area, Cell,
          Extent, ICellAddress, Point,
-         IsCellAddress, Localization } from 'treb-base-types';
+         IsCellAddress, Localization, IArea } from 'treb-base-types';
 import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV } from 'treb-parser';
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
 import { NumberFormatCache, RDateScale } from 'treb-format';
@@ -19,7 +19,7 @@ import { ValueParser, Hints } from '../util/value_parser';
 
 import { TileRenderer } from '../render/tile_renderer';
 import { GridEvent, AnnotationEvent } from './grid_events';
-import { SheetEvent } from './sheet_types';
+import { SheetEvent, SerializedSheet } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
 import { GridOptions, DefaultGridOptions } from './grid_options';
 import { AutocompleteMatcher, FunctionDescriptor } from '../editors/autocomplete_matcher';
@@ -33,6 +33,7 @@ import { Command, CommandKey, CommandRecord,
          SetRangeCommand, FreezeCommand, UpdateBordersCommand,
          InsertRowsCommand, InsertColumnsCommand, SetNameCommand } from './grid_command';
 import { DataModel } from './data_model';
+import { NamedRangeCollection } from './named_range';
 
 interface DoubleClickData {
   timeout?: any;
@@ -82,6 +83,7 @@ export class Grid {
   public readonly model: DataModel = {
     sheet: Sheet.Blank(100, 26),
     annotations: [],
+    named_ranges: new NamedRangeCollection(),
   };
 
   // --- private members -------------------------------------------------------
@@ -615,21 +617,32 @@ export class Grid {
     // add selection to data, so we can restore it (primarily used for undo)
     // COPY SO IT'S NOT LINKED
 
+    // this one can stay in sheet
+
     data.primary_selection = JSON.parse(JSON.stringify(this.primary_selection));
 
     // frozen, but omit if empty/no data
-
-    /*
-    if (this.layout.freeze.rows || this.layout.freeze.columns) {
-      data.freeze = {...this.layout.freeze};
-    }
-    */
 
     // annotations: also copy
 
     data.annotations = JSON.parse(JSON.stringify(this.model.annotations));
 
-    return data;
+    // NOTE: moving into a structured object (the sheet data is also
+    // structured, of course) but we are moving things out of sheet
+
+    const result: {
+      sheet_data: SerializedSheet,
+      named_ranges?: {[index: string]: IArea},
+    } = {
+      sheet_data: data,
+    };
+
+    if (this.model.named_ranges.Count()) {
+      result.named_ranges = this.model.named_ranges.Serialize();
+    }
+
+    return result;
+
   }
 
   // pass through
@@ -711,6 +724,11 @@ export class Grid {
 
     this.UpdateSheet(new Sheet().toJSON(), true);
     this.RemoveAllAnnotations();
+
+    // FIXME: are there named ranges in the data? (...)
+
+    this.model.named_ranges.Reset();
+
     this.ClearSelection(this.primary_selection);
 
     this.cells.FromJSON(cell_data);
@@ -873,8 +891,12 @@ export class Grid {
    *
    * @param container html container element
    * @param sheet_data optional sheet (serialized, as json or object)
+   * 
+   * no one is using the sheet_data parameter atm, so we are removing
+   * it; it might come back, but if it does use a load method (don't inline)
+   * 
    */
-  public Initialize(grid_container: HTMLElement, sheet_data?: string | object) {
+  public Initialize(grid_container: HTMLElement /*, sheet_data?: string | object*/ ) {
 
     this.grid_container = grid_container;
 
@@ -912,6 +934,8 @@ export class Grid {
 
     this.container.setAttribute('tabindex', '-1');
 
+    /* see method comment
+
     // if there's a sheet passed in, use that (serialized)
 
     if (sheet_data) {
@@ -923,6 +947,8 @@ export class Grid {
         console.error(err);
       }
     }
+
+    */
 
     // create dom structure
 
@@ -3074,7 +3100,7 @@ export class Grid {
           break;
 
         case 'identifier':
-          if (this.model.sheet.named_ranges.Get(unit.name)) {
+          if (this.model.named_ranges.Get(unit.name)) {
             unit.name = unit.name.toUpperCase();
           }
           break;
@@ -3775,7 +3801,7 @@ export class Grid {
 
       let label = Area.CellAddressToLabel(target.start);
 
-      for (const entry of this.model.sheet.named_ranges.List()) {
+      for (const entry of this.model.named_ranges.List()) {
         if (entry.range.Equals(target)) {
           label = entry.name;
           break;
@@ -4222,6 +4248,7 @@ export class Grid {
   private InsertRowsInternal(command: InsertRowsCommand) { // before_row = 0, count = 1) {
 
     this.model.sheet.InsertRows(command.before_row, command.count);
+    this.model.named_ranges.PatchNamedRanges(0, 0, command.before_row, command.count);
 
     // snip
 
@@ -4327,6 +4354,7 @@ export class Grid {
   private InsertColumnsInternal(command: InsertColumnsCommand) { // before_column = 0, count = 1) {
 
     this.model.sheet.InsertColumns(command.before_column, command.count);
+    this.model.named_ranges.PatchNamedRanges(command.before_column, command.count, 0, 0);
 
     // snip
 
@@ -4680,6 +4708,7 @@ export class Grid {
         else {
           this.UpdateSheet(new Sheet().toJSON(), true);
           this.RemoveAllAnnotations();
+          this.model.named_ranges.Reset();
           this.ClearSelection(this.primary_selection);
           this.ScrollIntoView({row: 0, column: 0});
           this.QueueLayoutUpdate(); // necessary? (...)
@@ -4772,11 +4801,11 @@ export class Grid {
 
       case CommandKey.SetName:
         if (command.area) {
-          this.model.sheet.named_ranges.SetName(command.name,
+          this.model.named_ranges.SetName(command.name,
             new Area(command.area.start, command.area.end));
         }
         else {
-          this.model.sheet.named_ranges.ClearName(command.name);
+          this.model.named_ranges.ClearName(command.name);
         }
         structure_event = true;
         structure_rebuild_required = true;

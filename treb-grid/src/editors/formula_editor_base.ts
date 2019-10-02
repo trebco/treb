@@ -495,7 +495,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
               this.reference_list.push(unit);
             }
             else {
-              const named_range = this.model.sheet.named_ranges.Get(unit.name);
+              const named_range = this.model.named_ranges.Get(unit.name);
               if (named_range) {
                 if (named_range.count === 1) {
                   this.reference_list.push({
