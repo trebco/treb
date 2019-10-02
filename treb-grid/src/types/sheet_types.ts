@@ -56,4 +56,6 @@ export interface SerializedSheet {
   named_ranges?: {[index: string]: IArea};
   freeze?: FreezePane;
 
+  id?: number;
+
 }

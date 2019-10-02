@@ -30,6 +30,8 @@ interface CellStyleRef {
 
 export class Sheet {
 
+  public static base_id = 100;
+
   // --- class methods --------------------------------------------------------
 
   public static Blank(rows = 100, columns = 26) {
@@ -78,6 +80,12 @@ export class Sheet {
           }
       }
       sheet.named_ranges.RebuildList();
+    }
+
+    // persist ID
+
+    if (obj.id) {
+      sheet.id = obj.id;
     }
 
     // styles (part 1) -- moved up in case we use inlined style refs
@@ -256,6 +264,9 @@ export class Sheet {
    */
   public readonly sheet_events = new EventSource<SheetEvent>(true, 'sheet-events');
 
+  /** internal ID */
+  private id_: number;
+
   // tslint:disable-next-line:variable-name
   private row_height_: number[] = [];
 
@@ -326,6 +337,15 @@ export class Sheet {
   /** accessor: now just a wrapper for the call on cells */
   public get columns() { return this.cells.columns; }
 
+  public get id() { return this.id_; }
+
+  public set id(id: number) {
+    this.id_ = id;
+    if (this.id >= Sheet.base_id) {
+      Sheet.base_id = this.id + 1;
+    }
+  }
+
   // --- public methods -------------------------------------------------------
 
   constructor() {
@@ -336,6 +356,8 @@ export class Sheet {
     this.default_column_width = DEFAULT_COLUMN_WIDTH;
     this.row_header_width = DEFAULT_ROW_HEADER_WIDTH;
     this.UpdateDefaultRowHeight(true);
+
+    this.id_ = Sheet.base_id++;
 
   }
 
@@ -886,185 +908,6 @@ export class Sheet {
   }
 
   /**
-   * unified method for fixing named range references
-   * after row/column insert/delete
-   */
-  public PatchNamedRanges(before_column: number, column_count: number, before_row: number, row_count: number) {
-
-    // const keys = Object.keys(this.named_ranges);
-    // 
-    // for (const key of keys) {
-
-    const copy = this.named_ranges.List().slice(0);
-
-    for (const entry of copy) {
-
-      const key = entry.name;
-      const range = entry.range;
-
-      if (column_count && before_column <= range.end.column) {
-
-        /*
-        // (1) we are before the insert point, not affected
-
-        if (before_column > range.end.column) {
-          continue;
-        }
-        */
-
-        if (column_count > 0) {
-
-          // (2) it's an insert and we are past the insert point:
-          //     increment [start] and [end] by [count]
-
-          if (before_column <= range.start.column) {
-            range.Shift(0, column_count);
-          }
-
-          // (3) it's an insert and we contain the insert point:
-          //     increment [end] by [count]
-
-          else if (before_column > range.start.column && before_column <= range.end.column) {
-            range.ConsumeAddress({row: range.end.row, column: range.end.column + column_count});
-          }
-
-          else {
-            console.warn(`PNR X case 1`, before_column, column_count, JSON.stringify(range));
-          }
-
-        }
-        else if (column_count < 0) {
-
-          // (4) it's a delete and we are past the delete point (before+count):
-          //     decrement [start] and [end] by [count]
-
-          if (before_column - column_count <= range.start.column) {
-            range.Shift(0, column_count);
-          }
-
-          // (5) it's a delete and contains the entire range
-
-          else if (before_column <= range.start.column && before_column - column_count > range.end.column) {
-            this.named_ranges.ClearName(key, false);
-          }
-
-          // (6) it's a delete and contains part of the range. clip the range.
-
-          else if (before_column <= range.start.column) {
-            const last_column = before_column - column_count - 1;
-            this.named_ranges.SetName(key, new Area({
-              row: range.start.row, column: last_column + 1 + column_count }, {
-                row: range.end.row, column: range.end.column + column_count }), false);
-          }
-
-          else if (before_column <= range.end.column) {
-            const last_column = before_column - column_count - 1;
-
-            if (last_column >= range.end.column) {
-              this.named_ranges.SetName(key, new Area({
-                row: range.start.row, column: range.start.column }, {
-                  row: range.end.row, column: before_column - 1 }), false);
-            }
-            else {
-              this.named_ranges.SetName(key, new Area({
-                row: range.start.row, column: range.start.column }, {
-                  row: range.end.row, column: range.start.column + range.columns + column_count - 1}), false);
-            }
-
-          }
-
-          else {
-            console.warn(`PNR X case 2`, before_column, column_count, JSON.stringify(range));
-          }
-
-        }
-      }
-
-
-      if (row_count && before_row <= range.end.row) {
-
-        /*
-        // (1) we are before the insert point, not affected
-
-        if (before_row > range.end.row) {
-          continue;
-        }
-        */
-
-        if (row_count > 0) {
-
-          // (2) it's an insert and we are past the insert point:
-          //     increment [start] and [end] by [count]
-
-          if (before_row <= range.start.row) {
-            range.Shift(row_count, 0);
-          }
-
-          // (3) it's an insert and we contain the insert point:
-          //     increment [end] by [count]
-
-          else if (before_row > range.start.row && before_row <= range.end.row) {
-            range.ConsumeAddress({row: range.end.row + row_count, column: range.end.column});
-          }
-
-          else {
-            console.warn(`PNR X case 3`, before_row, row_count, JSON.stringify(range));
-          }
-
-        }
-        else if (row_count < 0) {
-
-          // (4) it's a delete and we are past the delete point (before+count):
-          //     decrement [start] and [end] by [count]
-
-          if (before_row - row_count <= range.start.row) {
-            range.Shift(row_count, 0);
-          }
-
-          // (5) it's a delete and contains the entire range
-
-          else if (before_row <= range.start.row && before_row - row_count > range.end.row) {
-            this.named_ranges.ClearName(key, false);
-          }
-
-          // (6) it's a delete and contains part of the range. clip the range.
-
-          else if (before_row <= range.start.row) {
-            const last_row = before_row - row_count - 1;
-            this.named_ranges.SetName(key, new Area({
-              column: range.start.column, row: last_row + 1 + row_count }, {
-                column: range.end.column, row: range.end.row + row_count }), false);
-          }
-
-          else if (before_row <= range.end.row) {
-            const last_row = before_row - row_count - 1;
-            if (last_row >= range.end.row) {
-              this.named_ranges.SetName(key, new Area({
-                column: range.start.column, row: range.start.row }, {
-                  column: range.end.column, row: before_row - 1 }), false);
-            }
-            else {
-              this.named_ranges.SetName(key, new Area({
-                column: range.start.column, row: range.start.row }, {
-                  column: range.end.column, row: range.start.row + range.rows + row_count - 1 }), false);
-            }
-
-          }
-
-          else {
-            console.warn(`PNR X case 4`, before_row, row_count, JSON.stringify(range));
-          }
-
-        }
-      }
-
-    }
-
-    this.named_ranges.RebuildList();
-
-  }
-
-  /**
    *
    * @param before_row insert before
    * @param count number to insert
@@ -1095,7 +938,7 @@ export class Sheet {
       }
     }
 
-    this.PatchNamedRanges(0, 0, before_row, count);
+    this.named_ranges.PatchNamedRanges(0, 0, before_row, count);
 
     // ok we can insert...
 
@@ -1217,7 +1060,7 @@ export class Sheet {
       }
     }
 
-    this.PatchNamedRanges(before_column, count, 0, 0);
+    this.named_ranges.PatchNamedRanges(before_column, count, 0, 0);
 
     // ok we can insert...
 
@@ -1635,6 +1478,7 @@ export class Sheet {
       // in this submodule versioning (is there? ...)
 
       version: (ModuleInfo as any).version,
+      id: this.id,
 
       data,
       sheet_style,
