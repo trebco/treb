@@ -104,25 +104,25 @@ export class GridLayout extends BaseLayout {
 
     if (!this.container) throw new Error('missing container');
 
-    this.header_size.width = this.model.sheet.header_offset.x;
-    this.header_size.height = this.model.sheet.header_offset.y;
+    this.header_size.width = this.model.active_sheet.header_offset.x;
+    this.header_size.height = this.model.active_sheet.header_offset.y;
 
     // update the containing grid (layout for column/row headers)
 
-    let x = this.model.sheet.header_offset.x;
-    let y = this.model.sheet.header_offset.y;
+    let x = this.model.active_sheet.header_offset.x;
+    let y = this.model.active_sheet.header_offset.y;
 
-    if (this.model.sheet.freeze.columns) {
-      for (let i = 0; i < this.model.sheet.freeze.columns; i++) x += this.model.sheet.GetColumnWidth(i);
+    if (this.model.active_sheet.freeze.columns) {
+      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) x += this.model.active_sheet.GetColumnWidth(i);
     }
-    if (this.model.sheet.freeze.rows) {
-      for (let i = 0; i < this.model.sheet.freeze.rows; i++) y += this.model.sheet.GetRowHeight(i);
+    if (this.model.active_sheet.freeze.rows) {
+      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) y += this.model.active_sheet.GetRowHeight(i);
     }
 
     // this.container.style.gridTemplateColumns = `${x}px auto`;
     // this.container.style.gridTemplateRows = `${y}px auto`;
-    this.container.style.gridTemplateColumns = `${this.model.sheet.header_offset.x}px auto`;
-    this.container.style.gridTemplateRows = `${this.model.sheet.header_offset.y}px auto`;
+    this.container.style.gridTemplateColumns = `${this.model.active_sheet.header_offset.x}px auto`;
+    this.container.style.gridTemplateRows = `${this.model.active_sheet.header_offset.y}px auto`;
 
     this.corner_canvas.setAttribute('width', `${this.dpr * x}`);
     this.corner_canvas.setAttribute('height', `${this.dpr * y}`);
@@ -158,11 +158,11 @@ export class GridLayout extends BaseLayout {
     // frozen selection -- now used for selection highlights
     // as well (moved from render headers)
 
-    let y = this.model.sheet.header_offset.y;
-    if (this.model.sheet.freeze.rows) {
+    let y = this.model.active_sheet.header_offset.y;
+    if (this.model.active_sheet.freeze.rows) {
       // let y = 0;
-      for (let i = 0; i < this.model.sheet.freeze.rows; i++) {
-        y += this.model.sheet.GetRowHeight(i);
+      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) {
+        y += this.model.active_sheet.GetRowHeight(i);
       }
     }
 
@@ -174,10 +174,10 @@ export class GridLayout extends BaseLayout {
       this.row_header_selection.style.top = '0px'; // `${this.model.sheet.header_offset.y}px`;
     this.row_header_selection.style.left = `0px`;
 
-    let x = this.model.sheet.header_offset.x;
-    if (this.model.sheet.freeze.columns) {
-      for (let i = 0; i < this.model.sheet.freeze.columns; i++) {
-        x += this.model.sheet.GetColumnWidth(i);
+    let x = this.model.active_sheet.header_offset.x;
+    if (this.model.active_sheet.freeze.columns) {
+      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) {
+        x += this.model.active_sheet.GetColumnWidth(i);
       }
     }
     this.column_header_selection.style.display = 'block';
@@ -203,15 +203,15 @@ export class GridLayout extends BaseLayout {
 
     this.grid_selection.style.width = `${width}px`;
     this.grid_selection.style.height = `${height}px`;
-    this.grid_selection.style.top = `${this.model.sheet.header_offset.y}px`;
-    this.grid_selection.style.left = `${this.model.sheet.header_offset.x}px`;
+    this.grid_selection.style.top = `${this.model.active_sheet.header_offset.y}px`;
+    this.grid_selection.style.left = `${this.model.active_sheet.header_offset.x}px`;
 
     // annotations
 
     this.annotation_container.style.width = `${width}px`;
     this.annotation_container.style.height = `${height}px`;
-    this.annotation_container.style.top = `${this.model.sheet.header_offset.y}px`;
-    this.annotation_container.style.left = `${this.model.sheet.header_offset.x}px`;
+    this.annotation_container.style.top = `${this.model.active_sheet.header_offset.y}px`;
+    this.annotation_container.style.left = `${this.model.active_sheet.header_offset.x}px`;
 
   }
 

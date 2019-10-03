@@ -35,7 +35,7 @@ export abstract class Graph {
    */
   public AttachData(model: DataModel){
     this.model = model;
-    this.cells = model.sheet.cells;
+    this.cells = model.active_sheet.cells;
   }
 
   /**

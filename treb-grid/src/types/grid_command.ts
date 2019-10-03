@@ -38,27 +38,30 @@ export enum CommandKey {
   Freeze,
   SetName,
   ShowHeaders,
+  ActivateSheet,
 
 }
 
+/*
 export interface CommandBase {
 
-  /**
+  / **
    * support commands that are not added to any recording or log.
    * this is for things like resizing rows/columns -- we don't necessarily
    * want to transmit every event, and if we don't support ephemeral commands
    * we will wind up working around the exec-command system, which I would
    * like to avoid.
-   */
+   * /
   ephemeral?: boolean;
 
 }
+*/
 
 /**
  * resize row(s). undefined means "all rows". undefined height
  * means "auto size".
  */
-export interface ResizeRowsCommand extends CommandBase {
+export interface ResizeRowsCommand {
   key: CommandKey.ResizeRows;
   row?: number|number[];
   height?: number;
@@ -68,34 +71,34 @@ export interface ResizeRowsCommand extends CommandBase {
  * resize columns(s). undefined means "all columns". undefined
  * width means "auto size".
  */
-export interface ResizeColumnsCommand extends CommandBase {
+export interface ResizeColumnsCommand {
   key: CommandKey.ResizeColumns;
   column?: number|number[];
   width?: number;
 }
 
 /** insert one or more rows at the given insert point */
-export interface InsertRowsCommand extends CommandBase {
+export interface InsertRowsCommand {
   key: CommandKey.InsertRows;
   before_row: number;
   count: number;
 }
 
 /** insert one or more columns at the given insert point */
-export interface InsertColumnsCommand extends CommandBase {
+export interface InsertColumnsCommand {
   key: CommandKey.InsertColumns;
   before_column: number;
   count: number;
 }
 
 /** show or hide headers */
-export interface ShowHeadersCommand extends CommandBase {
+export interface ShowHeadersCommand {
   key: CommandKey.ShowHeaders;
   show: boolean;
 }
 
 /** set or clear name (omit range to clear) */
-export interface SetNameCommand extends CommandBase {
+export interface SetNameCommand {
   key: CommandKey.SetName;
   name: string;
   area?: IArea;
@@ -105,7 +108,7 @@ export interface SetNameCommand extends CommandBase {
  * not sure if we should be serializing selections...
  * we need some indication of primary/alternative
  */
-export interface SelectCommand extends CommandBase {
+export interface SelectCommand {
   key: CommandKey.Select;
 
   /** missing area implies clear selection (-> no selection) */
@@ -116,7 +119,7 @@ export interface SelectCommand extends CommandBase {
 }
 
 /** set data in cell or area */
-export interface SetRangeCommand extends CommandBase {
+export interface SetRangeCommand {
   key: CommandKey.SetRange;
   area: IArea|ICellAddress;
 
@@ -132,7 +135,7 @@ export interface SetRangeCommand extends CommandBase {
  * to an area, for example, "outside border" means the outside if the total
  * area, not the outside of each cell.
  */
-export interface UpdateBordersCommand extends CommandBase {
+export interface UpdateBordersCommand {
   key: CommandKey.UpdateBorders;
   area: IArea;
   borders: BorderConstants;
@@ -143,7 +146,7 @@ export interface UpdateBordersCommand extends CommandBase {
 }
 
 /** update style in area. area can be cell(s), sheet, row(s), column(s) */
-export interface UpdateStyleCommand extends CommandBase {
+export interface UpdateStyleCommand {
   key: CommandKey.UpdateStyle;
   area: IArea|ICellAddress;
   style: Style.Properties;
@@ -151,7 +154,7 @@ export interface UpdateStyleCommand extends CommandBase {
 }
 
 /** merge the given cells */
-export interface MergeCellsCommand extends CommandBase {
+export interface MergeCellsCommand {
   key: CommandKey.MergeCells;
   area: IArea;
 }
@@ -161,13 +164,13 @@ export interface MergeCellsCommand extends CommandBase {
  * merge area, we will look for merge areas inside the larger area and
  * unmerge those (generally useful when working with selections).
  */
-export interface UnmergeCellsCommand extends CommandBase {
+export interface UnmergeCellsCommand {
   key: CommandKey.UnmergeCells;
   area: IArea;
 }
 
 /** set or clear note at given address. */
-export interface SetNoteCommand extends CommandBase {
+export interface SetNoteCommand {
   key: CommandKey.SetNote;
   address: ICellAddress;
   note?: string;
@@ -176,7 +179,7 @@ export interface SetNoteCommand extends CommandBase {
 /**
  * clear an area, or the entire sheet
  */
-export interface ClearCommand extends CommandBase {
+export interface ClearCommand {
   key: CommandKey.Clear;
   area?: IArea;
 }
@@ -185,7 +188,7 @@ export interface ClearCommand extends CommandBase {
  * set freeze area. set rows and columns to 0 to unfreeze.
  * highlight defaults to TRUE.
  */
-export interface FreezeCommand extends CommandBase {
+export interface FreezeCommand {
   key: CommandKey.Freeze;
   rows: number;
   columns: number;
@@ -197,32 +200,55 @@ export interface FreezeCommand extends CommandBase {
  * base it on the local theme? (...) probably the former, otherwise
  * you lose synchronization
  */
-export interface UpdateThemeCommand extends CommandBase {
+export interface UpdateThemeCommand {
   key: CommandKey.UpdateTheme;
 }
 
-export interface NullCommand extends CommandBase {
+export interface NullCommand {
   key: CommandKey.Null;
 }
 
-export type Command
-  = NullCommand
+/**
+ * activate a sheet. there are a couple of options for selecting
+ * the sheet, defaulting to index (which defaults to 0) so if you
+ * pass no selector it will select index 0.
+ */
+export interface ActivateSheetCommand {
+  key: CommandKey.ActivateSheet;
+  id?: number;
+  name?: string;
+  index?: number;
+}
+
+/**
+ * ephemeral flag added to commands.
+ */
+export interface Ephemeral {
+  ephemeral?: boolean;
+}
+
+/**
+ * composite command type and ephemeral flag
+ */
+export type Command =
+  ( NullCommand
   | ClearCommand
   | SelectCommand
   | FreezeCommand
   | SetNoteCommand
+  | SetNameCommand
   | SetRangeCommand
   | MergeCellsCommand
   | ResizeRowsCommand
   | InsertRowsCommand
+  | ShowHeadersCommand
   | UpdateStyleCommand
   | UnmergeCellsCommand
   | ResizeColumnsCommand
-  | ShowHeadersCommand
   | InsertColumnsCommand
   | UpdateBordersCommand
-  | SetNameCommand
-  ;
+  | ActivateSheetCommand
+  ) & Ephemeral;
 
 /**
  * record type for recording/logging commands

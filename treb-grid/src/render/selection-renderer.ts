@@ -112,7 +112,7 @@ export class SelectionRenderer {
 
     let header_selection_rect = new Rectangle(-1, -1, 0, 0);
     if (!this.primary_selection.empty) {
-      const area = this.model.sheet.RealArea(this.primary_selection.area);
+      const area = this.model.active_sheet.RealArea(this.primary_selection.area);
       header_selection_rect =
         this.layout.CellAddressToRectangle(area.start).Combine(
           this.layout.CellAddressToRectangle(area.end));
@@ -120,11 +120,11 @@ export class SelectionRenderer {
 
     // highlight row header (if visible)
 
-    if (!this.primary_selection.empty && this.model.sheet.header_offset.y > 2) {
+    if (!this.primary_selection.empty && this.model.active_sheet.header_offset.y > 2) {
       this.row_overlay.Show(header_selection_rect.left, 0,
-        header_selection_rect.width, this.model.sheet.header_offset.y);
-      this.corner_row_overlay.Show(header_selection_rect.left + this.model.sheet.header_offset.x, 0,
-        header_selection_rect.width, this.model.sheet.header_offset.y);
+        header_selection_rect.width, this.model.active_sheet.header_offset.y);
+      this.corner_row_overlay.Show(header_selection_rect.left + this.model.active_sheet.header_offset.x, 0,
+        header_selection_rect.width, this.model.active_sheet.header_offset.y);
     }
     else {
       this.row_overlay.Hide();
@@ -133,18 +133,18 @@ export class SelectionRenderer {
 
     // highlight column header (if visible)
 
-    if (!this.primary_selection.empty && this.model.sheet.header_offset.x > 2) {
+    if (!this.primary_selection.empty && this.model.active_sheet.header_offset.x > 2) {
       this.column_overlay.Show(0, header_selection_rect.top,
-        this.model.sheet.header_offset.x, header_selection_rect.height);
-      this.corner_column_overlay.Show(0, header_selection_rect.top + this.model.sheet.header_offset.y,
-        this.model.sheet.header_offset.x, header_selection_rect.height);
+        this.model.active_sheet.header_offset.x, header_selection_rect.height);
+      this.corner_column_overlay.Show(0, header_selection_rect.top + this.model.active_sheet.header_offset.y,
+        this.model.active_sheet.header_offset.x, header_selection_rect.height);
     }
     else {
       this.column_overlay.Hide();
       this.corner_column_overlay.Hide();
     }
 
-    if (!this.model.sheet.freeze.columns && !this.model.sheet.freeze.rows) return;
+    if (!this.model.active_sheet.freeze.columns && !this.model.active_sheet.freeze.rows) return;
 
     // check visibility for selections in frozen rows, columns
 
@@ -157,30 +157,30 @@ export class SelectionRenderer {
     }
     else {
       const start = this.primary_selection.area.start;
-      visible_row.push(start.row <= this.model.sheet.freeze.rows || start.row === Infinity);
-      visible_column.push(start.column <= this.model.sheet.freeze.columns || start.column === Infinity);
+      visible_row.push(start.row <= this.model.active_sheet.freeze.rows || start.row === Infinity);
+      visible_column.push(start.column <= this.model.active_sheet.freeze.columns || start.column === Infinity);
     }
 
     for (const {area} of this.additional_selections) {
-      visible_row.push(area.start.row <= this.model.sheet.freeze.rows || area.start.row === Infinity);
-      visible_column.push(area.start.column <= this.model.sheet.freeze.columns || area.start.column === Infinity);
+      visible_row.push(area.start.row <= this.model.active_sheet.freeze.rows || area.start.row === Infinity);
+      visible_column.push(area.start.column <= this.model.active_sheet.freeze.columns || area.start.column === Infinity);
     }
 
     // selections...
 
-    if (this.model.sheet.freeze.rows) {
+    if (this.model.active_sheet.freeze.rows) {
       this.RenderSelectionGroup(aggregate, this.layout.row_header_selection,
-        visible_row, undefined, this.row_header_selections, {x: 0, y: this.model.sheet.header_offset.y});
+        visible_row, undefined, this.row_header_selections, {x: 0, y: this.model.active_sheet.header_offset.y});
     }
 
-    if (this.model.sheet.freeze.columns) {
+    if (this.model.active_sheet.freeze.columns) {
       this.RenderSelectionGroup(aggregate, this.layout.column_header_selection,
-        visible_column, undefined, this.column_header_selections, {x: this.model.sheet.header_offset.x, y: 0});
+        visible_column, undefined, this.column_header_selections, {x: this.model.active_sheet.header_offset.x, y: 0});
     }
 
-    if (this.model.sheet.freeze.rows && this.model.sheet.freeze.columns) {
+    if (this.model.active_sheet.freeze.rows && this.model.active_sheet.freeze.columns) {
       this.RenderSelectionGroup(aggregate, this.layout.corner_selection,
-        visible_column, visible_row, this.corner_selections, {...this.model.sheet.header_offset});
+        visible_column, visible_row, this.corner_selections, {...this.model.active_sheet.header_offset});
     }
 
   }
@@ -244,7 +244,7 @@ export class SelectionRenderer {
    */
   private RenderSVGSelection(selection: GridSelection, block: SVGSelectionBlock, index = 0) {
 
-    const area = this.model.sheet.RealArea(selection.area);
+    const area = this.model.active_sheet.RealArea(selection.area);
 
     let rect = this.layout.CellAddressToRectangle(area.start);
     if (area.count > 1) {
@@ -269,11 +269,11 @@ export class SelectionRenderer {
 
     // when not showing headers...
 
-    if (rect.top === 0 && this.model.sheet.header_offset.y <= 1) {
+    if (rect.top === 0 && this.model.active_sheet.header_offset.y <= 1) {
       rect.top = 1;
       rect.height -= 1;
     }
-    if (rect.left === 0 && this.model.sheet.header_offset.x <= 1) {
+    if (rect.left === 0 && this.model.active_sheet.header_offset.x <= 1) {
       rect.left = 1;
       rect.width -= 1;
     }
@@ -294,7 +294,7 @@ export class SelectionRenderer {
       // get the target rect (primary only)
 
       let target_rect = this.layout.CellAddressToRectangle(selection.target);
-      const data = this.model.sheet.CellData(selection.target);
+      const data = this.model.active_sheet.CellData(selection.target);
       if (data.merge_area) {
         target_rect = this.layout.CellAddressToRectangle(data.merge_area.start);
         target_rect = target_rect.Combine(this.layout.CellAddressToRectangle(data.merge_area.end));

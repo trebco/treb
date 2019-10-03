@@ -11,6 +11,7 @@ export class NamedRangeCollection {
     return this.backward.length;
   }
 
+  /** FIXME: why not just use toJSON? */
   public Serialize() {
     return JSON.parse(JSON.stringify(this.Map()));
   }

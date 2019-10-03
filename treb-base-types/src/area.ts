@@ -84,13 +84,17 @@ export class Area implements IArea {
   private end_: ICellAddress;
 
   /** accessor returns a _copy_ of the start address */
-  public get start(){ return { row: this.start_.row, column: this.start_.column }; }
+  public get start() {
+    return { ...this.start_ };
+  }
 
   /** accessor */
   public set start(value: ICellAddress){ this.start_ = value; }
 
   /** accessor returns a _copy_ of the end address */
-  public get end(){ return { row: this.end_.row, column: this.end_.column }; }
+  public get end(){
+    return { ...this.end_ };
+  }
 
   /** accessor */
   public set end(value: ICellAddress){ this.end_ = value; }
@@ -135,6 +139,7 @@ export class Area implements IArea {
    */
   constructor(start: ICellAddress, end: ICellAddress = start, normalize = false){
 
+    /*
     // copy
     this.start_ = {
       row: start.row, column: start.column,
@@ -145,8 +150,13 @@ export class Area implements IArea {
       row: end.row, column: end.column,
       absolute_column: !!end.absolute_column,
       absolute_row: !!end.absolute_row };
+    */
+
+    this.end_ = { ...end };
+    this.start_ = { ...start };
 
     if (normalize) this.Normalize();
+
   }
 
   public Normalize(){
@@ -161,17 +171,24 @@ export class Area implements IArea {
     // we need to bind the element and the absolute/relative status
     // so sorting is too simple
 
+    const start = { ...this.start_ };
+    const end = { ...this.end_ };
+
+    /*
     const start = {
+      sheet_id: this.start_.sheet_id,
       row: this.start_.row,
       column: this.start_.column,
       absolute_column: this.start_.absolute_column,
       absolute_row: this.start_.absolute_row };
 
-      const end = {
+    const end = {
+      sheet_id: this.end_.sheet_id, // we don't ever use this, but copy JIC
       row: this.end_.row,
       column: this.end_.column,
       absolute_column: this.end_.absolute_column,
       absolute_row: this.end_.absolute_row };
+    */
 
     // swap row
 
@@ -269,6 +286,8 @@ export class Area implements IArea {
     if (this.entire_column || this.entire_row) throw new Error('can\'t convert infinite area to array');
     const array: ICellAddress[] = new Array<ICellAddress>(this.rows * this.columns);
     let index = 0;
+
+    // does this need sheet ID?
 
     for (let row = this.start_.row; row <= this.end_.row; row++){
       for (let column = this.start_.column; column <= this.end_.column; column++){
@@ -375,7 +394,18 @@ export class Area implements IArea {
 
   }
 
+  /**
+   * FIXME: is this different than what would be returned if
+   * we just used the default json serializer? (...)
+   */
   public toJSON(){
+
+    return {
+      start: { ...this.start_ },
+      end: { ...this.end_ },
+    };
+
+    /*
     return {
       start: {
         row: this.start.row,
@@ -390,6 +420,7 @@ export class Area implements IArea {
         absolute_column: this.end.absolute_column,
       },
     };
+    */
   }
 
 }

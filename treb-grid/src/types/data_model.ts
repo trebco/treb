@@ -15,7 +15,8 @@ import { NamedRangeCollection } from './named_range';
 export interface DataModel {
   document_name?: string;
   user_data?: any;
-  sheet: Sheet;
+  active_sheet: Sheet;
+  sheets: Sheet[];
   annotations: Annotation[];
   named_ranges: NamedRangeCollection;
 }

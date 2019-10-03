@@ -1170,9 +1170,14 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // for now, pull out sheet[0]. multi-sheet pending. you still
     // need to test that this object is not undefined.
 
-    const sheet_data = (data.sheet_data && Array.isArray(data.sheet_data)) ?
-      data.sheet_data[0] :
-      data.sheet_data;
+    // const sheet_data = (data.sheet_data && Array.isArray(data.sheet_data)) ?
+    //  data.sheet_data[0] :
+    //  data.sheet_data;
+
+    // as an array...
+
+    const sheets = (data.sheet_data && Array.isArray(data.sheet_data)) ?
+      data.sheet_data : [data.sheet_data];
 
     // FIXME: it's not necessary to call reset here unless the
     // document fails, do that with a trap?
@@ -1203,36 +1208,37 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         target_argument_separator = ArgumentSeparatorType.Comma;
       }
 
-      if (sheet_data && sheet_data.annotations) {
-        for (const annotation of (sheet_data.annotations as Annotation[])) {
-          if (annotation.formula) {
-            const parse_result = parser.Parse(annotation.formula);
-            if (parse_result.expression) {
-              const translated = parser.Render(parse_result.expression, undefined, undefined,
-                target_decimal_mark, target_argument_separator);
-              annotation.formula = '=' + translated;
-            }
-          }
-        }
-      }
-
-      if (sheet_data && sheet_data.data && sheet_data.data.length) {
-
-        // update for grouped data (v5+)
-        for (const block of sheet_data.data) {
-          const cells = block.cells ? block.cells : [block];
-          for (const cell of cells) {
-            if (cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
-              const parse_result = parser.Parse(cell.value.slice(1));
+      for (const sheet_data of sheets) {
+        if (sheet_data && sheet_data.annotations) {
+          for (const annotation of (sheet_data.annotations as Annotation[])) {
+            if (annotation.formula) {
+              const parse_result = parser.Parse(annotation.formula);
               if (parse_result.expression) {
                 const translated = parser.Render(parse_result.expression, undefined, undefined,
                   target_decimal_mark, target_argument_separator);
-                cell.value = '=' + translated;
+                annotation.formula = '=' + translated;
               }
             }
           }
         }
 
+        if (sheet_data && sheet_data.data && sheet_data.data.length) {
+
+          // update for grouped data (v5+)
+          for (const block of sheet_data.data) {
+            const cells = block.cells ? block.cells : [block];
+            for (const cell of cells) {
+              if (cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
+                const parse_result = parser.Parse(cell.value.slice(1));
+                if (parse_result.expression) {
+                  const translated = parser.Render(parse_result.expression, undefined, undefined,
+                    target_decimal_mark, target_argument_separator);
+                  cell.value = '=' + translated;
+                }
+              }
+            }
+          }
+        }
       }
 
     } // end l10n conversion
@@ -1250,7 +1256,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       this.calculator.UpdateResults(this.last_simulation_data);
     }
 
-    this.grid.UpdateSheet(sheet_data); // don't paint -- wait for calculate
+    // this.grid.UpdateSheet(sheet_data); // don't paint -- wait for calculate
+    this.grid.UpdateSheets(sheets);
 
     const model = this.grid.model;
 
@@ -1261,8 +1268,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // old models have it in sheet, new models have at top level -- we can
     // support old models, but write in the new syntax
 
-    if (data.named_ranges || sheet_data.named_ranges) {
-      model.named_ranges.Deserialize(data.named_ranges || sheet_data.named_ranges);
+    let named_range_data = data.named_ranges;
+    if (!named_range_data && sheets[0] && sheets[0].named_ranges) {
+      named_range_data = sheets[0].named_ranges;
+    }
+
+    if (named_range_data) {
+      model.named_ranges.Deserialize(named_range_data);
     }
 
     this.additional_cells = [];
@@ -1819,7 +1831,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.worker.postMessage({
       type: 'configure',
       locale: Localization.locale,
-      sheet: this.grid.model.sheet.toJSON({
+      sheet: this.grid.model.active_sheet.toJSON({
         rendered_values: true, // has a different name, for some reason
         preserve_type: true,
       }),

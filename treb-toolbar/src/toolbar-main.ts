@@ -178,7 +178,7 @@ export class FormattingToolbar {
     this.toolbar.ClearDocumentColors();
     this.toolbar.ClearDocumentFormats();
 
-    const serialized = this.grid.model.sheet.toJSON();
+    const serialized = this.grid.model.active_sheet.toJSON();
 
     for (const style of serialized.cell_style_refs) {
       if (style.background) this.toolbar.AddDocumentColor(style.background);
@@ -303,12 +303,12 @@ export class FormattingToolbar {
     this.toolbar.DeactivateAll();
 
     if (this.primary_selection && !this.primary_selection.empty) {
-      let data = this.grid.model.sheet.CellData(this.primary_selection.target);
+      let data = this.grid.model.active_sheet.CellData(this.primary_selection.target);
       merged = !!data.merge_area;
       if (merged && data.merge_area && (
           data.merge_area.start.row !== this.primary_selection.target.row ||
           data.merge_area.start.column !== this.primary_selection.target.column)) {
-        data = this.grid.model.sheet.CellData(data.merge_area.start);
+        data = this.grid.model.active_sheet.CellData(data.merge_area.start);
       }
 
       const style = data.style;

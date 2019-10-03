@@ -247,7 +247,7 @@ export class Calculator extends Graph {
 
       // check any dirty...
 
-      area = this.model.sheet.RealArea(area);
+      area = this.model.active_sheet.RealArea(area);
 
       if (offset) {
         area = new Area({
@@ -430,7 +430,7 @@ export class Calculator extends Graph {
       calculated_value: true };
 
     this.full_rebuild_required = false; // unset
-    const flat = model.sheet.cells.toJSON(json_options);
+    const flat = model.active_sheet.cells.toJSON(json_options);
 
     this.AttachData(model);
     this.expression_calculator.SetModel(model);
@@ -943,7 +943,7 @@ export class Calculator extends Graph {
 
   protected async CalculateInternal(model: DataModel, area?: Area, options?: CalculationOptions){
 
-    const cells = model.sheet.cells;
+    const cells = model.active_sheet.cells;
     this.AttachData(model); // for graph. FIXME
 
     const json_options: CellSerializationOptions = {

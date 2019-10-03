@@ -44,7 +44,7 @@ export class MCCalculator extends Calculator {
     simulation_model.lhs = lhs;
     simulation_model.correlated_distributions = {};
 
-    const cells = model.sheet.cells;
+    const cells = model.active_sheet.cells;
 
     // calling the flush method, instead of flushing tree directly,
     // will also set status -> OK. note that (atm, at least) we don't

@@ -10,10 +10,7 @@ import { EventSource, Measurement } from 'treb-utils';
 
 import { SheetEvent, UpdateHints, FreezePane, SerializedSheet } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
-import { NamedRangeCollection } from './named_range';
-
-import * as ModuleInfo from '@root/package.json';
-import { Theme } from './theme';
+import { GridSelection, CreateSelection } from './grid_selection';
 
 // --- constants --------------------------------------------------------------
 
@@ -31,6 +28,14 @@ interface CellStyleRef {
 export class Sheet {
 
   public static base_id = 100;
+
+  public static readonly default_sheet_name = 'Sheet1';
+
+  /**
+   * adding verbose flag so we can figure out who is publishing
+   * (and stop -- part of the ExecCommand switchover)
+   */
+  public static readonly sheet_events = new EventSource<SheetEvent>(true, 'sheet-events');
 
   // --- class methods --------------------------------------------------------
 
@@ -222,6 +227,15 @@ export class Sheet {
 
     }
 
+    // FIXME: hint? does anyone use hints?
+
+    if (obj.selection) {
+
+      // copy to ensure there's no link to random object
+      sheet.selection = JSON.parse(JSON.stringify(obj.selection));
+
+    }
+
     return sheet;
 
   }
@@ -250,14 +264,21 @@ export class Sheet {
     columns: 0,
   };
 
-  /** standard width */
+  /** standard width (FIXME: static?) */
   public default_column_width = 100;
 
-  /** standard height */
+  /** standard height (FIXME: static?) */
   public default_row_height = 25;
 
   /** cells data */
   public cells: Cells = new Cells();
+
+  /**
+   * selection. moved to sheet to preserve selections in multiple sheets.
+   * this instance should just be used to populate the actual selection,
+   * not used as a reference.
+   */
+  public selection = CreateSelection();
 
   /**
    * named ranges: name -> area
@@ -266,15 +287,10 @@ export class Sheet {
    */
   // public named_ranges = new NamedRangeCollection();
 
-  public name?: string;
-
-  /**
-   * adding verbose flag so we can figure out who is publishing
-   * (and stop -- part of the ExecCommand switchover)
-   */
-  public readonly sheet_events = new EventSource<SheetEvent>(true, 'sheet-events');
+  public name = Sheet.default_sheet_name;
 
   /** internal ID */
+  // tslint:disable-next-line: variable-name
   private id_: number;
 
   // tslint:disable-next-line:variable-name
@@ -1182,7 +1198,7 @@ export class Sheet {
     area = this.RealArea(area);
     this.cells.IterateArea(area, (cell) => cell.Reset());
     if (inline) { return; }
-    return this.sheet_events.Publish({ type: 'data', area });
+    return Sheet.sheet_events.Publish({ type: 'data', area });
   }
 
   // ATM we have 4 methods to set value/values. we need a distinction for
@@ -1509,6 +1525,8 @@ export class Sheet {
       row_height: flatten_numeric_array(this.row_height_, this.default_row_height),
       column_width: flatten_numeric_array(this.column_width_, this.default_column_width),
 
+      selection: JSON.parse(JSON.stringify(this.selection)),
+
     };
 
     // moved to outer container (data model)
@@ -1777,7 +1795,7 @@ export class Sheet {
     // block on undo batching; but note that the undo batch won't
     // publish an event later, so you need to do that manually
 
-    this.sheet_events.Publish({ type: 'style', area });
+    Sheet.sheet_events.Publish({ type: 'style', area });
 
     // trace (we are trying to remove all calls)
 

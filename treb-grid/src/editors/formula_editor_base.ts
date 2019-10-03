@@ -480,6 +480,11 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
     if (text !== this.last_parse_string || !this.reference_list) {
 
+      const sheet_name_map: {[index: string]: number} = {};
+      for (const sheet of this.model.sheets) {
+        sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
+      }
+
       this.dependency_list = [];
       this.reference_index_map = [];
 
@@ -492,7 +497,15 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
         if (parse_result.full_reference_list) {
           for (const unit of parse_result.full_reference_list) {
             if (unit.type === 'address' || unit.type === 'range') {
+
+              // if there's a sheet name, map to an ID. FIXME: make a map
+              const start = (unit.type === 'address') ? unit : unit.start;
+              if (start.sheet && !start.sheet_id) {
+                start.sheet_id = sheet_name_map[start.sheet.toLowerCase()] || 0;
+                console.info('checkem', start);
+              }
               this.reference_list.push(unit);
+
             }
             else {
               const named_range = this.model.named_ranges.Get(unit.name);
@@ -534,23 +547,26 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
         }
 
         if (this.reference_list) {
+
           this.reference_list.sort((a, b) => a.position - b.position);
 
           for (const reference of this.reference_list) {
             let area: Area;
 
             if (reference.type === 'address') {
-              area = new Area({row: reference.row, column: reference.column}); // note dropping absolute
+              area = new Area({
+                row: reference.row, column: reference.column, sheet_id: reference.sheet_id}); // note dropping absolute
             }
             else {
               area = new Area(
-                {row: reference.start.row, column: reference.start.column}, // note dropping absolute
+                {row: reference.start.row, column: reference.start.column,
+                  sheet_id: reference.start.sheet_id}, // note dropping absolute
                 {row: reference.end.row, column: reference.end.column});
             }
 
             const label = area.spreadsheet_label;
             if (!this.dependency_list.some((test, index) => {
-              if (test.spreadsheet_label === label) {
+              if (test.spreadsheet_label === label && test.start.sheet_id === area.start.sheet_id) {
                 this.reference_index_map.push(index);
                 return true;
               }

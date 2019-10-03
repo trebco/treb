@@ -54,7 +54,7 @@ export class ExpressionCalculator {
   }
 
   public SetModel(model: DataModel) {
-    this.cells = model.sheet.cells;
+    this.cells = model.active_sheet.cells;
     this.data_model = model;
     this.named_range_map = model.named_ranges.Map();
   }
@@ -257,7 +257,7 @@ export class ExpressionCalculator {
 
           if (address) {
 
-            const cell_data = this.data_model.sheet.CellData(address);
+            const cell_data = this.data_model.active_sheet.CellData(address);
             /*
             const simulation_data =
               (this.simulation_model.state === SimulationState.Null) ?

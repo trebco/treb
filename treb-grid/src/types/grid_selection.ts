@@ -16,3 +16,14 @@ export interface GridSelection {
   empty?: boolean;
 
 }
+
+/**
+ * create an empty selection
+ */
+export const CreateSelection = (): GridSelection => {
+  return {
+    target: {row: 0, column: 0},
+    area: new Area({row: 0, column: 0}),
+    empty: true,
+  };
+};

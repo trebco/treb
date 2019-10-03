@@ -1,5 +1,6 @@
 
 import { Area, IArea, Style } from 'treb-base-types';
+import { GridSelection } from './grid_selection';
 
 export interface UpdateHints {
   data?: boolean;
@@ -58,5 +59,7 @@ export interface SerializedSheet {
 
   id?: number;
   name?: string;
+
+  selection: GridSelection;
 
 }

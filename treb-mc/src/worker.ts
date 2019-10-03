@@ -8,14 +8,14 @@ import { Localization, ICellAddress, Area } from 'treb-base-types';
 import { DataModel, Sheet, Annotation, NamedRangeCollection } from 'treb-grid';
 import { MCCalculator } from './simulation-calculator';
 import { GraphStatus } from '../../treb-calculator/src/dag/graph';
-import * as PackResults from '../../treb-calculator/src/pack-results';
 
 export class WorkerImpl {
 
   protected trials = 0;
   protected lhs = false;
   protected data_model: DataModel = {
-    sheet: Sheet.Blank(),
+    active_sheet: Sheet.Blank(),
+    sheets: [Sheet.Blank()],
     annotations: [],
     named_ranges: new NamedRangeCollection(),
   };
@@ -59,7 +59,7 @@ export class WorkerImpl {
         Localization.UpdateLocale(message.locale);
         this.calculator.UpdateLocale();
       }
-      Sheet.FromJSON(message.sheet, this.data_model.sheet);
+      Sheet.FromJSON(message.sheet, this.data_model.active_sheet);
       if (message.additional_cells) {
         this.additional_cells = message.additional_cells;
       }
@@ -135,7 +135,7 @@ export class WorkerImpl {
     this.Post({
       type: 'update',
       percent_complete,
-      cells: this.data_model.sheet.cells.toJSON(), // this.cells.toJSON(),
+      cells: this.data_model.active_sheet.cells.toJSON(), // this.cells.toJSON(),
       trial_data: {
         results: flattened,
         trials: this.iteration,

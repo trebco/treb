@@ -99,6 +99,7 @@ export interface UnitUnary extends BaseUnit {
 export interface UnitAddress extends BaseUnit {
   type: 'address';
   sheet?: string;
+  sheet_id?: number;
   label: string;
   row: number;
   column: number;

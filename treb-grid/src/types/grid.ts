@@ -31,7 +31,7 @@ import { Autocomplete } from '../editors/autocomplete';
 
 import { Command, CommandKey, CommandRecord,
          SetRangeCommand, FreezeCommand, UpdateBordersCommand,
-         InsertRowsCommand, InsertColumnsCommand, SetNameCommand } from './grid_command';
+         InsertRowsCommand, InsertColumnsCommand, SetNameCommand, ActivateSheetCommand } from './grid_command';
 import { DataModel } from './data_model';
 import { NamedRangeCollection } from './named_range';
 
@@ -80,11 +80,14 @@ export class Grid {
    * also a nice way to transition... we now have a wrapper object, and we can
    * switch the member to an accessor (DM will have to become a class)
    */
-  public readonly model: DataModel = {
-    sheet: Sheet.Blank(100, 26),
+  public readonly model: DataModel;
+  
+  /* = {
+    active_sheet: Sheet.Blank(100, 26),
     annotations: [],
     named_ranges: new NamedRangeCollection(),
   };
+  */
 
   // --- private members -------------------------------------------------------
 
@@ -102,7 +105,7 @@ export class Grid {
    * FIXME: find a solution for this.
    */
   private get cells() {
-    return this.model.sheet.cells;
+    return this.model.active_sheet.cells;
   }
 
   private grid_container?: HTMLElement;
@@ -241,6 +244,18 @@ export class Grid {
    * FIXME: NO PARAMETER INITIALIZATIONS
    */
   constructor(options: GridOptions = {}, theme: Theme = {}) {
+
+    // construct model. it's a little convoluted because the
+    // "active sheet" reference points to one of the array members
+
+    const sheets = [Sheet.Blank(100, 26)];
+
+    this.model = {
+      sheets,
+      active_sheet: sheets[0],
+      annotations: [],
+      named_ranges: new NamedRangeCollection(),
+    };
 
     // set properties here, we will update in initialize()
     this.theme = {...theme};
@@ -606,7 +621,15 @@ export class Grid {
    * the function.
    */
   public Serialize(options: SerializeOptions = {}) {
-    const data: any = this.model.sheet.toJSON(options);
+
+    // selection moved to sheet, but it's not "live"; so we need to store
+    // the primary selection in the current active sheet
+
+    this.model.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
+
+    // FIXME: where do annotations go? (...)
+
+    // const data: any = this.model.active_sheet.toJSON(options);
 
     // FIXME: if these things (selection, freeze) are "data" for purposes
     // of serialization, then they should be in the data class (sheet),
@@ -617,42 +640,46 @@ export class Grid {
     // add selection to data, so we can restore it (primarily used for undo)
     // COPY SO IT'S NOT LINKED
 
+
     // this one can stay in sheet
 
-    data.primary_selection = JSON.parse(JSON.stringify(this.primary_selection));
+    // moved to sheet
+    // data.primary_selection = JSON.parse(JSON.stringify(this.primary_selection));
 
     // frozen, but omit if empty/no data
 
     // annotations: also copy
 
-    data.annotations = JSON.parse(JSON.stringify(this.model.annotations));
+    // data.annotations = JSON.parse(JSON.stringify(this.model.annotations));
+
+    // all sheets
+
+    const sheet_data = this.model.sheets.map((sheet) => sheet.toJSON(options));
+
+    // FIXME: move
+
+    (sheet_data[0] as any).annotations = JSON.parse(JSON.stringify(this.model.annotations));
 
     // NOTE: moving into a structured object (the sheet data is also
     // structured, of course) but we are moving things out of sheet
 
-    const result: {
-      sheet_data: SerializedSheet[],
-      named_ranges?: {[index: string]: IArea},
-    } = {
-      sheet_data: [data],
+    return {
+      sheet_data,
+      named_ranges: this.model.named_ranges.Count() ?
+          this.model.named_ranges.Serialize() :
+          undefined,
     };
-
-    if (this.model.named_ranges.Count()) {
-      result.named_ranges = this.model.named_ranges.Serialize();
-    }
-
-    return result;
 
   }
 
   // pass through
   public RealArea(area: Area) {
-    return this.model.sheet.RealArea(area);
+    return this.model.active_sheet.RealArea(area);
   }
 
   // pass through
   public CellRenderData(address: ICellAddress) {
-    return this.model.sheet.CellData(address);
+    return this.model.active_sheet.CellData(address);
   }
 
   /**
@@ -722,7 +749,7 @@ export class Grid {
       styles: Style.Properties[],
       render = false) {
 
-    this.UpdateSheet(new Sheet().toJSON(), true);
+    this.UpdateSheets([new Sheet().toJSON()], true);
     this.RemoveAllAnnotations();
 
     // FIXME: are there named ranges in the data? (...)
@@ -735,7 +762,7 @@ export class Grid {
 
     // 0 is implicitly just a general style
 
-    const cs = (this.model.sheet as any).cell_style;
+    const cs = (this.model.active_sheet as any).cell_style;
     for (const info of cell_data) {
       if (info.style_ref) {
         if (!cs[info.column]) cs[info.column] = [];
@@ -745,13 +772,13 @@ export class Grid {
 
     for (let i = 0; i < column_widths.length; i++ ){
       if (typeof column_widths[i] !== 'undefined') {
-        this.model.sheet.SetColumnWidth(i, column_widths[i]);
+        this.model.active_sheet.SetColumnWidth(i, column_widths[i]);
       }
     }
 
     for (let i = 0; i < row_heights.length; i++ ){
       if (typeof row_heights[i] !== 'undefined') {
-        this.model.sheet.SetRowHeight(i, row_heights[i]);
+        this.model.active_sheet.SetRowHeight(i, row_heights[i]);
       }
     }
 
@@ -772,14 +799,231 @@ export class Grid {
     this.model.user_data = undefined;
   }
 
-  public UpdateSheet(data: any, render = false) {
+  /**
+   * FIXME: private
+   */
+  public ActivateSheet(command: ActivateSheetCommand) {
+    console.info('activate sheet', command);
+
+    let candidate = this.model.sheets[0];
+
+    if (typeof command.name !== 'undefined') {
+      for (const sheet of this.model.sheets) {
+        if (sheet.name === command.name) {
+          candidate = sheet;
+          break;
+        }
+      }
+    }
+    else if (typeof command.id !== 'undefined') {
+      for (const sheet of this.model.sheets) {
+        if (sheet.id === command.id) {
+          candidate = sheet;
+          break;
+        }
+      }
+    }
+    else {
+      const index = command.index || 0;
+      if (index >= 0 && index < this.model.sheets.length) {
+        candidate = this.model.sheets[index];
+      }
+    }
+
+    // ok, activate...
+
+    if (this.model.active_sheet === candidate) { return; }
+
+    // cache primary selection in the sheet we are deactivating
+    // FIXME: cache scroll position, too!
+
+    this.model.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
+
+    // select target
+
+    this.model.active_sheet = candidate;
+
+    // ---
+
+    // the following is from UpdateSheet. TODO: consolidate, move to a unified method
+
+    this.ClearSelection(this.primary_selection);
+
+    if (candidate.selection && !candidate.selection.empty) {
+      this.Select(this.primary_selection,
+        new Area(candidate.selection.area.start, candidate.selection.area.end),
+          candidate.selection.target);
+    }
+
+    // scrub, then add any sheet annotations. note the caller will
+    // still have to inflate these or do whatever step is necessary to
+    // render.
+
+    this.RemoveAllAnnotations();
+
+    /* FIXME: store in sheet? (...)
+    const annotations = (data as any).annotations;
+    if (annotations && Array.isArray(annotations)) {
+      for (const element of annotations) {
+        this.AddAnnotation(new Annotation(element), true);
+      }
+    }
+    */
+
+    // we do the tile rebuild just before the next paint, to prevent
+    // flashing. seems to be stable but needs more testing. note that
+    // if you call this with render = true, that will happen immediately,
+    // synchronously.
+
+    // no longer sending layout event here
+
+    this.QueueLayoutUpdate();
+
+    // this.StyleDefaultFromTheme(); // ?
+
+    // if (render)
+    {
+      this.Repaint(false, false);
+    }
+
+    // FIXME: structure event
+
+  }
+
+  public DeleteSheet(index = 0) {
+
+    let is_active = false;
+
+    // remove from array. check if this is the active sheet
+
+    const sheets = this.model.sheets.filter((sheet, i) => {
+      if (i === index) {
+        is_active = (sheet === this.model.active_sheet);
+        return false;
+      }
+      return true;
+    });
+
+    // empty? create new, activate
+
+    if (!sheets.length) {
+      sheets.push(Sheet.Blank(100, 26));
+    }
+
+    this.model.sheets = sheets;
+
+    // need to activate a new sheet? use the next one (now in the slot
+    // we just removed). this will roll over properly if we're at the end.
+
+    if (is_active) {
+      this.ActivateSheet({key: CommandKey.ActivateSheet, index});
+    }
+
+  }
+
+  public AddSheet(name = Sheet.default_sheet_name) {
+
+    // validate name...
+
+    while (this.model.sheets.some((test) => test.name === name)) {
+
+      const match = name.match(/^(.*?)(\d+)$/);
+      if (match) {
+        name = match[1] + (Number(match[2]) + 1);
+      }
+      else {
+        name = name + '2';
+      }
+
+    }
+
+    // FIXME: structure event
+
+    this.model.sheets.push(Sheet.Blank(100, 26, name));
+  }
+
+  /** new version for multiple sheets */
+  public UpdateSheets(data: any[], render = false) {
+
+    const sheets = data.map((sheet) => Sheet.FromJSON(sheet));
+
+    // ensure we have a sheets[0] so we can set active
+
+    if (sheets.length === 0) {
+      sheets.push(Sheet.Blank());
+    }
+
+    this.model.sheets = sheets;
+    this.model.active_sheet = sheets[0];
+
+    this.ClearSelection(this.primary_selection);
+
+    // FIXME: copying from updatesheet AND activatesheet... still need to unify
+
+    // support old style files
+
+    if (data[0] && (data[0] as any).primary_selection) {
+      const selection = ((data[0] as any).primary_selection) as GridSelection;
+      if (!selection.empty) {
+        this.Select(this.primary_selection,
+          new Area(selection.area.start, selection.area.end), selection.target);
+      }
+    }
+
+    // the new version, as fallback
+
+    else if (!this.model.active_sheet.selection.empty) {
+      const template = this.model.active_sheet.selection;
+      this.Select(this.primary_selection,
+        new Area(template.area.start, template.area.end), template.target);
+    }
+
+    this.ResetMetadata(); // FIXME: ?
+
+    // scrub, then add any sheet annotations. note the caller will
+    // still have to inflate these or do whatever step is necessary to
+    // render.
+
+    this.RemoveAllAnnotations();
+
+    // FIXME: move annotations
+
+    const annotations = data[0] ? (data[0] as any).annotations : undefined;
+    if (annotations && Array.isArray(annotations)) {
+      for (const element of annotations) {
+        this.AddAnnotation(new Annotation(element), true);
+      }
+    }
+
+    // we do the tile rebuild just before the next paint, to prevent
+    // flashing. seems to be stable but needs more testing. note that
+    // if you call this with render = true, that will happen immediately,
+    // synchronously.
+
+    // no longer sending layout event here
+
+    this.QueueLayoutUpdate();
+
+    this.StyleDefaultFromTheme();
+
+    if (render) {
+      this.Repaint(false, false);
+    }
+
+  }
+
+  /** DEPRECATED */
+  public UpdateSheet__(data: any, render = false) {
 
     if (typeof data === 'string') {
       data = JSON.parse(data);
     }
 
-    Sheet.FromJSON(data, this.model.sheet);
+    Sheet.FromJSON(data, this.model.active_sheet);
     this.ClearSelection(this.primary_selection);
+
+    // this is the old version -- we still want to support it, but
+    // only for reading. it should have precedence? (...)
 
     if ((data as any).primary_selection) {
       const selection = ((data as any).primary_selection) as GridSelection;
@@ -788,6 +1032,15 @@ export class Grid {
           new Area(selection.area.start, selection.area.end), selection.target);
       }
     }
+
+    // the new version, as fallback
+
+    else if (!this.model.active_sheet.selection.empty) {
+      const template = this.model.active_sheet.selection;
+      this.Select(this.primary_selection,
+        new Area(template.area.start, template.area.end), template.target);
+    }
+
 
     this.ResetMetadata();
 
@@ -871,8 +1124,8 @@ export class Grid {
     // update style for theme
     this.StyleDefaultFromTheme();
 
-    this.model.sheet.UpdateDefaultRowHeight(true);
-    this.model.sheet.FlushCellStyles();
+    this.model.active_sheet.UpdateDefaultRowHeight(true);
+    this.model.active_sheet.FlushCellStyles();
 
     this.layout.ApplyTheme(this.theme);
 
@@ -958,7 +1211,7 @@ export class Grid {
 
     // event handlers and components
 
-    this.model.sheet.sheet_events.Subscribe(this.HandleSheetEvent.bind(this));
+    Sheet.sheet_events.Subscribe(this.HandleSheetEvent.bind(this));
 
     this.AttachListeners();
 
@@ -1024,23 +1277,35 @@ export class Grid {
    * set or clear name
    */
   public SetName(name: string, range?: ICellAddress|Area) {
+
     const command: SetNameCommand = {
       key: CommandKey.SetName,
       name,
     };
+
     if (range) {
+
       if (IsCellAddress(range)) {
-        command.area = new Area(range);
+        range = new Area(range);
       }
-      else {
-        command.area = new Area(range.start, range.end);
+
+      // make sure that this has a sheet ID, use active if not otherwise
+      // set. FIXME: move to area? (...)
+
+      if (!range.start.sheet_id) {
+        range = new Area(
+          { ...range.start, sheet_id: this.model.active_sheet.id }, range.end);
       }
+
+      command.area = new Area(range.start, range.end);
+
     }
+
     this.ExecCommand(command);
   }
 
   public GetNumberFormat(address: ICellAddress) {
-    const style = this.model.sheet.CellStyleData(address);
+    const style = this.model.active_sheet.CellStyleData(address);
     if (style && style.number_format) {
       return NumberFormatCache.Get(style.number_format).toString();
     }
@@ -1100,8 +1365,8 @@ export class Grid {
 
       if (recycle) {
 
-        const rows = range.entire_column ? this.model.sheet.rows : range.rows;
-        const columns = range.entire_row ? this.model.sheet.columns : range.columns;
+        const rows = range.entire_column ? this.model.active_sheet.rows : range.rows;
+        const columns = range.entire_row ? this.model.active_sheet.columns : range.columns;
         const count = rows * columns;
 
         if (count > (data as any).length) {
@@ -1243,7 +1508,7 @@ export class Grid {
 
   /** return freeze area */
   public GetFreeze() {
-    return {...this.model.sheet.freeze};
+    return {...this.model.active_sheet.freeze};
   }
 
   /**
@@ -1719,8 +1984,8 @@ export class Grid {
     for (let column = start.column; column <= end.column; column++) column_list.push(column);
 
     // FIXME: multiple tiles
-    if (start.row > 0 && this.model.sheet.freeze.rows) row_list.push(0);
-    if (start.column > 0 && this.model.sheet.freeze.columns) column_list.push(0);
+    if (start.row > 0 && this.model.active_sheet.freeze.rows) row_list.push(0);
+    if (start.column > 0 && this.model.active_sheet.freeze.columns) column_list.push(0);
 
     for (const column of column_list) {
       for (const row of row_list) {
@@ -1879,7 +2144,7 @@ export class Grid {
       const base = offset.y + event.offsetY;
 
       // height of ROW
-      const original_height = this.model.sheet.GetRowHeight(row);
+      const original_height = this.model.active_sheet.GetRowHeight(row);
       let height = original_height;
 
       const rect = this.layout.OffsetCellAddressToRectangle({ row, column: 0 });
@@ -1898,7 +2163,7 @@ export class Grid {
 
           height = delta + original_height;
           // tile_sizes[tile_index] = tile_height + delta;
-          this.model.sheet.SetRowHeight(row, height);
+          this.model.active_sheet.SetRowHeight(row, height);
 
           this.layout.UpdateTooltip({
             text: `${height}px`,
@@ -1934,7 +2199,7 @@ export class Grid {
 
             // update all selected rows. these could be in different tiles.
 
-            const area = this.model.sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
+            const area = this.model.active_sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
 
             rows = [];
             for (let r = area.start.row; r <= area.end.row; r++) {
@@ -2022,7 +2287,7 @@ export class Grid {
 
           // update all selected columns. these could be in different tiles.
 
-          const area = this.model.sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
+          const area = this.model.active_sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
 
           columns = [];
           for (let c = area.start.column; c <= area.end.column; c++) {
@@ -2044,7 +2309,7 @@ export class Grid {
       //
 
       // width of COLUMN
-      const original_width = this.model.sheet.GetColumnWidth(column);
+      const original_width = this.model.active_sheet.GetColumnWidth(column);
       let width = original_width;
 
       const rect = this.layout.OffsetCellAddressToRectangle({ row: 0, column });
@@ -2070,7 +2335,7 @@ export class Grid {
           });
 
           // tile_sizes[tile_index] = tile_width + delta;
-          this.model.sheet.SetColumnWidth(column, width);
+          this.model.active_sheet.SetColumnWidth(column, width);
 
           requestAnimationFrame(() => {
             this.layout.UpdateTileWidths(true, column);
@@ -2096,7 +2361,7 @@ export class Grid {
 
             // update all selected columns. these could be in different tiles.
 
-            const area = this.model.sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
+            const area = this.model.active_sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
 
             for (let c = area.start.column; c <= area.end.column; c++) {
               // this.model.sheet.ColumnWidth(c, width, true);
@@ -2346,8 +2611,8 @@ export class Grid {
     const grid_rect =
       this.layout.CellAddressToRectangle({ row: 0, column: 0 }).Combine(
         this.layout.CellAddressToRectangle({
-          row: this.model.sheet.rows - 1,
-          column: this.model.sheet.columns - 1,
+          row: this.model.active_sheet.rows - 1,
+          column: this.model.active_sheet.columns - 1,
         })).Expand(-1, -1);
 
     this.MouseDrag(overlay_classes, (move_event: MouseEvent) => {
@@ -2436,7 +2701,7 @@ export class Grid {
 
     let label = selection.area.spreadsheet_label;
 
-    const cell = this.model.sheet.CellData(selection.area.start);
+    const cell = this.model.active_sheet.CellData(selection.area.start);
     if (cell.merge_area && cell.merge_area.Equals(selection.area)) {
       label = Area.CellAddressToLabel(cell.merge_area.start);
     }
@@ -2556,7 +2821,7 @@ export class Grid {
         const applied_style: Style.Properties = {};
         const selected_style: Style.Properties =
           this.primary_selection.empty ? {} :
-            this.model.sheet.CellData(this.primary_selection.target).style || {};
+            this.model.active_sheet.CellData(this.primary_selection.target).style || {};
 
         // seems to be the best bet for xplatform
 
@@ -2702,7 +2967,7 @@ export class Grid {
       return;
     }
 
-    const cell = this.model.sheet.CellData(this.primary_selection.target);
+    const cell = this.model.active_sheet.CellData(this.primary_selection.target);
     if (!cell || !cell.area) {
       return;
     }
@@ -2782,8 +3047,8 @@ export class Grid {
 
       const test = { row: end.row + rows, column: end.column + columns };
       if (test.column < 0 || test.row < 0 ||
-        test.column >= this.model.sheet.columns ||
-        test.row >= this.model.sheet.rows) break;
+        test.column >= this.model.active_sheet.columns ||
+        test.row >= this.model.active_sheet.rows) break;
 
       let has_value = false;
       if (rows) {
@@ -2863,7 +3128,7 @@ export class Grid {
    */
   private DeleteSelection(selection: GridSelection) {
     if (selection.empty) return;
-    const area = this.model.sheet.RealArea(selection.area);
+    const area = this.model.active_sheet.RealArea(selection.area);
     this.ExecCommand({ key: CommandKey.Clear, area });
 3  }
 
@@ -2888,7 +3153,7 @@ export class Grid {
     // array.
 
     let target = selection.target || selection.area.start;
-    const cell = this.model.sheet.CellData(target);
+    const cell = this.model.active_sheet.CellData(target);
 
     if (cell.area) {
       if ((!array && cell.area.count > 1) || !selection.area || !selection.area.Equals(cell.area)) {
@@ -2900,7 +3165,7 @@ export class Grid {
     else if (array) {
       let existing_array = false;
       let reference: Area;
-      this.model.sheet.cells.IterateArea(selection.area, (element: Cell, column?: number, row?: number) => {
+      this.model.active_sheet.cells.IterateArea(selection.area, (element: Cell, column?: number, row?: number) => {
         if (element.area) {
           column = column || 0;
           row = row || 0;
@@ -2934,14 +3199,14 @@ export class Grid {
       // it might actually be preferable to override the local cell style,
       // if there is one, if the argument has a style. (...)
 
-      if (!this.model.sheet.HasCellStyle(target)) {
+      if (!this.model.active_sheet.HasCellStyle(target)) {
         const formula_parse_result = this.parser.Parse(value);
         if (formula_parse_result && formula_parse_result.dependencies) {
           const list = formula_parse_result.dependencies;
           for (const key of Object.keys(list.addresses)) {
             const address = list.addresses[key];
-            if (this.model.sheet.HasCellStyle({...address})) {
-              const test = this.model.sheet.CellData({...address});
+            if (this.model.active_sheet.HasCellStyle({...address})) {
+              const test = this.model.active_sheet.CellData({...address});
               if (test.style && test.style.number_format) {
                 const style: Style.Properties = {
                   number_format: test.style.number_format,
@@ -3189,7 +3454,7 @@ export class Grid {
     if (!this.cell_editor) return;
 
     let address = selection.target || selection.area.start;
-    let cell = this.model.sheet.CellData(address);
+    let cell = this.model.active_sheet.CellData(address);
     let rect: Rectangle;
 
     // new, hide note if visible
@@ -3205,7 +3470,7 @@ export class Grid {
       rect = this.layout.OffsetCellAddressToRectangle(cell.merge_area.start).Combine(
         this.layout.OffsetCellAddressToRectangle(cell.merge_area.end));
       address = cell.merge_area.start;
-      cell = this.model.sheet.CellData(address);
+      cell = this.model.active_sheet.CellData(address);
     }
     else {
       rect = this.layout.OffsetCellAddressToRectangle(address);
@@ -3299,12 +3564,12 @@ export class Grid {
   private StepVisibleRows(start: number, step: number) {
     if (step > 0) {
       for (let i = 0; i < step; i++) {
-        if (!this.model.sheet.GetRowHeight(++start)) i--;
+        if (!this.model.active_sheet.GetRowHeight(++start)) i--;
       }
     }
     else if (step < 0) {
       for (let i = 0; i > step; i--) {
-        if (--start >= 0 && !this.model.sheet.GetRowHeight(start)) i++;
+        if (--start >= 0 && !this.model.active_sheet.GetRowHeight(start)) i++;
       }
     }
     return start;
@@ -3317,12 +3582,12 @@ export class Grid {
   private StepVisibleColumns(start: number, step: number) {
     if (step > 0) {
       for (let i = 0; i < step; i++) {
-        if (!this.model.sheet.GetColumnWidth(++start)) i--;
+        if (!this.model.active_sheet.GetColumnWidth(++start)) i--;
       }
     }
     else if (step < 0) {
       for (let i = 0; i > step; i--) {
-        if (--start >= 0 && !this.model.sheet.GetColumnWidth(start)) i++;
+        if (--start >= 0 && !this.model.active_sheet.GetColumnWidth(start)) i++;
       }
     }
     return start;
@@ -3364,7 +3629,7 @@ export class Grid {
     }
     else {
 
-      const target_cell = this.model.sheet.CellData(selection.target);
+      const target_cell = this.model.active_sheet.CellData(selection.target);
 
       // if there's a merge, behavior may be a little different. for stepping,
       // we step into the merge cell when we hit the head. otherwise we skip
@@ -3414,7 +3679,7 @@ export class Grid {
           // merged? if we're not on the head, keep stepping (FIXME: step over
           // for efficiency, don't waste multiple checks)
 
-          const check_cell = this.model.sheet.CellData(address);
+          const check_cell = this.model.active_sheet.CellData(address);
           if (!check_cell.merge_area ||
             (check_cell.merge_area.start.row === address.row &&
               check_cell.merge_area.start.column === address.column)) break;
@@ -3486,10 +3751,10 @@ export class Grid {
 
         for (const addr of [start, end, scroll_target]) {
           if (addr.row !== Infinity) {
-            addr.row = Math.max(0, Math.min(addr.row, this.model.sheet.rows - 1));
+            addr.row = Math.max(0, Math.min(addr.row, this.model.active_sheet.rows - 1));
           }
           if (addr.column !== Infinity) {
-            addr.column = Math.max(0, Math.min(addr.column, this.model.sheet.columns - 1));
+            addr.column = Math.max(0, Math.min(addr.column, this.model.active_sheet.columns - 1));
           }
         }
 
@@ -3527,16 +3792,16 @@ export class Grid {
         // NOTE: this is bounding.
         // FIXME: option to expand the sheet by selecting out of bounds.
 
-        if (address.row >= this.model.sheet.rows && this.options.expand) {
-          let row = this.model.sheet.rows;
+        if (address.row >= this.model.active_sheet.rows && this.options.expand) {
+          let row = this.model.active_sheet.rows;
           while (address.row >= row) { row += 8; }
-          this.model.sheet.cells.EnsureRow(row);
+          this.model.active_sheet.cells.EnsureRow(row);
           expanded = true;
         }
-        if (address.column >= this.model.sheet.columns && this.options.expand) {
-          let column = this.model.sheet.columns;
+        if (address.column >= this.model.active_sheet.columns && this.options.expand) {
+          let column = this.model.active_sheet.columns;
           while (address.column >= column) { column += 8; }
-          this.model.sheet.cells.EnsureColumn(column);
+          this.model.active_sheet.cells.EnsureColumn(column);
           expanded = true;
         }
 
@@ -3552,10 +3817,10 @@ export class Grid {
         this.Select(selection, new Area({
           row: Math.min(
             Math.max(0, address.row),
-            this.model.sheet.rows - 1),
+            this.model.active_sheet.rows - 1),
           column: Math.min(
             Math.max(0, address.column),
-            this.model.sheet.columns - 1),
+            this.model.active_sheet.columns - 1),
         }));
 
         // we're calling renderselections early, to avoid jitter when
@@ -3604,10 +3869,13 @@ export class Grid {
     // displayed range, which may be larger (or is that implicit? ...)
 
     for (let area of dependencies) {
-      if ((area.start.row === Infinity || area.start.row < this.model.sheet.rows) &&
-          (area.start.column === Infinity || area.start.column < this.model.sheet.columns)) {
-        area = this.model.sheet.RealArea(area);
-        this.AddAdditionalSelection(area.start, area);
+      if ((area.start.row === Infinity || area.start.row < this.model.active_sheet.rows) &&
+          (area.start.column === Infinity || area.start.column < this.model.active_sheet.columns)) {
+
+        const hide = (!!area.start.sheet_id && area.start.sheet_id !== this.model.active_sheet.id);
+
+        area = this.model.active_sheet.RealArea(area);
+        this.AddAdditionalSelection(area.start, area, hide);
       }
     }
 
@@ -3618,13 +3886,16 @@ export class Grid {
   /**
    * add an additional selection to the list. don't add it if already
    * on the list (don't stack).
+   *
+   * we now support empty selections (hiding) in the case of references
+   * to other sheets. if we don't do that, the colors get out of sync.
    */
-  private AddAdditionalSelection(target: ICellAddress, area: Area) {
+  private AddAdditionalSelection(target: ICellAddress, area: Area, hide = false) {
     const label = area.spreadsheet_label;
     if (this.additional_selections.some((test) => {
       return (test.area.spreadsheet_label === label);
     })) return;
-    this.additional_selections.push({target, area});
+    this.additional_selections.push({target, area, empty: hide});
   }
 
   /** remove all additonla (argument) selections */
@@ -3684,7 +3955,7 @@ export class Grid {
     }
     if (area) {
 
-      let real_area = this.model.sheet.RealArea(area);
+      let real_area = this.model.active_sheet.RealArea(area);
       if (!target) target = real_area.start;
 
       let recheck = true;
@@ -3693,10 +3964,10 @@ export class Grid {
 
       while (recheck) {
         recheck = false;
-        this.model.sheet.cells.IterateArea(real_area, (cell: Cell) => {
+        this.model.active_sheet.cells.IterateArea(real_area, (cell: Cell) => {
           if (cell.merge_area && !real_area.ContainsArea(cell.merge_area)) {
             area.ConsumeArea(cell.merge_area);
-            real_area = this.model.sheet.RealArea(area);
+            real_area = this.model.active_sheet.RealArea(area);
             recheck = true;
           }
         });
@@ -3747,7 +4018,7 @@ export class Grid {
       this.formula_bar.formula = '';
     }
     else {
-      let data = this.model.sheet.CellData(this.primary_selection.target);
+      let data = this.model.active_sheet.CellData(this.primary_selection.target);
 
       // optimally we would do this check prior to this call, but
       // it's the uncommon case... not sure how important that is
@@ -3756,7 +4027,7 @@ export class Grid {
       if (head) {
         if (head.start.column !== this.primary_selection.target.column
           || head.start.row !== this.primary_selection.target.row) {
-          data = this.model.sheet.CellData(head.start);
+          data = this.model.active_sheet.CellData(head.start);
         }
       }
 
@@ -3787,7 +4058,7 @@ export class Grid {
     }
     else {
 
-      const data = this.model.sheet.CellData(this.primary_selection.target);
+      const data = this.model.active_sheet.CellData(this.primary_selection.target);
       const target = new Area(data.merge_area ? data.merge_area.start : selection.target);
 
       /*
@@ -3802,7 +4073,7 @@ export class Grid {
       let label = Area.CellAddressToLabel(target.start);
 
       for (const entry of this.model.named_ranges.List()) {
-        if (entry.range.Equals(target)) {
+        if (entry.range.start.sheet_id === this.model.active_sheet.id && entry.range.Equals(target)) {
           label = entry.name;
           break;
         }
@@ -3931,11 +4202,11 @@ export class Grid {
     }
     else {
 
-      const area = this.model.sheet.RealArea(this.primary_selection.area);
+      const area = this.model.active_sheet.RealArea(this.primary_selection.area);
       const columns = area.columns;
       const rows = area.rows;
 
-      const cells = this.model.sheet.cells;
+      const cells = this.model.active_sheet.cells;
       const tsv_data: any[] = [];
       const treb_data: any[] = [];
 
@@ -3947,7 +4218,7 @@ export class Grid {
 
         for (let column = 0; column < columns; column++) {
           const address = { row: area.start.row + row, column: area.start.column + column };
-          const cell = this.model.sheet.CellData(address);
+          const cell = this.model.active_sheet.CellData(address);
 
           // NOTE: this now has to account for "text parts", which
           // are returned from the format lib. we need to render them,
@@ -3981,7 +4252,7 @@ export class Grid {
     this.HandleCopy(event);
 
     if (!this.primary_selection.empty) {
-      const area = this.model.sheet.RealArea(this.primary_selection.area);
+      const area = this.model.active_sheet.RealArea(this.primary_selection.area);
       // this.model.sheet.ClearArea(area);
       this.ExecCommand({ key: CommandKey.Clear, area });
     }
@@ -4064,7 +4335,7 @@ export class Grid {
       return;
     }
 
-    const area = this.model.sheet.RealArea(this.primary_selection.area);
+    const area = this.model.active_sheet.RealArea(this.primary_selection.area);
     const commands: Command[] = [];
 
     // FIXME: these iterate. that causes lots of events.
@@ -4098,7 +4369,7 @@ export class Grid {
         // const paste_area = new Area(area.start, area.end);
         for (const paste_area of paste_areas) {
 
-          this.model.sheet.cells.EnsureCell(paste_area.end);
+          this.model.active_sheet.cells.EnsureCell(paste_area.end);
 
           // FIXME: command
           // this.model.sheet.ClearArea(paste_area, true);
@@ -4166,7 +4437,7 @@ export class Grid {
         for (let r = 0; r < lines.length; r++) {
           for (let c = 0; c < lines[0].length; c++) {
             const target_area = new Area({ row: r + paste_area.start.row, column: c + paste_area.start.column });
-            this.model.sheet.cells.EnsureCell(target_area.end);
+            this.model.active_sheet.cells.EnsureCell(target_area.end);
             const value = (cells[r][c] === '') ? undefined : cells[r][c];
             const tmp = this.SetInferredType({ area: target_area, target: target_area.start, empty: false },
               // cells[r][c], false, true);
@@ -4212,8 +4483,8 @@ export class Grid {
 
 //    if (command.rows === this.layout.freeze.rows &&
 //      command.columns === this.layout.freeze.columns) {
-    if (command.rows === this.model.sheet.freeze.rows &&
-        command.columns === this.model.sheet.freeze.columns) {
+    if (command.rows === this.model.active_sheet.freeze.rows &&
+        command.columns === this.model.active_sheet.freeze.columns) {
           if (highlight) {
         this.HighlightFreezeArea();
       }
@@ -4222,8 +4493,8 @@ export class Grid {
 
     // this.layout.freeze.rows = command.rows;
     // this.layout.freeze.columns = command.columns;
-    this.model.sheet.freeze.rows = command.rows;
-    this.model.sheet.freeze.columns = command.columns;
+    this.model.active_sheet.freeze.rows = command.rows;
+    this.model.active_sheet.freeze.columns = command.columns;
 
     // FIXME: should we do this via events? (...)
 
@@ -4247,12 +4518,12 @@ export class Grid {
    */
   private InsertRowsInternal(command: InsertRowsCommand) { // before_row = 0, count = 1) {
 
-    this.model.sheet.InsertRows(command.before_row, command.count);
+    this.model.active_sheet.InsertRows(command.before_row, command.count);
     this.model.named_ranges.PatchNamedRanges(0, 0, command.before_row, command.count);
 
     // snip
 
-    this.model.sheet.cells.IterateAll((cell: Cell) => {
+    this.model.active_sheet.cells.IterateAll((cell: Cell) => {
       let modified = false;
       if (cell.type === ValueType.formula) {
         const parsed = this.parser.Parse(cell.value || '');
@@ -4353,12 +4624,12 @@ export class Grid {
    */
   private InsertColumnsInternal(command: InsertColumnsCommand) { // before_column = 0, count = 1) {
 
-    this.model.sheet.InsertColumns(command.before_column, command.count);
+    this.model.active_sheet.InsertColumns(command.before_column, command.count);
     this.model.named_ranges.PatchNamedRanges(command.before_column, command.count, 0, 0);
 
     // snip
 
-    this.model.sheet.cells.IterateAll((cell: Cell) => {
+    this.model.active_sheet.cells.IterateAll((cell: Cell) => {
       let modified = false;
       if (cell.type === ValueType.formula) {
         const parsed = this.parser.Parse(cell.value || '');
@@ -4490,7 +4761,7 @@ export class Grid {
 
     // inside all/none
     if (borders === BorderConstants.None || borders === BorderConstants.All) {
-      this.model.sheet.UpdateAreaStyle(area, {
+      this.model.active_sheet.UpdateAreaStyle(area, {
         ...top, ...bottom, ...left, ...right,
       }, true, false, true);
     }
@@ -4498,7 +4769,7 @@ export class Grid {
     // top
     if (borders === BorderConstants.Top || borders === BorderConstants.Outside) {
       if (!area.entire_column) {
-        this.model.sheet.UpdateAreaStyle(area.top, { ...top }, true, false, true);
+        this.model.active_sheet.UpdateAreaStyle(area.top, { ...top }, true, false, true);
       }
     }
 
@@ -4507,7 +4778,7 @@ export class Grid {
       borders === BorderConstants.Outside || borders === BorderConstants.Top) {
       if (!area.entire_column) {
         if (area.start.row) {
-          this.model.sheet.UpdateAreaStyle(new Area(
+          this.model.active_sheet.UpdateAreaStyle(new Area(
             { row: area.start.row - 1, column: area.start.column },
             { row: area.start.row - 1, column: area.end.column }), { ...clear_bottom }, true, false, true);
         }
@@ -4517,7 +4788,7 @@ export class Grid {
     // bottom
     if (borders === BorderConstants.Bottom || borders === BorderConstants.Outside) {
       if (!area.entire_column) {
-        this.model.sheet.UpdateAreaStyle(area.bottom, { ...bottom }, true, false, true);
+        this.model.active_sheet.UpdateAreaStyle(area.bottom, { ...bottom }, true, false, true);
       }
     }
 
@@ -4525,7 +4796,7 @@ export class Grid {
     if (borders === BorderConstants.None || borders === BorderConstants.All ||
       borders === BorderConstants.Outside || borders === BorderConstants.Bottom) {
       if (!area.entire_column) {
-        this.model.sheet.UpdateAreaStyle(new Area(
+        this.model.active_sheet.UpdateAreaStyle(new Area(
           { row: area.end.row + 1, column: area.start.column },
           { row: area.end.row + 1, column: area.end.column }), { ...clear_top }, true, false, true);
       }
@@ -4534,7 +4805,7 @@ export class Grid {
     // left
     if (borders === BorderConstants.Left || borders === BorderConstants.Outside) {
       if (!area.entire_row) {
-        this.model.sheet.UpdateAreaStyle(area.left, { ...left }, true, false, true);
+        this.model.active_sheet.UpdateAreaStyle(area.left, { ...left }, true, false, true);
       }
     }
 
@@ -4543,7 +4814,7 @@ export class Grid {
       borders === BorderConstants.Outside || borders === BorderConstants.Left) {
       if (!area.entire_row) {
         if (area.start.column) {
-          this.model.sheet.UpdateAreaStyle(new Area(
+          this.model.active_sheet.UpdateAreaStyle(new Area(
             { row: area.start.row, column: area.start.column - 1 },
             { row: area.end.row, column: area.start.column - 1 }), { ...clear_right }, true, false, true);
         }
@@ -4553,7 +4824,7 @@ export class Grid {
     // right
     if (borders === BorderConstants.Right || borders === BorderConstants.Outside) {
       if (!area.entire_row) {
-        this.model.sheet.UpdateAreaStyle(area.right, { ...right }, true, false, true);
+        this.model.active_sheet.UpdateAreaStyle(area.right, { ...right }, true, false, true);
       }
     }
 
@@ -4561,7 +4832,7 @@ export class Grid {
     if (borders === BorderConstants.None || borders === BorderConstants.All ||
       borders === BorderConstants.Outside || borders === BorderConstants.Right) {
       if (!area.entire_row) {
-        this.model.sheet.UpdateAreaStyle(new Area(
+        this.model.active_sheet.UpdateAreaStyle(new Area(
           { row: area.start.row, column: area.end.column + 1 },
           { row: area.end.row, column: area.end.column + 1 }), { ...clear_left }, true, false, true);
       }
@@ -4606,11 +4877,11 @@ export class Grid {
       : new Area(command.area.start, command.area.end);
 
     if ( !area.entire_row && !area.entire_column && (
-        area.end.row >= this.model.sheet.rows
-        || area.end.column >= this.model.sheet.columns)) {
+        area.end.row >= this.model.active_sheet.rows
+        || area.end.column >= this.model.active_sheet.columns)) {
 
       // we have to call this because the 'set area' method calls RealArea
-      this.model.sheet.cells.EnsureCell(area.end);
+      this.model.active_sheet.cells.EnsureCell(area.end);
 
       // should we send a structure event here? we may be increasing the
       // size, in which case we should send the event. even though no addresses
@@ -4631,7 +4902,7 @@ export class Grid {
 
       // single cell
 
-      this.model.sheet.SetCellValue(command.area, command.value);
+      this.model.active_sheet.SetCellValue(command.area, command.value);
       return area;
     }
     else {
@@ -4646,10 +4917,10 @@ export class Grid {
       // FIXME: clean this up!
 
       if (command.array) {
-        this.model.sheet.SetArrayValue(area, command.value);
+        this.model.active_sheet.SetArrayValue(area, command.value);
       }
       else {
-        this.model.sheet.SetAreaValues2(area, command.value);
+        this.model.active_sheet.SetAreaValues2(area, command.value);
       }
       /*
       else if (!Array.isArray(command.value) && !ArrayBuffer.isView(command.value)) {
@@ -4702,11 +4973,11 @@ export class Grid {
       case CommandKey.Clear:
         if (command.area) {
           const area = new Area(command.area.start, command.area.end);
-          this.model.sheet.ClearArea(area, true);
+          this.model.active_sheet.ClearArea(area, true);
           data_area = Area.Join(area, data_area);
         }
         else {
-          this.UpdateSheet(new Sheet().toJSON(), true);
+          this.UpdateSheets([new Sheet().toJSON()], true);
           this.RemoveAllAnnotations();
           this.model.named_ranges.Reset();
           this.ClearSelection(this.primary_selection);
@@ -4734,7 +5005,7 @@ export class Grid {
         break;
 
       case CommandKey.MergeCells:
-        this.model.sheet.MergeCells(
+        this.model.active_sheet.MergeCells(
           new Area(command.area.start, command.area.end));
 
         render_area = Area.Join(command.area, render_area);
@@ -4757,7 +5028,7 @@ export class Grid {
           const list: { [index: string]: Area } = {};
           const area = new Area(command.area.start, command.area.end);
 
-          this.model.sheet.cells.IterateArea(area, (cell: Cell) => {
+          this.model.active_sheet.cells.IterateArea(area, (cell: Cell) => {
             if (cell.merge_area) {
               const label = Area.CellAddressToLabel(cell.merge_area.start) + ':'
                 + Area.CellAddressToLabel(cell.merge_area.end);
@@ -4770,7 +5041,7 @@ export class Grid {
           // suppress events until the last one
 
           for (let i = 0; i < keys.length; i++) {
-            this.model.sheet.UnmergeCells(list[keys[i]], i !== keys.length - 1);
+            this.model.active_sheet.UnmergeCells(list[keys[i]], i !== keys.length - 1);
           }
 
           // see above
@@ -4785,14 +5056,14 @@ export class Grid {
       case CommandKey.UpdateStyle:
         if (IsCellAddress(command.area)) {
           const area = new Area(command.area);
-          this.model.sheet.UpdateCellStyle(command.area, command.style, !!command.delta, true);
+          this.model.active_sheet.UpdateCellStyle(command.area, command.style, !!command.delta, true);
           // events.push({type: 'style', area});
           style_area = Area.Join(area, style_area);
           render_area = Area.Join(area, render_area);
         }
         else {
           const area = new Area(command.area.start, command.area.end);
-          this.model.sheet.UpdateAreaStyle(area, command.style, !!command.delta, false, true);
+          this.model.active_sheet.UpdateAreaStyle(area, command.style, !!command.delta, false, true);
           // events.push({type: 'style', area});
           style_area = Area.Join(area, style_area);
           render_area = Area.Join(area, render_area);
@@ -4824,18 +5095,18 @@ export class Grid {
           let row = command.row;
           if (typeof row === 'undefined') {
             row = [];
-            for (let i = 0; i < this.model.sheet.rows; i++) row.push(i);
+            for (let i = 0; i < this.model.active_sheet.rows; i++) row.push(i);
           }
 
           if (typeof row === 'number') row = [row];
           if (typeof command.height === 'number') {
             for (const entry of row) {
-              this.model.sheet.SetRowHeight(entry, command.height);
+              this.model.active_sheet.SetRowHeight(entry, command.height);
             }
           }
           else {
             for (const entry of row) {
-              this.model.sheet.AutoSizeRow(entry, true);
+              this.model.active_sheet.AutoSizeRow(entry, true);
             }
           }
 
@@ -4845,7 +5116,7 @@ export class Grid {
 
           if (this.layout.container
               && this.layout.container.offsetHeight
-              && this.layout.container.offsetHeight > this.model.sheet.total_height) {
+              && this.layout.container.offsetHeight > this.model.active_sheet.total_height) {
             this.UpdateLayout();
           }
           else {
@@ -4866,19 +5137,19 @@ export class Grid {
 
           if (typeof column === 'undefined') {
             column = [];
-            for (let i = 0; i < this.model.sheet.columns; i++) column.push(i);
+            for (let i = 0; i < this.model.active_sheet.columns; i++) column.push(i);
           }
 
           if (typeof column === 'number') column = [column];
 
           if (typeof command.width === 'number') {
             for (const entry of column) {
-              this.model.sheet.SetColumnWidth(entry, command.width);
+              this.model.active_sheet.SetColumnWidth(entry, command.width);
             }
           }
           else {
             for (const entry of column) {
-              this.model.sheet.AutoSizeColumn(entry, false, true);
+              this.model.active_sheet.AutoSizeColumn(entry, false, true);
             }
           }
 
@@ -4895,7 +5166,7 @@ export class Grid {
 
           if (this.layout.container
               && this.layout.container.offsetWidth
-              && this.layout.container.offsetWidth > this.model.sheet.total_width) {
+              && this.layout.container.offsetWidth > this.model.active_sheet.total_width) {
             this.UpdateLayout();
           }
           else {
@@ -4916,7 +5187,7 @@ export class Grid {
         // other than 1-level headers), headers should be managed by/move into
         // the grid class.
 
-        this.model.sheet.SetHeaderSize(command.show ? undefined : 1, command.show ? undefined : 1);
+        this.model.active_sheet.SetHeaderSize(command.show ? undefined : 1, command.show ? undefined : 1);
         this.QueueLayoutUpdate();
         this.Repaint();
         break;
@@ -4964,6 +5235,10 @@ export class Grid {
           }
 
         }
+        break;
+
+      case CommandKey.ActivateSheet:
+        this.ActivateSheet(command);
         break;
 
       default:

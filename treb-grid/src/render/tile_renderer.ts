@@ -130,13 +130,13 @@ export class TileRenderer {
       let dirty = full_tile; // false;
       if (!dirty) {
         for (let column = overflow.area.start.column; !dirty && column <= overflow.area.end.column; column++) {
-          const cell = this.model.sheet.cells.GetCell({ row, column }, false);
+          const cell = this.model.active_sheet.cells.GetCell({ row, column }, false);
           dirty = !!(cell && cell.render_dirty);
         }
       }
       if (dirty) {
         for (let column = overflow.area.start.column; column <= overflow.area.end.column; column++) {
-          const cell = this.model.sheet.cells.GetCell({ row, column }, false);
+          const cell = this.model.active_sheet.cells.GetCell({ row, column }, false);
           if (cell) {
             cell.render_dirty = true;
             if (cell.renderer_data && cell.renderer_data.overflowed) {
@@ -168,16 +168,16 @@ export class TileRenderer {
     });
 
     const scale = this.layout.dpr;
-    const header_size = this.model.sheet.header_offset;
+    const header_size = this.model.active_sheet.header_offset;
 
     let x = header_size.x;
-    for (let i = 0; i < this.model.sheet.freeze.columns; i++) {
-      x += this.model.sheet.GetColumnWidth(i);
+    for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) {
+      x += this.model.active_sheet.GetColumnWidth(i);
     }
 
     let y = header_size.y;
-    for (let i = 0; i < this.model.sheet.freeze.rows; i++) {
-      y += this.model.sheet.GetRowHeight(i);
+    for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) {
+      y += this.model.active_sheet.GetRowHeight(i);
     }
 
     context.setTransform(scale, 0, 0, scale, 0, 0);
@@ -194,7 +194,7 @@ export class TileRenderer {
     context.lineTo(x, header_size.y - 0.5);
     context.stroke();
 
-    if (!this.model.sheet.freeze.columns && !this.model.sheet.freeze.rows) return;
+    if (!this.model.active_sheet.freeze.columns && !this.model.active_sheet.freeze.rows) return;
 
     // NOTE: if headers are hidden (which is done by setting width/height to
     // 0 or 1 pixel) we don't want to render them here.
@@ -206,7 +206,7 @@ export class TileRenderer {
     context.font = `${this.theme.interface_font_size} ${this.theme.interface_font_face}`;
     context.fillStyle = this.theme.header_text_color || '';
 
-    if (this.model.sheet.freeze.rows && this.model.sheet.header_offset.x > 1) {
+    if (this.model.active_sheet.freeze.rows && this.model.active_sheet.header_offset.x > 1) {
 
       context.setTransform(scale, 0, 0, scale, 0, 0);
       context.translate(0, header_size.y);
@@ -215,8 +215,8 @@ export class TileRenderer {
       context.lineTo(header_size.x, 0 - 0.5);
 
       let row_index = 0;
-      for (; row_index < this.model.sheet.freeze.rows; row_index++) {
-        const height = this.model.sheet.GetRowHeight(row_index);
+      for (; row_index < this.model.active_sheet.freeze.rows; row_index++) {
+        const height = this.model.active_sheet.GetRowHeight(row_index);
         context.fillStyle = this.theme.header_text_color || '';
         if (height >= font_metrics.block) {
           context.fillText(`${row_index + 1}`,
@@ -255,7 +255,7 @@ export class TileRenderer {
 
     }
 
-    if (this.model.sheet.freeze.columns && this.model.sheet.header_offset.y > 1) {
+    if (this.model.active_sheet.freeze.columns && this.model.active_sheet.header_offset.y > 1) {
 
       context.strokeStyle = this.theme.grid_color || '';
       context.setTransform(scale, 0, 0, scale, 0, 0);
@@ -265,8 +265,8 @@ export class TileRenderer {
       context.lineTo(0 - 0.5, header_size.y);
 
       let column_index = 0;
-      for (; column_index < this.model.sheet.freeze.columns; column_index++) {
-        const width = this.model.sheet.GetColumnWidth(column_index);
+      for (; column_index < this.model.active_sheet.freeze.columns; column_index++) {
+        const width = this.model.active_sheet.GetColumnWidth(column_index);
         const text = Area.ColumnToLabel(column_index);
         const metrics = context.measureText(text);
         if (width > metrics.width) {
@@ -316,7 +316,7 @@ export class TileRenderer {
 
     const scale = this.layout.dpr;
 
-    const header_size = this.model.sheet.header_offset;
+    const header_size = this.model.active_sheet.header_offset;
     const font_metrics = FontMetricsCache.get({
       font_face: this.theme.interface_font_face,
       font_size: this.theme.interface_font_size,
@@ -333,7 +333,7 @@ export class TileRenderer {
       if (tile.dirty || force) {
 
         context.fillStyle = this.theme.header_background_color || '';
-        context.fillRect(0, 0, tile.logical_size.width, this.model.sheet.header_offset.y);
+        context.fillRect(0, 0, tile.logical_size.width, this.model.active_sheet.header_offset.y);
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -347,7 +347,7 @@ export class TileRenderer {
 
         let column_index = tile.first_cell.column;
         for (; column_index <= tile.last_cell.column; column_index++) {
-          const width = this.model.sheet.GetColumnWidth(column_index);
+          const width = this.model.active_sheet.GetColumnWidth(column_index);
           const text = Area.ColumnToLabel(column_index);
           const metrics = context.measureText(text);
           if (width > metrics.width) {
@@ -388,7 +388,7 @@ export class TileRenderer {
         context.fillStyle = this.theme.header_background_color || '';
         context.setTransform(scale, 0, 0, scale, 0, 0);
         // context.fillRect(0, 0, tile.logical_size.width, tile.logical_size.height);
-        context.fillRect(0, 0, this.model.sheet.header_offset.x, tile.logical_size.height);
+        context.fillRect(0, 0, this.model.active_sheet.header_offset.x, tile.logical_size.height);
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -402,7 +402,7 @@ export class TileRenderer {
 
         let row_index = tile.first_cell.row;
         for (; row_index <= tile.last_cell.row; row_index++) {
-          const height = this.model.sheet.GetRowHeight(row_index);
+          const height = this.model.active_sheet.GetRowHeight(row_index);
           context.fillStyle = this.theme.header_text_color || '';
           if (height >= font_metrics.block) {
             context.fillText(`${row_index + 1}`,
@@ -431,7 +431,7 @@ export class TileRenderer {
       }
     }
 
-    if (this.model.sheet.freeze.rows || this.model.sheet.freeze.columns) {
+    if (this.model.active_sheet.freeze.rows || this.model.active_sheet.freeze.columns) {
       this.RenderCorner();
     }
 
@@ -501,15 +501,15 @@ export class TileRenderer {
     // console.info('r', tile.first_cell);
 
     for (let column = tile.first_cell.column; column <= tile.last_cell.column; column++) {
-      const width = this.model.sheet.GetColumnWidth(column);
+      const width = this.model.active_sheet.GetColumnWidth(column);
       if (!width) continue;
       top = 0;
       for (let row = tile.first_cell.row; row <= tile.last_cell.row; row++) {
-        const height = this.model.sheet.GetRowHeight(row);
+        const height = this.model.active_sheet.GetRowHeight(row);
         if (height) {
 
           context.setTransform(scale, 0, 0, scale, left, top);
-          const cell = this.model.sheet.CellData({ row, column });
+          const cell = this.model.active_sheet.CellData({ row, column });
 
           if (tile.needs_full_repaint || cell.render_dirty) {
 
@@ -534,21 +534,21 @@ export class TileRenderer {
       left += (width * scale);
     }
 
-    if (!this.model.sheet.freeze.rows && !this.model.sheet.freeze.columns) return; // render_list;
+    if (!this.model.active_sheet.freeze.rows && !this.model.active_sheet.freeze.columns) return; // render_list;
 
     // paint to headers
 
     let copy_height = 0;
     let copy_width = 0;
 
-    if (tile.first_cell.row <= this.model.sheet.freeze.rows - 1) {
-      for (let i = tile.first_cell.row; i < this.model.sheet.freeze.rows && i <= tile.last_cell.row; i++) {
-        copy_height += this.model.sheet.GetRowHeight(i);
+    if (tile.first_cell.row <= this.model.active_sheet.freeze.rows - 1) {
+      for (let i = tile.first_cell.row; i < this.model.active_sheet.freeze.rows && i <= tile.last_cell.row; i++) {
+        copy_height += this.model.active_sheet.GetRowHeight(i);
       }
     }
-    if (tile.first_cell.column <= this.model.sheet.freeze.columns - 1) {
-      for (let i = tile.first_cell.column; i < this.model.sheet.freeze.columns && i <= tile.last_cell.column; i++) {
-        copy_width += this.model.sheet.GetColumnWidth(i);
+    if (tile.first_cell.column <= this.model.active_sheet.freeze.columns - 1) {
+      for (let i = tile.first_cell.column; i < this.model.active_sheet.freeze.columns && i <= tile.last_cell.column; i++) {
+        copy_width += this.model.active_sheet.GetColumnWidth(i);
       }
     }
 
@@ -594,8 +594,8 @@ export class TileRenderer {
       // FIXME: offset for !first tile
 
       corner_context.setTransform(scale, 0, 0, scale,
-        this.model.sheet.header_offset.x * scale,
-        this.model.sheet.header_offset.y * scale);
+        this.model.active_sheet.header_offset.x * scale,
+        this.model.active_sheet.header_offset.y * scale);
 
       corner_context.drawImage(tile, 0, 0, copy_width * scale,
         copy_height * scale, 0, 0, copy_width, copy_height);
@@ -778,7 +778,7 @@ export class TileRenderer {
     const composite = { ...style };
 
     if (!composite.border_bottom) {
-      const test = this.model.sheet.CellStyleData({ row: address.row + 1, column: address.column });
+      const test = this.model.active_sheet.CellStyleData({ row: address.row + 1, column: address.column });
       if (test && test.border_top) {
         composite.border_bottom = test.border_top;
         composite.border_bottom_color = test.border_top_color;
@@ -786,7 +786,7 @@ export class TileRenderer {
     }
 
     if (!composite.border_top && address.row) {
-      const test = this.model.sheet.CellStyleData({ row: address.row - 1, column: address.column });
+      const test = this.model.active_sheet.CellStyleData({ row: address.row - 1, column: address.column });
       if (test && test.border_bottom) {
         composite.border_top = test.border_bottom;
         composite.border_top_color = test.border_bottom_color;
@@ -794,7 +794,7 @@ export class TileRenderer {
     }
 
     if (!composite.border_left && address.column) {
-      const test = this.model.sheet.CellStyleData({ row: address.row, column: address.column - 1 });
+      const test = this.model.active_sheet.CellStyleData({ row: address.row, column: address.column - 1 });
       if (test && test.border_right) {
         composite.border_left = test.border_right;
         composite.border_left_color = test.border_right_color;
@@ -802,7 +802,7 @@ export class TileRenderer {
     }
 
     if (!composite.border_right) {
-      const test = this.model.sheet.CellStyleData({ row: address.row, column: address.column + 1 });
+      const test = this.model.active_sheet.CellStyleData({ row: address.row, column: address.column + 1 });
       if (test && test.border_left) {
         composite.border_right = test.border_left;
         composite.border_right_color = test.border_left_color;
@@ -951,17 +951,17 @@ export class TileRenderer {
         (address.column === cell.merge_area.start.column)) {
 
         for (let column = cell.merge_area.start.column + 1; column <= cell.merge_area.end.column; column++) {
-          width += this.model.sheet.GetColumnWidth(column);
+          width += this.model.active_sheet.GetColumnWidth(column);
         }
 
         for (let row = cell.merge_area.start.row + 1; row <= cell.merge_area.end.row; row++) {
-          height += this.model.sheet.GetRowHeight(row);
+          height += this.model.active_sheet.GetRowHeight(row);
         }
 
         // get last cell for borders
 
         if (cell.merge_area.count > 1) {
-          const end_cell_style = this.model.sheet.CellStyleData(cell.merge_area.end);
+          const end_cell_style = this.model.active_sheet.CellStyleData(cell.merge_area.end);
           if (end_cell_style) {
             style.border_bottom = end_cell_style.border_bottom;
             style.border_right = end_cell_style.border_right;
@@ -1128,8 +1128,8 @@ export class TileRenderer {
           overflow_right_column++;
 
           const target_address = { row: address.row, column: overflow_right_column };
-          const target_cell = this.model.sheet.CellData(target_address);
-          const target_width = this.model.sheet.GetColumnWidth(overflow_right_column);
+          const target_cell = this.model.active_sheet.CellData(target_address);
+          const target_width = this.model.active_sheet.GetColumnWidth(overflow_right_column);
           overflow_pixels_right -= target_width;
           if (target_cell && !target_cell.type && !target_cell.calculated_type) {
 
@@ -1172,8 +1172,8 @@ export class TileRenderer {
           overflow_left_column--;
 
           const target_address = { row: address.row, column: overflow_left_column };
-          const target_cell = this.model.sheet.CellData(target_address);
-          const target_width = this.model.sheet.GetColumnWidth(overflow_left_column);
+          const target_cell = this.model.active_sheet.CellData(target_address);
+          const target_width = this.model.active_sheet.GetColumnWidth(overflow_left_column);
           overflow_pixels_left -= target_width;
           if (target_cell && !target_cell.type && !target_cell.calculated_type) {
 

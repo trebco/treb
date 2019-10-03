@@ -118,7 +118,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
           if (address) {
 
-            const cell_data = this.data_model.sheet.CellData(address);
+            const cell_data = this.data_model.active_sheet.CellData(address);
             const simulation_data =
               (this.simulation_model.state === SimulationState.Null) ?
               this.simulation_model.StoreCellResults(address) :
