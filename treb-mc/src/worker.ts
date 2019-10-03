@@ -59,7 +59,10 @@ export class WorkerImpl {
         Localization.UpdateLocale(message.locale);
         this.calculator.UpdateLocale();
       }
-      Sheet.FromJSON(message.sheet, this.data_model.active_sheet);
+
+      this.data_model.sheets = message.sheets.map((sheet) => Sheet.FromJSON(sheet));
+      this.data_model.active_sheet = this.data_model.sheets[0];
+
       if (message.additional_cells) {
         this.additional_cells = message.additional_cells;
       }

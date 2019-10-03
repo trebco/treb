@@ -36,7 +36,9 @@ export class ExpressionCalculator {
   protected call_index = 0;
 
   // local reference
-  protected cells: Cells = new Cells();
+  // protected cells: Cells = new Cells();
+  protected cells_map: {[index: number]: Cells} = {};
+  protected sheet_name_map: {[index: string]: number} = {};
 
   // local reference
   protected named_range_map: {[index: string]: Area} = {};
@@ -54,7 +56,15 @@ export class ExpressionCalculator {
   }
 
   public SetModel(model: DataModel) {
-    this.cells = model.active_sheet.cells;
+    // this.cells = model.active_sheet.cells;
+    this.cells_map = {};
+    this.sheet_name_map = {};
+
+    for (const sheet of model.sheets) {
+      this.cells_map[sheet.id] = sheet.cells;
+      this.sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
+    }
+
     this.data_model = model;
     this.named_range_map = model.named_ranges.Map();
   }
@@ -103,13 +113,24 @@ export class ExpressionCalculator {
    */
   protected CellFunction2(expr: UnitAddress) {
 
-    // TEMP
-    if (expr.sheet) {
+    if (!expr.sheet_id) {
+      if (expr.sheet) {
+        expr.sheet_id = this.sheet_name_map[expr.sheet.toLowerCase()];
+      }
+      else {
+        return () => ReferenceError;
+      }
+    }
+
+    const cells = this.cells_map[expr.sheet_id];
+
+    if (!cells) {
+      console.warn('missing cells reference @ ' + expr.sheet_id);
       return () => ReferenceError;
     }
 
     // reference
-    const cell = this.cells.GetCell(expr);
+    const cell = cells.GetCell(expr);
 
     // this is not an error, just a reference to an empty cell
     if (!cell) {
@@ -132,9 +153,16 @@ export class ExpressionCalculator {
 //  protected CellFunction(c1: number, r1: number, c2?: number, r2?: number){
   protected CellFunction(start: ICellAddress, end?: ICellAddress){
 
+    if (!start.sheet_id) {
+      console.warn('missing sheet id, cellfunction');
+      return () => ReferenceError;
+    }
+
+    const cells = this.cells_map[start.sheet_id];
+
     // if (typeof c2 === 'undefined' || typeof r2 === 'undefined') {
     if (!end) {
-      const cell = this.cells.GetCell(start);
+      const cell = cells.GetCell(start);
 
       if (!cell) {
         return undefined;
@@ -149,12 +177,13 @@ export class ExpressionCalculator {
       return cell.GetValue();
     }
     else {
-      return(this.cells.GetRange2(
+      return(cells.GetRange2(
         start, // {row: r1, column: c1},
         end, // {row: r2, column: c2},
         true,
       ));
     }
+
   }
 
   /** excutes a function call */

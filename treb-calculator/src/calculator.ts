@@ -1,6 +1,6 @@
 
 import { Localization, Cell, Area, ICellAddress,
-         ValueType, CellSerializationOptions } from 'treb-base-types';
+         ValueType, CellSerializationOptions, Cells } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier } from 'treb-parser';
 
@@ -430,12 +430,13 @@ export class Calculator extends Graph {
       calculated_value: true };
 
     this.full_rebuild_required = false; // unset
-    const flat = model.active_sheet.cells.toJSON(json_options);
 
     this.AttachData(model);
     this.expression_calculator.SetModel(model);
 
-    const result = this.RebuildGraph(flat.data, {});
+    const flat_data = this.BuildCellsList(json_options);
+
+    const result = this.RebuildGraph(flat_data, {});
 
     // add leaf vertices for annotations
 
@@ -599,6 +600,7 @@ export class Calculator extends Graph {
       type: 'address',
       row: address.row,
       column: address.column,
+      sheet_id: address.sheet_id,
       label,
       id,
       position,
@@ -613,8 +615,16 @@ export class Calculator extends Graph {
    */
   protected RebuildDependencies(
       unit: ExpressionUnit,
+      relative_sheet_id: number,
       dependencies: DependencyList = {addresses: {}, ranges: {}},
     ){
+
+    const sheet_name_map: {[index: string]: number} = {};
+    if (this.model) {
+      for (const sheet of this.model.sheets) {
+        sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
+      }
+    }
 
     switch (unit.type){
 
@@ -638,24 +648,35 @@ export class Calculator extends Graph {
         break;
 
       case 'address':
+        if (!unit.sheet_id) {
+          unit.sheet_id = unit.sheet ?
+            (sheet_name_map[unit.sheet.toLowerCase()] || 0) :
+            relative_sheet_id;
+        }
         dependencies.addresses[unit.label] = unit;
         break; // this.AddressLabel(unit, offset);
 
       case 'range':
+        if (!unit.start.sheet_id) {
+          unit.start.sheet_id = unit.start.sheet ?
+            (sheet_name_map[unit.start.sheet.toLowerCase()] || 0) :
+            relative_sheet_id;
+        }
         dependencies.ranges[unit.start.label + ':' + unit.end.label] = unit;
         break;
 
       case 'unary':
-        this.RebuildDependencies(unit.operand, dependencies);
+        this.RebuildDependencies(unit.operand, relative_sheet_id, dependencies);
         break;
 
       case 'binary':
-        this.RebuildDependencies(unit.left, dependencies);
-        this.RebuildDependencies(unit.right, dependencies);
+        this.RebuildDependencies(unit.left, relative_sheet_id, dependencies);
+        this.RebuildDependencies(unit.right, relative_sheet_id, dependencies);
         break;
 
       case 'group':
-        unit.elements.forEach((element) => this.RebuildDependencies(element, dependencies));
+        unit.elements.forEach((element) =>
+          this.RebuildDependencies(element, relative_sheet_id, dependencies));
         break;
 
       case 'call':
@@ -675,7 +696,7 @@ export class Calculator extends Graph {
             }
           });
         }
-        args.forEach((arg) => this.RebuildDependencies(arg, dependencies));
+        args.forEach((arg) => this.RebuildDependencies(arg, relative_sheet_id, dependencies));
 
         break;
 
@@ -690,7 +711,7 @@ export class Calculator extends Graph {
 
     const parse_result = this.parser.Parse(formula);
     if (parse_result.expression) {
-      const dependencies = this.RebuildDependencies(parse_result.expression);
+      const dependencies = this.RebuildDependencies(parse_result.expression, 0); // FIXME: relative ID
 
       for (const key of Object.keys(dependencies.ranges)){
         const unit = dependencies.ranges[key];
@@ -737,11 +758,11 @@ export class Calculator extends Graph {
         for (let c = cell.area.start.column; c <= cell.area.end.column; c++ ){
           for (let r = cell.area.start.row; r <= cell.area.end.row; r++ ){
             if (c !== cell.area.start.column && r !== cell.area.start.row){
-              this.ResetInbound({column: c, row: r});
-              const status = this.AddEdge(cell, {column: c, row: r});
+              this.ResetInbound({column: c, row: r, sheet_id: cell.area.start.sheet_id});
+              const status = this.AddEdge(cell, {column: c, row: r, sheet_id: cell.area.start.sheet_id});
               if (status !== GraphStatus.OK) {
                 global_status = status;
-                if (!initial_reference) initial_reference = {column: cell.column, row: cell.row};
+                if (!initial_reference) initial_reference = { ...cell };
               }
             }
             this.SetDirty(cell);
@@ -760,7 +781,7 @@ export class Calculator extends Graph {
         // for those here...
 
         if (parse_result.expression) {
-          const dependencies = this.RebuildDependencies(parse_result.expression);
+          const dependencies = this.RebuildDependencies(parse_result.expression, cell.sheet_id);
 
           for (const key of Object.keys(dependencies.ranges)){
             const unit = dependencies.ranges[key];
@@ -769,7 +790,7 @@ export class Calculator extends Graph {
               const status = this.AddEdge(address, cell);
               if (status !== GraphStatus.OK) {
                 global_status = status;
-                if (!initial_reference) initial_reference = {column: cell.column, row: cell.row};
+                if (!initial_reference) initial_reference = { ...cell };
               }
             });
           }
@@ -779,7 +800,7 @@ export class Calculator extends Graph {
             const status = this.AddEdge(address, cell);
             if (status !== GraphStatus.OK) {
               global_status = status;
-              if (!initial_reference) initial_reference = {column: cell.column, row: cell.row};
+              if (!initial_reference) initial_reference = { ...cell };
             }
           }
 
@@ -822,7 +843,14 @@ export class Calculator extends Graph {
 
   protected SpreadCallback(vertex: SpreadsheetVertex, value: any) {
 
-    if (!this.cells) throw(new Error('called spread without cells'));
+    if (!vertex.address || !vertex.address.sheet_id) {
+      throw new Error('spread callback called without sheet id');
+    }
+    const cells = this.cells_map[vertex.address.sheet_id];
+
+    if (!cells) {
+      throw new Error('spread callback called without cells');
+    }
 
     if (!vertex || !vertex.reference) return;
 
@@ -862,18 +890,18 @@ export class Calculator extends Graph {
           for (let r = 0; r < value.length && r < area.rows; r++, row++ ){
             if (this.IsNativeOrTypedArray(value[r])){
               for (let c = 0; c < value[r].length && c < area.columns; c++, column++ ){
-                this.cells.data2[row][column].SetCalculatedValueOrError(value[r][c]);
+                cells.data2[row][column].SetCalculatedValueOrError(value[r][c]);
               }
               column = area.start.column;
             }
-            else this.cells.data2[row][column].SetCalculatedValueOrError(value[r]);
+            else cells.data2[row][column].SetCalculatedValueOrError(value[r]);
           }
         }
         else {
           for (let c = value.length; c < area.columns; c++ ) value[c] = []; // padding columns for loop
           for (let c = 0, column = area.start.column; c < area.columns; c++, column++ ){
             for (let r = 0, row = area.start.row; r < area.rows; r++, row++ ){
-              this.cells.data2[row][column].SetCalculatedValueOrError(value[c][r]);
+              cells.data2[row][column].SetCalculatedValueOrError(value[c][r]);
             }
           }
         }
@@ -884,7 +912,7 @@ export class Calculator extends Graph {
         if (calculation_error) {
           for (let c = area.start.column; c <= area.end.column; c++){
             for (let r = area.start.row; r <= area.end.row; r++){
-              this.cells.data2[r][c].SetCalculationError(value.error);
+              cells.data2[r][c].SetCalculationError(value.error);
             }
           }
         }
@@ -892,7 +920,7 @@ export class Calculator extends Graph {
           const value_type = Cell.GetValueType(value);
           for (let c = area.start.column; c <= area.end.column; c++){
             for (let r = area.start.row; r <= area.end.row; r++){
-              this.cells.data2[r][c].SetCalculatedValue(value, value_type);
+              cells.data2[r][c].SetCalculatedValue(value, value_type);
             }
           }
         }
@@ -941,10 +969,49 @@ export class Calculator extends Graph {
     return this.expression_calculator.Calculate(vertex.expression, vertex.address);
   }
 
+  /**
+   * get a list of cells, possibly subset, for building the graph
+   */
+  protected BuildCellsList(options: CellSerializationOptions) {
+
+    if (options.subset) {
+
+      // if there's a subset, then limit to that sheet
+
+      const sheet_id = options.subset.start.sheet_id;
+      if (!sheet_id) { throw new Error('BuildCellsList called with subset without sheet id'); }
+
+      const cells = this.cells_map[sheet_id];
+      if (!cells) { throw new Error('BuildCellsList called with invalid sheet id'); }
+
+      const flat = cells.toJSON({ ...options, sheet_id });
+      return flat.data;
+
+    }
+    else {
+
+      if (!this.model) { throw new Error('BuildCellsList called without model'); }
+
+      let data: any[] = [];
+      for (const sheet of this.model.sheets) {
+        const flat = sheet.cells.toJSON({ ...options, sheet_id: sheet.id });
+        data = data.concat(flat.data);
+      }
+
+      return data;
+
+    }
+
+  }
+
   protected async CalculateInternal(model: DataModel, area?: Area, options?: CalculationOptions){
 
     const cells = model.active_sheet.cells;
     this.AttachData(model); // for graph. FIXME
+
+    if (area && !area.start.sheet_id) {
+      throw new Error('CalculateInternal called with area w/out sheet ID')
+    }
 
     const json_options: CellSerializationOptions = {
       preserve_type: true,
@@ -959,7 +1026,7 @@ export class Calculator extends Graph {
 
     this.full_rebuild_required = false; // unset
 
-    let flat = cells.toJSON(json_options);
+    let flat_data = this.BuildCellsList(json_options);
 
     this.expression_calculator.SetModel(model);
 
@@ -967,7 +1034,7 @@ export class Calculator extends Graph {
       status: GraphStatus.OK,
     };
 
-    if (flat.data.length === 0 && area){
+    if (flat_data.length === 0 && area){
 
       // clearing. set these as dirty. NOTE: there's another case
       // where are clearing, but we have values; that happens for
@@ -982,8 +1049,13 @@ export class Calculator extends Graph {
 
       if (this.status !== GraphStatus.OK){
         json_options.subset = undefined;
-        flat = cells.toJSON(json_options);
-        result = this.RebuildGraph(flat.data, options);
+
+        // what would flat be in this context? if data.length (above) is 0,
+        // why would it be different now?
+
+        // flat = cells.toJSON({...json_options, sheet_id: model.active_sheet.id});
+        flat_data = this.BuildCellsList(json_options);
+        result = this.RebuildGraph(flat_data, options);
       }
 
     }
@@ -994,12 +1066,13 @@ export class Calculator extends Graph {
       // the complete check.
 
       const initial_state = this.status;
-      result = this.RebuildGraph(flat.data, options);
+      result = this.RebuildGraph(flat_data, options);
 
       if (initial_state){
         json_options.subset = undefined;
-        flat = cells.toJSON(json_options);
-        result = this.RebuildGraph(flat.data, options);
+        // flat = cells.toJSON({...json_options, sheet_id: model.active_sheet.id});
+        flat_data = this.BuildCellsList(json_options);
+        result = this.RebuildGraph(flat_data, options);
       }
     }
 

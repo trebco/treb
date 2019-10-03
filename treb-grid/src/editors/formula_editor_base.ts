@@ -502,7 +502,6 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
               const start = (unit.type === 'address') ? unit : unit.start;
               if (start.sheet && !start.sheet_id) {
                 start.sheet_id = sheet_name_map[start.sheet.toLowerCase()] || 0;
-                console.info('checkem', start);
               }
               this.reference_list.push(unit);
 

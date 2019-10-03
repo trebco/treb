@@ -5249,10 +5249,12 @@ export class Grid {
     // consolidate events and merge areas
 
     if (data_area) {
+      data_area.SetSheetID(this.model.active_sheet.id);
       events.push({ type: 'data', area: data_area });
     }
 
     if (style_area) {
+      style_area.SetSheetID(this.model.active_sheet.id);
       events.push({ type: 'style', area: style_area });
     }
 

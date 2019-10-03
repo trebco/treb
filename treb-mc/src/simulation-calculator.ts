@@ -72,8 +72,9 @@ export class MCCalculator extends Calculator {
       calculated_value: true,
     };
 
-    const flat = cells.toJSON(json_options);
-    const result = this.RebuildGraph(flat.data, {});
+    // const flat = cells.toJSON(json_options);
+    const flat_data = this.BuildCellsList(json_options);
+    const result = this.RebuildGraph(flat_data, {});
 
     // NOTE: not dealing with annotations here. the rationale is that these
     // may have external function definitions, so we can't reliably get the
@@ -110,7 +111,7 @@ export class MCCalculator extends Calculator {
    */
   public SimulationTrial(iteration: number){
 
-    if (!this.cells) throw(new Error('called trial without cells')); // this is an assert, right? should remove for prod
+    // if (!this.cells) throw(new Error('called trial without cells')); // this is an assert, right? should remove for prod
 
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 
@@ -127,28 +128,33 @@ export class MCCalculator extends Calculator {
       // unecessary.
 
       // tslint:disable-next-line:forin
-      for (const c in simulation_model.results){
-        const column = simulation_model.results[c];
+      for (const id in simulation_model.results) {
+
+        const cells = this.cells_map[id];
 
         // tslint:disable-next-line:forin
-        for (const r in column){
-          const cell = this.cells.GetCell({row: Number(r), column: Number(c)});
+        for (const c in simulation_model.results[id]){
+          const column = simulation_model.results[id][c];
 
-          // it seems like this is a waste -- if the cell doesn't exist,
-          // we should remove it from the list (or not add it in the first
-          // place). that prevents it from getting tested every loop.
+          // tslint:disable-next-line:forin
+          for (const r in column){
+            const cell = cells.GetCell({row: Number(r), column: Number(c)});
 
-          if (cell){
-            const value = cell.GetValue();
-            switch (typeof value){
-              case 'number': column[r][iteration] = value; break;
-              case 'boolean': column[r][iteration] = value ? 1 : 0; break;
-              default: column[r][iteration] = 0;
+            // it seems like this is a waste -- if the cell doesn't exist,
+            // we should remove it from the list (or not add it in the first
+            // place). that prevents it from getting tested every loop.
+
+            if (cell){
+              const value = cell.GetValue();
+              switch (typeof value){
+                case 'number': column[r][iteration] = value; break;
+                case 'boolean': column[r][iteration] = value ? 1 : 0; break;
+                default: column[r][iteration] = 0;
+              }
             }
           }
         }
       }
-
       return { status: GraphStatus.OK, reference: null };
     }
     catch (err){
@@ -157,6 +163,8 @@ export class MCCalculator extends Calculator {
     }
 
     // expand ranges [?]
+
+   return { status: GraphStatus.CalculationError, reference: null };
 
   }
 
@@ -172,16 +180,19 @@ export class MCCalculator extends Calculator {
     const flattened: any[] = [];
 
     // tslint:disable-next-line:forin
-    for (const c in simulation_model.results) {
-      const column = simulation_model.results[c];
+    for (const id in simulation_model.results) {
 
       // tslint:disable-next-line:forin
-      for (const r in column) {
-        flattened.push(PackResults.PackOne({
-          row: Number(r), column: Number(c), data: column[r] }).buffer);
+      for (const c in simulation_model.results[id]) {
+        const column = simulation_model.results[id][c];
+
+        // tslint:disable-next-line:forin
+        for (const r in column) {
+          flattened.push(PackResults.PackOne({
+            row: Number(r), column: Number(c), sheet_id: Number(id), data: column[r] }).buffer);
+        }
       }
     }
-
     return flattened;
   }
 
@@ -216,10 +227,16 @@ export class MCCalculator extends Calculator {
 
     data.results.map((result: any) => {
       const entry = (result instanceof ArrayBuffer) ? PackResults.UnpackOne(new Float64Array(result)) : result;
-      if (!simulation_model.results[entry.column]) {
-        simulation_model.results[entry.column] = [];
+
+      if (!simulation_model.results[entry.sheet_id]){
+        simulation_model.results[entry.sheet_id] = [];
       }
-      simulation_model.results[entry.column][entry.row] = entry.data;
+
+      if (!simulation_model.results[entry.sheet_id][entry.column]) {
+        simulation_model.results[entry.sheet_id][entry.column] = [];
+      }
+
+      simulation_model.results[entry.sheet_id][entry.column][entry.row] = entry.data;
       this.SetDirty(entry);
     });
 

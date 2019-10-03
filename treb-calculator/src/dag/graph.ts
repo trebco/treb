@@ -18,10 +18,13 @@ export enum GraphStatus {
  */
 export abstract class Graph {
 
-  public vertices: Array<Array<SpreadsheetVertex|undefined>> = [];
+  // public vertices: Array<Array<SpreadsheetVertex|undefined>> = [];
+  public vertices: Array<Array<Array<SpreadsheetVertex|undefined>>> = [[]];
+
   public dirty_list: SpreadsheetVertex[] = [];
   public volatile_list: SpreadsheetVertex[] = [];
-  public cells?: Cells;
+  // public cells?: Cells;
+  public cells_map: {[index: number]: Cells} = {};
   public model?: DataModel;
 
   // special
@@ -30,12 +33,15 @@ export abstract class Graph {
   /**
    * attach data. normally this is done as part of a calculation, but we can
    * do it without a calculation to support annotations that use leaf vertices
-   *
-   * @param cells
    */
   public AttachData(model: DataModel){
     this.model = model;
-    this.cells = model.active_sheet.cells;
+    // this.cells = model.active_sheet.cells;
+
+    this.cells_map = {};
+    for (const sheet of model.sheets) {
+      this.cells_map[sheet.id] = sheet.cells;
+    }
   }
 
   /**
@@ -44,24 +50,40 @@ export abstract class Graph {
   public FlushTree() {
     this.dirty_list = [];
     this.volatile_list = [];
-    this.vertices = [];
+    this.vertices = [[]];
     this.leaf_vertices = [];
-    this.cells = undefined;
+    // this.cells = undefined;
+    this.cells_map = {};
   }
 
   /** returns the vertex at this address. creates it if necessary. */
   public GetVertex(address: ICellAddress, create: boolean) {
 
-    if (!this.cells) return undefined;
+    if (!address.sheet_id) { throw new Error('getvertex with no sheet id'); }
 
-    if (!this.vertices[address.column]) {
+    // if (!this.cells) return undefined;
+
+    const cells = this.cells_map[address.sheet_id];
+
+    if (!cells) {
+      return undefined;
+    }
+
+    if (!this.vertices[address.sheet_id]) {
       if (!create) {
         return undefined;
       }
-      this.vertices[address.column] = [];
+      this.vertices[address.sheet_id] = [];
+    }
+
+    if (!this.vertices[address.sheet_id][address.column]) {
+      if (!create) {
+        return undefined;
+      }
+      this.vertices[address.sheet_id][address.column] = [];
     }
     else {
-      const existing_vertex = this.vertices[address.column][address.row];
+      const existing_vertex = this.vertices[address.sheet_id][address.column][address.row];
       if (existing_vertex) {
         return existing_vertex;
       }
@@ -85,7 +107,7 @@ export abstract class Graph {
 
     // works ok, maybe a little verbose
 
-    const row = this.cells.data2[address.row];
+    const row = cells.data2[address.row];
     if (row) {
       const cell = row[address.column];
       if (cell) {
@@ -93,24 +115,21 @@ export abstract class Graph {
       }
     }
 
-    this.vertices[address.column][address.row] = vertex;
+    this.vertices[address.sheet_id][address.column][address.row] = vertex;
     return vertex;
 
   }
 
-  /* * returns the vertex at this address, but doesn't create it. * /
-  public GetVertexOrUndefined(address: ICellAddress) {
-    if (!this.vertices[address.column]) return undefined;
-    return this.vertices[address.column][address.row];
-  }
-  */
-
   /** deletes the vertex at this address. */
   public RemoveVertex(address: ICellAddress) {
+
+    if (!address.sheet_id) { throw new Error('removevertex with no sheet id'); }
+
     const vertex = this.GetVertex(address, false);
     if (!vertex) return;
     vertex.Reset();
-    this.vertices[address.column][address.row] = undefined;
+    this.vertices[address.sheet_id][address.column][address.row] = undefined;
+
   }
 
   /** removes all edges, for rebuilding. leaves value/formula as-is. */

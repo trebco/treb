@@ -38,7 +38,7 @@ export class SimulationModel {
   public call_index = 0;
   public lhs = false;
   public state = SimulationState.Null;
-  public results: number[][][] = [];
+  public results: number[][][][] = [];
   public elapsed = 0;
   public trials = 0;
   public distributions: any = [];
@@ -559,8 +559,11 @@ export class SimulationModel {
 
     if (!address) return null;
 
-    if (!this.results[address.column]) this.results[address.column] = [];
-    const column = this.results[address.column];
+    if (!address.sheet_id) { throw new Error('SCR called without sheet id'); }
+
+    if (!this.results[address.sheet_id]) this.results[address.sheet_id] = [];
+    if (!this.results[address.sheet_id][address.column]) this.results[address.sheet_id][address.column] = [];
+    const column = this.results[address.sheet_id][address.column];
 
     if (!column[address.row]) column[address.row] = [];
     const cell = column[address.row];

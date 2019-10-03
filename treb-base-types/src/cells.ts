@@ -25,6 +25,9 @@ export interface CellSerializationOptions {
    */
   cell_style_refs?: number[][];
 
+  /** optionally attach an ID to the cells */
+  sheet_id?: number;
+
 }
 
 /**
@@ -366,6 +369,7 @@ export class Cells {
             const obj: any = { row, column, value: cell.value };
             if (cell.note) obj.note = cell.note;
             if (options.preserve_type) obj.type = cell.type;
+            if (options.sheet_id) obj.sheet_id = options.sheet_id;
             if (options.calculated_value &&
                 typeof cell.calculated !== 'undefined') { // && cell.calculated_type !== ValueType.error) {
               obj.calculated = cell.calculated;

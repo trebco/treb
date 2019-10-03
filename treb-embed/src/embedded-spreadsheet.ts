@@ -1831,9 +1831,17 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.worker.postMessage({
       type: 'configure',
       locale: Localization.locale,
+      /*
       sheet: this.grid.model.active_sheet.toJSON({
         rendered_values: true, // has a different name, for some reason
         preserve_type: true,
+      }),
+      */
+      sheets: this.grid.model.sheets.map((sheet) => {
+        return sheet.toJSON({
+          rendered_values: true, // has a different name, for some reason
+          preserve_type: true,
+        });
       }),
       named_ranges: this.grid.model.named_ranges.Serialize(),
       additional_cells,

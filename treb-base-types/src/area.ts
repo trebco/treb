@@ -159,6 +159,10 @@ export class Area implements IArea {
 
   }
 
+  public SetSheetID(id: number) {
+    this.start_.sheet_id = id;
+  }
+
   public Normalize(){
     /*
     let columns = [this.start.column, this.end.column].sort((a, b) => a-b);
@@ -285,13 +289,15 @@ export class Area implements IArea {
   public Array(): ICellAddress[] {
     if (this.entire_column || this.entire_row) throw new Error('can\'t convert infinite area to array');
     const array: ICellAddress[] = new Array<ICellAddress>(this.rows * this.columns);
+
+    const sheet_id = this.start_.sheet_id;
     let index = 0;
 
     // does this need sheet ID?
 
     for (let row = this.start_.row; row <= this.end_.row; row++){
       for (let column = this.start_.column; column <= this.end_.column; column++){
-        array[index++] = { row, column };
+        array[index++] = { row, column, sheet_id };
       }
     }
     return array;
@@ -359,7 +365,7 @@ export class Area implements IArea {
     if (this.entire_column || this.entire_row) return;
     for (let c = this.start_.column; c <= this.end_.column; c++){
       for (let r = this.start_.row; r <= this.end_.row; r++){
-        f({column: c, row: r});
+        f({column: c, row: r, sheet_id: this.start_.sheet_id});
       }
     }
   }

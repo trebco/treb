@@ -18,7 +18,8 @@ export interface StartMessage {
 export interface ConfigMessage {
   type: 'configure';
   locale: string;
-  sheet: any;
+  // sheet: any;
+  sheets: any[];
   additional_cells?: ICellAddress[];
   named_ranges?: {[index: string]: IArea};
 }
