@@ -130,6 +130,10 @@ export class MCCalculator extends Calculator {
       // tslint:disable-next-line:forin
       for (const id in simulation_model.results) {
 
+        // we should validate this, but I don't want to do that on every
+        // trial... can we precheck against collected cells, before running?
+        // maybe in prep? (...)
+
         const cells = this.cells_map[id];
 
         // tslint:disable-next-line:forin
