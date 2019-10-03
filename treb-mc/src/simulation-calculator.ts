@@ -111,8 +111,6 @@ export class MCCalculator extends Calculator {
    */
   public SimulationTrial(iteration: number){
 
-    // if (!this.cells) throw(new Error('called trial without cells')); // this is an assert, right? should remove for prod
-
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 
     simulation_model.iteration = iteration;
@@ -165,10 +163,6 @@ export class MCCalculator extends Calculator {
       console.info('calculation error trapped', err);
       return { status: GraphStatus.CalculationError, reference: null };
     }
-
-    // expand ranges [?]
-
-   return { status: GraphStatus.CalculationError, reference: null };
 
   }
 
