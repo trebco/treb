@@ -1,6 +1,7 @@
 
 import { ICellAddress, IArea, Style } from 'treb-base-types';
 import { BorderConstants } from './border_constants';
+import { Sheet } from './sheet';
 
 /**
  * switching to an exec-command based model, so we can serialize
@@ -218,6 +219,7 @@ export interface ActivateSheetCommand {
   id?: number;
   name?: string;
   index?: number;
+  sheet?: Sheet;
 }
 
 /**

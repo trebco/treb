@@ -235,6 +235,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         formula_bar: this.options.formula_bar,
         repaint_on_cell_change: false,
         scrollbars: this.options.scrollbars,
+        tab_bar: this.options.tab_bar,
       },
       // theme
     );

@@ -228,6 +228,10 @@ export class Grid {
    */
   private autocomplete_matcher = new AutocompleteMatcher();
 
+  // FIXME: move
+
+  private tab_bar?: HTMLElement;
+
   // --- constructor -----------------------------------------------------------
 
   /**
@@ -766,11 +770,15 @@ export class Grid {
    * FIXME: private
    */
   public ActivateSheet(command: ActivateSheetCommand) {
-    console.info('activate sheet', command);
+
+    // console.info('activate sheet', command);
 
     let candidate = this.model.sheets[0];
 
-    if (typeof command.name !== 'undefined') {
+    if (typeof command.sheet !== 'undefined') {
+      candidate = command.sheet;
+    }
+    else if (typeof command.name !== 'undefined') {
       for (const sheet of this.model.sheets) {
         if (sheet.name === command.name) {
           candidate = sheet;
@@ -830,7 +838,6 @@ export class Grid {
 
     const annotations = this.model.active_sheet.annotations;
     for (const element of annotations) {
-      console.info('calling aa with false')
       this.AddAnnotation(element, false); // true);
     }
 
@@ -867,6 +874,8 @@ export class Grid {
       activate: this.model.active_sheet,
     });
 
+    this.RebuildTabBar();
+
   }
 
   public DeleteSheet(index = 0) {
@@ -900,7 +909,7 @@ export class Grid {
 
   }
 
-  public AddSheet(name = Sheet.default_sheet_name) {
+  public AddSheet(name = Sheet.default_sheet_name, activate = true) {
 
     // validate name...
 
@@ -918,7 +927,15 @@ export class Grid {
 
     // FIXME: structure event
 
-    this.model.sheets.push(Sheet.Blank(100, 26, name));
+    const sheet = Sheet.Blank(100, 26, name);
+    this.model.sheets.push(sheet);
+
+    if (activate) {
+      this.ActivateSheet({ key: CommandKey.ActivateSheet, id: sheet.id });
+    }
+
+    this.RebuildTabBar();
+
   }
 
   /** new version for multiple sheets */
@@ -999,6 +1016,8 @@ export class Grid {
     if (render) {
       this.Repaint(false, false);
     }
+
+    this.RebuildTabBar();
 
   }
 
@@ -1157,6 +1176,10 @@ export class Grid {
         autocomplete = new Autocomplete({theme: this.theme, container});
       }
       this.InitFormulaBar(grid_container, autocomplete);
+    }
+
+    if (this.options.tab_bar) {
+      this.InitTabBar(grid_container);
     }
 
     // set container and add class for our styles
@@ -1734,6 +1757,55 @@ export class Grid {
       default:
       // console.info('evt', event);
     }
+  }
+
+  private InitTabBar(grid_container: HTMLElement) {
+
+    const container = document.createElement('div');
+    container.classList.add('treb-tab-bar-container');
+    grid_container.appendChild(container);
+
+    this.tab_bar = document.createElement('div');
+    this.tab_bar.classList.add('treb-tab-bar');
+    container.appendChild(this.tab_bar);
+
+  }
+
+  private RebuildTabBar() {
+
+    if (!this.tab_bar) {
+      return;
+    }
+
+    this.tab_bar.innerText = '';
+
+    // if (this.model.sheets.length <= 1) { return; }
+
+    for (const sheet of this.model.sheets) {
+      const tab = document.createElement('a');
+      tab.classList.add('tab');
+
+      if (sheet === this.model.active_sheet) {
+        tab.classList.add('selected');
+      }
+
+      tab.innerText = sheet.name;
+      tab.addEventListener('click', () => {
+        this.ActivateSheet({ key: CommandKey.ActivateSheet, id: sheet.id });
+      });
+
+      this.tab_bar.appendChild(tab);
+    }
+
+    const add_tab = document.createElement('a');
+    add_tab.classList.add('tab');
+    add_tab.innerText = '+';
+    add_tab.addEventListener('click', () => {
+      this.AddSheet(undefined, true);
+    });
+
+    this.tab_bar.appendChild(add_tab);
+
   }
 
   private InitFormulaBar(grid_container: HTMLElement, autocomplete: Autocomplete) {

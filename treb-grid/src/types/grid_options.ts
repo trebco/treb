@@ -17,6 +17,9 @@ export interface GridOptions {
   /** show the formula bar (and allow editing; TODO: read-only option) */
   formula_bar?: boolean;
 
+  /** show the tab bar */
+  tab_bar?: boolean;
+
   /** show the "insert function" button. requires formula bar. */
   insert_function_button?: boolean;
 

@@ -4,6 +4,15 @@ todo list, instead of scattering among projects.
 
 ## TODO
 
+### multisheet issues
+
+ + rewrite formula in other sheets when inserting/deleting rows/columns
+ + rewrite formula in annotations when inserting/deleting rows/columns
+ + rewrite formula when changing sheet names
+ + support changing sheet names
+ + selecting cells in other sheets when entering formula
+ + cut and paste in different sheets (what is the desired behavior?)
+
 ### grid/sheet
 
  + redo

@@ -1,0 +1,48 @@
+
+
+.treb-main {
+
+  // flex patch for chrome
+
+  .treb-tab-bar-container {
+    display: block;
+    order: 3;
+    height: 0px;
+    max-height: 0px;
+    overflow: visible;
+
+    & .treb-tab-bar {
+      display: flex;
+      flex-direction: row;
+      z-index: 1;
+    }
+
+    & .tab {
+
+      font-size: .75em;
+      padding: .25em .75em;
+      cursor: default;
+      display: inline-block;
+      color: #343;
+      background: #eee;
+
+      border-bottom-left-radius: 5px;
+      border-bottom-right-radius: 5px;
+      border: 1px solid #ccc;
+      border-top-width: 0px;
+
+      z-index: 1;
+    }
+
+    & .tab + .tab {
+      margin-left: -2px;
+    }
+
+    & .tab.selected {
+      background: #fff;
+      z-index: 2;
+    }
+
+  }
+
+}
