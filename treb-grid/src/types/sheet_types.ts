@@ -61,5 +61,6 @@ export interface SerializedSheet {
   name?: string;
 
   selection: GridSelection;
+  annotations?: any[];
 
 }

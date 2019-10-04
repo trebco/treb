@@ -204,7 +204,7 @@ export class LegacyLayout extends BaseLayout {
       else {
         const x2 = x - this.model.active_sheet.header_offset.x + this.scroll_reference_node.scrollLeft;
         const y2 = y - this.model.active_sheet.header_offset.y + this.scroll_reference_node.scrollTop;
-        for (const annotation of this.model.annotations) {
+        for (const annotation of this.model.active_sheet.annotations) {
           if (annotation.rect &&
               annotation.node &&
               annotation.rect.Contains(x2, y2)) {

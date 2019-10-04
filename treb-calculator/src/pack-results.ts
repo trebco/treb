@@ -27,6 +27,16 @@ export const PackOne = (result: Result) => {
 };
 
 export const UnpackOne = (data: Float64Array) => {
-  return { column: data[0], row: data[1], sheet_id: data[2], data: data.subarray(4) };
+
+  // we might have old-style data... how to know? should have
+  // added a version flag (probably not, wasteful)
+
+  if (data.length === 3 + data[2]) {
+    return { column: data[0], row: data[1], sheet_id: 0, data: data.subarray(3) };
+  }
+  else {
+    return { column: data[0], row: data[1], sheet_id: data[2], data: data.subarray(4) };
+  }
+
 };
 

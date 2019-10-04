@@ -17,6 +17,6 @@ export interface DataModel {
   user_data?: any;
   active_sheet: Sheet;
   sheets: Sheet[];
-  annotations: Annotation[];
+  // annotations: Annotation[];
   named_ranges: NamedRangeCollection;
 }

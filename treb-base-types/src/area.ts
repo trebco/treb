@@ -56,8 +56,12 @@ export class Area implements IArea {
     return s;
   }
 
-  public static CellAddressToLabel(address: ICellAddress){
-    return (address.absolute_column ? '$' : '')
+  public static CellAddressToLabel(address: ICellAddress, sheet_id = false){
+
+    const prefix = sheet_id ? `${address.sheet_id || 0}!` : '';
+
+    return prefix
+      + (address.absolute_column ? '$' : '')
       + this.ColumnToLabel(address.column)
       + (address.absolute_row ? '$' : '')
       + (address.row + 1);

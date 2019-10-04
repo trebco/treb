@@ -11,6 +11,7 @@ import { EventSource, Measurement } from 'treb-utils';
 import { SheetEvent, UpdateHints, FreezePane, SerializedSheet } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
 import { GridSelection, CreateSelection } from './grid_selection';
+import { Annotation } from './annotation';
 
 // --- constants --------------------------------------------------------------
 
@@ -229,6 +230,13 @@ export class Sheet {
 
     // FIXME: hint? does anyone use hints?
 
+    sheet.annotations = [];
+    if (obj.annotations) {
+      sheet.annotations = obj.annotations.map((entry) => new Annotation(entry));
+    }
+
+    // FIXME: hint? does anyone use hints?
+
     if (obj.selection) {
 
       // copy to ensure there's no link to random object
@@ -257,6 +265,9 @@ export class Sheet {
   private static measurement_canvas?: HTMLCanvasElement;
 
   // --- instance members -----------------------------------------------------
+
+  /* moved from grid */
+  public annotations: Annotation[] = [];
 
   // moved from layout
   public freeze: FreezePane = {
@@ -1526,6 +1537,8 @@ export class Sheet {
       column_width: flatten_numeric_array(this.column_width_, this.default_column_width),
 
       selection: JSON.parse(JSON.stringify(this.selection)),
+      
+      annotations: JSON.parse(JSON.stringify(this.annotations)),
 
     };
 

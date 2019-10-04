@@ -215,16 +215,30 @@ export class MCCalculator extends Calculator {
    *
    * once these are set, simulation functions (e.g. mean) can return
    * results
+   *
+   * @param model model passed directly, in case the model has not yet
+   *              been set; we may need this for assigning simulation 
+   *              results from older files.
    */
-  public UpdateResults(data: any){
+  public UpdateResults(data: any, model = this.model){
+
+    if (!model) {
+      throw new Error('UpdateResults called without model');
+    }
+
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 
     simulation_model.results = [];
     simulation_model.elapsed = data.elapsed;
     simulation_model.trials = data.trials;
 
-    data.results.map((result: any) => {
+    for (const result of data.results) {
+
       const entry = (result instanceof ArrayBuffer) ? PackResults.UnpackOne(new Float64Array(result)) : result;
+
+      if (!entry.sheet_id) {
+        entry.sheet_id = model.active_sheet.id;
+      }
 
       if (!simulation_model.results[entry.sheet_id]){
         simulation_model.results[entry.sheet_id] = [];
@@ -236,7 +250,8 @@ export class MCCalculator extends Calculator {
 
       simulation_model.results[entry.sheet_id][entry.column][entry.row] = entry.data;
       this.SetDirty(entry);
-    });
+
+    }
 
   }
 

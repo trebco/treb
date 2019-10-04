@@ -16,7 +16,7 @@ export class WorkerImpl {
   protected data_model: DataModel = {
     active_sheet: Sheet.Blank(),
     sheets: [Sheet.Blank()],
-    annotations: [],
+    // annotations: [],
     named_ranges: new NamedRangeCollection(),
   };
   protected screen_updates = false;

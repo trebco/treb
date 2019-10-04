@@ -51,9 +51,6 @@ export class Grid {
   /** for recording */
   public command_log = new EventSource<CommandRecord>();
 
-  /** list of annotations */
-  // public readonly annotations: Annotation[] = [];
-
   /**
    * the theme object exists so we can pass it to constructors for
    * various components, but it's no longer initialized until the
@@ -81,13 +78,6 @@ export class Grid {
    * switch the member to an accessor (DM will have to become a class)
    */
   public readonly model: DataModel;
-  
-  /* = {
-    active_sheet: Sheet.Blank(100, 26),
-    annotations: [],
-    named_ranges: new NamedRangeCollection(),
-  };
-  */
 
   // --- private members -------------------------------------------------------
 
@@ -253,7 +243,7 @@ export class Grid {
     this.model = {
       sheets,
       active_sheet: sheets[0],
-      annotations: [],
+      // annotations: [],
       named_ranges: new NamedRangeCollection(),
     };
 
@@ -316,7 +306,7 @@ export class Grid {
 
   /** find an annotation, given a node */
   public FindAnnotation(node: HTMLElement) {
-    for (const annotation of this.model.annotations) {
+    for (const annotation of this.model.active_sheet.annotations) {
       if (annotation.node === node) {
         return annotation;
       }
@@ -327,7 +317,7 @@ export class Grid {
   /**
    * create an annotation, with properties, without an original object.
    * optionally (and by default) add to sheet.
-   * 
+   *
    * @param offset check for a matching position (top-left) and if found,
    * shift by (X) pixels. intended for copy-paste, where we don't want to
    * paste immediately on top of the original.
@@ -338,7 +328,7 @@ export class Grid {
       let recheck = true;
       while (recheck) {
         recheck = false;
-        for (const test of this.model.annotations) {
+        for (const test of this.model.active_sheet.annotations) {
           if (test === annotation) { continue; }
           if (test.rect && test.rect.top === annotation.rect.top && test.rect.left === annotation.rect.left) {
             annotation.rect = annotation.rect.Shift(20, 20);
@@ -357,11 +347,6 @@ export class Grid {
 
   /** add an annotation. it will be returned with a usable node. */
   public AddAnnotation(annotation: Annotation, toll_events = false) {
-
-    // ensure we haven't already added this
-    for (const test of this.model.annotations) {
-      if (test === annotation) return;
-    }
 
     if (!annotation.node) {
       annotation.node = document.createElement('div');
@@ -562,7 +547,11 @@ export class Grid {
 
     annotation.node.classList.add('annotation');
     this.layout.AddAnnotation(annotation);
-    this.model.annotations.push(annotation);
+
+    // ensure we haven't already added this
+    if (!this.model.active_sheet.annotations.some((test) => test === annotation)){
+      this.model.active_sheet.annotations.push(annotation);
+    }
 
     if (!toll_events) {
       this.grid_events.Publish({
@@ -571,11 +560,6 @@ export class Grid {
         event: 'create',
       });
     }
-    /*
-    else {
-      console.info('not sending annotation event');
-    }
-    */
 
   }
 
@@ -585,9 +569,9 @@ export class Grid {
    * it existed before).
    */
   public RemoveAnnotation(annotation: Annotation) {
-    for (let i = 0; i < this.model.annotations.length; i++){
-      if (annotation === this.model.annotations[i]) {
-        this.model.annotations.splice(i, 1);
+    for (let i = 0; i < this.model.active_sheet.annotations.length; i++){
+      if (annotation === this.model.active_sheet.annotations[i]) {
+        this.model.active_sheet.annotations.splice(i, 1);
         if (annotation.node && annotation.node.parentElement) {
           annotation.node.parentElement.removeChild(annotation.node);
         }
@@ -603,16 +587,16 @@ export class Grid {
 
   /**
    * remove all annotations
-   * 
+   *
    * FIXME: should this have an attached event? (...)
    */
   public RemoveAllAnnotations() {
-    for (const annotation of this.model.annotations) {
+    for (const annotation of this.model.active_sheet.annotations) {
       if (annotation.node && annotation.node.parentElement) {
         annotation.node.parentElement.removeChild(annotation.node);
       }
     }
-    this.model.annotations.splice(0, this.model.annotations.length);
+    // this.model.active_sheet.annotations.splice(0, this.model.active_sheet.annotations.length);
   }
 
   /**
@@ -658,7 +642,7 @@ export class Grid {
 
     // FIXME: move
 
-    (sheet_data[0] as any).annotations = JSON.parse(JSON.stringify(this.model.annotations));
+    (sheet_data[0] as any).annotations = JSON.parse(JSON.stringify(this.model.active_sheet.annotations));
 
     // NOTE: moving into a structured object (the sheet data is also
     // structured, of course) but we are moving things out of sheet
@@ -749,8 +733,8 @@ export class Grid {
       styles: Style.Properties[],
       render = false) {
 
-    this.UpdateSheets([new Sheet().toJSON()], true);
     this.RemoveAllAnnotations();
+    this.UpdateSheets([new Sheet().toJSON()], true);
 
     // FIXME: are there named ranges in the data? (...)
 
@@ -839,6 +823,8 @@ export class Grid {
 
     this.model.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
 
+    this.RemoveAllAnnotations();
+
     // select target
 
     this.model.active_sheet = candidate;
@@ -859,7 +845,10 @@ export class Grid {
     // still have to inflate these or do whatever step is necessary to
     // render.
 
-    this.RemoveAllAnnotations();
+    const annotations = this.model.active_sheet.annotations;
+    for (const element of annotations) {
+      this.AddAnnotation(element, true);
+    }
 
     /* FIXME: store in sheet? (...)
     const annotations = (data as any).annotations;
@@ -945,6 +934,8 @@ export class Grid {
   /** new version for multiple sheets */
   public UpdateSheets(data: any[], render = false) {
 
+    this.RemoveAllAnnotations();
+
     const sheets = data.map((sheet) => Sheet.FromJSON(sheet));
 
     // ensure we have a sheets[0] so we can set active
@@ -984,15 +975,20 @@ export class Grid {
     // still have to inflate these or do whatever step is necessary to
     // render.
 
-    this.RemoveAllAnnotations();
-
     // FIXME: move annotations
 
+    /*
     const annotations = data[0] ? (data[0] as any).annotations : undefined;
     if (annotations && Array.isArray(annotations)) {
       for (const element of annotations) {
         this.AddAnnotation(new Annotation(element), true);
       }
+    }
+    */
+
+    const annotations = this.model.active_sheet.annotations;
+    for (const element of annotations) {
+      this.AddAnnotation(element, true);
     }
 
     // we do the tile rebuild just before the next paint, to prevent
@@ -1144,10 +1140,10 @@ export class Grid {
    *
    * @param container html container element
    * @param sheet_data optional sheet (serialized, as json or object)
-   * 
+   *
    * no one is using the sheet_data parameter atm, so we are removing
    * it; it might come back, but if it does use a load method (don't inline)
-   * 
+   *
    */
   public Initialize(grid_container: HTMLElement /*, sheet_data?: string | object*/ ) {
 
@@ -1772,7 +1768,7 @@ export class Grid {
             this.DelayedRender();
               return;
           }
-  
+
           if (this.container) this.Focus();
           this.ClearAdditionalSelections();
           this.ClearSelection(this.active_selection);
@@ -1798,7 +1794,7 @@ export class Grid {
             this.DelayedRender();
             return;
           }
-  
+
           if (this.container) this.Focus();
           this.SetInferredType(this.primary_selection, event.value, event.array);
           this.ClearAdditionalSelections();
@@ -1934,7 +1930,7 @@ export class Grid {
       this.tile_update_pending = false;
       this.layout.UpdateTiles();
       this.render_tiles = this.layout.VisibleTiles();
-      this.layout.UpdateAnnotation(this.model.annotations);
+      this.layout.UpdateAnnotation(this.model.active_sheet.annotations);
 
       // FIXME: why is this here, as opposed to coming from the command
       // exec method? are we doubling up? (...)
@@ -2176,7 +2172,7 @@ export class Grid {
 
             this.layout.UpdateTileHeights(true, row);
             this.Repaint(false, true); // repaint full tiles
-            this.layout.UpdateAnnotation(this.model.annotations);
+            this.layout.UpdateAnnotation(this.model.active_sheet.annotations);
           });
 
         }
@@ -2199,7 +2195,8 @@ export class Grid {
 
             // update all selected rows. these could be in different tiles.
 
-            const area = this.model.active_sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
+            // in case the whole sheet is selected
+            const area = this.model.active_sheet.RealArea(this.primary_selection.area);
 
             rows = [];
             for (let r = area.start.row; r <= area.end.row; r++) {
@@ -2287,7 +2284,8 @@ export class Grid {
 
           // update all selected columns. these could be in different tiles.
 
-          const area = this.model.active_sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
+          // in case the whole sheet is selected
+          const area = this.model.active_sheet.RealArea(this.primary_selection.area);
 
           columns = [];
           for (let c = area.start.column; c <= area.end.column; c++) {
@@ -2340,7 +2338,7 @@ export class Grid {
           requestAnimationFrame(() => {
             this.layout.UpdateTileWidths(true, column);
             this.Repaint(false, true); // repaint full tiles
-            this.layout.UpdateAnnotation(this.model.annotations);
+            this.layout.UpdateAnnotation(this.model.active_sheet.annotations);
           });
 
         }
@@ -2361,7 +2359,8 @@ export class Grid {
 
             // update all selected columns. these could be in different tiles.
 
-            const area = this.model.active_sheet.RealArea(this.primary_selection.area); // in case the whole sheet is selected
+            // in case the whole sheet is selected
+            const area = this.model.active_sheet.RealArea(this.primary_selection.area);
 
             for (let c = area.start.column; c <= area.end.column; c++) {
               // this.model.sheet.ColumnWidth(c, width, true);
@@ -3130,7 +3129,7 @@ export class Grid {
     if (selection.empty) return;
     const area = this.model.active_sheet.RealArea(selection.area);
     this.ExecCommand({ key: CommandKey.Clear, area });
-3  }
+  }
 
   /**
    * sets cell value, inferring type and (possibly) inferring cell style
@@ -4513,7 +4512,7 @@ export class Grid {
   /**
    * FIXME: should be API method
    * FIXME: need to handle annotations that are address-based
-   * 
+   *
    * @see InsertColumns for inline comments
    */
   private InsertRowsInternal(command: InsertRowsCommand) { // before_row = 0, count = 1) {
@@ -4549,7 +4548,7 @@ export class Grid {
       }
     });
 
-    for (const annotation of this.model.annotations) {
+    for (const annotation of this.model.active_sheet.annotations) {
       if (annotation.formula) {
         let modified = false;
         const parsed = this.parser.Parse(annotation.formula || '');
@@ -4655,7 +4654,7 @@ export class Grid {
       }
     });
 
-    for (const annotation of this.model.annotations) {
+    for (const annotation of this.model.active_sheet.annotations) {
       if (annotation.formula) {
         let modified = false;
         const parsed = this.parser.Parse(annotation.formula);
@@ -4680,7 +4679,7 @@ export class Grid {
         }
       }
     }
-   
+
     // fix selection(s)
 
     if (command.count < 0) {
@@ -4732,7 +4731,7 @@ export class Grid {
    *
    * UPDATE: modifying function for use with ExecCommand. runs the style
    * updates and returns the affected area.
-   * 
+   *
    */
   private ApplyBordersInternal(command: UpdateBordersCommand) {
 
@@ -4977,8 +4976,8 @@ export class Grid {
           data_area = Area.Join(area, data_area);
         }
         else {
-          this.UpdateSheets([new Sheet().toJSON()], true);
           this.RemoveAllAnnotations();
+          this.UpdateSheets([new Sheet().toJSON()], true);
           this.model.named_ranges.Reset();
           this.ClearSelection(this.primary_selection);
           this.ScrollIntoView({row: 0, column: 0});
@@ -5125,7 +5124,7 @@ export class Grid {
             this.Repaint(false, true); // repaint full tiles
           }
 
-          this.layout.UpdateAnnotation(this.model.annotations);
+          this.layout.UpdateAnnotation(this.model.active_sheet.annotations);
           structure_event = true;
 
         }
@@ -5175,7 +5174,7 @@ export class Grid {
             this.Repaint(false, true); // repaint full tiles
           }
 
-          this.layout.UpdateAnnotation(this.model.annotations);
+          this.layout.UpdateAnnotation(this.model.active_sheet.annotations);
           structure_event = true;
 
         }

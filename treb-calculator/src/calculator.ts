@@ -472,8 +472,9 @@ export class Calculator extends Graph {
       const address = {
         column: entry.column,
         row: entry.row,
+        sheet_id: entry.sheet_id,
       };
-      const label = Area.CellAddressToLabel(address);
+      const label = Area.CellAddressToLabel(address, true);
       if (map[label]) { continue; }
       map[label] = label;
       flattened.push(address);
@@ -520,7 +521,7 @@ export class Calculator extends Graph {
 
   public UpdateAnnotations(list?: Annotation|Annotation[]) {
 
-    if (!list && this.model) list = this.model.annotations;
+    if (!list && this.model) list = this.model.active_sheet.annotations;
     if (!list) return;
 
     if (typeof list !== 'undefined' && !Array.isArray(list)) {
@@ -540,6 +541,27 @@ export class Calculator extends Graph {
 
   }
 
+  public ResolveSheetID(expr: UnitAddress|UnitRange) {
+    if (!this.model) { throw new Error('ResolveSheetID called without model'); }
+
+    const target = expr.type === 'address' ? expr : expr.start;
+    if (!target.sheet_id) {
+      if (target.sheet) {
+        const lc = target.sheet.toLowerCase();
+        for (const sheet of this.model.sheets) {
+          if (sheet.name.toLowerCase() === lc) {
+            target.sheet_id = sheet.id;
+            break;
+          }
+        }
+      }
+      else {
+        target.sheet_id = this.model.active_sheet.id;
+      }
+    }
+
+  }
+
   // --- protected -------------------------------------------------------------
 
   /**
@@ -550,9 +572,11 @@ export class Calculator extends Graph {
 
     switch (expr.type) {
       case 'address':
+        this.ResolveSheetID(expr);
         return new Area(expr);
 
       case 'range':
+        this.ResolveSheetID(expr);
         return new Area(expr.start, expr.end);
 
       case 'identifier':
@@ -707,11 +731,16 @@ export class Calculator extends Graph {
 
   protected UpdateLeafVertex(vertex: LeafVertex, formula: string){
 
+    if (!this.model) {
+      throw new Error('UpdateLeafVertex called without model')
+    }
+
     vertex.Reset();
 
     const parse_result = this.parser.Parse(formula);
     if (parse_result.expression) {
-      const dependencies = this.RebuildDependencies(parse_result.expression, 0); // FIXME: relative ID
+      const dependencies =
+        this.RebuildDependencies(parse_result.expression, this.model.active_sheet.id);
 
       for (const key of Object.keys(dependencies.ranges)){
         const unit = dependencies.ranges[key];

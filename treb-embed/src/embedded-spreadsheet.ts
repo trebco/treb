@@ -1243,6 +1243,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     } // end l10n conversion
 
+    // this.grid.UpdateSheet(sheet_data); // don't paint -- wait for calculate
+    this.grid.UpdateSheets(sheets);
+    const model = this.grid.model;
+
     if (data.simulation_data) {
       this.last_simulation_data = data.simulation_data;
       this.last_simulation_data.results =
@@ -1253,13 +1257,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);
           return u8.buffer;
         });
-      this.calculator.UpdateResults(this.last_simulation_data);
+
+      this.calculator.UpdateResults(this.last_simulation_data, model);
     }
-
-    // this.grid.UpdateSheet(sheet_data); // don't paint -- wait for calculate
-    this.grid.UpdateSheets(sheets);
-
-    const model = this.grid.model;
 
     model.document_name = data.name;
     model.user_data = data.user_data;
@@ -1297,7 +1297,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     // event or suppress it.
 
     // I guess what we really need is to figure out if that event is actually
-    // necessary, at least from that point. if we could drop it that would 
+    // necessary, at least from that point. if we could drop it that would
     // resolve this problem in the cleanest way.
 
     if (data.rendered_values && !recalculate) {
@@ -1366,7 +1366,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * (just sparklines atm) and update if necessary.
    */
   public UpdateAnnotations() {
-    for (const annotation of this.grid.model.annotations) {
+    for (const annotation of this.grid.model.active_sheet.annotations) {
       if (annotation.temp.vertex) {
         const vertex = annotation.temp.vertex as LeafVertex;
         if (vertex.state_id !== annotation.temp.state) {
@@ -1506,7 +1506,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * load (including undo), which does not send `create` events.
    */
   public InflateAnnotations(){
-    for (const annotation of this.grid.model.annotations) {
+    for (const annotation of this.grid.model.active_sheet.annotations) {
       this.InflateAnnotation(annotation);
     }
   }
@@ -1546,6 +1546,15 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
               if (parse_result &&
                   parse_result.expression &&
                   parse_result.expression.type === 'call' ){
+
+                // FIXME: make a method for doing this
+
+                this.parser.Walk(parse_result.expression, (unit) => {
+                  if (unit.type === 'address' || unit.type === 'range') {
+                    this.calculator.ResolveSheetID(unit);
+                  }
+                  return true;
+                });
 
                 const expr_name = parse_result.expression.name.toLowerCase();
                 const result = this.calculator.CalculateExpression(parse_result.expression);
@@ -1819,7 +1828,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     // add any required additional collector cells from annotations (charts)
 
-    for (const annotation of this.grid.model.annotations) {
+    for (const annotation of this.grid.model.active_sheet.annotations) {
       if (annotation.formula) {
         additional_cells = additional_cells.concat(
           this.calculator.MetadataReferences(annotation.formula));
@@ -1831,12 +1840,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.worker.postMessage({
       type: 'configure',
       locale: Localization.locale,
-      /*
-      sheet: this.grid.model.active_sheet.toJSON({
-        rendered_values: true, // has a different name, for some reason
-        preserve_type: true,
-      }),
-      */
       sheets: this.grid.model.sheets.map((sheet) => {
         return sheet.toJSON({
           rendered_values: true, // has a different name, for some reason

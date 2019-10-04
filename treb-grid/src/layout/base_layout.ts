@@ -190,8 +190,8 @@ export abstract class BaseLayout {
 
     // find index
     let index = -1;
-    for (let i = 0; i < this.model.annotations.length; i++ ){
-      if  (this.model.annotations[i] === annotation) {
+    for (let i = 0; i < this.model.active_sheet.annotations.length; i++ ){
+      if  (this.model.active_sheet.annotations[i] === annotation) {
         index = i;
         break;
       }
@@ -201,7 +201,7 @@ export abstract class BaseLayout {
       return false; // not found
     }
 
-    const target = Math.min(Math.max(0, index + delta), this.model.annotations.length - 1);
+    const target = Math.min(Math.max(0, index + delta), this.model.active_sheet.annotations.length - 1);
 
     if (target === index) {
       return false; // not moving (probably at edge)
@@ -209,13 +209,13 @@ export abstract class BaseLayout {
 
     // change in array order, so it's preserved
 
-    this.model.annotations.splice(index, 1);
-    this.model.annotations.splice(target, 0, annotation);
+    this.model.active_sheet.annotations.splice(index, 1);
+    this.model.active_sheet.annotations.splice(target, 0, annotation);
 
     // update layout, use z-indexes
 
-    for (let i = 0; i < this.model.annotations.length; i++ ){
-      const node = this.model.annotations[i].node;
+    for (let i = 0; i < this.model.active_sheet.annotations.length; i++ ){
+      const node = this.model.active_sheet.annotations[i].node;
       if (node) {
         node.style.zIndex = (i + 1).toString();
       }
