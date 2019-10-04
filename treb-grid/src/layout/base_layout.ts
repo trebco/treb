@@ -247,6 +247,15 @@ export abstract class BaseLayout {
     }
   }
 
+  /**
+   * remove annotation nodes from the container, without impacting
+   * the underlying data. annotations will still retain nodes, they
+   * just won't be attached to anything.
+   */
+  public RemoveAnnotationNodes() {
+    this.annotation_container.innerText = '';
+  }
+
   public AddAnnotation(annotation: Annotation) {
     if (!annotation.node) {
       throw new Error('annotation node missing');

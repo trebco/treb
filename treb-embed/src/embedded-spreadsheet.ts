@@ -1,6 +1,6 @@
 
 // treb imports
-import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants } from 'treb-grid';
+import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants, SheetChangeEvent } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
@@ -258,6 +258,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           this.UpdateSelection(event.selection);
           break;
 
+        case 'sheet-change':
+          this.OnSheetChange(event);
+          break;
+
         case 'data':
           // console.info('calling recalc', event);
           this.Recalculate(event).then(() => {
@@ -288,6 +292,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
                 if (event.annotation.update_callback) {
                   event.annotation.update_callback();
                 }
+                else {
+                  console.info('annotation update event without update callback');
+                }
                 this.calculator.UpdateAnnotations(event.annotation);
                 break;
               case 'resize':
@@ -296,6 +303,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
                 }
                 break;
             }
+          }
+          else {
+            console.info('annotation event without annotation');
           }
           break;
 
@@ -365,6 +375,18 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       }
     }
     */
+
+  }
+
+  public OnSheetChange(event: SheetChangeEvent) {
+
+    // call annotation method(s) on any annotations in active sheet
+
+    for (const annotation of event.activate.annotations) {
+      if (annotation.update_callback) {
+        annotation.update_callback();
+      }
+    }
 
   }
 
@@ -1512,7 +1534,16 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
   }
 
   public InflateAnnotation(annotation: Annotation) {
+
+    // only inflate once, to prevent overwriting instance methods
+
+    if (annotation.inflated) {
+      return;
+    }
+    annotation.inflated = true;
+
     if (annotation.node && annotation.data) {
+
       if (annotation.type === 'treb-chart') {
         if (!(self as any).TREB || !(self as any).TREB.CreateChart2) {
           console.warn('missing chart library');
@@ -1530,9 +1561,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           // we need a local flag...
 
           if (!this.registered_libraries['treb-charts']) {
-          // if (!(chart.constructor as any).functions_registered) {
             this.calculator.RegisterFunction((chart.constructor as any).chart_functions);
-            // (chart.constructor as any).functions_registered = true;
             this.registered_libraries['treb-charts'] = true;
 
             // update AC list
@@ -1540,7 +1569,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           }
 
           const update_chart = () => {
-
             if (annotation.formula) {
               const parse_result = this.parser.Parse(annotation.formula);
               if (parse_result &&
@@ -1581,7 +1609,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           };
 
           /** call once */
-          update_chart();
+          if (annotation.node.parentElement) {
+            update_chart();
+          }
 
         }
 

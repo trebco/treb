@@ -340,13 +340,19 @@ export class Grid {
     }
 
     if (add_to_sheet) {
+
+      // ensure we haven't already added this
+      if (!this.model.active_sheet.annotations.some((test) => test === annotation)){
+        this.model.active_sheet.annotations.push(annotation);
+      }
+
       this.AddAnnotation(annotation);
     }
     return annotation;
   }
 
   /** add an annotation. it will be returned with a usable node. */
-  public AddAnnotation(annotation: Annotation, toll_events = false) {
+  public AddAnnotation(annotation: Annotation, toll_events = false, add_to_layout = true) {
 
     if (!annotation.node) {
       annotation.node = document.createElement('div');
@@ -357,12 +363,6 @@ export class Grid {
 
         // support focus
         node.setAttribute('tabindex', '-1');
-
-        /*
-        node.addEventListener('mousemove', (event) => {
-          console.info(event.screenX, event.screenY, event.offsetX, event.offsetY);
-        })
-        */
 
         node.addEventListener('mousedown', (event) => {
 
@@ -433,6 +433,7 @@ export class Grid {
               node.style.width = (rect.width) + 'px';
 
             }, () => {
+              console.info('public resize', annotation)
               this.grid_events.Publish({type: 'annotation', annotation, event: 'resize'});
             });
 
@@ -546,12 +547,20 @@ export class Grid {
     }
 
     annotation.node.classList.add('annotation');
-    this.layout.AddAnnotation(annotation);
 
+    if (add_to_layout) {
+      this.layout.AddAnnotation(annotation);
+    }
+    else {
+      console.info('not adding annotation node to layout...');
+    }
+
+    /*
     // ensure we haven't already added this
     if (!this.model.active_sheet.annotations.some((test) => test === annotation)){
       this.model.active_sheet.annotations.push(annotation);
     }
+    */
 
     if (!toll_events) {
       this.grid_events.Publish({
@@ -586,17 +595,15 @@ export class Grid {
   }
 
   /**
-   * remove all annotations
+   * this method removes annotation nodes from the grid/layout, but
+   * doesn't affect the underlying data. this should be used to remove
+   * annotations when switching sheets.
    *
-   * FIXME: should this have an attached event? (...)
+   * you can also use it when cleaning up, if the underlying data will
+   * also be wiped from the model.
    */
-  public RemoveAllAnnotations() {
-    for (const annotation of this.model.active_sheet.annotations) {
-      if (annotation.node && annotation.node.parentElement) {
-        annotation.node.parentElement.removeChild(annotation.node);
-      }
-    }
-    // this.model.active_sheet.annotations.splice(0, this.model.active_sheet.annotations.length);
+  public RemoveAnnotationNodes() {
+    this.layout.RemoveAnnotationNodes();
   }
 
   /**
@@ -606,46 +613,18 @@ export class Grid {
    */
   public Serialize(options: SerializeOptions = {}) {
 
-    // selection moved to sheet, but it's not "live"; so we need to store
-    // the primary selection in the current active sheet
+    // selection moved to sheet, but it's not "live"; so we need to
+    // capture the primary selection in the current active sheet before
+    // we serialize it
 
     this.model.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
 
-    // FIXME: where do annotations go? (...)
-
-    // const data: any = this.model.active_sheet.toJSON(options);
-
-    // FIXME: if these things (selection, freeze) are "data" for purposes
-    // of serialization, then they should be in the data class (sheet),
-    // right? this gets sloppy if we have data in lots of different places.
-
-    // FIXME
-
-    // add selection to data, so we can restore it (primarily used for undo)
-    // COPY SO IT'S NOT LINKED
-
-
-    // this one can stay in sheet
-
-    // moved to sheet
-    // data.primary_selection = JSON.parse(JSON.stringify(this.primary_selection));
-
-    // frozen, but omit if empty/no data
-
-    // annotations: also copy
-
-    // data.annotations = JSON.parse(JSON.stringify(this.model.annotations));
-
-    // all sheets
+    // NOTE: annotations moved to sheets, they will be serialized in the sheets
 
     const sheet_data = this.model.sheets.map((sheet) => sheet.toJSON(options));
 
-    // FIXME: move
-
-    (sheet_data[0] as any).annotations = JSON.parse(JSON.stringify(this.model.active_sheet.annotations));
-
-    // NOTE: moving into a structured object (the sheet data is also
-    // structured, of course) but we are moving things out of sheet
+    // NOTE: moving into a structured object (the sheet data is also structured,
+    // of course) but we are moving things out of sheet (just  named ranges atm))
 
     return {
       sheet_data,
@@ -733,7 +712,7 @@ export class Grid {
       styles: Style.Properties[],
       render = false) {
 
-    this.RemoveAllAnnotations();
+    this.RemoveAnnotationNodes();
     this.UpdateSheets([new Sheet().toJSON()], true);
 
     // FIXME: are there named ranges in the data? (...)
@@ -823,7 +802,11 @@ export class Grid {
 
     this.model.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
 
-    this.RemoveAllAnnotations();
+    // hold this for the event (later)
+
+    const deactivate = this.model.active_sheet;
+
+    this.RemoveAnnotationNodes();
 
     // select target
 
@@ -847,7 +830,8 @@ export class Grid {
 
     const annotations = this.model.active_sheet.annotations;
     for (const element of annotations) {
-      this.AddAnnotation(element, true);
+      console.info('calling aa with false')
+      this.AddAnnotation(element, false); // true);
     }
 
     /* FIXME: store in sheet? (...)
@@ -876,6 +860,12 @@ export class Grid {
     }
 
     // FIXME: structure event
+
+    this.grid_events.Publish({
+      type: 'sheet-change',
+      deactivate,
+      activate: this.model.active_sheet,
+    });
 
   }
 
@@ -934,7 +924,9 @@ export class Grid {
   /** new version for multiple sheets */
   public UpdateSheets(data: any[], render = false) {
 
-    this.RemoveAllAnnotations();
+    // remove existing annotations from layout
+
+    this.RemoveAnnotationNodes();
 
     const sheets = data.map((sheet) => Sheet.FromJSON(sheet));
 
@@ -944,8 +936,12 @@ export class Grid {
       sheets.push(Sheet.Blank());
     }
 
+    // now assign sheets
+
     this.model.sheets = sheets;
     this.model.active_sheet = sheets[0];
+
+    // selection
 
     this.ClearSelection(this.primary_selection);
 
@@ -971,24 +967,22 @@ export class Grid {
 
     this.ResetMetadata(); // FIXME: ?
 
-    // scrub, then add any sheet annotations. note the caller will
-    // still have to inflate these or do whatever step is necessary to
-    // render.
-
-    // FIXME: move annotations
+    // for this version, we want to add all annotations at once; we only
+    // add annotations on the active sheet to the layout, but the rest are
+    // also created. the intent here is to ensure that any dependent cells
+    // (like MC results) are marked even before we open a particular sheet.
 
     /*
-    const annotations = data[0] ? (data[0] as any).annotations : undefined;
-    if (annotations && Array.isArray(annotations)) {
-      for (const element of annotations) {
-        this.AddAnnotation(new Annotation(element), true);
-      }
-    }
-    */
-
     const annotations = this.model.active_sheet.annotations;
     for (const element of annotations) {
       this.AddAnnotation(element, true);
+    }
+    */
+
+    for (const sheet of this.model.sheets) {
+      for (const annotation of sheet.annotations) {
+        this.AddAnnotation(annotation, true, (sheet === this.model.active_sheet));
+      }
     }
 
     // we do the tile rebuild just before the next paint, to prevent
@@ -1044,7 +1038,7 @@ export class Grid {
     // still have to inflate these or do whatever step is necessary to
     // render.
 
-    this.RemoveAllAnnotations();
+    this.RemoveAnnotationNodes();
 
     const annotations = (data as any).annotations;
     if (annotations && Array.isArray(annotations)) {
@@ -4976,7 +4970,7 @@ export class Grid {
           data_area = Area.Join(area, data_area);
         }
         else {
-          this.RemoveAllAnnotations();
+          this.RemoveAnnotationNodes();
           this.UpdateSheets([new Sheet().toJSON()], true);
           this.model.named_ranges.Reset();
           this.ClearSelection(this.primary_selection);

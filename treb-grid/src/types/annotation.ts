@@ -33,6 +33,9 @@ export class Annotation {
   /** also opaque data, but not serialized. */
   public temp: any = {};
 
+  /** flag indicating we have inflated this. not serialized */
+  public inflated = false;
+
   /** if function exists, will be called when the annotation is resized */
   public resize_callback?: () => void;
 

@@ -2,6 +2,13 @@
 import { GridSelection } from './grid_selection';
 import { SheetEvent } from './sheet_types';
 import { Annotation } from './annotation';
+import { Sheet } from './sheet';
+
+export interface SheetChangeEvent {
+  type: 'sheet-change';
+  activate: Sheet;
+  deactivate: Sheet;
+}
 
 export interface GridSelectionEvent {
   type: 'selection';
@@ -27,8 +34,9 @@ export interface AnnotationEvent {
 }
 
 export type GridEvent
-  = GridSelectionEvent
+  = SheetEvent
   | StructureEvent
-  | SheetEvent
   | AnnotationEvent
+  | SheetChangeEvent
+  | GridSelectionEvent
   ;
