@@ -4,7 +4,6 @@ import { EventSource } from 'treb-utils';
 import { Sheet } from './sheet';
 import { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
-import { Rectangle } from 'treb-base-types';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';
@@ -39,9 +38,29 @@ export type TabEvent
    | ActivateSheetEvent
    ;
 
+/**
+ * tabs for multiple sheets. at the bottom, atm (FIXME: options?)
+ *
+ * rename tabs (sheets) by double-clicking. this triggers a global
+ * rename over all cells and annotations.
+ *
+ * reorder tabs by dragging. reorders the array, but order is not
+ * material to any other module, so it's basically just housekeeping.
+ *
+ * add a new tab with a special (+) tab (last).
+ *
+ * FIXME: delete tabs... add an (x) to each tab? don't really want to
+ * do that. right-click is out. ???
+ *
+ */
 export class TabBar extends EventSource<TabEvent> {
 
   private node?: HTMLElement;
+
+  private double_click_data: {
+    index?: number;
+    timeout?: any;
+  } = {};
 
   constructor(
       private layout: BaseLayout,
@@ -53,8 +72,29 @@ export class TabBar extends EventSource<TabEvent> {
 
   }
 
+  public IsDoubleClick(index: number, timeout = 300){
+
+    if (this.double_click_data.index === index ) {
+      clearTimeout(this.double_click_data.timeout);
+      this.double_click_data.index = undefined;
+      this.double_click_data.timeout = undefined;
+      return true;
+    }
+    else {
+      if (this.double_click_data.timeout) {
+        clearTimeout(this.double_click_data.timeout);
+      }
+      this.double_click_data.index = index;
+      this.double_click_data.timeout = setTimeout(() => {
+        this.double_click_data.index = undefined;
+        this.double_click_data.timeout = undefined;
+      }, timeout);
+    }
+
+  }
+
   /**
-   *
+   * update tabs from model.
    */
   public Update() {
 
@@ -82,6 +122,11 @@ export class TabBar extends EventSource<TabEvent> {
       const mousedown = (event: MouseEvent) => {
         event.stopPropagation();
         event.preventDefault();
+
+        if (this.IsDoubleClick(index)) {
+          return; // seems to allow us to process double clicks normally...
+        }
+
         this.Publish({ type: 'activate-sheet', sheet });
 
         let rectangles = tabs.map((element) => element.getBoundingClientRect());
@@ -209,7 +254,7 @@ export class TabBar extends EventSource<TabEvent> {
   }
 
   /**
-   *
+   * initialize, build node structure
    */
   private Init(grid_container: HTMLElement) {
 
