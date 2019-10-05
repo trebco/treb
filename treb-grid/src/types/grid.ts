@@ -2795,6 +2795,20 @@ export class Grid {
           delta.columns++;
           break;
 
+        case 'Delete':
+          if (event.shiftKey) {
+            event.stopPropagation();
+            event.preventDefault();
+            for (let i = 0; i < this.model.sheets.length; i++) {
+              if (this.model.sheets[i] === this.model.active_sheet) {
+                this.DeleteSheet(i);
+                break;
+              }
+            }
+            return;
+          }
+          break;
+
         case '/':
           event.stopPropagation();
           event.preventDefault();

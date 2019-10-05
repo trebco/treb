@@ -17,7 +17,7 @@
       z-index: 1;
     }
 
-    & .tab {
+    & .tab, & .add-tab {
 
       font-size: .75em;
       padding: .25em .75em;
@@ -32,21 +32,37 @@
       border-top-width: 0px;
 
       z-index: 1;
+
     }
 
-    & .tab { // + .tab {
-      // margin-left: -2px;
+    /*
+    & .tab::after {
+      content: 'x';
+      padding-left: .5em;
+      opacity: 0;
+    }
+    */
+
+    & .tab, & .add-tab {
       margin-right: -2px;
     }
 
     & .tab.selected {
       background: #fff;
       z-index: 2;
+
+      /*
+      &::after {
+        opacity: .5;
+
+        &:hover {
+          opacity: 1;
+        }
+
+      }
+      */
     }
 
-    & .tab.hot {
-      background: pink;
-    }
 
   }
 

@@ -242,7 +242,7 @@ export class TabBar extends EventSource<TabEvent> {
     }
 
     const add_tab = document.createElement('a');
-    add_tab.classList.add('tab');
+    add_tab.classList.add('add-tab');
     add_tab.style.order = (this.model.sheets.length * 2).toString();
     add_tab.innerText = '+';
     add_tab.addEventListener('click', () => {
