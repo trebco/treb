@@ -4,15 +4,15 @@ todo list, instead of scattering among projects.
 
 ## TODO
 
-### multisheet issues
+### multisheet issues/pending
+
+ + selecting cells in other sheets when entering formula **important**
 
  + rewrite formula in other sheets when inserting/deleting rows/columns
  + rewrite formula in annotations when inserting/deleting rows/columns
- + delete sheets
- + selecting cells in other sheets when entering formula
  + cut and paste in different sheets (what is the desired behavior?)
-
  + add/remove sheet does not run through exec command
+ + toggle tab bar in embedded sheet? (...)
 
 ### grid/sheet
 
@@ -43,4 +43,5 @@ todo list, instead of scattering among projects.
    - support changing sheet names
    - rewrite formula when changing sheet names
    - re-order sheets
+   - delete sheets: ctrl+delete (not optimal)
 

@@ -2796,7 +2796,8 @@ export class Grid {
           break;
 
         case 'Delete':
-          if (event.shiftKey) {
+          // if (event.shiftKey) // ctrl+shift+delete seems to be "delete history" in all browsers...
+          {
             event.stopPropagation();
             event.preventDefault();
             for (let i = 0; i < this.model.sheets.length; i++) {
