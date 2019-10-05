@@ -8,10 +8,11 @@ todo list, instead of scattering among projects.
 
  + rewrite formula in other sheets when inserting/deleting rows/columns
  + rewrite formula in annotations when inserting/deleting rows/columns
- + rewrite formula when changing sheet names
- + support changing sheet names
+ + delete sheets
  + selecting cells in other sheets when entering formula
  + cut and paste in different sheets (what is the desired behavior?)
+
+ + add/remove sheet does not run through exec command
 
 ### grid/sheet
 
@@ -37,4 +38,9 @@ todo list, instead of scattering among projects.
    - needs to be accessible to calculator for function resolution
    - (the above two suggest putting it in the 'sheet' object)
    - needs to adjust for add/remove rows/columns
+
+ + multisheet
+   - support changing sheet names
+   - rewrite formula when changing sheet names
+   - re-order sheets
 

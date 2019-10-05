@@ -34,13 +34,18 @@
       z-index: 1;
     }
 
-    & .tab + .tab {
-      margin-left: -2px;
+    & .tab { // + .tab {
+      // margin-left: -2px;
+      margin-right: -2px;
     }
 
     & .tab.selected {
       background: #fff;
       z-index: 2;
+    }
+
+    & .tab.hot {
+      background: pink;
     }
 
   }

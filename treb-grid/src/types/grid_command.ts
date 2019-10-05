@@ -40,6 +40,8 @@ export enum CommandKey {
   SetName,
   ShowHeaders,
   ActivateSheet,
+  RenameSheet,
+  ReorderSheet,
 
 }
 
@@ -223,6 +225,29 @@ export interface ActivateSheetCommand {
 }
 
 /**
+ * rename a sheet. options are like ActivateSheetCommand, except we
+ * have to be a little careful about name old/new
+ */
+export interface RenameSheetCommand {
+  key: CommandKey.RenameSheet;
+  id?: number;
+  current_name?: string;
+  index?: number;
+  sheet?: Sheet;
+  new_name: string; // required
+}
+
+/**
+ * reorder sheet; move sheet (X) before (Y). if (Y) is larger than the
+ * list length, moves to end.
+ */
+export interface ReorderSheetCommand {
+  key: CommandKey.ReorderSheet;
+  index: number;
+  move_before: number;
+}
+
+/**
  * ephemeral flag added to commands.
  */
 export interface Ephemeral {
@@ -245,6 +270,8 @@ export type Command =
   | InsertRowsCommand
   | ShowHeadersCommand
   | UpdateStyleCommand
+  | RenameSheetCommand
+  | ReorderSheetCommand
   | UnmergeCellsCommand
   | ResizeColumnsCommand
   | InsertColumnsCommand

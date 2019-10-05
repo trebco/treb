@@ -7,6 +7,7 @@ import { EventSource, Yield, SerializeHTML } from 'treb-utils';
 import { NumberFormatCache, RDateScale } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
+import { TabBar } from './tab_bar';
 import { Sheet } from './sheet';
 import { TileRange, BaseLayout } from '../layout/base_layout';
 import { GridLayout } from '../layout/grid_layout';
@@ -28,6 +29,8 @@ import { SerializeOptions } from './serialize_options';
 import { UA } from '../util/ua';
 import { Annotation } from './annotation';
 import { Autocomplete } from '../editors/autocomplete';
+
+import { MouseDrag } from './drag_mask';
 
 import { Command, CommandKey, CommandRecord,
          SetRangeCommand, FreezeCommand, UpdateBordersCommand,
@@ -230,7 +233,8 @@ export class Grid {
 
   // FIXME: move
 
-  private tab_bar?: HTMLElement;
+  // private tab_bar?: HTMLElement;
+  private tab_bar?: TabBar;
 
   // --- constructor -----------------------------------------------------------
 
@@ -384,7 +388,7 @@ export class Grid {
               y: bounds.top + event.offsetY - rect.top,
             };
 
-            this.MouseDrag('move', (move_event) => {
+            MouseDrag(this.layout.mask, 'move', (move_event) => {
 
               rect.top = move_event.offsetY - offset.y;
               rect.left = move_event.offsetX - offset.x;
@@ -420,7 +424,7 @@ export class Grid {
               y: bounds.top + event.offsetY - rect.height,
             };
 
-            this.MouseDrag('nw-resize', (move_event) => {
+            MouseDrag(this.layout.mask, 'nw-resize', (move_event) => {
 
               rect.height = move_event.offsetY - offset.y;
               rect.width = move_event.offsetX - offset.x;
@@ -632,6 +636,7 @@ export class Grid {
 
     return {
       sheet_data,
+      active_sheet: this.model.active_sheet.id,
       named_ranges: this.model.named_ranges.Count() ?
           this.model.named_ranges.Serialize() :
           undefined,
@@ -874,7 +879,7 @@ export class Grid {
       activate: this.model.active_sheet,
     });
 
-    this.RebuildTabBar();
+    if (this.tab_bar) { this.tab_bar.Update(); }
 
   }
 
@@ -907,6 +912,8 @@ export class Grid {
       this.ActivateSheet({key: CommandKey.ActivateSheet, index});
     }
 
+    if (this.tab_bar) { this.tab_bar.Update(); }
+
   }
 
   public AddSheet(name = Sheet.default_sheet_name, activate = true) {
@@ -934,7 +941,7 @@ export class Grid {
       this.ActivateSheet({ key: CommandKey.ActivateSheet, id: sheet.id });
     }
 
-    this.RebuildTabBar();
+    if (this.tab_bar) { this.tab_bar.Update(); }
 
   }
 
@@ -1017,7 +1024,7 @@ export class Grid {
       this.Repaint(false, false);
     }
 
-    this.RebuildTabBar();
+    if (this.tab_bar) { this.tab_bar.Update(); }
 
   }
 
@@ -1179,7 +1186,30 @@ export class Grid {
     }
 
     if (this.options.tab_bar) {
-      this.InitTabBar(grid_container);
+      this.tab_bar = new TabBar(this.layout, this.model, grid_container);
+      this.tab_bar.Subscribe((event) => {
+        switch (event.type) {
+          case 'cancel':
+            break;
+
+          case 'reorder-sheet':
+            this.ReorderSheet(event.index, event.move_before);
+            break;
+
+          case 'add-sheet':
+            this.AddSheet(undefined, true);
+            break;
+
+          case 'rename-sheet':
+            this.RenameSheet(event.sheet, event.name);
+            break;
+
+          case 'activate-sheet':
+            this.ActivateSheet({ key: CommandKey.ActivateSheet, sheet: event.sheet });
+            break;
+        }
+        this.Focus();
+      });
     }
 
     // set container and add class for our styles
@@ -1600,6 +1630,26 @@ export class Grid {
     });
   }
 
+  /** move sheet (X) before sheet (Y) */
+  public ReorderSheet(index: number, move_before: number) {
+    this.ExecCommand({
+      key: CommandKey.ReorderSheet,
+      index,
+      move_before,
+    });
+  }
+
+  /**
+   * rename active sheet
+   */
+  public RenameSheet(sheet = this.model.active_sheet, name: string) {
+    this.ExecCommand({
+      key: CommandKey.RenameSheet,
+      new_name: name,
+      sheet,
+    });
+  }
+
   /**
    * insert row at cursor
    */
@@ -1759,54 +1809,7 @@ export class Grid {
     }
   }
 
-  private InitTabBar(grid_container: HTMLElement) {
 
-    const container = document.createElement('div');
-    container.classList.add('treb-tab-bar-container');
-    grid_container.appendChild(container);
-
-    this.tab_bar = document.createElement('div');
-    this.tab_bar.classList.add('treb-tab-bar');
-    container.appendChild(this.tab_bar);
-
-  }
-
-  private RebuildTabBar() {
-
-    if (!this.tab_bar) {
-      return;
-    }
-
-    this.tab_bar.innerText = '';
-
-    // if (this.model.sheets.length <= 1) { return; }
-
-    for (const sheet of this.model.sheets) {
-      const tab = document.createElement('a');
-      tab.classList.add('tab');
-
-      if (sheet === this.model.active_sheet) {
-        tab.classList.add('selected');
-      }
-
-      tab.innerText = sheet.name;
-      tab.addEventListener('click', () => {
-        this.ActivateSheet({ key: CommandKey.ActivateSheet, id: sheet.id });
-      });
-
-      this.tab_bar.appendChild(tab);
-    }
-
-    const add_tab = document.createElement('a');
-    add_tab.classList.add('tab');
-    add_tab.innerText = '+';
-    add_tab.addEventListener('click', () => {
-      this.AddSheet(undefined, true);
-    });
-
-    this.tab_bar.appendChild(add_tab);
-
-  }
 
   private InitFormulaBar(grid_container: HTMLElement, autocomplete: Autocomplete) {
 
@@ -2064,62 +2067,6 @@ export class Grid {
 
   }
 
-  /**
-   * generic method for mouse drag handling. this method will insert an
-   * event mask to capture mouse events over the whole window, and call
-   * optional functions on events.
-   *
-   * @param classes optional list of classes to attach to the mask node
-   * @param move callback function on mouse move events
-   * @param end callback function on end (mouse up or button up)
-   */
-  private MouseDrag(
-      classes: string|string[] = [],
-      move?: (event: MouseEvent) => void,
-      end?: (event: MouseEvent) => void) {
-
-    if (typeof classes === 'string') {
-      classes = [classes];
-    }
-
-    let cleanup: () => void;
-
-    const handle_up = (event: MouseEvent) => {
-      event.stopPropagation();
-      event.preventDefault();
-      cleanup();
-      if (end) end.call(this, event);
-    };
-
-    const handle_move = (event: MouseEvent) => {
-      event.stopPropagation();
-      event.preventDefault();
-      if (!event.buttons) {
-        cleanup();
-        if (end) end.call(this, event);
-        return;
-      }
-      if (move) move.call(this, event);
-    };
-
-    cleanup = () => {
-      this.layout.mask.style.display = 'none';
-      this.layout.mask.removeEventListener('mousemove', handle_move);
-      this.layout.mask.removeEventListener('mouseup', handle_up);
-      for (const class_entry of classes) this.layout.mask.classList.remove(class_entry);
-    };
-
-    for (const class_entry of classes) this.layout.mask.classList.add(class_entry);
-    this.layout.mask.style.display = 'block';
-
-    // listeners are only added if we're going to use the callbacks.
-    // still safe to call remove listener even if they're not added.
-
-    if (move) this.layout.mask.addEventListener('mousemove', handle_move);
-    if (end) this.layout.mask.addEventListener('mouseup', handle_up);
-  }
-
-
   private MouseMove_RowHeader(event: MouseEvent) {
 
     const header = this.layout.CoordinateToRowHeader(event.offsetY);
@@ -2219,7 +2166,7 @@ export class Grid {
         y: tooltip_base,
       });
 
-      this.MouseDrag('row-resize', (move_event: MouseEvent) => {
+      MouseDrag(this.layout.mask, 'row-resize', (move_event: MouseEvent) => {
         const delta = Math.max(-original_height, Math.round(move_event.offsetY - base));
         if (delta + original_height !== height) {
 
@@ -2299,7 +2246,7 @@ export class Grid {
       }
       this.selection_renderer.RenderSelections();
 
-      this.MouseDrag([], (move_event: MouseEvent) => {
+      MouseDrag(this.layout.mask, [], (move_event: MouseEvent) => {
         const address = this.layout.CoordinateToRowHeader(move_event.offsetY - offset.y);
         const area = new Area(address, base_address, true);
 
@@ -2386,7 +2333,7 @@ export class Grid {
         y: Math.round(bounding_rect.bottom + 10),
       });
 
-      this.MouseDrag('column-resize', (move_event: MouseEvent) => {
+      MouseDrag(this.layout.mask, 'column-resize', (move_event: MouseEvent) => {
         const delta = Math.max(-original_width, Math.round(move_event.offsetX - base));
 
         if (delta + original_width !== width) {
@@ -2463,7 +2410,7 @@ export class Grid {
       }
       this.selection_renderer.RenderSelections();
 
-      this.MouseDrag([], (move_event: MouseEvent) => {
+      MouseDrag(this.layout.mask, [], (move_event: MouseEvent) => {
         const address = this.layout.CoordinateToColumnHeader(move_event.offsetX - offset.x);
         const area = new Area(address, base_address, true);
         if (selection.empty || !area.Equals(selection.area)) {
@@ -2680,7 +2627,7 @@ export class Grid {
           column: this.model.active_sheet.columns - 1,
         })).Expand(-1, -1);
 
-    this.MouseDrag(overlay_classes, (move_event: MouseEvent) => {
+    MouseDrag(this.layout.mask, overlay_classes, (move_event: MouseEvent) => {
 
       // check if we are oob the grid
 
@@ -4576,6 +4523,81 @@ export class Grid {
   }
 
   /**
+   * rename a sheet. this requires changing any formulae that refer to the
+   * old name to refer to the new name. if there are any references by ID
+   * those don't have to change.
+   *
+   * FIXME: can we do this using the dependency graph? (...)
+   */
+  private RenameSheetInternal(target: Sheet, name: string) {
+
+    // validate name... ?
+
+    if (!name || /['\+-=\*\\]/.test(name)) {
+      throw new Error('invalid sheet name');
+    }
+
+    // also can't have two sheets with the same name
+
+    const compare = name.toLowerCase();
+    for (const sheet of this.model.sheets) {
+      if (sheet !== target && sheet.name.toLowerCase() === compare) {
+        throw new Error('sheet name already exists');
+      }
+    }
+
+    const old_name = target.name.toLowerCase();
+    target.name = name;
+    for (const sheet of this.model.sheets) {
+
+      // cells
+      sheet.cells.IterateAll((cell: Cell) => {
+        if (cell.type === ValueType.formula) {
+          let modified = false;
+          const parsed = this.parser.Parse(cell.value || '');
+          if (parsed.expression) {
+            this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
+              if (element.type === 'address') {
+                if (element.sheet && element.sheet.toLowerCase() === old_name) {
+                  element.sheet = name;
+                  modified = true;
+                }
+              }
+              return true; // continue walk
+            });
+            if (modified) {
+              cell.value = '=' + this.parser.Render(parsed.expression);
+            }
+          }
+        }
+      });
+
+      // annotations
+      for (const annotation of sheet.annotations) {
+        if (annotation.formula) {
+          let modified = false;
+          const parsed = this.parser.Parse(annotation.formula || '');
+          if (parsed.expression) {
+            this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
+              if (element.type === 'address') {
+                if (element.sheet && element.sheet.toLowerCase() === old_name) {
+                  element.sheet = name;
+                  modified = true;
+                }
+              }
+              return true; // continue walk
+            });
+            if (modified) {
+              annotation.formula = '=' + this.parser.Render(parsed.expression);
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  /**
    * FIXME: should be API method
    * FIXME: need to handle annotations that are address-based
    *
@@ -5152,6 +5174,62 @@ export class Grid {
           const area = this.ApplyBordersInternal(command);
           render_area = Area.Join(area, render_area);
           style_area = Area.Join(area, style_area);
+        }
+        break;
+
+      case CommandKey.ReorderSheet:
+        {
+          const sheets: Sheet[] = [];
+          const target = this.model.sheets[command.index];
+
+          for (let i = 0; i < this.model.sheets.length; i++) { 
+            if (i !== command.index) {
+              if (i === command.move_before) {
+                sheets.push(target);
+              }
+              sheets.push(this.model.sheets[i]);
+            }
+          }
+
+          if (command.move_before >= this.model.sheets.length) {
+            sheets.push(target);
+          }
+
+          this.model.sheets = sheets;
+          if (this.tab_bar) { this.tab_bar.Update(); }
+          structure_event = true;
+
+        }
+        break;
+
+      case CommandKey.RenameSheet:
+        {
+          if (!command.sheet) {
+            if (command.index) {
+              command.sheet = this.model.sheets[command.index];
+            }
+            else if (command.id) {
+              for (const sheet of this.model.sheets) {
+                if (sheet.id === command.id) {
+                  command.sheet = sheet;
+                  break;
+                }
+              }
+            }
+            else if (command.current_name) {
+              for (const sheet of this.model.sheets) {
+                if (sheet.name === command.current_name) {
+                  command.sheet = sheet;
+                  break;
+                }
+              }
+            }
+          }
+          if (command.sheet) {
+            this.RenameSheetInternal(command.sheet, command.new_name);
+            if (this.tab_bar) { this.tab_bar.Update(); }
+            structure_event = true;
+          }
         }
         break;
 

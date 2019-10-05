@@ -1,6 +1,6 @@
 
 // treb imports
-import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants, SheetChangeEvent } from 'treb-grid';
+import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants, SheetChangeEvent, CommandKey } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
@@ -1348,6 +1348,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         this.ScrollTo(scroll);
         ds = document.body.scrollTop;
       });
+    }
+
+    if (data.active_sheet) {
+      this.grid.ActivateSheet({ key: CommandKey.ActivateSheet, id: data.active_sheet });
     }
 
   }

@@ -24,6 +24,7 @@ export interface TREBDocument {
   user_data?: any;
   sheet_data?: any;
   decimal_mark?: '.' | ',';
+  active_sheet?: number;
   simulation_data?: TREBSimulationData;
   rendered_values?: boolean;
   named_ranges?: {[index: string]: IArea};

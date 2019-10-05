@@ -178,26 +178,30 @@ export class FormattingToolbar {
     this.toolbar.ClearDocumentColors();
     this.toolbar.ClearDocumentFormats();
 
-    const serialized = this.grid.model.active_sheet.toJSON();
+    for (const sheet of this.grid.model.sheets) {
 
-    for (const style of serialized.cell_style_refs) {
-      if (style.background) this.toolbar.AddDocumentColor(style.background);
-      if (style.text_color) this.toolbar.AddDocumentColor(style.text_color);
-      if (style.number_format) this.toolbar.AddDocumentFormat(style.number_format);
-    }
+      const serialized = sheet.toJSON();
 
-    for (const key of Object.keys(serialized.column_style)) {
-      const style = serialized.column_style[Number(key)];
-      if (style.background) this.toolbar.AddDocumentColor(style.background);
-      if (style.text_color) this.toolbar.AddDocumentColor(style.text_color);
-      if (style.number_format) this.toolbar.AddDocumentFormat(style.number_format);
-    }
+      for (const style of serialized.cell_style_refs) {
+        if (style.background) this.toolbar.AddDocumentColor(style.background);
+        if (style.text_color) this.toolbar.AddDocumentColor(style.text_color);
+        if (style.number_format) this.toolbar.AddDocumentFormat(style.number_format);
+      }
 
-    for (const key of Object.keys(serialized.row_style)) {
-      const style = serialized.row_style[Number(key)];
-      if (style.background) this.toolbar.AddDocumentColor(style.background);
-      if (style.text_color) this.toolbar.AddDocumentColor(style.text_color);
-      if (style.number_format) this.toolbar.AddDocumentFormat(style.number_format);
+      for (const key of Object.keys(serialized.column_style)) {
+        const style = serialized.column_style[Number(key)];
+        if (style.background) this.toolbar.AddDocumentColor(style.background);
+        if (style.text_color) this.toolbar.AddDocumentColor(style.text_color);
+        if (style.number_format) this.toolbar.AddDocumentFormat(style.number_format);
+      }
+
+      for (const key of Object.keys(serialized.row_style)) {
+        const style = serialized.row_style[Number(key)];
+        if (style.background) this.toolbar.AddDocumentColor(style.background);
+        if (style.text_color) this.toolbar.AddDocumentColor(style.text_color);
+        if (style.number_format) this.toolbar.AddDocumentFormat(style.number_format);
+      }
+
     }
 
   }
