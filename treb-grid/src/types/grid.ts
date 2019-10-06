@@ -467,7 +467,7 @@ export class Grid {
               node.style.width = (rect.width) + 'px';
 
             }, () => {
-              console.info('public resize', annotation)
+              // console.info('public resize', annotation)
               this.grid_events.Publish({type: 'annotation', annotation, event: 'resize'});
             });
 
