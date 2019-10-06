@@ -374,6 +374,14 @@ export class Grid {
 
         node.addEventListener('mousedown', (event) => {
 
+          const origin = {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+          };
+          const bounding_rect = node.getBoundingClientRect();
+
           // FIXME: these 13s come from the stylesheet, we need to
           // either read these or make them dynamic somehow
 
@@ -382,16 +390,26 @@ export class Grid {
             event.preventDefault();
             node.focus();
 
-            const bounds = node.getBoundingClientRect();
             const offset = {
-              x: bounds.left + event.offsetX - rect.left,
-              y: bounds.top + event.offsetY - rect.top,
+              x: bounding_rect.left + event.offsetX - rect.left,
+              y: bounding_rect.top + event.offsetY - rect.top,
             };
 
             MouseDrag(this.layout.mask, 'move', (move_event) => {
 
               rect.top = move_event.offsetY - offset.y;
               rect.left = move_event.offsetX - offset.x;
+
+              if (move_event.shiftKey) {
+
+                // move in one direction at a time
+                const dx = Math.abs(rect.left - origin.left);
+                const dy = Math.abs(rect.top - origin.top);
+
+                if (dx <= dy) { rect.left = origin.left; }
+                else { rect.top = origin.top; }
+
+              }
 
               if (move_event.ctrlKey) {
                 const point = this.layout.ClampToGrid({
@@ -411,7 +429,6 @@ export class Grid {
             return;
           }
 
-          const bounding_rect = node.getBoundingClientRect();
           if ((bounding_rect.width - event.offsetX <= 13) &&
               (bounding_rect.height - event.offsetY <= 13)) {
             event.stopPropagation();
@@ -428,6 +445,15 @@ export class Grid {
 
               rect.height = move_event.offsetY - offset.y;
               rect.width = move_event.offsetX - offset.x;
+
+              if (move_event.shiftKey) {
+                // move in one direction at a time
+                const dx = Math.abs(rect.height - origin.height);
+                const dy = Math.abs(rect.width - origin.width);
+
+                if (dx > dy) { rect.width = origin.width; }
+                else { rect.height = origin.height; }
+              }
 
               if (move_event.ctrlKey) {
                 const point = this.layout.ClampToGrid({
