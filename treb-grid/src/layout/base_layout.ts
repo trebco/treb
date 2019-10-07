@@ -251,9 +251,25 @@ export abstract class BaseLayout {
    * remove annotation nodes from the container, without impacting
    * the underlying data. annotations will still retain nodes, they
    * just won't be attached to anything.
+   *
+   * NOTE: IE destroys nodes if you do this? (...)
+   * patch in legacy... actually we'll do it here
    */
   public RemoveAnnotationNodes() {
-    this.annotation_container.innerText = '';
+
+    // we were using a shortcut, innerText = '', but if you do that
+    // in IE it destroys the nodes (!) -- so we need to explicitly
+    // remove them
+
+    // FIXME: we are explicitly adding them, why not just maintain a list?
+
+    const children = Array.prototype.map.call(
+      this.annotation_container.children, (node) => node) as HTMLElement[];
+
+    for (const child of children) {
+      this.annotation_container.removeChild(child);
+    }
+
   }
 
   public AddAnnotation(annotation: Annotation) {

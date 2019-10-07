@@ -111,7 +111,13 @@ export class TabBar extends EventSource<TabEvent> {
 
       const sheet = this.model.sheets[index];
 
-      const tab = document.createElement('a');
+      // IE11 won't fire events on an A element? or is that just because
+      // of the default display value? (actually I am setting display...)
+
+      // doesn't really matter what the element is, so default to something
+      // IE11 will support (sigh)
+
+      const tab = document.createElement('div');
       tab.classList.add('tab');
       tab.style.order = (index * 2).toString();
 
@@ -195,7 +201,6 @@ export class TabBar extends EventSource<TabEvent> {
         tab.contentEditable = 'true';
 
         const selection = window.getSelection();
-
         if (selection) {
           selection.removeAllRanges();
           const range = document.createRange();
@@ -216,7 +221,6 @@ export class TabBar extends EventSource<TabEvent> {
               break;
 
             default:
-              // console.info(event.key);
               return;
           }
           inner_event.stopPropagation();
@@ -229,6 +233,7 @@ export class TabBar extends EventSource<TabEvent> {
         });
 
         tab.focus();
+
       };
 
       tab.innerText = sheet.name;

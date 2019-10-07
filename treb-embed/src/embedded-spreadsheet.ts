@@ -280,6 +280,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           // not on move or resize)
 
           if (event.annotation) {
+
             this.DocumentChange();
             switch (event.event) {
               case 'create':
@@ -1031,6 +1032,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         event.stopPropagation();
         event.preventDefault();
         const files = file_chooser.files;
+
+        // FIXME: setting explicitly here triggers another change, at least
+        // in IE11? or is something else causing that? see if there's a fix.
+
         if (files) {
           this.LoadFileInternal(files[0]).then(() => {
             file_chooser.value = ''; // allow same selection
@@ -1049,6 +1054,8 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   /** called when we have a file to write to */
   public LoadFileInternal(file: File) {
+
+    if (!file) { return Promise.resolve(); }
 
     const reader = new FileReader();
 
@@ -1574,6 +1581,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           }
 
           const update_chart = () => {
+
             if (annotation.formula) {
               const parse_result = this.parser.Parse(annotation.formula);
               if (parse_result &&

@@ -586,7 +586,7 @@ export class Grid {
       this.layout.AddAnnotation(annotation);
     }
     else {
-      console.info('not adding annotation node to layout...');
+      // console.info('not adding annotation node to layout...');
     }
 
     /*
@@ -804,10 +804,6 @@ export class Grid {
 
     const selecting_argument = this.SelectingArgument();
 
-    if (selecting_argument) {
-      console.info("AS, SA");
-    }
-
     // console.info('activate sheet', command);
 
     let candidate = this.model.sheets[0];
@@ -840,7 +836,9 @@ export class Grid {
 
     // ok, activate...
 
-    if (this.model.active_sheet === candidate) { return; }
+    if (this.model.active_sheet === candidate) {
+      return;
+    }
 
     // cache primary selection in the sheet we are deactivating
     // FIXME: cache scroll position, too!
@@ -874,7 +872,7 @@ export class Grid {
 
     }
     else {
-
+      // ...
     }
 
     // scrub, then add any sheet annotations. note the caller will
@@ -2827,6 +2825,7 @@ export class Grid {
           break;
 
         case 'Delete':
+        case 'Del':
           // if (event.shiftKey) // ctrl+shift+delete seems to be "delete history" in all browsers...
           {
             event.stopPropagation();
