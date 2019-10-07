@@ -1,6 +1,6 @@
 
 // treb imports
-import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants, SheetChangeEvent, CommandKey } from 'treb-grid';
+import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants, SheetChangeEvent, CommandKey, GridOptions } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
@@ -228,18 +228,21 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     // create + init grid
 
-    this.grid = new Grid({
-        expand: false,
-        insert_function_button: false,
-        in_cell_editor: true,
-        formula_bar: this.options.formula_bar,
-        repaint_on_cell_change: false,
-        scrollbars: this.options.scrollbars,
-        tab_bar: this.options.tab_bar,
-      },
-      // theme
-    );
+    const grid_options: GridOptions = {
+      expand: false,
+      insert_function_button: false,
+      in_cell_editor: true,
+      formula_bar: this.options.formula_bar,
+      repaint_on_cell_change: false,
+      scrollbars: this.options.scrollbars,
+      tab_bar: this.options.tab_bar,
+    };
 
+    if (this.options.add_tab) {
+      grid_options.add_tab = this.options.add_tab;
+    }
+
+    this.grid = new Grid(grid_options);
     this.grid.Initialize(this.node);
 
     // dnd

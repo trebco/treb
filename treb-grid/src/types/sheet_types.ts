@@ -36,6 +36,11 @@ export interface FreezePane {
   columns: number;
 }
 
+export interface ScrollOffset {
+  x: number;
+  y: number;
+}
+
 export interface SerializedSheet {
 
   // version: string;
@@ -62,5 +67,6 @@ export interface SerializedSheet {
 
   selection: GridSelection;
   annotations?: any[];
+  scroll?: ScrollOffset;
 
 }

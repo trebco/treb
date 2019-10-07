@@ -653,6 +653,10 @@ export class Grid {
 
     this.model.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
 
+    // same for scroll offset
+
+    this.model.active_sheet.scroll_offset = this.layout.scroll_offset;
+
     // NOTE: annotations moved to sheets, they will be serialized in the sheets
 
     const sheet_data = this.model.sheets.map((sheet) => sheet.toJSON(options));
@@ -844,6 +848,7 @@ export class Grid {
     // FIXME: cache scroll position, too!
 
     this.model.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
+    this.model.active_sheet.scroll_offset = this.layout.scroll_offset;
 
     // hold this for the event (later)
 
@@ -910,6 +915,8 @@ export class Grid {
 
     if (this.tab_bar) { this.tab_bar.Update(); }
 
+    this.layout.scroll_offset = this.model.active_sheet.scroll_offset;
+
   }
 
   public DeleteSheet(index = 0) {
@@ -946,6 +953,11 @@ export class Grid {
   }
 
   public AddSheet(name = Sheet.default_sheet_name, activate = true) {
+
+    if (!this.options.add_tab) {
+      console.warn('add tab option not set or false');
+      return;
+    }
 
     // validate name...
 
@@ -1053,7 +1065,9 @@ export class Grid {
       this.Repaint(false, false);
     }
 
-    if (this.tab_bar) { this.tab_bar.Update(); }
+    if (this.tab_bar) {
+      this.tab_bar.Update();
+    }
 
   }
 
@@ -1215,7 +1229,7 @@ export class Grid {
     }
 
     if (this.options.tab_bar) {
-      this.tab_bar = new TabBar(this.layout, this.model, grid_container);
+      this.tab_bar = new TabBar(this.layout, this.model, this.options, grid_container);
       this.tab_bar.Subscribe((event) => {
         switch (event.type) {
           case 'cancel':
@@ -5109,6 +5123,7 @@ export class Grid {
           data_area = Area.Join(area, data_area);
         }
         else {
+          Sheet.ResetAll();
           this.RemoveAnnotationNodes();
           this.UpdateSheets([new Sheet().toJSON()], true);
           this.model.named_ranges.Reset();

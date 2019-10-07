@@ -8,7 +8,7 @@ import { EventSource, Measurement } from 'treb-utils';
 
 // --- local imports ----------------------------------------------------------
 
-import { SheetEvent, UpdateHints, FreezePane, SerializedSheet } from './sheet_types';
+import { SheetEvent, UpdateHints, FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
 import { GridSelection, CreateSelection } from './grid_selection';
 import { Annotation } from './annotation';
@@ -39,6 +39,10 @@ export class Sheet {
   public static readonly sheet_events = new EventSource<SheetEvent>(true, 'sheet-events');
 
   // --- class methods --------------------------------------------------------
+
+  public static ResetAll() {
+    this.base_id = 100;
+  }
 
   public static Blank(rows = 100, columns = 26, name?: string) {
     const sheet = new Sheet();
@@ -189,6 +193,10 @@ export class Sheet {
 
     }
 
+    // scroll, optionally
+
+    sheet.scroll_offset = obj.scroll ? { ...obj.scroll } : { x: 0, y: 0 };
+
     // wrap up styles
 
     if (!hints || hints.style) {
@@ -290,6 +298,12 @@ export class Sheet {
    * not used as a reference.
    */
   public selection = CreateSelection();
+
+  /**
+   * cache scroll offset for flipping between sheets. should this be
+   * persisted? (...)
+   */
+  public scroll_offset: ScrollOffset = { x: 0, y: 0 };
 
   /**
    * named ranges: name -> area
@@ -1537,10 +1551,13 @@ export class Sheet {
       column_width: flatten_numeric_array(this.column_width_, this.default_column_width),
 
       selection: JSON.parse(JSON.stringify(this.selection)),
-      
       annotations: JSON.parse(JSON.stringify(this.annotations)),
 
     };
+
+    if (this.scroll_offset.x || this.scroll_offset.y) {
+      result.scroll = this.scroll_offset;
+    }
 
     // moved to outer container (data model)
 

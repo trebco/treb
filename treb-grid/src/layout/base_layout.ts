@@ -90,6 +90,24 @@ export abstract class BaseLayout {
    */
   public scroll_reference_node!: HTMLElement;
 
+  public get scroll_offset() {
+    if (!this.scroll_reference_node) {
+      return { x: 0, y: 0 };
+    }
+    return {
+      x: this.scroll_reference_node.scrollLeft,
+      y: this.scroll_reference_node.scrollTop,
+    };
+  }
+
+  public set scroll_offset(offset: {x: number, y: number}) {
+    if (!this.scroll_reference_node) {
+      return;
+    }
+    this.scroll_reference_node.scrollLeft = offset.x;
+    this.scroll_reference_node.scrollTop = offset.y;
+  }
+
   /** we have to disable mock selection for IE or it breaks key handling */
   private trident = ((typeof navigator !== 'undefined') &&
     navigator.userAgent && /trident/i.test(navigator.userAgent));

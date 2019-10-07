@@ -18,7 +18,10 @@ export interface GridOptions {
   formula_bar?: boolean;
 
   /** show the tab bar */
-  tab_bar?: boolean;
+  tab_bar?: boolean|'auto';
+
+  /** allow add tab */
+  add_tab?: boolean;
 
   /** show the "insert function" button. requires formula bar. */
   insert_function_button?: boolean;
@@ -38,6 +41,7 @@ export const DefaultGridOptions: GridOptions = {
   scrollbars: true,
   in_cell_editor: true,
   formula_bar: true,
+  add_tab: true,
   insert_function_button: false,
   expand: true,
   repaint_on_cell_change: true,

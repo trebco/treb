@@ -4,6 +4,7 @@ import { EventSource } from 'treb-utils';
 import { Sheet } from './sheet';
 import { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
+import { GridOptions } from './grid_options';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';
@@ -56,6 +57,7 @@ export type TabEvent
 export class TabBar extends EventSource<TabEvent> {
 
   private node?: HTMLElement;
+  private container?: HTMLElement;
 
   private double_click_data: {
     index?: number;
@@ -65,7 +67,9 @@ export class TabBar extends EventSource<TabEvent> {
   constructor(
       private layout: BaseLayout,
       private model: DataModel,
-      grid_container: HTMLElement ) {
+      private options: GridOptions,
+      grid_container: HTMLElement,
+    ) {
 
     super();
     this.Init(grid_container);
@@ -93,12 +97,29 @@ export class TabBar extends EventSource<TabEvent> {
 
   }
 
+  public Hide() {
+    this.Show(false);
+  }
+
+  public Show(show = true) {
+    if (!this.container) { return; }
+    this.container.style.display = show ? 'block' : 'none';
+  }
+
   /**
    * update tabs from model.
    */
   public Update() {
 
     if (!this.node) { return; }
+
+    if (this.options.tab_bar === 'auto') {
+      if (this.model.sheets.length <= 1) {
+        this.Show(false);
+        return;
+      }
+      this.Show(true);
+    }
 
     // clear
     this.node.innerText = '';
@@ -246,15 +267,19 @@ export class TabBar extends EventSource<TabEvent> {
 
     }
 
-    const add_tab = document.createElement('a');
-    add_tab.classList.add('add-tab');
-    add_tab.style.order = (this.model.sheets.length * 2).toString();
-    add_tab.innerText = '+';
-    add_tab.addEventListener('click', () => {
-      this.Publish({ type: 'add-sheet' });
-    });
+    if (this.options.add_tab) {
 
-    this.node.appendChild(add_tab);
+      const add_tab = document.createElement('a');
+      add_tab.classList.add('add-tab');
+      add_tab.style.order = (this.model.sheets.length * 2).toString();
+      add_tab.innerText = '+';
+      add_tab.addEventListener('click', () => {
+        this.Publish({ type: 'add-sheet' });
+      });
+
+      this.node.appendChild(add_tab);
+
+    }
 
   }
 
@@ -263,13 +288,13 @@ export class TabBar extends EventSource<TabEvent> {
    */
   private Init(grid_container: HTMLElement) {
 
-    const container = document.createElement('div');
-    container.classList.add('treb-tab-bar-container');
-    grid_container.appendChild(container);
+    this.container = document.createElement('div');
+    this.container.classList.add('treb-tab-bar-container');
+    grid_container.appendChild(this.container);
 
     this.node = document.createElement('div');
     this.node.classList.add('treb-tab-bar');
-    container.appendChild(this.node);
+    this.container.appendChild(this.node);
 
   }
 

@@ -53,7 +53,10 @@ export interface BaseOptions {
   scrollbars?: boolean;
 
   /** show tab bar (multi sheet) */
-  tab_bar?: boolean;
+  tab_bar?: boolean|'auto';
+
+  /** allow add tab */
+  add_tab?: boolean;
 
   /** set a reference in global (self) */
   global_name?: string;
