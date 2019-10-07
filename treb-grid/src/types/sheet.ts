@@ -40,7 +40,7 @@ export class Sheet {
 
   // --- class methods --------------------------------------------------------
 
-  public static ResetAll() {
+  public static Reset() {
     this.base_id = 100;
   }
 
@@ -397,9 +397,10 @@ export class Sheet {
     }
   }
 
-  // --- public methods -------------------------------------------------------
-
-  constructor() {
+  /**
+   * constructor is now protected. use a factory method (Blank or FromJSON).
+   */
+  protected constructor() {
 
     // FIXME: the below should be called in a separate 'init' method
     // that can be called after we change styles (since it will measure)
@@ -411,6 +412,8 @@ export class Sheet {
     this.id_ = Sheet.base_id++;
 
   }
+
+  // --- public methods -------------------------------------------------------
 
   public MergeCells(area: Area) {
 

@@ -752,7 +752,8 @@ export class Grid {
       render = false) {
 
     this.RemoveAnnotationNodes();
-    this.UpdateSheets([new Sheet().toJSON()], true);
+    // this.UpdateSheets([new Sheet().toJSON()], true);
+    this.UpdateSheets([Sheet.Blank().toJSON()], true);
 
     // FIXME: are there named ranges in the data? (...)
 
@@ -5123,9 +5124,9 @@ export class Grid {
           data_area = Area.Join(area, data_area);
         }
         else {
-          Sheet.ResetAll();
+          Sheet.Reset();
           this.RemoveAnnotationNodes();
-          this.UpdateSheets([new Sheet().toJSON()], true);
+          this.UpdateSheets([Sheet.Blank().toJSON()], true);
           this.model.named_ranges.Reset();
           this.ClearSelection(this.primary_selection);
           this.ScrollIntoView({row: 0, column: 0});
