@@ -80,7 +80,10 @@ export type FormulaEditorEvent
  */
 export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorEvent> {
 
-  /** single instance of parser, it's stateless and we're not threaded */
+  /**
+   * single instance of parser, it's stateless and we're not threaded 
+   * FIXME: why not share parser with grid?
+   */
   protected static Parser = new Parser();
 
   protected static readonly FormulaChars = '$^&*(-+={[<>/~%,'.split(''); // FIXME: i18n

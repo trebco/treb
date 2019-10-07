@@ -802,6 +802,12 @@ export class Grid {
    */
   public ActivateSheet(command: ActivateSheetCommand) {
 
+    const selecting_argument = this.SelectingArgument();
+
+    if (selecting_argument) {
+      console.info("AS, SA");
+    }
+
     // console.info('activate sheet', command);
 
     let candidate = this.model.sheets[0];
@@ -853,14 +859,22 @@ export class Grid {
 
     // ---
 
-    // the following is from UpdateSheet. TODO: consolidate, move to a unified method
+    // don't update selection if selecting argument... actually we _do_
+    // want to clear the primary selection, we just don't want the side
+    // effects of clearing the formula bar and so on
 
-    this.ClearSelection(this.primary_selection);
+    if (!selecting_argument) {
+      this.ClearSelection(this.primary_selection);
 
-    if (candidate.selection && !candidate.selection.empty) {
-      this.Select(this.primary_selection,
-        new Area(candidate.selection.area.start, candidate.selection.area.end),
-          candidate.selection.target);
+      if (candidate.selection && !candidate.selection.empty) {
+        this.Select(this.primary_selection,
+          new Area(candidate.selection.area.start, candidate.selection.area.end),
+            candidate.selection.target);
+      }
+
+    }
+    else {
+
     }
 
     // scrub, then add any sheet annotations. note the caller will
@@ -871,15 +885,6 @@ export class Grid {
     for (const element of annotations) {
       this.AddAnnotation(element, false); // true);
     }
-
-    /* FIXME: store in sheet? (...)
-    const annotations = (data as any).annotations;
-    if (annotations && Array.isArray(annotations)) {
-      for (const element of annotations) {
-        this.AddAnnotation(new Annotation(element), true);
-      }
-    }
-    */
 
     // we do the tile rebuild just before the next paint, to prevent
     // flashing. seems to be stable but needs more testing. note that
@@ -4026,8 +4031,8 @@ export class Grid {
         });
       }
 
-      selection.area = area;
-      if (target) selection.target = target;
+      selection.area = new Area({...area.start, sheet_id: this.model.active_sheet.id}, area.end);
+      if (target) selection.target = {...target, sheet_id: this.model.active_sheet.id};
       selection.empty = false;
 
     }
