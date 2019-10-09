@@ -12,10 +12,6 @@ export interface FormulaBarResizeEvent {
   type: 'formula-bar-resize';
 }
 
-export interface FormulaBarStartEditEvent {
-  type: 'start-edit';
-}
-
 export interface FormulaButtonEvent {
   type: 'formula-button';
   formula?: string;
@@ -23,10 +19,10 @@ export interface FormulaButtonEvent {
 }
 
 export type FormulaBar2Event
-  = FormulaBarResizeEvent
-  | FormulaBarStartEditEvent
-  | FormulaEditorEvent
-  | FormulaButtonEvent;
+  = FormulaEditorEvent
+  | FormulaButtonEvent
+  | FormulaBarResizeEvent
+  ;
 
 export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
@@ -189,6 +185,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
       const dependencies = this.ListDependencies();
 
       this.Publish([
+        { type: 'start-editing', editor: 'formula-bar' },
         { type: 'update', text, cell: this.active_cell, dependencies },
         { type: 'retain-focus', focus: true },
       ]);
@@ -202,7 +199,10 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
       // console.info('focus out');
 
       this.autocomplete.Hide();
-      this.Publish({ type: 'retain-focus', focus: false });
+      this.Publish([
+        { type: 'stop-editing' },
+        { type: 'retain-focus', focus: false }
+      ]);
       this.focused_ = false;
     });
 

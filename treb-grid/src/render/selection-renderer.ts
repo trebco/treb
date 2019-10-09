@@ -101,7 +101,14 @@ export class SelectionRenderer {
    *
    * updated for svg selections. erase is now required, so parameter is removed.
    */
-  public RenderSelections() {
+  public RenderSelections(show_primary_selection = true) {
+
+    // this is a dumb way of doing this...
+
+    const cache_primary_empty = this.primary_selection.empty;
+    if (!show_primary_selection) {
+      this.primary_selection.empty = true;
+    }
 
     // temp (we could change the signature and just take an array)
     const aggregate = [this.primary_selection].concat(this.additional_selections);
@@ -183,6 +190,8 @@ export class SelectionRenderer {
         visible_column, visible_row, this.corner_selections, {...this.model.active_sheet.header_offset});
     }
 
+    this.primary_selection.empty = cache_primary_empty;
+
   }
 
   /**
@@ -198,7 +207,11 @@ export class SelectionRenderer {
       offset?: SelectionOffset) {
 
     for (let i = 0; i < aggregate.length; i++ ){
-      if (!aggregate[i].empty && (!visible_a || visible_a[i]) && (!visible_b || visible_b[i])) {
+
+      const sheet_match = (!aggregate[i].area.start.sheet_id) ||
+        (aggregate[i].area.start.sheet_id === this.model.active_sheet.id);
+
+      if (sheet_match && !aggregate[i].empty && (!visible_a || visible_a[i]) && (!visible_b || visible_b[i])) {
         const block = this.EnsureGridSelectionBlock(node, group, i, offset);
         this.RenderSVGSelection(aggregate[i], block, i);
       }

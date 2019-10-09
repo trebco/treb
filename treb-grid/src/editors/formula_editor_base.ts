@@ -58,14 +58,25 @@ export interface RetainFocusEvent {
   focus: boolean;
 }
 
+export interface StartEditingEvent {
+  type: 'start-editing';
+  editor?: string;
+}
+
+export interface StopEditingEvent {
+  type: 'stop-editing';
+  editor?: string;
+}
+
 /** discriminated union */
 export type FormulaEditorEvent
-  = FormulaEditorCommitEvent
-  | FormulaEditorDiscardEvent
-  | RetainFocusEvent
+  = RetainFocusEvent
+  | StopEditingEvent
+  | StartEditingEvent
   | FormulaEditorUpdateEvent
+  | FormulaEditorCommitEvent
+  | FormulaEditorDiscardEvent
   | FormulaEditorEndSelectionEvent
-  // | FormulaEditorAutocompleteEvent
   ;
 
 /**
@@ -503,8 +514,14 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
               // if there's a sheet name, map to an ID. FIXME: make a map
               const start = (unit.type === 'address') ? unit : unit.start;
-              if (start.sheet && !start.sheet_id) {
-                start.sheet_id = sheet_name_map[start.sheet.toLowerCase()] || 0;
+
+              if (!start.sheet_id) {
+                if (start.sheet) {
+                  start.sheet_id = sheet_name_map[start.sheet.toLowerCase()] || 0;
+                }
+                else {
+                  start.sheet_id = this.model.active_sheet.id;
+                }
               }
               this.reference_list.push(unit);
 

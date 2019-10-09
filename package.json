@@ -31,8 +31,8 @@
     "build": "node compile.js",
     "dev": "node compile.js -d",
     "watch": "node compile.js -w",
-    "watch-modern": "node compile.js -w --modern",
-    "watch-legacy": "node compile.js -w --legacy",
+    "watch-modern": "node compile.js -w --modern -d",
+    "watch-legacy": "node compile.js -w --legacy -d",
     "watch-dev": "node compile.js -w -d",
     "release": "node compile.js && node zip-package.js"
   },

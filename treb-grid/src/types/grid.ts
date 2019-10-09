@@ -34,7 +34,9 @@ import { MouseDrag } from './drag_mask';
 
 import { Command, CommandKey, CommandRecord,
          SetRangeCommand, FreezeCommand, UpdateBordersCommand,
-         InsertRowsCommand, InsertColumnsCommand, SetNameCommand, ActivateSheetCommand, ShowSheetCommand, SheetSelection } from './grid_command';
+         InsertRowsCommand, InsertColumnsCommand, SetNameCommand,
+         ActivateSheetCommand, ShowSheetCommand, SheetSelection } from './grid_command';
+
 import { DataModel } from './data_model';
 import { NamedRangeCollection } from './named_range';
 
@@ -43,6 +45,11 @@ interface DoubleClickData {
   address?: ICellAddress;
 }
 
+enum EditingState {
+  NotEditing = 0,
+  CellEditor = 1,
+  FormulaBar = 2,
+}
 
 export class Grid {
 
@@ -83,6 +90,12 @@ export class Grid {
   public readonly model: DataModel;
 
   // --- private members -------------------------------------------------------
+
+  /** are we editing? */
+  private editing_state: EditingState = EditingState.NotEditing;
+
+  /** if we are editing, what is the cell? */
+  private editing_cell: ICellAddress = { row: -1, column: -1, sheet_id: 0 };
 
   /**  */
   private selected_annotation?: Annotation;
@@ -486,7 +499,7 @@ export class Grid {
           if (this.formula_bar && this.formula_bar.IsElement((event as FocusEvent).relatedTarget as HTMLElement)) {
             // console.info('editing...');
             this.primary_selection.empty = true;
-            this.selection_renderer.RenderSelections();
+            this.RenderSelections();
             this.editing_annotation = annotation;
             this.layout.ShowSelections(true);
           }
@@ -856,7 +869,7 @@ export class Grid {
 
     }
     else {
-      // ...
+      this.RenderSelections();
     }
 
     // scrub, then add any sheet annotations. note the caller will
@@ -1403,7 +1416,7 @@ export class Grid {
 
   public SelectAll() {
     this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
-    this.selection_renderer.RenderSelections();
+    this.RenderSelections();
   }
 
   /**
@@ -1933,7 +1946,20 @@ export class Grid {
     this.formula_bar.Subscribe((event) => {
 
       switch (event.type) {
+
+        case 'stop-editing':
+          this.editing_state = EditingState.NotEditing;
+          break;
+
+        case 'start-editing':
+          this.editing_state = EditingState.CellEditor;
+          this.editing_cell = { ...this.primary_selection.target };
+          console.info("TEC1", this.editing_cell);
+          break;
+
         case 'discard':
+
+          this.editing_state = EditingState.NotEditing;
 
           if (this.editing_annotation) {
             this.ClearAdditionalSelections();
@@ -1955,6 +1981,8 @@ export class Grid {
           break;
 
         case 'commit':
+
+          this.editing_state = EditingState.NotEditing;
 
           // we added annotations to the formula bar, so there's some
           // logic here that's not in the ICE commit handler
@@ -2043,6 +2071,16 @@ export class Grid {
 
       switch (event.type) {
 
+        case 'stop-editing':
+          this.editing_state = EditingState.NotEditing;
+          break;
+
+        case 'start-editing':
+          this.editing_state = EditingState.CellEditor;
+          this.editing_cell = { ...this.primary_selection.target };
+          console.info("TEC2", this.editing_cell);
+          break;
+
         case 'update':
           if (event.dependencies) {
             this.HighlightDependencies(event.dependencies);
@@ -2050,11 +2088,17 @@ export class Grid {
           break;
 
         case 'discard':
+
+          this.editing_state = EditingState.NotEditing;
+
           this.DismissEditor(false);
           this.DelayedRender();
           break;
 
         case 'commit':
+
+          this.editing_state = EditingState.NotEditing;
+
           // console.info('commit');
           if (event.selection) {
             this.SetInferredType(event.selection, event.value, event.array);
@@ -2133,7 +2177,7 @@ export class Grid {
     }
 
     this.layout_token = 0;
-    this.selection_renderer.RenderSelections();
+    this.RenderSelections();
 
     this.tile_renderer.OverflowDirty(full_tile);
 
@@ -2353,7 +2397,7 @@ export class Grid {
       else {
         this.Select(selection, new Area(base_address), { column: 0, row: base_address.row });
       }
-      this.selection_renderer.RenderSelections();
+      this.RenderSelections();
 
       MouseDrag(this.layout.mask, [], (move_event: MouseEvent) => {
         const address = this.layout.CoordinateToRowHeader(move_event.offsetY - offset.y);
@@ -2361,7 +2405,7 @@ export class Grid {
 
         if (selection.empty || !area.Equals(selection.area)) {
           this.Select(selection, area, undefined, true);
-          this.selection_renderer.RenderSelections();
+          this.RenderSelections();
         }
       }, (end_event: MouseEvent) => {
         // console.info('end');
@@ -2517,14 +2561,14 @@ export class Grid {
       else {
         this.Select(selection, new Area(base_address), { row: 0, column: base_address.column });
       }
-      this.selection_renderer.RenderSelections();
+      this.RenderSelections();
 
       MouseDrag(this.layout.mask, [], (move_event: MouseEvent) => {
         const address = this.layout.CoordinateToColumnHeader(move_event.offsetX - offset.x);
         const area = new Area(address, base_address, true);
         if (selection.empty || !area.Equals(selection.area)) {
           this.Select(selection, area, undefined, true);
-          this.selection_renderer.RenderSelections();
+          this.RenderSelections();
         }
       });
     }
@@ -2725,7 +2769,7 @@ export class Grid {
       this.Select(selection, new Area(base_address), base_address);
     }
 
-    this.selection_renderer.RenderSelections();
+    this.RenderSelections();
 
     if (selecting_argument) this.UpdateSelectedArgument(selection);
 
@@ -2777,7 +2821,7 @@ export class Grid {
       const area = new Area(address, base_address, true);
       if (selection.empty || !area.Equals(selection.area)) {
         this.Select(selection, area, undefined, true);
-        this.selection_renderer.RenderSelections();
+        this.RenderSelections();
 
         if (selecting_argument) {
           this.UpdateSelectedArgument(selection);
@@ -2996,7 +3040,7 @@ export class Grid {
 
           case 'a':
             // this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
-            // this.selection_renderer.RenderSelections();
+            // this.RenderSelections();
             this.SelectAll();
             break;
 
@@ -3005,7 +3049,7 @@ export class Grid {
           case '0':
             if (!event.altKey) return;
             this.ClearSelection(this.primary_selection); // not clear the selection, clear selection
-            this.selection_renderer.RenderSelections();
+            this.RenderSelections();
             break;
 
           default:
@@ -3110,8 +3154,15 @@ export class Grid {
     }
 
     this.Select(this.primary_selection, cell.area, cell.area.start);
-    this.selection_renderer.RenderSelections();
+    this.RenderSelections();
 
+  }
+
+  private RenderSelections() {
+    const show_primary_selection = (!this.editing_state) ||
+      (this.editing_cell.sheet_id === this.model.active_sheet.id);
+
+    this.selection_renderer.RenderSelections(show_primary_selection);
   }
 
   /**
@@ -3522,6 +3573,9 @@ export class Grid {
   private DismissEditor(update_selection = true) {
 
     if (!this.cell_editor) return;
+
+    this.editing_state = EditingState.NotEditing;
+
     this.Focus();
     this.cell_editor.Hide();
 
@@ -3967,7 +4021,7 @@ export class Grid {
         // at the least, we could flag that we've already done this so
         // it doesn't get called again on the next render
 
-        this.selection_renderer.RenderSelections();
+        this.RenderSelections();
 
         // then scroll.
 
@@ -4009,14 +4063,14 @@ export class Grid {
       if ((area.start.row === Infinity || area.start.row < this.model.active_sheet.rows) &&
           (area.start.column === Infinity || area.start.column < this.model.active_sheet.columns)) {
 
-        const hide = (!!area.start.sheet_id && area.start.sheet_id !== this.model.active_sheet.id);
+        // const hide = (!!area.start.sheet_id && area.start.sheet_id !== this.model.active_sheet.id);
 
         area = this.model.active_sheet.RealArea(area);
-        this.AddAdditionalSelection(area.start, area, hide);
+        this.AddAdditionalSelection(area.start, area);
       }
     }
 
-    if (render) this.selection_renderer.RenderSelections();
+    if (render) this.RenderSelections();
 
   }
 
@@ -4027,12 +4081,12 @@ export class Grid {
    * we now support empty selections (hiding) in the case of references
    * to other sheets. if we don't do that, the colors get out of sync.
    */
-  private AddAdditionalSelection(target: ICellAddress, area: Area, hide = false) {
+  private AddAdditionalSelection(target: ICellAddress, area: Area) {
     const label = area.spreadsheet_label;
     if (this.additional_selections.some((test) => {
       return (test.area.spreadsheet_label === label);
     })) return;
-    this.additional_selections.push({target, area, empty: hide});
+    this.additional_selections.push({target, area});
   }
 
   /** remove all additonla (argument) selections */
