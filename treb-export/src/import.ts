@@ -212,7 +212,7 @@ export class Importer {
 
   }
 
-  public GetSheet(index: string|number = 0) {
+  public GetSheet(index = 0) {
 
     const sheet = this.workbook.GetSheet(index);
     sheet.Parse();

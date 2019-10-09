@@ -69,4 +69,6 @@ export interface SerializedSheet {
   annotations?: any[];
   scroll?: ScrollOffset;
 
+  visible?: boolean;
+
 }

@@ -34,7 +34,7 @@ import { MouseDrag } from './drag_mask';
 
 import { Command, CommandKey, CommandRecord,
          SetRangeCommand, FreezeCommand, UpdateBordersCommand,
-         InsertRowsCommand, InsertColumnsCommand, SetNameCommand, ActivateSheetCommand } from './grid_command';
+         InsertRowsCommand, InsertColumnsCommand, SetNameCommand, ActivateSheetCommand, ShowSheetCommand, SheetSelection } from './grid_command';
 import { DataModel } from './data_model';
 import { NamedRangeCollection } from './named_range';
 
@@ -811,38 +811,16 @@ export class Grid {
 
     // console.info('activate sheet', command);
 
-    let candidate = this.model.sheets[0];
-
-    if (typeof command.sheet !== 'undefined') {
-      candidate = command.sheet;
-    }
-    else if (typeof command.name !== 'undefined') {
-      for (const sheet of this.model.sheets) {
-        if (sheet.name === command.name) {
-          candidate = sheet;
-          break;
-        }
-      }
-    }
-    else if (typeof command.id !== 'undefined') {
-      for (const sheet of this.model.sheets) {
-        if (sheet.id === command.id) {
-          candidate = sheet;
-          break;
-        }
-      }
-    }
-    else {
-      const index = command.index || 0;
-      if (index >= 0 && index < this.model.sheets.length) {
-        candidate = this.model.sheets[index];
-      }
-    }
+    const candidate = this.ResolveSheet(command) || this.model.sheets[0];
 
     // ok, activate...
 
     if (this.model.active_sheet === candidate) {
       return;
+    }
+
+    if (!candidate.visible) {
+      throw new Error('cannot activate hidden sheet');
     }
 
     // cache primary selection in the sheet we are deactivating
@@ -985,6 +963,31 @@ export class Grid {
 
     if (this.tab_bar) { this.tab_bar.Update(); }
 
+  }
+
+  public ShowAll() {
+
+    // obviously there are better ways to do this, but this
+    // will use the execcommand system and _should_ only fire
+    // a single event (FIXME: check)
+
+    const commands: ShowSheetCommand[] = [];
+    for (let index = 0; index < this.model.sheets.length; index++) {
+      commands.push({
+        key: CommandKey.ShowSheet,
+        index,
+        show: true,
+      });
+    }
+    this.ExecCommand(commands);
+  }
+
+  public ShowSheet(index = 0, show = true){
+    this.ExecCommand({
+      key: CommandKey.ShowSheet,
+      index,
+      show,
+    });
   }
 
   /** new version for multiple sheets */
@@ -1249,7 +1252,7 @@ export class Grid {
             break;
 
           case 'activate-sheet':
-            this.ActivateSheet({ key: CommandKey.ActivateSheet, sheet: event.sheet });
+            this.ActivateSheet({ key: CommandKey.ActivateSheet, id: event.sheet.id });
             break;
         }
         this.Focus();
@@ -1690,7 +1693,7 @@ export class Grid {
     this.ExecCommand({
       key: CommandKey.RenameSheet,
       new_name: name,
-      sheet,
+      id: sheet.id,
     });
   }
 
@@ -1747,6 +1750,68 @@ export class Grid {
   }
 
   // --- private methods -------------------------------------------------------
+
+  private ResolveSheet(command: SheetSelection) {
+    if (typeof command.index !== 'undefined') {
+      return this.model.sheets[command.index];
+    }
+    if (typeof command.name !== 'undefined') {
+      const compare = command.name.toLowerCase();
+      for (const sheet of this.model.sheets) {
+        if (sheet.name.toLowerCase() === compare) { return sheet; }
+      }
+    }
+    if (command.id) {
+      for (const sheet of this.model.sheets) {
+        if (sheet.id === command.id) { return sheet; }
+      }
+    }
+    return undefined;
+  }
+
+  private ShowSheetInternal(command: ShowSheetCommand) {
+
+    const sheet = this.ResolveSheet(command);
+
+    // invalid
+    if (!sheet) { return; }
+
+    // not changed
+    if (sheet.visible === command.show) { return; }
+
+    // make sure at least one will be visible after the operation
+    if (!command.show) {
+
+      let count = 0;
+      for (const test of this.model.sheets) {
+        if (!sheet.visible || test === sheet) { count++; }
+      }
+      if (count >= this.model.sheets.length) {
+        throw new Error('can\'t hide all sheets');
+      }
+
+    }
+
+    // ok, set
+    sheet.visible = command.show;
+
+    // is this current?
+    if (sheet === this.model.active_sheet) {
+      for (let i = 0; i < this.model.sheets.length; i++) {
+        if (this.model.sheets[i] === this.model.active_sheet) {
+          this.ActivateSheet({
+            key: CommandKey.ActivateSheet,
+            index: i + 1,
+          });
+          return;
+        }
+      }
+    }
+
+    // otherwise, just update tabs
+    if (this.tab_bar) { this.tab_bar.Update(); }
+
+  }
 
   private StyleDefaultFromTheme() {
 
@@ -5238,6 +5303,11 @@ export class Grid {
         }
         break;
 
+      case CommandKey.ShowSheet:
+        this.ShowSheetInternal(command);
+        structure_event = true;
+        break;
+
       case CommandKey.ReorderSheet:
         {
           const sheets: Sheet[] = [];
@@ -5265,29 +5335,9 @@ export class Grid {
 
       case CommandKey.RenameSheet:
         {
-          if (!command.sheet) {
-            if (command.index) {
-              command.sheet = this.model.sheets[command.index];
-            }
-            else if (command.id) {
-              for (const sheet of this.model.sheets) {
-                if (sheet.id === command.id) {
-                  command.sheet = sheet;
-                  break;
-                }
-              }
-            }
-            else if (command.current_name) {
-              for (const sheet of this.model.sheets) {
-                if (sheet.name === command.current_name) {
-                  command.sheet = sheet;
-                  break;
-                }
-              }
-            }
-          }
-          if (command.sheet) {
-            this.RenameSheetInternal(command.sheet, command.new_name);
+          const sheet = this.ResolveSheet(command);
+          if (sheet) {
+            this.RenameSheetInternal(sheet, command.new_name);
             if (this.tab_bar) { this.tab_bar.Update(); }
             structure_event = true;
           }

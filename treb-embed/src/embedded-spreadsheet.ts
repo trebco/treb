@@ -836,17 +836,19 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           reject(event);
         };
 
-        const serialized = this.grid.Serialize({
+        const serialized: any = this.grid.Serialize({
           rendered_values: true,
           expand_arrays: true,
           export_colors: true,
           decorated_cells: true,
         });
 
-        (serialized.sheet_data as any).decimal_mark = Localization.decimal_separator;
+        serialized.decimal_mark = Localization.decimal_separator;
+
         this.export_worker.postMessage({
-          command: 'export', sheet: serialized.sheet_data,
+          command: 'export', sheet: serialized,
         });
+
       }
       else {
         reject('worker failed');

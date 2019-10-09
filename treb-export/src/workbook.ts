@@ -22,14 +22,36 @@ export class Workbook {
 
   private zip?: JSZip;
   private shared_strings = new SharedStrings();
-  private sheets: {[index: string]: Sheet} = {};
+  // private sheets: {[index: string]: Sheet} = {};
+  private sheets: Sheet[] = [];
 
   private dom?: Tree;
   private rels: {[index: string]: Relationship} = {};
 
-  public GetSheet(sheet: string|number) {
-    if (typeof sheet === 'string') return this.sheets[name];
-    else return this.sheets[Object.keys(this.sheets)[0]];
+  private rels_dom?: Tree;
+
+  // public GetSheet(sheet: string|number) {
+  public GetSheet(sheet: number) {
+    // if (typeof sheet === 'string') return this.sheets[name];
+    // else return this.sheets[Object.keys(this.sheets)[0]];
+    return this.sheets[sheet];
+  }
+
+  public RenameSheet(index: number, name: string) {
+    if (!this.dom) throw new Error('missing dom');
+
+    // local: does this matter? might as well keep it consistent
+    this.sheets[index].options.name = name;
+
+    // rename in workbook
+    const sheet = this.dom.find(`./sheets/sheet/[@sheetId="${index + 1}"]`);
+    if (sheet) {
+      sheet.set('name', name);
+    }
+    else {
+      console.warn('rename: missing sheet', index);
+    }
+
   }
 
   public async ReadStyles() {
@@ -85,21 +107,21 @@ export class Workbook {
   /**
    * read all sheets (async)
    */
-  public async GetWorksheets(list: string[], preparse = false){
+  public async GetWorksheets(preparse = false){
     if (!this.zip) throw new Error('missing zip');
 
-    for (const name of list) {
-      const sheet = this.sheets[name];
+    for (const sheet of this.sheets) {
       if (sheet) {
         const rid = sheet.options.rid;
         if (rid) {
           sheet.path = `xl/${this.rels[rid].target}`;
-          const data = await this.zip.file( sheet.path ).async('text');
+          const data = await this.zip.file(sheet.path).async('text');
           sheet.xml = data;
           if (preparse) sheet.Parse();
         }
       }
     }
+
   }
 
   /**
@@ -108,6 +130,7 @@ export class Workbook {
   public async Finalize(opts: any = {}){
     if (!this.zip) throw new Error('missing zip');
     if (!this.dom) throw new Error('missing dom');
+    if (!this.rels_dom) throw new Error('missing rels_dom');
 
     if (this.shared_strings.dom) {
       const xml = this.shared_strings.dom.write({xml_declaration: true});
@@ -119,6 +142,7 @@ export class Workbook {
       await this.zip.file( 'xl/styles.xml', xml);
     }
 
+    await this.zip.file( 'xl/_rels/workbook.xml.rels', this.rels_dom.write({xml_declaration: true}));
     await this.zip.file( 'xl/workbook.xml', this.dom.write({xml_declaration: true}));
 
     if (opts.flushCalcChain || opts.flush){
@@ -130,14 +154,81 @@ export class Workbook {
       }
     }
 
-    for (const key of Object.keys(this.sheets)) {
-      const sheet = this.sheets[key];
+    // for (const key of Object.keys(this.sheets)) {
+    //  const sheet = this.sheets[key];
+    for (const sheet of this.sheets) {
       if (sheet.dom && sheet.path){
         sheet.Finalize();
         const xml = sheet.dom.write({xml_declaration: true});
         // console.info('sheet xml', sheet.path, xml);
         await this.zip.file(sheet.path, xml);
       }
+    }
+
+  }
+
+  /**
+   * clone sheet 0 so we have X total sheets
+   */
+  public InsertSheets(total_sheet_count: number) {
+    if (!this.dom) throw new Error('missing dom');
+    if (!this.rels_dom) throw new Error('missing rels_dom');
+
+    let next_rel_index = 1;
+    const NextRel = () => {
+      while (true) {
+        const rel = `rId${next_rel_index++}`;
+        if (!this.rels[rel]) return rel;
+      }
+    };
+
+    // for each sheet we add, we need to insert it in the list of
+    // sheets (in workbook.xml) and insert a relationship (in
+    // workbook.xml.rels).
+
+    while (this.sheets.length < total_sheet_count) {
+
+      const index = this.sheets.length;
+      const path = `worksheets/sheet${index + 1}.xml`;
+      const rel = NextRel();
+      const type = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet';
+
+      console.info('inserting sheet', index);
+
+      this.rels[rel] = {
+        target: path,
+        type,
+        id: rel,
+      };
+
+      const relationship = ElementTree.SubElement(this.rels_dom.getroot(), 'Relationship');
+      relationship.set('Id', rel);
+      relationship.set('Type', type);
+      relationship.set('Target', path);
+
+      const name = 'Sheet' + (index + 1);
+
+      const sheets = this.dom.find('./sheets');
+      if (sheets) {
+        const sheet_element = ElementTree.SubElement(sheets, 'sheet');
+        sheet_element.set('name', name);
+        sheet_element.set('sheetId', (index + 1).toString());
+        sheet_element.set('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id', rel);
+      }
+
+      // insert sheet
+      const worksheet = new Sheet({
+        name,
+        id: Number(index + 1),
+        rid: rel });
+
+      worksheet.shared_strings = this.shared_strings;
+      worksheet.xml = this.sheets[0].xml;
+      worksheet.path = 'xl/' + path;
+      worksheet.Parse();
+
+      this.sheets.push(worksheet);
+
     }
 
   }
@@ -155,10 +246,10 @@ export class Workbook {
     // read rels
     let data = await this.zip.file( 'xl/_rels/workbook.xml.rels').async('text');
 
-    const etree = ElementTree.parse(data);
+    this.rels_dom = ElementTree.parse(data);
     this.rels = {};
 
-    etree.findall('./Relationship').forEach((rel) => {
+    this.rels_dom.findall('./Relationship').forEach((rel) => {
       const rid = rel.attrib.Id;
       if (rid) {
         this.rels[rid] = {
@@ -177,7 +268,7 @@ export class Workbook {
 
     // create initial sheets; use relationship (rid) to map
     this.dom = ElementTree.parse(data);
-    this.sheets = {};
+    this.sheets = []; // {};
 
     this.dom.findall('./sheets/sheet').forEach((sheet) => {
       const name = sheet.attrib.name;
@@ -189,11 +280,13 @@ export class Workbook {
           rid: sheet.attrib['r:id']});
         
         worksheet.shared_strings = this.shared_strings;
-        this.sheets[name] = worksheet;
+        // this.sheets[name] = worksheet;
+        this.sheets.push(worksheet);
       }
     });
 
-    await this.GetWorksheets(Object.keys(this.sheets).slice(0), preparse);
+    // await this.GetWorksheets(Object.keys(this.sheets).slice(0), preparse);
+    await this.GetWorksheets(preparse);
 
   }
 

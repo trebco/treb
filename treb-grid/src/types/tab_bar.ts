@@ -114,7 +114,10 @@ export class TabBar extends EventSource<TabEvent> {
     if (!this.node) { return; }
 
     if (this.options.tab_bar === 'auto') {
-      if (this.model.sheets.length <= 1) {
+
+      const visible_count = this.model.sheets.reduce((count, test) => test.visible ? count + 1 : count, 0);
+
+      if (visible_count <= 1) {
         this.Show(false);
         return;
       }
@@ -127,10 +130,11 @@ export class TabBar extends EventSource<TabEvent> {
     // store tabs
     const tabs: HTMLElement[] = [];
 
-    // for (const sheet of this.model.sheets) {
-    for (let index = 0; index < this.model.sheets.length; index++) {
+    for (const sheet of this.model.sheets) {
 
-      const sheet = this.model.sheets[index];
+      if (!sheet.visible) { continue; }
+
+      const index = tabs.length;
 
       // IE11 won't fire events on an A element? or is that just because
       // of the default display value? (actually I am setting display...)

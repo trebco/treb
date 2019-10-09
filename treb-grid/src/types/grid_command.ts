@@ -42,7 +42,23 @@ export enum CommandKey {
   ActivateSheet,
   RenameSheet,
   ReorderSheet,
+  ShowSheet,
 
+}
+
+/** base type for sheet commands -- can select sheet by name, id or index */
+export interface SheetSelection {
+  index?: number;
+  name?: string;
+  id?: number;
+}
+
+/**
+ * show or hide sheet.
+ */
+export interface ShowSheetCommand extends SheetSelection {
+  key: CommandKey.ShowSheet;
+  show: boolean;
 }
 
 /*
@@ -216,24 +232,16 @@ export interface NullCommand {
  * the sheet, defaulting to index (which defaults to 0) so if you
  * pass no selector it will select index 0.
  */
-export interface ActivateSheetCommand {
+export interface ActivateSheetCommand extends SheetSelection {
   key: CommandKey.ActivateSheet;
-  id?: number;
-  name?: string;
-  index?: number;
-  sheet?: Sheet;
 }
 
 /**
  * rename a sheet. options are like ActivateSheetCommand, except we
  * have to be a little careful about name old/new
  */
-export interface RenameSheetCommand {
+export interface RenameSheetCommand extends SheetSelection {
   key: CommandKey.RenameSheet;
-  id?: number;
-  current_name?: string;
-  index?: number;
-  sheet?: Sheet;
   new_name: string; // required
 }
 
@@ -265,6 +273,7 @@ export type Command =
   | SetNoteCommand
   | SetNameCommand
   | SetRangeCommand
+  | ShowSheetCommand
   | MergeCellsCommand
   | ResizeRowsCommand
   | InsertRowsCommand

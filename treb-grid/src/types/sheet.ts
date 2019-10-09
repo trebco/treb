@@ -252,6 +252,11 @@ export class Sheet {
 
     }
 
+    sheet.visible = true; // default
+    if (typeof obj.visible !== 'undefined') {
+      sheet.visible = !!obj.visible;
+    }
+
     return sheet;
 
   }
@@ -282,6 +287,8 @@ export class Sheet {
     rows: 0,
     columns: 0,
   };
+
+  public visible = true;
 
   /** standard width (FIXME: static?) */
   public default_column_width = 100;
@@ -1545,10 +1552,10 @@ export class Sheet {
       row_style,
       column_style,
 
-      // why are these serialized? (...)
+      // why are these serialized? (...) export!
 
-      // default_row_height: this.default_row_height,
-      // default_column_width: this.default_column_width,
+      default_row_height: this.default_row_height,
+      default_column_width: this.default_column_width,
 
       row_height: flatten_numeric_array(this.row_height_, this.default_row_height),
       column_width: flatten_numeric_array(this.column_width_, this.default_column_width),
@@ -1557,6 +1564,11 @@ export class Sheet {
       annotations: JSON.parse(JSON.stringify(this.annotations)),
 
     };
+
+    // omit default (true)
+    if (!this.visible) {
+      result.visible = this.visible;
+    }
 
     if (this.scroll_offset.x || this.scroll_offset.y) {
       result.scroll = this.scroll_offset;
