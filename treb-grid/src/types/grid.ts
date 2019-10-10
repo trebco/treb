@@ -1954,7 +1954,6 @@ export class Grid {
         case 'start-editing':
           this.editing_state = EditingState.CellEditor;
           this.editing_cell = { ...this.primary_selection.target };
-          console.info("TEC1", this.editing_cell);
           break;
 
         case 'discard':
@@ -1981,6 +1980,12 @@ export class Grid {
           break;
 
         case 'commit':
+
+          // FIXME: unify this (to the extent possible) w/ the other editor
+
+          if (this.model.active_sheet.id !== this.editing_cell.sheet_id) {
+            this.ActivateSheet({key: CommandKey.ActivateSheet, id: this.editing_cell.sheet_id});
+          }
 
           this.editing_state = EditingState.NotEditing;
 
@@ -2078,7 +2083,6 @@ export class Grid {
         case 'start-editing':
           this.editing_state = EditingState.CellEditor;
           this.editing_cell = { ...this.primary_selection.target };
-          console.info("TEC2", this.editing_cell);
           break;
 
         case 'update':
@@ -2096,6 +2100,12 @@ export class Grid {
           break;
 
         case 'commit':
+
+          // FIXME: unify this (to the extent possible) w/ the other editor
+
+          if (this.model.active_sheet.id !== this.editing_cell.sheet_id) {
+            this.ActivateSheet({key: CommandKey.ActivateSheet, id: this.editing_cell.sheet_id});
+          }
 
           this.editing_state = EditingState.NotEditing;
 
@@ -2869,6 +2879,16 @@ export class Grid {
     const cell = this.model.active_sheet.CellData(selection.area.start);
     if (cell.merge_area && cell.merge_area.Equals(selection.area)) {
       label = Area.CellAddressToLabel(cell.merge_area.start);
+    }
+
+    if (this.model.active_sheet.id !== this.editing_cell.sheet_id) {
+      const name = this.model.active_sheet.name;
+      if (/\s/.test(name)) {
+        label = `'${name}'!${label}`;
+      }
+      else {
+        label = `${name}!${label}`;
+      }
     }
 
     if (this.cell_editor && this.cell_editor.visible && this.cell_editor.selecting) {
