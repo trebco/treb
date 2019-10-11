@@ -1,7 +1,7 @@
 
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ReferenceError, NotImplError } from '../function-error';
+import { ReferenceError, NotImplError, ValueError } from '../function-error';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -311,6 +311,22 @@ export const BaseFunctionLibrary: FunctionMap = {
         const m = Math.pow(10, digits);
         return Math.floor(m * value) / m;
       },
+    },
+
+    GeoMean: {
+      fn: (...args: any[]) => {
+        args = Utils.Flatten(args);
+        let count = 0;
+        let product = 1;
+        for (const arg of args) {
+          if (typeof arg === 'undefined') { continue; }
+          const value = Number(arg);
+          if (value < 0) { return ValueError; }
+          count++;
+          product *= value;
+        }
+        return Math.pow(product, 1 / count);
+      }
     },
 
     Average: {
