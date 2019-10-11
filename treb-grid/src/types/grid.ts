@@ -815,6 +815,19 @@ export class Grid {
     this.model.user_data = undefined;
   }
 
+  public NextSheet(step = 1) {
+    if (this.model.sheets.length === 1) return;
+    for (let i = 0; i < this.model.sheets.length; i++) {
+      if (this.model.sheets[i] === this.model.active_sheet) {
+        let index = (i + step) % this.model.sheets.length;
+        while (index < 0) { index += this.model.sheets.length; }
+        console.info("->", index);
+        this.ActivateSheet({key: CommandKey.ActivateSheet, index});
+        return;
+      }
+    }
+  }
+
   /**
    * FIXME: private
    */
@@ -3132,6 +3145,11 @@ export class Grid {
 
         case 'PageUp':
         case 'PageDown':
+          if (event.shiftKey) {
+            this.NextSheet(event.key === 'PageUp' ? -1 : 1);
+            break;
+          }
+
           return; // FIXME
 
         case 'Control':
@@ -4446,7 +4464,20 @@ export class Grid {
 
           // tsv_row.push(cell.formatted);
           tsv_row.push(typeof cell.calculated === 'undefined' ? cell.value : cell.calculated);
-          treb_data.push(JSON.parse(JSON.stringify({ address, data: cell.value, type: cell.type, style: cell.style })));
+          const data_entry: any = {
+            address,
+            data: cell.value,
+            type: cell.type,
+            style: cell.style,
+          };
+          if (cell.area &&
+              cell.area.start.row === address.row &&
+              cell.area.start.column === address.column) {
+            data_entry.array = {
+              rows: cell.area.rows, columns: cell.area.columns
+            };
+          }
+          treb_data.push(JSON.parse(JSON.stringify(data_entry)));
         }
         tsv_data.push(tsv_row);
       }
@@ -4582,6 +4613,11 @@ export class Grid {
 
         // UPDATE: use commands...
 
+        // keep track of arrays we paste; we don't want to set value
+        // on cells that are within those arrays.
+
+        const arrays: Area[] = [];
+
         // const paste_area = new Area(area.start, area.end);
         for (const paste_area of paste_areas) {
 
@@ -4618,7 +4654,46 @@ export class Grid {
               this.model.sheet.UpdateCellStyle(target_address, cell_info.style, false, true);
             }
             */
-            commands.push({ key: CommandKey.SetRange, value: data, area: target_address });
+
+            if (cell_info.array) {
+
+              const target_array = {
+                start: {
+                  ...target_address,
+                }, end: {
+                  row: target_address.row + cell_info.array.rows - 1,
+                  column: target_address.column + cell_info.array.columns - 1,
+                },
+              };
+
+              const command: SetRangeCommand = {
+                key: CommandKey.SetRange,
+                value: data,
+                array: true,
+                area: target_array,
+              };
+
+              arrays.push(new Area(target_array.start, target_array.end));
+
+              commands.push(command);
+
+            }
+            else {
+
+              let skip = false;
+              for (const array of arrays) {
+                if (array.Contains(target_address)) {
+                  skip = true;
+                  break;
+                }
+              }
+
+              if (!skip) {
+                commands.push({ key: CommandKey.SetRange, value: data, area: target_address });
+              }
+
+            }
+
             commands.push({ key: CommandKey.UpdateStyle, style: cell_info.style, area: target_address });
 
           });
@@ -5198,6 +5273,13 @@ export class Grid {
 
     if (IsCellAddress(command.area)) {
 
+      // FIXME: should throw if we try to set part of an array
+
+      const cell = this.model.active_sheet.CellData(command.area);
+      if (cell.area && (cell.area.rows > 1 || cell.area.columns > 1)) {
+        throw new Error('can\'t change part of an array');
+      }
+
       // single cell
 
       this.model.active_sheet.SetCellValue(command.area, command.value);
@@ -5232,6 +5314,20 @@ export class Grid {
       return area;
 
     }
+
+  }
+
+  private ClearAreaInternal(area: Area) {
+
+    area = this.model.active_sheet.RealArea(area); // collapse
+
+    this.model.active_sheet.cells.IterateArea(area, (cell, c, r) => {
+      if (cell.area && !area.ContainsArea(cell.area)) {
+        throw new Error('can\'t change part of an array');
+      }
+    });
+
+    this.model.active_sheet.ClearArea(area, true);
 
   }
 
@@ -5271,7 +5367,8 @@ export class Grid {
       case CommandKey.Clear:
         if (command.area) {
           const area = new Area(command.area.start, command.area.end);
-          this.model.active_sheet.ClearArea(area, true);
+          // this.model.active_sheet.ClearArea(area, true);
+          this.ClearAreaInternal(area);
           data_area = Area.Join(area, data_area);
         }
         else {

@@ -39,7 +39,11 @@
     & .tab::after {
       content: 'x';
       padding-left: .5em;
-      opacity: 0;
+      opacity: 0.5;
+    }
+
+    & .tab::after:hover {
+      opacity: 1;
     }
     */
 
