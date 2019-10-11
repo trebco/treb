@@ -3250,7 +3250,7 @@ export class Grid {
     */
 
     let cell = this.cells.GetCell(selection.target, false);
-    if (!cell || cell.type === ValueType.undefined) {
+    if (!cell || (cell.type === ValueType.undefined && !cell.area)) {
       return false;
     }
 
@@ -3284,20 +3284,20 @@ export class Grid {
       if (rows) {
         for (let column = selection.area.start.column; !has_value && column <= selection.area.end.column; column++) {
           cell = this.cells.GetCell({ row: test.row, column }, false);
-          has_value = has_value || (!!cell && cell.type !== ValueType.undefined);
+          has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
           if (!has_value && cell && cell.merge_area) {
             cell = this.cells.GetCell(cell.merge_area.start, false);
-            has_value = has_value || (!!cell && cell.type !== ValueType.undefined);
+            has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
           }
         }
       }
       else {
         for (let row = selection.area.start.row; !has_value && row <= selection.area.end.row; row++) {
           cell = this.cells.GetCell({ row, column: test.column }, false);
-          has_value = has_value || (!!cell && cell.type !== ValueType.undefined);
+          has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
           if (!has_value && cell && cell.merge_area) {
             cell = this.cells.GetCell(cell.merge_area.start, false);
-            has_value = has_value || (!!cell && cell.type !== ValueType.undefined);
+            has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
           }
         }
       }
