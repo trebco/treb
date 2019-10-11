@@ -1171,7 +1171,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       case SaveFileType.treb:
       default:
         data = this.SerializeDocument(preserve_simulation_data);
-        console.info(data);
         text = JSON.stringify(data, undefined, pretty ? 2 : undefined);
         blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
         filename = (document_name).toLowerCase().replace(/\s+/g, '-') + '.treb';
