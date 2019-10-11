@@ -4416,8 +4416,11 @@ export class Grid {
       if (this.selected_annotation) {
         if (event.clipboardData) {
 
-          const data = JSON.stringify(this.selected_annotation);
-          event.clipboardData.setData('text/x-treb-annotation', data);
+          const composite = JSON.stringify({
+            data: this.selected_annotation,
+            source: this.model.active_sheet.id,
+          });
+          event.clipboardData.setData('text/x-treb-annotation', composite);
 
           if (this.selected_annotation.node) {
             // this.selected_annotation.node.innerHTML;
@@ -4563,8 +4566,33 @@ export class Grid {
     const annotation_data = event.clipboardData.getData('text/x-treb-annotation');
     if (annotation_data) {
       try {
-        const data = JSON.parse(annotation_data);
-        const annotation = this.CreateAnnotation(data, true, true);
+        const composite = JSON.parse(annotation_data);
+        if (composite.source && composite.source !== this.model.active_sheet.id) {
+          if (composite.data && composite.data.formula) {
+            let name = '';
+            for (const sheet of this.model.sheets) {
+              if (sheet.id === composite.source) {
+                name = sheet.name;
+                break;
+              }
+            }
+            if (name) {
+              const parse_result = this.parser.Parse(composite.data.formula);
+              if (parse_result.expression) {
+                this.parser.Walk(parse_result.expression, (unit) => {
+                  if (unit.type === 'address') {
+                    if (!unit.sheet_id && !unit.sheet) {
+                      unit.sheet = name;
+                    }
+                  }
+                  return true;
+                });
+                composite.data.formula = '=' + this.parser.Render(parse_result.expression);
+              }
+            }
+          }
+        }
+        const annotation = this.CreateAnnotation(composite.data, true, true);
         if (annotation.node) {
           const node = annotation.node;
           setTimeout(() => {
