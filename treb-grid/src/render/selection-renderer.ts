@@ -103,7 +103,9 @@ export class SelectionRenderer {
    */
   public RenderSelections(show_primary_selection = true) {
 
-    // this is a dumb way of doing this...
+    // this is a dumb way of doing this... it's also error prone,
+    // because it needs to track all the function exits (there are
+    // two, atm)
 
     const cache_primary_empty = this.primary_selection.empty;
     if (!show_primary_selection) {
@@ -151,7 +153,10 @@ export class SelectionRenderer {
       this.corner_column_overlay.Hide();
     }
 
-    if (!this.model.active_sheet.freeze.columns && !this.model.active_sheet.freeze.rows) return;
+    if (!this.model.active_sheet.freeze.columns && !this.model.active_sheet.freeze.rows) {
+      this.primary_selection.empty = cache_primary_empty;
+      return;
+    }
 
     // check visibility for selections in frozen rows, columns
 
@@ -164,25 +169,37 @@ export class SelectionRenderer {
     }
     else {
       const start = this.primary_selection.area.start;
-      visible_row.push(start.row <= this.model.active_sheet.freeze.rows || start.row === Infinity);
-      visible_column.push(start.column <= this.model.active_sheet.freeze.columns || start.column === Infinity);
+      visible_row.push(
+        (start.row <= this.model.active_sheet.freeze.rows) ||
+        (start.row === Infinity));
+
+      visible_column.push(
+        (start.column <= this.model.active_sheet.freeze.columns) ||
+        (start.column === Infinity));
     }
 
     for (const {area} of this.additional_selections) {
-      visible_row.push(area.start.row <= this.model.active_sheet.freeze.rows || area.start.row === Infinity);
-      visible_column.push(area.start.column <= this.model.active_sheet.freeze.columns || area.start.column === Infinity);
+      visible_row.push(
+        (area.start.row <= this.model.active_sheet.freeze.rows) ||
+        (area.start.row === Infinity));
+
+      visible_column.push(
+        (area.start.column <= this.model.active_sheet.freeze.columns) ||
+        (area.start.column === Infinity));
     }
 
     // selections...
 
     if (this.model.active_sheet.freeze.rows) {
       this.RenderSelectionGroup(aggregate, this.layout.row_header_selection,
-        visible_row, undefined, this.row_header_selections, {x: 0, y: this.model.active_sheet.header_offset.y});
+        visible_row, undefined, this.row_header_selections,
+        {x: 0, y: this.model.active_sheet.header_offset.y});
     }
 
     if (this.model.active_sheet.freeze.columns) {
       this.RenderSelectionGroup(aggregate, this.layout.column_header_selection,
-        visible_column, undefined, this.column_header_selections, {x: this.model.active_sheet.header_offset.x, y: 0});
+        visible_column, undefined, this.column_header_selections,
+        {x: this.model.active_sheet.header_offset.x, y: 0});
     }
 
     if (this.model.active_sheet.freeze.rows && this.model.active_sheet.freeze.columns) {

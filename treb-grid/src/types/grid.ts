@@ -3178,6 +3178,10 @@ export class Grid {
 
   }
 
+  /**
+   * render selections. we are wrapping this up in a method so we can
+   * hide the primary selection in some cases (one case).
+   */
   private RenderSelections() {
     const show_primary_selection = (!this.editing_state) ||
       (this.editing_cell.sheet_id === this.model.active_sheet.id);
@@ -4161,6 +4165,7 @@ export class Grid {
    * @param preserve_target preserve existing selection target
    */
   private Select(selection: GridSelection, area?: Area, target?: ICellAddress, preserve_target = false) {
+
     if (!selection.empty) {
       if (preserve_target) target = selection.target;
     }
@@ -4633,14 +4638,13 @@ export class Grid {
       if (!text_data) return true;
 
       const lines = text_data.trim().split('\n');
-        // text_data.split('\n');
-      const cells = lines.map((line) => line.split('\t').map((x) => x.trim()));
+      const source = lines.map((line) => line.split('\t').map((x) => x.trim()));
 
       const paste_areas = this.RecyclePasteAreas(
-        new Area({ row: 0, column: 0 }, { row: cells.length - 1, column: cells[0].length - 1 }), area);
+        new Area({ row: 0, column: 0 }, { row: source.length - 1, column: source[0].length - 1 }), area);
 
       if (paste_areas.length === 1) {
-        area.Resize(cells.length, cells[0].length);
+        area.Resize(source.length, source[0].length);
         area.Resize(paste_areas[0].rows, paste_areas[0].columns);
       }
 
@@ -4649,17 +4653,25 @@ export class Grid {
           for (let c = 0; c < lines[0].length; c++) {
             const target_area = new Area({ row: r + paste_area.start.row, column: c + paste_area.start.column });
             this.model.active_sheet.cells.EnsureCell(target_area.end);
-            const value = (cells[r][c] === '') ? undefined : cells[r][c];
-            const tmp = this.SetInferredType({ area: target_area, target: target_area.start, empty: false },
-              // cells[r][c], false, true);
-              value, false, true);
-            if (tmp) {
-              for (const command of tmp) commands.push(command);
+            if (source[r][c]) {
+              const tmp = this.SetInferredType(
+                { area: target_area, target: target_area.start, empty: false },
+                source[r][c], false, false); // true); // <- shouldn't that be false? ???
+              if (tmp) {
+                for (const command of tmp) { commands.push(command); }
+              }
+            }
+            else {
+              const current = this.model.active_sheet.cells.GetCell(target_area.start, false);
+              if (current && current.type !== ValueType.undefined) {
+                commands.push({ key: CommandKey.Clear, area: target_area.Clone()});
+              }
             }
           }
         }
       }
 
+      // console.info(commands);
       // this.Select(this.primary_selection, area);
     }
 
@@ -5387,7 +5399,7 @@ export class Grid {
           const sheets: Sheet[] = [];
           const target = this.model.sheets[command.index];
 
-          for (let i = 0; i < this.model.sheets.length; i++) { 
+          for (let i = 0; i < this.model.sheets.length; i++) {
             if (i !== command.index) {
               if (i === command.move_before) {
                 sheets.push(target);
@@ -5455,6 +5467,7 @@ export class Grid {
 
           this.layout.UpdateAnnotation(this.model.active_sheet.annotations);
           structure_event = true;
+          this.RenderSelections();
 
         }
         break;
@@ -5505,6 +5518,7 @@ export class Grid {
 
           this.layout.UpdateAnnotation(this.model.active_sheet.annotations);
           structure_event = true;
+          this.RenderSelections();
 
         }
         break;

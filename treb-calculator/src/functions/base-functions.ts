@@ -1,7 +1,6 @@
 
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { Localization } from 'treb-base-types';
 import { ReferenceError, NotImplError } from '../function-error';
 
 /**
@@ -128,23 +127,6 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
-    Concatenate: {
-      description: 'Pastes strings together',
-      fn: (...args: any[]) => {
-        return args.map((arg) => {
-
-          // this is used when concatenating cells that contain numbers
-          // FIXME: get cell number format?
-
-          if (typeof arg === 'number' && Localization.decimal_separator === ',') {
-            return arg.toString().replace(/\./, ',');
-          }
-
-          return arg.toString();
-        }).join('');
-      },
-    },
-
     CountA: {
       description: 'Counts cells that are not empty',
       fn: (...args: any[]) => {
@@ -211,7 +193,8 @@ export const BaseFunctionLibrary: FunctionMap = {
       description: 'Adds arguments and ranges',
       fn: (...args: any[]) => {
         return Utils.Flatten(args).reduce((a: number, b: any) => {
-          if (typeof b === 'undefined') return a;
+          const type = typeof b;
+          if (type === 'undefined' || type === 'string') return a;
           return a + Number(b);
         }, 0);
       },

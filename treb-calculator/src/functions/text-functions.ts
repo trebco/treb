@@ -1,6 +1,7 @@
 
 import { FunctionMap } from '../descriptors';
 import { NumberFormatCache } from 'treb-format';
+import { Localization } from 'treb-base-types';
 
 export const TextFunctionLibrary: FunctionMap = {
 
@@ -47,6 +48,25 @@ export const TextFunctionLibrary: FunctionMap = {
       return str.substr(0, count);
     },
     category: ['text'],
+  },
+
+  Concatenate: {
+    description: 'Pastes strings together',
+    fn: (...args: any[]) => {
+      return args.map((arg) => {
+
+        // this is used when concatenating cells that contain numbers
+        // FIXME: get cell number format?
+
+        const string_arg = (typeof arg === 'undefined') ? '' : arg.toString();
+
+        if (typeof arg === 'number' && Localization.decimal_separator === ',') {
+          return string_arg.replace(/\./, ',');
+        }
+
+        return string_arg;
+      }).join('');
+    },
   },
 
 };

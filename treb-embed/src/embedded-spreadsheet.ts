@@ -232,12 +232,21 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       expand: false,
       insert_function_button: false,
       in_cell_editor: true,
-      formula_bar: this.options.formula_bar,
+      // formula_bar: this.options.formula_bar,
       repaint_on_cell_change: false,
-      scrollbars: this.options.scrollbars,
-      tab_bar: this.options.tab_bar,
+      // scrollbars: this.options.scrollbars,
+      // tab_bar: this.options.tab_bar,
     };
 
+    if (this.options.formula_bar) {
+      grid_options.formula_bar = this.options.formula_bar;
+    }
+    if (this.options.scrollbars) {
+      grid_options.scrollbars = this.options.scrollbars;
+    }
+    if (this.options.tab_bar) {
+      grid_options.tab_bar = this.options.tab_bar;
+    }
     if (this.options.add_tab) {
       grid_options.add_tab = this.options.add_tab;
     }

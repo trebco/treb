@@ -362,6 +362,15 @@ export class SimulationModel {
         category: ['RiskAMP Simulation Functions'],
       },
 
+      SimulationMedian: {
+        description: 'Returns the median value of the data from this cell in the simulation',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell', collector: true },
+        ],
+        fn: this.simulationmedian.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+      },
+
       SimulationValue: {
         description: 'Returns the value of this cell in the simulation at the given trial number',
         arguments: [

@@ -282,6 +282,32 @@ export class Cell {
   }
 
   /**
+   * we have an issue where a reference to an empty cell winds up returning
+   * a string, goes into a numerical calculation, and slows everything down.
+   *
+   * this is kind of a corner case. it's not that there's a reference to an
+   * empty cell -- that works OK. there's a reference to a cell, which is
+   * itself a reference to an empty cell. that's why it's a function, which
+   * is being returned as a string.
+   *
+   * in this case because it's the function value, I think returning 0 is ok.
+   * BUT, it still might make sense to return undefined.
+   */
+  public GetValue3() {
+    if (this.calculated_type) {
+      return (this.calculated_type === ValueType.error) ?
+        { error: this.calculated } : this.calculated;
+    }
+    if (this.type === ValueType.formula) {
+      // formula, but no calc type... undefined or zero? (...)
+      return 0; // undefined;
+    }
+    if (this.type === ValueType.string &&
+        this.value && this.value[0] === '\'') return this.value.slice(1);
+    return this.value;
+  }
+
+  /**
    * set note. set undefined to clear.
    */
   public SetNote(note?: string) {

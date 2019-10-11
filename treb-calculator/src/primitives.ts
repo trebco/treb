@@ -77,16 +77,28 @@ export const LessThanEquals = (a: number|object, b: number|object) => {
   return a <= b;
 };
 
-export const Equals = (a: number|object, b: number|object) => {
+export const Equals = (a: number|object|string, b: number|object|string) => {
   if (typeof a === 'object') return a;
   if (typeof b === 'object') return b;
+
+  // special case: empty string === undefined
+ 
+  if (typeof a === 'undefined' && b === '') { return true; }
+  if (typeof b === 'undefined' && a === '') { return true; }
+
   // tslint:disable-next-line: triple-equals
   return a == b;
 };
 
-export const NotEquals = (a: number|object, b: number|object) => {
+export const NotEquals = (a: number|object|string, b: number|object|string) => {
   if (typeof a === 'object') return a;
   if (typeof b === 'object') return b;
+
+  // special case: empty string === undefined
+
+  if (typeof a === 'undefined' && b === '') { return false; }
+  if (typeof b === 'undefined' && a === '') { return false; }
+
   // tslint:disable-next-line: triple-equals
   return a != b;
 };

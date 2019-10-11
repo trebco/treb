@@ -963,7 +963,7 @@ export class Parser {
         char === DOLLAR_SIGN ||
         char === PERIOD ||
         char === EXCLAMATION_MARK ||
-        ((char === SINGLE_QUOTE || char === SPACE) && single_quote) ||
+        single_quote || // ((char === SINGLE_QUOTE || char === SPACE) && single_quote) ||
         (char >= ZERO && char <= NINE) // tokens can't start with a number, but this loop starts at index 1
       ) {
         token.push(char);

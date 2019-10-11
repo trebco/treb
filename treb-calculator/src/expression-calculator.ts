@@ -137,8 +137,10 @@ export class ExpressionCalculator {
       return () => undefined;
     }
 
+    console.info("z?", cell.GetValue3());
+
     // close
-    return () => cell.GetValue();
+    return () => cell.GetValue3();
 
   }
 
