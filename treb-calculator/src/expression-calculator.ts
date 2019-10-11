@@ -286,7 +286,17 @@ export class ExpressionCalculator {
 
           if (address) {
 
-            const cell_data = this.data_model.active_sheet.CellData(address);
+            let sheet = this.data_model.active_sheet;
+            if (address.sheet_id && address.sheet_id !== sheet.id) {
+              for (const test of this.data_model.sheets) {
+                if (test.id === address.sheet_id) {
+                  sheet = test;
+                  break;
+                }
+              }
+            }
+
+            const cell_data = sheet.CellData(address);
 
             return {
               address: {...address},
