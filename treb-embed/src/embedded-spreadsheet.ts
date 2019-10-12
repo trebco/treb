@@ -1301,7 +1301,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           return u8.buffer;
         });
 
-      this.calculator.UpdateResults(this.last_simulation_data, model);
+      this.calculator.UpdateResults(this.last_simulation_data, model, false);
     }
 
     model.document_name = data.name;

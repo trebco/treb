@@ -557,7 +557,7 @@ export class Calculator extends Graph {
       return result;
     }
     else {
-      this.InitializeGraphValues();
+      this.InitializeGraph();
     }
 
   }

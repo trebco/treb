@@ -24,7 +24,10 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
   public reference?: Cell;
 
   public error = SpreadsheetError.None;
+
+  // why is this (?)? can't we use a default junk address?
   public address?: ICellAddress;
+
   public result: any;
   public expression: ExpressionUnit = { type: 'missing', id: -1 };
   public expression_error = false;
@@ -64,7 +67,6 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
     if (this.reference) {
       this.result = this.reference.GetValue();
     }
-    // this.dirty = false;
   }
 
   /**

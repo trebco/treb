@@ -71,8 +71,14 @@ export abstract class Graph {
     this.cells_map = {};
   }
 
+  /** overload */
+  public GetVertex(address: ICellAddress, create: true): SpreadsheetVertex;
+
+  /** overload */
+  public GetVertex(address: ICellAddress, create?: boolean): SpreadsheetVertex | undefined;
+
   /** returns the vertex at this address. creates it if necessary. */
-  public GetVertex(address: ICellAddress, create: boolean) {
+  public GetVertex(address: ICellAddress, create?: boolean) {
 
     if (!address.sheet_id) { throw new Error('getvertex with no sheet id'); }
 
@@ -81,6 +87,7 @@ export abstract class Graph {
     const cells = this.cells_map[address.sheet_id];
 
     if (!cells) {
+      throw new Error('no cells?');
       return undefined;
     }
 
@@ -182,30 +189,21 @@ export abstract class Graph {
     }
   }
 
-  /** adds an edge from u -> v */
-  public AddEdge(u: ICellAddress, v: ICellAddress): GraphStatus {
-
-    const v_u = this.GetVertex(u, true);
-    const v_v = this.GetVertex(v, true);
-
-    if (!v_v || !v_u) return GraphStatus.OK; // not possible to loop -> null
-
-    // loop check
-    // FIXME: move to vertex class
-
-    // let tcc = 0;
+  public LoopCheck(v: Vertex, u: Vertex) {
 
     const check_list: Vertex[] = [];
 
     const tail = (vertex: Vertex, depth = ''): boolean => {
 
-      if (vertex === v_u) {
-        console.info('MATCH', vertex, v_v, v_u);
+      if (vertex === u) {
+        console.info('MATCH', vertex, v, u);
         return true;
       }
 
       // switch to non-functional loop
-      for (const check of check_list) if (check === vertex) return false; // already checked this branch
+      for (const check of check_list) {
+        if (check === vertex) return false; // already checked this branch
+      }
 
       check_list.push(vertex);
 
@@ -214,7 +212,23 @@ export abstract class Graph {
 
     // throw or return value? [A: return value]
 
-    if (tail(v_v)) return GraphStatus.Loop; // throw( "not adding, loop");
+    if (tail(v)) {
+      return GraphStatus.Loop; // throw( "not adding, loop");
+    }
+
+    return GraphStatus.OK;
+
+  }
+
+  /** adds an edge from u -> v */
+  public AddEdge(u: ICellAddress, v: ICellAddress): GraphStatus {
+
+    const v_u = this.GetVertex(u, true);
+    const v_v = this.GetVertex(v, true);
+
+    const status = this.LoopCheck(v_v, v_u);
+
+    if (status === GraphStatus.Loop) { return status; }
 
     v_u.AddDependent(v_v);
     v_v.AddDependency(v_u);
@@ -224,6 +238,7 @@ export abstract class Graph {
 
   /** removes edge from u -> v */
   public RemoveEdge(u: ICellAddress, v: ICellAddress) {
+
     const v_u = this.GetVertex(u, false);
     const v_v = this.GetVertex(v, false);
 
@@ -246,7 +261,6 @@ export abstract class Graph {
   public SetDirty(address: ICellAddress) {
 
     const vertex = this.GetVertex(address, true);
-    if (!vertex) return;
 
     // is it safe to assume that, if the dirty flag is set, it's
     // on the dirty list? I'm not sure that's the case if there's
@@ -261,14 +275,14 @@ export abstract class Graph {
   public CreateImplicitEdgeToArray(array_vertex: ArrayVertex) {
 
     if (!array_vertex.area.start.sheet_id) {
-      console.info("area missing sheet id");
+      console.info('area missing sheet id');
       return;
     }
 
     array_vertex.area.Iterate((address) => {
       const vertex = this.GetVertex(address, false);
       if (vertex) {
-        console.info('CreateImplicitEdgeToArray', vertex.address, array_vertex.area);
+        // console.info('CreateImplicitEdgeToArray', vertex.address, array_vertex.area);
         array_vertex.AddDependency(vertex);
         vertex.AddDependent(array_vertex);
       }
@@ -279,11 +293,11 @@ export abstract class Graph {
   public CreateImplicitEdgeToArrays(vertex: SpreadsheetVertex) {
 
     if (!vertex.address) {
-      console.info("vertex missing address");
+      console.info('vertex missing address');
       return;
     }
     if (!vertex.address.sheet_id) {
-      console.info("vertex missing sheet id");
+      console.info('vertex missing sheet id');
       return;
     }
 
@@ -291,12 +305,9 @@ export abstract class Graph {
       const array_vertex = this.array_vertices[key];
       if (array_vertex.area.start.sheet_id === vertex.address.sheet_id &&
           array_vertex.area.Contains(vertex.address)) {
-
-        console.info('CreateImplicitEdgeToArray', vertex.address, array_vertex.area);
-
+        // console.info('CreateImplicitEdgeToArray', vertex.address, array_vertex.area);
         array_vertex.AddDependency(vertex);
         vertex.AddDependent(array_vertex);
-
       }
     }
   }
@@ -314,42 +325,9 @@ export abstract class Graph {
 
   }
 
-  /*
-  public SetArraysDirty(address: ICellAddress) {
+  public GetArrayVertex(area: Area, create: true): ArrayVertex;
 
-    console.info("SetArraysDirty", address);
-
-    for (const vertex of Object.values(this.array_vertices)) {
-      if (vertex.area.Contains(address)) {
-        for (const edge of vertex.edges_out as SpreadsheetVertex[]) {
-          if (!edge.SetDirty()) {
-            this.dirty_list.push(edge);
-            if (edge.address) { this.SetArraysDirty(edge.address); }
-          }
-        }
-      }
-    }
-  }
-
-  public ResetInboundArrays(address: ICellAddress, set_dirty = false){
-    for (const vertex of Object.values(this.array_vertices)) {
-      if (vertex.area.Contains(address)) {
-        vertex.ClearDependencies();
-        if (set_dirty) {
-          for (const edge of vertex.edges_out as SpreadsheetVertex[]) {
-            if (!edge.SetDirty()) {
-              this.dirty_list.push(edge);
-              if (edge.address) {
-                this.SetArraysDirty(edge.address);
-              }
-            }
-          }
-        }
-      }
-    }
-
-  }
-  */
+  public GetArrayVertex(area: Area, create?: boolean): ArrayVertex|undefined;
 
   public GetArrayVertex(area: Area, create: boolean): ArrayVertex|undefined {
     const label = area.start.sheet_id + '!' + area.spreadsheet_label;
@@ -389,13 +367,9 @@ export abstract class Graph {
     const v_u = this.GetArrayVertex(u, true); // create if necessary
     const v_v = this.GetVertex(v, true);
 
-    // FIXME: loop check
+    const status = this.LoopCheck(v_v, v_u);
 
-    // ...
-
-    if (!v_u || !v_v) { return GraphStatus.Loop; }
-
-    console.info("add ave", u, v);
+    if (status === GraphStatus.Loop) { return status; }
 
     v_u.AddDependent(v_v);
     v_v.AddDependency(v_u);
@@ -460,8 +434,6 @@ export abstract class Graph {
 
     const v_u = this.GetVertex(u, true);
 
-    if (!v_u) return GraphStatus.OK; // not possible to loop -> null
-
     v_u.AddDependent(v);
     v.AddDependency(v_u);
 
@@ -482,7 +454,7 @@ export abstract class Graph {
 
   // --- for initial load ---
 
-  public InitializeGraphValues() {
+  public InitializeGraph() {
 
     for (const vertex of this.dirty_list) {
 

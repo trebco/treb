@@ -217,10 +217,14 @@ export class MCCalculator extends Calculator {
    * results
    *
    * @param model model passed directly, in case the model has not yet
-   *              been set; we may need this for assigning simulation 
-   *              results from older files.
+   * been set; we may need this for assigning simulation results from
+   * older files.
+   *
+   * @param set_dirty ordinarily we would set the cell dirty, but on
+   * load it may not yet be available, and we are going to mark it dirty
+   * later anyway -- so pass false to skip.
    */
-  public UpdateResults(data: any, model = this.model){
+  public UpdateResults(data: any, model = this.model, set_dirty = true){
 
     if (!model) {
       throw new Error('UpdateResults called without model');
@@ -249,7 +253,9 @@ export class MCCalculator extends Calculator {
       }
 
       simulation_model.results[entry.sheet_id][entry.column][entry.row] = entry.data;
-      this.SetDirty(entry);
+      if (set_dirty) {
+        this.SetDirty(entry);
+      }
 
     }
 
