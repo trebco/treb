@@ -81,6 +81,8 @@ export class Area implements IArea {
     return area;
   }
 
+  private iterator_index: ICellAddress = { row: -1, column: -1, sheet_id: 0 };
+
   // tslint:disable-next-line:variable-name
   private start_: ICellAddress;
 
@@ -160,6 +162,8 @@ export class Area implements IArea {
     this.start_ = { ...start };
 
     if (normalize) this.Normalize();
+
+    this.ResetIterator();
 
   }
 
@@ -375,6 +379,45 @@ export class Area implements IArea {
   }
 
   /**
+   * testing: we may have to polyfill for IE11, or just not use it at
+   * all, depending on support level... but it works OK (kind of a clumsy
+   * implementation though).
+   */
+  public [Symbol.iterator]() {
+    return {
+      next: () => {
+
+        // sanity
+
+        if (this.entire_column || this.entire_row) {
+          console.warn('don\'t iterate over infinte range');
+          return { value: undefined, done: true };
+        }
+
+        // return current, unless it's OOB; if so, advance
+
+        if (this.iterator_index.column > this.end.column) {
+          this.iterator_index.column = this.start_.column;
+          this.iterator_index.row++;
+
+          if (this.iterator_index.row > this.end.row) {
+            this.ResetIterator();
+            return { value: undefined, done: true };
+          }
+
+        }
+
+        const result = { value: { ...this.iterator_index }, done: false };
+        this.iterator_index.column++;
+
+        return result;
+
+      },
+    };
+
+  }
+
+  /**
    * returns the range in A1-style spreadsheet addressing. if the
    * entire sheet is selected, returns nothing (there's no way to
    * express that in A1 notation). returns the row numbers for entire
@@ -432,5 +475,14 @@ export class Area implements IArea {
     };
     */
   }
+
+  private ResetIterator() {
+    this.iterator_index = {
+      row: this.start_.row,
+      column: this.start_.column,
+      sheet_id: this.start_.sheet_id,
+    };
+  }
+
 
 }
