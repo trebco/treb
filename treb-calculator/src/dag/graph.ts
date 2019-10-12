@@ -312,12 +312,12 @@ export abstract class Graph {
     // so we do fewer wasted checks of "are all my deps clean"?
 
     for (const vertex of calculation_list) {
-      vertex.Calculate(this, this.CalculationCallback, this.SpreadCallback);
+      vertex.Calculate(this);
     }
 
   }
 
-  protected abstract CalculationCallback(vertex: SpreadsheetVertex): CalculationResult;
-  protected abstract SpreadCallback(vertex: SpreadsheetVertex, value: any): void;
+  public abstract CalculationCallback(vertex: SpreadsheetVertex): CalculationResult;
+  public abstract SpreadCallback(vertex: SpreadsheetVertex, value: any): void;
 
 }

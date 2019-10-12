@@ -215,6 +215,114 @@ export class Calculator extends Graph {
 
   }
 
+  public SpreadCallback(vertex: SpreadsheetVertex, value: any) {
+
+    if (!vertex.address || !vertex.address.sheet_id) {
+      throw new Error('spread callback called without sheet id');
+    }
+    const cells = this.cells_map[vertex.address.sheet_id];
+
+    if (!cells) {
+      throw new Error('spread callback called without cells');
+    }
+
+    if (!vertex || !vertex.reference) return;
+
+    const ref = vertex.reference.area;
+    let type: string = typeof value;
+    let dims = 2;
+
+    const calculation_error = (typeof value === 'object' && value.error);
+
+    // mx1
+
+    if (!calculation_error && type === 'object' && value.data){
+      if (this.IsNativeOrTypedArray(value.data)){
+        type = 'array';
+        value = Utilities.TransposeArray(value.data);
+      }
+      else {
+        type = 'array';
+        value = [[''].concat(value.rownames)].concat(value.colnames.map((name: any) => {
+          return [name].concat(value.data[name]);
+        }));
+      }
+    }
+    else if (this.IsNativeOrTypedArray(value)){
+      value = Utilities.TransposeArray(value);
+      type = 'array';
+      dims = 1;
+    }
+
+    const area = vertex.reference.area;
+    if (area){
+      if (type === 'array' ){
+
+        if (dims === 1){
+          let row = area.start.row;
+          let column = area.start.column;
+          for (let r = 0; r < value.length && r < area.rows; r++, row++ ){
+            if (this.IsNativeOrTypedArray(value[r])){
+              for (let c = 0; c < value[r].length && c < area.columns; c++, column++ ){
+                cells.data2[row][column].SetCalculatedValueOrError(value[r][c]);
+              }
+              column = area.start.column;
+            }
+            else cells.data2[row][column].SetCalculatedValueOrError(value[r]);
+          }
+        }
+        else {
+          for (let c = value.length; c < area.columns; c++ ) value[c] = []; // padding columns for loop
+          for (let c = 0, column = area.start.column; c < area.columns; c++, column++ ){
+            for (let r = 0, row = area.start.row; r < area.rows; r++, row++ ){
+              cells.data2[row][column].SetCalculatedValueOrError(value[c][r]);
+            }
+          }
+        }
+      }
+      else {
+
+        // test before loops
+        if (calculation_error) {
+          for (let c = area.start.column; c <= area.end.column; c++){
+            for (let r = area.start.row; r <= area.end.row; r++){
+              cells.data2[r][c].SetCalculationError(value.error);
+            }
+          }
+        }
+        else {
+          const value_type = Cell.GetValueType(value);
+          for (let c = area.start.column; c <= area.end.column; c++){
+            for (let r = area.start.row; r <= area.end.row; r++){
+              cells.data2[r][c].SetCalculatedValue(value, value_type);
+            }
+          }
+        }
+      }
+    }
+
+    // console.info("Spread array value", value, vertex.reference_)
+  }
+
+  /**
+   * FIXME: for this version, this should be synchronous; the whole thing
+   * should run in a worker. should be much faster than context switching
+   * every time.
+   */
+  public CalculationCallback(vertex: SpreadsheetVertex): CalculationResult {
+
+    // must have address [UPDATE: don't do this]
+    if (!vertex.address) throw(new Error('vertex missing address'));
+    if (vertex.expression_error) {
+      return {
+        value: UnknownError,
+      };
+    }
+
+    return this.expression_calculator.Calculate(vertex.expression, vertex.address);
+  }
+
+
   /**
    * generic function, broken out from the Indirect function. checks dynamic
    * dependency for missing edges, and adds those edges.
@@ -870,95 +978,6 @@ export class Calculator extends Graph {
     return Array.isArray(val) || (val instanceof Float64Array) || (val instanceof Float32Array);
   }
 
-  protected SpreadCallback(vertex: SpreadsheetVertex, value: any) {
-
-    if (!vertex.address || !vertex.address.sheet_id) {
-      throw new Error('spread callback called without sheet id');
-    }
-    const cells = this.cells_map[vertex.address.sheet_id];
-
-    if (!cells) {
-      throw new Error('spread callback called without cells');
-    }
-
-    if (!vertex || !vertex.reference) return;
-
-    const ref = vertex.reference.area;
-    let type: string = typeof value;
-    let dims = 2;
-
-    const calculation_error = (typeof value === 'object' && value.error);
-
-    // mx1
-
-    if (!calculation_error && type === 'object' && value.data){
-      if (this.IsNativeOrTypedArray(value.data)){
-        type = 'array';
-        value = Utilities.TransposeArray(value.data);
-      }
-      else {
-        type = 'array';
-        value = [[''].concat(value.rownames)].concat(value.colnames.map((name: any) => {
-          return [name].concat(value.data[name]);
-        }));
-      }
-    }
-    else if (this.IsNativeOrTypedArray(value)){
-      value = Utilities.TransposeArray(value);
-      type = 'array';
-      dims = 1;
-    }
-
-    const area = vertex.reference.area;
-    if (area){
-      if (type === 'array' ){
-
-        if (dims === 1){
-          let row = area.start.row;
-          let column = area.start.column;
-          for (let r = 0; r < value.length && r < area.rows; r++, row++ ){
-            if (this.IsNativeOrTypedArray(value[r])){
-              for (let c = 0; c < value[r].length && c < area.columns; c++, column++ ){
-                cells.data2[row][column].SetCalculatedValueOrError(value[r][c]);
-              }
-              column = area.start.column;
-            }
-            else cells.data2[row][column].SetCalculatedValueOrError(value[r]);
-          }
-        }
-        else {
-          for (let c = value.length; c < area.columns; c++ ) value[c] = []; // padding columns for loop
-          for (let c = 0, column = area.start.column; c < area.columns; c++, column++ ){
-            for (let r = 0, row = area.start.row; r < area.rows; r++, row++ ){
-              cells.data2[row][column].SetCalculatedValueOrError(value[c][r]);
-            }
-          }
-        }
-      }
-      else {
-
-        // test before loops
-        if (calculation_error) {
-          for (let c = area.start.column; c <= area.end.column; c++){
-            for (let r = area.start.row; r <= area.end.row; r++){
-              cells.data2[r][c].SetCalculationError(value.error);
-            }
-          }
-        }
-        else {
-          const value_type = Cell.GetValueType(value);
-          for (let c = area.start.column; c <= area.end.column; c++){
-            for (let r = area.start.row; r <= area.end.row; r++){
-              cells.data2[r][c].SetCalculatedValue(value, value_type);
-            }
-          }
-        }
-      }
-    }
-
-    // console.info("Spread array value", value, vertex.reference_)
-  }
-
   /**
    * check if a cell is volatile. normally this falls out of the calculation,
    * but if we build the graph and set values explicitly, we need to check.
@@ -978,24 +997,6 @@ export class Calculator extends Graph {
 
     return volatile;
 
-  }
-
-  /**
-   * FIXME: for this version, this should be synchronous; the whole thing
-   * should run in a worker. should be much faster than context switching
-   * every time.
-   */
-  protected CalculationCallback(vertex: SpreadsheetVertex): CalculationResult {
-
-    // must have address [UPDATE: don't do this]
-    if (!vertex.address) throw(new Error('vertex missing address'));
-    if (vertex.expression_error) {
-      return {
-        value: UnknownError,
-      };
-    }
-
-    return this.expression_calculator.Calculate(vertex.expression, vertex.address);
   }
 
   /**

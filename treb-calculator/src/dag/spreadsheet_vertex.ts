@@ -4,7 +4,7 @@ import { Vertex } from './vertex';
 import { Cell, ICellAddress, ValueType } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 
-type Graph = import('./graph').Graph;
+type Graph = import('./graph').Graph; // circular; type only
 
 export enum SpreadsheetError {
   None,
@@ -106,10 +106,7 @@ export class SpreadsheetVertex extends Vertex {
    * A: for overloading. leaf extends this class, and has a separate
    * calculation routine.
    */
-  public Calculate(
-    graph: Graph, // any? because circular reference? (...)
-    callback: (vertex: SpreadsheetVertex) => CalculationResult,
-    spread_callback: (vertex: SpreadsheetVertex, value: any) => void){
+  public Calculate(graph: Graph) {
 
     if (!this.dirty) return;
 
@@ -135,7 +132,7 @@ export class SpreadsheetVertex extends Vertex {
       if (this.reference.type === ValueType.formula) {
 
         this.short_circuit = false;
-        const result = callback.call(graph, this);
+        const result = graph.CalculationCallback.call(graph, this);
         this.result = result.value;
 
         // this test is a waste for 99% of calls
@@ -149,7 +146,7 @@ export class SpreadsheetVertex extends Vertex {
       else this.result = this.reference.GetValue();
 
       if (this.array_head) {
-        spread_callback.call(graph, this, this.result);
+        graph.SpreadCallback.call(graph, this, this.result);
       }
       else if (this.reference.type === ValueType.formula) {
         if (typeof this.result === 'object' && this.result.error) {
@@ -168,7 +165,7 @@ export class SpreadsheetVertex extends Vertex {
     this.dirty = false;
 
     for (const edge of this.edges_out){
-      (edge as SpreadsheetVertex).Calculate(graph, callback, spread_callback);
+      (edge as SpreadsheetVertex).Calculate(graph);
     }
 
   }

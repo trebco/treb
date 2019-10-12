@@ -59,10 +59,7 @@ export class LeafVertex extends SpreadsheetVertex {
   }
 
   /** overrides calculate function */
-  public Calculate(
-    graph: any,
-    callback: (vertex: SpreadsheetVertex) => any,
-    spread_callback: (vertex: SpreadsheetVertex, value: any) => void){
+  public Calculate(graph: any) {
 
     // if we are not dirty, nothing to do
     if (!this.dirty) return;
