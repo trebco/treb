@@ -913,7 +913,6 @@ export class Calculator extends Graph {
 
         if (parse_result.expression) {
           const dependencies = this.RebuildDependencies(parse_result.expression, cell.sheet_id);
-          console.info("PRED", dependencies);
 
           for (const key of Object.keys(dependencies.ranges)){
             const unit = dependencies.ranges[key];
