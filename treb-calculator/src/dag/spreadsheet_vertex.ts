@@ -50,13 +50,18 @@ export class SpreadsheetVertex extends Vertex {
    * doing propagation, why are edges public?
    *
    * sets dirty, propagates.
+   *
+   * returns the original state -- meaning, true = "I was already dirty",
+   * false = "I was not previously dirty". callers can use that to drive
+   * behavior.
+   *
    */
   public SetDirty() {
 
     // if we are already dirty, then our children are already
     // dirty and we can skip this.
 
-    if (this.dirty) return;
+    if (this.dirty) return true; // was already dirty
 
     // otherwise set flag and propagate
 
@@ -70,6 +75,8 @@ export class SpreadsheetVertex extends Vertex {
     for (const edge of this.edges_out) {
       (edge as SpreadsheetVertex).SetDirty();
     }
+
+    return false; // was not dirty before
 
   }
 

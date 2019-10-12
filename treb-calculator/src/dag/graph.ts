@@ -150,9 +150,13 @@ export abstract class Graph {
    * we have an option to set dirty because they get called together
    * frequently, saves a lookup.
    */
-  public ResetInbound(address: ICellAddress, set_dirty = false){
-    const vertex = this.GetVertex(address, true);
+  public ResetInbound(address: ICellAddress, set_dirty = false, create = true){
+
+    this.ResetInboundArrays(address, set_dirty);
+    const vertex = this.GetVertex(address, create);
+
     if (!vertex) return;
+
     vertex.ClearDependencies();
 
     if (set_dirty) {
@@ -223,6 +227,9 @@ export abstract class Graph {
 
   /** sets dirty */
   public SetDirty(address: ICellAddress) {
+
+    console.info("SOmeone called SetDirty", address);
+
     const vertex = this.GetVertex(address, true);
     if (!vertex) return;
 
@@ -236,8 +243,43 @@ export abstract class Graph {
 
   // --- array vertices... testing ---
 
+  public SetArraysDirty(address: ICellAddress) {
+
+    console.info("SetArraysDirty", address);
+
+    for (const vertex of Object.values(this.array_vertices)) {
+      if (vertex.area.Contains(address)) {
+        for (const edge of vertex.edges_out as SpreadsheetVertex[]) {
+          if (!edge.SetDirty()) {
+            this.dirty_list.push(edge);
+            if (edge.address) { this.SetArraysDirty(edge.address); }
+          }
+        }
+      }
+    }
+  }
+
+  public ResetInboundArrays(address: ICellAddress, set_dirty = false){
+    for (const vertex of Object.values(this.array_vertices)) {
+      if (vertex.area.Contains(address)) {
+        vertex.ClearDependencies();
+        if (set_dirty) {
+          for (const edge of vertex.edges_out as SpreadsheetVertex[]) {
+            if (!edge.SetDirty()) {
+              this.dirty_list.push(edge);
+              if (edge.address) {
+                this.SetArraysDirty(edge.address);
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+
   public GetArrayVertex(area: Area, create: boolean): ArrayVertex|undefined {
-    const label = area.spreadsheet_label;
+    const label = area.start.sheet_id + '!' + area.spreadsheet_label;
     let vertex = this.array_vertices[label];
     if (!vertex && create) {
       vertex = new ArrayVertex();
@@ -263,14 +305,15 @@ export abstract class Graph {
 
   }
 
-  public AddArrayVertexEdge(u: ICellAddress, v: Area): GraphStatus {
+  /** add edge from u -> v */
+  public AddArrayVertexEdge(u: Area, v: ICellAddress): GraphStatus {
 
-    if (v.start.sheet_id === u.sheet_id && v.Contains(u)) {
+    if (u.start.sheet_id === v.sheet_id && u.Contains(v)) {
       return GraphStatus.Loop;
     }
 
-    const v_v = this.GetArrayVertex(v, true); // create if necessary
-    const v_u = this.GetVertex(u, true);
+    const v_u = this.GetArrayVertex(u, true); // create if necessary
+    const v_v = this.GetVertex(v, true);
 
     // FIXME: loop check
 
@@ -285,10 +328,11 @@ export abstract class Graph {
 
   }
 
-  public RemoveArrayVertexEdge(u: ICellAddress, v: Area) {
+  /** remove edge from u -> v */
+  public RemoveArrayVertexEdge(u: Area, v: ICellAddress) {
 
-    const v_v = this.GetArrayVertex(v, false);
-    const v_u = this.GetVertex(u, false);
+    const v_u = this.GetArrayVertex(u, false);
+    const v_v = this.GetVertex(v, false);
 
     if (!v_u || !v_v) { return; }
 
@@ -382,6 +426,9 @@ export abstract class Graph {
 
     for (const vertex of this.volatile_list) {
       vertex.SetDirty();
+      if (vertex.address) {
+        this.SetArraysDirty(vertex.address);
+      }
     }
 
     const calculation_list = this.volatile_list.slice(0).concat(this.dirty_list);

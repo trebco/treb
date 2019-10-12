@@ -917,6 +917,14 @@ export class Calculator extends Graph {
           for (const key of Object.keys(dependencies.ranges)){
             const unit = dependencies.ranges[key];
             const range = new Area(unit.start, unit.end);
+            const status = this.AddArrayVertexEdge(range, cell);
+
+            if (status !== GraphStatus.OK) {
+              global_status = status;
+              if (!initial_reference) initial_reference = { ...cell };
+            }
+
+            /*
             range.Iterate((address: ICellAddress) => {
               const status = this.AddEdge(address, cell);
               if (status !== GraphStatus.OK) {
@@ -924,6 +932,7 @@ export class Calculator extends Graph {
                 if (!initial_reference) initial_reference = { ...cell };
               }
             });
+            */
           }
 
           for (const key of Object.keys(dependencies.addresses)){
@@ -950,7 +959,7 @@ export class Calculator extends Graph {
         // sets dirty and removes inbound edges (in case the cell
         // previously contained a formula and now it contains a constant).
 
-        this.ResetInbound(cell, true); // NOTE: sets dirty
+        this.ResetInbound(cell, true, false); // NOTE: sets dirty
       }
       else if (cell.type === ValueType.undefined){
 
@@ -960,7 +969,7 @@ export class Calculator extends Graph {
 
         // is this unecessarily flagging a number of cells? (...)
 
-        this.ResetInbound(cell, true);
+        this.ResetInbound(cell, true, false);
       }
 
     }
