@@ -927,6 +927,11 @@ export class Calculator extends Graph {
             // and it should go back to the old way (but there will still be
             // some cruft in graph.ts, tests that will need to be removed).
 
+            // actually it's probably something that could be balanced based
+            // on the number of constants vs the number of formulae in the
+            // range. more (or all) constants, use a range. more/all formula,
+            // iterate.
+
             // --- array version -----------------------------------------------
 
             const status = this.AddArrayVertexEdge(range, cell);
