@@ -1,6 +1,6 @@
 
 import { Vertex } from './vertex';
-
+import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
 import { Cell, ICellAddress, ValueType } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 
@@ -19,10 +19,10 @@ export interface CalculationResult {
 /**
  * specialization of vertex with attached data and calculation metadata
  */
-export class SpreadsheetVertex extends Vertex {
+export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
   public reference?: Cell;
-  public dirty = false;
+
   public error = SpreadsheetError.None;
   public address?: ICellAddress;
   public result: any;
@@ -42,45 +42,6 @@ export class SpreadsheetVertex extends Vertex {
   }
 
   /**
-   * NOTE: DO NOT CALL THIS. call the graph method, which updates the
-   * dirty list.
-   *
-   * Q: so why is it here at all? why not have graph do the propagation?
-   * edges are public, so there's no encapsulation problem. and if we're
-   * doing propagation, why are edges public?
-   *
-   * sets dirty, propagates.
-   *
-   * returns the original state -- meaning, true = "I was already dirty",
-   * false = "I was not previously dirty". callers can use that to drive
-   * behavior.
-   *
-   */
-  public SetDirty() {
-
-    // if we are already dirty, then our children are already
-    // dirty and we can skip this.
-
-    if (this.dirty) return true; // was already dirty
-
-    // otherwise set flag and propagate
-
-    this.dirty = true;
-
-    // special case: if there's a loop, we don't want to propagate
-    // ...that should be handled when the edge is added, no?
-
-    // propagate
-
-    for (const edge of this.edges_out) {
-      (edge as SpreadsheetVertex).SetDirty();
-    }
-
-    return false; // was not dirty before
-
-  }
-
-  /**
    * to support restoring cached values (from file), we need a way to get
    * the value from the reference (cell). normally this is done during
    * calculation, and in reverse (we set the value).
@@ -90,8 +51,11 @@ export class SpreadsheetVertex extends Vertex {
    * - does not set volatile/nonvolatile, which is usually managed as a
    *   side-effect of the calculation.
    *
-   * - does not remove the entry from the dirty list (but does set the
-   *   internal dirty flag).
+   * - does not remove the entry from the dirty list
+   *
+   * - does not clear the internal dirty flag. it used to do that, but we
+   *   took it out because we are now managing multple vertex types, and
+   *   we don't want to attach that behavior to a type-specific method.
    *
    * so the caller needs to explicitly address the dirty and volatile lists
    * for this vertex.
@@ -100,7 +64,7 @@ export class SpreadsheetVertex extends Vertex {
     if (this.reference) {
       this.result = this.reference.GetValue();
     }
-    this.dirty = false;
+    // this.dirty = false;
   }
 
   /**
@@ -113,7 +77,7 @@ export class SpreadsheetVertex extends Vertex {
    * A: for overloading. leaf extends this class, and has a separate
    * calculation routine.
    */
-  public Calculate(graph: Graph) {
+  public Calculate(graph: Graph): void {
 
     if (!this.dirty) return;
 
@@ -126,7 +90,7 @@ export class SpreadsheetVertex extends Vertex {
     // we don't need to do the actual lookup.
 
     for (const edge of this.edges_in) {
-      if ((edge as SpreadsheetVertex).dirty) {
+      if ((edge as SpreadsheetVertexBase).dirty) {
         return;
       }
     }

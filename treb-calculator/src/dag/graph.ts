@@ -2,6 +2,7 @@
 import { Vertex } from './vertex';
 import { SpreadsheetVertex, CalculationResult } from './spreadsheet_vertex';
 import { ArrayVertex } from './array_vertex';
+import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
 import { LeafVertex } from './leaf_vertex';
 import { Cells, ICellAddress, Area, IArea } from 'treb-base-types';
 import { DataModel } from 'treb-grid';
@@ -22,8 +23,7 @@ export abstract class Graph {
   // public vertices: Array<Array<SpreadsheetVertex|undefined>> = [];
   public vertices: Array<Array<Array<SpreadsheetVertex|undefined>>> = [[]];
 
-  public volatile_list: SpreadsheetVertex[] = [];
-  // public cells?: Cells;
+  public volatile_list: SpreadsheetVertexBase[] = [];
   public cells_map: {[index: number]: Cells} = {};
   public model?: DataModel;
 
@@ -34,7 +34,15 @@ export abstract class Graph {
   public array_vertices: {[index: string]: ArrayVertex} = {};
 
   /** lock down access */
-  private dirty_list: SpreadsheetVertex[] = [];
+  private dirty_list: SpreadsheetVertexBase[] = [];
+
+  public IsArrayVertex(vertex: Vertex): vertex is ArrayVertex {
+    return vertex.type === 'array-vertex';
+  }
+
+  public IsSpreadsheetVertex(vertex: Vertex): vertex is SpreadsheetVertex {
+    return vertex.type === 'spreadsheet-vertex';
+  }
 
   /**
    * attach data. normally this is done as part of a calculation, but we can
@@ -123,6 +131,11 @@ export abstract class Graph {
     }
 
     this.vertices[address.sheet_id][address.column][address.row] = vertex;
+
+    // if there's an array that contains this cell, we need to create an edge
+
+    this.CreateImplicitEdgeToArrays(vertex);
+
     return vertex;
 
   }
@@ -152,10 +165,14 @@ export abstract class Graph {
    */
   public ResetInbound(address: ICellAddress, set_dirty = false, create = true){
 
-    this.ResetInboundArrays(address, set_dirty);
     const vertex = this.GetVertex(address, create);
 
-    if (!vertex) return;
+    if (!vertex) {
+      if (set_dirty) {
+        this.SetArraysDirty(address);
+      }
+      return;
+    }
 
     vertex.ClearDependencies();
 
@@ -228,8 +245,6 @@ export abstract class Graph {
   /** sets dirty */
   public SetDirty(address: ICellAddress) {
 
-    console.info("SOmeone called SetDirty", address);
-
     const vertex = this.GetVertex(address, true);
     if (!vertex) return;
 
@@ -243,6 +258,63 @@ export abstract class Graph {
 
   // --- array vertices... testing ---
 
+  public CreateImplicitEdgeToArray(array_vertex: ArrayVertex) {
+
+    if (!array_vertex.area.start.sheet_id) {
+      console.info("area missing sheet id");
+      return;
+    }
+
+    array_vertex.area.Iterate((address) => {
+      const vertex = this.GetVertex(address, false);
+      if (vertex) {
+        console.info('CreateImplicitEdgeToArray', vertex.address, array_vertex.area);
+        array_vertex.AddDependency(vertex);
+        vertex.AddDependent(array_vertex);
+      }
+    });
+
+  }
+
+  public CreateImplicitEdgeToArrays(vertex: SpreadsheetVertex) {
+
+    if (!vertex.address) {
+      console.info("vertex missing address");
+      return;
+    }
+    if (!vertex.address.sheet_id) {
+      console.info("vertex missing sheet id");
+      return;
+    }
+
+    for (const key of Object.keys(this.array_vertices)) {
+      const array_vertex = this.array_vertices[key];
+      if (array_vertex.area.start.sheet_id === vertex.address.sheet_id &&
+          array_vertex.area.Contains(vertex.address)) {
+
+        console.info('CreateImplicitEdgeToArray', vertex.address, array_vertex.area);
+
+        array_vertex.AddDependency(vertex);
+        vertex.AddDependent(array_vertex);
+
+      }
+    }
+  }
+
+  public SetArraysDirty(address: ICellAddress) {
+
+    for (const key of Object.keys(this.array_vertices)) {
+      const array_vertex = this.array_vertices[key];
+      if (array_vertex.area.start.sheet_id === address.sheet_id &&
+          array_vertex.area.Contains(address)) {
+        this.dirty_list.push(array_vertex);
+        array_vertex.SetDirty();
+      }
+    }
+
+  }
+
+  /*
   public SetArraysDirty(address: ICellAddress) {
 
     console.info("SetArraysDirty", address);
@@ -277,6 +349,7 @@ export abstract class Graph {
     }
 
   }
+  */
 
   public GetArrayVertex(area: Area, create: boolean): ArrayVertex|undefined {
     const label = area.start.sheet_id + '!' + area.spreadsheet_label;
@@ -285,6 +358,7 @@ export abstract class Graph {
       vertex = new ArrayVertex();
       vertex.area = area.Clone();
       this.array_vertices[label] = vertex;
+      this.CreateImplicitEdgeToArray(vertex);
     }
     return vertex;
   }
@@ -320,6 +394,8 @@ export abstract class Graph {
     // ...
 
     if (!v_u || !v_v) { return GraphStatus.Loop; }
+
+    console.info("add ave", u, v);
 
     v_u.AddDependent(v_v);
     v_v.AddDependency(v_u);
@@ -406,14 +482,29 @@ export abstract class Graph {
 
   // --- for initial load ---
 
-  public InitializeVolatileList() {
+  public InitializeGraphValues() {
+
     for (const vertex of this.dirty_list) {
-      vertex.TakeReferenceValue();
-      if (this.CheckVolatile(vertex)) {
-        this.volatile_list.push(vertex);
+
+      // take reference values for spreadsheet vertices
+
+      if (this.IsSpreadsheetVertex(vertex)) {
+        vertex.TakeReferenceValue();
+        if (this.CheckVolatile(vertex)) {
+          this.volatile_list.push(vertex);
+        }
       }
+
+      // clear dirty flag on _all_ vertices
+
+      vertex.dirty = false;
+
     }
-    this.dirty_list = []; // reset, essentially saying we're clean
+
+    // reset, essentially saying we're clean
+
+    this.dirty_list = [];
+
   }
 
   // --- calculation ---
@@ -426,9 +517,6 @@ export abstract class Graph {
 
     for (const vertex of this.volatile_list) {
       vertex.SetDirty();
-      if (vertex.address) {
-        this.SetArraysDirty(vertex.address);
-      }
     }
 
     const calculation_list = this.volatile_list.slice(0).concat(this.dirty_list);

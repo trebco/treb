@@ -557,7 +557,7 @@ export class Calculator extends Graph {
       return result;
     }
     else {
-      this.InitializeVolatileList();
+      this.InitializeGraphValues();
     }
 
   }
@@ -904,7 +904,7 @@ export class Calculator extends Graph {
       // formula?
       if (cell.type === ValueType.formula) {
 
-        this.ResetInbound(cell, true); // NOTE: sets dirty
+        this.ResetInbound(cell, true); // NOTE: sets dirty AND creates vertex if it doesn't exist
         const parse_result = this.parser.Parse(cell.value);
 
         // we have a couple of "magic" functions that can have loops
@@ -1075,7 +1075,7 @@ export class Calculator extends Graph {
       // will happen in the RebuildGraph function.
 
       area.Iterate((address: ICellAddress) => {
-        this.ResetInbound(address, true);
+        this.ResetInbound(address, true, false);
       });
 
       // check for loops...
