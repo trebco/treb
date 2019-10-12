@@ -1,8 +1,9 @@
 
 import { Vertex } from './vertex';
 import { SpreadsheetVertex, CalculationResult } from './spreadsheet_vertex';
+import { ArrayVertex } from './array_vertex';
 import { LeafVertex } from './leaf_vertex';
-import { Cells, ICellAddress, Area } from 'treb-base-types';
+import { Cells, ICellAddress, Area, IArea } from 'treb-base-types';
 import { DataModel } from 'treb-grid';
 
 // FIXME: this is a bad habit if you're testing on falsy for OK.
@@ -21,7 +22,6 @@ export abstract class Graph {
   // public vertices: Array<Array<SpreadsheetVertex|undefined>> = [];
   public vertices: Array<Array<Array<SpreadsheetVertex|undefined>>> = [[]];
 
-  public dirty_list: SpreadsheetVertex[] = [];
   public volatile_list: SpreadsheetVertex[] = [];
   // public cells?: Cells;
   public cells_map: {[index: number]: Cells} = {};
@@ -29,6 +29,12 @@ export abstract class Graph {
 
   // special
   public leaf_vertices: LeafVertex[] = [];
+
+  // special
+  public array_vertices: {[index: string]: ArrayVertex} = {};
+
+  /** lock down access */
+  private dirty_list: SpreadsheetVertex[] = [];
 
   /**
    * attach data. normally this is done as part of a calculation, but we can
@@ -52,6 +58,7 @@ export abstract class Graph {
     this.volatile_list = [];
     this.vertices = [[]];
     this.leaf_vertices = [];
+    this.array_vertices = {};
     // this.cells = undefined;
     this.cells_map = {};
   }
@@ -227,6 +234,68 @@ export abstract class Graph {
     vertex.SetDirty();
   }
 
+  // --- array vertices... testing ---
+
+  public GetArrayVertex(area: Area, create: boolean): ArrayVertex|undefined {
+    const label = area.spreadsheet_label;
+    let vertex = this.array_vertices[label];
+    if (!vertex && create) {
+      vertex = new ArrayVertex();
+      vertex.area = area.Clone();
+      this.array_vertices[label] = vertex;
+    }
+    return vertex;
+  }
+
+  public AddArrayVertex(area: Area) {
+    return this.GetArrayVertex(area, true);
+  }
+
+  public RemoveArrayVertex(area: Area) {
+
+    // FIXME: set undefined, and wait for another cleanup? or delete?
+
+    const label = area.spreadsheet_label;
+    const vertex = this.array_vertices[label];
+    if (!vertex) { return; }
+    vertex.Reset();
+    delete this.array_vertices[area.spreadsheet_label];
+
+  }
+
+  public AddArrayVertexEdge(u: ICellAddress, v: Area): GraphStatus {
+
+    if (v.start.sheet_id === u.sheet_id && v.Contains(u)) {
+      return GraphStatus.Loop;
+    }
+
+    const v_v = this.GetArrayVertex(v, true); // create if necessary
+    const v_u = this.GetVertex(u, true);
+
+    // FIXME: loop check
+
+    // ...
+
+    if (!v_u || !v_v) { return GraphStatus.Loop; }
+
+    v_u.AddDependent(v_v);
+    v_v.AddDependency(v_u);
+
+    return GraphStatus.OK;
+
+  }
+
+  public RemoveArrayVertexEdge(u: ICellAddress, v: Area) {
+
+    const v_v = this.GetArrayVertex(v, false);
+    const v_u = this.GetVertex(u, false);
+
+    if (!v_u || !v_v) { return; }
+
+    v_u.RemoveDependent(v_v);
+    v_v.RemoveDependency(v_u);
+
+  }
 
   // --- leaf vertex api ---
 
@@ -291,6 +360,18 @@ export abstract class Graph {
 
   }
 
+  // --- for initial load ---
+
+  public InitializeVolatileList() {
+    for (const vertex of this.dirty_list) {
+      vertex.TakeReferenceValue();
+      if (this.CheckVolatile(vertex)) {
+        this.volatile_list.push(vertex);
+      }
+    }
+    this.dirty_list = []; // reset, essentially saying we're clean
+  }
+
   // --- calculation ---
 
   /** runs calculation */
@@ -319,5 +400,7 @@ export abstract class Graph {
 
   public abstract CalculationCallback(vertex: SpreadsheetVertex): CalculationResult;
   public abstract SpreadCallback(vertex: SpreadsheetVertex, value: any): void;
+
+  protected abstract CheckVolatile(vertex: SpreadsheetVertex): boolean;
 
 }

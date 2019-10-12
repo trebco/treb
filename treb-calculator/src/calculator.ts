@@ -557,13 +557,7 @@ export class Calculator extends Graph {
       return result;
     }
     else {
-      for (const vertex of this.dirty_list) {
-        vertex.TakeReferenceValue();
-        if (this.CheckVolatile(vertex)) {
-          this.volatile_list.push(vertex);
-        }
-      }
-      this.dirty_list = []; // reset, essentially saying we're clean
+      this.InitializeVolatileList();
     }
 
   }
@@ -785,7 +779,7 @@ export class Calculator extends Graph {
             (sheet_name_map[unit.sheet.toLowerCase()] || 0) :
             relative_sheet_id;
         }
-        dependencies.addresses[unit.label] = unit;
+        dependencies.addresses[unit.sheet_id + '!' + unit.label] = unit;
         break; // this.AddressLabel(unit, offset);
 
       case 'range':
@@ -794,7 +788,7 @@ export class Calculator extends Graph {
             (sheet_name_map[unit.start.sheet.toLowerCase()] || 0) :
             relative_sheet_id;
         }
-        dependencies.ranges[unit.start.label + ':' + unit.end.label] = unit;
+        dependencies.ranges[unit.start.sheet_id + '!' + unit.start.label + ':' + unit.end.label] = unit;
         break;
 
       case 'unary':
@@ -919,6 +913,7 @@ export class Calculator extends Graph {
 
         if (parse_result.expression) {
           const dependencies = this.RebuildDependencies(parse_result.expression, cell.sheet_id);
+          console.info("PRED", dependencies);
 
           for (const key of Object.keys(dependencies.ranges)){
             const unit = dependencies.ranges[key];
@@ -982,7 +977,7 @@ export class Calculator extends Graph {
    * check if a cell is volatile. normally this falls out of the calculation,
    * but if we build the graph and set values explicitly, we need to check.
    */
-  protected CheckVolatile(vertex: SpreadsheetVertex) {
+  protected CheckVolatile(vertex: SpreadsheetVertex): boolean {
     if (!vertex.expression || vertex.expression_error) return false;
 
     let volatile = false;
