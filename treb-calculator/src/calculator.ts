@@ -917,12 +917,26 @@ export class Calculator extends Graph {
           for (const key of Object.keys(dependencies.ranges)){
             const unit = dependencies.ranges[key];
             const range = new Area(unit.start, unit.end);
+
+            // testing out array vertices (vertices that represent ranges).
+            // this is an effort to reduce the number of vertices in the graph,
+            // especially since these are generally unecessary (except for
+            // formula cells).
+
+            // if you want to drop this, go back to the non-array code below
+            // and it should go back to the old way (but there will still be
+            // some cruft in graph.ts, tests that will need to be removed).
+
+            // --- array version -----------------------------------------------
+
             const status = this.AddArrayVertexEdge(range, cell);
 
             if (status !== GraphStatus.OK) {
               global_status = status;
               if (!initial_reference) initial_reference = { ...cell };
             }
+
+            // --- non-array version -------------------------------------------
 
             /*
             range.Iterate((address: ICellAddress) => {
@@ -933,6 +947,9 @@ export class Calculator extends Graph {
               }
             });
             */
+
+            // --- end ---------------------------------------------------------
+
           }
 
           for (const key of Object.keys(dependencies.addresses)){
