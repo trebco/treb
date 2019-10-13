@@ -272,9 +272,7 @@ export class MCCalculator extends Calculator {
    */
   public Reset(flush_results = true){
 
-    this.status = GraphStatus.OK;
-    this.FlushTree();
-    this.full_rebuild_required = true;
+    super.Reset();
 
     if (flush_results){
       this.FlushSimulationResults(); // to prevent ghost data

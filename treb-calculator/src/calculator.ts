@@ -505,11 +505,10 @@ export class Calculator extends Graph {
 
     this.status = GraphStatus.OK;
     this.FlushTree();
+    if (this.model) {
+      this.AttachData(this.model);
+    }
     this.full_rebuild_required = true;
-
-//    if (flush_results){
-//      this.FlushSimulationResults(); // to prevent ghost data
-//    }
 
   }
 

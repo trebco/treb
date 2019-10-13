@@ -87,7 +87,7 @@ export abstract class Graph {
     const cells = this.cells_map[address.sheet_id];
 
     if (!cells) {
-      throw new Error('no cells?');
+      throw new Error('no cells? sheet id ' + address.sheet_id);
       return undefined;
     }
 
