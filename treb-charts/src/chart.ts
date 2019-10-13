@@ -66,9 +66,12 @@ export class Chart {
     this.chart_data = { type: 'null' };
   }
 
+  /**
+   * args: data, labels, title, y_format
+   */
   public CreateLineChart(args: any[], type: 'line'|'area' = 'line') {
 
-    const title = args[1] || '';
+    const title = args[2] || '';
     const data = Util.Flatten(args[0]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
     const range = Util.Range(data);
 
@@ -79,11 +82,19 @@ export class Chart {
 
     const scale = Util.Scale(range.min || 0, range.max || 0, 7);
 
-    const y_format = NumberFormatCache.Get('#,##0.00');
+    const y_format = NumberFormatCache.Get(args[4] || '#,##0.00');
     const y_labels: string[] = [];
 
     for (let i = 0; i <= scale.count; i++) {
       y_labels.push(y_format.Format(scale.min + i * scale.step));
+    }
+
+    const x_format = NumberFormatCache.Get(args[3] || '#,##0.00');
+    let x_labels: string[]|undefined;
+
+    if (args[1]) {
+      const values = Util.Flatten(args[1]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
+      x_labels = values.map((value) => x_format.Format(value));
     }
 
     this.chart_data = {
@@ -92,6 +103,7 @@ export class Chart {
       scale,
       title,
       y_labels,
+      x_labels,
     };
 
   }
@@ -482,7 +494,7 @@ export class Chart {
     case 'area':
       {
         // gridlines
-        this.renderer.RenderGrid(area, this.chart_data.scale.count, 'chart-grid');
+        this.renderer.RenderGrid(area, this.chart_data.scale.count, this.chart_data.data.length, 'chart-grid');
         const scale = this.chart_data.scale;
         const y = this.chart_data.data.map((point) => {
           if (typeof point === 'undefined') { return undefined; }
@@ -496,7 +508,7 @@ export class Chart {
     case 'histogram':
       {
         // gridlines
-        this.renderer.RenderGrid(area, this.chart_data.scale.count, 'chart-grid');
+        this.renderer.RenderGrid(area, this.chart_data.scale.count, 0, 'chart-grid');
 
         // columns
         const column_width = area.width / this.chart_data.count;

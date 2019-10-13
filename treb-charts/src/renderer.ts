@@ -174,6 +174,7 @@ export class ChartRenderer {
 
     for (let i = 0; i < count; i += increment) {
       const x = Math.round(area.left + step / 2 + step * i);
+      if (x + metrics[i].width / 2 >= area.right) { break; }
       this.RenderText(labels[i], 'center', { x, y: area.bottom }, classes);
     }
 
@@ -289,15 +290,21 @@ export class ChartRenderer {
 
   }
 
-  public RenderGrid(area: Area, y_count: number, classes?: string|string[]) {
+  public RenderGrid(area: Area, y_count: number, x_count = 0, classes?: string|string[]) {
 
     const node = document.createElementNS(SVGNS, 'path');
     const d: string[] = [];
 
-    const step = area.height / y_count;
+    let step = area.height / y_count;
     for (let i = 0; i <= y_count; i++ ){
       const y = Math.round(area.top + step * i) - 0.5;
       d.push(`M${area.left} ${y} L${area.right} ${y}`);
+    }
+
+    step = area.width / x_count;
+    for (let i = 0; i <= x_count; i++ ){
+      const x = Math.round(area.left + step * i) - 0.5;
+      d.push(`M${x} ${area.top} L${x} ${area.bottom}`);
     }
 
     node.setAttribute('d', d.join(' '));
