@@ -67,7 +67,7 @@ export class Chart {
   }
 
   /**
-   * args: data, labels, title, y_format
+   * args: data, labels, title, x_format, y_format, callouts
    */
   public CreateLineChart(args: any[], type: 'line'|'area' = 'line') {
 
@@ -97,6 +97,16 @@ export class Chart {
       x_labels = values.map((value) => x_format.Format(value));
     }
 
+    let callouts: {values: number[], labels: string[]}|undefined;
+
+    const callout_data = args[5];
+    if (callout_data && Array.isArray(callout_data)) {
+      callouts = {
+        values: callout_data[0],
+        labels: callout_data[1] || callout_data[0].map((x: number) => x.toString()),
+      };
+    }
+
     this.chart_data = {
       type,
       data,
@@ -104,6 +114,7 @@ export class Chart {
       title,
       y_labels,
       x_labels,
+      callouts,
     };
 
   }
@@ -465,7 +476,8 @@ export class Chart {
         }
 
         // render
-        this.renderer.RenderXAxis(area, this.chart_data.x_labels, x_metrics, ['axis-label', 'x-axis-label']);
+        this.renderer.RenderXAxis(area, (this.chart_data.type !== 'line'),
+          this.chart_data.x_labels, x_metrics, ['axis-label', 'x-axis-label']);
 
         // update bottom (either we unwound for labels, or we need to do it the first time)
         area.bottom -= (max_x_height + chart_margin.bottom);
@@ -502,6 +514,11 @@ export class Chart {
         });
 
         this.renderer.RenderLine(area, y, (this.chart_data.type === 'area'), 'chart-line');
+
+        if (this.chart_data.callouts) {
+          console.info('render callouts', this.chart_data.callouts)
+        }
+
       }
       break;
 

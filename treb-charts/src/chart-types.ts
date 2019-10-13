@@ -84,6 +84,7 @@ export interface LineBaseData extends ChartDataBaseType {
   scale: RangeScale;
   x_labels?: string[];
   y_labels?: string[];
+  callouts?: {values: number[], labels: string[]};
 }
 
 export interface LineData extends LineBaseData {

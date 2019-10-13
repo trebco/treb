@@ -138,17 +138,19 @@ export class ChartRenderer {
    */
   public RenderXAxis(
       area: Area,
+      offset: boolean,
       labels: string[],
       metrics: Metrics[],
       classes?: string|string[]) {
 
-    const count = labels.length;
+    let count = labels.length;
     if (!count) return;
 
     // FIXME: base on font, ' ' character
     const label_buffer = 4;
 
-    const step = area.width / (count);
+    const step = offset ? area.width / count : area.width / (count - 1);
+    const initial_offset = offset ? (step / 2) : 0;
 
     // calculate increment (skip_count)
     let increment = 1;
@@ -158,7 +160,7 @@ export class ChartRenderer {
       repeat = false;
       let extent = 0;
       for (let i = 0; i < count; i += increment) {
-        const center = Math.round(area.left + step / 2 + step * i);
+        const center = Math.round(area.left + initial_offset + step * i);
         const left = center - metrics[i].width / 2;
         if (extent && (left <= extent)) {
           increment++;
@@ -173,8 +175,8 @@ export class ChartRenderer {
     }
 
     for (let i = 0; i < count; i += increment) {
-      const x = Math.round(area.left + step / 2 + step * i);
-      if (x + metrics[i].width / 2 >= area.right) { break; }
+      const x = Math.round(area.left + initial_offset + step * i);
+      // if (x + metrics[i].width / 2 >= area.right) { break; }
       this.RenderText(labels[i], 'center', { x, y: area.bottom }, classes);
     }
 
@@ -227,7 +229,7 @@ export class ChartRenderer {
     const d2: string[] = [];
 
     const count = data.length;
-    const steps = count;
+    const steps = count - 1;
     const step = (area.width / count) / 2;
 
     let i = 0;
@@ -244,7 +246,7 @@ export class ChartRenderer {
         last_x = undefined;
         continue;
       }
-      const x = Math.round(step + area.left + area.width / steps * i);
+      const x = Math.round(/*step*/ + area.left + area.width / steps * i);
       if (move) {
         if (fill) {
           d2.push(`M${x} ${area.bottom} L${x} ${area.bottom - point}`);
@@ -301,8 +303,8 @@ export class ChartRenderer {
       d.push(`M${area.left} ${y} L${area.right} ${y}`);
     }
 
-    step = area.width / x_count;
-    for (let i = 0; i <= x_count; i++ ){
+    step = area.width / (x_count - 1);
+    for (let i = 0; i < x_count; i++ ){
       const x = Math.round(area.left + step * i) - 0.5;
       d.push(`M${x} ${area.top} L${x} ${area.bottom}`);
     }
