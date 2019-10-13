@@ -847,9 +847,16 @@ export class Calculator extends Graph {
       for (const key of Object.keys(dependencies.ranges)){
         const unit = dependencies.ranges[key];
         const range = new Area(unit.start, unit.end);
+
         range.Iterate((address: ICellAddress) => {
           this.AddLeafVertexEdge(address, vertex);
         });
+
+        /*
+        for (const address of range) {
+          this.AddLeafVertexEdge(address, vertex);
+        }
+        */
       }
 
       for (const key of Object.keys(dependencies.addresses)){

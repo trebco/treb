@@ -14,6 +14,9 @@ require('core-js/es/array/from');
 // tslint:disable-next-line:no-var-requires
 require('core-js/es/typed-array');
 
+// tslint:disable-next-line:no-var-requires
+// require('core-js/es/symbol');
+
 // old index
 import './main';
 

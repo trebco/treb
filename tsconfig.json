@@ -5,6 +5,7 @@
     "module": "commonjs",
     "strict": true,
     "experimentalDecorators": true,
+    "downlevelIteration": true,
     "sourceMap": true,
     "moduleResolution": "node",
     "outDir": "dist/",

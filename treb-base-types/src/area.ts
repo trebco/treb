@@ -37,7 +37,7 @@ export interface Dimensions {
  * sheet class has a method for reducing infinite ranges to actual
  * populated ranges.
  */
-export class Area implements IArea {
+export class Area implements IArea { // }, IterableIterator<ICellAddress> {
 
   public static FromColumn(column: number): Area {
     return new Area({row: Infinity, column});
@@ -81,7 +81,7 @@ export class Area implements IArea {
     return area;
   }
 
-  private iterator_index: ICellAddress = { row: -1, column: -1, sheet_id: 0 };
+  // private iterator_index: ICellAddress = { row: -1, column: -1, sheet_id: 0 };
 
   // tslint:disable-next-line:variable-name
   private start_: ICellAddress;
@@ -163,7 +163,7 @@ export class Area implements IArea {
 
     if (normalize) this.Normalize();
 
-    this.ResetIterator();
+    // this.ResetIterator();
 
   }
 
@@ -378,44 +378,47 @@ export class Area implements IArea {
     }
   }
 
-  /**
+  /* *
    * testing: we may have to polyfill for IE11, or just not use it at
    * all, depending on support level... but it works OK (kind of a clumsy
    * implementation though).
-   */
-  public [Symbol.iterator]() {
-    return {
-      next: () => {
+   *
+   * as it turns out we don't really use iteration that much (I thought
+   * we did) so it's probably not worth the polyfill...
+   *
+   * /
+  public next(): IteratorResult<ICellAddress> {
 
-        // sanity
+    // sanity
 
-        if (this.entire_column || this.entire_row) {
-          console.warn('don\'t iterate over infinte range');
-          return { value: undefined, done: true };
-        }
+    if (this.entire_column || this.entire_row) {
+      console.warn('don\'t iterate over infinte range');
+      return { value: undefined, done: true };
+    }
 
-        // return current, unless it's OOB; if so, advance
+    // return current, unless it's OOB; if so, advance
 
-        if (this.iterator_index.column > this.end.column) {
-          this.iterator_index.column = this.start_.column;
-          this.iterator_index.row++;
+    if (this.iterator_index.column > this.end.column) {
+      this.iterator_index.column = this.start_.column;
+      this.iterator_index.row++;
 
-          if (this.iterator_index.row > this.end.row) {
-            this.ResetIterator();
-            return { value: undefined, done: true };
-          }
+      if (this.iterator_index.row > this.end.row) {
+        this.ResetIterator();
+        return { value: undefined, done: true };
+      }
 
-        }
+    }
 
-        const result = { value: { ...this.iterator_index }, done: false };
-        this.iterator_index.column++;
+    const result = { value: { ...this.iterator_index }, done: false };
+    this.iterator_index.column++;
 
-        return result;
-
-      },
-    };
-
+    return result;
   }
+
+  public [Symbol.iterator](): IterableIterator <ICellAddress> {
+    return this;
+  }
+  */
 
   /**
    * returns the range in A1-style spreadsheet addressing. if the
@@ -476,6 +479,7 @@ export class Area implements IArea {
     */
   }
 
+  /*
   private ResetIterator() {
     this.iterator_index = {
       row: this.start_.row,
@@ -483,6 +487,6 @@ export class Area implements IArea {
       sheet_id: this.start_.sheet_id,
     };
   }
-
+  */
 
 }
