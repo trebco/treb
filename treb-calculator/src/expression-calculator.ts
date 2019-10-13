@@ -5,6 +5,7 @@ import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
+import * as Utilities from './utilities';
 
 import * as Primitives from './primitives';
 
@@ -624,6 +625,11 @@ export class ExpressionCalculator {
 
     case 'group':
       return (expr.user_data = this.GroupExpression(expr))(expr);
+
+    case 'array':
+      const transposed = Utilities.TransposeArray(expr.values);
+      expr.user_data = () => transposed;
+      return transposed;
 
     default:
       console.warn( 'Unhandled parse expr:', expr);

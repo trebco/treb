@@ -20,6 +20,17 @@ export interface UnitLiteral extends BaseUnit {
 }
 
 /**
+ * expression unit representing an array of primitive values. array
+ * can contain mixed values, and holes. array cannot contain arrays,
+ * or any other complex type.
+ */
+export interface UnitArray extends BaseUnit {
+  type: 'array';
+  position: number;
+  values: Array < Array <string|boolean|number|undefined> >;
+}
+
+/**
  * expression unit representing a missing value, intended for missing
  * arguments in function calls.
  */
@@ -122,6 +133,7 @@ export interface UnitRange extends BaseUnit {
 /** discriminated union for type guards */
 export type ExpressionUnit =
   | UnitLiteral
+  | UnitArray
   | UnitIdentifier
   | UnitCall
   | UnitMissing

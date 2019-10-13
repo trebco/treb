@@ -5,6 +5,7 @@ import {
   UnitIdentifier,
   UnitOperator,
   UnitRange,
+  UnitArray,
   UnitUnary,
   DependencyList,
   ParseResult,
@@ -41,9 +42,12 @@ const PERCENT = 0x25;
 const UNDERSCORE = 0x5f;
 const DOLLAR_SIGN = 0x24;
 
+const OPEN_BRACE = 0x7b;
+const CLOSE_BRACE = 0x7d;
+
 const EXCLAMATION_MARK = 0x21;
 // const COLON = 0x3a; // became an operator
-const SEMICOLON = 0x3b; // not used atm, but maybe for i18n
+const SEMICOLON = 0x3b;
 
 const UC_A = 0x41;
 const LC_A = 0x61;
@@ -261,6 +265,15 @@ export class Parser {
       case 'missing':
         return missing;
 
+      case 'array':
+        return '{' +
+          unit.values.map((row) => row.map((value) => {
+            if (typeof value === 'string') {
+              return '"' + value + '"';
+            }
+            return value;
+          }).join(', ')).join('; ') + '}';
+
       case 'binary':
         return (
           this.Render(
@@ -396,9 +409,11 @@ export class Parser {
    * to individual address dependencies. it's just sloppy (FIXME: refcount?)
    */
   public Parse(expression: string): ParseResult {
+
     // normalize
     expression = expression.trim();
-    // if (expression.startsWith('=')) expression = expression.substr(1).trim();
+
+    // remove leading =
     if (expression[0] === '=') {
       expression = expression.substr(1).trim();
     }
@@ -535,9 +550,12 @@ export class Parser {
     for (; this.index < this.length; ) {
       const unit = this.ParseNext(stream.length === 0);
       if (typeof unit === 'number') {
+
         if (exit.some((test) => unit === test)) {
           break;
-        } else if (unit === OPEN_PAREN) {
+        }
+        else if (unit === OPEN_PAREN) {
+
           // note that function calls are handled elsewhere,
           // so we only have to worry about grouping. parse
           // up to the closing paren...
@@ -819,7 +837,9 @@ export class Parser {
    * @param naked treat -/+ as signs (part of numbers) rather than operators.
    */
   protected ParseNext(naked = true): ExpressionUnit | number {
+
     this.ConsumeWhiteSpace();
+
     const char = this.data[this.index];
     if (char === DOUBLE_QUOTE) {
       return {
@@ -828,24 +848,28 @@ export class Parser {
         position: this.index,
         value: this.ConsumeString(),
       };
-    } else if (
-      (char >= ZERO && char <= NINE) ||
-      char === this.decimal_mark_char
-    ) {
+    }
+    else if ((char >= ZERO && char <= NINE) || char === this.decimal_mark_char) {
 
       // FIXME: is there a case where period needs to be handled the
       // same way as plus and minus, below?
 
       const position = this.index;
       const [value, text] = this.ConsumeNumber();
+
       return {
         type: 'literal',
         id: this.id_counter++,
         position,
         value,
         text,
-      }; // : this.ConsumeNumber() };
-    } else if (naked && (char === MINUS || char === PLUS)) {
+      };
+    }
+    else if (char === OPEN_BRACE) {
+      return this.ConsumeArray();
+    }
+    else if (naked && (char === MINUS || char === PLUS)) {
+
       // there's a case where you type '=-func()', which should support
       // '=+func()' as well, both of which are naked operators and not numbers.
       // the only way to figure this out is to check for a second number char.
@@ -867,20 +891,86 @@ export class Parser {
           text,
         }; // : this.ConsumeNumber() };
       }
-    } else if (
-      (char >= UC_A && char <= UC_Z) ||
-      (char >= LC_A && char <= LC_Z) ||
-      char === UNDERSCORE ||
-      char === SINGLE_QUOTE ||
-      char === DOLLAR_SIGN
-    ) {
+    }
+    else if (
+        (char >= UC_A && char <= UC_Z) ||
+        (char >= LC_A && char <= LC_Z) ||
+        char === UNDERSCORE ||
+        char === SINGLE_QUOTE ||
+        char === DOLLAR_SIGN
+      ) {
 
       // FIXME: this only tests for ASCII tokens? (...)
 
       return this.ConsumeToken(char);
     }
+
     // else throw(new Error('Unexpected character: ' + char));
     return char;
+  }
+
+  protected ConsumeArray(): ExpressionUnit {
+
+    const expression: UnitArray = {
+      type: 'array',
+      id: this.id_counter++,
+      values: [],
+      position: this.index,
+    };
+
+    this.index++;
+
+    let row = 0;
+    let column = 0;
+
+    while (this.index < this.length) {
+      const item = this.ParseNext();
+      const start_position = this.index;
+
+      if (typeof item === 'number') {
+        this.index++;
+        switch (item) {
+
+          case SEMICOLON:
+            column = 0;
+            row++;
+            break;
+
+          case COMMA:
+            column++;
+            break;
+
+          case CLOSE_BRACE:
+            return expression;
+
+          default:
+            if (this.valid) {
+              this.error = `invalid character in array literal`;
+              this.error_position = start_position;
+              this.valid = false;
+            }
+            break;
+        }
+      }
+      else {
+        switch (item.type) {
+          case 'literal':
+            if (!expression.values[row]) { expression.values[row] = []; }
+            expression.values[row][column] = item.value;
+            break;
+          default:
+            if (this.valid) {
+              this.error = `invalid value in array literal`;
+              this.error_position = start_position;
+              this.valid = false;
+            }
+            break;
+        }
+      }
+    }
+
+    return expression;
+
   }
 
   protected ConsumeOperator(): ExpressionUnit | null {
