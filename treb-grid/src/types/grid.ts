@@ -492,6 +492,13 @@ export class Grid {
         annotation.node.addEventListener('focusin', (event) => {
           this.selected_annotation = annotation;
           this.primary_selection.empty = true; // FIXME: not using method? (...)
+
+          // this is done for the side-effect when we start editing, we
+          // capture the sheet of the primary selection. if you switch
+          // sheets while editing, the selection won't be set so it persists.
+          // we need that to switch back to the correct sheet when an edit ends.
+
+          this.primary_selection.target = { row: -1, column: -1, sheet_id: this.model.active_sheet.id };
           this.HideGridSelection();
         });
 
@@ -1961,11 +1968,21 @@ export class Grid {
       switch (event.type) {
 
         case 'stop-editing':
+          console.info('stop editing');
           this.editing_state = EditingState.NotEditing;
           break;
 
         case 'start-editing':
-          this.editing_state = EditingState.CellEditor;
+
+          // NOTE: because this event (and stop-editing) are based on
+          // focus, they don't behave correctly when switching sheets,
+          // which (at least temporarily) steals focus. so we actually
+          // get extra start and stop events. it works, sort of, because
+          // we don't clear the primary selection when changing sheets
+          // when editing, so the sheet ID is correct. but that's an
+          // accident. see note below on 'commit'.
+
+          this.editing_state = EditingState.FormulaBar;
           this.editing_cell = { ...this.primary_selection.target };
           break;
 
@@ -1995,6 +2012,13 @@ export class Grid {
         case 'commit':
 
           // FIXME: unify this (to the extent possible) w/ the other editor
+
+          // NOTE: this only works because (1) on activate sheet, if you are
+          // editing, we don't update the primary selection; and (2) for
+          // annotations, we set a fake primary selection target with the
+          // correct sheet ID.
+
+          // all that needs to be rewritten to be more sane.
 
           if (this.model.active_sheet.id !== this.editing_cell.sheet_id) {
             this.ActivateSheet({key: CommandKey.ActivateSheet, id: this.editing_cell.sheet_id});
@@ -2088,6 +2112,9 @@ export class Grid {
     this.cell_editor.Subscribe((event) => {
 
       switch (event.type) {
+
+        // see notes in formula editor event handler re: start editing,
+        // stop editing  and commit.
 
         case 'stop-editing':
           this.editing_state = EditingState.NotEditing;
