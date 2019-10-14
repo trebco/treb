@@ -277,6 +277,7 @@ export class TabBar extends EventSource<TabEvent> {
       add_tab.classList.add('add-tab');
       add_tab.style.order = (this.model.sheets.length * 2).toString();
       add_tab.innerText = '+';
+      add_tab.setAttribute('title', 'Add Sheet');
       add_tab.addEventListener('click', () => {
         this.Publish({ type: 'add-sheet' });
       });

@@ -35,7 +35,7 @@ import { MouseDrag } from './drag_mask';
 import { Command, CommandKey, CommandRecord,
          SetRangeCommand, FreezeCommand, UpdateBordersCommand,
          InsertRowsCommand, InsertColumnsCommand, SetNameCommand,
-         ActivateSheetCommand, ShowSheetCommand, SheetSelection } from './grid_command';
+         ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand } from './grid_command';
 
 import { DataModel } from './data_model';
 import { NamedRangeCollection } from './named_range';
@@ -828,174 +828,50 @@ export class Grid {
       if (this.model.sheets[i] === this.model.active_sheet) {
         let index = (i + step) % this.model.sheets.length;
         while (index < 0) { index += this.model.sheets.length; }
-        console.info("->", index);
-        this.ActivateSheet({key: CommandKey.ActivateSheet, index});
+        this.ActivateSheet(index);
         return;
       }
     }
   }
 
-  /**
-   * FIXME: private
-   */
-  public ActivateSheet(command: ActivateSheetCommand) {
-
-    const selecting_argument = this.SelectingArgument();
-
-    // console.info('activate sheet', command);
-
-    const candidate = this.ResolveSheet(command) || this.model.sheets[0];
-
-    // ok, activate...
-
-    if (this.model.active_sheet === candidate) {
-      return;
-    }
-
-    if (!candidate.visible) {
-      throw new Error('cannot activate hidden sheet');
-    }
-
-    // cache primary selection in the sheet we are deactivating
-    // FIXME: cache scroll position, too!
-
-    this.model.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
-    this.model.active_sheet.scroll_offset = this.layout.scroll_offset;
-
-    // hold this for the event (later)
-
-    const deactivate = this.model.active_sheet;
-
-    this.RemoveAnnotationNodes();
-
-    // select target
-
-    this.model.active_sheet = candidate;
-
-    // ---
-
-    // don't update selection if selecting argument... actually we _do_
-    // want to clear the primary selection, we just don't want the side
-    // effects of clearing the formula bar and so on
-
-    if (!selecting_argument) {
-      this.ClearSelection(this.primary_selection);
-
-      if (candidate.selection && !candidate.selection.empty) {
-        this.Select(this.primary_selection,
-          new Area(candidate.selection.area.start, candidate.selection.area.end),
-            candidate.selection.target);
-      }
-
-    }
-    else {
-      this.RenderSelections();
-    }
-
-    // scrub, then add any sheet annotations. note the caller will
-    // still have to inflate these or do whatever step is necessary to
-    // render.
-
-    const annotations = this.model.active_sheet.annotations;
-    for (const element of annotations) {
-      this.AddAnnotation(element, false); // true);
-    }
-
-    // we do the tile rebuild just before the next paint, to prevent
-    // flashing. seems to be stable but needs more testing. note that
-    // if you call this with render = true, that will happen immediately,
-    // synchronously.
-
-    // no longer sending layout event here
-
-    this.QueueLayoutUpdate();
-
-    // this.StyleDefaultFromTheme(); // ?
-
-    // if (render)
-    {
-      this.Repaint(false, false);
-    }
-
-    // FIXME: structure event
-
-    this.grid_events.Publish({
-      type: 'sheet-change',
-      deactivate,
-      activate: this.model.active_sheet,
-    });
-
-    if (this.tab_bar) { this.tab_bar.Update(); }
-
-    this.layout.scroll_offset = this.model.active_sheet.scroll_offset;
-
-  }
-
   public DeleteSheet(index = 0) {
-
-    let is_active = false;
-
-    // remove from array. check if this is the active sheet
-
-    const sheets = this.model.sheets.filter((sheet, i) => {
-      if (i === index) {
-        is_active = (sheet === this.model.active_sheet);
-        return false;
-      }
-      return true;
+    this.ExecCommand({
+      key: CommandKey.DeleteSheet,
+      index,
     });
+  }
 
-    // empty? create new, activate
+  public AddSheet() {
+    this.ExecCommand({
+      key: CommandKey.AddSheet,
+    });
+  }
 
-    if (!sheets.length) {
-      sheets.push(Sheet.Blank(100, 26));
-    }
+  /**
+   * activate sheet, by name or index number
+   * @param sheet number (index into the array) or string (name)
+   */
+  public ActivateSheet(sheet: number|string) {
 
-    this.model.sheets = sheets;
+    const index = (typeof sheet === 'number') ? sheet : undefined;
+    const name = (typeof sheet === 'string') ? sheet : undefined;
 
-    // need to activate a new sheet? use the next one (now in the slot
-    // we just removed). this will roll over properly if we're at the end.
-
-    if (is_active) {
-      this.ActivateSheet({key: CommandKey.ActivateSheet, index});
-    }
-
-    if (this.tab_bar) { this.tab_bar.Update(); }
+    this.ExecCommand({
+      key: CommandKey.ActivateSheet,
+      index,
+      name,
+    });
 
   }
 
-  public AddSheet(name = Sheet.default_sheet_name, activate = true) {
-
-    if (!this.options.add_tab) {
-      console.warn('add tab option not set or false');
-      return;
-    }
-
-    // validate name...
-
-    while (this.model.sheets.some((test) => test.name === name)) {
-
-      const match = name.match(/^(.*?)(\d+)$/);
-      if (match) {
-        name = match[1] + (Number(match[2]) + 1);
-      }
-      else {
-        name = name + '2';
-      }
-
-    }
-
-    // FIXME: structure event
-
-    const sheet = Sheet.Blank(100, 26, name);
-    this.model.sheets.push(sheet);
-
-    if (activate) {
-      this.ActivateSheet({ key: CommandKey.ActivateSheet, id: sheet.id });
-    }
-
-    if (this.tab_bar) { this.tab_bar.Update(); }
-
+  /**
+   * activate sheet, by ID
+   */
+  public ActivateSheetID(id: number) {
+    this.ExecCommand({
+      key: CommandKey.ActivateSheet,
+      id,
+    });
   }
 
   public ShowAll() {
@@ -1024,7 +900,7 @@ export class Grid {
   }
 
   /** new version for multiple sheets */
-  public UpdateSheets(data: any[], render = false) {
+  public UpdateSheets(data: any[], render = false, activate_sheet_id?: number) {
 
     // remove existing annotations from layout
 
@@ -1042,6 +918,17 @@ export class Grid {
 
     this.model.sheets = sheets;
     this.model.active_sheet = sheets[0];
+
+    // possibly set an active sheet on load (shortcut)
+
+    if (activate_sheet_id) {
+      for (const sheet of this.model.sheets) {
+        if (activate_sheet_id === sheet.id) {
+          this.model.active_sheet = sheet;
+          break;
+        }
+      }
+    }
 
     // selection
 
@@ -1277,7 +1164,7 @@ export class Grid {
             break;
 
           case 'add-sheet':
-            this.AddSheet(undefined, true);
+            this.AddSheet();
             break;
 
           case 'rename-sheet':
@@ -1285,7 +1172,7 @@ export class Grid {
             break;
 
           case 'activate-sheet':
-            this.ActivateSheet({ key: CommandKey.ActivateSheet, id: event.sheet.id });
+            this.ActivateSheetID(event.sheet.id);
             break;
         }
         this.Focus();
@@ -1784,6 +1671,176 @@ export class Grid {
 
   // --- private methods -------------------------------------------------------
 
+  private DeleteSheetInternal(command: DeleteSheetCommand) {
+
+    let is_active = false;
+    let index = -1;
+
+    // remove from array. check if this is the active sheet
+
+    const named_sheet = command.name ? command.name.toLowerCase() : '';
+    const sheets = this.model.sheets.filter((sheet, i) => {
+      if (i === command.index || sheet.id === command.id || sheet.name.toLowerCase() === named_sheet) {
+        is_active = (sheet === this.model.active_sheet);
+        index = i;
+        return false;
+      }
+      return true;
+    });
+
+    // empty? create new, activate
+
+    if (!sheets.length) {
+      sheets.push(Sheet.Blank(100, 26));
+    }
+
+    this.model.sheets = sheets;
+
+    // need to activate a new sheet? use the next one (now in the slot
+    // we just removed). this will roll over properly if we're at the end.
+
+    if (is_active) {
+      this.ActivateSheetInternal({key: CommandKey.ActivateSheet, index});
+    }
+
+    // FIXME: this is not necessary if we just called activate, right? (...)
+
+    if (this.tab_bar) { this.tab_bar.Update(); }
+
+  }
+
+  private AddSheetInternal(name = Sheet.default_sheet_name) { // }, activate = true) {
+
+    if (!this.options.add_tab) {
+      console.warn('add tab option not set or false');
+      return;
+    }
+
+    // validate name...
+
+    while (this.model.sheets.some((test) => test.name === name)) {
+
+      const match = name.match(/^(.*?)(\d+)$/);
+      if (match) {
+        name = match[1] + (Number(match[2]) + 1);
+      }
+      else {
+        name = name + '2';
+      }
+
+    }
+
+    // FIXME: structure event
+
+    const sheet = Sheet.Blank(100, 26, name);
+    this.model.sheets.push(sheet);
+
+    // if (activate) {
+    //   this.ActivateSheetInternal({ key: CommandKey.ActivateSheet, id: sheet.id });
+    // }
+
+    if (this.tab_bar) { this.tab_bar.Update(); }
+
+    return sheet.id;
+
+  }
+
+  /**
+   *
+   */
+  private ActivateSheetInternal(command: ActivateSheetCommand) {
+
+    const selecting_argument = this.SelectingArgument();
+
+    // console.info('activate sheet', command);
+
+    const candidate = this.ResolveSheet(command) || this.model.sheets[0];
+
+    // ok, activate...
+
+    if (this.model.active_sheet === candidate) {
+      return;
+    }
+
+    if (!candidate.visible) {
+      throw new Error('cannot activate hidden sheet');
+    }
+
+    // cache primary selection in the sheet we are deactivating
+    // FIXME: cache scroll position, too!
+
+    this.model.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
+    this.model.active_sheet.scroll_offset = this.layout.scroll_offset;
+
+    // hold this for the event (later)
+
+    const deactivate = this.model.active_sheet;
+
+    this.RemoveAnnotationNodes();
+
+    // select target
+
+    this.model.active_sheet = candidate;
+
+    // ---
+
+    // don't update selection if selecting argument... actually we _do_
+    // want to clear the primary selection, we just don't want the side
+    // effects of clearing the formula bar and so on
+
+    if (!selecting_argument) {
+      this.ClearSelection(this.primary_selection);
+
+      if (candidate.selection && !candidate.selection.empty) {
+        this.Select(this.primary_selection,
+          new Area(candidate.selection.area.start, candidate.selection.area.end),
+            candidate.selection.target);
+      }
+
+    }
+    else {
+      this.RenderSelections();
+    }
+
+    // scrub, then add any sheet annotations. note the caller will
+    // still have to inflate these or do whatever step is necessary to
+    // render.
+
+    const annotations = this.model.active_sheet.annotations;
+    for (const element of annotations) {
+      this.AddAnnotation(element, false); // true);
+    }
+
+    // we do the tile rebuild just before the next paint, to prevent
+    // flashing. seems to be stable but needs more testing. note that
+    // if you call this with render = true, that will happen immediately,
+    // synchronously.
+
+    // no longer sending layout event here
+
+    this.QueueLayoutUpdate();
+
+    // this.StyleDefaultFromTheme(); // ?
+
+    // if (render)
+    {
+      this.Repaint(false, false);
+    }
+
+    // FIXME: structure event
+
+    this.grid_events.Publish({
+      type: 'sheet-change',
+      deactivate,
+      activate: this.model.active_sheet,
+    });
+
+    if (this.tab_bar) { this.tab_bar.Update(); }
+
+    this.layout.scroll_offset = this.model.active_sheet.scroll_offset;
+
+  }
+
   private ResolveSheet(command: SheetSelection) {
     if (typeof command.index !== 'undefined') {
       return this.model.sheets[command.index];
@@ -1832,7 +1889,7 @@ export class Grid {
     if (sheet === this.model.active_sheet) {
       for (let i = 0; i < this.model.sheets.length; i++) {
         if (this.model.sheets[i] === this.model.active_sheet) {
-          this.ActivateSheet({
+          this.ActivateSheetInternal({
             key: CommandKey.ActivateSheet,
             index: i + 1,
           });
@@ -2025,7 +2082,9 @@ export class Grid {
           // all that needs to be rewritten to be more sane.
 
           if (this.model.active_sheet.id !== this.editing_cell.sheet_id) {
-            this.ActivateSheet({key: CommandKey.ActivateSheet, id: this.editing_cell.sheet_id});
+            if (this.editing_cell.sheet_id) {
+              this.ActivateSheetID(this.editing_cell.sheet_id);
+            }
           }
 
           this.editing_state = EditingState.NotEditing;
@@ -2148,7 +2207,9 @@ export class Grid {
           // FIXME: unify this (to the extent possible) w/ the other editor
 
           if (this.model.active_sheet.id !== this.editing_cell.sheet_id) {
-            this.ActivateSheet({key: CommandKey.ActivateSheet, id: this.editing_cell.sheet_id});
+            if (this.editing_cell.sheet_id) {
+              this.ActivateSheetID(this.editing_cell.sheet_id);
+            }
           }
 
           this.editing_state = EditingState.NotEditing;
@@ -5734,9 +5795,23 @@ export class Grid {
 
         }
         break;
+      
+      case CommandKey.DeleteSheet:
+        this.DeleteSheetInternal(command);
+        structure_event = true;
+        break;
+
+      case CommandKey.AddSheet:
+        const sheet_id = this.AddSheetInternal(); // default name
+        this.ActivateSheetInternal({
+          key: CommandKey.ActivateSheet,
+          id: sheet_id,
+        });
+        structure_event = true;
+        break;
 
       case CommandKey.ActivateSheet:
-        this.ActivateSheet(command);
+        this.ActivateSheetInternal(command);
         break;
 
       default:

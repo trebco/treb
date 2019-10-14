@@ -1287,7 +1287,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     } // end l10n conversion
 
     // this.grid.UpdateSheet(sheet_data); // don't paint -- wait for calculate
-    this.grid.UpdateSheets(sheets);
+    this.grid.UpdateSheets(sheets, undefined, data.active_sheet);
     const model = this.grid.model;
 
     if (data.simulation_data) {
@@ -1370,9 +1370,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       });
     }
 
-    if (data.active_sheet) {
-      this.grid.ActivateSheet({ key: CommandKey.ActivateSheet, id: data.active_sheet });
-    }
+    // if (data.active_sheet) {
+    //  this.grid.ActivateSheetID({ key: CommandKey.ActivateSheet, id: data.active_sheet });
+    // }
 
   }
 

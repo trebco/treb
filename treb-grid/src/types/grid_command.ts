@@ -39,6 +39,8 @@ export enum CommandKey {
   Freeze,
   SetName,
   ShowHeaders,
+  AddSheet,
+  DeleteSheet,
   ActivateSheet,
   RenameSheet,
   ReorderSheet,
@@ -227,6 +229,14 @@ export interface NullCommand {
   key: CommandKey.Null;
 }
 
+export interface AddSheetCommand {
+  key: CommandKey.AddSheet;
+}
+
+export interface DeleteSheetCommand extends SheetSelection {
+  key: CommandKey.DeleteSheet;
+}
+
 /**
  * activate a sheet. there are a couple of options for selecting
  * the sheet, defaulting to index (which defaults to 0) so if you
@@ -272,12 +282,14 @@ export type Command =
   | FreezeCommand
   | SetNoteCommand
   | SetNameCommand
+  | AddSheetCommand
   | SetRangeCommand
   | ShowSheetCommand
   | MergeCellsCommand
   | ResizeRowsCommand
   | InsertRowsCommand
   | ShowHeadersCommand
+  | DeleteSheetCommand
   | UpdateStyleCommand
   | RenameSheetCommand
   | ReorderSheetCommand
