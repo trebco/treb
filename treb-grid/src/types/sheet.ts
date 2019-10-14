@@ -209,7 +209,7 @@ export class Sheet {
         }
       }
 
-      sheet.sheet_style = obj.sheet_style;
+      sheet.sheet_style = obj.sheet_style || {};
       sheet.row_styles = obj.row_style;
       sheet.column_styles = obj.column_style;
 

@@ -900,7 +900,7 @@ export class Grid {
   }
 
   /** new version for multiple sheets */
-  public UpdateSheets(data: any[], render = false, activate_sheet_id?: number) {
+  public UpdateSheets(data: any[], render = false, activate_sheet?: number|string) {
 
     // remove existing annotations from layout
 
@@ -921,11 +921,22 @@ export class Grid {
 
     // possibly set an active sheet on load (shortcut)
 
-    if (activate_sheet_id) {
-      for (const sheet of this.model.sheets) {
-        if (activate_sheet_id === sheet.id) {
-          this.model.active_sheet = sheet;
-          break;
+    if (activate_sheet) {
+
+      if (typeof activate_sheet === 'number') {
+        for (const sheet of this.model.sheets) {
+          if (activate_sheet === sheet.id) {
+            this.model.active_sheet = sheet;
+            break;
+          }
+        }
+      }
+      else if (typeof activate_sheet === 'string') {
+        for (const sheet of this.model.sheets) {
+          if (activate_sheet === sheet.name) {
+            this.model.active_sheet = sheet;
+            break;
+          }
         }
       }
     }

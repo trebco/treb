@@ -22,6 +22,9 @@ export interface BaseOptions {
   /** scroll to cell on load */
   scroll?: string | ICellAddress;
 
+  /** sheet to show on load, overrides anything in the model */
+  sheet?: string;
+
   /** add resizable wrapper */
   resizable?: boolean;
 

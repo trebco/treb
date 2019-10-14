@@ -244,7 +244,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     if (this.options.scrollbars) {
       grid_options.scrollbars = this.options.scrollbars;
     }
-    if (this.options.tab_bar) {
+    if (typeof this.options.tab_bar !== 'undefined') {
       grid_options.tab_bar = this.options.tab_bar;
     }
     if (this.options.add_tab) {
@@ -369,7 +369,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     }
 
     if (network_document) {
-      this.LoadNetworkDocument(network_document, this.options.scroll, !!this.options.recalculate);
+      this.LoadNetworkDocument(network_document, this.options);
     }
 
     // create mask dialog
@@ -648,10 +648,15 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    */
   public SimulationData(address: string | ICellAddress) {
     address = this.EnsureAddress(address);
+    if (!address.sheet_id) {
+      address.sheet_id = this.grid.model.active_sheet.id;
+    }
+
     const data = this.calculator.GetResults();
     if (!data) return undefined;
-    if (!data[address.column]) return undefined;
-    const cell = data[address.column][address.row];
+    if (!data[address.sheet_id]) return undefined;
+    if (!data[address.sheet_id][address.column]) return undefined;
+    const cell = data[address.sheet_id][address.column][address.row];
     if (cell) {
 
       // legacy support. will need a polyfill regardless for Array.from
@@ -993,7 +998,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * load a network document. using xhr/fetch, this will be
    * limited to local or CORS.
    */
-  public async LoadNetworkDocument(uri: string, scroll?: string|ICellAddress, recalculate = false) {
+  public async LoadNetworkDocument(uri: string, options: EmbeddedSpreadsheetOptions) {
+
+    // } scroll?: string|ICellAddress, recalculate = false) {
+
+    const scroll = options.scroll;
+    const recalculate = !!options.recalculate;
+    const override_sheet = options.sheet;
 
     // NOTE: dropping fetch, in favor of XHR; fetch requires a
     // pretty large polyfill for IE11, not worth it
@@ -1027,7 +1038,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         }
 
         const json = JSON.parse(response);
-        this.LoadDocument(json, scroll, undefined, recalculate);
+        this.LoadDocument(json, scroll, undefined, recalculate, options.sheet);
 
       }
     }
@@ -1205,7 +1216,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * flag is set in the document (assuming it's correct), because we can
    * display those values.
    */
-  public LoadDocument(data: TREBDocument, scroll?: string|ICellAddress, flush = true, recalculate = false) {
+  public LoadDocument(
+      data: TREBDocument,
+      scroll?: string|ICellAddress,
+      flush = true,
+      recalculate = false,
+      override_sheet?: string,
+      ) {
 
     // FIXME: version check
 
@@ -1287,7 +1304,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     } // end l10n conversion
 
     // this.grid.UpdateSheet(sheet_data); // don't paint -- wait for calculate
-    this.grid.UpdateSheets(sheets, undefined, data.active_sheet);
+    this.grid.UpdateSheets(sheets, undefined, override_sheet || data.active_sheet);
     const model = this.grid.model;
 
     if (data.simulation_data) {
