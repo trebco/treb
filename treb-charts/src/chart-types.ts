@@ -82,6 +82,7 @@ export interface HistogramData extends ColumnDataBaseType {
 export interface LineBaseData extends ChartDataBaseType {
   data: Array<number|undefined>;
   scale: RangeScale;
+  titles?: string[];
   x_labels?: string[];
   y_labels?: string[];
   callouts?: {values: number[], labels: string[]};

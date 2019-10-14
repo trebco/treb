@@ -97,6 +97,8 @@ export class Chart {
       x_labels = values.map((value) => x_format.Format(value));
     }
 
+    const titles = x_labels ? x_labels.map((x_label, i) => `${x_label} : ${y_format.Format(data[i])}`) : undefined;
+
     let callouts: {values: number[], labels: string[]}|undefined;
 
     const callout_data = args[5];
@@ -115,6 +117,7 @@ export class Chart {
       y_labels,
       x_labels,
       callouts,
+      titles,
     };
 
   }
@@ -513,11 +516,13 @@ export class Chart {
           return Util.ApplyScale(point, area.height, scale);
         });
 
-        this.renderer.RenderLine(area, y, (this.chart_data.type === 'area'), 'chart-line');
+        this.renderer.RenderLine(area, y, (this.chart_data.type === 'area'), this.chart_data.titles, 'chart-line');
 
+        /*
         if (this.chart_data.callouts) {
           console.info('render callouts', this.chart_data.callouts)
         }
+        */
 
       }
       break;

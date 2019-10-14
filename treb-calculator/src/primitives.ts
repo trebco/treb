@@ -123,10 +123,10 @@ export const MapOperator = (operator: string) => {
     case '<': return LessThan;
     case '>=': return GreaterThanEquals;
     case '<=': return LessThanEquals;
+    case '=':   return Equals;
+    case '==':  return Equals;
     case '!==': return NotEquals;
-    case '<>': return NotEquals;
-    case '=': return Equals;
-    case '==': return Equals;
+    case '<>':  return NotEquals;
   }
 
   return undefined;

@@ -30,6 +30,48 @@ export class MCExpressionCalculator extends ExpressionCalculator {
       return (expr: UnitCall) => NameError;
     }
 
+    // I wonder if we can handle prep separately, outside of
+    // the closure. on the assumption that prep is always the
+    // first call, perhaps we can check state first; do prep;
+    // and then return the closure without prep calls.
+
+    // also move this out?
+
+    const argument_descriptors = func.arguments || []; // map
+
+    if (this.simulation_model.state === SimulationState.Prep){
+
+      // this is a separate loop because we only need to call it on prep
+      // FIXME: can this move to parsing stage? (old note: probably this too,
+      // with a flag)
+
+      // we could split the simulation functions into regular and prep stage,
+      // which would drop a test inside the function.
+
+      // if you do that, though, make sure to set the captured call_index here
+      // (currently that's set below for the function call).
+
+      // NOTE: call_index is not relevant to StoreCellResults
+
+      outer.args.forEach((arg, arg_index) => {
+        const descriptor = argument_descriptors[arg_index] || {};
+        if (arg && descriptor.collector) {
+          if (arg.type === 'address') {
+            this.simulation_model.StoreCellResults(arg);
+          }
+          else if (arg.type === 'identifier') {
+            const named_range = this.named_range_map[arg.name.toUpperCase()];
+            if (named_range) {
+              this.simulation_model.StoreCellResults(named_range.start);
+            }
+          }
+        }
+      });
+
+    }
+
+    //
+
     return (expr: UnitCall) => {
 
       // get an index we can use for this call (we may recurse when
@@ -72,7 +114,6 @@ export class MCExpressionCalculator extends ExpressionCalculator {
       // exception rather than the rule...
 
       let argument_error: FunctionError|undefined;
-      const argument_descriptors = func.arguments || []; // map
 
       const mapped_args = (expr.args).map((arg, arg_index) => {
 
@@ -145,32 +186,9 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         }
         else if (descriptor.collector && this.simulation_model.state === SimulationState.Null) {
 
-          /*
-          // why holding this twice? (...) has to do with timing, apparently...
-
-          // I don't think this can actually happen. we should verify that this
-          // is necessary. look at it like this: the only thing that can cause
-          // this value to increment is a nested call to CallExpression (this
-          // method), which is only ever called by CalculateExpression.
-
-          // We can see from the code that CalculateExpression is _not_ called
-          // prior to this line. there's a small possibility that CalculateExpression
-          // is called, via Calculate, from a method call, but that is also below
-          // this line (at the end of the method).
-
-          // NOTE: that is 100% wrong. this is a loop. you might call
-          // CalculateExpression on loop 1 and then get here on loop 2. that's
-          // exactly why we capture this field. it might be rare, but if it
-          // happens it would be a mess. keep the captured value.
-          // do not remove this.
-
-          // actually you're both 100% wrong; because the CellData function doesn't
-          // actually use call_index. not sure how this got misaligned. it's needed
-          // for prep (correlation, lhs) and storing results during a simulation.
-          // so it needs to go in front of the function call and the prep step.
-
-          this.simulation_model.call_index = call_index;
-          */
+          // this branch is _getting_ simulation data, even though it uses
+          // the same function that marks cells for storage. we could perhaps
+          // use a separate function that doesn't allocate.
 
           if (arg.type === 'address'){
             return this.simulation_model.StoreCellResults(arg);
@@ -205,34 +223,6 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         return argument_error;
       }
 
-      if (this.simulation_model.state === SimulationState.Prep){
-
-        // this is a separate loop because we only need to call it on prep
-        // FIXME: can this move to parsing stage? (old note: probably this too,
-        // with a flag)
-
-        // we could split the simulation functions into regular and prep stage,
-        // which would drop a test inside the function.
-
-        // if you do that, though, make sure to set the captured call_index here
-        // (currently that's set below for the function call).
-
-        expr.args.forEach((arg, arg_index) => {
-          const descriptor = argument_descriptors[arg_index] || {};
-          if (arg && descriptor.collector) {
-            if (arg.type === 'address') {
-              this.simulation_model.StoreCellResults(arg);
-            }
-            else if (arg.type === 'identifier') {
-              const named_range = this.named_range_map[arg.name.toUpperCase()];
-              if (named_range) {
-                this.simulation_model.StoreCellResults(named_range.start);
-              }
-            }
-          }
-        });
-
-      }
 
       // if we have any nested calls, they may have updated the index so
       // we use the captured value here.

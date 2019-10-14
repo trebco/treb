@@ -220,7 +220,12 @@ export class ChartRenderer {
 
   }
 
-  public RenderLine(area: Area, data: Array<number|undefined>, fill = false, classes?: string|string[]){
+  public RenderLine(
+      area: Area,
+      data: Array<number|undefined>,
+      fill = false,
+      titles?: string[],
+      classes?: string|string[] ){
 
     // const node = document.createElementNS(SVGNS, 'path');
     const group = document.createElementNS(SVGNS, 'g');
@@ -231,6 +236,8 @@ export class ChartRenderer {
     const count = data.length;
     const steps = count - 1;
     const step = (area.width / count) / 2;
+
+    const circles: Array< {x: number, y: number, i: number}> = [];
 
     let i = 0;
     let move = true;
@@ -257,6 +264,9 @@ export class ChartRenderer {
         d1.push(`L${x} ${area.bottom - point}`);
         d2.push(`L${x} ${area.bottom - point}`);
       }
+
+      circles.push({x, y: area.bottom - point, i});
+
       last_x = x;
       move = false;
     }
@@ -289,6 +299,30 @@ export class ChartRenderer {
     }
 
     this.group.appendChild(group);
+
+    // circles...
+
+    if (titles && circles.length) {
+      const circle_group = document.createElementNS(SVGNS, 'g');
+      for (const circle of circles) {
+        const shape = document.createElementNS(SVGNS, 'circle');
+        shape.setAttribute('cx', circle.x.toString());
+        shape.setAttribute('cy', circle.y.toString());
+        shape.setAttribute('r', (step).toString());
+
+        shape.addEventListener('mouseenter', (event) => {
+          this.parent.setAttribute('title', titles[circle.i] || '');
+        });
+        shape.addEventListener('mouseleave', (event) => {
+          this.parent.setAttribute('title', '');
+        });
+
+        circle_group.appendChild(shape);
+        circle_group.classList.add('mouse-layer');
+      }
+      this.group.appendChild(circle_group);
+
+    }
 
   }
 

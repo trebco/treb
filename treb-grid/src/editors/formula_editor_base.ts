@@ -361,9 +361,12 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
   /**
    * replace text with node structure for highlighting.
    *
-   * lots of cross-browser issues. chrome is generally ok.
-   * firefox drops spaces at the end of the text. IE11 breaks,
-   * but it's not clear why.
+   * lots of cross-browser issues. chrome is generally ok. firefox drops
+   * spaces at the end of the text. IE11 breaks, but it's not clear why.
+   *
+   * UPDATE: this breaks when entering hanzi, probably true of all
+   * multibyte unicode characters
+   *
    */
   protected Reconstruct(preserve_caret = true) {
 

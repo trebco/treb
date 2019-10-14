@@ -326,7 +326,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           product *= value;
         }
         return Math.pow(product, 1 / count);
-      }
+      },
     },
 
     Average: {

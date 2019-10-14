@@ -1968,7 +1968,7 @@ export class Grid {
       switch (event.type) {
 
         case 'stop-editing':
-          console.info('stop editing');
+
           this.editing_state = EditingState.NotEditing;
           break;
 
@@ -1981,6 +1981,10 @@ export class Grid {
           // we don't clear the primary selection when changing sheets
           // when editing, so the sheet ID is correct. but that's an
           // accident. see note below on 'commit'.
+
+          // FIXME: could this be resolved by using the "selecting argument"
+          // flag? that's sort of what that was originally created for,
+          // although it predates multi-sheet. TODO
 
           this.editing_state = EditingState.FormulaBar;
           this.editing_cell = { ...this.primary_selection.target };
