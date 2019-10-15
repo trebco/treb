@@ -1,10 +1,12 @@
 
 import { Yield } from 'treb-utils';
-import { toolbar_template } from './toolbar-template';
+import { toolbar_template, sheet_structure_menu } from './toolbar-template';
 import { ToolbarItem } from './toolbar-item';
 import { NumberFormatCache, NumberFormat } from 'treb-format';
 import { Measurement } from 'treb-utils';
 import { ICellAddress, Area } from 'treb-base-types';
+
+import { ToolbarOptions } from './toolbar-options';
 
 export type EventHandler = (id: string, data?: any) => void;
 
@@ -42,9 +44,21 @@ export class Toolbar {
   /** using a list instead of querying every time (over-optimization) */
   private active_items: HTMLElement[] = [];
 
-  constructor(private container: HTMLElement) {
+  constructor(private container: HTMLElement, options: ToolbarOptions = {}) {
 
-    for (const item of toolbar_template) this.PopulateItems(item, container);
+    let template: ToolbarItem[] = JSON.parse(JSON.stringify(toolbar_template));
+
+    if (options.add_delete_sheet) {
+      const structure_item = JSON.parse(JSON.stringify(sheet_structure_menu));
+      template = template.map((item) => {
+        if (item.id === 'structure') {
+          return structure_item;
+        }
+        return item;
+      });
+    }
+
+    for (const item of template) this.PopulateItems(item, container);
 
     this.popup = document.createElement('div');
     this.popup.classList.add('treb-toolbar-menu');

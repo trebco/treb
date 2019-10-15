@@ -3,6 +3,7 @@
 // type EmbeddedSpreadsheet = import('treb-embed/src/index').EmbeddedSpreadsheet;
 
 import { Toolbar } from './toolbar';
+import { ToolbarOptions } from './toolbar-options';
 import { ToolbarItem } from './toolbar-item';
 import { NumberFormat, NumberFormatCache } from 'treb-format';
 import { Style } from 'treb-base-types';
@@ -31,8 +32,13 @@ export class FormattingToolbar {
    * factory method
    * FIXME: why?
    */
-  public static CreateInstance(sheet: EventSource<any>, grid: Grid, container: HTMLElement) {
-    return new FormattingToolbar(sheet, grid, container);
+  public static CreateInstance(
+      sheet: EventSource<any>,
+      grid: Grid,
+      container: HTMLElement,
+      options: ToolbarOptions = {}) {
+
+    return new FormattingToolbar(sheet, grid, container, options);
   }
 
   /** inject SVG, once, and lazily */
@@ -91,7 +97,8 @@ export class FormattingToolbar {
   constructor(
       private sheet: EventSource<any>, // FIXME: lock down this type? (...)
       private grid: Grid, // reference
-      private container: HTMLElement) {
+      private container: HTMLElement,
+      private options: ToolbarOptions = {}) {
 
     // prep
 
@@ -110,7 +117,7 @@ export class FormattingToolbar {
 
     // internal objects, initial state
 
-    this.toolbar = new Toolbar(this.node);
+    this.toolbar = new Toolbar(this.node, options);
 
     this.toolbar.Show('merge', true);
     this.toolbar.Show('unmerge', false);
@@ -363,6 +370,14 @@ export class FormattingToolbar {
 
       case 'structure':
         switch (template.value) {
+          case 'insert sheet':
+            this.grid.InsertSheet();
+            break;
+
+          case 'delete sheet':
+            this.grid.DeleteSheet();
+            break;
+
           case 'insert row':
             this.grid.InsertRow();
             break;

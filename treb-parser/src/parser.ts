@@ -17,6 +17,19 @@ interface PrecedenceList {
   [index: string]: number;
 }
 
+/**
+ * regex determines if a sheet name requires quotes. centralizing
+ * this to simplify maintenance and reduce overlap/errors
+ */
+export const QuotedSheetNameRegex = /[\s-\+=<>\!\(\)]/;
+
+/**
+ * similarly, illegal sheet name. we don't actually handle this in
+ * the parser, but it seems like a reasonable place to keep this
+ * definition.
+ */
+export const IllegalSheetNameRegex = /['\*\\]/;
+
 const DOUBLE_QUOTE = 0x22; // '"'.charCodeAt(0);
 const SINGLE_QUOTE = 0x27; // `'`.charCodeAt(0);
 
@@ -525,7 +538,7 @@ export class Parser {
 
     let label = '';
     if (address.sheet) {
-      label = (/\s/.test(address.sheet) ?
+      label = (QuotedSheetNameRegex.test(address.sheet) ?
         '\'' + address.sheet + '\'' : address.sheet) + '!';
     }
 

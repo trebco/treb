@@ -231,6 +231,7 @@ export interface NullCommand {
 
 export interface AddSheetCommand {
   key: CommandKey.AddSheet;
+  insert_index?: number;
 }
 
 export interface DeleteSheetCommand extends SheetSelection {

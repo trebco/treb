@@ -15,6 +15,7 @@ import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 
 // TYPE ONLY
 type FormattingToolbar = import('treb-toolbar/src/toolbar-main').FormattingToolbar;
+import { ToolbarOptions } from 'treb-toolbar/src/toolbar-options';
 
 // TYPE ONLY
 type Chart = import('../../treb-charts/src/index').Chart;
@@ -2008,7 +2009,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     if (!this.toolbar) {
       const load = await this.LoadToolbar();
       if (load) {
-        this.toolbar = (self as any).TREB['treb-toolbar'].CreateInstance(this, this.grid, container);
+
+        console.info('creating toolbar... option is', this.options.add_tab);
+        const options: ToolbarOptions = {
+          add_delete_sheet: !!this.options.add_tab,
+        };
+        this.toolbar = (self as any).TREB['treb-toolbar'].CreateInstance(this, this.grid, container, options);
+
       }
     }
 

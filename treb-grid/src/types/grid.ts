@@ -2,7 +2,8 @@
 import { Rectangle, ValueType, Style, Area, Cell,
          Extent, ICellAddress, Point,
          IsCellAddress, Localization, IArea } from 'treb-base-types';
-import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV } from 'treb-parser';
+import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
+         QuotedSheetNameRegex, IllegalSheetNameRegex } from 'treb-parser';
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
 import { NumberFormatCache, RDateScale } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
@@ -834,11 +835,50 @@ export class Grid {
     }
   }
 
-  public DeleteSheet(index = 0) {
+  /** insert sheet at the given index (or current index) */
+  public InsertSheet(index?: number) {
+
+    if (typeof index === 'undefined') {
+      if (!this.model.sheets.some((sheet, i) => {
+        if (sheet === this.model.active_sheet) {
+          index = i;
+          return true;
+        }
+        return false;
+      })) {
+        throw new Error('invalid index');
+      }
+    }
+
+    this.ExecCommand({
+      key: CommandKey.AddSheet,
+      insert_index: index,
+    });
+
+  }
+
+  /**
+   * delete sheet, by index or (omitting index) the current active sheet
+   */
+  public DeleteSheet(index?: number) {
+
+    if (typeof index === 'undefined') {
+      if (!this.model.sheets.some((sheet, i) => {
+        if (sheet === this.model.active_sheet) {
+          index = i;
+          return true;
+        }
+        return false;
+      })) {
+        throw new Error('invalid index');
+      }
+    }
+
     this.ExecCommand({
       key: CommandKey.DeleteSheet,
       index,
     });
+
   }
 
   public AddSheet() {
@@ -1720,7 +1760,7 @@ export class Grid {
 
   }
 
-  private AddSheetInternal(name = Sheet.default_sheet_name) { // }, activate = true) {
+  private AddSheetInternal(name = Sheet.default_sheet_name, insert_index = -1) {
 
     if (!this.options.add_tab) {
       console.warn('add tab option not set or false');
@@ -1744,7 +1784,13 @@ export class Grid {
     // FIXME: structure event
 
     const sheet = Sheet.Blank(100, 26, name);
-    this.model.sheets.push(sheet);
+
+    if (insert_index >= 0) {
+      this.model.sheets.splice(insert_index, 0, sheet);
+    }
+    else {
+      this.model.sheets.push(sheet);
+    }
 
     // if (activate) {
     //   this.ActivateSheetInternal({ key: CommandKey.ActivateSheet, id: sheet.id });
@@ -2209,7 +2255,7 @@ export class Grid {
 
           this.editing_state = EditingState.NotEditing;
 
-          this.DismissEditor(false);
+          this.DismissEditor();
           this.DelayedRender();
           break;
 
@@ -2229,7 +2275,9 @@ export class Grid {
           if (event.selection) {
             this.SetInferredType(event.selection, event.value, event.array);
           }
-          this.DismissEditor(false);
+          this.DismissEditor();
+
+          this.UpdateFormulaBarFormula();
 
           if (this.options.repaint_on_cell_change) { // || !formula){
             this.DelayedRender(false, event.selection ? event.selection.area : undefined);
@@ -2830,7 +2878,9 @@ export class Grid {
 
     // unless we're selecting an argument, close the ICE
 
-    if (this.cell_editor && this.cell_editor.visible && !this.cell_editor.selecting) this.DismissEditor();
+    if (this.cell_editor && this.cell_editor.visible && !this.cell_editor.selecting) {
+      this.DismissEditor();
+    }
 
     const offset_point = {
       x: event.offsetX,
@@ -2999,7 +3049,10 @@ export class Grid {
 
     if (this.model.active_sheet.id !== this.editing_cell.sheet_id) {
       const name = this.model.active_sheet.name;
-      if (/\s/.test(name)) {
+
+      console.info("USA", name);
+
+      if (QuotedSheetNameRegex.test(name)) {
         label = `'${name}'!${label}`;
       }
       else {
@@ -3715,7 +3768,7 @@ export class Grid {
    * dismisses the in-cell editor and returns to normal behavior.
    * removes any highlighted selections (arguments).
    */
-  private DismissEditor(update_selection = true) {
+  private DismissEditor() {
 
     if (!this.cell_editor) return;
 
@@ -4950,7 +5003,7 @@ export class Grid {
 
     // validate name... ?
 
-    if (!name || /['\+-=\*\\]/.test(name)) {
+    if (!name || IllegalSheetNameRegex.test(name)) {
       throw new Error('invalid sheet name');
     }
 
@@ -5501,6 +5554,7 @@ export class Grid {
           // this.model.active_sheet.ClearArea(area, true);
           this.ClearAreaInternal(area);
           data_area = Area.Join(area, data_area);
+          this.UpdateFormulaBarFormula();
         }
         else {
           Sheet.Reset();
@@ -5806,14 +5860,14 @@ export class Grid {
 
         }
         break;
-      
+
       case CommandKey.DeleteSheet:
         this.DeleteSheetInternal(command);
         structure_event = true;
         break;
 
       case CommandKey.AddSheet:
-        const sheet_id = this.AddSheetInternal(); // default name
+        const sheet_id = this.AddSheetInternal(undefined, command.insert_index); // default name
         this.ActivateSheetInternal({
           key: CommandKey.ActivateSheet,
           id: sheet_id,

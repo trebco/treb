@@ -2,6 +2,20 @@
 import { ToolbarItem } from './toolbar-item';
 import { Localization } from 'treb-base-types';
 
+export const sheet_structure_menu: ToolbarItem = {
+  icon: 'icon-crop',
+  id: 'structure',
+  title: 'Rows/Columns/Sheets',
+  submenu: [
+    'insert row',
+    'insert column',
+    'delete row',
+    'delete column',
+    { type: 'separator' },
+    'insert sheet',
+    'delete sheet',
+]};
+
 export const toolbar_template: Array<ToolbarItem|ToolbarItem[]> = [
 
   { icon: 'icon-format_align_left', id: 'align-left', title: 'Align Left' },
