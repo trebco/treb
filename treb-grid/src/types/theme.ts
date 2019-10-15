@@ -37,6 +37,15 @@ export interface Theme {
 
   // --------------------------------------------------------------------------
 
+  tab_bar_font_size?: number|string;
+  tab_bar_font_face?: string;
+  tab_bar_background?: string;
+  tab_bar_color?: string;
+  tab_bar_active_background?: string;
+  tab_bar_active_color?: string;
+
+  // --------------------------------------------------------------------------
+
   formula_bar_font_face?: string;
   formula_bar_font_size?: number|string;
   formula_bar_background_color?: string;
@@ -334,6 +343,16 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
 
   const note_marker = TestNode(['note-marker'], ['fill']);
   theme.note_marker_color = note_marker[0];
+
+  const tab_bar = TestNode(['tab-bar'], ['font-family', 'font-size', 'fill', 'stroke']);
+  theme.tab_bar_font_face = tab_bar[0];
+  theme.tab_bar_font_size = tab_bar[1];
+  theme.tab_bar_background = tab_bar[2];
+  theme.tab_bar_color = tab_bar[3];
+
+  const tab_bar_active = TestNode(['tab-bar', 'active'], ['fill', 'stroke']);
+  theme.tab_bar_active_background = tab_bar_active[0];
+  theme.tab_bar_active_color = tab_bar_active[1];
 
   // console.info(theme);
   // document.body.removeChild(node);

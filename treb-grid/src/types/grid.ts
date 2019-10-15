@@ -1204,7 +1204,7 @@ export class Grid {
     }
 
     if (this.options.tab_bar) {
-      this.tab_bar = new TabBar(this.layout, this.model, this.options, grid_container);
+      this.tab_bar = new TabBar(this.layout, this.model, this.options, this.theme, grid_container);
       this.tab_bar.Subscribe((event) => {
         switch (event.type) {
           case 'cancel':
@@ -3049,8 +3049,6 @@ export class Grid {
 
     if (this.model.active_sheet.id !== this.editing_cell.sheet_id) {
       const name = this.model.active_sheet.name;
-
-      console.info("USA", name);
 
       if (QuotedSheetNameRegex.test(name)) {
         label = `'${name}'!${label}`;

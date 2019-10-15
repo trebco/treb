@@ -5,6 +5,7 @@ import { Sheet } from './sheet';
 import { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import { GridOptions } from './grid_options';
+import { ExtendedTheme } from '../types/theme';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';
@@ -68,6 +69,7 @@ export class TabBar extends EventSource<TabEvent> {
       private layout: BaseLayout,
       private model: DataModel,
       private options: GridOptions,
+      private theme: ExtendedTheme,
       grid_container: HTMLElement,
     ) {
 
@@ -104,6 +106,21 @@ export class TabBar extends EventSource<TabEvent> {
   public Show(show = true) {
     if (!this.container) { return; }
     this.container.style.display = show ? 'block' : 'none';
+  }
+
+  public UpdateTheme() {
+
+    if (!this.node) { return; }
+
+    let font_size = this.theme.tab_bar_font_size || null;
+
+    if (typeof font_size === 'number') {
+      font_size = `${font_size}pt`;
+    }
+
+    this.node.style.fontFamily = this.theme.tab_bar_font_face || '';
+    this.node.style.fontSize = font_size || '';
+
   }
 
   /**
@@ -148,6 +165,12 @@ export class TabBar extends EventSource<TabEvent> {
 
       if (sheet === this.model.active_sheet) {
         tab.classList.add('selected');
+        tab.style.color = this.theme.tab_bar_active_color || '';
+        tab.style.background = this.theme.tab_bar_active_background || '';
+      }
+      else {
+        tab.style.color = this.theme.tab_bar_color || '';
+        tab.style.background = this.theme.tab_bar_background || '';
       }
 
       const mousedown = (event: MouseEvent) => {
@@ -282,6 +305,9 @@ export class TabBar extends EventSource<TabEvent> {
         this.Publish({ type: 'add-sheet' });
       });
 
+      add_tab.style.color = this.theme.tab_bar_color || '';
+      add_tab.style.background = this.theme.tab_bar_background || '';
+
       this.node.appendChild(add_tab);
 
     }
@@ -300,6 +326,8 @@ export class TabBar extends EventSource<TabEvent> {
     this.node = document.createElement('div');
     this.node.classList.add('treb-tab-bar');
     this.container.appendChild(this.node);
+
+    this.UpdateTheme();
 
   }
 

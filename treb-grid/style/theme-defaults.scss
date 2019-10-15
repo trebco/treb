@@ -105,6 +105,20 @@
 
   }
 
+  .tab-bar {
+
+    font-family: $font-stack;
+    font-size: 14px;
+    stroke: #333;
+    fill: #eee;
+
+    &.active {
+      stroke: #333;
+      fill: #fff;
+    }
+
+  }
+
   // column/row resize tooltip
 
   .tooltip {

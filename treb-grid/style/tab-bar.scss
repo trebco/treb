@@ -19,12 +19,14 @@
 
     & .tab, & .add-tab {
 
-      font-size: .75em;
+      // font-size: .75em;
+      font-size: inherit;
       padding: .25em .75em;
       cursor: default;
       display: inline-block;
-      color: #343;
-      background: #eee;
+
+      // color: #343;
+      // background: #eee;
 
       border-bottom-left-radius: 5px;
       border-bottom-right-radius: 5px;
@@ -52,7 +54,7 @@
     }
 
     & .tab.selected {
-      background: #fff;
+      // background: #fff;
       z-index: 2;
 
       /*
