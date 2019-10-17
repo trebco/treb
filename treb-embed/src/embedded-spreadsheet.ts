@@ -216,13 +216,6 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.node.setAttribute('class', 'treb-embed-container');
     container.appendChild(this.node);
 
-    if (this.options.resizable) {
-      // this.resizable
-      const resizable = new Resizable(container, this.node, () => {
-        this.Resize();
-      });
-    }
-
     // handle key. TODO: move undo to grid (makes more sense)
 
     container.addEventListener('keydown', this.HandleKeyDown.bind(this));
@@ -254,6 +247,21 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
     this.grid = new Grid(grid_options);
     this.grid.Initialize(this.node);
+
+    if (this.options.resizable) {
+      const node = this.node.querySelector('.treb-main');
+      console.info("TN", node);
+      if (node) {
+        const resizable = new Resizable(container, node as HTMLElement, () => {
+          this.Resize();
+        });
+      }
+      /*
+      const resizable = new Resizable(container, this.node, () => {
+        this.Resize();
+      });
+      */
+    }
 
     // dnd
 

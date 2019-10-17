@@ -116,6 +116,12 @@ class AutoEmbedManager {
 
     composite.classList.add('treb-embedded-spreadsheet');
 
+    /*
+    if (options.tab_bar === 'auto' || options.tab_bar === true) {
+      composite.classList.add('treb-embedded-tab-bar');
+    }
+    */
+
     if (!this.injected_styles) this.InjectStyles();
 
     const sheet_container = document.createElement('div');

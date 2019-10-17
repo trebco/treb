@@ -70,7 +70,7 @@ export class TabBar extends EventSource<TabEvent> {
       private model: DataModel,
       private options: GridOptions,
       private theme: ExtendedTheme,
-      grid_container: HTMLElement,
+      private grid_container: HTMLElement,
     ) {
 
     super();
@@ -105,7 +105,17 @@ export class TabBar extends EventSource<TabEvent> {
 
   public Show(show = true) {
     if (!this.container) { return; }
-    this.container.style.display = show ? 'block' : 'none';
+    // this.container.style.display = show ? 'block' : 'none';
+
+    if (show) {
+      this.grid_container.classList.add('treb-tab-bar-layout');
+      this.container.style.display = 'block';
+    }
+    else {
+      this.grid_container.classList.remove('treb-tab-bar-layout');
+      this.container.style.display = 'none';
+    }
+
   }
 
   public UpdateTheme() {
@@ -140,6 +150,8 @@ export class TabBar extends EventSource<TabEvent> {
       }
       this.Show(true);
     }
+
+    this.grid_container.classList.add('treb-tab-bar-layout');
 
     // clear
     this.node.innerText = '';
