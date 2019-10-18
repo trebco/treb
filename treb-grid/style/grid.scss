@@ -34,8 +34,15 @@
     box-sizing: border-box;
   }
 
-  &.treb-tab-bar-layout {
-    padding-bottom: 1.4em;
+  .treb-layout-master {
+    flex-grow: 1;
+    order: 2;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+    -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
+    display: flex;
+    position: relative;
   }
 
   .treb-grid {

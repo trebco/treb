@@ -249,18 +249,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     this.grid.Initialize(this.node);
 
     if (this.options.resizable) {
-      const node = this.node.querySelector('.treb-main');
-      console.info("TN", node);
-      if (node) {
-        const resizable = new Resizable(container, node as HTMLElement, () => {
-          this.Resize();
-        });
+      const master = container.querySelector('.treb-layout-master');
+      const node = container.querySelector('.treb-grid');
+      if (node && master) {
+        const resizable = new Resizable(container, node as HTMLElement, () => this.Resize(),
+          master as HTMLElement);
       }
-      /*
-      const resizable = new Resizable(container, this.node, () => {
-        this.Resize();
-      });
-      */
+      // const resizable = new Resizable(container, this.node, () => this.Resize());
     }
 
     // dnd

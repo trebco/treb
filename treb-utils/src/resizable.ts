@@ -9,11 +9,18 @@ export class Resizable {
   private static resize_mask: HTMLElement;
   private static resize_rect: HTMLElement;
 
-  constructor(container: HTMLElement, node: HTMLElement, resize_callback: () => void) {
+  /**
+   * adding layout_reference to move the handle. to keep this backwards
+   * compatible, we add it as a last, optional parameter. at some point
+   * we can create a replacement class and migrate.
+   */
+  constructor(container: HTMLElement, node: HTMLElement, resize_callback: () => void,
+    layout_reference: HTMLElement = container) {
 
     const resize_handle = document.createElement('div');
     resize_handle.classList.add('treb-embed-resize-handle');
-    container.appendChild(resize_handle);
+    // container.appendChild(resize_handle);
+    layout_reference.appendChild(resize_handle);
 
     if (!Resizable.resize_mask) {
       let mask = document.querySelector('.treb-embed-mouse-mask');

@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "6.0.9",
+  "version": "6.0.10",
   "main": "dist/index.js",
   "devDependencies": {
     "@types/elementtree": "^0.1.0",

@@ -1191,7 +1191,12 @@ export class Grid {
 
     const container = document.createElement('div');
 
-    grid_container.appendChild(container);
+    const higher_level_container = document.createElement('div');
+    higher_level_container.classList.add('treb-layout-master');
+    higher_level_container.appendChild(container);
+    grid_container.appendChild(higher_level_container);
+
+    // grid_container.appendChild(container);
     grid_container.classList.add('treb-main');
 
     let autocomplete: Autocomplete | undefined;
