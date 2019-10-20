@@ -9,18 +9,25 @@
     display: block;
     order: 1;
 
-    & > div {
+    & .treb-formula-bar {
 
       display: flex;
       flex-direction: row;
-      padding: 6px;
+      
+      padding: 6px 2px;
+
       max-width: 100%;
       overflow-x: hidden; // last ditch for IE11
       
       /** label for selection address */
       .address-label {
-        width: 100px;
-        min-width: 70px;
+        
+        // width: 100px;
+        // min-width: 70px;
+
+        width: 95px;
+        min-width: 95px;
+
         min-height: 1.5em;
         height: 1.75em;
         border: 1px solid #ccc;
@@ -30,6 +37,8 @@
         justify-content: center;
         padding-left: 3px;
 
+        margin-right: 6px;
+
         & > div {
           overflow: hidden;
           text-overflow: ellipsis;
@@ -37,13 +46,44 @@
         }
       }
 
+      .expand-button {
+        background: transparent;
+        // border: 1px solid #ccc;
+        border: 0;
+        border-radius: 2px;
+        margin-left: 2px;
+        padding: 1px;
+        // overflow: hidden;
+        outline: none;
+        height: 1.75em;
+
+        &::after {
+          content: ' ';
+          border: 6px solid transparent;
+          position: relative;
+          display: inline-block;
+          border-top-color: #999;
+          padding: 0;
+          margin: 0;
+        }
+      }
+
+      &.expanded {
+        .expand-button::after {
+          border-top-color: transparent;
+          border-bottom-color: #999;
+          top: -6px;
+        }
+      }
+
       .editor-container {
         border: 1px solid #ccc;
         border-radius: 2px;
         flex-grow: 1;
-        flex-shrink: 1;
+        
         height: 1.75em; // 3.5em; // 1.75em;
-        margin-left: 6px;
+        // margin-left: 6px;
+
         display: flex;
         min-width: 0px;
         flex-direction: column;
@@ -53,17 +93,27 @@
         &.locked {
           background: blue;
         }
-        
+
+      }
+
+      &.expanded {
+        .editor-container {
+          height: 4em;
+          .formula-editor {
+            overflow-y: auto;
+          }
+        }
       }
 
       .formula-editor {
         width: 100%;
         margin: 2px;
         outline: none;
-        overflow-y: auto;
+        overflow-y: hidden;
         overflow-x: hidden;
         line-height: normal;
 
+        flex-grow: 1; // keeps content at the top
         min-height: 1em;
 
         // I don't like this, let's figure out a better way w/ wrapping

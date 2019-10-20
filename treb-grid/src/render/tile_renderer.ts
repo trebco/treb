@@ -164,7 +164,9 @@ export class TileRenderer {
 
     const font_metrics = FontMetricsCache.get({
       font_face: this.theme.interface_font_face,
-      font_size: this.theme.interface_font_size,
+      // font_size: this.theme.interface_font_size,
+      font_size_unit: this.theme.interface_font_size_unit,
+      font_size_value: this.theme.interface_font_size_value,
     });
 
     const scale = this.layout.dpr;
@@ -203,7 +205,7 @@ export class TileRenderer {
 
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.font = `${this.theme.interface_font_size} ${this.theme.interface_font_face}`;
+    context.font = `${this.theme.interface_font_size_value}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
     context.fillStyle = this.theme.header_text_color || '';
 
     if (this.model.active_sheet.freeze.rows && this.model.active_sheet.header_offset.x > 1) {
@@ -319,7 +321,9 @@ export class TileRenderer {
     const header_size = this.model.active_sheet.header_offset;
     const font_metrics = FontMetricsCache.get({
       font_face: this.theme.interface_font_face,
-      font_size: this.theme.interface_font_size,
+      // font_size: this.theme.interface_font_size,
+      font_size_unit: this.theme.interface_font_size_unit,
+      font_size_value: this.theme.interface_font_size_value,
     });
 
     for (let column = tiles.start.column; column <= tiles.end.column; column++) {
@@ -337,7 +341,7 @@ export class TileRenderer {
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.font = `${this.theme.interface_font_size} ${this.theme.interface_font_face}`;
+        context.font = `${this.theme.interface_font_size_value}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
         context.fillStyle = this.theme.header_text_color || '';
         context.strokeStyle = this.theme.grid_color || '';
 
@@ -392,7 +396,7 @@ export class TileRenderer {
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.font = `${this.theme.interface_font_size} ${this.theme.interface_font_face}`;
+        context.font = `${this.theme.interface_font_size_value}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
         context.fillStyle = this.theme.header_text_color || '';
         context.strokeStyle = this.theme.grid_color || '';
 
@@ -1051,7 +1055,8 @@ export class TileRenderer {
     // (eventually) painting to the buffer context. just remember to set
     // font in the buffer context.
 
-    const font = Style.Font(style);
+    const font = Style.Font(style, this.model.active_sheet.scale);
+
     if (font !== this.last_font) {
       context.font = this.last_font = font; // set in context so we can measure
     }

@@ -1,6 +1,7 @@
 
 // treb imports
-import { Grid, GridEvent, SerializeOptions, Annotation, BorderConstants, SheetChangeEvent, CommandKey, GridOptions } from 'treb-grid';
+import { Grid, GridEvent, SerializeOptions, Annotation,
+         BorderConstants, SheetChangeEvent, GridOptions } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
@@ -2012,13 +2013,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
     if (!this.toolbar) {
       const load = await this.LoadToolbar();
       if (load) {
-
-        console.info('creating toolbar... option is', this.options.add_tab);
         const options: ToolbarOptions = {
           add_delete_sheet: !!this.options.add_tab,
         };
         this.toolbar = (self as any).TREB['treb-toolbar'].CreateInstance(this, this.grid, container, options);
-
       }
     }
 

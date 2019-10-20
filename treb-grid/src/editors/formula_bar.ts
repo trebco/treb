@@ -42,6 +42,9 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   /** the function button (optional?) */
   private button!: HTMLButtonElement;
 
+  /** */
+  private expand_button!: HTMLButtonElement;
+
   /** corner for resizing formula editor */
   private drag_corner!: HTMLDivElement;
 
@@ -201,7 +204,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
       this.autocomplete.Hide();
       this.Publish([
         { type: 'stop-editing' },
-        { type: 'retain-focus', focus: false }
+        { type: 'retain-focus', focus: false },
       ]);
       this.focused_ = false;
     });
@@ -214,6 +217,15 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
       this.Reconstruct();
       this.UpdateSelectState();
     });
+
+    /*
+    this.expand_button = DOMUtilities.Create<HTMLButtonElement>('button', 'expand-button', inner_node);
+    this.expand_button.addEventListener('click', (event: MouseEvent) => {
+      event.stopPropagation();
+      event.preventDefault();
+      inner_node.classList.toggle('expanded');
+    });
+    */
 
     // this.drag_corner = Dom2.CreateDiv(this.container_node, 'drag-corner');
     // this.drag_corner.addEventListener('mousedown', (event) => this.StartDrag(event));

@@ -60,6 +60,8 @@ export class TabBar extends EventSource<TabEvent> {
   private node?: HTMLElement;
   private container?: HTMLElement;
 
+  private dragging = false;
+
   private double_click_data: {
     index?: number;
     timeout?: any;
@@ -133,10 +135,37 @@ export class TabBar extends EventSource<TabEvent> {
 
   }
 
+  public SetActive(tab: HTMLElement, active: boolean) {
+    if (active) {
+      tab.classList.add('selected');
+      tab.style.color = this.theme.tab_bar_active_color || '';
+      tab.style.background = this.theme.tab_bar_active_background || '';
+    }
+    else {
+      tab.classList.remove('selected');
+      tab.style.color = this.theme.tab_bar_color || '';
+      tab.style.background = this.theme.tab_bar_background || '';
+    }
+  }
+
   /**
    * update tabs from model.
    */
   public Update() {
+
+    // this is a hack to normalize behavior if you try to re-order
+    // a tab that's not the active tab. what ordinarily happens is
+    // we start the drag, but then Update is called again which rebuilds
+    // tabs and throws out the old set.
+
+    // at the same time we want to activate on mousedown, not mouseup.
+    // so for the time being we just block the rebuild if we are dragging.
+    // longer term it's a FIXME.
+
+    if (this.dragging) {
+      // console.info('blocked!')
+      return;
+    }
 
     if (!this.node) { return; }
 
@@ -175,15 +204,7 @@ export class TabBar extends EventSource<TabEvent> {
       tab.classList.add('tab');
       tab.style.order = (index * 2).toString();
 
-      if (sheet === this.model.active_sheet) {
-        tab.classList.add('selected');
-        tab.style.color = this.theme.tab_bar_active_color || '';
-        tab.style.background = this.theme.tab_bar_active_background || '';
-      }
-      else {
-        tab.style.color = this.theme.tab_bar_color || '';
-        tab.style.background = this.theme.tab_bar_background || '';
-      }
+      this.SetActive(tab, sheet === this.model.active_sheet);
 
       const mousedown = (event: MouseEvent) => {
         event.stopPropagation();
@@ -207,6 +228,15 @@ export class TabBar extends EventSource<TabEvent> {
 
         const min = -1;
         const max = (rectangles.length - 1) * 2 + 1;
+
+        // see above re: dragging and activation. if the tabs aren't rebuilt,
+        // then the classes won't change.
+
+        for (const candidate of tabs) {
+          this.SetActive(candidate, candidate === tab);
+        }
+
+        this.dragging = true;
 
         MouseDrag(this.layout.mask, [], (move_event) => {
 
@@ -241,6 +271,9 @@ export class TabBar extends EventSource<TabEvent> {
         }, (end_event) => {
           const current = index;
           const move_before = (order + 1) / 2;
+
+          // console.info('set false')
+          this.dragging = false;
 
           if ((current === move_before) ||
               (current === 0 && move_before <= 0) ||

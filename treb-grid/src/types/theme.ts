@@ -9,7 +9,9 @@ export interface Theme {
   interface_font_face?: string;
 
   /** ui font size */
-  interface_font_size?: number|string;
+  // interface_font_size?: number|string;
+  interface_font_size_unit?: string;
+  interface_font_size_value?: number;
 
   /**
    * interface dialog -- not used by grid, but here for reference
@@ -133,7 +135,9 @@ export interface Theme {
   cell_font?: string;
 
   /** default cell font size */
-  cell_font_size?: number|string;
+  // cell_font_size?: number|string;
+  cell_font_size_unit?: string;
+  cell_font_size_value?: number;
 
   /** default cell text color */
   cell_color?: string;
@@ -200,6 +204,20 @@ export const CalculateSupplementalColors = (theme: Theme, threshold = .5): Exten
   }
 
   return extended_theme;
+};
+
+const ParseFontSize = (size: string) => {
+
+  let value = 10;
+  let unit = 'pt';
+
+  const match = size.match(/^([\d\.]+)(\D.*)$/);
+  if (match) {
+    value = Number(match[1]);
+    unit = match[2];
+  }
+
+  return { value, unit };
 };
 
 export const LoadThemeProperties = (container?: HTMLElement): Theme => {
@@ -291,7 +309,12 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
 
   theme.cell_font = cell[0];
   theme.cell_background_color = cell[1];
-  theme.cell_font_size = cell[2]; // FontSize(cell[2]);
+
+  const cell_font_size = ParseFontSize(cell[2]);
+  theme.cell_font_size_unit = cell_font_size.unit;
+  theme.cell_font_size_value = cell_font_size.value;
+  // theme.cell_font_size = cell[2]; // FontSize(cell[2]);
+
   theme.border_color = cell[3];
   theme.cell_color = cell[4];
 
@@ -300,11 +323,14 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
   const highlight = TestNode('freeze-highlight', ['fill', 'stroke']);
   theme.frozen_highlight_overlay = highlight[0];
   theme.frozen_highlight_border = highlight[1];
-  
+
   // tslint:disable-next-line:variable-name
   const interface_ = TestNode('interface', ['font-family', 'font-size']);
   theme.interface_font_face = interface_[0];
-  theme.interface_font_size = interface_[1]; // FontSize(interface_[1]);
+
+  const interface_font_size = ParseFontSize(interface_[1]);
+  theme.interface_font_size_value = interface_font_size.value;
+  theme.interface_font_size_unit = interface_font_size.unit;
 
   const dialog = TestNode(['interface', 'dialog'], ['stroke', 'fill', 'border-bottom-color']);
   theme.interface_dialog_color = dialog[0];

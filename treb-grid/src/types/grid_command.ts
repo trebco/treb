@@ -245,6 +245,9 @@ export interface DeleteSheetCommand extends SheetSelection {
  */
 export interface ActivateSheetCommand extends SheetSelection {
   key: CommandKey.ActivateSheet;
+
+  /** ... */
+  tab_bar_event?: boolean;
 }
 
 /**

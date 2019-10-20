@@ -27,7 +27,9 @@ class FontMetricsCacheInstance {
   private MeasureFont(properties: Style.Properties): FontMetricsInfo {
     if (!fontmetrics_instance) fontmetrics_instance = new FontMetrics();
     fontmetrics_instance.SetFont(properties.font_face || '',
-      properties.font_size || 0, properties.font_bold ? 600 : 400);
+      (properties.font_size_value || 0) + (properties.font_size_unit || 'pt'),
+      properties.font_bold ? 600 : 400);
+
     const fm1 = fontmetrics_instance.Measure('M');
     const fm2 = fontmetrics_instance.Measure('p');
 

@@ -74,6 +74,10 @@ export class Autocomplete {
         this.tooltip.style.fontFamily = this.options.theme.cell_font ?
         this.options.theme.cell_font : '';
 
+      const font_size = (this.options.theme.cell_font_size_value || 0) +
+        (this.options.theme.cell_font_size_unit || 'pt');
+
+      /*
       let font_size: string|null = null;
       if (typeof this.options.theme.cell_font_size === 'string') {
         font_size = this.options.theme.cell_font_size;
@@ -81,6 +85,7 @@ export class Autocomplete {
       else if (typeof this.options.theme.cell_font_size === 'number') {
         font_size = this.options.theme.cell_font_size + 'pt';
       }
+      */
 
       this.completion_list.style.fontSize =
         this.tooltip.style.fontSize =

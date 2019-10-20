@@ -1969,7 +1969,10 @@ export class Grid {
 
     Style.UpdateDefaultProperties({
       font_face: this.theme.cell_font,
-      font_size: this.theme.cell_font_size,
+      // font_size: this.theme.cell_font_size,
+      font_size_unit: this.theme.cell_font_size_unit,
+      font_size_value: this.theme.cell_font_size_value,
+
       // background: this.theme.cell_background_color || 'none',
       text_color: this.theme.cell_color || 'none',
       border_top_color: this.theme.border_color || 'none',

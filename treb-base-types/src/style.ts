@@ -1,5 +1,9 @@
 
-// why is this a namespace? module is implicit...
+// why is this a namespace? module is implicit... it's because of how
+// base types exports; we can't export * as Style, so we're stuck with
+// the namespace (or you could add an intermediate file and import ->
+// export, but that just seems like unecessary complexity and still a
+// fudge).
 
 // tslint:disable-next-line:no-namespace
 export namespace Style {
@@ -34,7 +38,13 @@ export namespace Style {
     // FIXME: we should use CSS font styling, parse as necessary
     // (in the alternative, maybe have a method to set from a CSS def)
 
-    font_size?: number|string;
+    // deprecated
+    // font_size?: number|string;
+
+    // new-style
+    font_size_unit?: string;
+    font_size_value?: number;
+
     font_face?: string;
     font_bold?: boolean;
     font_italic?: boolean;
@@ -77,7 +87,11 @@ export namespace Style {
     vertical_align: VerticalAlign.None,
     number_format: '0.00###',   // use symbolic, e.g. "general"
     nan: 'NaN',
-    font_size: 10,              // should have units
+    // font_size: 10,              // should have units
+
+    font_size_value: 10,
+    font_size_unit: 'pt',
+
     font_face: 'calibri',       // switch to something generic "sans serif"
     font_bold: false,           // drop "font_"
     font_italic: false,         // ...
@@ -96,8 +110,10 @@ export namespace Style {
 
   /**
    * merge. returns a new object, does not update dest in place.
+   * NOTE: if it does not update dest in place, then what would be
+   * the use case for a non-delta merge? (...)
    */
-  export const Merge = (dest: Properties, src: Properties, delta= true) => {
+  export const Merge = (dest: Properties, src: Properties, delta = true) => {
     const properties: Properties = delta ? {...dest, ...src} : {...src};
     return properties;
   };
@@ -110,6 +126,9 @@ export namespace Style {
       {...DefaultProperties});
   };
 
+  /**
+   * modify default properties. useful for theming.
+   */
   export const UpdateDefaultProperties = (opts: Properties) => {
     DefaultProperties = {
       ...DefaultProperties, ...opts,
@@ -119,12 +138,25 @@ export namespace Style {
   /**
    * returns a string representation suitable for canvas (or style)
    */
-  export const Font = (properties: Properties) => {
+  export const Font = (properties: Properties, scale = 1) => {
 
+    /*
     let font_size = properties.font_size;
     if (typeof font_size === 'number') {
-      font_size = font_size + 'pt';
+      font_size = (font_size * scale) + 'pt';
     }
+    else if (font_size && scale !== 1) {
+      const font_parts = font_size.match(/^([\d\.]+)(\D*)$/);
+      if (font_parts) {
+        font_size = (Number(font_parts[1]) * scale) + font_parts[2];
+      }
+    }
+    */
+
+    const font_size = ((properties.font_size_value || 0) * scale) +
+      (properties.font_size_unit || 'pt');
+
+    // console.info("FS", font_size);
 
     return (properties.font_bold ? 'bold ' : '')
       + (properties.font_italic ? 'italic ' : '')
