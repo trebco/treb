@@ -2,8 +2,7 @@
 // why is this a namespace? module is implicit... it's because of how
 // base types exports; we can't export * as Style, so we're stuck with
 // the namespace (or you could add an intermediate file and import ->
-// export, but that just seems like unecessary complexity and still a
-// fudge).
+// export, but that just seems like unecessary complexity and still kludgy).
 
 // tslint:disable-next-line:no-namespace
 export namespace Style {

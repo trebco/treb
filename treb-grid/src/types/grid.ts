@@ -1,7 +1,6 @@
 
 import { Rectangle, ValueType, Style, Area, Cell,
-         Extent, ICellAddress, Point,
-         IsCellAddress, Localization, IArea } from 'treb-base-types';
+         Extent, ICellAddress, IsCellAddress, Localization } from 'treb-base-types';
 import { Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
          QuotedSheetNameRegex, IllegalSheetNameRegex } from 'treb-parser';
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
@@ -20,8 +19,8 @@ import { CellEditor } from '../editors/cell_editor';
 import { ValueParser, Hints } from '../util/value_parser';
 
 import { TileRenderer } from '../render/tile_renderer';
-import { GridEvent, AnnotationEvent } from './grid_events';
-import { SheetEvent, SerializedSheet } from './sheet_types';
+import { GridEvent } from './grid_events';
+import { SheetEvent } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
 import { GridOptions, DefaultGridOptions } from './grid_options';
 import { AutocompleteMatcher, FunctionDescriptor } from '../editors/autocomplete_matcher';
@@ -51,6 +50,9 @@ enum EditingState {
   CellEditor = 1,
   FormulaBar = 2,
 }
+
+const DEFAULT_NEW_SHEET_ROWS = 30;
+const DEFAULT_NEW_SHEET_COLUMNS = 20;
 
 export class Grid {
 
@@ -260,7 +262,7 @@ export class Grid {
     // construct model. it's a little convoluted because the
     // "active sheet" reference points to one of the array members
 
-    const sheets = [Sheet.Blank(100, 26)];
+    const sheets = [Sheet.Blank(DEFAULT_NEW_SHEET_ROWS, DEFAULT_NEW_SHEET_COLUMNS)];
 
     this.model = {
       sheets,
@@ -1747,7 +1749,7 @@ export class Grid {
     // empty? create new, activate
 
     if (!sheets.length) {
-      sheets.push(Sheet.Blank(100, 26));
+      sheets.push(Sheet.Blank(DEFAULT_NEW_SHEET_ROWS, DEFAULT_NEW_SHEET_COLUMNS));
     }
 
     this.model.sheets = sheets;
@@ -1788,7 +1790,7 @@ export class Grid {
 
     // FIXME: structure event
 
-    const sheet = Sheet.Blank(100, 26, name);
+    const sheet = Sheet.Blank(DEFAULT_NEW_SHEET_ROWS, DEFAULT_NEW_SHEET_COLUMNS, name);
 
     if (insert_index >= 0) {
       this.model.sheets.splice(insert_index, 0, sheet);

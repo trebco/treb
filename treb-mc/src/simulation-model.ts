@@ -574,7 +574,10 @@ export class SimulationModel {
     if (!this.results[address.sheet_id][address.column]) this.results[address.sheet_id][address.column] = [];
     const column = this.results[address.sheet_id][address.column];
 
-    if (!column[address.row]) column[address.row] = [];
+    if (!column[address.row]) {
+      column[address.row] = [];
+    }
+
     const cell = column[address.row];
 
     return cell;

@@ -231,19 +231,14 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       repaint_on_cell_change: false,
       // scrollbars: this.options.scrollbars,
       // tab_bar: this.options.tab_bar,
-      expand_formula_button: true,
     };
 
     if (this.options.formula_bar) {
       grid_options.formula_bar = this.options.formula_bar;
     }
-
-    /*
     if (this.options.expand_formula_button) {
       grid_options.expand_formula_button = this.options.expand_formula_button;
     }
-    */
-
     if (this.options.scrollbars) {
       grid_options.scrollbars = this.options.scrollbars;
     }
@@ -1011,13 +1006,13 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
    * load a network document. using xhr/fetch, this will be
    * limited to local or CORS.
    */
-  public async LoadNetworkDocument(uri: string, options: EmbeddedSpreadsheetOptions) {
+  public async LoadNetworkDocument(uri: string, options?: EmbeddedSpreadsheetOptions) {
 
     // } scroll?: string|ICellAddress, recalculate = false) {
 
-    const scroll = options.scroll;
-    const recalculate = !!options.recalculate;
-    const override_sheet = options.sheet;
+    const scroll = options ? options.scroll : undefined;
+    const recalculate = options ? !!options.recalculate : false;
+    const override_sheet = options ? options.sheet : undefined;
 
     // NOTE: dropping fetch, in favor of XHR; fetch requires a
     // pretty large polyfill for IE11, not worth it
@@ -1051,7 +1046,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
         }
 
         const json = JSON.parse(response);
-        this.LoadDocument(json, scroll, undefined, recalculate, options.sheet);
+        this.LoadDocument(json, scroll, undefined, recalculate, override_sheet);
 
       }
     }
@@ -1711,6 +1706,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       serialized.rendered_values = true;
     }
     if (preserve_simulation_data) {
+
+      // it might be useful to prune this a bit, specifically to prune
+      // results that are not referenced. can we use the graph to do that?
+
       serialized.simulation_data = {
         elapsed: this.last_simulation_data.elapsed,
         trials: this.last_simulation_data.trials,
@@ -1718,6 +1717,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           return this.ArrayBufferToBase64(result);
         }),
       };
+
     }
     return serialized;
   }
