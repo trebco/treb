@@ -600,8 +600,8 @@ export class Sheet {
 
   public GetRowHeight(row: number) {
     const height = this.row_height_[row];
-    if (typeof height === 'undefined') return this.default_row_height * this.scale;
-    return height * this.scale;
+    if (typeof height === 'undefined') return this.default_row_height;
+    return height;
   }
 
   public SetRowHeight(row: number, height: number) {
@@ -612,8 +612,8 @@ export class Sheet {
 
   public GetColumnWidth(column: number) {
     const width = this.column_width_[column];
-    if (typeof width === 'undefined') return this.default_column_width * this.scale;
-    return width * this.scale;
+    if (typeof width === 'undefined') return this.default_column_width;
+    return width;
   }
 
   public SetColumnWidth(column: number, width: number) {

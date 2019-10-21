@@ -231,11 +231,19 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       repaint_on_cell_change: false,
       // scrollbars: this.options.scrollbars,
       // tab_bar: this.options.tab_bar,
+      expand_formula_button: true,
     };
 
     if (this.options.formula_bar) {
       grid_options.formula_bar = this.options.formula_bar;
     }
+
+    /*
+    if (this.options.expand_formula_button) {
+      grid_options.expand_formula_button = this.options.expand_formula_button;
+    }
+    */
+
     if (this.options.scrollbars) {
       grid_options.scrollbars = this.options.scrollbars;
     }

@@ -59,12 +59,13 @@
 
         &::after {
           content: ' ';
-          border: 6px solid transparent;
+          border: 5px solid transparent;
           position: relative;
           display: inline-block;
           border-top-color: #999;
           padding: 0;
           margin: 0;
+          top: -6px;
         }
       }
 
@@ -72,7 +73,7 @@
         .expand-button::after {
           border-top-color: transparent;
           border-bottom-color: #999;
-          top: -6px;
+          top: -12px;
         }
       }
 

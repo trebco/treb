@@ -218,14 +218,17 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
       this.UpdateSelectState();
     });
 
-    /*
-    this.expand_button = DOMUtilities.Create<HTMLButtonElement>('button', 'expand-button', inner_node);
-    this.expand_button.addEventListener('click', (event: MouseEvent) => {
-      event.stopPropagation();
-      event.preventDefault();
-      inner_node.classList.toggle('expanded');
-    });
-    */
+    if (this.options.expand_formula_button) {
+      this.expand_button = DOMUtilities.Create<HTMLButtonElement>('button', 'expand-button', inner_node);
+      this.expand_button.addEventListener('click', (event: MouseEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        if (this.editor_node) {
+          this.editor_node.scrollTop = 0;
+        }
+        inner_node.classList.toggle('expanded');
+      });
+    }
 
     // this.drag_corner = Dom2.CreateDiv(this.container_node, 'drag-corner');
     // this.drag_corner.addEventListener('mousedown', (event) => this.StartDrag(event));

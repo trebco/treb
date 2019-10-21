@@ -19,6 +19,9 @@ export interface BaseOptions {
   /** show formula bar */
   formula_bar?: boolean;
 
+  /** expand formula bar */
+  expand_formula_button?: boolean;
+
   /** scroll to cell on load */
   scroll?: string | ICellAddress;
 

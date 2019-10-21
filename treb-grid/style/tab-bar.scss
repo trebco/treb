@@ -1,15 +1,16 @@
 
+/**
+ * tab bar falls under .treb-main, which is a flex column layout.
+ */
 
 .treb-main {
 
   // flex patch for chrome
 
   .treb-tab-bar-container {
+
     display: block;
     order: 3;
-    // height: 0px;
-    // max-height: 0px;
-    // overflow: visible;
 
     & .treb-tab-bar {
       display: flex;
@@ -17,58 +18,34 @@
       z-index: 1;
     }
 
+    // tabs should be under tab bar? (...)
+
     & .tab, & .add-tab {
 
-      // font-size: .75em;
       font-size: inherit;
       padding: .25em .75em;
       cursor: default;
       display: inline-block;
 
-      // color: #343;
-      // background: #eee;
-
       border-bottom-left-radius: 5px;
       border-bottom-right-radius: 5px;
       border: 1px solid #ccc;
       border-top-width: 0px;
-
       z-index: 1;
-
-    }
-
-    /*
-    & .tab::after {
-      content: 'x';
-      padding-left: .5em;
-      opacity: 0.5;
-    }
-
-    & .tab::after:hover {
-      opacity: 1;
-    }
-    */
-
-    & .tab, & .add-tab {
       margin-right: -2px;
+
+    }
+
+    /** don't overflow/ellipsis the add tab button */
+    & .tab {
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow-x: hidden;
     }
 
     & .tab.selected {
-      // background: #fff;
       z-index: 2;
-
-      /*
-      &::after {
-        opacity: .5;
-
-        &:hover {
-          opacity: 1;
-        }
-
-      }
-      */
     }
-
 
   }
 
