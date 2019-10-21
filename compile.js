@@ -18,6 +18,7 @@ const LicenseCheckerWebpackPlugin = require("license-checker-webpack-plugin");
 
 let watch = false;
 let dev = false;
+let clean = false;
 
 // optionally limit build to one module
 const build = { legacy: false, modern: false };
@@ -31,6 +32,7 @@ for (const arg of process.argv) {
   if (arg === '--legacy') build.legacy = true;
   if (arg === '--modern') build.modern = true;
   if (arg === '--only-charts') only_charts = true;
+  if (arg === '--clean') clean = true;
 }
 
 // default is build both
@@ -67,6 +69,15 @@ else {
 const dist_dir = 'build';
 const build_dir = path.resolve(__dirname, dist_dir, package.version);
 const current_dir = path.resolve(__dirname, dist_dir, 'current');
+
+// clean "current" dir. not recursive.
+
+if (clean) {
+  const files = fs.readdirSync(current_dir);
+  for (const file of files) {
+    fs.unlinkSync(path.join(current_dir, file));
+  }
+}
 
 // borrow from tsconfig; flatten arrays (take first), resolve
 

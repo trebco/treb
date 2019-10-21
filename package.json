@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "6.0.12",
+  "version": "6.1.1",
   "main": "dist/index.js",
   "devDependencies": {
     "@types/elementtree": "^0.1.0",
@@ -34,7 +34,7 @@
     "watch-modern": "node compile.js -w --modern -d",
     "watch-legacy": "node compile.js -w --legacy -d",
     "watch-dev": "node compile.js -w -d",
-    "release": "node compile.js && node zip-package.js"
+    "release": "node compile.js --clean && node zip-package.js"
   },
   "build-entry-points": {
     "main": "embedded-treb-bundle",
