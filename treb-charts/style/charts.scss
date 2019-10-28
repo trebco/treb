@@ -1,5 +1,30 @@
 
+$color1:  #8DD3C7;
+$color2:  #FFFFB3;
+$color3:  #BEBADA;
+$color4:  #FB8072;
+$color5:  #80B1D3;
+$color6:  #FDB462;
+$color7:  #B3DE69;
+$color8:  #FCCDE5;
+$color9:  #D9D9D9;
+$color10: #BC80BD;
+$color11: #CCEBC5;
+$color12: #FFED6F;
+
+$font-stack:  "-apple-system",
+  "BlinkMacSystemFont",
+  "Segoe UI",
+  "Roboto",
+  "Oxygen-Sans",
+  "Ubuntu",
+  "Cantarell",
+  "Helvetica Neue",
+  "sans-serif";
+
 .treb-chart {
+
+  font-family: $font-stack;
 
   background: #fff;
 
@@ -8,11 +33,15 @@
   }
 
   .chart-title {
-    font-size: 13pt;
+    font-size: 14pt;
   }
 
   .chart-column {
-    fill: #39f;
+    fill: $color1;
+  }
+
+  .chart-column-shadow {
+    fill: darken($color1, 25%);
   }
 
   .chart-grid, .chart-ticks {
@@ -46,6 +75,16 @@
     fill: transparent;
   }
 
+  .donut path.callout {
+    fill: none;
+    stroke: #999;
+    stroke-dasharray: 2 2;
+  }
+
+  text.callout-label {
+    font-size: 10pt;
+  }
+
   .donut path {
 
     stroke: none;
@@ -54,19 +93,21 @@
     // we want to tie color to input order, even if the chart sorts the
     // data.
 
+    // I don't like this. we should use order. if necesary, you can
+    // add the nodes out of order.
 
-    &.series-1  { fill: red; }
-    &.series-2  { fill: orange; }
-    &.series-3  { fill: yellow; }
-    &.series-4  { fill: blanchedalmond; }
-    &.series-5  { fill: greenyellow; }
-    &.series-6  { fill: darkcyan; }
-    &.series-7  { fill: aquamarine; }
-    &.series-8  { fill: skyblue; }
-    &.series-9  { fill: #39f; }
-    &.series-10 { fill: purple; }
-    &.series-11 { fill: rebeccapurple; }
-    &.series-12 { fill: black; }
+    &.series-1  { fill: $color1; }
+    &.series-2  { fill: $color2; }
+    &.series-3  { fill: $color3; }
+    &.series-4  { fill: $color4; }
+    &.series-5  { fill: $color5; }
+    &.series-6  { fill: $color6; }
+    &.series-7  { fill: $color7; }
+    &.series-8  { fill: $color8; }
+    &.series-9  { fill: $color9; }
+    &.series-10  { fill: $color10; }
+    &.series-11  { fill: $color11; }
+    &.series-12  { fill: $color12; }
 
   }  
 

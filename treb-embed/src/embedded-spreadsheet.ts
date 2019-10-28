@@ -621,6 +621,20 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  public InsertAnnotation(formula: string, type = 'treb-chart') {
+
+    const x = 30;
+    const y = 30;
+
+    this.grid.CreateAnnotation({
+      type: 'treb-chart',
+      rect: {top: y, left: x, width: 300, height: 300},
+      formula,
+    });
+
+  }
+
+  /*
   public InsertHistogram(address: string|ICellAddress) {
     address = this.EnsureAddress(address);
     const x = 30;
@@ -632,6 +646,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       formula: `=MC.Histogram(${label}, Concatenate("Histogram: ", Cell("address", ${label})))`,
     });
   }
+  */
 
   /**
    *
@@ -1777,6 +1792,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       if (this.options.undo) {
         this.PushUndo(json);
       }
+
+      this.Publish({type: 'document-change'});
+
     });
   }
 

@@ -130,7 +130,7 @@ export class Chart {
     // data -> number or undefined
 
     let data = Util.Flatten(args[0]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
-    const labels = Util.Flatten(args[1]).map((x) => x.toString());
+    const labels = Util.Flatten(args[1]).map((x) => x ? x.toString() : '');
 
     // no negative numbers
 
@@ -166,8 +166,9 @@ export class Chart {
         const value = NumberFormatCache.Get('general').Format(slice.value || 0);
         const percent = NumberFormatCache.Get('percent').Format(slice.percent);
         slice.title = slice_title
-          .replace(/percent|pct|%/ig, percent)
-          .replace(/value|val/ig, value)
+          .replace(/value%/ig, NumberFormatCache.Get('percent').Format(slice.value || 0))
+          .replace(/value/ig, value)
+          .replace(/percent/ig, percent)
           .replace(/label/ig, slice.label || '')
           .trim();
       }
@@ -501,7 +502,8 @@ export class Chart {
       {
         const outer = (Math.min(area.height, area.width) / 2) * .9;
         const inner = this.chart_data.type === 'pie' ? 0 : outer * .8;
-        this.renderer.RenderDonut(this.chart_data.slices, area.center, outer, inner, 'donut');
+        this.renderer.RenderDonut(this.chart_data.slices, area.center, outer, inner, area,
+          true, 'donut');
       }
       break;
 
@@ -544,6 +546,10 @@ export class Chart {
           const height = Util.ApplyScale(this.chart_data.bins[i], area.height, this.chart_data.scale);
           const y = area.bottom - height;
           const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
+
+          this.renderer.RenderRectangle(new Area(
+            x - 1, y - 1, x + width + 1, y + height,
+          ), 'chart-column-shadow', bar_title || undefined);
 
           this.renderer.RenderRectangle(new Area(
             x, y, x + width, y + height,

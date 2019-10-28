@@ -472,10 +472,17 @@ export class ChartRenderer {
       center: Point,
       outer_radius: number,
       inner_radius: number,
-      classes?: string|string[]) {
+      bounds_area: Area,
+      callouts: boolean,
+      classes?: string|string[] ) {
 
     let start_angle = -Math.PI / 2; // start at 12:00
     let end_angle = 0;
+
+    if (callouts) {
+      outer_radius *= .8;
+      inner_radius *= .7;
+    }
 
     // we're creating a containing group so that we can nth-child the slices,
     // otherwise they'll be in the same group as the title
@@ -490,12 +497,14 @@ export class ChartRenderer {
       const index = slice.index;
 
       const node = document.createElementNS(SVGNS, 'path');
-      const d: string[] = [];
+      let d: string[] = [];
+
+      let half_angle = 0;
 
       if (value > 0.5) {
         // split into two segments
 
-        const half_angle = start_angle + (value / 2) * Math.PI * 2;
+        half_angle = start_angle + (value / 2) * Math.PI * 2;
         end_angle = start_angle + value * Math.PI * 2;
 
         const delta1 = half_angle - start_angle;
@@ -517,6 +526,8 @@ export class ChartRenderer {
       else {
 
         end_angle = start_angle + value * Math.PI * 2;
+        half_angle = (end_angle - start_angle) / 2 + start_angle;
+
         const delta = end_angle - start_angle;
         d.push(`M${this.PointOnCircle(start_angle, center, outer_radius)}`);
         d.push(`A${outer_radius},${outer_radius},${delta},0,1,`
@@ -533,6 +544,7 @@ export class ChartRenderer {
         node.classList.add(`series-${index}`);
       }
 
+      /*
       if (title) {
         node.addEventListener('mouseenter', (event) => {
           this.parent.setAttribute('title', title);
@@ -541,10 +553,127 @@ export class ChartRenderer {
           this.parent.setAttribute('title', '');
         });
       }
+      */
 
       donut.appendChild(node);
 
+      if (/*callouts &&*/ value >= .05 && title){
+
+        const callout = document.createElementNS(SVGNS, 'path');
+        const length = outer_radius - inner_radius;
+        d = [];
+
+        const anchor = this.PointOnCircle(half_angle, center,
+          inner_radius + (outer_radius - inner_radius) / 2 + length);
+
+        d.push(`M${this.PointOnCircle(half_angle, center, inner_radius + (outer_radius - inner_radius) / 2)}`);
+        d.push(`L${anchor}`);
+        callout.setAttribute('d', d.join(' '));
+        callout.classList.add('callout');
+        donut.appendChild(callout);
+
+        const corrected = half_angle + Math.PI / 2;
+
+        const text = title;
+        const metrics = this.MeasureText(text, ['donut', 'callout-label']);
+        let [x, y] = anchor;
+
+        x += metrics.height / 2 * Math.cos(half_angle);
+        y += metrics.height / 4 + metrics.height / 2 * Math.sin(half_angle);
+
+        let try_break = false;
+
+        if (corrected > Math.PI) {
+          if (x - metrics.width <= bounds_area.left) {
+            try_break = true;
+          }
+        }
+        else {
+          if (x + metrics.width > bounds_area.right) {
+            try_break = true;
+          }
+        }
+
+        const text_parts: string[] = [];
+        const callout_label = document.createElementNS(SVGNS, 'text');
+        callout_label.classList.add('callout-label');
+
+        const break_regex = /[\s-\W]/;
+
+        if (try_break && break_regex.test(text)) {
+          let break_index = -1;
+          let break_value = 1;
+
+          const indices: number[] = [];
+          for (let i = 0; i < text.length; i++) {
+            if (break_regex.test(text[i])) {
+              const index_value = Math.abs(0.5 - (i / text.length));
+              if (index_value < break_value) {
+                break_value = index_value;
+                break_index = i;
+              }
+            }
+          }
+
+          if (break_index > 0) {
+            text_parts.push(text.substr(0, break_index + 1).trim());
+            text_parts.push(text.substr(break_index + 1).trim());
+          }
+        }
+        else {
+          // ... ellipsis?
+        }
+
+        /*
+        if (y <= bounds_area.top) {
+          console.info("break top", title, y);
+        }
+        if (y >= bounds_area.bottom) {
+          console.info("break bottom", title, y);
+        }
+        */
+
+        if (text_parts.length) {
+          let dy = 0;
+          let widest = 0;
+
+          const parts = text_parts.map((part) => {
+            const m = this.MeasureText(part, ['donut', 'callout-label']);
+            widest = Math.max(widest, m.width);
+            return {text: part, metrics: m};
+          });
+
+          for (const part of parts) {
+            const tspan = document.createElementNS(SVGNS, 'tspan');
+            tspan.textContent = part.text;
+
+            const part_x = (corrected > Math.PI) ?
+              (x - (widest - part.metrics.width) / 2) :
+              (x + (widest - part.metrics.width) / 2);
+
+            tspan.setAttribute('x', part_x.toString());
+            tspan.setAttribute('dy', dy.toString());
+
+            callout_label.appendChild(tspan);
+            dy = part.metrics.height;
+
+          }
+        }
+        else {
+          callout_label.textContent = title;
+        }
+
+        const text_anchor = corrected > Math.PI ? 'end' : 'start';
+        callout_label.setAttribute('text-anchor', text_anchor);
+
+        callout_label.setAttribute('x', x.toString());
+        callout_label.setAttribute('y', y.toString());
+        donut.appendChild(callout_label);
+
+      }
+
       start_angle = end_angle;
+
     }
 
     if (typeof classes !== 'undefined') {

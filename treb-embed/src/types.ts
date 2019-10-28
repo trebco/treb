@@ -46,6 +46,10 @@ export interface DataChangeEvent {
   type: 'data';
 }
 
+export interface DocumentChangeEvent {
+  type: 'document-change';
+}
+
 export interface SimulationCompleteEvent {
   type: 'simulation-complete';
 }
@@ -54,11 +58,12 @@ export interface SelectionEvent {
   type: 'selection';
 }
 
-export type EmbeddedSheetEvent =
-  DocumentLoadEvent |
-  DocumentResetEvent |
-  DataChangeEvent |
-  SimulationCompleteEvent |
-  ResizeEvent |
-  SelectionEvent;
-
+export type EmbeddedSheetEvent
+  = SimulationCompleteEvent
+  | DocumentChangeEvent
+  | DocumentResetEvent
+  | DocumentLoadEvent
+  | DataChangeEvent
+  | SelectionEvent
+  | ResizeEvent
+  ;

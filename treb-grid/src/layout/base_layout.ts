@@ -152,8 +152,9 @@ export abstract class BaseLayout {
     this.mock_selection = DOMUtilities.CreateDiv('mock-selection-node');
     this.mock_selection.innerHTML = '&nbsp;';
 
-    this.note_node = // (document.querySelector('.treb-note') ||
-      DOMUtilities.CreateDiv('treb-note');
+    this.note_node = DOMUtilities.CreateDiv('treb-note');
+
+    this.HideNote();
 
   }
 

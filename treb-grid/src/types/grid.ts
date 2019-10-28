@@ -5572,6 +5572,7 @@ export class Grid {
           this.ClearSelection(this.primary_selection);
           this.ScrollIntoView({row: 0, column: 0});
           this.QueueLayoutUpdate(); // necessary? (...)
+          this.layout.HideNote();
         }
         break;
 
