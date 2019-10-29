@@ -3630,25 +3630,25 @@ export class Grid {
       // tslint:disable-next-line:no-bitwise
       if (hints & Hints.Date) {
         if (!cell.style || !cell.style.number_format ||
-            (NumberFormatCache.Equals(cell.style.number_format, 'general'))) {
-          number_format = 'short date';
+            (NumberFormatCache.Equals(cell.style.number_format, 'General'))) {
+          number_format = 'Short Date';
         }
       }
       // tslint:disable-next-line:no-bitwise
       else if (hints & Hints.Exponential) {
-        number_format = 'exponential';
+        number_format = 'Exponential';
       }
       // tslint:disable-next-line:no-bitwise
       else if (hints & Hints.Percent) {
-        number_format = 'percent';
+        number_format = 'Percent';
       }
       // tslint:disable-next-line:no-bitwise
       else if (hints & Hints.Currency) {
-        number_format = 'currency';
+        number_format = 'Currency';
       }
       // tslint:disable-next-line:no-bitwise
       else if ((hints & Hints.Grouping) || (hints & Hints.Parens)) {
-        number_format = 'accounting';
+        number_format = 'Accounting';
       }
 
       if (number_format) {
@@ -3795,14 +3795,16 @@ export class Grid {
     let cell_value = cell.value;
 
     if (cell.type === ValueType.number && cell.style && cell.style.number_format) {
+
       const format = NumberFormatCache.Get(cell.style.number_format);
+
       if (format.date_format) {
         const date = new Date(cell_value * RDateScale);
         const number_format = (date.getHours() || date.getMinutes() || date.getSeconds()) ?
-          'timestamp' : 'short date';
+          'Timestamp' : 'Short Date';
         cell_value = NumberFormatCache.Get(number_format).Format(cell_value);
       }
-      else if (/(?:%|percent)/.test(cell.style.number_format)) {
+      else if (/(?:%|percent)/i.test(cell.style.number_format)) {
 
         let precision = 0;
 

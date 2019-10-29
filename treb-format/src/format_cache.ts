@@ -91,6 +91,10 @@ export class NumberFormatCache {
       dollar: 'Dollar',
       exponential: 'Exponential',
 
+      'short date': 'Short Date',
+      'long date': 'Long Date',
+      timestamp: 'Timestamp',
+
     };
 
     for (const key of Object.keys(aliases)) {
