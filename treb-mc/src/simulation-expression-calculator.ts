@@ -21,7 +21,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
   protected CallExpression(outer: UnitCall) {
 
     // get the function descriptor, which won't change.
-    // we can bind in closure (also short-circuit check for 
+    // we can bind in closure (also short-circuit check for
     // invalid name)
 
     const func = this.library.Get(outer.name) as MCCompositeFunctionDescriptor;

@@ -140,6 +140,7 @@ export class MCCalculator extends Calculator {
 
           // tslint:disable-next-line:forin
           for (const r in column){
+
             const cell = cells.GetCell({row: Number(r), column: Number(c)});
 
             // it seems like this is a waste -- if the cell doesn't exist,

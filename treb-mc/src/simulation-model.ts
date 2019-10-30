@@ -42,6 +42,9 @@ export class SimulationModel {
   public elapsed = 0;
   public trials = 0;
   public distributions: any = [];
+  // public distributions: (number[]|Float64Array|boolean[])[][][][] = [];
+  // public distributions: any[][][][][] = [];
+
   public correlated_distributions: {
     [index: string]: {
       addresses: DistributionKey[],
@@ -382,7 +385,7 @@ export class SimulationModel {
       },
 
       SimulationValuesArray: {
-        description: 'Returns all value of this cell in the simulation, as an array',
+        description: 'Returns all values of this cell in the simulation, as an array',
         arguments: [
           { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
@@ -400,7 +403,7 @@ export class SimulationModel {
       },
 
       'SimulationValuesArray.Ordered': {
-        description: 'Returns all value of this cell in the simulation, as an array, ordered by a second cell',
+        description: 'Returns all values of this cell in the simulation, as an array, ordered by a second cell',
         arguments: [
           { name: 'reference cell', description: 'Source Cell', collector: true },
           { name: 'order by', description: 'Reference Cell for Ordering', collector: true },
@@ -526,15 +529,18 @@ export class SimulationModel {
   }
 
   public CorrelateDistributions() {
+
     for (const key of Object.keys(this.correlated_distributions)) {
+
       const desc = this.correlated_distributions[key];
+
       const distributions = desc.addresses.map((address) => {
-        return this.distributions[address.column][address.row][address.call_index];
+        return this.distributions[address.sheet_id || 0][address.column][address.row][address.call_index];
       });
       try {
         const result = MC.CorrelateCDM(desc.correlation, distributions, true);
         desc.addresses.forEach((address, index) => {
-          this.distributions[address.column][address.row][address.call_index] = result[index];
+          this.distributions[address.sheet_id || 0][address.column][address.row][address.call_index] = result[index];
         });
       }
       catch (err) {
@@ -551,14 +557,24 @@ export class SimulationModel {
   public InitDistribution() {
 
     if (!this.address) throw (new Error('invalid address'));
+    if (!this.address.sheet_id) throw (new Error('address missing sheet ID'));
 
-    if (!this.distributions[this.address.column]) this.distributions[this.address.column] = [];
-    const column = this.distributions[this.address.column];
+    if (!this.distributions[this.address.sheet_id]) {
+      this.distributions[this.address.sheet_id] = [];
+    }
+    const sheet = this.distributions[this.address.sheet_id];
 
-    if (!column[this.address.row]) column[this.address.row] = [];
-    let cell = column[this.address.row];
+    if (!sheet[this.address.column]) {
+      sheet[this.address.column] = [];
+    }
+    const column = sheet[this.address.column];
 
-    if (!cell) cell = [];
+    if (!column[this.address.row]) {
+      column[this.address.row] = [];
+    }
+
+    // let cell = column[this.address.row];
+    // if (!cell) cell = []; // ?? this is local... not sure what it's expected to do
   }
 
   public StoreCellResults(address?: ICellAddress) {
@@ -612,7 +628,12 @@ export class SimulationModel {
       };
     }
     this.correlated_distributions[range_of_values].addresses.push(
-      { column: this.address.column, row: this.address.row, call_index: this.call_index });
+      {
+        column: this.address.column,
+        row: this.address.row,
+        sheet_id: this.address.sheet_id,
+        call_index: this.call_index,
+      });
 
     this.InitDistribution();
   }
@@ -632,11 +653,12 @@ export class SimulationModel {
 
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Normal(this.iterations, { mean, sd, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
 
@@ -646,11 +668,12 @@ export class SimulationModel {
   public multivariate_beta(range_of_values: any, correlation_matrix: number[][], a = 1, b = 2) {
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Beta(this.iterations, { a, b, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
     return MC.Beta(1, { a, b })[0];
@@ -659,11 +682,12 @@ export class SimulationModel {
   public multivariate_uniform(range_of_values: any, correlation_matrix: number[][], min = 0, max = 1) {
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Uniform(this.iterations, { min, max, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
     return MC.Uniform(1, { min, max })[0];
@@ -674,11 +698,12 @@ export class SimulationModel {
 
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.PERT(this.iterations, { a: min, b: max, c: mode, lambda, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
     return MC.PERT(1, { a: min, b: max, c: mode, lambda })[0];
@@ -689,11 +714,12 @@ export class SimulationModel {
 
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Triangular(this.iterations, { a: min, b: max, c: mode, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
     return MC.Triangular(1, { a: min, b: max, c: mode })[0];
@@ -704,11 +730,12 @@ export class SimulationModel {
   public uniformvalue(min = 0, max = 1) {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Uniform(this.iterations, { min, max, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     return MC.Uniform(1, { min, max })[0];
   }
@@ -716,11 +743,12 @@ export class SimulationModel {
   public bernoullivalue(p = .5) {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Bernoulli(this.iterations, { p, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     return MC.Bernoulli(1, { p })[0];
   }
@@ -759,11 +787,12 @@ export class SimulationModel {
   public normalvalue(mean = 0, sd = 1) {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Normal(this.iterations, { mean, sd, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     return MC.Normal(1, { mean, sd })[0];
   }
@@ -771,11 +800,12 @@ export class SimulationModel {
   public pertvalue(min = 0, mode = .5, max = 1, lambda = 4) {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.PERT(this.iterations, { a: min, b: max, c: mode, lambda, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     return MC.PERT(1, { a: min, b: max, c: mode, lambda })[0];
   }
@@ -784,11 +814,12 @@ export class SimulationModel {
     if (this.state === SimulationState.Prep) {
       const parms = MC.P80Pert(p10, p90, mode, lambda);
       this.InitDistribution();
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.PERT(this.iterations, { ...parms, lambda, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     else {
       const parms = MC.P80Pert(p10, p90, mode, lambda);
@@ -805,11 +836,12 @@ export class SimulationModel {
   public CommonDistributionFunction(fun: (...args: any[]) => any, instance: any, args: any) {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         fun.apply(instance, [this.iterations].concat(args));
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     return fun.apply(instance, [1].concat(args))[0];
   }
@@ -819,11 +851,12 @@ export class SimulationModel {
 
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Triangular(this.iterations, { a: min, b: max, c: mode, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     return MC.Triangular(1, { a: min, b: max, c: mode })[0];
   }
@@ -831,11 +864,12 @@ export class SimulationModel {
   public betavalue(a = 1, b = 1) {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Beta(this.iterations, { a, b, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.column][this.address.row][this.call_index][this.iteration];
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
     }
     return MC.Beta(1, { a, b })[0];
   }
@@ -854,12 +888,13 @@ export class SimulationModel {
 
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Uniform(this.iterations, { min: 0, max: 1, lhs: this.lhs });
     }
     else {
       const r = (this.state === SimulationState.Simulation) ?
-        this.distributions[this.address.column][this.address.row][this.call_index][this.iteration] :
+        this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration] :
         MC.Uniform(1, { min: 0, max: 1 })[0];
 
       // assume it's rectangular. if not, there's nothing we can do.
@@ -898,12 +933,13 @@ export class SimulationModel {
 
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.column][this.address.row][this.call_index] =
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Uniform(this.iterations, { min: 0, max: 1, lhs: this.lhs });
     }
     else {
       const r = (this.state === SimulationState.Simulation) ?
-        this.distributions[this.address.column][this.address.row][this.call_index][this.iteration] :
+        this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration] :
         MC.Uniform(1, { min: 0, max: 1 })[0];
 
       // assume it's rectangular. if not, there's nothing we can do.

@@ -737,10 +737,19 @@ export class Calculator extends Graph {
    * annotation/leaf node). can recurse on elements, so the return value
    * is passed through. the first (outer) call can just leave it blank and
    * use the return value.
+   *
+   * we're adding the sheet name so that (in mc expression calculator) we
+   * can turn address parameters into qualified labels. the normal routine
+   * will just use the ID as the name, that's fine, as long as it's unique
+   * (which it is).
+   *
+   * this might cause issues if we ever try to actually resolve from the
+   * sheet name, though, so (...)
    */
   protected RebuildDependencies(
       unit: ExpressionUnit,
       relative_sheet_id: number,
+      relative_sheet_name: string,
       dependencies: DependencyList = {addresses: {}, ranges: {}},
     ){
 
@@ -777,6 +786,7 @@ export class Calculator extends Graph {
           unit.sheet_id = unit.sheet ?
             (sheet_name_map[unit.sheet.toLowerCase()] || 0) :
             relative_sheet_id;
+          if (!unit.sheet) { unit.sheet = relative_sheet_name; }
         }
         dependencies.addresses[unit.sheet_id + '!' + unit.label] = unit;
         break; // this.AddressLabel(unit, offset);
@@ -786,22 +796,23 @@ export class Calculator extends Graph {
           unit.start.sheet_id = unit.start.sheet ?
             (sheet_name_map[unit.start.sheet.toLowerCase()] || 0) :
             relative_sheet_id;
+          if (!unit.start.sheet) { unit.start.sheet = relative_sheet_name; }
         }
         dependencies.ranges[unit.start.sheet_id + '!' + unit.start.label + ':' + unit.end.label] = unit;
         break;
 
       case 'unary':
-        this.RebuildDependencies(unit.operand, relative_sheet_id, dependencies);
+        this.RebuildDependencies(unit.operand, relative_sheet_id, relative_sheet_name, dependencies);
         break;
 
       case 'binary':
-        this.RebuildDependencies(unit.left, relative_sheet_id, dependencies);
-        this.RebuildDependencies(unit.right, relative_sheet_id, dependencies);
+        this.RebuildDependencies(unit.left, relative_sheet_id, relative_sheet_name, dependencies);
+        this.RebuildDependencies(unit.right, relative_sheet_id, relative_sheet_name, dependencies);
         break;
 
       case 'group':
         unit.elements.forEach((element) =>
-          this.RebuildDependencies(element, relative_sheet_id, dependencies));
+          this.RebuildDependencies(element, relative_sheet_id, relative_sheet_name, dependencies));
         break;
 
       case 'call':
@@ -817,11 +828,18 @@ export class Calculator extends Graph {
         if (func && func.arguments){
           func.arguments.forEach((descriptor, index) => {
             if (descriptor && descriptor.address) {
+
+              // we still want to fix sheet addresses, though, even if we're
+              // not tracking the dependency. to do that, we can recurse with
+              // a new (empty) dependency list, and just drop the new list
+
+              this.RebuildDependencies(args[index], relative_sheet_id, relative_sheet_name);
+
               args[index] = { type: 'missing', id: -1 };
             }
           });
         }
-        args.forEach((arg) => this.RebuildDependencies(arg, relative_sheet_id, dependencies));
+        args.forEach((arg) => this.RebuildDependencies(arg, relative_sheet_id, relative_sheet_name, dependencies));
 
         break;
 
@@ -841,7 +859,11 @@ export class Calculator extends Graph {
     const parse_result = this.parser.Parse(formula);
     if (parse_result.expression) {
       const dependencies =
-        this.RebuildDependencies(parse_result.expression, this.model.active_sheet.id);
+        this.RebuildDependencies(
+          parse_result.expression,
+          this.model.active_sheet.id,
+          this.model.active_sheet.name,
+        );
 
       for (const key of Object.keys(dependencies.ranges)){
         const unit = dependencies.ranges[key];
@@ -918,7 +940,7 @@ export class Calculator extends Graph {
         // for those here...
 
         if (parse_result.expression) {
-          const dependencies = this.RebuildDependencies(parse_result.expression, cell.sheet_id);
+          const dependencies = this.RebuildDependencies(parse_result.expression, cell.sheet_id, cell.sheet_id);
 
           for (const key of Object.keys(dependencies.ranges)){
             const unit = dependencies.ranges[key];
