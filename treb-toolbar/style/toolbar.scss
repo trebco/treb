@@ -196,6 +196,7 @@ $font_stack: -apple-system,
 .treb-formatting-toolbar {
 
   height: 30px;
+  margin-bottom: 12px; // used to be margin in the embedded sheet
 
   &.centered {
     text-align: center;
