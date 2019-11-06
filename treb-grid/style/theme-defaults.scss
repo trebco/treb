@@ -78,7 +78,7 @@
   .formula-bar {
     font-family: $font-stack;
     font-size: 16px;
-    fill: transparent; // #fff;
+    fill: #fff;
     stroke: #333;
 
     &.locked {

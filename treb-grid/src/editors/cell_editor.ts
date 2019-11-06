@@ -76,8 +76,8 @@ export class CellEditor extends FormulaEditorBase {
       this.editor_node.style.fontSize = // `${this.theme.cell_font_size}`;
         `${this.theme.cell_font_size_value}${this.theme.cell_font_size_unit}`;
 
-      this.editor_node.style.borderColor = this.theme.grid_color || null;
-      this.editor_node.style.backgroundColor = this.theme.cell_background_color || null;
+      this.editor_node.style.borderColor = this.theme.grid_color || '';
+      this.editor_node.style.backgroundColor = this.theme.cell_background_color || '';
     }
 
     if (this.autocomplete) {

@@ -87,9 +87,14 @@ class AutoEmbedManager {
     if (!options.container) return;
     const container = options.container; // as HTMLElement, for closures
 
+    const decorated =
+      (typeof options.decorated === 'undefined' || options.decorated);
+
+    /*
     if (typeof options.decorated !== 'undefined' && !options.decorated) {
       return new EmbeddedSpreadsheet(options);
     }
+    */
 
     const bounding_rect = container.getBoundingClientRect();
     const { width, height } = bounding_rect;
@@ -137,7 +142,7 @@ class AutoEmbedManager {
     // FIXME: OR, calculate from actual layout?
 
     // const offset = 60;
-    const offset = 52; // smaller icons
+    const offset = decorated ? 52 : 0; // smaller icons
 
     if (options.auto_size) {
       sheet_container.style.width = `calc(100% - ${offset}px)`;
@@ -157,6 +162,11 @@ class AutoEmbedManager {
       resizable: typeof options.resizable === 'boolean' ? options.resizable : true,
       container: sheet_container,
     });
+
+    (options.container as any)._spreadsheet = sheet;
+    if (!decorated) {
+      return sheet;
+    }
 
     // this is circular, but it's not the end of the world
     // (container as any)._sheet = sheet;
@@ -232,8 +242,72 @@ class AutoEmbedManager {
       }
     });
 
+    // show/hide sidebar
+
+    const spacer = document.createElement('div');
+    spacer.classList.add('icon-spacer');
+    control_icons.appendChild(spacer);
+    this.AddIcon(control_icons, 'treb-chevron-right-icon', 'Hide Sidebar', () => {
+      control_icons.style.width = '0px';
+      const target_width = options.auto_size ? '100%' : `${width || 0}px`;
+      this.ShowSidebar(target_width, offset, sheet_container, show_sidebar_button, true);
+    });
+
+    const show_sidebar_button = document.createElement('div');
+    this.AddIcon(show_sidebar_button, 'treb-chevron-left-icon', 'Show Sidebar', () => {
+      control_icons.style.width = ''; // revert to css value
+      const target_width = options.auto_size ? `calc(100% - ${offset}px)` : `${(width || 0) - offset}px`;
+      this.ShowSidebar(target_width, -offset, sheet_container, show_sidebar_button, false);
+    });
+
+    show_sidebar_button.classList.add('show-sidebar-button');
+    show_sidebar_button.classList.add('hidden');
+
+    sheet_container.appendChild(show_sidebar_button);
+
+    // this is unfortunate, can we accomplish this with sibling selectors? (...)
+
+    
+
     (options.container as any)._spreadsheet = sheet;
     return sheet;
+
+  }
+
+  private ShowSidebar(
+      target_width: string,
+      offset: number,
+      sheet_container: HTMLElement,
+      button: HTMLElement,
+      show: boolean) {
+
+    const style_width = sheet_container.style.width;
+
+    if (style_width) {
+      const match_px = style_width.match(/([\d\.]+)px/);
+      if (match_px) {
+        target_width = `${Number(match_px[1]) + offset}px`;
+      }
+      else {
+        // FIXME: % (use calc)?
+      }
+    }
+
+    const transitionend = () => {
+      sheet_container.classList.remove('animate-width');
+      sheet_container.removeEventListener('transitionend', transitionend);
+    };
+
+    sheet_container.addEventListener('transitionend', transitionend);
+    sheet_container.classList.add('animate-width');
+    if (show) {
+      button.classList.remove('hidden');
+    }
+    else {
+      button.classList.add('hidden');
+    }
+
+    sheet_container.style.width = target_width;
 
   }
 

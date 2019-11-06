@@ -67,6 +67,13 @@ export class TabBar extends EventSource<TabEvent> {
     timeout?: any;
   } = {};
 
+  // tslint:disable-next-line: variable-name
+  private _visible = false;
+
+  public get visible() {
+    return this._visible;
+  }
+
   constructor(
       private layout: BaseLayout,
       private model: DataModel,
@@ -109,12 +116,16 @@ export class TabBar extends EventSource<TabEvent> {
     if (!this.container) { return; }
     // this.container.style.display = show ? 'block' : 'none';
 
+    this._visible = show;
+
     if (show) {
       this.grid_container.classList.add('treb-tab-bar-layout');
+      this.grid_container.parentElement?.classList.add('has-tab-bar');
       this.container.style.display = 'block';
     }
     else {
       this.grid_container.classList.remove('treb-tab-bar-layout');
+      this.grid_container.parentElement?.classList.remove('has-tab-bar');
       this.container.style.display = 'none';
     }
 
@@ -181,6 +192,7 @@ export class TabBar extends EventSource<TabEvent> {
     }
 
     this.grid_container.classList.add('treb-tab-bar-layout');
+    this.grid_container.parentElement?.classList.add('has-tab-bar');
 
     // clear
     this.node.innerText = '';

@@ -233,9 +233,10 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       // tab_bar: this.options.tab_bar,
     };
 
-    if (this.options.formula_bar) {
+    if (typeof this.options.formula_bar !== 'undefined') {
       grid_options.formula_bar = this.options.formula_bar;
     }
+
     if (this.options.expand_formula_button) {
       grid_options.expand_formula_button = this.options.expand_formula_button;
     }
