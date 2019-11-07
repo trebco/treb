@@ -251,14 +251,14 @@ class AutoEmbedManager {
     control_icons.appendChild(spacer);
     this.AddIcon(control_icons, 'treb-chevron-right-icon', 'Hide Sidebar', () => {
       control_icons.style.width = '0px';
-      const target_width = options.auto_size ? '100%' : width ? `${width}px` : '';
+      const target_width = options.auto_size ? '100%' : (width && height) ? `${width}px` : '';
       this.ShowSidebar(target_width, offset, sheet_container, show_sidebar_button, true);
     });
 
     const show_sidebar_button = document.createElement('div');
     this.AddIcon(show_sidebar_button, 'treb-chevron-left-icon', 'Show Sidebar', () => {
       control_icons.style.width = ''; // revert to css value
-      const target_width = options.auto_size ? `calc(100% - ${offset}px)` : width ? `${width - offset}px` : '';
+      const target_width = options.auto_size ? `calc(100% - ${offset}px)` : (width && height) ? `${width - offset}px` : '';
       this.ShowSidebar(target_width, -offset, sheet_container, show_sidebar_button, false);
     });
 
@@ -286,6 +286,12 @@ class AutoEmbedManager {
       show: boolean) {
 
     const style_width = sheet_container.style.width;
+
+    if (!style_width && !target_width) {
+      const bounds = sheet_container.getBoundingClientRect();
+      console.info('no width', bounds.width);
+      target_width = (bounds.width + offset) + 'px';
+    }
 
     if (style_width) {
       const match_px = style_width.match(/^([\d\.]+)px/);

@@ -29,6 +29,19 @@ $tabs-sidebar-control-offset: 72px;
 
   }
 
+
+  .sheet-control-icons svg, .show-sidebar-button svg {
+    fill: #ccc;
+    width: 24px; // 32px;
+    height: 24px; // 32px;
+    transition: fill .1s;
+
+    &:hover {
+      fill: #666;
+    }
+
+  }
+
   .show-sidebar-button {
     background: #fff;
     border: 1px solid #ccc;
@@ -96,17 +109,6 @@ $tabs-sidebar-control-offset: 72px;
     bottom: $tabs-sidebar-control-offset;
   }
 
-  svg {
-    fill: #ccc;
-    width: 24px; // 32px;
-    height: 24px; // 32px;
-    transition: fill .1s;
-
-    &:hover {
-      fill: #666;
-    }
-
-  }
 
 
   /*
