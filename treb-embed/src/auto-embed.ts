@@ -288,12 +288,13 @@ class AutoEmbedManager {
     const style_width = sheet_container.style.width;
 
     if (style_width) {
-      const match_px = style_width.match(/([\d\.]+)px/);
+      const match_px = style_width.match(/^([\d\.]+)px/);
       if (match_px) {
         target_width = `${Number(match_px[1]) + offset}px`;
       }
       else {
-        // FIXME: % (use calc)?
+        // FIXME: %
+        // FIXME: calc
       }
     }
 
