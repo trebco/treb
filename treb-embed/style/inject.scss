@@ -39,6 +39,7 @@ $tabs-sidebar-control-offset: 72px;
     z-index: 40;
     right: 0px;
     width: 24px;
+    line-height: 28px;
     bottom: $sidebar-control-offset;
     transition: opacity $animate-width-delay;
 
@@ -54,6 +55,7 @@ $tabs-sidebar-control-offset: 72px;
   }
 
   .sheet-control-icons {
+    line-height: 28px;
     padding-top: 3.5px;
     display: flex;
     flex-direction: column;
@@ -76,6 +78,7 @@ $tabs-sidebar-control-offset: 72px;
         svg {
           height: 12px;
         }
+        border: 1px solid transparent; // accounts for border on "show" button
         padding-bottom: $sidebar-control-offset;
       }
   

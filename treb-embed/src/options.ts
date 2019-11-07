@@ -104,6 +104,9 @@ export interface CreateSheetOptions extends EmbeddedSpreadsheetOptions {
   /** icons */
   decorated?: boolean;
 
+  /** collapsed: start sidebar closed */
+  collapsed?: boolean;
+
   /** mc icon is now optional */
   mc?: boolean;
 

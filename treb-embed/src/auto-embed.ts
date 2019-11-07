@@ -145,12 +145,14 @@ class AutoEmbedManager {
     const offset = decorated ? 52 : 0; // smaller icons
 
     if (options.auto_size) {
-      sheet_container.style.width = `calc(100% - ${offset}px)`;
+      const use_offset = options.collapsed ? 0 : offset;
+      sheet_container.style.width = `calc(100% - ${use_offset}px)`;
       sheet_container.style.height = `100%`;
     }
     else {
       if (width > 0 && height > 0) {
-        sheet_container.style.width = `${width - offset}px`;
+        const use_offset = options.collapsed ? 0 : offset;
+        sheet_container.style.width = `${width - use_offset}px`;
         sheet_container.style.height = `${height}px`;
       }
     }
@@ -249,25 +251,27 @@ class AutoEmbedManager {
     control_icons.appendChild(spacer);
     this.AddIcon(control_icons, 'treb-chevron-right-icon', 'Hide Sidebar', () => {
       control_icons.style.width = '0px';
-      const target_width = options.auto_size ? '100%' : `${width || 0}px`;
+      const target_width = options.auto_size ? '100%' : width ? `${width}px` : '';
       this.ShowSidebar(target_width, offset, sheet_container, show_sidebar_button, true);
     });
 
     const show_sidebar_button = document.createElement('div');
     this.AddIcon(show_sidebar_button, 'treb-chevron-left-icon', 'Show Sidebar', () => {
       control_icons.style.width = ''; // revert to css value
-      const target_width = options.auto_size ? `calc(100% - ${offset}px)` : `${(width || 0) - offset}px`;
+      const target_width = options.auto_size ? `calc(100% - ${offset}px)` : width ? `${width - offset}px` : '';
       this.ShowSidebar(target_width, -offset, sheet_container, show_sidebar_button, false);
     });
 
     show_sidebar_button.classList.add('show-sidebar-button');
-    show_sidebar_button.classList.add('hidden');
+
+    if (options.collapsed) {
+      control_icons.style.width = '0px';
+    }
+    else {
+      show_sidebar_button.classList.add('hidden');
+    }
 
     sheet_container.appendChild(show_sidebar_button);
-
-    // this is unfortunate, can we accomplish this with sibling selectors? (...)
-
-    
 
     (options.container as any)._spreadsheet = sheet;
     return sheet;
