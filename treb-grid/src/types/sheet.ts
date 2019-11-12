@@ -44,8 +44,10 @@ export class Sheet {
     this.base_id = 100;
   }
 
-  public static Blank(rows = 100, columns = 26, name?: string) {
-    const sheet = new Sheet();
+  public static Blank(rows = 100, columns = 26, style_defaults: Style.Properties, name?: string) {
+
+    const sheet = new Sheet(style_defaults);
+
     if (name) {
       sheet.name = name;
     }
@@ -64,7 +66,7 @@ export class Sheet {
    * @param hints UpdateHints supports partial deserialization/replacement
    * if we know there are only minor changes (as part of undo/redo, probably)
    */
-  public static FromJSON(json: string | object, sheet?: Sheet, hints?: UpdateHints) {
+  public static FromJSON(json: string | object, style_defaults: Style.Properties, sheet?: Sheet, hints?: UpdateHints) {
 
     if (hints) console.warn( '(using hints)', hints);
 
@@ -79,7 +81,9 @@ export class Sheet {
       });
     };
 
-    if (!sheet) sheet = new Sheet();
+    if (!sheet) {
+      sheet = new Sheet(style_defaults);
+    }
 
     // new, named ranges [FIXME: move to container?] -- these are
     // serialized so create objects
@@ -261,16 +265,17 @@ export class Sheet {
 
   }
 
-  /**
+  /* *
    * factory method creates a sheet from a 2D array.
    *
-   */
+   * /
   public static FromArray(data: any[] = [], transpose = false): Sheet {
     const sheet = new Sheet();
     sheet.cells.FromArray(data, transpose);
 
     return sheet;
   }
+  */
 
   // --- static members -------------------------------------------------------
 
@@ -278,6 +283,23 @@ export class Sheet {
   private static measurement_canvas?: HTMLCanvasElement;
 
   // --- instance members -----------------------------------------------------
+
+  /**
+   * in the old model, we had a concept of "default" style properties. we then
+   * used that object for theming: we would set default properties when the theme
+   * changed.
+   *
+   * the problem is that if there are multiple instances on a single page, with
+   * different themes, they would clash.
+   *
+   * so the new concept is to have a default property set per instance, managed
+   * by the grid instance. any sheets that are loaded in/created by grid will
+   * get a reference to that property set, and grid can update it as desired.
+   *
+   * because it's a reference, it should be constant.
+   * FIXME: move to model...
+   */
+  public readonly default_style_properties: Style.Properties;
 
   /* moved from grid */
   public annotations: Annotation[] = [];
@@ -410,7 +432,9 @@ export class Sheet {
   /**
    * constructor is now protected. use a factory method (Blank or FromJSON).
    */
-  protected constructor() {
+  protected constructor(theme_style_properties: Style.Properties) {
+
+    this.default_style_properties = theme_style_properties;
 
     // FIXME: the below should be called in a separate 'init' method
     // that can be called after we change styles (since it will measure)
@@ -513,7 +537,8 @@ export class Sheet {
    */
   public UpdateDefaultRowHeight(suppress_event = false) {
 
-    const composite = Style.Composite([this.sheet_style]);
+    const composite = Style.CompositeNoDefaults([this.default_style_properties, this.sheet_style]);
+
     if (typeof window !== 'undefined') {
       const measurement = Measurement.MeasureText(Style.Font(composite), 'M');
       const height = Math.round(measurement.height * 1.4);
@@ -679,7 +704,8 @@ export class Sheet {
     if (!this.cell_style[column]) this.cell_style[column] = [];
 
     const underlying = this.CompositeStyleForCell(address, false);
-    const merged = Style.Composite([
+    const merged = Style.CompositeNoDefaults([
+      this.default_style_properties,
       underlying,
       Style.Merge(this.cell_style[column][row] || {}, properties, delta),
     ]);
@@ -1682,8 +1708,9 @@ export class Sheet {
     return JSON.stringify(this);
   }
 
+  /*
   protected Deserialize(data: SerializedSheet) {
-    Sheet.FromJSON(data, this);
+    Sheet.FromJSON(data, this.default_style_properties, this);
 
     // some overlap here... consolidate? actually, doesn't
     // fromJSON call flush styles? [A: sometimes...]
@@ -1691,6 +1718,7 @@ export class Sheet {
     this.cells.FlushCachedValues();
     this.FlushCellStyles();
   }
+  */
 
   // --- private methods ------------------------------------------------------
 
@@ -1868,7 +1896,7 @@ export class Sheet {
    */
   private CompositeStyleForCell(address: ICellAddress, apply_cell_style = true) {
     const { row, column } = address;
-    const stack = [this.sheet_style];
+    const stack = [this.default_style_properties, this.sheet_style];
     if (this.row_styles[row]) stack.push(this.row_styles[row]);
     if (this.column_styles[column]) stack.push(this.column_styles[column]);
     if (apply_cell_style
@@ -1876,7 +1904,7 @@ export class Sheet {
       && this.cell_style[column][row]) {
       stack.push(this.cell_style[column][row]);
     }
-    return Style.Composite(stack);
+    return Style.CompositeNoDefaults(stack);
   }
 
   /**

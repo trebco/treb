@@ -14,8 +14,8 @@ export class WorkerImpl {
   protected trials = 0;
   protected lhs = false;
   protected data_model: DataModel = {
-    active_sheet: Sheet.Blank(),
-    sheets: [Sheet.Blank()],
+    active_sheet: Sheet.Blank(undefined, undefined, {}),
+    sheets: [Sheet.Blank(undefined, undefined, {})],
     // annotations: [],
     named_ranges: new NamedRangeCollection(),
   };
@@ -60,7 +60,8 @@ export class WorkerImpl {
         this.calculator.UpdateLocale();
       }
 
-      this.data_model.sheets = message.sheets.map((sheet) => Sheet.FromJSON(sheet));
+      this.data_model.sheets = message.sheets.map((sheet) => 
+        Sheet.FromJSON(sheet, {}));
       this.data_model.active_sheet = this.data_model.sheets[0];
 
       if (message.additional_cells) {

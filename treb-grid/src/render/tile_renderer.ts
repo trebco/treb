@@ -319,6 +319,7 @@ export class TileRenderer {
     const scale = this.layout.dpr;
 
     const header_size = this.model.active_sheet.header_offset;
+
     const font_metrics = FontMetricsCache.get({
       font_face: this.theme.interface_font_face,
       // font_size: this.theme.interface_font_size,

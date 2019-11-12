@@ -252,6 +252,15 @@ export class Grid {
   // private tab_bar?: HTMLElement;
   private tab_bar?: TabBar;
 
+  /**
+   * replacement for global style default properties.
+   * FIXME: move (model?)
+   *
+   * SEE comment in sheet class
+   */
+  private readonly theme_style_properties: Style.Properties =
+    Style.CompositeNoDefaults([Style.DefaultProperties]);
+
   // --- constructor -----------------------------------------------------------
 
   /**
@@ -262,7 +271,12 @@ export class Grid {
     // construct model. it's a little convoluted because the
     // "active sheet" reference points to one of the array members
 
-    const sheets = [Sheet.Blank(DEFAULT_NEW_SHEET_ROWS, DEFAULT_NEW_SHEET_COLUMNS)];
+    const sheets = [
+      Sheet.Blank(
+        DEFAULT_NEW_SHEET_ROWS,
+        DEFAULT_NEW_SHEET_COLUMNS,
+        this.theme_style_properties),
+    ];
 
     this.model = {
       sheets,
@@ -775,8 +789,8 @@ export class Grid {
       render = false) {
 
     this.RemoveAnnotationNodes();
-    // this.UpdateSheets([new Sheet().toJSON()], true);
-    this.UpdateSheets([Sheet.Blank().toJSON()], true);
+
+    this.UpdateSheets([Sheet.Blank(undefined, undefined, this.theme_style_properties).toJSON()], true);
 
     // FIXME: are there named ranges in the data? (...)
 
@@ -948,12 +962,12 @@ export class Grid {
 
     this.RemoveAnnotationNodes();
 
-    const sheets = data.map((sheet) => Sheet.FromJSON(sheet));
+    const sheets = data.map((sheet) => Sheet.FromJSON(sheet, this.theme_style_properties));
 
     // ensure we have a sheets[0] so we can set active
 
     if (sheets.length === 0) {
-      sheets.push(Sheet.Blank());
+      sheets.push(Sheet.Blank(undefined, undefined, this.theme_style_properties));
     }
 
     // now assign sheets
@@ -1055,7 +1069,7 @@ export class Grid {
       data = JSON.parse(data);
     }
 
-    Sheet.FromJSON(data, this.model.active_sheet);
+    Sheet.FromJSON(data, this.theme_style_properties, this.model.active_sheet);
     this.ClearSelection(this.primary_selection);
 
     // this is the old version -- we still want to support it, but
@@ -1749,7 +1763,11 @@ export class Grid {
     // empty? create new, activate
 
     if (!sheets.length) {
-      sheets.push(Sheet.Blank(DEFAULT_NEW_SHEET_ROWS, DEFAULT_NEW_SHEET_COLUMNS));
+      sheets.push(Sheet.Blank(
+        DEFAULT_NEW_SHEET_ROWS,
+        DEFAULT_NEW_SHEET_COLUMNS,
+        this.theme_style_properties,
+        ));
     }
 
     this.model.sheets = sheets;
@@ -1790,7 +1808,7 @@ export class Grid {
 
     // FIXME: structure event
 
-    const sheet = Sheet.Blank(DEFAULT_NEW_SHEET_ROWS, DEFAULT_NEW_SHEET_COLUMNS, name);
+    const sheet = Sheet.Blank(DEFAULT_NEW_SHEET_ROWS, DEFAULT_NEW_SHEET_COLUMNS, this.theme_style_properties, name);
 
     if (insert_index >= 0) {
       this.model.sheets.splice(insert_index, 0, sheet);
@@ -1969,19 +1987,15 @@ export class Grid {
 
   private StyleDefaultFromTheme() {
 
-    Style.UpdateDefaultProperties({
-      font_face: this.theme.cell_font,
-      // font_size: this.theme.cell_font_size,
-      font_size_unit: this.theme.cell_font_size_unit,
-      font_size_value: this.theme.cell_font_size_value,
+    this.theme_style_properties.font_face = this.theme.cell_font;
+    this.theme_style_properties.font_size_unit = this.theme.cell_font_size_unit;
+    this.theme_style_properties.font_size_value = this.theme.cell_font_size_value;
+    this.theme_style_properties.text_color = this.theme.cell_color || 'none';
 
-      // background: this.theme.cell_background_color || 'none',
-      text_color: this.theme.cell_color || 'none',
-      border_top_color: this.theme.border_color || 'none',
-      border_left_color: this.theme.border_color || 'none',
-      border_right_color: this.theme.border_color || 'none',
-      border_bottom_color: this.theme.border_color || 'none',
-    });
+    this.theme_style_properties.border_top_color =
+      this.theme_style_properties.border_left_color =
+      this.theme_style_properties.border_right_color =
+      this.theme_style_properties.border_bottom_color = this.theme.border_color || 'none';
 
   }
 
@@ -5569,7 +5583,7 @@ export class Grid {
         else {
           Sheet.Reset();
           this.RemoveAnnotationNodes();
-          this.UpdateSheets([Sheet.Blank().toJSON()], true);
+          this.UpdateSheets([Sheet.Blank(undefined, undefined, this.theme_style_properties).toJSON()], true);
           this.model.named_ranges.Reset();
           this.ClearSelection(this.primary_selection);
           this.ScrollIntoView({row: 0, column: 0});

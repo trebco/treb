@@ -262,12 +262,15 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
     this.address_label_container.style.fontFamily = this.theme.formula_bar_font_face || '';
     this.address_label_container.style.fontSize = font_size || '';
+    this.address_label_container.style.fontWeight = '400'; // FIXME
+    
     this.address_label_container.style.backgroundColor = this.theme.formula_bar_background_color || '';
     this.address_label_container.style.color = this.theme.formula_bar_color || null;
 
     if (this.container_node) {
       this.container_node.style.fontFamily = this.theme.formula_bar_font_face || '';
       this.container_node.style.fontSize = font_size || '';
+      this.container_node.style.fontWeight = '400'; // FIXME
       this.container_node.style.backgroundColor = this.theme.formula_bar_background_color || '';
       this.container_node.style.color = this.theme.formula_bar_color || null;
     }

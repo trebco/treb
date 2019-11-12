@@ -17,6 +17,7 @@ class FontMetricsCacheInstance {
 
   public get(style: Style.Properties){
     const font = Style.Font(style);
+
     let metrics: FontMetricsInfo = this.cache[font] || { ascent: 10, descent: 2, block: 18 };
     if (!this.cache[font] || this.cache[font].block === 1) {
       metrics = this.cache[font] = this.MeasureFont(style);

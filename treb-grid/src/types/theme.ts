@@ -317,7 +317,7 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
 
   theme.border_color = cell[3];
   theme.cell_color = cell[4];
-
+ 
   if (!theme.border_color && cell[5]) theme.border_color = cell[5];
 
   const highlight = TestNode('freeze-highlight', ['fill', 'stroke']);

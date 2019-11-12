@@ -117,22 +117,27 @@ export namespace Style {
     return properties;
   };
 
+  export const CompositeNoDefaults = (list: Properties[]) => {
+    return list.reduce((composite, item) => ({...composite, ...item}), {});
+  };
+
   /**
    * overlay. will always put defaults at the bottom.
-   */
+   * /
   export const Composite = (list: Properties[]) => {
     return list.reduce((composite, item) => ({...composite, ...item}),
       {...DefaultProperties});
   };
 
-  /**
+  / * *
    * modify default properties. useful for theming.
-   */
+   * /
   export const UpdateDefaultProperties = (opts: Properties) => {
     DefaultProperties = {
       ...DefaultProperties, ...opts,
     };
   };
+  */
 
   /**
    * returns a string representation suitable for canvas (or style)
