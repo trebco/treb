@@ -1178,8 +1178,10 @@ export class Grid {
     this.model.active_sheet.FlushCellStyles();
 
     this.layout.ApplyTheme(this.theme);
-
+        
     if (!initial) {
+
+      this.UpdateLayout(); // in case we have changed font size
       this.selection_renderer.Flush();
 
       if (this.cell_editor) this.cell_editor.UpdateTheme();
