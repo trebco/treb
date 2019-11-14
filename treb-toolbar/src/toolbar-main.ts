@@ -49,6 +49,41 @@ export class FormattingToolbar {
     svg.setAttribute('style', 'position: absolute; width: 0; height: 0; overflow: hidden;');
     svg.setAttribute('version', '1.1');
 
+    const pattern = document.createElementNS(SVGNS, 'pattern');
+    pattern.setAttribute('id', 'hatch-pattern');
+    pattern.setAttribute('width', '3');
+    pattern.setAttribute('height', '3');
+    pattern.setAttribute('patternTransform', 'rotate(45 0 0)');
+    pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+
+    const line = document.createElementNS(SVGNS, 'line');
+    line.setAttribute('x1', '1');
+    line.setAttribute('y1', '0');
+    line.setAttribute('x2', '1');
+    line.setAttribute('y2', '10');
+    line.style.strokeWidth = '2';
+    line.style.stroke = '#999';
+    pattern.appendChild(line);
+
+    /*
+    line = document.createElementNS(SVGNS, 'line');
+    line.setAttribute('x1', '0');
+    line.setAttribute('y1', '0');
+    line.setAttribute('x2', '10');
+    line.setAttribute('y2', '0');
+    line.style.strokeWidth = '1';
+    line.style.stroke = '#000';
+    pattern.appendChild(line);
+    */
+
+    svg.appendChild(pattern);
+
+    /*
+    <pattern id="diagonalHatch" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="10" style="stroke:black; stroke-width:1" />
+    </pattern>
+    */
+
     for (const key of Object.keys(symbol_defs)) {
       const def = symbol_defs[key];
       const symbol = document.createElementNS(SVGNS, 'symbol');

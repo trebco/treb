@@ -334,7 +334,13 @@ export class Toolbar {
     if (item && item.icon) {
       const paths = document.querySelectorAll(`symbol#${item.icon} path`);
       if (paths.length > 1) {
-        (paths[1] as HTMLElement).style.fill = color;
+        const element = paths[1] as HTMLElement;
+        if (!color) {
+          element.style.fill = 'url(#hatch-pattern)';
+        }
+        else {
+          element.style.fill = color;
+        }
       }
       item['second-color'] = color;
     }
