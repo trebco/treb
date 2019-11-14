@@ -111,6 +111,6 @@ export interface CreateSheetOptions extends EmbeddedSpreadsheetOptions {
   mc?: boolean;
 
   /** formatting is optional, may change */
-  toolbar?: boolean;
+  toolbar?: boolean | 'show';
 
 }

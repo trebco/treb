@@ -191,6 +191,9 @@ class AutoEmbedManager {
       this.AddIcon(control_icons, 'treb-toolbar-icon', 'Formatting', () => {
         sheet.FormattingToolbar(container);
       });
+      if (options.toolbar === 'show') {
+        sheet.FormattingToolbar(container);
+      }
     }
 
     this.AddIcon(control_icons, 'treb-export-icon', 'Download as XLSX', () => sheet.Export());
