@@ -906,6 +906,9 @@ export class TileRenderer {
       const offset_y = 1;
       const length = 8;
 
+      // FIXME: why is the default in here, and not in theme defaults?
+      // actually it is in theme defaults, probably was here first.
+
       context.fillStyle = this.theme.note_marker_color || '#d2c500';
       context.beginPath();
       context.moveTo(width - offset_x, offset_y);
