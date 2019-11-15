@@ -14,8 +14,8 @@ export class WorkerImpl {
   protected trials = 0;
   protected lhs = false;
   protected data_model: DataModel = {
-    active_sheet: Sheet.Blank(undefined, undefined, {}),
-    sheets: [Sheet.Blank(undefined, undefined, {})],
+    active_sheet: Sheet.Blank({}),
+    sheets: [Sheet.Blank({})],
     // annotations: [],
     named_ranges: new NamedRangeCollection(),
   };

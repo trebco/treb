@@ -128,7 +128,7 @@ export class Exporter {
               list.push(style_map[cell.column][cell.row]);
             }
 
-            const composite = Style.CompositeNoDefaults(list);
+            const composite = Style.Composite(list);
             for (const key of Object.keys(composite) as Style.PropertyKeys[]) {
               if (composite[key] === 'none') {
                 delete composite[key];

@@ -458,7 +458,7 @@ export class Toolbar {
       this.Publish(this.popup_item.id, this.popup_item);
       this.HidePopup(); // actually not necessary, because grid will steal focus
     }
-    else if (this.popup_item && this.popup_item.border ) {
+    else if (this.popup_item && this.popup_item.options ) {
 
       let button: HTMLElement = node;
       while (button.tagName !== 'BUTTON' && button !== this.popup) {
@@ -470,11 +470,12 @@ export class Toolbar {
 
         const id = button.getAttribute('data-id') || '';
         const item = this.popup_item;
+        const item_id = item.id || '';
 
         this.HidePopup();
-        this.UpdateTitle('border-option', button.getAttribute('title') || '');
-        this.UpdateIcon('border-option', button.getAttribute('data-icon') || '');
-        this.UpdateAlternateID('border-option', id);
+        this.UpdateTitle(item_id, button.getAttribute('title') || '');
+        this.UpdateIcon(item_id, button.getAttribute('data-icon') || '');
+        this.UpdateAlternateID(item_id, id);
 
         this.Publish(id, item);
 
@@ -555,29 +556,22 @@ export class Toolbar {
 
   }
 
-  private BorderPopup(item: ToolbarItemImpl) {
+  private OptionsPopup(item: ToolbarItemImpl) {
 
     const holder = document.createElement('div');
-    holder.classList.add('border-list-holder');
+    holder.classList.add('options-list-holder');
 
     const list = document.createElement('div');
     list.classList.add('list');
 
-    const options = [
-      { icon: 'icon-border_clear', id: 'border-none', title: 'Clear Borders' },
-      { icon: 'icon-border_outer', id: 'border-outer', title: 'Outer Border' },
-      { icon: 'icon-border_top', id: 'border-top', title: 'Top Border' },
-      { icon: 'icon-border_bottom', id: 'border-bottom', title: 'Bottom Border' },
-      { icon: 'icon-border_left', id: 'border-left', title: 'Left Border' },
-      { icon: 'icon-border_right', id: 'border-right', title: 'Right Border' },
-      { icon: 'icon-border_all', id: 'border-all', title: 'All Borders' },
-    ];
+    for (const option of item.options || []) {
 
-    for (const option of options) {
+      if (typeof option === 'string') { continue; }
+
       const button = document.createElement('button');
-      button.setAttribute('title', option.title);
-      button.setAttribute('data-id', option.id);
-      button.setAttribute('data-icon', option.icon);
+      button.setAttribute('title', option.title || '');
+      button.setAttribute('data-id', option.id || '');
+      button.setAttribute('data-icon', option.icon || '');
 
       const svg = document.createElementNS(SVGNS, 'svg');
       const element = document.createElementNS(SVGNS, 'use');
@@ -646,7 +640,7 @@ export class Toolbar {
 
     this.popup.textContent = '';
     this.popup.classList.remove('popup-color');
-    this.popup.classList.remove('popup-border');
+    this.popup.classList.remove('popup-options');
     this.popup.classList.remove('popup-submenu');
     this.popup.classList.remove('popup-note');
 
@@ -654,9 +648,9 @@ export class Toolbar {
       this.ColorPopup(item);
       this.popup.classList.add('popup-color');
     }
-    else if (item.border) {
-      this.BorderPopup(item);
-      this.popup.classList.add('popup-border');
+    else if (item.options) {
+      this.OptionsPopup(item);
+      this.popup.classList.add('popup-options');
     }
     else if (item.id === 'note') {
       this.NotePopup(item);

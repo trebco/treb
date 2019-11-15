@@ -44,13 +44,17 @@ export class Sheet {
     this.base_id = 100;
   }
 
-  public static Blank(rows = 100, columns = 26, style_defaults: Style.Properties, name?: string) {
+  /**
+   * factory method creates a new sheet
+   */
+  public static Blank(style_defaults: Style.Properties, name?: string, rows = 30, columns = 20) {
 
     const sheet = new Sheet(style_defaults);
 
     if (name) {
       sheet.name = name;
     }
+
     rows = Math.max(rows, 1);
     columns = Math.max(columns, 1);
     sheet.cells.EnsureCell({row: rows - 1, column: columns - 1});
@@ -537,7 +541,7 @@ export class Sheet {
    */
   public UpdateDefaultRowHeight(suppress_event = false) {
 
-    const composite = Style.CompositeNoDefaults([this.default_style_properties, this.sheet_style]);
+    const composite = Style.Composite([this.default_style_properties, this.sheet_style]);
 
     if (typeof window !== 'undefined') {
       const measurement = Measurement.MeasureText(Style.Font(composite), 'M');
@@ -704,7 +708,7 @@ export class Sheet {
     if (!this.cell_style[column]) this.cell_style[column] = [];
 
     const underlying = this.CompositeStyleForCell(address, false);
-    const merged = Style.CompositeNoDefaults([
+    const merged = Style.Composite([
       this.default_style_properties,
       underlying,
       Style.Merge(this.cell_style[column][row] || {}, properties, delta),
@@ -1704,9 +1708,11 @@ export class Sheet {
         && (b === false || b === null || b === undefined));
   }
 
+  /*
   protected Serialize() {
     return JSON.stringify(this);
   }
+  */
 
   /*
   protected Deserialize(data: SerializedSheet) {
@@ -1732,6 +1738,7 @@ export class Sheet {
    * the cell style, we go up the chain and remove any matching properties.
    */
   private UpdateSheetStyle(properties: Style.Properties, delta = true, inline = false) {
+
     this.sheet_style = Style.Merge(this.sheet_style, properties, delta);
 
     // reverse-override...
@@ -1774,6 +1781,7 @@ export class Sheet {
    * need to update the cell property to match the desired output.
    */
   private UpdateRowStyle(row: number, properties: Style.Properties, delta = true, inline = false) {
+
     this.row_styles[row] = Style.Merge(this.row_styles[row] || {}, properties, delta);
 
     // reverse-override... remove matching properties from cells in this row
@@ -1820,8 +1828,11 @@ export class Sheet {
 
   }
 
-  /** updates column properties. reverse-overrides cells (@see UpdateSheetStyle). */
+  /**
+   * updates column properties. reverse-overrides cells (@see UpdateSheetStyle).
+   */
   private UpdateColumnStyle(column: number, properties: Style.Properties, delta = true, inline = false) {
+
     this.column_styles[column] = Style.Merge(this.column_styles[column] || {}, properties, delta);
 
     // returning to this function after a long time. so what this is doing
@@ -1895,16 +1906,25 @@ export class Sheet {
    * we can drop the cell style (or the property in the style).
    */
   private CompositeStyleForCell(address: ICellAddress, apply_cell_style = true) {
+
     const { row, column } = address;
     const stack = [this.default_style_properties, this.sheet_style];
-    if (this.row_styles[row]) stack.push(this.row_styles[row]);
-    if (this.column_styles[column]) stack.push(this.column_styles[column]);
+
+    if (this.row_styles[row]) {
+      stack.push(this.row_styles[row]);
+    }
+
+    if (this.column_styles[column]) {
+      stack.push(this.column_styles[column]);
+    }
+
     if (apply_cell_style
-      && this.cell_style[column]
-      && this.cell_style[column][row]) {
+        && this.cell_style[column]
+        && this.cell_style[column][row]) {
       stack.push(this.cell_style[column][row]);
     }
-    return Style.CompositeNoDefaults(stack);
+
+    return Style.Composite(stack);
   }
 
   /**

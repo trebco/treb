@@ -67,7 +67,7 @@ $font_stack: -apple-system,
 
   }
 
-  &.popup-border {
+  &.popup-options {
     width: auto;
     max-height: none;
   }
@@ -156,7 +156,7 @@ $font_stack: -apple-system,
 
 // these are split out because we reuse them in popup...
 
-.treb-formatting-toolbar svg, .treb-toolbar-menu .border-list-holder button svg {
+.treb-formatting-toolbar svg, .treb-toolbar-menu .options-list-holder button svg {
     position: absolute;
     top: 3px;
     left: 3px;
@@ -167,12 +167,12 @@ $font_stack: -apple-system,
     // -ms-transform: scale(1); // doesn't un-blurry IE11
 }
 
-.border-list-holder .list {
+.options-list-holder .list {
   display: flex;
   flex-direction: column;
 }
 
-.border-list-holder button {
+.options-list-holder button {
 
   border-radius: 3px;
   overflow: hidden;

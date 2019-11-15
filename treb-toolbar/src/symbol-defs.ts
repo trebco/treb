@@ -3,8 +3,8 @@
 /**
  * generated file, do not edit (or don't expect your edits to survive)
  *
- * Sat Jun 15 2019 07:26:09 GMT-0700 (Pacific Daylight Time)
- * C:\Program Files\nodejs\node.exe H:\TREB\TREB\treb-embed\script\svg-to-js.js -i symbols.svg -o symbol-defs.ts
+ * Fri Nov 15 2019 10:33:45 GMT-0800 (Pacific Standard Time)
+ * /usr/bin/node /mnt/h/TREB/TREB/treb-toolbar/script/svg-to-js.js -i src/symbols.svg -o src/symbol-defs.ts
  */
 
 // tslint:disable: quotemark object-literal-key-quotes max-line-length trailing-comma
@@ -250,7 +250,7 @@ export const symbol_defs: {[index: string]: SymbolDef} = {
     "viewbox": "0 0 24 24",
     "paths": [
       {
-        "d": "M12 15.984c1.078 0 2.016 0.938 2.016 2.016s-0.938 2.016-2.016 2.016-2.016-0.938-2.016-2.016 0.938-2.016 2.016-2.016zM12 9.984c1.078 0 2.016 0.938 2.016 2.016s-0.938 2.016-2.016 2.016-2.016-0.938-2.016-2.016 0.938-2.016 2.016-2.016zM12 8.016c-1.078 0-2.016-0.938-2.016-2.016s0.938-2.016 2.016-2.016 2.016 0.938 2.016 2.016-0.938 2.016-2.016 2.016z"
+        "d": "M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
       }
     ]
   },
@@ -372,4 +372,3 @@ export const symbol_defs: {[index: string]: SymbolDef} = {
   }
 };
 
-      

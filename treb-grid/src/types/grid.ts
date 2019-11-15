@@ -51,8 +51,8 @@ enum EditingState {
   FormulaBar = 2,
 }
 
-const DEFAULT_NEW_SHEET_ROWS = 30;
-const DEFAULT_NEW_SHEET_COLUMNS = 20;
+// const DEFAULT_NEW_SHEET_ROWS = 30;
+// const DEFAULT_NEW_SHEET_COLUMNS = 20;
 
 export class Grid {
 
@@ -259,7 +259,7 @@ export class Grid {
    * SEE comment in sheet class
    */
   private readonly theme_style_properties: Style.Properties =
-    Style.CompositeNoDefaults([Style.DefaultProperties]);
+    Style.Composite([Style.DefaultProperties]);
 
   // --- constructor -----------------------------------------------------------
 
@@ -272,10 +272,7 @@ export class Grid {
     // "active sheet" reference points to one of the array members
 
     const sheets = [
-      Sheet.Blank(
-        DEFAULT_NEW_SHEET_ROWS,
-        DEFAULT_NEW_SHEET_COLUMNS,
-        this.theme_style_properties),
+      Sheet.Blank(this.theme_style_properties),
     ];
 
     this.model = {
@@ -286,6 +283,7 @@ export class Grid {
     };
 
     // set properties here, we will update in initialize()
+
     this.theme = {...theme};
 
     // apply default options, meaning that you need to explicitly set/unset
@@ -304,7 +302,6 @@ export class Grid {
       this.layout,
       this.model,
       this.primary_selection,
-      // this.highlight_selection,
       this.additional_selections);
 
     if (Localization.decimal_separator === '.') {
@@ -315,7 +312,6 @@ export class Grid {
       this.parser.decimal_mark = DecimalMarkType.Comma;
       this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
     }
-
 
   }
 
@@ -666,12 +662,12 @@ export class Grid {
   }
 
   /**
-   * this method removes annotation nodes from the grid/layout, but
-   * doesn't affect the underlying data. this should be used to remove
-   * annotations when switching sheets.
+   * this method removes annotation nodes from the grid/layout, but doesn't
+   * affect the underlying data. this should be used to remove annotations
+   * when switching sheets.
    *
-   * you can also use it when cleaning up, if the underlying data will
-   * also be wiped from the model.
+   * you can also use it when cleaning up, if the underlying data will also
+   * be wiped from the model.
    */
   public RemoveAnnotationNodes() {
     this.layout.RemoveAnnotationNodes();
@@ -711,12 +707,12 @@ export class Grid {
 
   }
 
-  // pass through
+  /** pass through */
   public RealArea(area: Area) {
     return this.model.active_sheet.RealArea(area);
   }
 
-  // pass through
+  /** pass through */
   public CellRenderData(address: ICellAddress) {
     return this.model.active_sheet.CellData(address);
   }
@@ -790,7 +786,7 @@ export class Grid {
 
     this.RemoveAnnotationNodes();
 
-    this.UpdateSheets([Sheet.Blank(undefined, undefined, this.theme_style_properties).toJSON()], true);
+    this.UpdateSheets([Sheet.Blank(this.theme_style_properties).toJSON()], true);
 
     // FIXME: are there named ranges in the data? (...)
 
@@ -967,7 +963,7 @@ export class Grid {
     // ensure we have a sheets[0] so we can set active
 
     if (sheets.length === 0) {
-      sheets.push(Sheet.Blank(undefined, undefined, this.theme_style_properties));
+      sheets.push(Sheet.Blank(this.theme_style_properties));
     }
 
     // now assign sheets
@@ -1765,11 +1761,7 @@ export class Grid {
     // empty? create new, activate
 
     if (!sheets.length) {
-      sheets.push(Sheet.Blank(
-        DEFAULT_NEW_SHEET_ROWS,
-        DEFAULT_NEW_SHEET_COLUMNS,
-        this.theme_style_properties,
-        ));
+      sheets.push(Sheet.Blank(this.theme_style_properties));
     }
 
     this.model.sheets = sheets;
@@ -1810,7 +1802,7 @@ export class Grid {
 
     // FIXME: structure event
 
-    const sheet = Sheet.Blank(DEFAULT_NEW_SHEET_ROWS, DEFAULT_NEW_SHEET_COLUMNS, this.theme_style_properties, name);
+    const sheet = Sheet.Blank(this.theme_style_properties, name);
 
     if (insert_index >= 0) {
       this.model.sheets.splice(insert_index, 0, sheet);
@@ -5585,7 +5577,7 @@ export class Grid {
         else {
           Sheet.Reset();
           this.RemoveAnnotationNodes();
-          this.UpdateSheets([Sheet.Blank(undefined, undefined, this.theme_style_properties).toJSON()], true);
+          this.UpdateSheets([], true);
           this.model.named_ranges.Reset();
           this.ClearSelection(this.primary_selection);
           this.ScrollIntoView({row: 0, column: 0});

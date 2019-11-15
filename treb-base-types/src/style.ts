@@ -81,7 +81,7 @@ export namespace Style {
    * border, text and background colors will be theme-dependent and
    * can change.
    */
-  export let DefaultProperties: Properties = {
+  export const DefaultProperties: Properties = {
     horizontal_align: HorizontalAlign.None,
     vertical_align: VerticalAlign.None,
     number_format: '0.00###',   // use symbolic, e.g. "general"
@@ -117,11 +117,11 @@ export namespace Style {
     return properties;
   };
 
-  export const CompositeNoDefaults = (list: Properties[]) => {
+  export const Composite = (list: Properties[]) => {
     return list.reduce((composite, item) => ({...composite, ...item}), {});
   };
 
-  /**
+  /* *
    * overlay. will always put defaults at the bottom.
    * /
   export const Composite = (list: Properties[]) => {
