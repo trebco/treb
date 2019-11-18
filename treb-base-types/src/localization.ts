@@ -56,8 +56,10 @@ export class Localization {
     }
     else {
 
-      const location = ((typeof self === 'undefined' || typeof self.document === 'undefined') ?
-        undefined : self.document.location);
+      // const location = ((typeof self === 'undefined' || typeof self.document === 'undefined') ?
+      //  undefined : self.document.location);
+
+      const location = self?.document?.location;
 
       if (location && location.search &&
           /locale=([^\?&]+?)(?:\?|$|&)/.test(location.search)) {
@@ -82,7 +84,7 @@ export class Localization {
 
     if (this.decimal_separator === ',') {
       this.argument_separator = ';';
-      this.grouping_separator = ' ';
+      this.grouping_separator = ' '; // FIXME: should be half-space (char?)
     }
 
     // moved from number format lib
