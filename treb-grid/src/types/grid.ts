@@ -1437,6 +1437,11 @@ export class Grid {
         // this.model.sheet.SetCellValue(range.start, data);
         this.ExecCommand({key: CommandKey.SetRange, area: range.start, value: data});
       }
+
+      if (!this.primary_selection.empty && range.Contains(this.primary_selection.target)) {
+        this.UpdateFormulaBarFormula();
+      }
+
       return;
     }
 
@@ -1489,6 +1494,10 @@ export class Grid {
 
     // this.model.sheet.SetAreaValues(range, data as any[][]);
     this.ExecCommand({key: CommandKey.SetRange, area: range, value: data});
+
+    if (!this.primary_selection.empty && range.Contains(this.primary_selection.target)) {
+      this.UpdateFormulaBarFormula();
+    }
 
   }
 
