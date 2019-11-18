@@ -419,6 +419,30 @@ export class NumberFormat {
     };
   }
 
+  /*
+  public DecimalAdjustRound(value: number, exp: number) {
+
+    if (!exp) { return Math.round(value); }
+
+    value = +value;
+    // exp = +exp;
+
+    // Shift
+    let values = value.toString().split('e');
+    value = Math.round(+(values[0] + 'e' + (values[1] ? (+values[1] - exp) : -exp)));
+
+    // Shift back
+    values = value.toString().split('e');
+    return +(values[0] + 'e' + (values[1] ? (+values[1] + exp) : exp));
+
+  }
+  */
+
+  public Round2(value: number, digits: number) {
+    const m = Math.pow(10, digits);
+    return Math.round(m * value) / m;
+  }
+
   public BaseFormat(value: any){
 
     if (this.sections[0].date_format) {
@@ -472,7 +496,7 @@ export class NumberFormat {
       if (section.percent) {
         abs_value *= 100;
       }
-      representation = abs_value.toFixed(section.decimal_max_digits);
+      representation = this.Round2(abs_value, section.decimal_max_digits).toFixed(section.decimal_max_digits);
     }
 
     if (zero_regexp) {
