@@ -73,6 +73,12 @@ export interface BaseOptions {
   /** support in-cell editor */
   in_cell_editor?: boolean;
 
+  /**
+   * toolbar
+   * FIXME: fix options
+   */
+  toolbar?: boolean | 'show' | 'compressed' | 'show-compressed';
+
 }
 
 /**
@@ -111,6 +117,7 @@ export interface CreateSheetOptions extends EmbeddedSpreadsheetOptions {
   mc?: boolean;
 
   /** formatting is optional, may change */
-  toolbar?: boolean | 'show';
+  /** moved to sheet options */
+  // toolbar?: boolean | 'show' | 'compressed' | 'show-compressed';
 
 }

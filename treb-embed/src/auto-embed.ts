@@ -191,7 +191,7 @@ class AutoEmbedManager {
       this.AddIcon(control_icons, 'treb-toolbar-icon', 'Formatting', () => {
         sheet.FormattingToolbar(container);
       });
-      if (options.toolbar === 'show') {
+      if (options.toolbar === 'show' || options.toolbar === 'show-compressed') {
         sheet.FormattingToolbar(container);
       }
     }

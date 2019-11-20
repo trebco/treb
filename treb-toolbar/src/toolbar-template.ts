@@ -1,6 +1,7 @@
 
 import { ToolbarItem } from './toolbar-item';
 import { Localization } from 'treb-base-types';
+import { ToolbarOptions } from './toolbar-options';
 
 export const sheet_structure_menu: ToolbarItem = {
   icon: 'icon-crop',
@@ -80,11 +81,37 @@ const expanded_align_menus: ToolbarItem[] = [
 
 ];
 
-export const toolbar_template: Array<ToolbarItem | ToolbarItem[]> = [
+export const CreateToolbarTemplate = (options: ToolbarOptions): ToolbarItem[] => {
+
+  const template: Array<ToolbarItem | ToolbarItem[]> = [];
+
+  if (options.file_menu) {
+    for (const item of more_menu) {
+      template.push(item);
+    }
+  }
+
+  const align_menus = options.compressed_align_menus ?
+    compressed_align_menus :
+    expanded_align_menus;
+
+  for (const item of align_menus) {
+    template.push(item);
+  }
+
+  for (const item of toolbar_template) {
+    template.push(item);
+  }
+
+  return JSON.parse(JSON.stringify(template));
+
+};
+
+export const toolbar_template: ToolbarItem[] = [
 
   // ...more_menu,
   // ...compressed_align_menus,
-  ...expanded_align_menus,
+  // ...expanded_align_menus,
 
   { icon: 'icon-wrap_text', id: 'wrap', title: 'Wrap Text' },
   { icon: 'icon-chat_bubble_outline', id: 'note', title: 'Add Note' },

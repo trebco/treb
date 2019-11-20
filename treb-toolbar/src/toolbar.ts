@@ -1,6 +1,6 @@
 
 import { Yield } from 'treb-utils';
-import { toolbar_template, sheet_structure_menu } from './toolbar-template';
+import { toolbar_template, sheet_structure_menu, CreateToolbarTemplate } from './toolbar-template';
 import { ToolbarItem } from './toolbar-item';
 import { NumberFormatCache, NumberFormat } from 'treb-format';
 import { Measurement } from 'treb-utils';
@@ -46,7 +46,8 @@ export class Toolbar {
 
   constructor(private container: HTMLElement, options: ToolbarOptions = {}) {
 
-    let template: ToolbarItem[] = JSON.parse(JSON.stringify(toolbar_template));
+    // let template: ToolbarItem[] = JSON.parse(JSON.stringify(toolbar_template));
+    let template = CreateToolbarTemplate(options);
 
     if (options.add_delete_sheet) {
       const structure_item = JSON.parse(JSON.stringify(sheet_structure_menu));

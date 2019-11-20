@@ -2042,6 +2042,9 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
       if (load) {
         const options: ToolbarOptions = {
           add_delete_sheet: !!this.options.add_tab,
+          compressed_align_menus: (
+            this.options.toolbar === 'compressed' ||
+            this.options.toolbar === 'show-compressed'),
         };
         this.toolbar = (self as any).TREB['treb-toolbar'].CreateInstance(this, this.grid, container, options);
       }
