@@ -247,6 +247,12 @@ class AutoEmbedManager {
       }
     });
 
+    /*
+    this.AddIcon(control_icons, 'treb-leaf-icon', 'ZERPO', () => {
+
+    });
+    */
+
     // show/hide sidebar
 
     const spacer = document.createElement('div');
