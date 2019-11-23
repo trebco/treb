@@ -185,15 +185,24 @@ export class FormattingToolbar {
   public Show(show = true) {
 
     this.visible_ = show;
-    this.outer.style.display = this.visible_ ? 'block' : 'none';
+    this.outer.style.display = this.visible_ ? '' : 'none';
 
     if (show) {
 
       const toolbar_rect = this.node.getBoundingClientRect();
       const container_rect = this.container.getBoundingClientRect();
 
-      if (toolbar_rect.width > container_rect.width) {
-        console.info('centering');
+      //
+      // don't want to use an actual width in here, sloppy
+      //
+      // actually we can probably assume there's overflow if the widths
+      // are ==, that most likely means it's clipping.
+      //
+      // the original problem was we were not centering properly when
+      // the box was too small -- IE11 was reporting the clipped size).
+      //
+
+      if (toolbar_rect.width >= container_rect.width) {
         this.outer.classList.add('centered');
       }
       else {

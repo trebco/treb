@@ -8,13 +8,13 @@ export const sheet_structure_menu: ToolbarItem = {
   id: 'structure',
   title: 'Rows/Columns/Sheets',
   submenu: [
-    'insert row',
-    'insert column',
-    'delete row',
-    'delete column',
+    'Insert Row',
+    'Insert Column',
+    'Delete Row',
+    'Delete Column',
     { type: 'separator' },
-    'insert sheet',
-    'delete sheet',
+    'Insert Sheet',
+    'Delete Sheet',
   ]
 };
 
@@ -25,7 +25,8 @@ export const sheet_structure_menu: ToolbarItem = {
 const more_menu: ToolbarItem[] = [
   {
     icon: 'icon-more_vert', id: 'more', title: 'More', submenu: [
-      // ...
+      'Save TREB (JSON) File',
+      'Save as XLSX',
     ],
   },
   { type: 'separator' },
@@ -180,6 +181,9 @@ export const toolbar_template: ToolbarItem[] = [
       // 'general', 'percent', 'accounting', 'currency', 'scientific',
     ],
   },
+
+  { type: 'separator' },
+
   {
     type: 'split', submenu: [
       { id: 'decrease-decimal', text: `0${Localization.decimal_separator}0`, title: 'Decrease Precision' },

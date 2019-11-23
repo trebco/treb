@@ -2045,6 +2045,7 @@ export class EmbeddedSpreadsheet extends EventSource<EmbeddedSheetEvent> {
           compressed_align_menus: (
             this.options.toolbar === 'compressed' ||
             this.options.toolbar === 'show-compressed'),
+          // file_menu: this.options.toolbar_file_menu,
         };
         this.toolbar = (self as any).TREB['treb-toolbar'].CreateInstance(this, this.grid, container, options);
       }

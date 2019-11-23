@@ -191,23 +191,178 @@ $font_stack: -apple-system,
 
 }
 
-// back to the original
+// rebuilding
 
 .treb-formatting-toolbar {
+  height: 32px;
+  margin-bottom: 12px;
+  position: relative;
+  // border: 1px dotted orange;
+
+  &.centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  & .treb-formatting-toolbar-inner {
+
+    font-family: $font_stack;
+    display: inline-flex;
+    flex-direction: row;
+    // border: 1px dotted green;
+
+    & button {
+      width: $button-size;
+      // min-width: $button-size;
+      height: $button-size;
+      // min-height: $button-size;
+      border-radius: 2px;
+
+      border: 1px solid $button-border;
+      background: none;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+      font-family: inherit;
+
+      &:hover {
+        background: #f6f2f8;
+      }
+
+      &.active {
+        background: #f6f2f8;
+      }
+
+      &.drop-down {
+        width: 9px;
+        max-width: 9px;
+        margin-left: 0;
+        overflow: hidden;
+        position: relative;
+
+        &::after {
+          left: 0px;
+          top: 11px;
+          position: relative;
+          content: '';
+          border: 3.5px solid transparent;
+          border-top-color: #777;
+        }
+
+      }
+
+    }
+
+    & button + button {
+      margin-left: 5px;
+    }
+
+    & .split-button {
+      // border: 1px solid purple;
+      display: inline-flex;
+      flex-direction: column;
+      height: $button-size;
+      max-height: $button-size;
+
+      & button {
+        position: relative;
+        margin-left: 0;
+        overflow: hidden;
+        height: $button-size / 2;
+        max-height: $button-size / 2;
+        font-size: 10.5px;
+        font-weight: 500;
+        line-height: 0;
+        // display: flex;
+        // align-items: center;
+
+        & span {
+          display: inline-block;
+          cursor: default;
+        }
+
+      }
+
+    }
+
+    & .input {
+
+      button {
+        font-size: 24px;
+        line-height: 0;
+        color: $button-foreground;
+        overflow: hidden;
+      }
+
+      // border: 1px dotted red;
+      display: inline-flex;
+      position: static;
+
+      & input {
+        // width: 8em;
+        // min-width: 8em;
+        width: 118px;
+        min-width: 118px;
+
+        border: 1px solid $button-border;
+        font-size: 14px;
+        color: darken($button-foreground, 20%);
+        border-radius: 3px;
+        background: #f9f9fc;
+        outline: none;
+        padding: 0 4px;
+        font-family: inherit;
+        -webkit-appearance: none;
+
+        &::-ms-clear {
+          display: none;
+        }
+      }
+
+    }
+
+    & .separator {
+      display: inline-block;
+      width: 12px;
+      min-width: 12px;
+      height: $button-size;
+      min-height: $button-size;
+    }
+  }
+}
+
+
+/*
+.X-treb-formatting-toolbar {
 
   height: 30px;
   margin-bottom: 12px; // used to be margin in the embedded sheet
+  // position: static;
+  position: relative;
+  width: auto;
+
+  // this works (except for IE11)
 
   &.centered {
-    text-align: center;
+
+    display: flex;
+    border: 1px solid green;
+
+    flex-direction: row;
+    justify-content: center;
+
     & .treb-formatting-toolbar-inner {
-      transform: translateX(-50%);
+      border: 1px solid red;
     }
   }
 
   .treb-formatting-toolbar-inner {
 
     position: absolute;
+    // position: relative;
+    // position: static;
+
     padding: 0 10px;
     display: inline-flex;
     flex-direction: row;
@@ -327,7 +482,8 @@ $font_stack: -apple-system,
 
       > button {
         width: auto;
-        min-width: auto;
+        min-width: 30px;
+        // min-width: auto;
         max-width: auto;
         padding-left: 6px;
         padding-right: 5px;
@@ -357,6 +513,7 @@ $font_stack: -apple-system,
         margin-bottom: 0;
         border-style: single;
         width: 8em;
+        min-width: 8em;
         font-family: inherit;
         -webkit-appearance: none;
 
@@ -369,6 +526,7 @@ $font_stack: -apple-system,
 
     .separator {
       width: 8px;
+      min-width: 8px;
       height: $button-size;
       position: relative;
       display: inline-block;
@@ -387,3 +545,5 @@ $font_stack: -apple-system,
 
 }
 }
+
+*/

@@ -720,6 +720,31 @@ export class Toolbar {
 
   private AddInput(template: ToolbarItem, container: HTMLElement) {
 
+    /*
+    const input = document.createElement('input');
+    input.setAttribute('type', 'text');
+
+    if (template.text) {
+      const header = document.createElement('button');
+      header.classList.add('input-header');
+
+      const span = document.createElement('span');
+      span.textContent = template.text;
+
+      // header.innerText = template.text;
+      header.appendChild(span);
+
+      if (template.title) {
+        header.setAttribute('title', template.title);
+      }
+
+      container.appendChild(header);
+
+    }
+
+    container.appendChild(input);
+    */
+
     const group = document.createElement('div');
     group.classList.add('input');
 
