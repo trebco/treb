@@ -1,6 +1,6 @@
 
 import { Yield } from 'treb-utils';
-import { toolbar_template, sheet_structure_menu, CreateToolbarTemplate } from './toolbar-template';
+import { toolbar_template, CreateToolbarTemplate } from './toolbar-template';
 import { ToolbarItem } from './toolbar-item';
 import { NumberFormatCache, NumberFormat } from 'treb-format';
 import { Measurement } from 'treb-utils';
@@ -46,19 +46,7 @@ export class Toolbar {
 
   constructor(private container: HTMLElement, options: ToolbarOptions = {}) {
 
-    // let template: ToolbarItem[] = JSON.parse(JSON.stringify(toolbar_template));
-    let template = CreateToolbarTemplate(options);
-
-    if (options.add_delete_sheet) {
-      const structure_item = JSON.parse(JSON.stringify(sheet_structure_menu));
-      template = template.map((item) => {
-        if (item.id === 'structure') {
-          return structure_item;
-        }
-        return item;
-      });
-    }
-
+    const template = CreateToolbarTemplate(options);
     for (const item of template) this.PopulateItems(item, container);
 
     this.popup = document.createElement('div');
@@ -453,7 +441,8 @@ export class Toolbar {
         }
       }
       else {
-        this.popup_item.value = node.textContent || '';
+        const command = node.getAttribute('data-command');
+        this.popup_item.value = command || node.textContent || '';
       }
 
       this.Publish(this.popup_item.id, this.popup_item);
@@ -612,6 +601,9 @@ export class Toolbar {
           else {
             const link = document.createElement('a');
             link.textContent = subitem.text || '';
+            if (subitem.id) {
+              link.setAttribute('data-command', subitem.id);
+            }
             list.appendChild(link);
           }
         }

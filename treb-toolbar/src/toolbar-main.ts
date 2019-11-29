@@ -414,27 +414,27 @@ export class FormattingToolbar {
 
       case 'structure':
         switch (template.value?.toLowerCase()) {
-          case 'insert sheet':
+          case 'insert-sheet':
             this.grid.InsertSheet();
             break;
 
-          case 'delete sheet':
+          case 'delete-sheet':
             this.grid.DeleteSheet();
             break;
 
-          case 'insert row':
+          case 'insert-row':
             this.grid.InsertRow();
             break;
 
-          case 'insert column':
+          case 'insert-column':
             this.grid.InsertColumn();
             break;
 
-          case 'delete row':
+          case 'delete-row':
             this.grid.DeleteRows();
             break;
 
-          case 'delete column':
+          case 'delete-column':
             this.grid.DeleteColumns();
             break;
 

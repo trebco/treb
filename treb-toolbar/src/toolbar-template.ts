@@ -3,19 +3,22 @@ import { ToolbarItem } from './toolbar-item';
 import { Localization } from 'treb-base-types';
 import { ToolbarOptions } from './toolbar-options';
 
-export const sheet_structure_menu: ToolbarItem = {
+const sheet_structure_menu: ToolbarItem[] = [
+  { type: 'separator' },
+  { text: 'Insert Sheet', id: 'insert-sheet' },
+  { text: 'Delete Sheet', id: 'delete-sheet' },
+];
+
+const base_structure_menu: ToolbarItem =   {
   icon: 'icon-crop',
   id: 'structure',
-  title: 'Rows/Columns/Sheets',
+  title: 'Grid Rows/Columns',
   submenu: [
-    'Insert Row',
-    'Insert Column',
-    'Delete Row',
-    'Delete Column',
-    { type: 'separator' },
-    'Insert Sheet',
-    'Delete Sheet',
-  ]
+    { text: 'Insert Row', id: 'insert-row' },
+    { text: 'Insert Column', id: 'insert-column' },
+    { text: 'Delete Row', id: 'delete-row' },
+    { text: 'Delete Column', id: 'delete-column' },
+  ],
 };
 
 /**
@@ -101,7 +104,17 @@ export const CreateToolbarTemplate = (options: ToolbarOptions): ToolbarItem[] =>
   }
 
   for (const item of toolbar_template) {
-    template.push(item);
+    if (item.id === 'structure' && options.add_delete_sheet) {
+      const new_item = JSON.parse(JSON.stringify(item));
+      new_item.title = 'Rows/Columns/Sheets';
+      for (const subitem of sheet_structure_menu) {
+        new_item.submenu?.push(subitem);
+      }
+      template.push(new_item);
+    }
+    else {
+      template.push(item);
+    }
   }
 
   return JSON.parse(JSON.stringify(template));
@@ -160,11 +173,8 @@ export const toolbar_template: ToolbarItem[] = [
 
   { icon: 'icon-fullscreen_exit', id: 'merge', title: 'Merge Cells' },
   { icon: 'icon-fullscreen', id: 'unmerge', title: 'Unmerge Cells' },
-  {
-    icon: 'icon-crop', id: 'structure', title: 'Grid Rows/Columns', submenu: [
-      'insert row', 'insert column', 'delete row', 'delete column',
-    ],
-  },
+
+  base_structure_menu, // may be updated
 
   { icon: 'icon-ac_unit', id: 'freeze2', title: 'Freeze Panes' },
 
