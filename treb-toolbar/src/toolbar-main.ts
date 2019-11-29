@@ -413,7 +413,7 @@ export class FormattingToolbar {
     switch (template_id) {
 
       case 'structure':
-        switch (template.value) {
+        switch (template.value?.toLowerCase()) {
           case 'insert sheet':
             this.grid.InsertSheet();
             break;
