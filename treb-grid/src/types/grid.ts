@@ -3220,7 +3220,7 @@ export class Grid {
 
         // seems to be the best bet for xplatform
 
-        switch (event.key) {
+        switch (event.key.toLowerCase()) {
 
           /*
           case 'c':
