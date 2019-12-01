@@ -180,7 +180,8 @@ class AutoEmbedManager {
     composite.appendChild(control_icons);
 
     if (options.mc) {
-      this.AddIcon(control_icons, 'treb-simulation-icon', 'Run Simulation', () => sheet.RunSimulation(5000));
+      // FIXME: has to do with MC split
+      this.AddIcon(control_icons, 'treb-simulation-icon', 'Run Simulation', () => (sheet as any).RunSimulation(5000));
     }
 
     this.AddIcon(control_icons, 'treb-reset-icon', 'Recalculate', () => {

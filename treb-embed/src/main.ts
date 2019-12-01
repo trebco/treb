@@ -1,9 +1,10 @@
 
-import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
+// import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { AutoEmbed } from './auto-embed';
 import { CreateSheetOptions } from './options';
 
 import * as build from '@root/package.json';
+import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 
 // create (or attach to) global TREB namespace
 
@@ -16,7 +17,7 @@ import * as build from '@root/package.json';
 
 // find path for worker loaders
 
-EmbeddedSpreadsheet.SniffPath();
+EmbeddedSpreadsheetBase.SniffPath();
 
 // FIXME: what if it's already loaded? (...)
 

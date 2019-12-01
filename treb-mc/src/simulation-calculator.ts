@@ -262,7 +262,12 @@ export class MCCalculator extends Calculator {
 
   }
 
-  /**
+  /*
+   * no longer overloading. call flush explicitly. there are two reasons for
+   * this: one, so we can stop overloading with a different signature; and two,
+   * because there's a local cache in caller that needs to be handled, so
+   * better to be explicit.
+   *
    * OVERLOAD
    * resets graph and graph status
    *
@@ -270,7 +275,7 @@ export class MCCalculator extends Calculator {
    * class method: shouldn't ts complain about that? not sure what the
    * correct thing is. even if it works, we should perhaps not do it.
    *
-   */
+   * /
   public Reset(flush_results = true){
 
     super.Reset();
@@ -280,6 +285,6 @@ export class MCCalculator extends Calculator {
     }
 
   }
-
+  */
 
 }
