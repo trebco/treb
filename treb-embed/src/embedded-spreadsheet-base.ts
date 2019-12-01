@@ -6,7 +6,7 @@ import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
-import { EventSource, Resizable, Yield, Measurement } from 'treb-utils';
+import { EventSource, Resizable, Yield } from 'treb-utils';
 
 // local
 import { MaskDialog } from './mask-dialog';
@@ -108,6 +108,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /** state of toolbar load. this is dynamic, but we are not using webpack chunks. */
   private static formatting_toolbar_state: ToolbarLoadState = ToolbarLoadState.NotLoaded;
 
+  /**
+   * this is not assigned here (it's assigned in a method) so we can
+   * overload it. this is not a good pattern, though. is there a better
+   * alternative?
+   */
   protected calculator!: Calculator;
 
   protected grid: Grid;
