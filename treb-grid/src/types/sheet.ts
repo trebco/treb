@@ -1388,8 +1388,13 @@ export class Sheet {
   /**
    * returns the area bounding actual content
    * (i.e. flattening "entire row/column/sheet")
+   *
+   * FIXME: this does not clamp to actual cells... why not?
+   * FIXME: so now we are (optionally) clamping end; should clamp start, too
+   *
+   * @param clamp -- new parameter will optionally clamp to actual sheet size
    */
-  public RealArea(area: Area) {
+  public RealArea(area: Area, clamp = false) {
 
     const start = area.start; // this is a copy
     const end = area.end;     // ditto
@@ -1406,6 +1411,17 @@ export class Sheet {
       start.absolute_row = false;
       end.row = this.cells.rows - 1;
       end.absolute_row = false;
+    }
+
+    if (clamp) {
+      if (end.row >= this.rows) {
+        end.row = this.rows - 1;
+        end.absolute_row = false;
+      }
+      if (end.column >= this.columns) {
+        end.column = this.columns - 1;
+        end.absolute_column = false;
+      }
     }
 
     return new Area(start, end);

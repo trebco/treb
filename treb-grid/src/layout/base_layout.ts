@@ -1416,8 +1416,9 @@ export abstract class BaseLayout {
     // limit. create a working object
 
     const clone = {row: address.row, column: address.column};
-    if (clone.row === Infinity) clone.row = 0;
-    if (clone.column === Infinity) clone.column = 0;
+
+    if (clone.row === Infinity || clone.row < 0) clone.row = 0;
+    if (clone.column === Infinity || clone.column < 0) clone.column = 0;
 
     let rect = this.rectangle_cache.Get(clone.column, clone.row);
     if (rect) { return rect; }

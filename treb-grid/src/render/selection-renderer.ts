@@ -1,6 +1,5 @@
 
-import { Rectangle } from 'treb-base-types';
-
+import { Rectangle, ICellAddress } from 'treb-base-types';
 import { BaseLayout } from '../layout/base_layout';
 import { ExtendedTheme } from '../types/theme';
 import { SVGSelectionBlock, SelectionOffset } from './svg_selection_block';
@@ -269,12 +268,23 @@ export class SelectionRenderer {
     return selection_block;
   }
 
+  private ClampEnd(address: ICellAddress) {
+
+    // NOTE: column/row can be infinity, but min handles that properly
+
+    return {
+      row: Math.min(address.row, this.model.active_sheet.rows - 1),
+      column: Math.min(address.column, this.model.active_sheet.columns - 1),
+    };
+
+  }
+
   /**
    * testing an SVG selection. index replaces primary; primary is always index 0.
    */
   private RenderSVGSelection(selection: GridSelection, block: SVGSelectionBlock, index = 0) {
 
-    const area = this.model.active_sheet.RealArea(selection.area);
+    const area = this.model.active_sheet.RealArea(selection.area, true);
 
     let rect = this.layout.CellAddressToRectangle(area.start);
     if (area.count > 1) {
