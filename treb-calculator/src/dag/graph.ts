@@ -50,8 +50,6 @@ export abstract class Graph {
    */
   public AttachData(model: DataModel){
     this.model = model;
-    // this.cells = model.active_sheet.cells;
-
     this.cells_map = {};
     for (const sheet of model.sheets) {
       this.cells_map[sheet.id] = sheet.cells;
