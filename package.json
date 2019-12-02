@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "6.3.0",
+  "version": "6.4.0",
   "main": "dist/index.js",
   "devDependencies": {
     "@types/elementtree": "^0.1.0",
@@ -38,7 +38,6 @@
   },
   "build-entry-points": {
     "main": "embedded-treb-bundle",
-    "toolbar": "embedded-treb-toolbar",
     "calculation-worker": "embedded-treb-worker",
     "export-worker": "embedded-treb-export-worker",
     "charts": "embedded-treb-charts"

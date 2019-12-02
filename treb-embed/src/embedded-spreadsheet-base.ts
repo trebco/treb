@@ -14,8 +14,10 @@ import { EmbeddedSpreadsheetOptions, DefaultOptions } from './options';
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 
 // TYPE ONLY
-type FormattingToolbar = import('treb-toolbar/src/toolbar-main').FormattingToolbar;
-import { ToolbarOptions } from 'treb-toolbar/src/toolbar-options';
+// type FormattingToolbar = import('treb-toolbar/src/toolbar-main').FormattingToolbar;
+// import { ToolbarOptions } from 'treb-toolbar/src/toolbar-options';
+
+import { ToolbarOptions, FormattingToolbar } from 'treb-toolbar';
 
 // TYPE ONLY
 type Chart = import('../../treb-charts/src/index').Chart;
@@ -32,12 +34,14 @@ import '../style/embed.scss';
 // config
 import * as build from '@root/package.json';
 
+/*
 enum ToolbarLoadState {
   NotLoaded = 0,
   Loading   = 1,
   Loaded    = 2,
   Error     = 3,
 }
+*/
 
 /**
  * embedded spreadsheet, suitable for one-line embedding in a web page
@@ -106,7 +110,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** state of toolbar load. this is dynamic, but we are not using webpack chunks. */
-  private static formatting_toolbar_state: ToolbarLoadState = ToolbarLoadState.NotLoaded;
+  // private static formatting_toolbar_state: ToolbarLoadState = ToolbarLoadState.NotLoaded;
 
   /**
    * this is not assigned here (it's assigned in a method) so we can
@@ -1512,6 +1516,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public async FormattingToolbar(container: HTMLElement) {
 
     if (!this.toolbar) {
+      const options: ToolbarOptions = {
+        add_delete_sheet: !!this.options.add_tab,
+        compressed_align_menus: (
+          this.options.toolbar === 'compressed' ||
+          this.options.toolbar === 'show-compressed'),
+        // file_menu: this.options.toolbar_file_menu,
+      };
+      this.toolbar = FormattingToolbar.CreateInstance(this, this.grid, container, options);
+    }
+
+    /*
+    if (!this.toolbar) {
       const load = await this.LoadToolbar();
       if (load) {
         const options: ToolbarOptions = {
@@ -1524,6 +1540,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         this.toolbar = (self as any).TREB['treb-toolbar'].CreateInstance(this, this.grid, container, options);
       }
     }
+    */
 
     if (this.toolbar) {
       this.toolbar.Toggle();
@@ -1697,7 +1714,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  /** async load a chunk module */
+  /* * async load a chunk module * /
   private async LoadToolbar() {
 
     switch (EmbeddedSpreadsheetBase.formatting_toolbar_state) {
@@ -1764,6 +1781,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     return result;
 
   }
+  */
 
   /**
    * handle key down to intercept ctrl+z (undo)

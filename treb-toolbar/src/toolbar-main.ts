@@ -575,9 +575,11 @@ export class FormattingToolbar {
 
 }
 
+/*
 // load. FIXME: these names need to be centralized somewhere
 
 if (!(self as any).TREB) {
   (self as any).TREB = {} as any;
 }
 (self as any).TREB['treb-toolbar'] = FormattingToolbar;
+*/
