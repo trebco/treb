@@ -112,6 +112,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * this is not assigned here (it's assigned in a method) so we can
    * overload it. this is not a good pattern, though. is there a better
    * alternative?
+   *
+   * the answer is probably to pass an instance to the constructor, have
+   * the caller determine which type to use (as long as there's a common
+   * base class).
    */
   protected calculator!: Calculator;
 
@@ -822,6 +826,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   /**
    * some local cleanup, gets called in various import/load/reset functions
+   * this is shrinking to the point of being unecessary... although we are
+   * possibly overloading it.
    */
   public ResetInternal() {
     // this.additional_cells = [];
