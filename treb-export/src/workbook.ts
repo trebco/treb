@@ -37,6 +37,10 @@ export class Workbook {
     return this.sheets[sheet];
   }
 
+  public Count() {
+    return this.sheets.length;
+  }
+
   public RenameSheet(index: number, name: string) {
     if (!this.dom) throw new Error('missing dom');
 

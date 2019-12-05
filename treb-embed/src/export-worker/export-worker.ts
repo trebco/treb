@@ -24,8 +24,16 @@ const ImportSheet = async (data: any) => {
 
   try {
     await importer.Init(data.data);
-    const result = await importer.GetSheet(0);
-    ctx.postMessage({ status: 'complete', result });
+
+    const count = importer.SheetCount();
+    const results = [];
+
+    for (let i = 0; i < count; i++) {
+      const result = await importer.GetSheet(i);
+      results.push(result);
+    }
+    ctx.postMessage({ status: 'complete', results });
+
   }
   catch (err) {
     console.warn('error importing xlsx file');

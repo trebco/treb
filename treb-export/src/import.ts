@@ -212,11 +212,17 @@ export class Importer {
 
   }
 
+  public SheetCount() {
+    return this.workbook.Count();
+  }
+
   public GetSheet(index = 0) {
 
     const sheet = this.workbook.GetSheet(index);
     sheet.Parse();
     if (!sheet.dom) throw new Error('missing DOM');
+
+    console.info(sheet.options.name);
 
     // we want a sparse array
 
@@ -305,6 +311,7 @@ export class Importer {
     */
 
     return {
+      name: sheet.options.name,
       cells: data,
       default_column_width,
       column_widths,
