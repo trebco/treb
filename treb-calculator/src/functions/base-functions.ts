@@ -183,6 +183,10 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    Power: {
+      fn: (base: number, exponent: number) => Math.pow(base, exponent),
+    },
+
     Mod: {
       fn: (num: number, divisor: number) => {
         return num % divisor;
