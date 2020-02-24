@@ -235,6 +235,17 @@ export class SimulationModel {
         category: ['RiskAMP Random Distributions'],
       },
 
+      LognormalValue: {
+        description: 'Returns a sample from the log-normal distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'mean', description: 'Mean of underlying Normal distribution', default: 0 },
+          { name: 'stdev', description: 'Standard Deviation of underlying Normal distribution', default: 1 },
+        ],
+        fn: this.lognormalvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
       SequentialValue: {
         description: 'Returns one from a set of values, in order',
         simulation_volatile: true,
@@ -782,6 +793,19 @@ export class SimulationModel {
       return this.iteration + 1;
     }
     return 1;
+  }
+
+  public lognormalvalue(mean = 0, sd = 1) {
+    if (this.state === SimulationState.Prep) {
+      this.InitDistribution();
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+        MC.LogNormal(this.iterations, { mean, sd, lhs: this.lhs });
+    }
+    else if (this.state === SimulationState.Simulation) {
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
+    }
+    return MC.LogNormal(1, { mean, sd })[0];
   }
 
   public normalvalue(mean = 0, sd = 1) {
