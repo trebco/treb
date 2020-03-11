@@ -1136,9 +1136,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // necessary, at least from that point. if we could drop it that would
     // resolve this problem in the cleanest way.
 
+    // UPDATE: recalculate if there are volatile cells in the model.
+    // FIXME: optional? parameter? (...)
+
     if (data.rendered_values && !recalculate) {
       this.grid.Update();
-      this.calculator.RebuildClean(this.grid.model);
+      this.calculator.RebuildClean(this.grid.model, true);
     }
     else {
       this.Recalculate();

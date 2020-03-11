@@ -529,8 +529,11 @@ export class Calculator extends Graph {
    *
    * we also need to manage the list of volatile cells, which is normally
    * built as a side-effect of calculation.
+   * 
+   * UPDATE: optionally recalculate if there are volatile cells. that's used
+   * for loading documents.
    */
-  public RebuildClean(model: DataModel) {
+  public RebuildClean(model: DataModel, recalculate_if_volatile = false) {
 
     const json_options: CellSerializationOptions = {
       preserve_type: true,
@@ -557,6 +560,11 @@ export class Calculator extends Graph {
     }
     else {
       this.InitializeGraph();
+
+      if (recalculate_if_volatile && this.volatile_list.length) {
+        this.Recalculate();
+      }
+
     }
 
   }
