@@ -153,12 +153,12 @@ const CreateConfig = (config, entry) => {
     plugins: [
       new LicenseCheckerWebpackPlugin({ outputFilename: "3d_party.txt" }),
       new webpack.BannerPlugin({
-        banner: `v${package.version}. Copyright 2018-2019 Structured Data, LLC. All rights reserved. CC-ND: https://treb.app/license`,
+        banner: `v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC-ND: https://treb.app/license`,
       }),
       {
         apply: (compiler) => {
           compiler.hooks.beforeCompile.tap('BeforeCompilePlugin', () => {
-            console.info('starting ' + config + ' build...', new Date().toString());
+            console.info('starting ' + config + ' build (' + package.version + ')...', new Date().toString());
           });
           /*
           compiler.hooks.afterEmit.tap('AfterEmitPlugin', (compilation) => {
