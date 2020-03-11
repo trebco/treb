@@ -285,7 +285,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: Math.log,
     },
 
-    Random: {
+    Rand: {
       volatile: true,
       fn: Math.random,
     },
