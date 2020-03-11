@@ -317,6 +317,9 @@ export class Cells {
 
     const data: any = [];
 
+    let last_row = -1;
+    let last_col = -1;
+
     // unifying [FIXME: move into class]
 
     // FIXME: why not use the original, instead of requiring a method
@@ -396,6 +399,9 @@ export class Cells {
             row_keys[row] = row;
             column_keys[column] = column;
 
+            last_row = Math.max(row, last_row);
+            last_col = Math.max(column, last_col);
+
             data.push(obj);
           }
 
@@ -426,7 +432,7 @@ export class Cells {
           const row = Number(key);
           new_data.push({ row, cells: cells[row] });
         }
-        return { data: new_data };
+        return { data: new_data, rows: last_row, columns: last_col + 1 };
 
       }
       else if (col_key_map.length) {
@@ -442,13 +448,13 @@ export class Cells {
           const column = Number(key);
           new_data.push({ column, cells: cells[column] });
         }
-        return { data: new_data };
+        return { data: new_data, rows: last_row, columns: last_col + 1 };
 
       }
 
     }
 
-    return { data };
+    return { data, rows: last_row + 1, columns: last_col + 1 };
 
   }
 

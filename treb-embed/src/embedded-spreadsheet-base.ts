@@ -1331,10 +1331,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * optionally preserve rendered values
    * UPDATE: default rendered values -> true
    */
-  public SerializeDocument(preserve_simulation_data = true, rendered_values = true,
+  public SerializeDocument(
+      preserve_simulation_data = true, 
+      rendered_values = true,
       additional_options: SerializeOptions = {}) {
 
     const serialize_options: SerializeOptions = {
+      shrink: true,
       ...additional_options,
       rendered_values,
     };

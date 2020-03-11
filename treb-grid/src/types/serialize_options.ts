@@ -24,4 +24,7 @@ export interface SerializeOptions {
   /** export cells that have no value, but have a border or background color */
   decorated_cells?: boolean;
 
+  /** prune unused rows/columns */
+  shrink?: boolean;
+
 }

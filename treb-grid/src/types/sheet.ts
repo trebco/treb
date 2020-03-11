@@ -1568,7 +1568,15 @@ export class Sheet {
       cell_style_refs: cell_reference_map,
     };
 
-    const data = this.cells.toJSON(serialization_options).data;
+    // the rows/columns we export can be shrunk to the actual used area,
+    // subject to serialization option.
+
+    let {data, rows, columns} = this.cells.toJSON(serialization_options);
+
+    if (!options.shrink) {
+      rows = this.rows;
+      columns = this.columns;
+    }
 
     // (3) (style) for anything that hasn't been consumed, create a
     //     cell style map. FIXME: optional [?]
@@ -1601,8 +1609,8 @@ export class Sheet {
 
       data,
       sheet_style,
-      rows: this.rows,
-      columns: this.columns,
+      rows,
+      columns,
       cell_styles,
       cell_style_refs,
       row_style,
