@@ -1,6 +1,8 @@
 
 import { RangeScale } from './util';
 
+export type NumberOrUndefinedArray = Array<number|undefined>;
+
 export interface AxisOptions {
 
   /** show labels */
@@ -80,7 +82,8 @@ export interface HistogramData extends ColumnDataBaseType {
 }
 
 export interface LineBaseData extends ChartDataBaseType {
-  data: Array<number|undefined>;
+  data: NumberOrUndefinedArray;
+  series?: NumberOrUndefinedArray[];
   scale: RangeScale;
   titles?: string[];
   x_labels?: string[];

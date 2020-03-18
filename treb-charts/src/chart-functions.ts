@@ -10,9 +10,21 @@ const Identity = (...args: any[]) => args;
  */
 export const ChartFunctions: FunctionMap = {
 
+  /* new: helper */
+  'Series': {
+    arguments: [
+      { name: 'Array...' },
+    ],
+    fn: (...args: any[]) => {
+      (args as any)._type = 'series';
+      return args;
+    },
+  },
+
   'Line.Chart': {
     arguments: [
-      { name: 'Values' },
+      { name: 'y' },
+      { name: 'x' },
       { name: 'Title' },
     ],
     fn: Identity,
@@ -20,7 +32,8 @@ export const ChartFunctions: FunctionMap = {
 
   'Area.Chart': {
     arguments: [
-      { name: 'Values' },
+      { name: 'y' },
+      { name: 'x' },
       { name: 'Title' },
     ],
     fn: Identity,

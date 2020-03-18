@@ -3,7 +3,7 @@ import { NumberFormat, NumberFormatCache } from 'treb-format';
 import { ChartRenderer, Metrics } from './renderer';
 import { Area } from './rectangle';
 import { Util, RangeScale } from './util';
-import { CellData, ChartData, DonutSlice } from './chart-types';
+import { CellData, ChartData, DonutSlice, NumberOrUndefinedArray } from './chart-types';
 
 import { ChartFunctions } from './chart-functions';
 
@@ -72,7 +72,24 @@ export class Chart {
   public CreateLineChart(args: any[], type: 'line'|'area' = 'line') {
 
     const title = args[2] || '';
-    const data = Util.Flatten(args[0]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
+
+    const raw_data = args[0];
+
+    // we still need the aggregate for range, scale
+    const data = Util.Flatten(raw_data).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
+
+    // but now we're potentially splitting into series
+    let series: NumberOrUndefinedArray[];
+
+    if (Array.isArray(raw_data) && (raw_data as any)._type === 'series') {
+      series = raw_data.map(entry => {
+        return Util.Flatten(entry).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
+      });
+    }
+    else {
+      series = [data];
+    }
+
     const range = Util.Range(data);
 
     // FIXME: optionally force 0 min
@@ -112,6 +129,7 @@ export class Chart {
     this.chart_data = {
       type,
       data,
+      series,
       scale,
       title,
       y_labels,
@@ -510,21 +528,42 @@ export class Chart {
     case 'line':
     case 'area':
       {
+        const scale = this.chart_data.scale;
+
+        /*
         // gridlines
         this.renderer.RenderGrid(area, this.chart_data.scale.count, this.chart_data.data.length, 'chart-grid');
-        const scale = this.chart_data.scale;
         const y = this.chart_data.data.map((point) => {
           if (typeof point === 'undefined') { return undefined; }
           return Util.ApplyScale(point, area.height, scale);
         });
 
         this.renderer.RenderLine(area, y, (this.chart_data.type === 'area'), this.chart_data.titles, 'chart-line');
-
-        /*
-        if (this.chart_data.callouts) {
-          console.info('render callouts', this.chart_data.callouts)
-        }
         */
+
+        if (this.chart_data.series) {
+          
+          // gridlines
+          this.renderer.RenderGrid(area, this.chart_data.scale.count, this.chart_data.series[0].length, 'chart-grid');
+
+          // series
+          let series_index = 0;
+          for (const series of this.chart_data.series) {
+            const y = series.map((point) => {
+              if (typeof point === 'undefined') { return undefined; }
+              return Util.ApplyScale(point, area.height, scale);
+            });
+
+            const styles = [
+              this.chart_data.type === 'area' ? 'chart-area' : 'chart-line',
+              `series-${series_index + 1}`]
+
+            this.renderer.RenderLine(area, y, (this.chart_data.type === 'area'), this.chart_data.titles, styles);
+            series_index++;
+          }
+        }
+
+        // TODO: callouts
 
       }
       break;

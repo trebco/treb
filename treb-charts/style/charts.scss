@@ -48,18 +48,50 @@ $font-stack:  "-apple-system",
     stroke: #ddd;
   }
 
-  .chart-line {
+  .chart-line, .chart-area {
 
     .line {
+
       fill: none;
       stroke-width: 2px;
-      stroke: #39f;
+      // stroke: #39f;
       stroke-linecap: round;
       stroke-linejoin: round;
+
     }
 
+    &.series-1  { stroke: $color1; }
+    &.series-2  { stroke: $color3; }
+    &.series-3  { stroke: $color4; }
+    &.series-4  { stroke: $color5; }
+    &.series-5  { stroke: $color6; }
+    &.series-6  { stroke: $color7; }
+    &.series-7  { stroke: $color8; }
+    &.series-8  { stroke: $color9; }
+    &.series-9  { stroke: $color10; }
+    &.series-10  { stroke: $color11; }
+    &.series-11  { stroke: $color12; }
+    &.series-12  { stroke: $color2; }
+
+  }
+
+  .chart-area {
+
+    &.series-1  { fill: transparentize($color1, .75); }
+    &.series-2  { fill: transparentize($color3, .75); }
+    &.series-3  { fill: transparentize($color4, .75); }
+    &.series-4  { fill: transparentize($color5, .75); }
+    &.series-5  { fill: transparentize($color6, .75); }
+    &.series-6  { fill: transparentize($color7, .75); }
+    &.series-7  { fill: transparentize($color8, .75); }
+    &.series-8  { fill: transparentize($color9, .75); }
+    &.series-9  { fill: transparentize($color10, .75); }
+    &.series-10  { fill: transparentize($color11, .75); }
+    &.series-11  { fill: transparentize($color12, .75); }
+    &.series-12  { fill: transparentize($color2, .75); }
+
     .fill {
-      fill: rgba(51, 153, 255, .25);
+      // fill: rgba(51, 153, 255, .25);
       stroke-linecap: round;
       stroke-linejoin: round;
     }
