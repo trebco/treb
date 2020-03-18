@@ -23,7 +23,7 @@ export class ChartRenderer {
   public size: Size = { width: 0, height: 0 };
   public bounds: Area = new Area();
 
-  public smoothing_factor = 0.15;
+  public smoothing_factor = 0.2;
 
   public Initialize(node: HTMLElement) {
     this.parent = node;
@@ -228,9 +228,7 @@ export class ChartRenderer {
     next = next || current;
 
     const o = this.LineProperties(previous, next);
-
-    const factor = Math.pow(1 - Math.abs(o.angle)/Math.PI, 2) * .2;
-    // const factor = this.smoothing_factor;
+    const factor = Math.pow(1 - Math.abs(o.angle)/Math.PI, 2) * this.smoothing_factor;
 
     const angle = o.angle + (reverse ? Math.PI : 0);
     const length = o.length * factor;
