@@ -23,6 +23,8 @@ export class ChartRenderer {
   public size: Size = { width: 0, height: 0 };
   public bounds: Area = new Area();
 
+  public smoothing_factor = 0.15;
+
   public Initialize(node: HTMLElement) {
     this.parent = node;
     this.svg_node = document.createElementNS(SVGNS, 'svg');
@@ -218,6 +220,195 @@ export class ChartRenderer {
       this.RenderText(label.label, 'right', { x: left, y }, classes);
     }
 
+  }
+
+  public ControlPoint(current: Point, previous?: Point, next?: Point, reverse = false): Point {
+
+    previous = previous || current;
+    next = next || current;
+
+    const o = this.LineProperties(previous, next);
+
+    const factor = Math.pow(1 - Math.abs(o.angle)/Math.PI, 2) * .2;
+    // const factor = this.smoothing_factor;
+
+    const angle = o.angle + (reverse ? Math.PI : 0);
+    const length = o.length * factor;
+    
+    const x = current.x + Math.cos(angle) * length;
+    const y = current.y + Math.sin(angle) * length;
+  
+    return {x, y};
+
+  }
+
+  public LineProperties(a: Point, b: Point) {
+
+    const x = b.x - a.x;
+    const y = b.y - a.y;
+
+    return {
+      length: Math.sqrt((x * x) + (y * y)),
+      angle: Math.atan2(y, x),
+    };
+
+  }
+
+  public RenderSmoothLine(      
+    area: Area,
+    data: Array<number|undefined>,
+    fill = false,
+    titles?: string[],
+    classes?: string|string[]) {
+
+
+    // const node = document.createElementNS(SVGNS, 'path');
+    const group = document.createElementNS(SVGNS, 'g');
+
+    const d1: string[] = [];
+    const d2: string[] = [];
+
+    const count = data.length;
+    const steps = count - 1;
+    const step = (area.width / count) / 2;
+
+    const circles: Array< {x: number, y: number, i: number}> = [];
+
+    let move = true;
+    let last_x: number|undefined;
+
+    let last_point: Point|undefined;
+
+    let points: Array<Point|undefined> = data.map((value, i) => {
+      if (typeof value === 'undefined') { 
+        return undefined;
+      }
+      return {
+        x: Math.round(area.left + area.width / steps * i),
+        y: area.bottom - value,
+      };
+    });
+
+    for (let i = 0; i < points.length; i++) {
+
+      const point = points[i];
+
+      if (point) {
+        if (move) {
+          d1.push(`M ${[point.x]},${point.y}`);
+          if (fill) {
+            d2.push(`M ${point.x} ${area.bottom} L ${[point.x]},${point.y}`);
+          }
+        }
+        else {
+          const cp_start = this.ControlPoint(points[i-1] as Point, points[i-2], point);
+          const cp_end = this.ControlPoint(point, points[i-1], points[i+1], true);
+          d1.push(`C ${cp_start.x},${cp_start.y} ${cp_end.x},${cp_end.y} ${point.x},${point.y}`);
+          d2.push(`C ${cp_start.x},${cp_start.y} ${cp_end.x},${cp_end.y} ${point.x},${point.y}`);
+        }
+        move = false;
+        last_point = point;
+
+      }
+      else {
+        move = true;
+        if (fill && last_point) {
+          d2.push(`L ${last_point.x},${area.bottom} Z`);
+        }
+        last_point = undefined;
+      }
+
+    }
+
+    if (fill && last_point) {
+      d2.push(`L ${last_point.x},${area.bottom} Z`);
+    }
+
+
+    /*
+
+    for (; i < count; i++ ){
+      const point = data[i];
+      if (typeof point === 'undefined') {
+        move = true;
+        if (fill && (typeof last_x !== 'undefined')) {
+          d2.push(`L${last_x} ${area.bottom}Z`);
+        }
+        last_x = undefined;
+        continue;
+      }
+      const x = Math.round(area.left + area.width / steps * i);
+      if (move) {
+        if (fill) {
+          d2.push(`M${x} ${area.bottom} L${x} ${area.bottom - point}`);
+        }
+        d1.push(`M${x} ${area.bottom - point}`);
+      }
+      else {
+        d1.push(`L${x} ${area.bottom - point}`);
+        d2.push(`L${x} ${area.bottom - point}`);
+      }
+
+      circles.push({x, y: area.bottom - point, i});
+
+      last_x = x;
+      move = false;
+    }
+
+    */
+
+    if (fill && (typeof last_x !== 'undefined')) {
+      d2.push(`L${last_x} ${area.bottom}Z`);
+    }
+
+    // fill first, under line
+
+    if (fill) {
+      const p2 = document.createElementNS(SVGNS, 'path');
+      p2.setAttribute('d', d2.join(' '));
+      p2.setAttribute('class', 'fill');
+      group.appendChild(p2);
+    }
+
+    // then line
+
+    const p1 = document.createElementNS(SVGNS, 'path');
+    p1.setAttribute('d', d1.join(' '));
+    p1.setAttribute('class', 'line');
+    group.appendChild(p1);
+
+    if (typeof classes !== 'undefined') {
+      if (typeof classes === 'string') {
+        classes = [classes];
+      }
+      group.setAttribute('class', classes.join(' '));
+    }
+
+    this.group.appendChild(group);
+
+    // circles...
+
+    if (titles && circles.length) {
+      const circle_group = document.createElementNS(SVGNS, 'g');
+      for (const circle of circles) {
+        const shape = document.createElementNS(SVGNS, 'circle');
+        shape.setAttribute('cx', circle.x.toString());
+        shape.setAttribute('cy', circle.y.toString());
+        shape.setAttribute('r', (step).toString());
+
+        shape.addEventListener('mouseenter', (event) => {
+          this.parent.setAttribute('title', titles[circle.i] || '');
+        });
+        shape.addEventListener('mouseleave', (event) => {
+          this.parent.setAttribute('title', '');
+        });
+
+        circle_group.appendChild(shape);
+        circle_group.classList.add('mouse-layer');
+      }
+      this.group.appendChild(circle_group);
+
+    }
   }
 
   public RenderLine(

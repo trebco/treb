@@ -6,6 +6,8 @@
  *
  * TODO: structure
  * TODO: other symbols... [FIXME: defined names need to go in here]
+ * TODO: context -- cell vs annotation (...)
+ *
  */
 
 export interface ArgumentDescriptor {

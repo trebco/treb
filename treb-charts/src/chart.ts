@@ -126,6 +126,8 @@ export class Chart {
       };
     }
 
+    const smooth = (args[6] === 'smooth');
+
     this.chart_data = {
       type,
       data,
@@ -136,6 +138,7 @@ export class Chart {
       x_labels,
       callouts,
       titles,
+      smooth,
     };
 
   }
@@ -542,7 +545,10 @@ export class Chart {
         */
 
         if (this.chart_data.series) {
-          
+
+          const func = this.chart_data.smooth ?
+            this.renderer.RenderSmoothLine : this.renderer.RenderLine;
+
           // gridlines
           this.renderer.RenderGrid(area, this.chart_data.scale.count, this.chart_data.series[0].length, 'chart-grid');
 
@@ -558,7 +564,7 @@ export class Chart {
               this.chart_data.type === 'area' ? 'chart-area' : 'chart-line',
               `series-${series_index + 1}`]
 
-            this.renderer.RenderLine(area, y, (this.chart_data.type === 'area'), this.chart_data.titles, styles);
+            func.call(this.renderer, area, y, (this.chart_data.type === 'area'), this.chart_data.titles, styles);
             series_index++;
           }
         }

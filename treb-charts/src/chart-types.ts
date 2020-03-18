@@ -89,6 +89,7 @@ export interface LineBaseData extends ChartDataBaseType {
   x_labels?: string[];
   y_labels?: string[];
   callouts?: {values: number[], labels: string[]};
+  smooth?: boolean;
 }
 
 export interface LineData extends LineBaseData {
