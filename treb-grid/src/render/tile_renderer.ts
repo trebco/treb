@@ -87,6 +87,8 @@ export class TileRenderer {
    */
   public EnsureBuffer(width = 0, height = 0, offset = 0) {
 
+    console.info('eb', width, height, offset);
+
     const scale = this.layout.dpr;
     width = width * scale;
     height = height * scale;
@@ -1066,7 +1068,11 @@ export class TileRenderer {
     }
 
     if (dirty || !cell.renderer_data || cell.renderer_data.width !== width || cell.renderer_data.height !== height) {
-      cell.renderer_data = { text_data: this.PrepText(context, cell, width), width, height };
+      cell.renderer_data = { 
+        text_data: this.PrepText(context, cell, width), 
+        width, 
+        height 
+      };
     }
 
     const text_data = cell.renderer_data.text_data;
@@ -1097,6 +1103,10 @@ export class TileRenderer {
 
     // we cache some data for drawing backgrounds under overflows, if necessary,
     // so we can do draw calls after we figure out if we need to buffer or not
+
+    // UPDATE: we have a case where there's a super-long string trying to 
+    // render/overflow, and it's breaking everything. we need to address some 
+    // caps/limits. WIP.
 
     const overflow_backgrounds: OverflowCellInfo[] = [];
 
@@ -1133,7 +1143,11 @@ export class TileRenderer {
         let overflow_right_column = address.column;
         let overflow_left_column = address.column;
 
-        while (overflow_pixels_right > 0) {
+        // cap at max
+
+        let last_column = this.model.active_sheet.columns - 1;
+
+        while (overflow_pixels_right > 0 && overflow_right_column < last_column) {
           overflow_right_column++;
 
           const target_address = { row: address.row, column: overflow_right_column };
