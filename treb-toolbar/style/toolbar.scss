@@ -254,7 +254,7 @@ $font_stack: -apple-system,
 
     }
 
-    & button + button {
+    & button:visible + button {
       margin-left: 5px;
     }
 
