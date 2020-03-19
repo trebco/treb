@@ -131,7 +131,9 @@ const CreateConfig = (config, entry) => {
             {
               loader: 'sass-loader',
               options: {
-                outputStyle: 'compressed',
+                sassOptions: {
+                  outputStyle: 'compressed',
+                },
               }
             },
           ],
