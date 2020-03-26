@@ -1,7 +1,7 @@
 
 // ----------------------
 
-import { WorkerImpl } from 'treb-mc';
+import { WorkerImpl } from '../worker';
 
 const ctx: Worker = self as any;
 const worker = new WorkerImpl(ctx);

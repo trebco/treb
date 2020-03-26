@@ -1,7 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "target": "es6"
+    "target": "es6",
+    "module": "es2020"
   },
   "include": [
     "treb-embed/src/index-modern.ts",

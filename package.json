@@ -1,29 +1,41 @@
 {
   "name": "treb",
-  "version": "6.8.2",
+  "version": "6.8.3",
   "main": "dist/index.js",
+  "sideEffects": [
+    "treb-embed/src/main.ts",
+    "treb-export/src/export-worker/export-worker.ts",
+    "treb-mc/src/calculation-worker/calculation-worker.ts"
+  ],
   "devDependencies": {
     "@types/elementtree": "^0.1.0",
     "@types/file-saver": "^2.0.1",
     "@types/js-base64": "^2.3.1",
     "@types/jszip": "^3.1.7",
+    "@types/node": "^13.9.4",
     "archiver": "^3.1.1",
     "core-js": "^3.6.4",
+    "css-loader": "^3.4.2",
     "cssnano": "^4.1.10",
     "elementtree": "^0.1.7",
     "file-saver": "^2.0.2",
     "js-base64": "^2.5.2",
     "jszip": "^3.2.2",
+    "license-checker-webpack-plugin": "^0.1.4",
     "node-sass": "^4.13.1",
     "riskampjs-mc": "file:../../riskampjs/riskampjs-mc",
-    "ts-loader": "^6.2.1",
+    "sass-loader": "^8.0.2",
+    "style-loader": "^1.1.3",
+    "ts-loader": "^6.2.2",
     "typescript": "^3.8.3",
-    "webpack": "^4.42.0",
+    "typescript-eslint": "0.0.1-alpha.0",
+    "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11"
   },
   "scripts": {
     "build": "node compile.js",
-    "dev": "node compile.js -d",
+    "dev": "node compile.js -d --modern",
+    "dev-legacy": "node compile.js -d --legacy",
     "watch": "node compile.js -w",
     "watch-modern": "node compile.js -w --modern -d",
     "watch-legacy": "node compile.js -w --legacy -d",
@@ -39,11 +51,5 @@
     "charts": "embedded-treb-charts"
   },
   "dependencies": {
-    "@types/node": "^13.9.2",
-    "css-loader": "^3.4.2",
-    "license-checker-webpack-plugin": "^0.1.4",
-    "sass-loader": "^8.0.2",
-    "style-loader": "^1.1.3",
-    "tslint": "^6.1.0"
   }
 }

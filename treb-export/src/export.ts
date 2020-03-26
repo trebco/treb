@@ -28,6 +28,10 @@ export class Exporter {
     this.archive_ = archive;
   }
 
+  public Goran() {
+    return "Ivanisevich";
+  }
+
   public get zip() {
     return this.archive_;
   }

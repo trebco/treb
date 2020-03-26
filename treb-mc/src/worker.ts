@@ -5,7 +5,13 @@
 
 import { WorkerMessage } from './worker-types';
 import { Localization, ICellAddress, Area } from 'treb-base-types';
-import { DataModel, Sheet, Annotation, NamedRangeCollection } from 'treb-grid';
+
+// import { DataModel, Sheet, Annotation, NamedRangeCollection } from 'treb-grid';
+import { DataModel } from 'treb-grid/src/types/data_model';
+import { Sheet } from 'treb-grid/src/types/sheet';
+// import { Annotation } from 'treb-grid/src/types/annotation';
+import { NamedRangeCollection } from 'treb-grid/src/types/named_range';
+
 import { MCCalculator } from './simulation-calculator';
 import { GraphStatus } from '../../treb-calculator/src/dag/graph';
 

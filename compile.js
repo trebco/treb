@@ -79,23 +79,23 @@ if (clean) {
   }
 }
 
-// borrow from tsconfig; flatten arrays (take first), resolve
+const directories = [
+  "treb-mc",
+  "treb-grid",
+  "treb-utils",
+  "treb-export",
+  "treb-format",
+  "treb-parser",
+  "treb-toolbar",
+  "treb-calculator",
+  "treb-sparkline",
+  "treb-base-types",
+];
 
-const aliases = {
-  "treb-mc": "./treb-mc",
-  "treb-grid": "./treb-grid",
-  "treb-utils": "./treb-utils",
-  "treb-export": "./treb-export",
-  "treb-format": "./treb-format",
-  "treb-parser": "./treb-parser",
-  "treb-toolbar": "./treb-toolbar",
-  "treb-calculator": "./treb-calculator",
-  "treb-sparkline": "./treb-sparkline",
-  "treb-base-types": "./treb-base-types"
-};
+const aliases = {};
 
-for (const key of Object.keys(aliases)) {
-  aliases[key] = path.resolve(__dirname, aliases[key]);
+for (const dir of directories) {
+  aliases[dir] = path.resolve(__dirname, dir);
 }
 
 /*
@@ -112,15 +112,7 @@ if (tsconfig && tsconfig.compilerOptions && tsconfig.compilerOptions.paths) {
 const CreateConfig = (config, entry) => {
   return {
 
-    /*
-    stats: {
-      all: false,
-      builtAt: true,
-      errors: true,
-    },
-    */
-
-    entry, // : modern_entry,
+    entry,
 
     mode: dev ? 'development' : 'production',
     module: {
@@ -143,6 +135,7 @@ const CreateConfig = (config, entry) => {
         },
         {
           test: /\.s*css$/,
+          sideEffects: true,
           use: [
             'style-loader',
             'css-loader',
@@ -158,6 +151,11 @@ const CreateConfig = (config, entry) => {
         },
       ]
     },
+    /*
+    optimization: {
+      // usedExports: true,
+    },
+    */
     resolve: {
       extensions: ['.ts', '.js'],
       alias: {

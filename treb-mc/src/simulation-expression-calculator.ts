@@ -2,10 +2,10 @@
 import { ExpressionCalculator } from '../../treb-calculator/src/expression-calculator';
 import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from '../../treb-calculator/src/function-library';
-import { Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
+import { ICellAddress } from 'treb-base-types/src/area';
 import { Parser, UnitCall } from 'treb-parser';
-import { FunctionError, NameError, ReferenceError, ExpressionError } from '../../treb-calculator/src/function-error';
-import { MCArgumentDescriptor, MCCompositeFunctionDescriptor } from './descriptors';
+import { FunctionError, NameError, ReferenceError } from '../../treb-calculator/src/function-error';
+import { MCCompositeFunctionDescriptor } from './descriptors';
 
 
 export class MCExpressionCalculator extends ExpressionCalculator {

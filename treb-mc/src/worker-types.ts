@@ -1,6 +1,5 @@
 
 import { ICellAddress, IArea } from 'treb-base-types/src';
-import { Annotation } from 'treb-grid/src';
 
 export interface TrialData {
   results: any;
