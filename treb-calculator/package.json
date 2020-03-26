@@ -1,3 +1,4 @@
 {
+  "name": "treb-calculator",
   "main": "src/index.ts"
 }

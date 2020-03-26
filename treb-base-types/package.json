@@ -1,3 +1,4 @@
 {
+  "name": "treb-base-types",
   "main": "src/index.ts"
 }

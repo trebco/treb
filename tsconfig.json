@@ -8,30 +8,20 @@
     "downlevelIteration": true,
     "sourceMap": true,
     "moduleResolution": "node",
-    "outDir": "dist/",
+    "outDir": "dist-test/",
     "declaration": true,
     "lib": [
       "dom", "es2015"
     ],
     "baseUrl": "./",
     "paths": {
-      "@root/*": ["./*"],
-      "treb-mc": [ "./treb-mc" ],
-      "treb-grid": [ "./treb-grid" ],
-      "treb-utils": [ "./treb-utils" ],
-      "treb-export": [ "./treb-export" ],
-      "treb-format": [ "./treb-format" ],
-      "treb-parser": [ "./treb-parser" ],
-      "treb-toolbar": [ "./treb-toolbar" ],
-      "treb-calculator": [ "./treb-calculator" ],
-      "treb-sparkline": [ "./treb-sparkline" ],
-      "treb-base-types": [ "./treb-base-types" ]
     },
     "declarationDir": "dist/"
   },
   "include": [
-    "treb-embed/src/**/*.ts",
-    "treb-charts/src/**/*.ts"
+    "treb-embed/src/index-legacy.ts",
+    "treb-export/src/export-worker/index-legacy.ts",
+    "treb-mc/src/calculation-worker/index-legacy.ts"
   ],
   "exclude": [
     "node_modules"

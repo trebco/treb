@@ -2,5 +2,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "target": "es6"
-  }
+  },
+  "include": [
+    "treb-embed/src/index-modern.ts",
+    "treb-export/src/export-worker/index-modern.ts",
+    "treb-mc/src/calculation-worker/index-modern.ts"
+  ]
 }

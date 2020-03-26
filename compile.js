@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const exec = require('child_process').exec;
 const package = require('./package.json');
-const tsconfig = require('./tsconfig.json');
+// const tsconfig = require('./tsconfig.json');
 const archiver = require('archiver');
 const LicenseCheckerWebpackPlugin = require("license-checker-webpack-plugin");
 
@@ -42,14 +42,14 @@ if (!build.legacy && !build.modern) {
 
 let modern_entry = {};
 modern_entry[package['build-entry-points']['main'] + '-es6'] = './treb-embed/src/index-modern.ts';
-modern_entry[package['build-entry-points']['export-worker'] + '-es6' + '-' + package.version] = './treb-embed/src/export-worker/index-modern.ts';
-modern_entry[package['build-entry-points']['calculation-worker'] + '-es6' + '-' + package.version] = './treb-embed/src/calculation-worker/index-modern.ts';
+modern_entry[package['build-entry-points']['export-worker'] + '-es6' + '-' + package.version] = './treb-export/src/export-worker/index-modern.ts';
+modern_entry[package['build-entry-points']['calculation-worker'] + '-es6' + '-' + package.version] = './treb-mc/src/calculation-worker/index-modern.ts';
 // modern_entry[package['build-entry-points']['toolbar'] + '-es6' + '-' + package.version] = './treb-toolbar/src/toolbar-main.ts';
 
 let legacy_entry = {};
-legacy_entry[package['build-entry-points']['main']] = './treb-embed/src/index.ts';
-legacy_entry[package['build-entry-points']['export-worker'] + '-' + package.version] = './treb-embed/src/export-worker/index.ts';
-legacy_entry[package['build-entry-points']['calculation-worker'] + '-' + package.version] = './treb-embed/src/calculation-worker/index.ts';
+legacy_entry[package['build-entry-points']['main']] = './treb-embed/src/index-legacy.ts';
+legacy_entry[package['build-entry-points']['export-worker'] + '-' + package.version] = './treb-export/src/export-worker/index-legacy.ts';
+legacy_entry[package['build-entry-points']['calculation-worker'] + '-' + package.version] = './treb-mc/src/calculation-worker/index-legacy.ts';
 // legacy_entry[package['build-entry-points']['toolbar'] + '-' + package.version] = './treb-toolbar/src/toolbar-main.ts';
 
 if (only_charts) {
@@ -81,7 +81,24 @@ if (clean) {
 
 // borrow from tsconfig; flatten arrays (take first), resolve
 
-const aliases = {};
+const aliases = {
+  "treb-mc": "./treb-mc",
+  "treb-grid": "./treb-grid",
+  "treb-utils": "./treb-utils",
+  "treb-export": "./treb-export",
+  "treb-format": "./treb-format",
+  "treb-parser": "./treb-parser",
+  "treb-toolbar": "./treb-toolbar",
+  "treb-calculator": "./treb-calculator",
+  "treb-sparkline": "./treb-sparkline",
+  "treb-base-types": "./treb-base-types"
+};
+
+for (const key of Object.keys(aliases)) {
+  aliases[key] = path.resolve(__dirname, aliases[key]);
+}
+
+/*
 if (tsconfig && tsconfig.compilerOptions && tsconfig.compilerOptions.paths) {
   const paths = tsconfig.compilerOptions.paths;
   for (const key of Object.keys(paths)) {
@@ -90,6 +107,7 @@ if (tsconfig && tsconfig.compilerOptions && tsconfig.compilerOptions.paths) {
     aliases[key] = path.resolve(__dirname, value);
   }
 }
+*/
 
 const CreateConfig = (config, entry) => {
   return {

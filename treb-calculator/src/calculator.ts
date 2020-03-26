@@ -14,7 +14,7 @@ import { FunctionMap } from './descriptors';
 import { BaseFunctionLibrary, BaseFunctionAliases } from './functions/base-functions';
 import { TextFunctionLibrary } from './functions/text-functions';
 
-import { DataModel, Annotation } from '@root/treb-grid/src';
+import { DataModel, Annotation } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
 
 import { ArgumentError, ReferenceError, UnknownError, IsError, ValueError } from './function-error';

@@ -4,7 +4,7 @@
 import { Calculator } from '../../treb-calculator/src/calculator';
 import { SimulationState } from './simulation-model';
 import { ICellAddress, CellSerializationOptions } from 'treb-base-types';
-import { DataModel } from '@root/treb-grid/src';
+import { DataModel } from 'treb-grid';
 import { GraphStatus } from '../../treb-calculator/src/dag/graph';
 import * as PackResults from '../../treb-calculator/src/pack-results';
 import { MCExpressionCalculator } from './simulation-expression-calculator';

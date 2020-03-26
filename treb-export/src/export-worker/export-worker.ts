@@ -1,5 +1,7 @@
 
-import { Importer, Exporter } from 'treb-export';
+// import { Importer, Exporter } from '../';
+import { Importer } from '../import';
+import { Exporter } from '../export';
 
 const ctx: Worker = self as any;
 const exporter = new Exporter();

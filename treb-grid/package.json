@@ -1,3 +1,4 @@
 {
+  "name": "treb-grid",
   "main": "src/index.ts"
 }

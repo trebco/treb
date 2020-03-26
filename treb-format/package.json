@@ -1,3 +1,4 @@
 {
+  "name": "treb-format",
   "main": "src/index.ts"
 }

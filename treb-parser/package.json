@@ -1,3 +1,4 @@
 {
+  "name": "treb-parser",
   "main": "src/index.ts"
 }

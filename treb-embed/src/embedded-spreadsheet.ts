@@ -8,7 +8,8 @@ import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 import { EmbeddedSpreadsheetOptions, DefaultOptions } from './options';
 
 // config
-import * as build from '@root/package.json';
+// import * as build from '@root/package.json';
+import * as build from '../package.json';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
