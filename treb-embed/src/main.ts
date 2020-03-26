@@ -3,7 +3,7 @@
 import { AutoEmbed } from './auto-embed';
 import { CreateSheetOptions } from './options';
 
-import * as build from '../package.json';
+import * as build from '../../package.json';
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 
 // gate on existing: intended to prevent running this multiple times.

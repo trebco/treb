@@ -33,7 +33,7 @@ import '../style/embed.scss';
 
 // config
 // import * as build from '@root/package.json';
-import * as build from '../package.json';
+import * as build from '../../package.json';
 
 /*
 enum ToolbarLoadState {
