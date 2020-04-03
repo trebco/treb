@@ -48,6 +48,7 @@ export class FormattingToolbar {
     const svg = document.createElementNS(SVGNS, 'svg');
     svg.setAttribute('style', 'position: absolute; width: 0; height: 0; overflow: hidden;');
     svg.setAttribute('version', '1.1');
+    svg.setAttribute('toolbar-icons', '1');
 
     const pattern = document.createElementNS(SVGNS, 'pattern');
     pattern.setAttribute('id', 'hatch-pattern');
@@ -87,12 +88,17 @@ export class FormattingToolbar {
     for (const key of Object.keys(symbol_defs)) {
       const def = symbol_defs[key];
       const symbol = document.createElementNS(SVGNS, 'symbol');
-      symbol.setAttribute('id', key);
-      symbol.setAttribute('viewBox', def.viewbox);
+      symbol.setAttribute('id', 'treb-toolbar-icon-' + key);
+      symbol.setAttribute('viewBox', def.viewbox || '0 0 24 24');
       for (const path_def of def.paths || []) {
         const path = document.createElementNS(SVGNS, 'path');
         path.setAttribute('d', path_def.d);
         if (path_def.style) path.setAttribute('style', path_def.style);
+        if (path_def.classes) {
+          const classes = Array.isArray(path_def.classes) ? path_def.classes : [path_def.classes];
+          // for (const class_name of classes) { path.classList.add(class_name); }
+          path.setAttribute('class', classes.join(' ')); // IE11
+        }
         symbol.appendChild(path);
       }
       svg.appendChild(symbol);

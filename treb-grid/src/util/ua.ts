@@ -2,6 +2,9 @@
 /**
  * some basic user-agent sniffing. we use less than we used to, except
  * for making the determination of modern (grid)/legacy layout.
+ * 
+ * FIXME: move to base_types, we need it in toolbar
+ * 
  */
 class UAType {
 

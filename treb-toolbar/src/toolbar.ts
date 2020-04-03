@@ -8,6 +8,8 @@ import { ICellAddress, Area } from 'treb-base-types';
 
 import { ToolbarOptions } from './toolbar-options';
 
+import { UA } from 'treb-grid';
+
 export type EventHandler = (id: string, data?: any) => void;
 
 const default_colors = [
@@ -66,6 +68,20 @@ export class Toolbar {
     this.popup.addEventListener('click', (event) => this.HandlePopupEvent(event));
     this.popup.addEventListener('change', (event) => this.HandlePopupEvent(event));
 
+    // fucking IE11
+    if (UA.trident) {
+      this.popup.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+          event.stopPropagation();
+          event.preventDefault();
+          if (event.target) {
+            (event.target as HTMLElement).blur();
+          }
+        }
+      });
+    }
+
+
     document.addEventListener('keydown', (event) => {
       if (this.popup_item && (event.key === 'Escape' || event.key === 'Esc')) {
         event.stopPropagation();
@@ -93,7 +109,6 @@ export class Toolbar {
     container.addEventListener('keydown', (event) => {
 
       if (event.key !== 'Enter') return;
-
       let node = event.target as HTMLElement;
       while (node) {
         const id = node.getAttribute('id');
@@ -321,14 +336,22 @@ export class Toolbar {
   public SetSecondColor(id: string, color: string) {
     const item = this.items[id];
     if (item && item.icon) {
-      const paths = document.querySelectorAll(`symbol#${item.icon} path`);
-      if (paths.length > 1) {
-        const element = paths[1] as HTMLElement;
-        if (!color) {
-          element.style.fill = 'url(#hatch-pattern)';
-        }
-        else {
-          element.style.fill = color;
+      const paths = document.querySelectorAll(`symbol#treb-toolbar-icon-${item.icon} path`);
+      for (let i = 0; i < paths.length; i++) {
+
+        // classList doesn't work in IE11 -- because SVG? not sure.
+
+        const class_name = paths[i].getAttribute('class') || '';
+        if (/target/.test(class_name)) {
+          const element = paths[i] as HTMLElement;
+          if (!color) {
+            element.style.fill = 'url(#hatch-pattern)';
+            element.style.stroke = 'none';
+          }
+          else {
+            element.style.fill = color;
+            element.style.stroke = 'none'; // color;
+          }
         }
       }
       item['second-color'] = color;
@@ -358,7 +381,7 @@ export class Toolbar {
     const item = this.items[id];
     const element = item.node.querySelector('use');
     if (element) {
-      element.setAttributeNS(XlinkNS, 'href', '#' + icon);
+      element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + icon);
     }
   }
 
@@ -566,7 +589,7 @@ export class Toolbar {
       const svg = document.createElementNS(SVGNS, 'svg');
       const element = document.createElementNS(SVGNS, 'use');
       svg.appendChild(element);
-      element.setAttributeNS(XlinkNS, 'href', '#' + option.icon);
+      element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + option.icon);
       button.appendChild(svg);
 
       list.appendChild(button);
@@ -743,7 +766,30 @@ export class Toolbar {
     const input = document.createElement('input');
     input.setAttribute('type', 'text');
 
-    if (template.text) {
+    if (template.icon) {
+      const header = document.createElement('button');
+      header.classList.add('input-header');
+
+      // const span = document.createElement('span');
+      // span.textContent = template.text;
+
+      // header.innerText = template.text;
+      // header.appendChild(span);
+
+      const svg = document.createElementNS(SVGNS, 'svg');
+      const element = document.createElementNS(SVGNS, 'use');
+      svg.appendChild(element);
+      element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + template.icon);
+      header.appendChild(svg);
+
+      if (template.title) {
+        header.setAttribute('title', template.title);
+      }
+      group.appendChild(header);
+
+    }
+
+    else if (template.text) {
       const header = document.createElement('button');
       header.classList.add('input-header');
 
@@ -823,7 +869,7 @@ export class Toolbar {
       const svg = document.createElementNS(SVGNS, 'svg');
       const element = document.createElementNS(SVGNS, 'use');
       svg.appendChild(element);
-      element.setAttributeNS(XlinkNS, 'href', '#' + template.icon);
+      element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + template.icon);
       button.appendChild(svg);
     }
 

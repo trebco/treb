@@ -12,3 +12,4 @@ export { GridSelection } from './types/grid_selection';
 export { BorderConstants } from './types/border_constants';
 export { SerializeOptions } from './types/serialize_options';
 export { FunctionDescriptor, ArgumentDescriptor } from './editors/autocomplete_matcher';
+export { UA } from './util/ua';

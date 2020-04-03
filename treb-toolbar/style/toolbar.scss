@@ -3,6 +3,8 @@
 $button-size: 32px;
 $button-background: transparent;
 $button-foreground: #777;
+$button-secondary: rgba(32, 107, 196, 0.25);
+
 //$button-border: #ddd;
 $button-border: transparent;
 $color-item-size: 20px;
@@ -154,6 +156,14 @@ $font_stack: -apple-system,
 
 }
 
+svg[toolbar-icons] symbol path.secondary {
+  stroke: $button-secondary;
+}
+
+svg[toolbar-icons] symbol path.target {
+  stroke: none; // $button-secondary;
+}
+
 // these are split out because we reuse them in popup...
 
 .treb-formatting-toolbar svg, .treb-toolbar-menu .options-list-holder button svg {
@@ -162,7 +172,11 @@ $font_stack: -apple-system,
     left: 3px;
     width: 24px;
     height: 24px;
-    fill: $button-foreground;
+    // fill: $button-foreground;
+    stroke: $button-foreground;
+    stroke-width: 2;
+    fill: none;
+
     -moz-transform: scale(1); // fixes ffx blurry svg, not sure why
     // -ms-transform: scale(1); // doesn't un-blurry IE11
 }
@@ -324,226 +338,17 @@ $font_stack: -apple-system,
 
     & .separator {
       display: inline-block;
-      width: 12px;
-      min-width: 12px;
+      // width: 12px;
+      // min-width: 12px;
       height: $button-size;
       min-height: $button-size;
+      border-right: 1px dotted #ccc;
+
+      width: 6px;
+      min-width: 6px;
+      margin-right: 5px;
+
     }
   }
 }
 
-
-/*
-.X-treb-formatting-toolbar {
-
-  height: 30px;
-  margin-bottom: 12px; // used to be margin in the embedded sheet
-  // position: static;
-  position: relative;
-  width: auto;
-
-  // this works (except for IE11)
-
-  &.centered {
-
-    display: flex;
-    border: 1px solid green;
-
-    flex-direction: row;
-    justify-content: center;
-
-    & .treb-formatting-toolbar-inner {
-      border: 1px solid red;
-    }
-  }
-
-  .treb-formatting-toolbar-inner {
-
-    position: absolute;
-    // position: relative;
-    // position: static;
-
-    padding: 0 10px;
-    display: inline-flex;
-    flex-direction: row;
-    overflow: hidden;
-
-    .toolbar-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    font-family: $font_stack;
-
-    button {
-      display: inline-block;
-      // border-radius: 3px;
-      overflow: hidden;
-      font-size: 1.5em;
-      color: $button-foreground;
-      min-width: $button-size;
-      // max-width: 12px; // $button-size;
-      min-height: $button-size;
-      width: $button-size;
-      height: $button-size;
-      border: 1px solid $button-border;
-
-      background: $button-background;
-      background: none;
-      position: relative;
-      margin-left: 5px;
-      padding:0;
-      overflow: hidden;
-
-      font-family: inherit;
-
-      &:hover {
-        background: #f6f2f8;
-      }
-
-      &.active {
-        background: #f6f2f8;
-      }
-
-      &.drop-down {
-        position: relative;
-        width: 11px;
-        max-width: 11px;
-        min-width: 11px;
-        overflow: hidden;
-        padding: 0;
-        margin-left: 2px;
-        &::after {
-          left: 1px;
-          position: absolute;
-          content: '';
-          border: 3.5px solid transparent;
-          border-top-color: #777;
-        }
-
-      }
-
-      &.input-header {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-      }
-
-    }
-
-    .split-button {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-
-      button {
-        height: $button-size / 2;
-        min-height: $button-size / 2;
-        position: relative;
-        // font-size: .7em;
-        font-size: 10.5px;
-        font-weight: 500;
-        overflow: hidden;
-        padding: 0;
-
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-
-        // fucking IE11, again // ...what?
-        span {
-          display: block;
-          margin: 0;
-          line-height: 0;
-          position: relative;
-          cursor: pointer;
-        }
-
-
-        &:first-child {
-          border-bottom-left-radius: 0;
-          border-bottom-right-radius: 0;
-          border-bottom-color: transparent;
-        }
-        &:last-child {
-          border-top-left-radius: 0;
-          border-top-right-radius: 0;
-        }
-
-      }
-
-    }
-
-    .input {
-      display: flex;
-      flex-direction: row;
-      position: relative;
-
-      > button {
-        width: auto;
-        min-width: 30px;
-        // min-width: auto;
-        max-width: auto;
-        padding-left: 6px;
-        padding-right: 5px;
-        line-height: 1.4;
-        margin-left: 6px;
-        //border-top-left-radius: 3px;
-        //border-bottom-left-radius: 3px;
-        //border-top-right-radius: 0px;
-        //border-bottom-right-radius: 0px;
-        border-radius: 0px;
-      }
-
-      > input[type=text] {
-        border: 1px solid $button-border;
-        font-size: 14px;
-        color: darken($button-foreground, 20%);
-        border-left: 0px;
-        // border-top-right-radius: 3px;
-        // border-bottom-right-radius: 3px;
-        
-        border-radius: 3px;
-        background: #f9f9fc;
-        outline: none;
-
-        padding: 0 4px;
-        margin-top: 0;
-        margin-bottom: 0;
-        border-style: single;
-        width: 8em;
-        min-width: 8em;
-        font-family: inherit;
-        -webkit-appearance: none;
-
-        &::-ms-clear {
-          display: none;
-        }
-      }
-
-    }
-
-    .separator {
-      width: 8px;
-      min-width: 8px;
-      height: $button-size;
-      position: relative;
-      display: inline-block;
-
-      &::after {
-        border-right: 1px solid $button-border;
-        content: ' ';
-        height: 90%;
-        min-height: 90%;
-        top: 5%;
-        left: 6px;
-        position: absolute;
-      }
-
-    }
-
-}
-}
-
-*/

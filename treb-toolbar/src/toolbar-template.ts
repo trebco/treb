@@ -10,7 +10,7 @@ const sheet_structure_menu: ToolbarItem[] = [
 ];
 
 const base_structure_menu: ToolbarItem =   {
-  icon: 'icon-crop',
+  icon: 'crop',
   id: 'structure',
   title: 'Grid Rows/Columns',
   submenu: [
@@ -73,14 +73,14 @@ const compressed_align_menus: ToolbarItem[] = [
  */
 const expanded_align_menus: ToolbarItem[] = [
 
-  { icon: 'icon-format_align_left', id: 'align-left', title: 'Align Left' },
-  { icon: 'icon-format_align_center', id: 'align-center', title: 'Align Center' },
-  { icon: 'icon-format_align_right', id: 'align-right', title: 'Align Right' },
+  { icon: 'align-left', id: 'align-left', title: 'Align Left' },
+  { icon: 'align-center', id: 'align-center', title: 'Align Center' },
+  { icon: 'align-right', id: 'align-right', title: 'Align Right' },
   { type: 'separator' },
 
-  { icon: 'icon-vertical_align_top', id: 'align-top', title: 'Align Top' },
-  { icon: 'icon-vertical_align_center', id: 'align-middle', title: 'Align Middle' },
-  { icon: 'icon-vertical_align_bottom', id: 'align-bottom', title: 'Align Bottom' },
+  { icon: 'align-top', id: 'align-top', title: 'Align Top' },
+  { icon: 'align-middle', id: 'align-middle', title: 'Align Middle' },
+  { icon: 'align-bottom', id: 'align-bottom', title: 'Align Bottom' },
   { type: 'separator' },
 
 ];
@@ -127,13 +127,13 @@ export const toolbar_template: ToolbarItem[] = [
   // ...compressed_align_menus,
   // ...expanded_align_menus,
 
-  { icon: 'icon-wrap_text', id: 'wrap', title: 'Wrap Text' },
-  { icon: 'icon-chat_bubble_outline', id: 'note', title: 'Add Note' },
+  { icon: 'wrap', id: 'wrap', title: 'Wrap Text' },
+  { icon: 'comment', id: 'note', title: 'Add Note' },
 
   { type: 'separator' },
 
   {
-    icon: 'icon-format_color_fill',
+    icon: 'fill-color',
     color: true,
     id: 'fill-color',
     title: 'Background Color',
@@ -142,24 +142,24 @@ export const toolbar_template: ToolbarItem[] = [
 
   { type: 'drop-down', 'related-id': 'fill-color', id: 'fill-color-dropdown' },
   {
-    icon: 'icon-format_color_text', color: true, id: 'text-color', title: 'Text Color',
+    icon: 'text-color', color: true, id: 'text-color', title: 'Text Color',
     'default-string': 'Default text color',
   },
   { type: 'drop-down', 'related-id': 'text-color', id: 'text-color-dropdown' },
 
   {
-    icon: 'icon-border_bottom',
+    icon: 'border-bottom',
     id: 'border-option',
     title: 'Bottom Border',
     alternate_id: 'border-bottom',
     options: [
-      { icon: 'icon-border_clear', id: 'border-none', title: 'Clear Borders' },
-      { icon: 'icon-border_outer', id: 'border-outer', title: 'Outer Border' },
-      { icon: 'icon-border_top', id: 'border-top', title: 'Top Border' },
-      { icon: 'icon-border_bottom', id: 'border-bottom', title: 'Bottom Border' },
-      { icon: 'icon-border_left', id: 'border-left', title: 'Left Border' },
-      { icon: 'icon-border_right', id: 'border-right', title: 'Right Border' },
-      { icon: 'icon-border_all', id: 'border-all', title: 'All Borders' },
+      { icon: 'border-none', id: 'border-none', title: 'Clear Borders' },
+      { icon: 'border-outside', id: 'border-outer', title: 'Outer Border' },
+      { icon: 'border-top', id: 'border-top', title: 'Top Border' },
+      { icon: 'border-bottom', id: 'border-bottom', title: 'Bottom Border' },
+      { icon: 'border-left', id: 'border-left', title: 'Left Border' },
+      { icon: 'border-right', id: 'border-right', title: 'Right Border' },
+      { icon: 'border-all', id: 'border-all', title: 'All Borders' },
     ],
   },
 
@@ -171,12 +171,12 @@ export const toolbar_template: ToolbarItem[] = [
 
   { type: 'separator' },
 
-  { icon: 'icon-fullscreen_exit', id: 'merge', title: 'Merge Cells' },
-  { icon: 'icon-fullscreen', id: 'unmerge', title: 'Unmerge Cells' },
+  { icon: 'merge-cells', id: 'merge', title: 'Merge Cells' },
+  { icon: 'unmerge-cells', id: 'unmerge', title: 'Unmerge Cells' },
 
   base_structure_menu, // may be updated
 
-  { icon: 'icon-ac_unit', id: 'freeze2', title: 'Freeze Panes' },
+  { icon: 'snowflake', id: 'freeze2', title: 'Freeze Panes' },
 
   /*
   { icon: 'icon-thermometer-0', id: 'freeze', title: 'Freeze Panes' },
@@ -187,7 +187,11 @@ export const toolbar_template: ToolbarItem[] = [
 
   { type: 'separator' },
   {
-    type: 'input', text: '#', id: 'number-format', title: 'Number Format', submenu: [
+    type: 'input', 
+    text: 'p', 
+    icon: 'number-format',
+    id: 'number-format', 
+    title: 'Number Format', submenu: [
       // 'general', 'percent', 'accounting', 'currency', 'scientific',
     ],
   },

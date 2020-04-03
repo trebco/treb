@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "6.8.3",
+  "version": "6.8.5",
   "main": "dist/index.js",
   "sideEffects": [
     "treb-embed/src/main.ts",
