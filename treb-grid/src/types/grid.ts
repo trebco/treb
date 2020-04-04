@@ -47,6 +47,7 @@ import { DataModel } from './data_model';
 import { NamedRangeCollection } from './named_range';
 
 interface DoubleClickData {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   timeout?: any;
   address?: ICellAddress;
 }
@@ -508,7 +509,7 @@ export class Grid {
 
         });
 
-        annotation.node.addEventListener('focusin', (event) => {
+        annotation.node.addEventListener('focusin', () => {
           this.selected_annotation = annotation;
           this.primary_selection.empty = true; // FIXME: not using method? (...)
 
@@ -2617,7 +2618,7 @@ export class Grid {
           });
 
         }
-      }, (end_event: MouseEvent) => {
+      }, () => {
 
         this.layout.HideTooltip();
 
@@ -2682,7 +2683,7 @@ export class Grid {
           this.Select(selection, area, undefined, true);
           this.RenderSelections();
         }
-      }, (end_event: MouseEvent) => {
+      }, () => {
         // console.info('end');
 
       });
@@ -2783,7 +2784,7 @@ export class Grid {
           });
 
         }
-      }, (end_event: MouseEvent) => {
+      }, () => {
 
         this.layout.HideTooltip();
 
@@ -3119,7 +3120,7 @@ export class Grid {
           }
         }
       }
-    }, (end_event: MouseEvent) => {
+    }, () => {
       // console.info('end');
       this.UpdateAddressLabel();
 
@@ -3649,12 +3650,12 @@ export class Grid {
     }
     else if (array) {
       let existing_array = false;
-      let reference: Area;
-      this.model.active_sheet.cells.IterateArea(selection.area, (element: Cell, column?: number, row?: number) => {
+      // let reference: Area;
+      this.model.active_sheet.cells.IterateArea(selection.area, (element: Cell) => {
         if (element.area) {
-          column = column || 0;
-          row = row || 0;
-          reference = new Area({ column, row });
+          // column = column || 0;
+          // row = row || 0;
+          // reference = new Area({ column, row });
           existing_array = true;
         }
       }, false);
@@ -3716,7 +3717,8 @@ export class Grid {
 
     if (!is_function && parse_result.type === ValueType.number) {
 
-      const text = value.toString();
+      // const text = value.toString();
+
       let number_format = '';
       const hints = parse_result.hints || Hints.None;
 
@@ -4157,7 +4159,8 @@ export class Grid {
         // (2) if the next cell is merged, then we either step onto the head
         // or, if we would step onto a subcell, pass over it entirely.
 
-        while (true) {
+        //while (true) {
+        for(;;) {
 
           // step
 
@@ -4625,13 +4628,14 @@ export class Grid {
     this.container.addEventListener('keydown', (event) => this.KeyDown(event));
 
     // select all?
-    this.layout.corner.addEventListener('dblclick', (event) => {
+    this.layout.corner.addEventListener('dblclick', () => {
       this.SelectAll();
     });
 
   }
 
   private RangeToTSV(range: any, address: Area) {
+
     const columns = address.columns;
     const rows = address.rows;
 
@@ -5608,7 +5612,7 @@ export class Grid {
 
     area = this.model.active_sheet.RealArea(area); // collapse
 
-    this.model.active_sheet.cells.IterateArea(area, (cell, c, r) => {
+    this.model.active_sheet.cells.IterateArea(area, (cell) => {
       if (cell.area && !area.ContainsArea(cell.area)) {
         throw new Error('can\'t change part of an array');
       }
@@ -5836,9 +5840,11 @@ export class Grid {
               }
             }
 
+            /*
             const area = new Area(
               { column: Infinity, row: row[0] },
               { column: Infinity, row: row[row.length - 1] });
+            */
 
             if (this.layout.container
               && this.layout.container.offsetHeight
@@ -5971,10 +5977,10 @@ export class Grid {
           break;
 
         case CommandKey.AddSheet:
-          const sheet_id = this.AddSheetInternal(undefined, command.insert_index); // default name
+          // const sheet_id = this.AddSheetInternal(undefined, command.insert_index); // default name
           this.ActivateSheetInternal({
             key: CommandKey.ActivateSheet,
-            id: sheet_id,
+            id: this.AddSheetInternal(undefined, command.insert_index), // default name
           });
           structure_event = true;
           break;

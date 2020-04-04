@@ -7,6 +7,8 @@ import { SharedStrings } from './shared-strings';
 import { StyleCache } from './style';
 import { Theme } from './theme';
 
+// import { Drawing } from './drawing';
+
 import * as JSZip from 'jszip';
 
 interface Relationship {
@@ -24,6 +26,8 @@ export class Workbook {
   private shared_strings = new SharedStrings();
   // private sheets: {[index: string]: Sheet} = {};
   private sheets: Sheet[] = [];
+
+  // private drawings: Drawing[] = [];
 
   private dom?: Tree;
   private rels: {[index: string]: Relationship} = {};
@@ -119,6 +123,7 @@ export class Workbook {
         const rid = sheet.options.rid;
         if (rid) {
           sheet.path = `xl/${this.rels[rid].target}`;
+          sheet.rels_path = sheet.path.replace('worksheets', 'worksheets/_rels') + '.rels';
           const data = await this.zip.file(sheet.path).async('text');
           sheet.xml = data;
           if (preparse) sheet.Parse();
@@ -158,6 +163,37 @@ export class Workbook {
       }
     }
 
+    /*
+    let single_color_style = false;
+
+    for (const drawing of this.drawings) {
+
+      drawing.Finalize();
+
+    // this.path = `xl/drawings/drawing${index}.xml`;
+    // this.rels_path = `xl/drawings/_rels/drawing${index}.xml.rels`;
+
+      const index = drawing.index;
+      let xml = drawing.dom.write({xml_declaration: true});
+      await this.zip.file(`xl/drawings/drawing${index}.xml`, xml);
+
+      xml = drawing.rels.write({xml_declaration: true}); 
+      await this.zip.file(`xl/drawings/_rels/drawing${index}.xml.rels`, xml);
+
+      xml = drawing.chart.write({xml_declaration: true}); 
+      await this.zip.file(`xl/charts/chart${index}.xml`, xml);
+
+      if (!single_color_style) {
+        single_color_style = true;
+        await this.zip.file(`xl/charts/colors1.xml`, Drawing.chart_colors);
+        await this.zip.file(`xl/charts/style1.xml`, Drawing.chart_style);
+      }
+
+      await this.zip.file(`xl/charts/_rels/chart${index}.xml.rels`, Drawing.chart_rels);
+
+    }
+    */
+
     // for (const key of Object.keys(this.sheets)) {
     //  const sheet = this.sheets[key];
     for (const sheet of this.sheets) {
@@ -166,10 +202,33 @@ export class Workbook {
         const xml = sheet.dom.write({xml_declaration: true});
         // console.info('sheet xml', sheet.path, xml);
         await this.zip.file(sheet.path, xml);
+
+        /*
+        if (sheet.drawing_rels && sheet.rels_path) {
+          await this.zip.file(sheet.rels_path, Drawing.SheetRels(sheet.drawing_rels));
+        }
+        */
+
       }
     }
 
   }
+
+  /*
+  public AddChart(): number {
+
+    // ensure we have directory for drawings, charts
+
+    // actually can we just create the documents? (...)
+
+    const index = this.drawings.length + 1;
+    this.drawings.push(new Drawing(index));
+
+
+
+    return index;
+  }
+  */
 
   /**
    * clone sheet 0 so we have X total sheets
@@ -229,6 +288,7 @@ export class Workbook {
       worksheet.shared_strings = this.shared_strings;
       worksheet.xml = this.sheets[0].xml;
       worksheet.path = 'xl/' + path;
+      worksheet.rels_path = `xl/worksheets/_rels/sheet${index + 1}.xml.rels`;
       worksheet.Parse();
 
       this.sheets.push(worksheet);

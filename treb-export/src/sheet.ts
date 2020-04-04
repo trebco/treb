@@ -13,16 +13,19 @@ export interface SheetOptions {
 export class Sheet {
 
   public path?: string;
+  public rels_path?: string;
   public xml?: string;
   public dom?: Tree;
   public shared_strings?: SharedStrings;
   public extent?: RangeType;
 
+  // public drawing_rels: number[] = [];
+
   private column_widths?: number[];
   private default_width = 0;
   private tail_width = 0;
   private column_style?: any;
- 
+   
   constructor(public options: SheetOptions = {}) {
 
   }
@@ -203,6 +206,27 @@ export class Sheet {
 
   }
 
+  /* * 
+   * the only thing in the worksheet is the drawing tag:
+   *
+   * <drawing r:id="rId1"/>
+   * 
+   * /
+  public AddChartReference(id: number) {
+
+    if (!this.dom) throw new Error('missing dom');
+
+    const drawing = Element('drawing');
+    drawing.attrib['r:id'] = `rId${id}`;
+
+    const root = this.dom.getroot();
+    root.append(drawing);
+
+    // we're going to need a rels file as well
+    this.drawing_rels.push(id);
+
+  }
+  */
 
   /**
    * set range.  if the range is more than one cell, val can be either
