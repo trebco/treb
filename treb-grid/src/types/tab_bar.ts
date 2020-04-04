@@ -280,7 +280,7 @@ export class TabBar extends EventSource<TabEvent> {
             }
           }
 
-        }, (end_event) => {
+        }, () => {
           const current = index;
           const move_before = (order + 1) / 2;
 
@@ -300,7 +300,7 @@ export class TabBar extends EventSource<TabEvent> {
 
       };
 
-      const doubleclick = (event: MouseEvent) => {
+      const doubleclick = () => {
         tab.removeEventListener('mousedown', mousedown);
         tab.removeEventListener('dblclick', doubleclick);
         tab.contentEditable = 'true';
@@ -316,8 +316,12 @@ export class TabBar extends EventSource<TabEvent> {
         tab.addEventListener('keydown', (inner_event: KeyboardEvent) => {
           switch (inner_event.key) {
             case 'Enter':
-              const name = tab.innerText.trim();
-              this.Publish({ type: 'rename-sheet', name, sheet });
+              // const name = tab.innerText.trim();
+              this.Publish({ 
+                type: 'rename-sheet', 
+                name: tab.innerText.trim(), 
+                sheet 
+              });
               break;
 
             case 'Escape':

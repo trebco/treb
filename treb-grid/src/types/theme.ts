@@ -211,7 +211,7 @@ const ParseFontSize = (size: string) => {
   let value = 10;
   let unit = 'pt';
 
-  const match = size.match(/^([\d\.]+)(\D.*)$/);
+  const match = size.match(/^([\d.]+)(\D.*)$/);
   if (match) {
     value = Number(match[1]);
     unit = match[2];

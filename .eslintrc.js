@@ -18,6 +18,17 @@ module.exports = {
     "camelcase": "off",
     "@typescript-eslint/camelcase": "off",     
     "@typescript-eslint/explicit-function-return-type": "off",     
+    "@typescript-eslint/quotes": [
+      "error",
+      "single",
+      { "allowTemplateLiterals": true },
+    ],
+    "brace-style": "off",
+    "@typescript-eslint/brace-style": [
+      "error",
+      "stroustrop",
+      { "allowSingleLine": true },
+    ]
   }
 
   /*

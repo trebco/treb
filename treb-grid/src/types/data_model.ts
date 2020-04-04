@@ -1,6 +1,6 @@
 
 import { Sheet } from './sheet';
-import { Annotation } from './annotation';
+// import { Annotation } from './annotation';
 import { NamedRangeCollection } from './named_range';
 
 /**
@@ -14,6 +14,7 @@ import { NamedRangeCollection } from './named_range';
  */
 export interface DataModel {
   document_name?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user_data?: any;
   active_sheet: Sheet;
   sheets: Sheet[];

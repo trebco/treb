@@ -18,6 +18,7 @@ export function MouseDrag(
     classes = [classes];
   }
 
+  // eslint-disable-next-line prefer-const
   let cleanup: () => void;
 
   const handle_up = (event: MouseEvent) => {
