@@ -617,7 +617,7 @@ export class Sheet {
       if (this.column_headers.length > column) return this.column_headers[column];
       return '';
     }
-    while (1) {
+    for(;;) {
       const c = column % 26;
       s = String.fromCharCode(65 + c) + s;
       column = Math.floor(column / 26);
@@ -1128,12 +1128,14 @@ export class Sheet {
 
     this.cell_style.forEach((column) => {
       if (column.length >= before_row) {
+        // eslint-disable-next-line prefer-spread
         column.splice.apply(column, args as [number, number, Style.Properties]);
       }
     });
 
     // row heights
 
+    // eslint-disable-next-line prefer-spread
     this.row_height_.splice.apply(this.row_height_, args as [number, number, number]);
 
     // invalidate style cache
@@ -1245,10 +1247,12 @@ export class Sheet {
       for (let i = 0; i < count; i++) args.push(undefined);
     }
 
+    // eslint-disable-next-line prefer-spread
     this.cell_style.splice.apply(this.cell_style, args as [number, number, Style.Properties[]]);
 
     // row heights
 
+    // eslint-disable-next-line prefer-spread
     this.column_width_.splice.apply(this.column_width_, args as [number, number, number]);
 
     // invalidate style cache
@@ -1571,7 +1575,10 @@ export class Sheet {
     // the rows/columns we export can be shrunk to the actual used area,
     // subject to serialization option.
 
-    let {data, rows, columns} = this.cells.toJSON(serialization_options);
+    const serialized_data = this.cells.toJSON(serialization_options);
+    const data = serialized_data.data;
+
+    let {rows, columns} = serialized_data;
 
     if (!options.shrink) {
       rows = this.rows;
@@ -1581,7 +1588,7 @@ export class Sheet {
     // (3) (style) for anything that hasn't been consumed, create a
     //     cell style map. FIXME: optional [?]
 
-    const cell_styles: Array<{row: number, column: number, ref: number}> = [];
+    const cell_styles: Array<{row: number; column: number; ref: number}> = [];
 
     for (let c = 0; c < cell_reference_map.length; c++) {
       const column = cell_reference_map[c];

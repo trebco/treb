@@ -10,6 +10,15 @@ export interface SheetOptions {
   rid?: any;
 }
 
+export interface RangeOptions {
+  merge?: boolean;
+  style?: number;
+  precalc?: boolean;
+  preserveStyle?: boolean;
+  type?: string;
+  array?: string;
+}
+
 export class Sheet {
 
   public path?: string;
@@ -19,12 +28,17 @@ export class Sheet {
   public shared_strings?: SharedStrings;
   public extent?: RangeType;
 
+  public tab_selected = false;
+
   // public drawing_rels: number[] = [];
 
   private column_widths?: number[];
+  private column_styles?: number[];
+  private default_column_style = -1;
+
   private default_width = 0;
   private tail_width = 0;
-  private column_style?: any;
+  // private column_style?: any;
    
   constructor(public options: SheetOptions = {}) {
 
@@ -43,7 +57,7 @@ export class Sheet {
    */
   public TranslateAddress(s: string): AddressType | RangeType {
     s = s.toUpperCase();
-    let m = s.match(/([A-Z]+\d+)\:([A-Z]+\d+)/);
+    let m = s.match(/([A-Z]+\d+):([A-Z]+\d+)/);
     if (m) {
       return {
         from: this.TranslateAddress(m[1]) as AddressType,
@@ -138,6 +152,12 @@ export class Sheet {
   public Finalize() {
     if (!this.dom) throw new Error('can\'t call finalize without parse');
 
+    // tab selected
+    const sheet_view = this.dom.find('./sheetViews/sheetView');
+    if (sheet_view) {
+      sheet_view.attrib.tabSelected = this.tab_selected ? '1' : '0';
+    }
+
     // columns
     this.UnmapColumnWidths();
 
@@ -227,7 +247,7 @@ export class Sheet {
 
   }
   */
-
+ 
   /**
    * set range.  if the range is more than one cell, val can be either
    * a single value (repeated) or an array (2d).
@@ -241,7 +261,7 @@ export class Sheet {
    * }
    *
    */
-  public SetRange(rng: AddressType | RangeType | string, val: any, options: any = {}) {
+  public SetRange(rng: AddressType | RangeType | string, val: any, options: RangeOptions = {}) {
 
     if (!this.dom) throw new Error('missing dom');
 
@@ -274,7 +294,7 @@ export class Sheet {
     }
 
     if (typeof val === 'undefined' && !options.merge && !options.precalc && typeof options.style !== 'undefined') {
-      // console.info('decorated, setting empty string');
+      // console.info('decorated, setting empty string', rng);
       val = '';
     }
 
@@ -337,7 +357,7 @@ export class Sheet {
     cell.tail = null;
 
     if (typeof options.style !== 'undefined') {
-      cell.attrib.s = options.style;
+      cell.attrib.s = options.style.toString();
     }
     else if (options.preserveStyle || (typeof options.preserveStyle === 'undefined')) {
       // do nothing
@@ -467,6 +487,25 @@ export class Sheet {
     }
   }
 
+  public SetDefaultColumnStyle(style: number) {
+    this.default_column_style = style;
+  }
+
+  public SetColumnStyleIndex(columns: number|number[], style: number) {
+
+    if (!this.column_styles) {
+      this.column_styles = [];
+    }
+
+    if (!Array.isArray(columns)) { columns = [columns]; }
+
+    for (const column of columns) {
+      this.column_styles[column] = style;
+    }
+
+
+  }
+
   /** 
    * updated to use the table
    */
@@ -483,6 +522,7 @@ export class Sheet {
 
   /**
    * unmap column widths from the table
+   * UPDATE: use style, too
    */
   public UnmapColumnWidths() {
 
@@ -514,7 +554,10 @@ export class Sheet {
     // finishing with a block that ends in column 16384.
     // columns are 1-based.
 
-    const blocks: Array<{ min: number, max: number, width: number }> = [];
+    const blocks: Array<{ 
+      min: number; 
+      max: number; 
+      width: number; }> = [];
 
     let max = this.column_widths.length;
     if (this.extent) max = Math.max(this.extent.to.col, max);
@@ -538,7 +581,11 @@ export class Sheet {
         width: block.width.toString(), // style: this.column_style,
       });
 
-      if (typeof this.column_style !== 'undefined') node.attrib.style = this.column_style;
+      // if (typeof this.column_style !== 'undefined') node.attrib.style = this.column_style;
+      
+      if (this.default_column_style >= 0) {
+        node.attrib.style = this.default_column_style.toString();
+      }
 
       if (width !== this.default_width) {
         node.attrib.customWidth = '1';
@@ -578,10 +625,10 @@ export class Sheet {
     for (const col of (cols as any)._children as Element[]) {
 
       if (null != col.attrib.style) {
-        if (this.column_style && this.column_style !== col.attrib.style) {
-          console.warn(' ** multiple column styles');
-        }
-        this.column_style = col.attrib.style;
+        //if (this.column_style && this.column_style !== col.attrib.style) {
+        //  console.warn(' ** multiple column styles');
+        //}
+        this.default_column_style = Number(col.attrib.style);
       }
 
       const min = Number(col.attrib.min || 0);

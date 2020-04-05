@@ -1031,7 +1031,7 @@ export class Calculator extends Graph {
 
         // this is just a constant?
         // console.info("UNHANDLED CASE?", cell);
-        
+
       }
 
     }
@@ -1142,6 +1142,8 @@ export class Calculator extends Graph {
       // NOTE: we need to do something with outbound vertices here.
       // the issue is if something refers to a cell within an array,
       // behavior is not well-defined. 
+
+      // NOTE2: that's now handled in graph.
 
       const edge_list: SpreadsheetVertex[] = [];
 

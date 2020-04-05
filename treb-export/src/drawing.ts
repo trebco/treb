@@ -7,6 +7,76 @@ import { AddressType, RangeType, is_range, is_address } from './address-type';
 export class Drawing {
 
   // ...
+  public static base2 = 
+  `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+  <xdr:wsDr
+    xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"
+    xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+    <xdr:twoCellAnchor>
+      <xdr:from>
+        <xdr:col>7</xdr:col>
+        <xdr:colOff>114300</xdr:colOff>
+        <xdr:row>5</xdr:row>
+        <xdr:rowOff>123825</xdr:rowOff>
+      </xdr:from>
+      <xdr:to>
+        <xdr:col>11</xdr:col>
+        <xdr:colOff>333375</xdr:colOff>
+        <xdr:row>25</xdr:row>
+        <xdr:rowOff>76200</xdr:rowOff>
+      </xdr:to>
+      <xdr:sp macro="" textlink="">
+        <xdr:nvSpPr>
+          <xdr:cNvPr id="2" name="Rectangle 1">
+            <a:extLst>
+              <a:ext uri="{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}">
+                <a16:creationId
+                  xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="{65F9A0BA-5105-4DCC-A021-D21A52C04C15}"/>
+                </a:ext>
+              </a:extLst>
+            </xdr:cNvPr>
+            <xdr:cNvSpPr/>
+          </xdr:nvSpPr>
+          <xdr:spPr>
+            <a:xfrm>
+              <a:off x="4381500" y="1076325"/>
+              <a:ext cx="2657475" cy="3762375"/>
+            </a:xfrm>
+            <a:prstGeom prst="rect">
+              <a:avLst/>
+            </a:prstGeom>
+          </xdr:spPr>
+          <xdr:style>
+            <a:lnRef idx="2">
+              <a:schemeClr val="accent1">
+                <a:shade val="50000"/>
+              </a:schemeClr>
+            </a:lnRef>
+            <a:fillRef idx="1">
+              <a:schemeClr val="accent1"/>
+            </a:fillRef>
+            <a:effectRef idx="0">
+              <a:schemeClr val="accent1"/>
+            </a:effectRef>
+            <a:fontRef idx="minor">
+              <a:schemeClr val="lt1"/>
+            </a:fontRef>
+          </xdr:style>
+          <xdr:txBody>
+            <a:bodyPr vertOverflow="clip" horzOverflow="clip" rtlCol="0" anchor="t"/>
+            <a:lstStyle/>
+            <a:p>
+              <a:pPr algn="l"/>
+              <a:endParaRPr lang="en-US" sz="1100"/>
+            </a:p>
+          </xdr:txBody>
+        </xdr:sp>
+        <xdr:clientData/>
+      </xdr:twoCellAnchor>
+    </xdr:wsDr>
+  `;
+
+  // ...
 
   public static base_xml = 
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:twoCellAnchor><xdr:from><xdr:col>11</xdr:col><xdr:colOff>23812</xdr:colOff><xdr:row>14</xdr:row><xdr:rowOff>185737</xdr:rowOff></xdr:from><xdr:to><xdr:col>18</xdr:col><xdr:colOff>328612</xdr:colOff><xdr:row>33</xdr:row><xdr:rowOff>85725</xdr:rowOff></xdr:to><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="3" name="Chart"><a:extLst><a:ext uri="{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}"><a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="{7BB0BD5E-85C4-4B06-B4B1-CF8612B15EED}"/></a:ext></a:extLst></xdr:cNvPr><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="0"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`;
@@ -31,11 +101,11 @@ export class Drawing {
   public dom: Tree;
 
   // drawing rels
-  public rels: Tree;
+  // public rels: Tree;
   // public rels_path: string;
 
   // chart
-  public chart: Tree;
+  // public chart: Tree;
   // public chart_path: string;
 
   public static SheetRels(rels: number[]): string {
@@ -58,6 +128,9 @@ export class Drawing {
 
   constructor(public index: number) {
 
+    this.dom = ElementTree.parse(Drawing.base2);
+
+    /*
     // drawing
 
     this.dom = ElementTree.parse(Drawing.base_xml);
@@ -79,6 +152,7 @@ export class Drawing {
     // chart
 
     this.chart = ElementTree.parse(Drawing.donut_chart_base);
+    */
 
   }
 

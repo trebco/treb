@@ -141,6 +141,8 @@ export class Workbook {
     if (!this.dom) throw new Error('missing dom');
     if (!this.rels_dom) throw new Error('missing rels_dom');
 
+    // it seems like we already have this in overrides, not sure why
+
     if (this.shared_strings.dom) {
       const xml = this.shared_strings.dom.write({xml_declaration: true});
       await this.zip.file( 'xl/sharedStrings.xml', xml);
@@ -149,6 +151,20 @@ export class Workbook {
     if (this.style_cache.modified && this.style_cache.dom) {
       const xml = this.style_cache.dom.write({xml_declaration: true});
       await this.zip.file( 'xl/styles.xml', xml);
+    }
+
+    // active tab
+
+    const workbook_view = this.dom.find('./bookViews/workbookView');
+    if (workbook_view) {
+      let selected_tab = 0;
+      for (let i = 0; i < this.sheets.length; i++) {
+        if (this.sheets[i].tab_selected) {
+          selected_tab = i;
+          break;
+        }
+      }
+      workbook_view.attrib.activeTab = selected_tab.toString();
     }
 
     await this.zip.file( 'xl/_rels/workbook.xml.rels', this.rels_dom.write({xml_declaration: true}));
@@ -163,8 +179,12 @@ export class Workbook {
       }
     }
 
+    const content_types_path = '[Content_Types].xml';
+    const content_types_data = await this.zip.file(content_types_path).async('text');
+    const content_types_dom = ElementTree.parse(content_types_data);
+
     /*
-    let single_color_style = false;
+    // let single_color_style = false;
 
     for (const drawing of this.drawings) {
 
@@ -174,33 +194,39 @@ export class Workbook {
     // this.rels_path = `xl/drawings/_rels/drawing${index}.xml.rels`;
 
       const index = drawing.index;
-      let xml = drawing.dom.write({xml_declaration: true});
-      await this.zip.file(`xl/drawings/drawing${index}.xml`, xml);
+      const xml = drawing.dom.write({xml_declaration: true});
+      const path = `xl/drawings/drawing${index}.xml`;
+      await this.zip.file(path, xml);
 
-      xml = drawing.rels.write({xml_declaration: true}); 
-      await this.zip.file(`xl/drawings/_rels/drawing${index}.xml.rels`, xml);
+      content_types_dom.getroot().append(Element('Override', {
+        PartName: '/' + path,
+        ContentType: 'application/vnd.openxmlformats-officedocument.drawing+xml',
+      }));
 
-      xml = drawing.chart.write({xml_declaration: true}); 
-      await this.zip.file(`xl/charts/chart${index}.xml`, xml);
+      // xml = drawing.rels.write({xml_declaration: true}); 
+      // await this.zip.file(`xl/drawings/_rels/drawing${index}.xml.rels`, xml);
 
+      // xml = drawing.chart.write({xml_declaration: true}); 
+      // await this.zip.file(`xl/charts/chart${index}.xml`, xml);
+
+      / *
       if (!single_color_style) {
         single_color_style = true;
         await this.zip.file(`xl/charts/colors1.xml`, Drawing.chart_colors);
         await this.zip.file(`xl/charts/style1.xml`, Drawing.chart_style);
       }
+      * /
 
-      await this.zip.file(`xl/charts/_rels/chart${index}.xml.rels`, Drawing.chart_rels);
+      // await this.zip.file(`xl/charts/_rels/chart${index}.xml.rels`, Drawing.chart_rels);
 
     }
     */
 
-    // for (const key of Object.keys(this.sheets)) {
-    //  const sheet = this.sheets[key];
+    let index = 0;
     for (const sheet of this.sheets) {
       if (sheet.dom && sheet.path){
         sheet.Finalize();
         const xml = sheet.dom.write({xml_declaration: true});
-        // console.info('sheet xml', sheet.path, xml);
         await this.zip.file(sheet.path, xml);
 
         /*
@@ -209,22 +235,25 @@ export class Workbook {
         }
         */
 
+        if (index++) {
+          content_types_dom.getroot().append(Element('Override', {
+              PartName: '/' + sheet.path,
+              ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
+          }));
+        }
+
       }
     }
+
+    await this.zip.file(content_types_path, content_types_dom.write({xml_declaration: true}));
 
   }
 
   /*
   public AddChart(): number {
 
-    // ensure we have directory for drawings, charts
-
-    // actually can we just create the documents? (...)
-
     const index = this.drawings.length + 1;
     this.drawings.push(new Drawing(index));
-
-
 
     return index;
   }
@@ -239,7 +268,7 @@ export class Workbook {
 
     let next_rel_index = 1;
     const NextRel = () => {
-      while (true) {
+      for(;;) {
         const rel = `rId${next_rel_index++}`;
         if (!this.rels[rel]) return rel;
       }

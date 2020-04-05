@@ -10,6 +10,7 @@ import { Parser, ArgumentSeparatorType, DecimalMarkType } from 'treb-parser';
 import { NumberFormatCache } from 'treb-format';
 
 import { SerializedSheet } from 'treb-grid';
+import { RangeOptions } from './sheet';
 
 /** excel units */
 const one_hundred_pixels = 14.28515625;
@@ -36,7 +37,7 @@ export class Exporter {
 
     if (!zip) {
       const data = JSBase64.decode(template);
-      zip = await new JSZip().loadAsync(data as any);
+      zip = await new JSZip().loadAsync(data);
     }
     this.archive_ = zip;
 
@@ -56,8 +57,9 @@ export class Exporter {
    * @param source
    */
   public async ExportSheet(source: {
-      sheet_data: SerializedSheet[],
-      decimal_mark: ','|'.',
+      sheet_data: SerializedSheet[];
+      active_sheet?: number;
+      decimal_mark: ','|'.';
     }) {
 
     this.workbook.InsertSheets(source.sheet_data.length);
@@ -88,6 +90,10 @@ export class Exporter {
         this.workbook.RenameSheet(index, sheet_source.name);
       }
 
+      if (source.active_sheet && sheet_source.id === source.active_sheet) {
+        sheet.tab_selected = true;
+      }
+
       // reset all merges, we will add as necessary
       sheet.ResetMerges();
 
@@ -106,102 +112,53 @@ export class Exporter {
 
       if (sheet_source.data) {
 
+        const StyleFromCell = (cell: { 
+          row: number; 
+          column: number;
+          ref?: number;
+          style_ref?: number;
+         }) => {
+
+          last_column = Math.max(last_column, cell.column);
+          const list: Style.Properties[] = [sheet_source.sheet_style];
+
+          if (sheet_source.column_style && sheet_source.column_style[cell.column]) {
+            list.push(sheet_source.column_style[cell.column]);
+          }
+
+          if (sheet_source.row_style && sheet_source.row_style[cell.row]) {
+            list.push(sheet_source.row_style[cell.row]);
+          }
+
+          if (cell.ref) {
+            list.push(sheet_source.cell_style_refs[cell.ref]);
+          }
+          else if (cell.style_ref) {
+            list.push(sheet_source.cell_style_refs[cell.style_ref]);
+          }
+          else if (style_map[cell.column] && style_map[cell.column][cell.row]) {
+            list.push(style_map[cell.column][cell.row]);
+          }
+
+          const composite = Style.Composite(list);
+          
+          const options = this.workbook.style_cache.StyleOptionsFromProperties(composite);
+          const style = this.workbook.style_cache.EnsureStyle(options);
+
+          return style;
+
+        };
+
         const HandleCell = (cell: any) => {
+
           if (typeof cell.row === 'number' && typeof cell.column === 'number') {
 
             last_column = Math.max(last_column, cell.column);
 
-            // FIXME: sheet style
-            const list: Style.Properties[] = [];
-            if (sheet_source.column_style && sheet_source.column_style[cell.column]) {
-              list.push(sheet_source.column_style[cell.column]);
-            }
-            if (sheet_source.row_style && sheet_source.row_style[cell.row]) {
-              list.push(sheet_source.row_style[cell.row]);
-            }
+            const style = StyleFromCell(cell);
 
-            if (cell.style_ref) {
-              const cs = sheet_source.cell_style_refs[cell.style_ref];
-              list.push(cs);
-            }
-            else if (style_map[cell.column] && style_map[cell.column][cell.row]) {
-              list.push(style_map[cell.column][cell.row]);
-            }
-
-            const composite = Style.Composite(list);
-            for (const key of Object.keys(composite) as Style.PropertyKeys[]) {
-              if (composite[key] === 'none') {
-                delete composite[key];
-              }
-            }
-
-            const font: Font = {};
-            const fill: Fill = {};
-            const border: BorderStyle = {};
-            const options: StyleOptions = {
-              font, border,
-            };
-
-            if (composite.number_format) {
-
-              // we have some symbolic number formats that we'll need to
-              // translate. these are defined by the cache.
-
-              options.number_format = { format: NumberFormatCache.Translate(composite.number_format) };
-            }
-
-            if (composite.font_bold) font.bold = true;
-            if (composite.font_italic) font.italic = true;
-            if (composite.font_underline) font.underline = true;
-            if (composite.text_color && composite.text_color !== Style.DefaultProperties.text_color) {
-              font.color_argb = composite.text_color;
-            }
-
-            if (composite.border_top) {
-              border.top_color = 64;
-              border.top_style = 'thin';
-            }
-            if (composite.border_bottom) {
-              border.bottom_color = 64;
-              if (composite.border_bottom > 1) {
-                border.bottom_style = 'double';
-              }
-              else {
-                border.bottom_style = 'thin';
-              }
-            }
-            if (composite.border_left) {
-              border.left_color = 64;
-              border.left_style = 'thin';
-            }
-            if (composite.border_right) {
-              border.right_color = 64;
-              border.right_style = 'thin';
-            }
-
-            switch (composite.horizontal_align) {
-              case Style.HorizontalAlign.Center:
-                options.horizontal_alignment = 'center';
-                break;
-              case Style.HorizontalAlign.Left:
-                options.horizontal_alignment = 'left';
-                break;
-              case Style.HorizontalAlign.Right:
-                options.horizontal_alignment = 'right';
-                break;
-            }
-
-            if (composite.background) {
-              fill.color_argb = composite.background;
-              options.fill = fill;
-            }
-
-            if (composite.wrap) {
-              options.wrap = true;
-            }
-
-            const style = this.workbook.style_cache.EnsureStyle(options);
-            const range_options: { [index: string]: any } = { style };
+            // const range_options: { [index: string]: any } = { style };
+            const range_options: RangeOptions = { style };
 
             if (cell.calculated) {
               range_options.precalc = cell.calculated; // .toString();
@@ -247,6 +204,18 @@ export class Exporter {
           }
         };
 
+        // this is used for cells that have styling but no other data
+        // (this changes? ... it changes when a cell is rendered and the style
+        // is cached. that's bad.)
+
+        // for the time being, set empty. if we hit the same cell later it
+        // will overwrite. make sure we're padding columns here if necessary.
+
+        for (const cell of sheet_source.cell_styles) {
+          const style = StyleFromCell(cell);
+          sheet.SetRange({ row: cell.row + 1, col: cell.column + 1 }, undefined, { style });
+        }
+
         for (const block of sheet_source.data) {
           if (block.cells) {
             const row = block.row;
@@ -269,15 +238,41 @@ export class Exporter {
       }
 
       if (last_column >= 0 && sheet_source.default_column_width) {
-        console.info(sheet_source.default_column_width);
+        //console.info(sheet_source.default_column_width);
         const units = sheet_source.default_column_width / 100 * one_hundred_pixels;
         for (let i = 0; i <= last_column; i++) {
           sheet.SetColumnWidth(i + 1, units);
         }
       }
 
+      // style... page style and column style goes in columns
+      {
+        const base = sheet_source.sheet_style;
+        let options = this.workbook.style_cache.StyleOptionsFromProperties(base);
+        let style = this.workbook.style_cache.EnsureStyle(options);
+        sheet.SetDefaultColumnStyle(style);
+
+        if (last_column >= 0) {
+          for (let i = 0; i <= last_column; i++) {
+            const list = [base];
+            if (sheet_source.column_style[i]) {
+              list.push(sheet_source.column_style[i]);
+            }
+            options = this.workbook.style_cache.StyleOptionsFromProperties(Style.Composite(list));
+            style = this.workbook.style_cache.EnsureStyle(options);
+
+            if (style) {
+              // console.info("COLUMN", i, "STYLE", style);
+              sheet.SetColumnStyleIndex(i + 1, style);
+            }
+
+          }
+
+        }
+      }
+
       if (sheet_source.column_width) {
-        console.info(sheet_source.column_width);
+        // console.info(sheet_source.column_width);
         for (const key of Object.keys(sheet_source.column_width)) {
 
           const column_index = Number(key || 0);
@@ -308,20 +303,20 @@ export class Exporter {
   }
 
   public async AsBinaryString(compression_level?: number) {
-    const opts: { [index: string]: any } = { type: 'binarystring' };
+    const opts: JSZip.JSZipGeneratorOptions = { type: 'binarystring' };
     if (typeof compression_level !== 'undefined') {
       opts.compression = 'DEFLATE';
-      opts.compression_level = compression_level;
+      opts.compressionOptions = {level: compression_level };
     }
     const output = await this.archive_.generateAsync(opts);
     return output;
   }
 
   public async AsBlob(compression_level?: number) {
-    const opts: { [index: string]: any } = { type: 'blob' };
+    const opts: JSZip.JSZipGeneratorOptions = { type: 'blob' };
     if (typeof compression_level !== 'undefined') {
       opts.compression = 'DEFLATE';
-      opts.compression_level = compression_level;
+      opts.compressionOptions = {level: compression_level };
     }
     const output = await this.archive_.generateAsync(opts);
     return output;

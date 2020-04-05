@@ -26,7 +26,7 @@ module.exports = {
     "brace-style": "off",
     "@typescript-eslint/brace-style": [
       "error",
-      "stroustrop",
+      "stroustrup",
       { "allowSingleLine": true },
     ],
 

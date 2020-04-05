@@ -3,6 +3,7 @@ import * as ElementTree from 'elementtree';
 import { Element, ElementTree as Tree } from 'elementtree';
 import { Style } from 'treb-base-types';
 import { Theme } from './theme';
+import { NumberFormatCache } from 'treb-format';
 
 export interface Font {
   size?: number;
@@ -152,6 +153,101 @@ export class StyleCache {
     }).join('');
 
   }
+
+  /// 
+
+  public StyleOptionsFromProperties(source: Style.Properties): StyleOptions {
+
+    const composite: Style.Properties = // Style.Composite(list);
+      JSON.parse(JSON.stringify(source));
+
+    for (const key of Object.keys(composite) as Style.PropertyKeys[]) {
+      if (composite[key] === 'none') {
+        delete composite[key];
+      }
+    }
+
+    const font: Font = {};
+    const fill: Fill = {};
+    const border: BorderStyle = {};
+    const options: StyleOptions = {
+      font, border,
+    };
+
+    if (composite.number_format) {
+
+      // we have some symbolic number formats that we'll need to
+      // translate. these are defined by the cache.
+
+      options.number_format = { format: NumberFormatCache.Translate(composite.number_format) };
+    }
+
+    if (composite.font_bold) font.bold = true;
+    if (composite.font_italic) font.italic = true;
+    if (composite.font_underline) font.underline = true;
+    if (composite.text_color && composite.text_color !== Style.DefaultProperties.text_color) {
+      font.color_argb = composite.text_color;
+    }
+
+    if (composite.border_top) {
+      border.top_color = 64;
+      border.top_style = 'thin';
+    }
+    if (composite.border_bottom) {
+      border.bottom_color = 64;
+      if (composite.border_bottom > 1) {
+        border.bottom_style = 'double';
+      }
+      else {
+        border.bottom_style = 'thin';
+      }
+    }
+    if (composite.border_left) {
+      border.left_color = 64;
+      border.left_style = 'thin';
+    }
+    if (composite.border_right) {
+      border.right_color = 64;
+      border.right_style = 'thin';
+    }
+
+    // leave blank for bottom, default
+
+    switch (composite.vertical_align) {
+      case Style.VerticalAlign.Top:
+        options.vertical_alignment = 'top';
+        break;
+      case Style.VerticalAlign.Middle:
+        options.vertical_alignment = 'center';
+        break;
+    }
+
+    switch (composite.horizontal_align) {
+      case Style.HorizontalAlign.Center:
+        options.horizontal_alignment = 'center';
+        break;
+      case Style.HorizontalAlign.Left:
+        options.horizontal_alignment = 'left';
+        break;
+      case Style.HorizontalAlign.Right:
+        options.horizontal_alignment = 'right';
+        break;
+    }
+
+    if (composite.background) {
+      fill.color_argb = composite.background;
+      options.fill = fill;
+    }
+
+    if (composite.wrap) {
+      options.wrap = true;
+    }
+
+    return options;
+
+  }
+
+  ///
 
   public CellXfToStyle(xf: CellXf): Style.Properties {
 
@@ -304,15 +400,28 @@ export class StyleCache {
   public EnsureBorder(border: BorderStyle) {
 
     const props = Object.keys(border).filter((key) => typeof (border as any)[key] !== 'undefined');
+    const prop_count = Object.keys(props).length;
+
     for (let i = 0; i < this.borders.length; i++ ){
       const candidate = this.borders[i];
-      let match = true;
-      for (const prop of props) {
-        match = match && (border as any)[prop] === (candidate as any)[prop];
+
+      // this matches the existing props but ignores _other_ props, which is bad.
+      // need to add another check. length should do it.
+      //
+      // FIXME: is any other routine doing it the same way?
+      // TODO: check
+
+      if (Object.keys(candidate).length === prop_count) {
+
+        let match = true;
+        for (const prop of props) {
+          match = match && (border as any)[prop] === (candidate as any)[prop];
+        }
+        if (match) {
+          return i;
+        }
       }
-      if (match) {
-        return i;
-      }
+
     }
 
     this.modified = true;
@@ -636,9 +745,11 @@ export class StyleCache {
       for (const child of element.getchildren()){
         switch (child.tag) {
           case 'fgColor':
-            const argb = child.attrib.rgb;
-            const indexed = child.attrib.indexed;
-            if (typeof argb !== 'undefined') fill.color_argb = argb;
+            {
+              const argb = child.attrib.rgb;
+              const indexed = child.attrib.indexed;
+              if (typeof argb !== 'undefined') fill.color_argb = argb;
+            }
             break;
         }
       }

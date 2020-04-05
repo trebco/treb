@@ -4,7 +4,7 @@
 // the namespace (or you could add an intermediate file and import ->
 // export, but that just seems like unecessary complexity and still kludgy).
 
-// tslint:disable-next-line:no-namespace
+// eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Style {
 
   /** horizontal align constants */
