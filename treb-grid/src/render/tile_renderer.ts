@@ -741,6 +741,10 @@ export class TileRenderer {
               wrapped.push(line.trim()); // remove trailing whitespace in this case
             }
           }
+          else {
+            // blank line?
+            wrapped.push('');
+          }
         });
         lines = wrapped;
       }

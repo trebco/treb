@@ -28,7 +28,8 @@ module.exports = {
       "error",
       "stroustrop",
       { "allowSingleLine": true },
-    ]
+    ],
+
   }
 
   /*

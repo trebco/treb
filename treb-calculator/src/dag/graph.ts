@@ -69,6 +69,32 @@ export abstract class Graph {
     this.cells_map = {};
   }
 
+  public ResolveArrayHead(address: ICellAddress): ICellAddress {
+
+    if (!address.sheet_id) { throw new Error('resolve array head with no sheet id'); }
+    const cells = this.cells_map[address.sheet_id];
+
+    if (!cells) {
+      throw new Error('no cells? sheet id ' + address.sheet_id);
+    }
+
+    const row = cells.data2[address.row];
+    if (row) {
+      const cell = row[address.column];
+      if (cell && cell.area) {
+
+        const resolved = { row: cell.area.start.row, column: cell.area.start.column, sheet_id: address.sheet_id };
+        console.info('array head', address, resolved);
+
+        return resolved;
+
+      }
+    }
+
+    return address;
+
+  }
+
   /** overload */
   public GetVertex(address: ICellAddress, create: true): SpreadsheetVertex;
 
@@ -185,6 +211,7 @@ export abstract class Graph {
       this.dirty_list.push(vertex);
       vertex.SetDirty();
     }
+
   }
 
   public LoopCheck(v: Vertex, u: Vertex) {
@@ -247,18 +274,40 @@ export abstract class Graph {
 
   }
 
+  public SetAreaDirty(area: IArea) {
+
+    if (area.start.column === Infinity
+      || area.end.column === Infinity
+      || area.start.row === Infinity
+      || area.end.row === Infinity ){
+        throw new Error('don\'t iterate over infinite area');
+    }
+
+    const sheet_id = area.start.sheet_id;
+    if (!sheet_id) {
+      throw new Error('invalid area, missing sheet id');
+    }
+
+    for (let column = area.start.column; column <= area.end.column; column++) {
+      for (let row = area.start.row; row <= area.end.row; row++) {
+        const address: ICellAddress = {row, column, sheet_id};
+        const vertex = this.GetVertex(address, false);
+        if (vertex) { this.SetDirty(address); }
+        this.SetArraysDirty(address);
+      }
+    }
+
+  }
+
   /** sets area dirty, convenience shortcut */
-  public SetAreaDirty(area: Area) {
+  public SetAreaDirtyX(area: Area) {
     area.Iterate((address: ICellAddress) => {
       const vertex = this.GetVertex(address, false);
       if (vertex) this.SetDirty(address);
     });
   }
 
-  /** sets dirty */
-  public SetDirty(address: ICellAddress) {
-
-    const vertex = this.GetVertex(address, true);
+  public SetVertexDirty(vertex: SpreadsheetVertex) {
 
     // is it safe to assume that, if the dirty flag is set, it's
     // on the dirty list? I'm not sure that's the case if there's
@@ -266,6 +315,33 @@ export abstract class Graph {
 
     this.dirty_list.push(vertex);
     vertex.SetDirty();
+
+    // so for arrays, make sure every member of the array is
+    // dirty (if there's a vertex). only call this from the 
+    // array head (and don't call the array head).
+
+    if (vertex.reference && vertex.reference.area && vertex.array_head) {
+      const {start, end} = vertex.reference.area;
+      const sheet_id = start.sheet_id || vertex.address?.sheet_id;
+      for (let column = start.column; column <= end.column; column++) {
+        for (let row = start.row; row <= end.row; row++) {
+          if (column === start.column && row === start.row) { continue; } // same same
+
+          const member = this.GetVertex({row, column, sheet_id}, false);
+          if (member && !member.dirty) { this.SetVertexDirty(member); }
+
+        }
+      }
+    }
+
+  }
+
+  /** sets dirty */
+  public SetDirty(address: ICellAddress) {
+
+    const vertex = this.GetVertex(address, true);
+    this.SetVertexDirty(vertex);
+
   }
 
   // --- array vertices... testing ---
@@ -279,10 +355,14 @@ export abstract class Graph {
 
     array_vertex.area.Iterate((address) => {
       const vertex = this.GetVertex(address, false);
+      // const vertex = this.GetVertex(this.ResolveArrayHead(address), false);
       if (vertex) {
         // console.info('CreateImplicitEdgeToArray', vertex.address, array_vertex.area);
         array_vertex.AddDependency(vertex);
         vertex.AddDependent(array_vertex);
+      }
+      else {
+        console.info('no vertex in CIE', address);
       }
     });
 
@@ -303,6 +383,7 @@ export abstract class Graph {
       const array_vertex = this.array_vertices[key];
       if (array_vertex.area.start.sheet_id === vertex.address.sheet_id &&
           array_vertex.area.Contains(vertex.address)) {
+
         // console.info('CreateImplicitEdgeToArray', vertex.address, array_vertex.area);
         array_vertex.AddDependency(vertex);
         vertex.AddDependent(array_vertex);
@@ -311,6 +392,8 @@ export abstract class Graph {
   }
 
   public SetArraysDirty(address: ICellAddress) {
+
+    // console.info("SAD", address)
 
     for (const key of Object.keys(this.array_vertices)) {
       const array_vertex = this.array_vertices[key];
@@ -485,11 +568,18 @@ export abstract class Graph {
     // FIXME: volatiles should proabbly be caclucated first,
     // not last, because they're probably primary.
 
-    for (const vertex of this.volatile_list) {
-      vertex.SetDirty();
-    }
+    // for (const vertex of this.volatile_list) {
+    //  vertex.SetDirty();
+    // }
 
-    const calculation_list = this.volatile_list.slice(0).concat(this.dirty_list);
+    // const calculation_list = this.volatile_list.slice(0).concat(this.dirty_list);
+
+    // we do this using the local function so we can trace back arrays
+
+    for (const vertex of this.volatile_list) {
+      this.SetVertexDirty(vertex as SpreadsheetVertex);
+    }
+    const calculation_list = this.dirty_list.slice(0);
 
     this.volatile_list = [];
     this.dirty_list = [];

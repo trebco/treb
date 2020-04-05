@@ -922,19 +922,17 @@ export class Calculator extends Graph {
 
       // array head
       if (cell.area && cell.area.start.column === cell.column && cell.area.start.row === cell.row ){
-        for (let c = cell.area.start.column; c <= cell.area.end.column; c++ ){
-          for (let r = cell.area.start.row; r <= cell.area.end.row; r++ ){
-            if (c !== cell.area.start.column && r !== cell.area.start.row){
-              this.ResetInbound({column: c, row: r, sheet_id: cell.area.start.sheet_id});
-              const status = this.AddEdge(cell, {column: c, row: r, sheet_id: cell.area.start.sheet_id});
-              if (status !== GraphStatus.OK) {
-                global_status = status;
-                if (!initial_reference) initial_reference = { ...cell };
-              }
-            }
-            this.SetDirty(cell);
+
+        const sheet_id = cell.area.start.sheet_id || cell.sheet_id;
+
+        for (let column = cell.area.start.column; column <= cell.area.end.column; column++ ){
+          for (let row = cell.area.start.row; row <= cell.area.end.row; row++ ){
+            this.ResetInbound({column, row, sheet_id}, true, false); // set dirty, don't create
           }
         }
+
+        this.SetDirty(cell); // implicitly creates vertex for array head (if it doesn't already exist)
+
       }
 
       // formula?
@@ -970,16 +968,17 @@ export class Calculator extends Graph {
 
             // --- array version -----------------------------------------------
 
+            /*
             const status = this.AddArrayVertexEdge(range, cell);
 
             if (status !== GraphStatus.OK) {
               global_status = status;
               if (!initial_reference) initial_reference = { ...cell };
             }
+            */
 
             // --- non-array version -------------------------------------------
 
-            /*
             range.Iterate((address: ICellAddress) => {
               const status = this.AddEdge(address, cell);
               if (status !== GraphStatus.OK) {
@@ -987,7 +986,6 @@ export class Calculator extends Graph {
                 if (!initial_reference) initial_reference = { ...cell };
               }
             });
-            */
 
             // --- end ---------------------------------------------------------
 
@@ -1028,6 +1026,12 @@ export class Calculator extends Graph {
         // is this unecessarily flagging a number of cells? (...)
 
         this.ResetInbound(cell, true, false);
+      }
+      else {
+
+        // this is just a constant?
+        // console.info("UNHANDLED CASE?", cell);
+        
       }
 
     }
@@ -1076,6 +1080,7 @@ export class Calculator extends Graph {
       if (!cells) { throw new Error('BuildCellsList called with invalid sheet id'); }
 
       const flat = cells.toJSON({ ...options, sheet_id });
+
       return flat.data;
 
     }
@@ -1109,7 +1114,9 @@ export class Calculator extends Graph {
 
       // drop subset if we need a full rebuild
       subset: this.full_rebuild_required ? undefined : area,
-      calculated_value: true };
+      calculated_value: true,
+    
+    };
 
     if (this.full_rebuild_required) {
       this.UpdateAnnotations();
@@ -1132,7 +1139,20 @@ export class Calculator extends Graph {
       // merged cells. in this case we still need to reset, but it
       // will happen in the RebuildGraph function.
 
+      // NOTE: we need to do something with outbound vertices here.
+      // the issue is if something refers to a cell within an array,
+      // behavior is not well-defined. 
+
+      const edge_list: SpreadsheetVertex[] = [];
+
       area.Iterate((address: ICellAddress) => {
+        const vertex = this.GetVertex(address, false);
+        if (vertex) {
+          for (const edge of vertex.edges_out) {
+            // console.info('EO', (edge as SpreadsheetVertex).address);
+            edge_list.push(edge as SpreadsheetVertex);
+          }
+        }
         this.ResetInbound(address, true, false);
       });
 
@@ -1148,6 +1168,24 @@ export class Calculator extends Graph {
         flat_data = this.BuildCellsList(json_options);
         result = this.RebuildGraph(flat_data, options);
       }
+
+      /*
+
+      else if (edge_list.length) {
+
+
+        flat_data = edge_list.map(edge => {
+          if (edge.address) {
+            return this.BuildCellsList({...json_options, subset: new Area(edge.address)})[0];
+          }
+        });
+        console.info("FDL", flat_data);
+        result = this.RebuildGraph(flat_data, options);
+
+      }
+
+      */
+
 
     }
     else {
