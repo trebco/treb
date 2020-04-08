@@ -157,7 +157,7 @@ $font_stack: -apple-system,
 }
 
 svg[toolbar-icons] symbol path.secondary {
-  stroke: $button-secondary;
+  stroke: $button-secondary; // this works in chrome but not ffx
 }
 
 svg[toolbar-icons] symbol path.target {
@@ -179,6 +179,11 @@ svg[toolbar-icons] symbol path.target {
 
     -moz-transform: scale(1); // fixes ffx blurry svg, not sure why
     // -ms-transform: scale(1); // doesn't un-blurry IE11
+
+  .secondary {
+    stroke: $button-secondary;
+  }
+
 }
 
 .options-list-holder .list {

@@ -6,6 +6,8 @@ import { NumberFormatCache, NumberFormat } from 'treb-format';
 import { Measurement } from 'treb-utils';
 import { ICellAddress, Area } from 'treb-base-types';
 
+import { symbol_defs } from './symbol-defs';
+
 import { ToolbarOptions } from './toolbar-options';
 
 import { UA } from 'treb-grid';
@@ -336,7 +338,9 @@ export class Toolbar {
   public SetSecondColor(id: string, color: string) {
     const item = this.items[id];
     if (item && item.icon) {
-      const paths = document.querySelectorAll(`symbol#treb-toolbar-icon-${item.icon} path`);
+      // const paths = document.querySelectorAll(`symbol#treb-toolbar-icon-${item.icon} path`);
+      //const paths = document.querySelectorAll(`.treb-toolbar-icon-${item.icon} path`);
+      const paths = this.container.querySelectorAll(`.treb-toolbar-icon-${item.icon} path`);
       for (let i = 0; i < paths.length; i++) {
 
         // classList doesn't work in IE11 -- because SVG? not sure.
@@ -379,12 +383,17 @@ export class Toolbar {
   public UpdateIcon(id: string, icon: string) {
 
     const item = this.items[id];
-    const element = item.node.querySelector('use');
+    //const element = item.node.querySelector('use');
+    //if (element) {
+    //  element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + icon);
+    //}
+ 
+    const element = item.node.querySelector('svg');
     if (element) {
-      element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + icon);
+      this.CreateSVG(icon, element as SVGElement);
     }
   }
-
+  
   public UpdateTitle(id: string, title: string) {
     const item = this.items[id];
     if (item) {
@@ -586,11 +595,14 @@ export class Toolbar {
       button.setAttribute('data-id', option.id || '');
       button.setAttribute('data-icon', option.icon || '');
 
-      const svg = document.createElementNS(SVGNS, 'svg');
-      const element = document.createElementNS(SVGNS, 'use');
-      svg.appendChild(element);
-      element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + option.icon);
-      button.appendChild(svg);
+      // const svg = document.createElementNS(SVGNS, 'svg');
+      // const element = document.createElementNS(SVGNS, 'use');
+      // svg.appendChild(element);
+      // element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + option.icon);
+      if (option.icon) {
+        const svg = this.CreateSVG(option.icon);
+        button.appendChild(svg);
+      }
 
       list.appendChild(button);
     }
@@ -776,11 +788,14 @@ export class Toolbar {
       // header.innerText = template.text;
       // header.appendChild(span);
 
-      const svg = document.createElementNS(SVGNS, 'svg');
-      const element = document.createElementNS(SVGNS, 'use');
-      svg.appendChild(element);
-      element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + template.icon);
-      header.appendChild(svg);
+      // const svg = document.createElementNS(SVGNS, 'svg');
+      // const element = document.createElementNS(SVGNS, 'use');
+      // svg.appendChild(element);
+      // element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + template.icon);
+      if (template.icon) {
+        const svg = this.CreateSVG(template.icon);
+        header.appendChild(svg);
+      }
 
       if (template.title) {
         header.setAttribute('title', template.title);
@@ -853,6 +868,40 @@ export class Toolbar {
     container.appendChild(div);
   }
 
+  private CreateSVG(icon: string, target?: SVGElement) {
+
+    if (!target) {
+      target = document.createElementNS(SVGNS, 'svg');
+      target.setAttribute('width', '24');
+      target.setAttribute('height', '24');
+    }
+    else {
+      target.innerHTML = '';
+    }
+
+    //for (const key of Object.keys(symbol_defs)) {
+      const def = symbol_defs[icon];
+      const symbol = document.createElementNS(SVGNS, 'g');
+      // symbol.setAttribute('id', 'treb-toolbar-icon-' + key);
+      target.setAttribute('viewBox', def.viewbox || '0 0 24 24');
+      //target.classList.add('treb-toolbar-icon-' + icon);
+      target.setAttribute('class', 'treb-toolbar-icon-' + icon);
+
+      for (const path_def of def.paths || []) {
+        const path = document.createElementNS(SVGNS, 'path');
+        path.setAttribute('d', path_def.d);
+        if (path_def.style) path.setAttribute('style', path_def.style);
+        if (path_def.classes) {
+          const classes = Array.isArray(path_def.classes) ? path_def.classes : [path_def.classes];
+          // for (const class_name of classes) { path.classList.add(class_name); }
+          path.setAttribute('class', classes.join(' ')); // IE11
+        }
+        symbol.appendChild(path);
+      }
+      target.appendChild(symbol);
+      return target;
+  }
+
   private AddButton(template: ToolbarItem, container: HTMLElement) {
     const button = document.createElement('button');
 
@@ -866,10 +915,11 @@ export class Toolbar {
       button.textContent = template.text;
     }
     if (template.icon) {
-      const svg = document.createElementNS(SVGNS, 'svg');
-      const element = document.createElementNS(SVGNS, 'use');
-      svg.appendChild(element);
-      element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + template.icon);
+      // const svg = document.createElementNS(SVGNS, 'svg');
+      // const element = document.createElementNS(SVGNS, 'use');
+      // svg.appendChild(element);
+      // element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + template.icon);
+      const svg = this.CreateSVG(template.icon);
       button.appendChild(svg);
     }
 

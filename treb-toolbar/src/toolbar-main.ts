@@ -85,6 +85,7 @@ export class FormattingToolbar {
     </pattern>
     */
 
+    /*
     for (const key of Object.keys(symbol_defs)) {
       const def = symbol_defs[key];
       const symbol = document.createElementNS(SVGNS, 'symbol');
@@ -103,6 +104,7 @@ export class FormattingToolbar {
       }
       svg.appendChild(symbol);
     }
+    */
 
     document.body.appendChild(svg);
     this.svg_injected = true;
@@ -543,23 +545,23 @@ export class FormattingToolbar {
       case 'increase-decimal':
       case 'decrease-decimal':
         if (!this.selection_style) break; // nothing selected
+        {
+          // style, or generic
+          const number_format = this.selection_style.number_format || 'generic'; // shouldn't that be 'general'?
+          const format_base = NumberFormatCache.Get(number_format);
+          const format_instance = new NumberFormat(format_base.pattern); // clone, basically
 
-        // style, or generic
-        const number_format = this.selection_style.number_format || 'generic'; // shouldn't that be 'general'?
-        const format_base = NumberFormatCache.Get(number_format);
-        const format_instance = new NumberFormat(format_base.pattern); // clone, basically
+          // do nothing to date formats
+          if (format_instance.date_format) break;
 
-        // do nothing to date formats
-        if (format_instance.date_format) break;
+          // use the format mutation method (make sure this is a clone)
+          if (template.id === 'increase-decimal') format_instance.IncreaseDecimal();
+          else format_instance.DecreaseDecimal();
 
-        // use the format mutation method (make sure this is a clone)
-        if (template.id === 'increase-decimal') format_instance.IncreaseDecimal();
-        else format_instance.DecreaseDecimal();
-
-        // get pattern returns the unmutated pattern, for some reason. use toString to
-        // get the mutated pattern. also: FIXME (in format)
-        style.number_format = format_instance.toString();
-
+          // get pattern returns the unmutated pattern, for some reason. use toString to
+          // get the mutated pattern. also: FIXME (in format)
+          style.number_format = format_instance.toString();
+        }
         break;
 
       case 'note':
