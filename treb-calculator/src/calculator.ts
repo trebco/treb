@@ -1,6 +1,6 @@
 
 import { Localization, Cell, Area, ICellAddress,
-         ValueType, CellSerializationOptions, Cells } from 'treb-base-types';
+         ValueType, CellSerializationOptions } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier } from 'treb-parser';
 
@@ -91,6 +91,7 @@ export class Calculator extends Graph {
           name: 'reference', description: 'Array or reference' },
         ],
         volatile: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fn: (reference: any) => {
           if (!reference) return ArgumentError;
           if (Array.isArray(reference)) {
@@ -113,6 +114,7 @@ export class Calculator extends Graph {
           name: 'reference', description: 'Array or reference' },
         ],
         volatile: false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fn: (reference: any) => {
           if (!reference) return ArgumentError;
           if (Array.isArray(reference)) {
@@ -135,6 +137,7 @@ export class Calculator extends Graph {
           if (!reference) return ArgumentError;
 
           const parse_result = this.parser.Parse(reference);
+
           if (parse_result.error || !parse_result.expression) {
             return ReferenceError;
           }
@@ -215,6 +218,7 @@ export class Calculator extends Graph {
 
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public SpreadCallback(vertex: SpreadsheetVertex, value: any) {
 
     if (!vertex.address || !vertex.address.sheet_id) {
@@ -228,7 +232,7 @@ export class Calculator extends Graph {
 
     if (!vertex || !vertex.reference) return;
 
-    const ref = vertex.reference.area;
+    // const ref = vertex.reference.area;
     let type: string = typeof value;
     let dims = 2;
 
@@ -243,6 +247,8 @@ export class Calculator extends Graph {
       }
       else {
         type = 'array';
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         value = [[''].concat(value.rownames)].concat(value.colnames.map((name: any) => {
           return [name].concat(value.data[name]);
         }));
@@ -357,19 +363,23 @@ export class Calculator extends Graph {
 
       area = this.model.active_sheet.RealArea(area);
 
+      const sheet_id = area.start.sheet_id;
+
       if (offset) {
         area = new Area({
           column: area.start.column + offset_columns,
           row: area.start.row + offset_rows,
+          sheet_id: area.start.sheet_id,
         }, {
           column: area.start.column + offset_columns + resize_rows - 1,
           row: area.start.row + offset_rows + resize_columns - 1,
+          sheet_id: area.end.sheet_id,
         });
       }
 
       for (let row = area.start.row; row <= area.end.row; row++ ){
         for (let column = area.start.column; column <= area.end.column; column++ ){
-          const vertex = this.GetVertex({row, column}, false);
+          const vertex = this.GetVertex({row, column, sheet_id}, false);
           if (vertex && vertex.dirty) {
 
             // so we know, given the structure of calculation, that there
@@ -392,7 +402,7 @@ export class Calculator extends Graph {
             // before you set the short-circuit flag, test result so we
             // can error on circular ref
 
-            const edge_result = this.AddEdge({row, column}, this.expression_calculator.context.address);
+            const edge_result = this.AddEdge({row, column, sheet_id}, this.expression_calculator.context.address);
 
             if (edge_result) {
               return ReferenceError;
@@ -478,6 +488,7 @@ export class Calculator extends Graph {
       // that rely on it. which is a pretty far-fetched scenario, but we might
       // as well protect against it.
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       descriptor.fn = (...args: any[]) => {
         return original_function.apply({
           address: { ...this.expression_calculator.context.address},
@@ -759,12 +770,29 @@ export class Calculator extends Graph {
       relative_sheet_id: number,
       relative_sheet_name: string,
       dependencies: DependencyList = {addresses: {}, ranges: {}},
+      sheet_name_map?: {[index: string]: number},
     ){
 
-    const sheet_name_map: {[index: string]: number} = {};
-    if (this.model) {
-      for (const sheet of this.model.sheets) {
-        sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
+    // does this get redone on every descent? dumb
+
+    if (!sheet_name_map) {
+
+      sheet_name_map = {};
+      if (this.model) {
+
+        for (const sheet of this.model.sheets) {
+          sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
+        }
+
+        if (!relative_sheet_name) {
+          for (const sheet of this.model.sheets) {
+            if (sheet.id === relative_sheet_id) {
+              relative_sheet_name = sheet.name;
+              break;
+            }
+          }
+        }
+
       }
     }
 
@@ -790,6 +818,7 @@ export class Calculator extends Graph {
         break;
 
       case 'address':
+
         if (!unit.sheet_id) {
           unit.sheet_id = unit.sheet ?
             (sheet_name_map[unit.sheet.toLowerCase()] || 0) :
@@ -810,17 +839,17 @@ export class Calculator extends Graph {
         break;
 
       case 'unary':
-        this.RebuildDependencies(unit.operand, relative_sheet_id, relative_sheet_name, dependencies);
+        this.RebuildDependencies(unit.operand, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map);
         break;
 
       case 'binary':
-        this.RebuildDependencies(unit.left, relative_sheet_id, relative_sheet_name, dependencies);
-        this.RebuildDependencies(unit.right, relative_sheet_id, relative_sheet_name, dependencies);
+        this.RebuildDependencies(unit.left, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map);
+        this.RebuildDependencies(unit.right, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map);
         break;
 
       case 'group':
         unit.elements.forEach((element) =>
-          this.RebuildDependencies(element, relative_sheet_id, relative_sheet_name, dependencies));
+          this.RebuildDependencies(element, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map));
         break;
 
       case 'call':
@@ -830,25 +859,25 @@ export class Calculator extends Graph {
         // to support our weird MV syntax (weird here, but useful in Excel).
 
         // UPDATE: this is broadly useful for some other functions, like OFFSET.
+        {
+          const args: ExpressionUnit[] = unit.args.slice(0);
+          const func = this.library.Get(unit.name);
+          if (func && func.arguments){
+            func.arguments.forEach((descriptor, index) => {
+              if (descriptor && descriptor.address) {
 
-        const args: ExpressionUnit[] = unit.args.slice(0);
-        const func = this.library.Get(unit.name);
-        if (func && func.arguments){
-          func.arguments.forEach((descriptor, index) => {
-            if (descriptor && descriptor.address) {
+                // we still want to fix sheet addresses, though, even if we're
+                // not tracking the dependency. to do that, we can recurse with
+                // a new (empty) dependency list, and just drop the new list
 
-              // we still want to fix sheet addresses, though, even if we're
-              // not tracking the dependency. to do that, we can recurse with
-              // a new (empty) dependency list, and just drop the new list
+                this.RebuildDependencies(args[index], relative_sheet_id, relative_sheet_name, undefined, sheet_name_map);
 
-              this.RebuildDependencies(args[index], relative_sheet_id, relative_sheet_name);
-
-              args[index] = { type: 'missing', id: -1 };
-            }
-          });
+                args[index] = { type: 'missing', id: -1 };
+              }
+            });
+          }
+          args.forEach((arg) => this.RebuildDependencies(arg, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map));
         }
-        args.forEach((arg) => this.RebuildDependencies(arg, relative_sheet_id, relative_sheet_name, dependencies));
-
         break;
 
     }
@@ -909,8 +938,9 @@ export class Calculator extends Graph {
    * FIXME: if we want to compose functions, we could do that here,
    * which might result in some savings
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected RebuildGraph(data: any[], options: CalculationOptions = {}):
-      {status: GraphStatus, reference?: ICellAddress} {
+      {status: GraphStatus; reference?: ICellAddress} {
 
     // we're finishing the dep/dirty check so we don't miss something
     // later, but we won't add the loop and we won't calculate.
@@ -946,7 +976,10 @@ export class Calculator extends Graph {
         // for those here...
 
         if (parse_result.expression) {
-          const dependencies = this.RebuildDependencies(parse_result.expression, cell.sheet_id, cell.sheet_id);
+
+          // zerp
+
+          const dependencies = this.RebuildDependencies(parse_result.expression, cell.sheet_id, ''); // cell.sheet_id);
 
           for (const key of Object.keys(dependencies.ranges)){
             const unit = dependencies.ranges[key];
@@ -1039,6 +1072,7 @@ export class Calculator extends Graph {
     return {status: global_status, reference: initial_reference || undefined}; // no loops
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected IsNativeOrTypedArray(val: any){
     return Array.isArray(val) || (val instanceof Float64Array) || (val instanceof Float32Array);
   }
@@ -1088,6 +1122,7 @@ export class Calculator extends Graph {
 
       if (!this.model) { throw new Error('BuildCellsList called without model'); }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let data: any[] = [];
       for (const sheet of this.model.sheets) {
         const flat = sheet.cells.toJSON({ ...options, sheet_id: sheet.id });
@@ -1102,7 +1137,8 @@ export class Calculator extends Graph {
 
   protected async CalculateInternal(model: DataModel, area?: Area, options?: CalculationOptions){
 
-    const cells = model.active_sheet.cells;
+    // const cells = model.active_sheet.cells;
+
     this.AttachData(model); // for graph. FIXME
 
     if (area && !area.start.sheet_id) {
@@ -1128,7 +1164,7 @@ export class Calculator extends Graph {
 
     this.expression_calculator.SetModel(model);
 
-    let result: {status: GraphStatus, reference?: ICellAddress} = {
+    let result: {status: GraphStatus; reference?: ICellAddress} = {
       status: GraphStatus.OK,
     };
 

@@ -484,6 +484,7 @@ for (const name of Object.getOwnPropertyNames(Math)) {
 // IE11: patch log10 function
 
 if (!Math.log10) {
+  Math.log10 = (a) => Math.log(a) / Math.log(10);
   BaseFunctionLibrary.log10 = {
     fn: (x) => Math.log(x) / Math.log(10),
     category: ['Math Functions'],

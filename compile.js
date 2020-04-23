@@ -1,4 +1,6 @@
 
+/* eslint-disable @typescript-eslint/no-var-requires */
+
 /**
  * seems like the only way to concurrently build (and watch) both ES5 and ES6
  * versions, using typescript, is to run two instances of webpack. this is
@@ -7,14 +9,14 @@
  * TODO: workers
  */
 
-const webpack = require("webpack");
+const webpack = require('webpack');
 const fs = require('fs');
 const path = require('path');
 const exec = require('child_process').exec;
+// const archiver = require('archiver');
+const LicenseCheckerWebpackPlugin = require('license-checker-webpack-plugin');
+
 const package = require('./package.json');
-// const tsconfig = require('./tsconfig.json');
-const archiver = require('archiver');
-const LicenseCheckerWebpackPlugin = require("license-checker-webpack-plugin");
 
 let watch = false;
 let dev = false;
@@ -40,7 +42,7 @@ if (!build.legacy && !build.modern) {
   build.legacy = build.modern = true;
 }
 
-let modern_entry = {};
+const modern_entry = {};
 modern_entry[package['build-entry-points']['main'] + '-es6'] = './treb-embed/src/index-modern.ts';
 modern_entry[package['build-entry-points']['export-worker'] + '-es6' + '-' + package.version] = './treb-export/src/export-worker/index-modern.ts';
 modern_entry[package['build-entry-points']['calculation-worker'] + '-es6' + '-' + package.version] = './treb-mc/src/calculation-worker/index-modern.ts';
@@ -80,16 +82,16 @@ if (clean) {
 }
 
 const directories = [
-  "treb-mc",
-  "treb-grid",
-  "treb-utils",
-  "treb-export",
-  "treb-format",
-  "treb-parser",
-  "treb-toolbar",
-  "treb-calculator",
-  "treb-sparkline",
-  "treb-base-types",
+  'treb-mc',
+  'treb-grid',
+  'treb-utils',
+  'treb-export',
+  'treb-format',
+  'treb-parser',
+  'treb-toolbar',
+  'treb-calculator',
+  'treb-sparkline',
+  'treb-base-types',
 ];
 
 const aliases = {};
@@ -169,7 +171,7 @@ const CreateConfig = (config, entry) => {
       chunkFilename: '[name].bundle.js'
     },
     plugins: [
-      new LicenseCheckerWebpackPlugin({ outputFilename: "3d_party.txt" }),
+      new LicenseCheckerWebpackPlugin({ outputFilename: '3d_party.txt' }),
       new webpack.BannerPlugin({
         banner: `v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC-ND: https://treb.app/license`,
       }),
@@ -189,8 +191,8 @@ const CreateConfig = (config, entry) => {
   }
 };
 
-let modern_compiler = webpack(CreateConfig('modern', modern_entry));
-let legacy_compiler = webpack(CreateConfig('legacy', legacy_entry));
+const modern_compiler = webpack(CreateConfig('modern', modern_entry));
+const legacy_compiler = webpack(CreateConfig('legacy', legacy_entry));
 
 const postbuild = async (config, err, stats) => {
 
@@ -205,7 +207,7 @@ const postbuild = async (config, err, stats) => {
     return;
   }
 
-    console.info("\n" + stats.toString({
+    console.info('\n' + stats.toString({
       all: false,
       builtAt: true,
       colors: true,
