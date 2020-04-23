@@ -23,7 +23,7 @@ export class FunctionLibrary {
       // a number. the legal characters thing is probably broken: we should
       // allow extended characters.
 
-      if (/[^a-zA-Z0-9\._]/.test(name)) {
+      if (/[^a-zA-Z0-9._]/.test(name)) {
         throw new Error('invalid function name (invalid character)');
       }
 

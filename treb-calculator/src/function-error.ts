@@ -24,6 +24,7 @@ export const UnknownError: FunctionError = { error: ErrorType.Unknown };
 export const NotImplError: FunctionError = { error: ErrorType.NotImpl };
 
 /** type guard function */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const IsError = (test: any): test is FunctionError => {
   return test && test.error && (
     test.error === ErrorType.Argument ||

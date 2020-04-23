@@ -100,6 +100,7 @@ export class ExpressionCalculator {
    * we pass around errors as objects with an error (string) field.
    * this is a simplified check for that type.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected IsError(value: any) {
     return (typeof value === 'object') && value.error;
   }
@@ -197,7 +198,7 @@ export class ExpressionCalculator {
     const func = this.library.Get(outer.name);
 
     if (!func) {
-      return (expr: UnitCall) => NameError;
+      return () => NameError;
     }
 
     return (expr: UnitCall) => {
@@ -279,9 +280,11 @@ export class ExpressionCalculator {
             break;
 
           case 'identifier':
-            const named_range = this.named_range_map[arg.name.toUpperCase()];
-            if (named_range) {
-              address = named_range.start; // FIXME: range?
+            {
+              const named_range = this.named_range_map[arg.name.toUpperCase()];
+              if (named_range) {
+                address = named_range.start; // FIXME: range?
+              }
             }
           }
 
@@ -364,9 +367,8 @@ export class ExpressionCalculator {
       };
 
     default:
-      const operator = x.operator;
       return () => {
-        console.warn('unexpected unary operator:', operator);
+        console.warn('unexpected unary operator:', x.operator);
         return ExpressionError;
       };
     }
@@ -377,6 +379,7 @@ export class ExpressionCalculator {
    * FIXME: did we drop this from the parser? I think we may have.
    * use logical functions AND(), OR()
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected LogicalExpression(operator: string, left: any, right: any){
 
     // sloppy typing, to support operators? (...)
@@ -401,6 +404,7 @@ export class ExpressionCalculator {
    * @param columns target columns
    * @param rows target rows
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected RecycleArray(arr: any[][], columns: number, rows: number){
 
     // NOTE: recycle rows first, more efficient. do it in place?
@@ -429,6 +433,7 @@ export class ExpressionCalculator {
    * @param left guaranteed to be 2d array
    * @param right guaranteed to be 2d array
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected ElementwiseBinaryExpression(fn: Primitives.PrimitiveBinaryExpression, left: any[][], right: any[][]){
 
     const columns = Math.max(left.length, right.length);
@@ -468,7 +473,7 @@ export class ExpressionCalculator {
     const fn = Primitives.MapOperator(x.operator);
 
     if (!fn) {
-      return (expr: UnitBinary) => {
+      return () => { // expr: UnitBinary) => {
         console.info(`(unexpected binary operator: ${x.operator})`);
         return ExpressionError;
       };
@@ -584,6 +589,7 @@ export class ExpressionCalculator {
     return (expr: UnitGroup) => this.CalculateExpression(expr.elements[0]);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected CalculateExpression(expr: ExpressionUnit): any {
 
     // user data is a generated function for the expression, at least
@@ -627,9 +633,11 @@ export class ExpressionCalculator {
       return (expr.user_data = this.GroupExpression(expr))(expr);
 
     case 'array':
-      const transposed = Utilities.TransposeArray(expr.values);
-      expr.user_data = () => transposed;
-      return transposed;
+      {
+        const transposed = Utilities.TransposeArray(expr.values);
+        expr.user_data = () => transposed;
+        return transposed;
+      }
 
     default:
       console.warn( 'Unhandled parse expr:', expr);

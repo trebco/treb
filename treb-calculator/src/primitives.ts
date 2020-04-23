@@ -103,6 +103,7 @@ export const NotEquals = (a: number|object|string, b: number|object|string) => {
   return a != b;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const Identity = (a: any) => a;
 
 export const Inverse = (a: number|object) => {
