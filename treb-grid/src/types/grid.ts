@@ -1027,6 +1027,7 @@ export class Grid {
   }
 
   /** new version for multiple sheets */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public UpdateSheets(data: any[], render = false, activate_sheet?: number | string) {
 
     // remove existing annotations from layout

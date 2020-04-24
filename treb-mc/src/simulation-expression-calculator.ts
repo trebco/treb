@@ -27,7 +27,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
     const func = this.library.Get(outer.name) as MCCompositeFunctionDescriptor;
 
     if (!func) {
-      return (expr: UnitCall) => NameError;
+      return () => NameError;
     }
 
     // I wonder if we can handle prep separately, outside of
@@ -130,6 +130,12 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         // NOTE: named ranges will _not_ work, because the address will be an
         // object, not a string. so FIXME.
 
+        // FIXME?: as currently implemented, OFFSET and INDIRECT will not work.
+        // we may be able to fix that, but I'm not sure we should -- this is
+        // an acceptable limitation, and the cost of doing that [correctly] 
+        // would be high. also, it's possible to get the same result using 
+        // the spreadsheet, instead of adding here, so let that be the resolution.
+
         if (descriptor.address) {
           return this.parser.Render(arg).replace(/\$/g, '');
         }
@@ -151,9 +157,11 @@ export class MCExpressionCalculator extends ExpressionCalculator {
             break;
 
           case 'identifier':
-            const named_range = this.named_range_map[arg.name.toUpperCase()];
-            if (named_range) {
-              address = named_range.start; // FIXME: range?
+            {
+              const named_range = this.named_range_map[arg.name.toUpperCase()];
+              if (named_range) {
+                address = named_range.start; // FIXME: range?
+              }
             }
           }
 
