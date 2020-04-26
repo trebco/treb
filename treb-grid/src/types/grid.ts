@@ -1034,6 +1034,8 @@ export class Grid {
 
     this.RemoveAnnotationNodes();
 
+    Sheet.Reset(); // reset ID generation
+
     const sheets = data.map((sheet) => Sheet.FromJSON(sheet, this.theme_style_properties));
 
     // ensure we have a sheets[0] so we can set active
