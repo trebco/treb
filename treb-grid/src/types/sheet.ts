@@ -1126,12 +1126,17 @@ export class Sheet {
       for (let i = 0; i < count; i++) args.push(undefined);
     }
 
+    console.info('m5.1');
+
     this.cell_style.forEach((column) => {
-      if (column.length >= before_row) {
+
+      if (column && column.length >= before_row) {
         // eslint-disable-next-line prefer-spread
         column.splice.apply(column, args as [number, number, Style.Properties]);
       }
     });
+
+    console.info('m6');
 
     // row heights
 
@@ -1140,6 +1145,8 @@ export class Sheet {
 
     // invalidate style cache
     this.FlushCellStyles();
+
+    console.info('m7');
 
     return true;
 
