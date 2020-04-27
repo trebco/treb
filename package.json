@@ -2,11 +2,6 @@
   "name": "treb",
   "version": "6.8.11",
   "main": "dist/index.js",
-  "sideEffects": [
-    "treb-embed/src/main.ts",
-    "treb-export/src/export-worker/export-worker.ts",
-    "treb-mc/src/calculation-worker/calculation-worker.ts"
-  ],
   "devDependencies": {
     "@types/elementtree": "^0.1.0",
     "@types/file-saver": "^2.0.1",
