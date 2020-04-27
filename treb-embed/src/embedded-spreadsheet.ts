@@ -1,14 +1,11 @@
 
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 import { MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
-import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
-import { Grid, GridEvent, SerializeOptions, Annotation,
-  BorderConstants, SheetChangeEvent, GridOptions } from 'treb-grid';
-import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
-import { EmbeddedSpreadsheetOptions, DefaultOptions } from './options';
+import { Localization, ICellAddress } from 'treb-base-types';
+import { SerializeOptions } from 'treb-grid';
+import { TREBDocument } from './types';
 
 // config
-// import * as build from '@root/package.json';
 import * as build from '../../package.json';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
@@ -108,7 +105,8 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
     this.UpdateMCDialog(0, 'Initializing');
 
-    const worker_name = (build as any)['build-entry-points']['calculation-worker'];
+    const worker_name = build['build-entry-points']['calculation-worker'];
+
     if (!this.worker) {
       this.worker = await this.LoadWorker(worker_name);
 
@@ -221,6 +219,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
         requestAnimationFrame(() => {
           this.calculator.UpdateResults(message.trial_data);
           this.Recalculate().then(() => this.Focus());
+
           setTimeout(() => {
             this.ShowDialog(false);
             this.Publish({ type: 'simulation-complete' });

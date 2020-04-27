@@ -99,6 +99,9 @@ export class Grid {
    */
   public readonly model: DataModel;
 
+  // new...
+  public headless = false;
+
   // --- private members -------------------------------------------------------
 
   /** are we editing? */
@@ -2426,6 +2429,8 @@ export class Grid {
   }
 
   private Repaint(force = false, full_tile = false, force_headers = false) {
+
+    if (this.headless) { return; }
 
     if (this.tile_update_pending) {
       this.tile_update_pending = false;

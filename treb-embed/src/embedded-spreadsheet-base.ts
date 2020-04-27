@@ -236,6 +236,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     this.grid = new Grid(grid_options);
+
+    if (options.headless) {
+      this.grid.headless = true; // FIXME: move into grid options
+    }
+
     this.grid.Initialize(this.node);
 
     this.InitCalculator();
@@ -1223,6 +1228,34 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
+  public SetHeadless(headless = true) {
+    if (this.grid.headless === headless) {
+      return;
+    }
+
+    this.grid.headless = headless;
+    if (!headless) {
+      this.grid.Update(true);
+      this.RebuildAllAnnotations();
+      // this.InflateAnnotations();
+    }
+  }
+
+  /**
+   * this method should be called after changing the headless flag
+   */
+  public RebuildAllAnnotations() {
+    for (const annotation of this.grid.model.active_sheet.annotations) {
+      this.InflateAnnotation(annotation);
+      if (annotation.resize_callback) {
+        annotation.resize_callback();
+      }
+      if (annotation.update_callback) {
+        annotation.update_callback();
+      }
+    }
+  }
+
   /**
    * inflate all annotations. intended to be called after a document
    * load (including undo), which does not send `create` events.
@@ -1234,6 +1267,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   public InflateAnnotation(annotation: Annotation) {
+
+    if (this.grid.headless) { return; }
 
     // only inflate once, to prevent overwriting instance methods
 
@@ -1299,19 +1334,24 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
           /** resize callback */
           annotation.resize_callback = () => {
-            chart.Resize();
-            chart.Update();
+            if (!this.grid.headless) {
+              chart.Resize();
+              chart.Update();
+            }
           };
 
           /** update callback */
           annotation.update_callback = () => {
-            // console.info('atu');
-            update_chart();
+            if (!this.grid.headless) {
+              update_chart();
+            }
           };
 
           /** call once */
           if (annotation.node.parentElement) {
-            update_chart();
+            if (!this.grid.headless) {
+              update_chart();
+            }
           }
 
         }
@@ -1705,7 +1745,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // FIXME: testing... in particular URL.createObjectURL and new Blob
 
-    if (/^(http\:|https\:|\/\/)/.test(name)) {
+    if (/^(http:|https:|\/\/)/.test(name)) {
       const script = await this.Fetch(name);
       worker = new Worker(URL.createObjectURL(new Blob([script], {type: 'application/javascript'})));
     }

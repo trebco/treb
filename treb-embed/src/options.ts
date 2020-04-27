@@ -79,6 +79,9 @@ export interface BaseOptions {
    */
   toolbar?: boolean | 'show' | 'compressed' | 'show-compressed';
 
+  /** new option, better support for headless operations */
+  headless?: boolean;
+
 }
 
 /**
