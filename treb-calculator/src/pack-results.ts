@@ -40,3 +40,63 @@ export const UnpackOne = (data: Float64Array) => {
 
 };
 
+/**
+ * consolidate multiple results (from multiple threads)
+ */
+export const ConsolidateResults = (thread_results: any[]) => {
+
+  // special case
+  if (thread_results.length === 1) {
+    return thread_results[0];
+  }
+
+  let elapsed = 0;
+  let trials = 0;
+    
+  for (const result of thread_results) {
+    elapsed = Math.max(elapsed, result.elapsed);
+    trials += result.trials;
+  }
+
+  // allocate, and copy first set
+
+  const base = thread_results[0];
+  const consolidated: Float64Array[] = 
+    base.results.map((original: ArrayBuffer) => {
+      const resized = new Float64Array(4 + trials);
+      resized.set(new Float64Array(original));
+      return resized;
+    });
+
+  let offset = base.trials + 4;
+
+  // now copy the rest (omitting header)
+
+  for (let i = 1; i < thread_results.length; i++) {
+    const set = thread_results[i];
+    set.results.forEach((packed: ArrayBuffer, index: number) => {
+      const result = new Float64Array(packed);
+      const target = consolidated[index];
+
+      // validate
+      if (target[0] !== result[0]
+          || target[1] !== result[1]
+          || target[2] !== result[2]) {
+        throw new Error('mismatch in result address');
+      }
+
+      target.set(result.subarray(4), offset);
+
+    });
+    offset += set.trials;
+  }
+
+  // ok
+
+  return {
+    elapsed, 
+    trials,
+    results: consolidated.map(result => result.buffer),
+  };
+
+}

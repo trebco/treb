@@ -5,6 +5,8 @@ import { Localization, ICellAddress } from 'treb-base-types';
 import { SerializeOptions } from 'treb-grid';
 import { TREBDocument } from './types';
 
+import * as PackResults from 'treb-calculator/src/pack-results';
+
 // config
 import * as build from '../../package.json';
 
@@ -28,7 +30,15 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
    * NOTE: why is this managed by this class, and not by calculator?
    * it seems like that would better encapsulate the calculation.
    */
-  private worker?: CalculationWorker;
+  // private worker?: CalculationWorker;
+  private workers: CalculationWorker[] = [];
+
+  private simulation_status = { 
+    running: false,
+    threads: 0,
+    results: [] as any[],
+    progress: [] as number[],
+  };
 
   /**
    * some local cleanup, gets called in various import/load/reset functions
@@ -98,32 +108,69 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   }
 
   /**
+   * init workers. we have a separate method so we can warm start
+   * on load, if desired. also you can re-init... 
+   */
+  public async InitWorkers(max?: number) {
+
+    if (this.workers.length) {
+      for (const worker of this.workers) {
+        worker.terminate();
+      }
+      this.workers = [];
+    }
+
+    const worker_name = build['build-entry-points']['calculation-worker'];
+    const thread_count = Math.min(navigator.hardwareConcurrency || 1, max || 4);
+
+    console.info('creating', thread_count, 'threads');
+
+    for (let i = 0; i < thread_count; i++) {
+
+      this.workers[i] = await this.LoadWorker(worker_name);
+
+      this.workers[i].onmessage = (event) => {
+        const message = event.data as WorkerMessage;
+        this.HandleWorkerMessage(message, i);
+      };
+
+      this.workers[i].onerror = (event) => {
+        console.error(`worker error (worker #${i})`);
+        console.info(event);
+      };
+
+    }
+
+  }
+
+  /**
    * run MC simulation, in worker. worker is now demand-loaded, so first
    * pass may be slow.
    */
   public async RunSimulation(trials = 5000, lhs = true) {
 
-    this.UpdateMCDialog(0, 'Initializing');
-
-    const worker_name = build['build-entry-points']['calculation-worker'];
-
-    if (!this.worker) {
-      this.worker = await this.LoadWorker(worker_name);
-
-      this.worker.onmessage = (event) => {
-        const message = event.data as WorkerMessage;
-        this.HandleWorkerMessage(message);
-      };
-
-      this.worker.onerror = (event) => {
-        console.error('worker error');
-        console.info(event);
-      };
+    if (this.simulation_status.running) {
+      throw new Error('simulation already running');
     }
 
-    if (!this.worker) {
+    this.UpdateMCDialog(0, 'Initializing');
+
+    if (!this.workers.length) {
+      await this.InitWorkers();
+    }
+
+    if (!this.workers[0]) {
       this.ShowDialog(true, 'Calculation failed', 2500);
       throw new Error('worker not initialized');
+    }
+
+    this.simulation_status.running = true;
+    this.simulation_status.threads = this.workers.length;
+    this.simulation_status.progress = [];
+    this.simulation_status.results = [];
+
+    for (let i = 0; i < this.workers.length; i++) {
+      this.simulation_status.progress.push(0);
     }
 
     // NOTE: accessing grid.cells, find a better approach [??]
@@ -142,22 +189,33 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
     additional_cells = this.calculator.FlattenCellList(additional_cells);
 
-    this.worker.postMessage({
-      type: 'configure',
-      locale: Localization.locale,
-      sheets: this.grid.model.sheets.map((sheet) => {
-        return sheet.toJSON({
-          rendered_values: true, // has a different name, for some reason
-          preserve_type: true,
-        });
-      }),
-      named_ranges: this.grid.model.named_ranges.Serialize(),
-      additional_cells,
-    });
+    const per_thread = Math.floor(trials / this.workers.length);
+    const last_thread = trials - (per_thread * (this.workers.length - 1));
 
-    this.worker.postMessage({
-      type: 'start', trials, lhs,
-    });
+    // console.info('per', per_thread, 'last', last_thread);
+
+    for (const worker of this.workers) {
+      worker.postMessage({
+        type: 'configure',
+        locale: Localization.locale,
+        sheets: this.grid.model.sheets.map((sheet) => {
+          return sheet.toJSON({
+            rendered_values: true, // has a different name, for some reason
+            preserve_type: true,
+          });
+        }),
+        named_ranges: this.grid.model.named_ranges.Serialize(),
+        additional_cells,
+      });
+    }
+
+    for (const worker of this.workers) {
+      worker.postMessage({
+        type: 'start', 
+        trials: worker === this.workers[0] ? last_thread : per_thread, 
+        lhs,
+      });
+    }
 
     await new Promise((resolve) => {
       this.simulation_resolution.push(resolve);
@@ -195,10 +253,14 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   /**
    * rx handler for worker messages
    */
-  private HandleWorkerMessage(message: WorkerMessage) {
+  private HandleWorkerMessage(message: WorkerMessage, index: number) {
 
     switch (message.type) {
       case 'update':
+
+        throw new Error('not implemented for multithread (atm)');
+
+        /** temp
         this.UpdateMCDialog(Number(message.percent_complete || 0));
         this.last_simulation_data = message.trial_data;
         this.calculator.UpdateResults(message.trial_data);
@@ -207,30 +269,50 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
         // not actually possible for this not to exist at this
         // point -- is there a way to express that in ts?
 
-        if (this.worker) this.worker.postMessage({ type: 'step' });
+        if (this.workers[index]) this.workers[index].postMessage({ type: 'step' });
+        temp **/
         break;
 
       case 'progress':
-        this.UpdateMCDialog(Number(message.percent_complete || 0));
+        {
+          this.simulation_status.progress[index] = message.percent_complete || 0;
+          const progress = Math.round(
+            this.simulation_status.progress.reduce((a, b) => a + b, 0) / this.simulation_status.threads);
+          this.UpdateMCDialog(progress);
+        }
         break;
 
       case 'complete':
-        this.last_simulation_data = message.trial_data;
-        requestAnimationFrame(() => {
-          this.calculator.UpdateResults(message.trial_data);
-          this.Recalculate().then(() => this.Focus());
+        this.simulation_status.progress[index] = 100;
+        this.simulation_status.results.push(message.trial_data);
 
-          setTimeout(() => {
-            this.ShowDialog(false);
-            this.Publish({ type: 'simulation-complete' });
+        if (this.simulation_status.results.length === this.simulation_status.threads) {
 
-            for (const entry of this.simulation_resolution) {
-              entry.call(this);
-            }
-            this.simulation_resolution = [];
+          this.simulation_status.running = false;
+          this.last_simulation_data =
+            PackResults.ConsolidateResults(this.simulation_status.results);
 
-          }, 500);
-        });
+          requestAnimationFrame(() => {
+            this.calculator.UpdateResults(this.last_simulation_data);
+            this.Recalculate().then(() => this.Focus());
+
+            setTimeout(() => {
+              this.ShowDialog(false);
+              this.Publish({ type: 'simulation-complete' });
+
+              for (const entry of this.simulation_resolution) {
+                entry.call(this);
+              }
+              this.simulation_resolution = [];
+
+            }, 500);
+          });
+        }
+        else {
+          const progress = Math.round(
+            this.simulation_status.progress.reduce((a, b) => a + b, 0) / this.simulation_status.threads);
+          this.UpdateMCDialog(progress);
+        }
         break;
 
       default:
