@@ -571,11 +571,9 @@ export class Calculator extends Graph {
     }
     else {
       this.InitializeGraph();
-
       if (recalculate_if_volatile && this.volatile_list.length) {
         this.Recalculate();
       }
-
     }
 
   }
@@ -1237,10 +1235,10 @@ export class Calculator extends Graph {
 
       if (initial_state){
         json_options.subset = undefined;
-        // flat = cells.toJSON({...json_options, sheet_id: model.active_sheet.id});
         flat_data = this.BuildCellsList(json_options);
         result = this.RebuildGraph(flat_data, options);
       }
+
     }
 
     this.status = result ? result.status : GraphStatus.OK;

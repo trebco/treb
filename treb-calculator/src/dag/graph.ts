@@ -4,7 +4,7 @@ import { SpreadsheetVertex, CalculationResult } from './spreadsheet_vertex';
 import { ArrayVertex } from './array_vertex';
 import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
 import { LeafVertex } from './leaf_vertex';
-import { Cells, ICellAddress, Area, IArea } from 'treb-base-types';
+import { Cells, ICellAddress, Area, IArea, Cell } from 'treb-base-types';
 import { DataModel } from 'treb-grid';
 
 // FIXME: this is a bad habit if you're testing on falsy for OK.
@@ -148,9 +148,18 @@ export abstract class Graph {
     // thing we need to worry about is maintaining the dependency, so if the
     // cell _is_ created later we get the update. (...)
 
-    // vertex.reference = this.cells.data2[address.row][address.column];
-    // vertex.reference = this.cells.EnsureCell(address);
+    // FIXME: the above is not working. recall the BSM model. we had
+    // 
+    // =IF(C3, C3, C4 + x)
+    //
+    // with no value in C3. as a result if you type something in, it won't
+    // update because there's no bound reference. we can ensure the cell,
+    // but maybe there's way to get it to work without that.
 
+    // I think the reason is because the reference lookup is closed by
+    // the calc routine; so dirty doesn't do it. let's ensure cell, for now.
+
+    /*
     // works ok, maybe a little verbose
 
     const row = cells.data2[address.row];
@@ -160,6 +169,9 @@ export abstract class Graph {
         vertex.reference = cell;
       }
     }
+    */
+
+    vertex.reference = cells.EnsureCell(address);
 
     this.vertices[address.sheet_id][address.column][address.row] = vertex;
 

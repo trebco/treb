@@ -132,7 +132,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
     }
     else {
-      console.info('skip dirty constant?');
+      console.info('skip dirty constant? [or dangling...]');
     }
 
     this.dirty = false;
