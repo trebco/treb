@@ -82,6 +82,8 @@ export interface BaseOptions {
   /** new option, better support for headless operations */
   headless?: boolean;
 
+  max_workers?: number;
+
 }
 
 /**
@@ -96,6 +98,7 @@ export const DefaultOptions: BaseOptions = {
   dnd: false,
   tab_bar: 'auto',
   add_tab: false,
+  max_workers: 1,
 };
 
 /**

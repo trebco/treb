@@ -110,8 +110,13 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   /**
    * init workers. we have a separate method so we can warm start
    * on load, if desired. also you can re-init... 
+   * 
+   * FIXME: should globalize these? if we do that, the "running" flag
+   * needs to be similarly global...
    */
-  public async InitWorkers(max?: number) {
+  public async InitWorkers(max = this.options.max_workers) {
+
+    max = max || 1; // could be undefined? (...)
 
     if (this.workers.length) {
       for (const worker of this.workers) {
@@ -121,9 +126,9 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     }
 
     const worker_name = build['build-entry-points']['calculation-worker'];
-    const thread_count = Math.min(navigator.hardwareConcurrency || 1, max || 4);
+    const thread_count = Math.min(navigator.hardwareConcurrency || 1, max);
 
-    console.info('creating', thread_count, 'threads');
+    console.info(`creating ${thread_count} thread${thread_count === 1 ? '' : 's'}`);
 
     for (let i = 0; i < thread_count; i++) {
 

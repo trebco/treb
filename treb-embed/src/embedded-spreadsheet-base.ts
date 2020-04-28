@@ -126,10 +126,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   protected grid: Grid;
 
+  protected options: EmbeddedSpreadsheetOptions;
+
   /** FIXME: can we share grid's parser instance? */
   private parser = new Parser();
-
-  private options: EmbeddedSpreadsheetOptions;
 
   private node: HTMLElement;
   private file_chooser?: HTMLInputElement;
