@@ -523,9 +523,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public Evaluate(formula: string): string|number|boolean|undefined {
+  /**
+   * evaluate an arbitrary expression in the spreadsheet. you should generally
+   * use sheet names when referring to cells, to avoid ambiguity, but relative
+   * cells will always be the active, or front, sheet.
+   */
+  public Evaluate(expression: string): string|number|boolean|undefined {
 
-    const parse_result = this.parser.Parse(formula);
+    const parse_result = this.parser.Parse(expression);
     if (parse_result &&
         parse_result.expression ){ // &&
         // parse_result.expression.type === 'call' ){
