@@ -6,7 +6,21 @@
  * where the array length is the number of trials. assuming
  * we only handle numbers, we should be able to pack this into
  * an array.
+ * 
+ * container looks like this:
+ * {
+ *    elapsed: number;
+ *    trials: number;
+ *    results: Float64Array[] (actually ArrayBuffer)
+ * }
+ * 
  */
+
+export interface ResultContainer {
+  elapsed: number;
+  trials: number;
+  results: ArrayBuffer[];
+}
 
 export interface Result {
   row: number;
@@ -43,7 +57,7 @@ export const UnpackOne = (data: Float64Array) => {
 /**
  * consolidate multiple results (from multiple threads)
  */
-export const ConsolidateResults = (thread_results: any[]) => {
+export const ConsolidateResults = (thread_results: ResultContainer[]): ResultContainer => {
 
   // special case
   if (thread_results.length === 1) {

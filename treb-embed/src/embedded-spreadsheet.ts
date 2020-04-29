@@ -1,6 +1,7 @@
 
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 import { MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
+import { ResultContainer } from 'treb-calculator';
 import { Localization, ICellAddress } from 'treb-base-types';
 import { SerializeOptions } from 'treb-grid';
 import { TREBDocument } from './types';
@@ -13,7 +14,7 @@ import * as build from '../../package.json';
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
   /* for storing; also inefficient. pack, zip, do something. */
-  protected last_simulation_data: any = {};
+  protected last_simulation_data?: ResultContainer;
 
   protected calculator!: MCCalculator;
 
@@ -38,6 +39,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     threads: 0,
     results: [] as any[],
     progress: [] as number[],
+    aggregate_progress: 0,
   };
 
   /**
@@ -72,7 +74,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
   public FlushSimulationResults() {
     this.calculator.FlushSimulationResults();
-    this.last_simulation_data = {};
+    this.last_simulation_data = undefined;
   }
 
   public SerializeDocument(preserve_simulation_data = true, rendered_values = true,
@@ -80,7 +82,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
     const serialized = super.SerializeDocument(preserve_simulation_data, rendered_values, additional_options);
 
-    if (preserve_simulation_data) {
+    if (preserve_simulation_data && this.last_simulation_data) {
 
       // it might be useful to prune this a bit, specifically to prune
       // results that are not referenced. can we use the graph to do that?
@@ -178,6 +180,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     this.simulation_status.threads = this.workers.length;
     this.simulation_status.progress = [];
     this.simulation_status.results = [];
+    this.simulation_status.aggregate_progress = 0;
 
     for (let i = 0; i < this.workers.length; i++) {
       this.simulation_status.progress.push(0);
@@ -261,6 +264,24 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   }
 
   /**
+   * splitting into a separate method to remove code duplication
+   */
+  private UpdateProgress(value: number, index: number) {
+
+    this.simulation_status.progress[index] = value || 0;
+
+    const progress = Math.round(
+      this.simulation_status.progress.reduce((a, b) => a + b, 0) / this.simulation_status.threads);
+    
+    if (progress !== this.simulation_status.aggregate_progress) {
+      this.simulation_status.aggregate_progress = progress;            
+      this.UpdateMCDialog(progress);
+      this.Publish({type: 'simulation-progress', progress});
+    }
+
+  }
+
+  /**
    * rx handler for worker messages
    */
   private HandleWorkerMessage(message: WorkerMessage, index: number) {
@@ -284,12 +305,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
         break;
 
       case 'progress':
-        {
-          this.simulation_status.progress[index] = message.percent_complete || 0;
-          const progress = Math.round(
-            this.simulation_status.progress.reduce((a, b) => a + b, 0) / this.simulation_status.threads);
-          this.UpdateMCDialog(progress);
-        }
+        this.UpdateProgress(message.percent_complete, index);
         break;
 
       case 'complete':
@@ -308,7 +324,12 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
             setTimeout(() => {
               this.HideDialog();
-              this.Publish({ type: 'simulation-complete' });
+              this.Publish({ 
+                type: 'simulation-complete',
+                elapsed: this.last_simulation_data?.elapsed || 0,
+                trials: this.last_simulation_data?.trials || 0,
+                // threads: this.simulation_status.threads,
+              });
 
               for (const entry of this.simulation_resolution) {
                 entry.call(this);
@@ -319,9 +340,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
           });
         }
         else {
-          const progress = Math.round(
-            this.simulation_status.progress.reduce((a, b) => a + b, 0) / this.simulation_status.threads);
-          this.UpdateMCDialog(progress);
+          this.UpdateProgress(100, index);
         }
         break;
 

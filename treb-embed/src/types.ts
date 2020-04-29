@@ -52,6 +52,14 @@ export interface DocumentChangeEvent {
 
 export interface SimulationCompleteEvent {
   type: 'simulation-complete';
+  elapsed: number;
+  trials: number;
+  // threads: number;
+}
+
+export interface SimulationProgressEvent {
+  type: 'simulation-progress';
+  progress: number;
 }
 
 export interface SelectionEvent {
@@ -60,6 +68,7 @@ export interface SelectionEvent {
 
 export type EmbeddedSheetEvent
   = SimulationCompleteEvent
+  | SimulationProgressEvent
   | DocumentChangeEvent
   | DocumentResetEvent
   | DocumentLoadEvent
