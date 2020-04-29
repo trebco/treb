@@ -7,6 +7,7 @@ import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
 import { EventSource, Resizable, Yield } from 'treb-utils';
+import { NumberFormatCache, ValueParser } from 'treb-format';
 
 // local
 //import { MaskDialog } from './mask-dialog';
@@ -521,6 +522,20 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     this.grid.SetRange(area, data, recycle, transpose);
 
+  }
+
+  /**
+   * format a number with an arbitrary formatter
+   */
+  public ParseNumber(text: string) {
+    return ValueParser.TryParse(text).value;
+  }
+
+  /**
+   * format a number with an arbitrary formatter
+   */
+  public FormatNumber(value: number, format: string) {
+    return NumberFormatCache.Get(format).Format(value);
   }
 
   /**
