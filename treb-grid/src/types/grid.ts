@@ -8,7 +8,7 @@ import {
   QuotedSheetNameRegex, IllegalSheetNameRegex
 } from 'treb-parser';
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
-import { NumberFormatCache, RDateScale } from 'treb-format';
+import { NumberFormatCache, RDateScale, ValueParser, Hints } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
 import { TabBar } from './tab_bar';
@@ -20,7 +20,6 @@ import { LegacyLayout } from '../layout/legacy_layout';
 import { GridSelection } from './grid_selection';
 import { Theme, ExtendedTheme, CalculateSupplementalColors, LoadThemeProperties } from './theme';
 import { CellEditor } from '../editors/cell_editor';
-import { ValueParser, Hints } from '../util/value_parser';
 
 import { TileRenderer } from '../render/tile_renderer';
 import { GridEvent } from './grid_events';

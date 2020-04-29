@@ -1,6 +1,6 @@
 
 import { ValueType, Localization } from 'treb-base-types';
-import { RDateScale } from 'treb-format';
+import { RDateScale } from './format';
 
 /**
  * this is code that was in the old number format class, which was superceded
@@ -29,7 +29,8 @@ export enum Hints {
  * parse result now uses base valuetype
  */
 export interface ParseResult {
-  value: any;
+
+  value: number|string|boolean|undefined;
   hints?: Hints;
   type: ValueType;
 }
@@ -49,25 +50,25 @@ class ValueParserType {
    *
    * remind me why this is better than just using a parser? (...)
    */
-  public TryParse(s: string = ''): ParseResult {
+  public TryParse(text = ''): ParseResult {
 
     let hints: Hints = Hints.None;
 
     // starts with SINGLE quote mark. express string.
-    if (s[0] === '\'') return { value: s, type: ValueType.string };
+    if (text[0] === '\'') return { value: text, type: ValueType.string };
 
     // empty string, treat as string (should be === 0 though?)
-    if (s === '') return { value: s, type: ValueType.string };
+    if (text === '') return { value: text, type: ValueType.string };
 
     // we test if the conversion returns NaN, which usually means
     // it's not a number -- unless the string is actually NaN, which
     // is something we want to preserve.
-    if ( s === 'NaN' ) return { value: NaN, type: ValueType.number, hints: Hints.Nan };
+    if ( text === 'NaN' ) return { value: NaN, type: ValueType.number, hints: Hints.Nan };
 
-    let x = s.trim();
+    let x = text.trim();
     // x = x.replace(/^[\$£€]/, '').trim();
 
-    const currency = x.match(/^[\$](.*?)$/);
+    const currency = x.match(/^[$](.*?)$/);
     if (currency) {
       x = currency[1];
       hints |= Hints.Currency;
@@ -102,14 +103,14 @@ class ValueParserType {
     if (null === num || isNaN(num)){
 
       // check boolean
-      const lc = s.toLowerCase();
+      const lc = text.toLowerCase();
       if (lc === 'false') return { value: false, type: ValueType.boolean };
       if (lc === 'true' ) return { value: true, type: ValueType.boolean };
 
       // check date, but bound on reasonable years...
       // also maybe parameterize, make this optional
 
-      const date = Date.parse(s);
+      const date = Date.parse(text);
 
       if (!isNaN(date)) {
         const check = new Date(date);
@@ -131,13 +132,13 @@ class ValueParserType {
 
       }
 
-      return { value: s, type: ValueType.string };
+      return { value: text, type: ValueType.string };
     }
 
     if (parens) num = -num;
     if (pct) num = num / 100;
 
-    if (/e/.test(s)) hints |= Hints.Exponential;
+    if (/e/.test(text)) hints |= Hints.Exponential;
     return { value: num, type: ValueType.number, hints };
 
   }
