@@ -100,11 +100,16 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   }
 
   /** mc-specific dialog; has constant string */
-  public UpdateMCDialog(progress = 0, text?: string) {
+  public UpdateMCDialog(progress = 0, text?: string, show = false) {
     if (typeof text === 'undefined') {
       text = `${progress}%`;
     }
-    this.UpdateDialog(`Running Monte Carlo Simulation...\n${text}`);
+    if (show) {
+      this.ShowProgressDialog(`Running Monte Carlo Simulation...`, progress);
+    }
+    else {
+      this.UpdateDialog(`Running Monte Carlo Simulation...`, progress);
+    }
   }
 
   /**
@@ -158,14 +163,14 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       throw new Error('simulation already running');
     }
 
-    this.UpdateMCDialog(0, 'Initializing');
+    this.UpdateMCDialog(0, 'Initializing', true);
 
     if (!this.workers.length) {
       await this.InitWorkers();
     }
 
     if (!this.workers[0]) {
-      this.ShowDialog(true, 'Calculation failed', 2500);
+      this.ShowMessageDialog('Calculation failed', 2500);
       throw new Error('worker not initialized');
     }
 
@@ -302,7 +307,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
             this.Recalculate().then(() => this.Focus());
 
             setTimeout(() => {
-              this.ShowDialog(false);
+              this.HideDialog();
               this.Publish({ type: 'simulation-complete' });
 
               for (const entry of this.simulation_resolution) {

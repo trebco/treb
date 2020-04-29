@@ -9,7 +9,8 @@ import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 't
 import { EventSource, Resizable, Yield } from 'treb-utils';
 
 // local
-import { MaskDialog } from './mask-dialog';
+//import { MaskDialog } from './mask-dialog';
+import { ProgressDialog } from './progress-dialog';
 import { EmbeddedSpreadsheetOptions, DefaultOptions } from './options';
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 
@@ -133,7 +134,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   private node: HTMLElement;
   private file_chooser?: HTMLInputElement;
-  private dialog: MaskDialog;
+  private dialog: ProgressDialog;
 
   private toolbar?: FormattingToolbar;
 
@@ -233,6 +234,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
     if (this.options.add_tab) {
       grid_options.add_tab = this.options.add_tab;
+    }
+
+    if (this.options.expand) {
+      grid_options.expand = true;
     }
 
     this.grid = new Grid(grid_options);
@@ -375,7 +380,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // create mask dialog
 
-    this.dialog = new MaskDialog(container, {
+    this.dialog = new ProgressDialog(container, {
       mask: this.grid.theme.interface_dialog_mask,
       border: this.grid.theme.interface_dialog_border,
       background: this.grid.theme.interface_dialog_background,
@@ -408,7 +413,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.LoadFileInternal(event.dataTransfer.files[0]).then(() => {
         // ...
       }).catch((err) => {
-        this.ShowDialog(true,
+        this.ShowMessageDialog(
             'Reading the file failed. Make sure your\n' +
             'file is a valid XLSX, CSV or TREB file.', 2500);
         console.error(err);
@@ -515,6 +520,29 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     this.grid.SetRange(area, data, recycle, transpose);
+
+  }
+
+  public Evaluate(formula: string): string|number|boolean|undefined {
+
+    const parse_result = this.parser.Parse(formula);
+    if (parse_result &&
+        parse_result.expression ){ // &&
+        // parse_result.expression.type === 'call' ){
+
+      // FIXME: make a method for doing this
+
+      this.parser.Walk(parse_result.expression, (unit) => {
+        if (unit.type === 'address' || unit.type === 'range') {
+          this.calculator.ResolveSheetID(unit);
+        }
+        return true;
+      });
+
+      const result = this.calculator.CalculateExpression(parse_result.expression);
+      return result;
+
+    }
 
   }
 
@@ -969,7 +997,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             file_chooser.value = ''; // allow same selection
           }).catch((err) => {
             console.error(err);
-            this.ShowDialog(true, 'Error loading file', 1500);
+            this.ShowMessageDialog('Error loading file', 1500);
             file_chooser.value = ''; // allow same selection
           });
         }
@@ -1533,7 +1561,22 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.Publish({type: 'selection'});
   }
 
-  /** show/hide dialog, generic message */
+  public HideDialog() {
+    this.dialog.HideDialog();
+  }
+
+  public ShowProgressDialog(message?: string, progress?: number) {
+    this.dialog.ShowProgressDialog(message, progress);
+  }
+
+  public ShowMessageDialog(message?: string, timeout = 0) { 
+    this.dialog.ShowMessageDialog(message);
+    if (timeout) {
+      setTimeout(() => this.dialog.HideDialog(), timeout);
+    }
+  }
+
+  /* * show/hide dialog, generic message * /
   public ShowDialog(show = true, message?: string, timeout = 0) {
     this.dialog.Show(show, message);
 
@@ -1546,12 +1589,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }, timeout);
     }
   }
+  */
 
   /** paint message to dialog (implicit show=true) */
-  public UpdateDialog(message: string) {
-    this.dialog.Update(message);
+  public UpdateDialog(message?: string, progress?: number) {
+    this.dialog.Update(message, progress);
   }
-
 
   /**
    * show the toolbar. will load on first call.

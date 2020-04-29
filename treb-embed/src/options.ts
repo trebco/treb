@@ -7,6 +7,9 @@ export interface BaseOptions {
   /** */
   dnd?: boolean;
 
+  /** expandable grid */
+  expand?: boolean;
+
   /** */
   // await_fonts?: string|string[];
 

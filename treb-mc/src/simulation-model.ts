@@ -41,15 +41,21 @@ export class SimulationModel {
   public results: number[][][][] = [];
   public elapsed = 0;
   public trials = 0;
+
+  public set seed(seed: number) {
+    console.info('seed not implemented');
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public distributions: any = [];
-  // public distributions: (number[]|Float64Array|boolean[])[][][][] = [];
-  // public distributions: any[][][][][] = [];
 
   public correlated_distributions: {
     [index: string]: {
-      addresses: DistributionKey[],
-      correlation: any,
-    }
+      addresses: DistributionKey[];
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      correlation: any;
+    };
   } = {};
 
   /**

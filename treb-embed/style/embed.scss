@@ -52,4 +52,31 @@
   text-align: center;
   border-radius: 2px;
   font-family: inherit;
+
+  // text content
+  .treb-embed-dialog-message {
+    text-align: center;
+    white-space: pre;
+  }
+
+  .treb-embed-progress-container {
+    position: relative;
+    border: 1px solid red;
+    width: 100%;
+    height: 6px;
+    border: 1px solid #ddd;
+    margin: auto;
+    margin-top: 1em;
+    margin-bottom: .5em;
+  }
+
+  .treb-embed-progress-bar {
+    position: relative;
+    background: #52880b;
+    // background: #8DD3C7;
+    top: 0px;
+    left: 0px;
+    height: 100%;
+  }
+
 }
