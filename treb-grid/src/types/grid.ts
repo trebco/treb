@@ -1480,7 +1480,7 @@ export class Grid {
    * get data in a given range, optionally formulas
    * API method
    */
-  public GetRange(range: ICellAddress | Area, formula = false) {
+  public GetRange(range: ICellAddress | Area, formula = false, formatted = false) {
 
     let sheet_id = 0;
 
@@ -1489,10 +1489,9 @@ export class Grid {
       sheet_id = range.sheet_id || this.model.active_sheet.id;
       for (const sheet of this.model.sheets) {
         if (sheet.id === sheet_id) { 
-          const cells = sheet.cells; 
-          return formula
-          ? cells.RawValue(range)
-          : cells.GetRange(range);
+          if (formula) { return sheet.cells.RawValue(range); } 
+          if (formatted) { return sheet.GetFormattedRange(range); }
+          return sheet.cells.GetRange(range);
         }
       }
       return undefined;
@@ -1502,10 +1501,9 @@ export class Grid {
     sheet_id = range.start.sheet_id || this.model.active_sheet.id;
     for (const sheet of this.model.sheets) {
       if (sheet.id === sheet_id) { 
-        const cells = sheet.cells; 
-        return formula
-          ? cells.RawValue(range.start, range.end)
-          : cells.GetRange(range.start, range.end);
+        if (formula) { return sheet.cells.RawValue(range.start, range.end); } 
+        if (formatted) { return sheet.GetFormattedRange(range.start, range.end); }
+        return sheet.cells.GetRange(range.start, range.end);
       }
     }
 

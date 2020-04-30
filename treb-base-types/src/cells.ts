@@ -509,6 +509,51 @@ export class Cells {
   }
   */
 
+  /*
+  public FormattedValue(cell: Cell) {
+
+    console.info('c', cell)
+
+    if (typeof cell.formatted === 'string') return cell.formatted;
+    if (cell.formatted) {
+      console.info("P", cell.formatted);
+      return cell.formatted.map(part => part.text).join(' ');
+    }
+    return cell.value;
+  }
+
+  public FormattedRange(from: ICellAddress, to: ICellAddress = from) {
+
+    if (from.row === to.row && from.column === to.column) {
+      if (this.data2[from.row] && this.data2[from.row][from.column]) {
+        return this.FormattedValue(this.data2[from.row][from.column]);
+      }
+      return undefined;
+    }
+
+    const result: any[][] = [];
+    
+    // grab rows
+    const rows = this.data2.slice(from.row, to.row + 1);
+
+    // now columns
+    const start = from.column;
+    const end = to.column + 1;
+
+    for (const source of rows) {
+      const target: any[] = [];
+      for (let column = start, index = 0; column < end; column++, index++ ) {
+        const cell = source[column];
+        target.push(this.FormattedValue(cell));
+      }
+      result.push(target);
+    }
+
+    return result;
+
+  }
+  */
+
   /**
    * get raw values (i.e. not calculated). anything outside of actual
    * range will be undefined OR not populated. 

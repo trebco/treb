@@ -1466,6 +1466,50 @@ export class Sheet {
 
   }
 
+  ///
+  public FormattedCellValue(address: ICellAddress) {
+
+    const cell = this.CellData(address);
+    if (!cell) return undefined;
+
+    if (typeof cell.formatted === 'string') return cell.formatted;
+    if (cell.formatted) {
+      return cell.formatted.map(part => {
+        switch (part.flag) {
+          case 1:
+            return ' ';
+          case 2:
+            return ' '; // ??
+          default:
+            return part.text;
+        }
+      }).join('');
+    }
+    return cell.value;
+  }
+
+  public GetFormattedRange(from: ICellAddress, to: ICellAddress = from) {
+
+    if (from.row === to.row && from.column === to.column) {
+      return this.FormattedCellValue(from);
+    }
+
+    const result: any[][] = [];
+    
+    // grab rows
+    for (let row = from.row; row <= to.row; row++) {
+      const target: any[] = [];
+      for (let column = from.column; column <= to.column; column++) {
+        target.push(this.FormattedCellValue({row, column}));
+      }
+      result.push(target);
+    }
+
+    return result;
+
+  }
+  ///
+
   /**
    * generates serializable object. given the new data semantics this
    * has to change a bit. here is what we are storing:

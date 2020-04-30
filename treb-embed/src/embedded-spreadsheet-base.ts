@@ -570,31 +570,32 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * returns range as array (column-major). optionally return raw values (formulae)
    *
    * @param formula set to true to return underlying formula, instead of calculated value
+   * @param formatted set to true to return formatted strings instead of numbers
    */
-  public GetRange(range: ICellAddress|IArea|string, formula = false) {
+  public GetRange(range: ICellAddress|IArea|string, formula = false, formatted = false) {
 
     if (typeof range === 'string') {
       const named_range = this.grid.model.named_ranges.Get(range);
       if (named_range) {
-        return this.grid.GetRange(named_range, formula);
+        return this.grid.GetRange(named_range, formula, formatted);
       }
       else {
         const addresses = range.split(':');
         if (addresses.length < 2) {
-          return this.grid.GetRange(new Area(this.EnsureAddress(addresses[0])), formula);
+          return this.grid.GetRange(new Area(this.EnsureAddress(addresses[0])), formula, formatted);
         }
         else {
           return this.grid.GetRange(new Area(
             this.EnsureAddress(addresses[0]),
-            this.EnsureAddress(addresses[1])), formula);
+            this.EnsureAddress(addresses[1])), formula, formatted);
         }
       }
     }
     else if (IsCellAddress(range)) {
-      return this.grid.GetRange(range);
+      return this.grid.GetRange(range, formula, formatted);
     }
     else {
-      return this.grid.GetRange(new Area(range.start, range.end));
+      return this.grid.GetRange(new Area(range.start, range.end), formula, formatted);
     }
 
   }
