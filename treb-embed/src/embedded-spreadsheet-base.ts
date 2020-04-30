@@ -403,12 +403,26 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   public HandleDrag(event: DragEvent) {
-    if (event.dataTransfer && event.dataTransfer.types && event.dataTransfer.types.some((check) => check === 'Files')) {
-      event.preventDefault();
+    if (event.dataTransfer && event.dataTransfer.types){
+
+      // this is for IE11, types is not an array
+
+      if (event.dataTransfer.types.some && event.dataTransfer.types.some((check) => check === 'Files')) {
+        event.preventDefault();
+      }
+      else {
+        for (let i = 0; i < event.dataTransfer.types.length; i++) {
+          if (event.dataTransfer.types[i] === 'files') {
+            event.preventDefault();
+            return;
+          }
+        }
+      }
     }
   }
 
   public HandleDrop(event: DragEvent) {
+
     if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
       event.preventDefault();
       this.LoadFileInternal(event.dataTransfer.files[0]).then(() => {
