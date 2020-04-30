@@ -634,16 +634,20 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * convert A1 address to CellAddress type
    */
   public EnsureAddress(address: string | ICellAddress): ICellAddress {
-    const result = { row: 0, column: 0 };
+    const result: ICellAddress = { row: 0, column: 0 };
     if (typeof address === 'string') {
       const parse_result = this.parser.Parse(address);
       if (parse_result.expression && parse_result.expression.type === 'address') {
+        this.calculator.ResolveSheetID(parse_result.expression);
         result.row = parse_result.expression.row;
         result.column = parse_result.expression.column;
+        result.sheet_id = parse_result.expression.sheet_id;
       }
       else if (parse_result.expression && parse_result.expression.type === 'range') {
+        this.calculator.ResolveSheetID(parse_result.expression);
         result.row = parse_result.expression.start.row;
         result.column = parse_result.expression.start.column;
+        result.sheet_id = parse_result.expression.start.sheet_id;
       }
       else if (parse_result.expression && parse_result.expression.type === 'identifier') {
         const named_range = this.grid.model.named_ranges.Get(parse_result.expression.name);

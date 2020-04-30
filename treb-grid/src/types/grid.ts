@@ -1482,15 +1482,34 @@ export class Grid {
    */
   public GetRange(range: ICellAddress | Area, formula = false) {
 
+    let sheet_id = 0;
+
     if (IsCellAddress(range)) {
-      return formula
-        ? this.cells.RawValue(range)
-        : this.cells.GetRange(range);
+
+      sheet_id = range.sheet_id || this.model.active_sheet.id;
+      for (const sheet of this.model.sheets) {
+        if (sheet.id === sheet_id) { 
+          const cells = sheet.cells; 
+          return formula
+          ? cells.RawValue(range)
+          : cells.GetRange(range);
+        }
+      }
+      return undefined;
+
     }
 
-    return formula
-      ? this.cells.RawValue(range.start, range.end)
-      : this.cells.GetRange(range.start, range.end);
+    sheet_id = range.start.sheet_id || this.model.active_sheet.id;
+    for (const sheet of this.model.sheets) {
+      if (sheet.id === sheet_id) { 
+        const cells = sheet.cells; 
+        return formula
+          ? cells.RawValue(range.start, range.end)
+          : cells.GetRange(range.start, range.end);
+      }
+    }
+
+    return undefined;
 
   }
 
@@ -5542,17 +5561,27 @@ export class Grid {
    * set range, via command. returns affected area.
    */
   private SetRangeInternal(command: SetRangeCommand) {
-
+   
     const area = IsCellAddress(command.area)
       ? new Area(command.area)
       : new Area(command.area.start, command.area.end);
 
+    let sheet = this.model.active_sheet;
+    if (area.start.sheet_id && area.start.sheet_id !== this.model.active_sheet.id) {
+      for (const compare of this.model.sheets) {
+        if (compare.id === area.start.sheet_id) {
+          sheet = compare;
+          break;
+        }
+      }
+    }
+
     if (!area.entire_row && !area.entire_column && (
-      area.end.row >= this.model.active_sheet.rows
-      || area.end.column >= this.model.active_sheet.columns)) {
+      area.end.row >= sheet.rows
+      || area.end.column >= sheet.columns)) {
 
       // we have to call this because the 'set area' method calls RealArea
-      this.model.active_sheet.cells.EnsureCell(area.end);
+      sheet.cells.EnsureCell(area.end);
 
       // should we send a structure event here? we may be increasing the
       // size, in which case we should send the event. even though no addresses
@@ -5573,14 +5602,14 @@ export class Grid {
 
       // FIXME: should throw if we try to set part of an array
 
-      const cell = this.model.active_sheet.CellData(command.area);
+      const cell = sheet.CellData(command.area);
       if (cell.area && (cell.area.rows > 1 || cell.area.columns > 1)) {
         throw new Error('can\'t change part of an array');
       }
 
       // single cell
 
-      this.model.active_sheet.SetCellValue(command.area, command.value);
+      sheet.SetCellValue(command.area, command.value);
       return area;
     }
     else {
@@ -5595,10 +5624,10 @@ export class Grid {
       // FIXME: clean this up!
 
       if (command.array) {
-        this.model.active_sheet.SetArrayValue(area, command.value);
+        sheet.SetArrayValue(area, command.value);
       }
       else {
-        this.model.active_sheet.SetAreaValues2(area, command.value);
+        sheet.SetAreaValues2(area, command.value);
       }
       /*
       else if (!Array.isArray(command.value) && !ArrayBuffer.isView(command.value)) {
