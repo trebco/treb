@@ -82,7 +82,7 @@ export interface BaseOptions {
    */
   toolbar?: boolean | 'show' | 'compressed' | 'show-compressed';
 
-  /** new option, better support for headless operations */
+  /** new option, better support for headless operations (default false) */
   headless?: boolean;
 
   max_workers?: number;
@@ -108,7 +108,7 @@ export const DefaultOptions: BaseOptions = {
  * actual options requires the container node
  */
 export interface EmbeddedSpreadsheetOptions extends BaseOptions {
-  container: string|HTMLElement;
+  container?: string|HTMLElement;
 }
 
 /**

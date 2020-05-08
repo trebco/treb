@@ -19,6 +19,7 @@
     "declarationDir": "dist/"
   },
   "include": [
+    "treb-engine/src/index.ts",
     "treb-embed/src/index-legacy.ts",
     "treb-export/src/export-worker/index-legacy.ts",
     "treb-mc/src/calculation-worker/index-legacy.ts"

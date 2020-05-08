@@ -57,6 +57,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public static treb_base_path = '';
   public static treb_language = '';
   public static treb_embedded_script_path = '';
+  public static enable_engine = false;
 
   /**
    * we need to load relative resources. we can't access the path of this
@@ -79,7 +80,19 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       const tag = tags[i];
       const src = tag.getAttribute('src');
 
+      /*
+      if (src && /\?.*?engine/i.test(src)) {
+        console.info('s', src);
+        this.enable_engine = true;
+      }
+      */
+
       if (src && rex.test(src)) {
+
+        if (src && /\?.*?engine/i.test(src)) {
+          this.enable_engine = true;
+        }
+
         this.treb_embedded_script_path = src;
         this.treb_base_path = src.replace(new RegExp(default_script_name + '.*$'), '');
         return;
@@ -133,9 +146,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /** FIXME: can we share grid's parser instance? */
   private parser = new Parser();
 
-  private node: HTMLElement;
+  private node?: HTMLElement;
   private file_chooser?: HTMLInputElement;
-  private dialog: ProgressDialog;
+  private dialog?: ProgressDialog;
 
   private toolbar?: FormattingToolbar;
 
@@ -191,22 +204,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       });
     }
 
-    let container: HTMLElement;
+    let container: HTMLElement|undefined;
 
     if (typeof options.container === 'string') {
       container = document.getElementById(options.container) as HTMLElement;
     }
-    else {
+    else if (options.container) {
       container = options.container;
     }
-
-    this.node = document.createElement('div');
-    this.node.setAttribute('class', 'treb-embed-container');
-    container.appendChild(this.node);
-
-    // handle key. TODO: move undo to grid (makes more sense)
-
-    container.addEventListener('keydown', this.HandleKeyDown.bind(this));
 
     // create + init grid
 
@@ -227,12 +232,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (this.options.expand_formula_button) {
       grid_options.expand_formula_button = this.options.expand_formula_button;
     }
+
     if (this.options.scrollbars) {
       grid_options.scrollbars = this.options.scrollbars;
     }
+
     if (typeof this.options.tab_bar !== 'undefined') {
       grid_options.tab_bar = this.options.tab_bar;
     }
+
     if (this.options.add_tab) {
       grid_options.add_tab = this.options.add_tab;
     }
@@ -247,97 +255,112 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.grid.headless = true; // FIXME: move into grid options
     }
 
-    this.grid.Initialize(this.node);
+    if (container) {
+
+      this.node = document.createElement('div');
+      this.node.setAttribute('class', 'treb-embed-container');
+      container.appendChild(this.node);
+
+      // handle key. TODO: move undo to grid (makes more sense)
+
+      container.addEventListener('keydown', this.HandleKeyDown.bind(this));
+
+      this.grid.Initialize(this.node);
+
+      if (this.options.resizable) {
+        const master = container.querySelector('.treb-layout-master');
+        const node = container.querySelector('.treb-grid');
+        if (node && master) {
+          const resizable = new Resizable(container, node as HTMLElement, () => this.Resize(),
+            master as HTMLElement);
+        }
+      }
+
+      // dnd
+
+      if (this.options.dnd) {
+        this.node.addEventListener('dragenter', (event) => this.HandleDrag(event));
+        this.node.addEventListener('dragover', (event) => this.HandleDrag(event));
+        this.node.addEventListener('drop', (event) => this.HandleDrop(event));
+      }
+
+      // set up grid events
+
+      this.grid.grid_events.Subscribe((event) => {
+        switch (event.type) {
+
+          case 'selection':
+            this.UpdateSelection(event.selection);
+            break;
+
+          case 'sheet-change':
+            this.OnSheetChange(event);
+            break;
+
+          case 'data':
+            // console.info('calling recalc', event);
+            this.Recalculate(event).then(() => {
+              this.DocumentChange();
+            });
+            break;
+
+          case 'style':
+            this.DocumentChange();
+            break;
+
+          case 'annotation':
+
+            // FIXME: maybe need to update vertices (on create, update, delete,
+            // not on move or resize)
+
+            if (event.annotation) {
+
+              this.DocumentChange();
+              switch (event.event) {
+                case 'create':
+                  this.InflateAnnotation(event.annotation);
+                  this.calculator.UpdateAnnotations(event.annotation);
+                  break;
+                case 'delete':
+                  this.calculator.RemoveAnnotation(event.annotation); // clean up vertex
+                  break;
+                case 'update':
+                  if (event.annotation.update_callback) {
+                    event.annotation.update_callback();
+                  }
+                  else {
+                    console.info('annotation update event without update callback');
+                  }
+                  this.calculator.UpdateAnnotations(event.annotation);
+                  break;
+                case 'resize':
+                  if (event.annotation.resize_callback) {
+                    event.annotation.resize_callback();
+                  }
+                  break;
+              }
+            }
+            else {
+              console.info('annotation event without annotation');
+            }
+            break;
+
+          case 'structure':
+            this.DocumentChange();
+            if (event.rebuild_required) {
+              this.calculator.Reset();
+            }
+            break;
+        }
+      });
+
+    }
+    else {
+      console.info('not initializing grid; don\'t call UI functions');
+      this.grid.headless = true; // ensure
+    }
 
     this.InitCalculator();
-
-    if (this.options.resizable) {
-      const master = container.querySelector('.treb-layout-master');
-      const node = container.querySelector('.treb-grid');
-      if (node && master) {
-        const resizable = new Resizable(container, node as HTMLElement, () => this.Resize(),
-          master as HTMLElement);
-      }
-      // const resizable = new Resizable(container, this.node, () => this.Resize());
-    }
-
-    // dnd
-
-    if (this.options.dnd) {
-      this.node.addEventListener('dragenter', (event) => this.HandleDrag(event));
-      this.node.addEventListener('dragover', (event) => this.HandleDrag(event));
-      this.node.addEventListener('drop', (event) => this.HandleDrop(event));
-    }
-
-    // set up grid events
-
-    this.grid.grid_events.Subscribe((event) => {
-      switch (event.type) {
-
-        case 'selection':
-          this.UpdateSelection(event.selection);
-          break;
-
-        case 'sheet-change':
-          this.OnSheetChange(event);
-          break;
-
-        case 'data':
-          // console.info('calling recalc', event);
-          this.Recalculate(event).then(() => {
-            this.DocumentChange();
-          });
-          break;
-
-        case 'style':
-          this.DocumentChange();
-          break;
-
-        case 'annotation':
-
-          // FIXME: maybe need to update vertices (on create, update, delete,
-          // not on move or resize)
-
-          if (event.annotation) {
-
-            this.DocumentChange();
-            switch (event.event) {
-              case 'create':
-                this.InflateAnnotation(event.annotation);
-                this.calculator.UpdateAnnotations(event.annotation);
-                break;
-              case 'delete':
-                this.calculator.RemoveAnnotation(event.annotation); // clean up vertex
-                break;
-              case 'update':
-                if (event.annotation.update_callback) {
-                  event.annotation.update_callback();
-                }
-                else {
-                  console.info('annotation update event without update callback');
-                }
-                this.calculator.UpdateAnnotations(event.annotation);
-                break;
-              case 'resize':
-                if (event.annotation.resize_callback) {
-                  event.annotation.resize_callback();
-                }
-                break;
-            }
-          }
-          else {
-            console.info('annotation event without annotation');
-          }
-          break;
-
-        case 'structure':
-          this.DocumentChange();
-          if (event.rebuild_required) {
-            this.calculator.Reset();
-          }
-          break;
-      }
-    });
 
     // FIXME: this should yield so we can subscribe to events before the initial load
 
@@ -381,12 +404,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // create mask dialog
 
-    this.dialog = new ProgressDialog(container, {
-      mask: this.grid.theme.interface_dialog_mask,
-      border: this.grid.theme.interface_dialog_border,
-      background: this.grid.theme.interface_dialog_background,
-      text: this.grid.theme.interface_dialog_color,
-    });
+    if (container) {
+      this.dialog = new ProgressDialog(container, {
+        mask: this.grid.theme.interface_dialog_mask,
+        border: this.grid.theme.interface_dialog_border,
+        background: this.grid.theme.interface_dialog_background,
+        text: this.grid.theme.interface_dialog_color,
+      });
+    }
 
   }
 
@@ -450,7 +475,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   public UpdateTheme() {
     this.grid.UpdateTheme();
-    this.dialog.UpdateTheme({
+    this.dialog?.UpdateTheme({
       mask: this.grid.theme.interface_dialog_mask,
       border: this.grid.theme.interface_dialog_border,
       background: this.grid.theme.interface_dialog_background,
@@ -1601,17 +1626,20 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   public HideDialog() {
-    this.dialog.HideDialog();
+    this.dialog?.HideDialog();
   }
 
   public ShowProgressDialog(message?: string, progress?: number) {
-    this.dialog.ShowProgressDialog(message, progress);
+    this.dialog?.ShowProgressDialog(message, progress);
   }
 
   public ShowMessageDialog(message?: string, timeout = 0) { 
-    this.dialog.ShowMessageDialog(message);
-    if (timeout) {
-      setTimeout(() => this.dialog.HideDialog(), timeout);
+    const dialog = this.dialog;
+    if (dialog) {
+      dialog.ShowMessageDialog(message);
+      if (timeout) {
+        setTimeout(() => dialog.HideDialog(), timeout);
+      }
     }
   }
 
@@ -1632,7 +1660,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   /** paint message to dialog (implicit show=true) */
   public UpdateDialog(message?: string, progress?: number) {
-    this.dialog.Update(message, progress);
+    this.dialog?.Update(message, progress);
   }
 
   /**
@@ -1667,9 +1695,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
     */
 
-    if (this.toolbar) {
-      this.toolbar.Toggle();
-    }
+    this.toolbar?.Toggle();
 
   }
 

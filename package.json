@@ -20,7 +20,8 @@
     "js-base64": "^2.5.2",
     "jszip": "^3.4.0",
     "license-checker-webpack-plugin": "^0.1.4",
-    "node-sass": "^4.14.0",
+    "node-sass": "^4.14.1",
+    "nodemon": "^2.0.3",
     "riskampjs-mc": "file:../../riskampjs/riskampjs-mc",
     "sass-loader": "^8.0.2",
     "style-loader": "^1.1.4",
@@ -45,7 +46,8 @@
     "main": "embedded-treb-bundle",
     "calculation-worker": "embedded-treb-worker",
     "export-worker": "embedded-treb-export-worker",
-    "charts": "embedded-treb-charts"
+    "charts": "embedded-treb-charts",
+    "engine": "treb-engine"
   },
   "dependencies": {}
 }

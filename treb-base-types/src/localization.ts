@@ -54,7 +54,7 @@ export class Localization {
     if (locale) {
       this.locale = locale; // 1
     }
-    else {
+    else if (typeof self !== 'undefined') {
 
       // const location = ((typeof self === 'undefined' || typeof self.document === 'undefined') ?
       //  undefined : self.document.location);
@@ -62,7 +62,7 @@ export class Localization {
       const location = self?.document?.location;
 
       if (location && location.search &&
-          /locale=([^\?&]+?)(?:\?|$|&)/.test(location.search)) {
+          /locale=([^?&]+?)(?:\?|$|&)/.test(location.search)) {
         const match = location.search.match(/locale=(.*?)(?:\?|$|&)/);
         if (match) this.locale = match[1];
         console.info('override locale', this.locale);
@@ -75,6 +75,7 @@ export class Localization {
           this.locale = navigator.language;
         }
       }
+
     }
 
     const decimal_separator = new Intl.NumberFormat(this.locale,

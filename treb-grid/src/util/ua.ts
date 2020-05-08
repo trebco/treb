@@ -55,4 +55,20 @@ class UAType {
     /webkit|firefox/i.test(navigator.userAgent);
 }
 
-export const UA = new UAType();
+const null_ua = {
+
+    is_edge: false,
+    is_ipad: false,
+    is_android: false,
+    is_firefox: false,
+    is_safari: false,
+    is_mac: false,
+    is_chrome: false,
+    trident: false,
+    is_windows: false,
+    is_modern: true,
+    is_node: true,
+    
+};
+
+export const UA = (typeof navigator === 'undefined') ? null_ua : new UAType();

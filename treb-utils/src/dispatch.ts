@@ -1,4 +1,9 @@
 
+// eslint-disable-next-line @typescript-eslint/interface-name-prefix
+interface IDispatcher {
+  Call: (fn: () => void) => void;
+}
+
 /**
  * this is a yielding callback function, like requestAnimationFrame but
  * (theoretically) faster. I'm starting to wonder if it's actually that
@@ -8,7 +13,7 @@
  * FIXME: move out of base types. this requires a window.
  * FIXME: or, potentially use nextTick or setImmediate if there's no window.
  */
-class Dispatcher {
+class Dispatcher implements IDispatcher {
 
   /** id for comparing messages. not intended to be secure. */
   private id = Math.random();
@@ -73,29 +78,42 @@ class Dispatcher {
 
 }
 
-// singleton, but protected against multiple copies of this module
-// inlined in different builds. unfortunately we have to pollute the
-// global object (FIXME: accessor?)
-//
-// NOTE: I haven't seen any cases where there are multiple instances.
-// webpack seems to be managing this OK. we could probably safely drop
-// the global.
+let local_instance: IDispatcher;
 
-let local_instance: Dispatcher = (self as any).__dispatcher_instance;
-if (!local_instance) {
-  if ((self as any).window) {
+if (typeof self !== 'undefined') {
 
-    // console.info('creating new dispatcher (3)');
-    local_instance = new Dispatcher();
-    Object.defineProperty(self, '__dispatcher_instance', {
-      value: local_instance,
-    });
+  // singleton, but protected against multiple copies of this module
+  // inlined in different builds. unfortunately we have to pollute the
+  // global object (FIXME: accessor?)
+  //
+  // NOTE: I haven't seen any cases where there are multiple instances.
+  // webpack seems to be managing this OK. we could probably safely drop
+  // the global.
+
+  local_instance = (self as any).__dispatcher_instance;
+  if (!local_instance) {
+    if ((self as any).window) {
+
+      // console.info('creating new dispatcher (3)');
+      local_instance = new Dispatcher();
+      Object.defineProperty(self, '__dispatcher_instance', {
+        value: local_instance,
+      });
 
 
+    }
   }
+  else {
+    // console.info('using existing dispatcher (4)');
+  }
+
 }
 else {
-  // console.info('using existing dispatcher (4)');
+
+  local_instance = {
+    Call: () => { console.info('jjo'); },
+  }
+
 }
 
 /**
