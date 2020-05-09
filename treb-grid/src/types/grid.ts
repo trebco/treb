@@ -1277,7 +1277,7 @@ export class Grid {
    * it; it might come back, but if it does use a load method (don't inline)
    *
    */
-  public Initialize(grid_container: HTMLElement /*, sheet_data?: string | object*/) {
+  public Initialize(grid_container: HTMLElement, toll_initial_render = false) {
 
     this.grid_container = grid_container;
 
@@ -1388,8 +1388,10 @@ export class Grid {
 
     // don't delay this, it looks terrible
 
-    this.Repaint(true);
-
+    if (!toll_initial_render) {
+      this.Repaint(true);
+    }
+    
   }
 
   /**

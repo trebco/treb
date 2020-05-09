@@ -100,7 +100,7 @@ export abstract class BaseLayout {
     };
   }
 
-  public set scroll_offset(offset: {x: number, y: number}) {
+  public set scroll_offset(offset: {x: number; y: number}) {
     if (!this.scroll_reference_node) {
       return;
     }

@@ -265,7 +265,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       container.addEventListener('keydown', this.HandleKeyDown.bind(this));
 
-      this.grid.Initialize(this.node);
+      const toll_initial_render = !!(data || options.network_document);
+      console.info('tir', toll_initial_render);
+
+      this.grid.Initialize(this.node, toll_initial_render);
 
       if (this.options.resizable) {
         const master = container.querySelector('.treb-layout-master');
@@ -1007,35 +1010,45 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     const csv = /csv(?:$|\?|&)/i.test(uri);
     const tsv = /tsv(?:$|\?|&)/i.test(uri);
 
-    let response = await this.Fetch(uri);
+    try {
 
-    if (typeof response === 'string') {
-      if (csv) {
-        this.LoadCSV(response);
-      }
-      else if (tsv) {
-        // ...
-        throw new Error('tsv not supported (TODO)');
-      }
-      else {
+      let response = await this.Fetch(uri);
 
-        // FIXME: support anti-hijack headers if desired
-        // (something like &&&START&&& or for(;;);)
-
-        // FIXME: why? the data is fully accessible once it's
-        // been loaded in here. this is silly and unecessary.
-
-        if (response.substr(0, 11) === '&&&START&&&') {
-          response = response.substr(11);
+      if (typeof response === 'string') {
+        if (csv) {
+          this.LoadCSV(response);
         }
-        else if (response.substr(0, 8) === 'for(;;);') {
-          response = response.substr(8);
+        else if (tsv) {
+          // ...
+          throw new Error('tsv not supported (TODO)');
         }
+        else {
 
-        const json = JSON.parse(response);
-        this.LoadDocument(json, scroll, undefined, recalculate, override_sheet);
+          // FIXME: support anti-hijack headers if desired
+          // (something like &&&START&&& or for(;;);)
 
+          // FIXME: why? the data is fully accessible once it's
+          // been loaded in here. this is silly and unecessary.
+
+          if (response.substr(0, 11) === '&&&START&&&') {
+            response = response.substr(11);
+          }
+          else if (response.substr(0, 8) === 'for(;;);') {
+            response = response.substr(8);
+          }
+
+          const json = JSON.parse(response);
+          this.LoadDocument(json, scroll, undefined, recalculate, override_sheet);
+
+        }
       }
+
+    }
+    catch (err) {
+      console.info('error loading network document', uri);
+      console.error(err);
+      this.ShowMessageDialog('Error loading file', 1500);
+      this.Reset();
     }
 
   }
