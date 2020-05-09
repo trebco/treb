@@ -235,11 +235,19 @@ export class Sheet {
         sheet.default_row_height);
         // obj.default_row_height);
 
+      if (sheet.row_height_.length) {
+        sheet.cells.EnsureRow(sheet.row_height_.length - 1);
+      }
+  
       sheet.column_width_ = [];
       unflatten_numeric_array(sheet.column_width_, obj.column_width || {},
         sheet.default_column_width);
         // obj.default_column_width);
 
+      if (sheet.column_width_.length) {
+        sheet.cells.EnsureColumn(sheet.column_width_.length - 1);
+      }
+    
       if (hints && !hints.data) sheet.FlushCellStyles();
 
     }
@@ -265,6 +273,7 @@ export class Sheet {
       sheet.visible = !!obj.visible;
     }
 
+    
     return sheet;
 
   }

@@ -847,10 +847,12 @@ export abstract class BaseLayout {
     if (!total_width) total_width = this.model.active_sheet.default_column_width * columns;
 
     if (this.container.offsetWidth > total_width){
+
       const add_columns = Math.ceil((this.container.offsetWidth - total_width) /
       this.model.active_sheet.default_column_width);
       total_width += add_columns * this.model.active_sheet.default_column_width;
       columns += add_columns;
+
     }
 
     if (this.container.offsetHeight > total_height){
