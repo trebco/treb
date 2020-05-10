@@ -266,7 +266,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       container.addEventListener('keydown', this.HandleKeyDown.bind(this));
 
       const toll_initial_render = !!(data || options.network_document);
-      console.info('tir', toll_initial_render);
 
       this.grid.Initialize(this.node, toll_initial_render);
 

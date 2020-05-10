@@ -82,6 +82,10 @@ export interface CompositeFunctionDescriptor {
    */
   // simulation_volatile?: boolean;
 
+  /**
+   * 
+   */
+  render?: (options: any) => void;
 
   /**
    * the actual function. if this is an object member and needs access

@@ -8,6 +8,13 @@ import { TextPart } from './text_part';
 // static global to avoid export in typings file
 // const parser = new Parser();
 
+export interface RenderFunctionOptions {
+  height: number;
+  width: number;
+  context: CanvasRenderingContext2D;
+  cell: Cell;
+}
+
 /**
  * restructuring from the old system, which had lots of separate arrays for
  * things. for the most part I think having a single array (or object) with
@@ -90,9 +97,10 @@ export class Cell {
   }
   */
 
-  public static GetValueType(value: any){
-    const type = typeof value;
-    switch (type){
+  public static GetValueType(value: unknown){
+
+    switch (typeof value){
+      
       case 'undefined':
         return ValueType.undefined;
 
@@ -116,6 +124,7 @@ export class Cell {
 
       default: // function or symbol
         return ValueType.error;
+
     }
   }
 
@@ -174,6 +183,8 @@ export class Cell {
   public render_dirty = true;
 
   public note?: string;
+
+  public render_function?: (options: RenderFunctionOptions) => void;
 
   // --- class methods --------------------------------------------------------
 

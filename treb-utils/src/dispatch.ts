@@ -9,6 +9,10 @@ interface IDispatcher {
  * (theoretically) faster. I'm starting to wonder if it's actually that
  * fast, if lots of things are reading messages (because everyone now uses
  * this mechanism).
+ * 
+ * did some perf testing and this is pretty good -- Promise.resolve() is 
+ * faster (especially in firefox) but not by much, and there's native support
+ * in IE11 (is that right?)
  *
  * FIXME: move out of base types. this requires a window.
  * FIXME: or, potentially use nextTick or setImmediate if there's no window.

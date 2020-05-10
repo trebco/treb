@@ -875,6 +875,7 @@ export class Calculator extends Graph {
             });
           }
           args.forEach((arg) => this.RebuildDependencies(arg, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map));
+
         }
         break;
 
@@ -978,6 +979,24 @@ export class Calculator extends Graph {
           // zerp
 
           const dependencies = this.RebuildDependencies(parse_result.expression, cell.sheet_id, ''); // cell.sheet_id);
+          
+          if (parse_result.expression.type === 'call') {
+            const func = this.library.Get(parse_result.expression.name);
+            if (func && func.render) {
+
+              // 'cell' here is not a reference to the actual cell (sadly)
+              // maybe we should fix that...
+
+              if (this.model) {
+                const sheet = this.model.sheets[cell.sheet_id] || this.model.active_sheet;
+                const cell2 = sheet.cells.GetCell(cell, false);
+                if (cell2) {
+                  cell2.render_function = func.render;
+                }
+              }
+
+            }
+          }
 
           for (const key of Object.keys(dependencies.ranges)){
             const unit = dependencies.ranges[key];

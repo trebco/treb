@@ -2,6 +2,9 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, ValueError } from '../function-error';
+import { Cell } from 'treb-base-types/src';
+
+import { RenderSparklineColumn } from 'treb-sparkline';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -421,6 +424,25 @@ export const BaseFunctionLibrary: FunctionMap = {
         return num.toString(16);
       },
     },
+
+    'Sparkline.Column': {
+      arguments: [
+        {name: 'data'}, 
+        {name: 'color 1'}, 
+        {name: 'color 2'}],
+      render: (options: any) => {
+        const context = options.context as CanvasRenderingContext2D;
+        const width = options.width as number;
+        const height = options.height as number;
+        const cell = options.cell as Cell;
+
+        RenderSparklineColumn(width, height, context, cell);
+       
+      },
+      fn: (...args: any[]) => {
+        return args;
+      },
+    }
 
 };
 

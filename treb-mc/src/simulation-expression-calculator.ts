@@ -231,6 +231,11 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         return argument_error;
       }
 
+      /*
+      if (func.custom_render) {
+        this.AssignCustomRenderFunc(func);
+      }
+      */
 
       // if we have any nested calls, they may have updated the index so
       // we use the captured value here.

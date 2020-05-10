@@ -1,5 +1,5 @@
 
-import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectangle } from 'treb-base-types';
+import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectangle, RenderFunctionOptions } from 'treb-base-types';
 
 import { Tile } from '../types/tile';
 import { ExtendedTheme } from '../types/theme';
@@ -87,7 +87,7 @@ export class TileRenderer {
    */
   public EnsureBuffer(width = 0, height = 0, offset = 0) {
 
-    console.info('eb', width, height, offset);
+    // console.info('eb', width, height, offset);
 
     const scale = this.layout.dpr;
     width = width * scale;
@@ -1049,6 +1049,22 @@ export class TileRenderer {
       }
     }
 
+    if (cell.render_function) {
+      this.RenderCellBackground(
+        !!cell.note,
+        address,
+        context, 
+        style, 
+        width, 
+        height);
+
+      cell.render_function.call(null, {
+        width, height, context, cell,
+      });
+
+      return result;
+    }
+
     // if there's no context, we just need to render the background
     // and border; but it still might be overflowed (via merge)
 
@@ -1149,7 +1165,7 @@ export class TileRenderer {
 
         // cap at max
 
-        let last_column = this.model.active_sheet.columns - 1;
+        const last_column = this.model.active_sheet.columns - 1;
 
         while (overflow_pixels_right > 0 && overflow_right_column < last_column) {
           overflow_right_column++;
@@ -1394,7 +1410,7 @@ export class TileRenderer {
       for (const part of text_data.strings) {
         if (!part.hidden) {
           context.fillText(part.text, left, top);
-          if (!!style.font_underline) {
+          if (style.font_underline) {
             if (!path_started) {
               path_started = true;
               context.moveTo(left, underline_y);
@@ -1419,7 +1435,7 @@ export class TileRenderer {
           left = width - this.cell_edge_buffer - part.width;
         }
 
-        if (!!style.font_underline) {
+        if (style.font_underline) {
           const underline_y = top + metrics.block - 3.5 - metrics.ascent - 3;
           context.moveTo(left, underline_y);
           context.lineTo(left + part.width, underline_y);

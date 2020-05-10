@@ -1,182 +1,139 @@
 
-import { XML } from './xml';
+import { Cell } from 'treb-base-types';
 
-export interface SparklineOptions {
-
-  /** chart type */
-  type?: 'line' | 'column' | 'win-loss';
-
-  /** buffer for zero (as %) so there are no empty columns */
-  zero?: number;
-
-  /** column as % of available space, the rest is margin */
-  column_width?: number;
-
-}
-
-const DefaultOptions: SparklineOptions = {
-  type: 'line',
-  zero: 0.025,
-  column_width: .9,
+const Unpack = (data: number[]|number[][]): number[] => {
+  if(!data.length) return [];
+  if(Array.isArray(data[0])) {
+    return (data as number[][]).reduce((a, set) => a.concat(set), []);
+  }
+  return (data as number[]);
 };
 
-export type RenderTarget = 'svg'|'canvas';
+export const RenderSparklineColumn = (
+  width: number,
+  height: number,
+  context: CanvasRenderingContext2D,
+  cell: Cell,
+) => {
 
-export class Sparkline {
+  // the cell function echoes back arguments. the first argument
+  // should be an array, but it will be 2D...
 
-  protected data: number[] = [];
-  protected options: SparklineOptions;
+  let values: Array<number|undefined> = [];
 
-  constructor(options: SparklineOptions = DefaultOptions, data: number[] = []) {
-    this.options = {...DefaultOptions, ...options};
-    this.Update(data);
-  }
+  // if you pass a color, it gets used for both positive and negative -- 
+  // pass two colors to define both
 
-  public Update(data: number[] = []) {
-    this.data = data.slice(0);
-  }
+  let colors = ['green', 'red'];
 
-  /**
-   * render bars. we reuse for win/loss, using transformed data
-   */
-  public RenderColumns(data: number[], root: XML) {
-
-    const step = 100 / data.length;
-    const g = root.Append('g');
-    let x = 0;
-
-    const width = step * (this.options.column_width || 1);
-    const margin = (step - width) / 2;
-
-    let {min, max} = this.Range(data);
-    let range = max - min;
-    const values: number[] = data.slice(0);
-
-    console.info("RANGE", min, max);
-
-    const zero_buffer = range * (this.options.zero || 0);
-
-    // if it doesn't cross zero, expand the range a little bit
-    // so we can see bars at minimum (maximum) value
-
-    if (min >= 0 && max >= 0) { // all positive
-      data = this.data.map((point) => point - min + zero_buffer);
-      max = max - min + zero_buffer;
-      min = 0;
-      range = max - min;
+  if (Array.isArray(cell.calculated)) {
+    if (Array.isArray(cell.calculated[0])) {
+      const data = Unpack(cell.calculated[0]);
+      values = data.map((value: any) => isNaN(value) ? undefined : Number(value));
     }
-    else if (min <= 0 && max <= 0) { // all negative
-      data = this.data.map((point) => point - max - zero_buffer);
-      min = min - max - zero_buffer;
-      max = zero_buffer;
-      range = max - min;
+    if (typeof cell.calculated[1] === 'string') {
+      colors = [cell.calculated[1], 
+        typeof cell.calculated[2] === 'string' ? cell.calculated[2] : cell.calculated[1]];
     }
-
-    const zero = 100 * (max / range);
-
-    // for (const point of data) {
-    for (let i = 0; i < data.length; i++) {
-
-      const point = data[i];
-      const height = 100 * Math.abs(point) / range;
-      const y = point > 0 ? zero - height : zero;
-
-      let class_name = '';
-      if (values[i] < 0) class_name = 'negative';
-      else if (values[i] > 0) class_name = 'positive';
-
-      g.Append('rect', {
-        x: (x + margin).toFixed(4),
-        y: (y).toFixed(4),
-        width: (width).toFixed(4),
-        height: (height).toFixed(4),
-        class: class_name,
-      });
-      x += step;
-    }
-
   }
 
-  /**
-   * renders SVG as text
-   */
-  public RenderSVG() {
-    return this.RenderInternal().toString();
-  }
+  // background
 
-  public RenderNode() {
-    return this.RenderInternal().toDOM();
-  }
+  // bars
 
-  private RenderInternal() {
-    const count = this.data.length;
-    const root = new XML('svg', {
-      class: 'treb-sparkline treb-sparkline-' + this.options.type,
-      xmlns: 'http://www.w3.org/2000/svg',
-      viewBox: '0 0 100 100',
-      preserveAspectRatio: 'none',
-    });
+  // any?
 
-    switch (this.options.type) {
-    case 'win-loss':
-      if (this.data.length) {
-        this.RenderColumns(this.data.map((point) => {
-          if (point < 0) return -1;
-          if (point > 0) return 1;
-          return 0;
-        }), root);
+  let min = 0;
+  let max = 0;
+
+  const x_margin = 0.05;
+  const y_margin = 0.10;
+
+  if (values.length) {
+
+    for (const value of values) {
+      if (typeof value === 'number') {
+        min = Math.min(min, value);
+        max = Math.max(max, value);
       }
-      break;
-    case 'column':
-      if (this.data.length) {
-        this.RenderColumns(this.data, root);
-      }
-      break;
+    }
 
-    case 'line':
-    default:
-      if (this.data.length) {
+    const step = Math.floor((width * (1 - 2 * x_margin)) / (values.length));
+    const pixel_range = Math.floor(height * (1 - 2 * y_margin)); // ?
+    const base = Math.round(height * y_margin);
 
-        const d: string[] = [];
-        const {min, max} = this.Range();
+    // let x = Math.round(width * x_margin);
+
+    if (min !== max) { 
+
+      if (min < 0 && max > 0) {
+
         const range = max - min;
-        const step = 100 / (count - 1);
+        const zero = base + max / range * pixel_range;
 
-        let x = 0;
+        // use an indexed loop so we can multiply to get x instead of adding
+        for (let i = 0; i < values.length; i++) {
+          const value = values[i];
+          if (typeof value === 'number') {
+            const x = Math.round(width * x_margin + i * step);
+            const bar_height = (Math.abs(value) / range) * pixel_range;
 
-        const Point = (point: number) => {
-          const text = `${x.toFixed(4)},${(100 * (point - min) / range).toFixed(4)}`;
-          x += step;
-          return text;
-        };
+            if (value >= 0) { 
+              context.fillStyle = colors[0];
+              const top = zero - bar_height;
+              context.fillRect(x + 2, top, step - 2, bar_height);
+              }
+            else { 
+              context.fillStyle = colors[1];
+              const top = zero;
+              context.fillRect(x + 2, top, step - 2, bar_height);
+              }
 
-        // first point
-        d.push(`M${Point(this.data[0])}`);
+          }
+        }  
 
-        // line
-        for (const point of this.data.slice(1)) {
-          d.push(`L${Point(point)}`);
-        }
-
-        root.Append('g').Append('path', {d: d.join(' ')});
       }
-      break;
+      else if (max > 0) {
+
+        // all positive
+
+        context.fillStyle = colors[0];
+        const range = max - min;
+
+        // use an indexed loop so we can multiply to get x instead of adding
+        for (let i = 0; i < values.length; i++) {
+          const value = values[i];
+          if (typeof value === 'number') {
+            const x = Math.round(width * x_margin + i * step);
+            const bar_height = (value / range) * pixel_range;
+            const top = height - base - bar_height;
+            context.fillRect(x + 2, top, step - 2, bar_height);
+          }
+        }  
+
+      }
+      else {
+
+        // all negative
+
+        context.fillStyle = colors[1];
+        const range = max - min;
+
+        // use an indexed loop so we can multiply to get x instead of adding
+        for (let i = 0; i < values.length; i++) {
+          const value = values[i];
+          if (typeof value === 'number') {
+            const x = Math.round(width * x_margin + i * step);
+            const bar_height = (Math.abs(value) / range) * pixel_range;
+            const top = base;
+            context.fillRect(x + 2, top, step - 2, bar_height);
+          }
+        }  
+
+      }
+
     }
 
-    return root; // .toString();
   }
 
-  private Range(data: number[] = this.data) {
-
-    let min = data[0] || 0;
-    let max = data[0] || 0;
-
-    for (const element of data) {
-      if (min > element) min = element;
-      if (max < element) max = element;
-    }
-
-    return {min, max};
-  }
-
-}
+};

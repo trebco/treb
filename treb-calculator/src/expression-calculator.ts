@@ -5,6 +5,7 @@ import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
+import { CompositeFunctionDescriptor } from './descriptors';
 import * as Utilities from './utilities';
 
 import * as Primitives from './primitives';
@@ -93,6 +94,12 @@ export class ExpressionCalculator {
     };
 
   }
+
+  /*
+  protected AssignCustomRenderFunc(func: CompositeFunctionDescriptor) {
+    console.info('acrf', this.context);
+  }
+  */
 
   // --- /public API ----------------------------------------------------------
 
@@ -326,6 +333,12 @@ export class ExpressionCalculator {
       if (argument_error) {
         return argument_error;
       }
+
+      /*
+      if (func.custom_render) {
+        this.AssignCustomRenderFunc(func);
+      }
+      */
 
       // if we have any nested calls, they may have updated the index so
       // we use the captured value here.
