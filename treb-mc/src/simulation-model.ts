@@ -1,3 +1,4 @@
+/* eslint-disable no-unexpected-multiline */
 
 import { ICellAddress } from 'treb-base-types';
 import * as Utils from '../../treb-calculator/src/utilities';
@@ -1058,7 +1059,7 @@ export class SimulationModel {
     return data[index - 1];
   }
 
-  public simulationpercentile(data?: number[], percentile: number = .5) {
+  public simulationpercentile(data?: number[], percentile = .5) {
     if (this.state !== SimulationState.Null) return 0;
     if (!data || !data.length) return DataError;
     return Stats.Percentile(data, percentile);
