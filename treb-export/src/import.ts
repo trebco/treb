@@ -350,8 +350,6 @@ export class Importer {
 
               const translated = sheet.TranslateAddress(reference);
 
-              console.info(reference, translated, constructed_function);
-
               if (is_address(translated)) {
 
                 const result = {
@@ -366,7 +364,6 @@ export class Importer {
                 for (const element of data) {
                   if (element.row === result.row && element.column === result.column) {
                     matched = true;
-                    console.info('match?', element);
                     element.type = ValueType.formula;
                     element.value = constructed_function;
                     break;
@@ -374,7 +371,6 @@ export class Importer {
                 }
                 
                 if (!matched) {
-                  console.info('pushing', result);
                   data.push(result);
                 }
 
