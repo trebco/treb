@@ -335,7 +335,7 @@ export class Sheet {
   public default_row_height = 25;
 
   /** cells data */
-  public cells: Cells = new Cells();
+  public readonly cells: Cells = new Cells();
 
   /**
    * selection. moved to sheet to preserve selections in multiple sheets.

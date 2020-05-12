@@ -6,7 +6,7 @@ import { Workbook } from './workbook';
 
 import { Style, Area, ICellAddress, Cell, Cells } from 'treb-base-types';
 import { StyleOptions, Font, BorderStyle, Fill } from './style';
-import { Parser, ArgumentSeparatorType, DecimalMarkType } from 'treb-parser';
+import { Parser, ArgumentSeparatorType, DecimalMarkType, ExpressionUnit, UnitCall } from 'treb-parser';
 import { NumberFormatCache } from 'treb-format';
 
 import { SerializedSheet } from 'treb-grid';
@@ -65,17 +65,26 @@ export class Exporter {
     this.workbook.InsertSheets(source.sheet_data.length);
 
     // we may need to rewrite functions
-    let parser: Parser | undefined;
+    // let parser: Parser | undefined;
+    const parser = new Parser();
+    let change_number_format = false;
 
     if (source.decimal_mark === ',') {
-      parser = new Parser();
+      // parser = new Parser();
       parser.decimal_mark = DecimalMarkType.Comma;
       parser.argument_separator = ArgumentSeparatorType.Semicolon;
+      change_number_format = true;
     }
 
     for (let index = 0; index < source.sheet_data.length; index++) {
 
       const sheet = this.workbook.GetSheet(index);
+      const sparklines: Array<{
+        expression: UnitCall;
+        row: number;
+        column: number;
+        reference: string;
+      }> = [];
 
       if (!sheet) {
         console.info('sheet not found @ index', index);
@@ -190,10 +199,27 @@ export class Exporter {
 
             if (parser && cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
               const result = parser.Parse(cell.value);
-              if (result.expression) {
-                const rewrite = parser.Render(result.expression, undefined, undefined,
-                  DecimalMarkType.Period, ArgumentSeparatorType.Comma);
-                cell.value = '=' + rewrite;
+              if (result.expression && result.expression.type === 'call') {
+                switch (result.expression.name.toLowerCase()) {
+                  case 'sparkline.column':
+                  case 'sparkline.line':
+                    cell.value = '';
+                    sparklines.push({
+                      expression: result.expression,
+                      row: cell.row + 1, 
+                      column: cell.column + 1,
+                      reference: result.expression.args[0] ? parser.Render(result.expression.args[0]) : '',
+                    });
+                    break;
+                }
+              }
+
+              if (change_number_format) {
+                if (result.expression) {
+                  const rewrite = parser.Render(result.expression, undefined, undefined,
+                    DecimalMarkType.Period, ArgumentSeparatorType.Comma);
+                  cell.value = '=' + rewrite;
+                }
               }
             }
 
@@ -296,6 +322,9 @@ export class Exporter {
       // const drawing_id = this.workbook.AddChart();
       // sheet.AddChartReference(drawing_id);
 
+      if (sparklines.length) {
+        sheet.AddSparklines(sparklines);
+      }
 
     }
 

@@ -1,23 +1,29 @@
 
 import { Sheet } from './sheet';
-// import { Annotation } from './annotation';
 import { NamedRangeCollection } from './named_range';
 
 /**
- * transition support
  * 
- * TODO: annotations should be tied to sheet
- *       sheets need names (or IDs?)
- *       -> map of names -> sheets
- *       named ranges should be in model, not sheet, because
- *       they may point to different sheets
  */
 export interface DataModel {
+
+  /** document metadata */
   document_name?: string;
+
+  /** document metadata */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user_data?: any;
+
+  /** reference */
   active_sheet: Sheet;
+
+  /** 
+   * list of sheets. we _should_ index these by ID, so we 
+   * don't have to look up. FIXME/TODO
+   */
   sheets: Sheet[];
-  // annotations: Annotation[];
+
+  /** named ranges are document-scope, we don't support sheet-scope names */
   named_ranges: NamedRangeCollection;
+
 }

@@ -988,11 +988,19 @@ export class Calculator extends Graph {
               // maybe we should fix that...
 
               if (this.model) {
-                const sheet = this.model.sheets[cell.sheet_id] || this.model.active_sheet;
-                const cell2 = sheet.cells.GetCell(cell, false);
-                if (cell2) {
-                  cell2.render_function = func.render;
+
+                // we need a better way to do this
+                
+                for (const sheet of this.model.sheets) {
+                  if (sheet.id === cell.sheet_id) {
+                    const cell2 = sheet.cells.GetCell(cell, false);
+                    if (cell2) {
+                      cell2.render_function = func.render;
+                    }
+                    break;
+                  }
                 }
+
               }
 
             }

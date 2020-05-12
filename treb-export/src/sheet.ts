@@ -3,6 +3,7 @@ import * as ElementTree from 'elementtree';
 import { Element, ElementTree as Tree } from 'elementtree';
 import { AddressType, RangeType, is_range, is_address } from './address-type';
 import { SharedStrings } from './shared-strings';
+import { UnitCall } from 'treb-parser';
 
 export interface SheetOptions {
   name?: string;
@@ -485,6 +486,72 @@ export class Sheet {
         element.attrib.customHeight = '1';
       }
     }
+  }
+
+  public AddSparklines(expressions: Array<{
+    expression: UnitCall;
+    row: number;
+    column: number;
+    reference: string;
+    }>) {
+
+    if (!this.dom) { return; }
+
+    console.info(expressions);
+
+    let extLst = this.dom.find('./extLst');
+    if (!extLst) {
+      extLst = ElementTree.SubElement(this.dom.getroot(), 'extLst');
+    }
+
+    const ext = ElementTree.SubElement(extLst, 'ext', {
+      uri: '{05C60535-1F16-4fd2-B633-F4F36F0B64E0}',
+      'xmlns:x14': 'http://schemas.microsoft.com/office/spreadsheetml/2009/9/main',
+      });
+
+    const groups = ElementTree.SubElement(ext, 'x14:sparklineGroups', {
+      'xmlns:xm': 'http://schemas.microsoft.com/office/excel/2006/main',
+      });
+
+    for (const element of expressions) {
+      const group = ElementTree.SubElement(groups, 'x14:sparklineGroup', {
+        displayEmptyCellsAs: 'gap',
+        'xr2:uid': '{A7934558-D60A-4B70-ABDB-3FEABAFEBB5B}',
+        });
+
+      if (element.expression.name.toLowerCase() === 'sparkline.column') {
+        group.set('type', 'column');
+      }
+
+      ElementTree.SubElement(group, 'x14:colorSeries', {rgb: 'FF376092'});
+      ElementTree.SubElement(group, 'x14:colorNegative', {rgb: 'FFD00000'});
+
+      ElementTree.SubElement(group, 'x14:colorAxis', {rgb: 'FF000000'});
+      ElementTree.SubElement(group, 'x14:colorMarkers', {rgb: 'FFD00000'});
+      ElementTree.SubElement(group, 'x14:colorFirst', {rgb: 'FFD00000'});
+      ElementTree.SubElement(group, 'x14:colorLast', {rgb: 'FFD00000'});
+      ElementTree.SubElement(group, 'x14:colorHigh', {rgb: 'FFD00000'});
+      ElementTree.SubElement(group, 'x14:colorLow', {rgb: 'FFD00000'});
+
+      const sparklines = ElementTree.SubElement(group, 'x14:sparklines');
+      const sparkline = ElementTree.SubElement(sparklines, 'x14:sparkline');
+      const f = ElementTree.SubElement(sparkline, 'xm:f');
+
+      if (/!/.test(element.reference)) {
+        f.text = element.reference; 
+      }
+      else {
+        let name = this.options.name || '';
+        if(/[\s]/.test(name)) { name = '"' + name + '"'; }
+        f.text = name + '!' + element.reference;
+      }
+
+      const sqref = ElementTree.SubElement(sparkline, 'xm:sqref');
+      sqref.text = this.Address({row: element.row, col: element.column});
+
+    }
+
+
   }
 
   public SetDefaultColumnStyle(style: number) {

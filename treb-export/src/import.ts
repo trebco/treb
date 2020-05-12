@@ -4,7 +4,7 @@ import * as ElementTree from 'elementtree';
 import { Workbook } from './workbook';
 import { Style, Area, ICellAddress, Cell, Cells, ValueType } from 'treb-base-types';
 import { Sheet } from './sheet';
-import { is_range, RangeType, ShiftRange, InRange, AddressType } from './address-type';
+import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address } from './address-type';
 import { Parser, ParseResult } from 'treb-parser';
 
 interface SharedFormula {
@@ -300,6 +300,89 @@ export class Importer {
             for (let i = min; i <= max; i++) column_widths[i - 1] = width;
           }
 
+        }
+      }
+    }
+
+    // we can't look these up directly because of namespacing, which
+    // isn't properly supported... (...)
+
+    const ext = sheet.dom.find('./extLst/ext');
+    if (ext) {
+      for (const child1 of ext.getchildren()) {
+        for (const child2 of child1.getchildren()) {
+          if (/sparklineGroup$/.test(child2.tag.toString())) {
+            let func = 'Sparkline.line';
+            let reference = '';
+            let source = '';
+
+            switch (child2.get('type')) {
+            case 'column':
+              func = 'Sparkline.column';
+              break;
+            }
+
+            // TODO: gap optional
+            // TODO: colors
+
+            for (const child3 of child2.getchildren()) {
+              if (/sparklines$/.test(child3.tag.toString())) {
+                for (const child4 of child3.getchildren()) {
+                  if (/sparkline$/.test(child4.tag.toString())) {
+                    for (const child5 of child4.getchildren()) {
+                      if (/(?:^|:)f$/.test(child5.tag.toString())) {
+                        source = child5.text ? child5.text.toString() : '';
+                      }
+                      if (/sqref$/.test(child5.tag.toString())) {
+                        reference = child5.text ? child5.text.toString() : '';
+                      }
+                    }
+                  }
+                }
+              }
+            }
+
+            if (source && reference) {
+              const constructed_function = `=${func}(${source})`; 
+
+              // 1: merges
+              // 2: maybe already in the list? need to filter
+
+              const translated = sheet.TranslateAddress(reference);
+
+              console.info(reference, translated, constructed_function);
+
+              if (is_address(translated)) {
+
+                const result = {
+                  row: translated.row - 1, 
+                  column: translated.col - 1,
+                  value: constructed_function, 
+                  type: ValueType.formula,
+                };
+
+                let matched = false;
+
+                for (const element of data) {
+                  if (element.row === result.row && element.column === result.column) {
+                    matched = true;
+                    console.info('match?', element);
+                    element.type = ValueType.formula;
+                    element.value = constructed_function;
+                    break;
+                  }
+                }
+                
+                if (!matched) {
+                  console.info('pushing', result);
+                  data.push(result);
+                }
+
+              }
+              
+            }
+
+          }
         }
       }
     }

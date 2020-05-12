@@ -1,6 +1,11 @@
 
 import { Cell } from 'treb-base-types';
 
+enum LineOperation {
+  move,
+  line,
+}
+
 /**
  * three possible cases: 
  * 
@@ -64,7 +69,7 @@ const SparklineCommon = (cell: Cell, number_of_colors = 2) => {
   // if you pass a color, it gets used for both positive and negative -- 
   // pass two colors to define both
 
-  let colors = number_of_colors === 2 ? ['green', 'red'] : ['#888'];
+  let colors = number_of_colors === 2 ? ['green', 'red'] : ['#333'];
 
   if (Array.isArray(cell.calculated)) {
     values = Unpack(cell.calculated[0]);
@@ -127,18 +132,28 @@ export const RenderSparklineLine = (
     context.lineCap = 'round';
     context.lineJoin = 'round';
 
-    let x = width * x_margin + step * first_index;
-    let y = height - ((values[first_index] as number) - min) * pixel_range / range - base;
+    // let x = width * x_margin + step * first_index;
+    // let y = height - ((values[first_index] as number) - min) * pixel_range / range - base;
 
     context.beginPath();
-    context.moveTo(x, y);
 
-    for (let i = first_index + 1; i < values.length; i++) {
+    let op = LineOperation.move;
+
+    for (let i = first_index; i < values.length; i++) {
       const value = values[i];
       if (typeof value === 'number') {
-        x = width * x_margin + step * i;
-        y = height - (value - min) * pixel_range / range - base;
-        context.lineTo(x, y);
+        const x = width * x_margin + step * i;
+        const y = height - (value - min) * pixel_range / range - base;
+        if (op === LineOperation.move) {
+          context.moveTo(x, y);
+          op = LineOperation.line;
+        }
+        else {
+          context.lineTo(x, y);
+        }
+      }
+      else {
+        op = LineOperation.move;
       }
     }
 
