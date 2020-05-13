@@ -6,7 +6,7 @@ import { ICellAddress } from 'treb-base-types/src/area';
 import { Parser, UnitCall } from 'treb-parser';
 import { FunctionError, NameError, ReferenceError } from '../../treb-calculator/src/function-error';
 import { MCCompositeFunctionDescriptor } from './descriptors';
-import { ValueType } from 'treb-base-types/src';
+import { ValueType, Cell } from 'treb-base-types/src';
 
 
 export class MCExpressionCalculator extends ExpressionCalculator {
@@ -123,7 +123,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
         if (typeof arg === 'undefined') { return undefined; } // FIXME: required?
 
-        const descriptor = argument_descriptors[arg_index] || {};
+        const descriptor = argument_descriptors[Math.min(arg_index, argument_descriptors.length - 1)] || {}; // recycle last one
 
         // FIXME (address): what about named ranges (actually those will work),
         // constructed references (we don't support them atm)?
@@ -142,6 +142,14 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         }
         else if (descriptor.metadata) {
 
+          return this.GetMetadata(arg, (cell_data: Cell, address: ICellAddress) => { 
+            const simulation_data =
+              (this.simulation_model.state === SimulationState.Null) ?
+              this.simulation_model.StoreCellResults(address) : [];
+            return { simulation_data };
+          });
+
+          /*
           // FIXME: we used to restrict this to non-cell functions, now
           // we are using it for the cell function (we used to use address,
           // which just returns the label)
@@ -170,6 +178,18 @@ export class MCExpressionCalculator extends ExpressionCalculator {
                 }
               }
             }
+            break;
+
+          case 'call':
+            {
+              const result = this.CalculateExpression(arg);
+              if (typeof result === 'object' && result.error && !descriptor.allow_error) {
+                argument_error = result;
+              }
+              return result;
+            }
+            break;
+
           }
 
           if (address) {
@@ -238,6 +258,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
             return range_result;
 
           }
+          */
 
         }
         else if (descriptor.collector && this.simulation_model.state === SimulationState.Null) {

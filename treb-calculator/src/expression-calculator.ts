@@ -1,6 +1,6 @@
 
 import { FunctionLibrary } from './function-library';
-import { Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
+import { Cell, Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
 import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
 import { DataModel } from 'treb-grid';
@@ -195,6 +195,114 @@ export class ExpressionCalculator {
 
   }
 
+  /** breaking this out to de-dupe */
+  protected GetMetadata(arg: ExpressionUnit, map_result: (cell_data: Cell, address: ICellAddress) => any) {
+
+    // FIXME: we used to restrict this to non-cell functions, now
+    // we are using it for the cell function (we used to use address,
+    // which just returns the label)
+
+    let address: ICellAddress|undefined;
+    let range: {start: ICellAddress; end: ICellAddress} | undefined;
+
+    switch (arg.type) {
+    case 'address':
+      address = arg;
+      break;
+
+    case 'range':
+      range = arg;
+      break;
+
+    case 'identifier':
+      {
+        const named_range = this.named_range_map[arg.name.toUpperCase()];
+        if (named_range) {
+          if (named_range.count === 1) {
+            address = named_range.start; // FIXME: range?
+          }
+          else {
+            range = named_range;
+          }
+        }
+      }
+      break;
+
+    case 'call':
+      {
+        const call_result = this.CalculateExpression(arg);
+        console.info('cr', arg, call_result);
+      }
+
+      return this.CalculateExpression(arg);
+    }
+
+    if (address) {
+
+      let sheet = this.data_model.active_sheet;
+      if (address.sheet_id && address.sheet_id !== sheet.id) {
+        for (const test of this.data_model.sheets) {
+          if (test.id === address.sheet_id) {
+            sheet = test;
+            break;
+          }
+        }
+      }
+
+      const cell_data = sheet.CellData(address);
+      const value = // (cell_data.type === ValueType.formula) ? cell_data.calculated : cell_data.value;
+        cell_data.calculated_type ? cell_data.calculated : cell_data.value;
+
+      return {
+        address: {...address},
+        value,
+        format: cell_data.style ? cell_data.style.number_format : undefined,
+        ...map_result(cell_data, address),
+      };
+    }
+    else if (range) {
+
+      if (range.start.row === Infinity || range.start.column === Infinity) {
+        return ReferenceError; // temp
+      }
+
+      let sheet = this.data_model.active_sheet;
+      if (range.start.sheet_id && range.start.sheet_id !== sheet.id) {
+        for (const test of this.data_model.sheets) {
+          if (test.id === range.start.sheet_id) {
+            sheet = test;
+            break;
+          }
+        }
+      }
+
+      const range_result = [];
+
+      for (let column = range.start.column; column <= range.end.column; column++) {
+        const column_result = [];
+        for (let row = range.start.row; row <= range.end.row; row++) {
+          const cell_data = sheet.CellData({row, column});
+          address = {...range.start, row, column};
+
+          const value = // (cell_data.type === ValueType.formula) ? cell_data.calculated : cell_data.value;
+            cell_data.calculated_type ? cell_data.calculated : cell_data.value;
+
+          column_result.push({
+            address,
+            value,
+            format: cell_data.style ? cell_data.style.number_format : undefined,
+            ...map_result(cell_data, address),
+          });
+        }
+        range_result.push(column_result);
+      }
+      
+      return range_result;
+
+    }
+
+  }
+
   /** excutes a function call */
   protected CallExpression(outer: UnitCall) {
 
@@ -258,7 +366,7 @@ export class ExpressionCalculator {
 
         if (typeof arg === 'undefined') { return undefined; } // FIXME: required?
 
-        const descriptor = argument_descriptors[arg_index] || {};
+        const descriptor = argument_descriptors[Math.min(arg_index, argument_descriptors.length - 1)] || {}; // recycle last one
 
         // FIXME (address): what about named ranges (actually those will work),
         // constructed references (we don't support them atm)?
@@ -270,94 +378,7 @@ export class ExpressionCalculator {
           return this.parser.Render(arg).replace(/\$/g, '');
         }
         else if (descriptor.metadata) {
-
-          // FIXME: we used to restrict this to non-cell functions, now
-          // we are using it for the cell function (we used to use address,
-          // which just returns the label)
-
-          let address: ICellAddress|undefined;
-          let range: {start: ICellAddress; end: ICellAddress} | undefined;
-
-          switch (arg.type) {
-          case 'address':
-            address = arg;
-            break;
-
-          case 'range':
-            range = arg;
-            break;
-
-          case 'identifier':
-            {
-              const named_range = this.named_range_map[arg.name.toUpperCase()];
-              if (named_range) {
-                if (named_range.count === 1) {
-                  address = named_range.start; // FIXME: range?
-                }
-                else {
-                  range = named_range;
-                }
-              }
-            }
-          }
-
-          if (address) {
-
-            let sheet = this.data_model.active_sheet;
-            if (address.sheet_id && address.sheet_id !== sheet.id) {
-              for (const test of this.data_model.sheets) {
-                if (test.id === address.sheet_id) {
-                  sheet = test;
-                  break;
-                }
-              }
-            }
-
-            const cell_data = sheet.CellData(address);
-
-            return {
-              address: {...address},
-              value: cell_data.type === ValueType.formula ? cell_data.calculated : cell_data.value,
-              format: cell_data.style ? cell_data.style.number_format : undefined,
-              // simulation_data,
-            };
-          }
-          else if (range) {
-
-            if (range.start.row === Infinity || range.start.column === Infinity) {
-              return ReferenceError; // temp
-            }
-
-            let sheet = this.data_model.active_sheet;
-            if (range.start.sheet_id && range.start.sheet_id !== sheet.id) {
-              for (const test of this.data_model.sheets) {
-                if (test.id === range.start.sheet_id) {
-                  sheet = test;
-                  break;
-                }
-              }
-            }
-
-            const range_result = [];
-
-            for (let column = range.start.column; column <= range.end.column; column++) {
-              const column_result = [];
-              for (let row = range.start.row; row <= range.end.row; row++) {
-                const cell_data = sheet.CellData({row, column});
-                column_result.push({
-                  address: {...range.start, row, column},
-                  value: cell_data.type === ValueType.formula ? cell_data.calculated : cell_data.value,
-                  format: cell_data.style ? cell_data.style.number_format : undefined,
-                  // simulation_data,
-                });
-              }
-              range_result.push(column_result);
-            }
-            
-            return range_result;
-
-          }
-
+          return this.GetMetadata(arg, () => { return {}});
         }
         else {
           const result = this.CalculateExpression(arg);

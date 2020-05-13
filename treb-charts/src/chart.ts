@@ -149,14 +149,33 @@ export class Chart {
   }
 
   /**
-   * args: data, labels, title, x_format, y_format, callouts
+   * args: data, labels, title, [x_format, y_format], callouts
    */
   public CreateLineChart(args: any[], type: 'line'|'area') { // |'bar'|'column') {
 
     const title = args[2] || '';
-
     const raw_data = args[0];
 
+    // we're now expecting this to be metadata (including value).
+    // so we need to unpack. could be an array... could be deep...
+    const flat = Util.Flatten(raw_data);
+
+    // we still need the aggregate for range, scale
+    const data = flat.map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
+
+    // but now we're potentially splitting into series
+    let series: NumberOrUndefinedArray[];
+
+    if (Array.isArray(raw_data) && (raw_data as any)._type === 'series') {
+      series = raw_data.map(entry => {
+        return Util.Flatten(entry).map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
+      });
+    }
+    else {
+      series = [data];
+    }
+
+    /*
     // we still need the aggregate for range, scale
     const data = Util.Flatten(raw_data).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
 
@@ -171,6 +190,7 @@ export class Chart {
     else {
       series = [data];
     }
+    */
 
     const range = Util.Range(data);
 
@@ -180,14 +200,16 @@ export class Chart {
     }
 
     const scale = Util.Scale(range.min || 0, range.max || 0, 7);
-
-    const y_format = NumberFormatCache.Get(args[4] || DEFAULT_FORMAT);
+    const format_pattern = (flat.length && flat[0].format) ? flat[0].format : '';
+    const y_format = NumberFormatCache.Get(format_pattern || DEFAULT_FORMAT);
+    // const y_format = NumberFormatCache.Get(args[4] || DEFAULT_FORMAT);
     const y_labels: string[] = [];
 
     for (let i = 0; i <= scale.count; i++) {
       y_labels.push(y_format.Format(scale.min + i * scale.step));
     }
 
+    /*
     const x_format = NumberFormatCache.Get(args[3] || DEFAULT_FORMAT);
     let x_labels: string[]|undefined;
 
@@ -197,9 +219,28 @@ export class Chart {
     }
 
     const titles = x_labels ? x_labels.map((x_label, i) => `${x_label} : ${y_format.Format(data[i])}`) : undefined;
+    */
+
+    let x_labels: string[] | undefined;
+
+    if (args[1]) {
+      const values = Util.Flatten(args[1]);
+      x_labels = values.map(cell => {
+        if (!cell) { return ''; }
+        if (typeof cell.value === 'number') {
+          const format = NumberFormatCache.Get(cell.format || DEFAULT_FORMAT);
+          return format.Format(cell.value);
+        }
+        return cell.value;
+      });
+    }
+
+    // const titles = x_labels ? x_labels.map((x_label, i) => `${x_label} : ${y_format.Format(data[i])}`) : undefined;
+    const titles = undefined;
 
     let callouts: {values: number[]; labels: string[]} | undefined;
 
+    /*
     const callout_data = args[5];
     if (callout_data && Array.isArray(callout_data)) {
       callouts = {
@@ -207,6 +248,7 @@ export class Chart {
         labels: callout_data[1] || callout_data[0].map((x: number) => x.toString()),
       };
     }
+    */
 
     const smooth = (args[6] === 'smooth');
 
