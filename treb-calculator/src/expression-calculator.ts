@@ -229,10 +229,14 @@ export class ExpressionCalculator {
       break;
 
     case 'call':
-      {
-        const call_result = this.CalculateExpression(arg);
-        console.info('cr', arg, call_result);
-      }
+
+      // we need a way to cascade the 'metadata' flag down 
+      // through calls so we can use indirect/offset addressing...
+
+      // at the same time you don't want to cascade down indefinitely,
+      // otherwise the function call itself won't work properly...
+
+      // [how to resolve?]
 
       return this.CalculateExpression(arg);
     }
