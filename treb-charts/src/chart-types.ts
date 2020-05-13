@@ -17,7 +17,7 @@ export interface AxisOptions {
 }
 
 export interface CellData {
-  address: { row: number, column: number };
+  address: { row: number; column: number };
   value?: any;
   simulation_data?: number[];
   format?: string;
@@ -88,7 +88,7 @@ export interface LineBaseData extends ChartDataBaseType {
   titles?: string[];
   x_labels?: string[];
   y_labels?: string[];
-  callouts?: {values: number[], labels: string[]};
+  callouts?: {values: number[]; labels: string[]};
   smooth?: boolean;
 }
 
@@ -98,6 +98,14 @@ export interface LineData extends LineBaseData {
 
 export interface AreaData extends LineBaseData {
   type: 'area';
+}
+
+export interface ColumnData extends LineBaseData {
+  type: 'column';
+}
+
+export interface BarData extends LineBaseData {
+  type: 'bar';
 }
 
 export interface DonutDataBaseType extends ChartDataBaseType {
@@ -123,5 +131,7 @@ export type ChartData
   | ScatterData
   | LineData
   | AreaData
+  | ColumnData
+  | BarData
   ;
 

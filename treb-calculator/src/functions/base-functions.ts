@@ -4,7 +4,7 @@ import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, ValueError } from '../function-error';
 import { Cell } from 'treb-base-types/src';
 
-import { RenderSparklineColumn, RenderSparklineLine } from 'treb-sparkline';
+import { Sparkline } from 'treb-sparkline';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -54,8 +54,11 @@ export const BaseFunctionLibrary: FunctionMap = {
         { name: 'reference', description: 'Cell reference', metadata: true },
       ],
       fn: (type: string, reference: any) => {
+
+        // console.info('metadata?', reference);
+
         if (!reference || !reference.address) return ReferenceError;
-        switch (type.toLowerCase()) {
+        switch (type?.toLowerCase()) {
           case 'format':
             return reference.format || ReferenceError;
           case 'address':
@@ -428,15 +431,15 @@ export const BaseFunctionLibrary: FunctionMap = {
     'Sparkline.Column': {
       arguments: [
         {name: 'data'}, 
-        {name: 'color 1'}, 
-        {name: 'color 2'}],
+        {name: 'color'}, 
+        {name: 'negative color'}],
       render: (options: any) => {
         const context = options.context as CanvasRenderingContext2D;
         const width = options.width as number;
         const height = options.height as number;
         const cell = options.cell as Cell;
 
-        RenderSparklineColumn(width, height, context, cell);
+        Sparkline.RenderColumn(width, height, context, cell);
        
       },
       fn: (...args: any[]) => {
@@ -448,6 +451,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [
         {name: 'data'}, 
         {name: 'color'},
+        {name: 'line width'},
       ],
       render: (options: any) => {
         const context = options.context as CanvasRenderingContext2D;
@@ -455,7 +459,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         const height = options.height as number;
         const cell = options.cell as Cell;
 
-        RenderSparklineLine(width, height, context, cell);
+        Sparkline.RenderLine(width, height, context, cell);
       
       },
       fn: (...args: any[]) => {

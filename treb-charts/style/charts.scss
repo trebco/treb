@@ -48,6 +48,38 @@ $font-stack:  "-apple-system",
     stroke: #ddd;
   }
 
+  .chart-column, .chart-bar {
+    &.chart-column-shadow {
+      &.series-1  { fill: darken($color1, 25%); }
+      &.series-2  { fill: darken($color3, 25%); }
+      &.series-3  { fill: darken($color4, 25%); }
+      &.series-4  { fill: darken($color5, 25%); }
+      &.series-5  { fill: darken($color6, 25%); }
+      &.series-6  { fill: darken($color7, 25%); }
+      &.series-7  { fill: darken($color8, 25%); }
+      &.series-8  { fill: darken($color9, 25%); }
+      &.series-9  { fill: darken($color10, 25%); }
+      &.series-10  { fill: darken($color11, 25%); }
+      &.series-11  { fill: darken($color12, 25%); }
+      &.series-12  { fill: darken($color2, 25%); }
+    }
+
+    &.series-1  { fill: $color1; }
+    &.series-2  { fill: $color3; }
+    &.series-3  { fill: $color4; }
+    &.series-4  { fill: $color5; }
+    &.series-5  { fill: $color6; }
+    &.series-6  { fill: $color7; }
+    &.series-7  { fill: $color8; }
+    &.series-8  { fill: $color9; }
+    &.series-9  { fill: $color10; }
+    &.series-10  { fill: $color11; }
+    &.series-11  { fill: $color12; }
+    &.series-12  { fill: $color2; }
+
+    
+  }
+
   .chart-line, .chart-area {
 
     .line {

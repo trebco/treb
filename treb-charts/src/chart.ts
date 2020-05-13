@@ -7,6 +7,8 @@ import { CellData, ChartData, DonutSlice, NumberOrUndefinedArray } from './chart
 
 import { ChartFunctions } from './chart-functions';
 
+const DEFAULT_FORMAT = '#,##0.00';
+
 export class Chart {
 
   /** function descriptors to register with the calculator */
@@ -42,8 +44,16 @@ export class Chart {
         this.CreateScatter(args);
         break;
 
+      case 'column.chart':
+        this.CreateColumnChart(args, 'column');
+        break;
+
+      case 'bar.chart':
+        this.CreateColumnChart(args, 'bar');
+        break;
+              
       case 'line.chart':
-        this.CreateLineChart(args);
+        this.CreateLineChart(args, 'line');
         break;
 
       case 'area.chart':
@@ -67,9 +77,81 @@ export class Chart {
   }
 
   /**
+   * @param args arguments: data, labels, title
+   * @param type 
+   */
+  public CreateColumnChart(args: any[], type: 'bar'|'column') {
+
+    const title = args[2] || '';
+    const raw_data = args[0];
+
+    // we're now expecting this to be metadata (including value).
+    // so we need to unpack. could be an array... could be deep...
+    const flat = Util.Flatten(raw_data);
+
+    // we still need the aggregate for range, scale
+    const data = flat.map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
+
+    // but now we're potentially splitting into series
+    let series: NumberOrUndefinedArray[];
+
+    if (Array.isArray(raw_data) && (raw_data as any)._type === 'series') {
+      series = raw_data.map(entry => {
+        return Util.Flatten(entry).map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
+      });
+    }
+    else {
+      series = [data];
+    }
+
+    const range = Util.Range(data);
+
+    // FIXME: optionally force 0 min
+    if (range.min) {
+      range.min = Math.min(0, range.min);
+    }
+
+    const scale = Util.Scale(range.min || 0, range.max || 0, 7);
+    const format_pattern = (flat.length && flat[0].format) ? flat[0].format : '';
+    const y_format = NumberFormatCache.Get(format_pattern || DEFAULT_FORMAT);
+    const y_labels: string[] = [];
+
+    for (let i = 0; i <= scale.count; i++) {
+      y_labels.push(y_format.Format(scale.min + i * scale.step));
+    }
+
+    let x_labels: string[] | undefined;
+
+    if (args[1]) {
+      const values = Util.Flatten(args[1]);
+      x_labels = values.map(cell => {
+        if (!cell) { return ''; }
+        if (typeof cell.value === 'number') {
+          const format = NumberFormatCache.Get(cell.format || DEFAULT_FORMAT);
+          return format.Format(cell.value);
+        }
+        return cell.value;
+      });
+    }
+
+    // const smooth = (args[6] === 'smooth');
+
+    this.chart_data = {
+      type,
+      data,
+      series,
+      scale,
+      title,
+      y_labels: type === 'bar' ? x_labels : y_labels, // swapped
+      x_labels: type === 'bar' ? y_labels : x_labels, // swapped
+    };
+
+  }
+
+  /**
    * args: data, labels, title, x_format, y_format, callouts
    */
-  public CreateLineChart(args: any[], type: 'line'|'area' = 'line') {
+  public CreateLineChart(args: any[], type: 'line'|'area') { // |'bar'|'column') {
 
     const title = args[2] || '';
 
@@ -99,14 +181,14 @@ export class Chart {
 
     const scale = Util.Scale(range.min || 0, range.max || 0, 7);
 
-    const y_format = NumberFormatCache.Get(args[4] || '#,##0.00');
+    const y_format = NumberFormatCache.Get(args[4] || DEFAULT_FORMAT);
     const y_labels: string[] = [];
 
     for (let i = 0; i <= scale.count; i++) {
       y_labels.push(y_format.Format(scale.min + i * scale.step));
     }
 
-    const x_format = NumberFormatCache.Get(args[3] || '#,##0.00');
+    const x_format = NumberFormatCache.Get(args[3] || DEFAULT_FORMAT);
     let x_labels: string[]|undefined;
 
     if (args[1]) {
@@ -116,7 +198,7 @@ export class Chart {
 
     const titles = x_labels ? x_labels.map((x_label, i) => `${x_label} : ${y_format.Format(data[i])}`) : undefined;
 
-    let callouts: {values: number[], labels: string[]}|undefined;
+    let callouts: {values: number[]; labels: string[]} | undefined;
 
     const callout_data = args[5];
     if (callout_data && Array.isArray(callout_data)) {
@@ -305,7 +387,7 @@ export class Chart {
 
     let x_format: NumberFormat;
     if (typeof args[2] === 'undefined' || args[2] === true) {
-      x_format = NumberFormatCache.Get(src.format || '#,##0.00');
+      x_format = NumberFormatCache.Get(src.format || DEFAULT_FORMAT);
     }
     else if (typeof args[2] === 'string') {
       x_format = NumberFormatCache.Get(args[2]);
@@ -446,7 +528,10 @@ export class Chart {
 
     if (this.chart_data.type === 'histogram'
         || this.chart_data.type === 'line'
-        || this.chart_data.type === 'area') {
+        || this.chart_data.type === 'area'
+        || this.chart_data.type === 'column'
+        || this.chart_data.type === 'bar'
+        ) {
 
       // we need to measure first, then lay out the other axis, then we
       // can come back and render. it doesn't really matter which one you
@@ -469,10 +554,15 @@ export class Chart {
 
       if (this.chart_data.y_labels && this.chart_data.y_labels.length) {
 
-        const y_labels: Array<{label: string, metrics: Metrics}> = [];
+        const y_labels: Array<{label: string; metrics: Metrics}> = [];
         let max_width = 0;
         let max_height = 0;
-        for (let i = 0; i <= this.chart_data.scale.count; i++ ){
+
+        const count = (this.chart_data.type === 'bar') ? 
+          this.chart_data.y_labels.length :
+          this.chart_data.scale.count + 1;
+
+        for (let i = 0; i < count; i++ ){
           const metrics = this.renderer.MeasureText(this.chart_data.y_labels[i], ['axis-label', 'y-axis-label']);
           y_labels.push({ label: this.chart_data.y_labels[i], metrics });
           max_width = Math.max(max_width, metrics.width);
@@ -486,7 +576,12 @@ export class Chart {
           area.bottom -= (max_x_height + chart_margin.bottom);
         }
 
-        this.renderer.RenderYAxis(area, area.left + max_width, y_labels, ['axis-label', 'y-axis-label']);
+        if (this.chart_data.type === 'bar') {
+          this.renderer.RenderYAxisBar(area, area.left + max_width, y_labels, ['axis-label', 'y-axis-label']);
+        }
+        else {
+          this.renderer.RenderYAxis(area, area.left + max_width, y_labels, ['axis-label', 'y-axis-label']);
+        }
         area.left += (max_width + chart_margin.left);
 
       }
@@ -501,7 +596,7 @@ export class Chart {
         }
 
         // render
-        this.renderer.RenderXAxis(area, (this.chart_data.type !== 'line'),
+        this.renderer.RenderXAxis(area, (this.chart_data.type !== 'line' && this.chart_data.type !== 'bar'),
           this.chart_data.x_labels, x_metrics, ['axis-label', 'x-axis-label']);
 
         // update bottom (either we unwound for labels, or we need to do it the first time)
@@ -532,18 +627,6 @@ export class Chart {
     case 'area':
       {
         const scale = this.chart_data.scale;
-
-        /*
-        // gridlines
-        this.renderer.RenderGrid(area, this.chart_data.scale.count, this.chart_data.data.length, 'chart-grid');
-        const y = this.chart_data.data.map((point) => {
-          if (typeof point === 'undefined') { return undefined; }
-          return Util.ApplyScale(point, area.height, scale);
-        });
-
-        this.renderer.RenderLine(area, y, (this.chart_data.type === 'area'), this.chart_data.titles, 'chart-line');
-        */
-
         if (this.chart_data.series) {
 
           const func = this.chart_data.smooth ?
@@ -570,6 +653,107 @@ export class Chart {
         }
 
         // TODO: callouts
+
+      }
+      break;
+
+    case 'bar':
+      {
+        // gridlines
+        this.renderer.RenderBarGrid(area, this.chart_data.scale.count, 'chart-grid');
+        if (this.chart_data.series) {
+
+          let count = 0;
+          const series_count = this.chart_data.series.length;
+
+          for (const series of this.chart_data.series) {
+            count = Math.max(count, series.length);
+          }
+
+          const row_height = area.height / count;
+          const row_pct = .7;
+          const space = row_height * (1 - row_pct) / 2;
+          const height = (row_height - space * 2) / series_count;
+
+          for (let s = 0; s < series_count; s++) {
+            const series = this.chart_data.series[s];
+
+            for (let i = 0; i < series.length; i++ ){
+              const value = series[i];
+              if (typeof value === 'number') {
+
+                const y = Math.round(area.top + i * row_height + space) + s * height;
+                const width = Util.ApplyScale(value, area.width, this.chart_data.scale);
+                const x = area.left;
+
+                // const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
+                const bar_title = undefined;
+
+                this.renderer.RenderRectangle(new Area(
+                  x - 1, y - 1, x + width + 1, y + height,
+                ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
+      
+                this.renderer.RenderRectangle(new Area(
+                  x, y, x + width, y + height,
+                ), ['chart-column', `series-${s + 1}`], bar_title || undefined);
+
+              }
+            }
+          }
+
+        }
+
+      }
+      break;
+
+    case 'column':
+      {
+        // gridlines
+        this.renderer.RenderGrid(area, this.chart_data.scale.count, 0, 'chart-grid');
+
+        if (this.chart_data.series) {
+
+          let count = 0;
+          const series_count = this.chart_data.series.length;
+
+          for (const series of this.chart_data.series) {
+            count = Math.max(count, series.length);
+          }
+
+          // columns
+          const column_width = area.width / count;
+          const column_pct = .7;
+          const space = column_width * (1 - column_pct) / 2;
+          const width = (column_width - space * 2) / series_count;
+
+          for (let s = 0; s < series_count; s++) {
+            const series = this.chart_data.series[s];
+
+            for (let i = 0; i < series.length; i++ ){
+              const value = series[i];
+              if (typeof value === 'number') {
+                const x = Math.round(area.left + i * column_width + space) + s * width;
+                
+                // const height = Util.ApplyScale(this.chart_data.bins[i], area.height, this.chart_data.scale);
+                const height = Util.ApplyScale(value, area.height, this.chart_data.scale);
+                const y = area.bottom - height;
+                
+                // const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
+                const bar_title = undefined;
+
+                this.renderer.RenderRectangle(new Area(
+                  x - 1, y - 1, x + width + 1, y + height,
+                ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
+      
+                this.renderer.RenderRectangle(new Area(
+                  x, y, x + width, y + height,
+                ), ['chart-column', `series-${s + 1}`], bar_title || undefined);
+              }
+            }
+
+          }
+  
+        }
 
       }
       break;

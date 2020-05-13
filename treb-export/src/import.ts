@@ -2,7 +2,7 @@
 import * as JSZip from 'jszip';
 import * as ElementTree from 'elementtree';
 import { Workbook } from './workbook';
-import { Style, Area, ICellAddress, Cell, Cells, ValueType } from 'treb-base-types';
+import { ValueType } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address } from './address-type';
 import { Parser, ParseResult } from 'treb-parser';
@@ -14,7 +14,7 @@ interface SharedFormula {
   parse_result: ParseResult;
 }
 
-interface SharedFormulaMap {[index: string]: SharedFormula; }
+interface SharedFormulaMap {[index: string]: SharedFormula }
 
 /** excel HORIZONTAL units (vertical is different? seems to be 4/3) */
 const one_hundred_pixels = 14.28515625;
@@ -326,14 +326,25 @@ export class Importer {
             // TODO: colors
 
             for (const child3 of child2.getchildren()) {
+              /*
+              if (/colorSeries$/.test(child3.tag.toString())) {
+                const rgb = child3.get('rgb');
+                console.info('series', rgb);
+              }
+              else if (/colorNegative$/.test(child3.tag.toString())) {
+                const rgb = child3.get('rgb');
+                console.info('negative', rgb);
+              }
+              */
               if (/sparklines$/.test(child3.tag.toString())) {
                 for (const child4 of child3.getchildren()) {
                   if (/sparkline$/.test(child4.tag.toString())) {
                     for (const child5 of child4.getchildren()) {
+
                       if (/(?:^|:)f$/.test(child5.tag.toString())) {
                         source = child5.text ? child5.text.toString() : '';
                       }
-                      if (/sqref$/.test(child5.tag.toString())) {
+                      else if (/sqref$/.test(child5.tag.toString())) {
                         reference = child5.text ? child5.text.toString() : '';
                       }
                     }

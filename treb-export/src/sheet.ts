@@ -4,6 +4,7 @@ import { Element, ElementTree as Tree } from 'elementtree';
 import { AddressType, RangeType, is_range, is_address } from './address-type';
 import { SharedStrings } from './shared-strings';
 import { UnitCall } from 'treb-parser';
+import { Sparkline } from 'treb-sparkline/src';
 
 export interface SheetOptions {
   name?: string;
@@ -522,6 +523,15 @@ export class Sheet {
       if (element.expression.name.toLowerCase() === 'sparkline.column') {
         group.set('type', 'column');
       }
+
+      /*
+      let color = Sparkline.SingleColor[0];
+      if (element.expression.args.length > 1 && 
+          element.expression.args[1].type === 'literal' &&
+          typeof element.expression.args[1].value === 'string') {
+        color = element.expression.args[1].value;
+      }
+      */
 
       ElementTree.SubElement(group, 'x14:colorSeries', {rgb: 'FF376092'});
       ElementTree.SubElement(group, 'x14:colorNegative', {rgb: 'FFD00000'});

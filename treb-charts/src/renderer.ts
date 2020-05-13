@@ -135,6 +135,53 @@ export class ChartRenderer {
 
   }
 
+  /** specialization for bar; it's different enough that we want special treatment */
+  public RenderXAxisBar(
+    area: Area,
+    offset: boolean,
+    labels: string[],
+    metrics: Metrics[],
+    classes?: string|string[]) {
+
+  const count = labels.length;
+  if (!count) return;
+
+  // FIXME: base on font, ' ' character
+  const label_buffer = 4;
+
+  const step = offset ? area.width / count : area.width / (count - 1);
+  const initial_offset = offset ? (step / 2) : 0;
+
+  // calculate increment (skip_count)
+  let increment = 1;
+  let repeat = true;
+
+  while (repeat) {
+    repeat = false;
+    let extent = 0;
+    for (let i = 0; i < count; i += increment) {
+      const center = Math.round(area.left + initial_offset + step * i);
+      const left = center - metrics[i].width / 2;
+      if (extent && (left <= extent)) {
+        increment++;
+        repeat = true;
+        break;
+      }
+
+      // FIXME: buffer? they get pretty tight sometimes
+
+      extent = center + (metrics[i].width / 2) + label_buffer;
+    }
+  }
+
+  for (let i = 0; i < count; i += increment) {
+    const x = Math.round(area.left + initial_offset + step * i);
+    // if (x + metrics[i].width / 2 >= area.right) { break; }
+    this.RenderText(labels[i], 'center', { x, y: area.bottom }, classes);
+  }
+
+}
+
   /**
    * render x axis labels; skips over labels to prevent overlap
    */
@@ -145,7 +192,7 @@ export class ChartRenderer {
       metrics: Metrics[],
       classes?: string|string[]) {
 
-    let count = labels.length;
+    const count = labels.length;
     if (!count) return;
 
     // FIXME: base on font, ' ' character
@@ -184,11 +231,53 @@ export class ChartRenderer {
 
   }
 
+  /** specialization for bar; it's different enough that we want special treatment */
+  public RenderYAxisBar(area: Area, left: number,
+    labels: Array<{
+      label: string; 
+      metrics: Metrics;
+    }>, classes?: string|string[]) {
+
+    const count = labels.length;
+    if (!count) return;
+
+    const step = area.height / count;
+
+    // calculate increment (skip count)
+    let increment = 1;
+    let repeat = true;
+
+    while(repeat) {
+      repeat = false;
+      let extent = 0;
+      for (let i = 0; i < count; i += increment) {
+        const label = labels[i];
+        const y = Math.round(area.bottom - step * (i + .5) + label.metrics.height / 4);
+        if (extent && y >= extent) {
+          increment++;
+          repeat = true;
+          break;
+        }
+        extent = y - label.metrics.height;
+      }
+    }
+
+    for (let i = 0; i < count; i += increment) {
+      const label = labels[i];
+      const y = Math.round(area.bottom - step * (i + .5) + label.metrics.height / 4);
+      this.RenderText(label.label, 'right', { x: left, y }, classes);
+    }
+
+  }
+
   /**
    * render y axis labels; skips over labels to prevent overlap
    */
   public RenderYAxis(area: Area, left: number,
-    labels: Array<{label: string, metrics: Metrics}>, classes?: string|string[]) {
+    labels: Array<{
+      label: string; 
+      metrics: Metrics;
+    }>, classes?: string|string[]) {
 
     const count = labels.length;
     if (!count) return;
@@ -270,14 +359,18 @@ export class ChartRenderer {
     const steps = count - 1;
     const step = (area.width / count) / 2;
 
-    const circles: Array< {x: number, y: number, i: number}> = [];
+    const circles: Array<{
+      x: number;
+      y: number;
+      i: number;
+    }> = [];
 
     let move = true;
     let last_x: number|undefined;
 
     let last_point: Point|undefined;
 
-    let points: Array<Point|undefined> = data.map((value, i) => {
+    const points: Array<Point|undefined> = data.map((value, i) => {
       if (typeof value === 'undefined') { 
         return undefined;
       }
@@ -426,7 +519,11 @@ export class ChartRenderer {
     const steps = count - 1;
     const step = (area.width / count) / 2;
 
-    const circles: Array< {x: number, y: number, i: number}> = [];
+    const circles: Array<{
+      x: number;
+      y: number;
+      i: number;
+    }> = [];
 
     let i = 0;
     let move = true;
@@ -512,6 +609,34 @@ export class ChartRenderer {
       this.group.appendChild(circle_group);
 
     }
+
+  }
+
+  /**
+   * the other RenderGrid function has semantics specifically for area/line.
+   * rather than try to shoehorn this in we'll use a different method.
+   */
+  public RenderBarGrid(area: Area, x_count: number, classes?: string|string[]) {
+   
+    const node = document.createElementNS(SVGNS, 'path');
+    const d: string[] = [];
+
+    const step = area.width / (x_count);
+    for (let i = 0; i <= x_count; i++ ){
+      const x = Math.round(area.left + step * i) - 0.5;
+      d.push(`M${x} ${area.top} L${x} ${area.bottom}`);
+    }
+
+    node.setAttribute('d', d.join(' '));
+    
+    if (typeof classes !== 'undefined') {
+      if (typeof classes === 'string') {
+        classes = [classes];
+      }
+      node.setAttribute('class', classes.join(' '));
+    }
+
+    this.group.appendChild(node);
 
   }
 

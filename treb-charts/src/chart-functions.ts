@@ -21,6 +21,24 @@ export const ChartFunctions: FunctionMap = {
     },
   },
 
+  'Column.Chart': {
+    arguments: [
+      { name: 'y', metadata: true, },
+      { name: 'labels', metadata: true, },
+      { name: 'Title' },
+    ],
+    fn: Identity,
+  },
+
+  'Bar.Chart': {
+    arguments: [
+      { name: 'x', metadata: true, },
+      { name: 'labels', metadata: true, },
+      { name: 'Title' },
+    ],
+    fn: Identity,
+  },
+
   'Line.Chart': {
     arguments: [
       { name: 'y' },

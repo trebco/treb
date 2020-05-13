@@ -6,6 +6,7 @@ import { ICellAddress } from 'treb-base-types/src/area';
 import { Parser, UnitCall } from 'treb-parser';
 import { FunctionError, NameError, ReferenceError } from '../../treb-calculator/src/function-error';
 import { MCCompositeFunctionDescriptor } from './descriptors';
+import { ValueType } from 'treb-base-types/src';
 
 
 export class MCExpressionCalculator extends ExpressionCalculator {
@@ -146,6 +147,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
           // which just returns the label)
 
           let address: ICellAddress|undefined;
+          let range: {start: ICellAddress; end: ICellAddress} | undefined;
 
           switch (arg.type) {
           case 'address':
@@ -153,14 +155,19 @@ export class MCExpressionCalculator extends ExpressionCalculator {
             break;
 
           case 'range':
-            address = arg.start;
+            range = arg;
             break;
 
           case 'identifier':
             {
               const named_range = this.named_range_map[arg.name.toUpperCase()];
               if (named_range) {
-                address = named_range.start; // FIXME: range?
+                if (named_range.count === 1) {
+                  address = named_range.start; // FIXME: range?
+                }
+                else {
+                  range = named_range;
+                }
               }
             }
           }
@@ -185,10 +192,51 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
             return {
               address: {...address},
-              value: cell_data.calculated,
+              value: cell_data.type === ValueType.formula ? cell_data.calculated : cell_data.value,
               format: cell_data.style ? cell_data.style.number_format : undefined,
               simulation_data,
             };
+
+          }
+          else if (range) {
+
+            if (range.start.row === Infinity || range.start.column === Infinity) {
+              return ReferenceError; // temp
+            }
+
+            let sheet = this.data_model.active_sheet;
+            if (range.start.sheet_id && range.start.sheet_id !== sheet.id) {
+              for (const test of this.data_model.sheets) {
+                if (test.id === range.start.sheet_id) {
+                  sheet = test;
+                  break;
+                }
+              }
+            }
+
+            const range_result = [];
+
+            for (let column = range.start.column; column <= range.end.column; column++) {
+              const column_result = [];
+              for (let row = range.start.row; row <= range.end.row; row++) {
+                const cell_data = sheet.CellData({row, column});
+                const simulation_data =
+                  (this.simulation_model.state === SimulationState.Null) ?
+                  this.simulation_model.StoreCellResults({...range.start, row, column}) :
+                  [];
+
+                column_result.push({
+                  address: {...range.start, row, column},
+                  value: cell_data.type === ValueType.formula ? cell_data.calculated : cell_data.value,
+                  format: cell_data.style ? cell_data.style.number_format : undefined,
+                  simulation_data,
+                });
+              }
+              range_result.push(column_result);
+            }
+
+            return range_result;
+
           }
 
         }
