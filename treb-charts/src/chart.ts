@@ -732,7 +732,8 @@ export class Chart {
                 const bar_title = undefined;
 
                 this.renderer.RenderRectangle(new Area(
-                  x - 1, y - 1, x + width + 1, y + height,
+                  // x - 1, y - 1, x + width + 1, y + height,
+                  x, y - 1, x + width + 1, y + height + 1,
                 ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
       
                 this.renderer.RenderRectangle(new Area(

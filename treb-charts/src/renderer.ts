@@ -238,6 +238,9 @@ export class ChartRenderer {
       metrics: Metrics;
     }>, classes?: string|string[]) {
 
+    labels = labels.slice(0);
+    labels.reverse();
+      
     const count = labels.length;
     if (!count) return;
 
