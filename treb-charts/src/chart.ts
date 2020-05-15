@@ -717,6 +717,11 @@ export class Chart {
           const space = row_height * (1 - row_pct) / 2;
           const height = (row_height - space * 2) / series_count;
 
+          let zero = 0;
+          if (this.chart_data.scale.min < 0) { // && this.chart_data.scale.max >= 0) {
+            zero = Util.ApplyScale(0, area.width, this.chart_data.scale);
+          }
+
           for (let s = 0; s < series_count; s++) {
             const series = this.chart_data.series[s];
 
@@ -725,15 +730,35 @@ export class Chart {
               if (typeof value === 'number') {
 
                 const y = Math.round(area.top + i * row_height + space) + s * height;
-                const width = Util.ApplyScale(value, area.width, this.chart_data.scale);
-                const x = area.left;
+
+                let x = 0;
+                let width = 0;
+                let negative = false;
+
+                if (zero) {
+                  if (value > 0) {
+                    width = Util.ApplyScale(value + this.chart_data.scale.min, area.width, this.chart_data.scale);
+                    x = area.left + zero;
+                  }
+                  else {
+                    width = Util.ApplyScale(this.chart_data.scale.min - value, area.width, this.chart_data.scale);
+                    x = area.left + zero - width;
+                    negative = true;
+                  }
+                }
+                else {
+                  width = Util.ApplyScale(value, area.width, this.chart_data.scale);
+                  x = area.left;
+                }
 
                 // const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
                 const bar_title = undefined;
 
                 this.renderer.RenderRectangle(new Area(
-                  // x - 1, y - 1, x + width + 1, y + height,
-                  x, y - 1, x + width + 1, y + height + 1,
+                  negative ? x - 1 : x, 
+                  y - 1, 
+                  negative ? x + width : x + width + 1, 
+                  y + height + 1,
                 ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
       
                 this.renderer.RenderRectangle(new Area(
@@ -769,28 +794,54 @@ export class Chart {
           const space = column_width * (1 - column_pct) / 2;
           const width = (column_width - space * 2) / series_count;
 
+          let zero = 0;
+          if (this.chart_data.scale.min < 0) { // && this.chart_data.scale.max >= 0) {
+            zero = Util.ApplyScale(0, area.height, this.chart_data.scale);
+          }
+
           for (let s = 0; s < series_count; s++) {
             const series = this.chart_data.series[s];
 
             for (let i = 0; i < series.length; i++ ){
               const value = series[i];
               if (typeof value === 'number') {
+
                 const x = Math.round(area.left + i * column_width + space) + s * width;
                 
-                // const height = Util.ApplyScale(this.chart_data.bins[i], area.height, this.chart_data.scale);
-                const height = Util.ApplyScale(value, area.height, this.chart_data.scale);
-                const y = area.bottom - height;
-                
+                let height = 0;
+                let y = 0;
+                let negative = false;
+
+                if (zero) {
+                  if (value > 0) {
+                    height = Util.ApplyScale(value + this.chart_data.scale.min, area.height, this.chart_data.scale);
+                    y = area.bottom - height - zero;
+                  }
+                  else {
+                    height = Util.ApplyScale(this.chart_data.scale.min - value, area.height, this.chart_data.scale);
+                    y = area.bottom - zero; // // area.bottom - height - zero;
+                    negative = true;
+                  }
+                }
+                else {
+                  height = Util.ApplyScale(value, area.height, this.chart_data.scale);
+                  y = area.bottom - height;
+                }
+
                 // const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
                 const bar_title = undefined;
 
                 this.renderer.RenderRectangle(new Area(
-                  x - 1, y - 1, x + width + 1, y + height,
+                  x - 1, 
+                  negative ? y : y - 1, 
+                  x + width + 1, 
+                  negative ? y + height + 1 : y + height,
                 ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
       
                 this.renderer.RenderRectangle(new Area(
                   x, y, x + width, y + height,
                 ), ['chart-column', `series-${s + 1}`], bar_title || undefined);
+
               }
             }
 

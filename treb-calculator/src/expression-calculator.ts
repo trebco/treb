@@ -5,9 +5,9 @@ import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
-import { CompositeFunctionDescriptor } from './descriptors';
-import * as Utilities from './utilities';
+import { ReturnType } from './descriptors';
 
+import * as Utilities from './utilities';
 import * as Primitives from './primitives';
 
 export interface CalculationContext {
@@ -84,6 +84,7 @@ export class ExpressionCalculator {
 
       // reset for this cell
       this.call_index = 0; // why not in model? A: timing (nested)
+
     }
 
     const value = this.CalculateExpression(expr);
@@ -238,7 +239,22 @@ export class ExpressionCalculator {
 
       // [how to resolve?]
 
-      return this.CalculateExpression(arg);
+      {
+        const result = this.CalculateExpression(arg, true);
+        if (result && typeof result === 'object') {
+          if (result.type === 'address') { 
+            address = result;
+          }
+          else if (result.type === 'range') {
+            range = result;
+          }
+          else {
+            return result;
+          }
+        }
+        else return result;
+      }
+
     }
 
     if (address) {
@@ -308,7 +324,7 @@ export class ExpressionCalculator {
   }
 
   /** excutes a function call */
-  protected CallExpression(outer: UnitCall) {
+  protected CallExpression(outer: UnitCall, return_reference = false) {
 
     // get the function descriptor, which won't change.
     // we can bind in closure (also short-circuit check for 
@@ -386,6 +402,7 @@ export class ExpressionCalculator {
         }
         else {
           const result = this.CalculateExpression(arg);
+
           if (typeof result === 'object' && result.error && !descriptor.allow_error) {
             argument_error = result;
           }
@@ -415,7 +432,23 @@ export class ExpressionCalculator {
       // now we bind functions that need this, so maybe we should pass
       // null here.
 
+      // return func.fn.apply(null, mapped_args);
+      
+      if (func.return_type === ReturnType.reference) {
+        const expr = func.fn.apply(null, mapped_args);
+        if (return_reference) { return expr; }
+        else if (typeof expr === 'object') {
+          if (expr.type === 'address') {
+            return this.CellFunction(expr);
+          }
+          else if (expr.type === 'range') {
+            return this.CellFunction(expr.start, expr.end);
+          }
+        }
+        return expr; // error?
+      }
       return func.fn.apply(null, mapped_args);
+
 
     };
 
@@ -669,7 +702,7 @@ export class ExpressionCalculator {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected CalculateExpression(expr: ExpressionUnit): any {
+  protected CalculateExpression(expr: ExpressionUnit, return_reference = false): any {
 
     // user data is a generated function for the expression, at least
     // for the simple ones (atm). see BinaryExpression for more. the
@@ -683,7 +716,7 @@ export class ExpressionCalculator {
 
     switch (expr.type){
     case 'call':
-      return (expr.user_data = this.CallExpression(expr))(expr);
+      return (expr.user_data = this.CallExpression(expr, return_reference))(expr);
 
     case 'address':
       return (expr.user_data = this.CellFunction2(expr))();

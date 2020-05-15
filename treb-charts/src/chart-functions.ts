@@ -1,3 +1,4 @@
+import { ReturnType } from 'treb-calculator/src/descriptors';
 
 // TYPE ONLY
 type FunctionMap = import('../../treb-calculator/src/descriptors').FunctionMap;
@@ -15,6 +16,7 @@ export const ChartFunctions: FunctionMap = {
     arguments: [
       { name: 'Array...', metadata: true, },
     ],
+    // return_type: ReturnType.reference,
     fn: (...args: any[]) => {
       (args as any)._type = 'series';
       return args;

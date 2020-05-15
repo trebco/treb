@@ -1,5 +1,6 @@
 
 import { ExpressionCalculator } from '../../treb-calculator/src/expression-calculator';
+import { ReturnType } from '../../treb-calculator/src/descriptors';
 import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from '../../treb-calculator/src/function-library';
 import { ICellAddress } from 'treb-base-types/src/area';
@@ -19,7 +20,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
   }
 
   /** excutes a function call */
-  protected CallExpression(outer: UnitCall) {
+  protected CallExpression(outer: UnitCall, return_reference = false) {
 
     // get the function descriptor, which won't change.
     // we can bind in closure (also short-circuit check for
@@ -137,6 +138,10 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         // would be high. also, it's possible to get the same result using 
         // the spreadsheet, instead of adding here, so let that be the resolution.
 
+        // we can do that, now, using metadata. we should do that. it will require
+        // a little snipping here and there... use metadata, then format from address.
+        // is this adding overhead, with the lookup? maybe we should check type...
+
         if (descriptor.address) {
           return this.parser.Render(arg).replace(/\$/g, '');
         }
@@ -175,6 +180,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         }
         else {
           const result = this.CalculateExpression(arg);
+
           if (typeof result === 'object' && result.error && !descriptor.allow_error) {
             argument_error = result;
           }
@@ -204,6 +210,19 @@ export class MCExpressionCalculator extends ExpressionCalculator {
       // now we bind functions that need this, so maybe we should pass
       // null here.
 
+      if (func.return_type === ReturnType.reference) {
+        const expr = func.fn.apply(null, mapped_args);
+        if (return_reference) { return expr; }
+        else if (typeof expr === 'object') {
+          if (expr.type === 'address') {
+            return this.CellFunction(expr);
+          }
+          else if (expr.type === 'range') {
+            return this.CellFunction(expr.start, expr.end);
+          }
+        }
+        return expr; // error?
+      }
       return func.fn.apply(null, mapped_args);
 
     };

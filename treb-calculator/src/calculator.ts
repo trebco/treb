@@ -10,7 +10,7 @@ import { ExpressionCalculator } from './expression-calculator';
 import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
-import { FunctionMap } from './descriptors';
+import { FunctionMap, ReturnType } from './descriptors';
 import { BaseFunctionLibrary, BaseFunctionAliases } from './functions/base-functions';
 import { TextFunctionLibrary } from './functions/text-functions';
 
@@ -127,23 +127,28 @@ export class Calculator extends Graph {
       /** like indirect, this creates dependencies at calc time */
       Offset: {
         arguments: [{
-          name: 'reference', description: 'Base reference', address: true, }, {
+          name: 'reference', description: 'Base reference', metadata: true, }, {
           name: 'rows', description: 'number of rows to offset' }, {
           name: 'columns', description: 'number of columns to offset' },
         ],
+        return_type: ReturnType.reference,
         volatile: true,
-        fn: ((reference: string, rows = 0, columns = 0, width = 1, height = 1) => {
+        fn: ((reference: any, rows = 0, columns = 0, width = 1, height = 1) => {
 
           if (!reference) return ArgumentError;
 
-          const parse_result = this.parser.Parse(reference);
+          // const parse_result = this.parser.Parse(reference);
+          // if (parse_result.error || !parse_result.expression) {
+          //  return ReferenceError;
+          //}
 
-          if (parse_result.error || !parse_result.expression) {
-            return ReferenceError;
-          }
+          // we need a proper type for this... also it might be a range
+
+          if (typeof reference !== 'object' || !reference.address) { return ReferenceError; }
 
           const check_result = this.DynamicDependencies(
-            parse_result.expression,
+            // parse_result.expression,
+            reference.address,
             true, rows, columns, width, height);
 
           if (IsError(check_result)) {
@@ -162,20 +167,26 @@ export class Calculator extends Graph {
             const start: ExpressionUnit = {
               type: 'address', ...check_result.area.start,
               label: '', position: 0,
-              id: parse_result.expression.id,
+              // id: parse_result.expression.id,
+              id: 0,
             };
             const end: ExpressionUnit = {
               type: 'address', ...check_result.area.end,
               label: '', position: 0,
-              id: parse_result.expression.id,
+              // id: parse_result.expression.id,
+              id: 0,
             };
             const expression: ExpressionUnit = check_result.area.count === 1 ? start : {
               type: 'range', start, end,
               label: '', position: 0,
-              id: parse_result.expression.id,
+              // id: parse_result.expression.id,
+              id: 0,
             };
 
-            return this.CalculateExpression(expression, undefined, true);
+            // return this.CalculateExpression(expression, undefined, true);
+
+            return expression;
+
           }
 
           return ValueError;
@@ -187,7 +198,8 @@ export class Calculator extends Graph {
         arguments: [
           { name: 'reference', description: 'Cell reference (string)' },
         ],
-        volatile: true,
+        return_type: ReturnType.reference,
+        volatile: true, // necessary?
         fn: ((reference: string) => {
 
           if (!reference) return ArgumentError;
@@ -210,7 +222,13 @@ export class Calculator extends Graph {
             return undefined;
           }
 
-          return this.CalculateExpression(parse_result.expression, undefined, true);
+          return parse_result.expression;
+
+          // we don't need to use calculate expression here because arguments
+          // will already have been calculated; we will _always_ get a string
+          // (or something is wrong). right?
+
+          // return this.CalculateExpression(parse_result.expression, undefined, true);
 
         }).bind(this),
       },
@@ -531,6 +549,7 @@ export class Calculator extends Graph {
       expression: ExpressionUnit,
       address: ICellAddress = {row: -1, column: -1},
       preserve_flags = false) {
+
     return this.expression_calculator.Calculate(expression, address, preserve_flags).value; // dropping volatile flag
   }
 

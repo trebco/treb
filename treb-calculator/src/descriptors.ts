@@ -1,6 +1,10 @@
 
 // FIXME: at least some of this could move to base types
 
+export enum ReturnType {
+  value, reference
+}
+
 /**
  * descriptor for an individual argument
  */
@@ -103,6 +107,11 @@ export interface CompositeFunctionDescriptor {
    * for the future
    */
   category?: string[];
+
+  /**
+   * support returning references
+   */
+  return_type?: ReturnType;
 
 }
 
