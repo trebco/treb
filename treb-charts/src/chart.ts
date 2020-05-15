@@ -110,6 +110,9 @@ export class Chart {
     if (range.min) {
       range.min = Math.min(0, range.min);
     }
+    if (range.max) {
+      range.max = Math.max(0, range.max);
+    }
 
     const scale = Util.Scale(range.min || 0, range.max || 0, 7);
     const format_pattern = (flat.length && flat[0].format) ? flat[0].format : '';
