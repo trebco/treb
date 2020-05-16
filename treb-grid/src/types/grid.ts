@@ -1992,7 +1992,7 @@ export class Grid {
 
     const annotations = this.model.active_sheet.annotations;
     for (const element of annotations) {
-      this.AddAnnotation(element, false); // true);
+      this.AddAnnotation(element, true);
     }
 
     // we do the tile rebuild just before the next paint, to prevent
@@ -4023,7 +4023,7 @@ export class Grid {
 
     if (flush) {
       if (cell.type === ValueType.number && cell.style &&
-        cell.style.number_format && /(?:%|percent)/.test(cell.style.number_format)) {
+        cell.style.number_format && /(?:%|percent)/i.test(cell.style.number_format)) {
         cell_value = '%';
       }
       else {

@@ -106,7 +106,7 @@ export class Chart {
 
     const range = Util.Range(data);
 
-    // FIXME: optionally force 0 min
+    // FIXME: optionally force 0 min [or max]
     if (range.min) {
       range.min = Math.min(0, range.min);
     }

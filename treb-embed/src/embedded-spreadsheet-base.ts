@@ -104,6 +104,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  public get modified() {
+    return this.undo_stack.length !== 1;
+  }
+
   /** name moved to model */
   public get document_name() {
     return this.grid.model.document_name;
@@ -289,6 +293,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       // set up grid events
 
       this.grid.grid_events.Subscribe((event) => {
+
         switch (event.type) {
 
           case 'selection':
@@ -421,10 +426,17 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // call annotation method(s) on any annotations in active sheet
 
+    // we stopped sending the 'create' event on sheet change, so
+    // now we have to inflate them on sheet change
+
     for (const annotation of event.activate.annotations) {
-      if (annotation.update_callback) {
-        annotation.update_callback();
-      }
+      // if (annotation.update_callback) {
+      //   annotation.update_callback();
+      // }
+
+      this.InflateAnnotation(annotation);
+      this.calculator.UpdateAnnotations(annotation);
+
     }
 
   }
@@ -993,6 +1005,27 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     });
   }
 
+  /** load from local storage, and change stored key */
+  public LoadFromLocalStorage(key: string): boolean {
+
+    this.options.storage_key = key;
+    const json = localStorage.getItem(key);
+
+    if (json) {
+      try {
+        const data = JSON.parse(json);
+        this.LoadDocument(data);
+        return true;
+      }
+      catch(err) {
+        console.error(err);
+      }
+    }
+
+    return false; // not loaded or error
+
+  }
+
   /**
    * load a network document. using xhr/fetch, this will be
    * limited to local or CORS.
@@ -1538,10 +1571,21 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.Publish({ type: 'data' });
   }
 
-  public SaveLocalStorage(key: string) {
+  public SaveLocalStorage(key?: string) {
+
+    if (!key) {
+      key = this.options.storage_key;
+    }
+    if (!key) {
+      console.info('not saving, no key');
+      return;
+    }
+
     const json = JSON.stringify(this.SerializeDocument(true, true, {
       rendered_values: true, expand_arrays: true}));
+
     localStorage.setItem(key, json);
+
   }
 
   /** save sheet to local storage */
