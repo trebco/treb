@@ -175,6 +175,8 @@ svg[toolbar-icons] symbol path.target {
     // fill: $button-foreground;
     stroke: $button-foreground;
     stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
     fill: none;
 
     -moz-transform: scale(1); // fixes ffx blurry svg, not sure why
