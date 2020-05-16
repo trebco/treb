@@ -178,8 +178,12 @@ export class Sparkline {
 
     const {values, colors} = this.SparklineCommon(cell);
 
-    const x_margin = 0.05; // FIXME: parameterize? (...)
-    const y_margin = 0.10;
+    // const x_margin = 0.05; // FIXME: parameterize? (...)
+    // const y_margin = 0.10;
+    // const y_margin = Math.max(1, Math.min(0.10 * height, 2));
+
+    const x_margin = 3;
+    const y_margin = 2.5;
 
     let min = 0;
     let max = 0;
@@ -200,9 +204,9 @@ export class Sparkline {
 
     if (values.length) {
 
-      const step = ((width * (1 - 2 * x_margin)) / (values.length));
-      const pixel_range = (height * (1 - 2 * y_margin)); // ?
-      const base = (height * y_margin);
+      const step = (width - 2 * x_margin) / values.length;
+      const pixel_range = (height - 2 * y_margin); // ?
+      const base = y_margin;
 
       // let x = Math.round(width * x_margin);
 
@@ -217,7 +221,7 @@ export class Sparkline {
           for (let i = 0; i < values.length; i++) {
             const value = values[i];
             if (typeof value === 'number') {
-              const x = (width * x_margin + i * step);
+              const x = (x_margin + i * step);
               const bar_height = (Math.abs(value) / range) * pixel_range;
 
               if (value >= 0) { 
@@ -246,8 +250,8 @@ export class Sparkline {
           for (let i = 0; i < values.length; i++) {
             const value = values[i];
             if (typeof value === 'number') {
-              const x = (width * x_margin + i * step);
-              const bar_height = ((value - min) / range) * pixel_range;
+              const x = (x_margin + i * step);
+              const bar_height = Math.max(1, ((value - min) / range) * pixel_range);
               const top = height - base - bar_height;
               context.fillRect(x + 2, top, step - 2, bar_height);
             }
@@ -265,11 +269,8 @@ export class Sparkline {
           for (let i = 0; i < values.length; i++) {
             const value = values[i];
             if (typeof value === 'number') {
-
-              console.info('v', value, 'min', min);
-
-              const x = (width * x_margin + i * step);
-              const bar_height = (Math.abs(max - value) / range) * pixel_range;
+              const x = (x_margin + i * step);
+              const bar_height = Math.max( 1, (Math.abs(max - value) / range) * pixel_range);
               const top = base;
               context.fillRect(x + 2, top, step - 2, bar_height);
             }
