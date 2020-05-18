@@ -50,7 +50,7 @@ export class Calculator extends Graph {
 
   protected readonly library = new FunctionLibrary();
 
-  protected readonly parser: Parser = new Parser();
+  public readonly parser: Parser = new Parser();
 
   // protected graph: Graph = new Graph(); // |null = null;
 

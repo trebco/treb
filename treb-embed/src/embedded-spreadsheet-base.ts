@@ -147,8 +147,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   protected options: EmbeddedSpreadsheetOptions;
 
-  /** FIXME: can we share grid's parser instance? */
-  private parser = new Parser();
+  /** localized parser instance. we're sharing. */
+  private get parser() { 
+    return this.calculator.parser;
+  }
 
   private node?: HTMLElement;
   private file_chooser?: HTMLInputElement;
@@ -1860,6 +1862,17 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         parser.argument_separator = ArgumentSeparatorType.Semicolon;
         target_decimal_mark = DecimalMarkType.Period;
         target_argument_separator = ArgumentSeparatorType.Comma;
+      }
+
+      if (data.macro_functions) {
+        for (const macro_function of data.macro_functions) {
+          const parse_result = parser.Parse(macro_function.function_def);
+          if (parse_result.expression) {
+            const translated = parser.Render(parse_result.expression, undefined, undefined,
+              target_decimal_mark, target_argument_separator);
+            macro_function.function_def = '=' + translated;
+          }
+        }
       }
 
       for (const sheet_data of sheets) {
