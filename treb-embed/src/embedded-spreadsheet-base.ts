@@ -1,7 +1,7 @@
 
 // treb imports
 import { Grid, GridEvent, SerializeOptions, Annotation,
-         BorderConstants, SheetChangeEvent, GridOptions } from 'treb-grid';
+         BorderConstants, SheetChangeEvent, GridOptions, MacroFunction } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
@@ -1346,6 +1346,35 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
+  public RemoveMacro(name: string) {
+
+    const uppercase = name.toUpperCase();
+    const keys = Object.keys(this.grid.model.macro_functions);
+    for (const key of keys) {
+      if (key.toUpperCase() === uppercase) {
+        delete this.grid.model.macro_functions[key];
+      }
+    }
+
+  }
+
+  public CreateMacro(name: string, argument_names: string[], function_def: string) {
+
+    // FIXME: watch collision with function names
+    // ...
+
+    // overwrite
+    this.RemoveMacro(name);
+
+    this.grid.model.macro_functions[name.toUpperCase()] = {
+      name,
+      function_def,
+      argument_names,
+      expression: this.parser.Parse(function_def).expression,
+    };
+
+  }
+
   /** testing
    *
    * this is called after recalc, check any annotations
@@ -1881,6 +1910,22 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (named_range_data) {
       model.named_ranges.Deserialize(named_range_data);
     }
+
+    model.macro_functions = {};
+    if (data.macro_functions) {
+      for (const macro_function of data.macro_functions) {
+
+        // FIXME: i18n of expression
+        // FIXME: autocomplete (also when you do that, remember to undo it)
+
+        model.macro_functions[macro_function.name.toUpperCase()] = {
+          ...macro_function,
+          expression: this.parser.Parse(macro_function.function_def || '').expression,
+        };       
+
+      }
+    }
+
 
   }
 

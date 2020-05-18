@@ -6,6 +6,7 @@ import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
 import { ReturnType } from './descriptors';
+import { MacroFunction } from 'treb-grid';
 
 import * as Utilities from './utilities';
 import * as Primitives from './primitives';
@@ -14,6 +15,7 @@ export interface CalculationContext {
   address: ICellAddress;
   volatile: boolean;
   call_index: number;
+  name_stack: Array<{[index: string]: ExpressionUnit}>;
 }
 
 export class ExpressionCalculator {
@@ -22,6 +24,7 @@ export class ExpressionCalculator {
     address: { row: -1, column: -1 },
     volatile: false,
     call_index: 0,
+    name_stack: [],
   };
 
   /**
@@ -323,6 +326,44 @@ export class ExpressionCalculator {
 
   }
 
+  protected EvaluateMacroFunction(macro_func: MacroFunction) {
+
+    if (!macro_func.expression) { 
+      return () => ExpressionError;
+    }
+
+    const expression = macro_func.expression;
+
+    return (expr: UnitCall) => {
+
+      // should we evaluate the arguments first, or just pass them in?
+      // I think the logical thing to do is evaluate them first, otherwise
+      // they might do the same work more than once.
+
+      const bound_names: {[index: string]: ExpressionUnit} = {};
+
+      if (macro_func.argument_names) {
+        for (let i = 0; i < macro_func.argument_names.length; i++) {
+          const name = macro_func.argument_names[i];
+
+          // temp just pass in
+          if (expr.args[i]) {
+            bound_names[name.toUpperCase()] = expr.args[i];
+          }
+
+        }
+      }
+      
+      this.context.name_stack.unshift(bound_names);
+      const result = this.CalculateExpression(expression);
+      this.context.name_stack.shift();
+
+      return result;
+
+    }
+
+  }
+
   /** excutes a function call */
   protected CallExpression(outer: UnitCall, return_reference = false) {
 
@@ -333,7 +374,11 @@ export class ExpressionCalculator {
     const func = this.library.Get(outer.name);
 
     if (!func) {
-      return () => NameError;
+      const macro_func = this.data_model.macro_functions[outer.name.toUpperCase()];
+      if (macro_func) {
+        return this.EvaluateMacroFunction(macro_func);
+      }
+      else return () => NameError;
     }
 
     return (expr: UnitCall) => {
@@ -656,26 +701,19 @@ export class ExpressionCalculator {
       if (named_range) {
         if (named_range.count === 1) {
           return this.CellFunction(named_range.start);
-          /*
-          return this.CellFunction(
-            named_range.start.column,
-            named_range.start.row,
-          );
-          */
         }
         else {
           return this.CellFunction(named_range.start, named_range.end);
-          /*
-          return this.CellFunction(
-            named_range.start.column,
-            named_range.start.row,
-            named_range.end.column,
-            named_range.end.row,
-          );
-          */
         }
       }
 
+      const bound_names = this.context.name_stack[0];
+
+      if (bound_names && bound_names[upper_case]) {
+        const bound_expression = bound_names[upper_case];
+        return this.CalculateExpression(bound_expression);
+      }
+  
       console.info( '** identifier', identifier);
       return NameError;
 

@@ -42,7 +42,7 @@ import {
   ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand
 } from './grid_command';
 
-import { DataModel } from './data_model';
+import { DataModel, MacroFunction } from './data_model';
 import { NamedRangeCollection } from './named_range';
 
 interface DoubleClickData {
@@ -289,6 +289,7 @@ export class Grid {
       active_sheet: sheets[0],
       // annotations: [],
       named_ranges: new NamedRangeCollection(),
+      macro_functions: {},
     };
 
     // set properties here, we will update in initialize()
@@ -706,12 +707,26 @@ export class Grid {
     // NOTE: moving into a structured object (the sheet data is also structured,
     // of course) but we are moving things out of sheet (just  named ranges atm))
 
+    let macro_functions: MacroFunction[] | undefined;
+
+    const macro_function_keys = Object.keys(this.model.macro_functions);
+    if (macro_function_keys.length) {
+      macro_functions = [];
+      for (const key of macro_function_keys) {
+        macro_functions.push({
+          ...this.model.macro_functions[key],
+          expression: undefined,
+        });
+      }
+    }
+
     return {
       sheet_data,
       active_sheet: this.model.active_sheet.id,
       named_ranges: this.model.named_ranges.Count() ?
         this.model.named_ranges.Serialize() :
         undefined,
+      macro_functions,
     };
 
   }
@@ -799,6 +814,7 @@ export class Grid {
     // FIXME: are there named ranges in the data? (...)
 
     this.model.named_ranges.Reset();
+    this.model.macro_functions = {};
 
     this.ClearSelection(this.primary_selection);
 
@@ -868,6 +884,7 @@ export class Grid {
     // FIXME: are there named ranges in the data? (...)
 
     this.model.named_ranges.Reset();
+    this.model.macro_functions = {};
 
     this.ClearSelection(this.primary_selection);
 
@@ -5704,6 +5721,7 @@ export class Grid {
             this.RemoveAnnotationNodes();
             this.UpdateSheets([], true);
             this.model.named_ranges.Reset();
+            this.model.macro_functions = {};
             this.ClearSelection(this.primary_selection);
             this.ScrollIntoView({ row: 0, column: 0 });
             this.QueueLayoutUpdate(); // necessary? (...)

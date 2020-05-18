@@ -1,4 +1,5 @@
 import { IArea } from 'treb-base-types';
+import { MacroFunction } from 'treb-grid';
 
 export enum SaveFileType {
   treb = 'treb', tsv = 'tsv', xlsx = 'xlsx',
@@ -28,6 +29,7 @@ export interface TREBDocument {
   simulation_data?: TREBSimulationData;
   rendered_values?: boolean;
   named_ranges?: {[index: string]: IArea};
+  macro_functions?: MacroFunction[];
 }
 
 export interface ResizeEvent {

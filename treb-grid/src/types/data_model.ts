@@ -1,9 +1,22 @@
 
 import { Sheet } from './sheet';
 import { NamedRangeCollection } from './named_range';
+import { ExpressionUnit } from 'treb-parser';
+
+export interface MacroFunction {
+  name: string;
+  function_def: string;
+  expression?: ExpressionUnit;
+  argument_names?: string[];
+  description?: string;
+}
+
+export interface MacroFunctionMap {
+  [index: string]: MacroFunction;
+}
 
 /**
- * 
+ * FIXME: this should move out of the grid module, grid should be focused on view
  */
 export interface DataModel {
 
@@ -25,5 +38,8 @@ export interface DataModel {
 
   /** named ranges are document-scope, we don't support sheet-scope names */
   named_ranges: NamedRangeCollection;
+
+  /** macro functions are functions written in spreadsheet language */
+  macro_functions: MacroFunctionMap;
 
 }

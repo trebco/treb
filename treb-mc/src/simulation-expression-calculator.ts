@@ -7,7 +7,7 @@ import { ICellAddress } from 'treb-base-types/src/area';
 import { Parser, UnitCall } from 'treb-parser';
 import { FunctionError, NameError, ReferenceError } from '../../treb-calculator/src/function-error';
 import { MCCompositeFunctionDescriptor } from './descriptors';
-import { ValueType, Cell } from 'treb-base-types/src';
+import { Cell } from 'treb-base-types/src';
 
 
 export class MCExpressionCalculator extends ExpressionCalculator {
@@ -29,7 +29,11 @@ export class MCExpressionCalculator extends ExpressionCalculator {
     const func = this.library.Get(outer.name) as MCCompositeFunctionDescriptor;
 
     if (!func) {
-      return () => NameError;
+      const macro_func = this.data_model.macro_functions[outer.name.toUpperCase()];
+      if (macro_func) {
+        return this.EvaluateMacroFunction(macro_func);
+      }
+      else return () => NameError;
     }
 
     // I wonder if we can handle prep separately, outside of

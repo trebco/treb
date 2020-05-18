@@ -24,6 +24,7 @@ export class WorkerImpl {
     sheets: [Sheet.Blank({})],
     // annotations: [],
     named_ranges: new NamedRangeCollection(),
+    macro_functions: {},
   };
   protected screen_updates = false;
   protected calculator = new MCCalculator();
@@ -74,6 +75,9 @@ export class WorkerImpl {
         this.additional_cells = message.additional_cells;
       }
       this.data_model.named_ranges.Deserialize(message.named_ranges); // implicit reset
+
+      // ... macro functions ...
+
       break;
 
     case 'step':

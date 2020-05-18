@@ -96,7 +96,7 @@ export class Measurement {
   /**
    * measure width, height of text, accounting for rotation
    */
-  public static MeasureText(font: string, text: string, angle = 0){
+  public static MeasureText(font: string, text: string, angle = 0): Metrics {
 
     this.EnsureMeasurementNode();
     this.text_measurement_node.style.font = font;
@@ -117,8 +117,9 @@ export class Measurement {
 
     return {
       width: rect.width,
-      height: rect.height } as Metrics;
-
+      height: rect.height,
+    };
+    
   }
 
   /** canvas used for color measurement */

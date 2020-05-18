@@ -5,6 +5,7 @@ import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
 import { DataError, ArgumentError, ValueError } from '../../treb-calculator/src/function-error';
+import { ExpressionUnit } from 'treb-parser';
 
 export enum SimulationState {
   Null, Prep, Simulation, Post,
@@ -31,6 +32,8 @@ export class SimulationModel {
 
   public address: ICellAddress = { row: 0, column: 0 };
   public volatile = false;
+
+  public name_stack: Array<{[index: string]: ExpressionUnit}> = [];
 
   // the rest are specific to MC, I think
 
