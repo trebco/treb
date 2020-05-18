@@ -3,13 +3,14 @@ import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 import { MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
 import { ResultContainer } from 'treb-calculator';
 import { Localization, ICellAddress } from 'treb-base-types';
-import { SerializeOptions } from 'treb-grid';
+import { SerializeOptions, MacroFunction } from 'treb-grid';
 import { TREBDocument } from './types';
 
 import * as PackResults from 'treb-calculator/src/pack-results';
 
 // config
 import * as build from '../../package.json';
+import { ExpressionUnit } from 'treb-parser/src';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
@@ -207,6 +208,24 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
     // console.info('per', per_thread, 'last', last_thread);
 
+    let macro_functions: MacroFunction[] | undefined;
+
+    // when passing in macro functions, we have to be sure we don't try
+    // to pass any bound expressions (closures) that get attached. we could
+    // parse on the receiving side, but this saves that work... not sure it's
+    // clean, though.
+
+    // FIXME: if you're cloning, just clone the whole thing at once.
+
+    if (this.grid.model.macro_functions) {
+      macro_functions = [];
+      const keys = Object.keys(this.grid.model.macro_functions);
+      for (const key of keys) {
+        const macro_function = this.grid.model.macro_functions[key];
+        macro_functions.push(JSON.parse(JSON.stringify(macro_function)));
+      }
+    }
+
     for (const worker of this.workers) {
       worker.postMessage({
         type: 'configure',
@@ -218,6 +237,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
           });
         }),
         named_ranges: this.grid.model.named_ranges.Serialize(),
+        macro_functions,
         additional_cells,
       });
     }

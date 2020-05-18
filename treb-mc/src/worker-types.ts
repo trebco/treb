@@ -1,5 +1,6 @@
 
-import { ICellAddress, IArea } from 'treb-base-types/src';
+import { ICellAddress, IArea } from 'treb-base-types';
+import { MacroFunction } from 'treb-grid';
 
 export interface TrialData {
   results: any;
@@ -21,6 +22,7 @@ export interface ConfigMessage {
   sheets: any[];
   additional_cells?: ICellAddress[];
   named_ranges?: {[index: string]: IArea};
+  macro_functions?: MacroFunction[];
 }
 
 export interface StepMessage {

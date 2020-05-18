@@ -6,9 +6,9 @@ import { ExpressionUnit } from 'treb-parser';
 export interface MacroFunction {
   name: string;
   function_def: string;
-  expression?: ExpressionUnit;
   argument_names?: string[];
   description?: string;
+  expression?: ExpressionUnit;
 }
 
 export interface MacroFunctionMap {

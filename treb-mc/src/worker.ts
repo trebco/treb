@@ -76,6 +76,13 @@ export class WorkerImpl {
       }
       this.data_model.named_ranges.Deserialize(message.named_ranges); // implicit reset
 
+      this.data_model.macro_functions = {};
+      if (message.macro_functions) {
+        for (const macro_function of message.macro_functions) {
+          this.data_model.macro_functions[macro_function.name.toUpperCase()] = macro_function;
+        }
+      }
+
       // ... macro functions ...
 
       break;
