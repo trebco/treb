@@ -1346,6 +1346,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
+  /** delete macro */
   public RemoveMacro(name: string) {
 
     const uppercase = name.toUpperCase();
@@ -1356,12 +1357,34 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
     }
 
+    // TODO: autocomplete
+
   }
 
-  public CreateMacro(name: string, argument_names: string[], function_def: string) {
+  /**
+   * create macro. name must not already exist (TODO: functions)
+   */
+  public CreateMacro(name: string, argument_names: string|string[] = '', function_def = '0') {
+
+    // name must start with a letter, use letters numbers underscore dot
+
+    if (!name.length || /^[^A-Za-z]/.test(name) || /[^\w_.]/.test(name)) {
+      throw new Error('invalid macro name');
+    }
 
     // FIXME: watch collision with function names
     // ...
+
+    if (typeof argument_names === 'string') {
+      argument_names = argument_names ? 
+        argument_names.split(this.parser.argument_separator).map(arg => arg.trim()) : [];
+    }
+
+    for (const name of argument_names) {
+      if (!name.length || /^[^A-Za-z]/.test(name) || /[^\w_.]/.test(name)) {
+        throw new Error('invalid argument name');
+      }
+    }
 
     // overwrite
     this.RemoveMacro(name);
@@ -1372,6 +1395,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       argument_names,
       expression: this.parser.Parse(function_def).expression,
     };
+
+    // TODO: autocomplete
 
   }
 

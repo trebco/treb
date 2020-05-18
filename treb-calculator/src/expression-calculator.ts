@@ -2,7 +2,7 @@
 import { FunctionLibrary } from './function-library';
 import { Cell, Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
 import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
-         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
+         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitMissing } from 'treb-parser';
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
 import { ReturnType } from './descriptors';
@@ -344,12 +344,10 @@ export class ExpressionCalculator {
 
       if (macro_func.argument_names) {
         for (let i = 0; i < macro_func.argument_names.length; i++) {
-          const name = macro_func.argument_names[i];
+          const name = macro_func.argument_names[i].toUpperCase();
 
           // temp just pass in
-          if (expr.args[i]) {
-            bound_names[name.toUpperCase()] = expr.args[i];
-          }
+          bound_names[name] = expr.args[i] ? expr.args[i] : {type: 'missing'} as UnitMissing;
 
         }
       }
