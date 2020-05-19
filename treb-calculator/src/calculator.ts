@@ -2,7 +2,7 @@
 import { Localization, Cell, Area, ICellAddress,
          ValueType, CellSerializationOptions } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
-         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier } from 'treb-parser';
+         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitLiteral } from 'treb-parser';
 
 import { Graph, GraphStatus } from './dag/graph';
 import { SpreadsheetVertex, CalculationResult } from './dag/spreadsheet_vertex';
@@ -17,7 +17,7 @@ import { TextFunctionLibrary } from './functions/text-functions';
 import { DataModel, Annotation } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
 
-import { ArgumentError, ReferenceError, UnknownError, IsError, ValueError } from './function-error';
+import { ArgumentError, ReferenceError, UnknownError, IsError, ValueError, ExpressionError } from './function-error';
 
 export interface CalculationOptions {
 
@@ -81,6 +81,67 @@ export class Calculator extends Graph {
     // special functions... need reference to the graph (this)
 
     this.library.Register({
+
+      /**
+       * this function is here so it has access to the parser.
+       * this is crazy expensive. is there a way to reduce cost?
+       * 
+       * we could, in theory, consider that there are only a few
+       * valid operations here -- all binary. instead of using a 
+       * generic call to the CalculateExpression routine, we could
+       * short-cut and call the binary method.
+       * 
+       * OTOH that makes it more fragile, and might not really 
+       * provide that much in the way of savings. still, it would
+       * be good if we could somehow cache some of the effort,
+       * particularly if the list data changes but not the expression.
+       * 
+       */
+      CountIf: {
+        arguments: [
+          { name: 'range', },
+          { name: 'criteria', }
+        ],
+        fn: (range, criteria) => {
+
+          const data = Utilities.Flatten(range);
+
+          if (typeof criteria !== 'string') {
+            criteria = '=' + (criteria || 0).toString();
+          }
+          else {
+            criteria = criteria.trim();
+            if (!/^[=<>]/.test(criteria)) {
+              criteria = '=' + criteria;
+            }
+          }
+
+          const parse_result = this.parser.Parse('0' + criteria);
+          const expression = parse_result.expression;
+
+          if (parse_result.error || !expression) {
+            return ExpressionError;
+          }
+          if (expression.type !== 'binary') {
+            // console.warn('invalid expression [1]', expression);
+            return ExpressionError;
+          }
+          if (expression.left.type !== 'literal') {
+            // console.warn('invalid expression [2]', expression);
+            return ExpressionError;
+          }
+
+          let count = 0;
+
+          for (const element of data) {
+            expression.left.value = element;
+            const result = this.CalculateExpression(expression);
+            if (result) { count++; }
+          }
+
+          return count;
+        },
+      },
 
       /**
        * this one does not have to be here, it's just here because
