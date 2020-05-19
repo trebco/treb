@@ -17,6 +17,12 @@ export const Subtract = Validate.bind(0, (x: any, y: any) => x - y);
 
 */
 
+export const Concatenate = (a: any, b: any) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  return `${a}${b}`;
+}
+
 export const Add = (a: number|object, b: number|object) => {
   if (typeof a === 'object') return a;
   if (typeof b === 'object') return b;
@@ -114,6 +120,7 @@ export const Inverse = (a: number|object) => {
 export const MapOperator = (operator: string) => {
 
   switch (operator){
+    case '&': return Concatenate;
     case '+': return Add;
     case '-': return Subtract;
     case '*': return Multiply;

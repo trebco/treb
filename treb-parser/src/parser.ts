@@ -83,6 +83,7 @@ const binary_operators_precendence: PrecedenceList = {
   '>=': 7,
   '+': 9,
   '-': 9,
+  '&': 9,
   '*': 10,
   '/': 10,
   '^': 11, // highest math op
