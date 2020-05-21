@@ -7,9 +7,19 @@ import { SharedStrings } from './shared-strings';
 import { StyleCache } from './style';
 import { Theme } from './theme';
 
-// import { Drawing } from './drawing';
-
 import * as JSZip from 'jszip';
+
+const XMLTypeMap = {
+  'sheet':          'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
+  'theme':          'application/vnd.openxmlformats-officedocument.theme+xml',
+  'drawing':        'application/vnd.openxmlformats-officedocument.drawing+xml',
+  'chart':          'application/vnd.openxmlformats-officedocument.drawingml.chart+xml',
+  'themeOverride':  'application/vnd.openxmlformats-officedocument.themeOverride+xml',
+  'ctrlProp':       'application/vnd.ms-excel.controlproperties+xml',
+  'style':          'application/vnd.ms-office.chartstyle+xml',
+  'colors':         'application/vnd.ms-office.chartcolorstyle+xml',
+};
+
 
 interface Relationship {
   id?: string;
@@ -26,8 +36,6 @@ export class Workbook {
   private shared_strings = new SharedStrings();
   // private sheets: {[index: string]: Sheet} = {};
   private sheets: Sheet[] = [];
-
-  // private drawings: Drawing[] = [];
 
   private dom?: Tree;
   private rels: {[index: string]: Relationship} = {};
@@ -183,44 +191,7 @@ export class Workbook {
     const content_types_data = await this.zip.file(content_types_path).async('text');
     const content_types_dom = ElementTree.parse(content_types_data);
 
-    /*
-    // let single_color_style = false;
-
-    for (const drawing of this.drawings) {
-
-      drawing.Finalize();
-
-    // this.path = `xl/drawings/drawing${index}.xml`;
-    // this.rels_path = `xl/drawings/_rels/drawing${index}.xml.rels`;
-
-      const index = drawing.index;
-      const xml = drawing.dom.write({xml_declaration: true});
-      const path = `xl/drawings/drawing${index}.xml`;
-      await this.zip.file(path, xml);
-
-      content_types_dom.getroot().append(Element('Override', {
-        PartName: '/' + path,
-        ContentType: 'application/vnd.openxmlformats-officedocument.drawing+xml',
-      }));
-
-      // xml = drawing.rels.write({xml_declaration: true}); 
-      // await this.zip.file(`xl/drawings/_rels/drawing${index}.xml.rels`, xml);
-
-      // xml = drawing.chart.write({xml_declaration: true}); 
-      // await this.zip.file(`xl/charts/chart${index}.xml`, xml);
-
-      / *
-      if (!single_color_style) {
-        single_color_style = true;
-        await this.zip.file(`xl/charts/colors1.xml`, Drawing.chart_colors);
-        await this.zip.file(`xl/charts/style1.xml`, Drawing.chart_style);
-      }
-      * /
-
-      // await this.zip.file(`xl/charts/_rels/chart${index}.xml.rels`, Drawing.chart_rels);
-
-    }
-    */
+    // do sheets first, get them in [content_types] in order, then we will add drawing bits
 
     let index = 0;
     for (const sheet of this.sheets) {
@@ -228,6 +199,11 @@ export class Workbook {
         sheet.Finalize();
         const xml = sheet.dom.write({xml_declaration: true});
         await this.zip.file(sheet.path, xml);
+
+        if (sheet.rels_dom && sheet.rels_path) {
+          const rels = sheet.rels_dom.write({xml_declaration: true});
+          await this.zip.file(sheet.rels_path, rels);
+        }
 
         /*
         if (sheet.drawing_rels && sheet.rels_path) {
@@ -238,8 +214,38 @@ export class Workbook {
         if (index++) {
           content_types_dom.getroot().append(Element('Override', {
               PartName: '/' + sheet.path,
-              ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
+              ContentType: XMLTypeMap.sheet,
           }));
+        }
+
+      }
+    }
+
+    for (const sheet of this.sheets) {
+      for (const drawing of sheet.drawings) {
+
+        const drawing_path = `xl/drawings/drawing${drawing.indexes.drawing}.xml`;
+        const drawing_rels_path = `xl/drawings/_rels/drawing${drawing.indexes.drawing}.xml.rels`;
+        content_types_dom.getroot().append(Element('Override', { PartName: '/' + drawing_path, ContentType: XMLTypeMap.drawing }));
+        await this.zip.file(drawing_path, drawing.GetDrawingXML());
+        await this.zip.file(drawing_rels_path, drawing.GetDrawingRels());
+
+        const chart_path =  `xl/charts/chart${drawing.indexes.chart}.xml`;
+        const chart_rels_path =  `xl/charts/_rels/chart${drawing.indexes.chart}.xml.rels`;
+        content_types_dom.getroot().append(Element('Override', { PartName: '/' + chart_path, ContentType: XMLTypeMap.chart }));
+        await this.zip.file(chart_path, drawing.GetChartXML());
+        await this.zip.file(chart_rels_path, drawing.GetChartRels());
+
+        if (drawing.indexes.colors) {
+          const colors_path = `xl/charts/colors${drawing.indexes.colors}.xml`;
+          content_types_dom.getroot().append(Element('Override', { PartName: '/' + colors_path, ContentType: XMLTypeMap.colors }));
+          await this.zip.file(colors_path, drawing.GetColorsXML());
+        }
+
+        if (drawing.indexes.style) {
+          const style_path =  `xl/charts/style${drawing.indexes.style}.xml`;
+          content_types_dom.getroot().append(Element('Override', { PartName: '/' + style_path, ContentType: XMLTypeMap.style }));
+          await this.zip.file(style_path, drawing.GetStyleXML());
         }
 
       }

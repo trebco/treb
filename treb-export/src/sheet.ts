@@ -4,7 +4,8 @@ import { Element, ElementTree as Tree } from 'elementtree';
 import { AddressType, RangeType, is_range, is_address } from './address-type';
 import { SharedStrings } from './shared-strings';
 import { UnitCall } from 'treb-parser';
-import { Sparkline } from 'treb-sparkline/src';
+// import { Sparkline } from 'treb-sparkline/src';
+import { Drawing, CellAnchor, ChartOptions } from './drawing2';
 
 export interface SheetOptions {
   name?: string;
@@ -25,14 +26,14 @@ export class Sheet {
 
   public path?: string;
   public rels_path?: string;
+  public rels_dom?: Tree;
+
   public xml?: string;
   public dom?: Tree;
   public shared_strings?: SharedStrings;
   public extent?: RangeType;
 
   public tab_selected = false;
-
-  // public drawing_rels: number[] = [];
 
   private column_widths?: number[];
   private column_styles?: number[];
@@ -41,7 +42,9 @@ export class Sheet {
   private default_width = 0;
   private tail_width = 0;
   // private column_style?: any;
-   
+
+  public drawings: Drawing[] = [];
+
   constructor(public options: SheetOptions = {}) {
 
   }
@@ -228,27 +231,45 @@ export class Sheet {
 
   }
 
-  /* * 
-   * the only thing in the worksheet is the drawing tag:
-   *
-   * <drawing r:id="rId1"/>
-   * 
-   * /
-  public AddChartReference(id: number) {
+  public CreateRelationships() {
+    const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>`;
+    return ElementTree.parse(rels);
+  }
+
+  /**
+   * this is part (3) from docs/charts.md -- add a chart node to sheet.
+   * NOTE: we're basing the _rels number here on drawings only. should
+   * switch to an internal counter...
+   */
+  public AddChart(from: CellAnchor, to: CellAnchor, options: ChartOptions) {
 
     if (!this.dom) throw new Error('missing dom');
 
-    const drawing = Element('drawing');
-    drawing.attrib['r:id'] = `rId${id}`;
+    const drawing = new Drawing(from, to, false, false, options);
+    const relationship = this.drawings.length + 1; // <-- here
+
+    drawing.sheet_drawing_relationship = relationship;
+
+    this.drawings.push(drawing);
+
+    const drawing_node = Element('drawing');
+    drawing_node.attrib['r:id'] = `rId${relationship}`;
 
     const root = this.dom.getroot();
-    root.append(drawing);
+    root.append(drawing_node);
 
-    // we're going to need a rels file as well
-    this.drawing_rels.push(id);
+    // create new rels if necessary
+    if (!this.rels_dom) { 
+      this.rels_dom = this.CreateRelationships();
+    }
+
+    ElementTree.SubElement(this.rels_dom.getroot(), 'Relationship', {
+      Id: `rId${drawing.sheet_drawing_relationship}`,
+      Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing',
+      Target: `../drawings/drawing${drawing.indexes.drawing}.xml`,
+    });
 
   }
-  */
  
   /**
    * set range.  if the range is more than one cell, val can be either

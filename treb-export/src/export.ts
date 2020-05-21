@@ -11,6 +11,7 @@ import { NumberFormatCache } from 'treb-format';
 
 import { SerializedSheet } from 'treb-grid';
 import { RangeOptions } from './sheet';
+import { ChartOptions } from './drawing2';
 
 /** excel units */
 const one_hundred_pixels = 14.28515625;
@@ -317,6 +318,94 @@ export class Exporter {
               sheet_source.row_height[Number(key)] * 3 / 4);
           }
         }
+      }
+
+      for (const annotation of sheet_source.annotations || []) {
+
+        const parse_result = parser.Parse(annotation.formula || '');
+        if (parse_result.expression && parse_result.expression.type === 'call') {
+          if (/^donut.chart$/i.test(parse_result.expression.name)) {
+
+            const options: ChartOptions = { type: 'donut' };
+
+            if (parse_result.expression.args[2] && parse_result.expression.args[2].type === 'literal') {
+              options.title = parse_result.expression.args[2];
+            }
+            else if (parse_result.expression.args[2] && parse_result.expression.args[2].type === 'address') {
+              const address = parse_result.expression.args[2];
+              address.absolute_row = true;
+              address.absolute_column = true;
+              if (!address.sheet) {
+                address.sheet = sheet_source.name;
+              }
+              address.label = parser.Render(address);
+              options.title = address;
+            }
+
+            if (parse_result.expression.args[0] && parse_result.expression.args[0].type === 'range') {
+              const range = parse_result.expression.args[0];
+              range.start.absolute_row = true;
+              range.start.absolute_column = true;
+              range.end.absolute_row = true;
+              range.end.absolute_column = true;
+              if (!range.start.sheet) {
+                range.start.sheet = sheet_source.name;
+              }
+              range.label = parser.Render(range);
+              options.data = range;
+            }
+
+            if (parse_result.expression.args[1] && parse_result.expression.args[1].type === 'range') {
+              const range = parse_result.expression.args[1];
+              range.start.absolute_row = true;
+              range.start.absolute_column = true;
+              range.end.absolute_row = true;
+              range.end.absolute_column = true;
+              if (!range.start.sheet) {
+                range.start.sheet = sheet_source.name;
+              }
+              range.label = parser.Render(range);
+              options.labels = range;
+            }
+
+            const from_cell = {row: 0, column: 0};
+            const to_cell = {row: 0, column: 0};
+
+            const rect = {...annotation.rect}; // {top, left, width, height}
+            
+            let x = 0;
+            for (let column = 0; column < 1000; column++) {
+              const width = (sheet_source.column_width && sheet_source.column_width[column]) ? sheet_source.column_width[column] : (sheet_source.default_column_width || 100);
+              if (rect.left >= x && rect.left <= x + width) {
+                from_cell.column = column + 1;
+              }
+              if (rect.left + rect.width >= x && rect.left + rect.width <= x + width) {
+                to_cell.column = column + 1;
+                break;
+              }
+              x += width;
+            }
+
+            let y = 0;
+            for (let row = 0; row < 1000; row++) {
+              const height = (sheet_source.row_height && sheet_source.row_height[row]) ? sheet_source.row_height[row] : (sheet_source.default_row_height || 20);
+              if (rect.top >= y && rect.top <= y + height) {
+                from_cell.row = row + 1;
+              }
+              if (rect.top + rect.height >= y && rect.top + rect.height <= y + height) {
+                to_cell.row = row + 1;
+                break;
+              }
+              y += height;
+            }
+
+            sheet.AddChart(from_cell, to_cell, options);
+
+          }
+
+        }
+        
+
       }
 
       // const drawing_id = this.workbook.AddChart();
