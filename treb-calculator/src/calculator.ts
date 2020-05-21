@@ -116,7 +116,10 @@ export class Calculator extends Graph {
             }
           }
 
-          const parse_result = this.parser.Parse('0' + criteria);
+          // switching to an array. doesn't actually seem to be any 
+          // faster... more appropriate, though.
+          
+          const parse_result = this.parser.Parse('{}' + criteria);
           const expression = parse_result.expression;
 
           if (parse_result.error || !expression) {
@@ -126,20 +129,26 @@ export class Calculator extends Graph {
             // console.warn('invalid expression [1]', expression);
             return ExpressionError;
           }
-          if (expression.left.type !== 'literal') {
-            // console.warn('invalid expression [2]', expression);
+          if (expression.left.type !== 'array') {
+            // console.warn('invalid expression [1]', expression);
             return ExpressionError;
           }
 
-          let count = 0;
+          expression.left.values = data;
+          const result = this.CalculateExpression(expression);
 
-          for (const element of data) {
-            expression.left.value = element;
-            const result = this.CalculateExpression(expression);
-            if (result) { count++; }
+          if (Array.isArray(result)) {
+            let count = 0;
+            for (const column of result) {
+              for (const cell of column) {
+                if (cell) { count++; }
+              }
+            }
+            return count;
           }
+          
+          return result; // error?
 
-          return count;
         },
       },
 
