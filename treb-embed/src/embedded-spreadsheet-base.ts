@@ -1341,10 +1341,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * set name at selection
    */
-  public SetName(name: string) {
-    const selection = this.grid.GetSelection();
-    if (!selection.empty) {
-      this.grid.SetName(name, selection.area);
+  public DefineName(name: string, area?: IArea) {
+    if (area) {
+      this.grid.SetName(name, new Area(area.start, area.end));
+    }
+    else {
+      const selection = this.grid.GetSelection();
+      if (!selection.empty) {
+        this.grid.SetName(name, selection.area);
+      }
     }
   }
 
@@ -1366,7 +1371,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * create macro. name must not already exist (TODO: functions)
    */
-  public CreateMacro(name: string, argument_names: string|string[] = '', function_def = '0') {
+  public DefineMacro(name: string, argument_names: string|string[] = '', function_def = '0') {
 
     // name must start with a letter, use letters numbers underscore dot
 
