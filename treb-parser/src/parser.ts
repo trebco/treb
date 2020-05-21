@@ -21,14 +21,14 @@ interface PrecedenceList {
  * regex determines if a sheet name requires quotes. centralizing
  * this to simplify maintenance and reduce overlap/errors
  */
-export const QuotedSheetNameRegex = /[\s-\+=<>\!\(\)]/;
+export const QuotedSheetNameRegex = /[\s-+=<>!()]/;
 
 /**
  * similarly, illegal sheet name. we don't actually handle this in
  * the parser, but it seems like a reasonable place to keep this
  * definition.
  */
-export const IllegalSheetNameRegex = /['\*\\]/;
+export const IllegalSheetNameRegex = /['*\\]/;
 
 const DOUBLE_QUOTE = 0x22; // '"'.charCodeAt(0);
 const SINGLE_QUOTE = 0x27; // `'`.charCodeAt(0);
@@ -144,7 +144,7 @@ export class Parser {
    */
   protected id_counter = 0;
 
-  protected expression: string = '';
+  protected expression = '';
   protected data: number[] = [];
   protected index = 0;
   protected length = 0;
@@ -255,7 +255,8 @@ export class Parser {
     let separator = this.argument_separator + ' ';
     if (convert_argument_separator === ArgumentSeparatorType.Comma) {
       separator = ', ';
-    } else if (convert_argument_separator === ArgumentSeparatorType.Semicolon) {
+    }
+    else if (convert_argument_separator === ArgumentSeparatorType.Semicolon) {
       separator = '; ';
     }
 
@@ -346,13 +347,15 @@ export class Parser {
               text = text.replace(/,/g, ''); // remove grouping
             }
             return text.replace(decimal_rex, decimal);
-          } else {
+          }
+          else {
             // this always works because this function is guaranteed
             // to return value in dot-decimal format without separators.
 
             return unit.value.toString().replace(/\./, decimal);
           }
-        } else if (unit.text) return unit.text;
+        }
+        else if (unit.text) return unit.text;
         return unit.value.toString();
 
       case 'identifier':
@@ -378,7 +381,8 @@ export class Parser {
               .join(separator) +
             ')'
           );
-        } else {
+        }
+        else {
           return unit.elements
             .map((x) =>
               this.Render(
@@ -561,7 +565,7 @@ export class Parser {
   protected ParseGeneric(exit: number[] = [0]): ExpressionUnit | null {
     const stream: ExpressionUnit[] = [];
 
-    for (; this.index < this.length; ) {
+    for (; this.index < this.length;) {
       const unit = this.ParseNext(stream.length === 0);
       if (typeof unit === 'number') {
 
@@ -591,7 +595,8 @@ export class Parser {
               explicit: true,
             });
           }
-        } else {
+        }
+        else {
           // this can probably move to PNext? except for the test
           // on looking for a binary operator? (...)
 
@@ -603,7 +608,8 @@ export class Parser {
             this.index++;
           }
         }
-      } else {
+      }
+      else {
         stream.push(unit);
       }
     }
@@ -667,7 +673,8 @@ export class Parser {
           this.full_reference_list.push(range);
 
           return range;
-        } else {
+        }
+        else {
           this.error = `unexpected character: :`;
           this.valid = false;
         }
@@ -754,7 +761,8 @@ export class Parser {
                 position: element.position,
               } as UnitUnary;
               element = right;
-            } else {
+            }
+            else {
               // create a unary operation which will replace the element
               element = {
                 type: 'unary',
@@ -767,7 +775,8 @@ export class Parser {
 
             // end loop after this pass, because the recurse consumes everything else
             index = stream.length;
-          } else {
+          }
+          else {
             this.error = `unexpected character: ${element.operator}`;
             this.error_position = element.position;
             this.valid = false;
@@ -778,7 +787,8 @@ export class Parser {
               explicit: false,
             };
           }
-        } else {
+        }
+        else {
           stack.push(element);
           continue;
         }
@@ -786,7 +796,8 @@ export class Parser {
 
       if (stack.length < 2) {
         stack.push(element);
-      } else if (stack[stack.length - 1].type === 'operator') {
+      }
+      else if (stack[stack.length - 1].type === 'operator') {
         const left = stack[stack.length - 2];
         const operator_unit = stack[stack.length - 1] as UnitOperator;
         const operator = operator_unit.operator;
@@ -810,7 +821,7 @@ export class Parser {
         if (
           left.type === 'binary' &&
           binary_operators_precendence[operator] >
-            binary_operators_precendence[left.operator]
+          binary_operators_precendence[left.operator]
         ) {
           // so we have [[A op1 B] op2 C], and we need to re-order this into [A op1 [B op2 C]].
 
@@ -828,7 +839,8 @@ export class Parser {
         }
 
         stack.splice(-2, 2, operation);
-      } else {
+      }
+      else {
         this.error = `multiple expressions`;
         this.error_position = (element as any).position;
         this.valid = false;
@@ -907,12 +919,12 @@ export class Parser {
       }
     }
     else if (
-        (char >= UC_A && char <= UC_Z) ||
-        (char >= LC_A && char <= LC_Z) ||
-        char === UNDERSCORE ||
-        char === SINGLE_QUOTE ||
-        char === DOLLAR_SIGN
-      ) {
+      (char >= UC_A && char <= UC_Z) ||
+      (char >= LC_A && char <= LC_Z) ||
+      char === UNDERSCORE ||
+      char === SINGLE_QUOTE ||
+      char === DOLLAR_SIGN
+    ) {
 
       // FIXME: this only tests for ASCII tokens? (...)
 
@@ -1010,7 +1022,7 @@ export class Parser {
     let argument_index = 0;
     const args: ExpressionUnit[] = [];
 
-    for (; this.index < this.length; ) {
+    for (; this.index < this.length;) {
       const unit = this.ParseGeneric([
         this.argument_separator_char,
         CLOSE_PAREN,
@@ -1026,7 +1038,8 @@ export class Parser {
         for (let i = args.length; i < argument_index; i++) {
           args.push({ type: 'missing', id: this.id_counter++ });
         }
-      } else if (char === CLOSE_PAREN) {
+      }
+      else if (char === CLOSE_PAREN) {
         this.index++;
         return args;
       }
@@ -1074,7 +1087,8 @@ export class Parser {
         if (char === SINGLE_QUOTE) {
           single_quote = false; // one only
         }
-      } else break;
+      }
+      else break;
     }
 
     const str = token.map((num) => String.fromCharCode(num)).join('');
@@ -1171,7 +1185,7 @@ export class Parser {
 
     // FIXME: should mark this (!) when it hits, rather than search
 
-    let sheet: string|undefined;
+    let sheet: string | undefined;
     const tokens = token.split('!');
 
     if (tokens.length === 2) {
@@ -1244,7 +1258,8 @@ export class Parser {
       if (char >= ZERO && char <= NINE) {
         value *= 10;
         value += char - ZERO;
-      } else break;
+      }
+      else break;
     }
 
     if (start === position) return false;
@@ -1268,9 +1283,11 @@ export class Parser {
       const char = this.data[position];
       if (char >= UC_A && char <= UC_Z) {
         column = 26 * (1 + column) + (char - UC_A);
-      } else if (char >= LC_A && char <= LC_Z) {
+      }
+      else if (char >= LC_A && char <= LC_Z) {
         column = 26 * (1 + column) + (char - LC_A);
-      } else break;
+      }
+      else break;
     }
 
     if (column < 0) return false;
@@ -1331,7 +1348,8 @@ export class Parser {
       if (char === this.decimal_mark_char) {
         if (state === 'integer') state = 'fraction';
         else break; // end of token; not consuming
-      } else if (char === PERCENT) {
+      }
+      else if (char === PERCENT) {
         // FIXME: disallow combination of exponential and percent notation
 
         integer /= 100; // this is a dumb way to do this
@@ -1339,13 +1357,15 @@ export class Parser {
 
         this.index++; // we are consuming
         break; // end of token
-      } else if (char === PLUS || char === MINUS) {
+      }
+      else if (char === PLUS || char === MINUS) {
         // NOTE: handling of positive/negative exponent in exponential
         // notation is handled separately, see below
 
         if (position === 0) {
           if (char === MINUS) negative = true;
-        } else break; // end of token -- not consuming
+        }
+        else break; // end of token -- not consuming
       }
       // else if (char === COMMA){
       //  // ... FIXME: validate that we're in the integer part
@@ -1360,8 +1380,10 @@ export class Parser {
               negative_exponent = true;
             }
           }
-        } else break; // not sure what this is, then
-      } else if (char >= ZERO && char <= NINE) {
+        }
+        else break; // not sure what this is, then
+      }
+      else if (char >= ZERO && char <= NINE) {
         switch (state) {
           case 'integer':
             integer = integer * 10 + (char - ZERO);
@@ -1374,7 +1396,8 @@ export class Parser {
             exponent = exponent * 10 + (char - ZERO);
             break;
         }
-      } else break;
+      }
+      else break;
     }
 
     let value = integer + fraction * Math.pow(10, -decimal);
@@ -1428,7 +1451,7 @@ export class Parser {
 
   /** run through any intervening whitespace */
   protected ConsumeWhiteSpace() {
-    for (; this.index < this.length; ) {
+    for (; this.index < this.length;) {
       const char = this.data[this.index];
       if (
         char === SPACE ||
@@ -1438,7 +1461,8 @@ export class Parser {
         char === NON_BREAKING_SPACE
       ) {
         this.index++;
-      } else return;
+      }
+      else return;
     }
   }
 }
