@@ -326,9 +326,20 @@ export class Exporter {
 
         const parse_result = this.parser.Parse(annotation.formula || '');
         if (parse_result.expression && parse_result.expression.type === 'call') {
-          if (/^donut.chart$/i.test(parse_result.expression.name)) {
+          
+          let type = '';
+          switch (parse_result.expression.name.toLowerCase()) {
+            case 'donut.chart':
+              type = 'donut';
+              break;
+            case 'column.chart':
+              type = 'column';
+              break;
+          }
 
-            const options: ChartOptions = { type: 'donut' };
+          if (type === 'column' || type === 'donut') {
+
+            const options: ChartOptions = { type };
 
             if (parse_result.expression.args[2] && parse_result.expression.args[2].type === 'literal') {
               options.title = parse_result.expression.args[2];

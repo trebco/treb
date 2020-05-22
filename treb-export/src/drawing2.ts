@@ -4,6 +4,8 @@ import { Element, ElementTree as Tree } from 'elementtree';
 import { UnitAddress, UnitRange, UnitLiteral } from 'treb-parser/src';
 
 import { donut_json, static_title, ref_title } from './donut-chart';
+import { column_json } from './column-chart';
+
 import { Localization } from 'treb-base-types/src';
 
 interface Indexes {
@@ -14,7 +16,7 @@ interface Indexes {
 }
 
 export interface ChartOptions {
-  type: 'donut';
+  type: 'donut'|'column';
   title?: UnitLiteral | UnitAddress;
   data?: UnitRange;
   labels?: UnitRange;
@@ -49,6 +51,15 @@ export class Drawing {
     colors: 1,
     style: 1,
   };
+
+  public static ResetIndexes() {
+    this.next_index = {
+      drawing: 1,
+      chart: 1,
+      colors: 1,
+      style: 1,
+    };
+  }
 
   public static AssignIndexes(colors = true, style = true): Indexes {
     const indexes = {...this.next_index};
@@ -98,7 +109,11 @@ export class Drawing {
   
     for (const key of Object.keys(node)) {
       if (key === '_a' || key === '_t') { continue; }
-      element.getchildren().push(this.ProcessJSONNode(key, node[key] as any));
+      let val = node[key] as any;
+      if (!Array.isArray(val)) { val = [val]; }
+      for (const entry of val) {
+        element.getchildren().push(this.ProcessJSONNode(key, entry));
+      }
     }
   
     return element;
@@ -131,9 +146,9 @@ export class Drawing {
 
   }
 
-  public CreateDonutChart() {
+  /** set chart title, either static or reference to cell */
+  public UpdateChartTitle(obj: any) {
 
-    const obj = JSON.parse(JSON.stringify(donut_json)); // clone
     const CC = this.FindNode('c:chart', obj);
 
     if (CC) {
@@ -160,6 +175,55 @@ export class Drawing {
       }
     }
 
+  }
+
+  public ObjectToXML(obj: any) {
+
+    const keys = Object.keys(obj);
+    if (keys.length !== 1) {
+      throw new Error('too many roots');
+    }
+    const root = keys[0];
+    const xml = new Tree(this.ProcessJSONNode(root, obj[root]));
+
+    return xml;
+    
+  }
+
+  public CreateColumnChart() {
+
+    const obj = JSON.parse(JSON.stringify(column_json)); // clone
+    this.UpdateChartTitle(obj);
+
+    const column = this.FindNode('c:barChart', obj);
+    if (column) {
+
+      if (this.options.labels) {
+        const cser = this.FindNode('c:ser', column);
+        cser['c:cat'] = {
+          'c:strRef': {
+            'c:f': {
+              _t: this.options.labels.label,
+            }
+          }
+        }
+      }
+
+      const val = this.FindNode('c:val/c:numRef/c:f', column);
+      if (val) {
+        val._t = this.options.data?.label;
+      }
+
+    }    
+
+    return this.ObjectToXML(obj);
+  }
+
+  public CreateDonutChart() {
+
+    const obj = JSON.parse(JSON.stringify(donut_json)); // clone
+    this.UpdateChartTitle(obj);
+
     const donut = this.FindNode('c:doughnutChart', obj);
     if (donut) {
 
@@ -175,15 +239,7 @@ export class Drawing {
 
     }    
 
-    const keys = Object.keys(obj);
-    if (keys.length !== 1) {
-      throw new Error('too many roots');
-    }
-    const root = keys[0];
-    const xml = new Tree(this.ProcessJSONNode(root, obj[root]));
-  
-
-    return xml;
+    return this.ObjectToXML(obj);
   
   }
 
@@ -191,7 +247,18 @@ export class Drawing {
   ///
 
   public GetChartXML() {
-    return this.CreateDonutChart().write({xml_declaration: true});
+
+    switch (this.options.type) {
+      case 'donut':
+        return this.CreateDonutChart().write({xml_declaration: true});
+      
+      case 'column':
+        return this.CreateColumnChart().write({xml_declaration: true});
+    }
+
+    console.warn('missing chart type xml');
+    return '';
+
   }
 
   public GetChartRels() {

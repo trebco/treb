@@ -8,6 +8,7 @@ import { StyleCache } from './style';
 import { Theme } from './theme';
 
 import * as JSZip from 'jszip';
+import { Drawing } from './drawing2';
 
 const XMLTypeMap = {
   'sheet':          'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
@@ -341,6 +342,8 @@ export class Workbook {
     if (zip) { this.zip = zip; }
 
     if (!this.zip) throw new Error('missing zip');
+
+    Drawing.ResetIndexes();
 
     // read rels
     let data = await this.zip.file( 'xl/_rels/workbook.xml.rels').async('text');
