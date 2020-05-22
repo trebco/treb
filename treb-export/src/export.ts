@@ -6,12 +6,12 @@ import { Workbook } from './workbook';
 
 import { Style, Area, ICellAddress, Cell, Cells } from 'treb-base-types';
 import { StyleOptions, Font, BorderStyle, Fill } from './style';
-import { Parser, ArgumentSeparatorType, DecimalMarkType, ExpressionUnit, UnitCall } from 'treb-parser';
+import { Parser, ArgumentSeparatorType, DecimalMarkType, ExpressionUnit, UnitCall, UnitAddress, UnitRange } from 'treb-parser';
 import { NumberFormatCache } from 'treb-format';
 
 import { SerializedSheet } from 'treb-grid';
 import { RangeOptions } from './sheet';
-import { ChartOptions } from './drawing2';
+import { ChartOptions, CellAnchor, TwoCellAnchor } from './drawing2';
 
 /** excel units */
 const one_hundred_pixels = 14.28515625;
@@ -320,6 +320,23 @@ export class Exporter {
         }
       }
 
+      const normalize_address = (unit: UnitAddress|UnitRange) => {
+        const addresses = (unit.type === 'address') ? [unit] : [unit.start, unit.end];
+        for (const address of addresses) {
+          address.absolute_row = true;
+          address.absolute_column = true;
+          if (!address.sheet) {
+            address.sheet = sheet_source.name;
+          }
+        }
+        if (unit.type === 'range') {
+          unit.end.sheet = undefined;
+        }
+
+        unit.label = parser.Render(unit);
+        return unit; // fluent
+      };
+
       for (const annotation of sheet_source.annotations || []) {
 
         const parse_result = parser.Parse(annotation.formula || '');
@@ -332,74 +349,57 @@ export class Exporter {
               options.title = parse_result.expression.args[2];
             }
             else if (parse_result.expression.args[2] && parse_result.expression.args[2].type === 'address') {
-              const address = parse_result.expression.args[2];
-              address.absolute_row = true;
-              address.absolute_column = true;
-              if (!address.sheet) {
-                address.sheet = sheet_source.name;
-              }
-              address.label = parser.Render(address);
-              options.title = address;
+              options.title = normalize_address(parse_result.expression.args[2]) as UnitAddress;
             }
 
             if (parse_result.expression.args[0] && parse_result.expression.args[0].type === 'range') {
-              const range = parse_result.expression.args[0];
-              range.start.absolute_row = true;
-              range.start.absolute_column = true;
-              range.end.absolute_row = true;
-              range.end.absolute_column = true;
-              if (!range.start.sheet) {
-                range.start.sheet = sheet_source.name;
-              }
-              range.label = parser.Render(range);
-              options.data = range;
+              options.data = normalize_address(parse_result.expression.args[0]) as UnitRange;
             }
 
             if (parse_result.expression.args[1] && parse_result.expression.args[1].type === 'range') {
-              const range = parse_result.expression.args[1];
-              range.start.absolute_row = true;
-              range.start.absolute_column = true;
-              range.end.absolute_row = true;
-              range.end.absolute_column = true;
-              if (!range.start.sheet) {
-                range.start.sheet = sheet_source.name;
-              }
-              range.label = parser.Render(range);
-              options.labels = range;
+              options.labels = normalize_address(parse_result.expression.args[1]) as UnitRange;
             }
 
-            const from_cell = {row: 0, column: 0};
-            const to_cell = {row: 0, column: 0};
+            const anchor: TwoCellAnchor = {
+              from: {row: -1, column: -1},
+              to: {row: -1, column: -1},
+            };
 
-            const rect = {...annotation.rect}; // {top, left, width, height}
+            const rect = {
+              ...annotation.rect,  // {top, left, width, height}
+              right: annotation.rect.left + annotation.rect.width,
+              bottom: annotation.rect.top + annotation.rect.height,
+            };
             
-            let x = 0;
-            for (let column = 0; column < 1000; column++) {
+            for (let x = 0, column = 0; column < 1000; column++) {
               const width = (sheet_source.column_width && sheet_source.column_width[column]) ? sheet_source.column_width[column] : (sheet_source.default_column_width || 100);
-              if (rect.left >= x && rect.left <= x + width) {
-                from_cell.column = column + 1;
+              if (anchor.from.column < 0 && rect.left <= x + width) {
+                anchor.from.column = column;
+                anchor.from.column_offset = (rect.left - x);
               }
-              if (rect.left + rect.width >= x && rect.left + rect.width <= x + width) {
-                to_cell.column = column + 1;
+              if (anchor.to.column < 0 && rect.right <= x + width) {
+                anchor.to.column = column;
+                anchor.to.column_offset = (rect.right - x);
                 break;
               }
               x += width;
             }
 
-            let y = 0;
-            for (let row = 0; row < 1000; row++) {
+            for (let y = 0, row = 0; row < 1000; row++) {
               const height = (sheet_source.row_height && sheet_source.row_height[row]) ? sheet_source.row_height[row] : (sheet_source.default_row_height || 20);
-              if (rect.top >= y && rect.top <= y + height) {
-                from_cell.row = row + 1;
+              if (anchor.from.row < 0 && rect.top <= y + height) {
+                anchor.from.row = row;
+                anchor.from.row_offset = (rect.top - y);
               }
-              if (rect.top + rect.height >= y && rect.top + rect.height <= y + height) {
-                to_cell.row = row + 1;
+              if (anchor.to.row < 0 && rect.bottom <= y + height) {
+                anchor.to.row = row;
+                anchor.to.row_offset = (rect.bottom - y);
                 break;
               }
               y += height;
             }
 
-            sheet.AddChart(from_cell, to_cell, options);
+            sheet.AddChart(anchor, options);
 
           }
 

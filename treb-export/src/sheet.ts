@@ -5,7 +5,7 @@ import { AddressType, RangeType, is_range, is_address } from './address-type';
 import { SharedStrings } from './shared-strings';
 import { UnitCall } from 'treb-parser';
 // import { Sparkline } from 'treb-sparkline/src';
-import { Drawing, CellAnchor, ChartOptions } from './drawing2';
+import { Drawing, CellAnchor, ChartOptions, TwoCellAnchor } from './drawing2';
 
 export interface SheetOptions {
   name?: string;
@@ -241,11 +241,11 @@ export class Sheet {
    * NOTE: we're basing the _rels number here on drawings only. should
    * switch to an internal counter...
    */
-  public AddChart(from: CellAnchor, to: CellAnchor, options: ChartOptions) {
+  public AddChart(anchor: TwoCellAnchor, options: ChartOptions) {
 
     if (!this.dom) throw new Error('missing dom');
 
-    const drawing = new Drawing(from, to, false, false, options);
+    const drawing = new Drawing(anchor, false, false, options);
     const relationship = this.drawings.length + 1; // <-- here
 
     drawing.sheet_drawing_relationship = relationship;

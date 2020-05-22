@@ -20,9 +20,18 @@ export interface ChartOptions {
   labels?: UnitRange;
 }
 
+const pixel_offset = 9525;
+
 export interface CellAnchor {
   row: number;
+  column_offset?: number;
   column: number;
+  row_offset?: number;
+}
+
+export interface TwoCellAnchor {
+  from: CellAnchor;
+  to: CellAnchor;
 }
 
 export class Drawing {
@@ -70,8 +79,7 @@ export class Drawing {
   public sheet_drawing_relationship = 0;
 
   constructor(
-    public from_cell: CellAnchor, // TODO: offset
-    public to_cell: CellAnchor,
+    public anchor: TwoCellAnchor,
     colors = true, 
     style = true,
     public options: ChartOptions,
@@ -219,7 +227,12 @@ export class Drawing {
   }
 
   public GetDrawingXML() {
-    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:twoCellAnchor><xdr:from><xdr:col>${this.from_cell.column}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${this.from_cell.row}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>${this.to_cell.column}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${this.to_cell.row}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart ${this.indexes.chart}"><a:extLst><a:ext uri="{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}"><a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="{9948BDEE-44B2-4E72-83C8-2C9C56F04EAA}"/></a:ext></a:extLst></xdr:cNvPr><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">`
+      + `<xdr:twoCellAnchor><xdr:from><xdr:col>${this.anchor.from.column}</xdr:col><xdr:colOff>${(this.anchor.from.column_offset || 0) * pixel_offset}</xdr:colOff>`
+      + `<xdr:row>${this.anchor.from.row}</xdr:row><xdr:rowOff>${(this.anchor.from.row_offset || 0) * pixel_offset}</xdr:rowOff></xdr:from>`
+      + `<xdr:to><xdr:col>${this.anchor.to.column}</xdr:col><xdr:colOff>${(this.anchor.to.column_offset || 0) * pixel_offset}</xdr:colOff>`
+      + `<xdr:row>${this.anchor.to.row}</xdr:row><xdr:rowOff>${(this.anchor.to.row_offset || 0) * pixel_offset}</xdr:rowOff></xdr:to>`
+      + `<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart ${this.indexes.chart}"><a:extLst><a:ext uri="{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}"><a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="{9948BDEE-44B2-4E72-83C8-2C9C56F04EAA}"/></a:ext></a:extLst></xdr:cNvPr><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`;
   }
 
   public GetDrawingRels() {
