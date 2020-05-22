@@ -26,6 +26,9 @@ export class Exporter {
 
   public workbook!: Workbook;
 
+  /** we may need to rewrite functions */
+  public parser = new Parser();
+
   public set zip(archive: JSZip) {
     this.archive_ = archive;
   }
@@ -67,13 +70,12 @@ export class Exporter {
 
     // we may need to rewrite functions
     // let parser: Parser | undefined;
-    const parser = new Parser();
     let change_number_format = false;
 
     if (source.decimal_mark === ',') {
       // parser = new Parser();
-      parser.decimal_mark = DecimalMarkType.Comma;
-      parser.argument_separator = ArgumentSeparatorType.Semicolon;
+      this.parser.decimal_mark = DecimalMarkType.Comma;
+      this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
       change_number_format = true;
     }
 
@@ -198,8 +200,8 @@ export class Exporter {
 
             }
 
-            if (parser && cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
-              const result = parser.Parse(cell.value);
+            if (this.parser && cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
+              const result = this.parser.Parse(cell.value);
               if (result.expression && result.expression.type === 'call') {
                 switch (result.expression.name.toLowerCase()) {
                   case 'sparkline.column':
@@ -209,7 +211,7 @@ export class Exporter {
                       expression: result.expression,
                       row: cell.row + 1, 
                       column: cell.column + 1,
-                      reference: result.expression.args[0] ? parser.Render(result.expression.args[0]) : '',
+                      reference: result.expression.args[0] ? this.parser.Render(result.expression.args[0]) : '',
                     });
                     break;
                 }
@@ -217,7 +219,7 @@ export class Exporter {
 
               if (change_number_format) {
                 if (result.expression) {
-                  const rewrite = parser.Render(result.expression, undefined, undefined,
+                  const rewrite = this.parser.Render(result.expression, undefined, undefined,
                     DecimalMarkType.Period, ArgumentSeparatorType.Comma);
                   cell.value = '=' + rewrite;
                 }
@@ -320,26 +322,9 @@ export class Exporter {
         }
       }
 
-      const normalize_address = (unit: UnitAddress|UnitRange) => {
-        const addresses = (unit.type === 'address') ? [unit] : [unit.start, unit.end];
-        for (const address of addresses) {
-          address.absolute_row = true;
-          address.absolute_column = true;
-          if (!address.sheet) {
-            address.sheet = sheet_source.name;
-          }
-        }
-        if (unit.type === 'range') {
-          unit.end.sheet = undefined;
-        }
-
-        unit.label = parser.Render(unit);
-        return unit; // fluent
-      };
-
       for (const annotation of sheet_source.annotations || []) {
 
-        const parse_result = parser.Parse(annotation.formula || '');
+        const parse_result = this.parser.Parse(annotation.formula || '');
         if (parse_result.expression && parse_result.expression.type === 'call') {
           if (/^donut.chart$/i.test(parse_result.expression.name)) {
 
@@ -349,56 +334,18 @@ export class Exporter {
               options.title = parse_result.expression.args[2];
             }
             else if (parse_result.expression.args[2] && parse_result.expression.args[2].type === 'address') {
-              options.title = normalize_address(parse_result.expression.args[2]) as UnitAddress;
+              options.title = this.NormalizeAddress(parse_result.expression.args[2], sheet_source);
             }
 
             if (parse_result.expression.args[0] && parse_result.expression.args[0].type === 'range') {
-              options.data = normalize_address(parse_result.expression.args[0]) as UnitRange;
+              options.data = this.NormalizeAddress(parse_result.expression.args[0], sheet_source);
             }
 
             if (parse_result.expression.args[1] && parse_result.expression.args[1].type === 'range') {
-              options.labels = normalize_address(parse_result.expression.args[1]) as UnitRange;
+              options.labels = this.NormalizeAddress(parse_result.expression.args[1], sheet_source);
             }
 
-            const anchor: TwoCellAnchor = {
-              from: {row: -1, column: -1},
-              to: {row: -1, column: -1},
-            };
-
-            const rect = {
-              ...annotation.rect,  // {top, left, width, height}
-              right: annotation.rect.left + annotation.rect.width,
-              bottom: annotation.rect.top + annotation.rect.height,
-            };
-            
-            for (let x = 0, column = 0; column < 1000; column++) {
-              const width = (sheet_source.column_width && sheet_source.column_width[column]) ? sheet_source.column_width[column] : (sheet_source.default_column_width || 100);
-              if (anchor.from.column < 0 && rect.left <= x + width) {
-                anchor.from.column = column;
-                anchor.from.column_offset = (rect.left - x);
-              }
-              if (anchor.to.column < 0 && rect.right <= x + width) {
-                anchor.to.column = column;
-                anchor.to.column_offset = (rect.right - x);
-                break;
-              }
-              x += width;
-            }
-
-            for (let y = 0, row = 0; row < 1000; row++) {
-              const height = (sheet_source.row_height && sheet_source.row_height[row]) ? sheet_source.row_height[row] : (sheet_source.default_row_height || 20);
-              if (anchor.from.row < 0 && rect.top <= y + height) {
-                anchor.from.row = row;
-                anchor.from.row_offset = (rect.top - y);
-              }
-              if (anchor.to.row < 0 && rect.bottom <= y + height) {
-                anchor.to.row = row;
-                anchor.to.row_offset = (rect.bottom - y);
-                break;
-              }
-              y += height;
-            }
-
+            const anchor = this.AnnotationRectToAnchor(annotation.rect, sheet_source);
             sheet.AddChart(anchor, options);
 
           }
@@ -418,6 +365,93 @@ export class Exporter {
     }
 
     await this.workbook.Finalize();
+  }
+
+  /**
+   * convert a rectangle (pixels) to a two-cell anchor. note that
+   * our offsets are in pixels, they'll need to be changed to whatever
+   * the target units are.
+   */
+  public AnnotationRectToAnchor(
+      annotation_rect: { 
+        left: number; 
+        top: number; 
+        width: number; 
+        height: number; 
+      }, 
+      sheet: SerializedSheet) {
+    
+    const anchor: TwoCellAnchor = {
+      from: {row: -1, column: -1},
+      to: {row: -1, column: -1},
+    };
+
+    const rect = {
+      ...annotation_rect,  // {top, left, width, height}
+      right: annotation_rect.left + annotation_rect.width,
+      bottom: annotation_rect.top + annotation_rect.height,
+    };
+    
+    for (let x = 0, column = 0; column < 1000; column++) {
+      const width = (sheet.column_width && sheet.column_width[column]) ? sheet.column_width[column] : (sheet.default_column_width || 100);
+      if (anchor.from.column < 0 && rect.left <= x + width) {
+        anchor.from.column = column;
+        anchor.from.column_offset = (rect.left - x);
+      }
+      if (anchor.to.column < 0 && rect.right <= x + width) {
+        anchor.to.column = column;
+        anchor.to.column_offset = (rect.right - x);
+        break;
+      }
+      x += width;
+    }
+
+    for (let y = 0, row = 0; row < 1000; row++) {
+      const height = (sheet.row_height && sheet.row_height[row]) ? sheet.row_height[row] : (sheet.default_row_height || 20);
+      if (anchor.from.row < 0 && rect.top <= y + height) {
+        anchor.from.row = row;
+        anchor.from.row_offset = (rect.top - y);
+      }
+      if (anchor.to.row < 0 && rect.bottom <= y + height) {
+        anchor.to.row = row;
+        anchor.to.row_offset = (rect.bottom - y);
+        break;
+      }
+      y += height;
+    }
+
+    return anchor;
+
+  }
+
+  /** overload for return type */
+  public NormalizeAddress(unit: UnitAddress, sheet: SerializedSheet): UnitAddress;
+
+  /** overload for return type */
+  public NormalizeAddress(unit: UnitRange, sheet: SerializedSheet): UnitRange;
+
+  /**
+   * for charts we need addresses to be absolute ($)  and ensure there's
+   * a sheet name -- use the active sheet if it's not explicitly referenced
+   */
+  public NormalizeAddress(unit: UnitAddress|UnitRange, sheet: SerializedSheet) {
+
+    const addresses = (unit.type === 'address') ? [unit] : [unit.start, unit.end];
+
+    for (const address of addresses) {
+      address.absolute_row = true;
+      address.absolute_column = true;
+      if (!address.sheet) {
+        address.sheet = sheet.name;
+      }
+    }
+    if (unit.type === 'range') {
+      unit.end.sheet = undefined;
+    }
+
+    unit.label = this.parser.Render(unit);
+    return unit; // fluent
+
   }
 
   public async AsBinaryString(compression_level?: number) {
