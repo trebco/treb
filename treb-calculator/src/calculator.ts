@@ -14,7 +14,7 @@ import { FunctionMap, ReturnType } from './descriptors';
 import { BaseFunctionLibrary, BaseFunctionAliases } from './functions/base-functions';
 import { TextFunctionLibrary } from './functions/text-functions';
 
-import { DataModel, Annotation } from 'treb-grid';
+import { DataModel, Annotation, FunctionDescriptor } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
 
 import { ArgumentError, ReferenceError, UnknownError, IsError, ValueError, ExpressionError } from './function-error';
@@ -540,7 +540,7 @@ export class Calculator extends Graph {
    * returns a list of available functions, for AC/tooltips
    * FIXME: categories?
    */
-  public SupportedFunctions(){
+  public SupportedFunctions(): FunctionDescriptor[] {
 
     const list = this.library.List();
 
@@ -555,6 +555,19 @@ export class Calculator extends Graph {
         }),
       };
     });
+
+    if (this.model) {
+      for (const key of Object.keys(this.model.macro_functions)) {
+        const macro = this.model.macro_functions[key];
+        function_list.push({
+          name: macro.name,
+          description: macro.description,
+          arguments: (macro.argument_names || []).map(argument => {
+            return { name: argument };
+          }),
+        });
+      }
+    }
 
     return function_list;
 

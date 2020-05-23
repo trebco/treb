@@ -1353,8 +1353,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
-  /** delete macro */
-  public RemoveMacro(name: string) {
+  /** delete macro function */
+  public RemoveFunction(name: string) {
 
     const uppercase = name.toUpperCase();
     const keys = Object.keys(this.grid.model.macro_functions);
@@ -1364,19 +1364,19 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
     }
 
-    // TODO: autocomplete
+    this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
 
   }
 
   /**
-   * create macro. name must not already exist (TODO: functions)
+   * create macro function. name must not already exist (TODO: functions)
    */
-  public DefineMacro(name: string, argument_names: string|string[] = '', function_def = '0') {
+  public DefineFunction(name: string, argument_names: string|string[] = '', function_def = '0') {
 
     // name must start with a letter, use letters numbers underscore dot
 
     if (!name.length || /^[^A-Za-z]/.test(name) || /[^\w_.]/.test(name)) {
-      throw new Error('invalid macro name');
+      throw new Error('invalid function name');
     }
 
     // FIXME: watch collision with function names
@@ -1394,7 +1394,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     // overwrite
-    this.RemoveMacro(name);
+    this.RemoveFunction(name);
 
     this.grid.model.macro_functions[name.toUpperCase()] = {
       name,
@@ -1403,7 +1403,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       expression: this.parser.Parse(function_def).expression,
     };
 
-    // TODO: autocomplete
+    this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
 
   }
 
