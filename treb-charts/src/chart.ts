@@ -23,7 +23,10 @@ export class Chart {
 
   // not chart-specific, so leave outside (FIXME: layout options?)
 
-  private margin = { top: 0.025, left: 0.025, bottom: 0.025, right: 0.05 };
+  // FIXME: change depending on whether there are y-axis labels
+
+  // private margin = { top: 0.025, left: 0.025, bottom: 0.025, right: 0.05 };
+  private margin = { top: 0.025, left: 0.05, bottom: 0.025, right: 0.075 };
 
   constructor(
     public renderer: ChartRenderer = new ChartRenderer()) {
@@ -661,6 +664,8 @@ export class Chart {
         const scale = this.chart_data.scale;
         if (this.chart_data.series) {
 
+          const points = Math.max.apply(0, this.chart_data.series.map(x => x.length));
+
           const func = this.chart_data.smooth ?
             this.renderer.RenderSmoothLine : this.renderer.RenderLine;
 
@@ -674,6 +679,12 @@ export class Chart {
               if (typeof point === 'undefined') { return undefined; }
               return Util.ApplyScale(point, area.height, scale);
             });
+
+            if (y.length < points) {
+              for (let i = y.length; i < points; i++) {
+                y.push(undefined);
+              }
+            }
 
             const styles = [
               this.chart_data.type === 'area' ? 'chart-area' : 'chart-line',
