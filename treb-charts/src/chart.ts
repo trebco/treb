@@ -152,7 +152,7 @@ export class Chart {
   }
 
   /**
-   * args: data, labels, title, [x_format, y_format], callouts
+   * args: data, labels, title, callouts, "smooth"
    */
   public CreateLineChart(args: any[], type: 'line'|'area') { // |'bar'|'column') {
 
@@ -205,24 +205,11 @@ export class Chart {
     const scale = Util.Scale(range.min || 0, range.max || 0, 7);
     const format_pattern = (flat.length && flat[0].format) ? flat[0].format : '';
     const y_format = NumberFormatCache.Get(format_pattern || DEFAULT_FORMAT);
-    // const y_format = NumberFormatCache.Get(args[4] || DEFAULT_FORMAT);
     const y_labels: string[] = [];
 
     for (let i = 0; i <= scale.count; i++) {
       y_labels.push(y_format.Format(scale.min + i * scale.step));
     }
-
-    /*
-    const x_format = NumberFormatCache.Get(args[3] || DEFAULT_FORMAT);
-    let x_labels: string[]|undefined;
-
-    if (args[1]) {
-      const values = Util.Flatten(args[1]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
-      x_labels = values.map((value) => x_format.Format(value));
-    }
-
-    const titles = x_labels ? x_labels.map((x_label, i) => `${x_label} : ${y_format.Format(data[i])}`) : undefined;
-    */
 
     let x_labels: string[] | undefined;
 
@@ -253,7 +240,7 @@ export class Chart {
     }
     */
 
-    const smooth = (args[6] === 'smooth');
+    const smooth = (args[4] === 'smooth');
 
     this.chart_data = {
       type,

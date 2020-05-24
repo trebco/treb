@@ -1,132 +1,58 @@
 
-export const column_json = {
-  'c:chartSpace': {
+export const column_series = {
+  'c:idx': {
     '_a': {
-      'xmlns:c': 'http://schemas.openxmlformats.org/drawingml/2006/chart',
-      'xmlns:a': 'http://schemas.openxmlformats.org/drawingml/2006/main',
-      'xmlns:r': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
-      'xmlns:c16r2': 'http://schemas.microsoft.com/office/drawing/2015/06/chart'
-    },
-    'c:date1904': {
-      '_a': {
-        'val': '0'
-      }
-    },
-    'c:lang': {
-      '_a': {
-        'val': 'en-US'
-      }
-    },
-    'c:roundedCorners': {
-      '_a': {
-        'val': '0'
-      }
-    },
-    'mc:AlternateContent': {
-      '_a': {
-        'xmlns:mc': 'http://schemas.openxmlformats.org/markup-compatibility/2006'
-      },
-      'mc:Choice': {
+      'val': '0'
+    }
+  },
+  'c:order': {
+    '_a': {
+      'val': '0'
+    }
+  },
+  'c:spPr': {
+    'a:solidFill': {
+      'a:schemeClr': {
         '_a': {
-          'Requires': 'c14',
-          'xmlns:c14': 'http://schemas.microsoft.com/office/drawing/2007/8/2/chart'
-        },
-        'c14:style': {
-          '_a': {
-            'val': '102'
-          }
-        }
-      },
-      'mc:Fallback': {
-        'c:style': {
-          '_a': {
-            'val': '2'
-          }
+          'val': 'accent1'
         }
       }
     },
-    'c:chart': {
-      'c:title': {
-        'c:overlay': {
-          '_a': {
-            'val': '0'
-          }
-        },
-        'c:spPr': {
-          'a:noFill': {},
-          'a:ln': {
-            'a:noFill': {}
-          },
-          'a:effectLst': {}
-        },
-        'c:txPr': {
-          'a:bodyPr': {
-            '_a': {
-              'rot': '0',
-              'spcFirstLastPara': '1',
-              'vertOverflow': 'ellipsis',
-              'vert': 'horz',
-              'wrap': 'square',
-              'anchor': 'ctr',
-              'anchorCtr': '1'
-            }
-          },
-          'a:lstStyle': {},
-          'a:p': {
-            'a:pPr': {
-              'a:defRPr': {
-                '_a': {
-                  'sz': '1400',
-                  'b': '0',
-                  'i': '0',
-                  'u': 'none',
-                  'strike': 'noStrike',
-                  'kern': '1200',
-                  'spc': '0',
-                  'baseline': '0'
-                },
-                'a:solidFill': {
-                  'a:schemeClr': {
-                    '_a': {
-                      'val': 'tx1'
-                    },
-                    'a:lumMod': {
-                      '_a': {
-                        'val': '65000'
-                      }
-                    },
-                    'a:lumOff': {
-                      '_a': {
-                        'val': '35000'
-                      }
-                    }
-                  }
-                },
-                'a:latin': {
-                  '_a': {
-                    'typeface': '+mn-lt'
-                  }
-                },
-                'a:ea': {
-                  '_a': {
-                    'typeface': '+mn-ea'
-                  }
-                },
-                'a:cs': {
-                  '_a': {
-                    'typeface': '+mn-cs'
-                  }
-                }
-              }
-            },
-            'a:endParaRPr': {
-              '_a': {
-                'lang': 'en-US'
-              }
-            }
-          }
-        }
+    'a:ln': {
+      'a:noFill': {}
+    },
+    'a:effectLst': {}
+  },
+  'c:invertIfNegative': {
+    '_a': {
+      'val': '0'
+    }
+  },
+  'c:val': {
+    'c:numRef': {
+      'c:f': {
+        '_t': '', // ref: 'Sheet1!$B$3:$B$14'
+      }, 
+    }
+  },
+  'c:extLst': {
+    'c:ext': {
+      '_a': {
+        'uri': '{C3380CC4-5D6E-409C-BE32-E72D297353CC}',
+        'xmlns:c16': 'http://schemas.microsoft.com/office/drawing/2014/chart'
       },
+      'c16:uniqueId': {
+        '_a': {
+          'val': '{00000000-F52E-47BC-822F-A046A80610BE}'
+        }
+      }
+    }
+  }
+};
+
+export const column_json = 
+{
+      'c:title': {},
       'c:autoTitleDeleted': {
         '_a': {
           'val': '0'
@@ -150,164 +76,7 @@ export const column_json = {
               'val': '0'
             }
           },
-          'c:ser': {
-            'c:idx': {
-              '_a': {
-                'val': '0'
-              }
-            },
-            'c:order': {
-              '_a': {
-                'val': '0'
-              }
-            },
-            'c:spPr': {
-              'a:solidFill': {
-                'a:schemeClr': {
-                  '_a': {
-                    'val': 'accent1'
-                  }
-                }
-              },
-              'a:ln': {
-                'a:noFill': {}
-              },
-              'a:effectLst': {}
-            },
-            'c:invertIfNegative': {
-              '_a': {
-                'val': '0'
-              }
-            },
-            'c:val': {
-              'c:numRef': {
-                'c:f': {
-                  '_t': '', // ref: 'Sheet1!$B$3:$B$14'
-                }, /*
-                'c:numCache': {
-                  'c:formatCode': {
-                    '_t': 'General'
-                  },
-                  'c:ptCount': {
-                    '_a': {
-                      'val': '12'
-                    }
-                  },
-                  'c:pt': [
-                    {
-                      '_a': {
-                        'idx': '0'
-                      },
-                      'c:v': {
-                        '_t': '1'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '1'
-                      },
-                      'c:v': {
-                        '_t': '2'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '2'
-                      },
-                      'c:v': {
-                        '_t': '3'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '3'
-                      },
-                      'c:v': {
-                        '_t': '4'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '4'
-                      },
-                      'c:v': {
-                        '_t': '5'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '5'
-                      },
-                      'c:v': {
-                        '_t': '6'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '6'
-                      },
-                      'c:v': {
-                        '_t': '6'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '7'
-                      },
-                      'c:v': {
-                        '_t': '4'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '8'
-                      },
-                      'c:v': {
-                        '_t': '3'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '9'
-                      },
-                      'c:v': {
-                        '_t': '3'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '10'
-                      },
-                      'c:v': {
-                        '_t': '2'
-                      }
-                    },
-                    {
-                      '_a': {
-                        'idx': '11'
-                      },
-                      'c:v': {
-                        '_t': '1'
-                      }
-                    }
-                  ]
-                } */
-              }
-            },
-            'c:extLst': {
-              'c:ext': {
-                '_a': {
-                  'uri': '{C3380CC4-5D6E-409C-BE32-E72D297353CC}',
-                  'xmlns:c16': 'http://schemas.microsoft.com/office/drawing/2014/chart'
-                },
-                'c16:uniqueId': {
-                  '_a': {
-                    'val': '{00000000-F52E-47BC-822F-A046A80610BE}'
-                  }
-                }
-              }
-            }
-          },
+          'c:ser': [],
           'c:dLbls': {
             'c:showLegendKey': {
               '_a': {
@@ -730,71 +499,5 @@ export const column_json = {
           'val': '0'
         }
       }
-    },
-    'c:spPr': {
-      'a:solidFill': {
-        'a:schemeClr': {
-          '_a': {
-            'val': 'bg1'
-          }
-        }
-      },
-      'a:ln': {
-        '_a': {
-          'w': '9525',
-          'cap': 'flat',
-          'cmpd': 'sng',
-          'algn': 'ctr'
-        },
-        'a:solidFill': {
-          'a:schemeClr': {
-            '_a': {
-              'val': 'tx1'
-            },
-            'a:lumMod': {
-              '_a': {
-                'val': '15000'
-              }
-            },
-            'a:lumOff': {
-              '_a': {
-                'val': '85000'
-              }
-            }
-          }
-        },
-        'a:round': {}
-      },
-      'a:effectLst': {}
-    },
-    'c:txPr': {
-      'a:bodyPr': {},
-      'a:lstStyle': {},
-      'a:p': {
-        'a:pPr': {
-          'a:defRPr': {}
-        },
-        'a:endParaRPr': {
-          '_a': {
-            'lang': 'en-US'
-          }
-        }
-      }
-    },
-    'c:printSettings': {
-      'c:headerFooter': {},
-      'c:pageMargins': {
-        '_a': {
-          'b': '0.75',
-          'l': '0.7',
-          'r': '0.7',
-          't': '0.75',
-          'header': '0.3',
-          'footer': '0.3'
-        }
-      },
-      'c:pageSetup': {}
-    }
-  }
-}
-;
+
+};

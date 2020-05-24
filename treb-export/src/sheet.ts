@@ -5,7 +5,8 @@ import { AddressType, RangeType, is_range, is_address } from './address-type';
 import { SharedStrings } from './shared-strings';
 import { UnitCall } from 'treb-parser';
 // import { Sparkline } from 'treb-sparkline/src';
-import { Drawing, CellAnchor, ChartOptions, TwoCellAnchor } from './drawing2';
+import { Drawing, TwoCellAnchor } from './drawing/drawing';
+import { ChartOptions } from './drawing/chart';
 
 export interface SheetOptions {
   name?: string;
@@ -245,29 +246,36 @@ export class Sheet {
 
     if (!this.dom) throw new Error('missing dom');
 
-    const drawing = new Drawing(anchor, false, false, options);
-    const relationship = this.drawings.length + 1; // <-- here
+    let drawing = this.drawings[0];
+    if (!drawing) {
 
-    drawing.sheet_drawing_relationship = relationship;
+      drawing = new Drawing(); // anchor, false, false, options);
+      const relationship = this.drawings.length + 1; // <-- here
 
-    this.drawings.push(drawing);
+      drawing.sheet_drawing_relationship = relationship;
 
-    const drawing_node = Element('drawing');
-    drawing_node.attrib['r:id'] = `rId${relationship}`;
+      this.drawings.push(drawing);
 
-    const root = this.dom.getroot();
-    root.append(drawing_node);
+      const drawing_node = Element('drawing');
+      drawing_node.attrib['r:id'] = `rId${relationship}`;
 
-    // create new rels if necessary
-    if (!this.rels_dom) { 
-      this.rels_dom = this.CreateRelationships();
+      const root = this.dom.getroot();
+      root.append(drawing_node);
+
+      // create new rels if necessary
+      if (!this.rels_dom) { 
+        this.rels_dom = this.CreateRelationships();
+      }
+
+      ElementTree.SubElement(this.rels_dom.getroot(), 'Relationship', {
+        Id: `rId${drawing.sheet_drawing_relationship}`,
+        Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing',
+        Target: `../drawings/drawing${drawing.index}.xml`,
+      });
+
     }
 
-    ElementTree.SubElement(this.rels_dom.getroot(), 'Relationship', {
-      Id: `rId${drawing.sheet_drawing_relationship}`,
-      Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing',
-      Target: `../drawings/drawing${drawing.indexes.drawing}.xml`,
-    });
+    drawing.AddChart(options, anchor);
 
   }
  

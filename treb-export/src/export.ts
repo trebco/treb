@@ -4,14 +4,13 @@ import { template } from './base-template';
 import { Base64 as JSBase64 } from 'js-base64';
 import { Workbook } from './workbook';
 
-import { Style, Area, ICellAddress, Cell, Cells } from 'treb-base-types';
-import { StyleOptions, Font, BorderStyle, Fill } from './style';
-import { Parser, ArgumentSeparatorType, DecimalMarkType, ExpressionUnit, UnitCall, UnitAddress, UnitRange } from 'treb-parser';
-import { NumberFormatCache } from 'treb-format';
+import { Style, Area } from 'treb-base-types';
+import { Parser, ArgumentSeparatorType, DecimalMarkType, UnitCall, UnitAddress, UnitRange } from 'treb-parser';
 
 import { SerializedSheet } from 'treb-grid';
 import { RangeOptions } from './sheet';
-import { ChartOptions, CellAnchor, TwoCellAnchor } from './drawing2';
+import { TwoCellAnchor } from './drawing/drawing';
+import { ChartOptions } from './drawing/chart';
 
 /** excel units */
 const one_hundred_pixels = 14.28515625;
@@ -329,17 +328,23 @@ export class Exporter {
           
           let type = '';
           switch (parse_result.expression.name.toLowerCase()) {
+            case 'line.chart':
+              type = 'scatter';
+              break;
             case 'donut.chart':
               type = 'donut';
+              break;
+            case 'bar.chart':
+              type = 'bar';
               break;
             case 'column.chart':
               type = 'column';
               break;
           }
 
-          if (type === 'column' || type === 'donut') {
+          if (type === 'column' || type === 'donut' || type === 'bar' || type === 'scatter') {
 
-            const options: ChartOptions = { type };
+            const options: ChartOptions = { type, data: [] };
 
             if (parse_result.expression.args[2] && parse_result.expression.args[2].type === 'literal') {
               options.title = parse_result.expression.args[2];
@@ -348,12 +353,30 @@ export class Exporter {
               options.title = this.NormalizeAddress(parse_result.expression.args[2], sheet_source);
             }
 
-            if (parse_result.expression.args[0] && parse_result.expression.args[0].type === 'range') {
-              options.data = this.NormalizeAddress(parse_result.expression.args[0], sheet_source);
+            if (parse_result.expression.args[0]) {
+              const arg0 = parse_result.expression.args[0];
+              if (arg0.type === 'range') {
+                options.data.push(this.NormalizeAddress(arg0, sheet_source));
+              }
+              else if (arg0.type === 'call' && /series/i.test(arg0.name)) {
+                for (const series of arg0.args) {
+                  if (series.type === 'range') {
+                    options.data.push(this.NormalizeAddress(series, sheet_source));
+                  }
+                }
+              }
             }
 
             if (parse_result.expression.args[1] && parse_result.expression.args[1].type === 'range') {
               options.labels = this.NormalizeAddress(parse_result.expression.args[1], sheet_source);
+            }
+
+            if (type === 'scatter' 
+                && parse_result.expression.args[4]
+                && parse_result.expression.args[4].type === 'literal'
+                && parse_result.expression.args[4].value.toString().toLowerCase() === 'smooth') {
+
+              options.smooth = true;
             }
 
             const anchor = this.AnnotationRectToAnchor(annotation.rect, sheet_source);

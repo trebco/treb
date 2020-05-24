@@ -8,7 +8,8 @@ import { StyleCache } from './style';
 import { Theme } from './theme';
 
 import * as JSZip from 'jszip';
-import { Drawing } from './drawing2';
+import { Drawing } from './drawing/drawing';
+import { Chart } from './drawing/chart';
 
 const XMLTypeMap = {
   'sheet':          'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
@@ -225,28 +226,36 @@ export class Workbook {
     for (const sheet of this.sheets) {
       for (const drawing of sheet.drawings) {
 
-        const drawing_path = `xl/drawings/drawing${drawing.indexes.drawing}.xml`;
-        const drawing_rels_path = `xl/drawings/_rels/drawing${drawing.indexes.drawing}.xml.rels`;
+        const drawing_path = `xl/drawings/drawing${drawing.index}.xml`;
+        const drawing_rels_path = `xl/drawings/_rels/drawing${drawing.index}.xml.rels`;
         content_types_dom.getroot().append(Element('Override', { PartName: '/' + drawing_path, ContentType: XMLTypeMap.drawing }));
         await this.zip.file(drawing_path, drawing.GetDrawingXML());
         await this.zip.file(drawing_rels_path, drawing.GetDrawingRels());
 
-        const chart_path =  `xl/charts/chart${drawing.indexes.chart}.xml`;
-        const chart_rels_path =  `xl/charts/_rels/chart${drawing.indexes.chart}.xml.rels`;
-        content_types_dom.getroot().append(Element('Override', { PartName: '/' + chart_path, ContentType: XMLTypeMap.chart }));
-        await this.zip.file(chart_path, drawing.GetChartXML());
-        await this.zip.file(chart_rels_path, drawing.GetChartRels());
+        for (const anchored_chart of drawing.charts) {
 
-        if (drawing.indexes.colors) {
-          const colors_path = `xl/charts/colors${drawing.indexes.colors}.xml`;
-          content_types_dom.getroot().append(Element('Override', { PartName: '/' + colors_path, ContentType: XMLTypeMap.colors }));
-          await this.zip.file(colors_path, drawing.GetColorsXML());
-        }
+          const chart = anchored_chart.chart;
 
-        if (drawing.indexes.style) {
-          const style_path =  `xl/charts/style${drawing.indexes.style}.xml`;
-          content_types_dom.getroot().append(Element('Override', { PartName: '/' + style_path, ContentType: XMLTypeMap.style }));
-          await this.zip.file(style_path, drawing.GetStyleXML());
+          const chart_path =  `xl/charts/chart${chart.index}.xml`;
+          const chart_rels_path =  `xl/charts/_rels/chart${chart.index}.xml.rels`;
+          content_types_dom.getroot().append(Element('Override', { PartName: '/' + chart_path, ContentType: XMLTypeMap.chart }));
+          await this.zip.file(chart_path, chart.GetChartXML());
+          await this.zip.file(chart_rels_path, chart.GetChartRels());
+
+          /*
+          if (drawing.indexes.colors) {
+            const colors_path = `xl/charts/colors${drawing.indexes.colors}.xml`;
+            content_types_dom.getroot().append(Element('Override', { PartName: '/' + colors_path, ContentType: XMLTypeMap.colors }));
+            await this.zip.file(colors_path, drawing.GetColorsXML());
+          }
+
+          if (drawing.indexes.style) {
+            const style_path =  `xl/charts/style${drawing.indexes.style}.xml`;
+            content_types_dom.getroot().append(Element('Override', { PartName: '/' + style_path, ContentType: XMLTypeMap.style }));
+            await this.zip.file(style_path, drawing.GetStyleXML());
+          }
+          */
+
         }
 
       }
@@ -255,16 +264,6 @@ export class Workbook {
     await this.zip.file(content_types_path, content_types_dom.write({xml_declaration: true}));
 
   }
-
-  /*
-  public AddChart(): number {
-
-    const index = this.drawings.length + 1;
-    this.drawings.push(new Drawing(index));
-
-    return index;
-  }
-  */
 
   /**
    * clone sheet 0 so we have X total sheets
@@ -343,7 +342,9 @@ export class Workbook {
 
     if (!this.zip) throw new Error('missing zip');
 
-    Drawing.ResetIndexes();
+    // Drawing.ResetIndexes();
+    Drawing.next_drawing_index = 1;
+    Chart.next_chart_index = 1;
 
     // read rels
     let data = await this.zip.file( 'xl/_rels/workbook.xml.rels').async('text');
