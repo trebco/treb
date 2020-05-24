@@ -1,7 +1,7 @@
 
 // treb imports
 import { Grid, GridEvent, SerializeOptions, Annotation,
-         BorderConstants, SheetChangeEvent, GridOptions, MacroFunction } from 'treb-grid';
+         BorderConstants, SheetChangeEvent, GridOptions, Sheet } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
@@ -12,7 +12,7 @@ import { NumberFormatCache, ValueParser } from 'treb-format';
 // local
 //import { MaskDialog } from './mask-dialog';
 import { ProgressDialog } from './progress-dialog';
-import { EmbeddedSpreadsheetOptions, DefaultOptions } from './options';
+import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions, DefaultExportOptions } from './options';
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 
 // TYPE ONLY
@@ -1210,26 +1210,147 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  public ExportDelimited(options: ExportOptions = {}) {
+
+    options = {
+      ...DefaultExportOptions, 
+      ...options,
+    };
+
+    if (!options.delimiter || (options.delimiter !== ',' && options.delimiter !== '\t')) {
+      throw new Error('invalid delimiter');
+    }
+
+    let sheet: Sheet|undefined = this.grid.model.active_sheet;
+
+    switch (typeof options.sheet) {
+
+      case 'undefined':
+        break;
+
+      case 'string':
+        sheet = undefined;
+        for (const compare of this.grid.model.sheets) {
+          if (compare.name === options.sheet) {
+            sheet = compare;
+          }
+        }
+        break;
+
+      case 'number':
+        sheet = this.grid.model.sheets[options.sheet];
+        break;
+
+      default:
+        sheet = undefined;
+        break;
+
+    }
+
+    if (!sheet) {
+      throw new Error('invalid sheet identifier');        
+    }
+
+    const serialized_data = sheet.cells.toJSON({
+      nested: false,
+      expand_arrays: true,
+      calculated_value: true,
+    });
+    
+    const columns: string[] = [];
+    for (let i = 0; i < serialized_data.columns; i++) { columns.push(''); }
+
+    const rows: string[][] = [];
+    for (let i = 0; i < serialized_data.rows; i++){
+      rows.push(columns.slice(0));
+    }
+
+    const delim_regex = new RegExp(`[\t\n\r"${options.delimiter}]`);
+
+    for (const element of serialized_data.data){
+      let value = '';
+      if ((!options.formulas) && typeof element.calculated !== 'undefined') {
+        value = element.calculated.toString();
+      }
+      else if (typeof element.value === 'string' && element.value[0] === '\'') {
+        value = element.value.substr(1);
+      }
+      else if (typeof element.value !== 'undefined') {
+        value = element.value.toString();
+      }
+
+      if (delim_regex.test(value)) {
+
+        // 1: escape any internal quotes
+        value = value.replace(/"/g, '""');
+
+        // 2: quote
+        value = '"' + value + '"';
+
+      }
+
+      rows[element.row][element.column] = value;
+    }
+
+    return rows.map(row => row.join(options.delimiter)).join('\r\n');
+
+  }
+
   /** save a file to desktop */
-  public SaveLocalFile(type: SaveFileType = SaveFileType.treb, preserve_simulation_data = true, pretty = false) {
+  public SaveLocalFile(
+    /* type: SaveFileType = SaveFileType.treb,*/
+    filename: string = SaveFileType.treb,
+    preserve_simulation_data = true, pretty = false) {
 
     const document_name = this.grid.model.document_name || 'document'; // FIXME: options
 
     let data: any;
-    let blob: Blob;
-    let filename: string;
     let text: string;
 
-    switch (type) {
-      case SaveFileType.treb:
-      default:
-        data = this.SerializeDocument(preserve_simulation_data);
-        text = JSON.stringify(data, undefined, pretty ? 2 : undefined);
-        blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-        filename = (document_name).toLowerCase().replace(/\s+/g, '-') + '.treb';
+    const parts = filename.split(/\./);
+    const type = parts.length ? parts[parts.length - 1].toLowerCase() : SaveFileType.treb;
+
+    if (parts.length <= 1) {
+      filename = (document_name).toLowerCase().replace(/\s+/g, '-') + '.' + type;
     }
 
-    if (blob && filename) {
+    switch (type) {
+ 
+      case SaveFileType.csv:
+        text = this.ExportDelimited({ delimiter: ',' });
+        break;
+
+      case SaveFileType.tsv:
+        text = this.ExportDelimited({ delimiter: '\t' });
+        break;
+
+      case SaveFileType.treb:
+      case SaveFileType.json:
+        data = this.SerializeDocument(preserve_simulation_data);
+        text = JSON.stringify(data, undefined, pretty ? 2 : undefined);
+        break;
+
+      default:
+
+        // special case: you pass in "gorge", and you want "gorge.treb".
+        // FIXME: why on earth would we want to support that?
+
+        /*
+        if (parts.length === 1) {
+          filename = parts[0] + '.treb';
+          data = this.SerializeDocument(preserve_simulation_data);
+          text = JSON.stringify(data, undefined, pretty ? 2 : undefined);
+        }
+        else {
+          throw new Error('invalid file type');
+        }
+        */
+        throw new Error('invalid file type');
+
+    }
+
+    if (text && filename) {
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
       FileSaver.saveAs(blob, filename, true);
     }
 

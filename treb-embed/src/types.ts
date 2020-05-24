@@ -2,7 +2,11 @@ import { IArea } from 'treb-base-types';
 import { MacroFunction } from 'treb-grid';
 
 export enum SaveFileType {
-  treb = 'treb', tsv = 'tsv', xlsx = 'xlsx',
+  json = 'json',
+  treb = 'treb', 
+  csv = 'csv', 
+  tsv = 'tsv', 
+  xlsx = 'xlsx',
 }
 
 export interface TREBSimulationData {
