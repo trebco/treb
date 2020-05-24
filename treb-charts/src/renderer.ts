@@ -498,8 +498,8 @@ export class ChartRenderer {
         });
 
         circle_group.appendChild(shape);
-        circle_group.classList.add('mouse-layer');
       }
+      circle_group.setAttribute('class', 'mouse-layer');
       this.group.appendChild(circle_group);
 
     }
@@ -607,8 +607,8 @@ export class ChartRenderer {
         });
 
         circle_group.appendChild(shape);
-        circle_group.classList.add('mouse-layer');
       }
+      circle_group.setAttribute('class', 'mouse-layer');
       this.group.appendChild(circle_group);
 
     }
@@ -858,7 +858,7 @@ export class ChartRenderer {
 
       node.setAttribute('d', d.join(' '));
       if (typeof index !== 'undefined') {
-        node.classList.add(`series-${index}`);
+        node.setAttribute('class', `series-${index}`);
       }
 
       /*
@@ -886,7 +886,7 @@ export class ChartRenderer {
         d.push(`M${this.PointOnCircle(half_angle, center, inner_radius + (outer_radius - inner_radius) / 2)}`);
         d.push(`L${anchor}`);
         callout.setAttribute('d', d.join(' '));
-        callout.classList.add('callout');
+        callout.setAttribute('class', 'callout');
         donut.appendChild(callout);
 
         const corrected = half_angle + Math.PI / 2;
@@ -913,7 +913,7 @@ export class ChartRenderer {
 
         const text_parts: string[] = [];
         const callout_label = document.createElementNS(SVGNS, 'text');
-        callout_label.classList.add('callout-label');
+        callout_label.setAttribute('class', 'callout-label');
 
         const break_regex = /[\s-\W]/;
 
