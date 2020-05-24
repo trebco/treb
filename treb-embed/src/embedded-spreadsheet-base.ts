@@ -1307,7 +1307,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     let data: any;
     let text: string;
 
-    const parts = filename.split(/\./);
+    const parts = filename.split(/\./).filter(test => test.trim().length);
     const type = parts.length ? parts[parts.length - 1].toLowerCase() : SaveFileType.treb;
 
     if (parts.length <= 1) {
