@@ -15,7 +15,7 @@ export interface CalculationContext {
   address: ICellAddress;
   volatile: boolean;
   call_index: number;
-  name_stack: Array<{[index: string]: ExpressionUnit}>;
+  // name_stack: Array<{[index: string]: ExpressionUnit}>;
 }
 
 export class ExpressionCalculator {
@@ -24,7 +24,7 @@ export class ExpressionCalculator {
     address: { row: -1, column: -1 },
     volatile: false,
     call_index: 0,
-    name_stack: [],
+    // name_stack: [],
   };
 
   /**
@@ -326,6 +326,7 @@ export class ExpressionCalculator {
 
   }
 
+  /*
   protected EvaluateMacroFunction(macro_func: MacroFunction) {
 
     if (!macro_func.expression) { 
@@ -361,6 +362,7 @@ export class ExpressionCalculator {
     }
 
   }
+  */
 
   /** excutes a function call */
   protected CallExpression(outer: UnitCall, return_reference = false) {
@@ -372,11 +374,13 @@ export class ExpressionCalculator {
     const func = this.library.Get(outer.name);
 
     if (!func) {
+      /*
       const macro_func = this.data_model.macro_functions[outer.name.toUpperCase()];
       if (macro_func) {
         return this.EvaluateMacroFunction(macro_func);
       }
-      else return () => NameError;
+      else */
+      return () => NameError;
     }
 
     return (expr: UnitCall) => {
@@ -705,13 +709,15 @@ export class ExpressionCalculator {
         }
       }
 
+      /*
       const bound_names = this.context.name_stack[0];
 
       if (bound_names && bound_names[upper_case]) {
         const bound_expression = bound_names[upper_case];
         return this.CalculateExpression(bound_expression);
       }
-  
+      */
+
       console.info( '** identifier', identifier);
       return NameError;
 

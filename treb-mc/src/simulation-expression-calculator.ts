@@ -29,11 +29,13 @@ export class MCExpressionCalculator extends ExpressionCalculator {
     const func = this.library.Get(outer.name) as MCCompositeFunctionDescriptor;
 
     if (!func) {
+      /*
       const macro_func = this.data_model.macro_functions[outer.name.toUpperCase()];
       if (macro_func) {
         return this.EvaluateMacroFunction(macro_func);
       }
-      else return () => NameError;
+      else */
+      return () => NameError;
     }
 
     // I wonder if we can handle prep separately, outside of

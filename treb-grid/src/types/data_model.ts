@@ -7,6 +7,7 @@ export interface MacroFunction {
   name: string;
   function_def: string;
   argument_names?: string[];
+  // argument_default_values?: any[]; // <- new
   description?: string;
   expression?: ExpressionUnit;
 }

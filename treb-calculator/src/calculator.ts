@@ -2,7 +2,7 @@
 import { Localization, Cell, Area, ICellAddress,
          ValueType, CellSerializationOptions } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
-         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitLiteral } from 'treb-parser';
+         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitLiteral, UnitMissing } from 'treb-parser';
 
 import { Graph, GraphStatus } from './dag/graph';
 import { SpreadsheetVertex, CalculationResult } from './dag/spreadsheet_vertex';
@@ -1034,6 +1034,95 @@ export class Calculator extends Graph {
   }
 
   /**
+   * we're passing model here to skip the test on each call
+   * 
+   * @param unit 
+   * @param model 
+   */
+  protected ApplyMacroFunctionInternal(
+      unit: ExpressionUnit, 
+      model: DataModel, 
+      name_stack: Array<{[index: string]: ExpressionUnit}>,
+    ): ExpressionUnit { 
+
+      switch (unit.type) {
+
+        case 'identifier':
+          if (name_stack[0]) {
+            const value = name_stack[0][(unit.name || '').toUpperCase()];
+            if (value) {
+              return JSON.parse(JSON.stringify(value)) as ExpressionUnit;
+            }
+          }
+          break;
+
+        case 'binary':
+          unit.left = this.ApplyMacroFunctionInternal(unit.left, model, name_stack);
+          unit.right = this.ApplyMacroFunctionInternal(unit.right, model, name_stack);
+          break;
+  
+        case 'unary':
+          unit.operand = this.ApplyMacroFunctionInternal(unit.operand, model, name_stack);
+          break;
+  
+        case 'group':
+          unit.elements = unit.elements.map(element => this.ApplyMacroFunctionInternal(element, model, name_stack));
+          break;
+  
+        case 'call':
+          {
+            // do this first, so we can pass through directly
+            unit.args = unit.args.map(arg => this.ApplyMacroFunctionInternal(arg, model, name_stack));
+
+            const func = this.library.Get(unit.name);
+            if (!func) { 
+              const macro = model.macro_functions[unit.name.toUpperCase()];
+              if (macro && macro.expression) {
+
+                // clone
+                const expression = JSON.parse(JSON.stringify(macro.expression));
+
+                const bound_names: {[index: string]: ExpressionUnit} = {};
+
+                if (macro.argument_names) {
+                  for (let i = 0; i < macro.argument_names.length; i++) {
+                    const name = macro.argument_names[i].toUpperCase();
+          
+                    // temp just pass in
+                    bound_names[name] = unit.args[i] ? unit.args[i] : {type: 'missing'} as UnitMissing;
+                  }
+                }
+
+                // replace arguments
+                name_stack.unshift(bound_names);
+                const replacement = this.ApplyMacroFunctionInternal(expression, model, name_stack);                
+                name_stack.shift();
+                return replacement;
+
+              }
+            }
+          }
+
+          break;
+
+      }
+
+      return unit;
+
+  }
+
+  protected ApplyMacroFunctions(expression: ExpressionUnit) {
+
+    if (!this.model) { return; }
+
+    const count = Object.keys(this.model.macro_functions).length;
+    if (!count) { return; }
+
+    return this.ApplyMacroFunctionInternal(expression, this.model, []);
+
+  }
+
+  /**
    * rebuild the graph; parse expressions, build a dependency map,
    * initialize edges between nodes.
    *
@@ -1079,7 +1168,17 @@ export class Calculator extends Graph {
 
         if (parse_result.expression) {
 
-          // zerp
+          // FIXME: move macro function parsing here; so that we don't
+          // need special call semantics, and dependencies work as normal.
+
+          // NOTE: the problem with that is you have to deep-parse every function,
+          // here, to look for macros. that might be OK, but the alternative is
+          // just to calculate them on demand, which seems a lot more efficient
+
+          const modified = this.ApplyMacroFunctions(parse_result.expression);
+          if (modified) { parse_result.expression = modified; }
+
+          // ...
 
           const dependencies = this.RebuildDependencies(parse_result.expression, cell.sheet_id, ''); // cell.sheet_id);
           

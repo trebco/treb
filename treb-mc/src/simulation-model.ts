@@ -33,7 +33,7 @@ export class SimulationModel {
   public address: ICellAddress = { row: 0, column: 0 };
   public volatile = false;
 
-  public name_stack: Array<{[index: string]: ExpressionUnit}> = [];
+  // public name_stack: Array<{[index: string]: ExpressionUnit}> = [];
 
   // the rest are specific to MC, I think
 
