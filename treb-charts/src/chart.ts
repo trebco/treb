@@ -24,6 +24,7 @@ export class Chart {
   // not chart-specific, so leave outside (FIXME: layout options?)
 
   // FIXME: change depending on whether there are y-axis labels
+  // FIXME: different for donut charts...
 
   // private margin = { top: 0.025, left: 0.025, bottom: 0.025, right: 0.05 };
   private margin = { top: 0.025, left: 0.05, bottom: 0.025, right: 0.075 };
@@ -265,9 +266,42 @@ export class Chart {
    */
   public CreateDonut(args: any[], pie_chart = false) {
 
+    /*
+
     // data -> number or undefined
 
     let data = Util.Flatten(args[0]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
+
+
+    */
+
+    //////////
+
+    const raw_data = args[0];
+
+    // we're now expecting this to be metadata (including value).
+    // so we need to unpack. could be an array... could be deep...
+    const flat = Util.Flatten(raw_data);
+
+    // we still need the aggregate for range, scale
+    let data = flat.map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
+
+    /*
+    // but now we're potentially splitting into series
+    let series: NumberOrUndefinedArray[];
+
+    if (Array.isArray(raw_data) && (raw_data as any)._type === 'series') {
+      series = raw_data.map(entry => {
+        return Util.Flatten(entry).map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
+      });
+    }
+    else {
+      series = [data];
+    }
+    */
+
+    //////////
+
     const labels = Util.Flatten(args[1]).map((x) => x ? x.toString() : '');
 
     // no negative numbers
@@ -298,13 +332,17 @@ export class Chart {
     // titles? label/value/percent
     // FIXME: number format(s)
 
+    const format_pattern = (flat.length && flat[0].format) ? flat[0].format : '';
+    const format = NumberFormatCache.Get(format_pattern || DEFAULT_FORMAT);
+    const percent_format = NumberFormatCache.Get('percent');
+
     const slice_title = (args[4] || '');
     if (slice_title) {
       for (const slice of slices) {
-        const value = NumberFormatCache.Get('general').Format(slice.value || 0);
-        const percent = NumberFormatCache.Get('percent').Format(slice.percent);
+        const value = /*NumberFormatCache.Get('general')*/ format.Format(slice.value || 0);
+        const percent = percent_format.Format(slice.percent);
         slice.title = slice_title
-          .replace(/value%/ig, NumberFormatCache.Get('percent').Format(slice.value || 0))
+          .replace(/value%/ig, percent_format.Format(slice.value || 0))
           .replace(/value/ig, value)
           .replace(/percent/ig, percent)
           .replace(/label/ig, slice.label || '')

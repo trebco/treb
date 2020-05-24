@@ -61,7 +61,7 @@ export const ChartFunctions: FunctionMap = {
 
   'Pie.Chart': {
     arguments: [
-      { name: 'Values' },
+      { name: 'Values', metadata: true, },
       { name: 'Labels' },
       { name: 'Title' },
       { name: 'Sort' },
@@ -72,7 +72,7 @@ export const ChartFunctions: FunctionMap = {
 
   'Donut.Chart': {
     arguments: [
-      { name: 'Values' },
+      { name: 'Values', metadata: true, },
       { name: 'Labels' },
       { name: 'Title' },
       { name: 'Sort' },
