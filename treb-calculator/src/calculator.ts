@@ -539,6 +539,7 @@ export class Calculator extends Graph {
   /**
    * returns a list of available functions, for AC/tooltips
    * FIXME: categories?
+   * FIXME: need to separate annotation functions and sheet functions
    */
   public SupportedFunctions(): FunctionDescriptor[] {
 
