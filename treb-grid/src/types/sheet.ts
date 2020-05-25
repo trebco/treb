@@ -1604,10 +1604,10 @@ export class Sheet {
         }
       }
       for (const style of style_list as Style.Properties[]) {
-        if (typeof style.background !== 'undefined') {
+        if (typeof style.background !== 'undefined' && style.background !== 'none') {
           style.background = Measurement.MeasureColorARGB(style.background);
         }
-        if (typeof style.text_color !== 'undefined') {
+        if (typeof style.text_color !== 'undefined' && style.text_color !== 'none') {
           if (style.text_color === Style.DefaultProperties.text_color) {
             style.text_color = undefined;
           }
