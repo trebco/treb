@@ -52,7 +52,7 @@ export type TabEvent
  * add a new tab with a special (+) tab (last).
  *
  * FIXME: delete tabs... add an (x) to each tab? don't really want to
- * do that. right-click is out. ???
+ * do that. right-click is out. ??? [A: toolbar menu]
  *
  */
 export class TabBar extends EventSource<TabEvent> {
@@ -281,11 +281,21 @@ export class TabBar extends EventSource<TabEvent> {
           }
 
         }, () => {
-          const current = index;
-          const move_before = (order + 1) / 2;
+          let current = index;
+          let move_before = (order + 1) / 2;
 
           // console.info('set false')
           this.dragging = false;
+
+          // the indexes we have are visible tabs only, so we may need
+          // to adjust if there are hidden tabs in between.
+
+          for (let i = 0; i < this.model.sheets.length; i++) {
+            if (!this.model.sheets[i].visible) {
+              if (current >= i) { current++; }
+              if (move_before >= i) { move_before++; }
+            }
+          }
 
           if ((current === move_before) ||
               (current === 0 && move_before <= 0) ||
@@ -294,7 +304,7 @@ export class TabBar extends EventSource<TabEvent> {
             // didn't change
           }
           else {
-            this.Publish({type: 'reorder-sheet', index, move_before});
+            this.Publish({type: 'reorder-sheet', index: current, move_before});
           }
         });
 
