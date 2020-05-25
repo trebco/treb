@@ -143,6 +143,51 @@ export class Workbook {
 
   }
 
+  public async UpdateFileInfo(options: {
+    creator?: string;
+    modified_by?: string;
+    created?: Date;
+    modified?: Date;
+  }) {
+
+    if (!this.zip) { return; }
+
+    const core = await this.zip.file('docProps/core.xml').async('text');
+    const core_dom = ElementTree.parse(core);
+
+    /*
+      <dc:creator>TREB</dc:creator>
+      <cp:lastModifiedBy>TREB</cp:lastModifiedBy>
+      <dcterms:created xsi:type="dcterms:W3CDTF">2019-01-31T16:48:03Z</dcterms:created>
+      <dcterms:modified xsi:type="dcterms:W3CDTF">2019-01-31T16:48:28Z</dcterms:modified>
+    */
+
+    let node: ElementTree.Element|null;
+
+    if (options.creator) {
+      node = core_dom.getroot().find('./dc:creator');
+      if (node) { node.text = options.creator; }
+    }
+
+    if (options.modified_by) {
+      node = core_dom.getroot().find('./cp:lastModifiedBy');
+      if (node) { node.text = options.modified_by; }
+    }
+
+    if (options.created) {
+      node = core_dom.getroot().find('./dcterms:created');
+      if (node) { node.text = options.created.toISOString(); }
+    }
+
+    if (options.modified) {
+      node = core_dom.getroot().find('./dcterms:modified');
+      if (node) { node.text = options.modified.toISOString(); }
+    }
+
+    await this.zip.file('docProps/core.xml', core_dom.write({ xml_declaration: true }));
+
+  }
+
   /**
    * finalize: rewrite xml, save in zip file.
    */
@@ -188,6 +233,14 @@ export class Workbook {
         console.warn(e);
       }
     }
+
+    const time = new Date();
+    await this.UpdateFileInfo({
+      created: time,
+      modified: time,
+      creator: 'TREB',
+      modified_by: 'TREB',
+    });
 
     const content_types_path = '[Content_Types].xml';
     const content_types_data = await this.zip.file(content_types_path).async('text');
