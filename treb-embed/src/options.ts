@@ -4,7 +4,7 @@ import { ICellAddress } from 'treb-base-types';
 export interface ExportOptions {
   delimiter?: ',' | '\t';
   sheet?: string|number;
-  filename?: string;
+  // filename?: string;
   formulas?: boolean;   // export formulas not values
   formatted?: boolean;  // use number formats
 }
