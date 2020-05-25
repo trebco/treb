@@ -29,6 +29,7 @@ module.exports = {
       "stroustrup",
       { "allowSingleLine": true },
     ],
+    "@typescript-eslint/interface-name-prefix": "off",
 
   }
 
@@ -42,7 +43,6 @@ module.exports = {
     "@typescript-eslint/indent": [
         2
     ],
-    "@typescript-eslint/interface-name-prefix": "off",
     "@typescript-eslint/no-empty-function": "error",
     "@typescript-eslint/no-empty-interface": "error",
     "@typescript-eslint/no-explicit-any": "off",
