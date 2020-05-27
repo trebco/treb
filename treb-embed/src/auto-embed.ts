@@ -259,13 +259,15 @@ class AutoEmbedManager {
     const spacer = document.createElement('div');
     spacer.classList.add('icon-spacer');
     control_icons.appendChild(spacer);
+
+    const show_sidebar_button = document.createElement('div');
+
     this.AddIcon(control_icons, 'treb-chevron-right-icon', 'Hide Sidebar', () => {
       control_icons.style.width = '0px';
       const target_width = options.auto_size ? '100%' : (width && height) ? `${width}px` : '';
       this.ShowSidebar(target_width, offset, sheet_container, show_sidebar_button, true);
     });
 
-    const show_sidebar_button = document.createElement('div');
     this.AddIcon(show_sidebar_button, 'treb-chevron-left-icon', 'Show Sidebar', () => {
       control_icons.style.width = ''; // revert to css value
       const target_width = options.auto_size ? `calc(100% - ${offset}px)` : (width && height) ? `${width - offset}px` : '';
