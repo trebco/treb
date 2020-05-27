@@ -9,18 +9,17 @@ export class Resizable {
   private static resize_mask: HTMLElement;
   private static resize_rect: HTMLElement;
 
-  /**
-   * adding layout_reference to move the handle. to keep this backwards
-   * compatible, we add it as a last, optional parameter. at some point
-   * we can create a replacement class and migrate.
-   */
-  constructor(container: HTMLElement, node: HTMLElement, resize_callback: () => void,
-    layout_reference: HTMLElement = container) {
+  public static Create(options: {
+      container: HTMLElement; 
+      node: HTMLElement;
+      resize_callback?: () => void;
+      layout_reference?: HTMLElement;
+   }) {
 
     const resize_handle = document.createElement('div');
     resize_handle.classList.add('treb-embed-resize-handle');
-    // container.appendChild(resize_handle);
-    layout_reference.appendChild(resize_handle);
+
+    (options.layout_reference || options.container).appendChild(resize_handle);
 
     if (!Resizable.resize_mask) {
       let mask = document.querySelector('.treb-embed-mouse-mask');
@@ -42,7 +41,10 @@ export class Resizable {
       Resizable.resize_rect = rect as HTMLElement;
     }
 
-    let mouseup: (event: MouseEvent) => void;
+    // eslint-disable-next-line prefer-const
+    let mouseup: () => void;
+    
+    // eslint-disable-next-line prefer-const
     let mousemove: (event: MouseEvent) => void;
 
     let container_rect = { width: 0, height: 0 };
@@ -56,12 +58,14 @@ export class Resizable {
       Resizable.resize_mask.style.display = 'none';
 
       if (delta.x || delta.y) {
-        const bounding_rect = container.getBoundingClientRect();
+        const bounding_rect = options.container.getBoundingClientRect();
         const width = bounding_rect.width + delta.x;
         const height = bounding_rect.height + delta.y;
-        container.style.width = `${width}px`;
-        container.style.height = `${height}px`;
-        resize_callback();
+        options.container.style.width = `${width}px`;
+        options.container.style.height = `${height}px`;
+        if (options.resize_callback) {
+          options.resize_callback();
+        }
       }
 
     };
@@ -83,7 +87,7 @@ export class Resizable {
       }
     };
 
-    mouseup = (event: MouseEvent) => {
+    mouseup = () => {
       cleanup();
     };
 
@@ -92,7 +96,7 @@ export class Resizable {
       event.stopPropagation();
       event.preventDefault();
 
-      const bounding_rect = node.getBoundingClientRect();
+      const bounding_rect = options.node.getBoundingClientRect();
       container_rect = { width: bounding_rect.width, height: bounding_rect.height };
 
       if (Resizable.resize_rect) {
@@ -110,6 +114,26 @@ export class Resizable {
       Resizable.resize_mask.addEventListener('mouseup', mouseup);
 
     });
+
+  }
+
+  /**
+   * adding layout_reference to move the handle. to keep this backwards
+   * compatible, we add it as a last, optional parameter. at some point
+   * we can create a replacement class and migrate.
+   * 
+   * this is a weird pattern, we don't need an instance of this class...
+   * goint to refactor
+   * 
+   */
+  constructor(container: HTMLElement, node: HTMLElement, resize_callback: () => void,
+      layout_reference: HTMLElement = container) {
+
+    Resizable.Create({
+      container, 
+      node, 
+      resize_callback, 
+      layout_reference});
 
   }
 

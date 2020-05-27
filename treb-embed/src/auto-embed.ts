@@ -1,4 +1,10 @@
 
+/**
+ * 
+ * deprecated
+ * 
+ */
+
 import { symbols } from './symbol-defs';
 import { CreateSheetOptions } from './options';
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
@@ -306,7 +312,7 @@ class AutoEmbedManager {
     }
 
     if (style_width) {
-      const match_px = style_width.match(/^([\d\.]+)px/);
+      const match_px = style_width.match(/^([\d.]+)px/);
       if (match_px) {
         target_width = `${Number(match_px[1]) + offset}px`;
       }

@@ -231,6 +231,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       // tab_bar: this.options.tab_bar,
     };
 
+    // what is happening here? this is dumb
+
     if (typeof this.options.formula_bar !== 'undefined') {
       grid_options.formula_bar = this.options.formula_bar;
     }
@@ -274,6 +276,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       const toll_initial_render = !!(data || options.network_document);
 
       this.grid.Initialize(this.node, toll_initial_render);
+
+      // FIXME: resizable should be in the containing (auto-embed) class
+      // if that one is managing the rest of the layout... like toolbar...
 
       if (this.options.resizable) {
         const master = container.querySelector('.treb-layout-master');

@@ -114,6 +114,7 @@ export const DefaultOptions: BaseOptions = {
   tab_bar: 'auto',
   add_tab: false,
   max_workers: 1,
+  resizable: true,
 };
 
 /**
@@ -140,5 +141,7 @@ export interface CreateSheetOptions extends EmbeddedSpreadsheetOptions {
   /** formatting is optional, may change */
   /** moved to sheet options */
   // toolbar?: boolean | 'show' | 'compressed' | 'show-compressed';
+
+  load?: string;
 
 }

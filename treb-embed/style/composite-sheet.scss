@@ -1,0 +1,189 @@
+
+$transition_options: .2s ease-in-out;
+$sidebar_width: 40px;
+$sidebar_button_offset: 50px;
+$toolbar_height: 38px;
+
+/**
+ * this class is used for the actual grid. we need to 
+ * allocate space for sidebar/toolbar, everything else
+ * should be taken care of by grid.
+ */
+.embedded-spreadsheet-container {
+  box-sizing: border-box;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  bottom: 0px;
+  right: 0px;
+  transition: right $transition_options, top $transition_options;
+}
+
+.default-spreadsheet-size {
+  width: 680px;
+  height: 400px;
+}
+
+/**
+ * this class gets added to the container, 
+ * everything else should trigger off of this.
+ */
+.sidebar-open {
+
+  /** resize the container width by X */
+  .embedded-spreadsheet-container {
+    right: $sidebar_width;
+  }
+
+  /** hide the overlay button */
+  .show-sidebar-button {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /** resize the sidebar */
+  .embedded-spreadsheet-sidebar {
+    // width: $sidebar_width;
+    opacity: 1;
+    pointer-events: initial;
+  }
+
+}
+
+.toolbar-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity $transition_options;
+}
+
+/** 
+ * like sidebar, this class means we're showing the toolbar
+ */
+.toolbar-open {
+
+  /** resize grid */
+  .embedded-spreadsheet-container {
+    top: $toolbar_height;
+  }
+
+  /** resize sidebar */
+  .embedded-spreadsheet-sidebar {
+    top: $toolbar_height;
+  }
+
+  .toolbar-container {
+    opacity: 1;
+    pointer-events: initial;
+  }
+ 
+}
+
+/**
+ * button with an SVG icon. primarily for the sidebar, but we 
+ * use it for the overlay button as well (with some tweaks).
+ */
+.sidebar-button {
+
+  box-sizing: border-box;
+
+  width: 24px;
+  height: 24px;
+  border: 0;
+
+  line-height: 28px; // is this necessary, if we're using flex? (...)
+
+  // using flex here to center the svgs
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+
+  &.smaller {
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  & svg {
+    width: 24px;
+    height: 24px;
+    transition: fill .1s;
+    pointer-events: none;
+    fill: #ccc;
+  }
+
+  &:hover {
+    svg {
+      fill: #666;
+    }
+  }
+
+  border: 0; // 1px solid orange;
+
+}
+
+/**
+ * this button exists outside of the sidebar and hovers over the grid.
+ */
+.show-sidebar-button {
+
+  position: absolute;
+  border: 1px solid #ccc;
+  border-right-width: 0px;
+  z-index: 5;
+  bottom: $sidebar_button_offset;
+  right: 0px;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  background: #fff;
+  transition: opacity $transition_options;
+
+}
+
+/**
+ * the sidebar, should manage its buttons 
+ */
+.embedded-spreadsheet-sidebar {
+
+  box-sizing: border-box;
+  border: 0; // 1px solid red;
+
+  box-sizing: border-box;
+  align-items: center;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  width: $sidebar_width;
+  opacity: 0;
+  bottom: 0px;
+  overflow: hidden;
+  pointer-events: none;
+
+  display: flex;
+  flex-direction: column;
+
+  transition: top $transition_options, opacity $transition_options;
+
+  & .sidebar-button {
+    margin-top: 10px;
+    margin-bottom: 4px;
+
+    &:last-child {
+      margin-bottom: $sidebar_button_offset;
+    }
+
+  }
+
+  & .sidebar-spacer {
+    box-sizing: border-box;
+    flex-grow: 1;
+  }
+  
+}
+
+
