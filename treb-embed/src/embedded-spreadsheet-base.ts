@@ -6,45 +6,26 @@ import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
-import { EventSource, Resizable, Yield } from 'treb-utils';
+import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser } from 'treb-format';
 
 // local
-//import { MaskDialog } from './mask-dialog';
 import { ProgressDialog } from './progress-dialog';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions, DefaultExportOptions } from './options';
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 
 // TYPE ONLY
-// type FormattingToolbar = import('treb-toolbar/src/toolbar-main').FormattingToolbar;
-// import { ToolbarOptions } from 'treb-toolbar/src/toolbar-options';
-
-import { ToolbarOptions, FormattingToolbar } from 'treb-toolbar';
-
-// TYPE ONLY
 type Chart = import('../../treb-charts/src/index').Chart;
 
 // 3d party modules
-// import { Base64 } from 'js-base64';
 import * as FileSaver from 'file-saver';
 
 // style
 import 'treb-grid/style/grid.scss';
-import 'treb-base-types/style/resizable.css';
 import '../style/embed.scss';
 
 // config
-// import * as build from '@root/package.json';
 import * as build from '../../package.json';
-
-/*
-enum ToolbarLoadState {
-  NotLoaded = 0,
-  Loading   = 1,
-  Loaded    = 2,
-  Error     = 3,
-}
-*/
 
 /**
  * embedded spreadsheet, suitable for one-line embedding in a web page
@@ -156,7 +137,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   private file_chooser?: HTMLInputElement;
   private dialog?: ProgressDialog;
 
-  private toolbar?: FormattingToolbar;
+  // private toolbar?: FormattingToolbar;
 
   /**
    * export worker (no longer using worker-loader).
@@ -276,18 +257,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       const toll_initial_render = !!(data || options.network_document);
 
       this.grid.Initialize(this.node, toll_initial_render);
-
-      // FIXME: resizable should be in the containing (auto-embed) class
-      // if that one is managing the rest of the layout... like toolbar...
-
-      if (this.options.resizable) {
-        const master = container.querySelector('.treb-layout-master');
-        const node = container.querySelector('.treb-grid');
-        if (node && master) {
-          const resizable = new Resizable(container, node as HTMLElement, () => this.Resize(),
-            master as HTMLElement);
-        }
-      }
 
       // dnd
 
@@ -1906,9 +1875,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.dialog?.Update(message, progress);
   }
 
-  /**
+  /* *
    * show the toolbar. will load on first call.
-   */
+   * /
   public async FormattingToolbar(container: HTMLElement) {
 
     if (!this.toolbar) {
@@ -1922,7 +1891,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.toolbar = FormattingToolbar.CreateInstance(this, this.grid, container, options);
     }
 
-    /*
+    / *
     if (!this.toolbar) {
       const load = await this.LoadToolbar();
       if (load) {
@@ -1936,11 +1905,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         this.toolbar = (self as any).TREB['treb-toolbar'].CreateInstance(this, this.grid, container, options);
       }
     }
-    */
+    * /
 
     this.toolbar?.Toggle();
 
   }
+  */
 
   protected InitCalculator() {
     this.calculator = new Calculator();

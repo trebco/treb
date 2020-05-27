@@ -7,6 +7,7 @@ import { Resizable } from 'treb-utils';
 import { ToolbarOptions, FormattingToolbar } from 'treb-toolbar';
 
 import '../style/composite-sheet.scss';
+import 'treb-base-types/style/resizable.css';
 
 const sidebar_open_class = 'sidebar-open';
 const toolbar_open_class = 'toolbar-open';
