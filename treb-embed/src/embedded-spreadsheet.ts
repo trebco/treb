@@ -150,6 +150,20 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       this.workers[i].onerror = (event) => {
         console.error(`worker error (worker #${i})`);
         console.info(event);
+
+        this.ShowMessageDialog('Calculation failed (worker error)', 2500);
+
+        // flush
+        for (const entry of this.simulation_resolution) {
+          entry.call(this);
+        }
+        this.simulation_resolution = [];
+        this.simulation_status.running = false;
+        for (const worker of this.workers) {
+          worker.terminate();
+        }
+        this.workers = [];
+
       };
 
     }
@@ -169,7 +183,13 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     this.UpdateMCDialog(0, 'Initializing', true);
 
     if (!this.workers.length) {
-      await this.InitWorkers();
+      try {
+        await this.InitWorkers();
+      }
+      catch(err) {
+        this.ShowMessageDialog('Calculation failed', 2500);
+        throw new Error('worker not initialized');
+      }
     }
 
     if (!this.workers[0]) {
