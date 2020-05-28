@@ -527,7 +527,7 @@ export class Sheet {
 
     if (!this.dom) { return; }
 
-    console.info(expressions);
+    //console.info(expressions);
 
     let extLst = this.dom.find('./extLst');
     if (!extLst) {

@@ -177,12 +177,20 @@ export class CompositeSheet {
 
     this.outer_container = container;
 
+    // UPDATE: only force if it's position:static, which we don't support.
+    // optimally we should not do this, just warn, but it's going to break
+    // too many things. [...]
+
+    const container_style = window.getComputedStyle(container);
+    if (container_style.position === 'static') {
+      container.style.position = 'relative';
+    }
+    
     // set a default size if there's no width or height (fixme: one or the other?)
     const rect = this.outer_container.getBoundingClientRect();
     if (!rect.width || !rect.height) {
       this.outer_container.classList.add('default-spreadsheet-size');
     }
-    this.outer_container.style.position = 'relative'; // force
 
     this.inner_container = document.createElement('div');
     this.inner_container.classList.add('embedded-spreadsheet-container');
