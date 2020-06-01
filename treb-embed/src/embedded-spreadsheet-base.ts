@@ -244,6 +244,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.grid.headless = true; // FIXME: move into grid options
     }
 
+    // we're now gating this on container to support fully headless operation
+
     if (container) {
 
       this.node = document.createElement('div');
@@ -350,14 +352,23 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (data) {
       this.LoadDocument(JSON.parse(data), undefined, undefined, !!options.recalculate);
     }
+    else if (!network_document) {
+
+      // no data and no network document -- we need to connect the grid model
+      // and the calculator, which would otherwise happen on document load
+
+      this.calculator.RebuildClean(this.grid.model, true);
+        
+    }
+
     this.FlushUndo();
 
     // FIXME: this is deprecated [what?]
     // [this is now a file property, not an option]
 
-    if (options.freeze_rows || options.freeze_columns) {
-      this.grid.Freeze(options.freeze_rows || 0, options.freeze_columns || 0);
-    }
+    // if (options.freeze_rows || options.freeze_columns) {
+    //  this.grid.Freeze(options.freeze_rows || 0, options.freeze_columns || 0);
+    // }
 
     if (typeof options.show_headers !== 'undefined') {
       this.grid.ShowHeaders(options.show_headers);
@@ -1679,9 +1690,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     const grid_data = this.grid.Serialize(serialize_options);
 
     const serialized: TREBDocument = {
-      app: (build as any).name,
-      // document_id: this.document_id,
-      version: (build as any).version,
+      app: build.name,
+      version: build.version,
       name: this.grid.model.document_name, // may be undefined
       user_data: this.grid.model.user_data, // may be undefined
       decimal_mark: Localization.decimal_separator,
