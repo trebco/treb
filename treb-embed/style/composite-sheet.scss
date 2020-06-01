@@ -19,6 +19,10 @@ $toolbar_height: 38px;
   transition: right $transition_options, top $transition_options;
 }
 
+/**
+ * this class gets attached to a container if it doesn't already
+ * have a size (we check the bounding client rect)
+ */
 .default-spreadsheet-size {
   width: 680px;
   height: 400px;

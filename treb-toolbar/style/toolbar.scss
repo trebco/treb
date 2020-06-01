@@ -56,6 +56,7 @@ $font_stack: -apple-system,
         height: 200px;
         font: inherit;
         flex-grow: 1;
+        outline: none;
       }
 
       a {
@@ -158,6 +159,7 @@ $font_stack: -apple-system,
     border: 1px solid #ccc;
     padding: 3px;
     font-family: inherit;
+    outline: none;
   }
 
 }
@@ -246,6 +248,9 @@ svg[toolbar-icons] symbol path.target {
     // border: 1px dotted green;
 
     & button {
+
+      // outline: none;
+
       width: $button-size;
       // min-width: $button-size;
       height: $button-size;
