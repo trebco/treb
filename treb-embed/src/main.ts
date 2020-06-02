@@ -2,6 +2,7 @@
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 // import { AutoEmbed } from './auto-embed';
 import { CompositeSheet } from './composite-sheet';
+import { AutoEmbedManager } from './auto-embed';
 import { CreateSheetOptions } from './options';
 
 import * as build from '../../package.json';
@@ -43,7 +44,7 @@ if (!(self as any).TREB?.CreateSpreadsheet) {
   // FIXME: what if it's already loaded? (...)
 
   // document.addEventListener('DOMContentLoaded', () => AutoEmbed.Run());
-  document.addEventListener('DOMContentLoaded', () => CompositeSheet.AutoEmbed());
+  document.addEventListener('DOMContentLoaded', () => AutoEmbedManager.Run());
 
 }
 
