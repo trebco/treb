@@ -37,6 +37,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   public static treb_base_path = '';
   public static treb_language = '';
+  public static treb_script_host = '';
   public static treb_embedded_script_path = '';
   public static enable_engine = false;
 
@@ -58,8 +59,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < tags.length; i++ ){
+
       const tag = tags[i];
-      const src = tag.getAttribute('src');
+      const src = tag.src; // fully-qualified here [FIXME: IE11?]
 
       /*
       if (src && /\?.*?engine/i.test(src)) {
@@ -76,15 +78,21 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
         this.treb_embedded_script_path = src;
         this.treb_base_path = src.replace(new RegExp(default_script_name + '.*$'), '');
+
         return;
       }
 
     }
 
     // console.warn('treb: base path not found');
-
+    
   }
 
+  /** 
+   * this was added for riskamp.com; it doesn't track modified, really, because
+   * it doesn't reflect saves. we need to do that but leave this one as-is for
+   * backwards compatibility.
+   */
   public get modified() {
     return this.undo_stack.length !== 1;
   }
@@ -109,6 +117,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public set user_data(data: any|undefined) {
     this.grid.model.user_data = data;
   }
+
+  protected file_version = 0;
+  protected last_save_version = 0;
 
   /** state of toolbar load. this is dynamic, but we are not using webpack chunks. */
   // private static formatting_toolbar_state: ToolbarLoadState = ToolbarLoadState.NotLoaded;
@@ -164,6 +175,27 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   private undo_pointer = 0;
   private undo_stack: any[] = [];
   private block_undo = false;
+
+  public get script_path() {
+
+    let name = build['build-entry-points'].main;
+
+    if (EmbeddedSpreadsheetBase.treb_language) {
+      name += '-' + EmbeddedSpreadsheetBase.treb_language;
+    }
+
+    if (!/\.js$/.test(name)) name += '.js'; // ('-' + build.version + '.js');
+
+    let treb_path = EmbeddedSpreadsheetBase.treb_base_path;
+
+    if (treb_path) {
+      if (!/\/$/.test(treb_path)) treb_path += '/';
+      name = treb_path + name;
+    }    
+
+    return name;
+
+  }
 
   constructor(options: EmbeddedSpreadsheetOptions) {
 
@@ -338,6 +370,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             break;
         }
       });
+
+      if (this.options.prompt_save) {
+        window.addEventListener('beforeunload', (event) => {
+          if (this.last_save_version !== this.file_version) {
+            event.preventDefault();
+            event.returnValue = '';
+          }
+        });
+      }
 
     }
     else {
@@ -890,6 +931,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
       if (blob) {
         FileSaver.saveAs(blob, filename + '.xlsx', true);
+        this.last_save_version = this.file_version; // even though it's an export, consider it clean
       }
     });
   }
@@ -932,6 +974,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // this.additional_cells = [];
     this.calculator.Reset();
     this.FlushUndo();
+
+    this.file_version = this.last_save_version = 0;
   }
 
   /** clear/reset sheet, back to initial state */
@@ -1313,6 +1357,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       case SaveFileType.json:
         data = this.SerializeDocument(preserve_simulation_data);
         text = JSON.stringify(data, undefined, pretty ? 2 : undefined);
+        this.last_save_version = this.file_version; // clean
+
         break;
 
       default:
@@ -1420,6 +1466,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // if (data.active_sheet) {
     //  this.grid.ActivateSheetID({ key: CommandKey.ActivateSheet, id: data.active_sheet });
     // }
+
+    this.file_version = this.last_save_version = 0; // reset
 
   }
 
@@ -1802,6 +1850,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         this.undo_pointer -= delta;
       }
 
+      this.file_version++; // increment
+
     }
 
     if (this.block_undo) {
@@ -1819,6 +1869,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (push) {
       this.PushUndo();
     }
+
+    // impact on file version? (...)
+
   }
 
   public Undo() {
@@ -1838,6 +1891,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // prevents flickering.
 
     this.LoadDocument(JSON.parse(data), undefined, false);
+
+    this.file_version--; // decrement
+
 
   }
 

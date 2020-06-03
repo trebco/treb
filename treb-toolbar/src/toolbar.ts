@@ -7,6 +7,7 @@ import { Measurement } from 'treb-utils';
 import { ICellAddress, Area } from 'treb-base-types';
 
 import { symbol_defs } from './symbol-defs';
+import { icons as new_icons } from './icons';
 
 import { ToolbarOptions } from './toolbar-options';
 
@@ -345,7 +346,14 @@ export class Toolbar {
 
         // classList doesn't work in IE11 -- because SVG? not sure.
 
-        const class_name = paths[i].getAttribute('class') || '';
+        let class_name = paths[i].getAttribute('class') || '';
+
+        // update for new (old) icons
+        if (/fa-secondary/.test(class_name)) {
+          class_name = class_name.replace('fa-secondary', 'target');
+          paths[i].setAttribute('class', class_name);
+        }
+
         if (/target/.test(class_name)) {
           const element = paths[i] as HTMLElement;
           if (!color) {
@@ -870,22 +878,37 @@ export class Toolbar {
 
   private CreateSVG(icon: string, target?: SVGElement) {
 
+    const use_new_icon = !!new_icons[icon];
+    const old_size = '24';
+    const new_size = '24';
+    const size = use_new_icon ? new_size : old_size;
+
     if (!target) {
       target = document.createElementNS(SVGNS, 'svg');
-      target.setAttribute('width', '24');
-      target.setAttribute('height', '24');
+      target.setAttribute('width', size);
+      target.setAttribute('height', size);
     }
     else {
       target.innerHTML = '';
     }
 
     //for (const key of Object.keys(symbol_defs)) {
-      const def = symbol_defs[icon];
+
+      const def = symbol_defs[icon] || new_icons[icon];
+      if (!def) {
+        console.info('no def for', icon);
+        return target;
+      }
+
+
       const symbol = document.createElementNS(SVGNS, 'g');
       // symbol.setAttribute('id', 'treb-toolbar-icon-' + key);
-      target.setAttribute('viewBox', def.viewbox || '0 0 24 24');
+      target.setAttribute('viewBox', def.viewbox || `0 0 ${size} ${size}`);
       //target.classList.add('treb-toolbar-icon-' + icon);
-      target.setAttribute('class', 'treb-toolbar-icon-' + icon);
+
+      let classes_list = 'treb-toolbar-icon-' + icon;
+      if (use_new_icon) { classes_list += ' treb-new-icon'; }
+      target.setAttribute('class', classes_list);
 
       for (const path_def of def.paths || []) {
         const path = document.createElementNS(SVGNS, 'path');

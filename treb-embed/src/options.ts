@@ -52,6 +52,9 @@ export interface BaseOptions {
   /** popout icon */
   popout?: boolean;
 
+  /** the old "fork and edit" button */
+  fork?: boolean;
+
   /** fetch network document (URI) */
   network_document?: string;
 
@@ -88,11 +91,17 @@ export interface BaseOptions {
   /** support in-cell editor */
   in_cell_editor?: boolean;
 
+  /** prompt "you have unsaved changes" */
+  prompt_save?: boolean;
+
   /**
    * toolbar
    * FIXME: fix options
    */
   toolbar?: boolean | 'show' | 'compressed' | 'show-compressed';
+
+  /** file options in the toolbar */
+  file_toolbar?: boolean;
 
   /** new option, better support for headless operations (default false) */
   headless?: boolean;
@@ -111,6 +120,8 @@ export const DefaultOptions: BaseOptions = {
   undo: true,
   scrollbars: true,
   dnd: false,
+  fork: false,
+  popout: true,
   tab_bar: 'auto',
   add_tab: false,
   max_workers: 1,

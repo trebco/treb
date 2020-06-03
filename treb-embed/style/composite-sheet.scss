@@ -190,4 +190,52 @@ $toolbar_height: 38px;
   
 }
 
+/**
+ * overrides to add a little more space... maybe get these in the embed class?
+ */
+
+$fullscreen_sidebar_width: 50px;
+$fullscreen_toolbar_height: 45px;
+
+//  $sidebar_button_offset: 50px;
+
+.treb-fullscreen-padding {
+   
+  .embedded-spreadsheet-sidebar {
+    width: $fullscreen_sidebar_width;
+
+    .sidebar-button {
+      margin-bottom: 6px;
+      &:last-child {
+        margin-bottom: $sidebar_button_offset;
+      }
+    }
+
+  }
+
+  .toolbar-container {
+    top: 8px;
+    left: 6px;
+  }
+
+  &.sidebar-open {
+    .embedded-spreadsheet-container {
+      right: $fullscreen_sidebar_width;
+    }
+  }
+  
+  &.toolbar-open {
+
+    .embedded-spreadsheet-container {
+      top: $fullscreen_toolbar_height;
+    }
+  
+    .embedded-spreadsheet-sidebar {
+      top: $fullscreen_toolbar_height;
+    }
+ 
+  
+  }
+
+ }
 

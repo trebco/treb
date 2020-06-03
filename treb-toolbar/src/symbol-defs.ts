@@ -12,6 +12,28 @@ export interface SymbolDef {
 
 export const symbol_defs: {[index: string]: SymbolDef} = 
 {
+  "vertical-dots": {
+    "paths": [
+      {
+        "d": "M12,12 M12,11 A1,1,0,0,1,13,12 A1,1,0,0,1,12,13 A1,1,0,0,1,11,12 A1,1,0,0,1,12,11",
+        "classes": [
+          "filled"
+        ]
+      },
+      {
+        "d": "M12,18 M12,17 A1,1,0,0,1,13,18 A1,1,0,0,1,12,19 A1,1,0,0,1,11,18 A1,1,0,0,1,12,17",
+        "classes": [
+          "filled"
+        ]
+      },
+      {
+        "d": "M12,6 M12,5 A1,1,0,0,1,13,6 A1,1,0,0,1,12,7 A1,1,0,0,1,11,6 A1,1,0,0,1,12,5",
+        "classes": [
+          "filled"
+        ]
+      }
+    ]
+  },
   "comment": {
     "paths": [
       {

@@ -195,15 +195,25 @@ export class CompositeSheet {
       click: () => this.sheet.Export(),
     });
 
-    this.AddSidebarButton({
-      icon: 'treb-fork-icon',
-      title: 'Fork and Edit',
-      click: () => {
-        const host = 'https://treb.app';
-        const new_window = window.open(host + '/edit?fork');
-        if (new_window) { this.sheet.PostDocument(new_window, host); }
-      }
-    });
+    if (this.options.popout) {
+      this.AddSidebarButton({
+        icon: 'treb-popout-icon',
+        title: 'Open in New Tab',
+        click: () => this.Popout(),
+      });
+    }
+
+    if (this.options.fork) {
+      this.AddSidebarButton({
+        icon: 'treb-fork-icon',
+        title: 'Fork and Edit',
+        click: () => {
+          const host = 'https://treb.app';
+          const new_window = window.open(host + '/edit?fork');
+          if (new_window) { this.sheet.PostDocument(new_window, host); }
+        }
+      });
+    }
 
     this.AddSidebarButton({
       icon: 'treb-about-icon',
@@ -251,6 +261,113 @@ export class CompositeSheet {
     }
 
     (options.container as any)._spreadsheet = this.sheet; // ?
+
+  }
+
+  /**
+   * popout, or "open in new tab". WIP.
+   */
+  public Popout() {
+
+    const new_window = window.open('', '_blank');
+    if (!new_window) { return; }
+
+    new_window.document.title = this.sheet.document_name ?
+      `TREB: ${this.sheet.document_name}` : 'TREB';
+
+    // this is synchronous, right? we determined that when we
+    // were testing yield() implementations.
+
+    const link = new_window.document.createElement('link');
+    link.setAttribute('rel', 'shortcut icon');
+    link.setAttribute('type', 'image/x-icon');
+    link.setAttribute('href', 'https://treb.app/favicon.ico')
+    new_window.document.head.appendChild(link);
+
+    const treb_script = new_window.document.createElement('script');
+    treb_script.src = this.sheet.script_path;
+    treb_script.setAttribute('type', 'text/javascript');
+    new_window.document.body.appendChild(treb_script);
+
+    // check if charts are loaded, and if so, do that
+
+    const scripts = document.querySelectorAll('script');
+    for (let i = 0; i < scripts.length; i++) {
+      if (/embedded-treb-charts/i.test(scripts[i].src)) {
+        const chart_script = new_window.document.createElement('script');
+        chart_script.src = scripts[i].src;
+        chart_script.setAttribute('type', 'text/javascript');
+        new_window.document.body.appendChild(chart_script);
+        break;
+      }
+    }
+
+    const document_data = JSON.stringify(this.sheet.SerializeDocument(true, true));
+
+    const style = new_window.document.createElement('style');
+    style.setAttribute('type', 'text/css');
+    style.textContent = `
+      * { box-sizing: border-box; padding: 0; margin: 0; }
+      body, html { height: 100%; width: 100%; position: relative; }
+      .treb { top: 0; left: 0; right: 0; bottom: 0; position: absolute; background: #fff; }
+    `;
+    new_window.document.head.appendChild(style);
+
+    const div = new_window.document.createElement('div');
+
+    // IE11. I'm guessing the polyfill doesn't work here because we're
+    // talking to the new window
+
+    // div.classList.add('treb', 'treb-fullscreen-padding');
+    div.setAttribute('class', 'treb treb-fullscreen-padding');
+
+    new_window.document.body.appendChild(div);
+
+    // use our options, but drop container or we'll be stringifying the 
+    // whole DOM. also we have some other defaults...
+
+    // ~ not really testing for desktop/mobile, just available space
+
+    const desktop = window.screen.availWidth >= 1200;
+
+    const script = new_window.document.createElement('script');
+    const target_options: CreateSheetOptions = {
+      ...this.options,
+      container: undefined,
+      network_document: undefined,
+      resizable: false,
+      scroll: undefined,
+      toolbar: desktop ? 'show' : true,
+      file_toolbar: true,
+      prompt_save: true,
+      expand_formula_button: desktop,
+      popout: false,    // ?
+      dnd: true,        // we have an "open" button anyway
+      collapsed: !desktop, // false, // true,  // ? what about mobile?
+    };
+
+    script.textContent = `
+      (function(){
+        var options = ${JSON.stringify(target_options)};
+        var attempts = 0;
+        var document_data = ${document_data};
+        var load = function() {
+          options.container = document.querySelector('.treb');
+          if (options.container && window.TREB) {
+            var sheet = TREB.CreateSpreadsheet(options);
+            sheet.LoadDocument(document_data);
+          }
+          else {
+            if (++attempts < 32) {
+              setTimeout(function(){ load(); }, 100);
+            }
+          }
+        };
+        load();
+      })();
+    `;
+
+    new_window.document.body.appendChild(script);
 
   }
 
@@ -351,6 +468,7 @@ export class CompositeSheet {
 
         const options: ToolbarOptions = {
           add_delete_sheet: !!this.options.add_tab,
+          file_toolbar: !!this.options.file_toolbar,
           compressed_align_menus: (
             this.options.toolbar === 'compressed' ||
             this.options.toolbar === 'show-compressed'),

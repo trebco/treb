@@ -9,6 +9,9 @@ import { NumberFormat, NumberFormatCache } from 'treb-format';
 import { Style } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
 
+// TYPE ONLY
+type EmbeddedSpreadsheetBase = import('../../treb-embed/src/embedded-spreadsheet-base').EmbeddedSpreadsheetBase;
+
 import '../style/toolbar.scss';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -33,7 +36,7 @@ export class FormattingToolbar {
    * FIXME: why?
    */
   public static CreateInstance(
-      sheet: EventSource<any>,
+      sheet: EmbeddedSpreadsheetBase, // EventSource<any>,
       grid: Grid,
       container: HTMLElement,
       options: ToolbarOptions = {}) {
@@ -138,7 +141,8 @@ export class FormattingToolbar {
   private primary_selection: GridSelection;
 
   constructor(
-      private sheet: EventSource<any>, // FIXME: lock down this type? (...)
+      // private sheet: EventSource<any>, // FIXME: lock down this type? (...)
+      private sheet: EmbeddedSpreadsheetBase,
       private grid: Grid, // reference
       private container: HTMLElement,
       private options: ToolbarOptions = {}) {
@@ -324,15 +328,10 @@ export class FormattingToolbar {
   private UpdateFreezeState() {
 
     const freeze = this.grid.GetFreeze();
-
-    if (freeze.rows || freeze.columns) {
-      this.toolbar.Activate('freeze2');
-      this.toolbar.UpdateTitle('freeze2', 'Unfreeze');
-    }
-    else {
-      this.toolbar.Deactivate('freeze2');
-      this.toolbar.UpdateTitle('freeze2', 'Freeze Panes');
-    }
+    const frozen = (freeze.rows || freeze.columns);
+    
+    this.toolbar.Show('unfreeze3', !!frozen);
+    this.toolbar.Show('freeze3', !frozen);
 
   }
 
@@ -449,6 +448,20 @@ export class FormattingToolbar {
         }
         break;
 
+      case 'save':
+        this.sheet.SaveLocalFile();
+        break;
+      
+      case 'load':
+        this.sheet.LoadLocalFile();
+        break;
+      
+      case 'new':
+        this.sheet.Reset(); // FIXME: prompt?
+        break;
+
+      case 'freeze3':
+      case 'unfreeze3':
       case 'freeze2':
         this.Freeze();
         break;

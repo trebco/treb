@@ -2,7 +2,7 @@
 
 $button-size: 32px;
 $button-background: transparent;
-$button-foreground: #777;
+$button-foreground: #454;
 $button-secondary: rgba(32, 107, 196, 0.25);
 
 //$button-border: #ddd;
@@ -193,6 +193,47 @@ svg[toolbar-icons] symbol path.target {
   .secondary {
     stroke: $button-secondary;
   }
+
+  &.treb-new-icon {
+    /*
+    width: 20px;
+    height: 20px;
+    top: 5px;
+    left: 5px;
+    */
+  }
+
+  // switching back... at least for now
+
+  .fa5-regular, .fa5-duotone, .fa5-solid {
+    stroke: none;
+    fill: $button-foreground;
+  }
+
+  .fa-secondary {
+    opacity: .4;
+  }
+
+  // ...or maybe...
+
+  .material-outline {
+    stroke: none;
+    fill: $button-foreground;
+  }
+
+  .fill-none {
+    fill: none;
+  }
+
+  // ...or...
+
+  .feather {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2px;
+    stroke: #222;
+  }
+
 
 }
 
