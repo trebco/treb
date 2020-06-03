@@ -15,7 +15,9 @@ import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions, DefaultExpor
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 
 // TYPE ONLY
-type Chart = import('../../treb-charts/src/index').Chart;
+// type Chart = import('../../treb-charts/src/index').Chart;
+
+import { Chart } from 'treb-charts';
 
 // 3d party modules
 import * as FileSaver from 'file-saver';
@@ -933,6 +935,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         FileSaver.saveAs(blob, filename + '.xlsx', true);
         this.last_save_version = this.file_version; // even though it's an export, consider it clean
       }
+    }).catch(err => {
+
+      if (/invalid uri/i.test(err.message)) {
+        this.ShowMessageDialog('Export failed. The worker cannot run from\nthe filesystem, please use a web server.', 2500);
+      }
+
+      // rethrow
+      throw(err);
     });
   }
 
@@ -1632,12 +1642,17 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (annotation.node && annotation.data) {
 
       if (annotation.type === 'treb-chart') {
-        if (!(self as any).TREB || !(self as any).TREB.CreateChart2) {
-          console.warn('missing chart library');
-        }
-        else {
 
-          const chart = (self as any).TREB.CreateChart2(annotation.node) as Chart;
+        // if (!(self as any).TREB || !(self as any).TREB.CreateChart2) {
+        //    console.warn('missing chart library');
+        // }
+        // else 
+        {
+
+          const chart = new Chart();
+          chart.Initialize(annotation.node);
+
+          // const chart = (self as any).TREB.CreateChart2(annotation.node) as Chart;
 
           // we may need to register library functions. we only need to do
           // that once. not sure I like this as the place for the test, though.
@@ -2157,14 +2172,25 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // for remote workers, fetch and construct as blob. for local
     // workers we can just create.
 
+    // actually we're now getting a fully-qualified URL, so it will
+    // always have a network prefix (or a file prefix)
+
     // FIXME: testing... in particular URL.createObjectURL and new Blob
 
     if (/^(http:|https:|\/\/)/.test(name)) {
       const script = await this.Fetch(name);
       worker = new Worker(URL.createObjectURL(new Blob([script], {type: 'application/javascript'})));
     }
+    else if (/^file:/.test(name)) {
+      throw new Error('invalid URI');
+    }
     else {
+
+      // this was intended for relative URIs but now it is applied
+      // to file:// URIs, which won't work anyway (in chrome, at least)
+
       worker = new Worker(name);
+
     }
 
     return worker;

@@ -46,6 +46,9 @@ export interface BaseOptions {
   /** add resizable wrapper */
   resizable?: boolean;
 
+  /** export to xlsx, now optional */
+  export?: boolean;
+
   /** fill container */
   auto_size?: boolean;
 
@@ -120,6 +123,7 @@ export const DefaultOptions: BaseOptions = {
   undo: true,
   scrollbars: true,
   dnd: false,
+  export: true,
   fork: false,
   popout: true,
   tab_bar: 'auto',

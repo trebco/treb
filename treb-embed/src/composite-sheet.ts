@@ -189,11 +189,13 @@ export class CompositeSheet {
 
     }
 
-    this.AddSidebarButton({
-      icon: 'treb-export-icon',
-      title: 'Download as XLSX',
-      click: () => this.sheet.Export(),
-    });
+    if (this.options.export) {
+      this.AddSidebarButton({
+        icon: 'treb-export-icon',
+        title: 'Download as XLSX',
+        click: () => this.sheet.Export(),
+      });
+    }
 
     if (this.options.popout) {
       this.AddSidebarButton({
@@ -289,6 +291,10 @@ export class CompositeSheet {
     treb_script.setAttribute('type', 'text/javascript');
     new_window.document.body.appendChild(treb_script);
 
+    /*
+
+    // charts are now integrated, no extra tag
+
     // check if charts are loaded, and if so, do that
 
     const scripts = document.querySelectorAll('script');
@@ -301,16 +307,25 @@ export class CompositeSheet {
         break;
       }
     }
+    */
 
     const document_data = JSON.stringify(this.sheet.SerializeDocument(true, true));
 
     const style = new_window.document.createElement('style');
     style.setAttribute('type', 'text/css');
+
+    // wish we had some preprocessor available... going to manually preprocess
+
+    /* original
     style.textContent = `
       * { box-sizing: border-box; padding: 0; margin: 0; }
       body, html { height: 100%; width: 100%; position: relative; }
       .treb { top: 0; left: 0; right: 0; bottom: 0; position: absolute; background: #fff; }
     `;
+    */
+
+     style.textContent = `*{box-sizing:border-box;padding:0;margin:0;}body,html{height:100%;width:100%;position:relative;}.treb{top:0;left:0;right:0;bottom:0;position:absolute;background:#fff;}`;
+
     new_window.document.head.appendChild(style);
 
     const div = new_window.document.createElement('div');
@@ -326,7 +341,8 @@ export class CompositeSheet {
     // use our options, but drop container or we'll be stringifying the 
     // whole DOM. also we have some other defaults...
 
-    // ~ not really testing for desktop/mobile, just available space
+    // ~ not really testing for desktop/mobile, just available space.
+    //   what's the ipad width in landscape?
 
     const desktop = window.screen.availWidth >= 1200;
 
@@ -336,6 +352,7 @@ export class CompositeSheet {
       container: undefined,
       network_document: undefined,
       resizable: false,
+      export: true,
       scroll: undefined,
       toolbar: desktop ? 'show' : true,
       file_toolbar: true,
@@ -346,6 +363,9 @@ export class CompositeSheet {
       collapsed: !desktop, // false, // true,  // ? what about mobile?
     };
 
+    // see above re:preprocessor
+
+    /*
     script.textContent = `
       (function(){
         var options = ${JSON.stringify(target_options)};
@@ -366,7 +386,10 @@ export class CompositeSheet {
         load();
       })();
     `;
+    */
 
+   script.textContent = `(function(){var options=${JSON.stringify(target_options)};var attempts=0;var document_data=${document_data};var load=function(){options.container=document.querySelector('.treb');if(options.container&&window.TREB){var sheet=TREB.CreateSpreadsheet(options);sheet.LoadDocument(document_data);}else{if(++attempts<32){setTimeout(function(){load();},100);}}};load();})();`;
+ 
     new_window.document.body.appendChild(script);
 
   }

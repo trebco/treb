@@ -2,12 +2,13 @@
 import { NumberFormat, NumberFormatCache } from 'treb-format';
 import { ChartRenderer, Metrics } from './renderer';
 import { Area } from './rectangle';
-import { Util, RangeScale } from './util';
+import { Util } from './util';
 import { CellData, ChartData, DonutSlice, NumberOrUndefinedArray } from './chart-types';
-
 import { ChartFunctions } from './chart-functions';
 
-const DEFAULT_FORMAT = '#,##0.00';
+require('../style/charts.scss');
+
+const DEFAULT_FORMAT = '#,##0.00'; // why not use "general", or whatever the usual default is?
 
 export class Chart {
 

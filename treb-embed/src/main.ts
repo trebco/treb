@@ -33,7 +33,11 @@ if (!(self as any).TREB?.CreateSpreadsheet) {
     // [A: at one point, at least, we also had the charts library in there;
     //  this serves to identify that it's the version of the embedded sheet]
 
-    TREB['treb-embed'] = { version: (build as any).version };
+    // TREB['treb-embed'] = { version: (build as any).version };
+
+    // removing
+
+    TREB.version = build.version;
 
     TREB.CreateSpreadsheet = (options: CreateSheetOptions) => {
       return CompositeSheet.Create(options);

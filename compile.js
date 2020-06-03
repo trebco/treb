@@ -26,14 +26,14 @@ let clean = false;
 const build = { legacy: false, modern: false };
 
 // dev, limit to charts module
-let only_charts = false;
+// let only_charts = false;
 
 for (const arg of process.argv) {
   if (arg === '-d') dev = true;
   if (arg === '-w' || arg === '--watch') watch = true;
   if (arg === '--legacy') build.legacy = true;
   if (arg === '--modern') build.modern = true;
-  if (arg === '--only-charts') only_charts = true;
+//  if (arg === '--only-charts') only_charts = true;
   if (arg === '--clean') clean = true;
 }
 
@@ -49,19 +49,22 @@ const modern_entry = {
   // [package['build-entry-points']['toolbar'] + '-es6' + '-' + package.version]: './treb-toolbar/src/toolbar-main.ts',
 };
 
-let legacy_entry = {
+const legacy_entry = {
   [package['build-entry-points']['main']]: './treb-embed/src/index-legacy.ts',
   [package['build-entry-points']['export-worker'] + '-' + package.version]: './treb-export/src/export-worker/index-legacy.ts',
   [package['build-entry-points']['calculation-worker'] + '-' + package.version]: './treb-mc/src/calculation-worker/index-legacy.ts',
   // p[ackage['build-entry-points']['toolbar'] + '-' + package.version]: './treb-toolbar/src/toolbar-main.ts',
 };
 
+/*
 if (only_charts) {
   legacy_entry = {};
   build.modern = false;
   build.legacy = true;
 }
+*/
 
+/*
 // unified (for now), so only do this once
 if (build.legacy) {
   legacy_entry[package['build-entry-points']['charts']] = './treb-charts/src/main.ts';
@@ -69,6 +72,7 @@ if (build.legacy) {
 else {
   modern_entry[package['build-entry-points']['charts']] = './treb-charts/src/main.ts';
 }
+*/
 
 const dist_dir = 'build';
 
@@ -88,6 +92,7 @@ const directories = [
   'treb-mc',
   'treb-grid',
   'treb-utils',
+  'treb-charts',
   'treb-export',
   'treb-format',
   'treb-parser',
