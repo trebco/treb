@@ -881,7 +881,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (!this.export_worker) {
       const worker_name = (build as any)['build-entry-points']['export-worker'];
       this.export_worker = await this.LoadWorker(worker_name);
-    }
+  }
 
     return new Promise<Blob>((resolve, reject) => {
 
@@ -1350,7 +1350,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     const type = parts.length ? parts[parts.length - 1].toLowerCase() : SaveFileType.treb;
 
     if (parts.length <= 1) {
-      filename = (document_name).toLowerCase().replace(/\s+/g, '-') + '.' + type;
+      filename = (document_name).toLowerCase().replace(/\W+/g, '-') + '.' + type;
     }
 
     switch (type) {
@@ -2145,7 +2145,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       }
     }
-
 
   }
 

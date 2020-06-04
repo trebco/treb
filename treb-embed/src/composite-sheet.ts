@@ -324,7 +324,7 @@ export class CompositeSheet {
     `;
     */
 
-     style.textContent = `*{box-sizing:border-box;padding:0;margin:0;}body,html{height:100%;width:100%;position:relative;}.treb{top:0;left:0;right:0;bottom:0;position:absolute;background:#fff;}`;
+    style.textContent = `*{box-sizing:border-box;padding:0;margin:0;}body,html{height:100%;width:100%;position:relative;}.treb{top:0;left:0;right:0;bottom:0;position:absolute;background:#fff;}`;
 
     new_window.document.head.appendChild(style);
 
@@ -388,8 +388,7 @@ export class CompositeSheet {
     `;
     */
 
-   script.textContent = `(function(){var options=${JSON.stringify(target_options)};var attempts=0;var document_data=${document_data};var load=function(){options.container=document.querySelector('.treb');if(options.container&&window.TREB){var sheet=TREB.CreateSpreadsheet(options);sheet.LoadDocument(document_data);}else{if(++attempts<32){setTimeout(function(){load();},100);}}};load();})();`;
- 
+    script.textContent = `(function(){var options=${JSON.stringify(target_options)};var attempts=0;var document_data=${document_data};var load=function(){options.container=document.querySelector('.treb');if(options.container&&window.TREB){var sheet=TREB.CreateSpreadsheet(options);sheet.LoadDocument(document_data);}else{if(++attempts<32){setTimeout(function(){load();},100);}}};load();})();`;
     new_window.document.body.appendChild(script);
 
   }
