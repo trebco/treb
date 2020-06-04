@@ -176,7 +176,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   private undo_pointer = 0;
   private undo_stack: any[] = [];
-  private block_undo = false;
 
   public get script_path() {
 
@@ -1451,6 +1450,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.calculator.RebuildClean(this.grid.model, true);
     }
     else {
+      console.info('load recalc');
       this.Recalculate();
     }
 
@@ -1461,9 +1461,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     if (flush) {
       this.FlushUndo();
+
+      // this.file_version = this.last_save_version = 0; // reset
+
     }
 
-    this.Publish({ type: 'load' });
+    this.Publish({ type: 'load' }); // FIXME: should not happen on undo...
 
     if (scroll) {
       let ds = document.body.scrollTop;
@@ -1476,8 +1479,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // if (data.active_sheet) {
     //  this.grid.ActivateSheetID({ key: CommandKey.ActivateSheet, id: data.active_sheet });
     // }
-
-    this.file_version = this.last_save_version = 0; // reset
 
   }
 
@@ -1839,39 +1840,26 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   public PushUndo(json?: string) {
 
-    // console.info('push undo');
-
-    if (this.block_undo) {
-      // console.info('blocked');
-    }
-    else {
-
-      if (!json) {
-        json = JSON.stringify(this.SerializeDocument(false, true, {
-          rendered_values: true, expand_arrays: true}));
-      }
-
-      // insert at [undo_pointer], then increment the pointer
-
-      this.undo_stack[this.undo_pointer++] = json;
-
-      // FIXME: parameterize max length
-
-      const length = this.undo_stack.length;
-
-      if (length > 16) {
-        const delta = length - 16;
-        this.undo_stack = this.undo_stack.slice(delta);
-        this.undo_pointer -= delta;
-      }
-
-      this.file_version++; // increment
-
+    if (!json) {
+      json = JSON.stringify(this.SerializeDocument(false, true, {
+        rendered_values: true, expand_arrays: true}));
     }
 
-    if (this.block_undo) {
-      this.block_undo = false;
+    // insert at [undo_pointer], then increment the pointer
+
+    this.undo_stack[this.undo_pointer++] = json;
+
+    // FIXME: parameterize max length
+
+    const length = this.undo_stack.length;
+
+    if (length > 16) {
+      const delta = length - 16;
+      this.undo_stack = this.undo_stack.slice(delta);
+      this.undo_pointer -= delta;
     }
+
+    this.file_version++; // increment
 
   }
 
@@ -1896,10 +1884,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       return;
     }
 
-    // console.info('undo');
-
     const data = this.undo_stack[(--this.undo_pointer) - 1];
-    this.block_undo = true;
 
     // UPDATE: we are storing calculated values in serialized data
     // in the undo stack. so we don't need to recalculate; paint immediately.
