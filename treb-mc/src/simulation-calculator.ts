@@ -8,7 +8,7 @@ import { ICellAddress } from 'treb-base-types/src/area';
 import { CellSerializationOptions } from 'treb-base-types/src/cells';
 import { DataModel } from 'treb-grid/src/types/data_model';
 import { GraphStatus } from 'treb-calculator/src/dag/graph';
-import * as PackResults from 'treb-calculator/src/pack-results';
+import * as PackResults from './pack-results';
 import { MCExpressionCalculator } from './simulation-expression-calculator';
 
 export class MCCalculator extends Calculator {
@@ -178,7 +178,7 @@ export class MCCalculator extends Calculator {
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 
     // flatten into buffers
-    const flattened: any[] = [];
+    const flattened: ArrayBuffer[] = [];
 
     // tslint:disable-next-line:forin
     for (const id in simulation_model.results) {
@@ -227,7 +227,7 @@ export class MCCalculator extends Calculator {
    * load it may not yet be available, and we are going to mark it dirty
    * later anyway -- so pass false to skip.
    */
-  public UpdateResults(data: any, model = this.model, set_dirty = true){
+  public UpdateResults(data?: PackResults.ResultContainer, model = this.model, set_dirty = true){
 
     if (!model) {
       throw new Error('UpdateResults called without model');
@@ -235,33 +235,39 @@ export class MCCalculator extends Calculator {
 
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 
-    simulation_model.results = [];
-    simulation_model.elapsed = data.elapsed;
-    simulation_model.trials = data.trials;
-
-    for (const result of data.results) {
-
-      const entry = (result instanceof ArrayBuffer) ? PackResults.UnpackOne(new Float64Array(result)) : result;
-
-      if (!entry.sheet_id) {
-        entry.sheet_id = model.active_sheet.id;
-      }
-
-      if (!simulation_model.results[entry.sheet_id]){
-        simulation_model.results[entry.sheet_id] = [];
-      }
-
-      if (!simulation_model.results[entry.sheet_id][entry.column]) {
-        simulation_model.results[entry.sheet_id][entry.column] = [];
-      }
-
-      simulation_model.results[entry.sheet_id][entry.column][entry.row] = entry.data;
-      if (set_dirty) {
-        this.SetDirty(entry);
-      }
-
+    if (!data) {
+      simulation_model.results = [];
+      simulation_model.elapsed = 0;
+      simulation_model.trials = 0;
     }
+    else {
+      simulation_model.results = [];
+      simulation_model.elapsed = data.elapsed;
+      simulation_model.trials = data.trials;
 
+      for (const result of data.results) {
+
+        const entry = (result instanceof ArrayBuffer) ? PackResults.UnpackOne(new Float64Array(result)) : result;
+
+        if (!entry.sheet_id) {
+          entry.sheet_id = model.active_sheet.id;
+        }
+
+        if (!simulation_model.results[entry.sheet_id]){
+          simulation_model.results[entry.sheet_id] = [];
+        }
+
+        if (!simulation_model.results[entry.sheet_id][entry.column]) {
+          simulation_model.results[entry.sheet_id][entry.column] = [];
+        }
+
+        simulation_model.results[entry.sheet_id][entry.column][entry.row] = entry.data as any;
+        if (set_dirty) {
+          this.SetDirty(entry);
+        }
+
+      }
+    }
   }
 
   /*

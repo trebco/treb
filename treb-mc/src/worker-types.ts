@@ -2,11 +2,15 @@
 import { ICellAddress, IArea } from 'treb-base-types';
 import { MacroFunction } from 'treb-grid';
 
+import { ResultContainer } from './pack-results';
+
+/*
 export interface TrialData {
   results: any;
   trials: number;
   elapsed: number;
 }
+*/
 
 export interface StartMessage {
   type: 'start';
@@ -38,12 +42,12 @@ export interface UpdateMessage {
   type: 'update';
   percent_complete: number;
   cells: any;
-  trial_data: TrialData;
+  trial_data: ResultContainer; // TrialData;
 }
 
 export interface CompleteMessage {
   type: 'complete';
-  trial_data: TrialData;
+  trial_data: ResultContainer; // TrialData;
 }
 
 export type WorkerMessage

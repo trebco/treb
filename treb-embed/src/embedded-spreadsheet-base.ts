@@ -17,7 +17,7 @@ import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 // TYPE ONLY
 // type Chart = import('../../treb-charts/src/index').Chart;
 
-import { Chart } from 'treb-charts';
+import { Chart, ChartFunctions } from 'treb-charts';
 
 // 3d party modules
 import * as FileSaver from 'file-saver';
@@ -28,6 +28,11 @@ import '../style/embed.scss';
 
 // config
 import * as build from '../../package.json';
+
+interface UndoEntry {
+  data: string;
+  selection?: string;
+}
 
 /**
  * embedded spreadsheet, suitable for one-line embedding in a web page
@@ -56,7 +61,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     const tags = document.querySelectorAll('script');
 
     // FIXME: fragile!
-    const default_script_name = (build as any)['build-entry-points'].main;
+    const default_script_name = build['build-entry-points'].main;
     const rex = new RegExp(default_script_name);
 
     // tslint:disable-next-line:prefer-for-of
@@ -120,11 +125,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.grid.model.user_data = data;
   }
 
+  /**
+   * this might be something that should travel with the document,
+   * as a way to compare different versions... something to think
+   * about. we could certainly preserve/restore it on save/load.
+   */
   protected file_version = 0;
-  protected last_save_version = 0;
 
-  /** state of toolbar load. this is dynamic, but we are not using webpack chunks. */
-  // private static formatting_toolbar_state: ToolbarLoadState = ToolbarLoadState.NotLoaded;
+  /** 
+   * this is recordkeeping for "dirty" marking, which also supports
+   * undo. if we preserve the file version this will have to track.
+   */
+  protected last_save_version = 0;
 
   /**
    * this is not assigned here (it's assigned in a method) so we can
@@ -134,8 +146,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * the answer is probably to pass an instance to the constructor, have
    * the caller determine which type to use (as long as there's a common
    * base class).
+   * 
+   * What? why not just assign it in the constructor, which can be 
+   * overloaded in the subclass constructor? 
+   * 
+   * [A: see pattern, which is the sensible way to do this given ts limitation]
    */
-  protected calculator!: Calculator;
+  protected calculator: Calculator;
 
   protected grid: Grid;
 
@@ -175,7 +192,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * this is confusing.
    */
   private undo_pointer = 0;
-  private undo_stack: any[] = [];
+  private undo_stack: UndoEntry[] = [];
 
   /**
    * ...
@@ -216,9 +233,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // optionally data from storage, with fallback
 
-    let data: any;
+    let data: string|undefined;
+
     if (this.options.storage_key && !this.options.toll_initial_load) {
-      data = localStorage.getItem(this.options.storage_key);
+      data = localStorage.getItem(this.options.storage_key) || undefined;
       if (!data && this.options.alternate_document) {
         network_document = this.options.alternate_document;
       }
@@ -400,7 +418,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.grid.headless = true; // ensure
     }
 
-    this.InitCalculator();
+    this.calculator = this.InitCalculator();
 
     // FIXME: this should yield so we can subscribe to events before the initial load
 
@@ -832,7 +850,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public async ImportXLSX(data: string) {
 
     if (!this.export_worker) {
-      const worker_name = (build as any)['build-entry-points']['export-worker'];
+      const worker_name = build['build-entry-points']['export-worker'];
       this.export_worker = await this.LoadWorker(worker_name);
     }
 
@@ -891,7 +909,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public async ExportBlob() {
 
     if (!this.export_worker) {
-      const worker_name = (build as any)['build-entry-points']['export-worker'];
+      const worker_name = build['build-entry-points']['export-worker'];
       this.export_worker = await this.LoadWorker(worker_name);
   }
 
@@ -907,6 +925,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           reject(event);
         };
 
+        // FIXME: type
+
         const serialized: any = this.grid.Serialize({
           rendered_values: true,
           expand_arrays: true,
@@ -914,6 +934,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           decorated_cells: true,
         });
 
+        // why do _we_ put this in, instead of the grid method? 
         serialized.decimal_mark = Localization.decimal_separator;
 
         this.export_worker.postMessage({
@@ -1190,7 +1211,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         else resolve();
       };
 
-      reader.onload = (event) => {
+      reader.onload = () => {
 
         try {
           if (reader.result) {
@@ -1237,8 +1258,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         }
       };
 
-      reader.onabort = (event) => { finalize('Aborted'); };
-      reader.onerror = (event) => { finalize('File error'); };
+      reader.onabort = () => { finalize('Aborted'); };
+      reader.onerror = () => { finalize('File error'); };
 
       // need a nontrivial delay to allow IE to re-render.
       // FIXME: this should be done async, possibly in a worker
@@ -1355,7 +1376,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     const document_name = this.grid.model.document_name || 'document'; // FIXME: options
 
-    let data: any;
+    let data: TREBDocument;
     let text: string;
 
     const parts = filename.split(/\./).filter(test => test.trim().length);
@@ -1429,7 +1450,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       flush = true,
       recalculate = false,
       override_sheet?: string,
-      override_selection?: any,
+      override_selection?: GridSelection,
       ) {
 
     if (override_selection) {
@@ -1493,10 +1514,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.Publish({ type: 'load' }); // FIXME: should not happen on undo...
 
     if (scroll) {
-      let ds = document.body.scrollTop;
+      // let ds = document.body.scrollTop;
       Yield().then(() => {
         this.ScrollTo(scroll);
-        ds = document.body.scrollTop;
+        // ds = document.body.scrollTop;
       });
     }
 
@@ -1688,7 +1709,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           // we need a local flag...
 
           if (!this.registered_libraries['treb-charts']) {
-            this.calculator.RegisterFunction((chart.constructor as any).chart_functions);
+
+            // this is a little simpler because we now integrate charts;
+            // some of this logic should be restructured (although we 
+            // should memorialize the pattern for managing external libs)
+
+            //this.calculator.RegisterFunction((chart.constructor as any).chart_functions);
+            this.calculator.RegisterFunction(ChartFunctions);
             this.registered_libraries['treb-charts'] = true;
 
             // update AC list
@@ -1916,8 +1943,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     this.last_save_version = this.file_version = 0;
 
-    // impact on file version? (...)
-
   }
 
   public Undo() {
@@ -2034,8 +2059,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
   */
 
-  protected InitCalculator() {
-    this.calculator = new Calculator();
+  /** overloadable for subclasses */
+  protected InitCalculator(): Calculator {
+    return new Calculator();
   }
 
   /**
@@ -2199,7 +2225,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       name += '-' + EmbeddedSpreadsheetBase.treb_language;
     }
 
-    if (!/\.js$/.test(name)) name += ('-' + (build as any).version + '.js');
+    if (!/\.js$/.test(name)) name += ('-' + build.version + '.js');
 
     let worker: Worker;
     let treb_path = EmbeddedSpreadsheetBase.treb_base_path;

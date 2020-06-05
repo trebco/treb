@@ -1,16 +1,15 @@
 
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
-import { MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
-import { ResultContainer } from 'treb-calculator';
+import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
+// import { ResultContainer } from 'treb-calculator';
 import { Localization, ICellAddress } from 'treb-base-types';
 import { SerializeOptions, MacroFunction } from 'treb-grid';
 import { TREBDocument } from './types';
 
-import * as PackResults from 'treb-calculator/src/pack-results';
+import * as PackResults from 'treb-mc/src/pack-results';
 
 // config
 import * as build from '../../package.json';
-import { ExpressionUnit } from 'treb-parser/src';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
@@ -38,7 +37,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   private simulation_status = { 
     running: false,
     threads: 0,
-    results: [] as any[],
+    results: [] as ResultContainer[],
     progress: [] as number[],
     aggregate_progress: 0,
   };
@@ -91,7 +90,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       serialized.simulation_data = {
         elapsed: this.last_simulation_data.elapsed,
         trials: this.last_simulation_data.trials,
-        results: (this.last_simulation_data.results || []).map((result: any) => {
+        results: (this.last_simulation_data.results || []).map(result => {
           return this.ArrayBufferToBase64(result);
         }),
       };
@@ -276,8 +275,11 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
   }
 
+  /**
+   * overload for MC calculator replaces base calculator
+   */
   protected InitCalculator() {
-    this.calculator = new MCCalculator();
+    return new MCCalculator();
   }
 
   protected ImportDocumentData(data: TREBDocument, override_sheet?: string) {
@@ -288,7 +290,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       this.last_simulation_data = data.simulation_data;
       this.last_simulation_data.results =
         (this.last_simulation_data.results || []).map((entry: any) => {
-          const binary = Base64.atob(entry);
+          const binary = Base64.atob(entry); // this should not work? (...)
           const len = binary.length;
           const u8 = new Uint8Array(len);
           for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);

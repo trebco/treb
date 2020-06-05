@@ -42,7 +42,11 @@ export class SimulationModel {
   public call_index = 0;
   public lhs = false;
   public state = SimulationState.Null;
-  public results: number[][][][] = [];
+  
+  //public results: number[][][][] = [];
+  //public results: Array<Float64Array|number[]>[][] = [];
+  public results: Array<Float64Array|number[]>[][] = [];
+
   public elapsed = 0;
   public trials = 0;
 

@@ -13,7 +13,7 @@ const DEFAULT_FORMAT = '#,##0.00'; // why not use "general", or whatever the usu
 export class Chart {
 
   /** function descriptors to register with the calculator */
-  public static chart_functions = ChartFunctions;
+  // public static chart_functions = ChartFunctions;
 
   /** flag indicating we've registered at least once */
   public static functions_registered = false;
