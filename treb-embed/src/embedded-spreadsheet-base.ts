@@ -1914,6 +1914,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.PushUndo();
     }
 
+    this.last_save_version = this.file_version = 0;
+
     // impact on file version? (...)
 
   }
