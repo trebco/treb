@@ -26,7 +26,7 @@ export interface Result {
   row: number;
   column: number;
   sheet_id: number;
-  data: number[];
+  data: Float64Array|number[];
 }
 
 export const PackOne = (result: Result) => {
