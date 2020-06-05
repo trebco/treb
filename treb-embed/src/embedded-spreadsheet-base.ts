@@ -1,7 +1,7 @@
 
 // treb imports
 import { Grid, GridEvent, SerializeOptions, Annotation,
-         BorderConstants, SheetChangeEvent, GridOptions, Sheet } from 'treb-grid';
+         BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
@@ -177,6 +177,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   private undo_pointer = 0;
   private undo_stack: any[] = [];
 
+  /**
+   * ...
+   */
+  private last_selection?: string;
+  
   public get script_path() {
 
     let name = build['build-entry-points'].main;
@@ -316,10 +321,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             break;
 
           case 'data':
-            // console.info('calling recalc', event);
-            this.Recalculate(event).then(() => {
-              this.DocumentChange();
-            });
+            {
+
+              // because this is async (more than once), we can't expect the 
+              // selection event to happen after the PushUndo call. we need
+              // to preserve the current selection and pass it through.
+
+              const cached_selection = this.last_selection;
+              this.Recalculate(event).then(() => {
+                this.DocumentChange(cached_selection);
+              });
+
+            }
             break;
 
           case 'style':
@@ -1416,7 +1429,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       flush = true,
       recalculate = false,
       override_sheet?: string,
+      override_selection?: any,
       ) {
+
+    if (override_selection) {
+      // console.info("OS", override_selection, data);
+      for (const sheet of data.sheet_data) {
+        if (sheet.id === override_selection.target.sheet_id) {
+          sheet.selection = override_selection;
+          break;
+        }
+      }
+    }
 
     this.ImportDocumentData(data, override_sheet);
 
@@ -1818,11 +1842,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  /** save sheet to local storage */
-  public DocumentChange() {
+  /** 
+   * save sheet to local storage and trigger (push) undo. our undo system
+   * relies on tracking selection after storing the main data, and sometimes
+   * we need to manage this explicitly: hence the parameter.
+   * 
+   */
+  public DocumentChange(undo_selection?: string) {
 
-    // FIXME: switch to yield?
-    requestAnimationFrame(() => {
+    Yield().then(() => {
+
       const json = JSON.stringify(this.SerializeDocument(false, true, {
         rendered_values: true, expand_arrays: true}));
 
@@ -1830,7 +1859,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         localStorage.setItem(this.options.storage_key, json);
       }
       if (this.options.undo) {
-        this.PushUndo(json);
+        this.PushUndo(json, undo_selection);
       }
 
       this.Publish({type: 'document-change'});
@@ -1838,8 +1867,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     });
   }
 
-  public PushUndo(json?: string) {
+  public PushUndo(json?: string, last_selection?: string) {
 
+    // console.info('push undo');
+
+    if (this.undo_stack[this.undo_pointer - 1]) {
+      this.undo_stack[this.undo_pointer - 1].selection = last_selection || this.last_selection;
+      // console.info('set at pointer', this.undo_pointer-1, this.last_selection);
+    }
+    
     if (!json) {
       json = JSON.stringify(this.SerializeDocument(false, true, {
         rendered_values: true, expand_arrays: true}));
@@ -1847,7 +1883,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // insert at [undo_pointer], then increment the pointer
 
-    this.undo_stack[this.undo_pointer++] = json;
+    this.undo_stack[this.undo_pointer++] = {
+      data: json,
+      selection: undefined,
+    };
+
+    // FIXME: should truncate the stack at pointer, because we might not be at end
 
     // FIXME: parameterize max length
 
@@ -1884,22 +1925,35 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       return;
     }
 
-    const data = this.undo_stack[(--this.undo_pointer) - 1];
+    const undo_entry = this.undo_stack[(--this.undo_pointer) - 1];
+
+    // const undo_selection_set = this.undo_selection_stack[this.undo_pointer]; // <-- pointer already decremented
+    // const undo_selection = undo_selection_set ? undo_selection_set[1] : undefined;
+    // console.info("* undo selection", undo_selection);
 
     // UPDATE: we are storing calculated values in serialized data
     // in the undo stack. so we don't need to recalculate; paint immediately.
     // prevents flickering.
 
-    this.LoadDocument(JSON.parse(data), undefined, false);
+    this.LoadDocument(JSON.parse(undo_entry.data), undefined, false, undefined, undefined, 
+      undo_entry.selection ? JSON.parse(undo_entry.selection) : undefined);
 
     this.file_version--; // decrement
 
 
   }
 
-  /** update selection: used for updating toolbar (i.e. highlight bold button) */
-  public UpdateSelection(selection: any) {
-    // console.info(selection);
+  /** 
+   * update selection: used for updating toolbar (i.e. highlight bold button) 
+   * 
+   * we can also use this to better manage selection in the undo system...
+   * 
+   */
+  public UpdateSelection(selection: GridSelection) {
+
+    // cache for undo
+    this.last_selection = JSON.stringify(selection);    
+
     this.Publish({type: 'selection'});
   }
 

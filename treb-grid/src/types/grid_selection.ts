@@ -27,3 +27,7 @@ export const CreateSelection = (): GridSelection => {
     empty: true,
   };
 };
+
+export const CloneSelection = (rhs: GridSelection): GridSelection => {
+  return JSON.parse(JSON.stringify(rhs));
+};

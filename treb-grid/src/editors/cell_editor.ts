@@ -253,12 +253,17 @@ export class CellEditor extends FormulaEditorBase {
     switch (event.key){
     case 'Enter':
     case 'Tab':
-      const value = this.editor_node.textContent || undefined;
-      const array = (event.key === 'Enter' && event.ctrlKey && event.shiftKey);
-      this.Publish({type: 'commit', value, selection: this.selection, array});
-      this.selecting_ = false;
-      return false;
+      {
+        // we're going to trap this event, and then re-send it, as we do with
+        // the formula bar editor. this is so that the grid can send the data
+        // event before the selection event, to better support undo.
 
+        const value = this.editor_node.textContent || undefined;
+        const array = (event.key === 'Enter' && event.ctrlKey && event.shiftKey);
+        this.Publish({type: 'commit', value, selection: this.selection, array, event});
+        this.selecting_ = false;
+        return true; // false;
+      }
     case 'Escape':
     case 'Esc':
       this.Publish({type: 'discard'});
@@ -269,7 +274,6 @@ export class CellEditor extends FormulaEditorBase {
     case 'ArrowDown':
     case 'ArrowLeft':
     case 'ArrowRight':
-
     case 'Up':
     case 'Down':
     case 'Left':

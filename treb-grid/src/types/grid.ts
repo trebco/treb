@@ -2208,7 +2208,38 @@ export class Grid {
     }
   }
 
+  private RedispatchEvent(event: KeyboardEvent) {
 
+    let cloned_event: KeyboardEvent;
+
+    if (UA.trident) {
+      cloned_event = document.createEvent('KeyboardEvent');
+      const modifiers = [];
+      if (event.ctrlKey) modifiers.push('Control');
+      if (event.altKey) modifiers.push('Alt');
+      if (event.shiftKey) modifiers.push('Shift');
+
+      // have to mask type for trident
+      (cloned_event as any).initKeyboardEvent(
+        event.type,
+        false,
+        false,
+        event.view,
+        event.key,
+        event.location,
+        modifiers.join(' '),
+        event.repeat,
+        Localization.locale);
+    }
+    else {
+      cloned_event = new KeyboardEvent(event.type, event);
+    }
+
+    if (cloned_event && this.container) {
+      this.container.dispatchEvent(cloned_event);
+    }
+
+  }
 
   private InitFormulaBar(grid_container: HTMLElement, autocomplete: Autocomplete) {
 
@@ -2307,6 +2338,7 @@ export class Grid {
           }
 
           if (this.container) this.Focus();
+          
           this.SetInferredType(this.primary_selection, event.value, event.array);
           this.ClearAdditionalSelections();
           this.ClearSelection(this.active_selection);
@@ -2315,9 +2347,15 @@ export class Grid {
             this.DelayedRender(false, this.primary_selection.area);
           }
 
+          // unifying
           if (event.event) {
+
+            this.RedispatchEvent(event.event);
+
+            /*
+            let cloned_event: KeyboardEvent;
             if (UA.trident) {
-              const cloned_event = document.createEvent('KeyboardEvent');
+              cloned_event = document.createEvent('KeyboardEvent');
               const modifiers = [];
               if (event.event.ctrlKey) modifiers.push('Control');
               if (event.event.altKey) modifiers.push('Alt');
@@ -2334,12 +2372,15 @@ export class Grid {
                 modifiers.join(' '),
                 event.event.repeat,
                 Localization.locale);
-              if (this.container) this.container.dispatchEvent(cloned_event);
             }
             else {
-              const cloned_event = new KeyboardEvent(event.event.type, event.event);
-              if (this.container) this.container.dispatchEvent(cloned_event);
+              cloned_event = new KeyboardEvent(event.event.type, event.event);
             }
+
+            if (cloned_event && this.container) {
+              this.container.dispatchEvent(cloned_event);
+            }
+            */
           }
           break;
 
@@ -2404,6 +2445,8 @@ export class Grid {
 
         case 'commit':
 
+          // console.info('commit');
+
           // FIXME: unify this (to the extent possible) w/ the other editor
 
           if (this.model.active_sheet.id !== this.editing_cell.sheet_id) {
@@ -2414,13 +2457,22 @@ export class Grid {
 
           this.editing_state = EditingState.NotEditing;
 
-          // console.info('commit');
           if (event.selection) {
             this.SetInferredType(event.selection, event.value, event.array);
           }
           this.DismissEditor();
 
-          this.UpdateFormulaBarFormula();
+          // we should maybe not call this if there's an event? we
+          // may just be repainting it immediately afterwards. 
+
+          // (referring to UpdateFormulaBarFormula, which is now switched)
+
+          if (event.event) {
+            this.RedispatchEvent(event.event);
+          }
+          else {
+            this.UpdateFormulaBarFormula();
+          }
 
           if (this.options.repaint_on_cell_change) { // || !formula){
             this.DelayedRender(false, event.selection ? event.selection.area : undefined);
@@ -6051,6 +6103,9 @@ export class Grid {
     // consolidate events and merge areas
 
     if (data_area) {
+
+      console.info('publishing data event');
+
       data_area.SetSheetID(this.model.active_sheet.id);
       events.push({ type: 'data', area: data_area });
     }

@@ -14,6 +14,7 @@ export interface UpdateHints {
 export interface DataEvent {
   type: 'data';
   area?: Area;
+  // selection?: GridSelection;
 }
 
 export interface FlushEvent {
@@ -23,6 +24,7 @@ export interface FlushEvent {
 export interface StyleEvent {
   type: 'style';
   area?: Area;
+  // selection?: GridSelection;
 }
 
 export type SheetEvent
@@ -48,7 +50,7 @@ export interface SerializedSheet {
   sheet_style: Style.Properties;
   rows: number;
   columns: number;
-  cell_styles: Array<{row: number, column: number, ref: number}>;
+  cell_styles: Array<{row: number; column: number; ref: number}>;
 
   cell_style_refs: Style.Properties[];
   row_style: Style.Properties[];
