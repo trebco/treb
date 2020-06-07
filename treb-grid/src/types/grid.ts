@@ -4244,7 +4244,7 @@ export class Grid {
         // could be a very large selection, or we have moused
         // around -- so scroll the target into view.
 
-        const area = selection.area;
+        const area = this.RealArea(selection.area);
         const address = selection.target;
 
         // two things happen when merged. (1) if the current target is a
