@@ -6103,9 +6103,6 @@ export class Grid {
     // consolidate events and merge areas
 
     if (data_area) {
-
-      console.info('publishing data event');
-
       data_area.SetSheetID(this.model.active_sheet.id);
       events.push({ type: 'data', area: data_area });
     }
