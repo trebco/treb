@@ -53,6 +53,13 @@ export const BaseFunctionLibrary: FunctionMap = {
         { name: 'type', description: 'Type of data to return' },
         { name: 'reference', description: 'Cell reference', metadata: true },
       ],
+
+      // there's no concept of "structure volatile", and structure events
+      // don't trigger recalc, so this is not helpful -- we may need to 
+      // think about both of those things
+      
+      // volatile: true, 
+
       fn: (type: string, reference: any) => {
 
         // console.info('metadata?', reference);

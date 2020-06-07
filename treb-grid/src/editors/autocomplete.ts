@@ -2,6 +2,7 @@
 import { DOMUtilities } from '../util/dom_utilities';
 import { Rectangle } from 'treb-base-types';
 import { ExtendedTheme } from '../types/theme';
+import { AutocompleteExecResult } from './autocomplete_matcher';
 
 export interface AutocompleteResult {
   handled: boolean;
@@ -11,11 +12,13 @@ export interface AutocompleteResult {
   click?: boolean;
 }
 
+/*
 export interface AutocompleteData {
   completions?: string[];
   tooltip?: string;
   arguments?: string;
 }
+*/
 
 export type AcceptCallback = (result: AutocompleteResult) => void;
 
@@ -225,7 +228,7 @@ export class Autocomplete {
     return { handled: false };
   }
 
-  public Show(callback: AcceptCallback, data: AutocompleteData = {},
+  public Show(callback: AcceptCallback, data: AutocompleteExecResult = {},
       position: Rectangle) {
 
     this.completion_list_visible = false;
@@ -284,7 +287,10 @@ export class Autocomplete {
     else this.completion_list.style.top = '-1000px';
 
     if (data.tooltip){
-      this.tooltip.textContent = data.tooltip + data.arguments;
+
+      this.tooltip.textContent = data.tooltip + data.arguments +
+        (data.description ? '\n' + data.description : '');
+
       this.tooltip.style.left = position.left + 'px';
       if (this.options.tooltip_prefer_top){
         this.tooltip.style.top = (position.top - this.tooltip.offsetHeight - 5 ) + 'px';

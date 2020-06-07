@@ -16,12 +16,22 @@ export interface ArgumentDescriptor {
 
 export interface FunctionDescriptor {
   name: string;
+  description?: string;
   arguments?: ArgumentDescriptor[];
 }
 
 export interface AutocompleteMatchData {
   text: string;
   cursor: number;
+}
+
+export interface AutocompleteExecResult {
+  completions?: string[]; 
+  token?: string;
+  position?: number;
+  tooltip?: string;
+  arguments?: string;
+  description?: string;
 }
 
 export class AutocompleteMatcher {
@@ -48,7 +58,7 @@ export class AutocompleteMatcher {
     if (data.text[0] !== '=') return {};
 
     let match;
-    let result: any = {};
+    let result: AutocompleteExecResult = {};
 
     // ac only at the end of the string
     if (data.cursor === data.text.length) {
@@ -56,13 +66,15 @@ export class AutocompleteMatcher {
       // FIXME: quoted strings...
 
       // if it's a token, and ends with a legal character
-      match = data.text.match(/(?:^|[^A-Za-z_])([A-Za-z_][\w\d_\.]*)\s*$/);
+      match = data.text.match(/(?:^|[^A-Za-z_])([A-Za-z_][\w\d_.]*)\s*$/);
       if (match) {
         const token = match[1];
         const rex = new RegExp('^' + token.replace('.', '\\.'), 'i');
         const list = this.function_names.filter((name) => rex.test(name));
         result = {
-          completions: list, token, position: data.cursor - token.length,
+          completions: list, 
+          token, 
+          position: data.cursor - token.length,
         };
       }
 
@@ -72,8 +84,8 @@ export class AutocompleteMatcher {
     // let's do a baby parser
 
     let sub = data.text.substr(0, data.cursor);
-    const closed_function = /(?:^|[^A-Za-z_])([A-Za-z_][\w\d_\.]*\s*\([^\(\)]*\))/;
-    const open_function = /([A-Za-z_][\w\d_\.]*)\s*\(/g;
+    const closed_function = /(?:^|[^A-Za-z_])([A-Za-z_][\w\d_.]*\s*\([^()]*\))/;
+    const open_function = /([A-Za-z_][\w\d_.]*)\s*\(/g;
 
     match = sub.match(closed_function);
     while (match) {
@@ -95,6 +107,7 @@ export class AutocompleteMatcher {
         // else result.tooltip = tt.toUpperCase();
         result.tooltip = func.name;
         result.arguments = '(' + (func.arguments || []).map((desc) => (desc.name || 'argument')).join(', ') + ')';
+        result.description = func.description;
       }
     }
 
