@@ -1,5 +1,7 @@
 
-/** calculated human-friendly scale for rendering axes */
+import { RangeScale, Scale } from 'treb-utils';
+
+/* * calculated human-friendly scale for rendering axes * /
 export interface RangeScale {
   scale: number;
   step: number;
@@ -7,6 +9,7 @@ export interface RangeScale {
   min: number;
   max: number;
 }
+*/
 
 export class Util {
 
@@ -16,6 +19,7 @@ export class Util {
    */
   public static Scale(min: number, max: number, count = 6.5): RangeScale {
 
+    /*
     const range = max - min;
     const log10 = // Math.log10(range);
       Math.log(range) / Math.log(10); // just avoid the problem
@@ -45,7 +49,9 @@ export class Util {
     count = Math.round((max - min) / step); // accounts for fp errors
 
     return { scale, step, count, min, max };
-
+    */
+    return Scale(min, max, count);
+    
   }
 
   public static Range(data: Array<number|undefined>) {

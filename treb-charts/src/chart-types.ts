@@ -1,5 +1,5 @@
 
-import { RangeScale } from './util';
+import { RangeScale } from 'treb-utils';
 
 export type NumberOrUndefinedArray = Array<number|undefined>;
 

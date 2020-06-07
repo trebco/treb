@@ -6,3 +6,5 @@ export * from './resizable';
 export * from './measurement';
 export * from './color';
 export * from './serialize_html';
+
+export * from './scale';

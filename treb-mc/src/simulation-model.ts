@@ -1,11 +1,12 @@
 /* eslint-disable no-unexpected-multiline */
 
-import { ICellAddress } from 'treb-base-types';
+import { ICellAddress, Cell, Area } from 'treb-base-types';
 import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
 import { DataError, ArgumentError, ValueError } from '../../treb-calculator/src/function-error';
 import { ExpressionUnit } from 'treb-parser';
+import { Scale as CreateScale } from 'treb-utils';
 
 export enum SimulationState {
   Null, Prep, Simulation, Post,
@@ -548,6 +549,14 @@ export class SimulationModel {
         },
 
       },
+
+      // new stuff
+
+      'RiskAMP.HistogramTable': {
+        description: 'Creates a histogram table from a source cell',
+        arguments: [{ name: 'reference cell', collector: true, }],
+        fn: this.HistogramTable.bind(this),
+      }
 
     };
 
@@ -1161,5 +1170,74 @@ export class SimulationModel {
 
   }
 
-}
+  public HistogramTable(reference: any) {
 
+    let rows = 1, columns = 1;
+
+    const cell = ((this.address as any) as Cell);
+
+    if (cell.area) {
+      const area = new Area(cell.area.start, cell.area.end);
+      rows = area.rows;
+      columns = area.columns;
+    }
+
+    const length = Math.max(rows, columns);
+    const depth = Math.min(rows, columns);
+
+    if (Array.isArray(reference) || reference instanceof Float64Array || reference instanceof Float32Array) {
+
+      if (reference.length <= 1) {
+        return 0; // ??
+      }
+
+      if (!Array.isArray(reference)) {
+        reference = Array.prototype.slice.call(reference);
+      }
+
+      reference.sort((a: number, b: number) => a - b);
+
+      const min = reference[0] || 0; 
+      const max = reference[reference.length - 1] || 0;
+
+      if (max === min) {
+        // ...
+        return 0;
+      }
+     
+      let result: number[][] = [[], []];
+
+      const scale = CreateScale(min, max, length, true);
+      // console.info(length, scale);
+  
+      let base = scale.min;
+      let last = base;
+      let index = 0;
+
+      if (scale.count < length) {
+        base = scale.min - (Math.ceil(length - scale.count) / 2) * scale.step;
+      }
+      for (let i = 0; i < length; i++) {
+
+        // count from (last) to (next)
+        const bucket = base + (i + 1) * scale.step;
+        
+        let count = 0;
+        for (; index < reference.length && reference[index] < bucket; index++, count++) { /* */ }
+
+        result[1][i] = count; // (this.trials || 0);
+        result[0][i] = last = bucket;
+      }
+
+      if (depth === 1 ){
+        result = [result[1]];
+      }
+
+      return (columns > rows) ? Utils.TransposeArray(result) : result;
+
+    }
+
+    return 0;
+  }
+
+}
