@@ -44,6 +44,9 @@ export class CompositeSheet {
   /** and toolbar */
   public toolbar_container?: HTMLElement;
 
+  /** reference to the button so we can update the title on state */
+  public toolbar_button?: HTMLElement;
+
   /** sheet instance */
   public sheet: EmbeddedSpreadsheet;
 
@@ -179,7 +182,7 @@ export class CompositeSheet {
       this.toolbar_container = document.createElement('div');
       this.toolbar_container.classList.add('toolbar-container');
 
-      this.AddSidebarButton({
+     this.toolbar_button = this.AddSidebarButton({
         icon: 'treb-toolbar-icon',
         title: 'Show Toolbar',
         click: () => this.ToggleToolbar(),
@@ -462,6 +465,7 @@ export class CompositeSheet {
   public ShowSidebar(show = true) {
     if (show) {
       this.outer_container.classList.add(sidebar_open_class);
+
     }
     else {
       this.outer_container.classList.remove(sidebar_open_class);
@@ -484,6 +488,9 @@ export class CompositeSheet {
 
   /** show or hide toolbar */
   public ShowToolbar(show = true) {
+
+    let toolbar_button_title = 'Hide Toolbar';
+
     if (show) {
 
       if (!this.toolbar && this.toolbar_container) {
@@ -516,11 +523,17 @@ export class CompositeSheet {
     }
     else {
       this.outer_container.classList.remove(toolbar_open_class);
+      toolbar_button_title = 'Show Toolbar';
     }
+
+    if (this.toolbar_button) {
+      this.toolbar_button.setAttribute('title', toolbar_button_title);
+    }
+
   }
 
   /** alias */
-  public HidToolbar() { this.ShowToolbar(false); }
+  public HideToolbar() { this.ShowToolbar(false); }
 
 }
 
