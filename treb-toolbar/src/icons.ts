@@ -2,7 +2,7 @@
 
 /**
  * source directory: /mnt/h/TREB/TREB/treb-toolbar/icons
- * generated Tue Jun 02 2020 16:47:26 GMT-0700 (Pacific Daylight Time)
+ * generated Mon Jun 08 2020 06:40:35 GMT-0700 (Pacific Daylight Time)
  */  
 
 export interface PathDef2 {
@@ -17,7 +17,7 @@ export interface SymbolDef2 {
 }
 
 export const icons: {[index: string]: SymbolDef2} = {
-  'material-outline-ac_unit-24px': {
+  'material/outline/ac_unit-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
       {
@@ -35,7 +35,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
-  'material-outline-chat_bubble_outline-24px': {
+  'material/outline/chat_bubble_outline-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
       {
@@ -53,7 +53,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
-  'material-outline-crop-24px': {
+  'material/outline/crop-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
       {
@@ -71,7 +71,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
-  'material-outline-crop_free-24px': {
+  'material/outline/crop_free-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
       {
@@ -89,7 +89,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
-  'material-outline-folder-24px': {
+  'material/outline/folder-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
       {
@@ -107,7 +107,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
-  'material-outline-insert_drive_file-24px': {
+  'material/outline/insert_drive_file-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
       {
@@ -125,7 +125,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
-  'material-outline-save-24px': {
+  'material/outline/save-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
       {
@@ -143,7 +143,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
-  'material-outline-save_alt-24px': {
+  'material/outline/save_alt-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
       {
@@ -161,7 +161,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
-  'material-outline-wrap_text-24px': {
+  'material/outline/wrap_text-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
       {

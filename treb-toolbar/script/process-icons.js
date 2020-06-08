@@ -178,7 +178,7 @@ const Convert = async () => {
 
   for (const file of files) {
     const svg = await ReadFile(file);
-    const name = path.relative(source_dir, file).toLowerCase().replace(/.svg$/i, '').replace(/\W+/g, '-');
+    const name = path.relative(source_dir, file).toLowerCase().replace(/.svg$/i, '').replace(/[^\w\/]+/g, '-');
     // console.info(name, ParseSVG(svg));
     const class_name = path.dirname(path.relative(source_dir, file)).toLowerCase().replace(/.svg$/i, '').replace(/\W+/g, '-');
 

@@ -57,9 +57,9 @@ const file_menu: ToolbarItem[] = [
   { id: 'new', title: 'New Document', icon: 'fa5-regular-file' },
   */
 
- { id: 'save', title: 'Save to Desktop', icon: 'material-outline-save_alt-24px' },
- { id: 'load', title: 'Open Desktop File', icon: 'material-outline-folder-24px' },
- { id: 'new', title: 'New Document', icon: 'material-outline-insert_drive_file-24px' },
+ { id: 'save', title: 'Save to Desktop', icon: 'material/outline/save_alt-24px' },
+ { id: 'load', title: 'Open Desktop File', icon: 'material/outline/folder-24px' },
+ { id: 'new', title: 'New Document', icon: 'material/outline/insert_drive_file-24px' },
 
   { type: 'separator' },
 ];
@@ -122,8 +122,8 @@ export const toolbar_template: ToolbarItem[] = [
   // ...compressed_align_menus,
   // ...expanded_align_menus,
 
-  { icon: 'material-outline-wrap_text-24px', id: 'wrap', title: 'Wrap Text' },
-  { icon: 'material-outline-chat_bubble_outline-24px', id: 'note', title: 'Add Comment' },
+  { icon: 'material/outline/wrap_text-24px', id: 'wrap', title: 'Wrap Text' },
+  { icon: 'material/outline/chat_bubble_outline-24px', id: 'note', title: 'Add Comment' },
 
   { type: 'separator' },
 

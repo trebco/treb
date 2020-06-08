@@ -336,6 +336,9 @@ export const symbol_defs: {[index: string]: SymbolDef} =
         "d": "M17,15 L6,15"
       }
     ]
-  }
+  },
+
+
+
 };
 
