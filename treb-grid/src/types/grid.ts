@@ -4091,7 +4091,7 @@ export class Grid {
     let cell_value = cell.value;
 
     if (flush) {
-      if (cell.type === ValueType.number && cell.style &&
+      if ((cell.type === ValueType.number || cell.rendered_type === ValueType.number) && cell.style &&
         cell.style.number_format && /(?:%|percent)/i.test(cell.style.number_format)) {
         cell_value = '%';
       }
