@@ -147,6 +147,9 @@ export class Grid {
    */
   private parser = new Parser();
 
+  /** this is used when testing if a typed character is numeric */
+  private decimal_separator_code = 0x2e; // "."
+
   /** in-cell editor */
   private cell_editor?: CellEditor;
 
@@ -322,6 +325,8 @@ export class Grid {
       this.parser.decimal_mark = DecimalMarkType.Comma;
       this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
     }
+
+    this.decimal_separator_code = Localization.decimal_separator.charCodeAt(0);
 
   }
 
@@ -4030,6 +4035,22 @@ export class Grid {
   }
 
   /**
+   * FIXME: move to utils lib
+   */
+  private IsNumeric(c: number) {
+
+    // anything else?
+
+    return (c >= 0x30 && c <= 0x39) // 0-9
+          // || (c === Localization.decimal_separator.charCodeAt(0)) // FIXME: cache?
+          || (c === this.decimal_separator_code) // cached
+          || (c === 0x2d) // -
+          || (c === 0x2b) // + // this one is kind of a stretch...
+          ;
+
+  }
+
+  /**
    * starts the in-cell editor at the given sheet address. this method doesn't
    * handle scroll-into-view, do that first if necessary.
    *
@@ -4091,8 +4112,14 @@ export class Grid {
     let cell_value = cell.value;
 
     if (flush) {
+
       if ((cell.type === ValueType.number || cell.rendered_type === ValueType.number) && cell.style &&
-        cell.style.number_format && /(?:%|percent)/i.test(cell.style.number_format)) {
+        cell.style.number_format && /(?:%|percent)/i.test(cell.style.number_format) &&
+        (!event || this.IsNumeric(event.key.charCodeAt(0)))) {
+
+        // UPDATE: don't do this if the user types '=', because they're typing a function.
+        // actually we could probably extend that to anything that doesn't look like a number...
+
         cell_value = '%';
       }
       else {
