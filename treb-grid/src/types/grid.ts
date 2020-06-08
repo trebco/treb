@@ -3822,6 +3822,40 @@ export class Grid {
       let number_format = '';
       const hints = parse_result.hints || Hints.None;
 
+      // be stricter about number format. don't implicitly /change/
+      // the number format (you can /set/, but don't /change/). 
+
+      // FIXME: in this case, if we're setting a number format from
+      // nothing, we could be a little smarter about setting the 
+      // decimal places.
+
+      if (!cell.style || !cell.style.number_format || NumberFormatCache.Equals(cell.style.number_format, 'General')) {
+
+        // tslint:disable-next-line:no-bitwise
+        if (hints & Hints.Date) {
+          number_format = 'Short Date';
+        }
+        // tslint:disable-next-line:no-bitwise
+        else if (hints & Hints.Exponential) {
+          number_format = 'Exponential';
+        }
+        // tslint:disable-next-line:no-bitwise
+        else if (hints & Hints.Percent) {
+          number_format = 'Percent';
+        }
+        // tslint:disable-next-line:no-bitwise
+        else if (hints & Hints.Currency) {
+          number_format = 'Currency';
+        }
+        // tslint:disable-next-line:no-bitwise
+        else if ((hints & Hints.Grouping) || (hints & Hints.Parens)) {
+          number_format = 'Accounting';
+        }
+
+      }
+
+      /*
+
       // tslint:disable-next-line:no-bitwise
       if (hints & Hints.Date) {
         if (!cell.style || !cell.style.number_format ||
@@ -3831,20 +3865,36 @@ export class Grid {
       }
       // tslint:disable-next-line:no-bitwise
       else if (hints & Hints.Exponential) {
-        number_format = 'Exponential';
+        if (!cell.style || !cell.style.number_format || !/e/.test(cell.style.number_format)) {
+          number_format = 'Exponential';
+        }
       }
       // tslint:disable-next-line:no-bitwise
       else if (hints & Hints.Percent) {
-        number_format = 'Percent';
+        if (!cell.style || !cell.style.number_format || !/%/.test(cell.style.number_format)) {
+          number_format = 'Percent';
+        }
       }
       // tslint:disable-next-line:no-bitwise
       else if (hints & Hints.Currency) {
-        number_format = 'Currency';
+        if (!cell.style || !cell.style.number_format || !/,/.test(cell.style.number_format)) {
+          number_format = 'Currency';
+        }
       }
       // tslint:disable-next-line:no-bitwise
-      else if ((hints & Hints.Grouping) || (hints & Hints.Parens)) {
-        number_format = 'Accounting';
+      else if (hints & Hints.Grouping) {
+        if (!cell.style || !cell.style.number_format || !new RegExp(Localization.grouping_separator).test(cell.style.number_format)) {
+          number_format = 'Accounting';
+        }
       }
+      // tslint:disable-next-line:no-bitwise
+      else if (hints & Hints.Parens) {
+        if (!cell.style || !cell.style.number_format || !/,/.test(cell.style.number_format)) {
+          number_format = 'Accounting';
+        }
+      }
+
+      */
 
       if (number_format) {
         // if (array) this.model.sheet.UpdateAreaStyle(selection.area, { number_format }, true, true);
