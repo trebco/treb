@@ -99,7 +99,17 @@ export class Workbook {
     // with (potentially) multiple <r/> elements and formatting data in
     // the <rPr/> section inside each <r/>.
 
-    const data = await this.zip.file('xl/sharedStrings.xml').async('text');
+    // NOTE that there's a (relatively slim) possibility there is no
+    // strings table -- you need a spreadsheet that has no strings in
+    // it, and never had strings in it.
+
+    // not sure what effect this will have on other functions, since
+    // theoretically it should never be needed
+
+    const shared_strings = this.zip.file('xl/sharedStrings.xml');
+    if (!shared_strings) { return; }
+
+    const data = await shared_strings.async('text');
 
     // FOR NOW, let's just ignore complex strings.  we'll track
     // simple strings as before (but now with correct indexes).
