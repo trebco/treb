@@ -8,6 +8,11 @@
  * TODO: other symbols... [FIXME: defined names need to go in here]
  * TODO: context -- cell vs annotation (...)
  *
+ * FIXME: why does this use different definitions than the functions? 
+ * can't we merge the two?
+ * 
+ * [I think they may have been developed independently and them converged...]
+ * 
  */
 
 export interface ArgumentDescriptor {
