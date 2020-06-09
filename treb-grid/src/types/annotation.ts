@@ -17,13 +17,6 @@ export class Annotation {
   /** coordinates, in sheet space */
   public rect?: Rectangle;
 
-  /**
-   * alternatively, coordinates as sheet cell reference.
-   * implies not movable, resizable, selectable (although we are not
-   * enforcing this atm).
-   */
-  public cell_address?: Area;
-
   /** opaque data. this is serialized, so it's persistent data */
   public data: any = {};
 
@@ -54,6 +47,12 @@ export class Annotation {
   /** annotation can be selected. this is advisory, for UI */
   public selectable = true;
 
+  /** move when resizing/inserting rows/columns */
+  public move_with_cells = true;
+
+  /** resize when resizing/inserting rows/columns */
+  public resize_with_cells = true;
+
   /** layout node, obviously not serialized */
   public node?: HTMLDivElement;
 
@@ -74,16 +73,13 @@ export class Annotation {
       if (key !== 'rect' && key !== 'cell_address' && opts[key]) (this as any)[key] = opts[key];
     }
     if (opts.rect) this.rect = Rectangle.Create(opts.rect);
-    if (opts.cell_address) {
-      this.cell_address = new Area(opts.cell_address.start, opts.cell_address.end);
-    }
   }
 
   /**
    * serialization method drops node and trims
    */
   public toJSON(){
-    const result: any = { rect: this.rect, cell_address: this.cell_address };
+    const result: any = { rect: this.rect };
 
     if (this.data) result.data = this.data;
     if (this.formula) result.formula = this.formula;
@@ -93,6 +89,9 @@ export class Annotation {
     if (!this.movable) result.movable = this.movable;
     if (!this.removable) result.removable = this.removable;
     if (!this.selectable) result.selectable = this.selectable;
+
+    if (!this.move_with_cells) result.move_with_cells = this.move_with_cells;
+    if (!this.resize_with_cells) result.resize_with_cells = this.resize_with_cells;
 
     return result;
   }

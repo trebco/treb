@@ -2695,6 +2695,20 @@ export class Grid {
         y: tooltip_base,
       });
 
+      const move_annotation_list: Array<{annotation: Annotation; y: number}> = [];
+      const size_annotation_list: Array<{annotation: Annotation; height: number}> = [];
+
+      for (const annotation of this.model.active_sheet.annotations) {
+        const y = base - offset.y;
+        if (!annotation.rect || annotation.rect.bottom < y) { continue; }
+        if (y <= annotation.rect.top && annotation.move_with_cells) {
+          move_annotation_list.push({annotation, y: annotation.rect.top});
+        }
+        else if (y > annotation.rect.top && annotation.resize_with_cells) {
+          size_annotation_list.push({annotation, height: annotation.rect.height});
+        }
+      }
+
       MouseDrag(this.layout.mask, 'row-resize', (move_event: MouseEvent) => {
         const delta = Math.max(-original_height, Math.round(move_event.offsetY - base));
         if (delta + original_height !== height) {
@@ -2707,6 +2721,17 @@ export class Grid {
             text: `${height}px`,
             y: tooltip_base + delta,
           });
+
+          for (const {annotation, y} of move_annotation_list) {
+            if (annotation.rect) {
+              annotation.rect.top = y + delta;
+            }
+          }
+          for (const {annotation, height} of size_annotation_list) {
+            if (annotation.rect) {
+              annotation.rect.height = height + delta;
+            }
+          }
 
           requestAnimationFrame(() => {
 
@@ -2748,6 +2773,12 @@ export class Grid {
 
             // row = area.start.row; // ??
 
+          }
+
+          for (const {annotation} of size_annotation_list) {
+            if (annotation.resize_callback) {
+              annotation.resize_callback.call(undefined);
+            }
           }
 
           this.ExecCommand({
@@ -2862,6 +2893,23 @@ export class Grid {
         y: Math.round(bounding_rect.bottom + 10),
       });
 
+      // list of annotations that may be affected by this operation. 
+      // this operation will either affect position or size, but not both.
+
+      const move_annotation_list: Array<{annotation: Annotation; x: number}> = [];
+      const size_annotation_list: Array<{annotation: Annotation; width: number}> = [];
+
+      for (const annotation of this.model.active_sheet.annotations) {
+        const x = base - offset.x;
+        if (!annotation.rect || annotation.rect.right < x) { continue; }
+        if (x <= annotation.rect.left && annotation.move_with_cells) {
+          move_annotation_list.push({annotation, x: annotation.rect.left});
+        }
+        else if (x > annotation.rect.left && annotation.resize_with_cells) {
+          size_annotation_list.push({annotation, width: annotation.rect.width});
+        }
+      }
+
       MouseDrag(this.layout.mask, 'column-resize', (move_event: MouseEvent) => {
         const delta = Math.max(-original_width, Math.round(move_event.offsetX - base));
 
@@ -2876,6 +2924,17 @@ export class Grid {
 
           // tile_sizes[tile_index] = tile_width + delta;
           this.model.active_sheet.SetColumnWidth(column, width);
+
+          for (const {annotation, x} of move_annotation_list) {
+            if (annotation.rect) {
+              annotation.rect.left = x + delta;
+            }
+          }
+          for (const {annotation, width} of size_annotation_list) {
+            if (annotation.rect) {
+              annotation.rect.width = width + delta;
+            }
+          }
 
           requestAnimationFrame(() => {
             this.layout.UpdateTileWidths(true, column);
@@ -2912,6 +2971,12 @@ export class Grid {
             // for next call
             // column = area.start.column; // ??
 
+          }
+
+          for (const {annotation} of size_annotation_list) {
+            if (annotation.resize_callback) {
+              annotation.resize_callback.call(undefined);
+            }
           }
 
           this.ExecCommand({
@@ -3897,8 +3962,6 @@ export class Grid {
       */
 
       if (number_format) {
-        // if (array) this.model.sheet.UpdateAreaStyle(selection.area, { number_format }, true, true);
-        // else this.model.sheet.UpdateCellStyle(target, { number_format }, true, true);
         commands.push({
           key: CommandKey.UpdateStyle,
           area: array ? selection.area : target,
@@ -4035,6 +4098,11 @@ export class Grid {
 
   }
 
+  /**
+   * this prepares the cell value for _editing_ -- it's not the displayed
+   * value, it's how we want the value to be displayed in the editor and 
+   * formula bar. 
+   */
   private NormalizeCellValue(cell: Cell) {
 
     let cell_value = cell.value;
@@ -4085,6 +4153,11 @@ export class Grid {
   }
 
   /**
+   * this is used to handle a trailing % sign when entering a new value.
+   * we need to decide if the user is typing a number, in which case we
+   * retain the %; or something else, like a formula or a string, in which
+   * case we want to drop the %.
+   * 
    * FIXME: move to utils lib
    */
   private IsNumeric(c: number) {
@@ -4092,7 +4165,6 @@ export class Grid {
     // anything else?
 
     return (c >= 0x30 && c <= 0x39) // 0-9
-          // || (c === Localization.decimal_separator.charCodeAt(0)) // FIXME: cache?
           || (c === this.decimal_separator_code) // cached
           || (c === 0x2d) // -
           || (c === 0x2b) // + // this one is kind of a stretch...
@@ -4194,6 +4266,8 @@ export class Grid {
     // order of overflow is different for vertical/horizontal movement.
     // also we don't want to double-step. so there are four separate,
     // double tests... it seems redundant.
+
+    // not possible to do modulo arithmetic? (need carry/underflow?)
 
     if (address.column > area.end.column) {
       address.row = this.StepVisibleRows(address.row, 1);

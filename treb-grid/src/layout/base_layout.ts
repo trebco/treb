@@ -251,6 +251,7 @@ export abstract class BaseLayout {
 
         // FIXME: merge cells? [...]
 
+        /*
         if (annotation.cell_address) {
           let rect = this.CellAddressToRectangle(annotation.cell_address.start);
           if (annotation.cell_address.count > 1) {
@@ -259,7 +260,8 @@ export abstract class BaseLayout {
           rect = rect.Expand(-1, -1);
           rect.ApplyStyle(annotation.node);
         }
-        else if (annotation.rect) {
+        else */
+        if (annotation.rect) {
           annotation.rect.ApplyStyle(annotation.node);
         }
       }
