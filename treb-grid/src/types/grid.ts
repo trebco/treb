@@ -2699,7 +2699,8 @@ export class Grid {
       const size_annotation_list: Array<{annotation: Annotation; height: number}> = [];
 
       for (const annotation of this.model.active_sheet.annotations) {
-        const y = base - offset.y;
+        const y = rect.bottom - 1; // -1? border or something?
+
         if (!annotation.rect || annotation.rect.bottom < y) { continue; }
         if (y <= annotation.rect.top && annotation.move_with_cells) {
           move_annotation_list.push({annotation, y: annotation.rect.top});
@@ -2900,8 +2901,9 @@ export class Grid {
       const size_annotation_list: Array<{annotation: Annotation; width: number}> = [];
 
       for (const annotation of this.model.active_sheet.annotations) {
-        const x = base - offset.x;
+        const x = rect.right - 1; // -1? border or something?
         if (!annotation.rect || annotation.rect.right < x) { continue; }
+
         if (x <= annotation.rect.left && annotation.move_with_cells) {
           move_annotation_list.push({annotation, x: annotation.rect.left});
         }
