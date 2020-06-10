@@ -135,8 +135,20 @@ class ValueParserType {
       return { value: text, type: ValueType.string };
     }
 
-    if (parens) num = -num;
-    if (pct) num = num / 100;
+    if (parens) { num = -num; }
+    if (pct) {
+
+      // NOTE: this is an attempt to reduce fp errors that arise
+      // if you /100 (or if you /10 twice, which actually helps, but
+      // is not sufficient). there's probably a better way to do this...
+
+      const sign = num < 0 ? -1 : 1;
+      const split = (sign * num).toString().split('.');
+
+      split[0] = ('00' + split[0]).replace(/(\d\d)$/, '.$1');
+      num = Number(split.join('')) * sign;
+      
+    }
 
     if (/e/.test(text)) hints |= Hints.Exponential;
     return { value: num, type: ValueType.number, hints };
