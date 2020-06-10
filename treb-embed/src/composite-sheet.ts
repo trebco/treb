@@ -134,7 +134,7 @@ export class CompositeSheet {
     
     // set a default size if there's no width or height (fixme: one or the other?)
     const rect = this.outer_container.getBoundingClientRect();
-    if (!rect.width || !rect.height) {
+    if (!this.options.headless && (!rect.width || !rect.height)) {
       this.outer_container.classList.add('default-spreadsheet-size');
     }
 
