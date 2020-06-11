@@ -435,7 +435,11 @@ export class CompositeSheet {
 
     if (options.click) {
       const callback = options.click;
-      button.addEventListener('click', callback);
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        callback();
+      });
     }
 
     if (options.icon) {
