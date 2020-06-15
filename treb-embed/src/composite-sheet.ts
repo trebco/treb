@@ -368,6 +368,42 @@ export class CompositeSheet {
 
     // see above re:preprocessor
 
+    // was thinking about creating a function and then using
+    // function.toString(); but that seems impractical with
+    // the document data (and target options). although those
+    // could get passed in separately, I guess...
+
+    // the idea is to get ts to transpile and webpack to compress,
+    // so we can write a more normal function
+
+    // seems to work OK in chrome/ffx, need more testing
+
+    /*
+    const afunction = function() {
+      let attempts = 0;
+      const aself = (self as any);
+      const load = function() {
+        target_options.container = document.querySelector('.treb') as HTMLElement;
+        if (target_options.container && aself.TREB) {
+          aself.sheet = aself.TREB.CreateSpreadsheet(target_options);
+          aself.sheet.LoadDocument(document_data);
+        }
+        else {
+          if (++attempts < 32) {
+            setTimeout(function(){ load(); }, 100);
+          }
+        }
+      };
+      load();
+    }
+
+    script.textContent = `
+      var target_options=${JSON.stringify(target_options)};
+      var document_data = ${document_data};
+      (${afunction.toString()})();
+    `;
+    */
+
     /*
     script.textContent = `
       (function(){
@@ -377,7 +413,7 @@ export class CompositeSheet {
         var load = function() {
           options.container = document.querySelector('.treb');
           if (options.container && window.TREB) {
-            var sheet = TREB.CreateSpreadsheet(options);
+            window.sheet = TREB.CreateSpreadsheet(options);
             sheet.LoadDocument(document_data);
           }
           else {
@@ -391,7 +427,7 @@ export class CompositeSheet {
     `;
     */
 
-    script.textContent = `(function(){var options=${JSON.stringify(target_options)};var attempts=0;var document_data=${document_data};var load=function(){options.container=document.querySelector('.treb');if(options.container&&window.TREB){var sheet=TREB.CreateSpreadsheet(options);sheet.LoadDocument(document_data);}else{if(++attempts<32){setTimeout(function(){load();},100);}}};load();})();`;
+    script.textContent = `(function(){var options=${JSON.stringify(target_options)};var attempts=0;var document_data=${document_data};var load=function(){options.container=document.querySelector('.treb');if(options.container&&window.TREB){window.sheet=TREB.CreateSpreadsheet(options);sheet.LoadDocument(document_data);}else{if(++attempts<32){setTimeout(function(){load();},100);}}};load();})();`;
     new_window.document.body.appendChild(script);
 
   }
