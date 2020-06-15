@@ -8,7 +8,7 @@ export abstract class SpreadsheetVertexBase extends Vertex {
 
   public abstract Calculate(graph: Graph): void;
 
-  /**
+  /* *
    * NOTE: DO NOT CALL THIS. call the graph method, which updates the
    * dirty list.
    *
@@ -22,7 +22,7 @@ export abstract class SpreadsheetVertexBase extends Vertex {
    * false = "I was not previously dirty". callers can use that to drive
    * behavior.
    *
-   */
+   * /
   public SetDirty(): boolean {
 
     // if we are already dirty, then our children are already
@@ -48,6 +48,6 @@ export abstract class SpreadsheetVertexBase extends Vertex {
     return false; // was not dirty before
 
   }
-
+  */
 
 }

@@ -177,7 +177,7 @@ export abstract class Graph {
 
     // if there's an array that contains this cell, we need to create an edge
 
-    this.CreateImplicitEdgeToArrays(vertex);
+    // this.CreateImplicitEdgeToArrays(vertex);
 
     return vertex;
 
@@ -211,17 +211,20 @@ export abstract class Graph {
     const vertex = this.GetVertex(address, create);
 
     if (!vertex) {
+      /*
       if (set_dirty) {
         this.SetArraysDirty(address);
       }
+      */
       return;
     }
 
     vertex.ClearDependencies();
 
     if (set_dirty) {
-      this.dirty_list.push(vertex);
-      vertex.SetDirty();
+      // this.dirty_list.push(vertex);
+      // vertex.SetDirty();
+      this.SetVertexDirty(vertex);
     }
 
   }
@@ -269,6 +272,13 @@ export abstract class Graph {
 
     v_u.AddDependent(v_v);
     v_v.AddDependency(v_u);
+
+    // add implicit edge to array head. this is required at start
+    // because the array isn't set implicitly (why not?)
+
+    if (v_u.reference && v_u.reference.area && !v_u.array_head) {
+      this.AddEdge(v_u.reference.area.start, u);
+    }
 
     return GraphStatus.OK;
   }
@@ -321,6 +331,19 @@ export abstract class Graph {
 
   public SetVertexDirty(vertex: SpreadsheetVertex) {
 
+    // see below re: concern about relying on this
+
+    if (vertex.dirty) { return; }
+
+    this.dirty_list.push(vertex);
+    vertex.dirty = true;
+
+    for (const edge of vertex.edges_out) {
+      this.SetVertexDirty(edge as SpreadsheetVertex);
+    }
+
+    /*
+
     // is it safe to assume that, if the dirty flag is set, it's
     // on the dirty list? I'm not sure that's the case if there's
     // an error.
@@ -345,6 +368,8 @@ export abstract class Graph {
         }
       }
     }
+
+    */
 
   }
 
@@ -405,6 +430,9 @@ export abstract class Graph {
 
   public SetArraysDirty(address: ICellAddress) {
 
+    throw new Error('set arrays dirty');
+
+    /*
     // console.info("SAD", address)
 
     for (const key of Object.keys(this.array_vertices)) {
@@ -415,6 +443,7 @@ export abstract class Graph {
         array_vertex.SetDirty();
       }
     }
+    */
 
   }
 

@@ -350,6 +350,14 @@ export class Calculator extends Graph {
 
     const area = vertex.reference.area;
     if (area){
+
+      // clear array -- will it always exist? (...)
+      for (let row = area.start.row; row <= area.end.row; row++) {
+        for (let column = area.start.column; column <= area.end.column; column++) {
+          cells.data2[row][column].SetCalculatedValue(undefined, ValueType.undefined);
+        }
+      }
+      
       if (type === 'array' ){
 
         if (dims === 1){
@@ -362,7 +370,9 @@ export class Calculator extends Graph {
               }
               column = area.start.column;
             }
-            else cells.data2[row][column].SetCalculatedValueOrError(value[r]);
+            else {
+              cells.data2[row][column].SetCalculatedValueOrError(value[r]);
+            }
           }
         }
         else {
@@ -1153,6 +1163,20 @@ export class Calculator extends Graph {
         }
 
         this.SetDirty(cell); // implicitly creates vertex for array head (if it doesn't already exist)
+
+        // implicit vertices from array head -> array members. this is required
+        // to correctly propagate dirtiness if a referenced cell changes state
+        // from array -> !array and vice-versa
+
+        for (let column = cell.area.start.column; column <= cell.area.end.column; column++ ){
+          for (let row = cell.area.start.row; row <= cell.area.end.row; row++ ){
+            if (row === cell.area.start.row && column === cell.area.start.column) { continue; }
+            this.AddEdge(cell.area.start, {
+              ...cell.area.start, row, column
+            });
+          }
+        }
+        
 
       }
 

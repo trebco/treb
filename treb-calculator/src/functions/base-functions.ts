@@ -356,14 +356,42 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    /**
+     * sort arguments, but ensure we return empty strings to
+     * fill up the result array
+     */
     Sort: {
       fn: (...args: any[]) => {
+
         args = Utils.Flatten(args);
-        const numeric = args.every((x) => {
-          const type = typeof x;
-          return (null === x || type === 'undefined' || type === 'number');
+        if(args.every((test) => typeof test === 'number')) {
+          args.sort((a, b) => a - b);
+        }
+        else {
+          args.sort(); // lexical
+        }
+        return args;
+
+        /*
+        args = Utils.Flatten(Utils.UndefinedToEmptyString(args));
+
+        const empty: string[] = [];
+        const filtered = args.filter((test) => {
+          if (!!test || test === 0) return true;
+          empty.push('X');
+          return false;
         });
-        return numeric ? args.sort((a, b) => a - b) : args.sort();
+
+        if(filtered.every((test) => typeof test === 'number')) {
+          filtered.sort((a, b) => a - b);
+        }
+        else {
+          filtered.sort(); // lexical
+        }
+
+        return filtered.concat(empty);
+        */
+
       },
     },
 

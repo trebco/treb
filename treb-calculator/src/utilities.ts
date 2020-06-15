@@ -106,6 +106,18 @@ export const Flatten = (args: any[]): any[] => {
   }, []);
 };
 
+export const UndefinedToEmptyString = (args: any[]): any[] => {
+  for (let i = 0; i < args.length; i++) {
+    if (Array.isArray(args[i])) {
+      args[i] = UndefinedToEmptyString(args[i]);
+    }
+    else if (typeof args[i] === 'undefined') {
+      args[i] = '';
+    }
+  }
+  return args;
+};
+
 /**
  * returns a function that applies the given function to a scalar or a matrix
  * @param base the underlying function
