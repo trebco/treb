@@ -74,6 +74,16 @@ else {
 }
 */
 
+/*
+// as above
+if (build.legacy) {
+  legacy_entry[package['build-entry-points']['connect']] = './treb-connect/src/index.ts';
+}
+else {
+  modern_entry[package['build-entry-points']['connect']] = './treb-connect/src/index.ts';
+}
+*/
+
 const dist_dir = 'build';
 
 const build_dir = path.resolve(__dirname, dist_dir, package.version);
@@ -97,6 +107,7 @@ const directories = [
   'treb-format',
   'treb-parser',
   'treb-engine',
+  'treb-connect',
   'treb-toolbar',
   'treb-calculator',
   'treb-sparkline',

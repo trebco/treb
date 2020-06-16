@@ -46,7 +46,8 @@
     "main": "embedded-treb-bundle",
     "calculation-worker": "embedded-treb-worker",
     "export-worker": "embedded-treb-export-worker",
-    "engine": "treb-engine"
+    "engine": "treb-engine",
+    "connect": "treb-connect-lib"
   },
   "dependencies": {}
 }
