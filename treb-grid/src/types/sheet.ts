@@ -254,10 +254,44 @@ export class Sheet {
 
     // FIXME: hint? does anyone use hints?
 
+    // NOTE: we're padding out rows/columns here to be under annotations,
+    // otherwise the pruning may have removed them. it would probably be
+    // preferable to not prune them... that shouldn't add much extra data
+    // because it would just be the number.
+
+    // FIXME
+
+    sheet.annotations = (obj.annotations || []).map((entry) => new Annotation(entry));
+
+    /*
     sheet.annotations = [];
     if (obj.annotations) {
-      sheet.annotations = obj.annotations.map((entry) => new Annotation(entry));
+      sheet.annotations = obj.annotations.map((entry) => {
+        const annotation = new Annotation(entry);
+        let right = annotation.rect?.right;
+        if (right && sheet?.default_column_width) {
+          for (let i = 0; right >= 0 && i < 1000; i++) {
+            right -= sheet.GetColumnWidth(i);
+            if (right < 0) {
+              sheet.cells.EnsureColumn(i);
+              break;
+            }
+          }
+        }
+        let bottom = annotation.rect?.bottom;
+        if (bottom && sheet?.default_row_height) {
+          for (let i = 0; bottom >= 0 && i < 1000; i++) {
+            bottom -= sheet.GetRowHeight(i);
+            if (bottom < 0) {
+              sheet.cells.EnsureRow(i);
+              break;
+            }
+          }
+        }
+        return annotation;
+      });
     }
+    */
 
     // FIXME: hint? does anyone use hints?
 
@@ -1645,6 +1679,18 @@ export class Sheet {
       columns = this.columns;
     }
 
+    // push out for annotations
+
+    for (const annotation of this.annotations) {
+      if (!annotation.extent) {
+        this.CalculateAnnotationExtent(annotation);
+      }
+      if (annotation.extent) {
+        rows = Math.max(rows, annotation.extent.row + 1);
+        columns = Math.max(columns, annotation.extent.column + 1);
+      }
+    }
+    
     // (3) (style) for anything that hasn't been consumed, create a
     //     cell style map. FIXME: optional [?]
 
@@ -1788,6 +1834,42 @@ export class Sheet {
   }
 
   // --- protected ------------------------------------------------------------
+
+  /** 
+   * figure out the last row/column of the annotation. this
+   * might set it to 0/0 if there's no rect, just make sure
+   * that it gets cleared on layout changes.
+   */
+  protected CalculateAnnotationExtent(annotation: Annotation) {
+
+    // 1000 here is just sanity check, it might be larger
+    const sanity = 1000;
+
+    annotation.extent = { row: 0, column: 0 };
+
+    let right = annotation.rect?.right;
+    if (right && this.default_column_width) { // also sanity check
+      for (let i = 0; right >= 0 && i < sanity; i++) {
+        right -= this.GetColumnWidth(i);
+        if (right < 0) {
+          annotation.extent.column = i;
+          break;
+        }
+      }
+    }
+
+    let bottom = annotation.rect?.bottom;
+    if (bottom && this.default_row_height) {
+      for (let i = 0; bottom >= 0 && i < sanity; i++) {
+        bottom -= this.GetRowHeight(i);
+        if (bottom < 0) {
+          annotation.extent.row = i;
+          break;
+        }
+      }
+    }
+   
+  }
 
   /**
    * when checking style properties, check falsy but not '' or 0

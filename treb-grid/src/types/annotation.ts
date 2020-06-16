@@ -1,5 +1,5 @@
 
-import { Rectangle, Area } from 'treb-base-types';
+import { Rectangle, ICellAddress } from 'treb-base-types';
 
 /**
  * new annotation class. annotations are arbitrary content
@@ -62,6 +62,18 @@ export class Annotation {
    */
   public formula = '';
 
+  /** 
+   * extent, useful for exporting. we could probably serialize this,
+   * just be sure to clear it when layout changes so it will be
+   * recalculated.
+   * 
+   * the idea is to know the bottom/right row/column of the annotation,
+   * so when we preserve/restore the sheet we don't trim those rows/columns.
+   * they don't need any data, but it just looks bad. we can do this 
+   * dynamically but since it won't change all that often, we might 
+   * as well precalculate.
+   */
+  public extent?: ICellAddress;
 
   /**
    * constructor takes a property bag (from json, generally). note that
@@ -92,6 +104,8 @@ export class Annotation {
 
     if (!this.move_with_cells) result.move_with_cells = this.move_with_cells;
     if (!this.resize_with_cells) result.resize_with_cells = this.resize_with_cells;
+
+    if (this.extent) result.extent = this.extent;
 
     return result;
   }

@@ -2088,6 +2088,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // document fails, do that with a trap?
 
     // FIXME: move this to a separate function/lib
+    // properly belongs to model?
 
     if (data.decimal_mark && data.decimal_mark !== Localization.decimal_separator) {
 

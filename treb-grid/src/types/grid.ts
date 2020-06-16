@@ -464,6 +464,7 @@ export class Grid {
               node.style.left = (rect.left) + 'px';
 
             }, () => {
+              annotation.extent = undefined; // reset
               this.grid_events.Publish({ type: 'annotation', annotation, event: 'move' });
             });
 
@@ -508,7 +509,7 @@ export class Grid {
               node.style.width = (rect.width) + 'px';
 
             }, () => {
-              // console.info('public resize', annotation)
+              annotation.extent = undefined; // reset
               this.grid_events.Publish({ type: 'annotation', annotation, event: 'resize' });
             });
 
@@ -621,6 +622,7 @@ export class Grid {
             rect.top = target.y;
             node.style.top = (rect.top) + 'px';
             node.style.left = (rect.left) + 'px';
+            annotation.extent = undefined; // reset
             this.grid_events.Publish({ type: 'annotation', event: 'move', annotation });
           }
 
