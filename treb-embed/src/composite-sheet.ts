@@ -362,6 +362,8 @@ export class CompositeSheet {
       prompt_save: true,
       expand_formula_button: desktop,
       popout: false,    // ?
+      add_tab: true,
+      tab_bar: 'auto',
       dnd: true,        // we have an "open" button anyway
       collapsed: !desktop, // false, // true,  // ? what about mobile?
     };
