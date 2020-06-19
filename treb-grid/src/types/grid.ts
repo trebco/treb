@@ -4316,6 +4316,7 @@ export class Grid {
         if (--start >= 0 && !this.model.active_sheet.GetRowHeight(start)) i++;
       }
     }
+
     return start;
   }
 
@@ -4494,17 +4495,58 @@ export class Grid {
           start.row = Math.max(0, start.row);
         }
 
-        for (const addr of [start, end, scroll_target]) {
-          if (addr.row !== Infinity) {
-            addr.row = Math.max(0, Math.min(addr.row, this.model.active_sheet.rows - 1));
+        if (!this.options.expand) {
+          for (const addr of [start, end, scroll_target]) {
+            if (addr.row !== Infinity) {
+              addr.row = Math.max(0, Math.min(addr.row, this.model.active_sheet.rows - 1));
+            }
+            if (addr.column !== Infinity) {
+              addr.column = Math.max(0, Math.min(addr.column, this.model.active_sheet.columns - 1));
+            }
           }
-          if (addr.column !== Infinity) {
-            addr.column = Math.max(0, Math.min(addr.column, this.model.active_sheet.columns - 1));
+
+          this.ScrollIntoView(scroll_target);
+          this.Select(selection, new Area(start, end), undefined, true);
+ 
+
+        }
+        else {
+
+          for (const addr of [start, end, scroll_target]) {
+            if (addr.row !== Infinity) {
+              addr.row = Math.max(0, addr.row);
+            }
+            if (addr.column !== Infinity) {
+              addr.column = Math.max(0, addr.column);
+            }
           }
+
+
+          if (end.row !== Infinity && end.row >= this.model.active_sheet.rows && this.options.expand) {
+            let row = this.model.active_sheet.rows;
+            while (end.row >= row) { row += 8; }
+            this.model.active_sheet.cells.EnsureRow(row);
+            expanded = true;
+          }
+          if (end.column !== Infinity && end.column >= this.model.active_sheet.columns && this.options.expand) {
+            let column = this.model.active_sheet.columns;
+            while (end.column >= column) { column += 8; }
+            this.model.active_sheet.cells.EnsureColumn(column);
+            expanded = true;
+          }
+  
+          if (expanded) {
+            this.layout.UpdateTiles();
+            this.layout.UpdateContentsSize();
+            this.Repaint(true, true);
+            render = true;
+          }
+
+          this.ScrollIntoView(scroll_target);
+          this.Select(selection, new Area(start, end), undefined, true);
+ 
         }
 
-        this.ScrollIntoView(scroll_target);
-        this.Select(selection, new Area(start, end), undefined, true);
 
       }
       else {
