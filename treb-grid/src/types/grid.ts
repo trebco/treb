@@ -5,7 +5,7 @@ import {
 } from 'treb-base-types';
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
-  QuotedSheetNameRegex, IllegalSheetNameRegex
+  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress
 } from 'treb-parser';
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
 import { NumberFormatCache, RDateScale, ValueParser, Hints } from 'treb-format';
@@ -5466,6 +5466,109 @@ export class Grid {
 
   }
 
+  /** 
+   * this function now works for both rows and columns, and can handle
+   * sheets other than the active sheet. it does assume that you only ever
+   * add rows/columns on the active sheet, but since that's all parameterized
+   * you could get it to work either way.
+   * 
+   * in fact we should change the names of those parameters so it's a little
+   * more generic.
+   */
+  private PatchFormulasInternal(source: string, 
+    before_row: number,
+    row_count: number,
+    before_column: number, 
+    column_count: number,
+    active_sheet_name: string,
+    active_sheet: boolean ) {
+
+    const parsed = this.parser.Parse(source || '');
+    let modified = false;
+
+    // the sheet test is different for active sheet/non-active sheet.
+    
+    // on the active sheet, check for no name OR name === active sheet name.
+    // on other sheets, check for name AND name === active sheet name.
+
+    if (parsed.expression) {
+      this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
+
+        if (element.type === 'range' || element.type === 'address') {
+
+          // we can test if we need to modify a range or an address, but the 
+          // second address in a range can't be tested properly. so the solution
+          // here is to just capture the addresses that need to be modified
+          // from the range, and then not recurse (we should never get here
+          // as an address in a range).
+
+          const addresses: UnitAddress[] = [];
+
+          if (element.type === 'range') {
+
+            // there's a problem: this breaks because the inner test fails when
+            // this is TRUE... we may need to modify
+
+            // recurse if (1) explicit name match; or (2) no name AND we are on the active sheet
+
+            // return ((element.start.sheet && element.start.sheet.toLowerCase() === active_sheet_name) || (!element.start.sheet && active_sheet));
+
+
+            if ((element.start.sheet && element.start.sheet.toLowerCase() === active_sheet_name) || (!element.start.sheet && active_sheet)) {
+              addresses.push(element.start, element.end);
+            }
+
+          }
+          else if (element.type === 'address') {
+            if ((element.sheet && element.sheet.toLowerCase() === active_sheet_name) || (!element.sheet && active_sheet)) {
+              addresses.push(element);
+            }
+
+          }
+
+          // could switch the tests around? (referring to the count
+          // tests, which switch on operation)
+
+          for (const address of addresses) {
+
+            if (row_count && address.row >= before_row) {
+              if (row_count < 0 && address.row + row_count < before_row) {
+                address.column = address.row = -1;
+              }
+              else {
+                address.row += row_count;
+              }
+              modified = true;
+            }
+            if (column_count && address.column >= before_column) {
+              if (column_count < 0 && address.column + column_count < before_column) {
+                address.column = address.row = -1; // set as invalid (-1)
+              }
+              else {
+                address.column += column_count;
+              }
+              modified = true;
+            }
+  
+          }
+
+          return false; // always explicit
+ 
+        }
+        
+        return true; // recurse for everything else
+
+      });
+
+      if (modified) {
+        return '=' + this.parser.Render(parsed.expression);
+      }
+    }
+
+    return undefined;
+
+  }
+
   /**
    * FIXME: should be API method
    * FIXME: need to handle annotations that are address-based
@@ -5477,58 +5580,33 @@ export class Grid {
     this.model.active_sheet.InsertRows(command.before_row, command.count);
     this.model.named_ranges.PatchNamedRanges(0, 0, command.before_row, command.count);
 
-    // snip
+    const active_sheet_name = this.model.active_sheet.name.toLowerCase();
 
-    this.model.active_sheet.cells.IterateAll((cell: Cell) => {
-      let modified = false;
-      if (cell.type === ValueType.formula) {
-        const parsed = this.parser.Parse(cell.value || '');
-        if (parsed.expression) {
-          this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
-            if (element.type === 'address') {
-              if (element.row >= command.before_row) {
-                if (command.count < 0 && element.row + command.count < command.before_row) {
-                  element.column = element.row = -1;
-                }
-                else {
-                  element.row += command.count;
-                }
-                modified = true;
-              }
-            }
-            return true; // continue
-          });
+    for (const sheet of this.model.sheets) {
+      const active_sheet = sheet === this.model.active_sheet;    
+
+      sheet.cells.IterateAll((cell: Cell) => {
+        if (cell.type === ValueType.formula) {
+          const modified = this.PatchFormulasInternal(cell.value || '', 
+            command.before_row, command.count, 0, 0,
+            active_sheet_name, active_sheet);
           if (modified) {
-            cell.value = '=' + this.parser.Render(parsed.expression);
+            cell.value = modified;
+          }
+        }
+      });
+
+      for (const annotation of sheet.annotations) {
+        if (annotation.formula) {
+          const modified = this.PatchFormulasInternal(annotation.formula || '', 
+            command.before_row, command.count, 0, 0,
+            active_sheet_name, active_sheet);
+          if (modified) {
+            annotation.formula = modified;
           }
         }
       }
-    });
 
-    for (const annotation of this.model.active_sheet.annotations) {
-      if (annotation.formula) {
-        let modified = false;
-        const parsed = this.parser.Parse(annotation.formula || '');
-        if (parsed.expression) {
-          this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
-            if (element.type === 'address') {
-              if (element.row >= command.before_row) {
-                if (command.count < 0 && element.row + command.count < command.before_row) {
-                  element.column = element.row = -1;
-                }
-                else {
-                  element.row += command.count;
-                }
-                modified = true;
-              }
-            }
-            return true; // continue
-          });
-          if (modified) {
-            annotation.formula = '=' + this.parser.Render(parsed.expression);
-          }
-        }
-      }
     }
 
     // fix selections
@@ -5583,61 +5661,60 @@ export class Grid {
     this.model.active_sheet.InsertColumns(command.before_column, command.count);
     this.model.named_ranges.PatchNamedRanges(command.before_column, command.count, 0, 0);
 
-    // snip
+    // FIXME: we need an event here? 
 
-    this.model.active_sheet.cells.IterateAll((cell: Cell) => {
-      let modified = false;
-      if (cell.type === ValueType.formula) {
-        const parsed = this.parser.Parse(cell.value || '');
-        if (parsed.expression) {
-          this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
-            if (element.type === 'address') {
-              if (element.column >= command.before_column) {
-                if (command.count < 0 && element.column + command.count < command.before_column) {
-                  element.column = element.row = -1;
-                }
-                else {
-                  element.column += command.count;
-                }
-                modified = true;
-              }
-            }
-            return true; // continue
-          });
+    // A: caller sends a "structure" event after this call. that doesn't include
+    //    affected areas, though. need to think about whether structure event
+    //    triggers a recalc (probably should). we could track whether we've made
+    //    any modifications (and maybe also whether we now have any invalid 
+    //    references)
+
+    // patch all sheets
+
+    const active_sheet_name = this.model.active_sheet.name.toLowerCase();
+
+    for (const sheet of this.model.sheets) {
+      const active_sheet = sheet === this.model.active_sheet;
+    
+      sheet.cells.IterateAll((cell: Cell) => {
+        if (cell.type === ValueType.formula) {
+          const modified = this.PatchFormulasInternal(cell.value || '', 0, 0,
+            command.before_column, command.count,
+            active_sheet_name, active_sheet);
           if (modified) {
-            cell.value = '=' + this.parser.Render(parsed.expression);
+            cell.value = modified;
+          }
+        }
+      });
+
+      for (const annotation of sheet.annotations) {
+        if (annotation.formula) {
+          const modified = this.PatchFormulasInternal(annotation.formula,
+            0, 0, command.before_column, command.count,
+            active_sheet_name, active_sheet);
+          if (modified) {
+            annotation.formula = modified;
           }
         }
       }
-    });
 
-    for (const annotation of this.model.active_sheet.annotations) {
-      if (annotation.formula) {
-        let modified = false;
-        const parsed = this.parser.Parse(annotation.formula);
-        if (parsed.expression) {
-          this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
-            if (element.type === 'address') {
-              if (element.column >= command.before_column) {
-                if (command.count < 0 && element.column + command.count < command.before_column) {
-                  element.column = element.row = -1;
-                }
-                else {
-                  element.column += command.count;
-                }
-                modified = true;
-              }
-            }
-            return true; // continue
-          });
-          if (modified) {
-            annotation.formula = '=' + this.parser.Render(parsed.expression);
-          }
-        }
-      }
     }
 
+    // one other thing: we need to move/resize annotations, like
+    // we do with resizing rows/columns. to do that, we'll need the
+    // pixel offset of affected areas... TODO
+
+
+    
+    // ...
+
     // fix selection(s)
+
+    // FIXME: sheet? (...) no, because the only way you have "active"
+    // selections on non-active sheet is if you are editing, and editing
+    // and insert/delete row/column can't happen at the same time.
+
+    // sheet selections are persisted in the sheets so they won't be affected
 
     if (command.count < 0) {
       for (const selection of this.AllSelections()) {
