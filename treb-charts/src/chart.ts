@@ -6,6 +6,8 @@ import { Util } from './util';
 import { CellData, ChartData, DonutSlice, NumberOrUndefinedArray } from './chart-types';
 import { ChartFunctions } from './chart-functions';
 
+import { RangeScale } from 'treb-utils';
+
 require('../style/charts.scss');
 
 const DEFAULT_FORMAT = '#,##0.00'; // why not use "general", or whatever the usual default is?
@@ -217,6 +219,7 @@ export class Chart {
     }
 
     let x_labels: string[] | undefined;
+    let x_scale: RangeScale | undefined;
 
     if (args[1]) {
       const values = Util.Flatten(args[1]);
@@ -228,6 +231,10 @@ export class Chart {
         }
         return cell.value;
       });
+    }
+    else {
+      const count = Math.max.apply(0, series.map(data => data.length));
+      x_scale = Util.Scale(0, count, 7);
     }
 
     // const titles = x_labels ? x_labels.map((x_label, i) => `${x_label} : ${y_format.Format(data[i])}`) : undefined;
@@ -255,6 +262,7 @@ export class Chart {
       title,
       y_labels,
       x_labels,
+      x_scale,
       callouts,
       titles,
       smooth,
@@ -703,13 +711,18 @@ export class Chart {
         const scale = this.chart_data.scale;
         if (this.chart_data.series) {
 
-          const points = Math.max.apply(0, this.chart_data.series.map(x => x.length));
+          const points = this.chart_data.x_scale ? 
+            this.chart_data.x_scale.max :
+            Math.max.apply(0, this.chart_data.series.map(x => x.length));
 
           const func = this.chart_data.smooth ?
             this.renderer.RenderSmoothLine : this.renderer.RenderLine;
 
           // gridlines
-          this.renderer.RenderGrid(area, this.chart_data.scale.count, this.chart_data.series[0].length, 'chart-grid');
+          this.renderer.RenderGrid(area, 
+            this.chart_data.scale.count, 
+            this.chart_data.x_scale ? this.chart_data.x_scale.count : points, 
+            'chart-grid');
 
           // series
           let series_index = 0;

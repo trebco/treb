@@ -85,6 +85,7 @@ export interface LineBaseData extends ChartDataBaseType {
   data: NumberOrUndefinedArray;
   series?: NumberOrUndefinedArray[];
   scale: RangeScale;
+  x_scale?: RangeScale;
   titles?: string[];
   x_labels?: string[];
   y_labels?: string[];
