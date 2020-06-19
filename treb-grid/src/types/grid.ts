@@ -5142,7 +5142,7 @@ export class Grid {
                   }
                   return true;
                 });
-                composite.data.formula = '=' + this.parser.Render(parse_result.expression);
+                composite.data.formula = '=' + this.parser.Render(parse_result.expression, undefined, '');
               }
             }
           }
@@ -5435,7 +5435,7 @@ export class Grid {
               return true; // continue walk
             });
             if (modified) {
-              cell.value = '=' + this.parser.Render(parsed.expression);
+              cell.value = '=' + this.parser.Render(parsed.expression, undefined, '');
             }
           }
         }
@@ -5457,7 +5457,7 @@ export class Grid {
               return true; // continue walk
             });
             if (modified) {
-              annotation.formula = '=' + this.parser.Render(parsed.expression);
+              annotation.formula = '=' + this.parser.Render(parsed.expression, undefined, '');
             }
           }
         }
