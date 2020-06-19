@@ -5561,7 +5561,7 @@ export class Grid {
       });
 
       if (modified) {
-        return '=' + this.parser.Render(parsed.expression);
+        return '=' + this.parser.Render(parsed.expression, undefined, '');
       }
     }
 
