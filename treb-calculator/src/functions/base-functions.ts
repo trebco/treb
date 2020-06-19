@@ -224,6 +224,20 @@ export const BaseFunctionLibrary: FunctionMap = {
         // if (args.length === 0) return 0;
         // if (args.length === 1) return args[0];
 
+        const flattened = args.map(arg => Utils.Flatten(arg));
+        const len = Math.max.apply(0, flattened.map(x => x.length));
+
+        let sum = 0;
+        for (let i = 0; i < len; i++) {
+          sum += flattened.reduce((a, arg) => {
+            return a * (arg[i] || 0);
+          }, 1);
+        }        
+
+        return sum;
+
+        /*
+        
         const cols = args[0].length;
         const rows = args[0][0].length;
         if (!rows) return ReferenceError;
@@ -236,8 +250,10 @@ export const BaseFunctionLibrary: FunctionMap = {
             }, 1);
           }
         }
-
         return sum;
+
+        */
+
       },
     },
 
