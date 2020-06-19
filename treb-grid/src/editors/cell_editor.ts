@@ -262,6 +262,11 @@ export class CellEditor extends FormulaEditorBase {
         const array = (event.key === 'Enter' && event.ctrlKey && event.shiftKey);
         this.Publish({type: 'commit', value, selection: this.selection, array, event});
         this.selecting_ = false;
+
+        // do this so we don't tab-switch-focus
+        event.stopPropagation();
+        event.preventDefault();
+
         return true; // false;
       }
     case 'Escape':
