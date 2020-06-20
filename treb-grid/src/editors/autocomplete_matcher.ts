@@ -111,13 +111,19 @@ export class AutocompleteMatcher {
 
   /**
    * baby parser for generating tooltips. we want the name of the 
-   * current function, and the index of the current argument
+   * current function, and the index of the current argument.
+   * 
+   * not handled: escaped quotes (not even sure what the syntax for that is)
    */
   public ParseTooltip(expression: string) {
 
+    // these two things are actually unrelated, we just need to push/pop them at the same time
     const stack: Array<{buffer: string; argument: number }> = [];
+
     let argument = 0;
     let buffer = '';
+
+    // state flag
     let quote = false;
 
     for (const letter of expression) {
@@ -130,7 +136,7 @@ export class AutocompleteMatcher {
         switch (char) {
           case 0x28: // OPEN_PAREN:
             stack.push({
-              buffer: buffer.trim(), 
+              buffer: buffer.trim(), // there is no case where spaces get in this buffer
               argument,
             });
             buffer = '';
@@ -151,11 +157,13 @@ export class AutocompleteMatcher {
             break;
 
           default:
-            if ( (char >= 0x61 && char <= 0x7a)
-              || (char >= 0x41 && char <= 0x5a)
-              || (char >= 0x30 && char <= 0x39)
-              || (char === 0x5f)
-              || (char === 0x2e)) {
+
+            // these are legal symbol characters
+            if ( (char >= 0x61 && char <= 0x7a) // a-z
+              || (char >= 0x41 && char <= 0x5a) // A-Z
+              || (char >= 0x30 && char <= 0x39) // 0-9
+              || (char === 0x5f)                // _
+              || (char === 0x2e)) {             // .
     
               buffer += letter;
             }
