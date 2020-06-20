@@ -1,5 +1,5 @@
 
-import { Area, Cell, Rectangle } from 'treb-base-types';
+import { Area, Cell, Rectangle, Localization } from 'treb-base-types';
 import { Yield, EventSource } from 'treb-utils';
 import { Parser, UnitRange, UnitAddress } from 'treb-parser';
 
@@ -97,7 +97,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
    */
   protected static Parser = new Parser();
 
-  protected static readonly FormulaChars = '$^&*(-+={[<>/~%,'.split(''); // FIXME: i18n
+  protected static readonly FormulaChars = ('$^&*(-+={[<>/~%' + Localization.argument_separator).split(''); // FIXME: i18n
 
   /**
    * the current edit cell. in the event we're editing a merged or

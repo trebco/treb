@@ -15,6 +15,8 @@
  * 
  */
 
+import { Localization } from "treb-base-types/src";
+
 export interface ArgumentDescriptor {
   name?: string;
 }
@@ -111,7 +113,7 @@ export class AutocompleteMatcher {
         // if (func.canonical_name) result.tooltip = func.canonical_name;
         // else result.tooltip = tt.toUpperCase();
         result.tooltip = func.name;
-        result.arguments = '(' + (func.arguments || []).map((desc) => (desc.name || 'argument')).join(', ') + ')';
+        result.arguments = '(' + (func.arguments || []).map((desc) => (desc.name || 'argument')).join(Localization.argument_separator + ' ') + ')';
         result.description = func.description;
       }
     }
