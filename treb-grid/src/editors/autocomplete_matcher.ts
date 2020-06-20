@@ -15,7 +15,7 @@
  * 
  */
 
-import { Localization } from "treb-base-types/src";
+import { Localization } from 'treb-base-types';
 
 export interface ArgumentDescriptor {
   name?: string;
@@ -45,6 +45,8 @@ export class AutocompleteMatcher {
 
   private function_names: string[] = [];
   private function_map: {[index: string]: FunctionDescriptor} = {};
+
+  private argument_separator = Localization.argument_separator.charCodeAt(0);
 
   public SetFunctions(functions: FunctionDescriptor[]) {
     this.function_map = {};
@@ -90,7 +92,9 @@ export class AutocompleteMatcher {
     // check for tt: we're in a function call
     // let's do a baby parser
 
+    /*
     let sub = data.text.substr(0, data.cursor);
+
     const closed_function = /(?:^|[^A-Za-z_])([A-Za-z_][\w\d_.]*\s*\([^()]*\))/;
     const open_function = /([A-Za-z_][\w\d_.]*)\s*\(/g;
 
@@ -106,19 +110,90 @@ export class AutocompleteMatcher {
       tt = match[1];
       match = open_function.exec(sub);
     }
+    */
 
-    if (tt) {
-      const func = this.function_map[tt.toLowerCase()];
+    const parsed = this.ParseTooltip(data.text.substr(0, data.cursor));
+
+    if (parsed.function) {
+      const func = this.function_map[parsed.function.toLowerCase()];
       if (func) {
         // if (func.canonical_name) result.tooltip = func.canonical_name;
         // else result.tooltip = tt.toUpperCase();
+
         result.tooltip = func.name;
-        result.arguments = '(' + (func.arguments || []).map((desc) => (desc.name || 'argument')).join(Localization.argument_separator + ' ') + ')';
-        result.description = func.description;
+        result.arguments = '(' + (func.arguments || []).map((desc, index) => {
+          const argument = desc.name || 'argument';
+          return (index === parsed.argument) ? `<span class="active-argument">${argument}</span>` : argument;
+        }).join(Localization.argument_separator + ' ') + ')';
+        result.description = `<span class="function-description">${func.description}</span>`;
       }
     }
 
     return result;
+  }
+
+  /**
+   * baby parser for generating tooltips. we want the name of the 
+   * current function, and the index of the current argument
+   */
+  public ParseTooltip(expression: string) {
+
+    const stack: Array<{buffer: string; argument: number }> = [];
+    let argument = 0;
+    let buffer = '';
+    let quote = false;
+
+    for (const letter of expression) {
+     
+      const char = letter.charCodeAt(0);
+      if (quote) {
+        if (char === 0x22) { quote = false; }
+      }
+      else {
+        switch (char) {
+          case 0x28: // OPEN_PAREN:
+            stack.push({
+              buffer: buffer.trim(), 
+              argument,
+            });
+            buffer = '';
+            argument = 0;
+            break;
+    
+          case this.argument_separator:
+            argument++;
+            break;
+    
+          case 0x29: // CLOSE_PAREN:
+            argument = stack.pop()?.argument || 0;
+            break;
+    
+          case 0x22: // QUOTE:
+            quote = true;
+            break;
+
+          default:
+            if ( (char >= 0x61 && char <= 0x7a)
+              || (char >= 0x41 && char <= 0x5a)
+              || (char >= 0x30 && char <= 0x39)
+              || (char === 0x5f)
+              || (char === 0x2e)) {
+    
+              buffer += letter;
+            }
+            else {
+              buffer = '';
+            }
+    
+          }
+      }
+    }
+
+    return {
+      function: stack.pop()?.buffer || undefined,
+      argument,
+    };
+
   }
 
 }

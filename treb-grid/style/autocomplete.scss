@@ -86,4 +86,15 @@
   font-size: inherit;
   line-height: normal;
   white-space: pre;
+  color: inherit;
+
+  & .active-argument {
+    font-weight: 800;
+    // border-bottom: 1px solid #333;
+  }
+
+  & .function-description {
+    font-style: italic;
+  }
+
 }

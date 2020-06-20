@@ -288,7 +288,8 @@ export class Autocomplete {
 
     if (data.tooltip){
 
-      this.tooltip.textContent = data.tooltip + data.arguments +
+      //this.tooltip.textContent
+      this.tooltip.innerHTML = data.tooltip + data.arguments +
         (data.description ? '\n' + data.description : '');
 
       this.tooltip.style.left = position.left + 'px';
