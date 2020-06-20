@@ -110,6 +110,19 @@ export class SimulationModel {
         category: ['RiskAMP Random Distributions'],
       },
 
+      'Multivariate.LogNormal': {
+        description: 'Returns a sample from the multivariate log-normal distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'range of values', description: 'Set of Correlated Distributions (N)', address: true },
+          { name: 'correlation', description: 'Correlation Matrix (NxN)' },
+          { name: 'mean', description: 'Mean of underlying Normal distribution', default: 0 },
+          { name: 'stdev', description: 'Standard Deviation of underlying Normal distribution', default: 1 },
+        ],
+        fn: this.multivariate_lognormal.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
       'Multivariate.Uniform': {
         description: 'Returns a sample from the multivariate uniform distribution',
         simulation_volatile: true,
@@ -697,6 +710,22 @@ export class SimulationModel {
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
 
     return MC.Normal(1, { mean, sd })[0];
+  }
+
+  public multivariate_lognormal(range_of_values: any, correlation_matrix: number[][], mean = 0, sd = 1) {
+
+    if (this.state === SimulationState.Prep) {
+      this.PrepMultivariate(range_of_values, correlation_matrix);
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+        MC.LogNormal(this.iterations, { mean, sd, lhs: this.lhs, ordered: true });
+    }
+    else if (this.state === SimulationState.Simulation) {
+      return this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration];
+    }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
+
+    return MC.LogNormal(1, { mean, sd })[0];
   }
 
   public multivariate_beta(range_of_values: any, correlation_matrix: number[][], a = 1, b = 2) {

@@ -1678,6 +1678,14 @@ export class Sheet {
       rows = this.rows;
       columns = this.columns;
     }
+    else { 
+
+      // pad by 1 (2?)
+
+      rows += 2;
+      columns += 1;
+
+    }
 
     // push out for annotations
 

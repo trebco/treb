@@ -669,7 +669,6 @@ export class Calculator extends Graph {
     this.expression_calculator.SetModel(model);
 
     const flat_data = this.BuildCellsList(json_options);
-
     const result = this.RebuildGraph(flat_data, {});
 
     // add leaf vertices for annotations
@@ -1155,6 +1154,7 @@ export class Calculator extends Graph {
       if (cell.area && cell.area.start.column === cell.column && cell.area.start.row === cell.row ){
 
         const sheet_id = cell.area.start.sheet_id || cell.sheet_id;
+        if (!cell.area.start.sheet_id) { cell.area.start.sheet_id = sheet_id; }
 
         for (let column = cell.area.start.column; column <= cell.area.end.column; column++ ){
           for (let row = cell.area.start.row; row <= cell.area.end.row; row++ ){
@@ -1171,13 +1171,13 @@ export class Calculator extends Graph {
         for (let column = cell.area.start.column; column <= cell.area.end.column; column++ ){
           for (let row = cell.area.start.row; row <= cell.area.end.row; row++ ){
             if (row === cell.area.start.row && column === cell.area.start.column) { continue; }
+
             this.AddEdge(cell.area.start, {
               ...cell.area.start, row, column
             });
           }
         }
         
-
       }
 
       // formula?

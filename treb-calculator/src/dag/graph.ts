@@ -276,8 +276,14 @@ export abstract class Graph {
     // add implicit edge to array head. this is required at start
     // because the array isn't set implicitly (why not?)
 
+    // watch out for missing sheet ID!
+
     if (v_u.reference && v_u.reference.area && !v_u.array_head) {
-      this.AddEdge(v_u.reference.area.start, u);
+      this.AddEdge({
+        ...u,
+        row: v_u.reference.area.start.row,
+        column: v_u.reference.area.start.column,
+      }, u);
     }
 
     return GraphStatus.OK;
