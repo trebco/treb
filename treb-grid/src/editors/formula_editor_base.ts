@@ -199,6 +199,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
   }
 
   public UpdateTheme() {
+    // ...
   }
 
   public InsertReference(reference: string, id: any){
