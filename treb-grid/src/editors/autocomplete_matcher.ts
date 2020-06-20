@@ -89,29 +89,6 @@ export class AutocompleteMatcher {
 
     }
 
-    // check for tt: we're in a function call
-    // let's do a baby parser
-
-    /*
-    let sub = data.text.substr(0, data.cursor);
-
-    const closed_function = /(?:^|[^A-Za-z_])([A-Za-z_][\w\d_.]*\s*\([^()]*\))/;
-    const open_function = /([A-Za-z_][\w\d_.]*)\s*\(/g;
-
-    match = sub.match(closed_function);
-    while (match) {
-      sub = sub.substr(0, (match.index || 0) + 1) + sub.substr((match.index || 0) + 1 + match[1].length);
-      match = sub.match(closed_function);
-    }
-
-    let tt = '';
-    match = open_function.exec(sub);
-    while (match) {
-      tt = match[1];
-      match = open_function.exec(sub);
-    }
-    */
-
     const parsed = this.ParseTooltip(data.text.substr(0, data.cursor));
 
     if (parsed.function) {
@@ -169,6 +146,7 @@ export class AutocompleteMatcher {
             break;
     
           case 0x22: // QUOTE:
+            buffer = '';
             quote = true;
             break;
 
