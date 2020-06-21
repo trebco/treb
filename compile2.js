@@ -72,7 +72,6 @@ const directories = [
   'treb-format',
   'treb-parser',
   'treb-engine',
-  'treb-toolbar',
   'treb-calculator',
   'treb-sparkline',
   'treb-base-types',

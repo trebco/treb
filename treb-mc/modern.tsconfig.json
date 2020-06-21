@@ -3,6 +3,10 @@
   "references": [
     { "path": "../treb-base-types/modern.tsconfig.json" },
     { "path": "../treb-calculator/modern.tsconfig.json" }
+  ],
+  "exclude": [
+    "src/calculation-worker/index-legacy.ts"
   ]
+
 }
 

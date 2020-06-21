@@ -1,33 +1,40 @@
 
-import { Yield } from 'treb-utils';
-import { toolbar_template, CreateToolbarTemplate } from './toolbar-template';
+/**
+ * unifying the old two-class toolbar structure, and cleaning up. WIP.
+ */
+
+import { ToolbarOptions } from './toolbar-options';
 import { ToolbarItem } from './toolbar-item';
-import { NumberFormatCache, NumberFormat } from 'treb-format';
+
+import { NumberFormat, NumberFormatCache } from 'treb-format';
+import { BorderConstants, Grid, GridSelection, GridEvent } from 'treb-grid';
+
+import { BuildToolbarTemplate } from './toolbar-template';
 import { Measurement } from 'treb-utils';
-import { ICellAddress, Area } from 'treb-base-types';
+import { ICellAddress, Area, Style } from 'treb-base-types';
 
 import { symbol_defs } from './symbol-defs';
 import { icons as new_icons } from './icons';
 
-import { ToolbarOptions } from './toolbar-options';
-
 import { UA } from 'treb-grid';
 
-export type EventHandler = (id: string, data?: any) => void;
+import { EmbeddedSpreadsheetBase } from '../../embedded-spreadsheet-base';
+import { EmbeddedSheetEvent } from 'treb-embed/src/types';
+
+import '../style/toolbar.scss';
 
 const default_colors = [
   '#000', '#333', '#666', '#999', '#ccc', '#fff',
 ];
 
-const SVGNS = 'http://www.w3.org/2000/svg';
-const XlinkNS = 'http://www.w3.org/1999/xlink';
+const CreateSVGElement = document.createElementNS.bind(document, 'http://www.w3.org/2000/svg') as (tag: string) => SVGElement;
 
 interface ToolbarItemImpl extends ToolbarItem {
   node: HTMLElement;
   input?: HTMLInputElement;
 }
 
-export class Toolbar {
+export class CompositeToolbar {
 
   public current_note = '';
   public current_cell: ICellAddress = {row: -1, column: -1};
@@ -39,7 +46,7 @@ export class Toolbar {
   public dialog_cell: ICellAddress = {row: -1, column: -1};
   public dialog_note = '';
 
-  private handlers: EventHandler[] = [];
+  // private handlers: EventHandler[] = [];
   private items: {[index: string]: ToolbarItemImpl} = {};
   private colors: string[] = [];
   private formats: Array<string|ToolbarItem> = [];
@@ -49,9 +56,135 @@ export class Toolbar {
   /** using a list instead of querying every time (over-optimization) */
   private active_items: HTMLElement[] = [];
 
-  constructor(private container: HTMLElement, options: ToolbarOptions = {}) {
+  ////////////////////////////////////////
 
-    const template = CreateToolbarTemplate(options);
+  /** inject SVG, once, and lazily */
+  public static InjectSVG() {
+    if (this.svg_injected) return;
+
+    // const svg = document.createElementNS(SVGNS, 'svg');
+    const svg = CreateSVGElement('svg');
+    svg.setAttribute('style', 'position: absolute; width: 0; height: 0; overflow: hidden;');
+    svg.setAttribute('version', '1.1');
+    svg.setAttribute('toolbar-icons', '1');
+
+    // const pattern = document.createElementNS(SVGNS, 'pattern');
+    const pattern = CreateSVGElement('pattern');
+    pattern.setAttribute('id', 'hatch-pattern');
+    pattern.setAttribute('width', '3');
+    pattern.setAttribute('height', '3');
+    pattern.setAttribute('patternTransform', 'rotate(45 0 0)');
+    pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+
+    // const line = document.createElementNS(SVGNS, 'line');
+    const line = CreateSVGElement('line') as SVGLineElement;
+    line.setAttribute('x1', '1');
+    line.setAttribute('y1', '0');
+    line.setAttribute('x2', '1');
+    line.setAttribute('y2', '10');
+    line.style.strokeWidth = '2';
+    line.style.stroke = '#999';
+    pattern.appendChild(line);
+
+    svg.appendChild(pattern);
+
+    document.body.appendChild(svg);
+    this.svg_injected = true;
+  }
+
+  /** flag indicating we've done this */
+  private static svg_injected = false;
+
+  /** accessor */
+  public get visible() { return this.visible_; }
+
+  // tslint:disable-next-line: variable-name
+  private visible_ = false;
+
+  /** node for the actual toolbar */
+  private node: HTMLElement;
+
+  /** containing node */
+  private outer: HTMLElement;
+
+  /** instance of the toolbar class */
+  // private toolbar: Toolbar;
+
+  /** cache (a copy of) the current active style */
+  private selection_style?: Style.Properties;
+
+  /**
+   * live reference to selection, so we don't have to constantly retrieve
+   * it (this is less important now that we have a reference to the grid)
+   */
+  private primary_selection: GridSelection;
+
+  private grid: Grid;
+
+  /**
+   * both classes used to have "container" as a property. the inner class'
+   * container is what the outer class (in this constructor) calls "node".
+   * 
+   * but I think there's only one reference in the second class, and it's a
+   * selector, so it works even if it adds some useless work
+   * 
+   */
+  constructor(
+      private sheet: EmbeddedSpreadsheetBase,
+      private container: HTMLElement,
+      private options: ToolbarOptions = {}) {
+
+    this.grid = (sheet as any).grid; // private
+
+    // prep
+
+    CompositeToolbar.InjectSVG();
+
+    // dom layout
+
+    this.outer = document.createElement('div');
+    this.outer.classList.add('treb-formatting-toolbar');
+
+    this.node = document.createElement('div');
+    this.node.classList.add('treb-formatting-toolbar-inner');
+
+    container.insertBefore(this.outer, container.firstChild);
+    this.outer.appendChild(this.node);
+
+    // internal objects, initial state
+
+    this.InitToolbar(this.node, options);
+      
+    this.Show('merge', true);
+    this.Show('unmerge', false);
+    this.SetSecondColor('fill-color', 'yellow');
+    this.SetSecondColor('text-color', 'red');
+
+    // events
+   
+    this.grid.grid_events.Subscribe((event) => this.HandleGridEvent(event));
+    this.sheet.Subscribe((event) => this.HandleEvent(event));
+
+    // we now hold a live reference to the selection. we don't need to query
+    // every time. this should survive any document changes, since selection
+    // is const/readonly.
+
+    this.primary_selection = this.grid.GetSelection(); // live reference
+
+    // update state
+
+    this.UpdateDocumentStyles();
+    this.UpdateFreezeState();
+    this.UpdateFromSelection();
+
+  }
+
+  /**
+   * this is the old inner-class constructor
+   */
+  public InitToolbar(container: HTMLElement, options: ToolbarOptions = {}) {
+
+    const template = BuildToolbarTemplate(options);
     for (const item of template) this.PopulateItems(item, container);
 
     this.popup = document.createElement('div');
@@ -106,8 +239,8 @@ export class Toolbar {
     // let's do this the hard way. test target to make sure we're not
     // debouncing a different (future) element
 
-    let debounce: any;
-    let debounce_target: any;
+    let debounce: number|NodeJS.Timeout|undefined;
+    let debounce_target: string; // any;
 
     container.addEventListener('keydown', (event) => {
 
@@ -124,7 +257,8 @@ export class Toolbar {
             event.preventDefault();
             debounce_target = match[1];
             debounce = setTimeout(() => { debounce = undefined; }, 250);
-            this.Publish(match[1], item);
+            // this.Publish(match[1], item);
+            this.HandleToolbar(match[1], item); // yield?
             return;
           }
         }
@@ -153,7 +287,7 @@ export class Toolbar {
 
             const item = this.items[match[1]];
             if (item) item.value = event.target ? (event.target as HTMLInputElement).value : '';
-            this.Publish(match[1], item);
+            this.HandleToolbar(match[1], item);
             return;
           }
         }
@@ -229,7 +363,7 @@ export class Toolbar {
             }
             else {
               // console.info(item);
-              this.Publish(match[1], item);
+              this.HandleToolbar(match[1], item);
             }
           }
           return;
@@ -241,7 +375,431 @@ export class Toolbar {
 
   }
 
-  public Activate(id: string) {
+  /**
+   * show or hide toolbar. this can also be called on resize to update layout.
+   * 
+   * we don't use this anymore except as a side-effect of resize events, trim
+   * down...
+   * 
+   */
+  public ShowToolbar(show = true) {
+
+    this.visible_ = show;
+    this.outer.style.display = this.visible_ ? '' : 'none';
+
+    if (show) {
+
+      const toolbar_rect = this.node.getBoundingClientRect();
+      const container_rect = this.container.getBoundingClientRect();
+
+      //
+      // don't want to use an actual width in here, sloppy
+      //
+      // actually we can probably assume there's overflow if the widths
+      // are ==, that most likely means it's clipping.
+      //
+      // the original problem was we were not centering properly when
+      // the box was too small -- IE11 was reporting the clipped size).
+      //
+
+      if (toolbar_rect.width >= container_rect.width) {
+        this.outer.classList.add('centered');
+      }
+      else {
+        this.outer.classList.remove('centered');
+      }
+
+    }
+
+  }
+
+  /* * explicit hide method * /
+  public HideToolbar() {
+    this.ShowToolbar(false);
+  }
+
+  / ** toggle visibility (useful if you do not store state) * /
+  public Toggle() {
+    this.ShowToolbar(!this.visible_);
+  }
+  */
+
+  /** get colors and number formats that are in the document */
+  private UpdateDocumentStyles() {
+
+    this.ClearDocumentColors();
+    this.ClearDocumentFormats();
+
+    for (const sheet of this.grid.model.sheets) {
+
+      const serialized = sheet.toJSON();
+
+      for (const style of serialized.cell_style_refs) {
+        if (style.background) this.AddDocumentColor(style.background);
+        if (style.text_color) this.AddDocumentColor(style.text_color);
+        if (style.number_format) this.AddDocumentFormat(style.number_format);
+      }
+
+      for (const key of Object.keys(serialized.column_style)) {
+        const style = serialized.column_style[Number(key)];
+        if (style.background) this.AddDocumentColor(style.background);
+        if (style.text_color) this.AddDocumentColor(style.text_color);
+        if (style.number_format) this.AddDocumentFormat(style.number_format);
+      }
+
+      for (const key of Object.keys(serialized.row_style)) {
+        const style = serialized.row_style[Number(key)];
+        if (style.background) this.AddDocumentColor(style.background);
+        if (style.text_color) this.AddDocumentColor(style.text_color);
+        if (style.number_format) this.AddDocumentFormat(style.number_format);
+      }
+
+    }
+
+  }
+
+  /**
+   * handle sheet events. we are really only concerned with new documents,
+   * so we can update state
+   *
+   * UPDATE: also handling resize events
+   * FIXME: lock down type
+   */
+  private HandleEvent(event: EmbeddedSheetEvent) {
+    switch (event.type) {
+    case 'load':
+    case 'reset':
+      this.UpdateDocumentStyles();
+      this.UpdateFreezeState();
+      break;
+
+    case 'resize':
+      if (this.visible) {
+        this.ShowToolbar(true);
+      }
+      break;
+    }
+  }
+
+  /**
+   * toggle freeze, depending on current state. uses selection.
+   */
+  private Freeze() {
+
+    const freeze = this.grid.GetFreeze();
+    const frozen = freeze.rows || freeze.columns;
+
+    if (frozen) {
+      this.grid.Freeze(0, 0);
+    }
+    else {
+      if (this.primary_selection && !this.primary_selection.empty) {
+        const area = this.primary_selection.area as Area;
+        if (area.entire_sheet) {
+          // ?
+        }
+        else if (area.entire_row) {
+          this.grid.Freeze(area.end.row + 1, 0);
+        }
+        else if (area.entire_column) {
+          this.grid.Freeze(0, area.end.column + 1);
+        }
+        else {
+          this.grid.Freeze(area.end.row + 1, area.end.column + 1);
+        }
+      }
+    }
+
+    this.UpdateFreezeState();
+
+  }
+
+  private UpdateFreezeState() {
+
+    const freeze = this.grid.GetFreeze();
+    const frozen = (freeze.rows || freeze.columns);
+    
+    this.Show('unfreeze3', !!frozen);
+    this.Show('freeze3', !frozen);
+
+  }
+
+  /**
+   * handle grid events. we are only concerned about selection changes,
+   * so we can update the toolbar button states
+   */
+  private HandleGridEvent(event: GridEvent) {
+    if (event.type === 'selection') {
+      this.UpdateFromSelection();
+    }
+    /*
+    else if (event.type === 'data' || event.type === 'style') {
+      // console.info('dirty', event);
+      // if (this.current_file) {
+      //   this.file_list.State(this.current_file, FileState.dirty);
+      // }
+    }
+    */
+  }
+
+  /**
+   * update toolbar buttons -- essentially set toggle buttons for various
+   * styles (alignment, merge, number format, &c).
+   */
+  private UpdateFromSelection() {
+
+    let format = '';
+    let merged = false;
+
+    this.DeactivateAll();
+
+    if (this.primary_selection && !this.primary_selection.empty) {
+      let data = this.grid.model.active_sheet.CellData(this.primary_selection.target);
+      merged = !!data.merge_area;
+      if (merged && data.merge_area && (
+          data.merge_area.start.row !== this.primary_selection.target.row ||
+          data.merge_area.start.column !== this.primary_selection.target.column)) {
+        data = this.grid.model.active_sheet.CellData(data.merge_area.start);
+      }
+
+      const style = data.style;
+      this.selection_style = style;
+      if (style) {
+        format = style.number_format || '';
+
+        if (style.horizontal_align === 1) this.ActivateItem('align-left');
+        else if (style.horizontal_align === 2) this.ActivateItem('align-center');
+        else if (style.horizontal_align === 3) this.ActivateItem('align-right');
+
+        if (style.vertical_align === 1) this.ActivateItem('align-top');
+        else if (style.vertical_align === 2) this.ActivateItem('align-bottom');
+        else if (style.vertical_align === 3) this.ActivateItem('align-middle');
+
+        if (style.wrap) this.ActivateItem('wrap');
+
+      }
+      if (format) {
+        format = NumberFormatCache.SymbolicName(format) || format;
+      }
+
+      this.UpdateItem({
+        id: 'note', 
+        title: data.note ? 'Edit Note' : 'Add Note'
+      });
+
+      this.current_cell = {...this.primary_selection.target};
+      this.current_note = data.note || '';
+
+    }
+
+    this.UpdateItem({
+      id: 'number-format', 
+      value: format,
+    });
+
+    this.Show('merge', !merged);
+    this.Show('unmerge', merged);
+    this.UpdateFreezeState();
+
+  }
+
+  /**
+   * this used to be called via an event dispatch, so it was async.
+   * we're now calling it directly. should we add a Yield() in front?
+   * 
+   * (...)
+   * 
+   */
+  private HandleToolbar(id: string, template: ToolbarItem) {
+
+    const style: Style.Properties = {};
+
+    const template_id = template.alternate_id || template.id;
+
+    switch (template_id) {
+
+      case 'structure':
+        switch (template.value?.toLowerCase()) {
+          case 'insert-sheet':
+            this.grid.InsertSheet();
+            break;
+
+          case 'delete-sheet':
+            this.grid.DeleteSheet();
+            break;
+
+          case 'insert-row':
+            this.grid.InsertRow();
+            break;
+
+          case 'insert-column':
+            this.grid.InsertColumn();
+            break;
+
+          case 'delete-row':
+            this.grid.DeleteRows();
+            break;
+
+          case 'delete-column':
+            this.grid.DeleteColumns();
+            break;
+
+        }
+        break;
+
+      case 'save':
+        this.sheet.SaveLocalFile();
+        break;
+      
+      case 'load':
+        this.sheet.LoadLocalFile();
+        break;
+      
+      case 'new':
+        this.sheet.Reset(); // FIXME: prompt?
+        break;
+
+      case 'freeze3':
+      case 'unfreeze3':
+      case 'freeze2':
+        this.Freeze();
+        break;
+
+      case 'merge':
+        this.grid.MergeSelection();
+        break;
+
+      case 'unmerge':
+        this.grid.UnmergeSelection();
+        break;
+
+      case 'number-format':
+        style.number_format = template.value || '';
+        if (style.number_format) this.AddDocumentFormat(style.number_format);
+        break;
+
+      case 'align-top':
+        style.vertical_align = 1;
+        break;
+
+      case 'align-middle':
+        style.vertical_align = 3;
+        break;
+
+      case 'align-bottom':
+        style.vertical_align = 2;
+        break;
+
+      case 'align-left':
+        style.horizontal_align = 1;
+        break;
+
+      case 'align-center':
+        style.horizontal_align = 2;
+        break;
+
+      case 'align-right':
+        style.horizontal_align = 3;
+        break;
+
+      case 'wrap':
+        if (this.selection_style && this.selection_style.wrap) {
+          style.wrap = false;
+        }
+        else style.wrap = true;
+        break;
+
+      case 'border-bottom':
+        if (this.selection_style && this.selection_style.border_bottom === 1) {
+          this.grid.ApplyBorders(undefined, BorderConstants.Bottom, undefined, 2);
+        }
+        else {
+          this.grid.ApplyBorders(undefined, BorderConstants.Bottom);
+        }
+        break;
+
+      case 'border-all':
+        this.grid.ApplyBorders(undefined, BorderConstants.All);
+        break;
+
+      case 'border-outer':
+        this.grid.ApplyBorders(undefined, BorderConstants.Outside);
+        break;
+
+      case 'border-right':
+        this.grid.ApplyBorders(undefined, BorderConstants.Right);
+        break;
+
+      case 'border-left':
+        this.grid.ApplyBorders(undefined, BorderConstants.Left);
+        break;
+
+      case 'border-top':
+        this.grid.ApplyBorders(undefined, BorderConstants.Top);
+        break;
+
+      case 'border-none':
+        this.grid.ApplyBorders(undefined, BorderConstants.None);
+        break;
+
+      case 'text-color':
+        style.text_color = this.GetSecondColor(id) || undefined;
+        if (style.text_color) this.AddDocumentColor(style.text_color);
+        else style.text_color = 'none';
+        break;
+
+      case 'fill-color':
+        style.background = this.GetSecondColor(id) || undefined;
+        if (style.background) this.AddDocumentColor(style.background);
+        else style.background = 'none';
+        break;
+
+      case 'increase-decimal':
+      case 'decrease-decimal':
+        if (!this.selection_style) break; // nothing selected
+        {
+          // style, or generic
+          const number_format = this.selection_style.number_format || 'generic'; // shouldn't that be 'general'?
+          const format_base = NumberFormatCache.Get(number_format);
+          const format_instance = new NumberFormat(format_base.pattern); // clone, basically
+
+          // do nothing to date formats
+          if (format_instance.date_format) break;
+
+          // use the format mutation method (make sure this is a clone)
+          if (template.id === 'increase-decimal') format_instance.IncreaseDecimal();
+          else format_instance.DecreaseDecimal();
+
+          // get pattern returns the unmutated pattern, for some reason. use toString to
+          // get the mutated pattern. also: FIXME (in format)
+          style.number_format = format_instance.toString();
+        }
+        break;
+
+      case 'note':
+        this.grid.SetNote(undefined, this.dialog_note);
+        break;
+
+      default:
+        console.info('unhandled command:', template.id);
+    }
+
+    if (Object.keys(style).length) {
+      this.grid.ApplyStyle(undefined, style, true);
+    }
+
+    this.UpdateFromSelection();
+    this.grid.Focus();
+
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * set "active" state. this is the semi-highlight showing that
+   * a style is applied to the current selection.
+   */
+  public ActivateItem(id: string) {
     const item = this.items[id];
     if (item) {
       item.node.classList.add('active');
@@ -249,7 +807,8 @@ export class Toolbar {
     }
   }
 
-  public Deactivate(id: string){
+  /** remove "active" state */
+  public DeactivateItem(id: string){
     const item = this.items[id];
     if (item) {
       this.active_items = this.active_items.filter((test) => {
@@ -262,6 +821,7 @@ export class Toolbar {
     }
   }
 
+  /** remove "active" state */
   public DeactivateAll() {
     for (const item of this.active_items) {
       item.classList.remove('active');
@@ -269,6 +829,9 @@ export class Toolbar {
     this.active_items = [];
   }
 
+  /**
+   * FIXME: move strings out (can we interrogate the NF cache?)
+   */
   public ClearDocumentFormats() {
     this.formats = [
       'General', 'Number', 'Integer', 'Percent', 'Accounting', 'Currency', 'Scientific',
@@ -322,14 +885,6 @@ export class Toolbar {
     this.colors.push(color);
   }
 
-  public On(handler: EventHandler) {
-    this.handlers.push(handler);
-  }
-
-  public Off(handler: EventHandler) {
-    this.handlers = this.handlers.filter((test) => test !== handler);
-  }
-
   /**
    * this is a bit of a hack, for setting the second color in the color
    * buttons. we can't use the variable scheme we use in electron (because
@@ -337,10 +892,9 @@ export class Toolbar {
    * flexible.
    */
   public SetSecondColor(id: string, color: string) {
+
     const item = this.items[id];
     if (item && item.icon) {
-      // const paths = document.querySelectorAll(`symbol#treb-toolbar-icon-${item.icon} path`);
-      //const paths = document.querySelectorAll(`.treb-toolbar-icon-${item.icon} path`);
       const paths = this.container.querySelectorAll(`.treb-toolbar-icon-${item.icon} path`);
       for (let i = 0; i < paths.length; i++) {
 
@@ -388,42 +942,27 @@ export class Toolbar {
     else console.warn(`can't show id ${id}`);
   }
 
-  public UpdateIcon(id: string, icon: string) {
-
-    const item = this.items[id];
-    //const element = item.node.querySelector('use');
-    //if (element) {
-    //  element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + icon);
-    //}
- 
-    const element = item.node.querySelector('svg');
-    if (element) {
-      this.CreateSVG(icon, element as SVGElement);
-    }
-  }
-  
-  public UpdateTitle(id: string, title: string) {
-    const item = this.items[id];
+  public UpdateItem(update: ToolbarItem) {
+    const item = this.items[update.id||0];
     if (item) {
-      item.node.setAttribute('title', title);
-    }
-  }
-
-  public UpdateAlternateID(id: string, alternate_id: string) {
-    const item = this.items[id];
-    if (item) {
-      item.alternate_id = alternate_id;
-    }
-  }
-
-  public Update(id: string, value: string) {
-    if (this.items[id]) {
-      const item = this.items[id];
-      if (item.type === 'input') {
-        if (item.input) item.input.value = value;
+      if (typeof update.title !== 'undefined') {
+        item.node.setAttribute('title', update.title);
       }
-    }
-    else console.warn(`can't update id ${id}`);
+      if (typeof update.icon !== 'undefined') {
+        const element = item.node.querySelector('svg');
+        if (element) {
+          this.CreateSVG(update.icon, element as SVGElement);
+        }
+      }
+      if (typeof update.alternate_id !== 'undefined') {
+        item.alternate_id = update.alternate_id;
+      }
+      if (typeof update.value !== 'undefined') {
+        if (item.type === 'input' && item.input) {
+          item.input.value = update.value;
+        }
+      }
+    }    
   }
 
   private AddSeparator(container: HTMLElement) {
@@ -459,7 +998,7 @@ export class Toolbar {
           this.popup_item && this.popup_item.color && this.popup_item.id) {
         const color = this.TranslateColor((node as HTMLInputElement).value || '');
         this.SetSecondColor(this.popup_item.id, color);
-        this.Publish(this.popup_item.id, this.popup_item);
+        this.HandleToolbar(this.popup_item.id, this.popup_item);
         this.HidePopup(); // actually not necessary, because grid will steal focus
       }
       return;
@@ -485,7 +1024,7 @@ export class Toolbar {
         this.popup_item.value = command || node.textContent || '';
       }
 
-      this.Publish(this.popup_item.id, this.popup_item);
+      this.HandleToolbar(this.popup_item.id, this.popup_item);
       this.HidePopup(); // actually not necessary, because grid will steal focus
     }
     else if (this.popup_item && this.popup_item.options ) {
@@ -503,11 +1042,14 @@ export class Toolbar {
         const item_id = item.id || '';
 
         this.HidePopup();
-        this.UpdateTitle(item_id, button.getAttribute('title') || '');
-        this.UpdateIcon(item_id, button.getAttribute('data-icon') || '');
-        this.UpdateAlternateID(item_id, id);
+        this.UpdateItem({
+          id: item_id,
+          title: button.getAttribute('title') || '',
+          icon: button.getAttribute('data-icon') || '',
+          alternate_id: id,
+        });
 
-        this.Publish(id, item);
+        this.HandleToolbar(id, item);
 
       }
     }
@@ -546,7 +1088,7 @@ export class Toolbar {
 
   }
 
-  private NotePopup(item: ToolbarItemImpl) {
+  private NotePopup() {
 
     const container = document.createElement('div');
     this.popup.appendChild(container);
@@ -689,7 +1231,7 @@ export class Toolbar {
       this.popup.classList.add('popup-options');
     }
     else if (item.id === 'note') {
-      this.NotePopup(item);
+      this.NotePopup();
       this.popup.classList.add('popup-note');
     }
     else {
@@ -755,31 +1297,6 @@ export class Toolbar {
 
   private AddInput(template: ToolbarItem, container: HTMLElement) {
 
-    /*
-    const input = document.createElement('input');
-    input.setAttribute('type', 'text');
-
-    if (template.text) {
-      const header = document.createElement('button');
-      header.classList.add('input-header');
-
-      const span = document.createElement('span');
-      span.textContent = template.text;
-
-      // header.innerText = template.text;
-      header.appendChild(span);
-
-      if (template.title) {
-        header.setAttribute('title', template.title);
-      }
-
-      container.appendChild(header);
-
-    }
-
-    container.appendChild(input);
-    */
-
     const group = document.createElement('div');
     group.classList.add('input');
 
@@ -790,16 +1307,6 @@ export class Toolbar {
       const header = document.createElement('button');
       header.classList.add('input-header');
 
-      // const span = document.createElement('span');
-      // span.textContent = template.text;
-
-      // header.innerText = template.text;
-      // header.appendChild(span);
-
-      // const svg = document.createElementNS(SVGNS, 'svg');
-      // const element = document.createElementNS(SVGNS, 'use');
-      // svg.appendChild(element);
-      // element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + template.icon);
       if (template.icon) {
         const svg = this.CreateSVG(template.icon);
         header.appendChild(svg);
@@ -884,15 +1391,13 @@ export class Toolbar {
     const size = use_new_icon ? new_size : old_size;
 
     if (!target) {
-      target = document.createElementNS(SVGNS, 'svg');
+      target = CreateSVGElement('svg');
       target.setAttribute('width', size);
       target.setAttribute('height', size);
     }
     else {
       target.innerHTML = '';
     }
-
-    //for (const key of Object.keys(symbol_defs)) {
 
       const def = symbol_defs[icon] || new_icons[icon];
       if (!def) {
@@ -901,22 +1406,19 @@ export class Toolbar {
       }
 
 
-      const symbol = document.createElementNS(SVGNS, 'g');
-      // symbol.setAttribute('id', 'treb-toolbar-icon-' + key);
+      const symbol = CreateSVGElement('g');
       target.setAttribute('viewBox', def.viewbox || `0 0 ${size} ${size}`);
-      //target.classList.add('treb-toolbar-icon-' + icon);
 
       let classes_list = 'treb-toolbar-icon-' + icon;
       if (use_new_icon) { classes_list += ' treb-new-icon'; }
       target.setAttribute('class', classes_list);
 
       for (const path_def of def.paths || []) {
-        const path = document.createElementNS(SVGNS, 'path');
+        const path = CreateSVGElement('path');
         path.setAttribute('d', path_def.d);
         if (path_def.style) path.setAttribute('style', path_def.style);
         if (path_def.classes) {
           const classes = Array.isArray(path_def.classes) ? path_def.classes : [path_def.classes];
-          // for (const class_name of classes) { path.classList.add(class_name); }
           path.setAttribute('class', classes.join(' ')); // IE11
         }
         symbol.appendChild(path);
@@ -938,10 +1440,6 @@ export class Toolbar {
       button.textContent = template.text;
     }
     if (template.icon) {
-      // const svg = document.createElementNS(SVGNS, 'svg');
-      // const element = document.createElementNS(SVGNS, 'use');
-      // svg.appendChild(element);
-      // element.setAttributeNS(XlinkNS, 'href', '#treb-toolbar-icon-' + template.icon);
       const svg = this.CreateSVG(template.icon);
       button.appendChild(svg);
     }
@@ -957,12 +1455,5 @@ export class Toolbar {
     container.appendChild(button);
   }
 
-  private Publish(id: string, data?: any) {
-    Yield().then(() => {
-      for (const handler of this.handlers) {
-        handler(id, data);
-      }
-    });
-  }
-
 }
+

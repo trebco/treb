@@ -4,7 +4,7 @@ import { symbols } from './symbol-defs';
 import { CreateSheetOptions, DefaultOptions } from './options';
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { Resizable } from 'treb-utils';
-import { ToolbarOptions, FormattingToolbar } from 'treb-toolbar';
+import { ToolbarOptions, CompositeToolbar as FormattingToolbar } from './toolbar/src';
 
 import '../style/composite-sheet.scss';
 import 'treb-base-types/style/resizable.css';
@@ -555,9 +555,8 @@ export class CompositeSheet {
           // file_menu: this.options.toolbar_file_menu,
         };
 
-        this.toolbar = FormattingToolbar.CreateInstance(
+        this.toolbar = new FormattingToolbar(
           this.sheet, 
-          (this.sheet as any).grid, 
           this.toolbar_container, 
           options);
   

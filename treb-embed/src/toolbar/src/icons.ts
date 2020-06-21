@@ -17,6 +17,7 @@ export interface SymbolDef2 {
 }
 
 export const icons: {[index: string]: SymbolDef2} = {
+  /*
   'material/outline/ac_unit-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
@@ -35,6 +36,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
+  */
   'material/outline/chat_bubble_outline-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
@@ -53,6 +55,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
+  /*
   'material/outline/crop-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
@@ -89,6 +92,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
+  */
   'material/outline/folder-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
@@ -125,6 +129,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
+  /*
   'material/outline/save-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
@@ -143,6 +148,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
+  */
   'material/outline/save_alt-24px': {
     'viewbox': '0 0 24 24',
     'paths': [

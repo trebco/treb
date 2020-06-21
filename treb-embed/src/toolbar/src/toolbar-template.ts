@@ -1,6 +1,7 @@
 
-import { ToolbarItem } from './toolbar-item';
 import { Localization } from 'treb-base-types';
+
+import { ToolbarItem } from './toolbar-item';
 import { ToolbarOptions } from './toolbar-options';
 
 /** 
@@ -215,7 +216,7 @@ export const toolbar_template: ToolbarItem[] = [
 ];
 
 
-export const CreateToolbarTemplate = (options: ToolbarOptions): ToolbarItem[] => {
+export const BuildToolbarTemplate = (options: ToolbarOptions): ToolbarItem[] => {
 
   const template: Array<ToolbarItem | ToolbarItem[]> = [];
 

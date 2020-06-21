@@ -13,6 +13,8 @@
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "rootDir": ".",
+    "importHelpers": true,
+    "noEmitHelpers": true,
     "lib": [
       "dom", "es2015"
     ],
