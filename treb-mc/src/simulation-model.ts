@@ -563,6 +563,49 @@ export class SimulationModel {
 
       },
 
+      MMult: {
+        description: 'Multiplies two matrices',
+        arguments: [{ name: 'Matrix 1'}, { name: 'Matrix 2'}],
+        fn: (a: number[][], b: number[][]) => {
+          if (!a || !b) return ArgumentError;
+
+          const a_cols = a.length || 0;
+          const a_rows = a[0]?.length || 0;
+  
+          const b_cols = b.length || 0;
+          const b_rows = b[0]?.length || 0;
+  
+          if (!a_rows || !b_rows || !a_cols || !b_cols
+             || a_rows !== b_cols || a_cols !== b_rows) return ValueError;
+  
+          // this is backwards. why? because the arrays passed in 
+          // are column-major. instead of calling transpose three times
+          // we can just switch around. intransitive property ftw!
+
+          const ma = Matrix.FromArray(a);
+          const mb = Matrix.FromArray(b);
+
+          return mb.Multiply(ma).ToArray();
+
+        }  
+      },
+
+      MInverse: {
+        description: 'Returns the inverse matrix',
+        fn: (a: number[][]) => {
+
+          try {
+            const mat = Matrix.FromArray(a).Transpose();
+            return mat.Inverse().ToArray(true);
+          }
+          catch (err) {
+            console.warn(err);
+            return ValueError;
+          }
+
+        }
+      },
+
       // new stuff
 
       'RiskAMP.HistogramTable': {

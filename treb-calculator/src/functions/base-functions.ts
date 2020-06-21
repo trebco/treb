@@ -1,7 +1,7 @@
 
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ReferenceError, NotImplError, ValueError } from '../function-error';
+import { ReferenceError, NotImplError, ValueError, ArgumentError } from '../function-error';
 import { Cell } from 'treb-base-types/src';
 
 import { Sparkline } from 'treb-sparkline';
@@ -216,6 +216,41 @@ export const BaseFunctionLibrary: FunctionMap = {
         }, 0);
       },
     },
+
+    /*
+    MMult: {
+      description: 'Multiplies two matrices',
+      arguments: [{ name: 'Matrix 1'}, { name: 'Matrix 2'}],
+      fn: (a, b) => {
+        if (!a || !b) return ArgumentError;
+
+        const a_cols = a.length || 0;
+        const a_rows = a[0]?.length || 0;
+
+        const b_cols = b.length || 0;
+        const b_rows = b[0]?.length || 0;
+
+        if (!a_rows || !b_rows || !a_cols || !b_cols
+           || a_rows !== b_cols || a_cols !== b_rows) return ValueError;
+
+        const result: number[][] = [];
+
+        // slightly confusing because we're column-major
+
+        for (let c = 0; c < b_cols; c++) {
+          result[c] = [];
+          for (let r = 0; r < a_rows; r++) {
+            result[c][r] = 0;
+            for (let x = 0; x < a_cols; x++) {
+              result[c][r] += a[x][r] * b[c][x];
+            }
+          }
+        }
+        return result;
+
+      }
+    },
+    */
 
     SumProduct: {
       description: 'Returns the sum of pairwise products of two or more ranges',
