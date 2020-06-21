@@ -362,9 +362,12 @@ export class Cells {
           // why we do that, because we should ensure empty cells if there's
           // a style (separately).
 
+          // NOTE: switching test from "calculated" to "calculated type": this
+          // should preserve zeros.
+
           if (cell && (!is_empty || options.preserve_empty_strings) &&
-              (merge_head || cell.type || (cell.calculated && options.expand_arrays) ||
-                (cell.calculated && options.calculated_value) ||
+              (merge_head || cell.type || (cell.calculated_type && options.expand_arrays) ||
+                (cell.calculated_type && options.calculated_value) ||
                 (options.decorated_cells && cell.style &&
                   ( cell.style.background || cell.style.border_bottom ||
                     cell.style.border_top || cell.style.border_left || cell.style.border_right)))){
