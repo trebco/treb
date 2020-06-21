@@ -1,8 +1,7 @@
 
 import { Localization } from 'treb-base-types';
 
-import { ToolbarItem } from './toolbar-item';
-import { ToolbarOptions } from './toolbar-options';
+import { ToolbarItem, ToolbarOptions } from './toolbar-types';
 
 /** 
  * dropdown menu for add/remove sheet. this will get added to 

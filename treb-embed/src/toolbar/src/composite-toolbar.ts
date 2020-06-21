@@ -3,8 +3,7 @@
  * unifying the old two-class toolbar structure, and cleaning up. WIP.
  */
 
-import { ToolbarOptions } from './toolbar-options';
-import { ToolbarItem } from './toolbar-item';
+import { ToolbarOptions, ToolbarItem } from './toolbar-types';
 
 import { NumberFormat, NumberFormatCache } from 'treb-format';
 import { BorderConstants, Grid, GridSelection, GridEvent } from 'treb-grid';
