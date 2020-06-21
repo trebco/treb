@@ -156,6 +156,7 @@ const CreateConfig = (config, entry) => {
       publicPath: './',
       chunkFilename: '[name].bundle.js'
     },
+
     plugins: [
       new LicenseCheckerWebpackPlugin({ outputFilename: '3d_party.txt' }),
       new webpack.BannerPlugin({
