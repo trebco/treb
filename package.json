@@ -30,16 +30,16 @@
     "webpack-cli": "^3.3.12"
   },
   "scripts": {
-    "build": "node compile.js",
-    "dev": "node compile.js -d --modern",
-    "dev-legacy": "node compile.js -d --legacy",
-    "watch": "node compile.js -w",
-    "watch-modern": "node compile.js -w --modern -d",
-    "watch-legacy": "node compile.js -w --legacy -d",
-    "build-modern": "node compile.js --modern",
-    "build-legacy": "node compile.js --legacy",
-    "watch-dev": "node compile.js -w -d",
-    "release": "node compile.js --clean && node zip-package.js"
+    "build": "node compile2.js",
+    "dev": "node compile2.js -d --modern",
+    "dev-legacy": "node compile2.js -d --legacy",
+    "watch": "node compile2.js -w",
+    "watch-modern": "node compile2.js -w --modern -d",
+    "watch-legacy": "node compile2.js -w --legacy -d",
+    "build-modern": "node compile2.js --modern",
+    "build-legacy": "node compile2.js --legacy",
+    "watch-dev": "node compile2.js -w -d",
+    "release": "node compile2.js --clean && node zip-package.js"
   },
   "build-entry-points": {
     "main": "embedded-treb-bundle",

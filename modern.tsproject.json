@@ -17,13 +17,7 @@
     "noEmitHelpers": true,
     "lib": [
       "dom", "es2015"
-    ],
-		"paths": {
-			"treb-base-types/*": ["treb-base-types/src/*"],
-			"treb-utils/*": ["treb-utils/src/*"],
-      "treb-parser/*": ["treb-parser/src/*"],
-      "treb-format/*": ["treb-format/src/*"]
-		}
+    ]
   },
   "exclude": [
     "node_modules"
