@@ -74,7 +74,7 @@ export class Workbook {
 
   public async ReadStyles() {
     if (!this.zip) throw new Error('missing zip');
-    const data = await this.zip.file('xl/styles.xml').async('text');
+    const data = await this.zip.file('xl/styles.xml')?.async('text') as string;
     this.style_cache.Init(data, this.theme);
   }
 
@@ -144,7 +144,7 @@ export class Workbook {
         if (rid) {
           sheet.path = `xl/${this.rels[rid].target}`;
           sheet.rels_path = sheet.path.replace('worksheets', 'worksheets/_rels') + '.rels';
-          const data = await this.zip.file(sheet.path).async('text');
+          const data = await this.zip.file(sheet.path)?.async('text');
           sheet.xml = data;
           if (preparse) sheet.Parse();
         }
@@ -162,7 +162,7 @@ export class Workbook {
 
     if (!this.zip) { return; }
 
-    const core = await this.zip.file('docProps/core.xml').async('text');
+    const core = await this.zip.file('docProps/core.xml')?.async('text') as string;
     const core_dom = ElementTree.parse(core);
 
     /*
@@ -253,7 +253,7 @@ export class Workbook {
     });
 
     const content_types_path = '[Content_Types].xml';
-    const content_types_data = await this.zip.file(content_types_path).async('text');
+    const content_types_data = await this.zip.file(content_types_path)?.async('text') as string;
     const content_types_dom = ElementTree.parse(content_types_data);
 
     // do sheets first, get them in [content_types] in order, then we will add drawing bits
@@ -410,7 +410,7 @@ export class Workbook {
     Chart.next_chart_index = 1;
 
     // read rels
-    let data = await this.zip.file( 'xl/_rels/workbook.xml.rels').async('text');
+    let data = await this.zip.file( 'xl/_rels/workbook.xml.rels')?.async('text') as string;
 
     this.rels_dom = ElementTree.parse(data);
     this.rels = {};
@@ -426,7 +426,7 @@ export class Workbook {
     });
 
     // read workbook
-    data = await this.zip.file('xl/workbook.xml').async('text');
+    data = await this.zip.file('xl/workbook.xml')?.async('text') as string;
 
     await this.ReadStringsTable();
     await this.ReadTheme();
