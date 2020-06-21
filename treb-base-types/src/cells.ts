@@ -262,7 +262,8 @@ export class Cells {
 
     }
 
-    data.forEach((obj) => {
+    for (const obj of data) {
+
       if (!this.data2[obj.row]) this.data2[obj.row] = [];
       const cell = new Cell(obj.value);
       if (typeof obj.calculated !== 'undefined') {
@@ -275,8 +276,13 @@ export class Cells {
       }
       this.data2[obj.row][obj.column] = cell;
 
+      // since we are serializing the array data (when storing calculated
+      // values), is this getting called every time? I think it might be...
+      // we're fixing the former, anyway.
+
       if (obj.area){
-        const area = new Area(obj.area.start, obj.area.end);
+        const area = new Area(obj.area.start, obj.area.end); // isn't there a clone method?
+
         for ( let row = area.start.row; row <= area.end.row; row++){
           for ( let column = area.start.column; column <= area.end.column; column++){
             if (!this.data2[row]) this.data2[row] = [];
@@ -297,9 +303,11 @@ export class Cells {
         }
       }
 
-    });
+    }
+
     this.rows_ = this.data2.length;
     this.columns_ = this.data2.reduce((max, row) => Math.max(max, row.length), 0);
+
   }
 
   public toJSON(options: CellSerializationOptions = {}){
@@ -349,6 +357,10 @@ export class Cells {
             && cell.merge_area.start.row === row
             && cell.merge_area.start.column === column;
 
+          const array_head = cell && cell.area
+            && cell.area.start.row === row
+            && cell.area.start.column === column;
+
           const is_empty = cell ? (cell.type === ValueType.string && !cell.value) : true;
 
           // NOTE: we added the check on calculated && calculated_value,
@@ -385,7 +397,9 @@ export class Cells {
                 obj.calculated_type = cell.calculated_type;
               }
             }
-            if (cell.area) obj.area = cell.area.toJSON();
+            if (cell.area && array_head) {
+              obj.area = cell.area.toJSON();
+            }
             if (cell.merge_area) obj.merge_area = cell.merge_area.toJSON();
 
             if (options.cell_style_refs &&
