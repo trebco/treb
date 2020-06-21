@@ -592,6 +592,7 @@ export class SimulationModel {
 
       MInverse: {
         description: 'Returns the inverse matrix',
+        arguments: [{ name: 'Matrix' }],
         fn: (a: number[][]) => {
 
           try {
