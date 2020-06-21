@@ -1,0 +1,7 @@
+{
+  "extends": "../legacy.tsproject.json",
+  "references": [
+    { "path": "../treb-base-types/legacy.tsconfig.json" }
+  ]
+}
+

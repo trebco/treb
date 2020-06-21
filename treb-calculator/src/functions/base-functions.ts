@@ -1,8 +1,8 @@
 
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ReferenceError, NotImplError, ValueError, ArgumentError } from '../function-error';
-import { Cell } from 'treb-base-types/src';
+import { ReferenceError, NotImplError, ValueError } from '../function-error';
+import { Cell } from 'treb-base-types';
 
 import { Sparkline } from 'treb-sparkline';
 

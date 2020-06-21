@@ -17,7 +17,7 @@ todo list, instead of scattering among projects.
 ### grid/sheet
 
  + redo
- + move annotations on structure events (like "move and size with cells")
+ + move annotations on structure events (like "move and size with cells") [1/2 done: need to support insert/remove row/column]
  + shift simulation results (in calculator) on structure events
 
  + document create/reset does not (?) run through command/exec system
@@ -27,9 +27,6 @@ todo list, instead of scattering among projects.
 
  + export modules
  + clean up dependency structure so format is easier to reuse
-
- + rollup? initial testing was mixed, although it's definitely fast. have to
-   explore IE11 support.
 
 ## Done
 
@@ -45,3 +42,5 @@ todo list, instead of scattering among projects.
    - re-order sheets
    - delete sheets: ctrl+delete (not optimal)
 
+ + rollup? initial testing was mixed, although it's definitely fast. have to explore IE11 support.
+   Answer is no. stick w/ webpack, at least for the time being.

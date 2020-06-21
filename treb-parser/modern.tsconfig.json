@@ -1,0 +1,9 @@
+{
+  "extends": "../modern.tsproject.json",
+  "include": [
+    "src/index.ts",
+    "src/parser.ts",
+    "src/csv-parser.ts",
+    "src/parser-types.ts"
+  ]
+}

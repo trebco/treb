@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "target": "es6",
+    "module": "es2020",
+    "strict": true,
+    "composite": true,
+    "baseUrl": "./",
+    "outDir": "./dist/modern",
+    "experimentalDecorators": true,
+    "downlevelIteration": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "rootDir": ".",
+    "lib": [
+      "dom", "es2015"
+    ],
+		"paths": {
+			"treb-base-types/*": ["treb-base-types/src/*"],
+			"treb-utils/*": ["treb-utils/src/*"],
+      "treb-parser/*": ["treb-parser/src/*"],
+      "treb-format/*": ["treb-format/src/*"]
+		}
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}

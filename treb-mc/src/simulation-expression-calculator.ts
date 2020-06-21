@@ -1,13 +1,16 @@
 
+// we're deep-linking because these types are not exported by the project
+
 import { ExpressionCalculator } from '../../treb-calculator/src/expression-calculator';
 import { ReturnType } from '../../treb-calculator/src/descriptors';
-import { SimulationModel, SimulationState } from './simulation-model';
 import { FunctionLibrary } from '../../treb-calculator/src/function-library';
-import { ICellAddress } from 'treb-base-types/src/area';
-import { Parser, UnitCall } from 'treb-parser';
 import { FunctionError, NameError, ReferenceError } from '../../treb-calculator/src/function-error';
+
+import { SimulationModel, SimulationState } from './simulation-model';
 import { MCCompositeFunctionDescriptor } from './descriptors';
-import { Cell } from 'treb-base-types/src';
+
+import { Cell, ICellAddress } from 'treb-base-types';
+import { Parser, UnitCall } from 'treb-parser';
 
 
 export class MCExpressionCalculator extends ExpressionCalculator {

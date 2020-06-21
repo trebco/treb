@@ -1,30 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "resolveJsonModule": true,
-    "module": "es2020",
-    "strict": true,
-    "experimentalDecorators": true,
-    "downlevelIteration": true,
-    "sourceMap": true,
-    "moduleResolution": "node",
-    "outDir": "dist-test/",
-    "declaration": true,
-    "lib": [
-      "dom", "es2015"
-    ],
-    "baseUrl": "./",
-    "paths": {
-    },
-    "declarationDir": "dist/"
+    "composite": true,
   },
-  "include": [
-    "treb-engine/src/index.ts",
-    "treb-embed/src/index-legacy.ts",
-    "treb-export/src/export-worker/index-legacy.ts",
-    "treb-mc/src/calculation-worker/index-legacy.ts"
+  "references": [
+    { "path": "./treb-embed/modern.tsconfig.json" },
+    { "path": "./treb-embed/legacy.tsconfig.json" }
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "files": []
 }

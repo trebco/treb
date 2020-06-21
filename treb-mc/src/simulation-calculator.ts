@@ -1,15 +1,18 @@
 
 // this will move to a new subdir eventually so we can enforce isolation
 
-import { Calculator } from 'treb-calculator/src/calculator';
-import { SimulationState } from './simulation-model';
-//import { ICellAddress, CellSerializationOptions } from 'treb-base-types';
-import { ICellAddress } from 'treb-base-types/src/area';
-import { CellSerializationOptions } from 'treb-base-types/src/cells';
+import { Calculator } from 'treb-calculator';
+
+import { ICellAddress } from 'treb-base-types';
+import { CellSerializationOptions } from 'treb-base-types';
+
 import { DataModel } from 'treb-grid/src/types/data_model';
 import { GraphStatus } from 'treb-calculator/src/dag/graph';
+
 import * as PackResults from './pack-results';
 import { MCExpressionCalculator } from './simulation-expression-calculator';
+import { SimulationState } from './simulation-model';
+
 
 export class MCCalculator extends Calculator {
 

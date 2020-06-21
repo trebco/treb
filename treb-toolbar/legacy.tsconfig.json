@@ -1,0 +1,10 @@
+{
+  "extends": "../legacy.tsproject.json",
+  "references": [
+    { "path": "../treb-grid/legacy.tsconfig.json" },
+    { "path": "../treb-format/legacy.tsconfig.json" },
+    { "path": "../treb-utils/legacy.tsconfig.json" },
+    { "path": "../treb-base-types/legacy.tsconfig.json" }
+  ]
+}
+

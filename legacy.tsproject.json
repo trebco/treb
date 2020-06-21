@@ -1,0 +1,7 @@
+{
+  "extends": "./modern.tsproject.json",
+  "compilerOptions": {
+    "target": "es5",
+    "outDir": "./dist/legacy"
+  }
+}

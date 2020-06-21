@@ -5,20 +5,20 @@
 import { Toolbar } from './toolbar';
 import { ToolbarOptions } from './toolbar-options';
 import { ToolbarItem } from './toolbar-item';
+
+import { Style, Area } from 'treb-base-types';
 import { NumberFormat, NumberFormatCache } from 'treb-format';
-import { Style } from 'treb-base-types';
-import { EventSource } from 'treb-utils';
+import { BorderConstants, Grid, GridSelection } from 'treb-grid';
 
 // TYPE ONLY
-type EmbeddedSpreadsheetBase = import('../../treb-embed/src/embedded-spreadsheet-base').EmbeddedSpreadsheetBase;
+// type EmbeddedSpreadsheetBase = import('../../treb-embed/src/embedded-spreadsheet-base').EmbeddedSpreadsheetBase;
+
+// TEMP/FIXME
+declare type EmbeddedSpreadsheetBase = any;
 
 import '../style/toolbar.scss';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
-
-import { symbol_defs } from './symbol-defs';
-import { Area } from 'treb-base-types';
-import { BorderConstants, Grid, GridSelection } from 'treb-grid';
 
 /**
  * FIXME: why do we have the two-class structure? (...) the event passing

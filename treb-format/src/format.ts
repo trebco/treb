@@ -335,9 +335,10 @@ export class NumberFormat {
         switch (part.text.toLowerCase()) {
         case 'am/pm':
         case 'a/p':
-          const elements = part.text.split('/');
-          return {text: date.getHours() > 12 ? elements[1] : elements[0]};
-
+          {
+            const elements = part.text.split('/');
+            return {text: date.getHours() > 12 ? elements[1] : elements[0]};
+          }
         case 'mmmmm':
           return { text: Localization.date_components.long_months[date.getMonth()][0] };
         case 'mmmm':

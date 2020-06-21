@@ -1,0 +1,21 @@
+{
+  "extends": "../legacy.tsproject.json",
+  "references": [
+    { "path": "../treb-grid/legacy.tsconfig.json" },
+    { "path": "../treb-format/legacy.tsconfig.json" },
+    { "path": "../treb-utils/legacy.tsconfig.json" },
+    { "path": "../treb-toolbar/legacy.tsconfig.json" },
+    { "path": "../treb-mc/legacy.tsconfig.json" },
+    { "path": "../treb-charts/legacy.tsconfig.json" },
+    { "path": "../treb-calculator/legacy.tsconfig.json" },
+    { "path": "../treb-base-types/legacy.tsconfig.json" }
+  ],
+  "include": [
+    "../package.json",
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "src/index-modern.ts"
+  ]
+}
+

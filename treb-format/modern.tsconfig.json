@@ -1,0 +1,14 @@
+{
+  "extends": "../modern.tsproject.json",
+  "references": [
+    { "path": "../treb-base-types/modern.tsconfig.json" }
+  ],
+  "include": [
+    "src/format.ts",
+    "src/format_cache.ts",
+    "src/format_parser.ts",
+    "src/index.ts",
+    "src/number_format_section.ts",
+    "src/value_parser.ts"
+  ]
+}
