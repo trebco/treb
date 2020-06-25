@@ -345,6 +345,12 @@ export class Chart {
     const format = NumberFormatCache.Get(format_pattern || DEFAULT_FORMAT);
     const percent_format = NumberFormatCache.Get('percent');
 
+    // ensure label if we have labels array but no label format string
+    
+    if (typeof args[4] === 'undefined' && args[1]) {
+      args[4] = 'label';
+    }
+
     const slice_title = (args[4] || '');
     if (slice_title) {
       for (const slice of slices) {
