@@ -614,6 +614,7 @@ export class CompositeToolbar {
     const style: Style.Properties = {};
 
     const template_id = template.alternate_id || template.id;
+    let annotation_function = '';
 
     switch (template_id) {
 
@@ -644,6 +645,19 @@ export class CompositeToolbar {
             break;
 
         }
+        break;
+
+      case 'column-chart':
+        annotation_function = 'Column.Chart';
+        break;
+      case 'donut-chart':
+        annotation_function = 'Donut.Chart';
+        break;
+      case 'line-chart':
+        annotation_function = 'Line.Chart';
+        break;
+      case 'bar-chart':
+        annotation_function = 'Bar.Chart';
         break;
 
       case 'save':
@@ -781,6 +795,13 @@ export class CompositeToolbar {
 
       default:
         console.info('unhandled command:', template.id);
+    }
+
+    if (annotation_function) {
+      if (!this.primary_selection.empty) {
+        const label = this.primary_selection.area.spreadsheet_label;
+        this.sheet.InsertAnnotation(`=${annotation_function}(${label},,"${label}")`);
+      }
     }
 
     if (Object.keys(style).length) {

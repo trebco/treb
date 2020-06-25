@@ -116,6 +116,31 @@ const expanded_align_menus: ToolbarItem[] = [
 
 ];
 
+const chart_menu: ToolbarItem[] = [
+  { type: 'separator' },
+
+  { 
+    icon: 'column-chart', 
+    id: 'insert-chart', 
+    title: 'Column Chart',
+    alternate_id: 'column-chart',
+    options: [
+
+      { icon: 'column-chart', id: 'column-chart', title: 'Column Chart' },
+      { icon: 'donut-chart', id: 'donut-chart', title: 'Donut Chart' },
+      { icon: 'bar-chart', id: 'bar-chart', title: 'Bar Chart' },
+      { icon: 'line-chart', id: 'line-chart', title: 'Line Chart' },
+    
+    ],
+  },
+
+  {
+    type: 'drop-down',
+    'related-id': 'insert-chart',
+    id: 'chart-dropdown',
+  },
+];
+
 export const toolbar_template: ToolbarItem[] = [
 
   // ...more_menu,
@@ -169,6 +194,8 @@ export const toolbar_template: ToolbarItem[] = [
     id: 'border-dropdown',
   },
 
+  
+  
   { type: 'separator' },
 
   { icon: 'merge-cells', id: 'merge', title: 'Merge Cells' },
@@ -253,6 +280,10 @@ export const BuildToolbarTemplate = (options: ToolbarOptions): ToolbarItem[] => 
     }
   }
 
+  if (options.chart_menu) {
+    template.push(...chart_menu);
+  }
+  
   return JSON.parse(JSON.stringify(template));
 
 };

@@ -366,7 +366,7 @@ export class CompositeSheet {
       export: true,
       scroll: undefined,
       toolbar: desktop ? 'show' : true,
-      file_toolbar: true,
+      file_menu: true,
       prompt_save: true,
       expand_formula_button: desktop,
       popout: false,    // ?
@@ -544,7 +544,8 @@ export class CompositeSheet {
 
         const options: ToolbarOptions = {
           add_delete_sheet: !!this.options.add_tab,
-          file_toolbar: !!this.options.file_toolbar,
+          file_toolbar: !!this.options.file_menu,
+          chart_menu: !!this.options.chart_menu,
           compressed_align_menus: (
             this.options.toolbar === 'compressed' ||
             this.options.toolbar === 'show-compressed'),

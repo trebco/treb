@@ -104,7 +104,10 @@ export interface BaseOptions {
   toolbar?: boolean | 'show' | 'compressed' | 'show-compressed';
 
   /** file options in the toolbar */
-  file_toolbar?: boolean;
+  file_menu?: boolean;
+
+  /** chart menu in the toolbar */
+  chart_menu?: boolean;
 
   /** new option, better support for headless operations (default false) */
   headless?: boolean;

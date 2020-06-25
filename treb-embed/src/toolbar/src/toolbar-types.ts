@@ -4,6 +4,7 @@ export interface ToolbarOptions {
   compressed_align_menus?: boolean;
   file_toolbar?: boolean;
   file_menu?: boolean;
+  chart_menu?: boolean;
 }
 
 export const DefaultToolbarOptions: ToolbarOptions = {
