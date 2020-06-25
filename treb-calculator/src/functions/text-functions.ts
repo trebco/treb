@@ -7,7 +7,7 @@ export const TextFunctionLibrary: FunctionMap = {
 
   Char: {
     arguments: [{
-      description: 'number',
+      name: 'number',
     }],
     fn: (num: number) => {
       return String.fromCodePoint(num);
@@ -17,7 +17,7 @@ export const TextFunctionLibrary: FunctionMap = {
 
   Code: {
     arguments: [{
-      description: 'string',
+      name: 'string',
     }],
     fn: (str: string) => {
       return str.codePointAt(0);
@@ -27,8 +27,8 @@ export const TextFunctionLibrary: FunctionMap = {
 
   Text: {
     arguments: [
-      { description: 'value' },
-      { description: 'number format' },
+      { name: 'value' },
+      { name: 'number format' },
     ],
     fn: (value: number, format?: string) => {
       if (!format || typeof format !== 'string') {
@@ -41,8 +41,8 @@ export const TextFunctionLibrary: FunctionMap = {
 
   Left: {
     arguments: [
-      { description: 'string' },
-      { description: 'count' },
+      { name: 'string' },
+      { name: 'count' },
     ],
     fn: (str: string, count: number) => {
       return str.substr(0, count);
