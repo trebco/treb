@@ -102,7 +102,7 @@ export class AutocompleteMatcher {
           const argument = desc.name || 'argument';
           return (index === parsed.argument) ? `<span class="active-argument">${argument}</span>` : argument;
         }).join(Localization.argument_separator + ' ') + ')';
-        result.description = `<span class="function-description">${func.description}</span>`;
+        result.description = func.description ? `<span class="function-description">${func.description}</span>` : '';
       }
     }
 
