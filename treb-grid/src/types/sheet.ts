@@ -1169,7 +1169,7 @@ export class Sheet {
       for (let i = 0; i < count; i++) args.push(undefined);
     }
 
-    console.info('m5.1');
+    // console.info('m5.1');
 
     this.cell_style.forEach((column) => {
 
@@ -1179,7 +1179,7 @@ export class Sheet {
       }
     });
 
-    console.info('m6');
+    // console.info('m6');
 
     // row heights
 
@@ -1189,7 +1189,7 @@ export class Sheet {
     // invalidate style cache
     this.FlushCellStyles();
 
-    console.info('m7');
+    // console.info('m7');
 
     return true;
 

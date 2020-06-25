@@ -2799,6 +2799,10 @@ export class Grid {
       const selection = this.SelectingArgument() ?
         this.active_selection : this.primary_selection;
 
+      if (!this.SelectingArgument() && this.selected_annotation) {
+        this.Focus();
+      }
+
       if (event.shiftKey && !selection.empty) {
         const tmp = selection.target;
         this.Select(selection, new Area(selection.target, base_address, true), undefined, true);
@@ -2994,9 +2998,13 @@ export class Grid {
       });
     }
     else {
-
+     
       const selection = this.SelectingArgument() ?
         this.active_selection : this.primary_selection;
+
+      if (!this.SelectingArgument() && this.selected_annotation) {
+        this.Focus();
+      }
 
       if (event.shiftKey && !selection.empty) {
         const tmp = selection.target;
@@ -5609,6 +5617,107 @@ export class Grid {
 
     }
 
+    // annotations
+
+    const update_annotations_list: Annotation[] = [];
+    const resize_annotations_list: Annotation[] = [];
+
+    if (command.count > 0) {
+
+      const start = this.layout.CellAddressToRectangle({
+        row: command.before_row,
+        column: 0,
+      });
+
+      const height = this.model.active_sheet.default_row_height * command.count + 1; // ?
+      
+      for (const annotation of this.model.active_sheet.annotations) {
+        if (annotation.rect) {
+
+          if (start.top >= annotation.rect.bottom) {
+            continue;
+          }
+          else if (start.top <= annotation.rect.top) {
+            annotation.rect.top += (height - 1); // grid
+          }
+          else {
+            annotation.rect.height += height;
+            resize_annotations_list.push(annotation);
+          }
+
+          update_annotations_list.push(annotation);
+        }
+      }
+
+    }
+    else if (command.count < 0) { // delete
+
+      let rect = this.layout.CellAddressToRectangle({
+        row: command.before_row,
+        column: 0,
+      });
+
+      if (command.count < -1) {
+        rect = rect.Combine(this.layout.CellAddressToRectangle({
+          row: command.before_row - command.count - 1,
+          column: 0,
+        }));
+      }
+
+      for (const annotation of this.model.active_sheet.annotations) {
+        if (annotation.rect) {
+
+          if(annotation.rect.bottom <= rect.top) { 
+            continue; // unaffected
+          }
+
+          // affected are is entirely above of annotation: move only
+          if (annotation.rect.top >= rect.bottom - 1) { // grid
+            annotation.rect.top -= (rect.height);
+          }
+
+          // affected area is entirely underneath the annotation: size only
+          else if (annotation.rect.top <= rect.top && annotation.rect.bottom >= rect.bottom) {
+            annotation.rect.height = Math.max(annotation.rect.height - rect.height, 10);
+            resize_annotations_list.push(annotation);
+          }
+
+          // affected area completely contains the annotation: do nothing, or delete? (...)
+          else if (annotation.rect.top >= rect.top && annotation.rect.bottom <= rect.bottom) {
+            // ...
+            continue; // do nothing, for now
+          }
+
+          // top edge: shift AND clip?
+          else if (annotation.rect.top >= rect.top && annotation.rect.bottom > rect.bottom) {
+            const shift = annotation.rect.top - rect.top + 1; // grid
+            const clip = rect.height - shift;
+            annotation.rect.top -= shift;
+            annotation.rect.height = Math.max(annotation.rect.height - clip, 10);
+            resize_annotations_list.push(annotation);
+          }
+
+          // bottom edge: clip, I guess
+          else if (annotation.rect.top < rect.top && annotation.rect.bottom <= rect.bottom) {
+            const clip = annotation.rect.bottom - rect.top;
+            annotation.rect.height = Math.max(annotation.rect.height - clip, 10);
+            resize_annotations_list.push(annotation);
+          }
+
+          else {
+            console.info('unhandled case');
+            // console.info("AR", annotation.rect, "R", rect);
+          }
+
+          update_annotations_list.push(annotation);
+
+        }
+
+      }
+
+
+    }
+
     // fix selections
 
     if (command.count < 0) {
@@ -5647,8 +5756,14 @@ export class Grid {
 
     this.Repaint();
 
-    // FIXME: this should move to the _actual_ layout update, so we have
-    // current data. (...)
+    if (update_annotations_list.length) {
+      this.layout.UpdateAnnotation(update_annotations_list);
+      for (const annotation of resize_annotations_list) {
+        if (annotation.resize_callback) {
+          annotation.resize_callback.call(undefined);
+        }
+      }
+    }
 
   }
 
@@ -5700,13 +5815,106 @@ export class Grid {
 
     }
 
-    // one other thing: we need to move/resize annotations, like
-    // we do with resizing rows/columns. to do that, we'll need the
-    // pixel offset of affected areas... TODO
-
-
+    // annotations
     
-    // ...
+    const update_annotations_list: Annotation[] = [];
+    const resize_annotations_list: Annotation[] = [];
+
+    if (command.count > 0) {
+
+      const start = this.layout.CellAddressToRectangle({
+        row: 0,
+        column: command.before_column,
+      });
+
+      const width = this.model.active_sheet.default_column_width * command.count + 1; // ?
+      
+      for (const annotation of this.model.active_sheet.annotations) {
+        if (annotation.rect) {
+
+          if (start.left >= annotation.rect.right) {
+            continue;
+          }
+          else if (start.left <= annotation.rect.left) {
+            annotation.rect.left += (width - 1); // grid
+          }
+          else {
+            annotation.rect.width += width;
+            resize_annotations_list.push(annotation);
+          }
+
+          update_annotations_list.push(annotation);
+        }
+      }
+
+    }
+    else if (command.count < 0) { // delete
+
+      let rect = this.layout.CellAddressToRectangle({
+        row: 0,
+        column: command.before_column,
+      });
+
+      if (command.count < -1) {
+        rect = rect.Combine(this.layout.CellAddressToRectangle({
+          row: 0,
+          column: command.before_column - command.count - 1,
+        }));
+      }
+
+      for (const annotation of this.model.active_sheet.annotations) {
+        if (annotation.rect) {
+
+          if(annotation.rect.right <= rect.left) { 
+            continue; // unaffected
+          }
+
+          // affected are is entirely to the left of annotation: move only
+          if (annotation.rect.left >= rect.right - 1) { // grid
+            annotation.rect.left -= (rect.width);
+          }
+
+          // affected area is entirely underneath the annotation: size only
+          else if (annotation.rect.left <= rect.left && annotation.rect.right >= rect.right) {
+            annotation.rect.width = Math.max(annotation.rect.width - rect.width, 10);
+            resize_annotations_list.push(annotation);
+          }
+
+          // affected area completely contains the annotation: do nothing, or delete? (...)
+          else if (annotation.rect.left >= rect.left && annotation.rect.right <= rect.right) {
+            // ...
+            continue; // do nothing, for now
+          }
+
+          // left edge: shift AND clip?
+          else if (annotation.rect.left >= rect.left && annotation.rect.right > rect.right) {
+            const shift = annotation.rect.left - rect.left + 1; // grid
+            const clip = rect.width - shift;
+            annotation.rect.left -= shift;
+            annotation.rect.width = Math.max(annotation.rect.width - clip, 10);
+            resize_annotations_list.push(annotation);
+          }
+
+          // right edge: clip, I guess
+          else if (annotation.rect.left < rect.left && annotation.rect.right <= rect.right) {
+            const clip = annotation.rect.right - rect.left;
+            annotation.rect.width = Math.max(annotation.rect.width - clip, 10);
+            resize_annotations_list.push(annotation);
+          }
+
+          else {
+            console.info('unhandled case');
+            // console.info("AR", annotation.rect, "R", rect);
+          }
+
+          update_annotations_list.push(annotation);
+
+        }
+
+      }
+
+
+    }
 
     // fix selection(s)
 
@@ -5747,6 +5955,15 @@ export class Grid {
     // @see InsertColumnsInternal re: why repaint
 
     this.Repaint();
+
+    if (update_annotations_list.length) {
+      this.layout.UpdateAnnotation(update_annotations_list);
+      for (const annotation of resize_annotations_list) {
+        if (annotation.resize_callback) {
+          annotation.resize_callback.call(undefined);
+        }
+      }
+    }
 
   }
 
