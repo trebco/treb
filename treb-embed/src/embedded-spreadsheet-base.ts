@@ -164,7 +164,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   private node?: HTMLElement;
-  private file_chooser?: HTMLInputElement;
+
   private dialog?: ProgressDialog;
 
   // private toolbar?: FormattingToolbar;
@@ -1162,32 +1162,30 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /** load a file (desktop) */
   public LoadLocalFile() {
 
-    if (!this.file_chooser) {
-      const file_chooser = document.createElement('input');
-      file_chooser.setAttribute('type', 'file');
-      file_chooser.setAttribute('accept',
-        '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      file_chooser.addEventListener('change', (event) => {
-        event.stopPropagation();
-        event.preventDefault();
-        const files = file_chooser.files;
+    const file_chooser = document.createElement('input');
+    file_chooser.type = 'file';
+    file_chooser.setAttribute('accept',
+      '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
-        // FIXME: setting explicitly here triggers another change, at least
-        // in IE11? or is something else causing that? see if there's a fix.
+    file_chooser.addEventListener('change', (event) => {
 
-        if (files) {
-          this.LoadFileInternal(files[0]).then(() => {
-            file_chooser.value = ''; // allow same selection
-          }).catch((err) => {
-            console.error(err);
-            this.ShowMessageDialog('Error loading file', 1500);
-            file_chooser.value = ''; // allow same selection
-          });
-        }
-      });
-      this.file_chooser = file_chooser;
-    }
-    this.file_chooser.click();
+      event.stopPropagation();
+      event.preventDefault();
+      const files = file_chooser.files;
+
+      // FIXME: setting explicitly here triggers another change, at least
+      // in IE11? or is something else causing that? see if there's a fix.
+
+      if (files && files[0]) {
+        this.LoadFileInternal(files[0]).catch((err) => {
+          console.error(err);
+          this.ShowMessageDialog('Error loading file', 1500);
+        });
+      }
+      
+    });
+
+    file_chooser.click();
 
   }
 
@@ -1778,7 +1776,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
       else if (annotation.type === 'image') {
         const img = document.createElement('img');
-        img.setAttribute('src', annotation.data.src);
+        if (typeof annotation.data.src === 'string' && /^data:/.test(annotation.data.src)) {
+          img.setAttribute('src', annotation.data.src);
+        }
         img.style.width = '100%';
         img.style.height = '100%';
         annotation.node.appendChild(img);
