@@ -73,7 +73,7 @@ export const ChartFunctions: FunctionMap = {
   'Donut.Chart': {
     arguments: [
       { name: 'Values', metadata: true, },
-      { name: 'Labels' },
+      { name: 'Labels', metadata: true },
       { name: 'Title' },
       { name: 'Sort' },
       { name: 'Label' },

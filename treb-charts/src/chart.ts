@@ -311,7 +311,19 @@ export class Chart {
 
     //////////
 
-    const labels = Util.Flatten(args[1]).map((x) => x ? x.toString() : '');
+    // if labels are strings, just pass them in. if they're numbers then
+    // use the format (we're collecting metadata for this field now)
+
+    const labels = Util.Flatten(args[1]).map((label) => {
+      if (label && typeof label === 'object') {
+        const value = label.value;
+        if (typeof value === 'number' && label.format) {
+          return NumberFormatCache.Get(label.format).Format(value);
+        }
+        else return value ? value.toString() : '';
+      }
+      else return label ? label.toString() : '';
+    });
 
     // no negative numbers
 
