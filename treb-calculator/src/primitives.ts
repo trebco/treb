@@ -1,3 +1,4 @@
+import { DivideByZeroError } from './function-error';
 
 export type PrimitiveBinaryExpression = (a: number|object, b: number|object) => number|object|boolean;
 
@@ -50,6 +51,7 @@ export const Multiply = (a: number|object, b: number|object) => {
 export const Divide = (a: number|object, b: number|object) => {
   if (typeof a === 'object') return a;
   if (typeof b === 'object') return b;
+  if (b === 0) { return DivideByZeroError; }
   return a / b;
 };
 
