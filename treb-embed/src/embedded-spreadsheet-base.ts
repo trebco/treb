@@ -28,6 +28,7 @@ import '../style/embed.scss';
 
 // config
 import * as build from '../../package.json';
+import { resolve } from 'path';
 
 interface UndoEntry {
   data: string;
@@ -726,6 +727,68 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  public async InsertImage() {
+
+    const file = await this.SelectFile('.png, .jpg, .jpeg, .gif, .svg');
+  
+    if (!file) { return; }
+
+    await new Promise<void>((resolve, reject) => {
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+
+        try {
+          if (reader.result) {
+            let contents: string;
+            if (typeof reader.result === 'string') {
+              contents = reader.result;
+            }
+            else {
+              contents = '';
+              const bytes = new Uint8Array(reader.result);
+              for (let i = 0; i < bytes.byteLength; i++ ){
+                contents += String.fromCharCode(bytes[i]);
+              }
+            }
+
+            // note: this works, somewhat contrary to expectations,
+            // probably because there are some async calls; hence the
+            // src attribute is set before it's inflated. 
+
+            const annotation = this.grid.CreateAnnotation({
+              type: 'image',
+              rect: {top: 30, left: 30, width: 300, height: 300},
+              formula: '',
+            });
+            annotation.data.src = contents;
+            
+          }
+          resolve();
+        }
+        catch (err) {
+          reject(err);
+        }
+      };
+
+      reader.onabort = () => { reject('Aborted'); };
+      reader.onerror = () => { reject('File error'); };
+
+      // need a nontrivial delay to allow IE to re-render.
+      // FIXME: this should be done async, possibly in a worker
+
+      setTimeout(() => {
+        reader.readAsDataURL(file);
+      }, 100);
+
+    });
+
+
+  }
+
+  ///////////
+
   /**
    *
    * @param column column, or columns (array), or undefined means all columns
@@ -1159,33 +1222,90 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  /** load a file (desktop) */
-  public LoadLocalFile() {
+  /**
+   * show file chooser and resolve with the selected file, or undefined
+   */
+  public SelectFile(accept?: string): Promise<File|undefined> {
 
-    const file_chooser = document.createElement('input');
-    file_chooser.type = 'file';
-    file_chooser.setAttribute('accept',
-      '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    return new Promise((resolve) => {
 
-    file_chooser.addEventListener('change', (event) => {
-
-      event.stopPropagation();
-      event.preventDefault();
-      const files = file_chooser.files;
-
-      // FIXME: setting explicitly here triggers another change, at least
-      // in IE11? or is something else causing that? see if there's a fix.
-
-      if (files && files[0]) {
-        this.LoadFileInternal(files[0]).catch((err) => {
-          console.error(err);
-          this.ShowMessageDialog('Error loading file', 1500);
-        });
-      }
+      const file_chooser = document.createElement('input');
+      file_chooser.type = 'file';
       
+      if (accept) {
+        file_chooser.accept = accept;
+      }
+
+      // so the thing here is there is no way to trap a "cancel" event
+      // from the file chooser. if you are waiting on a promise, that will
+      // just get orphaned forever. 
+      
+      // it's not the end of the world, really, to leave a few of these 
+      // dangling, but this should allow it to clean up.
+
+      // the concept is that since file chooser is modal, there will never
+      // be a focus event until the modal is closed. unfortunately the focus
+      // event comes _before_ any input or change event from the file input,
+      // so we have to wait.
+
+      // tested Cr, FF, IE11 (todo: Safari)
+
+      // eslint-disable-next-line prefer-const
+      let finalize: (file?: File) => void;
+      let timeout: any;
+
+      // if you get a focus event, allow some reasonable time for the 
+      // corresponding change event. realistically this should be immediate,
+      // but as long as there's not a lot of logic waiting on a cancel, it 
+      // doesn't really matter.
+
+      const window_focus = () => {
+
+        // prevent this from accidentally being called more than once
+        window.removeEventListener('focus', window_focus);
+        timeout = setTimeout(finalize, 250);
+      }
+
+      const change_handler = () => {
+        if (timeout) { clearTimeout(timeout); }
+        finalize(file_chooser.files ? file_chooser.files[0] : undefined);
+      }
+
+      // our finalize method cleans up and resolves
+
+      finalize = (file?: File) => {
+        file_chooser.removeEventListener('change', change_handler);
+        window.removeEventListener('focus', window_focus);
+        resolve(file);
+      };
+
+      file_chooser.addEventListener('change', change_handler);
+      window.addEventListener('focus', window_focus);
+
+      file_chooser.click();
+
+
     });
 
-    file_chooser.click();
+  }
+
+  /** load a file (desktop) */
+  public async LoadLocalFile() {
+
+    const file = await(this.SelectFile(
+      '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
+
+    if (file) { 
+    
+      try {
+        this.LoadFileInternal(file);
+      }
+      catch (err) {
+        console.error(err);
+        this.ShowMessageDialog('Error loading file', 1500);
+      }
+
+    }
 
   }
 
