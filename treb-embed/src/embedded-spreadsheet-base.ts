@@ -1248,7 +1248,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       // event comes _before_ any input or change event from the file input,
       // so we have to wait.
 
-      // tested Cr, FF, IE11 (todo: Safari)
+      // tested Cr, FF, IE11
+      // update: works in Safari, although oddly not if you call the API
+      // function from the console. not sure if that's a browserstack thing.
 
       // eslint-disable-next-line prefer-const
       let finalize: (file?: File) => void;
