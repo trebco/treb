@@ -7,6 +7,9 @@ import {TextPart} from 'treb-base-types';
  * is only allowed after the number. percent can come before or after.
  *
  * converting to class, default values
+ * 
+ * FIXME: this should be an interface, you can create a default instance
+ * 
  */
 export class NumberFormatSection {
 
