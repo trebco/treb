@@ -1898,7 +1898,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
       else if (annotation.type === 'image') {
         const img = document.createElement('img');
-        if (typeof annotation.data.src === 'string' && /^data:/.test(annotation.data.src)) {
+        if (typeof annotation.data.src === 'string' && /^data:image/i.test(annotation.data.src)) {
           img.setAttribute('src', annotation.data.src);
         }
         img.style.width = '100%';
