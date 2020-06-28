@@ -8,6 +8,8 @@ import { RDateScale } from './format';
  * which is separate from parsing and from formatting.
  *
  * cleaning up to remove redundant bits, move inference in here
+ * 
+ * FIXME: move this somewhere else, this is the format library
  */
 
 // tslint:disable:no-bitwise
