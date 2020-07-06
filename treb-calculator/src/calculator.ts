@@ -11,8 +11,9 @@ import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
 import { FunctionMap, ReturnType } from './descriptors';
-import { BaseFunctionLibrary, BaseFunctionAliases } from './functions/base-functions';
+import { BaseFunctionLibrary } from './functions/base-functions';
 import { TextFunctionLibrary } from './functions/text-functions';
+import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './functions/statistics-functions';
 
 import { DataModel, Annotation, FunctionDescriptor } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
@@ -69,14 +70,19 @@ export class Calculator extends Graph {
     super();
     this.UpdateLocale();
 
-    // base functions (plus aliases)
+    // base functions
     this.library.Register(BaseFunctionLibrary);
-    for (const key of Object.keys(BaseFunctionAliases)) {
-      this.library.Alias(key, BaseFunctionAliases[key]);
-    }
 
     // we split out text functions
     this.library.Register(TextFunctionLibrary);
+
+    // also stats (wip)
+    this.library.Register(StatisticsFunctionLibrary);
+
+    // aliases
+    for (const key of Object.keys(StatisticsFunctionAliases)) {
+      this.library.Alias(key, StatisticsFunctionAliases[key]);
+    }
 
     // special functions... need reference to the graph (this)
 

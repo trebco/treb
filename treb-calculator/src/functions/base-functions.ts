@@ -381,31 +381,6 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
-    GeoMean: {
-      fn: (...args: any[]) => {
-        args = Utils.Flatten(args);
-        let count = 0;
-        let product = 1;
-        for (const arg of args) {
-          if (typeof arg === 'undefined') { continue; }
-          const value = Number(arg);
-          if (value < 0) { return ValueError; }
-          count++;
-          product *= value;
-        }
-        return Math.pow(product, 1 / count);
-      },
-    },
-
-    Average: {
-      fn: (...args: any[]) => {
-        args = Utils.Flatten(args);
-        return args.reduce((a: number, b: any) => {
-          if (typeof b === 'undefined') return a;
-          return a + Number(b);
-        }, 0) / args.length;
-      },
-    },
 
     /**
      * sort arguments, but ensure we return empty strings to
@@ -556,9 +531,11 @@ export const BaseFunctionLibrary: FunctionMap = {
 
 };
 
+/*
 export const BaseFunctionAliases: {[index: string]: string} = {
   Mean: 'Average',
 };
+*/
 
 // alias
 
@@ -574,9 +551,11 @@ for (const key of Object.keys(BaseFunctionLibrary)) {
   name_map[key.toLowerCase()] = key;
 }
 
+/*
 for (const key of Object.keys(BaseFunctionAliases)) {
   name_map[key.toLowerCase()] = key;
 }
+*/
 
 for (const name of Object.getOwnPropertyNames(Math)) {
 
