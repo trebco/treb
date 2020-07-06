@@ -55,6 +55,8 @@ export class CellEditor extends FormulaEditorBase {
         case 'ArrowDown':
         case 'ArrowLeft':
         case 'ArrowRight':
+        case 'Shift':       // also selection modifiers
+        case 'Control':     // ...
           return;
         }
       }
