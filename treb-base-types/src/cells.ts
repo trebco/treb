@@ -274,6 +274,13 @@ export class Cells {
       if (typeof obj.note !== 'undefined') {
         cell.note = obj.note;
       }
+
+      // stop wrecking arrays
+
+      if (this.data2[obj.row][obj.column] && this.data2[obj.row][obj.column].area) {
+        cell.area = this.data2[obj.row][obj.column].area;
+      }
+
       this.data2[obj.row][obj.column] = cell;
 
       // since we are serializing the array data (when storing calculated
@@ -282,7 +289,6 @@ export class Cells {
 
       if (obj.area){
         const area = new Area(obj.area.start, obj.area.end); // isn't there a clone method?
-
         for ( let row = area.start.row; row <= area.end.row; row++){
           for ( let column = area.start.column; column <= area.end.column; column++){
             if (!this.data2[row]) this.data2[row] = [];
