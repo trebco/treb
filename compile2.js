@@ -126,6 +126,11 @@ const CreateConfig = (config, entry) => {
           sideEffects: true,
           use: [
             'style-loader',
+            // 'postcss-loader',
+            { loader: 'css-loader', options: { importLoaders: 1 } },
+            'postcss-loader'
+
+            /*
             'css-loader',
             {
               loader: 'sass-loader',
@@ -135,6 +140,8 @@ const CreateConfig = (config, entry) => {
                 },
               }
             },
+            */
+
           ],
         },
       ]

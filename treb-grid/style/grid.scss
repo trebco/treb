@@ -1,19 +1,19 @@
 
-@import 'z-index';
-@import 'font-stack';
-@import 'defaults';
-@import 'mouse-mask';
-@import 'note';
-@import 'tooltip';
-@import 'autocomplete';
-@import 'formula-bar';
-@import 'tab-bar';
-@import 'in-cell-editor';
-@import 'legacy-layout';
-@import 'grid-layout';
+@import 'z-index.scss';
+@import 'font-stack.scss';
+@import 'defaults.scss';
+@import 'mouse-mask.scss';
+@import 'note.scss';
+@import 'tooltip.scss';
+@import 'autocomplete.scss';
+@import 'formula-bar.scss';
+@import 'tab-bar.scss';
+@import 'in-cell-editor.scss';
+@import 'legacy-layout.scss';
+@import 'grid-layout.scss';
 
-@import 'theme-container';
-@import 'theme-defaults';
+@import 'theme-container.scss';
+@import 'theme-defaults.scss';
 
 /*
  * NOTE: grid layout uses explicit properties (grid-start-row, &c)
@@ -153,7 +153,6 @@
           z-index: 999;
           box-sizing: border-box;
           border: 7px solid transparent;
-          // transition: border-color .5s;
         }
 
         &:focus, &.retain-focus {
@@ -171,7 +170,7 @@
       background: transparent;
       position: absolute;
       z-index: $z-index-grid-selection;
-      -moz-transform: scale(1); // firefox anti-blur
+      -moz-transform: scale(1); /* firefox anti-blur */
     }
 
     /** separate selection node for frozen rows/columns (needs different stacking) */
@@ -180,8 +179,8 @@
       background: transparent;
       position: absolute;
       z-index: $z-index-frozen-selection;
-      overflow: hidden; // needed for IE11 (put in legacy?)
-      -moz-transform: scale(1); // firefox anti-blur
+      overflow: hidden; /* needed for IE11 (put in legacy?) */
+      -moz-transform: scale(1); /* firefox anti-blur */
       pointer-events: none;
 
       &.frozen-selection-rows {

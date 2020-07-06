@@ -5,13 +5,13 @@
 
 .treb-theme {
 
-  // primary selection
+  /* primary selection */
 
   .primary-selection {
     stroke: rgb(64, 192, 64);
   }
 
-  // additional selections, global and then individual colors
+  /* additional selections, global and then individual colors */
 
   .additional-selections {
     stroke-dasharray: 3 2;
@@ -37,27 +37,27 @@
     stroke: rgba(254, 104, 71, 1);
   }
 
-  // headers
+  /* headers */
 
   .header {
     fill: #eee;
     stroke: #666;
   }
 
-  // highlight
+  /* highlight */
 
   .freeze-highlight {
     fill: rgba(87, 184, 255, .25);
     stroke: rgba(33, 118, 174, 1);
   }
 
-  // grid
+  /* grid */
 
   .grid {
     stroke: #ccc;
   }
 
-  // cells 
+  /* cells */
 
   .cell {
     font-family: "calibri", $font-stack;
@@ -68,12 +68,12 @@
 
     &.override-windows {
       font-size: 16px;
-      // stroke: #000;
+      /* stroke: #000; */
     }
 
   }
 
-  // formula bar/address label
+  /* formula bar/address label */
 
   .formula-bar {
     font-family: $font-stack;
@@ -88,7 +88,7 @@
 
   }
 
-  // interface 
+  /* interface */
 
   .interface {
     font-family: $font-stack;
@@ -120,7 +120,7 @@
 
   }
 
-  // column/row resize tooltip
+  /* column/row resize tooltip */
 
   .tooltip {
     stroke: #fff;
@@ -129,7 +129,7 @@
     font-family: $font-stack;
   }
 
-  // ac
+  /* ac */
 
   .autocomplete {
 
@@ -143,10 +143,9 @@
 
   }
 
-  // notes
+  /* notes */
 
   .note-marker {
-    // fill: #d2c500;
     fill: #6FAB20;
   }
 

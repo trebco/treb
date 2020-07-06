@@ -2,7 +2,7 @@
 .treb-main {
   .treb-grid {
 
-    // --- in-cell editor ---------------------------------------------------
+    /* --- in-cell editor --------------------------------------------------- */
 
     /** double node stucture for better control */
     .in-cell-editor-container {
@@ -26,7 +26,7 @@
       vertical-align: bottom;
       border: 1px solid red;
       z-index: $z-index-cell-editor;
-      outline: none; // new chrome style
+      outline: none; /* new chrome style */
     }
 
   }

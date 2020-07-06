@@ -1,20 +1,5 @@
 
-// z-index stacking
-/*
-$z-index-contents:                    8;
-$z-index-grid-selection:             10;
-$z-index-frozen-selection:           12;
-$z-index-annotations:                14;
-$z-index-headers:                    16;
-$z-index-corner:                     18;
-$z-index-tile-cover:                 20;
-$z-index-cell-editor:                22;
-$z-index-scroller:                   24; // legacy only
-$z-index-autocomplete:               99;
-$z-index-tooltip:                    99;
-$z-index-note:                       99;
-$z-index-mask:                     9999;
-*/
+/* z-index stacking */
 
 $z-index-contents:                    8;
 $z-index-grid-selection:             10;
@@ -25,7 +10,7 @@ $z-index-headers:                    18;
 $z-index-corner:                     20;
 $z-index-header-tile-cover:          22;
 $z-index-cell-editor:                24;
-$z-index-scroller:                   26; // legacy only
+$z-index-scroller:                   26; /* legacy only */
 $z-index-autocomplete:               39;
 $z-index-tooltip:                    39;
 $z-index-note:                       39;

@@ -47,7 +47,6 @@ $toolbar_height: 38px;
 
   /** resize the sidebar */
   .embedded-spreadsheet-sidebar {
-    // width: $sidebar_width;
     opacity: 1;
     pointer-events: initial;
   }
@@ -97,9 +96,9 @@ $toolbar_height: 38px;
   height: 24px;
   border: 0;
 
-  line-height: 28px; // is this necessary, if we're using flex? (...)
+  line-height: 28px; /* is this necessary, if we're using flex? (...) */
 
-  // using flex here to center the svgs
+  /* using flex here to center the svgs */
 
   display: flex;
   flex-direction: row;
@@ -127,7 +126,7 @@ $toolbar_height: 38px;
     }
   }
 
-  border: 0; // 1px solid orange;
+  border: 0;
 
 }
 
@@ -155,8 +154,8 @@ $toolbar_height: 38px;
 .embedded-spreadsheet-sidebar {
 
   box-sizing: border-box;
-  border: 0; // 1px solid red;
-
+  border: 0;
+  
   box-sizing: border-box;
   align-items: center;
   position: absolute;
@@ -196,8 +195,6 @@ $toolbar_height: 38px;
 
 $fullscreen_sidebar_width: 50px;
 $fullscreen_toolbar_height: 45px;
-
-//  $sidebar_button_offset: 50px;
 
 .treb-fullscreen-padding {
    

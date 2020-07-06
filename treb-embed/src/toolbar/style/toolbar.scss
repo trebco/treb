@@ -5,7 +5,6 @@ $button-background: transparent;
 $button-foreground: #454;
 $button-secondary: rgba(32, 107, 196, 0.25);
 
-//$button-border: #ddd;
 $button-border: transparent;
 $color-item-size: 20px;
 
@@ -62,7 +61,7 @@ $font_stack: -apple-system,
       a {
         white-space: nowrap;
         border-radius: 2px;
-        border: none; // 1px solid $button-border;
+        border: none;
         color: $button-foreground;
         background: #fff;
         margin: 4px;
@@ -99,7 +98,6 @@ $font_stack: -apple-system,
   }
 
   .list {
-    // overflow-x: hidden;
     font-size: 14px;
     position: relative;
 
@@ -165,14 +163,14 @@ $font_stack: -apple-system,
 }
 
 svg[toolbar-icons] symbol path.secondary {
-  stroke: $button-secondary; // this works in chrome but not ffx
+  stroke: $button-secondary; /* this works in chrome but not ffx */
 }
 
 svg[toolbar-icons] symbol path.target {
-  stroke: none; // $button-secondary;
+  stroke: none;
 }
 
-// these are split out because we reuse them in popup...
+/* these are split out because we reuse them in popup... */
 
 .treb-formatting-toolbar svg, .treb-toolbar-menu .options-list-holder button svg {
     position: absolute;
@@ -180,15 +178,14 @@ svg[toolbar-icons] symbol path.target {
     left: 3px;
     width: 24px;
     height: 24px;
-    // fill: $button-foreground;
     stroke: $button-foreground;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
     fill: none;
 
-    -moz-transform: scale(1); // fixes ffx blurry svg, not sure why
-    // -ms-transform: scale(1); // doesn't un-blurry IE11
+    -moz-transform: scale(1); /* fixes ffx blurry svg, not sure why */
+    /* -ms-transform: scale(1); // doesn't un-blurry IE11 */
 
   .secondary {
     stroke: $button-secondary;
@@ -203,7 +200,7 @@ svg[toolbar-icons] symbol path.target {
     */
   }
 
-  // switching back... at least for now
+  /* switching back... at least for now */
 
   .fa5-regular, .fa5-duotone, .fa5-solid {
     stroke: none;
@@ -214,7 +211,7 @@ svg[toolbar-icons] symbol path.target {
     opacity: .4;
   }
 
-  // ...or maybe...
+  /* ...or maybe... */
 
   .material-outline {
     stroke: none;
@@ -225,7 +222,7 @@ svg[toolbar-icons] symbol path.target {
     fill: none;
   }
 
-  // ...or...
+  /* ...or... */
 
   .feather {
     stroke-linecap: round;
@@ -256,12 +253,12 @@ svg[toolbar-icons] symbol path.target {
   background: $button-background;
   background: none;
   position: relative;
-  padding: 0; // ios
+  padding: 0; /* ios */
   margin: 3px;
 
 }
 
-// rebuilding
+/* rebuilding */
 
 .treb-formatting-toolbar {
 
@@ -273,7 +270,7 @@ svg[toolbar-icons] symbol path.target {
   height: 32px;
   margin-bottom: 12px;
   position: relative;
-  // border: 1px dotted orange;
+  /* border: 1px dotted orange; */
 
   &.centered {
     display: flex;
@@ -286,16 +283,11 @@ svg[toolbar-icons] symbol path.target {
     font-family: $font_stack;
     display: inline-flex;
     flex-direction: row;
-    // border: 1px dotted green;
 
     & button {
 
-      // outline: none;
-
       width: $button-size;
-      // min-width: $button-size;
       height: $button-size;
-      // min-height: $button-size;
       border-radius: 2px;
 
       border: 1px solid $button-border;
@@ -338,7 +330,6 @@ svg[toolbar-icons] symbol path.target {
     }
 
     & .split-button {
-      // border: 1px solid purple;
       display: inline-flex;
       flex-direction: column;
       height: $button-size;
@@ -353,8 +344,6 @@ svg[toolbar-icons] symbol path.target {
         font-size: 10.5px;
         font-weight: 500;
         line-height: 0;
-        // display: flex;
-        // align-items: center;
 
         color: darken($button-foreground, 25%);
 
@@ -376,13 +365,10 @@ svg[toolbar-icons] symbol path.target {
         overflow: hidden;
       }
 
-      // border: 1px dotted red;
       display: inline-flex;
       position: static;
 
       & input {
-        // width: 8em;
-        // min-width: 8em;
         width: 118px;
         min-width: 118px;
 
@@ -405,8 +391,6 @@ svg[toolbar-icons] symbol path.target {
 
     & .separator {
       display: inline-block;
-      // width: 12px;
-      // min-width: 12px;
       height: $button-size;
       min-height: $button-size;
       border-right: 1px dotted #ccc;

@@ -1,7 +1,5 @@
 .treb-note {
 
-  // display: none;
-  // pointer-events: none;
   position: fixed;
   padding: 7px 10px;
   border-radius: 2px;
@@ -12,13 +10,13 @@
   top: 100px;
   left: 100px;
 
-  max-width: 15em; // which em? seems to be way too large
+  max-width: 15em; /* which em? seems to be way too large */
   min-width: 15em;
 
   opacity: 0;
   transition: opacity .2s;
 
-  // themeable properties
+  /* themeable properties */
 
   font-family: $font-stack;
 

@@ -26,7 +26,7 @@ $font-stack:  "-apple-system",
 
   font-family: $font-stack;
 
-  // box-shadow:0 3px 7px rgba(0,0,0,.3); // looks good though
+  /* box-shadow:0 3px 7px rgba(0,0,0,.3); // looks good though */
 
   background: #fff;
 
@@ -88,7 +88,6 @@ $font-stack:  "-apple-system",
 
       fill: none;
       stroke-width: 2px;
-      // stroke: #39f;
       stroke-linecap: round;
       stroke-linejoin: round;
 
@@ -125,7 +124,6 @@ $font-stack:  "-apple-system",
     &.series-12  { fill: transparentize($color2, .75); }
 
     .fill {
-      // fill: rgba(51, 153, 255, .25);
       stroke-linecap: round;
       stroke-linejoin: round;
     }
@@ -155,12 +153,14 @@ $font-stack:  "-apple-system",
 
     stroke: none;
 
-    // don't use child ordering for color, use explicit series values.
-    // we want to tie color to input order, even if the chart sorts the
-    // data.
+    /*
+    don't use child ordering for color, use explicit series values.
+    we want to tie color to input order, even if the chart sorts the
+    data.
 
-    // I don't like this. we should use order. if necesary, you can
-    // add the nodes out of order.
+    I don't like this. we should use order. if necesary, you can
+    add the nodes out of order.
+    */
 
     &.series-1  { fill: $color1; }
     &.series-2  { fill: $color2; }

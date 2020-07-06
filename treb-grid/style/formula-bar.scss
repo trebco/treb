@@ -2,7 +2,7 @@
 
 .treb-main {
 
-  // flex patch for chrome
+  /* flex patch for chrome */
 
   .treb-formula-bar-container {
 
@@ -18,14 +18,11 @@
       padding: 6px 2px;
 
       max-width: 100%;
-      overflow-x: hidden; // last ditch for IE11
+      overflow-x: hidden; /* last ditch for IE11 */
       
       /** label for selection address */
       .address-label {
         
-        // width: 100px;
-        // min-width: 70px;
-
         width: 95px;
         min-width: 95px;
 
@@ -49,12 +46,10 @@
 
       .expand-button {
         background: transparent;
-        // border: 1px solid #ccc;
         border: 0;
         border-radius: 2px;
         margin-left: 2px;
         padding: 1px;
-        // overflow: hidden;
         outline: none;
         height: 1.75em;
 
@@ -83,8 +78,7 @@
         border-radius: 2px;
         flex-grow: 1;
         
-        height: 1.75em; // 3.5em; // 1.75em;
-        // margin-left: 6px;
+        height: 1.75em;
 
         display: flex;
         min-width: 0px;
@@ -115,10 +109,10 @@
         overflow-x: hidden;
         line-height: normal;
 
-        flex-grow: 1; // keeps content at the top
+        flex-grow: 1; /* keeps content at the top */
         min-height: 1em;
 
-        // I don't like this, let's figure out a better way w/ wrapping
+        /* I don't like this, let's figure out a better way w/ wrapping */
 
         /**
          * FIXME: we're using this for a single-line formula, but
