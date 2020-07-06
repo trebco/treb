@@ -1,4 +1,14 @@
 
+/**
+ * NOTE: this file uses the color-mod() function and a postcss library
+ * to translate it. that function is no longer in the spec and will be 
+ * implemented differently, so this will probably need to change.
+ *
+ * originally this file used sass so we used some sass library functions
+ * to do the same thing. all we are doing is (1) set alpha on a color and
+ * (2) darken a color.
+ */
+
 $color1:  #8DD3C7;
 $color2:  #FFFFB3;
 $color3:  #BEBADA;
@@ -43,7 +53,7 @@ $font-stack:  "-apple-system",
   }
 
   .chart-column-shadow {
-    fill: darken($color1, 25%);
+    fill: color-mod($color1 shade(25%));
   }
 
   .chart-grid, .chart-ticks {
@@ -52,18 +62,18 @@ $font-stack:  "-apple-system",
 
   .chart-column, .chart-bar {
     &.chart-column-shadow {
-      &.series-1  { fill: darken($color1, 25%); }
-      &.series-2  { fill: darken($color3, 25%); }
-      &.series-3  { fill: darken($color4, 25%); }
-      &.series-4  { fill: darken($color5, 25%); }
-      &.series-5  { fill: darken($color6, 25%); }
-      &.series-6  { fill: darken($color7, 25%); }
-      &.series-7  { fill: darken($color8, 25%); }
-      &.series-8  { fill: darken($color9, 25%); }
-      &.series-9  { fill: darken($color10, 25%); }
-      &.series-10  { fill: darken($color11, 25%); }
-      &.series-11  { fill: darken($color12, 25%); }
-      &.series-12  { fill: darken($color2, 25%); }
+      &.series-1  { fill: color-mod($color1 shade(25%)); }
+      &.series-2  { fill: color-mod($color3 shade(25%)); }
+      &.series-3  { fill: color-mod($color4 shade(25%)); }
+      &.series-4  { fill: color-mod($color5 shade(25%)); }
+      &.series-5  { fill: color-mod($color6 shade(25%)); }
+      &.series-6  { fill: color-mod($color7 shade(25%)); }
+      &.series-7  { fill: color-mod($color8 shade(25%)); }
+      &.series-8  { fill: color-mod($color9 shade(25%)); }
+      &.series-9  { fill: color-mod($color10 shade(25%)); }
+      &.series-10  { fill: color-mod($color11 shade(25%)); }
+      &.series-11  { fill: color-mod($color12 shade(25%)); }
+      &.series-12  { fill: color-mod($color2 shade(25%)); }
     }
 
     &.series-1  { fill: $color1; }
@@ -110,18 +120,18 @@ $font-stack:  "-apple-system",
 
   .chart-area {
 
-    &.series-1  { fill: transparentize($color1, .75); }
-    &.series-2  { fill: transparentize($color3, .75); }
-    &.series-3  { fill: transparentize($color4, .75); }
-    &.series-4  { fill: transparentize($color5, .75); }
-    &.series-5  { fill: transparentize($color6, .75); }
-    &.series-6  { fill: transparentize($color7, .75); }
-    &.series-7  { fill: transparentize($color8, .75); }
-    &.series-8  { fill: transparentize($color9, .75); }
-    &.series-9  { fill: transparentize($color10, .75); }
-    &.series-10  { fill: transparentize($color11, .75); }
-    &.series-11  { fill: transparentize($color12, .75); }
-    &.series-12  { fill: transparentize($color2, .75); }
+    &.series-1  { fill: color-mod($color1 a(.75)); }
+    &.series-2  { fill: color-mod($color3 a(.75)); }
+    &.series-3  { fill: color-mod($color4 a(.75)); }
+    &.series-4  { fill: color-mod($color5 a(.75)); }
+    &.series-5  { fill: color-mod($color6 a(.75)); }
+    &.series-6  { fill: color-mod($color7 a(.75)); }
+    &.series-7  { fill: color-mod($color8 a(.75)); }
+    &.series-8  { fill: color-mod($color9 a(.75)); }
+    &.series-9  { fill: color-mod($color10 a(.75)); }
+    &.series-10  { fill: color-mod($color11 a(.75)); }
+    &.series-11  { fill: color-mod($color12 a(.75)); }
+    &.series-12  { fill: color-mod($color2 a(.75)); }
 
     .fill {
       stroke-linecap: round;
