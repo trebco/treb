@@ -806,9 +806,9 @@ export class Grid {
   }
 
   public FromData2(
-      sheet_data: any[],
-      render = false,
-    ) {
+    sheet_data: any[],
+    render = false,
+  ) {
 
     this.RemoveAnnotationNodes();
 
@@ -878,11 +878,11 @@ export class Grid {
    * A: it's used for xlsx import. still, we could wrap it.
    */
   public FromData(
-      cell_data: any[],
-      column_widths: number[],
-      row_heights: number[],
-      styles: Style.Properties[],
-      render = false) {
+    cell_data: any[],
+    column_widths: number[],
+    row_heights: number[],
+    styles: Style.Properties[],
+    render = false) {
 
     this.RemoveAnnotationNodes();
 
@@ -1415,7 +1415,7 @@ export class Grid {
     if (!toll_initial_render) {
       this.Repaint(true);
     }
-    
+
   }
 
   /**
@@ -1514,8 +1514,8 @@ export class Grid {
 
       sheet_id = range.sheet_id || this.model.active_sheet.id;
       for (const sheet of this.model.sheets) {
-        if (sheet.id === sheet_id) { 
-          if (formula) { return sheet.cells.RawValue(range); } 
+        if (sheet.id === sheet_id) {
+          if (formula) { return sheet.cells.RawValue(range); }
           if (formatted) { return sheet.GetFormattedRange(range); }
           return sheet.cells.GetRange(range);
         }
@@ -1526,8 +1526,8 @@ export class Grid {
 
     sheet_id = range.start.sheet_id || this.model.active_sheet.id;
     for (const sheet of this.model.sheets) {
-      if (sheet.id === sheet_id) { 
-        if (formula) { return sheet.cells.RawValue(range.start, range.end); } 
+      if (sheet.id === sheet_id) {
+        if (formula) { return sheet.cells.RawValue(range.start, range.end); }
         if (formatted) { return sheet.GetFormattedRange(range.start, range.end); }
         return sheet.cells.GetRange(range.start, range.end);
       }
@@ -1588,7 +1588,7 @@ export class Grid {
 
         // reshape
         const reshaped: any[][] = [];
-        for (let c = 0, index = 0; c < columns; c++ , index += rows) {
+        for (let c = 0, index = 0; c < columns; c++, index += rows) {
           reshaped[c] = data.slice(index, index + rows);
         }
         data = reshaped;
@@ -2345,7 +2345,7 @@ export class Grid {
           }
 
           if (this.container) this.Focus();
-          
+
           this.SetInferredType(this.primary_selection, event.value, event.array);
           this.ClearAdditionalSelections();
           this.ClearSelection(this.active_selection);
@@ -2697,18 +2697,18 @@ export class Grid {
         y: tooltip_base,
       });
 
-      const move_annotation_list: Array<{annotation: Annotation; y: number}> = [];
-      const size_annotation_list: Array<{annotation: Annotation; height: number}> = [];
+      const move_annotation_list: Array<{ annotation: Annotation; y: number }> = [];
+      const size_annotation_list: Array<{ annotation: Annotation; height: number }> = [];
 
       for (const annotation of this.model.active_sheet.annotations) {
         const y = rect.bottom - 1; // -1? border or something?
 
         if (!annotation.rect || annotation.rect.bottom < y) { continue; }
         if (y <= annotation.rect.top && annotation.move_with_cells) {
-          move_annotation_list.push({annotation, y: annotation.rect.top});
+          move_annotation_list.push({ annotation, y: annotation.rect.top });
         }
         else if (y > annotation.rect.top && annotation.resize_with_cells) {
-          size_annotation_list.push({annotation, height: annotation.rect.height});
+          size_annotation_list.push({ annotation, height: annotation.rect.height });
         }
       }
 
@@ -2725,12 +2725,12 @@ export class Grid {
             y: tooltip_base + delta,
           });
 
-          for (const {annotation, y} of move_annotation_list) {
+          for (const { annotation, y } of move_annotation_list) {
             if (annotation.rect) {
               annotation.rect.top = y + delta;
             }
           }
-          for (const {annotation, height} of size_annotation_list) {
+          for (const { annotation, height } of size_annotation_list) {
             if (annotation.rect) {
               annotation.rect.height = height + delta;
             }
@@ -2778,7 +2778,7 @@ export class Grid {
 
           }
 
-          for (const {annotation} of size_annotation_list) {
+          for (const { annotation } of size_annotation_list) {
             if (annotation.resize_callback) {
               annotation.resize_callback.call(undefined);
             }
@@ -2903,18 +2903,18 @@ export class Grid {
       // list of annotations that may be affected by this operation. 
       // this operation will either affect position or size, but not both.
 
-      const move_annotation_list: Array<{annotation: Annotation; x: number}> = [];
-      const size_annotation_list: Array<{annotation: Annotation; width: number}> = [];
+      const move_annotation_list: Array<{ annotation: Annotation; x: number }> = [];
+      const size_annotation_list: Array<{ annotation: Annotation; width: number }> = [];
 
       for (const annotation of this.model.active_sheet.annotations) {
         const x = rect.right - 1; // -1? border or something?
         if (!annotation.rect || annotation.rect.right < x) { continue; }
 
         if (x <= annotation.rect.left && annotation.move_with_cells) {
-          move_annotation_list.push({annotation, x: annotation.rect.left});
+          move_annotation_list.push({ annotation, x: annotation.rect.left });
         }
         else if (x > annotation.rect.left && annotation.resize_with_cells) {
-          size_annotation_list.push({annotation, width: annotation.rect.width});
+          size_annotation_list.push({ annotation, width: annotation.rect.width });
         }
       }
 
@@ -2933,12 +2933,12 @@ export class Grid {
           // tile_sizes[tile_index] = tile_width + delta;
           this.model.active_sheet.SetColumnWidth(column, width);
 
-          for (const {annotation, x} of move_annotation_list) {
+          for (const { annotation, x } of move_annotation_list) {
             if (annotation.rect) {
               annotation.rect.left = x + delta;
             }
           }
-          for (const {annotation, width} of size_annotation_list) {
+          for (const { annotation, width } of size_annotation_list) {
             if (annotation.rect) {
               annotation.rect.width = width + delta;
             }
@@ -2981,7 +2981,7 @@ export class Grid {
 
           }
 
-          for (const {annotation} of size_annotation_list) {
+          for (const { annotation } of size_annotation_list) {
             if (annotation.resize_callback) {
               annotation.resize_callback.call(undefined);
             }
@@ -2998,7 +2998,7 @@ export class Grid {
       });
     }
     else {
-     
+
       const selection = this.SelectingArgument() ?
         this.active_selection : this.primary_selection;
 
@@ -3214,7 +3214,7 @@ export class Grid {
     // UPDATING nub let's do drag-and-insert. start with selection rules:
     // one dimension must be preserved.
 
-    let nub_area: Area|undefined;
+    let nub_area: Area | undefined;
 
     if (event.shiftKey && !selection.empty) {
       const tmp = selection.target;
@@ -3299,7 +3299,8 @@ export class Grid {
             rows: address.row > nub_area.end.row ?
               address.row - nub_area.end.row : nub_area.start.row - address.row,
             columns: address.column > nub_area.end.column ?
-              address.column - nub_area.end.column : nub_area.start.column - address.column };
+              address.column - nub_area.end.column : nub_area.start.column - address.column
+          };
 
           if (delta.rows >= delta.columns) {
             area = new Area(
@@ -3372,21 +3373,26 @@ export class Grid {
     // get original area cell data
     let cells: Cell[][] = [];
 
-    for (let row = 0; row < source_area.rows; row++ ){
+    for (let row = 0; row < source_area.rows; row++) {
       cells[row] = [];
-      for (let column = 0; column < source_area.columns; column++ ){
-        const address = { 
-          row: source_area.start.row + row, 
-          column: source_area.start.column + column };
+      for (let column = 0; column < source_area.columns; column++) {
+        const address = {
+          row: source_area.start.row + row,
+          column: source_area.start.column + column
+        };
         cells[row][column] = this.model.active_sheet.CellData(address);
       }
     }
 
     const data: any[][] = [];
+    let style: Style.Properties[][] = [];
 
     let source_columns = source_area.columns;
     let target_rows = target_area.rows;
     let inverted = false;
+
+    // rather than write this twice, for rows/columns, we will just write
+    // once and for the other direction we will transpose (twice). 
 
     const transpose = (arr: any[][]) => {
       const tmp: any = [];
@@ -3394,7 +3400,7 @@ export class Grid {
       const rows = arr[0].length;
       for (let r = 0; r < rows; r++) {
         tmp[r] = [];
-        for (let c = 0; c < cols; c++ ) {
+        for (let c = 0; c < cols; c++) {
           tmp[r][c] = arr[c][r];
         }
       }
@@ -3422,87 +3428,108 @@ export class Grid {
 
     for (let row = 0; row < target_rows; row++) {
       data[row] = [];
+      style[row] = [];
     }
 
-      // do this on a column basis, so we only parse formula once
+    // do this on a column basis, so we only parse formula once
 
-      for (let column = 0; column < source_columns; column++) {
+    for (let column = 0; column < source_columns; column++) {
 
-        // check for a pattern... only if there are more than one value
-        let pattern_step = 0;
+      // check for a pattern... only if there are more than one value
+      let pattern_step = 0;
 
-        if (cells.length > 1) {
+      if (cells.length > 1) {
 
-          pattern_step = 1;
-          const pattern: number[] = [];
-          const indices: number[] = [];
-  
-          for (let source_row = 0; source_row < cells.length; source_row++) {
-            if (cells[source_row][column].type === ValueType.number) {
-              indices.push(source_row);
-              pattern.push(cells[source_row][column].value);
-            }
-          }
-
-          if (pattern.length > 1) {
-            const deltas = pattern.slice(1).map((value, index) => value - pattern[index]);
-            if (deltas.every((delta) => delta === deltas[0])) {
-              pattern_step = deltas[0];
-            }
-          }
-          if (pattern.length) {
-            pattern_step += (pattern[pattern.length - 1] - pattern[0]);
-          }
-
-        }
+        pattern_step = 1;
+        const pattern: number[] = [];
+        const indices: number[] = [];
 
         for (let source_row = 0; source_row < cells.length; source_row++) {
-
-          let translate: ExpressionUnit|undefined;
-
-          if (cells[source_row][column].type === ValueType.formula) {
-            const parsed = this.parser.Parse(cells[source_row][column].value);
-            if (parsed.expression
-                && parsed.full_reference_list?.length) {
-              translate = parsed.expression;
-            }
+          if (cells[source_row][column].type === ValueType.number) {
+            indices.push(source_row);
+            pattern.push(cells[source_row][column].value);
           }
+        }
 
-          let offset = 0;
-          let start = source_row;
-          let step = cells.length;
-          let pattern_increment = 0;
-          let pattern = pattern_step;
-
-          if (inverted) {
-            start = target_rows - cells.length + source_row;
-            step = -cells.length;
-            pattern = -pattern_step;
+        if (pattern.length > 1) {
+          const deltas = pattern.slice(1).map((value, index) => value - pattern[index]);
+          if (deltas.every((delta) => delta === deltas[0])) {
+            pattern_step = deltas[0];
           }
+        }
+        if (pattern.length) {
+          pattern_step += (pattern[pattern.length - 1] - pattern[0]);
+        }
 
-          for (let row = start; row >= 0 && row < target_rows; row += step, offset += step, pattern_increment += pattern) {
-            if (translate) {
-              data[row][column] = '=' + this.parser.Render(translate, {rows: offset, columns: 0})
-            }
-            else if (cells[source_row][column].type === ValueType.number) {
-              data[row][column] = cells[source_row][column].value + pattern_increment;
-            }
-            else {
-              data[row][column] = cells[source_row][column].value;
-            }
+      }
+
+      for (let source_row = 0; source_row < cells.length; source_row++) {
+
+        let translate: ExpressionUnit | undefined;
+
+        if (cells[source_row][column].type === ValueType.formula) {
+          const parsed = this.parser.Parse(cells[source_row][column].value);
+          if (parsed.expression
+            && parsed.full_reference_list?.length) {
+            translate = parsed.expression;
           }
+        }
+
+        let offset = 0;
+        let start = source_row;
+        let step = cells.length;
+        let pattern_increment = 0;
+        let pattern = pattern_step;
+
+        if (inverted) {
+          start = target_rows - cells.length + source_row;
+          step = -cells.length;
+          pattern = -pattern_step;
+        }
+
+        for (let row = start; row >= 0 && row < target_rows; row += step, offset += step, pattern_increment += pattern) {
+          if (translate) {
+            data[row][column] = '=' + this.parser.Render(translate, { rows: offset, columns: 0 })
+          }
+          else if (cells[source_row][column].type === ValueType.number) {
+            data[row][column] = cells[source_row][column].value + pattern_increment;
+          }
+          else {
+            data[row][column] = cells[source_row][column].value;
+          }
+          style[row][column] = cells[source_row][column].style || {};
 
         }
 
       }
 
-    this.ExecCommand({
+    }
+
+    const commands: Command[] = [{
       key: CommandKey.SetRange,
       value: transposed ? transpose(data) : data,
       array: false,
       area: target_area,
-    }); 
+    }];
 
+    if (transposed) { style = transpose(style); }
+
+    for (let row = 0; row < style.length; row++) {
+      for (let column = 0; column < style[row].length; column++) {
+        commands.push({
+          key: CommandKey.UpdateStyle,
+          area: {
+            row: row + target_area.start.row, 
+            column: column + target_area.start.column },
+          style: style[row][column],
+          delta: false,
+        });
+      }
+    }
+
+    this.ExecCommand(commands);
+
+    
   }
 
   private UpdateSelectedArgument(selection: GridSelection) {
@@ -4368,10 +4395,10 @@ export class Grid {
     // anything else?
 
     return (c >= 0x30 && c <= 0x39) // 0-9
-          || (c === this.decimal_separator_code) // cached
-          || (c === 0x2d) // -
-          || (c === 0x2b) // + // this one is kind of a stretch...
-          ;
+      || (c === this.decimal_separator_code) // cached
+      || (c === 0x2d) // -
+      || (c === 0x2b) // + // this one is kind of a stretch...
+      ;
 
   }
 
@@ -4610,7 +4637,7 @@ export class Grid {
         // or, if we would step onto a subcell, pass over it entirely.
 
         //while (true) {
-        for(;;) {
+        for (; ;) {
 
           // step
 
@@ -4706,7 +4733,7 @@ export class Grid {
 
           this.ScrollIntoView(scroll_target);
           this.Select(selection, new Area(start, end), undefined, true);
- 
+
 
         }
         else {
@@ -4733,7 +4760,7 @@ export class Grid {
             this.model.active_sheet.cells.EnsureColumn(column);
             expanded = true;
           }
-  
+
           if (expanded) {
             this.layout.UpdateTiles();
             this.layout.UpdateContentsSize();
@@ -4743,7 +4770,7 @@ export class Grid {
 
           this.ScrollIntoView(scroll_target);
           this.Select(selection, new Area(start, end), undefined, true);
- 
+
         }
 
 
@@ -5674,19 +5701,19 @@ export class Grid {
    * in fact we should change the names of those parameters so it's a little
    * more generic.
    */
-  private PatchFormulasInternal(source: string, 
+  private PatchFormulasInternal(source: string,
     before_row: number,
     row_count: number,
-    before_column: number, 
+    before_column: number,
     column_count: number,
     active_sheet_name: string,
-    active_sheet: boolean ) {
+    active_sheet: boolean) {
 
     const parsed = this.parser.Parse(source || '');
     let modified = false;
 
     // the sheet test is different for active sheet/non-active sheet.
-    
+
     // on the active sheet, check for no name OR name === active sheet name.
     // on other sheets, check for name AND name === active sheet name.
 
@@ -5748,13 +5775,13 @@ export class Grid {
               }
               modified = true;
             }
-  
+
           }
 
           return false; // always explicit
- 
+
         }
-        
+
         return true; // recurse for everything else
 
       });
@@ -5782,11 +5809,11 @@ export class Grid {
     const active_sheet_name = this.model.active_sheet.name.toLowerCase();
 
     for (const sheet of this.model.sheets) {
-      const active_sheet = sheet === this.model.active_sheet;    
+      const active_sheet = sheet === this.model.active_sheet;
 
       sheet.cells.IterateAll((cell: Cell) => {
         if (cell.type === ValueType.formula) {
-          const modified = this.PatchFormulasInternal(cell.value || '', 
+          const modified = this.PatchFormulasInternal(cell.value || '',
             command.before_row, command.count, 0, 0,
             active_sheet_name, active_sheet);
           if (modified) {
@@ -5797,7 +5824,7 @@ export class Grid {
 
       for (const annotation of sheet.annotations) {
         if (annotation.formula) {
-          const modified = this.PatchFormulasInternal(annotation.formula || '', 
+          const modified = this.PatchFormulasInternal(annotation.formula || '',
             command.before_row, command.count, 0, 0,
             active_sheet_name, active_sheet);
           if (modified) {
@@ -5821,7 +5848,7 @@ export class Grid {
       });
 
       const height = this.model.active_sheet.default_row_height * command.count + 1; // ?
-      
+
       for (const annotation of this.model.active_sheet.annotations) {
         if (annotation.rect) {
 
@@ -5858,7 +5885,7 @@ export class Grid {
       for (const annotation of this.model.active_sheet.annotations) {
         if (annotation.rect) {
 
-          if(annotation.rect.bottom <= rect.top) { 
+          if (annotation.rect.bottom <= rect.top) {
             continue; // unaffected
           }
 
@@ -5981,7 +6008,7 @@ export class Grid {
 
     for (const sheet of this.model.sheets) {
       const active_sheet = sheet === this.model.active_sheet;
-    
+
       sheet.cells.IterateAll((cell: Cell) => {
         if (cell.type === ValueType.formula) {
           const modified = this.PatchFormulasInternal(cell.value || '', 0, 0,
@@ -6007,7 +6034,7 @@ export class Grid {
     }
 
     // annotations
-    
+
     const update_annotations_list: Annotation[] = [];
     const resize_annotations_list: Annotation[] = [];
 
@@ -6019,7 +6046,7 @@ export class Grid {
       });
 
       const width = this.model.active_sheet.default_column_width * command.count + 1; // ?
-      
+
       for (const annotation of this.model.active_sheet.annotations) {
         if (annotation.rect) {
 
@@ -6056,7 +6083,7 @@ export class Grid {
       for (const annotation of this.model.active_sheet.annotations) {
         if (annotation.rect) {
 
-          if(annotation.rect.right <= rect.left) { 
+          if (annotation.rect.right <= rect.left) {
             continue; // unaffected
           }
 
@@ -6312,7 +6339,7 @@ export class Grid {
    * set range, via command. returns affected area.
    */
   private SetRangeInternal(command: SetRangeCommand) {
-   
+
     const area = IsCellAddress(command.area)
       ? new Area(command.area)
       : new Area(command.area.start, command.area.end);
