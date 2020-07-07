@@ -168,8 +168,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   private dialog?: ProgressDialog;
 
-  // private toolbar?: FormattingToolbar;
-
   /**
    * export worker (no longer using worker-loader).
    * export worker is loaded on demand, not by default.
@@ -2144,43 +2142,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.dialog?.Update(message, progress);
   }
 
-  /* *
-   * show the toolbar. will load on first call.
-   * /
-  public async FormattingToolbar(container: HTMLElement) {
-
-    if (!this.toolbar) {
-      const options: ToolbarOptions = {
-        add_delete_sheet: !!this.options.add_tab,
-        compressed_align_menus: (
-          this.options.toolbar === 'compressed' ||
-          this.options.toolbar === 'show-compressed'),
-        // file_menu: this.options.toolbar_file_menu,
-      };
-      this.toolbar = FormattingToolbar.CreateInstance(this, this.grid, container, options);
-    }
-
-    / *
-    if (!this.toolbar) {
-      const load = await this.LoadToolbar();
-      if (load) {
-        const options: ToolbarOptions = {
-          add_delete_sheet: !!this.options.add_tab,
-          compressed_align_menus: (
-            this.options.toolbar === 'compressed' ||
-            this.options.toolbar === 'show-compressed'),
-          // file_menu: this.options.toolbar_file_menu,
-        };
-        this.toolbar = (self as any).TREB['treb-toolbar'].CreateInstance(this, this.grid, container, options);
-      }
-    }
-    * /
-
-    this.toolbar?.Toggle();
-
-  }
-  */
-
   /** overloadable for subclasses */
   protected InitCalculator(): Calculator {
     return new Calculator();
@@ -2385,75 +2346,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     return worker;
 
   }
-
-  /* * async load a chunk module * /
-  private async LoadToolbar() {
-
-    switch (EmbeddedSpreadsheetBase.formatting_toolbar_state) {
-      case ToolbarLoadState.Loaded:
-        return true;
-
-      case ToolbarLoadState.Error:
-        console.warn('Loading toolbar module failed');
-        return false;
-
-      case ToolbarLoadState.Loading:
-        console.info('already loading...');
-        return false;
-    }
-
-    // state is null
-
-    let treb_path = EmbeddedSpreadsheetBase.treb_base_path;
-    let name = // 'embedded-treb-toolbar-' + (build as any).version + '.js';
-      (build as any)['build-entry-points'].toolbar +
-      (EmbeddedSpreadsheetBase.treb_language ? '-' + EmbeddedSpreadsheetBase.treb_language : '') +
-      '-' + (build as any).version + '.js';
-
-    if (treb_path) {
-      if (!/\/$/.test(treb_path)) treb_path += '/';
-      name = treb_path + name;
-    }
-
-    EmbeddedSpreadsheetBase.formatting_toolbar_state = ToolbarLoadState.Loading;
-    const script = document.createElement('script');
-    script.setAttribute('type', 'text/javascript');
-
-    // console.info('setting src', name);
-    script.setAttribute('src', name);
-
-    // this is async... right?
-    document.body.appendChild(script);
-
-    // now wait until it loads, or there's a timeout.
-    const result = await new Promise((resolve) => {
-      if ((self as any).TREB['treb-toolbar']) {
-        return resolve(true);
-      }
-      let counter = 0;
-      const delay = (timeout: number) => {
-        setTimeout(() => {
-          if ((self as any).TREB['treb-toolbar']) {
-            return resolve(true);
-          }
-          if (counter++ >= 12) {
-            console.info('timeout loading module');
-            return resolve(false);
-          }
-          delay(timeout + 25);
-        }, timeout);
-      };
-      delay(100);
-
-    });
-
-    EmbeddedSpreadsheetBase.formatting_toolbar_state = result ?
-      ToolbarLoadState.Loaded : ToolbarLoadState.Error;
-
-    return result;
-
-  }
-  */
 
   /**
    * handle key down to intercept ctrl+z (undo)

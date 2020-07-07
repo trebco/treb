@@ -4,7 +4,7 @@ import { symbols } from './symbol-defs';
 import { CreateSheetOptions, DefaultOptions } from './options';
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { Resizable } from 'treb-utils';
-import { ToolbarOptions, CompositeToolbar as FormattingToolbar } from './toolbar/src';
+import { ToolbarOptions, CompositeToolbar as FormattingToolbar } from './toolbar/';
 
 import '../style/composite-sheet.scss';
 import 'treb-base-types/style/resizable.css';

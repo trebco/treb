@@ -17,10 +17,10 @@ import { icons as new_icons } from './icons';
 
 import { UA } from 'treb-grid';
 
-import { EmbeddedSpreadsheetBase } from '../../embedded-spreadsheet-base';
+import { EmbeddedSpreadsheetBase } from '../embedded-spreadsheet-base';
 import { EmbeddedSheetEvent } from 'treb-embed/src/types';
 
-import '../style/toolbar.scss';
+import '../../style/toolbar.scss';
 
 const default_colors = [
   '#000', '#333', '#666', '#999', '#ccc', '#fff',
