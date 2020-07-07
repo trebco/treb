@@ -3211,6 +3211,11 @@ export class Grid {
     // keeping the original top-left. this can lose the target, but that's
     // not ultimately a problem.
 
+    // UPDATING nub let's do drag-and-insert. start with selection rules:
+    // one dimension must be preserved.
+
+    let nub_area: Area|undefined;
+
     if (event.shiftKey && !selection.empty) {
       const tmp = selection.target;
       this.Select(selection, new Area(base_address, selection.target, true), undefined, true);
@@ -3219,6 +3224,7 @@ export class Grid {
     else if (this.nub_select_flag) {
       base_address = selection.area.TopLeft();
       overlay_classes.push('nub-select');
+      nub_area = this.model.active_sheet.RealArea(selection.area);
     }
     else {
       this.Select(selection, new Area(base_address), base_address);
@@ -3273,7 +3279,43 @@ export class Grid {
         }
       }
 
-      const area = new Area(address, base_address, true);
+      let area = new Area(address, base_address, true);
+
+      if (nub_area) {
+
+        area = nub_area.Clone();
+        area.ConsumeAddress(address);
+
+        // if you are moving from the nub you can only move one dimension,
+        // the other must be preserved. also the complete original selection
+        // is preserved.
+
+        if (area.rows !== nub_area.rows && area.columns !== nub_area.columns) {
+
+          // we're basing this on larger cell count, which is maybe wrong --
+          // should be based on larger pixel count
+
+          const delta = {
+            rows: address.row > nub_area.end.row ?
+              address.row - nub_area.end.row : nub_area.start.row - address.row,
+            columns: address.column > nub_area.end.column ?
+              address.column - nub_area.end.column : nub_area.start.column - address.column };
+
+          if (delta.rows >= delta.columns) {
+            area = new Area(
+              { row: area.start.row, column: nub_area.start.column },
+              { row: area.end.row, column: nub_area.end.column });
+          }
+          else {
+            area = new Area(
+              { row: nub_area.start.row, column: area.start.column },
+              { row: nub_area.end.row, column: area.end.column });
+          }
+
+        }
+
+      }
+
       if (selection.empty || !area.Equals(selection.area)) {
         this.Select(selection, area, undefined, true);
         this.RenderSelections();
@@ -3310,8 +3352,157 @@ export class Grid {
           this.formula_bar.FocusEditor();
         }
       }
+      else if (nub_area) {
+        this.RecycleNubArea(selection.area, nub_area);
+      }
 
     });
+  }
+
+  /**
+   * when you drag from the nub, we copy the contents of the original
+   * selection into the new selection, but there are some special recycling
+   * rules.
+   */
+  private RecycleNubArea(target_area: Area, source_area: Area) {
+
+    // nothing to do
+    if (target_area.Equals(source_area)) { return; }
+
+    // get original area cell data
+    let cells: Cell[][] = [];
+
+    for (let row = 0; row < source_area.rows; row++ ){
+      cells[row] = [];
+      for (let column = 0; column < source_area.columns; column++ ){
+        const address = { 
+          row: source_area.start.row + row, 
+          column: source_area.start.column + column };
+        cells[row][column] = this.model.active_sheet.CellData(address);
+      }
+    }
+
+    const data: any[][] = [];
+
+    let source_columns = source_area.columns;
+    let target_rows = target_area.rows;
+    let inverted = false;
+
+    const transpose = (arr: any[][]) => {
+      const tmp: any = [];
+      const cols = arr.length;
+      const rows = arr[0].length;
+      for (let r = 0; r < rows; r++) {
+        tmp[r] = [];
+        for (let c = 0; c < cols; c++ ) {
+          tmp[r][c] = arr[c][r];
+        }
+      }
+      return tmp;
+    };
+
+    let transposed = false;
+
+    // only one of columns or rows can be different
+    if (target_area.columns === source_area.columns) {
+
+      // check if we are going backwards
+      inverted = (target_area.start.row < source_area.start.row);
+
+    }
+    else {
+
+      source_columns = source_area.rows;
+      target_rows = target_area.columns;
+      inverted = (target_area.start.column < source_area.start.column);
+      cells = transpose(cells);
+      transposed = true;
+
+    }
+
+    for (let row = 0; row < target_rows; row++) {
+      data[row] = [];
+    }
+
+      // do this on a column basis, so we only parse formula once
+
+      for (let column = 0; column < source_columns; column++) {
+
+        // check for a pattern... only if there are more than one value
+        let pattern_step = 0;
+
+        if (cells.length > 1) {
+
+          pattern_step = 1;
+          const pattern: number[] = [];
+          const indices: number[] = [];
+  
+          for (let source_row = 0; source_row < cells.length; source_row++) {
+            if (cells[source_row][column].type === ValueType.number) {
+              indices.push(source_row);
+              pattern.push(cells[source_row][column].value);
+            }
+          }
+
+          if (pattern.length > 1) {
+            const deltas = pattern.slice(1).map((value, index) => value - pattern[index]);
+            if (deltas.every((delta) => delta === deltas[0])) {
+              pattern_step = deltas[0];
+            }
+          }
+          if (pattern.length) {
+            pattern_step += (pattern[pattern.length - 1] - pattern[0]);
+          }
+
+        }
+
+        for (let source_row = 0; source_row < cells.length; source_row++) {
+
+          let translate: ExpressionUnit|undefined;
+
+          if (cells[source_row][column].type === ValueType.formula) {
+            const parsed = this.parser.Parse(cells[source_row][column].value);
+            if (parsed.expression
+                && parsed.full_reference_list?.length) {
+              translate = parsed.expression;
+            }
+          }
+
+          let offset = 0;
+          let start = source_row;
+          let step = cells.length;
+          let pattern_increment = 0;
+          let pattern = pattern_step;
+
+          if (inverted) {
+            start = target_rows - cells.length + source_row;
+            step = -cells.length;
+            pattern = -pattern_step;
+          }
+
+          for (let row = start; row >= 0 && row < target_rows; row += step, offset += step, pattern_increment += pattern) {
+            if (translate) {
+              data[row][column] = '=' + this.parser.Render(translate, {rows: offset, columns: 0})
+            }
+            else if (cells[source_row][column].type === ValueType.number) {
+              data[row][column] = cells[source_row][column].value + pattern_increment;
+            }
+            else {
+              data[row][column] = cells[source_row][column].value;
+            }
+          }
+
+        }
+
+      }
+
+    this.ExecCommand({
+      key: CommandKey.SetRange,
+      value: transposed ? transpose(data) : data,
+      array: false,
+      area: target_area,
+    }); 
+
   }
 
   private UpdateSelectedArgument(selection: GridSelection) {
