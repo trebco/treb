@@ -94,6 +94,7 @@
 
       &.expanded {
         .editor-container {
+          transition: height .1s ease-in-out;
           height: 4em;
           .formula-editor {
             overflow-y: auto;
