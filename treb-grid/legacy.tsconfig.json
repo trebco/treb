@@ -4,6 +4,7 @@
     { "path": "../treb-base-types/legacy.tsconfig.json" },
     { "path": "../treb-format/legacy.tsconfig.json" },
     { "path": "../treb-utils/legacy.tsconfig.json" },
+    { "path": "../treb-export/legacy.tsconfig.json" },
     { "path": "../treb-parser/legacy.tsconfig.json" }
   ]
 }

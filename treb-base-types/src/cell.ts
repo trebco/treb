@@ -46,6 +46,8 @@ export interface RenderFunctionOptions {
  */
 export enum ValueType {
   undefined = 0,
+
+  // formula is a string; we usually test the first character === '='
   formula = 1,
   string = 2,
   number = 3,
@@ -53,14 +55,23 @@ export enum ValueType {
 
   // we don't actually use this type, it's here for matching only
   object = 5,
+
+  // error is a STRING VALUE... object errors are layered on top? is that 
+  // correct? (...) it sort of makes sense... since we have separate typing
   error = 6,
 }
+
+/** 
+ * not sure how useful this really is... it seems like just a way
+ * to get rid of linting errors when representing value as 'any'.
+ */
+export type CellValue = undefined | string | number | boolean;
 
 export class Cell {
 
   // --- static methods -------------------------------------------------------
 
-  public static StringToColumn(s: string){
+  public static StringToColumn(s: string): number{
     let index = 0;
     s = s.toUpperCase();
     for ( let i = 0; i < s.length; i++ ){
@@ -131,13 +142,13 @@ export class Cell {
   // --- class fields ---------------------------------------------------------
 
   // the basic value, which can be omitted (in the case of an array cell)
-  public value?: any;
+  public value?: CellValue; // any;
 
   // the value type, js intrinics plus a special type for formula
   public type: ValueType = ValueType.undefined;
 
   // the calculated value, returned from calculation service
-  public calculated?: any;
+  public calculated?: CellValue; // |FunctionError; // any;
 
   // the calculated type. we're separating calculation from rendering, since
   // we may calculate values that we don't need to render.
@@ -192,24 +203,41 @@ export class Cell {
     if (typeof value !== 'undefined') this.Set(value, value_type);
   }
 
+  /** type guard */
+  public ValueIsNumber() : this is { value: number } {
+    return this.type === ValueType.number;
+  }
+
+  /** type guard */
+  public ValueIsFormula() : this is { value: string } {
+    return this.type === ValueType.formula;
+  }
+
+  /** type guard */
+  public ValueIsBoolean() : this is { value: boolean } {
+    return this.type === ValueType.boolean;
+  }
+
+  ///
+
   /** flush style information and things that rely on it (formatted value) */
-  public FlushStyle(){
+  public FlushStyle(): void{
     this.formatted = this.rendered_type = this.style = undefined;
     this.render_dirty = true;
   }
 
   /** flush array information */
-  public FlushArray(){
+  public FlushArray(): void{
     this.area = undefined;
   }
 
   /** flush cached data: formatted and calculated */
-  public FlushCache(){
+  public FlushCache(): void{
     this.calculated = this.calculated_type = this.formatted = this.rendered_type = undefined;
     this.render_dirty = true;
   }
 
-  public Reset(){
+  public Reset(): void{
     this.type = ValueType.undefined;
     this.value
       = this.note
@@ -272,8 +300,14 @@ export class Cell {
    */
   public GetValue(){
     if (this.calculated_type) return this.calculated;
-    if (this.type === ValueType.string &&
-        this.value && this.value[0] === '\'') return this.value.slice(1);
+    // if (this.type === ValueType.string &&
+    //    this.value && this.value[0] === '\'') return this.value.slice(1);
+
+    // we maintain a type, but typescript won't associate the two so
+    // this test needs to use the actual type
+
+    if (typeof this.value === 'string' && this.value[0] === '\'') { return this.value.slice(1); }
+
     return this.value;
   }
 
@@ -287,8 +321,10 @@ export class Cell {
       return (this.calculated_type === ValueType.error) ?
         { error: this.calculated } : this.calculated;
     }
-    if (this.type === ValueType.string &&
-        this.value && this.value[0] === '\'') return this.value.slice(1);
+    // if (this.type === ValueType.string &&
+    //    this.value && this.value[0] === '\'') return this.value.slice(1);
+    if (typeof this.value === 'string' && this.value[0] === '\'') { return this.value.slice(1); } // @see GetValue
+
     return this.value;
   }
 
@@ -304,17 +340,23 @@ export class Cell {
    * in this case because it's the function value, I think returning 0 is ok.
    * BUT, it still might make sense to return undefined.
    */
-  public GetValue3() {
+  public GetValue3(): CellValue|{error: string} { // |FunctionError {
+
+    // so... what is this? shouldn't this be an object? (...)
+   
     if (this.calculated_type) {
       return (this.calculated_type === ValueType.error) ?
-        { error: this.calculated } : this.calculated;
+        { error: this.calculated as string } : this.calculated;
     }
+
     if (this.type === ValueType.formula) {
       // formula, but no calc type... undefined or zero? (...)
       return 0; // undefined;
     }
-    if (this.type === ValueType.string &&
-        this.value && this.value[0] === '\'') return this.value.slice(1);
+    // if (this.type === ValueType.string &&
+    //    this.value && this.value[0] === '\'') return this.value.slice(1);
+    if (typeof this.value === 'string' && this.value[0] === '\'') { return this.value.slice(1); } // @see GetValue
+
     return this.value;
   }
 

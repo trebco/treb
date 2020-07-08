@@ -327,13 +327,14 @@ export abstract class Graph {
 
   }
 
-  /** sets area dirty, convenience shortcut */
+  /* * sets area dirty, convenience shortcut * /
   public SetAreaDirtyX(area: Area) {
     area.Iterate((address: ICellAddress) => {
       const vertex = this.GetVertex(address, false);
       if (vertex) this.SetDirty(address);
     });
   }
+  */
 
   public SetVertexDirty(vertex: SpreadsheetVertex) {
 

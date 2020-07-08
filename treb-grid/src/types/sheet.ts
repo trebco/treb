@@ -1482,12 +1482,12 @@ export class Sheet {
 
   }
 
-  /**
+  /* *
    * returns the contents of the given area as tab-separated
    * values, intended for pasting into excel. this should be
    * either the raw value or the raw calculated result, if it
    * exists.
-   */
+   * /
   public GetTSV(area?: Area): string {
 
     if (!area) area = new Area({ row: Infinity, column: Infinity });
@@ -1508,6 +1508,7 @@ export class Sheet {
     return lines.join('\n').replace(/\s+$/, '');
 
   }
+  */
 
   ///
   public FormattedCellValue(address: ICellAddress) {

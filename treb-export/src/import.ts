@@ -6,6 +6,16 @@ import { ValueType } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address } from './address-type';
 import { Parser, ParseResult } from 'treb-parser';
+import { Style } from 'treb-base-types';
+
+export interface ImportedSheetData {
+  name: string|undefined;
+  cells: any[];
+  default_column_width: number;
+  column_widths: number[];
+  row_heights: number[];
+  styles: Style.Properties[];
+}
 
 interface SharedFormula {
   row: number;
@@ -216,7 +226,7 @@ export class Importer {
     return this.workbook.Count();
   }
 
-  public GetSheet(index = 0) {
+  public GetSheet(index = 0): ImportedSheetData {
 
     const sheet = this.workbook.GetSheet(index);
     sheet.Parse();
@@ -399,6 +409,7 @@ export class Importer {
     cells.FromJSON(data);
     return cells;
     */
+
 
     return {
       name: sheet.options.name,

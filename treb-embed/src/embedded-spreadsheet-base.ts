@@ -28,7 +28,7 @@ import '../style/embed.scss';
 
 // config
 import * as build from '../../package.json';
-import { resolve } from 'path';
+import { SerializedModel } from 'treb-grid/src/types/data_model';
 
 interface UndoEntry {
   data: string;
@@ -58,7 +58,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * script execution, we can probably assume it's still there -- because the
    * client won't have had a chance to remove it yet.
    */
-  public static SniffPath() {
+  public static SniffPath(): void {
     const tags = document.querySelectorAll('script');
 
     // FIXME: fragile!
@@ -101,12 +101,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * it doesn't reflect saves. we need to do that but leave this one as-is for
    * backwards compatibility.
    */
-  public get modified() {
+  public get modified(): boolean {
     return this.undo_stack.length !== 1;
   }
 
   /** name moved to model */
-  public get document_name() {
+  public get document_name(): string|undefined {
     return this.grid.model.document_name;
   }
 
@@ -117,7 +117,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** user data moved to model */
-  public get user_data() {
+  public get user_data(): any|undefined {
     return this.grid.model.user_data;
   }
 
@@ -198,7 +198,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   private last_selection?: string;
   
-  public get script_path() {
+  public get script_path(): string {
 
     let name = build['build-entry-points'].main;
 
@@ -944,7 +944,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
             // console.info(event.data.results);
 
-            this.grid.FromData2(event.data.results);
+            this.grid.FromImportData(event.data.results);
             this.ResetInternal();
             this.grid.Update();
 
@@ -998,7 +998,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
         // FIXME: type
 
-        const serialized: any = this.grid.Serialize({
+        const serialized: SerializedModel = this.grid.Serialize({
           rendered_values: true,
           expand_arrays: true,
           export_colors: true,
@@ -2253,28 +2253,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     } // end l10n conversion
 
-    // this.grid.UpdateSheet(sheet_data); // don't paint -- wait for calculate
+    // why is it not complaining about this? (...)
+
     this.grid.UpdateSheets(sheets, undefined, override_sheet || data.active_sheet);
     const model = this.grid.model;
-
-    /*
-    if (data.simulation_data) {
-      this.last_simulation_data = data.simulation_data;
-      this.last_simulation_data.results =
-        (this.last_simulation_data.results || []).map((entry: any) => {
-          const binary = Base64.atob(entry);
-          const len = binary.length;
-          const u8 = new Uint8Array(len);
-          for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);
-          return u8.buffer;
-        });
-
-      this.calculator.UpdateResults(this.last_simulation_data, model, false);
-    }
-    else {
-      this.FlushSimulationResults();
-    }
-    */
 
     model.document_name = data.name;
     model.user_data = data.user_data;

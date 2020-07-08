@@ -1,6 +1,6 @@
 
 import {
-  Rectangle, ValueType, Style, Area, Cell,
+  Rectangle, ValueType, Style, Area, Cell, CellValue,
   Extent, ICellAddress, IsCellAddress, Localization
 } from 'treb-base-types';
 import {
@@ -23,7 +23,7 @@ import { CellEditor } from '../editors/cell_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
 import { GridEvent } from './grid_events';
-import { SheetEvent } from './sheet_types';
+import { SheetEvent, FreezePane, SerializedSheet } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
 import { GridOptions, DefaultGridOptions } from './grid_options';
 import { AutocompleteMatcher, FunctionDescriptor } from '../editors/autocomplete_matcher';
@@ -32,6 +32,8 @@ import { SerializeOptions } from './serialize_options';
 import { UA } from '../util/ua';
 import { Annotation } from './annotation';
 import { Autocomplete } from '../editors/autocomplete';
+
+import { ImportedSheetData } from 'treb-export';
 
 import { MouseDrag } from './drag_mask';
 
@@ -42,12 +44,20 @@ import {
   ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand
 } from './grid_command';
 
-import { DataModel, MacroFunction } from './data_model';
+import { DataModel, MacroFunction, SerializedModel } from './data_model';
 import { NamedRangeCollection } from './named_range';
+
+interface ClipboardCellData {
+  address: ICellAddress;
+  data: CellValue;
+  type: ValueType;
+  style?: Style.Properties;
+  array?: {rows: number, columns: number};
+}
 
 interface DoubleClickData {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  timeout?: any;
+  timeout?: number;
   address?: ICellAddress;
 }
 
@@ -338,7 +348,7 @@ export class Grid {
    * at current selection
    * @param note new note, or undefined to clear note
    */
-  public SetNote(address?: ICellAddress, note?: string) {
+  public SetNote(address?: ICellAddress, note?: string): void {
 
     if (!address) {
       if (this.primary_selection.empty) return;
@@ -354,7 +364,7 @@ export class Grid {
   }
 
   /** find an annotation, given a node */
-  public FindAnnotation(node: HTMLElement) {
+  public FindAnnotation(node: HTMLElement): Annotation|undefined {
     for (const annotation of this.model.active_sheet.annotations) {
       if (annotation.node === node) {
         return annotation;
@@ -371,7 +381,7 @@ export class Grid {
    * shift by (X) pixels. intended for copy-paste, where we don't want to
    * paste immediately on top of the original.
    */
-  public CreateAnnotation(properties: object = {}, add_to_sheet = true, offset = false) {
+  public CreateAnnotation(properties: unknown = {}, add_to_sheet = true, offset = false): Annotation {
     const annotation = new Annotation(properties);
     if (offset && annotation.rect) {
       let recheck = true;
@@ -401,7 +411,7 @@ export class Grid {
   }
 
   /** add an annotation. it will be returned with a usable node. */
-  public AddAnnotation(annotation: Annotation, toll_events = false, add_to_layout = true) {
+  public AddAnnotation(annotation: Annotation, toll_events = false, add_to_layout = true): void {
 
     if (!annotation.node) {
       annotation.node = document.createElement('div');
@@ -661,7 +671,7 @@ export class Grid {
    * the parent (although the node still exists in the annotation, if
    * it existed before).
    */
-  public RemoveAnnotation(annotation: Annotation) {
+  public RemoveAnnotation(annotation: Annotation): void {
     for (let i = 0; i < this.model.active_sheet.annotations.length; i++) {
       if (annotation === this.model.active_sheet.annotations[i]) {
         this.model.active_sheet.annotations.splice(i, 1);
@@ -686,7 +696,7 @@ export class Grid {
    * you can also use it when cleaning up, if the underlying data will also
    * be wiped from the model.
    */
-  public RemoveAnnotationNodes() {
+  public RemoveAnnotationNodes(): void {
     this.layout.RemoveAnnotationNodes();
   }
 
@@ -695,7 +705,7 @@ export class Grid {
    * by typescript has a problem figuring this out, so we will simplify
    * the function.
    */
-  public Serialize(options: SerializeOptions = {}) {
+  public Serialize(options: SerializeOptions = {}): SerializedModel {
 
     // selection moved to sheet, but it's not "live"; so we need to
     // capture the primary selection in the current active sheet before
@@ -739,19 +749,19 @@ export class Grid {
   }
 
   /** pass through */
-  public RealArea(area: Area) {
+  public RealArea(area: Area): Area {
     return this.model.active_sheet.RealArea(area);
   }
 
   /** pass through */
-  public CellRenderData(address: ICellAddress) {
+  public CellRenderData(address: ICellAddress): Cell {
     return this.model.active_sheet.CellData(address);
   }
 
   /**
    * clear sheet, reset all data
    */
-  public Clear() {
+  public Clear(): void {
     this.ExecCommand({ key: CommandKey.Clear });
   }
 
@@ -765,7 +775,7 @@ export class Grid {
    * one problem with that is that import is really, really heavy (jszip).
    * it seems wasteful to require all that just to import csv.
    */
-  public FromCSV(text: string) {
+  public FromCSV(text: string): void {
 
     const records = ParseCSV(text);
     const arr = records.map((record) =>
@@ -798,17 +808,21 @@ export class Grid {
   /**
    * show or hide headers
    */
-  public ShowHeaders(show = true) {
+  public ShowHeaders(show = true): void {
     this.ExecCommand({
       key: CommandKey.ShowHeaders,
       show,
     });
   }
 
-  public FromData2(
-    sheet_data: any[],
+  /** 
+   * this method is called after an XLSX import. the data comes from the 
+   * worker handling the import. we should be able to nail down this type [FIXME]
+   */
+  public FromImportData(
+    sheet_data: ImportedSheetData[],
     render = false,
-  ) {
+  ): void {
 
     this.RemoveAnnotationNodes();
 
@@ -830,7 +844,7 @@ export class Grid {
       // this.cells.FromJSON(cell_data);
       this.model.sheets[si].cells.FromJSON(sheet_data[si].cells);
       if (sheet_data[si].name) {
-        this.model.sheets[si].name = sheet_data[si].name;
+        this.model.sheets[si].name = sheet_data[si].name || '';
       }
 
       // 0 is implicitly just a general style
@@ -873,16 +887,16 @@ export class Grid {
 
   }
 
-  /**
+  /* *
    * why does this not take the composite object? (...)
    * A: it's used for xlsx import. still, we could wrap it.
-   */
+   * /
   public FromData(
     cell_data: any[],
     column_widths: number[],
     row_heights: number[],
     styles: Style.Properties[],
-    render = false) {
+    render = false): void {
 
     this.RemoveAnnotationNodes();
 
@@ -930,13 +944,14 @@ export class Grid {
     }
 
   }
+  */
 
-  public ResetMetadata() {
+  public ResetMetadata(): void {
     this.model.document_name = undefined;
     this.model.user_data = undefined;
   }
 
-  public NextSheet(step = 1) {
+  public NextSheet(step = 1): void {
     if (this.model.sheets.length === 1) return;
     for (let i = 0; i < this.model.sheets.length; i++) {
       if (this.model.sheets[i] === this.model.active_sheet) {
@@ -949,7 +964,7 @@ export class Grid {
   }
 
   /** insert sheet at the given index (or current index) */
-  public InsertSheet(index?: number) {
+  public InsertSheet(index?: number): void {
 
     if (typeof index === 'undefined') {
       if (!this.model.sheets.some((sheet, i) => {
@@ -973,7 +988,7 @@ export class Grid {
   /**
    * delete sheet, by index or (omitting index) the current active sheet
    */
-  public DeleteSheet(index?: number) {
+  public DeleteSheet(index?: number): void {
 
     if (typeof index === 'undefined') {
       if (!this.model.sheets.some((sheet, i) => {
@@ -994,7 +1009,7 @@ export class Grid {
 
   }
 
-  public AddSheet() {
+  public AddSheet(): void {
     this.ExecCommand({
       key: CommandKey.AddSheet,
     });
@@ -1004,7 +1019,7 @@ export class Grid {
    * activate sheet, by name or index number
    * @param sheet number (index into the array) or string (name)
    */
-  public ActivateSheet(sheet: number | string) {
+  public ActivateSheet(sheet: number | string): void {
 
     const index = (typeof sheet === 'number') ? sheet : undefined;
     const name = (typeof sheet === 'string') ? sheet : undefined;
@@ -1020,14 +1035,14 @@ export class Grid {
   /**
    * activate sheet, by ID
    */
-  public ActivateSheetID(id: number) {
+  public ActivateSheetID(id: number): void {
     this.ExecCommand({
       key: CommandKey.ActivateSheet,
       id,
     });
   }
 
-  public ShowAll() {
+  public ShowAll(): void {
 
     // obviously there are better ways to do this, but this
     // will use the execcommand system and _should_ only fire
@@ -1044,7 +1059,7 @@ export class Grid {
     this.ExecCommand(commands);
   }
 
-  public ShowSheet(index = 0, show = true) {
+  public ShowSheet(index = 0, show = true): void {
     this.ExecCommand({
       key: CommandKey.ShowSheet,
       index,
@@ -1054,7 +1069,7 @@ export class Grid {
 
   /** new version for multiple sheets */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public UpdateSheets(data: any[], render = false, activate_sheet?: number | string) {
+  public UpdateSheets(data: SerializedSheet[], render = false, activate_sheet?: number | string): void {
 
     // remove existing annotations from layout
 
@@ -1162,8 +1177,8 @@ export class Grid {
 
   }
 
-  /** DEPRECATED */
-  public UpdateSheet__(data: any, render = false) {
+  /* * DEPRECATED * /
+  public UpdateSheet__(data: any, render = false): void {
 
     if (typeof data === 'string') {
       data = JSON.parse(data);
@@ -1222,13 +1237,14 @@ export class Grid {
       this.Repaint(false, false);
     }
   }
+  */
 
   /**
    * rebuild layout on a resize. we are not trapping resize events, clients
    * should do that (also this works for embedded elements that are not
    * directly affected by document resize).
    */
-  public UpdateLayout() {
+  public UpdateLayout(): void {
     this.layout.UpdateTiles();
     this.render_tiles = this.layout.VisibleTiles();
     this.Repaint(true);
@@ -1239,14 +1255,14 @@ export class Grid {
    * important for post-constructor theme updates, and the name applies
    * more to that function than to what we do at startup.
    */
-  public ApplyTheme() {
+  public ApplyTheme(): void {
     this.UpdateTheme(true);
   }
 
   /**
    * @param initial first call, from the grid Initialize() method
    */
-  public UpdateTheme(initial = false) {
+  public UpdateTheme(initial = false): void {
 
     if (!initial) {
       for (const key of Object.keys(this.theme)) {
@@ -1301,7 +1317,7 @@ export class Grid {
    * it; it might come back, but if it does use a load method (don't inline)
    *
    */
-  public Initialize(grid_container: HTMLElement, toll_initial_render = false) {
+  public Initialize(grid_container: HTMLElement, toll_initial_render = false): void {
 
     this.grid_container = grid_container;
 
@@ -1421,7 +1437,7 @@ export class Grid {
   /**
    * merges selected cells
    */
-  public MergeSelection() {
+  public MergeSelection(): void {
 
     if (this.primary_selection.empty) {
       return; // FIXME: warn?
@@ -1436,7 +1452,7 @@ export class Grid {
   /**
    * unmerges selected cells
    */
-  public UnmergeSelection() {
+  public UnmergeSelection(): void {
 
     if (this.primary_selection.empty) {
       return; // FIXME: warn?
@@ -1453,7 +1469,7 @@ export class Grid {
    * focus on the container. you must call this method to get copying
    * to work properly (because it creates a selection)
    */
-  public Focus() {
+  public Focus(): void {
     if (this.container) {
       this.container.focus();
     }
@@ -1462,7 +1478,7 @@ export class Grid {
   /**
    * set or clear name
    */
-  public SetName(name: string, range?: ICellAddress | Area) {
+  public SetName(name: string, range?: ICellAddress | Area): void {
 
     const command: SetNameCommand = {
       key: CommandKey.SetName,
@@ -1490,14 +1506,14 @@ export class Grid {
     this.ExecCommand(command);
   }
 
-  public GetNumberFormat(address: ICellAddress) {
+  public GetNumberFormat(address: ICellAddress): string|undefined {
     const style = this.model.active_sheet.CellStyleData(address);
     if (style && style.number_format) {
       return NumberFormatCache.Get(style.number_format).toString();
     }
   }
 
-  public SelectAll() {
+  public SelectAll(): void {
     this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
     this.RenderSelections();
   }
@@ -1506,7 +1522,7 @@ export class Grid {
    * get data in a given range, optionally formulas
    * API method
    */
-  public GetRange(range: ICellAddress | Area, formula = false, formatted = false) {
+  public GetRange(range: ICellAddress | Area, formula = false, formatted = false): CellValue|CellValue[][]|undefined {
 
     let sheet_id = 0;
 
@@ -1548,7 +1564,7 @@ export class Grid {
    * rows/columns -- we will not recycle a matrix.
    * @param transpose transpose before inserting (data is column-major)
    */
-  public SetRange(range: Area, data: any, recycle = false, transpose = false) {
+  public SetRange(range: Area, data: any, recycle = false, transpose = false): void {
 
     // single value, easiest
     if (!Array.isArray(data) && !ArrayBuffer.isView(data)) {
@@ -1600,6 +1616,13 @@ export class Grid {
 
     }
 
+    // why does the below tranpose method skip undefineds? is it trying
+    // to preserve data? ...
+
+    // it seems like it would have no effect, just not copying undefined -> undefined, 
+    // saving a useless copy at the expense of a test on all cells ...
+
+    /*
     // transpose. might not be square
     if (transpose) {
       const tmp: any[][] = [];
@@ -1614,6 +1637,8 @@ export class Grid {
       }
       data = tmp;
     }
+    */
+    if (transpose) { data = this.Transpose(data); }
 
     // this.model.sheet.SetAreaValues(range, data as any[][]);
     this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data });
@@ -1627,7 +1652,7 @@ export class Grid {
   /**
    * API method
    */
-  public SetRowHeight(row?: number | number[], height?: number) {
+  public SetRowHeight(row?: number | number[], height?: number): void {
     this.ExecCommand({
       key: CommandKey.ResizeRows,
       row,
@@ -1641,7 +1666,7 @@ export class Grid {
    * @param column column, columns, or undefined means all columns
    * @param width target width, or undefined means auto-size
    */
-  public SetColumnWidth(column?: number | number[], width = 0) {
+  public SetColumnWidth(column?: number | number[], width = 0): void {
     this.ExecCommand({
       key: CommandKey.ResizeColumns,
       column,
@@ -1655,7 +1680,7 @@ export class Grid {
    *
    * API method
    */
-  public ApplyStyle(area?: Area, properties: Style.Properties = {}, delta = true) {
+  public ApplyStyle(area?: Area, properties: Style.Properties = {}, delta = true): void {
 
     if (!area) {
       if (this.primary_selection.empty) {
@@ -1680,12 +1705,12 @@ export class Grid {
    *
    * API method
    */
-  public GetSelection() {
+  public GetSelection(): GridSelection {
     return this.primary_selection;
   }
 
   /** repaint after an external event (calculation) */
-  public Update(force = false, area?: Area) {
+  public Update(force = false, area?: Area): void {
     this.DelayedRender(force, area);
   }
 
@@ -1697,7 +1722,7 @@ export class Grid {
    * @param color
    * @param width
    */
-  public ApplyBorders(area?: Area, borders: BorderConstants = BorderConstants.None, color?: string, width = 1) {
+  public ApplyBorders(area?: Area, borders: BorderConstants = BorderConstants.None, color?: string, width = 1): void {
 
     if (!area) {
       if (this.primary_selection.empty) { return; }
@@ -1719,7 +1744,7 @@ export class Grid {
   }
 
   /** return freeze area */
-  public GetFreeze() {
+  public GetFreeze(): FreezePane {
     return { ...this.model.active_sheet.freeze };
   }
 
@@ -1728,7 +1753,7 @@ export class Grid {
    *
    * highglight is shown by default, but we can hide it(mostly for document load)
    */
-  public Freeze(rows = 0, columns = 0, highlight_transition = true) {
+  public Freeze(rows = 0, columns = 0, highlight_transition = true): void {
     this.ExecCommand({
       key: CommandKey.Freeze,
       rows,
@@ -1740,7 +1765,7 @@ export class Grid {
   /**
    * delete columns in current selection
    */
-  public DeleteColumns() {
+  public DeleteColumns(): void {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
     if (area.entire_row) {
@@ -1761,7 +1786,7 @@ export class Grid {
   /**
    * delete rows in current selection
    */
-  public DeleteRows() {
+  public DeleteRows(): void {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
     if (area.entire_column) {
@@ -1781,7 +1806,7 @@ export class Grid {
   /**
    * insert column at cursor
    */
-  public InsertColumn() {
+  public InsertColumn(): void {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
     const before_column = area.entire_row ? 0 : area.start.column;
@@ -1791,7 +1816,7 @@ export class Grid {
   /**
    * insert column(s) at some specific point
    */
-  public InsertColumns(before_column = 0, count = 1) {
+  public InsertColumns(before_column = 0, count = 1): void {
     this.ExecCommand({
       key: CommandKey.InsertColumns,
       before_column,
@@ -1800,7 +1825,7 @@ export class Grid {
   }
 
   /** move sheet (X) before sheet (Y) */
-  public ReorderSheet(index: number, move_before: number) {
+  public ReorderSheet(index: number, move_before: number): void {
     this.ExecCommand({
       key: CommandKey.ReorderSheet,
       index,
@@ -1811,7 +1836,7 @@ export class Grid {
   /**
    * rename active sheet
    */
-  public RenameSheet(sheet = this.model.active_sheet, name: string) {
+  public RenameSheet(sheet = this.model.active_sheet, name: string): void {
     this.ExecCommand({
       key: CommandKey.RenameSheet,
       new_name: name,
@@ -1822,7 +1847,7 @@ export class Grid {
   /**
    * insert row at cursor
    */
-  public InsertRow() {
+  public InsertRow(): void {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
     const before_row = area.entire_column ? 0 : area.start.row;
@@ -1832,7 +1857,7 @@ export class Grid {
   /**
    * insert rows(s) at some specific point
    */
-  public InsertRows(before_row = 0, count = 1) {
+  public InsertRows(before_row = 0, count = 1): void {
     this.ExecCommand({
       key: CommandKey.InsertRows,
       before_row,
@@ -1847,7 +1872,7 @@ export class Grid {
    * FIXME: we should use this to normalize function names, on insert and
    * on paste (if we're doing that).
    */
-  public SetAutocompleteFunctions(functions: FunctionDescriptor[]) {
+  public SetAutocompleteFunctions(functions: FunctionDescriptor[]): void {
     this.autocomplete_matcher.SetFunctions(functions);
   }
 
@@ -1855,7 +1880,7 @@ export class Grid {
    * scrolls so that the given cell is in the top-left (assuming that is
    * possible)
    */
-  public ScrollTo(address: ICellAddress) {
+  public ScrollTo(address: ICellAddress): void {
     this.layout.ScrollTo(address);
   }
 
@@ -1865,7 +1890,7 @@ export class Grid {
    * FIXME: we need a way to do this without scrolling the containing
    * page, in the event we do a scroll-on-load. small problem.
    */
-  public ScrollIntoView(address: ICellAddress) {
+  public ScrollIntoView(address: ICellAddress): void {
     if (this.options.scrollbars) {
       this.layout.ScrollIntoView(address);
     }
@@ -2227,6 +2252,7 @@ export class Grid {
       if (event.shiftKey) modifiers.push('Shift');
 
       // have to mask type for trident
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (cloned_event as any).initKeyboardEvent(
         event.type,
         false,
@@ -3129,7 +3155,7 @@ export class Grid {
     else {
       if (this.double_click_data.timeout) clearTimeout(this.double_click_data.timeout);
       this.double_click_data.address = { ...address };
-      this.double_click_data.timeout = setTimeout(() => {
+      this.double_click_data.timeout = window.setTimeout(() => {
         this.double_click_data.address = undefined;
         this.double_click_data.timeout = undefined;
       }, timeout);
@@ -3361,6 +3387,27 @@ export class Grid {
   }
 
   /**
+   * FIXME: -> util library
+   * @param arr 
+   */
+  private Transpose<T>(arr: T[][]) {
+    
+    const tmp: T[][] = [];
+    const cols = arr.length;
+    const rows = arr[0].length;
+
+    for (let r = 0; r < rows; r++) {
+      tmp[r] = [];
+      for (let c = 0; c < cols; c++) {
+        tmp[r][c] = arr[c][r];
+      }
+    }
+    
+    return tmp;
+
+  }
+
+  /**
    * when you drag from the nub, we copy the contents of the original
    * selection into the new selection, but there are some special recycling
    * rules.
@@ -3384,7 +3431,7 @@ export class Grid {
       }
     }
 
-    const data: any[][] = [];
+    const data: CellValue[][] = [];
     let style: Style.Properties[][] = [];
 
     let source_columns = source_area.columns;
@@ -3393,19 +3440,6 @@ export class Grid {
 
     // rather than write this twice, for rows/columns, we will just write
     // once and for the other direction we will transpose (twice). 
-
-    const transpose = (arr: any[][]) => {
-      const tmp: any = [];
-      const cols = arr.length;
-      const rows = arr[0].length;
-      for (let r = 0; r < rows; r++) {
-        tmp[r] = [];
-        for (let c = 0; c < cols; c++) {
-          tmp[r][c] = arr[c][r];
-        }
-      }
-      return tmp;
-    };
 
     let transposed = false;
 
@@ -3421,7 +3455,7 @@ export class Grid {
       source_columns = source_area.rows;
       target_rows = target_area.columns;
       inverted = (target_area.start.column < source_area.start.column);
-      cells = transpose(cells);
+      cells = this.Transpose(cells);
       transposed = true;
 
     }
@@ -3445,9 +3479,10 @@ export class Grid {
         const indices: number[] = [];
 
         for (let source_row = 0; source_row < cells.length; source_row++) {
-          if (cells[source_row][column].type === ValueType.number) {
+          const cell = cells[source_row][column];
+          if (cell.ValueIsNumber()) {
             indices.push(source_row);
-            pattern.push(cells[source_row][column].value);
+            pattern.push(cell.value);
           }
         }
 
@@ -3466,9 +3501,10 @@ export class Grid {
       for (let source_row = 0; source_row < cells.length; source_row++) {
 
         let translate: ExpressionUnit | undefined;
+        const cell = cells[source_row][column];
 
-        if (cells[source_row][column].type === ValueType.formula) {
-          const parsed = this.parser.Parse(cells[source_row][column].value);
+        if (cell.ValueIsFormula()) {
+          const parsed = this.parser.Parse(cell.value);
           if (parsed.expression
             && parsed.full_reference_list?.length) {
             translate = parsed.expression;
@@ -3491,14 +3527,16 @@ export class Grid {
           if (translate) {
             data[row][column] = '=' + this.parser.Render(translate, { rows: offset, columns: 0 })
           }
-          else if (cells[source_row][column].type === ValueType.number) {
-            data[row][column] = cells[source_row][column].value + pattern_increment;
-          }
           else {
-            data[row][column] = cells[source_row][column].value;
+            const cell = cells[source_row][column];
+            if (cell.ValueIsNumber()) {
+              data[row][column] = cell.value + pattern_increment;
+            }
+            else {
+              data[row][column] = cell.value; 
+            }
           }
           style[row][column] = cells[source_row][column].style || {};
-
         }
 
       }
@@ -3507,12 +3545,12 @@ export class Grid {
 
     const commands: Command[] = [{
       key: CommandKey.SetRange,
-      value: transposed ? transpose(data) : data,
+      value: transposed ? this.Transpose(data) : data,
       array: false,
       area: target_area,
     }];
 
-    if (transposed) { style = transpose(style); }
+    if (transposed) { style = this.Transpose(style); }
 
     for (let row = 0; row < style.length; row++) {
       for (let column = 0; column < style[row].length; column++) {
@@ -4019,14 +4057,18 @@ export class Grid {
    * be used for direct editing -- copy and paste can copy and paste styles.
    *
    * @param address cell address
+   * 
    * @param value value entered, usually this will be a string (we will try
    * to parse numbers/booleans)
+   * 
+   * in what case would these not be strings? (...) not sure that's a thing.
+   * 
    *
    * @param exec execute commands immediately; alternatively, return the list
    * of commands. the former is the default for editor commits; the latter
    * is used for paste.
    */
-  private SetInferredType(selection: GridSelection, value: any, array = false, exec = true) {
+  private SetInferredType(selection: GridSelection, value: string|undefined, array = false, exec = true) {
 
     // validation: cannot change part of an array without changing the
     // whole array. so check the array. separately, if you are entering
@@ -4070,7 +4112,7 @@ export class Grid {
 
     if (is_function) {
 
-      value = this.FixFormula(value);
+      value = this.FixFormula(value || '');
 
       // so what we are doing now is copying style from a function argument,
       // if a function argument has a number format, but only if there's no
@@ -4337,12 +4379,12 @@ export class Grid {
 
     let cell_value = cell.value;
 
-    if (cell.type === ValueType.number && cell.style && cell.style.number_format) {
+    if (cell.ValueIsNumber() && cell.style && cell.style.number_format) {
 
       const format = NumberFormatCache.Get(cell.style.number_format);
 
       if (format.date_format) {
-        const date = new Date(cell_value * RDateScale);
+        const date = new Date(cell.value * RDateScale);
         const number_format = (date.getHours() || date.getMinutes() || date.getSeconds()) ?
           'Timestamp' : 'Short Date';
         cell_value = NumberFormatCache.Get(number_format).Format(cell_value);
@@ -4356,7 +4398,7 @@ export class Grid {
           precision = Math.max(0, match[1].length - 2); // because we are *100
         }
 
-        cell_value = (cell_value * 100).toFixed(precision) + '%';
+        cell_value = (cell.value * 100).toFixed(precision) + '%';
         if (Localization.decimal_separator === ',') {
           // cell_value = (cell.value * 100).toString().replace(/\./, ',');
           cell_value = cell_value.replace(/\./, ',');
@@ -4369,10 +4411,10 @@ export class Grid {
         }
       }
     }
-    else if (cell.type === ValueType.boolean) {
-      return cell_value.toString().toUpperCase(); // ? 'True' : 'False';
+    else if (cell.ValueIsBoolean()) {
+      return cell.value.toString().toUpperCase(); // ? 'True' : 'False';
     }
-    else if (cell.type === ValueType.number) { // no style: I think this is no longer possible
+    else if (cell.ValueIsNumber()) { // no style: I think this is no longer possible
       if (cell_value && Localization.decimal_separator === ',') {
         cell_value = cell.value.toString().replace(/\./, ',');
       }
@@ -4481,8 +4523,6 @@ export class Grid {
     else {
       cell_value = this.NormalizeCellValue(cell);
     }
-
-    // const value: any = flush ? undefined : cell_value;
 
     // cell rect, offset for headers. FIXME: do we always offset for headers?
     // if so, that should go in the method.
@@ -5054,7 +5094,7 @@ export class Grid {
         this.formula_bar.formula = '{' + (value || '') + '}';
       }
       else {
-        this.formula_bar.formula = value || '';
+        this.formula_bar.formula = value ? value.toString() : ''; // value || ''; // what about zero?
       }
     }
 
@@ -5152,6 +5192,7 @@ export class Grid {
 
   }
 
+  /* not used anymore? (...)
   private RangeToTSV(range: any, address: Area) {
 
     const columns = address.columns;
@@ -5182,6 +5223,7 @@ export class Grid {
 
     return tsv.join('\n');
   }
+  */
 
   private HandleCopy(event: ClipboardEvent) {
 
@@ -5224,15 +5266,16 @@ export class Grid {
       const columns = area.columns;
       const rows = area.rows;
 
-      const cells = this.model.active_sheet.cells;
-      const tsv_data: any[] = [];
-      const treb_data: any[] = [];
+      // const cells = this.model.active_sheet.cells;
+      const tsv_data: CellValue[][] = [];
+      const treb_data: ClipboardCellData[] = [];
 
       // do this in row order, for tsv. we have to transpose one of them.
 
       for (let row = 0; row < rows; row++) {
-        const tsv_row: any[] = [];
-        // const treb_row: any[] = [];
+
+        // FIXME: we don't want function errors in the tsv output...
+        const tsv_row: CellValue[] = [];
 
         for (let column = 0; column < columns; column++) {
           const address = { row: area.start.row + row, column: area.start.column + column };
@@ -5248,12 +5291,14 @@ export class Grid {
 
           // tsv_row.push(cell.formatted);
           tsv_row.push(typeof cell.calculated === 'undefined' ? cell.value : cell.calculated);
-          const data_entry: any = {
+          
+          const data_entry: ClipboardCellData = {
             address,
             data: cell.value,
             type: cell.type,
             style: cell.style,
           };
+
           if (cell.area &&
             cell.area.start.row === address.row &&
             cell.area.start.column === address.column) {
@@ -5441,7 +5486,7 @@ export class Grid {
             columns: paste_area.start.column - source_area.start.column,
           };
 
-          object_data.data.forEach((cell_info: any) => {
+          object_data.data.forEach((cell_info: ClipboardCellData) => {
             let data = cell_info.data;
 
             const target_address = {
@@ -5450,7 +5495,7 @@ export class Grid {
             };
 
             if (cell_info.type === ValueType.formula) {
-              const parse_result = this.parser.Parse(data);
+              const parse_result = this.parser.Parse(data as string);
               if (parse_result.expression) {
                 data = '=' + this.parser.Render(parse_result.expression, offsets, '');
               }
@@ -5503,7 +5548,7 @@ export class Grid {
 
             }
 
-            commands.push({ key: CommandKey.UpdateStyle, style: cell_info.style, area: target_address });
+            commands.push({ key: CommandKey.UpdateStyle, style: cell_info.style || {}, area: target_address });
 
           });
 
@@ -5647,7 +5692,7 @@ export class Grid {
 
       // cells
       sheet.cells.IterateAll((cell: Cell) => {
-        if (cell.type === ValueType.formula) {
+        if (cell.ValueIsFormula()) {
           let modified = false;
           const parsed = this.parser.Parse(cell.value || '');
           if (parsed.expression) {
@@ -5812,7 +5857,7 @@ export class Grid {
       const active_sheet = sheet === this.model.active_sheet;
 
       sheet.cells.IterateAll((cell: Cell) => {
-        if (cell.type === ValueType.formula) {
+        if (cell.ValueIsFormula()) {
           const modified = this.PatchFormulasInternal(cell.value || '',
             command.before_row, command.count, 0, 0,
             active_sheet_name, active_sheet);
@@ -6010,7 +6055,7 @@ export class Grid {
       const active_sheet = sheet === this.model.active_sheet;
 
       sheet.cells.IterateAll((cell: Cell) => {
-        if (cell.type === ValueType.formula) {
+        if (cell.ValueIsFormula()) {
           const modified = this.PatchFormulasInternal(cell.value || '', 0, 0,
             command.before_column, command.count,
             active_sheet_name, active_sheet);

@@ -6,7 +6,6 @@ import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
 import { DataModel } from 'treb-grid';
 import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
 import { ReturnType } from './descriptors';
-import { MacroFunction } from 'treb-grid';
 
 import * as Utilities from './utilities';
 import * as Primitives from './primitives';

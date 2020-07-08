@@ -1,5 +1,6 @@
 
 import { Sheet } from './sheet';
+import { SerializedSheet } from './sheet_types';
 import { NamedRangeCollection } from './named_range';
 import { ExpressionUnit } from 'treb-parser';
 
@@ -43,4 +44,12 @@ export interface DataModel {
   /** macro functions are functions written in spreadsheet language */
   macro_functions: MacroFunctionMap;
 
+}
+
+export interface SerializedModel {
+  sheet_data: SerializedSheet[];
+  active_sheet: number;
+  named_ranges?: any;
+  macro_functions?: MacroFunction[];
+  decimal_mark?: ','|'.';
 }

@@ -1,5 +1,5 @@
 
-enum ErrorType {
+export enum ErrorType {
   Argument =    'ARG',
   Data =        'DATA',
   Reference =   'REF',

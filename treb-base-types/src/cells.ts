@@ -643,7 +643,7 @@ export class Cells {
         const column = [];
         for ( let r = from.row; r <= to.row; r++ ){
           if (this.data2[r] && this.data2[r][c]) column.push(this.data2[r][c].GetValue());
-          else column.push(null);
+          else column.push(undefined);
         }
         value.push(column);
       }
@@ -653,7 +653,7 @@ export class Cells {
         const row = [];
         for ( let c = from.column; c <= to.column; c++ ){
           if (this.data2[r] && this.data2[r][c]) row.push(this.data2[r][c].GetValue());
-          else row.push(null);
+          else row.push(undefined);
         }
         value.push(row);
       }
