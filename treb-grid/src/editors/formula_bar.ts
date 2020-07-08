@@ -31,7 +31,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   public focused_ = false;
 
   /** accessor for focused field */
-  public get focused() { return this.focused_; }
+  public get focused(): boolean { return this.focused_; }
 
   /** address label (may also show other things... ?) */
   private address_label_container!: HTMLDivElement;
@@ -63,7 +63,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   }
 
   /** get formula text */
-  public get formula() {
+  public get formula(): string {
     return this.editor_node ? this.editor_node.textContent || '' : '';
   }
 
@@ -88,7 +88,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   }
 
   /** get address label text */
-  public get label() {
+  public get label(): string {
     return this.address_label ? this.address_label.textContent || '' : '';
   }
 
@@ -139,10 +139,10 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     if (this.options.insert_function_button) {
 
       this.button = DOMUtilities.Create<HTMLButtonElement>('button', 'formula-button', inner_node);
-      const text1 = DOMUtilities.Create<HTMLSpanElement>('span', 'text-1', this.button);
-      const text2 = DOMUtilities.Create<HTMLSpanElement>('span', 'text-2', this.button);
+      //const text1 = DOMUtilities.Create<HTMLSpanElement>('span', 'text-1', this.button);
+      //const text2 = DOMUtilities.Create<HTMLSpanElement>('span', 'text-2', this.button);
 
-      this.button.addEventListener('click', (event) => {
+      this.button.addEventListener('click', () => {
         const formula: string = this.editor_node ? this.editor_node.textContent || '' : '';
         this.Publish({ type: 'formula-button', formula });
       });
@@ -154,7 +154,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.editor_node.setAttribute('contenteditable', 'true');
     this.editor_node.setAttribute('spellcheck', 'false');
 
-    this.editor_node.addEventListener('focusin', (event) => {
+    this.editor_node.addEventListener('focusin', () => {
 
       if (this.editor_node) {
         this.editor_node.setAttribute('spellcheck', 'false');
@@ -197,7 +197,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
     });
 
-    this.editor_node.addEventListener('focusout', (event) => {
+    this.editor_node.addEventListener('focusout', () => {
 
       // console.info('focus out');
 
@@ -213,7 +213,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.editor_node.addEventListener('keyup', (event) => this.FormulaKeyUp(event));
 
     // IE11 doesn't support this event? (not on contenteditable, as it turns out)
-    this.editor_node.addEventListener('input', (event) => {
+    this.editor_node.addEventListener('input', () => {
       this.Reconstruct();
       this.UpdateSelectState();
     });
@@ -236,7 +236,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.UpdateTheme();
   }
 
-  public IsElement(element: HTMLElement) {
+  public IsElement(element: HTMLElement): boolean {
     return element === this.editor_node;
   }
 
@@ -244,13 +244,13 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
    * focuses the formula editor. this is intended to be called after a
    * range selection, so we can continue editing.
    */
-  public FocusEditor(){
+  public FocusEditor(): void {
     if (this.editor_node) {
       this.editor_node.focus();
     }
   }
 
-  public UpdateTheme(){
+  public UpdateTheme(): void {
 
     let font_size = this.theme.formula_bar_font_size || null;
 
@@ -290,16 +290,18 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     switch (event.key){
     case 'Enter':
     case 'Tab':
-      this.selecting_ = false;
-      const array = (event.key === 'Enter' && event.ctrlKey && event.shiftKey);
-      this.Publish({
-        type: 'commit',
-        selection: this.selection,
-        value: this.editor_node ? this.editor_node.textContent || '' : '',
-        event,
-        array,
-      });
-      this.FlushReference();
+      {
+        this.selecting_ = false;
+        const array = (event.key === 'Enter' && event.ctrlKey && event.shiftKey);
+        this.Publish({
+          type: 'commit',
+          selection: this.selection,
+          value: this.editor_node ? this.editor_node.textContent || '' : '',
+          event,
+          array,
+        });
+        this.FlushReference();
+      }
       break;
     case 'Escape':
     case 'Esc':
