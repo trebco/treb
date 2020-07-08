@@ -7,6 +7,7 @@ export * from './basic_types';
 export * from './rectangle';
 export * from './style';
 export * from './text_part';
+export * from './import';
 
 // import * as Style from './style';
 // export { Style };
