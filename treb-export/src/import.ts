@@ -2,20 +2,11 @@
 import * as JSZip from 'jszip';
 import * as ElementTree from 'elementtree';
 import { Workbook } from './workbook';
-import { ValueType } from 'treb-base-types';
+import { ImportedSheetData, ValueType } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address } from './address-type';
 import { Parser, ParseResult } from 'treb-parser';
-import { Style } from 'treb-base-types';
-
-export interface ImportedSheetData {
-  name: string|undefined;
-  cells: any[];
-  default_column_width: number;
-  column_widths: number[];
-  row_heights: number[];
-  styles: Style.Properties[];
-}
+// import { Style } from 'treb-base-types';
 
 interface SharedFormula {
   row: number;

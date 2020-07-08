@@ -161,29 +161,30 @@ export class FormatParser {
       switch (char) {
 
         case this.group_separator:
+          {
+            // the behavior of this token is different at the end of the number
+            // format. in that case, each comma represents 'scale by 1000'. so
+            // we need to do lookahead... but we only one character?
 
-          // the behavior of this token is different at the end of the number
-          // format. in that case, each comma represents 'scale by 1000'. so
-          // we need to do lookahead... but we only one character?
-
-          let lookahead_digit = false;
-          for (let i = this.char_index + 1; !lookahead_digit && i < this.characters.length; i++) {
-            const next_char = this.characters[i];
-            if (next_char === this.decimal_mark
-              || next_char === NUMBER_SIGN
-              || next_char === ZERO) {
-              lookahead_digit = true;
+            let lookahead_digit = false;
+            for (let i = this.char_index + 1; !lookahead_digit && i < this.characters.length; i++) {
+              const next_char = this.characters[i];
+              if (next_char === this.decimal_mark
+                || next_char === NUMBER_SIGN
+                || next_char === ZERO) {
+                lookahead_digit = true;
+              }
+              else if (next_char !== COMMA) { break; }
             }
-            else if (next_char !== COMMA) { break; }
-          }
-          if (lookahead_digit) {
-            if (number_part === NumberPart.Decimal) {
-              throw new Error('invalid grouping in decimal part');
+            if (lookahead_digit) {
+              if (number_part === NumberPart.Decimal) {
+                throw new Error('invalid grouping in decimal part');
+              }
+              this.current_section.grouping = true;
             }
-            this.current_section.grouping = true;
-          }
-          else {
-            this.current_section.scaling = (this.current_section.scaling || 1) * 1000;
+            else {
+              this.current_section.scaling = (this.current_section.scaling || 1) * 1000;
+            }
           }
           break;
 
@@ -311,13 +312,11 @@ export class FormatParser {
         break;
 
       case LEFT_BRACE:
-        const formatting = this.ConsumeFormatting();
-        this.AppendTextPart({ text: formatting, flag: TextPartFlag.formatting });
+        this.AppendTextPart({ text: this.ConsumeFormatting(), flag: TextPartFlag.formatting });
         break;
 
       case DOUBLE_QUOTE:
-        const text = this.ConsumeString();
-        this.AppendString(text);
+        this.AppendString(this.ConsumeString());
         break;
 
       case QUESTION_MARK: // this is like _0
@@ -535,12 +534,12 @@ export class FormatParser {
 
       case ZERO:
       case NUMBER_SIGN:
-      // case PERIOD:
-      // case COMMA:
       case LOWERCASE_E:
       case UPPERCASE_E:
       case PERCENT:
       case AT:
+      // case PERIOD:
+      // case COMMA:
 
         // this is not a date format.
         this.date_pattern = false;
@@ -561,14 +560,15 @@ export class FormatParser {
 
       case UPPERCASE_A:
       case LOWERCASE_A:
-        const ampm = this.ConsumeAMPM();
-        if (!!ampm) this.AppendTextPart(ampm);
-        else this.AppendCharAsText();
+        {
+          const ampm = this.ConsumeAMPM();
+          if (ampm) this.AppendTextPart(ampm);
+          else this.AppendCharAsText();
+        }
         break;
 
       case DOUBLE_QUOTE:
-        const text = this.ConsumeString();
-        this.AppendString(text);
+        this.AppendString(this.ConsumeString());
         break;
 
       case QUESTION_MARK: // this is like _0

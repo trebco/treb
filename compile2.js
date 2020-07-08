@@ -14,8 +14,12 @@ const fs = require('fs');
 const path = require('path');
 const exec = require('child_process').exec;
 const LicenseCheckerWebpackPlugin = require('license-checker-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 const package = require('./package.json');
+
+//const propertiesRenameTransformer = require('ts-transformer-properties-rename').default;
+const minifyPrivatesTransformer = require('ts-transformer-minify-privates').default;
 
 let watch = false;
 let dev = false;
@@ -94,6 +98,23 @@ if (tsconfig && tsconfig.compilerOptions && tsconfig.compilerOptions.paths) {
 }
 */
 
+/*
+const custom_transformer = (context) => {
+  console.info("CONTEXT", context);
+  return (node) => {
+
+    const visitor = (node) => {
+      
+      return ts.visitEachChild(node, visitor, context);
+    };
+
+    console.info("NODE", node);
+    return ts.visitNode(node, visitor);
+
+  };
+};
+*/
+
 const CreateConfig = (config, entry) => {
   const config_instance = {
 
@@ -108,16 +129,15 @@ const CreateConfig = (config, entry) => {
           exclude: /node_modules/,
           options: {
 
-            /** 
-             * experimented with transpileOnly; does not seem significantly
-             * faster, and adds a good deal of complexity (requires separate
-             * type checking). so removed.
-             */
+            configFile: /modern/i.test(config) ? 'treb-embed/modern.tsconfig.json' : 'treb-embed/legacy.tsconfig.json',
 
-            // transpileOnly: true,
-            // configFile: /modern/i.test(config) ? 'modern.tsconfig.json' : 'tsconfig.json'
-
-            configFile: /modern/i.test(config) ? 'treb-embed/modern.tsconfig.json' : 'treb-embed/legacy.tsconfig.json'
+            /*
+            getCustomTransformers: program => ({
+              before: [
+                minifyPrivatesTransformer(program)
+              ]
+            }),
+            */
 
           }
         },
@@ -126,31 +146,41 @@ const CreateConfig = (config, entry) => {
           sideEffects: true,
           use: [
             'style-loader',
-            // 'postcss-loader',
             { loader: 'css-loader', options: { importLoaders: 1 } },
             'postcss-loader'
-
-            /*
-            'css-loader',
-            {
-              loader: 'sass-loader',
-              options: {
-                sassOptions: {
-                  outputStyle: 'compressed',
-                },
-              }
-            },
-            */
 
           ],
         },
       ]
     },
+
     /*
+
     optimization: {
+      minimize: !dev,
+      minimizer: [
+        new TerserPlugin({
+          cache: true,
+          parallel: true,
+          sourceMap: true, // Must be set to true if using source-maps in production
+          terserOptions: {
+            // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
+
+            mangle: {
+              properties: {
+                  regex: /^_private_/,
+              },
+            },
+
+          }
+        }),
+      ],
+
       // usedExports: true,
     },
+
     */
+
     resolve: {
       extensions: ['.ts', '.js'],
       alias: {

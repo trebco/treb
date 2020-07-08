@@ -1,7 +1,7 @@
 
 import {
   Rectangle, ValueType, Style, Area, Cell, CellValue,
-  Extent, ICellAddress, IsCellAddress, Localization
+  Extent, ICellAddress, IsCellAddress, Localization, ImportedSheetData
 } from 'treb-base-types';
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
@@ -32,8 +32,6 @@ import { SerializeOptions } from './serialize_options';
 import { UA } from '../util/ua';
 import { Annotation } from './annotation';
 import { Autocomplete } from '../editors/autocomplete';
-
-import { ImportedSheetData } from 'treb-export';
 
 import { MouseDrag } from './drag_mask';
 
