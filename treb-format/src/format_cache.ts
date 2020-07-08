@@ -67,7 +67,7 @@ export class NumberFormatCache {
 
   };
 
-  public static Get(format: string) {
+  public static Get(format: string): NumberFormat {
 
     // FIXME: we should use icase for symbolc formats, although not
     // for format strings. there should (hopefully) be no case where
@@ -87,7 +87,7 @@ export class NumberFormatCache {
   /** 
    * does anyone use this? (...)
    */
-  public static Equals(a: string, b: string) {
+  public static Equals(a: string, b: string): boolean {
     if (a === b) return true;
     const fa = this.Get(a);
     const fb = this.Get(b);
@@ -124,7 +124,7 @@ export class NumberFormatCache {
     return null;
   }
 
-  public static InitCache(){
+  public static InitCache(): void {
 
     for (const key of Object.keys(this.base_formats)) {
       this.cache[key] = new NumberFormat(this.base_formats[key]);

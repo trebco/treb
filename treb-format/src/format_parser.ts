@@ -1,6 +1,7 @@
 
 import { NumberFormatSection } from './number_format_section';
 import { TextPartFlag, TextPart } from 'treb-base-types';
+import { NumberFormat } from './format';
 
 const ASTERISK = 0x2A;  // TODO
 const UNDERSCORE = 0x5F;  // TODO
@@ -48,7 +49,7 @@ export class FormatParser {
    * luckily we don't have to parse that often; only when a format
    * is created. so we will do some extra work here.
    */
-  public static Parse(pattern: string) {
+  public static Parse(pattern: string): NumberFormatSection[] {
 
     // local
     this.pattern = pattern;
@@ -97,7 +98,7 @@ export class FormatParser {
   protected static decimal_mark = PERIOD;
   protected static group_separator = COMMA;
 
-  protected static ConsumeString() {
+  protected static ConsumeString(): string {
     let text = '';
     if (this.preserve_formatting_characters) {
       text += this.pattern[this.char_index]; // "
@@ -127,7 +128,7 @@ export class FormatParser {
     throw new Error('unterminated string');
   }
 
-  protected static ConsumeFormatting() {
+  protected static ConsumeFormatting(): string {
     let text = '';
     for (++this.char_index; this.char_index < this.characters.length; this.char_index++) {
       const char = this.characters[this.char_index];
@@ -152,7 +153,7 @@ export class FormatParser {
    * +-0#.,
    * anything else will be ignored
    */
-  protected static ConsumeNumberFormat() {
+  protected static ConsumeNumberFormat(): void {
 
     let number_part = NumberPart.Integer;
 
@@ -234,7 +235,7 @@ export class FormatParser {
 
   }
 
-  protected static AppendCharAsText(advance_pointer = true) {
+  protected static AppendCharAsText(advance_pointer = true): void {
     if (this.current_section.has_number_format) {
       this.current_section.suffix[this.current_section.suffix.length - 1].text += this.pattern[this.char_index];
     }
@@ -246,7 +247,7 @@ export class FormatParser {
     }
   }
 
-  protected static AppendString(text: string) {
+  protected static AppendString(text: string): void {
     if (this.current_section.has_number_format) {
       this.current_section.suffix[this.current_section.suffix.length - 1].text += text;
     }
@@ -255,7 +256,7 @@ export class FormatParser {
     }
   }
 
-  protected static AppendTextPart(part: TextPart) {
+  protected static AppendTextPart(part: TextPart): void {
     if (this.current_section.has_number_format) {
       this.current_section.suffix.push(part);
       this.current_section.suffix.push({ text: '' });
@@ -266,7 +267,7 @@ export class FormatParser {
     }
   }
 
-  protected static ConsumeChar() {
+  protected static ConsumeChar(): void {
 
     const char = this.characters[this.char_index];
 
@@ -409,7 +410,7 @@ export class FormatParser {
    * (one of [hmsdyHMSDY]). technically mixing date formats and number
    * formats (#0) is illegal. we will just drop into number formats for those.
    */
-  protected static ParseDatePattern() {
+  protected static ParseDatePattern(): boolean {
     this.date_pattern = true;
     while (this.date_pattern && this.char_index < this.pattern.length) {
       this.DatePatternConsumeChar();
@@ -473,7 +474,7 @@ export class FormatParser {
    * date parts are repeated sequences (e.g. ddd). we allow
    * fractional seconds with ss.00.
    */
-  protected static ConsumeDatePart() {
+  protected static ConsumeDatePart(): TextPart {
     const initial_char = this.pattern[this.char_index++];
     const normalized = initial_char.toLowerCase();
 
@@ -520,7 +521,7 @@ export class FormatParser {
     return undefined;
   }
 
-  protected static DatePatternConsumeChar() {
+  protected static DatePatternConsumeChar(): void {
 
     const char = this.characters[this.char_index];
 

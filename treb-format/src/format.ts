@@ -24,12 +24,12 @@ export class NumberFormat {
 //  public static decimal_mark: '.'|',' = Localization.decimal_separator;
 //  public static grouping_separator = (Localization.decimal_separator === '.') ? ',' : ' ';
 
-  public get pattern() {
+  public get pattern(): string {
     return this._pattern;
   }
 
   /** flag indicates if this is a date format */
-  public get date_format() {
+  public get date_format(): boolean {
     return this.sections[0] && this.sections[0].date_format;
   }
 
@@ -118,7 +118,7 @@ export class NumberFormat {
   }
 
   /** mutate */
-  public IncreaseDecimal() {
+  public IncreaseDecimal(): void {
     this.sections.forEach((section) => {
       section.decimal_min_digits++;
       section.decimal_max_digits = section.decimal_min_digits;
@@ -126,7 +126,7 @@ export class NumberFormat {
   }
 
   /** mutate */
-  public DecreaseDecimal() {
+  public DecreaseDecimal(): void {
     this.sections.forEach((section) => {
       section.decimal_min_digits = Math.max(0, section.decimal_min_digits - 1);
       section.decimal_max_digits = section.decimal_min_digits;
@@ -134,21 +134,21 @@ export class NumberFormat {
   }
 
   /** mutate */
-  public AddGrouping() {
+  public AddGrouping(): void {
     this.sections.forEach((section) => {
       section.grouping = true;
     });
   }
 
   /** mutate */
-  public RemoveGrouping() {
+  public RemoveGrouping(): void {
     this.sections.forEach((section) => {
       section.grouping = false;
     });
   }
 
   /** mutate */
-  public ToggleGrouping() {
+  public ToggleGrouping(): void {
     // set all to ! the value of the first one 
     const grouping = !this.sections[0].grouping;
     this.sections.forEach((section) => {
@@ -161,7 +161,7 @@ export class NumberFormat {
    * allowing mutation of formats; therefore we need to serialize them back
    * to the basic format.
    */
-  public toString() {
+  public toString(): string {
 
     if (this.sections[0].date_format) {
       return this._pattern; // immutable
@@ -225,7 +225,7 @@ export class NumberFormat {
    * states. it's intended for graphical representation where things
    * like hidden characters and padding require multiple passes or measurement.
    */
-  public FormatParts(value: any){
+  public FormatParts(value: any): TextPart[] {
 
     // new, shortcut
     if (typeof value !== 'number' && !this.sections[3]) {
@@ -274,7 +274,7 @@ export class NumberFormat {
    * FIXME: date, string (this is lagging)
    * UPDATE: unifying, basing this on the text part functionality
    */
-  public Format(value: any, text_width = 0){
+  public Format(value: any, text_width = 0): string {
 
     const parts = this.FormatParts(value);
     let padded = -1;
@@ -308,7 +308,7 @@ export class NumberFormat {
     return formatted.join('');
   }
 
-  public ZeroPad(text: string, length: number) {
+  public ZeroPad(text: string, length: number): string {
     while (text.length < length) text = '0' + text;
     return text;
   }
@@ -377,7 +377,8 @@ export class NumberFormat {
           return { text: date.getFullYear().toString() };
         case 'yy':
         case 'y':
-          return { text: (date.getFullYear() % 100).toString() };
+          // return { text: (date.getFullYear() % 100).toString() };
+          return { text: this.ZeroPad((date.getFullYear() % 100).toString(), 2) };
 
         case 'hh':
           return { text: this.ZeroPad(hours.toString(), 2) };
@@ -439,7 +440,7 @@ export class NumberFormat {
   }
   */
 
-  public Round2(value: number, digits: number) {
+  public Round2(value: number, digits: number): number {
     const m = Math.pow(10, digits);
     return Math.round(m * value) / m;
   }

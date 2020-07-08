@@ -14,12 +14,12 @@ const fs = require('fs');
 const path = require('path');
 const exec = require('child_process').exec;
 const LicenseCheckerWebpackPlugin = require('license-checker-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
+//const TerserPlugin = require('terser-webpack-plugin');
 
 const package = require('./package.json');
 
 //const propertiesRenameTransformer = require('ts-transformer-properties-rename').default;
-const minifyPrivatesTransformer = require('ts-transformer-minify-privates').default;
+//const minifyPrivatesTransformer = require('ts-transformer-minify-privates').default;
 
 let watch = false;
 let dev = false;
