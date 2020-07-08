@@ -725,7 +725,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public async InsertImage() {
+  public async InsertImage(): Promise<void> {
 
     const file = await this.SelectFile('.png, .jpg, .jpeg, .gif, .svg');
   
@@ -751,6 +751,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               }
             }
 
+            /*
+            const img = document.createElement('img');
+            img.setAttribute('style', 'position: absolute; display: block');
+            img.src = contents;
+            document.body.appendChild(img);
+            const { width, height } = img.getBoundingClientRect();
+            img.parentElement?.removeChild(img);
+            */
+
             // note: this works, somewhat contrary to expectations,
             // probably because there are some async calls; hence the
             // src attribute is set before it's inflated. 
@@ -761,7 +770,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               formula: '',
             });
             annotation.data.src = contents;
-            
+            // annotation.data.original_size = { width, height };
+
           }
           resolve();
         }
@@ -1792,7 +1802,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
-  public InflateAnnotation(annotation: Annotation) {
+  public InflateAnnotation(annotation: Annotation): void {
 
     if (this.grid.headless) { return; }
 
@@ -1914,7 +1924,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public SerializeDocument(
       preserve_simulation_data = true, 
       rendered_values = true,
-      additional_options: SerializeOptions = {}) {
+      additional_options: SerializeOptions = {}): TREBDocument {
 
     const serialize_options: SerializeOptions = {
       shrink: true,
@@ -1995,7 +2005,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * we need to manage this explicitly: hence the parameter.
    * 
    */
-  public DocumentChange(undo_selection?: string) {
+  public DocumentChange(undo_selection?: string): void {
 
     Yield().then(() => {
 
@@ -2014,7 +2024,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     });
   }
 
-  public PushUndo(json?: string, last_selection?: string) {
+  public PushUndo(json?: string, last_selection?: string): void {
 
     // console.info('push undo');
 

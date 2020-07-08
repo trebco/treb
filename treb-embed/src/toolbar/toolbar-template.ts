@@ -130,6 +130,7 @@ const chart_menu: ToolbarItem[] = [
       { icon: 'donut-chart', id: 'donut-chart', title: 'Donut Chart' },
       { icon: 'bar-chart', id: 'bar-chart', title: 'Bar Chart' },
       { icon: 'line-chart', id: 'line-chart', title: 'Line Chart' },
+      { icon: 'material/outline/image-24px', id: 'image', title: 'Image' },
     
     ],
   },

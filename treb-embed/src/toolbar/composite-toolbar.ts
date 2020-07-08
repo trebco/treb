@@ -659,6 +659,9 @@ export class CompositeToolbar {
       case 'bar-chart':
         annotation_function = 'Bar.Chart';
         break;
+      case 'image':
+        this.sheet.InsertImage();
+        break;
 
       case 'save':
         this.sheet.SaveLocalFile();
