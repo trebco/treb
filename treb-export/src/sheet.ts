@@ -437,6 +437,10 @@ export class Sheet {
         cell.attrib.t = 's';
       }
     }
+    else if (typeof val === 'boolean') {
+      cell.attrib.t = 'b';
+      val = val ? 1 : 0;
+    }
 
     const v = ElementTree.SubElement(cell, 'v');
 
