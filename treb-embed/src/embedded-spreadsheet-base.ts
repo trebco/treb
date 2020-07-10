@@ -604,7 +604,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param recycle recycle values. we only recycle single values or vectors -- we will not recycle a matrix.
    * @param transpose transpose before inserting (data is row-major)
    */
-  public SetRange(range: ICellAddress|IArea|string, data: any, recycle = false, transpose = false) {
+  public SetRange(range: ICellAddress|IArea|string, data: any, recycle = false, transpose = false, array = false) {
 
     let area: Area;
 
@@ -632,7 +632,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       area = new Area(range.start, range.end);
     }
 
-    this.grid.SetRange(area, data, recycle, transpose);
+    this.grid.SetRange(area, data, recycle, transpose, array);
 
   }
 
@@ -676,6 +676,24 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     }
 
+  }
+
+  public GetSheetID(sheet: string|number): number|undefined {
+    
+    if (typeof sheet === 'number') {
+      const model_sheet = this.grid.model.sheets[sheet];
+      if (model_sheet) { return model_sheet.id; }
+    }
+    else {
+      const name = sheet.toUpperCase();
+      for (const sheet of this.grid.model.sheets) {
+        if (sheet.name.toUpperCase() === name) {
+          return sheet.id;
+        }
+      }
+    }
+
+    return undefined;
   }
 
   /**

@@ -1562,17 +1562,17 @@ export class Grid {
    * rows/columns -- we will not recycle a matrix.
    * @param transpose transpose before inserting (data is column-major)
    */
-  public SetRange(range: Area, data: any, recycle = false, transpose = false): void {
+  public SetRange(range: Area, data: any, recycle = false, transpose = false, array = false): void {
 
-    // single value, easiest
+     // single value, easiest
     if (!Array.isArray(data) && !ArrayBuffer.isView(data)) {
       if (recycle) {
         // this.model.sheet.SetAreaValue(range, data);
-        this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data });
+        this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array });
       }
       else {
         // this.model.sheet.SetCellValue(range.start, data);
-        this.ExecCommand({ key: CommandKey.SetRange, area: range.start, value: data });
+        this.ExecCommand({ key: CommandKey.SetRange, area: range.start, value: data, array });
       }
 
       if (!this.primary_selection.empty && range.Contains(this.primary_selection.target)) {
@@ -1639,7 +1639,7 @@ export class Grid {
     if (transpose) { data = this.Transpose(data); }
 
     // this.model.sheet.SetAreaValues(range, data as any[][]);
-    this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data });
+    this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array });
 
     if (!this.primary_selection.empty && range.Contains(this.primary_selection.target)) {
       this.UpdateFormulaBarFormula();
@@ -6429,8 +6429,15 @@ export class Grid {
       }
 
       // single cell
+      // UPDATE: could be array
 
-      sheet.SetCellValue(command.area, command.value);
+      if (command.array) {
+        sheet.SetArrayValue(area, command.value);
+      }
+      else {
+        sheet.SetCellValue(command.area, command.value);
+      }
+
       return area;
     }
     else {
