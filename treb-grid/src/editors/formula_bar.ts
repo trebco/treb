@@ -281,6 +281,29 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
   }
 
+  private GetTextContent(node: Node) {
+
+    const children = node.childNodes;
+    const buffer: string[] = [];
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      switch (child.nodeType) {
+        case Node.ELEMENT_NODE:
+          buffer.push(...this.GetTextContent(child));
+          if (child instanceof Element && child.tagName === 'DIV') {
+            buffer.push('\n');
+          }
+          break;
+
+        case Node.TEXT_NODE:
+          if (child.nodeValue) { buffer.push(child.nodeValue); }
+          break;
+      }
+    }
+    return buffer;
+
+  }
+
   private FormulaKeyDown(event: KeyboardEvent){
 
     const ac_result = this.autocomplete.HandleKey('keydown', event);
@@ -293,22 +316,28 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
       {
         this.selecting_ = false;
         const array = (event.key === 'Enter' && event.ctrlKey && event.shiftKey);
+
+        const text = (this.editor_node ? 
+          this.GetTextContent(this.editor_node).join('') : '').trim();
+
         this.Publish({
           type: 'commit',
           selection: this.selection,
-          value: this.editor_node ? this.editor_node.textContent || '' : '',
+          value: text,
           event,
           array,
         });
         this.FlushReference();
       }
       break;
+
     case 'Escape':
     case 'Esc':
       this.selecting_ = false;
       this.Publish({ type: 'discard' });
       this.FlushReference();
       break;
+      
     default:
       return;
     }
