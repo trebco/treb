@@ -4,7 +4,7 @@
  */
 
 import { Area, ICellAddress } from './area';
-import { Cell, ValueType } from './cell';
+import { Cell, ValueType, CellValue } from './cell';
 
 export interface CellSerializationOptions {
   preserve_type?: boolean;
@@ -593,7 +593,7 @@ export class Cells {
    * @param to
    * @param transpose
    */
-  public RawValue(from: ICellAddress, to: ICellAddress = from) {
+  public RawValue(from: ICellAddress, to: ICellAddress = from): CellValue | CellValue[][] | undefined {
 
     if (from.row === to.row && from.column === to.column) {
       if (this.data2[from.row] && this.data2[from.row][from.column]) {
@@ -602,7 +602,7 @@ export class Cells {
       return undefined;
     }
 
-    const result: any[][] = [];
+    const result: CellValue[][] = [];
 
     // grab rows
     const rows = this.data2.slice(from.row, to.row + 1);
@@ -612,10 +612,10 @@ export class Cells {
     const end = to.column + 1;
 
     for (const source of rows) {
-      const target: any[] = [];
+      const target: CellValue[] = [];
       for (let column = start, index = 0; column < end; column++, index++ ) {
         const cell = source[column];
-        target.push(cell.value);
+        target.push(cell ? cell.value : undefined);
       }
       result.push(target);
     }
