@@ -734,13 +734,16 @@ export class SimulationModel {
     if (!correlation.IsSymmetric()) {
       correlation = correlation.Symmetrize(true);
     }
-    if (!correlation.IsPosDef()) {
+    if (correlation_matrix.some(row => row.some(value => typeof value !== 'number' && typeof value !== 'undefined'))
+      || !correlation.IsPosDef()) {
       return false;
     }
     return true;
   }
 
   public multivariate_normal(range_of_values: any, correlation_matrix: number[][], mean = 0, sd = 1) {
+
+    // this test (and all the other ones) is in the wrong order
 
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
