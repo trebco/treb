@@ -2823,9 +2823,17 @@ export class Grid {
       const selection = this.SelectingArgument() ?
         this.active_selection : this.primary_selection;
 
+      // why would you _not_ want to focus? (...)
+
+      /*
       if (!this.SelectingArgument() && this.selected_annotation) {
         this.Focus();
       }
+      */
+      if (!this.SelectingArgument()) {
+        this.Focus();
+      }
+
 
       if (event.shiftKey && !selection.empty) {
         const tmp = selection.target;
@@ -3026,9 +3034,17 @@ export class Grid {
       const selection = this.SelectingArgument() ?
         this.active_selection : this.primary_selection;
 
+      // @see Mousedown_RowHeader
+
+      if (!this.SelectingArgument()) {
+        this.Focus();
+      }
+
+      /*
       if (!this.SelectingArgument() && this.selected_annotation) {
         this.Focus();
       }
+      */
 
       if (event.shiftKey && !selection.empty) {
         const tmp = selection.target;
