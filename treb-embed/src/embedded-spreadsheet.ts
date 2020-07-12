@@ -362,7 +362,9 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
           requestAnimationFrame(() => {
             this.calculator.UpdateResults(this.last_simulation_data);
-            this.Recalculate().then(() => this.Focus());
+            this.Recalculate().then(() => {
+              if(!this.grid.headless) { this.Focus() }
+            });
 
             setTimeout(() => {
               this.HideDialog();
