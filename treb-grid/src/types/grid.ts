@@ -5092,7 +5092,7 @@ export class Grid {
         this.formula_bar.formula = '{' + (value || '') + '}';
       }
       else {
-        this.formula_bar.formula = value ? value.toString() : ''; // value || ''; // what about zero?
+        this.formula_bar.formula = (typeof value !== 'undefined') ? value.toString() : ''; // value || ''; // what about zero?
       }
     }
 
