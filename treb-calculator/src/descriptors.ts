@@ -20,6 +20,8 @@ export interface ArgumentDescriptor {
    * allows error values to propagate. otherwise, a function will
    * return an #ARG error if any arguments contain errors. used for
    * IsError and IfError, atm.
+   * 
+   * UPDATE: also used in IF.
    */
   allow_error?: boolean;
 

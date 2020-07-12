@@ -180,8 +180,18 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    /**
+     * for the IF function, we need to allow error in parameter
+     * because otherwise we may short-circuit the correct result.
+     */
     If: {
+      arguments: [
+        { name: 'Test value' },
+        { name: 'Value if true', allow_error: true, },
+        { name: 'Value if false', allow_error: true, },
+      ],
       fn: (a: any, b: any = true, c: any = false) => {
+
         if (a instanceof Float64Array || a instanceof Float32Array) a = Array.from(a);
         if (Array.isArray(a)) {
           return a.map((x) => {
