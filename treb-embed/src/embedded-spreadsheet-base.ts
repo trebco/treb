@@ -96,6 +96,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     
   }
 
+  /**
+   * this flag will be set on LoadDocument. the intent is to be able to
+   * know if you have loaded a network document, which may happen before you
+   * have the chance to subscribe to events
+   * 
+   * FIXME: we need to nail down the semantics of this. what does it mean if
+   * you call reset? 
+   */
+  public loaded = false;
+
   /** 
    * this was added for riskamp.com; it doesn't track modified, really, because
    * it doesn't reflect saves. we need to do that but leave this one as-is for
@@ -1658,7 +1668,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     this.Publish({ type: 'load' }); // FIXME: should not happen on undo...
-
+    this.loaded = true;
+    
     if (scroll) {
       // let ds = document.body.scrollTop;
       Yield().then(() => {
