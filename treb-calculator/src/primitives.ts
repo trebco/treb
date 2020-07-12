@@ -18,72 +18,19 @@ export const Subtract = Validate.bind(0, (x: any, y: any) => x - y);
 
 */
 
+// UPDATE: adding defaults... these still need work:
+
 export const Concatenate = (a: any, b: any) => {
   if (typeof a === 'object') return a;
   if (typeof b === 'object') return b;
+
+  // treat empty cells as strings
+
+  if (typeof a === 'undefined') a = '';
+  if (typeof b === 'undefined') a = '';
+
   return `${a}${b}`;
 }
-
-export const Add = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return a + b;
-};
-
-export const Subtract = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return a - b;
-};
-
-export const Modulo = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return a % b;
-};
-
-export const Multiply = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return a * b;
-};
-
-export const Divide = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  if (b === 0) { return DivideByZeroError; }
-  return a / b;
-};
-
-export const Power = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return Math.pow(a, b);
-};
-
-export const GreaterThan = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return a > b;
-};
-
-export const LessThan = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return a < b;
-};
-
-export const GreaterThanEquals = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return a >= b;
-};
-
-export const LessThanEquals = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return a <= b;
-};
 
 export const Equals = (a: number|object|string, b: number|object|string) => {
   if (typeof a === 'object') return a;
@@ -95,7 +42,7 @@ export const Equals = (a: number|object|string, b: number|object|string) => {
   if (typeof b === 'undefined' && a === '') { return true; }
 
   // tslint:disable-next-line: triple-equals
-  return a == b;
+  return (a||0) == (b||0);
 };
 
 export const NotEquals = (a: number|object|string, b: number|object|string) => {
@@ -108,15 +55,89 @@ export const NotEquals = (a: number|object|string, b: number|object|string) => {
   if (typeof b === 'undefined' && a === '') { return false; }
 
   // tslint:disable-next-line: triple-equals
-  return a != b;
+  return (a||0) != (b||0);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const Identity = (a: any) => a;
+export const Identity = (a: any) => {
+  if (typeof a === 'object') return a;
+
+  // undefined => 0 but NOT empty string => 0
+
+  if (typeof a === 'undefined') a = 0;
+  return a;
+}
 
 export const Inverse = (a: number|object) => {
   if (typeof a === 'object') return a;
+
+  // undefined => 0 but NOT empty string => 0
+
+  if (typeof a === 'undefined') a = 0;
   return -a;
+};
+
+// these are done:
+
+export const Add = (a: number|object, b: number|object) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  return (a||0) + (b||0);
+};
+
+export const Subtract = (a: number|object, b: number|object) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  return (a||0) - (b||0);
+};
+
+export const Modulo = (a: number|object, b: number|object) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  return (a||0) % (b||0);
+};
+
+export const Multiply = (a: number|object, b: number|object) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  return (a||0) * (b||0);
+};
+
+export const Divide = (a: number|object, b: number|object) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  if (!b) { return DivideByZeroError; }
+  return (a||0) / (b||0);
+};
+
+export const Power = (a: number|object, b: number|object) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  return Math.pow((a||0), (b||0));
+};
+
+export const GreaterThan = (a: number|object, b: number|object) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  return (a||0) > (b||0);
+};
+
+export const LessThan = (a: number|object, b: number|object) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  return (a||0) < (b||0);
+};
+
+export const GreaterThanEquals = (a: number|object, b: number|object) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  return (a||0) >= (b||0);
+};
+
+export const LessThanEquals = (a: number|object, b: number|object) => {
+  if (typeof a === 'object') return a;
+  if (typeof b === 'object') return b;
+  return (a||0) <= (b||0);
 };
 
 export const MapOperator = (operator: string) => {

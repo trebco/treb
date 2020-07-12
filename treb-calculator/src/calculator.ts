@@ -12,7 +12,7 @@ import * as Utilities from './utilities';
 import { FunctionLibrary } from './function-library';
 import { FunctionMap, ReturnType } from './descriptors';
 import { BaseFunctionLibrary } from './functions/base-functions';
-import { TextFunctionLibrary } from './functions/text-functions';
+import { TextFunctionLibrary, TextFunctionAliases } from './functions/text-functions';
 import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './functions/statistics-functions';
 
 import { DataModel, Annotation, FunctionDescriptor } from 'treb-grid';
@@ -82,6 +82,9 @@ export class Calculator extends Graph {
     // aliases
     for (const key of Object.keys(StatisticsFunctionAliases)) {
       this.library.Alias(key, StatisticsFunctionAliases[key]);
+    }
+    for (const key of Object.keys(TextFunctionAliases)) {
+      this.library.Alias(key, TextFunctionAliases[key]);
     }
 
     // special functions... need reference to the graph (this)
