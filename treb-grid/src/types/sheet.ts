@@ -220,6 +220,7 @@ export class Sheet {
       sheet.sheet_style = obj.sheet_style || {};
       sheet.row_styles = obj.row_style;
       sheet.column_styles = obj.column_style;
+      sheet.row_pattern = obj.row_pattern || [];
 
       if (hints && !hints.data) sheet.FlushCellStyles();
 
@@ -447,6 +448,16 @@ export class Sheet {
   private row_styles: { [index: number]: Style.Properties } = {};
 
   private column_styles: { [index: number]: Style.Properties } = {};
+
+  /* 
+  we used to have "alternate row" styles. it's clumsy, but it is a nice
+  effect. we will add that back via a "pattern". not sure how the UI would
+  work for this, but programatically it works.
+
+  just rows atm, not columns.
+  */
+
+  private row_pattern: Style.Properties[] = [];
 
   // and finally any cell-specific styles. [FIXME: this is sparse]
   // [why FIXME? sparse is OK in js]
@@ -820,8 +831,10 @@ export class Sheet {
    * the cell itself, or for row and column.
    */
   public HasCellStyle(address: ICellAddress) {
-    return ((this.cell_style[address.column] && this.cell_style[address.column][address.row]) ||
-      this.row_styles[address.row] || this.column_styles[address.column]);
+    return ((this.cell_style[address.column] && this.cell_style[address.column][address.row]) 
+      || this.row_styles[address.row] 
+      || this.column_styles[address.column]
+      || this.row_pattern.length );
   }
 
   /**
@@ -1626,11 +1639,12 @@ export class Sheet {
     const sheet_style = JSON.parse(JSON.stringify(this.sheet_style));
     const row_style = JSON.parse(JSON.stringify(this.row_styles));
     const column_style = JSON.parse(JSON.stringify(this.column_styles));
+    const row_pattern = JSON.parse(JSON.stringify(this.row_pattern));
 
     // translate, if necessary
     if (options.export_colors) {
       const style_list: Style.Properties[] = [];
-      for (const group of [row_style, column_style, cell_style_refs, [sheet_style]]) {
+      for (const group of [row_style, column_style, cell_style_refs, [sheet_style], row_pattern]) {
         if (Array.isArray(group)) {
           for (const entry of group) style_list.push(entry);
         }
@@ -1737,6 +1751,8 @@ export class Sheet {
       cell_style_refs,
       row_style,
       column_style,
+
+      row_pattern: row_pattern.length ? row_pattern : undefined,
 
       // why are these serialized? (...) export!
 
@@ -1947,6 +1963,8 @@ export class Sheet {
       keys.forEach((key) => delete this.column_styles[index as unknown as number][key]);
     }
 
+    // FIXME:  ROW PATTERN
+
     this.FlushCellStyles(); // not targeted
 
     if (inline) return;
@@ -2001,6 +2019,8 @@ export class Sheet {
         }
       }
     }
+
+    // FIXME: ROW PATTERN
 
     this.cells.IterateArea(this.RealArea(Area.FromRow(row)), (cell) => cell.FlushStyle());
 
@@ -2057,6 +2077,8 @@ export class Sheet {
 
     this.cells.IterateArea(this.RealArea(Area.FromColumn(column)), (cell) => cell.FlushStyle());
 
+    // FIXME: ROW PATTERN
+
     if (inline) return;
 
     this.PublishStyleEvent(undefined, 6); // console.info("PSE 6");
@@ -2091,6 +2113,10 @@ export class Sheet {
 
     const { row, column } = address;
     const stack = [this.default_style_properties, this.sheet_style];
+
+    if (this.row_pattern.length) {
+      stack.push(this.row_pattern[row % this.row_pattern.length]);
+    }
 
     if (this.row_styles[row]) {
       stack.push(this.row_styles[row]);

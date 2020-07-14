@@ -55,6 +55,7 @@ export interface SerializedSheet {
   cell_style_refs: Style.Properties[];
   row_style: Style.Properties[];
   column_style: Style.Properties[];
+  row_pattern?: Style.Properties[];
 
   default_row_height?: number;
   default_column_width?: number;
