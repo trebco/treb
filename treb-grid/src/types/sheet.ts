@@ -761,7 +761,10 @@ export class Sheet {
 
     if (!this.cell_style[column]) this.cell_style[column] = [];
 
-    const underlying = this.CompositeStyleForCell(address, false);
+    // testing
+    // const underlying = this.CompositeStyleForCell(address, false);
+    const underlying = this.CompositeStyleForCell(address, false, false);
+    
     const merged = Style.Composite([
       this.default_style_properties,
       underlying,
@@ -859,6 +862,14 @@ export class Sheet {
   }
 
   /**
+   * accessor to get cell style without row pattern -- for cut/copy
+   * @param address 
+   */
+  public GetCopyStyle(address: ICellAddress) {
+    return this.CompositeStyleForCell(address, true, false);
+  }
+
+  /**
    * wrapper for getting all relevant render data.
    * TODO: merge in "FormattedValue". restructure data so we don't have
    * two caches (formatted and calculated).
@@ -874,6 +885,7 @@ export class Sheet {
    *
    * NOTE: actually GetCellFormula resolves array formulae, so maybe not --
    * or the caller needs to check.
+   * 
    */
   public CellData(address: ICellAddress): Cell {
 
@@ -2109,12 +2121,12 @@ export class Sheet {
    * what happens if the cell style is not applied; if nothing happens, then
    * we can drop the cell style (or the property in the style).
    */
-  private CompositeStyleForCell(address: ICellAddress, apply_cell_style = true) {
+  private CompositeStyleForCell(address: ICellAddress, apply_cell_style = true, apply_row_pattern = true) {
 
     const { row, column } = address;
     const stack = [this.default_style_properties, this.sheet_style];
 
-    if (this.row_pattern.length) {
+    if (apply_row_pattern && this.row_pattern.length) {
       stack.push(this.row_pattern[row % this.row_pattern.length]);
     }
 

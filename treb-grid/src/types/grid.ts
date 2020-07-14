@@ -5310,7 +5310,7 @@ export class Grid {
             address,
             data: cell.value,
             type: cell.type,
-            style: cell.style,
+            style: this.model.active_sheet.GetCopyStyle(address), // excludes row pattern
           };
 
           if (cell.area &&
