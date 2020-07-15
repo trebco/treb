@@ -5577,8 +5577,16 @@ export class Grid {
     }
     else {
 
+      // excel tsv is not very clean wrt newlines and quotes. it's easy
+      // to construct tsv that makes no sense. as a result parsing is not
+      // really helpful.
+
+      // there is html which uses tables, that might work better (TODO)
+
       const text_data = event.clipboardData.getData('text/plain');
       if (!text_data) return true;
+
+      // still, you could do better than this.
 
       const lines = text_data.trim().split('\n');
       const source = lines.map((line) => line.split('\t').map((x) => x.trim()));
@@ -5592,8 +5600,10 @@ export class Grid {
       }
 
       for (const paste_area of paste_areas) {
-        for (let r = 0; r < lines.length; r++) {
-          for (let c = 0; c < lines[0].length; c++) {
+        //for (let r = 0; r < lines.length; r++) {
+        for (let r = 0; r < source.length; r++) {
+          //for (let c = 0; c < lines[0].length; c++) {
+          for (let c = 0; c < source[0].length; c++) {
             const target_area = new Area({ row: r + paste_area.start.row, column: c + paste_area.start.column });
             this.model.active_sheet.cells.EnsureCell(target_area.end);
             if (source[r][c]) {
