@@ -112,6 +112,8 @@ export class CompositeToolbar {
   /** cache (a copy of) the current active style */
   private selection_style?: Style.Properties;
 
+  private border_color?: string;
+
   /**
    * live reference to selection, so we don't have to constantly retrieve
    * it (this is less important now that we have a reference to the grid)
@@ -727,31 +729,31 @@ export class CompositeToolbar {
 
       case 'border-bottom':
         if (this.selection_style && this.selection_style.border_bottom === 1) {
-          this.grid.ApplyBorders(undefined, BorderConstants.Bottom, undefined, 2);
+          this.grid.ApplyBorders(undefined, BorderConstants.Bottom, this.border_color, 2);
         }
         else {
-          this.grid.ApplyBorders(undefined, BorderConstants.Bottom);
+          this.grid.ApplyBorders(undefined, BorderConstants.Bottom, this.border_color);
         }
         break;
 
       case 'border-all':
-        this.grid.ApplyBorders(undefined, BorderConstants.All);
+        this.grid.ApplyBorders(undefined, BorderConstants.All, this.border_color);
         break;
 
       case 'border-outer':
-        this.grid.ApplyBorders(undefined, BorderConstants.Outside);
+        this.grid.ApplyBorders(undefined, BorderConstants.Outside, this.border_color);
         break;
 
       case 'border-right':
-        this.grid.ApplyBorders(undefined, BorderConstants.Right);
+        this.grid.ApplyBorders(undefined, BorderConstants.Right, this.border_color);
         break;
 
       case 'border-left':
-        this.grid.ApplyBorders(undefined, BorderConstants.Left);
+        this.grid.ApplyBorders(undefined, BorderConstants.Left, this.border_color);
         break;
 
       case 'border-top':
-        this.grid.ApplyBorders(undefined, BorderConstants.Top);
+        this.grid.ApplyBorders(undefined, BorderConstants.Top, this.border_color);
         break;
 
       case 'border-none':
