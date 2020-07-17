@@ -78,7 +78,7 @@ export abstract class Graph {
       throw new Error('no cells? sheet id ' + address.sheet_id);
     }
 
-    const row = cells.data2[address.row];
+    const row = cells.data[address.row];
     if (row) {
       const cell = row[address.column];
       if (cell && cell.area) {

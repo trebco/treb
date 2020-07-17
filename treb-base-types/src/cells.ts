@@ -37,7 +37,7 @@ export interface CellSerializationOptions {
 export class Cells {
 
   /** switching to row-major */
-  public data2: Cell[][] = [];
+  public data: Cell[][] = [];
 
   // tslint:disable-next-line:variable-name
   private rows_ = 0;
@@ -45,8 +45,8 @@ export class Cells {
   // tslint:disable-next-line:variable-name
   private columns_ = 0;
 
-  get rows() { return this.rows_; }
-  get columns() { return this.columns_; }
+  get rows(): number { return this.rows_; }
+  get columns(): number { return this.columns_; }
 
   /**
    * the sheet wants to make sure this row exists, probably because it has
@@ -79,7 +79,7 @@ export class Cells {
     // hits populated keys. the returned array has the same
     // indexes. that is very nice.
 
-    this.data2 = this.data2.map((row, ri) => {
+    this.data = this.data.map((row, ri) => {
       if (row.length >= before){
         const tmp = row.slice(0, before);
         let index = before + count;
@@ -96,12 +96,12 @@ export class Cells {
 
     // trap! splice returns _removed_ elements so don't use map()
 
-    this.data2.forEach((row) => row.splice(index, count));
+    this.data.forEach((row) => row.splice(index, count));
     this.columns_ -= count;
   }
 
   public DeleteRows(index: number, count = 1){
-    this.data2.splice(index, count);
+    this.data.splice(index, count);
     this.rows_ -= count;
   }
 
@@ -114,7 +114,7 @@ export class Cells {
   public InsertRows(before = 0, count = 1){
     const args = [before, 0, []];
     for ( let i = 1; i < count; i++) args.push([]);
-    Array.prototype.splice.apply(this.data2, args as [number, number, any]);
+    Array.prototype.splice.apply(this.data, args as [number, number, any]);
     this.rows_ += count;
   }
 
@@ -138,22 +138,22 @@ export class Cells {
 
     const { row, column } = address;
 
-    if (!this.data2[row]) {
+    if (!this.data[row]) {
       if (create_new) {
-        this.data2[row] = [];
+        this.data[row] = [];
         this.rows_ = Math.max(this.rows_, row + 1);
       }
       else return undefined;
     }
 
-    if (!this.data2[row][column]) {
+    if (!this.data[row][column]) {
       if (create_new) {
-        this.data2[row][column] = new Cell();
+        this.data[row][column] = new Cell();
         this.columns_ = Math.max(this.columns_, column + 1);
       }
     }
 
-    return this.data2[row][column];
+    return this.data[row][column];
 
   }
 
@@ -166,10 +166,10 @@ export class Cells {
    * /
   public GetCell(address: ICellAddress, create_new?: boolean){
     const { row, column } = address;
-    let ref = this.data2[row];
+    let ref = this.data[row];
     if (!ref) {
       if (!create_new) return null;
-      this.data2[row] = ref = [];
+      this.data[row] = ref = [];
       this.rows_ = Math.max(this.rows_, row + 1);
     }
     let cell = ref[column];
@@ -185,9 +185,9 @@ export class Cells {
   /** returns an existing cell or creates a new cell. */
   public EnsureCell(address: ICellAddress){
     const { row, column } = address;
-    let ref = this.data2[row];
+    let ref = this.data[row];
     if (!ref) {
-      this.data2[row] = ref = [];
+      this.data[row] = ref = [];
       this.rows_ = Math.max(this.rows_, row + 1);
     }
     let cell = ref[column];
@@ -203,7 +203,7 @@ export class Cells {
    * when reading an older file, transpose.
    */
   public FromArray(data: any[] = [], transpose = false){
-    this.data2 = [];
+    this.data = [];
 
     let rows = 0;
     let columns = 0;
@@ -214,8 +214,8 @@ export class Cells {
         const ref = data[c];
         rows = Math.max(rows, ref.length);
         for ( let r = 0; r < ref.length; r++ ){
-          if (!this.data2[r]) this.data2[r] = [];
-          this.data2[r][c] = new Cell(ref[r]);
+          if (!this.data[r]) this.data[r] = [];
+          this.data[r][c] = new Cell(ref[r]);
         }
       }
     }
@@ -226,7 +226,7 @@ export class Cells {
         const ref = data[r];
         columns = Math.max(columns, ref.length);
         for ( let c = 0; c < ref.length; c++ ) column[c] = new Cell(ref[c]);
-        this.data2[r] = column;
+        this.data[r] = column;
       }
     }
     this.rows_ = rows;
@@ -235,7 +235,7 @@ export class Cells {
 
   public FromJSON(data: any[] = []){
 
-    this.data2 = [];
+    this.data = [];
 
     // handle nested data; fix. we can make the simplifying assumption
     // that data is either nested, or not, but never both. therefore, we
@@ -264,7 +264,7 @@ export class Cells {
 
     for (const obj of data) {
 
-      if (!this.data2[obj.row]) this.data2[obj.row] = [];
+      if (!this.data[obj.row]) this.data[obj.row] = [];
       const cell = new Cell(obj.value);
       if (typeof obj.calculated !== 'undefined') {
         // cell.calculated = obj.calculated;
@@ -277,11 +277,11 @@ export class Cells {
 
       // stop wrecking arrays
 
-      if (this.data2[obj.row][obj.column] && this.data2[obj.row][obj.column].area) {
-        cell.area = this.data2[obj.row][obj.column].area;
+      if (this.data[obj.row][obj.column] && this.data[obj.row][obj.column].area) {
+        cell.area = this.data[obj.row][obj.column].area;
       }
 
-      this.data2[obj.row][obj.column] = cell;
+      this.data[obj.row][obj.column] = cell;
 
       // since we are serializing the array data (when storing calculated
       // values), is this getting called every time? I think it might be...
@@ -291,9 +291,9 @@ export class Cells {
         const area = new Area(obj.area.start, obj.area.end); // isn't there a clone method?
         for ( let row = area.start.row; row <= area.end.row; row++){
           for ( let column = area.start.column; column <= area.end.column; column++){
-            if (!this.data2[row]) this.data2[row] = [];
-            if (!this.data2[row][column]) this.data2[row][column] = new Cell();
-            this.data2[row][column].area = area;
+            if (!this.data[row]) this.data[row] = [];
+            if (!this.data[row][column]) this.data[row][column] = new Cell();
+            this.data[row][column].area = area;
           }
         }
       }
@@ -302,17 +302,21 @@ export class Cells {
         const merge_area = new Area(obj.merge_area.start, obj.merge_area.end);
         for ( let row = merge_area.start.row; row <= merge_area.end.row; row++){
           for ( let column = merge_area.start.column; column <= merge_area.end.column; column++){
-            if (!this.data2[row]) this.data2[row] = [];
-            if (!this.data2[row][column]) this.data2[row][column] = new Cell();
-            this.data2[row][column].merge_area = merge_area;
+            if (!this.data[row]) this.data[row] = [];
+            if (!this.data[row][column]) this.data[row][column] = new Cell();
+            this.data[row][column].merge_area = merge_area;
           }
         }
       }
 
+      if (obj.validation) {
+        cell.validation = obj.validation;
+      }
+
     }
 
-    this.rows_ = this.data2.length;
-    this.columns_ = this.data2.reduce((max, row) => Math.max(max, row.length), 0);
+    this.rows_ = this.data.length;
+    this.columns_ = this.data.reduce((max, row) => Math.max(max, row.length), 0);
 
   }
 
@@ -320,7 +324,7 @@ export class Cells {
 
     let start_column = 0;
     let start_row = 0;
-    let end_row = this.data2.length - 1;
+    let end_row = this.data.length - 1;
     let end_column;
 
     if (options.subset){
@@ -346,8 +350,8 @@ export class Cells {
     const column_keys: {[index: number]: number} = {};
 
     for ( let row = start_row; row <= end_row; row++ ){
-      if ( this.data2[row]){
-        const ref = this.data2[row];
+      if ( this.data[row]){
+        const ref = this.data[row];
 
         end_column = ref.length - 1;
         if (options.subset) end_column = options.subset.end.column;
@@ -386,6 +390,7 @@ export class Cells {
           if (cell && (!is_empty || options.preserve_empty_strings) &&
               (merge_head || cell.type || (cell.calculated_type && options.expand_arrays) ||
                 (cell.calculated_type && options.calculated_value) ||
+                (cell.validation) ||
                 (options.decorated_cells && cell.style &&
                   ( cell.style.background || cell.style.border_bottom ||
                     cell.style.border_top || cell.style.border_left || cell.style.border_right)))){
@@ -406,7 +411,12 @@ export class Cells {
             if (cell.area && array_head) {
               obj.area = cell.area.toJSON();
             }
-            if (cell.merge_area) obj.merge_area = cell.merge_area.toJSON();
+            if (cell.merge_area) {
+              obj.merge_area = cell.merge_area.toJSON();
+            }
+            if (cell.validation) {
+              obj.validation = cell.validation; // safe? 
+            }
 
             if (options.cell_style_refs &&
                 options.cell_style_refs[column] &&
@@ -489,9 +499,9 @@ export class Cells {
   public GetFormattedRange(from: CellAddress, to?: CellAddress, transpose = false){
 
     if (!to || from === to || (from.column === to.column && from.row === to.row )){
-      if (this.data2[from.row] && this.data2[from.row][from.column]){
+      if (this.data[from.row] && this.data[from.row][from.column]){
         // return this.data[from.column][from.row].GetValue();
-        const cell = this.data2[from.row][from.column];
+        const cell = this.data[from.row][from.column];
         return (typeof cell.formatted !== 'undefined') ? cell.formatted : cell.GetValue();
       }
       return undefined;
@@ -503,8 +513,8 @@ export class Cells {
       for ( let c = from.column; c <= to.column; c++ ){
         const column = [];
         for ( let r = from.row; r <= to.row; r++ ){
-          if (this.data2[r] && this.data2[r][c]) {
-            const cell = this.data2[r][c];
+          if (this.data[r] && this.data[r][c]) {
+            const cell = this.data[r][c];
             column.push(typeof cell.formatted !== undefined ? cell.formatted : cell.GetValue());
           }
           else column.push(null);
@@ -516,8 +526,8 @@ export class Cells {
       for ( let r = from.row; r <= to.row; r++ ){
         const row = [];
         for ( let c = from.column; c <= to.column; c++ ){
-          if (this.data2[r] && this.data2[r][c]) {
-            const cell = this.data2[r][c];
+          if (this.data[r] && this.data[r][c]) {
+            const cell = this.data[r][c];
             row.push(typeof cell.formatted !== undefined ? cell.formatted : cell.GetValue());
           }
           else row.push(null);
@@ -548,8 +558,8 @@ export class Cells {
   public FormattedRange(from: ICellAddress, to: ICellAddress = from) {
 
     if (from.row === to.row && from.column === to.column) {
-      if (this.data2[from.row] && this.data2[from.row][from.column]) {
-        return this.FormattedValue(this.data2[from.row][from.column]);
+      if (this.data[from.row] && this.data[from.row][from.column]) {
+        return this.FormattedValue(this.data[from.row][from.column]);
       }
       return undefined;
     }
@@ -557,7 +567,7 @@ export class Cells {
     const result: any[][] = [];
     
     // grab rows
-    const rows = this.data2.slice(from.row, to.row + 1);
+    const rows = this.data.slice(from.row, to.row + 1);
 
     // now columns
     const start = from.column;
@@ -596,8 +606,8 @@ export class Cells {
   public RawValue(from: ICellAddress, to: ICellAddress = from): CellValue | CellValue[][] | undefined {
 
     if (from.row === to.row && from.column === to.column) {
-      if (this.data2[from.row] && this.data2[from.row][from.column]) {
-        return this.data2[from.row][from.column].value;
+      if (this.data[from.row] && this.data[from.row][from.column]) {
+        return this.data[from.row][from.column].value;
       }
       return undefined;
     }
@@ -605,7 +615,7 @@ export class Cells {
     const result: CellValue[][] = [];
 
     // grab rows
-    const rows = this.data2.slice(from.row, to.row + 1);
+    const rows = this.data.slice(from.row, to.row + 1);
 
     // now columns
     const start = from.column;
@@ -630,8 +640,8 @@ export class Cells {
     // console.info("getrange", from, to, transpose);
 
     if (!to || from === to || (from.column === to.column && from.row === to.row )){
-      if (this.data2[from.row] && this.data2[from.row][from.column]){
-        return this.data2[from.row][from.column].GetValue();
+      if (this.data[from.row] && this.data[from.row][from.column]){
+        return this.data[from.row][from.column].GetValue();
       }
       return undefined;
     }
@@ -642,7 +652,7 @@ export class Cells {
       for ( let c = from.column; c <= to.column; c++ ){
         const column = [];
         for ( let r = from.row; r <= to.row; r++ ){
-          if (this.data2[r] && this.data2[r][c]) column.push(this.data2[r][c].GetValue());
+          if (this.data[r] && this.data[r][c]) column.push(this.data[r][c].GetValue());
           else column.push(undefined);
         }
         value.push(column);
@@ -652,7 +662,7 @@ export class Cells {
       for ( let r = from.row; r <= to.row; r++ ){
         const row = [];
         for ( let c = from.column; c <= to.column; c++ ){
-          if (this.data2[r] && this.data2[r][c]) row.push(this.data2[r][c].GetValue());
+          if (this.data[r] && this.data[r][c]) row.push(this.data[r][c].GetValue());
           else row.push(undefined);
         }
         value.push(row);
@@ -671,8 +681,8 @@ export class Cells {
   public GetRange2(from: ICellAddress, to?: ICellAddress, transpose = false) {
 
     if (!to || from === to || (from.column === to.column && from.row === to.row )){
-      if (this.data2[from.row] && this.data2[from.row][from.column]){
-        return this.data2[from.row][from.column].GetValue2();
+      if (this.data[from.row] && this.data[from.row][from.column]){
+        return this.data[from.row][from.column].GetValue2();
       }
       return undefined;
     }
@@ -683,7 +693,7 @@ export class Cells {
       for ( let c = from.column; c <= to.column; c++ ){
         const column = [];
         for ( let r = from.row; r <= to.row; r++ ){
-          if (this.data2[r] && this.data2[r][c]) column.push(this.data2[r][c].GetValue2());
+          if (this.data[r] && this.data[r][c]) column.push(this.data[r][c].GetValue2());
           else column.push(undefined);
         }
         value.push(column);
@@ -693,7 +703,7 @@ export class Cells {
       for ( let r = from.row; r <= to.row; r++ ){
         const row = [];
         for ( let c = from.column; c <= to.column; c++ ){
-          if (this.data2[r] && this.data2[r][c]) row.push(this.data2[r][c].GetValue2());
+          if (this.data[r] && this.data[r][c]) row.push(this.data[r][c].GetValue2());
           else row.push(undefined);
         }
         value.push(row);
@@ -714,8 +724,8 @@ export class Cells {
 
     if (create_missing_cells){
       for ( let r = area.start.row; r <= area.end.row; r++ ){
-        if (!this.data2[r]) this.data2[r] = [];
-        const row = this.data2[r];
+        if (!this.data[r]) this.data[r] = [];
+        const row = this.data[r];
         for ( let c = area.start.column; c <= area.end.column; c++ ){
           if (!row[c]) row[c] = new Cell();
           f(row[c], c, r);
@@ -725,8 +735,8 @@ export class Cells {
     else {
       // we can loop over indexes that don't exist, just check for existence
       for ( let r = area.start.row; r <= area.end.row; r++ ){
-        if (this.data2[r]){
-          const row = this.data2[r];
+        if (this.data[r]){
+          const row = this.data[r];
           for ( let c = area.start.column; c <= area.end.column; c++ ){
             if (row[c]) f(row[c], c, r);
           }
@@ -745,8 +755,8 @@ export class Cells {
 
     if (Array.isArray(values) || ArrayBuffer.isView(values)) {
       for (let r = area.start.row, i = 0; r <= area.end.row; r++, i++) {
-        if (!this.data2[r]) this.data2[r] = [];
-        const row = this.data2[r];
+        if (!this.data[r]) this.data[r] = [];
+        const row = this.data[r];
         if (values[i]) {
           for (let c = area.start.column, j = 0; c <= area.end.column; c++, j++) {
             if (!row[c]) row[c] = new Cell();
@@ -759,8 +769,8 @@ export class Cells {
       const value_type = Cell.GetValueType(values); // otherwise we'd just call it every time
 
       for (let r = area.start.row; r <= area.end.row; r++) {
-        if (!this.data2[r]) this.data2[r] = [];
-        const row = this.data2[r];
+        if (!this.data[r]) this.data[r] = [];
+        const row = this.data[r];
         for (let c = area.start.column; c <= area.end.column; c++) {
           if (!row[c]) row[c] = new Cell();
           row[c].Set(values, value_type);
@@ -779,16 +789,16 @@ export class Cells {
    */
   public IterateAll(func: (cell: Cell) => void){
     /*
-    const row_keys = Object.keys(this.data2);
+    const row_keys = Object.keys(this.data);
     for (const row of row_keys){
       const n_row = Number(row) || 0;
-      const column_keys = Object.keys(this.data2[n_row]);
+      const column_keys = Object.keys(this.data[n_row]);
       for (const column_key of column_keys){
-        f(this.data2[n_row][Number(column_key)]);
+        f(this.data[n_row][Number(column_key)]);
       }
     }
     */
-    for (const row of this.data2) {
+    for (const row of this.data) {
       if (row) {
         for (const cell of row) {
           if (cell) {
@@ -802,7 +812,7 @@ export class Cells {
 
   /** moved from sheet, so we can do it non-functional style (for perf) */
   public FlushCellStyles() {
-    for (const row of this.data2) {
+    for (const row of this.data) {
       if (row) {
         for (const cell of row) {
           if (cell) {
@@ -815,7 +825,7 @@ export class Cells {
 
   /** moved from sheet, so we can do it non-functional style (for perf) */
   public FlushCachedValues() {
-    for (const row of this.data2) {
+    for (const row of this.data) {
       if (row) {
         for (const cell of row) {
           if (cell) {

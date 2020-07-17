@@ -7,7 +7,7 @@ import { GridSelection } from '../types/grid_selection';
 import { HeaderOverlay, Orientation } from './svg_header_overlay';
 import { DataModel } from '../types/data_model';
 
-const SVGNS = 'http://www.w3.org/2000/svg';
+// const SVGNS = 'http://www.w3.org/2000/svg';
 
 export class SelectionRenderer {
 

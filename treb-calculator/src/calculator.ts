@@ -363,7 +363,7 @@ export class Calculator extends Graph {
       // clear array -- will it always exist? (...)
       for (let row = area.start.row; row <= area.end.row; row++) {
         for (let column = area.start.column; column <= area.end.column; column++) {
-          cells.data2[row][column].SetCalculatedValue(undefined, ValueType.undefined);
+          cells.data[row][column].SetCalculatedValue(undefined, ValueType.undefined);
         }
       }
       
@@ -375,12 +375,12 @@ export class Calculator extends Graph {
           for (let r = 0; r < value.length && r < area.rows; r++, row++ ){
             if (this.IsNativeOrTypedArray(value[r])){
               for (let c = 0; c < value[r].length && c < area.columns; c++, column++ ){
-                cells.data2[row][column].SetCalculatedValueOrError(value[r][c]);
+                cells.data[row][column].SetCalculatedValueOrError(value[r][c]);
               }
               column = area.start.column;
             }
             else {
-              cells.data2[row][column].SetCalculatedValueOrError(value[r]);
+              cells.data[row][column].SetCalculatedValueOrError(value[r]);
             }
           }
         }
@@ -388,7 +388,7 @@ export class Calculator extends Graph {
           for (let c = value.length; c < area.columns; c++ ) value[c] = []; // padding columns for loop
           for (let c = 0, column = area.start.column; c < area.columns; c++, column++ ){
             for (let r = 0, row = area.start.row; r < area.rows; r++, row++ ){
-              cells.data2[row][column].SetCalculatedValueOrError(value[c][r]);
+              cells.data[row][column].SetCalculatedValueOrError(value[c][r]);
             }
           }
         }
@@ -399,7 +399,7 @@ export class Calculator extends Graph {
         if (calculation_error) {
           for (let c = area.start.column; c <= area.end.column; c++){
             for (let r = area.start.row; r <= area.end.row; r++){
-              cells.data2[r][c].SetCalculationError(value.error);
+              cells.data[r][c].SetCalculationError(value.error);
             }
           }
         }
@@ -407,7 +407,7 @@ export class Calculator extends Graph {
           const value_type = Cell.GetValueType(value);
           for (let c = area.start.column; c <= area.end.column; c++){
             for (let r = area.start.row; r <= area.end.row; r++){
-              cells.data2[r][c].SetCalculatedValue(value, value_type);
+              cells.data[r][c].SetCalculatedValue(value, value_type);
             }
           }
         }

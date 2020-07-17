@@ -1,5 +1,5 @@
 
-import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectangle, RenderFunctionOptions } from 'treb-base-types';
+import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectangle } from 'treb-base-types';
 
 import { Tile } from '../types/tile';
 import { ExtendedTheme } from '../types/theme';
@@ -85,7 +85,7 @@ export class TileRenderer {
    * when drawing to the buffered canvas, (1) ensure it's large enough,
    * and (2) set transform as necessary (we may be overflowing to the left).
    */
-  public EnsureBuffer(width = 0, height = 0, offset = 0) {
+  public EnsureBuffer(width = 0, height = 0, offset = 0): void {
 
     // console.info('eb', width, height, offset);
 
@@ -123,7 +123,7 @@ export class TileRenderer {
    * check all overflow areas. if any elements are dirty, mark all elements
    * as dirty (FIXME: and remove the list?)
    */
-  public OverflowDirty(full_tile = false) {
+  public OverflowDirty(full_tile = false): void {
 
     const mutated = [];
 
@@ -158,7 +158,7 @@ export class TileRenderer {
   /**
    * 
    */
-  public RenderCorner(/* selection: GridSelection */) {
+  public RenderCorner(/* selection: GridSelection */): void {
 
     const corner = this.layout.corner_canvas;
     const context = (corner as HTMLCanvasElement).getContext('2d', { alpha: false });
@@ -316,7 +316,7 @@ export class TileRenderer {
 
   /**
    */
-  public RenderHeaders(tiles: TileRange /*, selection: GridSelection*/, force = false) {
+  public RenderHeaders(tiles: TileRange /*, selection: GridSelection*/, force = false): void {
 
     const scale = this.layout.dpr;
 
@@ -461,7 +461,7 @@ export class TileRenderer {
     dy: -1 | 0 | 1,
     left: number,
     top: number,
-    result: RenderCellResult) {
+    result: RenderCellResult): void {
 
     const adjacent = this.layout.AdjacentTile(tile, dy, dx);
     if (!adjacent) return; // FIXME: warn?
@@ -490,7 +490,7 @@ export class TileRenderer {
   }
 
   /** render a tile */
-  public Render(tile: Tile) {
+  public Render(tile: Tile): void {
 
     const context = tile.getContext('2d', { alpha: false });
     if (!context) { return; } // should throw
@@ -700,7 +700,7 @@ export class TileRenderer {
       }
 
       let lines = formatted.split(/\n/); // cell.formatted.split(/\n/);
-      if (!!style.wrap) {
+      if (style.wrap) {
 
         const bounded_width = cell_width - (2 * this.cell_edge_buffer);
 
@@ -769,7 +769,7 @@ export class TileRenderer {
     address: ICellAddress,
     context: CanvasRenderingContext2D,
     style: Style.Properties,
-    left = 0, top = 0, width = 0, height = 0) {
+    left = 0, top = 0, width = 0, height = 0): void {
 
     context.lineWidth = 1;
 
@@ -874,7 +874,7 @@ export class TileRenderer {
     address: ICellAddress,
     context: CanvasRenderingContext2D,
     style: Style.Properties,
-    width: number, height: number) {
+    width: number, height: number): void {
 
     // we now flow the painted background over the grid, so
     // we only need to paint the grid if there's no active

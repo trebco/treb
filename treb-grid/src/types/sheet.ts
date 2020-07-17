@@ -10,13 +10,13 @@ import { EventSource, Measurement } from 'treb-utils';
 
 import { SheetEvent, UpdateHints, FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
-import { GridSelection, CreateSelection } from './grid_selection';
+import { CreateSelection } from './grid_selection';
 import { Annotation } from './annotation';
 
 // --- constants --------------------------------------------------------------
 
 const DEFAULT_COLUMN_WIDTH = 100;
-const DEFAULT_ROW_HEIGHT = 26; // not used because it's based on font (theoretically)
+// const DEFAULT_ROW_HEIGHT = 26; // not used because it's based on font (theoretically)
 const DEFAULT_ROW_HEADER_WIDTH = 60;
 
 interface CellStyleRef {
@@ -40,14 +40,14 @@ export class Sheet {
 
   // --- class methods --------------------------------------------------------
 
-  public static Reset() {
+  public static Reset(): void {
     this.base_id = 100;
   }
 
   /**
    * factory method creates a new sheet
    */
-  public static Blank(style_defaults: Style.Properties, name?: string, rows = 30, columns = 20) {
+  public static Blank(style_defaults: Style.Properties, name?: string, rows = 30, columns = 20): Sheet {
 
     const sheet = new Sheet(style_defaults);
 
@@ -1811,7 +1811,7 @@ export class Sheet {
   public ExportValueData(transpose = false, dates_as_strings = false, export_functions = false): any[][] {
 
     const arr = [];
-    const data = this.cells.data2;
+    const data = this.cells.data;
 
     if (transpose) {
       const rowcount = data[0].length; // assuming it's a rectangle

@@ -69,7 +69,9 @@ export namespace Style {
     // NEW
     // FIXME: change name to editable, default true? (...)
 
-    locked?: boolean;
+    // this is not properly in style -- should be in cell
+
+    // locked?: boolean;
 
   }
 

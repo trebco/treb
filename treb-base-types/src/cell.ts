@@ -67,6 +67,39 @@ export enum ValueType {
  */
 export type CellValue = undefined | string | number | boolean;
 
+/**
+ * validation TODO: date, number, boolean, &c
+ */
+export enum ValidationType {
+  List,
+  Date,
+  Number,
+  Boolean,
+}
+
+export interface DataValidationList {
+  type: ValidationType.List,
+  list: CellValue[],
+}
+
+export interface DataValidationDate {
+  type: ValidationType.Date,
+}
+
+export interface DataValidationNumber {
+  type: ValidationType.Number,
+}
+
+export interface DataValidationBoolean {
+  type: ValidationType.Boolean,
+}
+
+export type DataValidation 
+  = DataValidationList
+  | DataValidationNumber
+  | DataValidationDate
+  | DataValidationBoolean;
+
 export class Cell {
 
   // --- static methods -------------------------------------------------------
@@ -196,6 +229,11 @@ export class Cell {
   public note?: string;
 
   public render_function?: (options: RenderFunctionOptions) => void;
+
+  /** not editable */
+  public locked?: boolean;
+
+  public validation?: DataValidation;
 
   // --- class methods --------------------------------------------------------
 

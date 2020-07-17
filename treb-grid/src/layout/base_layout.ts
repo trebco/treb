@@ -18,9 +18,11 @@ import { RectangleCache } from './rectangle_cache';
 // define area as a generic, then define it on some arbitrary value. that would
 // force separation of all the functions between the two types (I think)
 
-import { Area as TileRange } from 'treb-base-types';
+import { Area as TileRange, CellValue } from 'treb-base-types';
 import { Annotation } from '../types/annotation';
 export { Area as TileRange } from 'treb-base-types';
+
+const SVGNS = 'http://www.w3.org/2000/svg';
 
 export interface TooltipOptions {
   up?: true;
@@ -117,9 +119,18 @@ export abstract class BaseLayout {
 
   private tooltip_state?: 'up'|'left';
 
-  private tooltip!: HTMLDivElement;
+  private tooltip: HTMLDivElement;
+
+  private dropdown_caret: SVGSVGElement;
+  private dropdown_list: HTMLDivElement;
+  private dropdown_caret_visible = false;
+  private dropdown_callback?: (value: CellValue) => void;
+  private dropdown_selected?: HTMLElement;
 
   private selection_layout_token?: any;
+
+  private error_highlight: HTMLDivElement;
+  private error_highlight_timeout?: any;
 
   private note_node: HTMLDivElement;
 
@@ -149,6 +160,117 @@ export abstract class BaseLayout {
     this.tooltip = // document.querySelector('.treb-tooltip'); // ||
       DOMUtilities.CreateDiv('treb-tooltip');
 
+    this.error_highlight = DOMUtilities.CreateDiv('treb-error-highlight');
+
+    this.dropdown_caret = document.createElementNS(SVGNS, 'svg') as SVGSVGElement;
+    this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
+    this.dropdown_caret.setAttribute('viewBox', '0 0 24 24');
+    this.dropdown_caret.tabIndex = -1;
+
+    const caret = document.createElementNS(SVGNS, 'path');
+    caret.setAttribute('d', 'M5,7 L12,17 L19,7');
+    this.dropdown_caret.appendChild(caret);
+
+    this.dropdown_caret.addEventListener('click', (event) => {
+
+      event.stopPropagation();
+      event.preventDefault();
+
+      this.grid_cover.classList.remove('nub-select');
+
+      // the classList polyfill doesn't apply to svg elements (not sure
+      // if that's an oversight, or IE11 just won't support it) -- but
+      // either way we can't use it
+
+      const class_name = this.dropdown_caret.getAttribute('class') || '';
+
+      if(/active/i.test(class_name)) {
+        this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
+      }
+      else {
+        this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret active');
+      }
+
+    });
+
+    this.dropdown_caret.addEventListener('focusout', () => {
+      this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
+      this.container?.focus();
+    });
+
+    this.dropdown_caret.addEventListener('keydown', (event) => {
+      let delta = 0;
+
+      switch(event.key) {
+        case 'ArrowDown':
+          delta = 1;
+          break;
+        case 'ArrowUp':
+          delta = -1;
+          break;
+
+        case 'Enter':
+          break;
+        default:
+          console.info(event.key);
+          return;
+      }
+
+      event.stopPropagation();
+      event.preventDefault();
+
+      if (event.key === 'Enter') {
+        this.container?.focus();
+        if (this.dropdown_callback) {
+          if (this.dropdown_selected) {
+            this.dropdown_callback.call(0, (this.dropdown_selected as any).dropdown_value);
+          }
+        }
+      }
+      else if (delta) {
+        if (this.dropdown_selected) {
+          if (delta > 0 && this.dropdown_selected.nextSibling) {
+            (this.dropdown_selected.nextSibling as HTMLElement).classList.add('selected');
+            this.dropdown_selected.classList.remove('selected');
+            this.dropdown_selected = this.dropdown_selected.nextSibling as HTMLElement;
+          }
+          else if (delta < 0 && this.dropdown_selected.previousSibling) {
+            (this.dropdown_selected.previousSibling as HTMLElement).classList.add('selected');
+            this.dropdown_selected.classList.remove('selected');
+            this.dropdown_selected = this.dropdown_selected.previousSibling as HTMLElement;
+          }
+        }
+      }
+
+    });
+
+    this.dropdown_list = DOMUtilities.CreateDiv('treb-dropdown-list');
+
+    this.dropdown_list.addEventListener('mousedown', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+
+      const target = event.target as HTMLElement;
+
+      this.container?.focus();
+      if (this.dropdown_callback) {
+        this.dropdown_callback.call(0, (target as any).dropdown_value);
+      }
+    });
+    
+    this.dropdown_list.addEventListener('mousemove', (event) => {
+      const target = event.target as HTMLElement;
+      if (target === this.dropdown_selected) {
+        return;
+      }
+      this.grid_cover.classList.remove('nub-select');
+      if (this.dropdown_selected) {
+        this.dropdown_selected.classList.remove('selected');
+      }
+      target.classList.add('selected');
+      this.dropdown_selected = target as HTMLElement;
+    });
+
     this.mock_selection = DOMUtilities.CreateDiv('mock-selection-node');
     this.mock_selection.innerHTML = '&nbsp;';
 
@@ -164,7 +286,6 @@ export abstract class BaseLayout {
   public ShowSelections(show = true) {
     this.grid_selection.style.display = show ? 'block' : 'none';
   }
-
 
   public HideNote() {
     this.note_node.style.opacity = '0';
@@ -306,16 +427,31 @@ export abstract class BaseLayout {
    * over to do some additional work post init, and renaming the subclass-specific
    * method (@see InitializeInternal).
    */
-  public Initialize(container: HTMLElement, scroll_callback: () => void, scroll = true) {
+  public Initialize(container: HTMLElement, 
+    scroll_callback: () => void, 
+    dropdown_callback: (value: CellValue) => void,
+    scroll = true): void {
 
     if (!this.mask.parentElement) {
       container.appendChild(this.mask);
+    }
+
+    if (!this.error_highlight.parentElement) {
+      container.appendChild(this.error_highlight);
     }
 
     if (!this.tooltip.parentElement) {
       container.appendChild(this.tooltip);
     }
 
+    if (!this.dropdown_caret.parentElement) {
+      container.appendChild(this.dropdown_caret);
+    }
+
+    if (!this.dropdown_list.parentElement) {
+      container.appendChild(this.dropdown_list);
+    }
+    
     if (!this.note_node.parentElement) {
       container.appendChild(this.note_node);
     }
@@ -324,6 +460,8 @@ export abstract class BaseLayout {
     if (!scroll && this.scroll_reference_node) {
       this.scroll_reference_node.style.overflow = 'hidden';
     }
+
+    this.dropdown_callback = dropdown_callback;
 
     this.initialized = true;
 
@@ -471,6 +609,9 @@ export abstract class BaseLayout {
     this.tooltip.style.backgroundColor = theme.tooltip_background || '';
     this.tooltip.style.borderColor = theme.tooltip_background || ''; // for arrow
     this.tooltip.style.color = theme.tooltip_color || '';
+
+    // TODO: dropdown caret
+
   }
 
   public UpdateContentsSize() {
@@ -491,6 +632,31 @@ export abstract class BaseLayout {
     this.tooltip.classList.remove('arrow-left');
   }
 
+  /** briefly flash red, to indicate an error */
+  public HighlightError(address: ICellAddress): void {
+
+    const target_rect = this.OffsetCellAddressToRectangle(address).Shift(
+      this.header_size.width, this.header_size.height);
+
+    target_rect.ApplyStyle(this.error_highlight);
+    this.error_highlight.style.opacity = '1';
+
+    // we don't like to rely on transitionend events. the concern is that
+    // if they overlap eventually one will get lost... because this can be
+    // triggered faster than the transition, we can almost always make that
+    // happen
+
+    if (this.error_highlight_timeout) {
+      clearTimeout(this.error_highlight_timeout);
+    }
+
+    this.error_highlight_timeout = setTimeout(() => {
+      this.error_highlight.style.opacity = '0';
+      this.error_highlight_timeout = undefined;
+    }, 250)
+
+  }
+
   /** show column/row resize tooltip */
   public ShowTooltip(options: TooltipOptions = {}) {
     if (options.up) {
@@ -503,6 +669,51 @@ export abstract class BaseLayout {
     }
     this.tooltip.style.display = 'block';
     this.UpdateTooltip(options);
+  }
+
+  public ShowDropdownCaret(address: ICellAddress, list: CellValue[], current: CellValue): void {
+
+    const target_rect = this.OffsetCellAddressToRectangle(address).Shift(
+      this.header_size.width, this.header_size.height);
+
+    // FIXME: max size? (...)
+
+    const height = Math.max(8, Math.min(20, target_rect.height));
+
+    this.dropdown_caret.style.height = `${height}px`;
+    this.dropdown_caret.style.width = `${height}px`;
+    this.dropdown_caret.style.left = `${target_rect.right + 1}px`;
+    this.dropdown_caret.style.top = `${target_rect.bottom - height}px`;
+
+    this.dropdown_list.style.top = `${target_rect.bottom + 2}px`;
+    this.dropdown_list.style.left = `${target_rect.left + 2}px`;
+    this.dropdown_list.style.minWidth = `${target_rect.width}px`;
+
+    this.dropdown_list.textContent = '';
+    for (const value of list) {
+      const entry = DOMUtilities.CreateDiv(undefined, this.dropdown_list);
+      if (current === value) {
+        this.dropdown_selected = entry;
+        entry.classList.add('selected');    
+      }
+      (entry as any).dropdown_value = value;
+      entry.textContent = value?.toString() || '';
+    }
+
+    //this.dropdown_caret.classList.remove('active');
+    this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
+
+    this.dropdown_caret.style.display = 'block';
+    this.dropdown_caret_visible = true;
+  }
+
+  public HideDropdownCaret() {
+    if (this.dropdown_caret_visible) {
+      // this.dropdown_caret.classList.remove('active');
+      this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
+      this.dropdown_caret_visible = false;
+      this.dropdown_caret.style.display = 'none';
+    }
   }
 
   public ScrollTo(address: ICellAddress){

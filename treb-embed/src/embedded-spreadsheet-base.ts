@@ -491,6 +491,47 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  /**
+   * batch multiple document changes. essentially the grid stops broadcasting
+   * events, and collects them for the duration. once that's done it returns
+   * the list of events, so you can deal with them as you see fit.
+   * 
+   * @param func 
+   */
+  public Batch(func: () => void): void {
+
+    const cached_selection = this.last_selection;
+    const events = this.grid.Batch(func);
+
+    let recalc = false;
+    let reset = false;
+
+    // FIXME: annotation events
+    // TODO: annotation events
+
+    // FIXME: sheet change events (affects annotations)
+    // TODO: sheet change events (affects annotations)
+
+    for (const event of events) {
+      if (event.type === 'data') {
+        recalc = true;
+      }
+      else if (event.type === 'structure') {
+        if (event.rebuild_required) reset = true;
+      }
+    }
+
+    if (reset) { 
+      this.calculator.Reset();
+    }
+    if (recalc || reset) {
+      this.Recalculate().then(() => {
+        this.DocumentChange(cached_selection);
+      });
+    }
+
+  }
+
   public OnSheetChange(event: SheetChangeEvent) {
 
     // call annotation method(s) on any annotations in active sheet
@@ -614,7 +655,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param recycle recycle values. we only recycle single values or vectors -- we will not recycle a matrix.
    * @param transpose transpose before inserting (data is row-major)
    */
-  public SetRange(range: ICellAddress|IArea|string, data: any, recycle = false, transpose = false, array = false) {
+  public SetRange(range: ICellAddress|IArea|string, data: any, recycle = false, transpose = false, array = false): void {
 
     let area: Area;
 
@@ -1998,6 +2039,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   /** recalc sheet */
   public async Recalculate(event?: GridEvent, formula_only = false) {
+
     let area: Area | undefined;
     if (event && event.type === 'data' && event.area) {
       area = event.area;
