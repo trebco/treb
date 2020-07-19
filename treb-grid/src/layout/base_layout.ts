@@ -612,6 +612,10 @@ export abstract class BaseLayout {
 
     // TODO: dropdown caret
 
+    this.dropdown_list.style.fontFamily = theme.cell_font || '';
+    this.dropdown_list.style.fontSize = 
+      (theme.cell_font_size_value || '10') + (theme.cell_font_size_unit || 'pt');
+
   }
 
   public UpdateContentsSize() {

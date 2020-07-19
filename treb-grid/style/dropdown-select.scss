@@ -1,0 +1,73 @@
+
+
+.treb-dropdown-caret {
+
+  display: none;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+
+  box-shadow: $default-box-shadow;
+  
+  z-index: $z-index-dropdown-caret;
+
+  & path {
+    fill: none;
+    stroke: #444;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+  }
+
+}
+
+.treb-dropdown-list {
+
+  position: absolute;
+  display: none;
+  box-shadow: $default-box-shadow;
+  z-index: $z-index-dropdown-caret;
+  background: #fff;
+  font-size: 10pt;
+
+  & div {
+    padding: 2px;
+    cursor: default;
+  }  
+
+  & div.selected {
+    background: #555;
+    color: #fff;
+  }
+
+  text-align: left;
+
+}
+
+.treb-dropdown-caret.active {
+  background: #eee;
+
+  & + .treb-dropdown-list {
+    display: block;
+  }
+
+}
+
+/**
+ * FIXME: this should move, it's used in dropdowns but it is
+ *        more general (shoudl be used for all errors)
+ */
+
+.treb-error-highlight {
+  transition: opacity 0.15s ease-in-out;
+  background: rgba(255, 0, 0, .25);
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: $z-index-error-highlight;
+
+}
