@@ -4,6 +4,7 @@ import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { CompositeSheet } from './composite-sheet';
 import { AutoEmbedManager } from './auto-embed';
 import { CreateSheetOptions } from './options';
+import { NumberFormatCache, ValueParser } from 'treb-format';
 
 import * as build from '../../package.json';
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
@@ -42,6 +43,14 @@ if (!(self as any).TREB?.CreateSpreadsheet) {
     TREB.CreateSpreadsheet = (options: CreateSheetOptions) => {
       return CompositeSheet.Create(options);
     }
+
+    if (EmbeddedSpreadsheetBase.enable_formatter) {
+      TREB.Format = {
+        format: (value: number, format: string) => NumberFormatCache.Get(format).Format(value),
+        parse: (value: string) => ValueParser.TryParse(value).value,
+      };
+    }
+
   })();
 
 

@@ -81,6 +81,10 @@ export class MCCalculator extends Calculator {
     const flat_data = this.BuildCellsList(json_options);
     const result = this.RebuildGraph(flat_data, {});
 
+    if (this.GlobalLoopCheck()) {
+      throw new Error('loop found in graph');
+    }
+
     // NOTE: not dealing with annotations here. the rationale is that these
     // may have external function definitions, so we can't reliably get the
     // metadata. there should really be no reason to do this anyway... so
@@ -122,6 +126,10 @@ export class MCCalculator extends Calculator {
 
     // now handled in graph/calc via volatile and simulationvolatile
     // Model.volatile_functions.forEach((addr) => this.SetDirty(addr));
+
+    // there's no loop check here because the graph can't change between
+    // init() and here; although the loop check would theoretically short-
+    // circuit anyway, since it's gated
 
     try {
       this.Recalculate();

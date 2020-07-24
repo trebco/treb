@@ -1,9 +1,15 @@
 
+export enum Color {
+  white, gray, black
+}
+
 export class Vertex {
 
   // --- members ---
 
   public type = 'vertex'; // for type guard
+
+  public color = Color.white; // for loop check
 
   /** dependencies */
   public edges_in: Vertex[] = [];

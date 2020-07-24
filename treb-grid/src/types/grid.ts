@@ -1583,7 +1583,7 @@ export class Grid {
 
      // single value, easiest
     if (!Array.isArray(data) && !ArrayBuffer.isView(data)) {
-      if (recycle) {
+      if (recycle || array) {
         // this.model.sheet.SetAreaValue(range, data);
         this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array });
       }

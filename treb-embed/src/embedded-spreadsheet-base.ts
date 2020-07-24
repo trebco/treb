@@ -35,6 +35,11 @@ interface UndoEntry {
   selection?: string;
 }
 
+enum CalculationOptions {
+  automatic,
+  manual,
+}
+
 /**
  * embedded spreadsheet, suitable for one-line embedding in a web page
  *
@@ -48,6 +53,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public static treb_script_host = '';
   public static treb_embedded_script_path = '';
   public static enable_engine = false;
+  public static enable_formatter = false;
 
   /**
    * we need to load relative resources. we can't access the path of this
@@ -82,6 +88,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
         if (src && /\?.*?engine/i.test(src)) {
           this.enable_engine = true;
+        }
+
+        if (src && /\?.*?format/i.test(src)) {
+          this.enable_formatter = true;
         }
 
         this.treb_embedded_script_path = src;
@@ -135,6 +145,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public set user_data(data: any|undefined) {
     this.grid.model.user_data = data;
   }
+
+  /** automatic/manual */
+  protected calculation = CalculationOptions.automatic;
 
   /**
    * this might be something that should travel with the document,
@@ -355,9 +368,22 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               // to preserve the current selection and pass it through.
 
               const cached_selection = this.last_selection;
-              this.Recalculate(event).then(() => {
-                this.DocumentChange(cached_selection);
+
+              ((this.calculation === CalculationOptions.automatic) ?
+                this.Recalculate(event) : Promise.resolve()).then(() => {
+                  this.DocumentChange(cached_selection);
               });
+
+              /*
+              if (this.calculation === CalculationOptions.automatic) {
+                this.Recalculate(event).then(() => {
+                  this.DocumentChange(cached_selection);
+                });
+              }
+              else {
+                Promise.resolve().then(() => this.DocumentChange(cached_selection));
+              }
+              */
 
             }
             break;

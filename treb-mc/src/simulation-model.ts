@@ -524,6 +524,18 @@ export class SimulationModel {
         },
       },
 
+      MakePosDef: {
+        description: 'Returns a matrix that is positive-definite',
+        arguments: [{ name: 'matrix' }],
+        fn: (mat: number[][]) => {
+          if (mat.some((arr) => {
+            return arr.some((v) => typeof v !== 'number');
+          })) return ValueError;
+          const m = Matrix.FromArray(mat);
+          return m.MakePosDef().ToArray();
+        }
+      },
+
       Cholesky: {
         arguments: [{ name: 'matrix' }, { name: 'transpose', default: false }],
         fn: (mat: number[][], transpose = false) => {

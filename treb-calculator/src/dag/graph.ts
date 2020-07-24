@@ -1,7 +1,7 @@
 
-import { Vertex } from './vertex';
+import { Vertex, Color } from './vertex';
 import { SpreadsheetVertex, CalculationResult } from './spreadsheet_vertex';
-import { ArrayVertex } from './array_vertex';
+// import { ArrayVertex } from './array_vertex';
 import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
 import { LeafVertex } from './leaf_vertex';
 import { Cells, ICellAddress, Area, IArea, Cell } from 'treb-base-types';
@@ -31,14 +31,19 @@ export abstract class Graph {
   public leaf_vertices: LeafVertex[] = [];
 
   // special
-  public array_vertices: {[index: string]: ArrayVertex} = {};
+  // public array_vertices: {[index: string]: ArrayVertex} = {};
 
   /** lock down access */
   private dirty_list: SpreadsheetVertexBase[] = [];
 
+  /** flag set on add edge */
+  private loop_check_required = false;
+
+  /*
   public IsArrayVertex(vertex: Vertex): vertex is ArrayVertex {
     return vertex.type === 'array-vertex';
   }
+  */
 
   public IsSpreadsheetVertex(vertex: Vertex): vertex is SpreadsheetVertex {
     return vertex.type === 'spreadsheet-vertex';
@@ -48,7 +53,7 @@ export abstract class Graph {
    * attach data. normally this is done as part of a calculation, but we can
    * do it without a calculation to support annotations that use leaf vertices
    */
-  public AttachData(model: DataModel){
+  public AttachData(model: DataModel): void {
     this.model = model;
     this.cells_map = {};
     for (const sheet of model.sheets) {
@@ -59,13 +64,12 @@ export abstract class Graph {
   /**
    * flush the graph, calculation tree and cells reference
    */
-  public FlushTree() {
+  public FlushTree(): void {
     this.dirty_list = [];
     this.volatile_list = [];
     this.vertices = [[]];
     this.leaf_vertices = [];
-    this.array_vertices = {};
-    // this.cells = undefined;
+    // this.array_vertices = {};
     this.cells_map = {};
   }
 
@@ -102,7 +106,7 @@ export abstract class Graph {
   public GetVertex(address: ICellAddress, create?: boolean): SpreadsheetVertex | undefined;
 
   /** returns the vertex at this address. creates it if necessary. */
-  public GetVertex(address: ICellAddress, create?: boolean) {
+  public GetVertex(address: ICellAddress, create?: boolean): SpreadsheetVertex | undefined {
 
     if (!address.sheet_id) { throw new Error('getvertex with no sheet id'); }
 
@@ -184,7 +188,7 @@ export abstract class Graph {
   }
 
   /** deletes the vertex at this address. */
-  public RemoveVertex(address: ICellAddress) {
+  public RemoveVertex(address: ICellAddress): void {
 
     if (!address.sheet_id) { throw new Error('removevertex with no sheet id'); }
 
@@ -196,7 +200,7 @@ export abstract class Graph {
   }
 
   /** removes all edges, for rebuilding. leaves value/formula as-is. */
-  public ResetVertex(address: ICellAddress) {
+  public ResetVertex(address: ICellAddress): void {
     const vertex = this.GetVertex(address, false);
     if (vertex) vertex.Reset();
   }
@@ -206,7 +210,7 @@ export abstract class Graph {
    * we have an option to set dirty because they get called together
    * frequently, saves a lookup.
    */
-  public ResetInbound(address: ICellAddress, set_dirty = false, create = true){
+  public ResetInbound(address: ICellAddress, set_dirty = false, create = true): void {
 
     const vertex = this.GetVertex(address, create);
 
@@ -228,36 +232,87 @@ export abstract class Graph {
     }
 
   }
+ 
+  /**
+   * global check returns true if there is any loop. this is more efficient
+   * than detecting loops on every call to AddEdge. uses the color algorithm
+   * from CLRS.
+   * 
+   */
+  public GlobalLoopCheck(): boolean {
 
-  public LoopCheck(v: Vertex, u: Vertex) {
+    // this flag is only set on AddEdge, and only cleared when we successfully
+    // get through this function. so if there are no new edges, we can bypass.
 
-    const check_list: Vertex[] = [];
+    if (!this.loop_check_required) { return false; }
 
-    const tail = (vertex: Vertex, depth = ''): boolean => {
+    // vertices is array [][][]
+    // build a list so we can simplify the second loop (waste of space?)
 
-      if (vertex === u) {
-        console.info('MATCH', vertex, v, u);
-        return true;
+    const list: Vertex[] = [];
+
+    for (const l1 of this.vertices) {
+      if (l1) {
+        for (const l2 of l1) {
+          if (l2) {
+            for (const vertex of l2) {
+              if (vertex) { 
+                vertex.color = Color.white; 
+                list.push(vertex);
+              }
+            }
+          }
+        }
       }
-
-      // switch to non-functional loop
-      for (const check of check_list) {
-        if (check === vertex) return false; // already checked this branch
-      }
-
-      check_list.push(vertex);
-
-      return vertex.edges_out.some((edge) => tail(edge, depth + '  '));
-    };
-
-    // throw or return value? [A: return value]
-
-    if (tail(v)) {
-      return GraphStatus.Loop; // throw( "not adding, loop");
     }
 
-    return GraphStatus.OK;
+    const tail = (vertex: Vertex): boolean => {
+      vertex.color = Color.gray;
+      for (const edge of vertex.edges_out) {
+        if (edge.color === Color.gray) { 
+          console.info('loop detected @', this.RenderAddress((vertex as SpreadsheetVertex).address));
+          return true; // loop
+        }
+        else if (edge.color === Color.white) {
+          if (tail(edge)) {
+            return true; // loop
+          }
+        }
+      }
+      vertex.color = Color.black;
+      return false;
+    };
 
+    for (const vertex of list) {
+      if (vertex.color === Color.white && tail(vertex)) { return true; }
+    }
+
+    this.loop_check_required = false;
+
+    return false;
+
+  }
+
+  /**
+   * render address as string; this is for reporting loops
+   */
+  public RenderAddress(address?: ICellAddress): string {
+
+    if (!address) { return 'undefined'; }
+
+    let sheet_name = '';
+    if (address.sheet_id && this.model) {
+      for (const sheet of this.model.sheets) {
+        if (address.sheet_id === sheet.id) {
+          sheet_name = sheet.name + '!';
+          break;
+        }
+      }
+    }
+
+    const area = new Area(address);
+    return sheet_name + area.spreadsheet_label;
+    
   }
 
   /** adds an edge from u -> v */
@@ -266,9 +321,13 @@ export abstract class Graph {
     const v_u = this.GetVertex(u, true);
     const v_v = this.GetVertex(v, true);
 
-    const status = this.LoopCheck(v_v, v_u);
+    // seems pretty uncommon, not sure it's a useful optimization
+    // const already_connected = v_u.edges_out.includes(v_v);
+    // if (already_connected) 
+    //  console.info('add edge', u.sheet_id, u.row, u.column, '->', v.sheet_id, v.row, v.column, already_connected ? '***' : '')
 
-    if (status === GraphStatus.Loop) { return status; }
+    // const status = this.LoopCheck(v_v, v_u);
+    // if (status === GraphStatus.Loop) { return status; }
 
     v_u.AddDependent(v_v);
     v_v.AddDependency(v_u);
@@ -286,11 +345,13 @@ export abstract class Graph {
       }, u);
     }
 
+    this.loop_check_required = true;
+
     return GraphStatus.OK;
   }
 
   /** removes edge from u -> v */
-  public RemoveEdge(u: ICellAddress, v: ICellAddress) {
+  public RemoveEdge(u: ICellAddress, v: ICellAddress): void {
 
     const v_u = this.GetVertex(u, false);
     const v_v = this.GetVertex(v, false);
@@ -302,7 +363,7 @@ export abstract class Graph {
 
   }
 
-  public SetAreaDirty(area: IArea) {
+  public SetAreaDirty(area: IArea): void {
 
     if (area.start.column === Infinity
       || area.end.column === Infinity
@@ -321,7 +382,7 @@ export abstract class Graph {
         const address: ICellAddress = {row, column, sheet_id};
         const vertex = this.GetVertex(address, false);
         if (vertex) { this.SetDirty(address); }
-        this.SetArraysDirty(address);
+        // this.SetArraysDirty(address);
       }
     }
 
@@ -336,7 +397,7 @@ export abstract class Graph {
   }
   */
 
-  public SetVertexDirty(vertex: SpreadsheetVertex) {
+  public SetVertexDirty(vertex: SpreadsheetVertex): void {
 
     // see below re: concern about relying on this
 
@@ -381,7 +442,7 @@ export abstract class Graph {
   }
 
   /** sets dirty */
-  public SetDirty(address: ICellAddress) {
+  public SetDirty(address: ICellAddress): void {
 
     const vertex = this.GetVertex(address, true);
     this.SetVertexDirty(vertex);
@@ -390,7 +451,8 @@ export abstract class Graph {
 
   // --- array vertices... testing ---
 
-  public CreateImplicitEdgeToArray(array_vertex: ArrayVertex) {
+  /*
+  public CreateImplicitEdgeToArray(array_vertex: ArrayVertex): void {
 
     if (!array_vertex.area.start.sheet_id) {
       console.info('area missing sheet id');
@@ -412,7 +474,7 @@ export abstract class Graph {
 
   }
 
-  public CreateImplicitEdgeToArrays(vertex: SpreadsheetVertex) {
+  public CreateImplicitEdgeToArrays(vertex: SpreadsheetVertex): void {
 
     if (!vertex.address) {
       console.info('vertex missing address');
@@ -434,12 +496,14 @@ export abstract class Graph {
       }
     }
   }
+  */
 
-  public SetArraysDirty(address: ICellAddress) {
+  /*
+  public SetArraysDirty(address: ICellAddress): void {
 
     throw new Error('set arrays dirty');
 
-    /*
+    / *
     // console.info("SAD", address)
 
     for (const key of Object.keys(this.array_vertices)) {
@@ -450,10 +514,12 @@ export abstract class Graph {
         array_vertex.SetDirty();
       }
     }
-    */
+    * /
 
   }
+  */
 
+  /*
   public GetArrayVertex(area: Area, create: true): ArrayVertex;
 
   public GetArrayVertex(area: Area, create?: boolean): ArrayVertex|undefined;
@@ -485,9 +551,13 @@ export abstract class Graph {
     delete this.array_vertices[area.spreadsheet_label];
 
   }
+  */
 
-  /** add edge from u -> v */
-  public AddArrayVertexEdge(u: Area, v: ICellAddress): GraphStatus {
+  /* * add edge from u -> v 
+   * 
+   * not used atm, removing (symbol) 
+   * /
+  public AddArrayVertexEdge__(u: Area, v: ICellAddress): GraphStatus {
 
     if (u.start.sheet_id === v.sheet_id && u.Contains(v)) {
       return GraphStatus.Loop;
@@ -496,9 +566,8 @@ export abstract class Graph {
     const v_u = this.GetArrayVertex(u, true); // create if necessary
     const v_v = this.GetVertex(v, true);
 
-    const status = this.LoopCheck(v_v, v_u);
-
-    if (status === GraphStatus.Loop) { return status; }
+    // const status = this.LoopCheck(v_v, v_u);
+    // if (status === GraphStatus.Loop) { return status; }
 
     v_u.AddDependent(v_v);
     v_v.AddDependency(v_u);
@@ -506,9 +575,10 @@ export abstract class Graph {
     return GraphStatus.OK;
 
   }
+  */
 
-  /** remove edge from u -> v */
-  public RemoveArrayVertexEdge(u: Area, v: ICellAddress) {
+  /* * remove edge from u -> v * /
+  public RemoveArrayVertexEdge(u: Area, v: ICellAddress): void {
 
     const v_u = this.GetArrayVertex(u, false);
     const v_v = this.GetVertex(v, false);
@@ -519,6 +589,7 @@ export abstract class Graph {
     v_v.RemoveDependency(v_u);
 
   }
+  */
 
   // --- leaf vertex api ---
 
@@ -526,7 +597,7 @@ export abstract class Graph {
    * adds a leaf vertex to the graph. this implies that someone else is
    * managing and maintaining these vertices: we only need references.
    */
-  public AddLeafVertex(vertex: LeafVertex){
+  public AddLeafVertex(vertex: LeafVertex): void {
 
     // ... don't add more than once. this is expensive but
     // the list should (generally speaking) be short, so not
@@ -547,7 +618,7 @@ export abstract class Graph {
   }
 
   /** removes vertex, by match */
-  public RemoveLeafVertex(vertex: LeafVertex){
+  public RemoveLeafVertex(vertex: LeafVertex): void {
     this.leaf_vertices = this.leaf_vertices.filter((test) => test !== vertex);
   }
 
@@ -559,7 +630,7 @@ export abstract class Graph {
    * there is no loop check (leaves are not allowed to have outbound
    * edges).
    */
-  public AddLeafVertexEdge(u: ICellAddress, v: LeafVertex) {
+  public AddLeafVertexEdge(u: ICellAddress, v: LeafVertex): GraphStatus {
 
     const v_u = this.GetVertex(u, true);
 
@@ -571,7 +642,7 @@ export abstract class Graph {
   }
 
   /** removes edge from u -> v */
-  public RemoveLeafVertexEdge(u: ICellAddress, v: LeafVertex) {
+  public RemoveLeafVertexEdge(u: ICellAddress, v: LeafVertex): void {
     const v_u = this.GetVertex(u, false);
 
     if (!v_u) return;
@@ -583,7 +654,7 @@ export abstract class Graph {
 
   // --- for initial load ---
 
-  public InitializeGraph() {
+  public InitializeGraph(): void {
 
     for (const vertex of this.dirty_list) {
 
@@ -611,7 +682,13 @@ export abstract class Graph {
   // --- calculation ---
 
   /** runs calculation */
-  public Recalculate() {
+  public Recalculate(): void {
+
+    /*
+    if (this.GlobalLoopCheck()) {
+      return GraphStatus.Loop;
+    }
+    */
 
     // FIXME: volatiles should proabbly be caclucated first,
     // not last, because they're probably primary.

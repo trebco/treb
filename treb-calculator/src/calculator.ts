@@ -684,6 +684,13 @@ export class Calculator extends Graph {
 
     this.UpdateAnnotations(); // all
 
+    if (result.status === GraphStatus.OK) {
+      const loop = this.GlobalLoopCheck();
+      if (loop) {
+        result.status = GraphStatus.Loop;
+      }
+    }
+    
     this.status = result ? result.status : GraphStatus.OK;
 
     if (this.status !== GraphStatus.OK){
@@ -1504,6 +1511,12 @@ export class Calculator extends Graph {
     }
 
     this.status = result ? result.status : GraphStatus.OK;
+
+    if (this.status === GraphStatus.OK) {
+      if(this.GlobalLoopCheck()) {
+        this.status = GraphStatus.Loop;
+      }
+    }
 
     if (this.status !== GraphStatus.OK){
       console.error( 'Loop detected, stopping');
