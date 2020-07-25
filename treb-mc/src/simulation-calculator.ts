@@ -81,8 +81,8 @@ export class MCCalculator extends Calculator {
     const flat_data = this.BuildCellsList(json_options);
     const result = this.RebuildGraph(flat_data, {});
 
-    if (this.GlobalLoopCheck()) {
-      throw new Error('loop found in graph');
+    if (this.LoopCheck()) {
+      throw new Error('Loop (circular dependency) found in graph');
     }
 
     // NOTE: not dealing with annotations here. the rationale is that these

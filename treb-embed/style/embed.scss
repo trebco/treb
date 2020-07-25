@@ -40,22 +40,74 @@
       "Open Sans",
       "Helvetica Neue", 
       sans-serif;
-    font-size: 16px;
+    font-size: 14px;
+    line-height: 28px;
   }
 
 }
 
 .treb-embed-dialog {
-  border: 1px solid #aaa;
+
+  border: 1px solid #ccc;
+  border-top-width: 3px;
+  border-top-color: rgb(0, 157, 255);
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  & > * {
+    padding: 2px 12px;
+    display: none;
+  }
+
+  /* middle: title, message and (maybe) progress bar */
+  & > *:nth-child(2) {
+    flex-grow: 1;
+    display: block;
+  }
+
+  & > svg {
+    fill: rgb(115, 130, 140);
+    width: 48px;
+    height: 48px;
+    cursor: default;
+
+    &:hover, &:active {
+      fill: rgb(4, 156, 251);
+    }
+
+  }
+
+  &.dialog-type-success {
+    border-top-color: rgb(68, 217, 38);
+  }
+
+  &.dialog-type-error {
+    border-top-color: rgb(249, 47, 6);
+  }
+
+  &.dialog-type-info {
+    border-top-color: rgb(115, 130, 140);
+  }
+
   padding: 1em;
   background: #fff;
-  text-align: center;
-  border-radius: 2px;
+  text-align: left;
+  border-radius: 3px;
   font-family: inherit;
+  
+  width: 80%;
+  max-width: 700px;
+
+  /* title */
+  .treb-embed-dialog-title {
+    white-space: pre;
+    font-weight: 500;
+  }
 
   /* text content */
   .treb-embed-dialog-message {
-    text-align: center;
     white-space: pre;
   }
 

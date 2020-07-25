@@ -10,6 +10,7 @@ import * as PackResults from 'treb-mc/src/pack-results';
 
 // config
 import * as build from '../../package.json';
+import { DialogType } from './progress-dialog';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
@@ -101,18 +102,19 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
   }
 
-  /** mc-specific dialog; has constant string */
+  /* * mc-specific dialog; has constant string * /
   public UpdateMCDialog(progress = 0, text?: string, show = false) {
     if (typeof text === 'undefined') {
       text = `${progress}%`;
     }
     if (show) {
-      this.ShowProgressDialog(`Running Monte Carlo Simulation...`, progress);
+      this.dialog?.ShowProgressDialog(`Running Monte Carlo Simulation...`, progress);
     }
     else {
-      this.UpdateDialog(`Running Monte Carlo Simulation...`, progress);
+      this.dialog?.Update(`Running Monte Carlo Simulation...`, progress);
     }
   }
+  */
 
   /**
    * init workers. we have a separate method so we can warm start
@@ -150,7 +152,15 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
         console.error(`worker error (worker #${i})`);
         console.info(event);
 
-        this.ShowMessageDialog('Calculation failed (worker error)', 2500);
+        const message = event.message || 'Worker error.';
+
+        this.dialog?.ShowDialog({
+          title: 'Calculation failed',
+          message,
+          close_box: true,
+          type: DialogType.error,
+          timeout: 3000,
+        });
 
         // flush
         for (const entry of this.simulation_resolution) {
@@ -179,20 +189,39 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       throw new Error('simulation already running');
     }
 
-    this.UpdateMCDialog(0, 'Initializing', true);
+    // this.UpdateMCDialog(0, 'Initializing', true);
+    this.dialog?.ShowDialog({
+      // progress_bar: true,
+      // progress: 0,
+      title: 'Running Monte Carlo Simulation...',
+      message: 'Starting',
+      type: DialogType.info,
+    });
 
     if (!this.workers.length) {
       try {
         await this.InitWorkers();
       }
       catch(err) {
-        this.ShowMessageDialog('Calculation failed', 2500);
+        this.dialog?.ShowDialog({
+          title: 'Calculation failed',
+          message: 'Worker not initialized.',
+          close_box: true,
+          type: DialogType.error,
+          timeout: 3000,
+        });
         throw new Error('worker not initialized');
       }
     }
 
     if (!this.workers[0]) {
-      this.ShowMessageDialog('Calculation failed', 2500);
+      this.dialog?.ShowDialog({
+        title: 'Calculation failed',
+        message: 'Worker not initialized.',
+        close_box: true,
+        type: DialogType.error,
+        timeout: 3000,
+      });
       throw new Error('worker not initialized');
     }
 
@@ -317,7 +346,13 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     
     if (progress !== this.simulation_status.aggregate_progress) {
       this.simulation_status.aggregate_progress = progress;            
-      this.UpdateMCDialog(progress);
+      // this.UpdateMCDialog(progress);
+
+      this.dialog?.Update({
+        message: `${progress}% complete`,
+      });
+ 
+
       this.Publish({type: 'simulation-progress', progress});
     }
 
@@ -367,7 +402,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
             });
 
             setTimeout(() => {
-              this.HideDialog();
+              this.dialog?.HideDialog();
               this.Publish({ 
                 type: 'simulation-complete',
                 elapsed: this.last_simulation_data?.elapsed || 0,
@@ -380,7 +415,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
               }
               this.simulation_resolution = [];
 
-            }, 500);
+            }, 500); // 500ms? is this waiting for something?
           });
         }
         else {

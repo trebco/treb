@@ -4105,6 +4105,14 @@ export class Grid {
     this.ExecCommand({ key: CommandKey.Clear, area });
   }
 
+  private Error(message: string) {
+    console.info('Error', message);
+    this.grid_events.Publish({
+      type: 'error',
+      message,
+    });
+  }
+
   /**
    * sets cell value, inferring type and (possibly) inferring cell style
    * (numbers only), so that 10% and $1,000 retain styles. this should only
@@ -4135,7 +4143,7 @@ export class Grid {
     if (cell.area) {
       if ((!array && cell.area.count > 1) || !selection.area || !selection.area.Equals(cell.area)) {
         // FIXME // this.Publish({type: 'grid-error', err: GridErrorType.ArrayChange, reference: selection.area });
-        console.info('rejected: can\'t change part of an array (1)');
+        this.Error(`You can't change part of an array.`);
         return;
       }
     }
@@ -4152,7 +4160,7 @@ export class Grid {
       }, false);
       if (existing_array) {
         // FIXME // this.Publish({type: 'grid-error', err: GridErrorType.ArrayChange, reference });
-        console.info('rejected: can\'t change part of an array (2)');
+        this.Error(`You can't change part of an array.`);
         return;
       }
     }
@@ -4171,7 +4179,7 @@ export class Grid {
       }
       if (!match) {
         this.layout.HighlightError(selection.target);
-        console.info('rejected: invalid value');
+        this.Error(`Invalid value (data validation).`);
         return; 
       }
     }

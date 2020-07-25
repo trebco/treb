@@ -1,4 +1,4 @@
-import { Vertex } from './vertex';
+import { Vertex, Color } from './vertex';
 
 type Graph = import('./graph').Graph; // circular; type only
 

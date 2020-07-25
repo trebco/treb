@@ -84,6 +84,23 @@ export class Vertex {
     this.edges_in = this.edges_in.filter((check) => check !== edge);
   }
 
+  /**
+   * 
+   */
+  public LoopCheck(): boolean {
+    this.color = Color.gray;
+
+    for (const edge of this.edges_out) {
+      if (edge.color === Color.gray) { return true; } // loop
+      if (edge.color === Color.white) {
+        if (edge.LoopCheck()) { return true; } // loop
+      }
+    }
+
+    this.color = Color.black;
+    return false;
+  }
+
 }
 
 

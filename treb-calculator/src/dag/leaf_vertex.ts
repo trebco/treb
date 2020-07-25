@@ -20,7 +20,7 @@ import { Vertex } from './vertex';
  */
 export class LeafVertex extends SpreadsheetVertex {
 
-  public state_id: number = 0;
+  public state_id = 0;
   public type = 'leaf-vertex'; // for type guard
 
   protected state_representation = '';
@@ -59,7 +59,7 @@ export class LeafVertex extends SpreadsheetVertex {
   }
 
   /** overrides calculate function */
-  public Calculate(graph: any) {
+  public Calculate(graph: any): void {
 
     // if we are not dirty, nothing to do
     if (!this.dirty) return;
@@ -78,7 +78,7 @@ export class LeafVertex extends SpreadsheetVertex {
     // we are not allowed to have edges out, so nothing to do
   }
 
-  public AddDependent(edge: Vertex){
+  public AddDependent(edge: Vertex): void {
     throw(new Error('leaf vertex cannot have dependents'));
   }
 

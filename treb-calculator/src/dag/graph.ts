@@ -27,6 +27,11 @@ export abstract class Graph {
   public cells_map: {[index: number]: Cells} = {};
   public model?: DataModel;
 
+  /**
+   * where is the loop in the graph (or at least the first one we found)?
+   */
+  public loop_hint?: string;
+
   // special
   public leaf_vertices: LeafVertex[] = [];
 
@@ -141,7 +146,20 @@ export abstract class Graph {
     }
 
     const vertex = new SpreadsheetVertex();
-    vertex.address = { ...address };
+    // vertex.address = { ...address };
+
+    // because we are passing in something other than an address, we're 
+    // collecting a lot of extraneous data here. I am worried that someone
+    // is relying on it, so we will force it to be just the address props.
+    // see if something breaks.
+
+    vertex.address = {
+      row: address.row,
+      column: address.column,
+      absolute_row: address.absolute_row,
+      absolute_column: address.absolute_column,
+      sheet_id: address.sheet_id,
+    };
 
     // this breaks if the cell reference does not point to a cell; that
     // happens if a formula references an empty cell, and we run through
@@ -231,15 +249,106 @@ export abstract class Graph {
       this.SetVertexDirty(vertex);
     }
 
+    // vertex.expression = { type: 'missing', id: -1 };
+    // vertex.expression_error = false;
+    
   }
- 
+
+  /* * for dev * /
+  public ForceClean() {
+    for (const l1 of this.vertices) {
+      if (l1) {
+        for (const l2 of l1) {
+          if (l2) {
+            for (const vertex of l2) {
+              if (vertex && vertex.dirty) {
+                vertex.dirty = false;
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  / * * for dev, check if any vertices are dirtices * /
+  public CheckDirty() {
+
+    for (const l1 of this.vertices) {
+      if (l1) {
+        for (const l2 of l1) {
+          if (l2) {
+            for (const vertex of l2) {
+              if (vertex && vertex.dirty) {
+                console.info("DIRTY", vertex);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+  }
+  */
+
+  /**
+   * set all vertices to white, for the color algorithm. includes
+   * leaf vertices, although it's not necessary to check them -- we 
+   * are including in case they show up via calc
+   * 
+   * it should not be necessary to check constants or formula with
+   * no inbound edges (deps) so we can start those black
+   * 
+   * actually those are immaterial as they should (theoretically) never
+   * get tested, if we are testing lazily
+   * 
+   * actually you should be able to omit nodes with no edges out, as
+   * well... right? b/c there's no way they loop.
+   * 
+   * actually all of that is a waste of time. if a vertex is never 
+   * checked then it doesn't matter what color it is. save the test,
+   * just set everyone.
+   * 
+   * that's not quite right, because you don't want loop errors to show
+   * up in cells that don't have deps, it doesn't make sense -- you want
+   * errors to show up where there are problems. not 100% sure how to 
+   * solve that, yet...
+   * 
+   */
+  public ResetLoopState(): void {
+
+    for (const l1 of this.vertices) {
+      if (l1) {
+        for (const l2 of l1) {
+          if (l2) {
+            for (const vertex of l2) {
+              if (vertex) {
+                vertex.color = Color.white; 
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // this is unecessary
+
+    for (const vertex of this.leaf_vertices) {
+      if (vertex.edges_in.length) {
+        vertex.color = Color.white;
+      }
+    }
+    
+  }
+
   /**
    * global check returns true if there is any loop. this is more efficient
    * than detecting loops on every call to AddEdge. uses the color algorithm
    * from CLRS.
    * 
    */
-  public GlobalLoopCheck(): boolean {
+  public LoopCheck(): boolean {
 
     // this flag is only set on AddEdge, and only cleared when we successfully
     // get through this function. so if there are no new edges, we can bypass.
@@ -270,7 +379,8 @@ export abstract class Graph {
       vertex.color = Color.gray;
       for (const edge of vertex.edges_out) {
         if (edge.color === Color.gray) { 
-          console.info('loop detected @', this.RenderAddress((vertex as SpreadsheetVertex).address));
+          this.loop_hint = this.RenderAddress((vertex as SpreadsheetVertex).address);
+          console.info('loop detected @', this.loop_hint);
           return true; // loop
         }
         else if (edge.color === Color.white) {
@@ -288,6 +398,7 @@ export abstract class Graph {
     }
 
     this.loop_check_required = false;
+    this.loop_hint = undefined;
 
     return false;
 
@@ -345,7 +456,7 @@ export abstract class Graph {
       }, u);
     }
 
-    this.loop_check_required = true;
+    this.loop_check_required = true; // because new edges
 
     return GraphStatus.OK;
   }
@@ -415,6 +526,10 @@ export abstract class Graph {
     // is it safe to assume that, if the dirty flag is set, it's
     // on the dirty list? I'm not sure that's the case if there's
     // an error.
+
+    // A: definitely not. investigating...
+
+
 
     this.dirty_list.push(vertex);
     vertex.SetDirty();
@@ -708,6 +823,33 @@ export abstract class Graph {
 
     this.volatile_list = [];
     this.dirty_list = [];
+
+    if (this.loop_check_required) {
+      // console.info('reset loop state');
+
+      this.ResetLoopState();
+      this.loop_check_required = false;
+
+      /*
+      for (const vertex of calculation_list) {
+        if (vertex.color === Color.white) {
+          console.info('loop check');
+          if (vertex.LoopCheck2()) {
+            vertex.dirty = false;
+  
+            // this should alwys be true, because it has edges so
+            // it must be a formula (right?)
+     
+            (vertex as SpreadsheetVertex)?.reference?.SetCalculationError('LOOP');
+
+          }
+        }
+      }
+      */
+
+    }
+
+    // console.info("CL", calculation_list)
 
     // recalculate everything that's dirty. FIXME: optimize path
     // so we do fewer wasted checks of "are all my deps clean"?

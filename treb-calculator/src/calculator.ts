@@ -432,7 +432,7 @@ export class Calculator extends Graph {
       };
     }
 
-    return this.expression_calculator.Calculate(vertex.expression, vertex.address);
+    return this.expression_calculator.Calculate(vertex.expression, vertex.address); // <- this one
   }
 
 
@@ -684,13 +684,15 @@ export class Calculator extends Graph {
 
     this.UpdateAnnotations(); // all
 
+    /*
     if (result.status === GraphStatus.OK) {
-      const loop = this.GlobalLoopCheck();
+      const loop = this.LoopCheck();
       if (loop) {
         result.status = GraphStatus.Loop;
       }
     }
-    
+    */
+
     this.status = result ? result.status : GraphStatus.OK;
 
     if (this.status !== GraphStatus.OK){
@@ -1224,6 +1226,9 @@ export class Calculator extends Graph {
           
           if (parse_result.expression.type === 'call') {
             const func = this.library.Get(parse_result.expression.name);
+
+            // this is for sparklines... right?
+
             if (func && func.render) {
 
               // 'cell' here is not a reference to the actual cell (sadly)
@@ -1512,11 +1517,13 @@ export class Calculator extends Graph {
 
     this.status = result ? result.status : GraphStatus.OK;
 
+    /*
     if (this.status === GraphStatus.OK) {
-      if(this.GlobalLoopCheck()) {
-        this.status = GraphStatus.Loop;
+      if(this.LoopCheck()) {
+        result.status = this.status = GraphStatus.Loop;
       }
     }
+    */
 
     if (this.status !== GraphStatus.OK){
       console.error( 'Loop detected, stopping');

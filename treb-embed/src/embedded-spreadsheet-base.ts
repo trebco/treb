@@ -10,7 +10,7 @@ import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser } from 'treb-format';
 
 // local
-import { ProgressDialog } from './progress-dialog';
+import { ProgressDialog, MessageDialogOptions, DialogType } from './progress-dialog';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions, DefaultExportOptions } from './options';
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 
@@ -29,6 +29,7 @@ import '../style/embed.scss';
 // config
 import * as build from '../../package.json';
 import { SerializedModel } from 'treb-grid/src/types/data_model';
+import { GraphStatus } from 'treb-calculator/src/dag/graph';
 
 interface UndoEntry {
   data: string;
@@ -182,14 +183,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   protected options: EmbeddedSpreadsheetOptions;
 
+  protected dialog?: ProgressDialog;
+
   /** localized parser instance. we're sharing. */
   private get parser() { 
     return this.calculator.parser;
   }
 
   private node?: HTMLElement;
-
-  private dialog?: ProgressDialog;
 
   /**
    * export worker (no longer using worker-loader).
@@ -351,6 +352,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.grid.grid_events.Subscribe((event) => {
 
         switch (event.type) {
+
+          case 'error':
+            this.dialog?.ShowDialog({
+              type: DialogType.error,
+              message: event.message,
+              title: event.title || 'Error',
+              timeout: 3000,
+              close_box: true,
+            });
+            break;
 
           case 'selection':
             this.UpdateSelection(event.selection);
@@ -515,6 +526,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       });
     }
 
+    /* testing dialog
+    requestAnimationFrame(() => {
+      this.dialog?.ShowMessageDialog({
+        title: 'Dramatic error occurred',
+        message: 'Goon fahoon. Tacos the game!',
+        close_box: true,
+      });
+    });
+    */
+
   }
 
   /**
@@ -596,23 +617,27 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
-  public HandleDrop(event: DragEvent) {
+  public HandleDrop(event: DragEvent): void {
 
     if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
       event.preventDefault();
       this.LoadFileInternal(event.dataTransfer.files[0]).then(() => {
         // ...
       }).catch((err) => {
-        this.ShowMessageDialog(
-            'Reading the file failed. Make sure your\n' +
-            'file is a valid XLSX, CSV or TREB file.', 2500);
+        this.dialog?.ShowDialog({
+          title: 'Error reading file',
+          close_box: true,
+          message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
+          type: DialogType.error,
+          timeout: 3000, 
+        });
         console.error(err);
       });
     }
   }
 
   /** set freeze area */
-  public Freeze(rows = 0, columns = 0) {
+  public Freeze(rows = 0, columns = 0): void {
     this.grid.Freeze(rows, columns, true);
   }
 
@@ -1137,7 +1162,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }).catch(err => {
 
       if (/invalid uri/i.test(err.message)) {
-        this.ShowMessageDialog('Export failed. The worker cannot run from\nthe filesystem, please use a web server.', 2500);
+        this.dialog?.ShowDialog({
+          title: 'Error exporting file',
+          close_box: true,
+          message: 'The worker cannot run from the filesystem, please use a web server.',
+          timeout: 3000,
+          type: DialogType.error,
+        });
       }
 
       // rethrow
@@ -1319,7 +1350,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     catch (err) {
       console.info('error loading network document', uri);
       console.error(err);
-      this.ShowMessageDialog('Error loading file', 1500);
+      this.dialog?.ShowDialog({
+        title: 'Error loading file',
+        close_box: true,
+        message: 'The network document returned an error',
+        type: DialogType.error,
+        timeout: 3000,
+      });
       this.Reset();
     }
 
@@ -1395,27 +1432,30 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** load a file (desktop) */
-  public async LoadLocalFile() {
+  public async LoadLocalFile(): Promise<void> {
 
     const file = await(this.SelectFile(
       '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
 
     if (file) { 
     
-      try {
-        this.LoadFileInternal(file);
-      }
-      catch (err) {
-        console.error(err);
-        this.ShowMessageDialog('Error loading file', 1500);
-      }
+      this.LoadFileInternal(file).catch(() => {
+        this.dialog?.ShowDialog({
+          title: 'Error reading file',
+          close_box: true,
+          message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
+          type: DialogType.error,
+          timeout: 3000,
+        });
+
+      });
 
     }
 
   }
 
   /** called when we have a file to write to */
-  public LoadFileInternal(file: File) {
+  public LoadFileInternal(file: File): Promise<void> {
 
     if (!file) { return Promise.resolve(); }
 
@@ -2064,19 +2104,39 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** recalc sheet */
-  public async Recalculate(event?: GridEvent, formula_only = false) {
+  public async Recalculate(event?: GridEvent, formula_only = false): Promise<void> {
 
     let area: Area | undefined;
     if (event && event.type === 'data' && event.area) {
       area = event.area;
     }
 
-    // NOTE: accessing grid.cells, find a better approach
+    const result = await this.calculator.Calculate(this.grid.model, area, { formula_only });
 
-    await this.calculator.Calculate(this.grid.model, area, { formula_only });
+    /* this can't happen anymore, we're inlining loop errors
+
+    if (result.status === GraphStatus.Loop) { // && !area) {
+
+      let message = `Loop detected in graph.`;
+      if (this.calculator.loop_hint) {
+        message += ` Check ${this.calculator.loop_hint}.`;
+      }
+
+      this.dialog?.ShowMessageDialog({
+        title: 'Calculation error',
+        message,
+        close_box: true,
+        type: DialogType.error,
+        timeout: 3500,
+      });
+
+    }
+    */
+
     this.grid.Update(true); // , area);
     this.UpdateAnnotations();
     this.Publish({ type: 'data' });
+
   }
 
   public SaveLocalStorage(key?: string) {
@@ -2211,14 +2271,32 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.Publish({type: 'selection'});
   }
 
+  /*
   public HideDialog() {
     this.dialog?.HideDialog();
   }
+  */
 
+  /*
   public ShowProgressDialog(message?: string, progress?: number) {
     this.dialog?.ShowProgressDialog(message, progress);
   }
+  */
 
+  /*
+  public ShowMessageDialog(options: Partial<MessageDialogOptions>, timeout = 0) {
+    const dialog = this.dialog;
+    if (dialog) {
+      dialog.ShowMessageDialog(options);
+      if (timeout) {
+        setTimeout(() => dialog.HideDialog(), timeout);
+      }
+    }
+
+  }
+  */
+
+  /*
   public ShowMessageDialog(message?: string, timeout = 0) { 
     const dialog = this.dialog;
     if (dialog) {
@@ -2228,6 +2306,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
     }
   }
+  */
 
   /* * show/hide dialog, generic message * /
   public ShowDialog(show = true, message?: string, timeout = 0) {
@@ -2244,10 +2323,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
   */
 
-  /** paint message to dialog (implicit show=true) */
+  /* * paint message to dialog (implicit show=true)  * /
   public UpdateDialog(message?: string, progress?: number) {
     this.dialog?.Update(message, progress);
   }
+  */
 
   /** overloadable for subclasses */
   protected InitCalculator(): Calculator {
