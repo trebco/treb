@@ -4178,7 +4178,7 @@ export class Grid {
         }
       }
       if (!match) {
-        this.layout.HighlightError(selection.target);
+        // removed in favor of error //this.layout.HighlightError(selection.target);
         this.Error(`Invalid value (data validation).`);
         return; 
       }

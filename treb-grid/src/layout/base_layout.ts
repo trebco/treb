@@ -129,8 +129,8 @@ export abstract class BaseLayout {
 
   private selection_layout_token?: any;
 
-  private error_highlight: HTMLDivElement;
-  private error_highlight_timeout?: any;
+  // private error_highlight: HTMLDivElement;
+  // private error_highlight_timeout?: any;
 
   private note_node: HTMLDivElement;
 
@@ -160,7 +160,7 @@ export abstract class BaseLayout {
     this.tooltip = // document.querySelector('.treb-tooltip'); // ||
       DOMUtilities.CreateDiv('treb-tooltip');
 
-    this.error_highlight = DOMUtilities.CreateDiv('treb-error-highlight');
+    // this.error_highlight = DOMUtilities.CreateDiv('treb-error-highlight');
 
     this.dropdown_caret = document.createElementNS(SVGNS, 'svg') as SVGSVGElement;
     this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
@@ -436,9 +436,9 @@ export abstract class BaseLayout {
       container.appendChild(this.mask);
     }
 
-    if (!this.error_highlight.parentElement) {
-      container.appendChild(this.error_highlight);
-    }
+    //if (!this.error_highlight.parentElement) {
+    //  container.appendChild(this.error_highlight);
+    //}
 
     if (!this.tooltip.parentElement) {
       container.appendChild(this.tooltip);
@@ -636,7 +636,11 @@ export abstract class BaseLayout {
     this.tooltip.classList.remove('arrow-left');
   }
 
-  /** briefly flash red, to indicate an error */
+  /*
+
+  highlight error removed in favor of container errors, event reporting
+  
+  * briefly flash red, to indicate an error * /
   public HighlightError(address: ICellAddress): void {
 
     const target_rect = this.OffsetCellAddressToRectangle(address).Shift(
@@ -660,6 +664,7 @@ export abstract class BaseLayout {
     }, 250)
 
   }
+  */
 
   /** show column/row resize tooltip */
   public ShowTooltip(options: TooltipOptions = {}) {
