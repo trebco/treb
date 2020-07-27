@@ -98,39 +98,48 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
     // especially for simulation, where we can determine ahead of time if
     // there are any loops
 
-    if (this.color === Color.white) {
+    if (this.color === Color.white && this.LoopCheck()) {
 
       // console.info('LC', `R${this.address?.row} C${this.address?.column}`, this);
 
-      if (this.LoopCheck()) {
+      // if (this.LoopCheck()) {
         // throw new Error('loop loop 2')
-
-        // console.info('LC mark', `R${this.address?.row} C${this.address?.column}`, this);
 
         this.dirty = false;
 
-        // this should alwys be true, because it has edges so
-        // it must be a formula (right?)
+        if (this.edges_in.length) {
 
-        // we don't have to do that test because now we only set
-        // vertices -> white if they match
+          // console.info('set loop err', `R${this.address?.row} C${this.address?.column}`, this);
 
-        if (this.reference && (
-            this.array_head || this.reference.type === ValueType.formula )) {
-          this.reference.SetCalculationError('LOOP');
+          // this should alwys be true, because it has edges so
+          // it must be a formula (right?)
+
+          // we don't have to do that test because now we only set
+          // vertices -> white if they match
+
+          if (this.reference && (
+              this.array_head || this.reference.type === ValueType.formula )) {
+            this.reference.SetCalculationError('LOOP');
+          }
+          //this.reference?.SetCalculationError('LOOP');
+
+          // intuitively this seems like a good idea but I'm not sure
+          // that it is actually necessary (TODO: check)
+
+          for (const edge of this.edges_out){
+            (edge as SpreadsheetVertex).Calculate(graph);
+          }
+        
+          return;
+
         }
-        //this.reference?.SetCalculationError('LOOP');
-
-        // intuitively this seems like a good idea but I'm not sure
-        // that it is actually necessary (TODO: check)
-
-        for (const edge of this.edges_out){
-          (edge as SpreadsheetVertex).Calculate(graph);
+        /*
+        else {
+          console.info('SKIP loop err', `R${this.address?.row} C${this.address?.column}`, this);
         }
+        */
 
-        return;
-
-      }
+      // }
     }
 
     // this is done before checking if it's a formula for the case of
@@ -151,7 +160,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
     for (const edge of this.edges_in) {
       if ((edge as SpreadsheetVertexBase).dirty) {
-        // console.info('exiting on dirty', `R${this.address?.row} C${this.address?.column}`, this);
+        // console.info('exiting on dirty deps', `R${this.address?.row} C${this.address?.column}`, this);
         return;
       }
     }

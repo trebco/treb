@@ -281,7 +281,9 @@ export abstract class Graph {
           if (l2) {
             for (const vertex of l2) {
               if (vertex && vertex.dirty) {
-                console.info("DIRTY", vertex);
+                console.info("DIRTY", `R${vertex.address?.row} C${vertex.address?.column}`, vertex);
+
+
               }
             }
           }
@@ -848,6 +850,13 @@ export abstract class Graph {
       */
 
     }
+
+    /*
+    for(const vertex of calculation_list as SpreadsheetVertex[]) {
+      console.info("CL", `R${vertex.address?.row} C${vertex.address?.column}`, vertex);
+
+    } 
+    */
 
     // console.info("CL", calculation_list)
 

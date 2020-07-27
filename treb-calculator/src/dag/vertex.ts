@@ -85,21 +85,52 @@ export class Vertex {
   }
 
   /**
+   * this is called during calculation (if necessary). on a hit (loop), we 
+   * reset the color of this, the test node, to white. there are two reasons 
+   * for this: 
    * 
+   * one, we want subsequent tests to also find the hit. in some cases we may
+   * not be marking the node as a loop (if it precedes the backref in the graph),
+   * so we want subsequent nodes to also hit the loop. [Q: this makes no sense,
+   * because this would still hit if the node were marked grey, assuming you
+   * test for that].
+   * 
+   * two, if you fix the loop, on a subsequent call we want to force a re-check,
+   * which we can do if the vertex is marked white. [Q: could also be done on
+   * gray?]
+   * 
+   * [A: logically you are correct, but this works, and matching grey does not].
    */
   public LoopCheck(): boolean {
     this.color = Color.gray;
 
     for (const edge of this.edges_out) {
-      if (edge.color === Color.gray) { return true; } // loop
-      if (edge.color === Color.white) {
-        if (edge.LoopCheck()) { return true; } // loop
-      }
+      if (edge.color === Color.gray || (edge.color === Color.white && edge.LoopCheck())) { 
+        this.color = Color.white; // someone else can test
+        return true; // loop
+      } 
     }
 
     this.color = Color.black;
     return false;
   }
+
+  /*
+  public LoopCheck2(compare: Vertex = this): boolean {
+    this.color = Color.gray;
+
+    for (const edge of this.edges_out) {
+      if (edge.color === Color.gray || (edge.color === Color.white && edge.LoopCheck2(compare))) { 
+        this.color = Color.white; // someone else can test
+        return edge === compare; // loop
+      } 
+    }
+
+    this.color = Color.black;
+    return false;
+    
+  }
+  */
 
 }
 
