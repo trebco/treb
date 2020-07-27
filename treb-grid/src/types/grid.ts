@@ -6543,7 +6543,9 @@ export class Grid {
 
       const cell = sheet.CellData(command.area);
       if (cell.area && (cell.area.rows > 1 || cell.area.columns > 1)) {
-        throw new Error('can\'t change part of an array');
+        // throw new Error('can\'t change part of an array');
+        this.Error(`You can't change part of an array.`);
+        return;
       }
 
       // single cell
@@ -6592,16 +6594,23 @@ export class Grid {
 
   private ClearAreaInternal(area: Area) {
 
+    let error = false;
     area = this.active_sheet.RealArea(area); // collapse
 
     this.active_sheet.cells.IterateArea(area, (cell) => {
       if (cell.area && !area.ContainsArea(cell.area)) {
-        throw new Error('can\'t change part of an array');
+        // throw new Error('can\'t change part of an array');
+        error = true;
       }
     });
 
-    this.active_sheet.ClearArea(area, true);
-
+    if (error) {
+      this.Error(`You can't change part of an array.`);
+    }
+    else {
+      this.active_sheet.ClearArea(area, true);
+    }
+    
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -6942,13 +6951,20 @@ export class Grid {
 
         case CommandKey.SetRange:
           {
+            // area could be undefined if there's an error
+            // (try to change part of an array)
+
             const area = this.SetRangeInternal(command);
-            data_area = Area.Join(area, data_area);
+            if (area) {
+              
+              data_area = Area.Join(area, data_area);
 
-            // normally we don't paint, we wait for the calculator to resolve
+              // normally we don't paint, we wait for the calculator to resolve
 
-            if (this.options.repaint_on_cell_change) {
-              render_area = Area.Join(area, render_area);
+              if (this.options.repaint_on_cell_change) {
+                render_area = Area.Join(area, render_area);
+              }
+
             }
 
           }
