@@ -422,6 +422,12 @@ export class ExpressionCalculator {
       // if there's a conditional (like an IF function). although that is the
       // exception rather than the rule...
 
+      // ok we can handle IF functions, at the expense of some tests... 
+      // is it worth it? 
+
+      const if_function = outer.name.toLowerCase() === 'if';
+      let skip_argument_index = -1;
+
       let argument_error: FunctionError|undefined;
       const argument_descriptors = func.arguments || []; // map
 
@@ -430,7 +436,15 @@ export class ExpressionCalculator {
         // short circuit
         if (argument_error) { return undefined; }
 
-        if (typeof arg === 'undefined') { return undefined; } // FIXME: required?
+        // if function, wrong branch
+        if (arg_index === skip_argument_index) { 
+          return undefined; 
+        }
+
+        if (typeof arg === 'undefined') { 
+          if (if_function && arg_index === 0) { skip_argument_index = 1; }
+          return undefined; // FIXME: required?
+        }
 
         const descriptor = argument_descriptors[Math.min(arg_index, argument_descriptors.length - 1)] || {}; // recycle last one
 
@@ -452,6 +466,11 @@ export class ExpressionCalculator {
           if (typeof result === 'object' && result.error && !descriptor.allow_error) {
             argument_error = result;
           }
+          else if (if_function && arg_index === 0) {
+            const result_truthy = (typeof result === 'string') ? result.toLowerCase() !== 'false' : !!result;
+            skip_argument_index = result_truthy ? 2 : 1;
+          }
+
           return result;
         }
 
