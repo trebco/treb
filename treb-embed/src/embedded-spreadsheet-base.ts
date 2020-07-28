@@ -545,7 +545,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    * @param func 
    */
-  public Batch(func: () => void): void {
+  public async Batch(func: () => void): Promise<void> {
 
     const cached_selection = this.last_selection;
     const events = this.grid.Batch(func);
@@ -571,10 +571,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (reset) { 
       this.calculator.Reset();
     }
+
     if (recalc || reset) {
-      this.Recalculate().then(() => {
-        this.DocumentChange(cached_selection);
-      });
+      await this.Recalculate();
+      this.DocumentChange(cached_selection);
     }
 
   }
