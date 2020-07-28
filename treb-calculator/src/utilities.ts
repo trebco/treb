@@ -97,6 +97,7 @@ export const Uint8ToBase64 = (data: Uint8Array): string => {
  * callers can use rest spread to collect arguments.
  */
 export const Flatten = (args: any[]): any[] => {
+  if (!Array.isArray(args)) { return [args]; } // special case
   return args.reduce((a: any[], b: any) => {
     if (typeof b === 'undefined') return a;
     if (Array.isArray(b)) return a.concat(Flatten(b));
