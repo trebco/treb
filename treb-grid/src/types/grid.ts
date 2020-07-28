@@ -1071,12 +1071,18 @@ export class Grid {
     this.ExecCommand(commands);
   }
 
-  public ShowSheet(index = 0, show = true): void {
-    this.ExecCommand({
+  public ShowSheet(index: number|string = 0, show = true): void {
+
+    const command: ShowSheetCommand = {
       key: CommandKey.ShowSheet,
-      index,
       show,
-    });
+    };
+
+    if (typeof index === 'string') { command.name = index; }
+    else { command.index = index; }
+
+    this.ExecCommand(command);
+    
   }
 
   /** new version for multiple sheets */
