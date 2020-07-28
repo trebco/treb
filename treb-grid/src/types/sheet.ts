@@ -2117,9 +2117,9 @@ export class Sheet {
    * generates the composite style for the given cell. this
    * should only be used to generate a cache of styles (Q: really? PERF?)
    *
-   * the last parameter is used for testing when pruning. we want to check
-   * what happens if the cell style is not applied; if nothing happens, then
-   * we can drop the cell style (or the property in the style).
+   * the "apply_cell_style" parameter is used for testing when pruning. we
+   * want to check what happens if the cell style is not applied; if nothing 
+   * happens, then we can drop the cell style (or the property in the style).
    */
   private CompositeStyleForCell(address: ICellAddress, apply_cell_style = true, apply_row_pattern = true) {
 
@@ -2148,7 +2148,7 @@ export class Sheet {
   }
 
   /**
-   *
+   * can we use the rendered JSON as a key, instead? 
    */
   private GetStyleIndex(style: Style.Properties) {
 
