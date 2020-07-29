@@ -523,12 +523,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         border: this.grid.theme.interface_dialog_border,
         background: this.grid.theme.interface_dialog_background,
         text: this.grid.theme.interface_dialog_color,
+        fontFamily: this.grid.theme.interface_dialog_font_face,
+        fontSize: this.grid.theme.interface_dialog_font_size,
       });
     }
 
-    /* testing dialog
+    /*
+    // testing dialog
     requestAnimationFrame(() => {
-      this.dialog?.ShowMessageDialog({
+      this.dialog?.ShowDialog({
         title: 'Dramatic error occurred',
         message: 'Goon fahoon. Tacos the game!',
         close_box: true,
@@ -655,6 +658,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       border: this.grid.theme.interface_dialog_border,
       background: this.grid.theme.interface_dialog_background,
       text: this.grid.theme.interface_dialog_color,
+      fontSize: `${this.grid.theme.interface_font_size_value}${this.grid.theme.interface_font_size_unit}`,
+      fontFamily: `${this.grid.theme.interface_font_face}`,
     });
   }
 

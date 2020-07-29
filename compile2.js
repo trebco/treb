@@ -125,21 +125,24 @@ const CreateConfig = (config, entry) => {
       rules: [
         {
           test: /\.ts$/,
-          loader: 'ts-loader',
           exclude: /node_modules/,
-          options: {
-
-            configFile: /modern/i.test(config) ? 'treb-embed/modern.tsconfig.json' : 'treb-embed/legacy.tsconfig.json',
-
-            /*
-            getCustomTransformers: program => ({
-              before: [
-                minifyPrivatesTransformer(program)
-              ]
-            }),
-            */
-
-          }
+          use: [
+            { 
+              loader: 'ts-loader',
+              options: {
+                configFile: /modern/i.test(config) ? 'treb-embed/modern.tsconfig.json' : 'treb-embed/legacy.tsconfig.json',
+              },
+            },
+            {
+              loader: path.resolve('./template-compressor.js'),
+              options: {
+                tags: [
+                  { tag: 'tmpl', trim_lines: true, },
+                  { tag: 'css', remove_whitespace: true, remove_tag: true, },
+                ],
+              }
+            }
+          ],
         },
         {
           test: /\.s*css$/,

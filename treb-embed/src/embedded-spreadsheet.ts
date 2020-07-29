@@ -193,9 +193,9 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     this.dialog?.ShowDialog({
       // progress_bar: true,
       // progress: 0,
-      title: 'Running Monte Carlo Simulation...',
+      title: 'Running Monte Carlo simulation',
       message: 'Starting',
-      type: DialogType.info,
+      // type: DialogType.info,
     });
 
     if (!this.workers.length) {

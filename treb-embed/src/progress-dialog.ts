@@ -1,4 +1,6 @@
 
+import {tmpl, NodeModel} from 'treb-utils'; 
+
 /**
  * colors, which can be controlled by the grid theme
  */
@@ -8,6 +10,8 @@ export interface MaskDialogOptions {
   text?: string;
   mask?: string;
   progress?: string;
+  fontSize?: string|number;
+  fontFamily?: string;
 }
 
 export enum DialogType {
@@ -46,6 +50,9 @@ export interface MessageDialogOptions {
  */
 export class ProgressDialog {
 
+  private model: NodeModel;
+
+  /*
   private mask: HTMLElement;
   private dialog: HTMLElement;
 
@@ -54,6 +61,7 @@ export class ProgressDialog {
 
   private left: HTMLElement;
   private right: SVGElement;
+  */
 
   // private progress_container: HTMLElement;
   // private progress_bar: HTMLElement;
@@ -82,21 +90,21 @@ export class ProgressDialog {
   private set options(options: Partial<MessageDialogOptions>) {
   
     if (this.options_.icon !== options.icon) {
-      this.left.style.display = options.icon ? 'block' : 'none';
+      this.model.left.style.display = options.icon ? 'block' : 'none';
     }
 
     if (this.options_.close_box !== options.close_box) {
-      this.right.style.display = options.close_box ? 'block' : 'none';
+      this.model.right.style.display = options.close_box ? 'block' : 'none';
     }
 
     if (this.options_.message !== options.message) {
-      this.message.textContent = options.message || '';
-      this.message.style.display = options.message ? 'block' : 'none';
+      this.model.message.textContent = options.message || '';
+      this.model.message.style.display = options.message ? 'block' : 'none';
     }
 
     if (this.options_.title !== options.title) {
-      this.title.textContent = options.title || '';
-      this.title.style.display = options.title ? 'block' : 'none';
+      this.model.title.textContent = options.title || '';
+      this.model.title.style.display = options.title ? 'block' : 'none';
     }
 
     /*
@@ -112,19 +120,19 @@ export class ProgressDialog {
 
     if (this.options_.type !== options.type) {
 
-      this.dialog.classList.remove('dialog-type-error', 'dialog-type-warning', 'dialog-type-success', 'dialog-type-info');
+      this.model.dialog.classList.remove('dialog-type-error', 'dialog-type-warning', 'dialog-type-success', 'dialog-type-info');
       switch (options.type) {
         case DialogType.info:
-          this.dialog.classList.add('dialog-type-info');
+          this.model.dialog.classList.add('dialog-type-info');
           break;
         case DialogType.success:
-          this.dialog.classList.add('dialog-type-success');
+          this.model.dialog.classList.add('dialog-type-success');
           break;
         case DialogType.error:
-          this.dialog.classList.add('dialog-type-error');
+          this.model.dialog.classList.add('dialog-type-error');
           break;
         case DialogType.warning:
-          this.dialog.classList.add('dialog-type-warning');
+          this.model.dialog.classList.add('dialog-type-warning');
           break;
       }
 
@@ -146,8 +154,8 @@ export class ProgressDialog {
     if (value === this.visible_) { return; }
     this.visible_ = value;
 
-    if (value) { this.mask.classList.add('visible'); }
-    else { this.mask.classList.remove('visible'); }
+    if (value) { this.model.mask.classList.add('visible'); }
+    else { this.model.mask.classList.remove('visible'); }
 
   }
 
@@ -157,51 +165,31 @@ export class ProgressDialog {
 
   constructor(private parent_node: HTMLElement, options: MaskDialogOptions = {}) {
 
-    this.mask = this.Div('treb-embed-mask', parent_node);
-    this.dialog = this.Div('treb-embed-dialog', this.mask);
+    this.model = tmpl`
+      <div id='mask' class='treb-embed-mask'>
+        <div id='dialog' class='treb-embed-dialog'>
+          <div id='left'></div>
+          <div id='middle'>
+            <div id='title' class='treb-embed-dialog-title'></div>
+            <div id='message' class='treb-embed-dialog-message'></div>
+          </div>
+          <div id='right'>
+            <svg viewBox='0 0 16 16'>
+              <path d='M11.854 4.146a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708-.708l7-7a.5.5 0 0 1 .708 0z'/>
+              <path d='M4.146 4.146a.5.5 0 0 0 0 .708l7 7a.5.5 0 0 0 .708-.708l-7-7a.5.5 0 0 0-.708 0z'/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    `;
 
-    /*
-    this.dialog.addEventListener('click', () => {
-      if (this.dismiss_on_click) { this.HideDialog(); }
-    });
-    */
-
-    this.left = this.Div(undefined, this.dialog);
-    const middle = this.Div(undefined, this.dialog);
-    // this.right = this.Div(undefined, this.dialog);
-
-    const svgns = 'http://www.w3.org/2000/svg';
-    this.right = document.createElementNS(svgns, 'svg')
-    this.right.setAttribute('viewBox', '0 0 16 16');
-    this.dialog.appendChild(this.right);
-
-    let path = document.createElementNS(svgns, 'path');
-    path.setAttribute('d', 'M11.854 4.146a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708-.708l7-7a.5.5 0 0 1 .708 0z');
-    this.right.appendChild(path);
-
-    path = document.createElementNS(svgns, 'path');
-    path.setAttribute('d', 'M4.146 4.146a.5.5 0 0 0 0 .708l7 7a.5.5 0 0 0 .708-.708l-7-7a.5.5 0 0 0-.708 0z');
-    this.right.appendChild(path);
-                           /*
-    <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-x" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-  <path fill-rule="evenodd" d="M11.854 4.146a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708-.708l7-7a.5.5 0 0 1 .708 0z"></path>
-  <path fill-rule="evenodd" d="M4.146 4.146a.5.5 0 0 0 0 .708l7 7a.5.5 0 0 0 .708-.708l-7-7a.5.5 0 0 0-.708 0z"></path>
-</svg>
-    */
-
-   this.right.addEventListener('click', (event) => {
+    this.model.right.addEventListener('click', (event) => {
       event.stopPropagation();
       event.preventDefault();
       this.HideDialog();
     });
-    
-    this.title = this.Div('treb-embed-dialog-title', middle);
-    this.message = this.Div('treb-embed-dialog-message', middle);
-
-    // this.progress_container = this.Div('treb-embed-progress-container', middle);
-    // this.progress_bar = this.Div('treb-embed-progress-bar', this.progress_container);
-    // this.progress_container.style.display = 'none';
-
+  
+    parent_node.appendChild(this.model.mask);
 
     // this.dialog.textContent = ' ';
     this.UpdateTheme(options);
@@ -218,14 +206,25 @@ export class ProgressDialog {
   public UpdateTheme(options: MaskDialogOptions): void {
 
     if (options.mask) {
-      this.mask.style.backgroundColor = options.mask;
+      this.model.mask.style.backgroundColor = options.mask;
     }
     if (options.background) {
-      this.dialog.style.backgroundColor = options.background;
+      this.model.dialog.style.backgroundColor = options.background;
     }
     if (options.text) {
-      this.dialog.style.color = options.text;
+      this.model.dialog.style.color = options.text;
     }
+    if (options.fontFamily) {
+      this.model.dialog.style.fontFamily = options.fontFamily;
+    }
+    if (options.fontSize) {
+      let font_size = options.fontSize || null;
+      if (typeof font_size === 'number') {
+        font_size = `${font_size}pt`;
+      }
+      this.model.dialog.style.fontSize = font_size || '';
+    }
+
     // if (options.border) {
     //  this.dialog.style.borderColor = options.border;
     // }

@@ -5,6 +5,7 @@ import { CreateSheetOptions, DefaultOptions } from './options';
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { Resizable } from 'treb-utils';
 import { ToolbarOptions, CompositeToolbar as FormattingToolbar } from './toolbar/';
+import { css, js } from 'treb-utils';
 
 import '../style/composite-sheet.scss';
 import 'treb-base-types/style/resizable.css';
@@ -325,17 +326,35 @@ export class CompositeSheet {
     const style = new_window.document.createElement('style');
     style.setAttribute('type', 'text/css');
 
-    // wish we had some preprocessor available... going to manually preprocess
+    // we have a special loader that can transform tagged templates -- this
+    // one (css) is just pass-through, but the loader will remove all whitespace.
+    // it will remove the tag, too (but leave the template -- ts can remove it
+    // if there are no interpolations).
 
-    /* original
-    style.textContent = `
-      * { box-sizing: border-box; padding: 0; margin: 0; }
-      body, html { height: 100%; width: 100%; position: relative; }
-      .treb { top: 0; left: 0; right: 0; bottom: 0; position: absolute; background: #fff; }
+    style.textContent = css`
+
+      * { 
+        box-sizing: border-box;
+        padding: 0;
+        margin: 0;
+      }
+      
+      body, html {
+        height: 100%;
+        width: 100%;
+        position: relative;
+      }
+      
+      .treb {
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        position: absolute;
+        background: #fff;
+      }
+      
     `;
-    */
-
-    style.textContent = `*{box-sizing:border-box;padding:0;margin:0;}body,html{height:100%;width:100%;position:relative;}.treb{top:0;left:0;right:0;bottom:0;position:absolute;background:#fff;}`;
 
     new_window.document.head.appendChild(style);
 
@@ -362,6 +381,7 @@ export class CompositeSheet {
       ...this.options,
       container: undefined,
       network_document: undefined,
+      storage_key: undefined,
       resizable: false,
       export: true,
       scroll: undefined,
@@ -376,68 +396,33 @@ export class CompositeSheet {
       collapsed: !desktop, // false, // true,  // ? what about mobile?
     };
 
-    // see above re:preprocessor
+    // this works great -- ts will convert to es6 or es5, as appropriate,
+    // so that when we call toString we get the appropriate level code.
+    // the only thing we can't do is inline the data, but we can do that
+    // in the call (below).
 
-    // was thinking about creating a function and then using
-    // function.toString(); but that seems impractical with
-    // the document data (and target options). although those
-    // could get passed in separately, I guess...
+    const func = (options: any, data: string) => {
 
-    // the idea is to get ts to transpile and webpack to compress,
-    // so we can write a more normal function
-
-    // seems to work OK in chrome/ffx, need more testing
-
-    /*
-    const afunction = function() {
       let attempts = 0;
-      const aself = (self as any);
-      const load = function() {
-        target_options.container = document.querySelector('.treb') as HTMLElement;
-        if (target_options.container && aself.TREB) {
-          aself.sheet = aself.TREB.CreateSpreadsheet(target_options);
-          aself.sheet.LoadDocument(document_data);
+      const load = () => {
+        options.container = document.querySelector('.treb') as HTMLElement;
+
+        if (options.container && (window as any).TREB) {
+          (window as any).sheet = (window as any).TREB.CreateSpreadsheet(options);
+          (window as any).sheet.LoadDocument(data);
         }
-        else {
+        else{
           if (++attempts < 32) {
-            setTimeout(function(){ load(); }, 100);
+            setTimeout(() => load(), 100);
           }
         }
       };
       load();
-    }
 
-    script.textContent = `
-      var target_options=${JSON.stringify(target_options)};
-      var document_data = ${document_data};
-      (${afunction.toString()})();
-    `;
-    */
+    };
 
-    /*
-    script.textContent = `
-      (function(){
-        var options = ${JSON.stringify(target_options)};
-        var attempts = 0;
-        var document_data = ${document_data};
-        var load = function() {
-          options.container = document.querySelector('.treb');
-          if (options.container && window.TREB) {
-            window.sheet = TREB.CreateSpreadsheet(options);
-            sheet.LoadDocument(document_data);
-          }
-          else {
-            if (++attempts < 32) {
-              setTimeout(function(){ load(); }, 100);
-            }
-          }
-        };
-        load();
-      })();
-    `;
-    */
+    script.textContent = `(${func.toString()})(${JSON.stringify(target_options)},${document_data})`;
 
-    script.textContent = `(function(){var options=${JSON.stringify(target_options)};var attempts=0;var document_data=${document_data};var load=function(){options.container=document.querySelector('.treb');if(options.container&&window.TREB){window.sheet=TREB.CreateSpreadsheet(options);sheet.LoadDocument(document_data);}else{if(++attempts<32){setTimeout(function(){load();},100);}}};load();})();`;
     new_window.document.body.appendChild(script);
     new_window.document.close();
 

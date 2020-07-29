@@ -37,6 +37,9 @@ export interface Theme {
    */
   interface_dialog_mask?: string;
 
+  interface_dialog_font_face?: string;
+  interface_dialog_font_size?: number|string;
+
   // --------------------------------------------------------------------------
 
   tab_bar_font_size?: number|string;
@@ -332,10 +335,12 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
   theme.interface_font_size_value = interface_font_size.value;
   theme.interface_font_size_unit = interface_font_size.unit;
 
-  const dialog = TestNode(['interface', 'dialog'], ['stroke', 'fill', 'border-bottom-color']);
+  const dialog = TestNode(['interface', 'dialog'], ['stroke', 'fill', 'border-bottom-color', 'font-family', 'font-size']);
   theme.interface_dialog_color = dialog[0];
   theme.interface_dialog_background = dialog[1];
   theme.interface_dialog_border = dialog[2];
+  theme.interface_dialog_font_face = dialog[3];
+  theme.interface_dialog_font_size = dialog[4];
 
   const mask = TestNode(['interface', 'mask'], ['fill']);
   theme.interface_dialog_mask = mask[0];

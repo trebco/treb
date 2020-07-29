@@ -8,3 +8,4 @@ export * from './color';
 export * from './serialize_html';
 
 export * from './scale';
+export * from './template';
