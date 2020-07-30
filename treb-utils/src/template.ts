@@ -48,4 +48,3 @@ export const tmpl = (strings: TemplateStringsArray, ...args: any[]): NodeModel =
 }
 
 export const css = composite;
-export const js = composite;

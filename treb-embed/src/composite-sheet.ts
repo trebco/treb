@@ -5,7 +5,7 @@ import { CreateSheetOptions, DefaultOptions } from './options';
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { Resizable } from 'treb-utils';
 import { ToolbarOptions, CompositeToolbar as FormattingToolbar } from './toolbar/';
-import { css, js } from 'treb-utils';
+import { css } from 'treb-utils';
 
 import '../style/composite-sheet.scss';
 import 'treb-base-types/style/resizable.css';

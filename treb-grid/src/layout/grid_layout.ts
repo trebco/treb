@@ -1,10 +1,11 @@
 
-import { Point } from 'treb-base-types';
-import { BaseLayout, TileRange } from './base_layout';
+// import { Point } from 'treb-base-types';
+import { BaseLayout } from './base_layout';
 import { Tile } from '../types/tile';
 import { DOMUtilities } from '../util/dom_utilities';
-import { Sheet } from '../types/sheet';
+// import { Sheet } from '../types/sheet';
 import { DataModel } from '../types/data_model';
+import { tmpl, NodeModel } from 'treb-utils';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -12,6 +13,49 @@ export class GridLayout extends BaseLayout {
 
   constructor(model: DataModel){
     super(model);
+
+    /*
+    const nodes = tmpl`
+
+      <div id='column_header' class='top-header'>
+        <svg id='row_header_selection' class='frozen-selection frozen-selection-rows'></svg>
+      </div>
+
+      <div id='row_header' class='left-header'>
+        <svg id='column_header_selection' class='frozen-selection frozen-selection-columns'></svg>
+      </div>
+
+      <div id='corner' class='corner'>
+        <canvas id='corner_canvas'></canvas>
+        <svg id='corner_selection' class='frozen-selection'></svg>
+      </div>
+
+      <div id='contents' class='contents'>
+        <svg id='grid_selection' class='grid-selection'></svg>
+      </div>
+
+      <div id='annotation_container' class='annotation-container'></div>
+
+      <div id='grid_cover' class='tile-cover grid-cover'></div>
+      <div id='column_header_cover' class='tile-cover column-header-cover'></div>
+      <div id='row_header_cover' class='tile-cover row-header-cover'></div>
+
+    `;
+
+    this.column_header = nodes.column_header as HTMLDivElement;
+    this.row_header = nodes.row_header as HTMLDivElement;
+    this.corner = nodes.corner as HTMLDivElement;
+    this.corner_canvas = nodes.corner_canvas as HTMLCanvasElement;
+    this.contents = nodes.contents as HTMLDivElement;
+    this.grid_selection = (nodes.grid_selection as any) as SVGSVGElement;
+    this.row_header_selection = (nodes.row_header_selection as any) as SVGSVGElement;
+    this.column_header_selection = (nodes.column_header_selection as any) as SVGSVGElement;
+    this.corner_selection = (nodes.corner_selection as any) as SVGSVGElement;
+    this.annotation_container = nodes.annotation_container as HTMLDivElement;
+    this.grid_cover = nodes.grid_cover as HTMLDivElement;
+    this.column_header_cover = nodes.column_header_cover as HTMLDivElement;
+    this.row_header_cover = nodes.row_header_cover as HTMLDivElement;
+    */
 
     // nodes always exist
 

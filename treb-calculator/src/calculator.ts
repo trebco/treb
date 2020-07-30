@@ -12,6 +12,7 @@ import * as Utilities from './utilities';
 import { FunctionLibrary } from './function-library';
 import { FunctionMap, ReturnType } from './descriptors';
 import { BaseFunctionLibrary } from './functions/base-functions';
+import { FinanceFunctionLibrary } from './functions/finance-functions';
 import { TextFunctionLibrary, TextFunctionAliases } from './functions/text-functions';
 import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './functions/statistics-functions';
 
@@ -78,6 +79,9 @@ export class Calculator extends Graph {
 
     // also stats (wip)
     this.library.Register(StatisticsFunctionLibrary);
+
+    // also this (wip)
+    this.library.Register(FinanceFunctionLibrary);
 
     // aliases
     for (const key of Object.keys(StatisticsFunctionAliases)) {
