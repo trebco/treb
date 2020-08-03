@@ -21,6 +21,10 @@ import { Sparkline } from 'treb-sparkline';
  * this function is broken out because we use it in the rate function 
  * (to search). we could reasonably use any of them (we probably should 
  * use the one most likely to be zero -- FV maybe?)
+ * 
+ * this is now used in a couple of functions, so it makes sense to leave
+ * it broken out irrespective of what we use for Rate.
+ * 
  */
 const payment_function = (rate: number, periods: number, pv = 0, fv = 0, type = 0): number => {
   if (type) {
@@ -30,7 +34,105 @@ const payment_function = (rate: number, periods: number, pv = 0, fv = 0, type = 
   return -(pv * rate * Math.pow(1 + rate, periods) + fv * rate) / (Math.pow(1 + rate, periods) - 1);
 }
 
+/** broken out for use in ipmt, ppmt functions */
+const fv_function = (rate: number, periods: number, payment: number, pv = 0, type = 0): number => {
+  if (type) {
+    return (1 + rate) * -payment / rate * (Math.pow(1 + rate, periods) - 1) - pv * Math.pow(1 + rate, periods);
+  }
+  return -payment / rate * (Math.pow(1 + rate, periods) - 1) - pv * Math.pow(1 + rate, periods);
+};
+
+/** ppmt is calculated as payment less interest payment */
+const ipmt_function = (rate: number, period: number, periods: number, pv = 0, fv = 0, type = 0): number => {
+
+  // invalid
+  if (period < 1) { return NaN; }
+
+  // if payment is at the start of the period, there's no interest in payment 1
+  if (period === 1 && type) {
+    return 0;
+  }
+
+  const total_payment = payment_function(rate, periods, pv, fv, type);
+  const interest = fv_function(rate, period - 1, total_payment, pv, type) * rate;
+
+  // for payments at start of period, after period 1, we need to discount
+  return type ? interest / (1 + rate) : interest;
+
+};
+
+const ppmt_function = (rate: number, period: number, periods: number, pv = 0, fv = 0, type = 0): number => {
+  return payment_function(rate, periods, pv, fv, type) -
+    ipmt_function(rate, period, periods, pv, fv, type);
+};
+
 export const FinanceFunctionLibrary: FunctionMap = {
+
+  CUMPRINC: {
+    description: 'Returns cumulative principal paid on a loan between two periods',
+    arguments: [
+      { name: 'Rate', },
+      { name: 'Periods', },
+      { name: 'Present Value' },
+      { name: 'Start Period' },
+      { name: 'End Period' },
+      { name: 'Type', default: 0 },
+    ],
+    fn: (rate: number, periods: number, pv: number, start: number, end: number, type = 0): number => {
+      let accum = 0;
+      for (let i = start; i <= end; i++ ) {
+        accum += ppmt_function(rate, i, periods, pv, 0, type);
+      }
+      return accum;
+    },
+
+  },
+
+  CUMIPMT: {
+    description: 'Returns cumulative interest paid on a loan between two periods',
+    arguments: [
+      { name: 'Rate', },
+      { name: 'Periods', },
+      { name: 'Present Value' },
+      { name: 'Start Period' },
+      { name: 'End Period' },
+      { name: 'Type', default: 0 },
+    ],
+    fn: (rate: number, periods: number, pv: number, start: number, end: number, type = 0): number => {
+      let accum = 0;
+      for (let i = start; i <= end; i++ ) {
+        accum += ipmt_function(rate, i, periods, pv, 0, type);
+      }
+      return accum;
+    },
+
+  },
+
+  IPMT: {
+    description: 'Returns the interest portion of a payment',
+    arguments: [
+      { name: 'Rate', },
+      { name: 'Period', },
+      { name: 'Periods', },
+      { name: 'Present Value', default: 0 },
+      { name: 'Future Value', default: 0 },
+      { name: 'Type', default: 0 },
+    ],
+    fn: ipmt_function,
+  },
+
+  PPMT: {
+    description: 'Returns the principal portion of a payment',
+    arguments: [
+      { name: 'Rate', },
+      { name: 'Period', },
+      { name: 'Periods', },
+      { name: 'Present Value', default: 0 },
+      { name: 'Future Value', default: 0 },
+      { name: 'Type', default: 0 },
+    ],
+    fn: ppmt_function,
+  },
 
   Rate: {
     description: 'Returns the interest rate of an annuity',
@@ -83,13 +185,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
       { name: 'Present Value', default: 0 },
       { name: 'Type', default: 0 },
     ],
-    fn: (rate: number, periods: number, payment: number, pv = 0, type = 0): number => {
-      if (type) {
-        return (1 + rate) * -payment / rate * (Math.pow(1 + rate, periods) - 1) - pv * Math.pow(1 + rate, periods);
-      }
-      return -payment / rate * (Math.pow(1 + rate, periods) - 1) - pv * Math.pow(1 + rate, periods);
-    },
-
+    fn: fv_function,
   },
 
   PV: {
