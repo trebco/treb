@@ -94,6 +94,7 @@ export class Importer {
         const index = Number(mapped.v.text);
         if (!isNaN(index) && sheet.shared_strings) {
           value = sheet.shared_strings.GetSharedString(index);
+          if (value[0] === '=') { value = '\'' + value; }
         }
       }
     }
