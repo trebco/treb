@@ -5265,12 +5265,21 @@ export class Grid {
       }
       */
 
+      // start with regular label
+
       let label = Area.CellAddressToLabel(target.start);
 
+      // check for named range === target
+
       for (const entry of this.model.named_ranges.List()) {
-        if (entry.range.start.sheet_id === this.active_sheet.id && entry.range.Equals(target)) {
-          label = entry.name;
-          break;
+        if (entry.range.start.sheet_id === this.active_sheet.id) {
+          if (entry.range.Equals(selection.area)) {
+            label = entry.name; // don't break, in case there's a match for target which takes precendence.
+          }
+          if (entry.range.Equals(target)) {
+            label = entry.name;
+            break;
+          }
         }
       }
 
