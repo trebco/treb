@@ -10,6 +10,7 @@ import { Theme } from './theme';
 import * as JSZip from 'jszip';
 import { Drawing } from './drawing/drawing';
 import { Chart } from './drawing/chart';
+import { IArea, Area } from 'treb-base-types/src';
 
 const XMLTypeMap = {
   'sheet':          'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
@@ -325,6 +326,83 @@ export class Workbook {
     }
 
     await this.zip.file(content_types_path, content_types_dom.write({xml_declaration: true}));
+
+  }
+
+  public GetNamedRanges(): {[index: string]: string} {
+    if (!this.dom) throw new Error('missing dom');
+    const results: {[index: string]: string} = {};
+
+    const names = this.dom.find('./definedNames');
+    if (names) {
+      const children = names.getchildren();
+      for (const child of children) {
+        if (child.tag === 'definedName') {
+          const name = child.attrib.name;
+          const reference = child.text;
+
+          if (name && reference) {
+            results[name] = reference.toString();
+          }
+        }
+      }
+    }
+
+    return results;
+  }
+
+  public AddNamedRanges(named_ranges: {[index: string]: IArea} = {}, name_map: string[] = []): void {
+    if (!this.dom) throw new Error('missing dom');
+
+    // this comes from parser. I'm inlining it because we don't include
+    // parser in this worker (?)
+
+    const QuotedSheetNameRegex = /[\s-+=<>!()]/;
+
+    let names = this.dom.find('./definedNames');
+    if (!names) {
+      let found = false;
+      names = Element('definedNames')
+      const elements = this.dom.getroot().getchildren();
+      for (let i = 0; i < elements.length; i++) {
+        if (elements[i].tag === 'sheets') {
+          this.dom.getroot().insert(i + 1, names);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        console.warn('insert point for definedNames not found');
+      }
+    }
+
+    for (const name of Object.keys(named_ranges)) {
+      const base = named_ranges[name];
+      base.start.absolute_column = 
+        base.start.absolute_row = 
+        base.end.absolute_column =
+        base.end.absolute_row = true;
+
+      const area = new Area(base.start, base.end);
+
+      if (typeof area.start.sheet_id !== 'undefined') {
+        let sheet_name = name_map[area.start.sheet_id];
+        if (QuotedSheetNameRegex.test(sheet_name)) {
+          sheet_name = '"' + sheet_name + '"';
+        }
+        const label = sheet_name + '!' + area.spreadsheet_label;
+
+        // <definedName name="fortran">Sheet1!$C$3</definedName>
+        const element = Element('definedName', {name});
+        element.text = label;
+        names.append(element);
+      }
+      else {
+        console.warn('named range missing sheet ID');
+      }
+
+    }
+
 
   }
 

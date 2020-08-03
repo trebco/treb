@@ -275,7 +275,7 @@ export class NamedRangeCollection {
 
   }
 
-  private RebuildList() {
+  public RebuildList() {
     this.backward = [];
     for (const key of Object.keys(this.forward)) {
       this.backward.push({ name: key, range: this.forward[key] });

@@ -1059,17 +1059,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               return reject(event.data.error || 'unknown error');
             }
 
-            // if (Array.isArray(sheet_data)) {
-            //  sheet_data = sheet_data[0];
-            // }
-            // console.info(event.data);
-
-            // NOTE: this is not grid.cells, it's the cells
-            // property of the imported data -- this is ok (for now)
-
-            // console.info(event.data.results);
-
             this.grid.FromImportData(event.data.results);
+
             this.ResetInternal();
             this.grid.Update();
 

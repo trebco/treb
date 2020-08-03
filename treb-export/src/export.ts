@@ -4,7 +4,7 @@ import { template } from './base-template';
 import { Base64 as JSBase64 } from 'js-base64';
 import { Workbook } from './workbook';
 
-import { Style, Area } from 'treb-base-types';
+import { Style, Area, IArea } from 'treb-base-types';
 import { Parser, ArgumentSeparatorType, DecimalMarkType, UnitCall, UnitAddress, UnitRange } from 'treb-parser';
 
 import { SerializedSheet } from 'treb-grid';
@@ -59,11 +59,12 @@ export class Exporter {
    *
    * @param source
    */
-  public async ExportSheet(source: {
+  public async ExportSheets(source: {
       sheet_data: SerializedSheet[];
       active_sheet?: number;
+      named_ranges?: {[index: string]: IArea};
       decimal_mark: ','|'.';
-    }) {
+    }): Promise <void> {
 
     this.workbook.InsertSheets(source.sheet_data.length);
 
@@ -77,6 +78,8 @@ export class Exporter {
       this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
       change_number_format = true;
     }
+
+    const name_map: string[] = [];
 
     for (let index = 0; index < source.sheet_data.length; index++) {
 
@@ -97,6 +100,8 @@ export class Exporter {
 
       sheet.Parse();
 
+      name_map[sheet_source.id || 0] = sheet_source.name || `Sheet${index + 1}`;
+      
       if (sheet_source.name) {
         this.workbook.RenameSheet(index, sheet_source.name);
       }
@@ -396,6 +401,10 @@ export class Exporter {
         sheet.AddSparklines(sparklines);
       }
 
+    }
+
+    if (source.named_ranges) {
+      this.workbook.AddNamedRanges(source.named_ranges, name_map);
     }
 
     await this.workbook.Finalize();

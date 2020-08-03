@@ -3,6 +3,7 @@ import {
   Rectangle, ValueType, Style, Area, Cell, CellValue,
   Extent, ICellAddress, IsCellAddress, Localization, ImportedSheetData,
   ValidationType,
+  IArea,
 } from 'treb-base-types';
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
@@ -832,11 +833,16 @@ export class Grid {
    * worker handling the import. we should be able to nail down this type [FIXME]
    */
   public FromImportData(
-    sheet_data: ImportedSheetData[],
+    import_data: {
+      sheets: ImportedSheetData[],
+      names?: {[index: string]: string},
+    },
     render = false,
   ): void {
 
     this.RemoveAnnotationNodes();
+
+    const sheet_data = import_data.sheets;
 
     const base_sheets = sheet_data.map(() => {
       return Sheet.Blank(this.theme_style_properties).toJSON();
@@ -844,9 +850,12 @@ export class Grid {
 
     this.UpdateSheets(base_sheets, true);
 
-    // FIXME: are there named ranges in the data? (...)
+    // build a name map for fixing named ranges
 
-    this.model.named_ranges.Reset();
+    const name_map: {[index: string]: number} = {};
+    
+    // FIXME: are there macro functions in the data? (...)
+
     this.model.macro_functions = {};
 
     this.ClearSelection(this.primary_selection);
@@ -858,6 +867,8 @@ export class Grid {
       if (sheet_data[si].name) {
         this.model.sheets[si].name = sheet_data[si].name || '';
       }
+
+      name_map[this.model.sheets[si].name] = this.model.sheets[si].id;
 
       // 0 is implicitly just a general style
 
@@ -881,6 +892,33 @@ export class Grid {
         }
       }
 
+    }
+
+    this.model.named_ranges.Reset();
+
+    if (import_data.names) {
+      for (const name of Object.keys(import_data.names)) {
+        const label = import_data.names[name];
+        const parse_result = this.parser.Parse(label);
+        if (parse_result.expression) {
+          if (parse_result.expression.type === 'range') {
+            const sheet_id = name_map[parse_result.expression.start.sheet || ''];
+            if (sheet_id) {
+              parse_result.expression.start.sheet_id = sheet_id;
+              this.model.named_ranges.SetName(name, new Area(parse_result.expression.start, parse_result.expression.end), false);
+            }
+          }
+          if (parse_result.expression.type === 'address') {
+            const sheet_id = name_map[parse_result.expression.sheet || ''];
+            if (sheet_id) {
+              parse_result.expression.sheet_id = sheet_id;
+              this.model.named_ranges.SetName(name, new Area(parse_result.expression), false);
+            }
+          }
+        }
+
+      }
+      this.model.named_ranges.RebuildList();
     }
 
     // no longer sending explicit layout event here

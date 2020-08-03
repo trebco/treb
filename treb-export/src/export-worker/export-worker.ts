@@ -2,14 +2,15 @@
 // import { Importer, Exporter } from '../';
 import { Importer } from '../import';
 import { Exporter } from '../export';
+import { ImportedSheetData, IArea } from 'treb-base-types/src';
 
 const ctx: Worker = self as any;
 const exporter = new Exporter();
 
-const ExportSheet = async (data: any) => {
+const ExportSheets = async (data: any) => {
   if (data.sheet) {
     await exporter.Init();
-    await exporter.ExportSheet(data.sheet);
+    await exporter.ExportSheets(data.sheet);
     const blob = await exporter.AsBlob(1);
 
     // correct the mime type for firefox
@@ -28,11 +29,14 @@ const ImportSheet = async (data: any) => {
     await importer.Init(data.data);
 
     const count = importer.SheetCount();
-    const results = [];
+    const results = {
+      sheets: [] as ImportedSheetData[],
+      names: importer.workbook.GetNamedRanges(),
+    };
 
     for (let i = 0; i < count; i++) {
       const result = await importer.GetSheet(i);
-      results.push(result);
+      results.sheets.push(result);
     }
     ctx.postMessage({ status: 'complete', results });
 
@@ -48,7 +52,7 @@ const ImportSheet = async (data: any) => {
 // initialize message handler
 ctx.addEventListener('message', (event) => {
   if (event.data && event.data.command === 'export'){
-    ExportSheet(event.data);
+    ExportSheets(event.data);
   }
   else if (event.data && event.data.command === 'import'){
     ImportSheet(event.data);
