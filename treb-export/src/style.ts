@@ -268,6 +268,31 @@ export class StyleCache {
     }
 
     if (format_string) {
+
+      // Excel uses number formats like 
+
+      // #,##0.00\ [$€-40C];[Red]\-#,##0.00\ [$€-40C]
+      // [$¥-411]#,##0;[Red]\-[$¥-411]#,##0
+      // _("$"* #,##0_);_("$"* \(#,##0\);_("$"* "-"??_);_(@_)
+
+      // where [$¥-411] encodes a yen symbol, [$€-40C] is the euro, &c.
+      // I have no idea what that encoding is, or where it comes from
+      // (can't find it in Excel documentation; should probably check OOo).
+
+      // for the time being we will just drop, and assume the symbol
+      // (in position 2) is correct. are we sure there are always 3 hex
+      // characters? and always negative? (...)
+
+      // OK, got it, these are Microsoft LCIDs in hex. so the format seems to be:
+      // 
+      // square bracket, dollar sign, symbol, hyphen, hex LCID, square bracket
+      //
+      // we can safely drop this for now, AFAIAC. LCID seems to be (in hex) 
+      // usually 3-4 digits, but I suppose lower is conceivable.
+
+      const encoding_regex = /\[\$(.)-[0-9A-Za-z]{1,4}\]/g;
+      format_string = format_string.replace(encoding_regex, '$1');
+
       props.number_format = format_string;
     }
 
