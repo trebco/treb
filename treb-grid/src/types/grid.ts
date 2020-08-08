@@ -3678,22 +3678,28 @@ export class Grid {
     // if this is a single merged block, we want to insert it as the
     // root cell and not the range.
 
-    let label = selection.area.spreadsheet_label;
+    // let label = selection.area.spreadsheet_label;
 
-    const cell = this.active_sheet.CellData(selection.area.start);
-    if (cell.merge_area && cell.merge_area.Equals(selection.area)) {
-      label = Area.CellAddressToLabel(cell.merge_area.start);
-    }
+    const data = this.active_sheet.CellData(selection.area.start);
+    const target = new Area(data.merge_area ? data.merge_area.start : selection.target);
 
-    if (this.active_sheet.id !== this.editing_cell.sheet_id) {
-      const name = this.active_sheet.name;
+    let label = this.model.named_ranges.MatchSelection(selection.area, target);
 
-      if (QuotedSheetNameRegex.test(name)) {
-        label = `'${name}'!${label}`;
+    if (!label) {
+
+      label = Area.CellAddressToLabel(target.start);
+
+      if (this.active_sheet.id !== this.editing_cell.sheet_id) {
+        const name = this.active_sheet.name;
+
+        if (QuotedSheetNameRegex.test(name)) {
+          label = `'${name}'!${label}`;
+        }
+        else {
+          label = `${name}!${label}`;
+        }
       }
-      else {
-        label = `${name}!${label}`;
-      }
+
     }
 
     if (this.cell_editor && this.cell_editor.visible && this.cell_editor.selecting) {
@@ -5261,34 +5267,10 @@ export class Grid {
       const data = this.active_sheet.CellData(this.primary_selection.target);
       const target = new Area(data.merge_area ? data.merge_area.start : selection.target);
 
-      /*
-      if (data.merge_area) {
-        this.formula_bar.label = Area.CellAddressToLabel(data.merge_area.start);
-      }
-      else {
-        this.formula_bar.label = Area.CellAddressToLabel(selection.target);
-      }
-      */
+      this.formula_bar.label = 
+      this.model.named_ranges.MatchSelection(selection.area, target)
+        || Area.CellAddressToLabel(target.start);
 
-      // start with regular label
-
-      let label = Area.CellAddressToLabel(target.start);
-
-      // check for named range === target
-
-      for (const entry of this.model.named_ranges.List()) {
-        if (entry.range.start.sheet_id === this.active_sheet.id) {
-          if (entry.range.Equals(selection.area)) {
-            label = entry.name; // don't break, in case there's a match for target which takes precendence.
-          }
-          if (entry.range.Equals(target)) {
-            label = entry.name;
-            break;
-          }
-        }
-      }
-
-      this.formula_bar.label = label;
     }
 
   }

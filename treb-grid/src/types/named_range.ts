@@ -1,5 +1,6 @@
 
 import { IArea, Area } from 'treb-base-types';
+import { GridSelection } from './grid_selection';
 
 export class NamedRangeCollection {
 
@@ -24,6 +25,31 @@ export class NamedRangeCollection {
       }
       this.RebuildList();
     }
+  }
+
+  /**
+   * match an area, optionally a target within a larger area (for selections).
+   * we don't use the selection directly, as we may need to adjust target for
+   * merge area.
+   */
+  public MatchSelection(area: Area, target?: Area): string|undefined {
+
+    if (!area.start.sheet_id) { 
+      throw new Error('match selection without sheet id'); 
+    }
+
+    let label: string|undefined;
+    for (const entry of this.List()) {
+      if (entry.range.start.sheet_id === area.start.sheet_id) {
+        if (entry.range.Equals(area)) {
+          label = entry.name; // don't break, in case there's a match for target which takes precendence.
+        }
+        if (target?.Equals(entry.range)) {
+          return entry.name;
+        }
+      }
+    }
+    return label;
   }
 
   /**
