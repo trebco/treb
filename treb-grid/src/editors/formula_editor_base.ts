@@ -447,6 +447,15 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     const remainder = text.substr(start) || '';
     const remainder_node = document.createTextNode(remainder);
 
+    // this was here when I was trying to force a space character
+    // after you inserted a named range reference via autocomplete.
+    // contenteditable won't properly move after a space in a text
+    // node, so if you want that space it has to be in an element.
+
+    // this works, but then I decided I don't actually want that 
+    // space -- after the named range you might enter a comma or close
+    // paren or something.
+
     /*
     let remainder_node: Node;
     if(/^\s+$/.test(remainder)) {

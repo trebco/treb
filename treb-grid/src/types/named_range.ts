@@ -7,7 +7,7 @@ export class NamedRangeCollection {
   private backward: Array<{name: string; range: Area}> = [];
 
   /** FIXME: why not an accessor? */
-  public Count() {
+  public Count(): number {
     return this.backward.length;
   }
 

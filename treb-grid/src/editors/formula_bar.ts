@@ -91,7 +91,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
   /** get address label text */
   public get label(): string {
-    return this.address_label ? this.address_label.textContent || '' : '';
+    return this.address_label?.textContent || '';
   }
 
   /** toggle editable property: supports locked cells */
