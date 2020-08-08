@@ -245,6 +245,7 @@ export class CellEditor extends FormulaEditorBase {
     // AC first
 
     const ac_result = this.autocomplete.HandleKey('keydown', event);
+
     if (ac_result.accept){
       this.AcceptAutocomplete(ac_result);
     }

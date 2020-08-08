@@ -5,7 +5,7 @@ import { Parser, UnitRange, UnitAddress } from 'treb-parser';
 
 import { GridSelection } from '../types/grid_selection';
 import { Autocomplete, AutocompleteResult } from './autocomplete';
-import { AutocompleteMatcher } from './autocomplete_matcher';
+import { AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
 
 import { ExtendedTheme } from '../types/theme';
 import { DataModel } from '../types/data_model';
@@ -446,6 +446,18 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
     const remainder = text.substr(start) || '';
     const remainder_node = document.createTextNode(remainder);
+
+    /*
+    let remainder_node: Node;
+    if(/^\s+$/.test(remainder)) {
+      remainder_node = document.createElement('span');
+      (remainder_node as HTMLElement).innerHTML = '&nbsp;';
+    }
+    else {
+      remainder_node = document.createTextNode(remainder);
+    }
+    */
+
     fragment.appendChild(remainder_node);
 
     if (!selection_target_node) {
@@ -648,10 +660,20 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
   }
 
-  protected AcceptAutocomplete(ac_result: AutocompleteResult){
+  protected AcceptAutocomplete(ac_result: AutocompleteResult): void {
 
     if (!this.editor_node) return;
     const selection = window.getSelection();
+
+    let type = DescriptorType.Function;
+    if (ac_result.data && ac_result.data.completions) {
+      for (const completion of ac_result.data.completions) {
+        if (completion.name.toLowerCase() === ac_result.value?.toLowerCase()) {
+          type = completion.type || DescriptorType.Function;
+          break;
+        }
+      }
+    }
 
     if (!selection) throw new Error('error getting selection');
 
@@ -662,15 +684,24 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     preCaretRange.selectNodeContents(this.editor_node);
     preCaretRange.setEnd(range.endContainer, range.endOffset);
     tmp.appendChild(preCaretRange.cloneContents());
-    const str = (tmp.textContent || '').substr(0, ac_result.data.position) + ac_result.value;
 
-    this.editor_node.textContent = str + '(';
+    const str = (tmp.textContent || '').substr(0, ac_result.data ? ac_result.data.position : 0) + ac_result.value;
+    const insert = (type === DescriptorType.Token) ? str + ' ' : str + '(';
+
+    // this is destroying nodes, we should be setting html here
+
+    this.editor_node.textContent = insert;
     this.autocomplete.Hide();
+
+    // we have to reconstruct because we destroyed nodes, although
+    // we do need to call this for new nodes (on a defined name)
+
+    this.Reconstruct(true);
 
     range = document.createRange();
     // const selection = window.getSelection();
 
-    if (this.editor_node.lastChild) {
+    if (this.editor_node?.lastChild) {
       range.setStartAfter(this.editor_node.lastChild);
     }
     range.collapse(true);
@@ -681,6 +712,13 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     if (ac_result.click){
       this.UpdateSelectState();
     }
+
+    /*
+    if (type === DescriptorType.Token) {
+      this.selecting_ = false;
+      Yield().then(() => this.Reconstruct(true));
+    }
+    */
 
   }
 

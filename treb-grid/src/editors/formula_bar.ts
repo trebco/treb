@@ -78,6 +78,8 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     }
     else {
       this.address_label.textContent = text;
+
+      // should this be in a Yield callback? need to check IE11...
       if (this.address_label.scrollWidth > this.address_label.offsetWidth) {
         this.address_label.setAttribute('title', text);
       }

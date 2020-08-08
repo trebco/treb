@@ -28,7 +28,7 @@ import { GridEvent } from './grid_events';
 import { SheetEvent, FreezePane, SerializedSheet } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
 import { GridOptions, DefaultGridOptions } from './grid_options';
-import { AutocompleteMatcher, FunctionDescriptor } from '../editors/autocomplete_matcher';
+import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
 import { BorderConstants } from './border_constants';
 import { SerializeOptions } from './serialize_options';
 import { UA } from '../util/ua';
@@ -1952,7 +1952,12 @@ export class Grid {
    * on paste (if we're doing that).
    */
   public SetAutocompleteFunctions(functions: FunctionDescriptor[]): void {
-    this.autocomplete_matcher.SetFunctions(functions);
+    const consolidated = functions.slice(0).concat(
+      this.model.named_ranges.List().map((named_range) => {
+        return { name: named_range.name, type: DescriptorType.Token };
+      }));
+    //this.autocomplete_matcher.SetFunctions(functions);
+    this.autocomplete_matcher.SetFunctions(consolidated);
   }
 
   /**

@@ -2,14 +2,15 @@
 import { DOMUtilities } from '../util/dom_utilities';
 import { Rectangle } from 'treb-base-types';
 import { ExtendedTheme } from '../types/theme';
-import { AutocompleteExecResult } from './autocomplete_matcher';
+import { AutocompleteExecResult, DescriptorType } from './autocomplete_matcher';
 
 export interface AutocompleteResult {
   handled: boolean;
   accept?: boolean;
-  data?: any;
+  data?: AutocompleteExecResult;
   value?: string;
   click?: boolean;
+  type?: DescriptorType;
 }
 
 /*
@@ -41,7 +42,7 @@ export class Autocomplete {
 
   private selected_index = 0;
   private block = false;
-  private autocomplete_data: any = {};
+  private autocomplete_data: AutocompleteExecResult = {};
 
   private callback?: AcceptCallback;
   private scope: string;
@@ -228,8 +229,10 @@ export class Autocomplete {
     return { handled: false };
   }
 
-  public Show(callback: AcceptCallback, data: AutocompleteExecResult = {},
-      position: Rectangle) {
+  public Show(
+      callback: AcceptCallback, 
+      data: AutocompleteExecResult = {},
+      position: Rectangle): void {
 
     this.completion_list_visible = false;
     this.tooltip_visible = false;
@@ -244,9 +247,9 @@ export class Autocomplete {
       this.selected_index = 0;
 
       this.completion_list.innerHTML = `<ul>`
-        + data.completions.map((name, index) => {
-          if (name === this.last_completion) this.selected_index = index;
-          return `<li><a>${name}</a></li>`;
+        + data.completions.map((descriptor, index) => {
+          if (descriptor.name === this.last_completion) this.selected_index = index;
+          return `<li><a>${descriptor.name}</a></li>`;
         }).join('\n') + `<ul>`;
 
       const height = this.completion_list.offsetHeight;

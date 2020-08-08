@@ -21,10 +21,15 @@ export interface ArgumentDescriptor {
   name?: string;
 }
 
+export enum DescriptorType {
+  Function, Token
+}
+
 export interface FunctionDescriptor {
   name: string;
   description?: string;
   arguments?: ArgumentDescriptor[];
+  type?: DescriptorType;
 }
 
 export interface AutocompleteMatchData {
@@ -33,7 +38,8 @@ export interface AutocompleteMatchData {
 }
 
 export interface AutocompleteExecResult {
-  completions?: string[]; 
+  // completions?: string[]; 
+  completions?: FunctionDescriptor[];
   token?: string;
   position?: number;
   tooltip?: string;
@@ -41,14 +47,21 @@ export interface AutocompleteExecResult {
   description?: string;
 }
 
+export interface TooltipParserResult {
+  function: string|undefined;
+  argument: number;
+}
+
 export class AutocompleteMatcher {
 
   private function_names: string[] = [];
+  private token_names: string[] = [];
+
   private function_map: {[index: string]: FunctionDescriptor} = {};
 
   private argument_separator = Localization.argument_separator.charCodeAt(0);
 
-  public SetFunctions(functions: FunctionDescriptor[]) {
+  public SetFunctions(functions: FunctionDescriptor[]): void {
     this.function_map = {};
     this.function_names = functions.map((fn) => {
       this.function_map[fn.name.toLowerCase()] = fn;
@@ -56,15 +69,17 @@ export class AutocompleteMatcher {
     }).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
   }
 
-  public NormalizeIdentifier(name: string) {
+  public NormalizeIdentifier(name: string): string|undefined {
     const identifier = this.function_map[name.toLowerCase()];
     return identifier ? identifier.name : undefined;
   }
 
-  public Exec(data: AutocompleteMatchData) {
+  public Exec(data: AutocompleteMatchData): AutocompleteExecResult {
 
     // ac/tt only for formula
-    if (data.text[0] !== '=') return {};
+    if (data.text[0] !== '=') {
+      return {};
+    }
 
     let match;
     let result: AutocompleteExecResult = {};
@@ -79,12 +94,14 @@ export class AutocompleteMatcher {
       if (match) {
         const token = match[1];
         const rex = new RegExp('^' + token.replace('.', '\\.'), 'i');
-        const list = this.function_names.filter((name) => rex.test(name));
+        const list = this.function_names.filter((name) => rex.test(name)).map((name) => this.function_map[name.toLowerCase()]);
+
         result = {
           completions: list, 
           token, 
           position: data.cursor - token.length,
         };
+
       }
 
     }
@@ -115,7 +132,7 @@ export class AutocompleteMatcher {
    * 
    * not handled: escaped quotes (not even sure what the syntax for that is)
    */
-  public ParseTooltip(expression: string) {
+  public ParseTooltip(expression: string): TooltipParserResult {
 
     // these two things are actually unrelated, we just need to push/pop them at the same time
     const stack: Array<{buffer: string; argument: number }> = [];
