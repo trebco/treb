@@ -55,21 +55,24 @@ export class NamedRangeCollection {
   /**
    * add name. names are case-insensitive. if the name already
    * exists, it will be overwritten.
+   * 
+   * update: returns success (FIXME: proper errors)
    */
-  public SetName(name: string, range: Area, apply = true) {
+  public SetName(name: string, range: Area, apply = true): boolean {
     const validated = this.ValidateNamed(name);
     if (!validated) {
       console.warn('invalid name');
-      return;
+      return false;
     }
     if (range.entire_column || range.entire_row) {
       console.warn('invalid range');
-      return;
+      return false;
     }
     this.forward[validated] = range;
     if (apply) {
       this.RebuildList();
     }
+    return true;
   }
 
   public SetNames(list: {[index: string]: IArea}) {

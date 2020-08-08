@@ -55,11 +55,25 @@ export interface TooltipParserResult {
 export class AutocompleteMatcher {
 
   private function_names: string[] = [];
-  private token_names: string[] = [];
 
   private function_map: {[index: string]: FunctionDescriptor} = {};
 
   private argument_separator = Localization.argument_separator.charCodeAt(0);
+
+  public RemoveFunctions(functions: FunctionDescriptor|FunctionDescriptor[]): void {
+    if (!Array.isArray(functions)) { functions = [functions]; }
+    let list = Object.keys(this.function_map).map((key) => this.function_map[key]);
+    for (const func of functions) {
+      list = list.filter(test => test.name !== func.name);
+    }
+    this.SetFunctions(list);
+  }
+
+  public AddFunctions(functions: FunctionDescriptor|FunctionDescriptor[]): void {
+    if (!Array.isArray(functions)) { functions = [functions]; }
+    const list = Object.keys(this.function_map).map((key) => this.function_map[key]).concat(...functions);
+    this.SetFunctions(list);
+  }
 
   public SetFunctions(functions: FunctionDescriptor[]): void {
     this.function_map = {};

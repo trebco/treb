@@ -18,10 +18,16 @@ export interface FormulaButtonEvent {
   cursor_position?: number;
 }
 
+export interface AddressLabelEvent {
+  type: 'address-label-event';
+  text?: string;
+}
+
 export type FormulaBar2Event
   = FormulaEditorEvent
   | FormulaButtonEvent
   | FormulaBarResizeEvent
+  | AddressLabelEvent
   ;
 
 export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
@@ -34,10 +40,10 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   public get focused(): boolean { return this.focused_; }
 
   /** address label (may also show other things... ?) */
-  private address_label_container!: HTMLDivElement;
+  private address_label_container: HTMLDivElement;
 
   /** address label (may also show other things... ?) */
-  private address_label!: HTMLDivElement;
+  private address_label: HTMLDivElement;
 
   /** the function button (optional?) */
   private button!: HTMLButtonElement;
@@ -137,6 +143,8 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
     this.address_label_container = DOMUtilities.CreateDiv('address-label', inner_node);
     this.address_label = DOMUtilities.CreateDiv('', this.address_label_container);
+
+    this.InitAddressLabel();
 
     if (this.options.insert_function_button) {
 
@@ -240,6 +248,56 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
   public IsElement(element: HTMLElement): boolean {
     return element === this.editor_node;
+  }
+
+  public InitAddressLabel() {
+
+    this.address_label.contentEditable = 'true';
+    this.address_label.spellcheck = false;
+
+    // on focus, select all 
+    // Q: do we do this in other places? we should consolidate
+    // A: I don't think we do just this, usually there's additional logic for % and such
+
+    this.address_label.addEventListener('focusin', (event) => {
+
+      // FIXME: close any open editors? (...)
+
+      if ((document.body as any).createTextRange) {
+        const range = (document.body as any).createTextRange();
+        range.moveToElementText(this.address_label);
+        range.select();
+      } 
+      else if (window.getSelection) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(this.address_label);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+    });
+
+    this.address_label.addEventListener('keydown', (event) => {
+      switch (event.key) {
+          
+        case 'Enter':
+          event.stopPropagation();
+          event.preventDefault();
+          this.Publish({
+            type: 'address-label-event',
+            text: this.address_label.textContent || undefined,
+          });
+          break;
+
+        case 'Esc':
+        case 'Escape':
+          event.stopPropagation();
+          event.preventDefault();
+          this.Publish({ type: 'address-label-event' });
+          break;                    
+      }
+    });
+
   }
 
   /**

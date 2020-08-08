@@ -2357,6 +2357,93 @@ export class Grid {
 
   }
 
+  private HandleAddressLabelEvent(text?: string) {
+
+    if (text) {
+
+      // can be one of:
+      // 
+      // - it's an address (possibly including sheet): jump to that address
+      // - it's a range, same thing
+      // - it's a name, which exists: jump to that name
+      // - it's a name, which doesn't exist: create name for current selection
+
+      // we definitely do this a lot, need to consolidate
+
+      const resolve_sheet_name = (name = ''): number => {
+        const lc = name.toLowerCase();
+        for (const sheet of this.model.sheets) {
+          if (sheet.name.toLowerCase() === lc) { return sheet.id; }
+        }
+        return this.active_sheet.id; // default to active sheet on short-hand names like "A2"
+      }
+      
+      let target_area: Area|undefined;
+      const parse_result = this.parser.Parse(text);
+
+      if (parse_result.expression) {
+        switch (parse_result.expression.type) {
+          case 'address':
+            parse_result.expression.sheet_id = resolve_sheet_name(parse_result.expression.sheet);
+            target_area = new Area(parse_result.expression);
+            break;
+
+          case 'range':
+            parse_result.expression.start.sheet_id = resolve_sheet_name(parse_result.expression.start.sheet);
+            target_area = new Area(parse_result.expression.start, parse_result.expression.end);
+            break;
+
+          case 'identifier':
+            {
+              target_area = this.model.named_ranges.Get(parse_result.expression.name);
+              if (!target_area) {
+                if (!this.primary_selection.empty) {
+                  this.SetName(parse_result.expression.name.toUpperCase(), this.primary_selection.area);
+                }
+              }
+            }
+            break;
+        
+          default:
+            // console.info('UNK', parse_result.expression.type);
+            break;
+        }
+      }
+
+      if (target_area) {
+        /*
+
+        console.info("TA", target_area);
+        const commands: Command[] = [];
+        if (target_area.start.sheet_id !== this.active_sheet.id) {
+          commands.push({
+            key: CommandKey.ActivateSheet,
+            id: target_area.start.sheet_id,
+          });
+        }
+        commands.push({
+          key: CommandKey.Select,
+          area: target_area,
+        });
+
+        this.ExecCommand(commands);
+        */
+
+        this.ExecCommand({
+          key: CommandKey.Select,
+          area: target_area,
+        });
+
+        return;
+      }
+
+    }
+
+    this.UpdateAddressLabel();
+    this.Focus();
+
+  }
+
   private InitFormulaBar(grid_container: HTMLElement, autocomplete: Autocomplete) {
 
     this.formula_bar = new FormulaBar(
@@ -2370,6 +2457,10 @@ export class Grid {
     this.formula_bar.Subscribe((event) => {
 
       switch (event.type) {
+
+        case 'address-label-event':
+          this.HandleAddressLabelEvent(event.text)
+          break;
 
         case 'stop-editing':
 
@@ -6708,7 +6799,23 @@ export class Grid {
           break;
 
         case CommandKey.Select:
-          // ...
+
+          // case: empty selection
+          if (!command.area) {
+            this.ClearSelection(this.primary_selection);
+          }
+          else {
+            // activate sheet, if necessary
+            if (command.area.start.sheet_id && command.area.start.sheet_id !== this.active_sheet.id) {
+              this.ActivateSheetInternal({
+                key: CommandKey.ActivateSheet,
+                id: command.area.start.sheet_id,
+              });
+            }
+            this.Select(this.primary_selection, new Area(command.area.start, command.area.end));
+            this.RenderSelections();
+          }
+
           break;
 
         case CommandKey.Freeze:
@@ -6795,9 +6902,17 @@ export class Grid {
           if (command.area) {
             this.model.named_ranges.SetName(command.name,
               new Area(command.area.start, command.area.end));
+            this.autocomplete_matcher.AddFunctions({
+              type: DescriptorType.Token,
+              name: command.name,
+            });
           }
           else {
             this.model.named_ranges.ClearName(command.name);
+            this.autocomplete_matcher.RemoveFunctions({
+              type: DescriptorType.Token,
+              name: command.name,
+            });
           }
           structure_event = true;
           structure_rebuild_required = true;

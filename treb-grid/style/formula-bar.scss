@@ -38,6 +38,7 @@
         margin-right: 6px;
 
         & > div {
+          outline: none;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
