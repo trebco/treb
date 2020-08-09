@@ -2377,7 +2377,14 @@ export class Grid {
         }
         return this.active_sheet.id; // default to active sheet on short-hand names like "A2"
       }
-      
+
+      const get_sheet = (id?: number) => {
+        for (const sheet of this.model.sheets) {
+          if (sheet.id === id) { return sheet; }
+        }
+        return this.active_sheet;
+      };
+
       let target_area: Area|undefined;
       const parse_result = this.parser.Parse(text);
 
@@ -2411,30 +2418,19 @@ export class Grid {
       }
 
       if (target_area) {
-        /*
-
-        console.info("TA", target_area);
-        const commands: Command[] = [];
-        if (target_area.start.sheet_id !== this.active_sheet.id) {
-          commands.push({
-            key: CommandKey.ActivateSheet,
-            id: target_area.start.sheet_id,
+        
+        // check that range exists
+        const sheet = get_sheet(target_area.start.sheet_id);
+        if (sheet.columns >= target_area.end.column && sheet.rows >= target_area.end.row) {
+          this.ExecCommand({
+            key: CommandKey.Select,
+            area: target_area,
           });
+          return;
         }
-        commands.push({
-          key: CommandKey.Select,
-          area: target_area,
-        });
-
-        this.ExecCommand(commands);
-        */
-
-        this.ExecCommand({
-          key: CommandKey.Select,
-          area: target_area,
-        });
-
-        return;
+        else {
+          console.warn('address out of range');
+        }
       }
 
     }
