@@ -3,6 +3,7 @@ import { DOMUtilities } from '../util/dom_utilities';
 import { Rectangle } from 'treb-base-types';
 import { ExtendedTheme } from '../types/theme';
 import { AutocompleteExecResult, DescriptorType } from './autocomplete_matcher';
+import { css } from 'treb-utils';
 
 export interface AutocompleteResult {
   handled: boolean;
@@ -47,6 +48,8 @@ export class Autocomplete {
   private callback?: AcceptCallback;
   private scope: string;
 
+  private active_element?: HTMLElement;
+
   constructor(private options: AutocompleteOptions = {}){
 
     this.scope = 'AC' + Math.round(Math.random() * Math.pow(10, 10)).toString(16);
@@ -59,6 +62,10 @@ export class Autocomplete {
 
     this.completion_list.addEventListener('mousedown', (event) => this.ListMouseDown(event));
 
+    // FIXME: should we add/remove listener based on visibility? (...)
+
+    this.completion_list.addEventListener('mousemove', (event) => this.ListMouseMove(event));
+
     this.tooltip = DOMUtilities.CreateDiv('treb-cell-editor-ac-tooltip treb-ac-tooltip',
       options.container || document.body,
       this.scope);
@@ -67,7 +74,7 @@ export class Autocomplete {
 
   }
 
-  public UpdateTheme() {
+  public UpdateTheme(): void {
     if (this.options.theme) {
 
       // FIXME: no longer sharing, don't need scoped styling anymore
@@ -95,6 +102,7 @@ export class Autocomplete {
         this.tooltip.style.fontSize =
         font_size || '';
 
+      /*
       this.stylesheet.textContent = `
 
       .treb-ac-list[${this.scope}] {
@@ -112,22 +120,58 @@ export class Autocomplete {
       }
 
       `.replace(/\s+/g, ' ').trim();
+      */
 
+     this.stylesheet.textContent = css`
+
+     .treb-ac-list[${this.scope}] {
+       background: ${this.options.theme.autocomplete_background};
+     }
+
+     .treb-ac-list[${this.scope}] > ul > li {
+       color: ${this.options.theme.autocomplete_color};
+     }
+
+     .treb-ac-list[${this.scope}] > ul > li > a.selected {
+       color: ${this.options.theme.autocomplete_highlight_color};
+       background: ${this.options.theme.autocomplete_highlight_background};
+     }
+
+     `.replace(/\s+/g, ' ').trim();
+     
     }
   }
 
-  public Hide(){
+  public Hide(): void {
     this.tooltip.style.top = '-1000px';
     this.completion_list.style.top = '-1000px';
     this.completion_list_visible = false;
     this.tooltip_visible = false;
+    this.active_element = undefined;
   }
 
-  public ResetBlock(){
+  public ResetBlock(): void {
     this.block = false;
   }
 
-  public ListMouseDown(event: MouseEvent){
+  public ListMouseMove(event: MouseEvent): void {
+   
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'A') {
+      if (target !== this.active_element) {
+        if (this.active_element) {
+          this.active_element.classList.remove('selected');
+          this.active_element = target;
+          this.active_element.classList.add('selected');
+          this.selected_index = Number(target.dataset.index || '0');
+          this.last_completion = target.textContent || '';
+        }
+      }
+    }
+    
+  }
+
+  public ListMouseDown(event: MouseEvent): void {
 
     event.stopPropagation();
     event.preventDefault();
@@ -199,6 +243,7 @@ export class Autocomplete {
         const child = children[index];
         if (index === this.selected_index){
           child.classList.add('selected');
+          this.active_element = child;
           const child_rect = child.getBoundingClientRect();
           if (child_rect.top < list_rect.top){
             this.completion_list.scrollBy(0, -child_rect.height);
@@ -249,7 +294,7 @@ export class Autocomplete {
       this.completion_list.innerHTML = `<ul>`
         + data.completions.map((descriptor, index) => {
           if (descriptor.name === this.last_completion) this.selected_index = index;
-          return `<li><a>${descriptor.name}</a></li>`;
+          return `<li><a data-index="${index}">${descriptor.name}</a></li>`;
         }).join('\n') + `<ul>`;
 
       const height = this.completion_list.offsetHeight;
@@ -282,8 +327,12 @@ export class Autocomplete {
       this.completion_list.style.left = position.left + 'px';
 
       const children = this.completion_list.querySelectorAll('a');
+      this.active_element = children[this.selected_index];
       children[this.selected_index].classList.add('selected');
       this.last_completion = children[this.selected_index].textContent || undefined;
+
+      // FIXME: scroll into view? (...)
+      this.completion_list.scrollTop = this.active_element.offsetTop;
 
       this.completion_list_visible = true;
     }

@@ -43,6 +43,12 @@ module.exports = function(source) {
         cooked = cooked.split('\n').map(line => line.trim()).join('');
       }
 
+      // this is too aggressive for CSS because it removes spaces in
+      // composite rule selectors. it works for simple rules, but we
+      // need to adjust... I think the rule should be keep space 
+      // characters (not newlines, although there should be a single space)
+      // outside of braces 
+
       if (tag.remove_whitespace) {
         cooked = cooked.replace(/[\s\r\n]+/g, '');
       }

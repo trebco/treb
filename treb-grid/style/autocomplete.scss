@@ -48,7 +48,9 @@
         cursor: default;
         color: inherit;
 
-        &:hover, &.selected {
+        /* &:hover, */
+
+        &.selected {
           background: #339966;
           color: #fff;
         }
@@ -59,7 +61,7 @@
     /*
     here we unwind the selected style if there's a hover,
     unless you're hovering over the selection. and so on.
-    */
+    * /
 
     &:hover li a.selected {
       background: inherit;
@@ -71,6 +73,7 @@
       }
 
     }
+    */
 
   }
 }
