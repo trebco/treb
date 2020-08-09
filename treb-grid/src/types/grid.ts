@@ -3534,6 +3534,7 @@ export class Grid {
       }
 
       if (selection.empty || !area.Equals(selection.area)) {
+
         this.Select(selection, area, undefined, true);
         this.RenderSelections();
 
@@ -3774,7 +3775,11 @@ export class Grid {
 
     if (!label) {
 
-      label = Area.CellAddressToLabel(target.start);
+      // label = Area.CellAddressToLabel(target.start);
+      label = selection.area.spreadsheet_label;
+      if (data.merge_area && data.merge_area.Equals(selection.area)) {
+        label = Area.CellAddressToLabel(data.merge_area.start);
+      }
 
       if (this.active_sheet.id !== this.editing_cell.sheet_id) {
         const name = this.active_sheet.name;
