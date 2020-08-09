@@ -286,57 +286,7 @@ export class Autocomplete {
 
     if (this.block) return;
 
-    if (data.completions && data.completions.length){
-      this.tooltip.style.top = '-1000px';
-
-      this.selected_index = 0;
-
-      this.completion_list.innerHTML = `<ul>`
-        + data.completions.map((descriptor, index) => {
-          if (descriptor.name === this.last_completion) this.selected_index = index;
-          return `<li><a data-index="${index}">${descriptor.name}</a></li>`;
-        }).join('\n') + `<ul>`;
-
-      const height = this.completion_list.offsetHeight;
-
-      if (this.options.autocomplete_prefer_top){
-        if (position.top < 200){
-          this.completion_list.style.top = (position.bottom + 5) + 'px';
-        }
-        else {
-          this.completion_list.style.top = (position.top - height - 5) + 'px';
-        }
-      }
-      else {
-
-        // compiler thinks this is possibly undefined, but vs code does
-        // not -- I thought vs code used the same tsc we use to compile?
-
-        if (document.documentElement) {
-          const viewport_height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-          if (viewport_height - position.bottom < 200 ){
-            this.completion_list.style.top = (position.top - height - 5) + 'px';
-          }
-          else {
-            this.completion_list.style.top = (position.bottom + 5) + 'px';
-          }
-
-        }
-      }
-
-      this.completion_list.style.left = position.left + 'px';
-
-      const children = this.completion_list.querySelectorAll('a');
-      this.active_element = children[this.selected_index];
-      children[this.selected_index].classList.add('selected');
-      this.last_completion = children[this.selected_index].textContent || undefined;
-
-      // FIXME: scroll into view? (...)
-      this.completion_list.scrollTop = this.active_element.offsetTop;
-
-      this.completion_list_visible = true;
-    }
-    else this.completion_list.style.top = '-1000px';
+    // handle tooltip first. we may offset AC list based for tooltip.
 
     if (data.tooltip){
 
@@ -354,6 +304,66 @@ export class Autocomplete {
       this.tooltip_visible = true;
     }
     else this.tooltip.style.top = '-1000px';
+
+    // now layout AC list
+
+    if (data.completions && data.completions.length){
+
+      // temp we are just hiding tooltip if there's AC, but we could layout
+
+      this.tooltip.style.top = '-1000px';
+
+      this.selected_index = 0;
+
+      this.completion_list.innerHTML = `<ul>`
+        + data.completions.map((descriptor, index) => {
+          if (descriptor.name === this.last_completion) this.selected_index = index;
+          return `<li><a data-index="${index}">${descriptor.name}</a></li>`;
+        }).join('\n') + `<ul>`;
+
+      const height = this.completion_list.offsetHeight;
+
+      let layout_top = false;
+
+      if (this.options.autocomplete_prefer_top){
+        layout_top = (position.top >= 200);
+      }
+      else {
+
+        // compiler thinks this is possibly undefined, but vs code does
+        // not -- I thought vs code used the same tsc we use to compile?
+
+        if (document.documentElement) {
+          const viewport_height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+          if (viewport_height - position.bottom < 200 ){
+            layout_top = true;
+          }
+        }
+
+      }
+
+      if (layout_top) {
+        this.completion_list.style.top = (position.top - height - 5) + 'px';
+      }
+      else {
+        this.completion_list.style.top = (position.bottom + 5) + 'px';
+      }
+
+      this.completion_list.style.left = position.left + 'px';
+
+      const children = this.completion_list.querySelectorAll('a');
+      this.active_element = children[this.selected_index];
+      children[this.selected_index].classList.add('selected');
+      this.last_completion = children[this.selected_index].textContent || undefined;
+
+      // scroll into view
+      this.completion_list.scrollTop = this.active_element.offsetTop;
+
+      this.completion_list_visible = true;
+    }
+    else this.completion_list.style.top = '-1000px';
+
+    
   }
 
 
