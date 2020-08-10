@@ -1,6 +1,10 @@
 
 import { CompositeSheet } from './composite-sheet';
 
+interface DecoratedHTMLElement extends HTMLElement {
+  _spreadsheet: any;
+}
+
 export class AutoEmbedManager {
   
   /** auto-embed */
@@ -10,17 +14,21 @@ export class AutoEmbedManager {
 
     for (let i = 0; i < elements.length; i++) {
 
-      const element = elements[i];
-      if ((element as any)._spreadsheet) continue; // already attached
+      const element = elements[i] as DecoratedHTMLElement;
+      if (element._spreadsheet) { 
+        continue; // already attached
+      }
+
+      const dataset = element.dataset || {};
 
       const options: any = {
         container: element,
-        network_document: element.getAttribute('data-treb') || undefined,
+        network_document: dataset.treb || undefined,
       };
 
       // dropping old-style options, they've been deprecated for a while
 
-      const options_list = element.getAttribute('data-options');
+      const options_list = dataset.options;
       if (options_list) {
         const pairs = options_list.split(/,/g);
         for (const pair of pairs) {
@@ -45,7 +53,7 @@ export class AutoEmbedManager {
       const sheet = CompositeSheet.Create(options);
 
       // optional load callback
-      const load = options.load || element.getAttribute('data-load');
+      const load = options.load || dataset.load;
       if (load) {
         const aself = (self as any);
         if (aself[load]) {

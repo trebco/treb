@@ -459,12 +459,6 @@ export class CompositeSheet {
       button.textContent = options.text;
     }
 
-    /*
-    if (options.command) {
-      button.setAttribute('data-command', options.command);
-    }
-    */
-
     if (options.click) {
       const callback = options.click;
       button.addEventListener('click', () => callback());

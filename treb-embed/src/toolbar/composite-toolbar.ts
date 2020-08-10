@@ -1045,8 +1045,7 @@ export class CompositeToolbar {
         }
       }
       else {
-        const command = node.getAttribute('data-command');
-        this.popup_item.value = command || node.textContent || '';
+        this.popup_item.value = node.dataset.command || node.textContent || '';
       }
 
       this.HandleToolbar(this.popup_item.id, this.popup_item);
@@ -1062,7 +1061,9 @@ export class CompositeToolbar {
 
       if (button && button.tagName === 'BUTTON') {
 
-        const id = button.getAttribute('data-id') || '';
+        const dataset = button.dataset;
+
+        const id = dataset.id || '';
         const item = this.popup_item;
         const item_id = item.id || '';
 
@@ -1070,7 +1071,7 @@ export class CompositeToolbar {
         this.UpdateItem({
           id: item_id,
           title: button.getAttribute('title') || '',
-          icon: button.getAttribute('data-icon') || '',
+          icon: dataset.icon || '',
           alternate_id: id,
         });
 
@@ -1167,8 +1168,12 @@ export class CompositeToolbar {
 
       const button = document.createElement('button');
       button.setAttribute('title', option.title || '');
-      button.setAttribute('data-id', option.id || '');
-      button.setAttribute('data-icon', option.icon || '');
+
+      button.dataset.id = option.id || '';
+      // button.setAttribute('data-id', option.id || '');
+      button.dataset.icon = option.icon || '';
+      // button.setAttribute('data-icon', option.icon || '');
+
 
       // const svg = document.createElementNS(SVGNS, 'svg');
       // const element = document.createElementNS(SVGNS, 'use');
