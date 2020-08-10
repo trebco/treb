@@ -100,7 +100,7 @@ export class SelectionRenderer {
    *
    * updated for svg selections. erase is now required, so parameter is removed.
    */
-  public RenderSelections(show_primary_selection = true) {
+  public RenderSelections(show_primary_selection = true): void {
 
     // this is a dumb way of doing this... it's also error prone,
     // because it needs to track all the function exits (there are

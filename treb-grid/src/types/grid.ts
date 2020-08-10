@@ -2751,7 +2751,13 @@ export class Grid {
     }
 
     this.layout_token = 0;
-    this.RenderSelections();
+
+    // move this to the end. on first load, sheet will be smaller than
+    // viewport, so full-row/full-column selections will be truncated.
+    // by moving the selection render to the end, we get the result of 
+    // any implicit sheet expansion.
+
+    // this.RenderSelections();
 
     this.tile_renderer.OverflowDirty(full_tile);
 
@@ -2791,6 +2797,8 @@ export class Grid {
 
     this.tile_renderer.RenderHeaders(this.render_tiles, force_headers);
     this.tile_renderer.RenderCorner();
+
+    this.RenderSelections();
 
   }
 
@@ -4091,6 +4099,7 @@ export class Grid {
    * hide the primary selection in some cases (one case).
    */
   private RenderSelections() {
+
     const show_primary_selection = (!this.editing_state) ||
       (this.editing_cell.sheet_id === this.active_sheet.id);
 

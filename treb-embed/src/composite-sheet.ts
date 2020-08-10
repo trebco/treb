@@ -25,6 +25,10 @@ interface SidebarButtonOptions {
   click?: () => void;
 }
 
+export interface DecoratedHTMLElement extends HTMLElement {
+  _spreadsheet: any;
+}
+
 /**
  * sheet plus toolbar and sidebar (replacement for the old autoembed)
  */
@@ -266,14 +270,14 @@ export class CompositeSheet {
       this.ShowToolbar(true);
     }
 
-    (options.container as any)._spreadsheet = this.sheet; // ?
+    (options.container as DecoratedHTMLElement)._spreadsheet = this.sheet; // ?
 
   }
 
   /**
    * popout, or "open in new tab". WIP.
    */
-  public Popout() {
+  public Popout(): void {
 
     const new_window = window.open('', '_blank');
     if (!new_window) { return; }
@@ -407,6 +411,9 @@ export class CompositeSheet {
       const load = () => {
         options.container = document.querySelector('.treb') as HTMLElement;
 
+        // these are sloppy from ts perspective but this will get 
+        // transpiled away, so it will ultimately be cleaner
+
         if (options.container && (window as any).TREB) {
           (window as any).sheet = (window as any).TREB.CreateSpreadsheet(options);
           (window as any).sheet.LoadDocument(data);
@@ -429,7 +436,7 @@ export class CompositeSheet {
   }
 
   /** show about page */
-  public About() {
+  public About(): void {
     if (/about-treb/.test(document.location.href.toString()) || /^about treb$/i.test(document.title)) {
       alert('This is the about page.');
     }
@@ -439,7 +446,7 @@ export class CompositeSheet {
   }
 
   /** add sidebar button */
-  public AddSidebarButton(options: SidebarButtonOptions = {}, container = this.sidebar) {
+  public AddSidebarButton(options: SidebarButtonOptions = {}, container = this.sidebar): HTMLDivElement {
 
     const button = document.createElement('div');
     button.classList.add('sidebar-button');
@@ -480,15 +487,16 @@ export class CompositeSheet {
     }
 
     return button;
+
   }
 
   /** toggle sidebar */
-  public ToggleSidebar() {
+  public ToggleSidebar(): void {
     this.outer_container.classList.toggle(sidebar_open_class);
   }
 
   /** show or hide sidebar */
-  public ShowSidebar(show = true) {
+  public ShowSidebar(show = true): void {
     if (show) {
       this.outer_container.classList.add(sidebar_open_class);
 
@@ -499,10 +507,10 @@ export class CompositeSheet {
   }
 
   /** alias */
-  public HideSidebar() { this.ShowSidebar(false); }
+  public HideSidebar(): void { this.ShowSidebar(false); }
 
   /** toggle toolbar */
-  public ToggleToolbar() {
+  public ToggleToolbar(): void {
 
     // we're doing this manually so we can control the actual toolbar
     // const has_class = new RegExp('(?:^|\\s)' + toolbar_open_class + '(?:$|\\s)').test(this.outer_container.getAttribute('class') || '');
@@ -513,7 +521,7 @@ export class CompositeSheet {
   }
 
   /** show or hide toolbar */
-  public ShowToolbar(show = true) {
+  public ShowToolbar(show = true): void {
 
     let toolbar_button_title = 'Hide Toolbar';
 
@@ -559,7 +567,7 @@ export class CompositeSheet {
   }
 
   /** alias */
-  public HideToolbar() { this.ShowToolbar(false); }
+  public HideToolbar(): void { this.ShowToolbar(false); }
 
 }
 

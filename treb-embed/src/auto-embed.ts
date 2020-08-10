@@ -1,9 +1,5 @@
 
-import { CompositeSheet } from './composite-sheet';
-
-interface DecoratedHTMLElement extends HTMLElement {
-  _spreadsheet: any;
-}
+import { CompositeSheet, DecoratedHTMLElement } from './composite-sheet';
 
 export class AutoEmbedManager {
   

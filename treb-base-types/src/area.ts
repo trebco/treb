@@ -158,13 +158,26 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
       absolute_row: !!end.absolute_row };
     */
 
-    this.end_ = { ...end };
-    this.start_ = { ...start };
+    // patch nulls. this is an effect of transferring via JSON, 
+    // infinities are -> null. make sure to strict === null.
+
+    // NOTE that the patch function returns a clone, so we can store the 
+    // returned object (instead of copying, which we used to do).
+
+    this.end_ = this.PatchNull(end);
+    this.start_ = this.PatchNull(start);
 
     if (normalize) this.Normalize();
 
     // this.ResetIterator();
 
+  }
+
+  public PatchNull(address: ICellAddress): ICellAddress {
+    const copy = { ...address };
+    if (copy.row === null) { copy.row = Infinity; }
+    if (copy.column === null) { copy.column = Infinity; }
+    return copy;
   }
 
   public SetSheetID(id: number) {

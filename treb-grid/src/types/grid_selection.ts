@@ -2,7 +2,11 @@
 import { Area, ICellAddress } from 'treb-base-types';
 
 /**
- *
+ * FIXME: this is broken. we treat this as a simple javascript object,
+ * cloning and creating via JSON, but area is a class instance.
+ * 
+ * that means cloned objects won't work properly (if anyone is relying on 
+ * that object).
  */
 export interface GridSelection {
 
