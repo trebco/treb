@@ -9,6 +9,7 @@ import { AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
 
 import { ExtendedTheme } from '../types/theme';
 import { DataModel } from '../types/data_model';
+import { UA } from '../util/ua';
 
 /** event on commit, either enter or tab */
 export interface FormulaEditorCommitEvent {
@@ -672,7 +673,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
   protected AcceptAutocomplete(ac_result: AutocompleteResult): void {
 
     if (!this.editor_node) return;
-    const selection = window.getSelection();
+    let selection = window.getSelection();
 
     let type = DescriptorType.Function;
     if (ac_result.data && ac_result.data.completions) {
@@ -695,7 +696,8 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     tmp.appendChild(preCaretRange.cloneContents());
 
     const str = (tmp.textContent || '').substr(0, ac_result.data ? ac_result.data.position : 0) + ac_result.value;
-    const insert = (type === DescriptorType.Token) ? str + ' ' : str + '(';
+    //const insert = (type === DescriptorType.Token) ? str + ' ' : str + '(';
+    const insert = (type === DescriptorType.Token) ? str : str + '(';
 
     // this is destroying nodes, we should be setting html here
 
@@ -705,29 +707,28 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     // we have to reconstruct because we destroyed nodes, although
     // we do need to call this for new nodes (on a defined name)
 
-    this.Reconstruct(true);
+    // firefox has problems... essentially if we do reconstruct, then
+    // try to place the cursor at the end, it ends up in a garbage position.
+    // (debugging...)
 
+    if (!UA.is_firefox) {
+      this.Reconstruct(true);
+    }
+
+    selection = window.getSelection();
     range = document.createRange();
-    // const selection = window.getSelection();
-
     if (this.editor_node?.lastChild) {
       range.setStartAfter(this.editor_node.lastChild);
     }
     range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
     this.selecting_ = true;
 
     if (ac_result.click){
       this.UpdateSelectState();
     }
-
-    /*
-    if (type === DescriptorType.Token) {
-      this.selecting_ = false;
-      Yield().then(() => this.Reconstruct(true));
-    }
-    */
 
   }
 
