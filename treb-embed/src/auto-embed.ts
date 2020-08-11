@@ -4,7 +4,7 @@ import { CompositeSheet, DecoratedHTMLElement } from './composite-sheet';
 export class AutoEmbedManager {
   
   /** auto-embed */
-  public static Run() {
+  public static Run(): void {
 
     const elements = document.querySelectorAll('div[data-treb]');
 

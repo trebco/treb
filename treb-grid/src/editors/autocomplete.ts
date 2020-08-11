@@ -137,7 +137,7 @@ export class Autocomplete {
        background: ${this.options.theme.autocomplete_highlight_background};
      }
 
-     `.replace(/\s+/g, ' ').trim();
+     `; // this is not needed because the template compressor will remove whitespace // .replace(/\s+/g, ' ').trim();
      
     }
   }

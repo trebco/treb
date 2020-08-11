@@ -228,7 +228,8 @@ export class CompositeSheet {
     this.AddSidebarButton({
       icon: 'treb-about-icon',
       title: `What's This?`,
-      click: () => this.About(),
+      click: () => // this.About(),
+        this.sheet.About(),
     });
 
     const spacer = document.createElement('div');
@@ -435,7 +436,7 @@ export class CompositeSheet {
 
   }
 
-  /** show about page */
+  /* * show about page * /
   public About(): void {
     if (/about-treb/.test(document.location.href.toString()) || /^about treb$/i.test(document.title)) {
       alert('This is the about page.');
@@ -444,6 +445,7 @@ export class CompositeSheet {
       window.open('https://treb.app', 'about-treb'); // <- FIXME: absolute, to canonical host
     }
   }
+  */
 
   /** add sidebar button */
   public AddSidebarButton(options: SidebarButtonOptions = {}, container = this.sidebar): HTMLDivElement {

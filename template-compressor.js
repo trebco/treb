@@ -4,6 +4,7 @@ const utils = require('loader-utils');
 
 module.exports = function(source) {
   const options = utils.getOptions(this);
+
   let tags = options ? options.tags || [] : [];
 
   // test

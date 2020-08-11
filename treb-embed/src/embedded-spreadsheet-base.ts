@@ -6,11 +6,11 @@ import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
-import { EventSource, Yield } from 'treb-utils';
+import { EventSource, Yield, tmpl } from 'treb-utils';
 import { NumberFormatCache, ValueParser } from 'treb-format';
 
 // local
-import { ProgressDialog, MessageDialogOptions, DialogType } from './progress-dialog';
+import { ProgressDialog, DialogType } from './progress-dialog';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions, DefaultExportOptions } from './options';
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
 
@@ -29,7 +29,7 @@ import '../style/embed.scss';
 // config
 import * as build from '../../package.json';
 import { SerializedModel } from 'treb-grid/src/types/data_model';
-import { GraphStatus } from 'treb-calculator/src/dag/graph';
+import { FreezePane } from 'treb-grid/src/types/sheet_types';
 
 interface UndoEntry {
   data: string;
@@ -183,6 +183,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   protected options: EmbeddedSpreadsheetOptions;
 
+  /**
+   * dialog is assigned in the constructor, only if there's a containing
+   * element (i.e. not when we're just using the engine)
+   */
   protected dialog?: ProgressDialog;
 
   /** localized parser instance. we're sharing. */
@@ -357,7 +361,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             this.dialog?.ShowDialog({
               type: DialogType.error,
               message: event.message,
-              title: event.title || 'Error',
+              title: event.title, // || 'Error',
               timeout: 3000,
               close_box: true,
             });
@@ -526,6 +530,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         fontFamily: this.grid.theme.interface_dialog_font_face,
         fontSize: this.grid.theme.interface_dialog_font_size,
       });
+      // requestAnimationFrame(() => this.About());
     }
 
     /*
@@ -582,7 +587,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public OnSheetChange(event: SheetChangeEvent) {
+  public OnSheetChange(event: SheetChangeEvent): void {
 
     // call annotation method(s) on any annotations in active sheet
 
@@ -601,7 +606,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public HandleDrag(event: DragEvent) {
+  public HandleDrag(event: DragEvent): void {
     if (event.dataTransfer && event.dataTransfer.types){
 
       // this is for IE11, types is not an array
@@ -645,13 +650,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** return current freeze area */
-  public GetFreeze() { return this.grid.GetFreeze(); }
+  public GetFreeze(): FreezePane { return this.grid.GetFreeze(); }
 
   /**
    * update theme if any css properties have changed. this calls
    * the grid method but we also have to update our dialog.
    */
-  public UpdateTheme() {
+  public UpdateTheme(): void {
     this.grid.UpdateTheme();
     this.dialog?.UpdateTheme({
       mask: this.grid.theme.interface_dialog_mask,
@@ -665,8 +670,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   /**
    * sends data to a new window. used for popout and fork.
+   * 
+   * DEPRECATED [?]
    */
-  public PostDocument(target: Window, host: string) {
+  public PostDocument(target: Window, host: string): void {
 
     let ack = false;
     let counter = 0;
@@ -927,7 +934,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param column column, or columns (array), or undefined means all columns
    * @param width desired width (can be 0) or undefined means 'auto-size'
    */
-  public SetColumnWidth(column?: number|number[], width?: number) {
+  public SetColumnWidth(column?: number|number[], width?: number): void {
     this.grid.SetColumnWidth(column, width);
   }
 
@@ -936,7 +943,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param row row, or rows (array), or undefined means all rows
    * @param height desired height (can be 0) or undefined means 'auto-size'
    */
-  public SetRowHeight(row?: number|number[], height?: number) {
+  public SetRowHeight(row?: number|number[], height?: number): void {
     this.grid.SetRowHeight(row, height);
   }
 
@@ -973,14 +980,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     return result;
   }
 
-  public ScrollTo(address: string | ICellAddress) {
+  public ScrollTo(address: string | ICellAddress): void {
     this.grid.ScrollTo(this.EnsureAddress(address));
   }
 
   /**
    * API function: insert at current cursor
    */
-  public InsertRow() {
+  public InsertRow(): void {
     /*
     const selection = this.grid.GetSelection();
     const area = selection.area;
@@ -994,7 +1001,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * API function: insert at current cursor
    */
-  public InsertColumn() {
+  public InsertColumn(): void {
     /*
     const selection = this.grid.GetSelection();
     const area = selection.area;
@@ -1008,35 +1015,35 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * API function: delete selection
    */
-  public DeleteRows() {
+  public DeleteRows(): void {
     this.grid.DeleteRows();
   }
 
   /**
    * API function: delete selection
    */
-  public DeleteColumns() {
+  public DeleteColumns(): void {
     this.grid.DeleteColumns();
   }
 
   /**
    * API function: apply borders to current selection
    */
-  public ApplyBorders(borders: BorderConstants, width = 1) {
+  public ApplyBorders(borders: BorderConstants, width = 1): void {
     this.grid.ApplyBorders(undefined, borders, undefined, width);
   }
 
   /**
    * API function: merge current selection
    */
-  public MergeCells() {
+  public MergeCells(): void {
     this.grid.MergeSelection();
   }
 
   /**
    * API function: unmerge current selection
    */
-  public UnmergeCells() {
+  public UnmergeCells(): void {
     this.grid.UnmergeSelection();
   }
 
@@ -2265,6 +2272,17 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.last_selection = JSON.stringify(selection);    
 
     this.Publish({type: 'selection'});
+  }
+
+  public About(): void {
+    this.dialog?.ShowDialog({
+      // title: 'About TREB',
+      // close_box: true,
+      // html: `TREB version ${build.version}<div class='smaller'><a target=_blank href='https://treb.app'>http://treb.app</a></div>`,
+      // timeout: 3000,
+      // icon: true,
+      type: DialogType.about,
+    });
   }
 
   /*

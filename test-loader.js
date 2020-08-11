@@ -5,6 +5,7 @@ const fs = require('fs');
 
 let file = './treb-embed/src/progress-dialog.ts';
 file = './sample.ts';
+file = './treb-grid/src/editors/autocomplete.ts';
 
 fs.readFile(file, 'utf-8', (err, data) => {
   if (err) { 
@@ -14,6 +15,13 @@ fs.readFile(file, 'utf-8', (err, data) => {
 
   // console.info(
     loader.call({
-      options: { tags: ['tmpl'] }}, data);
+
+      query: { 
+        tags: [
+          { tag: 'tmpl', trim_lines: true, },
+          { tag: 'css', remove_whitespace: true, remove_tag: true, },
+        ],
+        dev: true,
+      }}, data);
 
 });

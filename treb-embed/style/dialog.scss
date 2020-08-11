@@ -22,18 +22,23 @@
   border: 1px solid #ccc;
   border: 1px solid #999;
   
-  /*
   border-top-width: 3px;
   border-top-color: rgb(0, 157, 255);
-  */
+  border-top-color: rgb(158, 175, 185);
+  border-top-color: #999;
 
   display: flex;
   flex-direction: row;
   align-items: center;
+  position: relative;
 
   & > * {
-    padding: 2px 12px;
+    /* padding: 2px 12px; */
     display: none;
+  }
+
+  & > div {
+    position: relative;
   }
 
   /* middle: title, message and (maybe) progress bar */
@@ -42,16 +47,42 @@
     display: block;
   }
 
-  & svg {
-    fill: rgb(115, 130, 140);
-    width: 20px;
-    height: 20px;
-    cursor: default;
+  & > *:nth-child(2) {
+    padding: 2px 12px;
+    padding-right: 20px;
+  }
 
-    &:hover, &:active {
-      fill: rgb(4, 156, 251);
+  & > .close-box {
+    position: absolute;
+    top: 0;
+    right: 0px;
+
+    & > svg {
+      fill: rgb(115, 130, 140);
+      width: 20px;
+      height: 20px;
+      cursor: default;
+      &:hover, &:active {
+        fill: rgb(4, 156, 251);
+      }
     }
 
+    padding: 4px;
+
+  }
+
+  .smaller {
+    font-size: .9em;
+  }
+
+  a {
+    text-decoration: none;
+    /* color: rgb(115, 130, 140); */
+    color: inherit;
+    
+    &:hover, &:active {
+      color: rgb(4, 156, 251);
+    }
   }
 
   &.dialog-type-success {
@@ -59,11 +90,14 @@
     border-top-color: rgb(68, 217, 38);
   }
 
+  &.dialog-type-about {
+    border-top-width: 3px;
+    border-top-color: #52880b;
+  }
+
   &.dialog-type-error {
-    /*
     border-top-width: 3px;
     border-top-color: rgb(249, 47, 6);
-    */
   }
 
   &.dialog-type-info {
