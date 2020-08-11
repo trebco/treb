@@ -10,7 +10,7 @@ import {
   QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress
 } from 'treb-parser';
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
-import { NumberFormatCache, RDateScale, ValueParser, Hints } from 'treb-format';
+import { NumberFormatCache, LotusDate, ValueParser, Hints } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
 import { TabBar } from './tab_bar';
@@ -4621,9 +4621,10 @@ export class Grid {
       const format = NumberFormatCache.Get(cell.style.number_format);
 
       if (format.date_format) {
-        const date = new Date(cell.value * RDateScale);
-        const number_format = (date.getHours() || date.getMinutes() || date.getSeconds()) ?
+        const date = LotusDate(cell.value);
+        const number_format = (date.getUTCHours() || date.getUTCMinutes() || date.getUTCSeconds()) ?
           'Timestamp' : 'Short Date';
+
         cell_value = NumberFormatCache.Get(number_format).Format(cell_value);
       }
       else if (/(?:%|percent)/i.test(cell.style.number_format)) {

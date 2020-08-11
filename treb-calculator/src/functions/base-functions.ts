@@ -3,8 +3,8 @@ import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, ValueError } from '../function-error';
 import { Cell } from 'treb-base-types';
-
 import { Sparkline } from 'treb-sparkline';
+import { LotusDate, UnlotusDate } from 'treb-format';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -20,7 +20,7 @@ import { Sparkline } from 'treb-sparkline';
  */
 
 /** milliseconds in one day, used in time functions */
-const DAY_MS = 1000 * 60 * 60 * 24;
+// const DAY_MS = 1000 * 60 * 60 * 24;
 
 // some functions have semantics that can't be represented inline,
 // or we may want to refer to them from other functions.
@@ -95,39 +95,60 @@ export const BaseFunctionLibrary: FunctionMap = {
     Now: {
       description: 'Returns current time',
       volatile: true,
-      fn: () => {
-        // NOTE: these are R dates. we should not use R dates. switch to unix timestamps.
-        return new Date().getTime() / DAY_MS;
+      fn: (): number => {
+        return UnlotusDate(new Date().getTime());
       },
     },
 
     Today: {
       description: 'Returns current day',
       volatile: true,
-      fn: () => {
-        // NOTE: these are R dates. we should not use R dates. switch to unix timestamps.
+      fn: (): number => {
         const date = new Date();
         date.setMilliseconds(0);
         date.setSeconds(0);
         date.setMinutes(0);
         date.setHours(12);
-        return date.getTime() / DAY_MS;
+        return UnlotusDate(date.getTime());
       },
     },
 
     Year: {
-      description: 'Returns current year',
-      fn: (r_date: number) => {
-        // NOTE: these are R dates. we should not use R dates. switch to unix timestamps.
-        const date = new Date(r_date * DAY_MS);
-        return date.getUTCFullYear();
+      description: 'Returns year from date',
+      arguments: [{
+        name: 'date',
+      }],
+      fn: (source: number): number => {
+        return new Date(LotusDate(source)).getUTCFullYear();
+      },
+    },
+
+
+    Month: {
+      description: 'Returns month from date',
+      arguments: [{
+        name: 'date',
+      }],
+      fn: (source: number): number => {
+        return new Date(LotusDate(source)).getUTCMonth() + 1; // 0-based
+      },
+    },
+
+    
+    Day: {
+      description: 'Returns day of month from date',
+      arguments: [{
+        name: 'date',
+      }],
+      fn: (source: number): number => {
+        return new Date(LotusDate(source)).getUTCDate();
       },
     },
 
     Radians: {
       description: 'Converts degrees to radians',
       arguments: [{ name: 'Degrees', description: 'Angle in degrees' }],
-      fn: (degrees: number) => {
+      fn: (degrees: number): number => {
         return degrees * Math.PI / 180;
       },
     },
@@ -135,7 +156,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     Degrees: {
       description: 'Converts radians to degrees',
       arguments: [{ name: 'Radians', description: 'Angle in radians' }],
-      fn: (radians: number) => {
+      fn: (radians: number): number => {
         return radians / Math.PI * 180;
       },
     },

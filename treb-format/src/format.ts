@@ -3,11 +3,68 @@ import { FormatParser } from './format_parser';
 import { NumberFormatSection } from './number_format_section';
 import { Localization, TextPartFlag, TextPart } from 'treb-base-types';
 
-/**
- * difference between an R date and a javascript date.
- * they both use the unix epoch.
- */
-export const RDateScale = 86400000; // (1000 * 60 * 60 * 24);
+//
+// excel time is explicitly universal, so we need all dates in and out 
+// to be UTC. we can't use local time because of daylight savings (which
+// excel ignores)
+// 
+// the actual epoch is "January 0" -- I suppose that === Dec 31?
+//
+// const base_date = -2209075200000; // new Date('1899-12-31 00:00:00 Z').getTime();
+
+//
+// excel time is 1 == 1 day, so relative to js time (millis), we need 
+// to scale by 1000 * 60 * 60 * 24
+//
+// const date_scale = 86400000;
+
+//
+// one last thing -- Excel incorrectly treats 1900 as a leap year. this was
+// for compatibility with Lotus 1-2-3, which handled it incorrectly. we will 
+// join the party and treat it incorrectly as well.
+// 
+// ref:
+// https://docs.microsoft.com/en-us/office/troubleshoot/excel/wrongly-assumes-1900-is-leap-year
+//
+// what about backwards?
+//
+// OK, I can answer that now: Excel just doesn't handle dates before 1900
+// at all. can't parse them; can't handle negative numbers as dates. 
+
+/** convert cell value -> date, using the rules above */
+export const LotusDate = (value: number): Date => {
+  if (value >= 60) value--; // March 1, 1900
+  return new Date(-2209075200000 + 86400000 * value);
+};
+
+/** convert date (as number, utc millis) -> lotus date value */
+export const UnlotusDate = (value: number, local = true): number => {
+
+  // if the passed value is local, we need to convert it to UTC
+
+  if (local) {
+
+    const local_date = new Date(value);
+    const utc_date = new Date();
+
+    utc_date.setUTCMilliseconds(local_date.getUTCMilliseconds());
+    utc_date.setUTCSeconds(local_date.getUTCSeconds());
+    utc_date.setUTCMinutes(local_date.getUTCMinutes());
+    utc_date.setUTCHours(local_date.getHours());
+    utc_date.setUTCDate(local_date.getDate());
+    utc_date.setUTCMonth(local_date.getMonth());
+    utc_date.setUTCFullYear(local_date.getFullYear());
+
+    value = utc_date.getTime();
+
+  }
+
+  value = (value + 2209075200000) / 86400000;
+  if (value >= 60) { value++; }
+
+  return value;
+
+};
 
 /**
  * unifying date format and number format (really just bolting dates
@@ -315,10 +372,10 @@ export class NumberFormat {
 
   public DateFormat(value: number) {
 
-    const date = new Date(Math.max(0, value) * RDateScale);
+    const date = LotusDate(value);
     const section = this.sections[0];
 
-    let hours = date.getHours();
+    let hours = date.getUTCHours();
     if (section.twelve_hour) {
       if (hours > 12) hours -= 12;
       if (hours === 0) hours = 12;
@@ -327,9 +384,9 @@ export class NumberFormat {
     const parts: TextPart[] = section.prefix.map((part) => {
       if (part.flag === TextPartFlag.date_component_minutes) {
         if (part.text === 'mm') {
-          return { text: this.ZeroPad((date.getMinutes()).toString(), 2) };
+          return { text: this.ZeroPad((date.getUTCMinutes()).toString(), 2) };
         }
-        return { text: this.ZeroPad((date.getMinutes()).toString(), 1) };
+        return { text: this.ZeroPad((date.getUTCMinutes()).toString(), 1) };
       }
       else if (part.flag === TextPartFlag.date_component) {
         switch (part.text.toLowerCase()) {
@@ -337,48 +394,48 @@ export class NumberFormat {
         case 'a/p':
           {
             const elements = part.text.split('/');
-            return {text: date.getHours() > 12 ? elements[1] : elements[0]};
+            return {text: date.getUTCHours() > 12 ? elements[1] : elements[0]};
           }
         case 'mmmmm':
-          return { text: Localization.date_components.long_months[date.getMonth()][0] };
+          return { text: Localization.date_components.long_months[date.getUTCMonth()][0] };
         case 'mmmm':
           if (part.text === 'MMMM') {
-            return { text: Localization.date_components.long_months[date.getMonth()].toUpperCase() };
+            return { text: Localization.date_components.long_months[date.getUTCMonth()].toUpperCase() };
           }
-          return { text: Localization.date_components.long_months[date.getMonth()] };
+          return { text: Localization.date_components.long_months[date.getUTCMonth()] };
         case 'mmm':
           if (part.text === 'MMM') {
-            return { text: Localization.date_components.short_months[date.getMonth()].toUpperCase() };
+            return { text: Localization.date_components.short_months[date.getUTCMonth()].toUpperCase() };
           }
-          return { text: Localization.date_components.short_months[date.getMonth()] };
+          return { text: Localization.date_components.short_months[date.getUTCMonth()] };
         case 'mm':
-          return { text: this.ZeroPad((date.getMonth() + 1).toString(), 2) };
+          return { text: this.ZeroPad((date.getUTCMonth() + 1).toString(), 2) };
         case 'm':
-          return { text: this.ZeroPad((date.getMonth() + 1).toString(), 1) };
+          return { text: this.ZeroPad((date.getUTCMonth() + 1).toString(), 1) };
 
         case 'ddddd':
         case 'dddd':
           if (part.text === 'DDDDD' || part.text === 'DDDD') {
-            return { text: Localization.date_components.long_days[date.getDay()].toUpperCase() };
+            return { text: Localization.date_components.long_days[date.getUTCDay()].toUpperCase() };
           }
-          return { text: Localization.date_components.long_days[date.getDay()] };
+          return { text: Localization.date_components.long_days[date.getUTCDay()] };
         case 'ddd':
           if (part.text === 'DDD') {
-            return { text: Localization.date_components.short_days[date.getDay()].toUpperCase() };
+            return { text: Localization.date_components.short_days[date.getUTCDay()].toUpperCase() };
           }
-          return { text: Localization.date_components.short_days[date.getDay()] };
+          return { text: Localization.date_components.short_days[date.getUTCDay()] };
         case 'dd':
-          return { text: this.ZeroPad((date.getDate()).toString(), 2) };
+          return { text: this.ZeroPad((date.getUTCDate()).toString(), 2) };
         case 'd':
-          return { text: this.ZeroPad((date.getDate()).toString(), 1) };
+          return { text: this.ZeroPad((date.getUTCDate()).toString(), 1) };
 
         case 'yyyy':
         case 'yyy':
-          return { text: date.getFullYear().toString() };
+          return { text: date.getUTCFullYear().toString() };
         case 'yy':
         case 'y':
-          // return { text: (date.getFullYear() % 100).toString() };
-          return { text: this.ZeroPad((date.getFullYear() % 100).toString(), 2) };
+          // return { text: (date.getUTCFullYear() % 100).toString() };
+          return { text: this.ZeroPad((date.getUTCFullYear() % 100).toString(), 2) };
 
         case 'hh':
           return { text: this.ZeroPad(hours.toString(), 2) };
@@ -386,18 +443,18 @@ export class NumberFormat {
           return { text: this.ZeroPad(hours.toString(), 1) };
 
         case 'ss':
-          return { text: this.ZeroPad((date.getSeconds()).toString(), 2) };
+          return { text: this.ZeroPad((date.getUTCSeconds()).toString(), 2) };
         case 's':
-          return { text: this.ZeroPad((date.getSeconds()).toString(), 1) };
+          return { text: this.ZeroPad((date.getUTCSeconds()).toString(), 1) };
 
         }
 
         const match = part.text.match(/^(s+)\.(0+)$/);
         if (match) {
           return {
-            text: this.ZeroPad(date.getSeconds().toString(), match[1].length) +
+            text: this.ZeroPad(date.getUTCSeconds().toString(), match[1].length) +
               Localization.decimal_separator +
-              (date.getMilliseconds() / 1000).toFixed(match[2].length).substr(2),
+              (date.getUTCMilliseconds() / 1000).toFixed(match[2].length).substr(2),
           };
         }
 

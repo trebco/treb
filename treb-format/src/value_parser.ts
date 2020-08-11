@@ -1,6 +1,6 @@
 
 import { ValueType, Localization } from 'treb-base-types';
-import { RDateScale } from './format';
+import { UnlotusDate } from './format';
 
 /**
  * this is code that was in the old number format class, which was superceded
@@ -126,7 +126,7 @@ class ValueParserType {
           }
 
           return {
-            value: date / RDateScale,
+            value: UnlotusDate(date),
             type: ValueType.number,
             hints,
           };
