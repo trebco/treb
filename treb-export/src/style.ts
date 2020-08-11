@@ -293,6 +293,14 @@ export class StyleCache {
       const encoding_regex = /\[\$(.)-[0-9A-Za-z]{1,4}\]/g;
       format_string = format_string.replace(encoding_regex, '$1');
 
+      // there are also locale indicators with no symbol -- we can remove these
+      // for now, but we need to consider how to deal with them. (...)
+
+      // also this could be merged with the above.
+
+      const locale_regex = /\[\$-[0-9A-Za-z]{1,4}\]/g;
+      format_string = format_string.replace(locale_regex, '');
+
       props.number_format = format_string;
     }
 

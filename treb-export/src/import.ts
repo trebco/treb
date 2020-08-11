@@ -224,7 +224,7 @@ export class Importer {
     sheet.Parse();
     if (!sheet.dom) throw new Error('missing DOM');
 
-    console.info(sheet.options.name);
+    // console.info(sheet.options.name);
 
     // we want a sparse array
 
