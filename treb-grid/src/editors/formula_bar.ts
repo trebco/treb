@@ -7,6 +7,7 @@ import { FormulaEditorBase, FormulaEditorEvent } from './formula_editor_base';
 import { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
 import { DataModel } from '../types/data_model';
+import { UA } from '../util/ua';
 
 export interface FormulaBarResizeEvent {
   type: 'formula-bar-resize';
@@ -263,18 +264,24 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
       // FIXME: close any open editors? (...)
 
-      if ((document.body as any).createTextRange) {
-        const range = (document.body as any).createTextRange();
-        range.moveToElementText(this.address_label);
-        range.select();
-      } 
-      else if (window.getSelection) {
-        const selection = window.getSelection();
-        const range = document.createRange();
-        range.selectNodeContents(this.address_label);
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-      }
+      // we're now doing this async for all browsers... it's only really
+      // necessary for IE11 and safari, but doesn't hurt
+
+      requestAnimationFrame(() => {
+        if ((document.body as any).createTextRange) {
+          const range = (document.body as any).createTextRange();
+          range.moveToElementText(this.address_label);
+          range.select();
+        }
+        else {
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(this.address_label);
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        }
+      });
+
     });
 
     this.address_label.addEventListener('keydown', (event) => {
