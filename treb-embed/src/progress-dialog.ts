@@ -22,6 +22,8 @@ export enum DialogType {
   warning = 'warning',
   success = 'success',
   about = 'about',
+
+  initial = 'initial',
 }
 
 export interface MessageDialogOptions {
@@ -88,7 +90,9 @@ export class ProgressDialog {
   }
   */
 
-  private options_: Partial<MessageDialogOptions> = {};
+  private options_: Partial<MessageDialogOptions> = {
+    type: DialogType.initial,
+  };
 
   private set options(options: Partial<MessageDialogOptions>) {
 
