@@ -1400,8 +1400,9 @@ export class TileRenderer {
         left = width - this.cell_edge_buffer - text_data.width;
       }
 
-      let path_started = false;
-      const underline_y = top + metrics.block - 3.5 - metrics.ascent - 3;
+      // let path_started = false;
+      const underline_y = top + metrics.block - 3.5 - metrics.ascent - 3; // calc? ...
+      const strike_y = Math.round(top  - metrics.ascent / 2) + 0.5;
 
       // we want a single underline, possibly spanning hidden elements,
       // but not starting or stopping on a hidden element (usually invisible
@@ -1411,11 +1412,15 @@ export class TileRenderer {
         if (!part.hidden) {
           context.fillText(part.text, left, top);
           if (style.font_underline) {
-            if (!path_started) {
-              path_started = true;
-              context.moveTo(left, underline_y);
-            }
+            // if (!path_started) {
+            //  path_started = true;
+            context.moveTo(left, underline_y);
+            //}
             context.lineTo(left + part.width, underline_y);
+          }
+          if (style.font_strike) {
+            context.moveTo(left, strike_y);
+            context.lineTo(left + part.width, strike_y);
           }
         }
         left += part.width;
@@ -1439,6 +1444,12 @@ export class TileRenderer {
           const underline_y = top + metrics.block - 3.5 - metrics.ascent - 3;
           context.moveTo(left, underline_y);
           context.lineTo(left + part.width, underline_y);
+        }
+        
+        if (style.font_strike) {
+          const strike_y = Math.round(top  - metrics.ascent / 2) + 1.5;
+          context.moveTo(left, strike_y);
+          context.lineTo(left + part.width, strike_y);
         }
 
         context.fillText(part.text, left, top);

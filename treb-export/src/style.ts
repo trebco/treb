@@ -16,6 +16,7 @@ export interface Font {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
+  strike?: boolean;
 }
 
 export interface NumberFormat {
@@ -23,8 +24,19 @@ export interface NumberFormat {
   format?: string;
 }
 
+export interface XlColor {
+  theme?: number;
+  tint?: number;
+  indexed?: number;
+  argb?: string;
+}
+
 export interface Fill {
-  color_argb?: string;
+  pattern_type: 'none'|'solid'|'gray';
+  pattern_gray?: number;
+  fg_color?: XlColor;
+  bg_color?: XlColor;
+  // color_argb?: string;
 }
 
 export interface CellXf {
@@ -168,7 +180,7 @@ export class StyleCache {
     }
 
     const font: Font = {};
-    const fill: Fill = {};
+    const fill: Fill = { pattern_type: 'none' };
     const border: BorderStyle = {};
     const options: StyleOptions = {
       font, border,
@@ -235,7 +247,11 @@ export class StyleCache {
     }
 
     if (composite.background) {
-      fill.color_argb = composite.background;
+      // fill.color_argb = composite.background;
+      fill.pattern_type = 'solid';
+      fill.fg_color = {
+        argb: composite.background,
+      }
       options.fill = fill;
     }
 
@@ -311,12 +327,15 @@ export class StyleCache {
       if (font.bold) props.font_bold = true;
       if (font.italic) props.font_italic = true;
       if (font.underline) props.font_underline = true;
+      if (font.strike) props.font_strike = true;
+
       if (font.color_argb) {
         props.text_color = '#' + (
           font.color_argb.length > 6 ?
           font.color_argb.substr(font.color_argb.length - 6) :
           font.color_argb);
       }
+
       else if (typeof font.color_theme === 'number') {
         const index = Theme.color_map[font.color_theme];
         const color = this.theme.colors[index];
@@ -326,6 +345,38 @@ export class StyleCache {
           }
           else {
             props.text_color = '#' + color.value;
+          }
+        }
+      }
+
+    }
+
+    const fill = this.fills[xf.fill || 0];
+    if (fill && fill.pattern_type !== 'none') {
+      if (fill.pattern_type === 'gray') {
+        const value = Math.round((fill.pattern_gray || 0) / 1000 * 255);
+        props.background = `rgb(${value}, ${value}, ${value})`;
+      }
+      if (fill.pattern_type === 'solid') {
+        if (fill.fg_color) {
+          if (fill.fg_color.argb) {
+            props.background = '#' + (
+              fill.fg_color.argb.length > 6 ?
+              fill.fg_color.argb.substr(fill.fg_color.argb.length - 6) :
+              fill.fg_color.argb);
+          }
+          else if (typeof fill.fg_color.theme === 'number') {
+            const index = Theme.color_map[fill.fg_color.theme];
+            const color = this.theme.colors[index];
+            // if (color && color.type !== 'system' && color.value) {
+            if (color && color.value) {
+              if (typeof fill.fg_color.tint === 'number') {
+                props.background = '#' + this.TintColor(color.value, fill.fg_color.tint);
+              }
+              else {
+                props.background = '#' + color.value;
+              }
+            }
           }
         }
       }
@@ -539,11 +590,37 @@ export class StyleCache {
     fills.attrib.count = (Number(fills.attrib.count || 0) + 1).toString();
 
     const new_element = Element('fill');
+    const pattern_fill = Element('patternFill', { patternType: fill.pattern_type });
+
+    switch (fill.pattern_type) {
+      case 'none':
+        break;
+      case 'solid':
+        if (fill.fg_color) {
+          pattern_fill.append(Element('fgColor', { 
+            rgb: fill.fg_color.argb || '',
+            indexed: fill.fg_color.indexed?.toString() || '',
+            tint: fill.fg_color.tint?.toString() || '',
+          }));
+        }
+        break;
+      case 'gray':
+
+        // ...
+
+        break;
+    }
+
+    new_element.append(pattern_fill);
+
+    /*
     const pattern_fill = Element('patternFill', { patternType: 'solid' });
     new_element.append(pattern_fill);
 
     pattern_fill.append(Element('fgColor', { rgb: fill.color_argb }));
     // pattern_fill.append(Element('bgColor', { indexed: '64' }));
+    */
+
 
     fills.append(new_element);
     return this.fills.length - 1;
@@ -601,6 +678,7 @@ export class StyleCache {
     if (new_font.bold) new_element.append(Element('b'));
     if (new_font.underline) new_element.append(Element('u'));
     if (new_font.italic) new_element.append(Element('i'));
+    if (new_font.strike) new_element.append(Element('strike'));
 
     fonts.append(new_element);
 
@@ -615,7 +693,7 @@ export class StyleCache {
     const font_index = this.EnsureFont(options.font || {});
     const border_index = this.EnsureBorder(options.border || {});
     const number_format_index = this.EnsureNumberFormat(options.number_format || {});
-    const fill_index = this.EnsureFill(options.fill || {});
+    const fill_index = this.EnsureFill(options.fill || { pattern_type: 'none' });
 
     // now find an XF that matches
     for (let i = 0; i < this.cell_xfs.length; i++){
@@ -774,7 +852,42 @@ export class StyleCache {
     });
 
     this.fills = this.dom.findall('./fills/fill').map((element) => {
-      const fill: Fill = {};
+      const fill: Fill = { pattern_type: 'none' };
+      const pattern_fill = element.find('./patternFill');
+      if (pattern_fill) {
+        const type = pattern_fill.attrib.patternType;
+        switch (type) {
+          case 'none':
+            break;
+          case 'solid':
+            fill.pattern_type = 'solid';
+            {
+              const fg = pattern_fill.find('./fgColor');
+              if (fg) {
+                fill.fg_color = {
+                  theme: fg.attrib.theme ? Number(fg.attrib.theme) : undefined,
+                  indexed: fg.attrib.indexed ? Number(fg.attrib.indexed) : undefined,
+                  tint: fg.attrib.tint ? Number(fg.attrib.tint) : undefined,
+                  argb: fg.attrib.rgb,
+                };
+              }
+            }
+            break;
+          default: 
+            {
+              const match = type?.match(/^gray(\d+)$/);
+              if (match) {
+                fill.pattern_type = 'gray';
+                fill.pattern_gray = Number(match[1]);
+                break;
+              }
+            }
+            console.info('unhandled pattern type', type);
+        } 
+
+      }
+
+      /*
       for (const child of element.getchildren()){
         switch (child.tag) {
           case 'fgColor':
@@ -786,6 +899,8 @@ export class StyleCache {
             break;
         }
       }
+      */
+
       return fill;
     });
 
@@ -800,6 +915,9 @@ export class StyleCache {
             if (child.attrib.theme) font.color_theme = Number(child.attrib.theme);
             if (child.attrib.tint) font.color_tint = Number(child.attrib.tint);
             if (child.attrib.rgb) font.color_argb = child.attrib.rgb;
+            break;
+          case 'strike':
+            font.strike = true;
             break;
           case 'name':
             font.name = child.attrib.val;

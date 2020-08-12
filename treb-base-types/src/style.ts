@@ -48,6 +48,7 @@ export namespace Style {
     font_bold?: boolean;
     font_italic?: boolean;
     font_underline?: boolean;
+    font_strike?: boolean;
 
     border_top?: number;
     border_right?: number;
@@ -97,6 +98,7 @@ export namespace Style {
     font_bold: false,           // drop "font_"
     font_italic: false,         // ...
     font_underline: false,      // ...
+    font_strike: false,         // 
     background: 'none',
     text_color: 'none',
     border_top_color: 'none',

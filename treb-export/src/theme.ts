@@ -29,12 +29,12 @@ export class Theme {
 
   private dom?: ElementTree.ElementTree;
 
-  public Init(data: string){
+  public Init(data: string): void {
     this.dom = ElementTree.parse(data);
     const tag = this.dom.getroot().tag;
 
     let namespace = '';
-    const match = tag.toString().match(/^(.*?)\:/);
+    const match = tag.toString().match(/^(.*?):/);
     if (match) namespace = match[1] + ':';
 
     const color_scheme = this.dom.find(`./${namespace}themeElements/${namespace}clrScheme`);
