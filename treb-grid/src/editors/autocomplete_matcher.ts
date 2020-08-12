@@ -128,7 +128,7 @@ export class AutocompleteMatcher {
         // if (func.canonical_name) result.tooltip = func.canonical_name;
         // else result.tooltip = tt.toUpperCase();
 
-        result.tooltip = func.name;
+        result.tooltip = '<span class="notranslate">' + func.name + '</span>';
         result.arguments = '(' + (func.arguments || []).map((desc, index) => {
           const argument = desc.name || 'argument';
           return (index === parsed.argument) ? `<span class="active-argument">${argument}</span>` : argument;

@@ -31,7 +31,7 @@ export class CellEditor extends FormulaEditorBase {
     //  theme: this.theme,
     // });
 
-    this.container_node = DOMUtilities.CreateDiv('in-cell-editor-container', container);
+    this.container_node = DOMUtilities.CreateDiv('in-cell-editor-container notranslate', container);
     this.editor_node = DOMUtilities.CreateDiv('in-cell-editor', this.container_node);
     this.editor_node.setAttribute('contenteditable', 'true');
     this.editor_node.setAttribute('spellcheck', 'false');

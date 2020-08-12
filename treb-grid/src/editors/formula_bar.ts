@@ -137,7 +137,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
     // create layout. need a flex patch for chrome
 
-    const outer_node = DOMUtilities.CreateDiv('treb-formula-bar-container', container);
+    const outer_node = DOMUtilities.CreateDiv('treb-formula-bar-container notranslate', container);
     const inner_node = DOMUtilities.CreateDiv('treb-formula-bar', outer_node);
 
     // this.node = DOMUtilities.CreateDiv('treb-formula-bar', container);

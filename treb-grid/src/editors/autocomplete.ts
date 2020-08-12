@@ -315,7 +315,7 @@ export class Autocomplete {
 
       this.selected_index = 0;
 
-      this.completion_list.innerHTML = `<ul>`
+      this.completion_list.innerHTML = `<ul class="notranslate">`
         + data.completions.map((descriptor, index) => {
           if (descriptor.name === this.last_completion) this.selected_index = index;
           return `<li><a data-index="${index}">${descriptor.name}</a></li>`;
