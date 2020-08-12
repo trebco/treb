@@ -138,11 +138,11 @@ export class StyleCache {
 
   public modified = false;
 
-  public Clamp(value: number, min: number, max: number) {
+  public Clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(value, max));
   }
 
-  public TintColor(base: string, tint: number) {
+  public TintColor(base: string, tint: number): string {
 
     let r = parseInt(base.substr(0, 2), 16);
     let g = parseInt(base.substr(2, 2), 16);
@@ -435,11 +435,11 @@ export class StyleCache {
   }
 
   /** map all cell xfs to styles; retain order */
-  public CellXfToStyles() {
+  public CellXfToStyles(): Style.Properties[] {
     return this.cell_xfs.map((xf) => this.CellXfToStyle(xf));
   }
 
-  public EnsureNumberFormat(number_format: NumberFormat) {
+  public EnsureNumberFormat(number_format: NumberFormat): number {
 
     // there are a lot of default, implicit number formats.
     // we should probably find out what they are. for the time
@@ -481,7 +481,7 @@ export class StyleCache {
 
   }
 
-  public EnsureBorder(border: BorderStyle) {
+  public EnsureBorder(border: BorderStyle): number {
 
     const props = Object.keys(border).filter((key) => typeof (border as any)[key] !== 'undefined');
     const prop_count = Object.keys(props).length;
@@ -561,7 +561,7 @@ export class StyleCache {
     return this.borders.length - 1;
   }
 
-  public EnsureFill(fill: Fill) {
+  public EnsureFill(fill: Fill): number {
 
     const props = Object.keys(fill).filter((key) => typeof (fill as any)[key] !== 'undefined');
     for (let i = 0; i < this.fills.length; i++ ){
@@ -631,7 +631,7 @@ export class StyleCache {
    * scheme (whatever that is). every font is based on font 0, the default.
    * we add bold/italic/underline as necessary.
    */
-  public EnsureFont(font: Font){
+  public EnsureFont(font: Font): number {
 
     const props = Object.keys(font).filter((key) => typeof (font as any)[key] !== 'undefined');
     for (let i = 0; i < this.fonts.length; i++ ){
@@ -687,7 +687,7 @@ export class StyleCache {
   }
 
 
-  public EnsureStyle(options: StyleOptions) {
+  public EnsureStyle(options: StyleOptions): number {
 
     // find indexes for props
     const font_index = this.EnsureFont(options.font || {});
@@ -770,7 +770,7 @@ export class StyleCache {
 
   }
 
-  public Init(data: string, theme: Theme){
+  public Init(data: string, theme: Theme): void {
 
     this.theme = theme;
 
@@ -825,7 +825,7 @@ export class StyleCache {
       return border;
     });
 
-    this.cell_xfs = this.dom.findall('./cellXfs/xf').map((element, index) => {
+    this.cell_xfs = this.dom.findall('./cellXfs/xf').map((element) => {
       const xf: CellXf = {
         number_format: Number(element.attrib.numFmtId),
         font: Number(element.attrib.fontId),
