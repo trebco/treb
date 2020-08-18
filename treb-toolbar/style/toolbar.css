@@ -1,0 +1,295 @@
+
+.treb-toolbar2 {
+
+  --border-radius: 3px;
+  --control-border: none;
+  --control-background: transparent;
+  --control-hover-background: #eee;
+  --control-active-background: #eee;
+  --dropdown-border-color: #ccc;
+  --separator-color: #ccc;
+  --button-size: 30px;
+
+  box-sizing: border-box;
+  & > * {
+    box-sizing: border-box;
+  }
+  position: relative;
+
+  svg {
+
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+
+    path.line-icon {
+      stroke: #454;
+      stroke-width: 2;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+      fill: none;
+    }
+
+    path.material-outline { fill: #454; stroke: none; }
+    path.fill-none { fill: none; }
+    path.secondary {
+      stroke: #aaa;
+      fill: none;
+    }
+
+  }
+
+  .color-chooser {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    & .new-color {
+
+      position: relative;
+
+      width: 200px;
+      display: flex;
+      flex-direction: row;
+
+      margin: auto;
+      margin-top: 6px;
+      padding: 6px;
+      border-top: 1px solid #ccc;
+
+      & > * + * {
+        margin-left: 6px;
+      }
+
+      & > button {
+
+        border: 1px solid #ccc;
+        border-radius: var(--border-radius);
+        background: transparent;
+        font-family: inherit;
+        font-size: inherit;
+
+      }
+
+      & input {
+
+        width: 5em;
+        flex-grow: 1;
+
+        font-family: inherit;
+        font-size: inherit;
+
+        border: 1px solid #ccc;
+        border-radius: var(--border-radius);
+        font-family: inherit;
+        font-size: inherit;
+        padding-left: 3px;
+  
+      }
+
+    }
+   
+
+    & .colors {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      padding: 4px;
+
+      margin: auto;
+
+      & button {
+        height: 20px;
+        width: 20px;
+        border-radius: 2px;
+        border: 1px solid #ccc;
+        margin: 3px 4px;
+
+        &.default-color {
+          border: 1px dashed #666;
+          
+          background: #fff;
+        }
+
+      } 
+    }
+
+  }
+
+  .toolbar-items {
+
+    display: flex;
+    flex-direction: row;
+    position: relative;
+
+    /* common button styles, cascasdes down */
+    & button {
+      border: var(--control-border);
+      background: var(--control-background);
+      border-radius: var(--border-radius);
+      &:hover {
+        background: var(--control-hover-background);
+      }
+    }
+
+    /* separator */
+    & > .separator {
+      border-left: 1px solid var(--separator-color);
+      margin-left: 6px;
+      padding-right: 6px;
+    }
+
+    /* text input */
+    & input.toolbar-input {
+      height: var(--button-size);
+      border: 1px solid #ccc;
+      border-radius: var(--border-radius);
+      font-family: inherit;
+      font-size: inherit;
+      padding-left: 3px;
+      text-overflow: ellipsis;
+    }
+
+    /* standard toolbar button */
+    & button.toolbar-button {
+      width: var(--button-size);
+      height: var(--button-size);
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      justify-content: center;
+      align-items: center;
+
+      &.active {
+        background: var(--control-active-background);
+      }
+        
+    }
+
+    /* split button (top/bottom) */
+    & > .split-button {
+      
+      display: flex;
+      flex-direction: column;
+
+      & > button {
+        width: var(--button-size);
+        height: calc(var(--button-size) / 2);
+        font-size: 11px; /* FIXME: var */
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+    }
+
+    & .dropdown-container {
+      display: flex;
+      flex-direction: row;
+      padding: 0;
+      margin: 0;
+      position: relative;
+
+      & .dropdown-list {
+
+        &.choose-color {
+          width: 209px;
+        }
+
+        position: absolute;
+        /*
+        width: 100px;
+        height: 100px;
+        */
+        border: 1px solid var(--dropdown-border-color);
+        border-radius: var(--border-radius);
+        background: #fff;
+        z-index: 9;
+        top: calc(var(--button-size) + 2px);
+        left: 0px;
+        opacity: 0;
+        transition: opacity .2s ease-in-out;
+        pointer-events: none;
+
+        /* FIXME: vars, viewport */        
+        max-height: 400px;
+        max-width: 300px;
+
+        overflow-y: auto;
+        overflow-x: hidden;
+
+        & > ul {
+          list-style-type: none;
+          padding-left: 0;
+          margin: 0;
+          line-height: 1.6em;
+
+          & > li {
+            width: 100%;
+            padding: 0;
+            margin: 0;
+          }
+
+          & a {
+            font-family: inherit;
+            font-size: inherit;
+            display: inline-block;
+            cursor: default;
+            width: 100%;
+            overflow: hidden;
+            padding-left: 6px;
+            padding-right: 6px;
+            margin: 0;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            &:hover {
+              background: var(--control-hover-background);
+            }
+          }
+
+        }
+
+        & .separator {
+          border-bottom: 1px solid var(--separator-color);
+          width: 100%;
+        }
+
+        & .toolbar-button {
+          margin: 4px 8px;
+        }
+
+      }
+
+      /* .dropdown-link:active + .dropdown-list, */
+      /* .dropdown-link:focus + .dropdown-list { */
+      &.focused > .dropdown-list {
+        opacity: 1;
+        pointer-events: initial;
+      }
+
+    }
+
+    /* 
+       click to open dropdown menu 
+       FIXME: var sizing
+    */
+    & button.dropdown-link {
+      margin-left: 0px;
+      width: 11px;
+      position: relative;
+
+      &::after {
+        position: absolute;
+        border: 4px solid transparent;
+        border-top-color: #666;
+        content: '';
+        top: 12px;
+        left: 2px;
+      }
+
+    }
+
+  }
+
+}

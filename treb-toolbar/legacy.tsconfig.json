@@ -1,0 +1,6 @@
+{
+  "extends": "../legacy.tsproject.json",
+  "references": [
+    { "path": "../treb-utils/legacy.tsconfig.json" }
+  ]
+}
