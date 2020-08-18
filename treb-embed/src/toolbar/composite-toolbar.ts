@@ -51,6 +51,7 @@ export class CompositeToolbar {
   private formats: Array<string|ToolbarItem> = [];
   private popup!: HTMLElement;
   private popup_item?: ToolbarItemImpl;
+  private popup_reference?: HTMLElement;
 
   /** using a list instead of querying every time (over-optimization) */
   private active_items: HTMLElement[] = [];
@@ -1063,6 +1064,19 @@ export class CompositeToolbar {
 
         const dataset = button.dataset;
 
+        /*
+        if (dataset.sideMenu) {
+          const reference = this.popup_reference as HTMLElement;
+          const item = this.popup_item as ToolbarItemImpl;
+          console.info("OIX", item);
+          Promise.resolve().then(() => {
+            this.ShowPopup(reference, item);
+          });
+          this.HidePopup();
+          return;
+        }
+        */
+
         const id = dataset.id || '';
         const item = this.popup_item;
         const item_id = item.id || '';
@@ -1166,6 +1180,13 @@ export class CompositeToolbar {
 
       if (typeof option === 'string') { continue; }
 
+      if (option.type === 'separator') {
+        const div = document.createElement('div');
+        div.classList.add('separator');
+        list.appendChild(div);
+        continue;
+      }
+
       const button = document.createElement('button');
       button.setAttribute('title', option.title || '');
 
@@ -1182,6 +1203,10 @@ export class CompositeToolbar {
       if (option.icon) {
         const svg = this.CreateSVG(option.icon);
         button.appendChild(svg);
+      }
+
+      if (option.type === 'side-menu') {
+        button.dataset.sideMenu = 'true';
       }
 
       list.appendChild(button);
@@ -1241,6 +1266,7 @@ export class CompositeToolbar {
     }
 
     this.popup_item = item;
+    this.popup_reference = reference;
 
     const br = reference.getBoundingClientRect();
     this.popup.style.top = `${br.bottom + 6}px`;

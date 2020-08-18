@@ -215,19 +215,7 @@ export const symbol_defs: {[index: string]: SymbolDef} =
   "align-left": {
     "paths": [
       {
-        "d": "M5,4 L19,4"
-      },
-      {
-        "d": "M5,20 L19,20"
-      },
-      {
-        "d": "M5,8 L13,8"
-      },
-      {
-        "d": "M5,12 L15,12"
-      },
-      {
-        "d": "M5,16 L13,16"
+        "d": "M5,4 L19,4M5,20 L19,20M5,8 L13,8M5,12 L15,12M5,16 L13,16"
       }
     ]
   },

@@ -1,8 +1,8 @@
 
 
 /**
- * source directory: /mnt/h/TREB/TREB/treb-toolbar/icons
- * generated Mon Jun 08 2020 06:40:35 GMT-0700 (Pacific Daylight Time)
+ * source directory: /mnt/h/TREB/TREB/treb-embed/icons
+ * generated Thu Aug 13 2020 09:42:57 GMT-0700 (Pacific Daylight Time)
  */  
 
 export interface PathDef2 {
@@ -17,44 +17,6 @@ export interface SymbolDef2 {
 }
 
 export const icons: {[index: string]: SymbolDef2} = {
-  /*
-  'material/outline/ac_unit-24px': {
-    'viewbox': '0 0 24 24',
-    'paths': [
-      {
-        'd': 'M0 0h24v24H0V0z',
-        'classes': [
-          'material-outline',
-          'fill-none'
-        ]
-      },
-      {
-        'd': 'M22 11h-4.17l3.24-3.24-1.41-1.42L15 11h-2V9l4.66-4.66-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93 6.34 4.34 11 9v2H9L4.34 6.34 2.93 7.76 6.17 11H2v2h4.17l-3.24 3.24 1.41 1.42L9 13h2v2l-4.66 4.66 1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24 1.42-1.41L13 15v-2h2l4.66 4.66 1.41-1.42L17.83 13H22v-2z',
-        'classes': [
-          'material-outline'
-        ]
-      }
-    ]
-  },
-  */
- 'material/outline/image-24px': {
-    'viewbox': '0 0 24 24',
-    'paths': [
-      {
-        'd': 'M0 0h24v24H0V0z',
-        'classes': [
-          'material-outline',
-          'fill-none'
-        ]
-      },
-      {
-        'd': 'M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z',
-        'classes': [
-          'material-outline'
-        ]
-      }
-    ]
-  },
   'material/outline/chat_bubble_outline-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
@@ -73,44 +35,6 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
-  /*
-  'material/outline/crop-24px': {
-    'viewbox': '0 0 24 24',
-    'paths': [
-      {
-        'd': 'M0 0h24v24H0V0z',
-        'classes': [
-          'material-outline',
-          'fill-none'
-        ]
-      },
-      {
-        'd': 'M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zM7 17V1H5v4H1v2h4v10c0 1.1.9 2 2 2h10v4h2v-4h4v-2H7z',
-        'classes': [
-          'material-outline'
-        ]
-      }
-    ]
-  },
-  'material/outline/crop_free-24px': {
-    'viewbox': '0 0 24 24',
-    'paths': [
-      {
-        'd': 'M0 0h24v24H0V0z',
-        'classes': [
-          'material-outline',
-          'fill-none'
-        ]
-      },
-      {
-        'd': 'M3 5v4h2V5h4V3H5c-1.1 0-2 .9-2 2zm2 10H3v4c0 1.1.9 2 2 2h4v-2H5v-4zm14 4h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4zm0-16h-4v2h4v4h2V5c0-1.1-.9-2-2-2z',
-        'classes': [
-          'material-outline'
-        ]
-      }
-    ]
-  },
-  */
   'material/outline/folder-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
@@ -123,6 +47,24 @@ export const icons: {[index: string]: SymbolDef2} = {
       },
       {
         'd': 'M9.17 6l2 2H20v10H4V6h5.17M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z',
+        'classes': [
+          'material-outline'
+        ]
+      }
+    ]
+  },
+  'material/outline/image-24px': {
+    'viewbox': '0 0 24 24',
+    'paths': [
+      {
+        'd': 'M0 0h24v24H0V0z',
+        'classes': [
+          'material-outline',
+          'fill-none'
+        ]
+      },
+      {
+        'd': 'M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z',
         'classes': [
           'material-outline'
         ]
@@ -147,8 +89,7 @@ export const icons: {[index: string]: SymbolDef2} = {
       }
     ]
   },
-  /*
-  'material/outline/save-24px': {
+  'material/outline/palette-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
       {
@@ -159,14 +100,37 @@ export const icons: {[index: string]: SymbolDef2} = {
         ]
       },
       {
-        'd': 'M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 6h9v4H6z',
+        'd': 'M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28 0-.5.22-.5.5 0 .12.05.23.13.33.41.47.64 1.06.64 1.67 0 1.38-1.12 2.5-2.5 2.5zm0-18c-4.41 0-8 3.59-8 8s3.59 8 8 8c.28 0 .5-.22.5-.5 0-.16-.08-.28-.14-.35-.41-.46-.63-1.05-.63-1.65 0-1.38 1.12-2.5 2.5-2.5H16c2.21 0 4-1.79 4-4 0-3.86-3.59-7-8-7z',
+        'classes': [
+          'material-outline'
+        ]
+      },
+      {
+        'd': 'M6.5,10 A1.5,1.5,0,0,1,6.5,13 A1.5,1.5,0,0,1,6.5,10',
+        'classes': [
+          'material-outline'
+        ]
+      },
+      {
+        'd': 'M9.5,6 A1.5,1.5,0,0,1,9.5,9 A1.5,1.5,0,0,1,9.5,6',
+        'classes': [
+          'material-outline'
+        ]
+      },
+      {
+        'd': 'M14.5,6 A1.5,1.5,0,0,1,14.5,9 A1.5,1.5,0,0,1,14.5,6',
+        'classes': [
+          'material-outline'
+        ]
+      },
+      {
+        'd': 'M17.5,10 A1.5,1.5,0,0,1,17.5,13 A1.5,1.5,0,0,1,17.5,10',
         'classes': [
           'material-outline'
         ]
       }
     ]
   },
-  */
   'material/outline/save_alt-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
@@ -199,6 +163,78 @@ export const icons: {[index: string]: SymbolDef2} = {
         'd': 'M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3 3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z',
         'classes': [
           'material-outline'
+        ]
+      }
+    ]
+  },
+  'unused-icons/ac_unit-24px': {
+    'viewbox': '0 0 24 24',
+    'paths': [
+      {
+        'd': 'M0 0h24v24H0V0z',
+        'classes': [
+          'unused-icons',
+          'fill-none'
+        ]
+      },
+      {
+        'd': 'M22 11h-4.17l3.24-3.24-1.41-1.42L15 11h-2V9l4.66-4.66-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93 6.34 4.34 11 9v2H9L4.34 6.34 2.93 7.76 6.17 11H2v2h4.17l-3.24 3.24 1.41 1.42L9 13h2v2l-4.66 4.66 1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24 1.42-1.41L13 15v-2h2l4.66 4.66 1.41-1.42L17.83 13H22v-2z',
+        'classes': [
+          'unused-icons'
+        ]
+      }
+    ]
+  },
+  'unused-icons/crop-24px': {
+    'viewbox': '0 0 24 24',
+    'paths': [
+      {
+        'd': 'M0 0h24v24H0V0z',
+        'classes': [
+          'unused-icons',
+          'fill-none'
+        ]
+      },
+      {
+        'd': 'M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zM7 17V1H5v4H1v2h4v10c0 1.1.9 2 2 2h10v4h2v-4h4v-2H7z',
+        'classes': [
+          'unused-icons'
+        ]
+      }
+    ]
+  },
+  'unused-icons/crop_free-24px': {
+    'viewbox': '0 0 24 24',
+    'paths': [
+      {
+        'd': 'M0 0h24v24H0V0z',
+        'classes': [
+          'unused-icons',
+          'fill-none'
+        ]
+      },
+      {
+        'd': 'M3 5v4h2V5h4V3H5c-1.1 0-2 .9-2 2zm2 10H3v4c0 1.1.9 2 2 2h4v-2H5v-4zm14 4h-4v2h4c1.1 0 2-.9 2-2v-4h-2v4zm0-16h-4v2h4v4h2V5c0-1.1-.9-2-2-2z',
+        'classes': [
+          'unused-icons'
+        ]
+      }
+    ]
+  },
+  'unused-icons/save-24px': {
+    'viewbox': '0 0 24 24',
+    'paths': [
+      {
+        'd': 'M0 0h24v24H0V0z',
+        'classes': [
+          'unused-icons',
+          'fill-none'
+        ]
+      },
+      {
+        'd': 'M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 6h9v4H6z',
+        'classes': [
+          'unused-icons'
         ]
       }
     ]

@@ -185,7 +185,10 @@ export const toolbar_template: ToolbarItem[] = [
       { icon: 'border-left', id: 'border-left', title: 'Left Border' },
       { icon: 'border-right', id: 'border-right', title: 'Right Border' },
       { icon: 'border-all', id: 'border-all', title: 'All Borders' },
-    
+      /*
+      { type: 'separator' },
+      { type: 'side-menu', icon: 'material/outline/palette-24px', id: 'border-color', title: 'Border Color' },
+      */
     ],
   },
 

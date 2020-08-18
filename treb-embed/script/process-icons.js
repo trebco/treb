@@ -167,6 +167,37 @@ const ParseSVG = (svg, class_name) => {
     }
   }
 
+  match = svg.match(/<circle(.*?)\/>/g);
+  if (match) {
+    for (const item of match) {
+
+      const classes = [];
+      if (class_name) { 
+        classes.push(class_name);
+      }
+
+      const item_class = Attr(item, 'class');
+      if (item_class) {
+        classes.push(item_class);
+      }
+
+      const fill = Attr(item, 'fill');
+      if (fill === 'none') {
+        classes.push('fill-none');
+      }
+
+      const cx = Number(Attr(item, 'cx'));
+      const cy = Number(Attr(item, 'cy'));
+      const r = Number(Attr(item, 'r'));
+
+      const d = `M${cx},${cy - r} A${r},${r},0,0,1,${cx},${cy + r} A${r},${r},0,0,1,${cx},${cy - r}`;
+
+      icon.paths.push({
+        d, classes: classes.length ? classes : undefined, // : Attr(item, 'class'),
+      });
+      
+    }
+  }
   return icon;
 
 };

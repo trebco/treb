@@ -76,6 +76,7 @@ const directories = [
   'treb-format',
   'treb-parser',
   'treb-engine',
+  'treb-toolbar',
   'treb-calculator',
   'treb-sparkline',
   'treb-base-types',
@@ -145,7 +146,7 @@ const CreateConfig = (config, entry) => {
           ],
         },
         {
-          test: /\.s*css$/,
+          test: /\.[sp]*css$/,
           sideEffects: true,
           use: [
             'style-loader',

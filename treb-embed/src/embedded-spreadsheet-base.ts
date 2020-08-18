@@ -7,7 +7,9 @@ import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
 import { EventSource, Yield, tmpl } from 'treb-utils';
-import { NumberFormatCache, ValueParser } from 'treb-format';
+import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
+import { Toolbar as SimpleToolbar } from 'treb-toolbar';
+import { ToolbarManager, ExtendedToolbarElement } from './toolbar-manager';
 
 // local
 import { ProgressDialog, DialogType } from './progress-dialog';
@@ -189,6 +191,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   protected dialog?: ProgressDialog;
 
+  // public toolbar?: SimpleToolbar;
+  protected toolbar_manager?: ToolbarManager;
+
+  public get toolbar(): SimpleToolbar|undefined { 
+    return this.toolbar_manager ? this.toolbar_manager.toolbar : undefined;
+  }
+
+  protected active_selection_style?: Style.Properties;
+
   /** localized parser instance. we're sharing. */
   private get parser() { 
     return this.calculator.parser;
@@ -369,10 +380,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
           case 'selection':
             this.UpdateSelection(event.selection);
+            this.UpdateSelectionStyle(event.selection);
             break;
 
           case 'sheet-change':
             this.OnSheetChange(event);
+            this.UpdateSelectionStyle();
             break;
 
           case 'data':
@@ -405,6 +418,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
           case 'style':
             this.DocumentChange();
+            this.UpdateDocumentStyles(false);
+            this.UpdateSelectionStyle();
             break;
 
           case 'annotation':
@@ -449,6 +464,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             if (event.rebuild_required) {
               this.calculator.Reset();
             }
+            this.UpdateSelectionStyle();
             break;
         }
       });
@@ -1075,6 +1091,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
             this.calculator.AttachData(this.grid.model);
             this.Publish({ type: 'load' });
+            this.UpdateDocumentStyles();
 
           }
           else {
@@ -1701,6 +1718,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.ResetInternal();
     this.grid.Update(true);
     this.Publish({ type: 'load' });
+    this.UpdateDocumentStyles();
+
   }
 
   /**
@@ -1778,6 +1797,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     this.Publish({ type: 'load' }); // FIXME: should not happen on undo...
+    this.UpdateDocumentStyles();
     this.loaded = true;
     
     if (scroll) {
@@ -2343,6 +2363,170 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
   */
 
+  public CreateToolbar(container: HTMLElement): SimpleToolbar|undefined {
+
+    if (this.toolbar_manager) {
+      return this.toolbar_manager.toolbar;
+    }
+
+    this.toolbar_manager = new ToolbarManager(container);
+    this.toolbar_manager.toolbar.Subscribe((event) => {
+
+      if (event.type === 'focusout') {
+        this.Focus();
+        return;
+      }
+
+      const element = (event.element as ExtendedToolbarElement);
+      let updated_style: Style.Properties = {};
+
+      if (element && element.update_style) {
+        updated_style = element.update_style;
+      }
+      else if (element && element.data && element.data.border) {
+        this.grid.ApplyBorders(undefined, element.data.border, undefined, element.data.width || 1);
+      }
+      else if (event.id) {
+        switch (event.id) {
+          case 'text-color':
+            updated_style.text_color = this.toolbar_manager?.foreground_color || 'none';
+            break;
+          case 'background-color':
+            updated_style.background = this.toolbar_manager?.background_color || 'none';
+            break;
+
+          case 'increase-precision':
+          case 'decrease-precision':
+            if (this.active_selection_style) {
+              const format = NumberFormatCache.Get(this.active_selection_style.number_format||'General');
+              if (format.date_format) { break; }
+              const clone = new NumberFormat(format.pattern);
+              if (event.id === 'increase-precision') {
+                clone.IncreaseDecimal();
+              }
+              else {
+                clone.DecreaseDecimal();
+              }
+              updated_style.number_format = clone.toString();
+            }
+            break;
+
+          case 'merge':
+            if (element?.data?.merge) {
+              this.grid.MergeSelection();
+            }
+            else {
+              this.grid.UnmergeSelection();
+            }
+            break;
+
+          default:
+            console.info('unhandled', event.id, element);
+            break;
+        }
+      }
+
+      if (Object.keys(updated_style).length){ 
+        this.grid.ApplyStyle(undefined, updated_style, true);
+      }
+
+      this.Focus();
+
+    });
+
+    this.UpdateDocumentStyles(false);
+    this.UpdateSelectionStyle(undefined, false);
+    this.toolbar_manager.Update();
+
+    return this.toolbar_manager.toolbar;
+  }
+
+  public UpdateSelectionStyle(selection?: GridSelection, update = true) {
+
+    let merged = false;
+    let note = false;
+
+    if (!selection) { 
+      selection = this.grid.GetSelection(); 
+    }
+        
+    if (selection && !selection.empty) {
+
+      let data = this.grid.model.active_sheet.CellData(selection.target);
+      merged = !!data.merge_area;
+      if (merged && data.merge_area && (
+          data.merge_area.start.row !== selection.target.row ||
+          data.merge_area.start.column !== selection.target.column)) {
+        data = this.grid.model.active_sheet.CellData(data.merge_area.start);
+      }
+
+      this.active_selection_style = data.style;
+      note = !!data.note;
+
+    }
+    else {
+      this.active_selection_style = {};
+    }
+
+    this.toolbar_manager?.UpdateSelection(
+      selection, 
+      merged, 
+      this.active_selection_style, 
+      note, 
+      update);
+
+  }
+
+  public UpdateDocumentStyles(update = true) {
+
+    if (!this.toolbar_manager) { return; }
+
+    const number_format_map: {[index: string]: number} = {};
+    const color_map: {[index: string]: number} = {};
+
+    const update_from_style = (style: Style.Properties): void => {
+      if (style.number_format) { 
+        number_format_map[style.number_format] = 1; 
+      }
+      if (style.text_color && style.text_color !== 'none') {
+        color_map[style.text_color] = 1;
+      }
+      if (style.background && style.background !== 'none') {
+        color_map[style.background] = 1;
+      }
+    }
+
+    for (const sheet of this.grid.model.sheets) {
+      const json = sheet.toJSON();
+      
+      update_from_style(json.sheet_style);
+      
+      for (const style of json.cell_style_refs) {
+        update_from_style(style);
+      }
+
+      if (json.row_pattern) {
+        for (const style of json.row_pattern) {
+          update_from_style(style);
+        }
+      }
+
+      for (const key of Object.keys(json.column_style)) {
+        update_from_style(json.column_style[key as any]);
+      }
+      for (const key of Object.keys(json.row_style)) {
+        update_from_style(json.row_style[key as any]);
+      }
+      
+    }
+
+    this.toolbar_manager.UpdateDocumentStyles(
+      Object.keys(number_format_map),
+      Object.keys(color_map),
+      update);
+    
+  }
+
   /** overloadable for subclasses */
   protected InitCalculator(): Calculator {
     return new Calculator();
@@ -2542,7 +2726,5 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.Undo();
     }
   }
-
-
 
 }

@@ -15,7 +15,7 @@ export const DefaultToolbarOptions: ToolbarOptions = {
 };
 
 export interface ToolbarItem {
-  type?: 'separator'|'input'|'button'|'drop-down'|'split';
+  type?: 'separator'|'input'|'button'|'drop-down'|'split'|'side-menu';
   text?: string;
   icon?: string;
   class?: string;

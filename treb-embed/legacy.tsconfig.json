@@ -7,7 +7,8 @@
     { "path": "../treb-mc/legacy.tsconfig.json" },
     { "path": "../treb-charts/legacy.tsconfig.json" },
     { "path": "../treb-calculator/legacy.tsconfig.json" },
-    { "path": "../treb-base-types/legacy.tsconfig.json" }
+    { "path": "../treb-base-types/legacy.tsconfig.json" },
+    { "path": "../treb-toolbar/legacy.tsconfig.json" }
   ],
   "include": [
     "../package.json",

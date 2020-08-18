@@ -34,7 +34,7 @@ const ParseTemplate = (template: string, container?: HTMLElement|string) => {
 
 }
 
-const composite = (strings: TemplateStringsArray, ...args: any[]): string => {
+export const composite = (strings: TemplateStringsArray, ...args: any[]): string => {
   const output: string[] = [];
   for (let i = 0; i < strings.length; i++) {
     output.push(strings[i]);

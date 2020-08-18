@@ -531,6 +531,8 @@ export class CompositeSheet {
 
       if (!this.toolbar && this.toolbar_container) {
 
+        /*
+
         const options: ToolbarOptions = {
           add_delete_sheet: !!this.options.add_tab,
           file_toolbar: !!this.options.file_menu,
@@ -546,6 +548,10 @@ export class CompositeSheet {
           this.toolbar_container, 
           options);
   
+          */
+
+        this.sheet.CreateToolbar(this.toolbar_container);
+
         // this is a patch for old behavior, which should be removed
 
         const toolbar_node = this.toolbar_container.querySelector('.treb-formatting-toolbar');
