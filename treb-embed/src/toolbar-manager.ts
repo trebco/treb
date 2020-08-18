@@ -172,12 +172,6 @@ export class ToolbarManager {
 
   ];
 
-  public default_number_formats = [
-    'General', 'Number', 'Integer', 'Percent', 'Accounting', 'Currency', 'Scientific'];
-
-  public default_date_formats = [
-    'Timestamp', 'Long Date', 'Short Date'];
-
   constructor(container: HTMLElement) {
     this.MapElements();
     this.toolbar = new Toolbar(container);
@@ -319,10 +313,6 @@ export class ToolbarManager {
     const format_element = this.map['format'];
     if (!format_element) { return; } // FIXME: throw
 
-    const string_to_element = (entry: string): ToolbarElement => {
-      return { type: 'text', text: entry };
-    };
-
     const number_formats: string[] = [];
     const date_formats: string[] = [];
 
@@ -337,11 +327,21 @@ export class ToolbarManager {
       }
     }
 
+    let index = 0;
+    const string_to_element = (entry: string): ExtendedToolbarElement => {
+      return { 
+        type: 'text', 
+        text: entry, 
+        id: `format-entry-${index++}`,
+        update_style: { number_format: entry },
+      };
+    };
+
     format_element.list = [
-      ...this.default_number_formats.map(string_to_element),
+      // ...this.default_number_formats.map(string_to_element),
       ...number_formats.map(string_to_element),
       separator,
-      ...this.default_date_formats.map(string_to_element),
+      // ...this.default_date_formats.map(string_to_element),
       ...date_formats.map(string_to_element),
     ];
 

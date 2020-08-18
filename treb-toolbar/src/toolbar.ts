@@ -11,6 +11,13 @@ interface IDMap {[index: string]: HTMLElement}
  * trying to make the toolbar as simple as possible. we will let
  * the caller handle things like mutating state; we just show it
  * and pass on events.
+ * 
+ * so if you want to change a button, you update your spec and we
+ * diff it against ours (more or less).
+ * 
+ * colors are handled a little differently, we will handle the UI
+ * for the color chooser. but to change the color on a button, you
+ * need to change your state.
  */
 export class Toolbar extends EventSource<ToolbarEvent> {
 
@@ -53,16 +60,15 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         </div>
       </div>
     `;
-    // this.node.appendChild(this.color_menu.root);
 
-    // these events exclude the color chooser
-
+    /**
+     * on button click, a couple of things happen: we open dropdown
+     * menus, we publish events, we choose colors. depends on the button.
+     */
     this.toolbar.addEventListener('click', (event) => {
 
       const element = this.ContainingElement(event.target as HTMLElement);
       if ((element as HTMLButtonElement)?.disabled) { return; }
-
-      // console.info("click", event);
 
       if (element) {
         if (element.classList.contains('dropdown-link')) {
@@ -96,16 +102,24 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         }
         else if (/accept-color/.test(element.className)) {
 
+          // this is the "OK" button in the color chooser (which should be
+          // a checkmark). apply the color (as long as it's not empty) and 
+          // close the color chooser
+
           const dropdown = this.ContainingDropdown(element);
           if (dropdown) {
             const input = this.color_menu.input as HTMLInputElement;
             const button = dropdown.querySelector('.toolbar-button') as HTMLElement;
-            if (button?.dataset.id) {
+
+            if (button?.dataset.id && input?.value.trim()) {
               this.Publish({
                 related_id: button.dataset.id,
-                color: input?.value,
+                color: input.value.trim(),
               });
             }
+
+            // clear the input field, we'll add the color as a swatch
+
             input.value = '';
             dropdown.classList.remove('focused');
             button.click();
@@ -113,6 +127,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         }
         else if (typeof element.dataset.color !== 'undefined') {
+
+          // this is a color swatch button -- apply the color and close
+          // the color chooser.
 
           const dropdown = this.ContainingDropdown(element);
           if (dropdown) {
@@ -132,59 +149,56 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     });
 
-    /*
-    this.toolbar.addEventListener('change', (event) => {
-
-      console.info('change', event);
-      const input = event.target as HTMLInputElement;
-
-      const dropdown = this.ContainingDropdown(input);
-      if (dropdown) {
-        const button = dropdown.querySelector('.toolbar-button') as HTMLElement;
-        if (button?.dataset.id) {
-          this.Publish({
-            related_id: button.dataset.id,
-            color: input.value,
-          });
-        }
-        input.value = '';
-        dropdown.classList.remove('focused');
-        button.click();
-      }
-
-    });
-    */
-
-    /*
-    this.toolbar.addEventListener('input', (event) => {
-      console.info('input', event);
-    });
-    */
-
+    /** 
+     * we handle two keys: enter in input fields, and escape when
+     * a dropdown menu is open (to close it).
+     */
     this.toolbar.addEventListener('keydown', (event) => {
       const target = event.target as HTMLElement;
 
       switch (event.key) {
         case 'Enter':
-          if (/input-color/.test(target?.className || '')) {
+          if (target === this.color_menu.input) {
             const dropdown = this.ContainingDropdown(event.target as HTMLElement);
             const button = dropdown?.querySelector('.toolbar-button') as HTMLElement;
             const input = this.color_menu.input as HTMLInputElement;
             if (button?.dataset.id) {
-              this.Publish({
-                related_id: button.dataset.id,
-                color: input.value,
-              });
+
+              // only publish non-empty value
+              // FIXME: prevalidate color? (...)
+
+              if (input.value.trim()) {
+                this.Publish({
+                  related_id: button.dataset.id,
+                  color: input.value,
+                });
+              }
               input.value = '';
               button.click();
             }
             break;
           }
+          else {
+            if (target?.dataset.id && target?.tagName === 'INPUT') {
+              const input = target as HTMLInputElement;
+              if (input.value.trim()) {
+                this.Publish({
+                  type: 'input',
+                  id: input.dataset.id,
+                  value: input.value,
+                })
+              }
+            }
+          }
           return;
 
         case 'Escape':
         case 'Esc':
+          if (typeof target.dataset.original_value !== 'undefined') {
+            (target as HTMLInputElement).value = target.dataset.original_value;
+          }
           break;
+
         default:
           return;
       }
@@ -194,9 +208,14 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       if (dropdown) {
         dropdown.classList.remove('focused');
       }
+
       this.Publish({ type: 'focusout' });
+
     });
 
+    /**
+     * close a dropdown menu if it loses focus, accounting for child elements
+     */
     this.toolbar.addEventListener('focusout', (event) => {
 
       const old_target = this.ContainingDropdown(event.target as HTMLElement);
@@ -207,23 +226,6 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       }
       
     });
-
-    /*
-    this.toolbar.addEventListener('focusin', (event) => {
-      console.info('focusin', event.target, event.relatedTarget);
-      const dropdown = this.ContainingDropdown(event.target as HTMLElement);
-      if (dropdown) {
-        dropdown.classList.add('focused');
-      }
-    });
-    */
-
-    /*
-    if (elements) {
-      // this.Init(elements, colors);
-      this.elements = elements;
-    }
-    */
 
   }
 
@@ -364,7 +366,13 @@ export class Toolbar extends EventSource<ToolbarEvent> {
   public Input(element: ToolbarInputField): HTMLElement {
     const input = document.createElement('input');
     input.className = 'toolbar-input';
-    if (element.text) { input.value = element.text; }
+    if (element.id) {
+      input.dataset.id = element.id;
+    }
+    if (element.text) { 
+      input.value = element.text; 
+      input.dataset.original_value = element.text || '';
+    }
     if (element.placeholder) { input.placeholder = element.placeholder; }
     if (element.dropdown) {
       return this.Dropdown(input, element);
@@ -373,9 +381,13 @@ export class Toolbar extends EventSource<ToolbarEvent> {
   }
 
   public Text(element: ToolbarTextField): HTMLElement {
-    const a = document.createElement('a');
-    a.textContent = element.text || '';
-    return a;
+    const button = document.createElement('button');
+    button.textContent = element.text || '';
+    button.className = 'text-button';
+    if (element.id) {
+      button.dataset.id = element.id;
+    }
+    return button;
   }
 
   public UpdateColors(document_colors: string[] = []) {
@@ -475,6 +487,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
       if (a.type === 'input') {
         (target as HTMLInputElement).value = a.text || '';
+        (target as HTMLInputElement).dataset.original_value = a.text || '';
       }
       else {
         target.textContent = a.text || '';

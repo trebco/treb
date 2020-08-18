@@ -59,9 +59,10 @@ export type ToolbarElement
   ;
 
 export interface ToolbarEvent {
-  type?: 'focusout'|'button';
+  type?: 'focusout'|'button'|'cancel'|'input';
   element?: ToolbarElement;
   id?: string;
   related_id?: string;
   color?: string;
+  value?: string;
 }
