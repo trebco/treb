@@ -201,10 +201,11 @@ export class SimulationModel {
       },
 
       'SampleValue.Weighted': {
-        description: 'Returns one of a set of values, with equal probability and with replacement',
+        description: 'Returns one of a set of values, weighted by a second set of values',
         simulation_volatile: true,
         arguments: [
           { name: 'range', description: 'Range of Values' },
+          { name: 'weights', description: 'Range of Weights' },
         ],
         fn: this.samplevalue_weighted.bind(this),
         category: ['RiskAMP Random Distributions'],
