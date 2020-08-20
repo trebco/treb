@@ -757,6 +757,13 @@ export class Sheet {
    * @param inline this is part of another operation, don't do any undo/state updates
    */
   public UpdateCellStyle(address: ICellAddress, properties: Style.Properties, delta = true, inline = false) {
+
+    // so what this is doing is constructing two merge stacks: one including
+    // the cell style, and one without. any deltas among the two are the cell
+    // style. the aim here is to remove properties that would be duplicative
+    // because they stack, so if the base sheet has color=red, there is no
+    // reason to apply that to the cell as well.
+
     const { row, column } = address;
 
     if (!this.cell_style[column]) this.cell_style[column] = [];

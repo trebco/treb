@@ -1,6 +1,10 @@
 
 .treb-toolbar2 {
 
+  /*
+
+  IE11 says no vars
+
   --border-radius: 3px;
   --control-border: none;
   --control-background: transparent;
@@ -9,6 +13,19 @@
   --dropdown-border-color: #ccc;
   --separator-color: #ccc;
   --button-size: 30px;
+
+  */
+
+  font-family: -apple-system, 
+    BlinkMacSystemFont, 
+    "Segoe UI", 
+    Roboto, 
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Open Sans",
+    "Helvetica Neue", 
+    sans-serif;
 
   box-sizing: border-box;
   & > * {
@@ -64,10 +81,15 @@
       & > button {
 
         border: 1px solid #ccc;
-        border-radius: var(--border-radius);
+        border-radius: 3px;
         background: transparent;
         font-family: inherit;
-        font-size: inherit;
+        font-size: 14px;
+        display: flex;
+        flex-direction: row;
+        padding: 0px;
+        justify-content: center;
+        align-items: center;
 
       }
 
@@ -75,16 +97,12 @@
 
         width: 5em;
         flex-grow: 1;
-
         font-family: inherit;
-        font-size: inherit;
-
+        font-size: 14px;
         border: 1px solid #ccc;
-        border-radius: var(--border-radius);
-        font-family: inherit;
-        font-size: inherit;
-        padding-left: 3px;
-  
+        border-radius: 3px;
+        padding-left: 4px;
+          
       }
 
     }
@@ -122,38 +140,43 @@
     flex-direction: row;
     position: relative;
 
+    margin-top: 4px;
+    margin-left: 2px;
+
     /* common button styles, cascasdes down */
     & button {
-      border: var(--control-border);
-      background: var(--control-background);
-      border-radius: var(--border-radius);
+      border: none;
+      background: transparent;
+      border-radius: 3px;
       &:hover {
-        background: var(--control-hover-background);
+        background: #eee;
       }
     }
 
     /* separator */
     & > .separator {
-      border-left: 1px solid var(--separator-color);
+      border-left: 1px solid #ccc;
       margin-left: 6px;
       padding-right: 6px;
     }
 
     /* text input */
     & input.toolbar-input {
-      height: var(--button-size);
+      height: 30px;
       border: 1px solid #ccc;
-      border-radius: var(--border-radius);
+      border-radius: 3px;
       font-family: inherit;
-      font-size: inherit;
-      padding-left: 3px;
+      font-size: 14px;
+      padding-left: 4px;
+      width: 10em;
       text-overflow: ellipsis;
     }
 
     /* standard toolbar button */
     & button.toolbar-button {
-      width: var(--button-size);
-      height: var(--button-size);
+      width: 30px;
+      height: 30px;
+      padding: 0;
       display: flex;
       flex-direction: row;
       overflow: hidden;
@@ -161,7 +184,7 @@
       align-items: center;
 
       &.active {
-        background: var(--control-active-background);
+        background: #eee;
       }
         
     }
@@ -173,15 +196,20 @@
       flex-direction: column;
 
       & > button {
-        width: var(--button-size);
-        height: calc(var(--button-size) / 2);
+        width: 30px;
+        height: 15px; /* calc(30px / 2); */
         font-size: 11px; /* FIXME: var */
         display: flex;
         flex-direction: row;
         justify-content: center;
+        align-items: center;
         overflow: hidden;
       }
 
+    }
+
+    & > button + button {
+      margin-left: 1px;
     }
 
     & .dropdown-container {
@@ -202,14 +230,14 @@
         width: 100px;
         height: 100px;
         */
-        border: 1px solid var(--dropdown-border-color);
-        border-radius: var(--border-radius);
+        border: 1px solid #ccc;
+        border-radius: 3px;
         background: #fff;
         z-index: 9;
-        top: calc(var(--button-size) + 2px);
+        top: calc(30px + 2px);
         left: 0px;
         opacity: 0;
-        transition: opacity .2s ease-in-out;
+        transition: opacity .15s ease-in-out;
         pointer-events: none;
 
         /* FIXME: vars, viewport */        
@@ -236,26 +264,31 @@
            */
           & button.text-button {
             font-family: inherit;
-            font-size: inherit;
+            font-size: 14px;
             display: inline-block;
             cursor: default;
             width: 100%;
             overflow: hidden;
             text-align: left;
-            padding-left: 6px;
-            padding-right: 6px;
+            /*
+            padding-left: 10px;
+            padding-right: 10px;
+            */
+            padding: 8px 10px;
+            min-width: 120px;
+
             margin: 0;
             white-space: nowrap;
             text-overflow: ellipsis;
             &:hover {
-              background: var(--control-hover-background);
+              background: #eee;
             }
           }
 
         }
 
         & .separator {
-          border-bottom: 1px solid var(--separator-color);
+          border-bottom: 1px solid #ccc;
           width: 100%;
         }
 

@@ -1,6 +1,6 @@
 
 import { ToolbarElement, ToolbarButton, 
-         ToolbarSplitButton, ToolbarInputField, ToolbarTextField, ToolbarEvent, ToolbarElementBase, ToolbarIconDefinition } from './toolbar-types';
+         ToolbarSplitButton, ToolbarInputField, ToolbarTextField, ToolbarEvent, ToolbarElementBase, ToolbarIconDefinition, ToolbarElementType } from './toolbar-types';
 import { tmpl, NodeModel, EventSource } from 'treb-utils';
 
 import '../style/toolbar.css';
@@ -27,6 +27,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
   private map: {[index: string]: ToolbarElement} = {};
 
   private elements: ToolbarElement[] = [];
+  private id_generator = 100;
 
   private colors = [
     'rgb(0, 0, 0)',
@@ -37,6 +38,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     'rgb(256, 256, 256)',
     'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet',
   ];
+
+  public static checkmark = `<svg viewBox='0 0 24 24'><path d='M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z'/></svg>`;
+  public static trash = `<svg viewBox='0 0 24 24'><path d='M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z'/></svg>`
 
   constructor(private container: HTMLElement) {
     super();
@@ -56,7 +60,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         <div id='colors' class='colors'></div>
         <div class='new-color'>
           <input id='input' class='input-color' placeholder='New color'>
-          <button class='accept-color'>OK</button>
+          <button class='accept-color'>
+            ${Toolbar.checkmark}
+          </button>
         </div>
       </div>
     `;
@@ -69,23 +75,70 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
       const element = this.ContainingElement(event.target as HTMLElement);
       if ((element as HTMLButtonElement)?.disabled) { return; }
+      
+      // special case for input
+      if (element?.tagName === 'INPUT') { 
+
+        // close popup, if any
+
+        const dropdown = this.ContainingDropdown(element);
+        if (dropdown) {
+          dropdown.classList.remove('focused');
+        }
+
+        return;
+      }
+
+      const toolbar_element = (element?.dataset.id) ? this.map[element.dataset.id] : undefined;
 
       if (element) {
-        if (element.classList.contains('dropdown-link')) {
+        if (element.classList.contains('dropdown-link') 
+            || toolbar_element?.dropdown === 'button-list'
+            || toolbar_element?.dropdown === 'button-custom'
+            || (toolbar_element?.dropdown && toolbar_element.type == ToolbarElementType.hidden)) {
 
           const dropdown = this.ContainingDropdown(event.target as HTMLElement);
+          let mapped: ToolbarElement|undefined;
 
           if (element.dataset.target_id) {
-            const mapped = this.map[element.dataset.target_id];
+            mapped = this.map[element.dataset.target_id];
+          }
+          else if (toolbar_element?.type === ToolbarElementType.hidden) {
+            mapped = toolbar_element;
+          }
+          if (mapped) {
             if (mapped.dropdown === 'color') {
               const list = dropdown?.querySelector('.dropdown-list');
-              if (list) { list.appendChild(this.color_menu.root); }
+              if (list) { 
+                (this.color_menu.input as HTMLInputElement).value = '';
+                list.appendChild(this.color_menu.root); 
+              }
             }
           }
 
           if (dropdown) {
-            dropdown.classList.toggle('focused');
+            const shown = dropdown.classList.toggle('focused');
+
+            if (shown) {
+
+              // if we're in a hidden element, that's not focusable, so
+              // we need to focus on the popup for all the focus/unfocus
+              // semantics to work
+
+              if (toolbar_element?.type === ToolbarElementType.hidden) {
+                const list = dropdown?.querySelector('.dropdown-list') as HTMLElement;
+                if (list) {
+                  requestAnimationFrame(() => list.focus());
+                }
+              }
+
+              if (toolbar_element?.show) {
+                toolbar_element.show();
+              }
+            }
+
           }
+
         }
         else if (element.dataset.id) {
 
@@ -107,9 +160,11 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           // close the color chooser
 
           const dropdown = this.ContainingDropdown(element);
+
           if (dropdown) {
             const input = this.color_menu.input as HTMLInputElement;
-            const button = dropdown.querySelector('.toolbar-button') as HTMLElement;
+            // const button = dropdown.querySelector('.toolbar-button') as HTMLElement;
+            const button = dropdown.firstChild as HTMLElement;
 
             if (button?.dataset.id && input?.value.trim()) {
               this.Publish({
@@ -119,10 +174,15 @@ export class Toolbar extends EventSource<ToolbarEvent> {
             }
 
             // clear the input field, we'll add the color as a swatch
+            // actually it looks sloppy, because you can see it -- let's
+            // clear this field on open instead
 
-            input.value = '';
+            // input.value = '';
             dropdown.classList.remove('focused');
-            button.click();
+            if (button.tagName === 'BUTTON') {
+              button.click();
+            }
+
           }
 
         }
@@ -133,7 +193,8 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
           const dropdown = this.ContainingDropdown(element);
           if (dropdown) {
-            const button = dropdown.querySelector('.toolbar-button') as HTMLElement;
+            // const button = dropdown.querySelector('.toolbar-button') as HTMLElement;
+            const button = dropdown.firstChild as HTMLElement;
             if (button?.dataset.id) {
               this.Publish({
                 related_id: button.dataset.id,
@@ -141,7 +202,10 @@ export class Toolbar extends EventSource<ToolbarEvent> {
               });
             }
             dropdown.classList.remove('focused');
-            button.click();
+            if (button.tagName === 'BUTTON') {
+              button.click();
+            }
+
           }
 
         }
@@ -160,7 +224,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         case 'Enter':
           if (target === this.color_menu.input) {
             const dropdown = this.ContainingDropdown(event.target as HTMLElement);
-            const button = dropdown?.querySelector('.toolbar-button') as HTMLElement;
+            // const button = dropdown?.querySelector('.toolbar-button') as HTMLElement;
+            const button = dropdown?.firstChild as HTMLElement;
+            
             const input = this.color_menu.input as HTMLInputElement;
             if (button?.dataset.id) {
 
@@ -173,8 +239,11 @@ export class Toolbar extends EventSource<ToolbarEvent> {
                   color: input.value,
                 });
               }
-              input.value = '';
-              button.click();
+
+              if (button.tagName === 'BUTTON') {
+                // input.value = ''; // we do this on open so you don't see it
+                button.click();
+              }
             }
             break;
           }
@@ -203,10 +272,15 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           return;
       }
       event.stopPropagation();
-      const dropdown = this.ContainingDropdown(event.target as HTMLElement);
 
-      if (dropdown) {
+      let dropdown = this.ContainingDropdown(event.target as HTMLElement);
+
+      //if (dropdown) {
+      //  dropdown.classList.remove('focused');
+      //}
+      while (dropdown) {
         dropdown.classList.remove('focused');
+        dropdown = this.ContainingDropdown(dropdown.parentElement as HTMLElement);
       }
 
       this.Publish({ type: 'focusout' });
@@ -219,12 +293,29 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     this.toolbar.addEventListener('focusout', (event) => {
 
       const old_target = this.ContainingDropdown(event.target as HTMLElement);
-      const new_target = this.ContainingDropdown(event.relatedTarget as HTMLElement);
 
+      // we have a new thing, where there might be nested dropdowns... so we
+      // should check for that
+
+      if (old_target) {
+        let new_target = this.ContainingDropdown(event.relatedTarget as HTMLElement);
+
+        for (;;) {
+          if (!new_target) { break; }
+          if (new_target === old_target) { 
+            return; 
+          }
+          new_target = this.ContainingDropdown(new_target.parentElement as HTMLElement);
+        }
+        old_target.classList.remove('focused');
+      }
+
+      /*
       if (old_target && old_target !== new_target) {
         old_target.classList.remove('focused');
       }
-      
+      */
+
     });
 
   }
@@ -243,6 +334,10 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     `;
   }
 
+  public Item(id: string): ToolbarElement|undefined { 
+    return this.map[id]; 
+  }
+
   public ContainingDropdown(element: HTMLElement): HTMLElement|undefined {
     if (!element) { return undefined; }
     if (element.classList.contains('dropdown-container')) { return element; }
@@ -255,13 +350,19 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     return undefined;
   }
 
-  public ContainingElement(element: HTMLElement, tag = 'BUTTON'): HTMLElement|undefined {
+  /**
+   * this was originally a generic look-for-tag method (defaulting to button),
+   * but we're modifying it so it specifically looks for a containing button
+   * OR an element with dataset.id.
+   */
+  public ContainingElement(element: HTMLElement): HTMLElement|undefined {
     if (!element) { return undefined; }
-    if (element.tagName === tag) { return element; }
+
+    if (element.dataset.id || element.tagName === 'BUTTON') { return element; }
     for (;;) {
       element = element.parentElement as HTMLElement;
-      if (!element) return undefined;
-      if (element.tagName === tag) { return element; }
+      if (!element || element === this.node || element === this.toolbar) { return undefined; }
+      if (element.dataset.id || element.tagName === 'BUTTON') { return element; }
     }
     return undefined;
   }
@@ -286,20 +387,28 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     container.appendChild(root);
 
     // add dropdown button
-    const dropdown = document.createElement('button');
-    dropdown.className = 'dropdown-link';
-    dropdown.dataset.target_id = element.id;
-    container.appendChild(dropdown);
-    
+    if (element.dropdown !== 'button-list' 
+        && element.dropdown !== 'button-custom'
+        && element.type !== ToolbarElementType.hidden) {
+      const dropdown = document.createElement('button');
+      dropdown.className = 'dropdown-link';
+      dropdown.dataset.target_id = element.id;
+      container.appendChild(dropdown);
+    }
+
     // add dropdown menu
     const list = document.createElement('div');
     list.className = element.dropdown === 'color' ? 'dropdown-list choose-color' : 'dropdown-list';
     list.tabIndex = -1;
     container.appendChild(list);
   
-    if (element.dropdown === 'list' && element.list) {
+    if (element.list) {
+      if (!element.dropdown) {
+        element.dropdown = 'list';
+      }
       const ul = document.createElement('ul');
       for (const entry of element.list) {
+        if (entry.type !== ToolbarElementType.separator) { entry.parent_id = element.id; }
         const child = this.CreateElement(entry);
         if (child) {
           const li = document.createElement('li');
@@ -311,6 +420,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         }
       }
       list.appendChild(ul);
+    }
+    else if (element.content) {
+      list.appendChild(element.content);
     }
 
     return container;
@@ -326,7 +438,13 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     if (element.disabled) {
       button.disabled = true;
     }
-
+    /*
+    if (element.data) {
+      for (const key of Object.keys(element.data)) {
+        button.dataset[key] = element.data[key];
+      }
+    }
+    */
     if (element.title) {
       button.title = element.title;
     }
@@ -339,7 +457,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     if (element.icon) {
       button.appendChild(this.CreateSVGFragment(element.icon).icon);
     }
-    if (element.dropdown) { 
+    if (element.dropdown || element.list) { 
       return this.Dropdown(button, element); 
     }
 
@@ -374,10 +492,21 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       input.dataset.original_value = element.text || '';
     }
     if (element.placeholder) { input.placeholder = element.placeholder; }
-    if (element.dropdown) {
+    if (element.dropdown || element.list) {
       return this.Dropdown(input, element);
     }
     return input;
+  }
+
+  public Hidden(element: ToolbarElement): HTMLElement {
+    const empty = document.createElement('div');
+    if (element.id) {
+      empty.dataset.id = element.id;
+    }
+    if (element.dropdown || element.list) {
+      return this.Dropdown(empty, element);
+    }
+    return empty;
   }
 
   public Text(element: ToolbarTextField): HTMLElement {
@@ -414,26 +543,36 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       button.dataset.color = color;
       nodes.push(button);
     }
-    this.color_menu.colors.append(...nodes);
+
+    for (const node of nodes) {
+      this.color_menu.colors.appendChild(node);
+    }
 
   }
 
   public CreateElement(element: ToolbarElement): HTMLElement|undefined {
 
+    if (!element.id) {
+      element.id = `__${this.id_generator++}`;
+    }
+
     switch (element.type) {
-      case 'split':
+      case ToolbarElementType.split:
         return this.SplitButton(element);
 
-      case 'input':
+      case ToolbarElementType.input:
         return this.Input(element);
 
-      case 'button':
+      case ToolbarElementType.button:
         return this.Button(element);
 
-      case 'separator':
+      case ToolbarElementType.separator:
         return this.Separator();
 
-      case 'text':
+      case ToolbarElementType.hidden:
+        return this.Hidden(element);
+
+      case ToolbarElementType.text:
         return this.Text(element);
     }
   
@@ -461,12 +600,14 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     // no existing one, or node missing, needs full build
 
     if (!b || !b.node) { 
+      // console.info("CE1");
       return this.CreateElement(a);
     }
 
     // comparisons need full rebuild
 
     if (a.type !== b.type || a.dropdown !== b.dropdown) { 
+      // console.info("CE2");
       return this.CreateElement(a);
     }
 
@@ -485,7 +626,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
       // FIXME: button?
 
-      if (a.type === 'input') {
+      if (a.type === ToolbarElementType.input) {
         (target as HTMLInputElement).value = a.text || '';
         (target as HTMLInputElement).dataset.original_value = a.text || '';
       }
@@ -509,12 +650,32 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     // this feels wasteful... is there another way? perhaps we could cache
     // icon defs and then use symbolic identifiers
 
+    // here is what we are doing: we're keeping a reference to the node, instead
+    // of copying it as JSON. therefore we can strict === the values.
+
+    /*
     if (a.type === 'button' && b.type === 'button' && JSON.stringify(a.icon) !== JSON.stringify(b.icon)) { 
       target.textContent = '';
       if (a.icon) {
         target.appendChild(this.CreateSVGFragment(a.icon).icon);
       }
     }
+    */
+
+    if (a.type === ToolbarElementType.button && b.type === ToolbarElementType.button && a.icon !== b.icon) {
+      target.textContent = '';
+      if (a.icon) {
+        target.appendChild(this.CreateSVGFragment(a.icon).icon);
+      }
+    }
+
+    /*
+    if (JSON.stringify(a.data) !== JSON.stringify(b.data)) {
+      for (const key of Object.keys(a.data)) {
+        target.dataset[key] = a.data[key];
+      }
+    }
+    */
 
     // this should recurse...
 
@@ -533,6 +694,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     let index = 0;
     for (; index < elements.length; index++ ){
+
       const element = elements[index];
       const local = this.elements[index];
 
@@ -541,12 +703,15 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
       if (new_node !== current_node) {
         if (new_node && current_node) {
+          // console.info('replace');
           current_node.parentElement?.replaceChild(new_node, current_node);
         }
         else if (new_node) {
+          // console.info('append');
           this.toolbar.appendChild(new_node);
         }
         else if (current_node) {
+          // console.info('remove');
           current_node.parentElement?.removeChild(current_node);
         }
       }
@@ -556,11 +721,20 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       // data changes.
 
       // set local
-      this.elements[index] = JSON.parse(JSON.stringify(element));
-      this.elements[index].node = new_node;
+      const clone = JSON.parse(JSON.stringify(element));
+
+      this.elements[index] = clone;
+
+      // UPDATE: we're referencing icon, not cloning
+      if (element.type === ToolbarElementType.button) {
+        (clone as ToolbarButton).icon = element.icon; 
+        (clone as ToolbarButton).show = element.show; 
+      }
+
+      clone.node = new_node;
 
       if (element.id) {
-        this.map[element.id] = element;
+        this.map[element.id] = clone; // element; // shouldn't this be our copy? (...)
       }
 
     }
@@ -570,7 +744,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     
   }
 
-  /** init, based on template list */
+  /* * init, based on template list * /
   public Init(elements: ToolbarElement[], colors?: string[]): void {
 
     const ids: {[index: string]: HTMLElement} = {};
@@ -590,11 +764,11 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           ids[element.id] = node;
         }
         nodes.push(node);
-        /*
+        / *
         if (element.dropdown) {
           nodes.push(this.Dropdown(element, ids));
         }
-        */
+        * /
       }
     }
 
@@ -606,5 +780,6 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     this.toolbar.append(...nodes);
 
   }
-
+  */
+ 
 }

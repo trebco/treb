@@ -3255,7 +3255,15 @@ export class Grid {
 
     // does this cell have a note?
 
-    const cell = this.cells.GetCell(address, false);
+    let cell = this.cells.GetCell(address, false);
+
+    if (cell?.merge_area) {
+      const area = cell.merge_area;
+      address = area.start;
+      cell = this.cells.GetCell(address, false);
+      address = { row: area.start.row, column: area.end.column };
+    }
+
     const note = cell ? cell.note : undefined;
 
     if (note) {
@@ -6523,12 +6531,18 @@ export class Grid {
     const clear_left: Style.Properties = { border_left: 0 };
     const clear_right: Style.Properties = { border_right: 0 };
 
-    if (typeof command.color !== 'undefined') {
+    // default to "none", which means "default"
+
+    if (!command.color) {
+      command.color = 'none';
+    }
+
+    //if (typeof command.color !== 'undefined') {
       top.border_top_color =
         bottom.border_bottom_color =
         left.border_left_color =
         right.border_right_color = command.color;
-    }
+    //}
 
     // inside all/none
     if (borders === BorderConstants.None || borders === BorderConstants.All) {
@@ -7098,9 +7112,17 @@ export class Grid {
 
         case CommandKey.SetNote:
           {
-            const cell = this.cells.GetCell(command.address, true);
+            let cell = this.cells.GetCell(command.address, true);
             if (cell) {
-              const area = new Area(command.address);
+
+              let area: Area;
+              if (cell.merge_area) {
+                area = new Area(cell.merge_area.start);
+                cell = this.cells.GetCell(cell.merge_area.start, true);
+              }
+              else {
+                area = new Area(command.address);
+              }
 
               cell.SetNote(command.note);
               this.DelayedRender(false, area);

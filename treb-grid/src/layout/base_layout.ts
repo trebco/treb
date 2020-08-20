@@ -283,16 +283,19 @@ export abstract class BaseLayout {
   /**
    * show/hide grid selections. used when selecting annotations.
    */
-  public ShowSelections(show = true) {
+  public ShowSelections(show = true): void {
     this.grid_selection.style.display = show ? 'block' : 'none';
   }
 
-  public HideNote() {
+  public HideNote(): void {
+
+    // FIXME: use class
+
     this.note_node.style.opacity = '0';
     this.note_node.style.pointerEvents = 'none';
   }
 
-  public ShowNote(note: string, address: ICellAddress, event?: MouseEvent) {
+  public ShowNote(note: string, address: ICellAddress, event?: MouseEvent): void {
     this.note_node.textContent = note;
 
     if (!this.note_node.parentElement) return;
@@ -300,7 +303,7 @@ export abstract class BaseLayout {
     const note_size = this.note_node.getBoundingClientRect();
     const container = this.note_node.parentElement.getBoundingClientRect();
 
-    const offset = { x: 3, y: 2 };
+    const offset = { x: 8, y: 2 };
 
     const rect = this.OffsetCellAddressToRectangle(address).Shift(
       this.header_size.width, this.header_size.height);
@@ -308,7 +311,9 @@ export abstract class BaseLayout {
     this.note_node.style.left = (
       container.left + rect.right - this.scroll_reference_node.scrollLeft + offset.x) + 'px';
     this.note_node.style.top = (
-      container.top + rect.top - this.scroll_reference_node.scrollTop - note_size.height - offset.y) + 'px';
+      container.top + rect.top - this.scroll_reference_node.scrollTop - (note_size.height / 5) - offset.y) + 'px';
+
+    // FIXME: use class
 
     this.note_node.style.opacity = '1';
     this.note_node.style.pointerEvents = 'auto';

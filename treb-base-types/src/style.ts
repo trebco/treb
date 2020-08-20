@@ -112,6 +112,15 @@ export namespace Style {
   };
 
   /**
+   * this version of merge is used to support explicit deletes, via
+   * "undefined" properties. we use a trick via JSON to skip iterating
+   * properties (I believe this is faster, but have not tested).
+   */
+  export const Merge2 = (dest: Properties, src: Properties): Properties => {
+    return JSON.parse(JSON.stringify({...dest, ...src}));
+  }
+
+  /**
    * merge. returns a new object, does not update dest in place.
    * NOTE: if it does not update dest in place, then what would be
    * the use case for a non-delta merge? (...)

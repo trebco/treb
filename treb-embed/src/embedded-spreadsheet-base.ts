@@ -8,8 +8,8 @@ import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
 import { EventSource, Yield, tmpl } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
-import { Toolbar as SimpleToolbar } from 'treb-toolbar';
-import { ToolbarManager, ExtendedToolbarElement } from './toolbar-manager';
+import { Toolbar as SimpleToolbar, ToolbarElement } from 'treb-toolbar';
+import { ToolbarManager } from './toolbar-manager';
 
 // local
 import { ProgressDialog, DialogType } from './progress-dialog';
@@ -663,6 +663,31 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /** set freeze area */
   public Freeze(rows = 0, columns = 0): void {
     this.grid.Freeze(rows, columns, true);
+  }
+
+  /** freeze at current selection */
+  public FreezeSelection(): void {
+
+    const selection = this.grid.GetSelection();
+    if (selection.empty) {
+      this.grid.Freeze(0, 0);
+    }
+    else {
+      const area = selection.area as Area;
+      if (area.entire_sheet) {
+        // ?
+      }
+      else if (area.entire_row) {
+        this.grid.Freeze(area.end.row + 1, 0);
+      }
+      else if (area.entire_column) {
+        this.grid.Freeze(0, area.end.column + 1);
+      }
+      else {
+        this.grid.Freeze(area.end.row + 1, area.end.column + 1);
+      }
+    }
+
   }
 
   /** return current freeze area */
@@ -2369,7 +2394,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       return this.toolbar_manager.toolbar;
     }
 
-    this.toolbar_manager = new ToolbarManager(container);
+    this.toolbar_manager = new ToolbarManager(container, this.grid.theme, this.options);
     this.toolbar_manager.toolbar.Subscribe((event) => {
 
       if (event.type === 'focusout') {
@@ -2377,17 +2402,59 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         return;
       }
 
-      const element = (event.element as ExtendedToolbarElement);
+      const element = (event.element as ToolbarElement);
       let updated_style: Style.Properties = {};
 
-      if (element && element.update_style) {
-        updated_style = element.update_style;
+      if (event.related_id === 'border-color-target') {
+        const color = event.color || 'none';
+        updated_style = {
+          border_bottom_color: color,
+          border_top_color: color,
+          border_left_color: color,
+          border_right_color: color,
+        };
+      }
+
+      if (element && element.data && element.data.style) {
+        updated_style = element.data.style;
+      }
+      else if (element && element.data && element.data.annotation) {
+        const selection = this.grid.GetSelection();
+        if (selection && !selection.empty) {
+          const label = selection.area.spreadsheet_label;
+          this.InsertAnnotation(`=${element.data.annotation}(${label},,"${label}")`);
+        }
       }
       else if (element && element.data && element.data.border) {
-        this.grid.ApplyBorders(undefined, element.data.border, undefined, element.data.width || 1);
+        this.grid.ApplyBorders(undefined, element.data.border, this.toolbar_manager?.border_color || undefined, element.data.width || 1);
       }
       else if (event.id) {
         switch (event.id) {
+
+          case 'insert-row': this.grid.InsertRow(); break;
+          case 'insert-column': this.grid.InsertColumn(); break;
+          case 'delete-row': this.grid.DeleteRows(); break;
+          case 'delete-column': this.grid.DeleteColumns(); break;
+          case 'insert-sheet': this.grid.InsertSheet(); break;
+          case 'delete-sheet': this.grid.DeleteSheet(); break;
+
+          case 'freeze':
+            if (element?.data?.freeze) {
+              this.FreezeSelection();
+            }
+            else {
+              this.Freeze(0, 0);
+            }
+            break;
+
+          case 'update-note':
+            this.SetNote(event.value);
+            break;
+
+          case 'image':
+            this.InsertImage();
+            break;
+
           case 'text-color':
             updated_style.text_color = this.toolbar_manager?.foreground_color || 'none';
             break;
@@ -2447,10 +2514,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     return this.toolbar_manager.toolbar;
   }
 
-  public UpdateSelectionStyle(selection?: GridSelection, update = true) {
+  /** update selection style for the toolbar */
+  public UpdateSelectionStyle(selection?: GridSelection, update = true): void {
 
     let merged = false;
-    let note = false;
+    let note: string|undefined;
 
     if (!selection) { 
       selection = this.grid.GetSelection(); 
@@ -2467,23 +2535,26 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
 
       this.active_selection_style = data.style;
-      note = !!data.note;
+      note = data.note;
 
     }
     else {
       this.active_selection_style = {};
     }
 
+    const freeze = this.grid.GetFreeze();
+
     this.toolbar_manager?.UpdateSelection(
       selection, 
       merged, 
       this.active_selection_style, 
       note, 
+      (!!freeze.rows || !!freeze.columns),
       update);
 
   }
 
-  public UpdateDocumentStyles(update = true) {
+  public UpdateDocumentStyles(update = true): void {
 
     if (!this.toolbar_manager) { return; }
 
@@ -2509,6 +2580,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
       if (style.background && style.background !== 'none') {
         color_map[style.background] = 1;
+      }
+      if (style.border_top_color && style.border_top_color !== 'none') {
+        color_map[style.border_top_color] = 1;
+      }
+      if (style.border_bottom_color && style.border_bottom_color !== 'none') {
+        color_map[style.border_bottom_color] = 1;
+      }
+      if (style.border_left_color && style.border_left_color !== 'none') {
+        color_map[style.border_left_color] = 1;
+      }
+      if (style.border_right_color && style.border_right_color !== 'none') {
+        color_map[style.border_right_color] = 1;
       }
     }
 

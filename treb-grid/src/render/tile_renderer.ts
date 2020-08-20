@@ -820,7 +820,10 @@ export class TileRenderer {
       }
     }
 
-    if (composite.border_bottom && composite.border_bottom_color && composite.border_bottom_color !== 'none') {
+    if (composite.border_bottom && composite.border_bottom_color) {
+      if (composite.border_bottom_color === 'none') { 
+        composite.border_bottom_color = this.theme.border_color || ''; 
+      }
       context.strokeStyle = composite.border_bottom_color;
       context.beginPath();
 
@@ -836,7 +839,10 @@ export class TileRenderer {
       context.stroke();
     }
 
-    if (composite.border_top && composite.border_top_color && composite.border_top_color !== 'none') {
+    if (composite.border_top && composite.border_top_color) {
+      if (composite.border_top_color === 'none') { 
+        composite.border_top_color = this.theme.border_color || ''; 
+      }
       context.strokeStyle = composite.border_top_color;
       context.beginPath();
 
@@ -851,7 +857,11 @@ export class TileRenderer {
       context.stroke();
     }
 
-    if (composite.border_left && composite.border_left_color && composite.border_left_color !== 'none') {
+    if (composite.border_left && composite.border_left_color) {
+      if (composite.border_left_color === 'none') { 
+        composite.border_left_color = this.theme.border_color || ''; 
+      }
+  
       context.strokeStyle = composite.border_left_color;
       context.beginPath();
       context.moveTo(left - 0.5, top);
@@ -859,7 +869,11 @@ export class TileRenderer {
       context.stroke();
     }
 
-    if (composite.border_right && composite.border_right_color && composite.border_right_color !== 'none') {
+    if (composite.border_right && composite.border_right_color) {
+      if (composite.border_right_color === 'none') { 
+        composite.border_right_color = this.theme.border_color || ''; 
+      }
+
       context.strokeStyle = composite.border_right_color;
       context.beginPath();
       context.moveTo(left + width - 0.5, top);
@@ -1319,8 +1333,12 @@ export class TileRenderer {
 
     // set stroke for underline
 
+    // FIXME: color here should default to style, not ''. it's working only
+    // because our default style happens to be the default color. that applies
+    // to text color, background color and border color.
+
     context.lineWidth = 1;
-    const style_text_color = style.text_color === 'none' ? '' : style.text_color;
+    const style_text_color = style.text_color === 'none' ? (this.theme.cell_color ||  '') : style.text_color;
 
     context.strokeStyle = context.fillStyle =
       text_data.format ? text_data.format :

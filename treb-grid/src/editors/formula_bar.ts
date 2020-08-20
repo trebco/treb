@@ -60,6 +60,8 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
   private last_formula = '';
 
+  private label_update_timer = 0;
+
   /** set formula text */
   public set formula(text: string) {
     if (this.editor_node) {
@@ -86,13 +88,23 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     else {
       this.address_label.textContent = text;
 
-      // should this be in a Yield callback? need to check IE11...
-      if (this.address_label.scrollWidth > this.address_label.offsetWidth) {
-        this.address_label.setAttribute('title', text);
+      if (!this.label_update_timer) {
+        this.label_update_timer = requestAnimationFrame(() => {
+          this.label_update_timer = 0;
+
+          // should this be in a Yield callback? need to check IE11...
+          // yes
+
+          if (this.address_label.scrollWidth > this.address_label.offsetWidth) {
+            this.address_label.setAttribute('title', text);
+          }
+          else {
+            this.address_label.removeAttribute('title');
+          }
+
+        });
       }
-      else {
-        this.address_label.removeAttribute('title');
-      }
+      
     }
   }
 

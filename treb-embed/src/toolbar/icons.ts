@@ -2,7 +2,7 @@
 
 /**
  * source directory: /mnt/h/TREB/TREB/treb-embed/icons
- * generated Thu Aug 13 2020 09:42:57 GMT-0700 (Pacific Daylight Time)
+ * generated Thu Aug 20 2020 09:38:34 GMT-0700 (Pacific Daylight Time)
  */  
 
 export interface PathDef2 {
@@ -17,6 +17,26 @@ export interface SymbolDef2 {
 }
 
 export const icons: {[index: string]: SymbolDef2} = {
+  /*
+  'material/filled/delete-24px': {
+    'viewbox': '0 0 24 24',
+    'paths': [
+      {
+        'd': 'M0 0h24v24H0z',
+        'classes': [
+          'material-filled',
+          'fill-none'
+        ]
+      },
+      {
+        'd': 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
+        'classes': [
+          'material-filled'
+        ]
+      }
+    ]
+  },
+  */
   'material/outline/chat_bubble_outline-24px': {
     'viewbox': '0 0 24 24',
     'paths': [
@@ -29,6 +49,24 @@ export const icons: {[index: string]: SymbolDef2} = {
       },
       {
         'd': 'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z',
+        'classes': [
+          'material-outline'
+        ]
+      }
+    ]
+  },
+  'material/outline/done-24px': {
+    'viewbox': '0 0 24 24',
+    'paths': [
+      {
+        'd': 'M0 0h24v24H0V0z',
+        'classes': [
+          'material-outline',
+          'fill-none'
+        ]
+      },
+      {
+        'd': 'M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z',
         'classes': [
           'material-outline'
         ]
