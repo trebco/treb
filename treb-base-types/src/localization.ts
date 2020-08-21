@@ -85,7 +85,20 @@ export class Localization {
 
     if (this.decimal_separator === ',') {
       this.argument_separator = ';';
-      this.grouping_separator = ' '; // FIXME: should be half-space (char?)
+
+      // FIXME: should be half-space (char?)
+      //
+      // the appropriate character (I think) is \u2009, "thin space", but
+      // it seems to be rendered as full-width space in monospace fonts --
+      // which makes sense -- and since we mostly use those it's probably 
+      // immaterial.
+      //
+      // it might be useful for fonts with variable-width characters but
+      // tabular numbers, in which case we would want to use it.
+      //
+      // FIXME: does format use this field, or does it have its own? (...)
+      
+      this.grouping_separator = ' '; 
     }
 
     // moved from number format lib
