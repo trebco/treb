@@ -5,6 +5,7 @@ import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage } from 
 import { Localization, ICellAddress } from 'treb-base-types';
 import { SerializeOptions, MacroFunction } from 'treb-grid';
 import { TREBDocument } from './types';
+import { Base64 } from 'js-base64';
 
 import * as PackResults from 'treb-mc/src/pack-results';
 
