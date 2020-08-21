@@ -21,6 +21,9 @@ export class Measurement {
 
   /**
    * measure a color. turns symbolic or rgb colors into rgb values.
+   * 
+   * UPDATE: prefill with #fff. that prevents it from randomly returning
+   * the last value, if the color doesn't work for some reason.
    */
   public static MeasureColor(color: string){
 
@@ -37,6 +40,9 @@ export class Measurement {
 
     const context = this.color_measurement_canvas.getContext('2d');
     if (context) {
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, 1, 1);
+
       context.fillStyle = color;
       context.fillRect(0, 0, 1, 1);
       cached = context.getImageData(0, 0, 1, 1).data;

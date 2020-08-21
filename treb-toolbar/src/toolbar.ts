@@ -1,7 +1,7 @@
 
 import { ToolbarElement, ToolbarButton, 
          ToolbarSplitButton, ToolbarInputField, ToolbarTextField, ToolbarEvent, ToolbarElementBase, ToolbarIconDefinition, ToolbarElementType } from './toolbar-types';
-import { tmpl, NodeModel, EventSource } from 'treb-utils';
+import { tmpl, NodeModel, EventSource, Measurement, Color } from 'treb-utils';
 
 import '../style/toolbar.css';
 
@@ -60,12 +60,26 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         <div id='colors' class='colors'></div>
         <div class='new-color'>
           <input id='input' class='input-color' placeholder='New color'>
-          <button class='accept-color'>
+          <button class='accept-color' id='accept'>
             ${Toolbar.checkmark}
           </button>
         </div>
       </div>
     `;
+
+    this.color_menu.input.addEventListener('input', (event) => {
+      const input = (this.color_menu.input as HTMLInputElement);
+
+      const color = Measurement.MeasureColor(input.value);
+      const hsl = Color.RGBToHSL(color[0], color[1], color[2]); // can't destructure? 
+
+      this.color_menu.accept.style.stroke = 
+        this.color_menu.accept.style.fill = (hsl.l > .5) ? '' : '#fff';
+      // console.info("L", l, this.color_menu.accept.style.fill);
+      // console.info(input.value, color, h, s, l);
+      
+      this.color_menu.accept.style.background = `rgb(${color[0]}, ${color[1]}, ${color[2]})` || '#fff';
+    });
 
     /**
      * on button click, a couple of things happen: we open dropdown
