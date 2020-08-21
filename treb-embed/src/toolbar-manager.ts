@@ -50,7 +50,7 @@ export class ToolbarManager {
       icon: symbol_defs['column-chart'],
       title: 'Insert column chart',
       id: 'insert-chart',
-      data: { annotation_function: 'Column.Chart' },
+      data: { annotation: 'Column.Chart' },
       list: [
         { type: ToolbarElementType.button, icon: symbol_defs['column-chart'], title: 'Insert column chart', data: { annotation: 'Column.Chart' } },
         { type: ToolbarElementType.button, icon: symbol_defs['donut-chart'], title: 'Insert donut chart', data: { annotation: 'Donut.Chart' } },
