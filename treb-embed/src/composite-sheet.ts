@@ -4,7 +4,7 @@ import { symbols } from './symbol-defs';
 import { CreateSheetOptions, DefaultOptions } from './options';
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { Resizable } from 'treb-utils';
-import { ToolbarOptions, CompositeToolbar as FormattingToolbar } from './toolbar/';
+// import { ToolbarOptions, CompositeToolbar as FormattingToolbar } from './toolbar/';
 import { css } from 'treb-utils';
 
 import '../style/composite-sheet.scss';
@@ -59,7 +59,7 @@ export class CompositeSheet {
   public options: CreateSheetOptions;
 
   /** toolbar instance, moved from embedded sheet */
-  public toolbar?: FormattingToolbar;
+  // public toolbar?: FormattingToolbar;
 
   /** 
    * inject svg symbol defs (once)
@@ -529,7 +529,8 @@ export class CompositeSheet {
 
     if (show) {
 
-      if (!this.toolbar && this.toolbar_container) {
+      // if (!this.toolbar && this.toolbar_container) {
+      if (!this.sheet.toolbar && this.toolbar_container) {
 
         /*
 

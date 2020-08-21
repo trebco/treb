@@ -1,8 +1,8 @@
 
 import { Toolbar, ToolbarElement, ToolbarInputField, ToolbarElementType, ToolbarIconDefinition, ToolbarButton } from 'treb-toolbar';
 import { NumberFormatCache } from 'treb-format';
-import { symbol_defs, SymbolDef } from './toolbar/symbol-defs';
-import { icons } from './toolbar/icons';
+import { symbol_defs, SymbolDef } from './generated/symbol-defs';
+import { icons } from './generated/icons';
 import { tmpl, NodeModel } from 'treb-utils';
 import { Style } from 'treb-base-types';
 import { GridSelection, BorderConstants } from 'treb-grid/src';
