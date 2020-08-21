@@ -5,7 +5,7 @@ const fs = require('fs');
 
 let file = './treb-embed/src/progress-dialog.ts';
 file = './sample.ts';
-file = './treb-grid/src/editors/autocomplete.ts';
+file = './treb-toolbar/src/toolbar.ts';
 
 fs.readFile(file, 'utf-8', (err, data) => {
   if (err) { 
