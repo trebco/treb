@@ -971,6 +971,20 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   ///////////
 
   /**
+   * show or hide sheet, by name or index
+   */
+  public ShowSheet(index: number|string = 0, show = true): void {
+    this.grid.ShowSheet(index, show);
+  }
+
+  /**
+   * activate sheet, by name or index
+   */
+  public ActivateSheet(index: number|string): void {
+    this.grid.ActivateSheet(index);
+  }
+
+  /**
    *
    * @param column column, or columns (array), or undefined means all columns
    * @param width desired width (can be 0) or undefined means 'auto-size'
