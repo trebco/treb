@@ -12,6 +12,7 @@ import * as Primitives from './primitives';
 
 export interface CalculationContext {
   address: ICellAddress;
+  model?: DataModel;
   volatile: boolean;
   call_index: number;
   // name_stack: Array<{[index: string]: ExpressionUnit}>;
@@ -71,6 +72,8 @@ export class ExpressionCalculator {
 
     this.data_model = model;
     this.named_range_map = model.named_ranges.Map();
+    this.context.model = model;
+    
   }
 
   /**

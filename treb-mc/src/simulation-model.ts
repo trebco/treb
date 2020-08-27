@@ -7,6 +7,7 @@ import { MCFunctionMap } from './descriptors';
 import { DataError, ArgumentError, ValueError } from '../../treb-calculator/src/function-error';
 import { ExpressionUnit } from 'treb-parser';
 import { Scale as CreateScale } from 'treb-utils';
+import { DataModel } from 'treb-grid';
 
 export enum SimulationState {
   Null, Prep, Simulation, Post,
@@ -33,6 +34,7 @@ export class SimulationModel {
 
   public address: ICellAddress = { row: 0, column: 0 };
   public volatile = false;
+  public model?: DataModel;
 
   // public name_stack: Array<{[index: string]: ExpressionUnit}> = [];
 
@@ -1263,7 +1265,26 @@ export class SimulationModel {
 
     let rows = 1, columns = 1;
 
-    const cell = ((this.address as any) as Cell);
+    // this function used to rely on the Cell structure being passed
+    // as the address. we used to do that, in error. while we might want
+    // to bring it back, for the time being we will look up in the model
+    // instead.
+
+    // const cell = ((this.address as any) as Cell);
+    let cell: Cell|undefined;
+
+    if (this.address.sheet_id) {
+      for (const sheet of this.model?.sheets || []) {
+        if (sheet.id === this.address.sheet_id) {
+          if (sheet.cells.data[this.address.row]) {
+            cell = sheet.cells.data[this.address.row][this.address.column];
+          }
+          break;
+        }
+      }
+    }
+
+    if (!cell) { return ArgumentError; }
 
     if (cell.area) {
       const area = new Area(cell.area.start, cell.area.end);
@@ -1297,7 +1318,6 @@ export class SimulationModel {
       let result: number[][] = [[], []];
 
       const scale = CreateScale(min, max, length, true);
-      // console.info(length, scale);
   
       let base = scale.min;
       let last = base;
