@@ -1,9 +1,7 @@
 
 import {
-  Rectangle, ValueType, Style, Area, Cell, CellValue,
-  Extent, ICellAddress, IsCellAddress, Localization, ImportedSheetData,
-  ValidationType,
-  IArea,
+  Rectangle, ValueType, Style, Area, Cell, CellValue, Extent, ICellAddress, 
+  IsCellAddress, Localization, ImportedSheetData, ValidationType,
 } from 'treb-base-types';
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
@@ -16,8 +14,10 @@ import { SelectionRenderer } from '../render/selection-renderer';
 import { TabBar } from './tab_bar';
 import { Sheet } from './sheet';
 import { TileRange, BaseLayout } from '../layout/base_layout';
-import { GridLayout } from '../layout/grid_layout';
-import { LegacyLayout } from '../layout/legacy_layout';
+
+// import { GridLayout } from '../layout/grid_layout';
+// import { LegacyLayout } from '../layout/legacy_layout';
+import { CreateLayout } from '@grid-conditional/layout_manager';
 
 import { GridSelection } from './grid_selection';
 import { Theme, ExtendedTheme, CalculateSupplementalColors, LoadThemeProperties } from './theme';
@@ -46,6 +46,8 @@ import {
 
 import { DataModel, MacroFunction, SerializedModel } from './data_model';
 import { NamedRangeCollection } from './named_range';
+
+import '../../style/grid.scss';
 
 interface ClipboardCellData {
   address: ICellAddress;
@@ -328,9 +330,12 @@ export class Grid {
 
     this.options = { ...DefaultGridOptions, ...options };
 
+    /*
     this.layout = UA.is_modern ?
       new GridLayout(this.model) :
       new LegacyLayout(this.model);
+    */
+    this.layout = CreateLayout(this.model);
 
     this.tile_renderer = new TileRenderer(this.theme, this.layout, this.model, this.options);
     this.selection_renderer = new SelectionRenderer(

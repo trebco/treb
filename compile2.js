@@ -116,7 +116,7 @@ const custom_transformer = (context) => {
 };
 */
 
-const CreateConfig = (config, entry) => {
+const CreateConfig = (config, entry, additional_aliases) => {
   const config_instance = {
 
     entry,
@@ -189,7 +189,8 @@ const CreateConfig = (config, entry) => {
       extensions: ['.ts', '.js'],
       alias: {
         '@root': path.resolve(__dirname),
-        ...aliases
+        ...aliases,
+        ...additional_aliases,
       }
     },
     output: {
@@ -221,8 +222,15 @@ const CreateConfig = (config, entry) => {
   return config_instance;
 };
 
-const modern_compiler = build.modern ? webpack(CreateConfig('modern', modern_entry)) : undefined;
-const legacy_compiler = build.legacy ? webpack(CreateConfig('legacy', legacy_entry)) : undefined;
+const modern_compiler = build.modern ? webpack(CreateConfig('modern', modern_entry, {
+  '@grid-conditional': path.resolve(__dirname, path.join('treb-grid', 'src', 'conditional', 'modern')),
+  '@conditional-config': path.resolve(__dirname, path.join('treb-base-types', 'src', 'config-modern.ts')),
+})) : undefined;
+
+const legacy_compiler = build.legacy ? webpack(CreateConfig('legacy', legacy_entry, {
+  '@grid-conditional': path.resolve(__dirname, path.join('treb-grid', 'src', 'conditional', 'legacy')),
+  '@conditional-config': path.resolve(__dirname, path.join('treb-base-types', 'src', 'config-legacy.ts')),
+})) : undefined;
 
 const postbuild = async (config, err, stats) => {
 

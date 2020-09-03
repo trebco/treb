@@ -25,7 +25,7 @@ import { Chart, ChartFunctions } from 'treb-charts';
 import * as FileSaver from 'file-saver';
 
 // style
-import 'treb-grid/style/grid.scss';
+// import 'treb-grid/style/grid.scss';
 import '../style/embed.scss';
 
 // config
