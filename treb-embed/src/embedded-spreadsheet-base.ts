@@ -2507,6 +2507,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             }
             break;
 
+          case 'border-color': // not handled here, just triggers the color chooser
+            break;
+
           default:
             console.info('unhandled', event.id, element);
             break;

@@ -56,6 +56,11 @@ export interface CellXf {
 
 }
 
+interface ColorAttributes {
+  indexed?: string;
+  rgb?: string;
+}
+
 /**
  * this is flat so we can map/copy better, even thought it makes
  * more sense as a map of simple objects
@@ -63,18 +68,23 @@ export interface CellXf {
 export interface BorderStyle {
   left_style?: string; // 'thin' | ??
   left_color?: number; // indexed // FIXME: argb
+  left_color_rgba?: string;
 
   right_style?: string;
   right_color?: number;
+  right_color_rgba?: string;
 
   top_style?: string;
   top_color?: number;
+  top_color_rgba?: string;
 
   bottom_style?: string;
   bottom_color?: number;
+  bottom_color_rgba?: string;
 
   diagonal_style?: string;
   diagonal_color?: number;
+  diagonal_color_rgba?: string;
 }
 
 export interface StyleOptions {
@@ -202,11 +212,21 @@ export class StyleCache {
     }
 
     if (composite.border_top) {
-      border.top_color = 64;
       border.top_style = 'thin';
+      if (!composite.border_top_color || composite.border_top_color === 'none') {
+        border.top_color = 64;
+      }
+      else {
+        border.top_color_rgba = composite.border_top_color;
+      }
     }
     if (composite.border_bottom) {
-      border.bottom_color = 64;
+      if (!composite.border_bottom_color || composite.border_bottom_color === 'none') {
+        border.bottom_color = 64;
+      }
+      else {
+        border.bottom_color_rgba = composite.border_bottom_color;
+      }
       if (composite.border_bottom > 1) {
         border.bottom_style = 'double';
       }
@@ -215,11 +235,21 @@ export class StyleCache {
       }
     }
     if (composite.border_left) {
-      border.left_color = 64;
+      if (!composite.border_left_color || composite.border_left_color === 'none') {
+        border.left_color = 64;
+      }
+      else {
+        border.left_color_rgba = composite.border_left_color;
+      }
       border.left_style = 'thin';
     }
     if (composite.border_right) {
-      border.right_color = 64;
+      if (!composite.border_right_color || composite.border_right_color === 'none') {
+        border.right_color = 64;
+      }
+      else {
+        border.right_color_rgba = composite.border_right_color;
+      }
       border.right_style = 'thin';
     }
 
@@ -524,28 +554,60 @@ export class StyleCache {
     const left = Element('left');
     if (border.left_style) {
       left.attrib.style = border.left_style;
-      left.append(Element('color', {indexed: (border.left_color || 0).toString() }));
+      // left.append(Element('color', {indexed: (border.left_color || 0).toString() }));
+      const attrs: ColorAttributes = {};
+      if (border.left_color_rgba) {
+        attrs.rgb = border.left_color_rgba;
+      }
+      else {
+        attrs.indexed = (border.left_color || 0).toString();
+      } 
+      left.append(Element('color', attrs as ElementTree.Attributes));
     }
     new_element.append(left);
 
     const right = Element('right');
     if (border.right_style) {
       right.attrib.style = border.right_style;
-      right.append(Element('color', {indexed: (border.right_color || 0).toString() }));
+      // right.append(Element('color', {indexed: (border.right_color || 0).toString() }));
+      const attrs: ColorAttributes = {};
+      if (border.right_color_rgba) {
+        attrs.rgb = border.right_color_rgba;
+      }
+      else {
+        attrs.indexed = (border.right_color || 0).toString();
+      } 
+      right.append(Element('color', attrs as ElementTree.Attributes));
+
     }
     new_element.append(right);
 
     const top = Element('top');
     if (border.top_style) {
       top.attrib.style = border.top_style;
-      top.append(Element('color', {indexed: (border.top_color || 0).toString() }));
+      const attrs: ColorAttributes = {};
+      if (border.top_color_rgba) {
+        attrs.rgb = border.top_color_rgba;
+      }
+      else {
+        attrs.indexed = (border.top_color || 0).toString();
+      } 
+      top.append(Element('color', attrs as ElementTree.Attributes));
     }
     new_element.append(top);
 
     const bottom = Element('bottom');
     if (border.bottom_style) {
       bottom.attrib.style = border.bottom_style;
-      bottom.append(Element('color', {indexed: (border.bottom_color || 0).toString() }));
+      // bottom.append(Element('color', {indexed: (border.bottom_color || 0).toString() }));
+      const attrs: ColorAttributes = {};
+      if (border.bottom_color_rgba) {
+        attrs.rgb = border.bottom_color_rgba;
+      }
+      else {
+        attrs.indexed = (border.bottom_color || 0).toString();
+      } 
+      bottom.append(Element('color', attrs as ElementTree.Attributes));
     }
     new_element.append(bottom);
 

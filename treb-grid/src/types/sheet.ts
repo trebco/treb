@@ -1660,6 +1660,18 @@ export class Sheet {
     const column_style = JSON.parse(JSON.stringify(this.column_styles));
     const row_pattern = JSON.parse(JSON.stringify(this.row_pattern));
 
+    const translate_border_color = (color: string|undefined, default_color: string|undefined): string|undefined => {
+      if (typeof color !== 'undefined' && color !== 'none') {
+        if (color === default_color) {
+          return undefined;
+        }
+        else {
+          return Measurement.MeasureColorARGB(color);
+        }
+      }
+      return undefined;
+    }
+
     // translate, if necessary
     if (options.export_colors) {
       const style_list: Style.Properties[] = [];
@@ -1672,6 +1684,12 @@ export class Sheet {
         }
       }
       for (const style of style_list as Style.Properties[]) {
+
+        style.border_top_color = translate_border_color(style.border_top_color, Style.DefaultProperties.border_top_color);
+        style.border_left_color = translate_border_color(style.border_left_color, Style.DefaultProperties.border_left_color);
+        style.border_right_color = translate_border_color(style.border_right_color, Style.DefaultProperties.border_right_color);
+        style.border_bottom_color = translate_border_color(style.border_bottom_color, Style.DefaultProperties.border_bottom_color);
+
         if (typeof style.background !== 'undefined' && style.background !== 'none') {
           style.background = Measurement.MeasureColorARGB(style.background);
         }

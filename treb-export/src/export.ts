@@ -32,11 +32,11 @@ export class Exporter {
     this.archive_ = archive;
   }
 
-  public get zip() {
+  public get zip(): JSZip {
     return this.archive_;
   }
 
-  public async Init(zip?: JSZip) {
+  public async Init(zip?: JSZip): Promise<void> {
 
     if (!zip) {
       const data = JSBase64.decode(template);
@@ -422,7 +422,7 @@ export class Exporter {
         width: number; 
         height: number; 
       }, 
-      sheet: SerializedSheet) {
+      sheet: SerializedSheet): TwoCellAnchor {
     
     const anchor: TwoCellAnchor = {
       from: {row: -1, column: -1},
@@ -477,7 +477,7 @@ export class Exporter {
    * for charts we need addresses to be absolute ($)  and ensure there's
    * a sheet name -- use the active sheet if it's not explicitly referenced
    */
-  public NormalizeAddress(unit: UnitAddress|UnitRange, sheet: SerializedSheet) {
+  public NormalizeAddress(unit: UnitAddress|UnitRange, sheet: SerializedSheet): UnitAddress|UnitRange {
 
     const addresses = (unit.type === 'address') ? [unit] : [unit.start, unit.end];
 
