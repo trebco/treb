@@ -35,7 +35,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     'rgb(128, 128, 128)',
     'rgb(192, 192, 192)',
     'rgb(212, 212, 212)',
-    'rgb(256, 256, 256)',
+    'rgb(255, 255, 255)',
     'red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet',
   ];
 
