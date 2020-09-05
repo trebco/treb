@@ -1,6 +1,6 @@
 
 import {
-  Rectangle, ValueType, Style, Area, Cell, CellValue, Extent, ICellAddress, 
+  Rectangle, ValueType, Style, Area, IArea, Cell, CellValue, Extent, ICellAddress, 
   IsCellAddress, Localization, ImportedSheetData, ValidationType,
 } from 'treb-base-types';
 import {
@@ -8,7 +8,7 @@ import {
   QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress
 } from 'treb-parser';
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
-import { NumberFormatCache, LotusDate, ValueParser, Hints } from 'treb-format';
+import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
 import { TabBar } from './tab_bar';
@@ -4334,22 +4334,34 @@ export class Grid {
       }
     }
 
-    if (cell.validation && cell.validation.type === ValidationType.List) {
-      let match = false;
-      if (value) {
-        const uc = value.toUpperCase();
-        for (const entry of cell.validation.list) {
-          if (entry && entry.toString().toUpperCase() === uc) {
-            value = entry.toString();
-            match = true;
-            break;
+    if (cell.validation) {
+      
+      let list: CellValue[]|undefined;
+      
+      if (cell.validation.type === ValidationType.List) {
+        list = cell.validation.list;
+      }
+      else if (cell.validation.type === ValidationType.Range) {
+        list = this.GetValidationRange(cell.validation.area);
+      }
+
+      if (list && list.length) {
+        let match = false;
+        if (value) {
+          const uc = value.toUpperCase();
+          for (const entry of list) {
+            if (entry && entry.toString().toUpperCase() === uc) {
+              value = entry.toString();
+              match = true;
+              break;
+            }
           }
         }
-      }
-      if (!match) {
-        // removed in favor of error //this.layout.HighlightError(selection.target);
-        this.Error(`Invalid value (data validation).`);
-        return; 
+        if (!match) {
+          // removed in favor of error //this.layout.HighlightError(selection.target);
+          this.Error(`Invalid value (data validation).`);
+          return; 
+        }
       }
     }
 
@@ -5309,6 +5321,47 @@ export class Grid {
   }
 
   /**
+   * get values from a range of data
+   * @param area 
+   */
+  private GetValidationRange(area: IArea): CellValue[]|undefined {
+
+    let sheet: Sheet|undefined;
+    let list: CellValue[]|undefined;
+
+    if (!area.start.sheet_id || area.start.sheet_id === this.model.active_sheet.id) {
+      sheet = this.model.active_sheet;
+    }
+    else {
+      for (const test of this.model.sheets) {
+        if (test.id === area.start.sheet_id) {
+          sheet = test;
+          break;
+        }
+      }
+    }
+    if (sheet) {
+      list = [];
+      for (let row = area.start.row; row <= area.end.row; row++) {
+        for (let column = area.start.column; column <= area.end.column; column++) {
+          const cell = sheet.CellData({row, column});
+          if (cell && cell.formatted) {
+            if (typeof cell.formatted === 'string') {
+              list.push(cell.formatted);
+            }
+            else {
+              list.push(NumberFormat.FormatPartsAsText(cell.formatted));
+            }
+          }
+        }
+      }
+    }
+
+    return list;
+
+  }
+
+  /**
    *
    */
   private UpdateFormulaBarFormula(override?: string) {
@@ -5346,11 +5399,19 @@ export class Grid {
       // sync up, so it would be a separate function but called at the
       // same time.
 
-      if (data.validation && data.validation.type === ValidationType.List && !data.locked) {
-        this.layout.ShowDropdownCaret(
-            this.primary_selection.target, 
-            data.validation.list,
-            data.value);
+      if (data.validation && !data.locked) {
+        let list: CellValue[] | undefined;
+        if (data.validation.type === ValidationType.List) {
+          list = data.validation.list;
+        }
+        else if (data.validation.type === ValidationType.Range) {
+          list = this.GetValidationRange(data.validation.area);
+        }
+
+        if (list && list.length) {
+          this.layout.ShowDropdownCaret(
+              this.primary_selection.target, list, data.value);
+        }
       }
       else {
         this.layout.HideDropdownCaret();
@@ -5391,6 +5452,14 @@ export class Grid {
   }
 
   private OnDropdownSelect(value: CellValue) {
+
+    if (typeof value !== 'undefined') {
+      const result = ValueParser.TryParse(value.toString());
+      if (result.type === ValueType.number) {
+        value = result.value;
+      }
+    }
+    
     this.ExecCommand({
       key: CommandKey.SetRange,
       area: this.primary_selection.target,

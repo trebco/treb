@@ -1,7 +1,7 @@
 
 // import { Parser } from 'treb-parser';
 
-import { Area } from './area';
+import { Area, IArea } from './area';
 import { Style } from './style';
 import { TextPart } from './text_part';
 
@@ -73,29 +73,36 @@ export type CellValue = undefined | string | number | boolean;
 export enum ValidationType {
   List,
   Date,
+  Range,
   Number,
   Boolean,
 }
 
+export interface DataValidationRange {
+  type: ValidationType.Range;
+  area: IArea;
+}
+
 export interface DataValidationList {
-  type: ValidationType.List,
-  list: CellValue[],
+  type: ValidationType.List;
+  list: CellValue[];
 }
 
 export interface DataValidationDate {
-  type: ValidationType.Date,
+  type: ValidationType.Date;
 }
 
 export interface DataValidationNumber {
-  type: ValidationType.Number,
+  type: ValidationType.Number;
 }
 
 export interface DataValidationBoolean {
-  type: ValidationType.Boolean,
+  type: ValidationType.Boolean;
 }
 
 export type DataValidation 
   = DataValidationList
+  | DataValidationRange
   | DataValidationNumber
   | DataValidationDate
   | DataValidationBoolean;

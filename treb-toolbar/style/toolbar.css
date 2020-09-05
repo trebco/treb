@@ -85,7 +85,6 @@
         background: transparent;
         font-family: inherit;
         font-weight: inherit;
-        line-height: inherit;
         font-size: 14px;
         display: flex;
         flex-direction: row;
@@ -101,7 +100,6 @@
         flex-grow: 1;
         font-family: inherit;
         font-weight: inherit;
-        line-height: inherit;
         font-size: 14px;
         border: 1px solid #ccc;
         border-radius: 3px;
@@ -273,7 +271,6 @@
             font-family: inherit;
             font-size: 14px;
             font-weight: inherit;
-            line-height: inherit;
     
             display: inline-block;
             cursor: default;

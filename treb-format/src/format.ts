@@ -75,6 +75,44 @@ export class NumberFormat {
 
   public static grouping_regexp = /\d{1,3}(?=(\d{3})+(?!\d))/g;
 
+  /**
+   * render text parts to string
+   * FIXME: move
+   */
+  public static FormatPartsAsText(parts: TextPart[], text_width = 0): string {
+
+    let padded = -1;
+
+    const formatted = parts.map((part, index) => {
+      switch (part.flag) {
+        case TextPartFlag.padded:
+          padded = index;
+          return part.text;
+
+        case TextPartFlag.hidden:
+          return part.text.replace(/./g, ' ');
+
+        case TextPartFlag.formatting:
+          return '';
+
+        default:
+          return part.text;
+      }
+    });
+
+    if (padded >= 0 && text_width) {
+      const total_length = formatted.reduce((a, str, index) => (index === padded) ? a : a + str.length, 0);
+      let tmp = '';
+      for (let i = 0; i < text_width - total_length; i++){
+        tmp += formatted[padded];
+      }
+      formatted[padded] = tmp;
+    }
+
+    return formatted.join('');
+
+  }
+
 //  NumberFormat.decimal_mark = Localization.decimal_separator;
 //  if (NumberFormat.decimal_mark === ',') NumberFormat.grouping_separator = ' ';
 
@@ -98,6 +136,7 @@ export class NumberFormat {
   // this is a flag for string representation
   protected cloned: boolean[] = [];
 
+ 
   constructor(pattern: string){
     this._pattern = pattern;
     this.sections = FormatParser.Parse(pattern);
@@ -333,6 +372,7 @@ export class NumberFormat {
    */
   public Format(value: any, text_width = 0): string {
 
+    /*
     const parts = this.FormatParts(value);
     let padded = -1;
 
@@ -363,6 +403,10 @@ export class NumberFormat {
     }
 
     return formatted.join('');
+    */
+
+    return NumberFormat.FormatPartsAsText(this.FormatParts(value), text_width);
+
   }
 
   public ZeroPad(text: string, length: number): string {
