@@ -597,11 +597,50 @@ export class Sheet {
 
   }
 
-  public SetDefaultColumnStyle(style: number) {
+  public SetDefaultColumnStyle(style: number): void {
     this.default_column_style = style;
   }
 
-  public SetColumnStyleIndex(columns: number|number[], style: number) {
+  public SetRowStyleIndex(rows: number|number[], style: number): void {
+
+    if (!this.dom) { 
+      throw new Error('missing dom'); 
+    }
+
+    if (!Array.isArray(rows)) { 
+      rows = [rows]; 
+    }
+
+    const sheet_data = this.dom.find('./sheetData');
+    let sort = false;
+
+    for (const index of rows) {
+
+      let row = this.dom.find(`./sheetData/row/[@r="${index}"]`);
+
+      if (!row) {
+        if (sheet_data) {
+          row = ElementTree.SubElement(sheet_data, 'row');
+          row.set('r', index.toString());
+          sort = true;
+        }
+      }
+
+      row?.set('customFormat', '1');
+      row?.set('s', style.toString());
+
+    }
+
+    if (sort) {
+      // sort rows
+      (sheet_data as any)._children.sort((a: Element, b: Element) => {
+        return Number(a.attrib.r) - Number(b.attrib.r);
+      });
+    }
+
+  }
+
+  public SetColumnStyleIndex(columns: number|number[], style: number): void {
 
     if (!this.column_styles) {
       this.column_styles = [];
@@ -612,7 +651,6 @@ export class Sheet {
     for (const column of columns) {
       this.column_styles[column] = style;
     }
-
 
   }
 

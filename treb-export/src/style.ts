@@ -513,6 +513,32 @@ export class StyleCache {
 
   public EnsureBorder(border: BorderStyle): number {
 
+    for (let i = 0; i < this.borders.length; i++ ){
+      const candidate = this.borders[i];
+
+      if ( candidate.diagonal_color === border.diagonal_color
+        && candidate.diagonal_color_rgba === border.diagonal_color_rgba
+        && candidate.diagonal_style === border.diagonal_style
+        && candidate.left_color === border.left_color
+        && candidate.left_color_rgba === border.left_color_rgba
+        && candidate.left_style === border.left_style
+        && candidate.right_color === border.right_color
+        && candidate.right_color_rgba === border.right_color_rgba
+        && candidate.right_style === border.right_style
+        && candidate.top_color === border.top_color
+        && candidate.top_color_rgba === border.top_color_rgba
+        && candidate.top_style === border.top_style
+        && candidate.bottom_color === border.bottom_color
+        && candidate.bottom_color_rgba === border.bottom_color_rgba
+        && candidate.bottom_style === border.bottom_style ) {
+
+        return i;
+      }
+
+    }
+
+    /*
+
     const props = Object.keys(border).filter((key) => typeof (border as any)[key] !== 'undefined');
     const prop_count = Object.keys(props).length;
 
@@ -537,6 +563,8 @@ export class StyleCache {
       }
 
     }
+
+    */
 
     this.modified = true;
 
@@ -623,8 +651,21 @@ export class StyleCache {
     return this.borders.length - 1;
   }
 
+  public MatchColor(a: XlColor|undefined, b: XlColor|undefined): boolean {
+
+    if (!a && !b) { return true; }
+    if (!a || !b) { return false; }
+
+    return ( a.argb === b.argb
+          && a.indexed === b.indexed
+          && a.theme === b.theme
+          && a.tint === b.tint);
+
+  }
+
   public EnsureFill(fill: Fill): number {
 
+    /*
     const props = Object.keys(fill).filter((key) => typeof (fill as any)[key] !== 'undefined');
     for (let i = 0; i < this.fills.length; i++ ){
       const candidate = this.fills[i];
@@ -634,6 +675,17 @@ export class StyleCache {
         match = match && (fill as any)[prop] === (candidate as any)[prop];
       }
       if (match) {
+        return i;
+      }
+    }
+    */
+
+    for (let i = 0; i < this.fills.length; i++) {
+      const candidate = this.fills[i];
+      if ( this.MatchColor(fill.bg_color, candidate.bg_color)
+        && this.MatchColor(fill.fg_color, candidate.fg_color)
+        && fill.pattern_gray === candidate.pattern_gray
+        && fill.pattern_type === candidate.pattern_type ) {
         return i;
       }
     }
@@ -767,6 +819,7 @@ export class StyleCache {
           !!xf.wrap_text === !!options.wrap &&
           (!options.horizontal_alignment || options.horizontal_alignment === xf.horizontal_alignment) &&
           (!options.vertical_alignment || options.vertical_alignment === xf.vertical_alignment)) {
+          
         return i;
       }
     }

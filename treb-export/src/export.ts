@@ -11,6 +11,7 @@ import { SerializedSheet } from 'treb-grid';
 import { RangeOptions } from './sheet';
 import { TwoCellAnchor } from './drawing/drawing';
 import { ChartOptions } from './drawing/chart';
+import { listenerCount } from 'process';
 
 /** excel units */
 const one_hundred_pixels = 14.28515625;
@@ -123,6 +124,7 @@ export class Exporter {
       }
 
       let last_column = -1;
+      let last_row = -1;
 
       // console.info(JSON.stringify(sheet_source, undefined, 2));
 
@@ -136,7 +138,13 @@ export class Exporter {
          }) => {
 
           last_column = Math.max(last_column, cell.column);
+          last_row = Math.max(last_row, cell.row);
+
           const list: Style.Properties[] = [sheet_source.sheet_style];
+
+          if (sheet_source.row_pattern && sheet_source.row_pattern.length) {
+            list.push(sheet_source.row_pattern[cell.row % sheet_source.row_pattern.length]);
+          }
 
           if (sheet_source.column_style && sheet_source.column_style[cell.column]) {
             list.push(sheet_source.column_style[cell.column]);
@@ -170,6 +178,7 @@ export class Exporter {
           if (typeof cell.row === 'number' && typeof cell.column === 'number') {
 
             last_column = Math.max(last_column, cell.column);
+            last_row = Math.max(last_row, cell.row);
 
             const style = StyleFromCell(cell);
 
@@ -275,6 +284,31 @@ export class Exporter {
         const units = sheet_source.default_column_width / 100 * one_hundred_pixels;
         for (let i = 0; i <= last_column; i++) {
           sheet.SetColumnWidth(i + 1, units);
+        }
+      }
+
+      // style: row styles
+      if (last_row >= 0) {
+        const pattern_length = sheet_source.row_pattern?.length || 0;
+
+        for (let i = 0; i <= last_row; i++) {
+
+          const list: Style.Properties[] = [];
+
+          if (pattern_length && sheet_source.row_pattern) {
+            list.push(sheet_source.row_pattern[i % pattern_length]);
+          }
+
+          if (sheet_source.row_style && sheet_source.row_style[i]) {
+            list.push(sheet_source.row_style[i]);
+          }
+
+          if (list.length) {
+            const options = this.workbook.style_cache.StyleOptionsFromProperties(Style.Composite(list));
+            const style = this.workbook.style_cache.EnsureStyle(options);
+            sheet.SetRowStyleIndex(i + 1, style);
+          }
+
         }
       }
 
