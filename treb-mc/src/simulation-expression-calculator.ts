@@ -76,6 +76,23 @@ export class MCExpressionCalculator extends ExpressionCalculator {
               this.simulation_model.StoreCellResults(named_range.start);
             }
           }
+          else if (arg.type === 'call') {
+
+            // support for "offset", essentially (see also below)
+
+            const result = this.CalculateExpression(arg, true);
+            if (result) {
+              if (result.type === 'address') {
+                this.simulation_model.StoreCellResults(result);
+              }
+              else if (result.type === 'range') {
+                this.simulation_model.StoreCellResults(result.start);
+              }
+            }
+          }
+          else {
+            // console.info('mark x...', arg.type)
+          }
         }
       });
 
@@ -194,6 +211,20 @@ export class MCExpressionCalculator extends ExpressionCalculator {
             const named_range = this.named_range_map[arg.name.toUpperCase()];
             if (named_range) {
               return this.simulation_model.StoreCellResults(named_range.start);
+            }
+          }
+          else if (arg.type === 'call') {
+
+            // support for "offset", essentially (see also above)
+
+            const result = this.CalculateExpression(arg, true);
+            if (result) {
+              if (result.type === 'address') {
+                return this.simulation_model.StoreCellResults(result);
+              }
+              else if (result.type === 'range') {
+                return this.simulation_model.StoreCellResults(result.start);
+              }
             }
           }
 
