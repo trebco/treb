@@ -1,7 +1,8 @@
 
 import {
-  Rectangle, ValueType, Style, Area, IArea, Cell, CellValue, Extent, ICellAddress, 
-  IsCellAddress, Localization, ImportedSheetData, ValidationType,
+  Rectangle, ValueType, Style, Area, IArea, 
+  Cell, CellValue, Extent, ICellAddress, 
+  IsCellAddress, Localization, ImportedSheetData, ValidationType
 } from 'treb-base-types';
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
@@ -41,7 +42,7 @@ import {
   Command, CommandKey, CommandRecord,
   SetRangeCommand, FreezeCommand, UpdateBordersCommand,
   InsertRowsCommand, InsertColumnsCommand, SetNameCommand,
-  ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand
+  ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand, DataValidationCommand
 } from './grid_command';
 
 import { DataModel, MacroFunction, SerializedModel } from './data_model';
@@ -1537,6 +1538,37 @@ export class Grid {
     if (this.container) {
       this.container.focus();
     }
+  }
+
+  public SetValidation(target?: ICellAddress, data?: CellValue[]|IArea) {
+
+    if (!target) {
+      if (this.primary_selection.empty) {
+        throw new Error('invalid target in set validation');
+      }
+      target = this.primary_selection.target;
+    }
+
+    console.info('target', target);
+
+    const command: DataValidationCommand = {
+      key: CommandKey.DataValidation,
+      target,
+    };
+    
+    if (data) {
+      if (Array.isArray(data)) { 
+        command.list = data;
+      }
+      else if (typeof data === 'object'){
+        if (data.start && data.end && IsCellAddress(data.start) && IsCellAddress(data.end)) {
+          command.range = data as IArea;
+        }
+      }
+    }
+
+    this.ExecCommand(command);
+
   }
 
   /**
@@ -5320,6 +5352,50 @@ export class Grid {
 
   }
 
+  private SetValidationInternal(command: DataValidationCommand): void {
+
+    // find target
+
+    let sheet: Sheet|undefined;
+    let cell: Cell|undefined;
+
+    if (!command.target.sheet_id || command.target.sheet_id === this.model.active_sheet.id) {
+      sheet = this.model.active_sheet;
+    }
+    else {
+      for (const test of this.model.sheets) {
+        if (test.id === command.target.sheet_id) {
+          sheet = test;
+          break;
+        }
+      }
+    }
+    if (sheet) {
+      cell = sheet.cells.GetCell(command.target, true);
+    }
+
+    if (!cell) {
+      throw new Error('invalid cell in set validation');
+    }
+
+    if (command.range) {
+      cell.validation = {
+        type: ValidationType.Range,
+        area: command.range,
+      };
+    }
+    else if (command.list) {
+      cell.validation = {
+        type: ValidationType.List,
+        list: JSON.parse(JSON.stringify(command.list)),
+      }
+    }
+    else {
+      cell.validation = undefined;
+    }
+
+  }
+
   /**
    * get values from a range of data
    * @param area 
@@ -6995,6 +7071,11 @@ export class Grid {
             style_area = Area.Join(area, style_area);
             render_area = Area.Join(area, render_area);
           }
+          break;
+
+        case CommandKey.DataValidation:
+          this.SetValidationInternal(command);
+          render_area = Area.Join(new Area(command.target), render_area);
           break;
 
         case CommandKey.SetName:

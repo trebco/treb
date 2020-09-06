@@ -1,5 +1,5 @@
 
-import { ICellAddress, IArea, Style } from 'treb-base-types';
+import { ICellAddress, IArea, Style, CellValue } from 'treb-base-types';
 import { BorderConstants } from './border_constants';
 import { Sheet } from './sheet';
 
@@ -45,7 +45,7 @@ export enum CommandKey {
   RenameSheet,
   ReorderSheet,
   ShowSheet,
-
+  DataValidation,
 }
 
 /** base type for sheet commands -- can select sheet by name, id or index */
@@ -123,6 +123,13 @@ export interface SetNameCommand {
   key: CommandKey.SetName;
   name: string;
   area?: IArea;
+}
+
+export interface DataValidationCommand {
+  key: CommandKey.DataValidation;
+  target: ICellAddress;
+  range?: IArea;
+  list?: CellValue[];
 }
 
 /**
@@ -302,6 +309,7 @@ export type Command =
   | InsertColumnsCommand
   | UpdateBordersCommand
   | ActivateSheetCommand
+  | DataValidationCommand
   ) & Ephemeral;
 
 /**
