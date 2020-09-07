@@ -189,16 +189,26 @@ export abstract class BaseLayout {
       }
       else {
         this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret active');
+        this.dropdown_list.focus();
       }
 
     });
 
+    // we used to focus on caret. that broke when we started supporting
+    // long lists and scrolling. so now we focus on the list.
+
+    /*
     this.dropdown_caret.addEventListener('focusout', () => {
       this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
       this.container?.focus();
     });
+    */
 
-    this.dropdown_caret.addEventListener('keydown', (event) => {
+   this.dropdown_list = DOMUtilities.CreateDiv('treb-dropdown-list');
+   this.dropdown_list.setAttribute('tabindex', '-1'); // focusable
+
+    // this.dropdown_caret.addEventListener('keydown', (event) => {
+    this.dropdown_list.addEventListener('keydown', (event) => {
       let delta = 0;
 
       switch(event.key) {
@@ -208,7 +218,8 @@ export abstract class BaseLayout {
         case 'ArrowUp':
           delta = -1;
           break;
-
+        case 'Escape':
+          break;
         case 'Enter':
           break;
         default:
@@ -219,9 +230,10 @@ export abstract class BaseLayout {
       event.stopPropagation();
       event.preventDefault();
 
-      if (event.key === 'Enter') {
+      if (event.key === 'Escape' || event.key === 'Enter') {
         this.container?.focus();
-        if (this.dropdown_callback) {
+        this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
+        if (event.key === 'Enter' && this.dropdown_callback) {
           if (this.dropdown_selected) {
             this.dropdown_callback.call(0, (this.dropdown_selected as any).dropdown_value);
           }
@@ -233,31 +245,51 @@ export abstract class BaseLayout {
             (this.dropdown_selected.nextSibling as HTMLElement).classList.add('selected');
             this.dropdown_selected.classList.remove('selected');
             this.dropdown_selected = this.dropdown_selected.nextSibling as HTMLElement;
+
+            // support scrolling
+
+            const bottom = this.dropdown_selected.offsetTop + this.dropdown_selected.offsetHeight;
+            if (bottom >
+                this.dropdown_list.offsetHeight + this.dropdown_list.scrollTop) {
+              this.dropdown_list.scrollTop = bottom - this.dropdown_list.offsetHeight;
+            }
+
           }
           else if (delta < 0 && this.dropdown_selected.previousSibling) {
             (this.dropdown_selected.previousSibling as HTMLElement).classList.add('selected');
             this.dropdown_selected.classList.remove('selected');
             this.dropdown_selected = this.dropdown_selected.previousSibling as HTMLElement;
+
+            // support scrolling
+
+            if (this.dropdown_selected.offsetTop < this.dropdown_list.scrollTop) {
+              this.dropdown_list.scrollTop = this.dropdown_selected.offsetTop;
+            }
+
           }
         }
       }
 
     });
 
-    this.dropdown_list = DOMUtilities.CreateDiv('treb-dropdown-list');
-
     this.dropdown_list.addEventListener('mousedown', (event) => {
+
+      const target = event.target as HTMLElement;
+      if (event.target === this.dropdown_list) { 
+        return; 
+      }
+
       event.stopPropagation();
       event.preventDefault();
 
-      const target = event.target as HTMLElement;
-
       this.container?.focus();
+      this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
+
       if (this.dropdown_callback) {
         this.dropdown_callback.call(0, (target as any).dropdown_value);
       }
     });
-    
+
     this.dropdown_list.addEventListener('mousemove', (event) => {
       const target = event.target as HTMLElement;
       if (target === this.dropdown_selected) {
@@ -598,7 +630,7 @@ export abstract class BaseLayout {
   /**
    * applies theme to nodes, as necessary
    */
-  public ApplyTheme(theme: ExtendedTheme){
+  public ApplyTheme(theme: ExtendedTheme): void {
     this.row_header.style.backgroundColor =
       this.column_header.style.backgroundColor =
       this.corner.style.backgroundColor =
@@ -623,7 +655,7 @@ export abstract class BaseLayout {
 
   }
 
-  public UpdateContentsSize() {
+  public UpdateContentsSize(): void {
 
     const height = this.row_header_tiles.reduce((a, tile) => a + tile.logical_size.height, 0);
     const width = this.column_header_tiles.reduce((a, tile) => a + tile.logical_size.width, 0);
@@ -634,7 +666,7 @@ export abstract class BaseLayout {
   }
 
   /** hides column/row resize tooltip and removes any specific classes */
-  public HideTooltip(){
+  public HideTooltip(): void {
     this.tooltip.style.display = 'none';
     this.tooltip_state = undefined;
     this.tooltip.classList.remove('arrow-up');
@@ -721,7 +753,7 @@ export abstract class BaseLayout {
     this.dropdown_caret_visible = true;
   }
 
-  public HideDropdownCaret() {
+  public HideDropdownCaret(): void {
     if (this.dropdown_caret_visible) {
       // this.dropdown_caret.classList.remove('active');
       this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');

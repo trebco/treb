@@ -46,6 +46,10 @@
 
   text-align: left;
 
+  max-height: 10em;
+  overflow-y: auto;
+  outline: none;
+
 }
 
 .treb-dropdown-caret.active {
