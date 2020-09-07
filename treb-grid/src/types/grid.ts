@@ -5418,6 +5418,12 @@ export class Grid {
     }
     if (sheet) {
       list = [];
+
+      // clamp to actual area to avoid screwing up sheet
+      // FIXME: what does that cause [problem with selections], why, and fix it
+
+      area = sheet.RealArea(new Area(area.start, area.end), true);
+
       for (let row = area.start.row; row <= area.end.row; row++) {
         for (let column = area.start.column; column <= area.end.column; column++) {
           const cell = sheet.CellData({row, column});
