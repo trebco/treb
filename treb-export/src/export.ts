@@ -4,14 +4,13 @@ import { template } from './base-template';
 import { Base64 as JSBase64 } from 'js-base64';
 import { Workbook } from './workbook';
 
-import { Style, Area, IArea } from 'treb-base-types';
-import { Parser, ArgumentSeparatorType, DecimalMarkType, UnitCall, UnitAddress, UnitRange } from 'treb-parser';
+import { Style, Area, IArea, DataValidation, ValidationType } from 'treb-base-types';
+import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, UnitCall, UnitAddress, UnitRange } from 'treb-parser';
 
 import { SerializedSheet } from 'treb-grid';
 import { RangeOptions } from './sheet';
 import { TwoCellAnchor } from './drawing/drawing';
 import { ChartOptions } from './drawing/chart';
-import { listenerCount } from 'process';
 
 /** excel units */
 const one_hundred_pixels = 14.28515625;
@@ -85,6 +84,13 @@ export class Exporter {
     for (let index = 0; index < source.sheet_data.length; index++) {
 
       const sheet = this.workbook.GetSheet(index);
+      const validations: Array<{
+        row: number;
+        column: number;
+        // validation: DataValidation;
+        formula: string;
+      }> = [];
+
       const sparklines: Array<{
         expression: UnitCall;
         row: number;
@@ -210,6 +216,61 @@ export class Exporter {
                 }
               }
               */
+
+            }
+
+            if (cell.validation) {
+              const validation = cell.validation as DataValidation;
+              let formula = '';
+
+              if (validation.type === ValidationType.Range) {
+
+                  // FIXME: sheet name
+                 
+                  const area = new Area({
+                    ...validation.area.start,
+                    absolute_column: true,
+                    absolute_row: true,
+                  }, {
+                    ...validation.area.end,
+                    absolute_column: true,
+                    absolute_row: true,
+                  });
+        
+                  // formula.text = '$D$3:$D$10';
+                  formula = area.spreadsheet_label;
+
+                  if (validation.area.start.sheet_id 
+                      && validation.area.start.sheet_id !== sheet_source.id
+                      && name_map[validation.area.start.sheet_id]) {
+                    let sheet_name = name_map[validation.area.start.sheet_id];
+                    if (QuotedSheetNameRegex.test(sheet_name)) {
+                      sheet_name = `'${sheet_name}'`;
+                    }
+                    formula = sheet_name + '!' + formula;
+                  }
+
+                  console.info('f', formula);
+                  
+              }
+              else if (validation.type === ValidationType.List) {
+       
+                const list = validation.list.filter(value => !!value).map((value) => {
+                  return (value?.toString() || '').replace(/"/g, '""');
+                }).join(', ');
+      
+                formula = '"' + list + '"';
+        
+              }
+
+              if (formula) {              
+                validations.push({
+                  row: cell.row + 1,
+                  column: cell.column + 1,
+                  // validation: cell.validation
+                  formula,
+                });
+              }
 
             }
 
@@ -431,9 +492,14 @@ export class Exporter {
       // const drawing_id = this.workbook.AddChart();
       // sheet.AddChartReference(drawing_id);
 
+      if (validations.length) {
+        sheet.AddValidations(validations);
+      }
+
       if (sparklines.length) {
         sheet.AddSparklines(sparklines);
       }
+
 
     }
 

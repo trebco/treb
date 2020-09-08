@@ -522,12 +522,60 @@ export class Sheet {
     }
   }
 
+  public AddValidations(validations: Array<{
+      row: number,
+      column: number,
+      // validation: DataValidation,
+      formula: string,
+    }>): void {
+
+    if (!this.dom) { return; }
+
+    let container = this.dom.find('./dataValidations');
+    if (!container) {
+
+      // this has to be BEFORE pageMargins.
+
+      container = Element('dataValidations');
+
+      const root = this.dom.getroot();
+      const children = [];
+      for (const child of (root as any)._children) {
+        children.push(child);
+        if (child.tag === 'sheetData') {
+          children.push(container);
+        }
+      }
+      (root as any)._children = children;
+
+    }
+
+    for (const validation of validations) {
+
+      const element = ElementTree.SubElement(container, 'dataValidation', {
+        type: 'list',
+        allowBlank: '1',
+        showInputMessage: '1',
+        showErrorMessage: '1',
+        sqref: this.Address({row: validation.row, col: validation.column}),
+        // 'xr:uid': '{A8CDB049-08EC-4F94-ABD3-DDB8FE664C33}',
+      });
+
+      const formula = ElementTree.SubElement(element, 'formula1');
+      formula.text = validation.formula;
+      
+    }
+
+    container.set('count', container.getchildren().length.toString());
+
+  }
+
   public AddSparklines(expressions: Array<{
     expression: UnitCall;
     row: number;
     column: number;
     reference: string;
-    }>) {
+    }>): void {
 
     if (!this.dom) { return; }
 

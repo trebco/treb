@@ -1210,14 +1210,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   public Export(){
     this.ExportBlob().then((blob) => {
+
       let filename = 'export';
       if (this.grid.model.document_name) {
         filename = this.grid.model.document_name.toLowerCase().replace(/\s+/g, '-');
       }
+      
       if (blob) {
-        FileSaver.saveAs(blob, filename + '.xlsx', true);
+        FileSaver.saveAs(blob, filename + '.xlsx', {autoBom: false});
+        //FileSaver.saveAs(blob, filename + '.xlsx', true);
         this.last_save_version = this.file_version; // even though it's an export, consider it clean
       }
+
     }).catch(err => {
 
       if (/invalid uri/i.test(err.message)) {

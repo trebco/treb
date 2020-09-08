@@ -203,6 +203,7 @@ export class Workbook {
    * finalize: rewrite xml, save in zip file.
    */
   public async Finalize(opts: any = {}){
+
     if (!this.zip) throw new Error('missing zip');
     if (!this.dom) throw new Error('missing dom');
     if (!this.rels_dom) throw new Error('missing rels_dom');
