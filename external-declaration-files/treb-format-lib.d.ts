@@ -4,10 +4,6 @@
  * is hand-edited to remove dependencies, so it needs to be maintained.
  */
 
-export declare class Localization {
-  static UpdateLocale(locale?: string): void;
-}
-
 export declare enum TextPartFlag {
   /** just render */
   default = 0,

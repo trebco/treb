@@ -16,7 +16,7 @@ for (let i = 0; i < process.argv.length; i++) {
 
 const config = {
 
-    entry: `./treb-format/src/index.ts`,
+    entry: `./treb-format/src/index-standalone.ts`,
     mode,
     output: {
         path: path.resolve(__dirname, 'dist2'),
