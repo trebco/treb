@@ -4,6 +4,7 @@
 import { Area, IArea } from './area';
 import { Style } from './style';
 import { TextPart } from './text_part';
+import { ValueType } from './value-type';
 
 // static global to avoid export in typings file
 // const parser = new Parser();
@@ -32,7 +33,7 @@ export interface RenderFunctionOptions {
  *  - raw per-cell style information. this is in a separate array (object).
  */
 
-/**
+/* *
  * I _think_ using enums is faster. I'm not actually sure about that, though.
  * it stands to reason that a single int compare is faster than a string
  * compare, but you never know with javascript. undefined preferred over null.
@@ -43,7 +44,7 @@ export interface RenderFunctionOptions {
  * we're passing this type information out to calculators, so it needs
  * to have known values. DO NOT MODIFY EXISTING INDEXES, or at least be
  * aware of the implications. definitely do not change undefined => 0.
- */
+ * /
 export enum ValueType {
   undefined = 0,
 
@@ -60,6 +61,7 @@ export enum ValueType {
   // correct? (...) it sort of makes sense... since we have separate typing
   error = 6,
 }
+*/
 
 /** 
  * not sure how useful this really is... it seems like just a way

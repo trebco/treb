@@ -4,7 +4,8 @@
  */
 
 import { Area, ICellAddress } from './area';
-import { Cell, ValueType, CellValue } from './cell';
+import { Cell, CellValue } from './cell';
+import { ValueType } from './value-type';
 
 export interface CellSerializationOptions {
   preserve_type?: boolean;

@@ -27,7 +27,7 @@ const config = {
     resolve: {
       extensions: ['.ts', '.js', '.json'],
       alias: {
-        'treb-base-types': path.resolve(__dirname, 'treb-base-types'),
+        'treb-base-types': path.resolve(__dirname, 'treb-base-types/src/format-index.ts'),
       }
     },
     module: {
