@@ -21,7 +21,8 @@ const config = {
         path: path.resolve(__dirname, 'dist2'),
         filename: `treb-format-lib.js`,
         library: `treb-format-lib`,
-        libraryTarget: 'umd'
+        libraryTarget: 'umd',
+        globalObject: 'this',
     },
     resolve: {
       extensions: ['.ts', '.js', '.json'],
