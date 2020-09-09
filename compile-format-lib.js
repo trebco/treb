@@ -4,6 +4,7 @@
 
 const webpack = require('webpack');
 const path = require('path');
+const package = require('./package.json');
 
 let mode = 'production';
 
@@ -46,6 +47,12 @@ const config = {
         }
       ]
     },
+
+    plugins: [
+      new webpack.BannerPlugin({
+        banner: `v${package.version}. Copyright ${new Date().getFullYear()} Structured Data, LLC. All rights reserved.`,
+      }),
+    ],
     
 };
 
