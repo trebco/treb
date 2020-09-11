@@ -42,7 +42,7 @@ import {
   Command, CommandKey, CommandRecord,
   SetRangeCommand, FreezeCommand, UpdateBordersCommand,
   InsertRowsCommand, InsertColumnsCommand, SetNameCommand,
-  ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand, DataValidationCommand
+  ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand, DataValidationCommand, DuplicateSheetCommand
 } from './grid_command';
 
 import { DataModel, MacroFunction, SerializedModel } from './data_model';
@@ -1062,6 +1062,27 @@ export class Grid {
       key: CommandKey.DeleteSheet,
       index,
     });
+
+  }
+
+  /**
+   * duplicate sheet by index or (omitting index) the current active sheet
+   */
+  public DuplicateSheet(index?: number, name?: string): void {
+
+    const command: DuplicateSheetCommand = {
+      key: CommandKey.DuplicateSheet,
+      new_name: name,
+    };
+
+    if (typeof index === 'undefined') {
+      command.id = this.active_sheet.id;
+    }
+    else {
+      command.index = index;
+    }
+
+    this.ExecCommand(command);
 
   }
 
@@ -2096,6 +2117,57 @@ export class Grid {
     if (this.tab_bar) { this.tab_bar.Update(); }
 
     return sheet.id;
+
+  }
+
+  private DuplicateSheetInternal(command: DuplicateSheetCommand) {
+
+    if (!this.options.add_tab) {
+      console.warn('add tab option not set or false');
+      return;
+    }
+
+    const source = this.ResolveSheet(command);
+    const next_id = this.model.sheets.reduce((id, sheet) => Math.max(id, sheet.id), 0) + 1;
+
+    let insert_index = -1;
+    for (let i = 0; i < this.model.sheets.length; i++) {
+      if (this.model.sheets[i] === source) {
+        insert_index = i + 1;
+      }
+    }
+    
+    if (!source || insert_index < 0) {
+      throw new Error('source sheet not found');
+    }
+
+    const options: SerializeOptions = {
+      rendered_values: true,
+    };
+
+    const clone = Sheet.FromJSON(source.toJSON(options), this.theme_style_properties);
+    
+    let name = command.new_name || source.name;
+    while (this.model.sheets.some((test) => test.name === name)) {
+      const match = name.match(/^(.*?)(\d+)$/);
+      if (match) {
+        name = match[1] + (Number(match[2]) + 1);
+      }
+      else {
+        name = name + '2';
+      }
+    }
+
+    clone.name = name;
+    clone.id = next_id;
+
+    // console.info('CLONE', clone.id, clone);
+
+    this.model.sheets.splice(insert_index, 0, clone);
+
+    if (this.tab_bar) { this.tab_bar.Update(); }
+
+    return clone.id;
 
   }
 
@@ -7322,6 +7394,12 @@ export class Grid {
         case CommandKey.DeleteSheet:
           this.DeleteSheetInternal(command);
           structure_event = true;
+          break;
+
+        case CommandKey.DuplicateSheet:
+          this.DuplicateSheetInternal(command);
+          structure_event = true;
+          structure_rebuild_required = true;
           break;
 
         case CommandKey.AddSheet:

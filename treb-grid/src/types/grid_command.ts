@@ -40,6 +40,7 @@ export enum CommandKey {
   SetName,
   ShowHeaders,
   AddSheet,
+  DuplicateSheet,
   DeleteSheet,
   ActivateSheet,
   RenameSheet,
@@ -241,6 +242,11 @@ export interface AddSheetCommand {
   insert_index?: number;
 }
 
+export interface DuplicateSheetCommand extends SheetSelection {
+  key: CommandKey.DuplicateSheet;
+  new_name?: string;
+}
+
 export interface DeleteSheetCommand extends SheetSelection {
   key: CommandKey.DeleteSheet;
 }
@@ -310,6 +316,7 @@ export type Command =
   | UpdateBordersCommand
   | ActivateSheetCommand
   | DataValidationCommand
+  | DuplicateSheetCommand
   ) & Ephemeral;
 
 /**
