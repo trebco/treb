@@ -6749,6 +6749,16 @@ export class Grid {
 
     const area = new Area(command.area.start, command.area.end);
 
+    let sheet = this.active_sheet;
+    if (command.area.start.sheet_id && command.area.start.sheet_id !== this.active_sheet.id) {
+      for (const compare of this.model.sheets) {
+        if (compare.id === command.area.start.sheet_id) {
+          sheet = compare;
+          break;
+        }
+      }
+    }
+
     const top: Style.Properties = { border_top: width };
     const bottom: Style.Properties = { border_bottom: width };
     const left: Style.Properties = { border_left: width };
@@ -6772,9 +6782,11 @@ export class Grid {
         right.border_right_color = command.color;
     //}
 
+
+
     // inside all/none
     if (borders === BorderConstants.None || borders === BorderConstants.All) {
-      this.active_sheet.UpdateAreaStyle(area, {
+      sheet.UpdateAreaStyle(area, {
         ...top, ...bottom, ...left, ...right,
       }, true, false, true);
     }
@@ -6782,7 +6794,7 @@ export class Grid {
     // top
     if (borders === BorderConstants.Top || borders === BorderConstants.Outside) {
       if (!area.entire_column) {
-        this.active_sheet.UpdateAreaStyle(area.top, { ...top }, true, false, true);
+        sheet.UpdateAreaStyle(area.top, { ...top }, true, false, true);
       }
     }
 
@@ -6791,7 +6803,7 @@ export class Grid {
       borders === BorderConstants.Outside || borders === BorderConstants.Top) {
       if (!area.entire_column) {
         if (area.start.row) {
-          this.active_sheet.UpdateAreaStyle(new Area(
+          sheet.UpdateAreaStyle(new Area(
             { row: area.start.row - 1, column: area.start.column },
             { row: area.start.row - 1, column: area.end.column }), { ...clear_bottom }, true, false, true);
         }
@@ -6801,7 +6813,7 @@ export class Grid {
     // bottom
     if (borders === BorderConstants.Bottom || borders === BorderConstants.Outside) {
       if (!area.entire_column) {
-        this.active_sheet.UpdateAreaStyle(area.bottom, { ...bottom }, true, false, true);
+        sheet.UpdateAreaStyle(area.bottom, { ...bottom }, true, false, true);
       }
     }
 
@@ -6809,7 +6821,7 @@ export class Grid {
     if (borders === BorderConstants.None || borders === BorderConstants.All ||
       borders === BorderConstants.Outside || borders === BorderConstants.Bottom) {
       if (!area.entire_column) {
-        this.active_sheet.UpdateAreaStyle(new Area(
+        sheet.UpdateAreaStyle(new Area(
           { row: area.end.row + 1, column: area.start.column },
           { row: area.end.row + 1, column: area.end.column }), { ...clear_top }, true, false, true);
       }
@@ -6818,7 +6830,7 @@ export class Grid {
     // left
     if (borders === BorderConstants.Left || borders === BorderConstants.Outside) {
       if (!area.entire_row) {
-        this.active_sheet.UpdateAreaStyle(area.left, { ...left }, true, false, true);
+        sheet.UpdateAreaStyle(area.left, { ...left }, true, false, true);
       }
     }
 
@@ -6827,7 +6839,7 @@ export class Grid {
       borders === BorderConstants.Outside || borders === BorderConstants.Left) {
       if (!area.entire_row) {
         if (area.start.column) {
-          this.active_sheet.UpdateAreaStyle(new Area(
+          sheet.UpdateAreaStyle(new Area(
             { row: area.start.row, column: area.start.column - 1 },
             { row: area.end.row, column: area.start.column - 1 }), { ...clear_right }, true, false, true);
         }
@@ -6837,7 +6849,7 @@ export class Grid {
     // right
     if (borders === BorderConstants.Right || borders === BorderConstants.Outside) {
       if (!area.entire_row) {
-        this.active_sheet.UpdateAreaStyle(area.right, { ...right }, true, false, true);
+        sheet.UpdateAreaStyle(area.right, { ...right }, true, false, true);
       }
     }
 
@@ -6845,7 +6857,7 @@ export class Grid {
     if (borders === BorderConstants.None || borders === BorderConstants.All ||
       borders === BorderConstants.Outside || borders === BorderConstants.Right) {
       if (!area.entire_row) {
-        this.active_sheet.UpdateAreaStyle(new Area(
+        sheet.UpdateAreaStyle(new Area(
           { row: area.start.row, column: area.end.column + 1 },
           { row: area.end.row, column: area.end.column + 1 }), { ...clear_left }, true, false, true);
       }
