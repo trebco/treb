@@ -387,6 +387,8 @@ export class Sheet {
     (cell as any)._children = [];
     cell.tail = null;
 
+    // FIXME: I don't think this is necessary for s="0"
+
     if (typeof options.style !== 'undefined') {
       cell.attrib.s = options.style.toString();
     }
@@ -416,6 +418,10 @@ export class Sheet {
           val = options.precalc;
           if (typeof val === 'string') {
             cell.attrib.t = 'str';
+          }
+          else if (typeof val === 'boolean') {
+            cell.attrib.t = 'b';
+            val = val ? 1 : 0;
           }
         }
         else {
