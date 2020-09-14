@@ -397,6 +397,7 @@ export class CompositeSheet {
       popout: false,    // ?
       add_tab: true,
       tab_bar: 'auto',
+      headless: false,  // !
       dnd: true,        // we have an "open" button anyway
       collapsed: !desktop, // false, // true,  // ? what about mobile?
     };
