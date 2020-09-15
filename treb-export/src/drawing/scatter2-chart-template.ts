@@ -25,6 +25,7 @@ export const scatter_series =
       }
     }
   },
+  // <- 'c:tx': {},
   'c:xVal': {
     'c:numRef': {
       'c:f': {

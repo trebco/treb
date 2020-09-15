@@ -1,7 +1,7 @@
 
 import * as ElementTree from 'elementtree';
 import { Element, ElementTree as Tree } from 'elementtree';
-import { UnitAddress, UnitRange, UnitLiteral } from 'treb-parser';
+import { UnitAddress, UnitRange, UnitLiteral, ExpressionUnit } from 'treb-parser';
 
 import { donut_json } from './donut-chart-template';
 import { static_title, ref_title, chart_template } from './chart-template-components';
@@ -17,6 +17,7 @@ export interface ChartOptions {
   data: UnitRange[];
   labels?: UnitRange;
   labels2?: UnitRange[];
+  names?: ExpressionUnit[];
   smooth?: boolean;
 }
 
@@ -153,12 +154,41 @@ export class Chart {
 
     const cser = this.FindNode('c:ser', template);
 
+    let legend = false;
+
     for (let i = 0; i < this.options.data.length; i++) {
 
       const series = JSON.parse(JSON.stringify(scatter2_series));
 
       series['c:idx'] = { _a: { val: i.toString() }};
       series['c:order'] = { _a: { val: i.toString() }};
+
+      if (this.options.names && this.options.names[i]) {
+        const name = this.options.names[i];
+        switch (name.type) {
+          case 'literal':
+            series['c:tx'] = {
+              'c:v': {
+                _t: name.value.toString(),
+              }
+            };
+            legend = true;
+            break;
+
+          case 'range':
+          case 'address':
+            series['c:tx'] = {
+              'c:strRef': {
+                'c:f': {
+                  _t: name.label,
+                },
+              }
+            };
+            legend = true;
+            break;
+        }
+      }
+
       series['c:spPr']['a:ln']['a:solidFill']['a:schemeClr']._a['val'] = `accent${i+1}`;
 
       /*
@@ -198,7 +228,19 @@ export class Chart {
 
     }
 
-
+    if (legend) {
+      const cchart = this.FindNode('c:chart', template);
+      if (cchart) {
+        cchart['c:legend'] = {
+          'c:legendPos': {
+            _a: {val: 'b'},
+          },
+          'c:overlay': {
+            _a: {val: '0'},
+          }
+        };
+      }
+    }
 
     return this.ObjectToXML(template);
 

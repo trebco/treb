@@ -5,12 +5,13 @@ import { Base64 as JSBase64 } from 'js-base64';
 import { Workbook } from './workbook';
 
 import { Style, Area, IArea, DataValidation, ValidationType, ICellAddress } from 'treb-base-types';
-import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, UnitCall, UnitAddress, UnitRange } from 'treb-parser';
+import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, UnitCall, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
 
 import { SerializedSheet } from 'treb-grid';
 import { RangeOptions } from './sheet';
 import { TwoCellAnchor } from './drawing/drawing';
 import { ChartOptions } from './drawing/chart';
+import { group } from 'console';
 
 /** excel units */
 const one_hundred_pixels = 14.28515625;
@@ -421,6 +422,57 @@ export class Exporter {
         }
       }
 
+      const parse_series = (arg: ExpressionUnit, options: ChartOptions) => {
+        if (arg.type === 'range') {
+          // .. TODO
+        }
+        else if (arg.type === 'call') {
+          if (/group/i.test(arg.name)) {
+            // recurse
+            for (const value of (arg.args || [])) {
+              if (value.type === 'call' && /series/i.test(value.name)) {
+                parse_series(value, options);
+              }
+            }
+          }
+          else if (/series/i.test(arg.name)) {
+
+            const [label, x, y] = arg.args; // y is required
+            
+            if (y && y.type === 'range') {
+              options.data.push(this.NormalizeAddress(y, sheet_source));
+
+              if (label) {
+                if (!options.names) { options.names = []; }
+
+                if (label.type === 'address') {
+                  this.NormalizeAddress(label, sheet_source);
+                }
+                
+                if (label.type === 'range') {
+                  this.NormalizeAddress(label.start, sheet_source);
+                  options.names[options.data.length - 1] = label.start;
+                }
+                else {
+                  options.names[options.data.length - 1] = label;
+                }
+                
+              }
+
+              if (!options.labels2) { options.labels2 = []; }
+              if (x && x.type === 'range') {
+                options.labels2[options.data.length - 1] = this.NormalizeAddress(x, sheet_source);
+              }
+            }
+            else {
+              console.info('invalid series missing Y')
+            }
+
+          }
+        }
+
+      };
+
       for (const annotation of sheet_source.annotations || []) {
 
         const parse_result = this.parser.Parse(annotation.formula || '');
@@ -461,8 +513,14 @@ export class Exporter {
 
             if (parse_result.expression.args[0]) {
               const arg0 = parse_result.expression.args[0];
-              if (arg0.type === 'range') {
+              if (type === 'scatter2') {
+                parse_series(arg0, options);
+              }
+              else if (arg0.type === 'range') {
+                  /*
                 if (type === 'scatter2') {
+
+
                   if (arg0.end.column - arg0.start.column >= 1) {
 
                     let clone = JSON.parse(JSON.stringify(arg0)) as UnitRange;
@@ -478,14 +536,17 @@ export class Exporter {
                   else {
                     options.data.push(this.NormalizeAddress(arg0, sheet_source));
                   }
-                }
-                else {
+                  */
+
+                // }
+                //else {
                   options.data.push(this.NormalizeAddress(arg0, sheet_source));
-                }
+                //}
               }
               else if (arg0.type === 'call' && /series/i.test(arg0.name)) {
                 for (const series of arg0.args) {
                   if (series.type === 'range') {
+                    /*
                     if (type === 'scatter2') {
                       if (series.end.column - series.start.column >= 1) {
 
@@ -504,8 +565,9 @@ export class Exporter {
                       }
                     }
                     else {
+                      */
                       options.data.push(this.NormalizeAddress(series, sheet_source));
-                    }
+                    //}
                   }
                 }
               }

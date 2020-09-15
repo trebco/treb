@@ -234,6 +234,9 @@ export class ExpressionCalculator {
       }
       break;
 
+    case 'literal':
+      return arg.value;
+
     case 'call':
 
       // we need a way to cascade the 'metadata' flag down 
@@ -259,6 +262,8 @@ export class ExpressionCalculator {
         }
         else return result;
       }
+
+      // FIXME: binary, &c
 
     }
 
@@ -323,6 +328,11 @@ export class ExpressionCalculator {
       }
       
       return range_result;
+
+    }
+    else {
+
+      // console.info('no metadata!')
 
     }
 

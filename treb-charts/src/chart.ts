@@ -175,8 +175,14 @@ export class Chart {
     };
 
     if (data[0]) {
+      
       const flat = Util.Flatten(data[0]);
-      series.label = (flat[0] && flat[0].value) ? flat[0].value.toString() : '';
+      if (typeof flat[0] === 'object') {
+        series.label = (flat[0] && flat[0].value) ? flat[0].value.toString() : '';
+      }
+      else {
+        series.label = flat[0].toString();
+      }
     }
 
     // read [2] first, so we can default for [1] if necessary
