@@ -6,21 +6,53 @@ type FunctionMap = import('../../treb-calculator/src/descriptors').FunctionMap;
 /** function returns its arguments */
 const Identity = (...args: any[]) => args;
 
+export interface DecoratedArray<T> extends Array<T> {
+  _type: string;
+}
+
 /**
  * chart functions for registration
  */
 export const ChartFunctions: FunctionMap = {
+
+  /* new: also helper */
+  'Group': {
+    arguments: [
+      { name: 'Array...', metadata: true, },
+    ],
+    fn: (...args: DecoratedArray<unknown>): DecoratedArray<unknown> => {
+      args._type = 'group';
+      return args;
+    },
+  },
 
   /* new: helper */
   'Series': {
     arguments: [
       { name: 'Array...', metadata: true, },
     ],
-    // return_type: ReturnType.reference,
-    fn: (...args: any[]) => {
-      (args as any)._type = 'series';
+    fn: (...args: DecoratedArray<unknown>): DecoratedArray<unknown> => {
+      args._type = 'series';
       return args;
     },
+  },
+
+  /*
+  'Scatter.Plot': {
+    arguments: [
+      { name: 'data', metadata: true, },
+      { name: 'Title' },
+    ],
+    fn: Identity,
+  },
+  */
+
+  'Scatter.Line': {
+    arguments: [
+      { name: 'data', metadata: true, },
+      { name: 'Title' },
+    ],
+    fn: Identity,
   },
 
   'Column.Chart': {

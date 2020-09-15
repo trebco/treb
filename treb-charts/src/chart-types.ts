@@ -1,5 +1,6 @@
 
 import { RangeScale } from 'treb-utils';
+import { Area } from './rectangle';
 
 export type NumberOrUndefinedArray = Array<number|undefined>;
 
@@ -47,6 +48,8 @@ export interface DonutSlice {
 /** common to all chart data types */
 export interface ChartDataBaseType {
   title?: string;
+  legend?: string[];
+  legend_position?: LegendPosition;
   title_layout?: 'top'|'bottom';
 }
 
@@ -61,6 +64,22 @@ export interface ScatterData extends ChartDataBaseType {
   x: number[];
   y: number[];
   count: number;
+}
+
+/** scatter plot used for line charting */
+export interface ScatterData2 extends ChartDataBaseType {
+  type: 'scatter2';
+
+  series?: SeriesType[];
+
+  x_scale: RangeScale;
+  y_scale: RangeScale;
+
+  x_labels?: string[];
+  y_labels?: string[];
+
+  style?: 'plot'|'line';
+
 }
 
 /** base for column types (FIXME: probably common to scatter/line/area also) */
@@ -130,9 +149,43 @@ export type ChartData
   | HistogramData
   | PieChartData
   | ScatterData
+  | ScatterData2
   | LineData
   | AreaData
   | ColumnData
   | BarData
   ;
+
+export enum LegendLayout {
+  horizontal, vertical
+}
+
+export enum LegendPosition {
+  top, bottom, left, right,
+}
+
+export enum LegendStyle {
+  line, marker
+}
+
+export interface LegendOptions {
+  labels: string[];
+  layout?: LegendLayout;
+  position?: LegendPosition;
+  style?: LegendStyle;
+  area: Area;
+}
+
+export interface SubSeries {
+  data: Array<number|undefined>;
+  format?: string;
+  range?: { min: number, max: number };
+}
+
+export interface SeriesType {
+  label?: string;
+  x: SubSeries;
+  y: SubSeries;
+
+}
 

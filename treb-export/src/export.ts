@@ -4,7 +4,7 @@ import { template } from './base-template';
 import { Base64 as JSBase64 } from 'js-base64';
 import { Workbook } from './workbook';
 
-import { Style, Area, IArea, DataValidation, ValidationType } from 'treb-base-types';
+import { Style, Area, IArea, DataValidation, ValidationType, ICellAddress } from 'treb-base-types';
 import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, UnitCall, UnitAddress, UnitRange } from 'treb-parser';
 
 import { SerializedSheet } from 'treb-grid';
@@ -431,6 +431,9 @@ export class Exporter {
             case 'line.chart':
               type = 'scatter';
               break;
+            case 'scatter.line':
+              type = 'scatter2';
+              break;
             case 'donut.chart':
               type = 'donut';
               break;
@@ -442,33 +445,76 @@ export class Exporter {
               break;
           }
 
-          if (type === 'column' || type === 'donut' || type === 'bar' || type === 'scatter') {
+          if (type === 'column' || type === 'donut' || type === 'bar' || type === 'scatter' || type === 'scatter2') {
 
             const options: ChartOptions = { type, data: [] };
 
-            if (parse_result.expression.args[2] && parse_result.expression.args[2].type === 'literal') {
-              options.title = parse_result.expression.args[2];
+            const title_index = (type === 'scatter2') ? 1 : 2;
+            const title_arg = parse_result.expression.args[title_index];
+
+            if (title_arg && title_arg.type === 'literal') {
+              options.title = title_arg;
             }
-            else if (parse_result.expression.args[2] && parse_result.expression.args[2].type === 'address') {
-              options.title = this.NormalizeAddress(parse_result.expression.args[2], sheet_source);
+            else if (title_arg && title_arg.type === 'address') {
+              options.title = this.NormalizeAddress(title_arg, sheet_source);
             }
 
             if (parse_result.expression.args[0]) {
               const arg0 = parse_result.expression.args[0];
               if (arg0.type === 'range') {
-                options.data.push(this.NormalizeAddress(arg0, sheet_source));
+                if (type === 'scatter2') {
+                  if (arg0.end.column - arg0.start.column >= 1) {
+
+                    let clone = JSON.parse(JSON.stringify(arg0)) as UnitRange;
+                    clone.start.column = clone.end.column = clone.start.column + 1;
+                    options.data.push(this.NormalizeAddress(clone, sheet_source));
+
+                    clone = JSON.parse(JSON.stringify(arg0)) as UnitRange;
+                    clone.end.column = clone.start.column;
+
+                    if (!options.labels2) { options.labels2 = []; }
+                    options.labels2.push(this.NormalizeAddress(clone, sheet_source));
+                  }
+                  else {
+                    options.data.push(this.NormalizeAddress(arg0, sheet_source));
+                  }
+                }
+                else {
+                  options.data.push(this.NormalizeAddress(arg0, sheet_source));
+                }
               }
               else if (arg0.type === 'call' && /series/i.test(arg0.name)) {
                 for (const series of arg0.args) {
                   if (series.type === 'range') {
-                    options.data.push(this.NormalizeAddress(series, sheet_source));
+                    if (type === 'scatter2') {
+                      if (series.end.column - series.start.column >= 1) {
+
+                        let clone = JSON.parse(JSON.stringify(series)) as UnitRange;
+                        clone.start.column = clone.end.column = clone.start.column + 1;
+                        options.data.push(this.NormalizeAddress(clone, sheet_source));
+
+                        clone = JSON.parse(JSON.stringify(series)) as UnitRange;
+                        clone.end.column = clone.start.column;
+
+                        if (!options.labels2) { options.labels2 = []; }
+                        options.labels2.push(this.NormalizeAddress(clone, sheet_source));
+                      }
+                      else {
+                        options.data.push(this.NormalizeAddress(series, sheet_source));
+                      }
+                    }
+                    else {
+                      options.data.push(this.NormalizeAddress(series, sheet_source));
+                    }
                   }
                 }
               }
             }
 
-            if (parse_result.expression.args[1] && parse_result.expression.args[1].type === 'range') {
-              options.labels = this.NormalizeAddress(parse_result.expression.args[1], sheet_source);
+            if (type !== 'scatter2') {
+              if (parse_result.expression.args[1] && parse_result.expression.args[1].type === 'range') {
+                options.labels = this.NormalizeAddress(parse_result.expression.args[1], sheet_source);
+              }
             }
 
             if (type === 'scatter' 

@@ -3,8 +3,8 @@ import { NumberFormat, NumberFormatCache } from 'treb-format';
 import { ChartRenderer, Metrics } from './renderer';
 import { Area } from './rectangle';
 import { Util } from './util';
-import { CellData, ChartData, DonutSlice, NumberOrUndefinedArray } from './chart-types';
-import { ChartFunctions } from './chart-functions';
+import { CellData, ChartData, DonutSlice, LegendLayout, LegendPosition, NumberOrUndefinedArray, SeriesType } from './chart-types';
+import { DecoratedArray } from './chart-functions';
 
 import { RangeScale } from 'treb-utils';
 
@@ -72,6 +72,14 @@ export class Chart {
         this.CreateDonut(args, func.toLowerCase() === 'pie.chart');
         break;
 
+      case 'scatter.plot':
+        this.CreateScatterChart(args, 'plot');
+        break;
+
+      case 'scatter.line':
+        this.CreateScatterChart(args, 'line');
+        break;
+  
       default:
         this.Clear();
         break;
@@ -102,7 +110,7 @@ export class Chart {
     // but now we're potentially splitting into series
     let series: NumberOrUndefinedArray[];
 
-    if (Array.isArray(raw_data) && (raw_data as any)._type === 'series') {
+    if (Array.isArray(raw_data) && ((raw_data as any)._type === 'series' || (raw_data as any)._type === 'group')) {
       series = raw_data.map(entry => {
         return Util.Flatten(entry).map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
       });
@@ -158,6 +166,181 @@ export class Chart {
 
   }
 
+  public ReadSeries(data: DecoratedArray<any>): SeriesType {
+    
+    // in this case it's (label, X, Y)
+    const series: SeriesType = {
+      x: { data: [] },
+      y: { data: [] },
+    };
+
+    if (data[0]) {
+      const flat = Util.Flatten(data[0]);
+      series.label = (flat[0] && flat[0].value) ? flat[0].value.toString() : '';
+    }
+
+    // read [2] first, so we can default for [1] if necessary
+
+    if (data[2] && Array.isArray(data[2])) {
+      const flat = Util.Flatten(data[2]);
+      series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
+      if (flat[0].format) {
+        series.y.format = flat[0].format;
+      }
+    }
+
+    if (data[1] && Array.isArray(data[1])) {
+      const flat = Util.Flatten(data[1]);
+      series.x.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
+      if (flat[0].format) {
+        series.x.format = flat[0].format;
+      }
+    }
+    else {
+      series.x.data = series.y.data.map((row, i) => i);
+    }
+
+    for (const subseries of [series.x, series.y]) {
+      const values = subseries.data.filter(value => value || value === 0) as number[];
+      subseries.range = {
+        min: Math.min.apply(0, values), 
+        max: Math.max.apply(0, values), 
+      };
+    }
+
+    return series;
+          
+  }
+
+  /**
+   * composite data -> series. composite data can be
+   * 
+   * (1) set of Y values, with X not provided;
+   * (2) SERIES(label, X, Y) with Y required, others optional
+   * (3) GROUP(SERIES(label, X, Y), SERIES(label, X, Y), ...), with same rule for each series
+   * 
+   * FIXME: consider supporting GROUP(SERIES, [y], ...)
+   * 
+   * FIXME: we should not assign X by default in each series. if one series has
+   * X and the others don't, then assume we want to use the same X.
+   * 
+   */
+  public TransformSeriesData(raw_data: any): SeriesType[] {
+
+    const list: SeriesType[] = [];
+    
+    if (Array.isArray(raw_data)) {
+      const decorated = raw_data as DecoratedArray<any>;
+      if (decorated._type === 'group') {
+        for (const entry of decorated) {
+          if (Array.isArray(entry)) {
+            if ((entry as DecoratedArray<any>)._type === 'series') {
+              const series = this.ReadSeries(entry as DecoratedArray<any>)
+              list.push(series);
+            }
+          }
+        }
+      }
+      else if (decorated._type === 'series') {
+        const series = this.ReadSeries(decorated);
+        list.push(series);
+      }
+      else {
+
+        // this is an array of Y, X not provided
+
+        const series: SeriesType = { x: { data: [] }, y: { data: [] }, };
+        const flat = Util.Flatten(decorated);
+
+        series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
+        if (flat[0].format) {
+          series.y.format = flat[0].format || '';
+        }
+        series.x.data = flat.map((row, i) => i);
+
+        list.push(series);
+
+      }
+    }
+
+    return list;
+  }
+
+  /**
+   * args[0] is the scatter data. this can be 
+   * 
+   * (1) set of Y values, with X not provided;
+   * (2) SERIES(label, X, Y) with Y required, others optional
+   * (3) GROUP(SERIES(label, X, Y), SERIES(label, X, Y), ...), with same rule for each series
+   * 
+   * @param args 
+   */
+  public CreateScatterChart(args: any[], style: 'plot'|'line' = 'plot'): void {
+
+    // FIXME: transform the data, then have this function
+    // operate on clean data. that way the transform can
+    // be reused (and the function can be reused without the
+    // transform).
+
+    const title = args[1] || '';
+    const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
+
+    let x_format = '';
+    let y_format = '';
+
+    for (const entry of series) {
+      if (entry.y.format && !y_format) { y_format = entry.y.format; }
+      if (entry.x.format && !x_format) { x_format = entry.x.format; }
+    }
+
+    let legend: string[]|undefined;
+    if (series.some(test => test.label && (test.label.length > 0))) {
+      legend = series.map((entry, i) => entry.label || `Series ${i + 1}`);
+    }
+
+    const x = series.filter(test => test.x.range);
+    const x_min = Math.min.apply(0, x.map(test => test.x.range?.min || 0));
+    const x_max = Math.max.apply(0, x.map(test => test.x.range?.max || 0));
+
+    const y = series.filter(test => test.y.range);
+    const y_min = Math.min.apply(0, x.map(test => test.y.range?.min || 0));
+    const y_max = Math.max.apply(0, x.map(test => test.y.range?.max || 0));
+
+    const x_scale = Util.Scale(x_min, x_max, 7);
+    const y_scale = Util.Scale(y_min, y_max, 7);
+
+    let x_labels: string[]|undefined;
+    let y_labels: string[]|undefined;
+    
+    if (x_format) {
+      x_labels = [];
+      const format = NumberFormatCache.Get(x_format);
+      for (let i = 0; i <= x_scale.count + 1; i++) {
+        x_labels.push(format.Format(x_scale.min + i * x_scale.step));
+      }
+    }
+
+    if (y_format) {
+      y_labels = [];
+      const format = NumberFormatCache.Get(y_format);
+      for (let i = 0; i <= y_scale.count; i++) {
+        y_labels.push(format.Format(y_scale.min + i * y_scale.step));
+      }
+    }
+
+    this.chart_data = {
+      legend,
+      style,
+      type: 'scatter2', 
+      series, // : [{x, y}],
+      title, 
+      x_scale, y_scale,
+      x_labels, y_labels,
+    };
+
+
+  }
+
   /**
    * args: data, labels, title, callouts, "smooth"
    */
@@ -176,7 +359,7 @@ export class Chart {
     // but now we're potentially splitting into series
     let series: NumberOrUndefinedArray[];
 
-    if (Array.isArray(raw_data) && (raw_data as any)._type === 'series') {
+    if (Array.isArray(raw_data) && ((raw_data as any)._type === 'series' || (raw_data as any)._type === 'group')) {
       series = raw_data.map(entry => {
         return Util.Flatten(entry).map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
       });
@@ -623,6 +806,43 @@ export class Chart {
     area.bottom -= chart_margin.bottom;
     area.right -= chart_margin.right;
 
+    if (this.chart_data.legend && this.chart_data.legend.length) {
+
+      let default_position = LegendPosition.top;
+      if (this.chart_data.title) {
+        if (!this.chart_data.title_layout || this.chart_data.title_layout === 'top') {
+          default_position = LegendPosition.bottom;
+        }
+      }
+
+      const position = this.chart_data.legend_position || default_position;
+
+      const options = {
+        labels: this.chart_data.legend,
+        position,
+        layout: (position === LegendPosition.top || position === LegendPosition.bottom) ? 
+          LegendLayout.horizontal : LegendLayout.vertical,
+        area,
+      };
+
+      const legend_size = this.renderer.Legend(options);
+
+      if (options.position === LegendPosition.top) {
+        area.top += legend_size.height || 0;
+      }
+      else if (options.position === LegendPosition.right) {
+        area.right -= ((legend_size.width || 0) + 8);
+      }
+      else if (options.position === LegendPosition.left) {
+        area.left += ((legend_size.width || 0) + 8);
+      }
+      else {
+        area.bottom -= legend_size.height || 0;
+      }
+
+    }
+
+
     // FIXME: for now this is used for histogram only, but it's probably
     // applicable to some other types as well, so leave it here...
 
@@ -631,6 +851,7 @@ export class Chart {
         || this.chart_data.type === 'area'
         || this.chart_data.type === 'column'
         || this.chart_data.type === 'bar'
+        || this.chart_data.type === 'scatter2'
         ) {
 
       // we need to measure first, then lay out the other axis, then we
@@ -658,9 +879,12 @@ export class Chart {
         let max_width = 0;
         let max_height = 0;
 
+        const scale = (this.chart_data.type === 'scatter2') ? this.chart_data.y_scale : this.chart_data.scale;
+
         const count = (this.chart_data.type === 'bar') ? 
           this.chart_data.y_labels.length :
-          this.chart_data.scale.count + 1;
+          /* this.chart_data. */ 
+          scale.count + 1;
 
         for (let i = 0; i < count; i++ ){
           const metrics = this.renderer.MeasureText(this.chart_data.y_labels[i], ['axis-label', 'y-axis-label']);
@@ -696,7 +920,7 @@ export class Chart {
         }
 
         // render
-        this.renderer.RenderXAxis(area, (this.chart_data.type !== 'line' && this.chart_data.type !== 'bar'),
+        this.renderer.RenderXAxis(area, (this.chart_data.type !== 'line' && this.chart_data.type !== 'bar' && this.chart_data.type !== 'scatter2'),
           this.chart_data.x_labels, x_metrics, ['axis-label', 'x-axis-label']);
 
         // update bottom (either we unwound for labels, or we need to do it the first time)
@@ -711,6 +935,24 @@ export class Chart {
     switch (this.chart_data.type) {
     case 'scatter':
       this.renderer.RenderPoints(area, this.chart_data.x, this.chart_data.y, 'points');
+      break;
+
+    case 'scatter2':
+
+      this.renderer.RenderGrid(area, 
+        this.chart_data.y_scale.count, 
+        this.chart_data.y_scale.count, 
+        'chart-grid');
+
+      if (this.chart_data.series) {
+        for (let i = 0; i < this.chart_data.series.length; i++) {
+          const series = this.chart_data.series[i];
+          this.renderer.RenderPoints2(area, 
+            series.x.data, series.y.data, this.chart_data.x_scale, this.chart_data.y_scale, 
+              this.chart_data.style === 'line' ? 'line' : 'point',
+              this.chart_data.style === 'line' ? `chart-line series-${i + 1}` : `points series-${i + 1}`);
+        }
+      }
       break;
 
     case 'pie':

@@ -1,6 +1,7 @@
 
 import { Area, Size, Point } from './rectangle';
-import { DonutSlice } from './chart-types';
+import { DonutSlice, LegendLayout, LegendOptions, LegendPosition } from './chart-types';
+import { RangeScale } from 'treb-utils/src';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -41,6 +42,126 @@ export class ChartRenderer {
 
     this.parent.appendChild(this.svg_node);
     this.Resize();
+  }
+
+  public Legend(options: LegendOptions) {
+    const group = document.createElementNS(SVGNS, 'g');
+    this.group.appendChild(group);
+
+    const measure = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    group.appendChild(measure);
+    group.classList.add('legend');
+
+    const rows: number[][] = [[]];
+    const marker_width = 26;
+    const padding = 10;
+    let space = options.area.width;
+    let row = 0;
+    let max_height = 0;
+    const width = options.area.width;
+    
+    const metrics = options.labels.map((label, index) => {
+      measure.textContent = label;
+
+      const text_rect = measure.getBoundingClientRect();
+      const text_metrics = { width: text_rect.width, height: text_rect.height };
+      const composite = text_metrics.width + marker_width + padding;
+
+      max_height = Math.max(max_height, text_metrics.height);
+
+      if (options.layout === LegendLayout.vertical) {
+        rows[index] = [index];
+      }
+      else {
+        if (composite > space) {
+          if (rows[row].length === 0) {
+
+            // there's nothing in this row, so moving to the next 
+            // row will not help; stick it in here regardless
+
+            rows[row].push(index);
+            row++;
+            rows[row] = [];
+            space = width;
+          }
+          else {
+            row++;
+            rows[row] = [index];
+            space = width - composite;
+          }
+        }
+        else {
+          rows[row].push(index);
+          space -= composite;
+        }
+      }
+
+      return text_metrics;
+    });
+
+    let y = max_height;
+
+    const entries: string[] = [];
+
+    let layout = options.layout || LegendLayout.horizontal;
+    if (layout === LegendLayout.horizontal && rows.every(row => row.length <= 1)) {
+      layout = LegendLayout.horizontal;
+    }
+
+    for (let row = 0; row < rows.length; row++) {
+
+      const row_width = rows[row].reduce((a, x) => a + metrics[x].width + marker_width, (rows[row].length - 1) * padding);
+
+      let h = 0;
+      let x = layout === LegendLayout.horizontal ?
+        Math.round((width - row_width) / 2) :
+        Math.round(padding / 2) ;
+
+      for (let col = 0; col < rows[row].length; col++) {
+
+        const index = rows[row][col];
+        const text_metrrics = metrics[index];
+        const label = options.labels[index];
+
+        const marker_y = y - 1; // Math.round(y + text_metrrics.height / 2);
+
+        entries.push(`<text dominant-baseline="middle" x=${x + marker_width} y=${y}>${label}</text>`);
+ 
+        // FIXME: marker
+        entries.push(`<rect class='series-${index + 1}' x=${x} y=${marker_y - 1} width=${marker_width - 3} height=2 />`)
+
+        h = Math.max(h, text_metrrics.height);
+        x += text_metrrics.width + marker_width + padding;
+
+      }
+
+      y = Math.round(y + h * 1.1);
+    }
+
+    group.innerHTML = entries.join('');
+    const rect = group.getBoundingClientRect();
+    const legend_size = { width: rect.width, height: rect.height + max_height };
+
+    switch (options.position) {
+      case LegendPosition.bottom:
+        group.setAttribute('transform', `translate(${options.area.left}, ${options.area.bottom - legend_size.height})`);
+        break;
+
+      case LegendPosition.left:
+        group.setAttribute('transform', `translate(${options.area.left}, ${options.area.top})`);
+        break;
+          
+      case LegendPosition.right:
+        group.setAttribute('transform', `translate(${options.area.right - legend_size.width}, ${options.area.top})`);
+        break;
+
+      case LegendPosition.top:
+      default:
+        group.setAttribute('transform', `translate(${options.area.left}, ${options.area.top})`);
+    }
+
+    return legend_size;
+
   }
 
   public Clear() {
@@ -672,6 +793,78 @@ export class ChartRenderer {
     this.group.appendChild(node);
 
   }
+
+  public RenderPoints2(area: Area, 
+      x: Array<number|undefined>,
+      y: Array<number|undefined>,
+      x_scale: RangeScale,
+      y_scale: RangeScale,
+      style: 'point'|'line' = 'point',
+      classes?: string|string[]): void {
+
+    // ...
+
+    const count = Math.max(x.length, y.length);
+
+    const group = document.createElementNS(SVGNS, 'g');
+    const node = document.createElementNS(SVGNS, 'path');
+    const d: string[] = [];
+
+    const xrange = (x_scale.max - x_scale.min) || 1;
+    const yrange = (y_scale.max - y_scale.min) || 1;
+
+    const points: number[][] = [];
+
+    for (let i = 0; i< count; i++) {
+
+      let a = x[i];
+      let b = y[i];
+
+      if (typeof a === 'undefined' || typeof b === 'undefined') { continue; }
+
+      a = area.left + ((a - x_scale.min) / xrange) * area.width;
+      b = area.bottom - ((b - y_scale.min) / yrange) * area.height;
+     
+
+      // d.push(`M${a - 1},${b - 1} L${a + 1},${b + 1}`);
+      // d.push(`M${a - 1},${b + 1} L${a + 1},${b - 1}`);
+      
+      points.push([a, b]);
+
+    }
+
+    if (style === 'point') {
+      for (const point of points) {
+        const [a, b] = point;
+        d.push(`M${a - 1},${b - 1} L${a + 1},${b + 1}`);
+        d.push(`M${a - 1},${b + 1} L${a + 1},${b - 1}`);
+      }
+    }
+    else if (style === 'line') {
+      let [a, b] = points[0];
+      d.push(`M${a},${b}`);
+      for (const point of points.slice(1)) {
+        [a, b] = point;
+        d.push(`L${a},${b}`);
+      }
+    }
+
+    node.setAttribute('d', d.join(' '));
+    node.setAttribute('class', 'line');
+
+    if (typeof classes !== 'undefined') {
+      if (typeof classes === 'string') {
+        classes = [classes];
+      }
+      group.setAttribute('class', classes.join(' '));
+    }
+    group.appendChild(node);
+
+    // if (title) node.setAttribute('title', title);
+    this.group.appendChild(group);
+
+  }
+      
 
   public RenderPoints(area: Area, x: number[], y: number[], classes?: string|string[]) {
 

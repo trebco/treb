@@ -7,14 +7,16 @@ import { donut_json } from './donut-chart-template';
 import { static_title, ref_title, chart_template } from './chart-template-components';
 import { column_json, column_series } from './column-chart-template';
 import { scatter_json, scatter_series } from './scatter-chart-template';
+import { scatter_series as scatter2_series } from './scatter2-chart-template';
 
 import { Localization } from 'treb-base-types';
 
 export interface ChartOptions {
-  type: 'donut'|'column'|'bar'|'scatter';
+  type: 'donut'|'column'|'bar'|'scatter'|'scatter2';
   title?: UnitLiteral | UnitAddress;
   data: UnitRange[];
   labels?: UnitRange;
+  labels2?: UnitRange[];
   smooth?: boolean;
 }
 
@@ -78,10 +80,23 @@ export class Chart {
   /** set chart title, either static or reference to cell */
   public UpdateChartTitle(obj: any) {
 
-    const CC = this.FindNode('c:chart', obj);
 
+    /*
+    if (!this.options.title) {
+      const atd = this.FindNode('c:autoTitleDeleted', obj);
+      if (atd) {
+        atd._a.val = 1;
+      }
+    }
+    */
+
+    const unit = this.options.title || {
+      type: 'literal', value: '',
+    };
+
+    const CC = this.FindNode('c:chart', obj);
     if (CC) {
-      if (this.options.title && this.options.title.type === 'literal') {
+      if (unit && unit.type === 'literal') {
         const title = static_title;
         const AP = this.FindNode('a:p', title);
         AP['a:r'] = {
@@ -91,15 +106,15 @@ export class Chart {
             },
           },
           'a:t': {
-            _t: this.options.title.value,
+            _t: unit.value,
           }
         };
         CC['c:title'] = title;
       }
-      else if (this.options.title) {
+      else if (unit) {
         const title = ref_title;
         const CF = this.FindNode('c:tx/c:strRef/c:f', title);
-        CF._t = this.options.title.label;
+        CF._t = unit.label;
         CC['c:title'] = title;
       }
     }
@@ -117,6 +132,76 @@ export class Chart {
 
     return xml;
     
+  }
+
+  public CreateScatter2(): ElementTree.ElementTree {
+    
+    const template = JSON.parse(JSON.stringify(chart_template)); 
+    const chartspace = this.FindNode('c:chartSpace', template);
+    const scatter = JSON.parse(JSON.stringify(scatter_json)); 
+
+    if (this.options.smooth) {
+      const scatterstyle = this.FindNode('c:scatterStyle', scatter);
+      if (scatterstyle) {
+        scatterstyle._a.val = 'smoothMarker';
+      }
+    }
+
+    chartspace['c:chart'] = scatter;
+
+    this.UpdateChartTitle(template);
+
+    const cser = this.FindNode('c:ser', template);
+
+    for (let i = 0; i < this.options.data.length; i++) {
+
+      const series = JSON.parse(JSON.stringify(scatter2_series));
+
+      series['c:idx'] = { _a: { val: i.toString() }};
+      series['c:order'] = { _a: { val: i.toString() }};
+      series['c:spPr']['a:ln']['a:solidFill']['a:schemeClr']._a['val'] = `accent${i+1}`;
+
+      /*
+      if (!i && this.options.labels) {
+        series['c:cat'] = {
+          'c:strRef': {
+            'c:f': {
+              _t: this.options.labels.label,
+            }
+          }
+        }
+      }
+      */
+
+      let val = this.FindNode('c:yVal/c:numRef/c:f', series);
+      if (val) {
+        val._t = this.options.data[i]?.label;
+      }
+
+      if (this.options.labels2 && this.options.labels2[i]) {
+        val = this.FindNode('c:xVal/c:numRef/c:f', series);
+        if (val) {
+          val._t = this.options.labels2[i]?.label;
+        }
+      }
+
+      if (this.options.smooth) {
+        const smooth = this.FindNode('c:smooth', series);
+        if (smooth) {
+          smooth._a.val = '1';
+        }
+      }
+
+      // console.info("SER", JSON.stringify(series, undefined, 2));
+
+      cser.push(series);
+
+    }
+
+
+
+    return this.ObjectToXML(template);
+
   }
 
   public CreateScatterChart() {
@@ -269,6 +354,9 @@ export class Chart {
       case 'donut':
         return this.CreateDonutChart().write({xml_declaration: true});
       
+      case 'scatter2':
+        return this.CreateScatter2().write({xml_declaration: true});
+
       case 'scatter':
         return this.CreateScatterChart().write({xml_declaration: true});
 

@@ -159,6 +159,27 @@ $font-stack:  "-apple-system",
     font-size: 10pt;
   }
 
+  .legend {
+    font-size: 10.5pt;
+
+    & { stroke: none; }
+
+    .series-1  { fill: $color1; }
+    .series-2  { fill: $color3; }
+    .series-3  { fill: $color4; }
+    .series-4  { fill: $color5; }
+    .series-5  { fill: $color6; }
+    .series-6  { fill: $color7; }
+    .series-7  { fill: $color8; }
+    .series-8  { fill: $color9; }
+    .series-9  { fill: $color10; }
+    .series-10  { fill: $color11; }
+    .series-11  { fill: $color12; }
+    .series-12  { fill: $color2; }
+
+
+  }
+
   .donut path {
 
     stroke: none;
