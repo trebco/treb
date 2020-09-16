@@ -423,16 +423,15 @@ export class Exporter {
       }
 
       const parse_series = (arg: ExpressionUnit, options: ChartOptions) => {
+
         if (arg.type === 'range') {
-          // .. TODO
+          options.data.push(this.NormalizeAddress(arg, sheet_source));
         }
         else if (arg.type === 'call') {
           if (/group/i.test(arg.name)) {
             // recurse
             for (const value of (arg.args || [])) {
-              if (value.type === 'call' && /series/i.test(value.name)) {
-                parse_series(value, options);
-              }
+              parse_series(value, options);
             }
           }
           else if (/series/i.test(arg.name)) {
@@ -513,61 +512,16 @@ export class Exporter {
 
             if (parse_result.expression.args[0]) {
               const arg0 = parse_result.expression.args[0];
-              if (type === 'scatter2') {
+              if (type === 'scatter2' || type === 'bar' || type === 'column') {
                 parse_series(arg0, options);
               }
               else if (arg0.type === 'range') {
-                  /*
-                if (type === 'scatter2') {
-
-
-                  if (arg0.end.column - arg0.start.column >= 1) {
-
-                    let clone = JSON.parse(JSON.stringify(arg0)) as UnitRange;
-                    clone.start.column = clone.end.column = clone.start.column + 1;
-                    options.data.push(this.NormalizeAddress(clone, sheet_source));
-
-                    clone = JSON.parse(JSON.stringify(arg0)) as UnitRange;
-                    clone.end.column = clone.start.column;
-
-                    if (!options.labels2) { options.labels2 = []; }
-                    options.labels2.push(this.NormalizeAddress(clone, sheet_source));
-                  }
-                  else {
-                    options.data.push(this.NormalizeAddress(arg0, sheet_source));
-                  }
-                  */
-
-                // }
-                //else {
-                  options.data.push(this.NormalizeAddress(arg0, sheet_source));
-                //}
+                options.data.push(this.NormalizeAddress(arg0, sheet_source));
               }
               else if (arg0.type === 'call' && /series/i.test(arg0.name)) {
                 for (const series of arg0.args) {
                   if (series.type === 'range') {
-                    /*
-                    if (type === 'scatter2') {
-                      if (series.end.column - series.start.column >= 1) {
-
-                        let clone = JSON.parse(JSON.stringify(series)) as UnitRange;
-                        clone.start.column = clone.end.column = clone.start.column + 1;
-                        options.data.push(this.NormalizeAddress(clone, sheet_source));
-
-                        clone = JSON.parse(JSON.stringify(series)) as UnitRange;
-                        clone.end.column = clone.start.column;
-
-                        if (!options.labels2) { options.labels2 = []; }
-                        options.labels2.push(this.NormalizeAddress(clone, sheet_source));
-                      }
-                      else {
-                        options.data.push(this.NormalizeAddress(series, sheet_source));
-                      }
-                    }
-                    else {
-                      */
-                      options.data.push(this.NormalizeAddress(series, sheet_source));
-                    //}
+                    options.data.push(this.NormalizeAddress(series, sheet_source));
                   }
                 }
               }

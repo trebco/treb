@@ -92,12 +92,14 @@ export class Chart {
   }
 
   /**
+   * column/bar chart, now using common Series data and routines
+   * 
    * @param args arguments: data, categories, title
    * @param type 
    */
-  public CreateColumnChart(args: any[], type: 'bar'|'column') {
+  public CreateColumnChart(args: any[], type: 'bar'|'column'): void {
 
-    const series = this.TransformSeriesData(args[0]);
+    const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
     const common = this.CommonData(series);
 
     let category_labels: string[] | undefined;
@@ -390,7 +392,6 @@ export class Chart {
     // be reused (and the function can be reused without the
     // transform).
 
-    const title = args[1] || '';
     const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
     const common = this.CommonData(series);
 
@@ -399,7 +400,7 @@ export class Chart {
       style,
       type: 'scatter2', 
       series, // : [{x, y}],
-      title, 
+      title: args[1] || '', 
 
       x_scale: common.x.scale, 
       x_labels: common.x.labels, 

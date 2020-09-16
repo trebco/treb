@@ -9,6 +9,8 @@ import { column_json, column_series } from './column-chart-template';
 import { scatter_json, scatter_series } from './scatter-chart-template';
 import { scatter_series as scatter2_series } from './scatter2-chart-template';
 
+// import { v4 as uuidv4 } from 'uuid';
+
 import { Localization } from 'treb-base-types';
 
 export interface ChartOptions {
@@ -159,6 +161,14 @@ export class Chart {
     for (let i = 0; i < this.options.data.length; i++) {
 
       const series = JSON.parse(JSON.stringify(scatter2_series));
+
+      /*
+      const uniq = this.FindNode('c16:uniqueId', series);
+      if (uniq) {
+        uniq._a.val = `{${uuidv4()}}`
+        console.info(uniq);
+      }
+      */
 
       series['c:idx'] = { _a: { val: i.toString() }};
       series['c:order'] = { _a: { val: i.toString() }};
