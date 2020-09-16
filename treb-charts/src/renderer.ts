@@ -1,6 +1,6 @@
 
 import { Area, Size, Point } from './rectangle';
-import { DonutSlice, LegendLayout, LegendOptions, LegendPosition } from './chart-types';
+import { DonutSlice, LegendLayout, LegendOptions, LegendPosition, LegendStyle } from './chart-types';
 import { RangeScale } from 'treb-utils/src';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -53,12 +53,13 @@ export class ChartRenderer {
     group.classList.add('legend');
 
     const rows: number[][] = [[]];
-    const marker_width = 26;
     const padding = 10;
     let space = options.area.width;
     let row = 0;
     let max_height = 0;
     const width = options.area.width;
+
+    const marker_width = (options.style === LegendStyle.marker) ? 14 : 26;
     
     const metrics = options.labels.map((label, index) => {
       measure.textContent = label;
@@ -128,7 +129,12 @@ export class ChartRenderer {
         entries.push(`<text dominant-baseline="middle" x=${x + marker_width} y=${y}>${label}</text>`);
  
         // FIXME: marker
-        entries.push(`<rect class='series-${index + 1}' x=${x} y=${marker_y - 1} width=${marker_width - 3} height=2 />`)
+        if (options.style === LegendStyle.marker) {
+          entries.push(`<rect class='series-${index + 1}' x=${x} y=${marker_y - 4} width=8 height=8 />`)
+        }
+        else {
+          entries.push(`<rect class='series-${index + 1}' x=${x} y=${marker_y - 1} width=${marker_width - 3} height=2 />`)
+        }
 
         h = Math.max(h, text_metrrics.height);
         x += text_metrrics.width + marker_width + padding;

@@ -50,6 +50,7 @@ export interface ChartDataBaseType {
   title?: string;
   legend?: string[];
   legend_position?: LegendPosition;
+  legend_style?: LegendStyle;
   title_layout?: 'top'|'bottom';
 }
 
@@ -101,8 +102,8 @@ export interface HistogramData extends ColumnDataBaseType {
 }
 
 export interface LineBaseData extends ChartDataBaseType {
-  data: NumberOrUndefinedArray;
   series?: NumberOrUndefinedArray[];
+  series2?: SeriesType[];
   scale: RangeScale;
   x_scale?: RangeScale;
   titles?: string[];

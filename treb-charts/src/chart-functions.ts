@@ -26,10 +26,15 @@ export const ChartFunctions: FunctionMap = {
     },
   },
 
-  /* new: helper */
+  /**
+   * UPDATE: adding explicit names to Series, for convention. Use the 
+   * more general "group" if you just want to group things.
+   */
   'Series': {
     arguments: [
-      { name: 'Array...', metadata: true, },
+      { name: 'Label', metadata: true, },
+      { name: 'X', metadata: true, },
+      { name: 'Y', metadata: true, },
     ],
     fn: (...args: DecoratedArray<unknown>): DecoratedArray<unknown> => {
       args._type = 'series';
@@ -50,25 +55,25 @@ export const ChartFunctions: FunctionMap = {
   'Scatter.Line': {
     arguments: [
       { name: 'data', metadata: true, },
-      { name: 'Title' },
+      { name: 'ChartTitle' },
     ],
     fn: Identity,
   },
 
   'Column.Chart': {
     arguments: [
-      { name: 'y', metadata: true, },
-      { name: 'labels', metadata: true, },
-      { name: 'Title' },
+      { name: 'Data', metadata: true, },
+      { name: 'Categories', metadata: true, },
+      { name: 'Chart Title' },
     ],
     fn: Identity,
   },
 
   'Bar.Chart': {
     arguments: [
-      { name: 'x', metadata: true, },
-      { name: 'labels', metadata: true, },
-      { name: 'Title' },
+      { name: 'Data', metadata: true, },
+      { name: 'Categories', metadata: true, },
+      { name: 'ChartTitle' },
     ],
     fn: Identity,
   },
@@ -77,7 +82,7 @@ export const ChartFunctions: FunctionMap = {
     arguments: [
       { name: 'y', metadata: true,  },
       { name: 'x', metadata: true,  },
-      { name: 'Title' },
+      { name: 'ChartTitle' },
     ],
     fn: Identity,
   },
@@ -86,7 +91,7 @@ export const ChartFunctions: FunctionMap = {
     arguments: [
       { name: 'y', metadata: true,  },
       { name: 'x', metadata: true,  },
-      { name: 'Title' },
+      { name: 'ChartTitle' },
     ],
     fn: Identity,
   },

@@ -3,7 +3,7 @@ import { NumberFormat, NumberFormatCache } from 'treb-format';
 import { ChartRenderer, Metrics } from './renderer';
 import { Area } from './rectangle';
 import { Util } from './util';
-import { CellData, ChartData, DonutSlice, LegendLayout, LegendPosition, NumberOrUndefinedArray, SeriesType } from './chart-types';
+import { CellData, ChartData, DonutSlice, LegendLayout, LegendPosition, LegendStyle, NumberOrUndefinedArray, SeriesType, SubSeries } from './chart-types';
 import { DecoratedArray } from './chart-functions';
 
 import { RangeScale } from 'treb-utils';
@@ -92,57 +92,19 @@ export class Chart {
   }
 
   /**
-   * @param args arguments: data, labels, title
+   * @param args arguments: data, categories, title
    * @param type 
    */
   public CreateColumnChart(args: any[], type: 'bar'|'column') {
 
-    const title = args[2] || '';
-    const raw_data = args[0];
+    const series = this.TransformSeriesData(args[0]);
+    const common = this.CommonData(series);
 
-    // we're now expecting this to be metadata (including value).
-    // so we need to unpack. could be an array... could be deep...
-    const flat = Util.Flatten(raw_data);
-
-    // we still need the aggregate for range, scale
-    const data = flat.map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
-
-    // but now we're potentially splitting into series
-    let series: NumberOrUndefinedArray[];
-
-    if (Array.isArray(raw_data) && ((raw_data as any)._type === 'series' || (raw_data as any)._type === 'group')) {
-      series = raw_data.map(entry => {
-        return Util.Flatten(entry).map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
-      });
-    }
-    else {
-      series = [data];
-    }
-
-    const range = Util.Range(data);
-
-    // FIXME: optionally force 0 min [or max]
-    if (range.min) {
-      range.min = Math.min(0, range.min);
-    }
-    if (range.max) {
-      range.max = Math.max(0, range.max);
-    }
-
-    const scale = Util.Scale(range.min || 0, range.max || 0, 7);
-    const format_pattern = (flat.length && flat[0].format) ? flat[0].format : '';
-    const y_format = NumberFormatCache.Get(format_pattern || DEFAULT_FORMAT);
-    const y_labels: string[] = [];
-
-    for (let i = 0; i <= scale.count; i++) {
-      y_labels.push(y_format.Format(scale.min + i * scale.step));
-    }
-
-    let x_labels: string[] | undefined;
+    let category_labels: string[] | undefined;
 
     if (args[1]) {
       const values = Util.Flatten(args[1]);
-      x_labels = values.map(cell => {
+      category_labels = values.map(cell => {
         if (!cell) { return ''; }
         if (typeof cell.value === 'number') {
           const format = NumberFormatCache.Get(cell.format || DEFAULT_FORMAT);
@@ -152,16 +114,16 @@ export class Chart {
       });
     }
 
-    // const smooth = (args[6] === 'smooth');
-
     this.chart_data = {
       type,
-      data,
-      series,
-      scale,
-      title,
-      y_labels: type === 'bar' ? x_labels : y_labels, // swapped
-      x_labels: type === 'bar' ? y_labels : x_labels, // swapped
+      legend: common.legend,
+      // legend_position: LegendPosition.right,
+      legend_style: LegendStyle.marker,
+      series2: series,
+      scale: common.y.scale,
+      title: args[2] || '',
+      y_labels: type === 'bar' ? category_labels : common.y.labels, // swapped
+      x_labels: type === 'bar' ? common.y.labels : category_labels, // swapped
     };
 
   }
@@ -202,20 +164,59 @@ export class Chart {
         series.x.format = flat[0].format;
       }
     }
+
+    // UPDATE: no default for X (not yet, anyway)
+    /*
     else {
       series.x.data = series.y.data.map((row, i) => i);
     }
+    */
 
     for (const subseries of [series.x, series.y]) {
-      const values = subseries.data.filter(value => value || value === 0) as number[];
-      subseries.range = {
-        min: Math.min.apply(0, values), 
-        max: Math.max.apply(0, values), 
-      };
+
+      // in case of no values
+      if (subseries.data.length) {
+        const values = subseries.data.filter(value => value || value === 0) as number[];
+        subseries.range = {
+          min: Math.min.apply(0, values), 
+          max: Math.max.apply(0, values), 
+        };
+      }
     }
 
     return series;
           
+  }
+
+  public ArrayToSeries(data: any): SeriesType {
+
+    // this is an array of Y, X not provided
+
+    const series: SeriesType = { x: { data: [] }, y: { data: [] }, };
+    const flat = Util.Flatten(data);
+
+    series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
+    if (flat[0].format) {
+      series.y.format = flat[0].format || '';
+    }
+
+    const values = series.y.data.filter(value => value || value === 0) as number[];
+    series.y.range = {
+      min: Math.min.apply(0, values), 
+      max: Math.max.apply(0, values), 
+    };
+
+    /*
+    // no default (not yet)
+    series.x.data = flat.map((row, i) => i);
+    series.x.range = {
+      min: 0, 
+      max: flat.length - 1, 
+    };
+    */
+
+    return series;
+
   }
 
   /**
@@ -223,15 +224,12 @@ export class Chart {
    * 
    * (1) set of Y values, with X not provided;
    * (2) SERIES(label, X, Y) with Y required, others optional
-   * (3) GROUP(SERIES(label, X, Y), SERIES(label, X, Y), ...), with same rule for each series
+   * (3) GROUP(a, b, ...), where entries are either arrays as (1) or SERIES as (2)
    * 
    * FIXME: consider supporting GROUP(SERIES, [y], ...)
    * 
-   * FIXME: we should not assign X by default in each series. if one series has
-   * X and the others don't, then assume we want to use the same X.
-   * 
    */
-  public TransformSeriesData(raw_data: any): SeriesType[] {
+  public TransformSeriesData(raw_data: any, default_x?: Array<number|undefined>): SeriesType[] {
 
     const list: SeriesType[] = [];
     
@@ -244,6 +242,10 @@ export class Chart {
               const series = this.ReadSeries(entry as DecoratedArray<any>)
               list.push(series);
             }
+            else {
+              const series = this.ArrayToSeries(entry);
+              list.push(series);
+            }
           }
         }
       }
@@ -252,44 +254,66 @@ export class Chart {
         list.push(series);
       }
       else {
+        list.push(this.ArrayToSeries(decorated));
+      }
+    }
+    
+    // now we may or may not have X for each series, so we need
+    // to patch. it's also possible (as with older chart functions)
+    // that there's a common X -- not sure if we want to continue
+    // to support that or not...
 
-        // this is an array of Y, X not provided
+    let baseline_x: SubSeries|undefined;
+    let max_y_length = 0;
 
-        const series: SeriesType = { x: { data: [] }, y: { data: [] }, };
-        const flat = Util.Flatten(decorated);
+    // if we have a default, use that (and range it)
 
-        series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
-        if (flat[0].format) {
-          series.y.format = flat[0].format || '';
+    if (default_x) {
+      const filtered = default_x.filter(x => x || x === 0) as number[];
+      baseline_x = {
+        data: default_x,
+        range: {
+          min: Math.min.apply(0, filtered),
+          max: Math.max.apply(0, filtered),
         }
-        series.x.data = flat.map((row, i) => i);
+      }
+    }
 
-        list.push(series);
+    // look for the first set that has values. at the same time, get max len
 
+    for (const entry of list) {
+      max_y_length = Math.max(max_y_length, entry.y.data.length);
+      if (entry.x.data.length) {
+        if (!baseline_x) {
+          baseline_x = entry.x;
+        }
+      }
+    }
+
+    // now default for any series missing X
+
+    if (!baseline_x) {
+      baseline_x = {
+        data: [],
+        range: {
+          min: 0,
+          max: Math.max(0, max_y_length - 1),
+        }
+      }
+      for (let i = 0; i < max_y_length; i++) { baseline_x.data.push(i); }
+    }
+
+    for (const entry of list) {
+      if (!entry.x.data.length) {
+        entry.x = baseline_x;
       }
     }
 
     return list;
   }
 
-  /**
-   * args[0] is the scatter data. this can be 
-   * 
-   * (1) set of Y values, with X not provided;
-   * (2) SERIES(label, X, Y) with Y required, others optional
-   * (3) GROUP(SERIES(label, X, Y), SERIES(label, X, Y), ...), with same rule for each series
-   * 
-   * @param args 
-   */
-  public CreateScatterChart(args: any[], style: 'plot'|'line' = 'plot'): void {
-
-    // FIXME: transform the data, then have this function
-    // operate on clean data. that way the transform can
-    // be reused (and the function can be reused without the
-    // transform).
-
-    const title = args[1] || '';
-    const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
+  /** get a unified scale, and formats */
+  public CommonData(series: SeriesType[]) {
 
     let x_format = '';
     let y_format = '';
@@ -317,11 +341,11 @@ export class Chart {
 
     let x_labels: string[]|undefined;
     let y_labels: string[]|undefined;
-    
+
     if (x_format) {
       x_labels = [];
       const format = NumberFormatCache.Get(x_format);
-      for (let i = 0; i <= x_scale.count + 1; i++) {
+      for (let i = 0; i < x_scale.count + 1; i++) {
         x_labels.push(format.Format(x_scale.min + i * x_scale.step));
       }
     }
@@ -333,15 +357,56 @@ export class Chart {
         y_labels.push(format.Format(y_scale.min + i * y_scale.step));
       }
     }
+    
+    return {
+      x: {
+        format: x_format,
+        scale: x_scale,
+        labels: x_labels,
+      },
+      y: {
+        format: y_format,
+        scale: y_scale,
+        labels: y_labels,
+      },
+      legend,
+    };
+
+  }
+
+  /**
+   * args[0] is the scatter data. this can be 
+   * 
+   * (1) set of Y values, with X not provided;
+   * (2) SERIES(label, X, Y) with Y required, others optional
+   * (3) GROUP(SERIES(label, X, Y), SERIES(label, X, Y), ...), with same rule for each series
+   * 
+   * @param args 
+   */
+  public CreateScatterChart(args: any[], style: 'plot'|'line' = 'plot'): void {
+
+    // FIXME: transform the data, then have this function
+    // operate on clean data. that way the transform can
+    // be reused (and the function can be reused without the
+    // transform).
+
+    const title = args[1] || '';
+    const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
+    const common = this.CommonData(series);
 
     this.chart_data = {
-      legend,
+      legend: common.legend,
       style,
       type: 'scatter2', 
       series, // : [{x, y}],
       title, 
-      x_scale, y_scale,
-      x_labels, y_labels,
+
+      x_scale: common.x.scale, 
+      x_labels: common.x.labels, 
+
+      y_scale: common.y.scale,
+      y_labels: common.y.labels,
+
     };
 
 
@@ -445,7 +510,6 @@ export class Chart {
 
     this.chart_data = {
       type,
-      data,
       series,
       scale,
       title,
@@ -826,6 +890,7 @@ export class Chart {
       const options = {
         labels: this.chart_data.legend,
         position,
+        style: this.chart_data.legend_style,
         layout: (position === LegendPosition.top || position === LegendPosition.bottom) ? 
           LegendLayout.horizontal : LegendLayout.vertical,
         area,
@@ -1022,13 +1087,13 @@ export class Chart {
       {
         // gridlines
         this.renderer.RenderBarGrid(area, this.chart_data.scale.count, 'chart-grid');
-        if (this.chart_data.series) {
+        if (this.chart_data.series2) {
 
           let count = 0;
-          const series_count = this.chart_data.series.length;
+          const series_count = this.chart_data.series2.length;
 
-          for (const series of this.chart_data.series) {
-            count = Math.max(count, series.length);
+          for (const series of this.chart_data.series2) {
+            count = Math.max(count, series.y.data.length);
           }
 
           const row_height = area.height / count;
@@ -1042,10 +1107,10 @@ export class Chart {
           }
 
           for (let s = 0; s < series_count; s++) {
-            const series = this.chart_data.series[s];
+            const series = this.chart_data.series2[s];
 
-            for (let i = 0; i < series.length; i++ ){
-              const value = series[i];
+            for (let i = 0; i < series.y.data.length; i++ ){
+              const value = series.y.data[i];
               if (typeof value === 'number') {
 
                 const y = Math.round(area.top + i * row_height + space) + s * height;
@@ -1098,13 +1163,13 @@ export class Chart {
         // gridlines
         this.renderer.RenderGrid(area, this.chart_data.scale.count, 0, 'chart-grid');
 
-        if (this.chart_data.series) {
+        if (this.chart_data.series2) {
 
           let count = 0;
-          const series_count = this.chart_data.series.length;
+          const series_count = this.chart_data.series2.length;
 
-          for (const series of this.chart_data.series) {
-            count = Math.max(count, series.length);
+          for (const series of this.chart_data.series2) {
+            count = Math.max(count, series.y.data.length);
           }
 
           // columns
@@ -1119,10 +1184,10 @@ export class Chart {
           }
 
           for (let s = 0; s < series_count; s++) {
-            const series = this.chart_data.series[s];
+            const series = this.chart_data.series2[s];
 
-            for (let i = 0; i < series.length; i++ ){
-              const value = series[i];
+            for (let i = 0; i < series.y.data.length; i++ ){
+              const value = series.y.data[i];
               if (typeof value === 'number') {
 
                 const x = Math.round(area.left + i * column_width + space) + s * width;
