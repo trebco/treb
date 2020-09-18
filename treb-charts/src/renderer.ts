@@ -11,6 +11,31 @@ export interface Metrics {
   y_offset: number;
 }
 
+const trident = /trident/i.test(navigator?.userAgent || '');
+let dom_parser: DOMParser | undefined;
+
+const SetSVG = trident ? (node: SVGElement, svg: string) => {
+
+  if (!dom_parser) {
+    dom_parser = new DOMParser();
+    (dom_parser as any).async = false;
+  }
+
+  const element = dom_parser.parseFromString(
+    '<svg xmlns=\'http://www.w3.org/2000/svg\' xmlns:xlink=\'http://www.w3.org/1999/xlink\'>' + svg + '</svg>',
+    'text/xml').documentElement;
+
+  node.textContent = '';
+
+  let child = element.firstChild;
+
+  while (child) {
+    node.appendChild(document.importNode(child, true));
+    child = child.nextSibling;
+  }
+
+} : (node: SVGElement, svg: string) => node.innerHTML = svg;
+
 /**
  * FIXME: normalize API, make canvas version
  */
@@ -20,6 +45,8 @@ export class ChartRenderer {
   public svg_node!: SVGElement;
   public group!: SVGGElement;
   public text_measurement_node?: SVGTextElement;
+
+  public axis_group?: SVGElement;
 
   public size: Size = { width: 0, height: 0 };
   public bounds: Area = new Area();
@@ -50,7 +77,10 @@ export class ChartRenderer {
 
     const measure = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     group.appendChild(measure);
-    group.classList.add('legend');
+
+    // IE says no
+    // group.classList.add('legend');
+    group.setAttribute('class', 'legend');
 
     const rows: number[][] = [[]];
     const padding = 10;
@@ -60,7 +90,7 @@ export class ChartRenderer {
     const width = options.area.width;
 
     const marker_width = (options.style === LegendStyle.marker) ? 14 : 26;
-    
+
     const metrics = options.labels.map((label, index) => {
       measure.textContent = label;
 
@@ -103,6 +133,8 @@ export class ChartRenderer {
     let y = max_height;
 
     const entries: string[] = [];
+    // const nodes: SVGElement[] = [];
+
 
     let layout = options.layout || LegendLayout.horizontal;
     if (layout === LegendLayout.horizontal && rows.every(row => row.length <= 1)) {
@@ -116,7 +148,7 @@ export class ChartRenderer {
       let h = 0;
       let x = layout === LegendLayout.horizontal ?
         Math.round((width - row_width) / 2) :
-        Math.round(padding / 2) ;
+        Math.round(padding / 2);
 
       for (let col = 0; col < rows[row].length; col++) {
 
@@ -126,14 +158,15 @@ export class ChartRenderer {
 
         const marker_y = y - 1; // Math.round(y + text_metrrics.height / 2);
 
-        entries.push(`<text dominant-baseline="middle" x=${x + marker_width} y=${y}>${label}</text>`);
- 
-        // FIXME: marker
+        const trident_offset = trident ? `dy='.3em'` : '';
+
+        entries.push(`<text dominant-baseline="middle" ${trident_offset} x='${x + marker_width}' y='${y}'>${label}</text>`);
+
         if (options.style === LegendStyle.marker) {
-          entries.push(`<rect class='series-${index + 1}' x=${x} y=${marker_y - 4} width=8 height=8 />`)
+          entries.push(`<rect class='series-${index + 1}' x='${x}' y='${marker_y - 4}' width='8' height='8' />`)
         }
         else {
-          entries.push(`<rect class='series-${index + 1}' x=${x} y=${marker_y - 1} width=${marker_width - 3} height=2 />`)
+          entries.push(`<rect class='series-${index + 1}' x='${x}' y='${marker_y - 1}' width='${marker_width - 3}' height='2'/>`)
         }
 
         h = Math.max(h, text_metrrics.height);
@@ -144,7 +177,8 @@ export class ChartRenderer {
       y = Math.round(y + h * 1.1);
     }
 
-    group.innerHTML = entries.join('');
+    SetSVG(group, entries.join(''));
+
     const rect = group.getBoundingClientRect();
     const legend_size = { width: rect.width, height: rect.height + max_height };
 
@@ -156,7 +190,7 @@ export class ChartRenderer {
       case LegendPosition.left:
         group.setAttribute('transform', `translate(${options.area.left}, ${options.area.top})`);
         break;
-          
+
       case LegendPosition.right:
         group.setAttribute('transform', `translate(${options.area.right - legend_size.width}, ${options.area.top})`);
         break;
@@ -166,11 +200,25 @@ export class ChartRenderer {
         group.setAttribute('transform', `translate(${options.area.left}, ${options.area.top})`);
     }
 
+    if (options.position === LegendPosition.top) {
+      options.area.top += legend_size.height || 0;
+    }
+    else if (options.position === LegendPosition.right) {
+      options.area.right -= ((legend_size.width || 0) + 8); // 8?
+    }
+    else if (options.position === LegendPosition.left) {
+      options.area.left += ((legend_size.width || 0) + 8);
+    }
+    else {
+      options.area.bottom -= legend_size.height || 0;
+    }
+
     return legend_size;
 
   }
 
   public Clear() {
+    this.axis_group = undefined;
     this.group.textContent = '';
   }
 
@@ -197,9 +245,55 @@ export class ChartRenderer {
   }
 
   /**
-   * measure a label, optionally with class name(s)
+   * render title. this method modifies "area" in place -- that's 
+   * the style we want to use going forward.
+   * 
+   * @param title 
+   * @param area 
+   * @param margin 
+   * @param layout 
    */
-  public MeasureText(label: string, classes?: string|string[], ceil = false): Metrics {
+  public RenderTitle(
+      title: string,
+      area: Area,
+      margin: number,
+      layout: 'top'|'bottom'): void {
+
+    const text = document.createElementNS(SVGNS, 'text');
+    text.setAttribute('class', 'chart-title');
+    text.textContent = title;
+    text.style.textAnchor = 'middle';
+    text.setAttribute('x', Math.round(area.width / 2).toString());
+
+    this.group.appendChild(text);
+    const bounds = text.getBoundingClientRect();
+
+    switch (layout) {
+      case 'bottom':
+        text.setAttribute('y', Math.round(area.bottom - bounds.height).toString());
+        area.bottom -= (bounds.height + margin);
+        break;
+
+      default:
+        text.setAttribute('y', Math.round(area.top + margin + bounds.height).toString());
+        area.top += (bounds.height + margin);
+        break;
+    }
+   
+  }
+
+  /**
+   * measure a label, optionally with class name(s)
+   * 
+   * this is silly. you are doing the measurement on a random node and
+   * trying to match classes, while you could just do the measurement on
+   * the actual node, get actual classes right, and not bother with junk
+   * nodes.
+   * 
+   * FIXME: decprecate
+   * 
+   */
+  public MeasureText(label: string, classes?: string | string[], ceil = false): Metrics {
 
     if (!this.text_measurement_node) {
       this.text_measurement_node = document.createElementNS(SVGNS, 'text');
@@ -225,6 +319,8 @@ export class ChartRenderer {
     const metrics = {
       width: bounds.width,
       height: bounds.height,
+
+      // wtf is this?
       y_offset: bounds.height - ((this.bounds.top - bounds.top) - 100),
     };
 
@@ -237,14 +333,14 @@ export class ChartRenderer {
     return metrics;
   }
 
-  public RenderTicks(area: Area, 
-    top: number, bottom: number, count: number, classes?: string|string[]) {
+  public RenderTicks(area: Area,
+    top: number, bottom: number, count: number, classes?: string | string[]) {
 
     const node = document.createElementNS(SVGNS, 'path');
     const d: string[] = [];
 
     const step = area.width / (count);
-    for (let i = 0; i < count; i++){
+    for (let i = 0; i < count; i++) {
       const center = Math.round(area.left + step / 2 + step * i) - 0.5;
       d.push(`M${center} ${top} L${center} ${bottom}`);
     }
@@ -262,62 +358,22 @@ export class ChartRenderer {
 
   }
 
+  public GetAxisNode() {
+    if (!this.axis_group) { 
+      this.axis_group = document.createElementNS(SVGNS, 'g');
+      this.axis_group.setAttribute('class', 'axis-group');
+      this.group.appendChild(this.axis_group);
+    }
+    return this.axis_group; 
+  }
+
   /** specialization for bar; it's different enough that we want special treatment */
   public RenderXAxisBar(
     area: Area,
     offset: boolean,
     labels: string[],
     metrics: Metrics[],
-    classes?: string|string[]) {
-
-  const count = labels.length;
-  if (!count) return;
-
-  // FIXME: base on font, ' ' character
-  const label_buffer = 4;
-
-  const step = offset ? area.width / count : area.width / (count - 1);
-  const initial_offset = offset ? (step / 2) : 0;
-
-  // calculate increment (skip_count)
-  let increment = 1;
-  let repeat = true;
-
-  while (repeat) {
-    repeat = false;
-    let extent = 0;
-    for (let i = 0; i < count; i += increment) {
-      const center = Math.round(area.left + initial_offset + step * i);
-      const left = center - metrics[i].width / 2;
-      if (extent && (left <= extent)) {
-        increment++;
-        repeat = true;
-        break;
-      }
-
-      // FIXME: buffer? they get pretty tight sometimes
-
-      extent = center + (metrics[i].width / 2) + label_buffer;
-    }
-  }
-
-  for (let i = 0; i < count; i += increment) {
-    const x = Math.round(area.left + initial_offset + step * i);
-    // if (x + metrics[i].width / 2 >= area.right) { break; }
-    this.RenderText(labels[i], 'center', { x, y: area.bottom }, classes);
-  }
-
-}
-
-  /**
-   * render x axis labels; skips over labels to prevent overlap
-   */
-  public RenderXAxis(
-      area: Area,
-      offset: boolean,
-      labels: string[],
-      metrics: Metrics[],
-      classes?: string|string[]) {
+    classes?: string | string[]) {
 
     const count = labels.length;
     if (!count) return;
@@ -350,10 +406,63 @@ export class ChartRenderer {
       }
     }
 
+    const axis = this.GetAxisNode();
+
     for (let i = 0; i < count; i += increment) {
       const x = Math.round(area.left + initial_offset + step * i);
       // if (x + metrics[i].width / 2 >= area.right) { break; }
-      this.RenderText(labels[i], 'center', { x, y: area.bottom }, classes);
+      this.RenderText(axis, labels[i], 'center', { x, y: area.bottom }, classes);
+    }
+
+  }
+
+  /**
+   * render x axis labels; skips over labels to prevent overlap
+   */
+  public RenderXAxis(
+    area: Area,
+    offset: boolean,
+    labels: string[],
+    metrics: Metrics[],
+    classes?: string | string[]) {
+
+    const count = labels.length;
+    if (!count) return;
+
+    // FIXME: base on font, ' ' character
+    const label_buffer = 4;
+
+    const step = offset ? area.width / count : area.width / (count - 1);
+    const initial_offset = offset ? (step / 2) : 0;
+
+    // calculate increment (skip_count)
+    let increment = 1;
+    let repeat = true;
+
+    while (repeat) {
+      repeat = false;
+      let extent = 0;
+      for (let i = 0; i < count; i += increment) {
+        const center = Math.round(area.left + initial_offset + step * i);
+        const left = center - metrics[i].width / 2;
+        if (extent && (left <= extent)) {
+          increment++;
+          repeat = true;
+          break;
+        }
+
+        // FIXME: buffer? they get pretty tight sometimes
+
+        extent = center + (metrics[i].width / 2) + label_buffer;
+      }
+    }
+
+    const axis = this.GetAxisNode();
+
+    for (let i = 0; i < count; i += increment) {
+      const x = Math.round(area.left + initial_offset + step * i);
+      // if (x + metrics[i].width / 2 >= area.right) { break; }
+      this.RenderText(axis, labels[i], 'center', { x, y: area.bottom }, classes);
     }
 
   }
@@ -361,13 +470,13 @@ export class ChartRenderer {
   /** specialization for bar; it's different enough that we want special treatment */
   public RenderYAxisBar(area: Area, left: number,
     labels: Array<{
-      label: string; 
+      label: string;
       metrics: Metrics;
-    }>, classes?: string|string[]) {
+    }>, classes?: string | string[]) {
 
     labels = labels.slice(0);
     labels.reverse();
-      
+
     const count = labels.length;
     if (!count) return;
 
@@ -377,7 +486,7 @@ export class ChartRenderer {
     let increment = 1;
     let repeat = true;
 
-    while(repeat) {
+    while (repeat) {
       repeat = false;
       let extent = 0;
       for (let i = 0; i < count; i += increment) {
@@ -392,10 +501,12 @@ export class ChartRenderer {
       }
     }
 
+    const axis = this.GetAxisNode();
+
     for (let i = 0; i < count; i += increment) {
       const label = labels[i];
       const y = Math.round(area.bottom - step * (i + .5) + label.metrics.height / 4);
-      this.RenderText(label.label, 'right', { x: left, y }, classes);
+      this.RenderText(axis, label.label, 'right', { x: left, y }, classes);
     }
 
   }
@@ -405,9 +516,9 @@ export class ChartRenderer {
    */
   public RenderYAxis(area: Area, left: number,
     labels: Array<{
-      label: string; 
+      label: string;
       metrics: Metrics;
-    }>, classes?: string|string[]) {
+    }>, classes?: string | string[]) {
 
     const count = labels.length;
     if (!count) return;
@@ -418,7 +529,7 @@ export class ChartRenderer {
     let increment = 1;
     let repeat = true;
 
-    while(repeat) {
+    while (repeat) {
       repeat = false;
       let extent = 0;
       for (let i = 0; i < count; i += increment) {
@@ -433,10 +544,12 @@ export class ChartRenderer {
       }
     }
 
+    const axis = this.GetAxisNode();
+
     for (let i = 0; i < count; i += increment) {
       const label = labels[i];
       const y = Math.round(area.bottom - step * i + label.metrics.height / 4);
-      this.RenderText(label.label, 'right', { x: left, y }, classes);
+      this.RenderText(axis, label.label, 'right', { x: left, y }, classes);
     }
 
   }
@@ -447,15 +560,15 @@ export class ChartRenderer {
     next = next || current;
 
     const o = this.LineProperties(previous, next);
-    const factor = Math.pow(1 - Math.abs(o.angle)/Math.PI, 2) * this.smoothing_factor;
+    const factor = Math.pow(1 - Math.abs(o.angle) / Math.PI, 2) * this.smoothing_factor;
 
     const angle = o.angle + (reverse ? Math.PI : 0);
     const length = o.length * factor;
-    
+
     const x = current.x + Math.cos(angle) * length;
     const y = current.y + Math.sin(angle) * length;
-  
-    return {x, y};
+
+    return { x, y };
 
   }
 
@@ -471,12 +584,12 @@ export class ChartRenderer {
 
   }
 
-  public RenderSmoothLine(      
+  public RenderSmoothLine(
     area: Area,
-    data: Array<number|undefined>,
+    data: Array<number | undefined>,
     fill = false,
     titles?: string[],
-    classes?: string|string[]) {
+    classes?: string | string[]) {
 
 
     // const node = document.createElementNS(SVGNS, 'path');
@@ -496,12 +609,12 @@ export class ChartRenderer {
     }> = [];
 
     let move = true;
-    let last_x: number|undefined;
+    let last_x: number | undefined;
 
-    let last_point: Point|undefined;
+    let last_point: Point | undefined;
 
-    const points: Array<Point|undefined> = data.map((value, i) => {
-      if (typeof value === 'undefined') { 
+    const points: Array<Point | undefined> = data.map((value, i) => {
+      if (typeof value === 'undefined') {
         return undefined;
       }
       return {
@@ -522,8 +635,8 @@ export class ChartRenderer {
           }
         }
         else {
-          const cp_start = this.ControlPoint(points[i-1] as Point, points[i-2], point);
-          const cp_end = this.ControlPoint(point, points[i-1], points[i+1], true);
+          const cp_start = this.ControlPoint(points[i - 1] as Point, points[i - 2], point);
+          const cp_end = this.ControlPoint(point, points[i - 1], points[i + 1], true);
           d1.push(`C ${cp_start.x},${cp_start.y} ${cp_end.x},${cp_end.y} ${point.x},${point.y}`);
           d2.push(`C ${cp_start.x},${cp_start.y} ${cp_end.x},${cp_end.y} ${point.x},${point.y}`);
         }
@@ -633,11 +746,11 @@ export class ChartRenderer {
   }
 
   public RenderLine(
-      area: Area,
-      data: Array<number|undefined>,
-      fill = false,
-      titles?: string[],
-      classes?: string|string[] ){
+    area: Area,
+    data: Array<number | undefined>,
+    fill = false,
+    titles?: string[],
+    classes?: string | string[]) {
 
     // const node = document.createElementNS(SVGNS, 'path');
     const group = document.createElementNS(SVGNS, 'g');
@@ -657,9 +770,9 @@ export class ChartRenderer {
 
     let i = 0;
     let move = true;
-    let last_x: number|undefined;
+    let last_x: number | undefined;
 
-    for (; i < count; i++ ){
+    for (; i < count; i++) {
       const point = data[i];
       if (typeof point === 'undefined') {
         move = true;
@@ -681,7 +794,7 @@ export class ChartRenderer {
         d2.push(`L${x} ${area.bottom - point}`);
       }
 
-      circles.push({x, y: area.bottom - point, i});
+      circles.push({ x, y: area.bottom - point, i });
 
       last_x = x;
       move = false;
@@ -746,19 +859,19 @@ export class ChartRenderer {
    * the other RenderGrid function has semantics specifically for area/line.
    * rather than try to shoehorn this in we'll use a different method.
    */
-  public RenderBarGrid(area: Area, x_count: number, classes?: string|string[]) {
-   
+  public RenderBarGrid(area: Area, x_count: number, classes?: string | string[]) {
+
     const node = document.createElementNS(SVGNS, 'path');
     const d: string[] = [];
 
     const step = area.width / (x_count);
-    for (let i = 0; i <= x_count; i++ ){
+    for (let i = 0; i <= x_count; i++) {
       const x = Math.round(area.left + step * i) - 0.5;
       d.push(`M${x} ${area.top} L${x} ${area.bottom}`);
     }
 
     node.setAttribute('d', d.join(' '));
-    
+
     if (typeof classes !== 'undefined') {
       if (typeof classes === 'string') {
         classes = [classes];
@@ -770,19 +883,19 @@ export class ChartRenderer {
 
   }
 
-  public RenderGrid(area: Area, y_count: number, x_count = 0, classes?: string|string[]) {
+  public RenderGrid(area: Area, y_count: number, x_count = 0, classes?: string | string[]) {
 
     const node = document.createElementNS(SVGNS, 'path');
     const d: string[] = [];
 
     let step = area.height / y_count;
-    for (let i = 0; i <= y_count; i++ ){
+    for (let i = 0; i <= y_count; i++) {
       const y = Math.round(area.top + step * i) - 0.5;
       d.push(`M${area.left} ${y} L${area.right} ${y}`);
     }
 
     step = area.width / (x_count - 1);
-    for (let i = 0; i < x_count; i++ ){
+    for (let i = 0; i < x_count; i++) {
       const x = Math.round(area.left + step * i) - 0.5;
       d.push(`M${x} ${area.top} L${x} ${area.bottom}`);
     }
@@ -800,63 +913,240 @@ export class ChartRenderer {
 
   }
 
-  public RenderPoints2(area: Area, 
-      x: Array<number|undefined>,
-      y: Array<number|undefined>,
-      x_scale: RangeScale,
-      y_scale: RangeScale,
-      style: 'point'|'line' = 'point',
-      classes?: string|string[]): void {
+  /**
+   * return the intersection point of two lines (assuming 
+   * infinite projection) or undefined if they are parallel
+   */
+  public LineIntersection(a1: Point, a2: Point, b1: Point, b2: Point): Point|undefined {
+
+    const det = ((a1.x - a2.x) * (b1.y - b2.y) - (a1.y - a2.y) * (b1.x - b2.x));
+
+    if (!det) {
+      return undefined; // parallel
+    }
+
+    const t = ((a1.x - b1.x) * (b1.y - b2.y) - (a1.y - b1.y) * (b1.x - b2.x)) / det;
+
+    return { x: a1.x + t * (a2.x - a1.x), y: a1.y + t * (a2.y - a1.y) };
+
+  }
+
+  public RenderScatterSeries(area: Area,
+    x: Array<number | undefined>,
+    y: Array<number | undefined>,
+    x_scale: RangeScale,
+    y_scale: RangeScale,
+    lines = true,
+    markers = false,
+    smooth = false,
+    classes?: string | string[]): void {
 
     // ...
 
     const count = Math.max(x.length, y.length);
-
-    const group = document.createElementNS(SVGNS, 'g');
-    const node = document.createElementNS(SVGNS, 'path');
-    const d: string[] = [];
-
     const xrange = (x_scale.max - x_scale.min) || 1;
     const yrange = (y_scale.max - y_scale.min) || 1;
 
-    const points: number[][] = [];
+    const marker_elements: string[] = [];
+    const points: Array<Point | undefined> = [];
 
-    for (let i = 0; i< count; i++) {
+    const d: string[] = [];
 
-      let a = x[i];
-      let b = y[i];
+    for (let i = 0; i < count; i++) {
 
-      if (typeof a === 'undefined' || typeof b === 'undefined') { continue; }
+      const a = x[i];
+      const b = y[i];
 
-      a = area.left + ((a - x_scale.min) / xrange) * area.width;
-      b = area.bottom - ((b - y_scale.min) / yrange) * area.height;
-     
-
-      // d.push(`M${a - 1},${b - 1} L${a + 1},${b + 1}`);
-      // d.push(`M${a - 1},${b + 1} L${a + 1},${b - 1}`);
-      
-      points.push([a, b]);
+      if (typeof a === 'undefined' || typeof b === 'undefined') {
+        points.push(undefined);
+      }
+      else {
+        points.push({
+          x: area.left + ((a - x_scale.min) / xrange) * area.width,
+          y: area.bottom - ((b - y_scale.min) / yrange) * area.height,
+        });
+      }
 
     }
 
-    if (style === 'point') {
+    // FIXME: merge loops, if possible
+
+    if (markers) {
       for (const point of points) {
-        const [a, b] = point;
-        d.push(`M${a - 1},${b - 1} L${a + 1},${b + 1}`);
-        d.push(`M${a - 1},${b + 1} L${a + 1},${b - 1}`);
-      }
-    }
-    else if (style === 'line') {
-      let [a, b] = points[0];
-      d.push(`M${a},${b}`);
-      for (const point of points.slice(1)) {
-        [a, b] = point;
-        d.push(`L${a},${b}`);
+        if (point) {
+          marker_elements.push(`<path transform='translate(${point.x},${point.y})' class='marker'/>`);
+        }
       }
     }
 
-    node.setAttribute('d', d.join(' '));
-    node.setAttribute('class', 'line');
+    if (lines) {
+
+      if (smooth) {
+
+        // trailing point
+        let last_point: Point | undefined;
+
+        // trailing line for curve angle
+        let last_line: { a: Point, b: Point } | undefined;
+
+        for (let i = 0; i < points.length; i++) {
+
+          const point = points[i];
+
+          // leading point
+          let next_point = points[i + 1];
+
+          if (point) {
+            // const [a, b] = point;
+            let drawn = false;
+
+            if (last_point) {
+
+              const line1 = {
+                a: last_point, // { x: last_point[0], y: last_point[1] },
+                b: point, // { x: point[0], y: point[1] },
+              };
+              const p1 = this.LineProperties(line1.a, line1.b);
+
+              if (!next_point && last_line) {
+
+                const px1 = this.LineProperties(last_line.a, last_line.b);
+                const angle = p1.angle;
+                const split = (angle * 3 - px1.angle) / 2;
+
+                next_point = {
+                  x: point.x + Math.cos(split) * 25,
+                  y: point.y + Math.sin(split) * 25,
+                };
+
+              }
+
+              if (next_point) {
+
+                const line2 = {
+                  a: point, // { x: point[0], y: point[1] },
+                  b: next_point, // { x: next_point[0], y: next_point[1] },
+                };
+
+                const p2 = this.LineProperties(line2.a, line2.b);
+
+                const angle = (p1.angle + p2.angle) / 2;
+
+                const a1 = Math.cos(angle) * 10 + point.x;
+                const b1 = Math.sin(angle) * 10 + point.y;
+
+                const this_line = { a: point, b: { x: a1, y: b1 } };
+                const this_props = this.LineProperties(this_line.a, this_line.b);
+
+                if (!last_line) {
+
+                  // p1 is the angle of _this_ segment
+                  // this line is the new half-angle
+
+                  const split = (p1.angle * 3 - angle) / 2;
+                  const px = {
+                    x: last_point.x + 20 * Math.cos(split),
+                    y: last_point.y + 20 * Math.sin(split),
+                  }
+
+                  last_line = {
+                    a: last_point, b: px,
+                  };
+
+                  // d2.push(`M${last_point[0]},${last_point[1]} L${px.x},${px.y}`);
+
+                }
+
+                if (last_line) {
+
+                  const last_props = this.LineProperties(last_line.a, last_line.b);
+
+                  if ((last_props.angle >= p1.angle && p1.angle >= this_props.angle)
+                    || (last_props.angle <= p1.angle && p1.angle <= this_props.angle)) {
+
+                    const q = this.LineIntersection(last_line.a, last_line.b, this_line.a, this_line.b);
+                    if (q) {
+                      d.push(`M${last_point.x},${last_point.y} Q${q.x},${q.y} ${point.x},${point.y}`);
+                      drawn = true;
+                    }
+                  }
+                  else {
+
+                    const midpoint = {
+                      x: point.x + (last_point.x - point.x) / 2,
+                      y: point.y + (last_point.y - point.y) / 2,
+                    };
+
+                    const angle_1 = p1.angle; // that's the line 
+                    const angle_2 = this_props.angle; // that's the PRIOR split
+
+                    // this bit is maybe broken, not sure: 
+
+                    const AA = (angle_1 + angle_2) / 2;
+                    const DX = angle_1 - AA;
+                    let BB = angle_1 + 2 * DX;
+
+                    // BB = (p1.angle * 3 - this_props.angle)/2;
+                    const zed = 12;
+
+                    const midline = {
+                      a: { ...midpoint },
+                      b: { x: midpoint.x + Math.cos(BB) * -zed, y: midpoint.y + Math.sin(BB) * -zed },
+                    };
+
+                    // d2.push(`M${midpoint.x + Math.cos(BB) * -zed},${midpoint.y + Math.sin(BB) * -zed}`);
+                    // d2.push(`L${midpoint.x + Math.cos(BB) * zed},${midpoint.y + Math.sin(BB) * zed}`);
+
+                    // drawn = true;
+
+                    const q1 = this.LineIntersection(last_line.a, last_line.b, midline.a, midline.b);
+                    const q2 = this.LineIntersection(this_line.a, this_line.b, midline.a, midline.b);
+
+                    if (q1 && q2) {
+                      d.push(`M${last_point.x},${last_point.y} Q${q1.x},${q1.y} ${midpoint.x},${midpoint.y}`);
+                      d.push(`Q${q2.x},${q2.y} ${point.x},${point.y}`);
+                      drawn = true;
+                    }
+
+                  }
+
+                }
+
+                // const a2 = Math.cos(angle) * -10 + a;
+                // const b2 = Math.sin(angle) * -10 + b;
+
+                // d2.push(`M${a1},${b1} L${a2},${b2}`)
+
+                last_line = this_line;
+
+              }
+            }
+
+            if (!drawn) {
+              d.push(`${last_point ? 'L' : 'M'}${point.x},${point.y}`);
+            }
+
+          }
+
+          last_point = point;
+
+        }
+
+      }
+      else {
+        let last_point = undefined;
+        for (const point of points) {
+          if (point) {
+            d.push(`${last_point ? 'L' : 'M'}${point.x},${point.y}`);
+          }
+          last_point = point;
+        }
+      }
+
+    }
+
+    const group = document.createElementNS(SVGNS, 'g');
+    SetSVG(group, `<path d='${d.join(' ')}' class='line' />${marker_elements.join('')}`);
 
     if (typeof classes !== 'undefined') {
       if (typeof classes === 'string') {
@@ -864,20 +1154,19 @@ export class ChartRenderer {
       }
       group.setAttribute('class', classes.join(' '));
     }
-    group.appendChild(node);
 
     // if (title) node.setAttribute('title', title);
     this.group.appendChild(group);
 
   }
-      
 
-  public RenderPoints(area: Area, x: number[], y: number[], classes?: string|string[]) {
+
+  public RenderPoints(area: Area, x: number[], y: number[], classes?: string | string[]) {
 
     const node = document.createElementNS(SVGNS, 'path');
     const d: string[] = [];
 
-    for (let i = 0; i < x.length; i++ ){
+    for (let i = 0; i < x.length; i++) {
       const px = x[i] * area.width + area.left;
       const py = area.bottom - y[i] * area.height;
       d.push(`M${px - 1},${py - 1} L${px + 1},${py + 1}`);
@@ -896,10 +1185,10 @@ export class ChartRenderer {
 
     // if (title) node.setAttribute('title', title);
     this.group.appendChild(node);
-    
+
   }
 
-  public RenderPoint(x: number, y: number, classes?: string|string[]) {
+  public RenderPoint(x: number, y: number, classes?: string | string[]) {
 
     const node = document.createElementNS(SVGNS, 'circle');
     node.setAttribute('cx', x.toString());
@@ -917,7 +1206,7 @@ export class ChartRenderer {
     this.group.appendChild(node);
   }
 
-  public RenderRectangle(area: Area, classes?: string|string[], title?: string) {
+  public RenderRectangle(area: Area, classes?: string | string[], title?: string) {
 
     const node = document.createElementNS(SVGNS, 'rect');
     node.setAttribute('x', area.left.toString());
@@ -946,7 +1235,12 @@ export class ChartRenderer {
   /**
    * render text at point
    */
-  public RenderText(text: string, align: 'center'|'left'|'right', point: Point, classes?: string|string[]) {
+  public RenderText(
+      target: SVGElement|undefined, 
+      text: string, 
+      align: 'center' | 'left' | 'right', 
+      point: Point, 
+      classes?: string | string[]) {
 
     const node = document.createElementNS(SVGNS, 'text');
     node.textContent = text;
@@ -975,7 +1269,7 @@ export class ChartRenderer {
     node.setAttribute('x', point.x.toString());
     node.setAttribute('y', point.y.toString());
 
-    this.group.appendChild(node);
+    (target||this.group).appendChild(node);
 
   }
 
@@ -984,13 +1278,13 @@ export class ChartRenderer {
    * @param values
    */
   public RenderDonut(
-      slices: DonutSlice[],
-      center: Point,
-      outer_radius: number,
-      inner_radius: number,
-      bounds_area: Area,
-      callouts: boolean,
-      classes?: string|string[] ) {
+    slices: DonutSlice[],
+    center: Point,
+    outer_radius: number,
+    inner_radius: number,
+    bounds_area: Area,
+    callouts: boolean,
+    classes?: string | string[]) {
 
     let start_angle = -Math.PI / 2; // start at 12:00
     let end_angle = 0;
@@ -1073,7 +1367,15 @@ export class ChartRenderer {
 
       donut.appendChild(node);
 
-      if (/*callouts &&*/ value >= .05 && title){
+      if (typeof classes !== 'undefined') {
+        if (typeof classes === 'string') {
+          classes = [classes];
+        }
+        donut.setAttribute('class', classes.join(' '));
+      }
+      this.group.appendChild(donut);
+
+      if (/*callouts &&*/ value >= .05 && title) {
 
         const callout = document.createElementNS(SVGNS, 'path');
         const length = outer_radius - inner_radius;
@@ -1088,10 +1390,23 @@ export class ChartRenderer {
         callout.setAttribute('class', 'callout');
         donut.appendChild(callout);
 
-        const corrected = half_angle + Math.PI / 2;
+        const text_parts: string[] = [];
+        const callout_label = document.createElementNS(SVGNS, 'text');
+        callout_label.setAttribute('class', 'callout-label');
+        donut.appendChild(callout_label);
 
+        const corrected = half_angle + Math.PI / 2;
         const text = title;
-        const metrics = this.MeasureText(text, ['donut', 'callout-label']);
+
+        callout_label.textContent = text;
+        let bounds = callout_label.getBoundingClientRect();
+        const metrics = {
+          width: bounds.width,
+          height: bounds.height,
+        };
+
+        // const metrics = this.MeasureText(text, ['donut', 'callout-label']);
+
         let [x, y] = anchor;
 
         x += metrics.height / 2 * Math.cos(half_angle);
@@ -1110,9 +1425,6 @@ export class ChartRenderer {
           }
         }
 
-        const text_parts: string[] = [];
-        const callout_label = document.createElementNS(SVGNS, 'text');
-        callout_label.setAttribute('class', 'callout-label');
 
         const break_regex = /[\s-\W]/;
 
@@ -1154,11 +1466,20 @@ export class ChartRenderer {
           let widest = 0;
 
           const parts = text_parts.map((part) => {
-            const m = this.MeasureText(part, ['donut', 'callout-label']);
+            callout_label.textContent = part;
+            bounds = callout_label.getBoundingClientRect();
+            const m = {
+              width: bounds.width,
+              height: bounds.height,
+            };
+            //const m = this.MeasureText(part, ['donut', 'callout-label']);
             widest = Math.max(widest, m.width);
-            return {text: part, metrics: m};
+            return { text: part, metrics: m };
           });
 
+          console.info('p', parts);
+
+          callout_label.textContent = '';
           for (const part of parts) {
             const tspan = document.createElementNS(SVGNS, 'tspan');
             tspan.textContent = part.text;
@@ -1176,15 +1497,14 @@ export class ChartRenderer {
           }
         }
         else {
-          callout_label.textContent = title;
+          // already in from measurement 
+          // callout_label.textContent = title;
         }
 
         const text_anchor = corrected > Math.PI ? 'end' : 'start';
         callout_label.setAttribute('text-anchor', text_anchor);
-
         callout_label.setAttribute('x', x.toString());
         callout_label.setAttribute('y', y.toString());
-        donut.appendChild(callout_label);
 
       }
 
@@ -1192,14 +1512,6 @@ export class ChartRenderer {
 
     }
 
-    if (typeof classes !== 'undefined') {
-      if (typeof classes === 'string') {
-        classes = [classes];
-      }
-      donut.setAttribute('class', classes.join(' '));
-    }
-
-    this.group.appendChild(donut);
 
   }
 

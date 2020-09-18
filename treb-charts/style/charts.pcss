@@ -1,0 +1,160 @@
+
+/**
+ * rebuilding, try to keep it sane
+ *
+ * NOTE: this file uses the color-mod() function and a postcss library
+ * to translate it. that function is no longer in the spec and will be 
+ * implemented differently, so this will probably need to change.
+ *
+ * originally this file used sass so we used some sass library functions
+ * to do the same thing. all we are doing is (1) set alpha on a color and
+ * (2) darken a color.
+ */
+
+/**
+ * vars. note that we can't use css variables (because IE11), so for the time
+ * being we are using sass-style variables (but with postcss)
+ */
+
+$font-stack:  "-apple-system",
+  "BlinkMacSystemFont",
+  "Segoe UI",
+  "Roboto",
+  "Oxygen-Sans",
+  "Ubuntu",
+  "Cantarell",
+  "Helvetica Neue",
+  "sans-serif";
+
+/* container style */
+.treb-chart {
+
+  /** 
+   * default theme. the way we do this now is assign color from the theme, 
+   * then optionally set fill/stroke via currentColor. that reduces the number
+   * of times we have to define the same colors.
+   */
+
+  background: #fff;
+
+  .nroken {}
+  .series-1  { color: #80B1D3; }
+  .series-2  { color: #8DD3C7; }
+  .series-3  { color: #BEBADA; }
+  .series-4  { color: #FB8072; }
+  .series-5  { color: #FDB462; }
+  .series-6  { color: #B3DE69; }
+  .series-7  { color: #FCCDE5; }
+  .series-8  { color: #D9D9D9; }
+  .series-9  { color: #BC80BD; }
+  .series-10 { color: #CCEBC5; }
+  .series-11 { color: #FFED6F; }
+  .series-12 { color: #FFFFB3; }
+
+  /* default font */
+  font-family: $font-stack;
+
+  /* chart title, at top or bottom */
+  .chart-title {
+    font-size: 14pt;
+  }
+
+  /* axis labels */
+  .axis-group {
+    font-size: 9pt;  
+  }
+
+  /* default text color */
+  text {
+    fill: #000;
+    stroke: none;
+  }
+
+  /* legend uses matching series colors */
+  .legend {
+    font-size: 10.5pt;
+    rect {
+      fill: currentColor;
+    }
+  }
+
+  /* grid */
+  .chart-grid, .chart-ticks {
+    stroke: #ddd;
+  }
+
+  /* old type of line chart */
+  .chart-line {
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+  }
+
+  /**
+   * area chart has separate parts for line and area
+   * (because the line doesn't go up and down the sides)
+   */
+  .chart-area {
+    .line {
+      stroke: currentColor;
+      stroke-width: 2px;
+      fill: none;
+    }
+    .fill {
+      fill: currentColor;
+      opacity: .5;
+    }
+  }
+
+  /* scatter plot line (and marker -- change that class name) */
+  .scatter-plot {
+
+    stroke-width: 3;
+    fill: none;
+    stroke: currentColor;
+
+    /* circle marker. can be adjusted with 'd' */
+    & .marker {
+      stroke-width: 6px;
+      fill: #fff;
+      transition: d .15s ease-in;
+      d: path('M0,-1.5 a1.5,1.5,0,1,1,0,3 a1.5,1.5,0,1,1,0,-3'); /* circle */
+      &:hover {
+        d: path('M0,-3 a3,3,0,1,1,0,6 a3,3,0,1,1,0,-6'); /* circle */
+      }
+    }
+
+  }
+
+  /* donut/pie */
+  .donut {
+
+    fill: currentColor;
+
+    /* this is the dotted line to callouts */
+    & path.callout {
+      fill: none;
+      stroke: #999;
+      stroke-dasharray: 2 2;
+    }
+ 
+    /* this is the actual label */
+    text.callout-label {
+      font-size: 10pt;
+    }
+
+  }
+
+  /* HISTOGRAM NEEDS CLEANUP (IN LAYOUT) */
+  .chart-column {
+    fill: currentColor;
+    stroke: none;
+  }
+
+  /* SO DOES CORRELATION CHART */
+  .mc-correlation {
+    stroke: currentColor;
+    stroke-width: 1;
+  }
+
+}

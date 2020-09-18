@@ -8,7 +8,8 @@ import { DecoratedArray } from './chart-functions';
 
 import { RangeScale } from 'treb-utils';
 
-require('../style/charts.scss');
+// require('../style/charts.scss');
+require('../style/charts.pcss');
 
 const DEFAULT_FORMAT = '#,##0.00'; // why not use "general", or whatever the usual default is?
 
@@ -347,7 +348,7 @@ export class Chart {
     if (x_format) {
       x_labels = [];
       const format = NumberFormatCache.Get(x_format);
-      for (let i = 0; i < x_scale.count + 1; i++) {
+      for (let i = 0; i <= x_scale.count; i++) {
         x_labels.push(format.Format(x_scale.min + i * x_scale.step));
       }
     }
@@ -377,6 +378,8 @@ export class Chart {
   }
 
   /**
+   * args is [data, title, options]
+   * 
    * args[0] is the scatter data. this can be 
    * 
    * (1) set of Y values, with X not provided;
@@ -394,7 +397,7 @@ export class Chart {
 
     const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
     const common = this.CommonData(series);
-
+   
     this.chart_data = {
       legend: common.legend,
       style,
@@ -408,8 +411,15 @@ export class Chart {
       y_scale: common.y.scale,
       y_labels: common.y.labels,
 
+      lines: true,
+
     };
 
+    if (args[2]) {
+      const options = args[2].toString();
+      this.chart_data.markers = /marker/i.test(options);
+      this.chart_data.smooth = /smooth/i.test(options);
+    }
 
   }
 
@@ -847,28 +857,8 @@ export class Chart {
     const title = this.chart_data.title;
 
     if (title) {
-
-      const metrics = this.renderer.MeasureText(
-        title, 'chart-title', true);
-
-      const point = {x: area.width / 2, y: 0};
-
-      switch (this.chart_data.title_layout) {
-        case 'bottom':
-          area.bottom -= chart_margin.bottom;
-          point.y = area.bottom - metrics.y_offset * 2;
-          area.bottom -= (metrics.height + metrics.y_offset);
-          break;
-
-        default:
-          area.top += chart_margin.top;
-          point.y = Math.round(area.top + metrics.height - (metrics.y_offset / 2)); // + metrics.y_offset;
-          area.top += (metrics.height + metrics.y_offset);
-          break;
-      }
-
-      this.renderer.RenderText(title, 'center', point, 'chart-title');
-
+      this.renderer.RenderTitle(title, area, chart_margin.top, 
+        this.chart_data.title_layout||'top');
     }
 
     // pad
@@ -888,32 +878,16 @@ export class Chart {
 
       const position = this.chart_data.legend_position || default_position;
 
-      const options = {
+      this.renderer.Legend({
         labels: this.chart_data.legend,
         position,
         style: this.chart_data.legend_style,
         layout: (position === LegendPosition.top || position === LegendPosition.bottom) ? 
           LegendLayout.horizontal : LegendLayout.vertical,
         area,
-      };
-
-      const legend_size = this.renderer.Legend(options);
-
-      if (options.position === LegendPosition.top) {
-        area.top += legend_size.height || 0;
-      }
-      else if (options.position === LegendPosition.right) {
-        area.right -= ((legend_size.width || 0) + 8);
-      }
-      else if (options.position === LegendPosition.left) {
-        area.left += ((legend_size.width || 0) + 8);
-      }
-      else {
-        area.bottom -= legend_size.height || 0;
-      }
+      });
 
     }
-
 
     // FIXME: for now this is used for histogram only, but it's probably
     // applicable to some other types as well, so leave it here...
@@ -930,7 +904,7 @@ export class Chart {
       // can come back and render. it doesn't really matter which one you
       // do first.
 
-      // measure x axis
+      // measure x axis (height)
 
       let x_metrics: Metrics[] = [];
       let max_x_height = 0;
@@ -952,7 +926,7 @@ export class Chart {
         let max_height = 0;
 
         const scale = (this.chart_data.type === 'scatter2') ? this.chart_data.y_scale : this.chart_data.scale;
-
+        
         const count = (this.chart_data.type === 'bar') ? 
           this.chart_data.y_labels.length :
           /* this.chart_data. */ 
@@ -1006,23 +980,25 @@ export class Chart {
 
     switch (this.chart_data.type) {
     case 'scatter':
-      this.renderer.RenderPoints(area, this.chart_data.x, this.chart_data.y, 'points');
+      this.renderer.RenderPoints(area, this.chart_data.x, this.chart_data.y, 'mc mc-correlation series-1');
       break;
 
     case 'scatter2':
 
       this.renderer.RenderGrid(area, 
         this.chart_data.y_scale.count, 
-        this.chart_data.y_scale.count, 
+        this.chart_data.x_scale.count + 1, // (sigh)
         'chart-grid');
 
       if (this.chart_data.series) {
         for (let i = 0; i < this.chart_data.series.length; i++) {
           const series = this.chart_data.series[i];
-          this.renderer.RenderPoints2(area, 
+          this.renderer.RenderScatterSeries(area, 
             series.x.data, series.y.data, this.chart_data.x_scale, this.chart_data.y_scale, 
-              this.chart_data.style === 'line' ? 'line' : 'point',
-              this.chart_data.style === 'line' ? `chart-line series-${i + 1}` : `points series-${i + 1}`);
+              !!this.chart_data.lines,
+              !!this.chart_data.markers,
+              !!this.chart_data.smooth,
+              `scatter-plot series-${i + 1}`);
         }
       }
       break;
@@ -1139,13 +1115,15 @@ export class Chart {
                 // const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
                 const bar_title = undefined;
 
+                /*
                 this.renderer.RenderRectangle(new Area(
                   negative ? x - 1 : x, 
                   y - 1, 
                   negative ? x + width : x + width + 1, 
                   y + height + 1,
                 ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
-      
+                  */
+
                 this.renderer.RenderRectangle(new Area(
                   x, y, x + width, y + height,
                 ), ['chart-column', `series-${s + 1}`], bar_title || undefined);
@@ -1216,13 +1194,15 @@ export class Chart {
                 // const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
                 const bar_title = undefined;
 
+                /*
                 this.renderer.RenderRectangle(new Area(
                   x - 1, 
                   negative ? y : y - 1, 
                   x + width + 1, 
                   negative ? y + height + 1 : y + height,
                 ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
-      
+                  */
+
                 this.renderer.RenderRectangle(new Area(
                   x, y, x + width, y + height,
                 ), ['chart-column', `series-${s + 1}`], bar_title || undefined);
@@ -1255,13 +1235,15 @@ export class Chart {
           const y = area.bottom - height;
           const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
 
+          /*
           this.renderer.RenderRectangle(new Area(
-            x - 1, y - 1, x + width + 1, y + height,
+            x - .5, y - .5, x + width + .5, y + height,
           ), 'chart-column-shadow', bar_title || undefined);
+          */
 
           this.renderer.RenderRectangle(new Area(
             x, y, x + width, y + height,
-          ), 'chart-column', bar_title || undefined);
+          ), 'chart-column series-1', bar_title || undefined);
         }
 
       }

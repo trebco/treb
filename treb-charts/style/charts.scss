@@ -103,6 +103,25 @@ $font-stack:  "-apple-system",
 
     }
 
+    &.scatter-line .line {
+      stroke-width: 3px;
+    }
+
+    &.scatter-line .marker {
+      stroke-width: 6px;
+      fill: #fff;
+      /* 
+      d: path('M-1,-1 L1,-1 L1,1 L-1,1 Z');
+      */
+      d: path('M0,-1.5 a1.5,1.5,0,1,1,0,3 a1.5,1.5,0,1,1,0,-3'); /* circle */
+      transition: d .15s ease-in;
+
+      &:hover {
+        d: path('M0,-3 a3,3,0,1,1,0,6 a3,3,0,1,1,0,-6'); /* circle */
+      }
+
+    }
+
     &.series-1  { stroke: $color1; }
     &.series-2  { stroke: $color3; }
     &.series-3  { stroke: $color4; }

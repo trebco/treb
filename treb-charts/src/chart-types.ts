@@ -52,6 +52,11 @@ export interface ChartDataBaseType {
   legend_position?: LegendPosition;
   legend_style?: LegendStyle;
   title_layout?: 'top'|'bottom';
+
+  lines?: boolean;
+  markers?: boolean;
+  smooth?: boolean;
+
 }
 
 /** default, empty chart (you can still add a title, I suppose) */
