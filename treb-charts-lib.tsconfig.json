@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "ES2015",
+    "allowJs": false,
+    "strict": true,
+    "experimentalDecorators": true,
+    "sourceMap": false,
+    "moduleResolution": "node",
+    "outDir": "dist2/",
+    "declaration": true,
+    "declarationDir": "dist2/",
+    "lib": [
+      "dom", "es2015"
+    ]
+  },
+  "include": [
+    "treb-utils/src/**/*.ts",
+    "treb-charts/src/**/*.ts",
+    "treb-format/src/**/*.ts",
+    "treb-base-types/src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
