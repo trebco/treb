@@ -1,4 +1,3 @@
-import { ReturnType } from 'treb-calculator/src/descriptors';
 
 // TYPE ONLY
 type FunctionMap = import('../../treb-calculator/src/descriptors').FunctionMap;
