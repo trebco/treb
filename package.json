@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "6.20.9",
+  "version": "6.21.0",
   "main": "dist/index.js",
   "devDependencies": {
     "@types/elementtree": "^0.1.0",
@@ -29,7 +29,7 @@
     "postcss-loader": "^3.0.0",
     "postcss-preset-env": "^6.7.0",
     "precss": "^4.0.0",
-    "riskampjs-mc": "git@gitlab.com:SDLLC/riskampjs-mc.git",
+    "riskampjs-mc": "git+ssh://git@gitlab.com/SDLLC/riskampjs-mc.git",
     "style-loader": "^1.2.1",
     "ts-jest": "^26.3.0",
     "ts-loader": "^8.0.3",
