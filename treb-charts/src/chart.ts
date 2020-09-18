@@ -994,7 +994,10 @@ export class Chart {
         for (let i = 0; i < this.chart_data.series.length; i++) {
           const series = this.chart_data.series[i];
           this.renderer.RenderScatterSeries(area, 
-            series.x.data, series.y.data, this.chart_data.x_scale, this.chart_data.y_scale, 
+            series.x.data, 
+            series.y.data, 
+            this.chart_data.x_scale, 
+            this.chart_data.y_scale, 
               !!this.chart_data.lines,
               !!this.chart_data.markers,
               !!this.chart_data.smooth,
