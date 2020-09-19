@@ -113,7 +113,12 @@ $font-stack:  "-apple-system",
     fill: none;
     stroke: currentColor;
 
-    /* circle marker. can be adjusted with 'd' */
+    /**
+     * circle marker. can be adjusted with 'd'
+     * 
+     * that doesn't work in IE11, apparently. we'll still use it but have
+     * a default path in the element for IE.
+     */
     & .marker {
       stroke-width: 6px;
       fill: #fff;
@@ -129,7 +134,9 @@ $font-stack:  "-apple-system",
   /* donut/pie */
   .donut {
 
-    fill: currentColor;
+    & path {
+      fill: currentColor; /* has to be attached to path for IE11 */
+    }
 
     /* this is the dotted line to callouts */
     & path.callout {

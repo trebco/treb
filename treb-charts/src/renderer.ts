@@ -974,7 +974,12 @@ export class ChartRenderer {
     if (markers) {
       for (const point of points) {
         if (point) {
-          marker_elements.push(`<path transform='translate(${point.x},${point.y})' class='marker'/>`);
+
+          // if we can't use CSS to update the path (except in chrome)
+          // then it's probably not worth it... leave it for now
+          
+          marker_elements.push(`<path d='M0,-1.5 a1.5,1.5,0,1,1,0,3 a1.5,1.5,0,1,1,0,-3' transform='translate(${point.x},${point.y})' class='marker'/>`);
+
         }
       }
     }
