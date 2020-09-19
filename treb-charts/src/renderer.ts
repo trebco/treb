@@ -51,7 +51,7 @@ export class ChartRenderer {
   public size: Size = { width: 0, height: 0 };
   public bounds: Area = new Area();
 
-  public smoothing_factor = 0.2;
+  // public smoothing_factor = 0.2;
 
   public Initialize(node: HTMLElement) {
     this.parent = node;
@@ -554,6 +554,7 @@ export class ChartRenderer {
 
   }
 
+  /*
   public ControlPoint(current: Point, previous?: Point, next?: Point, reverse = false): Point {
 
     previous = previous || current;
@@ -571,6 +572,7 @@ export class ChartRenderer {
     return { x, y };
 
   }
+  */
 
   public LineProperties(a: Point, b: Point) {
 
@@ -623,6 +625,61 @@ export class ChartRenderer {
       };
     });
 
+    ///
+
+    {
+      // we need to split into segments in the event of missing data
+
+      let segment: Point[] = [];
+      const render_segment = () => {
+
+        if (segment.length < 2){ return; }
+
+        let line = '';
+        const first = segment[0];
+        const last = segment[segment.length-1];
+
+        // note here we're not adding the leading M because for area,
+        // we want to use an L instead (or it won't be contiguous)
+        
+        if (segment.length === 2) {
+          line = `${segment[0].x},${segment[0].y} L${segment[1].x},${segment[1].y}`;
+        }
+        else if (segment.length > 2) {
+          const curve = this.CatmullRomChain(segment);
+          line = '' + curve.map(point => `${point.x},${point.y}`).join(' L');
+        }
+
+        if (line) {
+          d1.push('M' + line);
+          if (fill) { 
+            d2.push(`M ${first.x},${area.bottom} L ${first.x},${first.y}`);
+            d2.push('L' + line); 
+            d2.push(`L ${last.x},${area.bottom}`);
+          }
+        }
+
+      };
+
+      for (const point of points) {
+        if (!point) {
+          render_segment();
+          segment = [];
+        }
+        else {
+          segment.push(point);
+        }
+      }
+      // render?
+      if (segment.length) {
+        render_segment();
+      }
+    }
+
+    ///
+
+    /*
+
     for (let i = 0; i < points.length; i++) {
 
       const point = points[i];
@@ -658,6 +715,7 @@ export class ChartRenderer {
       d2.push(`L ${last_point.x},${area.bottom} Z`);
     }
 
+    */
 
     /*
 
@@ -691,9 +749,11 @@ export class ChartRenderer {
 
     */
 
+    /*
     if (fill && (typeof last_x !== 'undefined')) {
       d2.push(`L${last_x} ${area.bottom}Z`);
     }
+    */
 
     // fill first, under line
 
@@ -931,6 +991,137 @@ export class ChartRenderer {
 
   }
 
+  public MultiplyPoint(point: Point, scalar: number): Point {
+    return {
+      x: point.x * scalar,
+      y: point.y * scalar,
+    };
+  }
+
+  public AddPoints(a: Point, b: Point): Point {
+    return {
+      x: a.x + b.x,
+      y: a.y + b.y,
+    };
+  }
+
+  /**
+   * algo from
+   * https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline
+   */
+
+  public CatmullRomSpline(P: Point[], n: number): Point[] {
+
+    // Parametric constant: 0.5 for the centripetal spline, 
+    // 0.0 for the uniform spline, 1.0 for the chordal spline.
+    let alpha = .5; 
+
+    // Premultiplied power constant for the following tj() function.
+    alpha = alpha/2;
+    const tj = (ti: number, Pi: Point, Pj: Point) => {
+      const {x: xi, y: yi} = Pi
+      const {x: xj, y: yj} = Pj
+      return ((xj-xi)**2 + (yj-yi)**2)**alpha + ti;
+    };
+
+    const t0 = 0
+    const t1 = tj(t0, P[0], P[1]);
+    const t2 = tj(t1, P[1], P[2]);
+    const t3 = tj(t2, P[2], P[3]);
+
+    const step = (t2-t1) / n;
+
+    const points: Point[] = [];
+
+    for (let i = 0; i < n; i++){ 
+      const t = t1 + step * i;
+      
+      const A1 = this.AddPoints(
+        this.MultiplyPoint(P[0], (t1-t)/(t1-t0)),
+        this.MultiplyPoint(P[1], (t-t0)/(t1-t0)),
+      );
+
+      const A2 = this.AddPoints(
+        this.MultiplyPoint(P[1], (t2-t)/(t2-t1)),
+        this.MultiplyPoint(P[2], (t-t1)/(t2-t1)),
+      );
+
+      const A3 = this.AddPoints(
+        this.MultiplyPoint(P[2], (t3-t)/(t3-t2)),
+        this.MultiplyPoint(P[3], (t-t2)/(t3-t2)),
+      );
+
+      const B1 = this.AddPoints(
+        this.MultiplyPoint(A1, (t2-t)/(t2-t0)),
+        this.MultiplyPoint(A2, (t-t0)/(t2-t0)),
+      );
+
+      const B2 = this.AddPoints(
+        this.MultiplyPoint(A2, (t3-t)/(t3-t1)),
+        this.MultiplyPoint(A3, (t-t1)/(t3-t1)),
+      );
+
+      const C = this.AddPoints(
+        this.MultiplyPoint(B1, (t2-t)/(t2-t1)),
+        this.MultiplyPoint(B2, (t-t1)/(t2-t1)),
+      );
+
+      points.push(C);
+
+    }
+
+    return points;
+
+  }
+
+  /**
+   * NOTE: we are munging the point list here, so don't use it after
+   * calling this function or pass in a temp copy
+   */
+  public CatmullRomChain(points: Point[], n = 30): Point[] {
+
+    const result: Point[] = [];
+    const len = points.length;
+
+    if (len) {
+
+      // add two trailing points, extended linearly from existing segmnet
+
+      let dx = points[len-1].x - points[len-2].x;
+      let dy = points[len-1].y - points[len-2].y;
+
+      points.push({
+        x: points[len-1].x + dx,
+        y: points[len-1].y + dy,
+      });
+
+      points.push({
+        x: points[len-1].x + dx,
+        y: points[len-1].y + dy,
+      });
+
+      // some for the first point, in the other direction
+
+      dx = points[1].x - points[0].x;
+      dy = points[1].y - points[0].y;
+
+      points.unshift({
+        x: points[0].x - dx,
+        y: points[0].y - dy,
+      });
+
+      for (let i = 0; i < points.length - 4; i++) {
+        const subset = points.slice(i, i + 4);
+        const step = this.CatmullRomSpline(subset, n);
+        result.push(...step);
+      }
+
+    }
+
+    return result;
+
+  }
+
   public RenderScatterSeries(area: Area,
     x: Array<number | undefined>,
     y: Array<number | undefined>,
@@ -987,6 +1178,38 @@ export class ChartRenderer {
     if (lines) {
 
       if (smooth) {
+
+        // we need to split into segments in the event of missing data
+
+        let segment: Point[] = [];
+        const render_segment = () => {
+
+          // segments < 3 should be straight lines (or points)
+          if (segment.length === 2) {
+            d.push(`M${segment[0].x},${segment[0].y} L${segment[1].x},${segment[1].y}`);
+          }
+          else if (segment.length > 2) {
+            const curve = this.CatmullRomChain(segment);
+            d.push('M' + curve.map(point => `${point.x},${point.y}`).join(' L'));
+          }
+
+        };
+
+        for (const point of points) {
+          if (!point) {
+            render_segment();
+            segment = [];
+          }
+          else {
+            segment.push(point);
+          }
+        }
+        // render?
+        if (segment.length) {
+          render_segment();
+        }
+
+        /*
 
         // trailing point
         let last_point: Point | undefined;
@@ -1136,6 +1359,8 @@ export class ChartRenderer {
           last_point = point;
 
         }
+
+        */
 
       }
       else {
