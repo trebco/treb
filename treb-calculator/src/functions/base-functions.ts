@@ -520,6 +520,18 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    /*
+    Checkbox: {
+      arguments: [
+        {name: 'checked'},
+      ],
+      render: () => {
+        console.info("render checkbox");
+      },
+      fn: (checked: boolean) => checked,
+    },
+    */
+
     'Sparkline.Column': {
       arguments: [
         {name: 'data'}, 
