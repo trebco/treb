@@ -520,17 +520,52 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
-    /*
     Checkbox: {
       arguments: [
         {name: 'checked'},
       ],
-      render: () => {
-        console.info("render checkbox");
+      click: (options: any) => {
+        const cell = options.cell as Cell;
+        const result: {value?: string} = {};
+        if (cell) {
+          result.value = `=Checkbox(${cell.calculated ? 'FALSE' : 'TRUE'})`;
+        }
+        return result;
       },
-      fn: (checked: boolean) => checked,
+      render: (options: any) => {
+
+        const context = options.context as CanvasRenderingContext2D;
+        const width = options.width as number;
+        const height = options.height as number;
+        const cell = options.cell as Cell;
+
+        context.lineJoin = 'round';
+        context.lineCap = 'round';
+
+        const x = Math.round(width / 2 - 8);
+        const y = Math.round(height / 2 - 8);
+
+        if (cell && cell.calculated) {
+          context.lineWidth = 2;
+          context.fillStyle = '#444';
+          context.fillRect(x, y, 16, 16);
+          context.strokeStyle = '#fff';
+          context.beginPath();
+          context.moveTo(x + 3, y + 8);
+          context.lineTo(x + 6, y + 13);
+          context.lineTo(x + 13, y + 3);
+          context.stroke();
+        }
+        else {
+          context.lineWidth = 2;
+          context.strokeStyle = '#777';
+          context.strokeRect(x, y, 16, 16);
+        }
+
+
+      },
+      fn: (checked: boolean): boolean => !!checked,
     },
-    */
 
     'Sparkline.Column': {
       arguments: [

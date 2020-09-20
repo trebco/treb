@@ -16,6 +16,14 @@ export interface RenderFunctionOptions {
   cell: Cell;
 }
 
+export interface ClickFunctionOptions {
+  cell: Cell;
+}
+
+export interface ClickResult {
+  value?: CellValue;
+}
+
 /**
  * restructuring from the old system, which had lots of separate arrays for
  * things. for the most part I think having a single array (or object) with
@@ -239,6 +247,8 @@ export class Cell {
 
   public render_function?: (options: RenderFunctionOptions) => void;
 
+  public click_function?: (options: ClickFunctionOptions) => ClickResult;
+
   /** not editable */
   public locked?: boolean;
 
@@ -280,7 +290,13 @@ export class Cell {
 
   /** flush cached data: formatted and calculated */
   public FlushCache(): void{
-    this.calculated = this.calculated_type = this.formatted = this.rendered_type = undefined;
+    this.calculated 
+      = this.calculated_type 
+      = this.formatted 
+      = this.rendered_type 
+      = this.render_function
+      = this.click_function
+      = undefined;
     this.render_dirty = true;
   }
 
@@ -295,6 +311,8 @@ export class Cell {
       = this.calculated_type
       = this.area
       = this.renderer_data // keep here?
+      = this.render_function
+      = this.click_function
       = undefined;
     this.render_dirty = true;
   }
@@ -307,6 +325,8 @@ export class Cell {
       this.style =
       this.calculated =
       this.calculated_type =
+      this.render_function =
+      this.click_function =
       this.area = undefined;
     this.render_dirty = true;
   }

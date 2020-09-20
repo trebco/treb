@@ -3568,6 +3568,20 @@ export class Grid {
       nub_area = this.active_sheet.RealArea(selection.area);
     }
     else {
+
+      const cell = this.active_sheet.CellData(base_address);
+      if (cell.click_function) {
+        const result = cell.click_function.call(this, {cell});
+        if (result.value) {
+          this.ExecCommand({
+            key: CommandKey.SetRange,
+            value: result.value,
+            area: base_address,
+          });
+        }
+        console.info(result);
+      }
+
       this.Select(selection, new Area(base_address), base_address);
     }
 
@@ -5396,7 +5410,9 @@ export class Grid {
       }
 
       selection.area = new Area({ ...area.start, sheet_id: this.active_sheet.id }, area.end);
-      if (target) selection.target = { ...target, sheet_id: this.active_sheet.id };
+      if (target) {
+        selection.target = { ...target, sheet_id: this.active_sheet.id };
+      }
       selection.empty = false;
 
     }

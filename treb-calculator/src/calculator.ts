@@ -1233,7 +1233,7 @@ export class Calculator extends Graph {
 
             // this is for sparklines... right?
 
-            if (func && func.render) {
+            if (func && (func.render || func.click)) {
 
               // 'cell' here is not a reference to the actual cell (sadly)
               // maybe we should fix that...
@@ -1247,6 +1247,7 @@ export class Calculator extends Graph {
                     const cell2 = sheet.cells.GetCell(cell, false);
                     if (cell2) {
                       cell2.render_function = func.render;
+                      cell2.click_function = func.click;
                     }
                     break;
                   }
