@@ -36,6 +36,15 @@ const SetSVG = trident ? (node: SVGElement, svg: string) => {
 
 } : (node: SVGElement, svg: string) => node.innerHTML = svg;
 
+const SVGNode = (tag: string, attribute_map: {[index: string]: any} = {}, text?: string): SVGElement => {
+  const node = document.createElementNS(SVGNS, tag);
+  for (const key of Object.keys(attribute_map)) {
+    node.setAttribute(key, attribute_map[key].toString());
+  }
+  if (text) { node.textContent = text; }
+  return node;
+};
+
 /**
  * FIXME: normalize API, make canvas version
  */
@@ -53,7 +62,7 @@ export class ChartRenderer {
 
   // public smoothing_factor = 0.2;
 
-  public Initialize(node: HTMLElement) {
+  public Initialize(node: HTMLElement): void {
     this.parent = node;
     this.svg_node = document.createElementNS(SVGNS, 'svg');
     this.svg_node.setAttribute('class', 'treb-chart');
@@ -71,7 +80,7 @@ export class ChartRenderer {
     this.Resize();
   }
 
-  public Legend(options: LegendOptions) {
+  public Legend(options: LegendOptions): void {
     const group = document.createElementNS(SVGNS, 'g');
     this.group.appendChild(group);
 
@@ -213,16 +222,16 @@ export class ChartRenderer {
       options.area.bottom -= legend_size.height || 0;
     }
 
-    return legend_size;
+    // return legend_size;
 
   }
 
-  public Clear() {
+  public Clear(): void {
     this.axis_group = undefined;
     this.group.textContent = '';
   }
 
-  public Resize() {
+  public Resize(): void {
     const bounds = this.parent.getBoundingClientRect();
     this.svg_node.setAttribute('width', bounds.width.toString());
     this.svg_node.setAttribute('height', bounds.height.toString());
@@ -236,7 +245,7 @@ export class ChartRenderer {
    * initialize before render. this assumes that document layout/scroll
    * won't change during the render pass, so we can cache some values.
    */
-  public Prerender() {
+  public Prerender(): void {
     const bounds = this.svg_node.getBoundingClientRect();
     this.bounds.top = bounds.top;
     this.bounds.left = bounds.left;
@@ -358,7 +367,7 @@ export class ChartRenderer {
 
   }
 
-  public GetAxisNode() {
+  public GetAxisNode(): SVGElement {
     if (!this.axis_group) { 
       this.axis_group = document.createElementNS(SVGNS, 'g');
       this.axis_group.setAttribute('class', 'axis-group');
@@ -591,7 +600,7 @@ export class ChartRenderer {
     data: Array<number | undefined>,
     fill = false,
     titles?: string[],
-    classes?: string | string[]) {
+    classes?: string | string[]): void {
 
 
     // const node = document.createElementNS(SVGNS, 'path');
@@ -610,11 +619,6 @@ export class ChartRenderer {
       i: number;
     }> = [];
 
-    let move = true;
-    let last_x: number | undefined;
-
-    let last_point: Point | undefined;
-
     const points: Array<Point | undefined> = data.map((value, i) => {
       if (typeof value === 'undefined') {
         return undefined;
@@ -627,54 +631,54 @@ export class ChartRenderer {
 
     ///
 
-    {
-      // we need to split into segments in the event of missing data
+  
+    // we need to split into segments in the event of missing data
 
-      let segment: Point[] = [];
-      const render_segment = () => {
+    let segment: Point[] = [];
+    const render_segment = () => {
 
-        if (segment.length < 2){ return; }
+      if (segment.length < 2){ return; }
 
-        let line = '';
-        const first = segment[0];
-        const last = segment[segment.length-1];
+      let line = '';
+      const first = segment[0];
+      const last = segment[segment.length-1];
 
-        // note here we're not adding the leading M because for area,
-        // we want to use an L instead (or it won't be contiguous)
-        
-        if (segment.length === 2) {
-          line = `${segment[0].x},${segment[0].y} L${segment[1].x},${segment[1].y}`;
-        }
-        else if (segment.length > 2) {
-          const curve = this.CatmullRomChain(segment);
-          line = '' + curve.map(point => `${point.x},${point.y}`).join(' L');
-        }
+      // note here we're not adding the leading M because for area,
+      // we want to use an L instead (or it won't be contiguous)
+      
+      if (segment.length === 2) {
+        line = `${segment[0].x},${segment[0].y} L${segment[1].x},${segment[1].y}`;
+      }
+      else if (segment.length > 2) {
+        const curve = this.CatmullRomChain(segment);
+        line = '' + curve.map(point => `${point.x},${point.y}`).join(' L');
+      }
 
-        if (line) {
-          d1.push('M' + line);
-          if (fill) { 
-            d2.push(`M ${first.x},${area.bottom} L ${first.x},${first.y}`);
-            d2.push('L' + line); 
-            d2.push(`L ${last.x},${area.bottom}`);
-          }
-        }
-
-      };
-
-      for (const point of points) {
-        if (!point) {
-          render_segment();
-          segment = [];
-        }
-        else {
-          segment.push(point);
+      if (line) {
+        d1.push('M' + line);
+        if (fill) { 
+          d2.push(`M ${first.x},${area.bottom} L ${first.x},${first.y}`);
+          d2.push('L' + line); 
+          d2.push(`L ${last.x},${area.bottom}`);
         }
       }
-      // render?
-      if (segment.length) {
+
+    };
+
+    for (const point of points) {
+      if (!point) {
         render_segment();
+        segment = [];
+      }
+      else {
+        segment.push(point);
       }
     }
+    // render?
+    if (segment.length) {
+      render_segment();
+    }
+    
 
     ///
 
@@ -973,10 +977,10 @@ export class ChartRenderer {
 
   }
 
-  /**
+  /* *
    * return the intersection point of two lines (assuming 
    * infinite projection) or undefined if they are parallel
-   */
+   * /
   public LineIntersection(a1: Point, a2: Point, b1: Point, b2: Point): Point|undefined {
 
     const det = ((a1.x - a2.x) * (b1.y - b2.y) - (a1.y - a2.y) * (b1.x - b2.x));
@@ -990,6 +994,7 @@ export class ChartRenderer {
     return { x: a1.x + t * (a2.x - a1.x), y: a1.y + t * (a2.y - a1.y) };
 
   }
+  */
 
   public MultiplyPoint(point: Point, scalar: number): Point {
     return {
@@ -1122,6 +1127,58 @@ export class ChartRenderer {
 
   }
 
+  public RenderDataLabels(
+      area: Area,
+      x: Array<number | undefined>,
+      y: Array<number | undefined>,
+      x_scale: RangeScale,
+      y_scale: RangeScale,
+      data_labels: Array<string|undefined> ): void {
+
+    const label_group = SVGNode('g');
+    this.group.appendChild(label_group);
+
+    const count = Math.max(x.length, y.length);
+    const xrange = (x_scale.max - x_scale.min) || 1;
+    const yrange = (y_scale.max - y_scale.min) || 1;
+
+    for (let i = 0; i < count; i++) {
+
+      const a = x[i];
+      const b = y[i];
+
+      if (a !== undefined && b !== undefined) {
+        const point ={
+          x: area.left + ((a - x_scale.min) / xrange) * area.width,
+          y: area.bottom - ((b - y_scale.min) / yrange) * area.height,
+        };
+        const label = data_labels[i];
+        if (label) {
+
+          label_group.appendChild(SVGNode('circle', {class: 'label-target', cx: point.x, cy: point.y, r: 10 }));
+
+          const g = SVGNode('g', {class: 'data-label', transform: `translate(${point.x + 10},${point.y})`});
+          label_group.appendChild(g);
+
+          const text = SVGNode('text', {x: 4, y: 0}, label);
+          g.appendChild(text);
+          const bounds = text.getBoundingClientRect();
+          const h = bounds.height;
+          const w = bounds.width + 8;
+
+          if (w + 15 + point.x >= area.right) {
+            g.setAttribute('transform', `translate(${point.x - w - 15},${point.y})`)
+          }
+
+          const rect = SVGNode('path', {d:`M0,5 h${w} v-${h} h-${w} Z`});
+          g.insertBefore(rect, text);
+
+        }
+      }
+    }
+
+  }
+
   public RenderScatterSeries(area: Area,
     x: Array<number | undefined>,
     y: Array<number | undefined>,
@@ -1142,6 +1199,17 @@ export class ChartRenderer {
     const points: Array<Point | undefined> = [];
 
     const d: string[] = [];
+
+    const group = document.createElementNS(SVGNS, 'g');
+    if (typeof classes !== 'undefined') {
+      if (typeof classes === 'string') {
+        classes = [classes];
+      }
+      group.setAttribute('class', classes.join(' '));
+    }
+
+    // if (title) node.setAttribute('title', title);
+    this.group.appendChild(group);
 
     for (let i = 0; i < count; i++) {
 
@@ -1364,29 +1432,21 @@ export class ChartRenderer {
 
       }
       else {
-        let last_point = undefined;
+        let command = 'M';
         for (const point of points) {
           if (point) {
-            d.push(`${last_point ? 'L' : 'M'}${point.x},${point.y}`);
+            d.push(`${command}${point.x},${point.y}`);
+            command = 'L';
           }
-          last_point = point;
+          else {
+            command = 'M';
+          }
         }
       }
 
     }
 
-    const group = document.createElementNS(SVGNS, 'g');
     SetSVG(group, `<path d='${d.join(' ')}' class='line' />${marker_elements.join('')}`);
-
-    if (typeof classes !== 'undefined') {
-      if (typeof classes === 'string') {
-        classes = [classes];
-      }
-      group.setAttribute('class', classes.join(' '));
-    }
-
-    // if (title) node.setAttribute('title', title);
-    this.group.appendChild(group);
 
   }
 
@@ -1514,7 +1574,7 @@ export class ChartRenderer {
     inner_radius: number,
     bounds_area: Area,
     callouts: boolean,
-    classes?: string | string[]) {
+    classes?: string | string[]): void {
 
     let start_angle = -Math.PI / 2; // start at 12:00
     let end_angle = 0;
@@ -1529,6 +1589,13 @@ export class ChartRenderer {
 
     const donut = document.createElementNS(SVGNS, 'g');
 
+    const PointOnCircle = (center: Point, radius: number, angle: number) => {
+      return [
+        Math.cos(angle) * radius + center.x,
+        Math.sin(angle) * radius + center.y,
+      ];
+    };
+  
     for (const slice of slices) {
 
       const title = slice.title || '';
@@ -1541,6 +1608,9 @@ export class ChartRenderer {
 
       let half_angle = 0;
 
+      const outer = PointOnCircle.bind(0, center, outer_radius);
+      const inner = PointOnCircle.bind(0, center, inner_radius);
+
       if (value > 0.5) {
         // split into two segments
 
@@ -1550,16 +1620,12 @@ export class ChartRenderer {
         const delta1 = half_angle - start_angle;
         const delta2 = end_angle - half_angle;
 
-        d.push(`M${this.PointOnCircle(start_angle, center, outer_radius)}`);
-        d.push(`A${outer_radius},${outer_radius},${delta1},0,1,`
-          + `${this.PointOnCircle(half_angle, center, outer_radius)}`);
-        d.push(`A${outer_radius},${outer_radius},${delta2},0,1,`
-          + `${this.PointOnCircle(end_angle, center, outer_radius)}`);
-        d.push(`L${this.PointOnCircle(end_angle, center, inner_radius)}`)
-        d.push(`A${inner_radius},${inner_radius},${delta2},0,0,`
-          + `${this.PointOnCircle(half_angle, center, inner_radius)}`);
-        d.push(`A${inner_radius},${inner_radius},${delta1},0,0,`
-          + `${this.PointOnCircle(start_angle, center, inner_radius)}`);
+        d.push(`M${outer(start_angle)}`);
+        d.push(`A${outer_radius},${outer_radius},${delta1},0,1,${outer(half_angle)}`);
+        d.push(`A${outer_radius},${outer_radius},${delta2},0,1,${outer(end_angle)}`);
+        d.push(`L${inner(end_angle)}`)
+        d.push(`A${inner_radius},${inner_radius},${delta2},0,0,${inner(half_angle)}`);
+        d.push(`A${inner_radius},${inner_radius},${delta1},0,0,${inner(start_angle)}`);
         d.push('Z');
 
       }
@@ -1569,12 +1635,10 @@ export class ChartRenderer {
         half_angle = (end_angle - start_angle) / 2 + start_angle;
 
         const delta = end_angle - start_angle;
-        d.push(`M${this.PointOnCircle(start_angle, center, outer_radius)}`);
-        d.push(`A${outer_radius},${outer_radius},${delta},0,1,`
-          + `${this.PointOnCircle(end_angle, center, outer_radius)}`);
-        d.push(`L${this.PointOnCircle(end_angle, center, inner_radius)}`)
-        d.push(`A${inner_radius},${inner_radius},${delta},0,0,`
-          + `${this.PointOnCircle(start_angle, center, inner_radius)}`);
+        d.push(`M${outer(start_angle)}`);
+        d.push(`A${outer_radius},${outer_radius},${delta},0,1,${outer(end_angle)}`);
+        d.push(`L${inner(end_angle)}`);
+        d.push(`A${inner_radius},${inner_radius},${delta},0,0,${inner(start_angle)}`);
         d.push('Z');
 
       }
@@ -1611,11 +1675,12 @@ export class ChartRenderer {
         const length = outer_radius - inner_radius;
         d = [];
 
-        const anchor = this.PointOnCircle(half_angle, center,
-          inner_radius + (outer_radius - inner_radius) / 2 + length);
+        const anchor = PointOnCircle(center,
+          inner_radius + (outer_radius - inner_radius) / 2 + length, half_angle);
 
-        d.push(`M${this.PointOnCircle(half_angle, center, inner_radius + (outer_radius - inner_radius) / 2)}`);
+        d.push(`M${PointOnCircle(center, inner_radius + (outer_radius - inner_radius) / 2, half_angle)}`);
         d.push(`L${anchor}`);
+
         callout.setAttribute('d', d.join(' '));
         callout.setAttribute('class', 'callout');
         donut.appendChild(callout);
@@ -1745,11 +1810,12 @@ export class ChartRenderer {
 
   }
 
+  /*
   protected PointOnCircle(angle: number, center: Point, radius: number) {
     return [
       Math.cos(angle) * radius + center.x,
       Math.sin(angle) * radius + center.y,
     ];
   }
-
+  */
 }

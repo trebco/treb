@@ -83,6 +83,31 @@ $font-stack:  "-apple-system",
     stroke: #ddd;
   }
 
+  /* mouse elements */
+  .label-target {
+    stroke: none;
+    fill: transparent;
+  }
+
+  .data-label {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s ease-in-out;
+
+    & text {
+      fill: #fff;
+    }
+
+    & path {
+      fill: #000;
+    }
+
+  }
+
+  .label-target:hover + .data-label {
+    opacity: 1;
+  }
+
   /* old type of line chart */
   .chart-line {
     stroke: currentColor;

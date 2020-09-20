@@ -156,7 +156,9 @@ export class Chart {
       const flat = Util.Flatten(data[2]);
       series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
       if (flat[0].format) {
-        series.y.format = flat[0].format;
+        series.y.format = flat[0].format as string;
+        const format = NumberFormatCache.Get(series.y.format);
+        series.y.labels = series.y.data.map(value => (value === undefined) ? undefined : format.Format(value));
       }
     }
 
@@ -419,6 +421,7 @@ export class Chart {
       const options = args[2].toString();
       this.chart_data.markers = /marker/i.test(options);
       this.chart_data.smooth = /smooth/i.test(options);
+      this.chart_data.data_labels = /labels/i.test(options);
     }
 
   }
@@ -1002,6 +1005,17 @@ export class Chart {
               !!this.chart_data.markers,
               !!this.chart_data.smooth,
               `scatter-plot series-${i + 1}`);
+        }
+        if (this.chart_data.data_labels) {
+          for (let i = 0; i < this.chart_data.series.length; i++) {
+            const series = this.chart_data.series[i];
+            if (series.y.labels) {
+              this.renderer.RenderDataLabels(
+                  area, series.x.data, series.y.data, 
+                  this.chart_data.x_scale, this.chart_data.y_scale, 
+                  series.y.labels);
+            }
+          }
         }
       }
       break;

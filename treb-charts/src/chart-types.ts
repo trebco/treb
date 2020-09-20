@@ -56,6 +56,7 @@ export interface ChartDataBaseType {
   lines?: boolean;
   markers?: boolean;
   smooth?: boolean;
+  data_labels?: boolean;
 
 }
 
@@ -186,6 +187,7 @@ export interface SubSeries {
   data: Array<number|undefined>;
   format?: string;
   range?: { min: number, max: number };
+  labels?: Array<string|undefined>;
 }
 
 export interface SeriesType {
