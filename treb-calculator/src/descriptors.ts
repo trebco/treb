@@ -1,8 +1,6 @@
 
 // FIXME: at least some of this could move to base types
 
-import { CellValue } from 'treb-base-types/src';
-
 export enum ReturnType {
   value, reference
 }
@@ -95,7 +93,7 @@ export interface CompositeFunctionDescriptor {
    */
   render?: (options: any) => void;
 
-  click?: (options: any) => {value?: CellValue};
+  click?: (options: any) => {value?: any };
 
   /**
    * the actual function. if this is an object member and needs access
