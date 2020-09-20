@@ -10,6 +10,7 @@ export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResul
       x: Math.round(width / 2 - 8),
       y: Math.round(height / 2 - 8),
     };
+
     if (x >= box.x && x <= box.x + 16 && y >= box.y && y <= box.y + 16) {
       result.value = `=Checkbox(${cell.calculated ? 'FALSE' : 'TRUE'})`;
       result.block_selection = true;

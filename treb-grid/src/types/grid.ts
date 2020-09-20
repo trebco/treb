@@ -3577,10 +3577,20 @@ export class Grid {
     }
     else {
 
-      const cell = this.active_sheet.CellData(base_address);
+      let address = base_address;
+      let cell = this.active_sheet.CellData(address);
+      if (cell.merge_area) {
+        address = cell.merge_area.start;
+        cell = this.active_sheet.CellData(cell.merge_area.start);
+      }
+
       if (cell.click_function) {
 
-        const rectangle = this.layout.CellAddressToRectangle(base_address);
+        let rectangle = this.layout.CellAddressToRectangle(address);
+        if (cell.merge_area) {
+          rectangle = rectangle.Combine(
+            this.layout.CellAddressToRectangle(cell.merge_area.end));
+        }
 
         const result = cell.click_function.call(this, {
           cell,
@@ -3594,7 +3604,7 @@ export class Grid {
           this.ExecCommand({
             key: CommandKey.SetRange,
             value: result.value,
-            area: base_address,
+            area: address,
           });
         }
 
@@ -6964,7 +6974,7 @@ export class Grid {
 
     }
 
-    // originall we called sheet methods here, but all the sheet
+    // originally we called sheet methods here, but all the sheet
     // does is call methods on the cells object -- we can shortcut.
 
     // is that a good idea? (...)

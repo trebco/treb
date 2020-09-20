@@ -1,7 +1,7 @@
 
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ReferenceError, NotImplError, ValueError } from '../function-error';
+import { ReferenceError, NotImplError, ValueError, ArgumentError } from '../function-error';
 import { Cell, ClickFunctionOptions, ClickFunctionResult } from 'treb-base-types';
 import { Sparkline } from 'treb-sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
@@ -201,6 +201,19 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
         return result;
       },
+    },
+
+    Not: {
+      fn: (...args: any[]) => {
+        if (args.length === 0) {
+          return ArgumentError;
+        }
+        if (args.length === 1) {
+          return !args[0];
+        }
+        console.info(args);
+        return true;
+      }
     },
 
     /**
