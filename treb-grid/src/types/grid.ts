@@ -3610,6 +3610,17 @@ export class Grid {
 
         if (result.block_selection) {
           this.ClearDoubleClick();
+
+          // special case
+          if (!this.primary_selection.empty && 
+              this.primary_selection.target.row === address.row &&
+              this.primary_selection.target.column === address.column) {
+
+            // update formula bar formula
+            this.UpdateFormulaBarFormula();
+
+          }
+
           return;
         }
       }
