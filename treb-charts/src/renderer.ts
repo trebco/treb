@@ -12,8 +12,9 @@ export interface Metrics {
 }
 
 const trident = /trident/i.test(navigator?.userAgent || '');
-let dom_parser: DOMParser | undefined;
 
+/*
+let dom_parser: DOMParser | undefined;
 const SetSVG = trident ? (node: SVGElement, svg: string) => {
 
   if (!dom_parser) {
@@ -35,11 +36,15 @@ const SetSVG = trident ? (node: SVGElement, svg: string) => {
   }
 
 } : (node: SVGElement, svg: string) => node.innerHTML = svg;
+*/
 
 const SVGNode = (tag: string, attribute_map: {[index: string]: any} = {}, text?: string): SVGElement => {
   const node = document.createElementNS(SVGNS, tag);
   for (const key of Object.keys(attribute_map)) {
-    node.setAttribute(key, attribute_map[key].toString());
+    if (attribute_map[key] !== undefined) {
+      const value = attribute_map[key];
+      node.setAttribute(key, Array.isArray(value) ? value.join(' ') : value.toString());
+    }
   }
   if (text) { node.textContent = text; }
   return node;
@@ -64,12 +69,11 @@ export class ChartRenderer {
 
   public Initialize(node: HTMLElement): void {
     this.parent = node;
-    this.svg_node = document.createElementNS(SVGNS, 'svg');
-    this.svg_node.setAttribute('class', 'treb-chart');
-    this.svg_node.style.overflow = 'hidden';
-    this.svg_node.style.position = 'relative';
-    this.svg_node.style.width = '100%';
-    this.svg_node.style.height = '100%';
+
+    this.svg_node = SVGNode('svg', {
+      class: 'treb-chart',
+      style: 'overflow: hidden; position: relative; width: 100%; height: 100%;'
+    });
 
     this.group = document.createElementNS(SVGNS, 'g');
     this.svg_node.appendChild(this.group);
@@ -81,10 +85,10 @@ export class ChartRenderer {
   }
 
   public Legend(options: LegendOptions): void {
-    const group = document.createElementNS(SVGNS, 'g');
+    const group = SVGNode('g');
     this.group.appendChild(group);
 
-    const measure = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    const measure = SVGNode('text');
     group.appendChild(measure);
 
     // IE says no
@@ -139,11 +143,9 @@ export class ChartRenderer {
       return text_metrics;
     });
 
+    measure.parentElement?.removeChild(measure);
+
     let y = max_height;
-
-    const entries: string[] = [];
-    // const nodes: SVGElement[] = [];
-
 
     let layout = options.layout || LegendLayout.horizontal;
     if (layout === LegendLayout.horizontal && rows.every(row => row.length <= 1)) {
@@ -167,15 +169,18 @@ export class ChartRenderer {
 
         const marker_y = y - 1; // Math.round(y + text_metrrics.height / 2);
 
-        const trident_offset = trident ? `dy='.3em'` : '';
+        // NOTE: trident offset is inlined here
 
-        entries.push(`<text dominant-baseline="middle" ${trident_offset} x='${x + marker_width}' y='${y}'>${label}</text>`);
+        group.appendChild(SVGNode('text', {
+          'dominant-baseline': 'middle', x: x + marker_width, y, dy: (trident ? '.3em' : undefined) }, label));
 
         if (options.style === LegendStyle.marker) {
-          entries.push(`<rect class='series-${index + 1}' x='${x}' y='${marker_y - 4}' width='8' height='8' />`)
+          group.appendChild(SVGNode('rect', { 
+            class: `series-${index + 1}`, x, y: marker_y - 4, width: 8, height: 8 }));
         }
         else {
-          entries.push(`<rect class='series-${index + 1}' x='${x}' y='${marker_y - 1}' width='${marker_width - 3}' height='2'/>`)
+          group.appendChild(SVGNode('rect', { 
+            class: `series-${index + 1}`, x, y: marker_y - 1, width: marker_width - 3, height: 2}));
         }
 
         h = Math.max(h, text_metrrics.height);
@@ -185,8 +190,6 @@ export class ChartRenderer {
 
       y = Math.round(y + h * 1.1);
     }
-
-    SetSVG(group, entries.join(''));
 
     const rect = group.getBoundingClientRect();
     const legend_size = { width: rect.width, height: rect.height + max_height };
@@ -268,11 +271,11 @@ export class ChartRenderer {
       margin: number,
       layout: 'top'|'bottom'): void {
 
-    const text = document.createElementNS(SVGNS, 'text');
-    text.setAttribute('class', 'chart-title');
-    text.textContent = title;
-    text.style.textAnchor = 'middle';
-    text.setAttribute('x', Math.round(area.width / 2).toString());
+    const text = SVGNode('text', {
+      class: 'chart-title', 
+      x: Math.round(area.width / 2), 
+      style: 'text-anchor: middle',
+    }, title);
 
     this.group.appendChild(text);
     const bounds = text.getBoundingClientRect();
@@ -305,9 +308,7 @@ export class ChartRenderer {
   public MeasureText(label: string, classes?: string | string[], ceil = false): Metrics {
 
     if (!this.text_measurement_node) {
-      this.text_measurement_node = document.createElementNS(SVGNS, 'text');
-      this.text_measurement_node.setAttribute('x', '-100px');
-      this.text_measurement_node.setAttribute('y', '-100px');
+      this.text_measurement_node = SVGNode('text', { x: '-100px', y: '-100px' }) as SVGTextElement;
       this.svg_node.appendChild(this.text_measurement_node);
     }
 
@@ -345,7 +346,6 @@ export class ChartRenderer {
   public RenderTicks(area: Area,
     top: number, bottom: number, count: number, classes?: string | string[]) {
 
-    const node = document.createElementNS(SVGNS, 'path');
     const d: string[] = [];
 
     const step = area.width / (count);
@@ -354,23 +354,13 @@ export class ChartRenderer {
       d.push(`M${center} ${top} L${center} ${bottom}`);
     }
 
-    node.setAttribute('d', d.join(' '));
-
-    if (typeof classes !== 'undefined') {
-      if (typeof classes === 'string') {
-        classes = [classes];
-      }
-      node.setAttribute('class', classes.join(' '));
-    }
-
-    this.group.appendChild(node);
+    this.group.appendChild(SVGNode('path', {d, class: classes}));
 
   }
 
   public GetAxisNode(): SVGElement {
     if (!this.axis_group) { 
-      this.axis_group = document.createElementNS(SVGNS, 'g');
-      this.axis_group.setAttribute('class', 'axis-group');
+      this.axis_group = SVGNode('g', {class: 'axis-group'});
       this.group.appendChild(this.axis_group);
     }
     return this.axis_group; 
@@ -382,7 +372,7 @@ export class ChartRenderer {
     offset: boolean,
     labels: string[],
     metrics: Metrics[],
-    classes?: string | string[]) {
+    classes?: string | string[]): void {
 
     const count = labels.length;
     if (!count) return;
@@ -433,7 +423,7 @@ export class ChartRenderer {
     offset: boolean,
     labels: string[],
     metrics: Metrics[],
-    classes?: string | string[]) {
+    classes?: string | string[]): void {
 
     const count = labels.length;
     if (!count) return;
@@ -604,7 +594,7 @@ export class ChartRenderer {
 
 
     // const node = document.createElementNS(SVGNS, 'path');
-    const group = document.createElementNS(SVGNS, 'g');
+    const group = SVGNode('g');
 
     const d1: string[] = [];
     const d2: string[] = [];
@@ -759,21 +749,13 @@ export class ChartRenderer {
     }
     */
 
-    // fill first, under line
-
+    // fill first, underneath
     if (fill) {
-      const p2 = document.createElementNS(SVGNS, 'path');
-      p2.setAttribute('d', d2.join(' '));
-      p2.setAttribute('class', 'fill');
-      group.appendChild(p2);
+      group.appendChild(SVGNode('path', { class: 'fill', d: d2 }));
     }
 
     // then line
-
-    const p1 = document.createElementNS(SVGNS, 'path');
-    p1.setAttribute('d', d1.join(' '));
-    p1.setAttribute('class', 'line');
-    group.appendChild(p1);
+    group.appendChild(SVGNode('path', { class: 'line', d: d1 }));
 
     if (typeof classes !== 'undefined') {
       if (typeof classes === 'string') {
@@ -789,10 +771,8 @@ export class ChartRenderer {
     if (titles && circles.length) {
       const circle_group = document.createElementNS(SVGNS, 'g');
       for (const circle of circles) {
-        const shape = document.createElementNS(SVGNS, 'circle');
-        shape.setAttribute('cx', circle.x.toString());
-        shape.setAttribute('cy', circle.y.toString());
-        shape.setAttribute('r', (step).toString());
+
+        const shape = SVGNode('circle', {cx: circle.x, cy: circle.y, r: step});
 
         shape.addEventListener('mouseenter', (event) => {
           this.parent.setAttribute('title', titles[circle.i] || '');
@@ -868,21 +848,13 @@ export class ChartRenderer {
       d2.push(`L${last_x} ${area.bottom}Z`);
     }
 
-    // fill first, under line
-
+    // fill first, underneath
     if (fill) {
-      const p2 = document.createElementNS(SVGNS, 'path');
-      p2.setAttribute('d', d2.join(' '));
-      p2.setAttribute('class', 'fill');
-      group.appendChild(p2);
+      group.appendChild(SVGNode('path', { class: 'fill', d: d2 }));
     }
 
     // then line
-
-    const p1 = document.createElementNS(SVGNS, 'path');
-    p1.setAttribute('d', d1.join(' '));
-    p1.setAttribute('class', 'line');
-    group.appendChild(p1);
+    group.appendChild(SVGNode('path', { class: 'line', d: d1 }));
 
     if (typeof classes !== 'undefined') {
       if (typeof classes === 'string') {
@@ -898,10 +870,15 @@ export class ChartRenderer {
     if (titles && circles.length) {
       const circle_group = document.createElementNS(SVGNS, 'g');
       for (const circle of circles) {
+
+        const shape = SVGNode('circle', { cx: circle.x, cy: circle.y, r: step });
+
+        /*
         const shape = document.createElementNS(SVGNS, 'circle');
         shape.setAttribute('cx', circle.x.toString());
         shape.setAttribute('cy', circle.y.toString());
         shape.setAttribute('r', (step).toString());
+        */
 
         shape.addEventListener('mouseenter', (event) => {
           this.parent.setAttribute('title', titles[circle.i] || '');
@@ -923,9 +900,8 @@ export class ChartRenderer {
    * the other RenderGrid function has semantics specifically for area/line.
    * rather than try to shoehorn this in we'll use a different method.
    */
-  public RenderBarGrid(area: Area, x_count: number, classes?: string | string[]) {
+  public RenderBarGrid(area: Area, x_count: number, classes?: string | string[]): void {
 
-    const node = document.createElementNS(SVGNS, 'path');
     const d: string[] = [];
 
     const step = area.width / (x_count);
@@ -934,22 +910,12 @@ export class ChartRenderer {
       d.push(`M${x} ${area.top} L${x} ${area.bottom}`);
     }
 
-    node.setAttribute('d', d.join(' '));
-
-    if (typeof classes !== 'undefined') {
-      if (typeof classes === 'string') {
-        classes = [classes];
-      }
-      node.setAttribute('class', classes.join(' '));
-    }
-
-    this.group.appendChild(node);
+    this.group.appendChild(SVGNode('path', { d, class: classes }));
 
   }
 
-  public RenderGrid(area: Area, y_count: number, x_count = 0, classes?: string | string[]) {
+  public RenderGrid(area: Area, y_count: number, x_count = 0, classes?: string | string[]): void {
 
-    const node = document.createElementNS(SVGNS, 'path');
     const d: string[] = [];
 
     let step = area.height / y_count;
@@ -964,16 +930,7 @@ export class ChartRenderer {
       d.push(`M${x} ${area.top} L${x} ${area.bottom}`);
     }
 
-    node.setAttribute('d', d.join(' '));
-
-    if (typeof classes !== 'undefined') {
-      if (typeof classes === 'string') {
-        classes = [classes];
-      }
-      node.setAttribute('class', classes.join(' '));
-    }
-
-    this.group.appendChild(node);
+    this.group.appendChild(SVGNode('path', {d, class: classes}));
 
   }
 
@@ -1133,7 +1090,8 @@ export class ChartRenderer {
       y: Array<number | undefined>,
       x_scale: RangeScale,
       y_scale: RangeScale,
-      data_labels: Array<string|undefined> ): void {
+      data_labels: Array<string|undefined>,
+      series_index: number ): void {
 
     const label_group = SVGNode('g');
     this.group.appendChild(label_group);
@@ -1160,6 +1118,11 @@ export class ChartRenderer {
           const g = SVGNode('g', {class: 'data-label', transform: `translate(${point.x + 10},${point.y})`});
           label_group.appendChild(g);
 
+          const circle = SVGNode('circle', {
+            cx: -10, y: 0, r: 5, class: `marker-highlight series-${series_index}`
+          });
+          g.appendChild(circle);
+
           const text = SVGNode('text', {x: 4, y: 0}, label);
           g.appendChild(text);
           const bounds = text.getBoundingClientRect();
@@ -1168,6 +1131,7 @@ export class ChartRenderer {
 
           if (w + 15 + point.x >= area.right) {
             g.setAttribute('transform', `translate(${point.x - w - 15},${point.y})`)
+            circle.setAttribute('cx', (w + 15).toString());
           }
 
           const rect = SVGNode('path', {d:`M0,5 h${w} v-${h} h-${w} Z`});
@@ -1195,11 +1159,12 @@ export class ChartRenderer {
     const xrange = (x_scale.max - x_scale.min) || 1;
     const yrange = (y_scale.max - y_scale.min) || 1;
 
-    const marker_elements: string[] = [];
+    // const marker_elements: string[] = [];
     const points: Array<Point | undefined> = [];
 
     const d: string[] = [];
 
+    /*
     const group = document.createElementNS(SVGNS, 'g');
     if (typeof classes !== 'undefined') {
       if (typeof classes === 'string') {
@@ -1207,6 +1172,8 @@ export class ChartRenderer {
       }
       group.setAttribute('class', classes.join(' '));
     }
+    */
+    const group = SVGNode('g', {class: classes});
 
     // if (title) node.setAttribute('title', title);
     this.group.appendChild(group);
@@ -1230,6 +1197,7 @@ export class ChartRenderer {
 
     // FIXME: merge loops, if possible
 
+    /*
     if (markers) {
       for (const point of points) {
         if (point) {
@@ -1237,11 +1205,12 @@ export class ChartRenderer {
           // if we can't use CSS to update the path (except in chrome)
           // then it's probably not worth it... leave it for now
           
-          marker_elements.push(`<path d='M0,-1.5 a1.5,1.5,0,1,1,0,3 a1.5,1.5,0,1,1,0,-3' transform='translate(${point.x},${point.y})' class='marker'/>`);
+          // marker_elements.push(`<path d='M0,-1.5 a1.5,1.5,0,1,1,0,3 a1.5,1.5,0,1,1,0,-3' transform='translate(${point.x},${point.y})' class='marker'/>`);
 
         }
       }
     }
+    */
 
     if (lines) {
 
@@ -1446,14 +1415,32 @@ export class ChartRenderer {
 
     }
 
-    SetSVG(group, `<path d='${d.join(' ')}' class='line' />${marker_elements.join('')}`);
+    // FIXME: optional
+    group.appendChild(SVGNode('path', {d, class: 'line'}));
+
+    if (markers) {
+      for (const point of points) {
+        if (point) {
+          group.appendChild(SVGNode('circle', {cx: point.x, cy: point.y, r: 3, class: 'marker'}));
+
+          // if we can't use CSS to update the path (except in chrome)
+          // then it's probably not worth it... leave it for now
+          
+          // marker_elements.push(`<path d='M0,-1.5 a1.5,1.5,0,1,1,0,3 a1.5,1.5,0,1,1,0,-3' transform='translate(${point.x},${point.y})' class='marker'/>`);
+
+        }
+      }
+    }
+
+
+    // SetSVG(group, `<path d='${d.join(' ')}' class='line' />${marker_elements.join('')}`);
 
   }
 
 
   public RenderPoints(area: Area, x: number[], y: number[], classes?: string | string[]) {
 
-    const node = document.createElementNS(SVGNS, 'path');
+    // const node = document.createElementNS(SVGNS, 'path');
     const d: string[] = [];
 
     for (let i = 0; i < x.length; i++) {
@@ -1463,53 +1450,22 @@ export class ChartRenderer {
       d.push(`M${px - 1},${py + 1} L${px + 1},${py - 1}`);
     }
 
-    // console.info(d);
-    node.setAttribute('d', d.join(' '));
-
-    if (typeof classes !== 'undefined') {
-      if (typeof classes === 'string') {
-        classes = [classes];
-      }
-      node.setAttribute('class', classes.join(' '));
-    }
-
-    // if (title) node.setAttribute('title', title);
-    this.group.appendChild(node);
+    this.group.appendChild(SVGNode('path', {d, class: classes}));
 
   }
 
-  public RenderPoint(x: number, y: number, classes?: string | string[]) {
-
-    const node = document.createElementNS(SVGNS, 'circle');
-    node.setAttribute('cx', x.toString());
-    node.setAttribute('cy', y.toString());
-    node.setAttribute('r', '1');
-
-    if (typeof classes !== 'undefined') {
-      if (typeof classes === 'string') {
-        classes = [classes];
-      }
-      node.setAttribute('class', classes.join(' '));
-    }
-
-    // if (title) node.setAttribute('title', title);
-    this.group.appendChild(node);
+  public RenderPoint(cx: number, cy: number, classes?: string | string[]): void {
+    this.group.appendChild(SVGNode('circle', {cx, cy, r: 1, class: classes}));
   }
 
   public RenderRectangle(area: Area, classes?: string | string[], title?: string) {
 
-    const node = document.createElementNS(SVGNS, 'rect');
-    node.setAttribute('x', area.left.toString());
-    node.setAttribute('y', area.top.toString());
-    node.setAttribute('width', area.width.toString());
-    node.setAttribute('height', area.height.toString());
-
-    if (typeof classes !== 'undefined') {
-      if (typeof classes === 'string') {
-        classes = [classes];
-      }
-      node.setAttribute('class', classes.join(' '));
-    }
+    const node = SVGNode('rect', {
+      x: area.left, 
+      y: area.top, 
+      width: area.width, 
+      height: area.height,
+      class: classes });
 
     if (title) {
       node.addEventListener('mouseenter', (event) => {
@@ -1519,6 +1475,7 @@ export class ChartRenderer {
         this.parent.setAttribute('title', '');
       });
     }
+
     this.group.appendChild(node);
   }
 
@@ -1530,10 +1487,9 @@ export class ChartRenderer {
       text: string, 
       align: 'center' | 'left' | 'right', 
       point: Point, 
-      classes?: string | string[]) {
+      classes?: string | string[]): void {
 
-    const node = document.createElementNS(SVGNS, 'text');
-    node.textContent = text;
+    const node = SVGNode('text', {x: point.x, y: point.y, class: classes}, text);
 
     switch (align) {
       case 'right':
@@ -1548,16 +1504,6 @@ export class ChartRenderer {
         node.style.textAnchor = 'start';
         break;
     }
-
-    if (typeof classes !== 'undefined') {
-      if (typeof classes === 'string') {
-        classes = [classes];
-      }
-      node.setAttribute('class', classes.join(' '));
-    }
-
-    node.setAttribute('x', point.x.toString());
-    node.setAttribute('y', point.y.toString());
 
     (target||this.group).appendChild(node);
 
@@ -1584,11 +1530,6 @@ export class ChartRenderer {
       inner_radius *= .7;
     }
 
-    // we're creating a containing group so that we can nth-child the slices,
-    // otherwise they'll be in the same group as the title
-
-    const donut = document.createElementNS(SVGNS, 'g');
-
     const PointOnCircle = (center: Point, radius: number, angle: number) => {
       return [
         Math.cos(angle) * radius + center.x,
@@ -1603,7 +1544,6 @@ export class ChartRenderer {
       const value = slice.percent;
       const index = slice.index;
 
-      const node = document.createElementNS(SVGNS, 'path');
       let d: string[] = [];
 
       let half_angle = 0;
@@ -1620,13 +1560,14 @@ export class ChartRenderer {
         const delta1 = half_angle - start_angle;
         const delta2 = end_angle - half_angle;
 
-        d.push(`M${outer(start_angle)}`);
-        d.push(`A${outer_radius},${outer_radius},${delta1},0,1,${outer(half_angle)}`);
-        d.push(`A${outer_radius},${outer_radius},${delta2},0,1,${outer(end_angle)}`);
-        d.push(`L${inner(end_angle)}`)
-        d.push(`A${inner_radius},${inner_radius},${delta2},0,0,${inner(half_angle)}`);
-        d.push(`A${inner_radius},${inner_radius},${delta1},0,0,${inner(start_angle)}`);
-        d.push('Z');
+        d.push(
+          `M${outer(start_angle)}`,
+          `A${outer_radius},${outer_radius},${delta1},0,1,${outer(half_angle)}`,
+          `A${outer_radius},${outer_radius},${delta2},0,1,${outer(end_angle)}`,
+          `L${inner(end_angle)}`,
+          `A${inner_radius},${inner_radius},${delta2},0,0,${inner(half_angle)}`,
+          `A${inner_radius},${inner_radius},${delta1},0,0,${inner(start_angle)}`,
+          'Z');
 
       }
       else {
@@ -1635,18 +1576,18 @@ export class ChartRenderer {
         half_angle = (end_angle - start_angle) / 2 + start_angle;
 
         const delta = end_angle - start_angle;
-        d.push(`M${outer(start_angle)}`);
-        d.push(`A${outer_radius},${outer_radius},${delta},0,1,${outer(end_angle)}`);
-        d.push(`L${inner(end_angle)}`);
-        d.push(`A${inner_radius},${inner_radius},${delta},0,0,${inner(start_angle)}`);
-        d.push('Z');
+        d.push(
+          `M${outer(start_angle)}`,
+          `A${outer_radius},${outer_radius},${delta},0,1,${outer(end_angle)}`,
+          `L${inner(end_angle)}`,
+          `A${inner_radius},${inner_radius},${delta},0,0,${inner(start_angle)}`,
+          'Z');
 
       }
 
-      node.setAttribute('d', d.join(' '));
-      if (typeof index !== 'undefined') {
-        node.setAttribute('class', `series-${index}`);
-      }
+      const node = SVGNode('path', {
+        d, class: (typeof index === 'undefined' ? undefined : `series-${index}`) 
+      });
 
       /*
       if (title) {
@@ -1659,19 +1600,16 @@ export class ChartRenderer {
       }
       */
 
-      donut.appendChild(node);
+      // we're creating a containing group so that we can nth-child the slices,
+      // otherwise they'll be in the same group as the title
 
-      if (typeof classes !== 'undefined') {
-        if (typeof classes === 'string') {
-          classes = [classes];
-        }
-        donut.setAttribute('class', classes.join(' '));
-      }
+      const donut = SVGNode('g', {class: classes});
+
+      donut.appendChild(node);
       this.group.appendChild(donut);
 
       if (/*callouts &&*/ value >= .05 && title) {
 
-        const callout = document.createElementNS(SVGNS, 'path');
         const length = outer_radius - inner_radius;
         d = [];
 
@@ -1681,13 +1619,16 @@ export class ChartRenderer {
         d.push(`M${PointOnCircle(center, inner_radius + (outer_radius - inner_radius) / 2, half_angle)}`);
         d.push(`L${anchor}`);
 
+        /*
+        const callout = document.createElementNS(SVGNS, 'path');
         callout.setAttribute('d', d.join(' '));
         callout.setAttribute('class', 'callout');
         donut.appendChild(callout);
+        */
+        donut.appendChild(SVGNode('path', { d, class: 'callout' }));
 
         const text_parts: string[] = [];
-        const callout_label = document.createElementNS(SVGNS, 'text');
-        callout_label.setAttribute('class', 'callout-label');
+        const callout_label = SVGNode('text', {class: 'callout-label'});
         donut.appendChild(callout_label);
 
         const corrected = half_angle + Math.PI / 2;

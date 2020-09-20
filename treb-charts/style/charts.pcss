@@ -102,6 +102,11 @@ $font-stack:  "-apple-system",
       fill: #000;
     }
 
+    & .marker-highlight {
+      fill: currentColor;
+      stroke: none;
+    }
+
   }
 
   .label-target:hover + .data-label {
@@ -139,19 +144,18 @@ $font-stack:  "-apple-system",
     stroke: currentColor;
 
     /**
-     * circle marker. can be adjusted with 'd'
-     * 
-     * that doesn't work in IE11, apparently. we'll still use it but have
-     * a default path in the element for IE.
+     * circle marker
      */
     & .marker {
-      stroke-width: 6px;
+
+      stroke-width: 2.5px;
       fill: #fff;
-      transition: d .15s ease-in;
-      d: path('M0,-1.5 a1.5,1.5,0,1,1,0,3 a1.5,1.5,0,1,1,0,-3'); /* circle */
+      transition: stroke-width .15s ease-in;
+
       &:hover {
-        d: path('M0,-3 a3,3,0,1,1,0,6 a3,3,0,1,1,0,-6'); /* circle */
+        stroke-width: 5px;
       }
+
     }
 
   }

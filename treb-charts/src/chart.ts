@@ -1011,9 +1011,13 @@ export class Chart {
             const series = this.chart_data.series[i];
             if (series.y.labels) {
               this.renderer.RenderDataLabels(
-                  area, series.x.data, series.y.data, 
-                  this.chart_data.x_scale, this.chart_data.y_scale, 
-                  series.y.labels);
+                  area, 
+                  series.x.data, 
+                  series.y.data, 
+                  this.chart_data.x_scale, 
+                  this.chart_data.y_scale, 
+                  series.y.labels,
+                  i + 1);
             }
           }
         }
