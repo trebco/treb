@@ -1072,6 +1072,10 @@ export class TileRenderer {
         width, 
         height);
 
+      const style_text_color = style.text_color === 'none' ? (this.theme.cell_color ||  '') : style.text_color;
+      context.strokeStyle = context.fillStyle =
+        style_text_color || this.theme.cell_color || '';
+        
       cell.render_function.call(null, {
         width, height, context, cell,
       });

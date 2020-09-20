@@ -2,7 +2,7 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, ValueError } from '../function-error';
-import { Cell } from 'treb-base-types';
+import { Cell, ClickFunctionOptions, ClickFunctionResult } from 'treb-base-types';
 import { Sparkline } from 'treb-sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -524,12 +524,21 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [
         {name: 'checked'},
       ],
-      click: (options: any) => {
-        const cell = options.cell as Cell;
-        const result: {value?: string} = {};
-        if (cell) {
-          result.value = `=Checkbox(${cell.calculated ? 'FALSE' : 'TRUE'})`;
+      click: (options: ClickFunctionOptions): ClickFunctionResult => {
+        const { x, y, width, height, cell } = options;
+        const result: ClickFunctionResult = {};
+
+        if (cell && width && height && x && y) {
+          const box = {
+            x: Math.round(width / 2 - 8),
+            y: Math.round(height / 2 - 8),
+          };
+          if (x >= box.x && x <= box.x + 16 && y >= box.y && y <= box.y + 16) {
+            result.value = `=Checkbox(${cell.calculated ? 'FALSE' : 'TRUE'})`;
+            result.block_selection = true;
+          }
         }
+
         return result;
       },
       render: (options: any) => {
@@ -546,19 +555,32 @@ export const BaseFunctionLibrary: FunctionMap = {
         const y = Math.round(height / 2 - 8);
 
         if (cell && cell.calculated) {
-          context.lineWidth = 2;
-          context.fillStyle = '#444';
-          context.fillRect(x, y, 16, 16);
-          context.strokeStyle = '#fff';
+          context.lineWidth = .5;
+          context.fillStyle = context.strokeStyle;
           context.beginPath();
-          context.moveTo(x + 3, y + 8);
-          context.lineTo(x + 6, y + 13);
-          context.lineTo(x + 13, y + 3);
-          context.stroke();
+
+          context.moveTo(x, y);
+          context.lineTo(x + 16, y);
+          context.lineTo(x + 16, y + 16);
+          context.lineTo(x, y + 16);
+          context.closePath();
+
+          context.moveTo(x + 15, y + 4);
+          for (const point of [
+              [13.59, 2.58],
+              [6, 10.17],
+              [2.41, 6.59],
+              [1, 8],
+              [6, 13],
+            ]) {
+            context.lineTo(x + point[0], y + point[1]);
+          }
+          context.closePath();
+          context.fill();
+
         }
         else {
           context.lineWidth = 2;
-          context.strokeStyle = '#777';
           context.strokeRect(x, y, 16, 16);
         }
 

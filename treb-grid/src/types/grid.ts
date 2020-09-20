@@ -3448,6 +3448,14 @@ export class Grid {
 
   }
 
+  /** 
+   * special case: we don't want the previous click to be treated
+   * as part of a double-click.
+   */
+  private ClearDoubleClick() {
+    this.double_click_data.address = undefined;
+  }
+
   /**
    * unifying double-click. pass the test address. returns true if this looks
    * like a double-click on that address. otherwise sets flags to capture the
@@ -3571,7 +3579,17 @@ export class Grid {
 
       const cell = this.active_sheet.CellData(base_address);
       if (cell.click_function) {
-        const result = cell.click_function.call(this, {cell});
+
+        const rectangle = this.layout.CellAddressToRectangle(base_address);
+
+        const result = cell.click_function.call(this, {
+          cell,
+          x: offset_point.x - rectangle.left,
+          y: offset_point.y - rectangle.top,
+          width: rectangle.width,
+          height: rectangle.height,
+        });
+
         if (result.value) {
           this.ExecCommand({
             key: CommandKey.SetRange,
@@ -3579,7 +3597,11 @@ export class Grid {
             area: base_address,
           });
         }
-        console.info(result);
+
+        if (result.block_selection) {
+          this.ClearDoubleClick();
+          return;
+        }
       }
 
       this.Select(selection, new Area(base_address), base_address);

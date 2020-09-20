@@ -18,10 +18,15 @@ export interface RenderFunctionOptions {
 
 export interface ClickFunctionOptions {
   cell: Cell;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }
 
-export interface ClickResult {
+export interface ClickFunctionResult {
   value?: CellValue;
+  block_selection?: boolean;
 }
 
 /**
@@ -247,7 +252,7 @@ export class Cell {
 
   public render_function?: (options: RenderFunctionOptions) => void;
 
-  public click_function?: (options: ClickFunctionOptions) => ClickResult;
+  public click_function?: (options: ClickFunctionOptions) => ClickFunctionResult;
 
   /** not editable */
   public locked?: boolean;
