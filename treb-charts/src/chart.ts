@@ -3,7 +3,7 @@ import { NumberFormat, NumberFormatCache } from 'treb-format';
 import { ChartRenderer, Metrics } from './renderer';
 import { Area } from './rectangle';
 import { Util } from './util';
-import { CellData, ChartData, DonutSlice, LegendLayout, LegendPosition, LegendStyle, NumberOrUndefinedArray, SeriesType, SubSeries } from './chart-types';
+import { BarData, CellData, ChartData, DonutSlice, LegendLayout, LegendPosition, LegendStyle, NumberOrUndefinedArray, SeriesType, SubSeries } from './chart-types';
 import { DecoratedArray } from './chart-functions';
 
 import { RangeScale } from 'treb-utils';
@@ -128,6 +128,11 @@ export class Chart {
       y_labels: type === 'bar' ? category_labels : common.y.labels, // swapped
       x_labels: type === 'bar' ? common.y.labels : category_labels, // swapped
     };
+
+    if (args[3]) {
+      const options = args[3].toString();
+      (this.chart_data as BarData).round = /round/i.test(options);
+    }
 
   }
 
@@ -1083,6 +1088,8 @@ export class Chart {
 
     case 'bar':
       {
+        let corners: number[]|undefined;
+
         // gridlines
         this.renderer.RenderBarGrid(area, this.chart_data.scale.count, 'chart-grid');
         if (this.chart_data.series2) {
@@ -1102,6 +1109,11 @@ export class Chart {
           let zero = 0;
           if (this.chart_data.scale.min < 0) { // && this.chart_data.scale.max >= 0) {
             zero = Util.ApplyScale(0, area.width, this.chart_data.scale);
+          }
+
+          if (this.chart_data.round) {
+            const half_height = Math.floor(height / 2);
+            corners = [0, half_height, half_height, 0];
           }
 
           for (let s = 0; s < series_count; s++) {
@@ -1145,10 +1157,11 @@ export class Chart {
                 ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
                   */
 
-                this.renderer.RenderRectangle(new Area(
-                  x, y, x + width, y + height,
-                ), ['chart-column', `series-${s + 1}`], bar_title || undefined);
-
+                if (width) {
+                  this.renderer.RenderRectangle(new Area(
+                    x, y, x + width, y + height,
+                  ), corners, ['chart-column', `series-${s + 1}`], bar_title || undefined);
+                }
               }
             }
           }
@@ -1181,6 +1194,13 @@ export class Chart {
           let zero = 0;
           if (this.chart_data.scale.min < 0) { // && this.chart_data.scale.max >= 0) {
             zero = Util.ApplyScale(0, area.height, this.chart_data.scale);
+          }
+
+          let corners: number[]|undefined;
+
+          if (this.chart_data.round) {
+            const half_width = Math.floor(width/2);
+            corners = [half_width, half_width, 0, 0];
           }
 
           for (let s = 0; s < series_count; s++) {
@@ -1224,10 +1244,11 @@ export class Chart {
                 ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
                   */
 
-                this.renderer.RenderRectangle(new Area(
-                  x, y, x + width, y + height,
-                ), ['chart-column', `series-${s + 1}`], bar_title || undefined);
-
+                if (height) {
+                  this.renderer.RenderRectangle(new Area(
+                    x, y, x + width, y + height,
+                  ), corners, ['chart-column', `series-${s + 1}`], bar_title || undefined);
+                }
               }
             }
 
@@ -1264,7 +1285,7 @@ export class Chart {
 
           this.renderer.RenderRectangle(new Area(
             x, y, x + width, y + height,
-          ), 'chart-column series-1', bar_title || undefined);
+          ), undefined, 'chart-column series-1', bar_title || undefined);
         }
 
       }

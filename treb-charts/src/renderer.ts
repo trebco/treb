@@ -1458,14 +1458,38 @@ export class ChartRenderer {
     this.group.appendChild(SVGNode('circle', {cx, cy, r: 1, class: classes}));
   }
 
-  public RenderRectangle(area: Area, classes?: string | string[], title?: string) {
+  public RenderRectangle(
+    area: Area, 
+    corner_radius?: number[],
+    classes?: string | string[], 
+    title?: string): void {
 
-    const node = SVGNode('rect', {
-      x: area.left, 
-      y: area.top, 
-      width: area.width, 
-      height: area.height,
-      class: classes });
+    let node: SVGElement;
+
+    if (corner_radius) {
+
+      const d = `M${area.left},${area.top + corner_radius[0]} ` 
+              + `a${corner_radius[0]},${corner_radius[0]} 0 0 1 ${corner_radius[0]},${-corner_radius[0]} `
+              + `h${area.width - corner_radius[0] - corner_radius[1]} `
+              + `a${corner_radius[1]},${corner_radius[1]} 0 0 1 ${corner_radius[1]},${corner_radius[1]} `
+              + `v${area.height - corner_radius[1] - corner_radius[2]} `
+              + `a${corner_radius[2]},${corner_radius[2]} 0 0 1 ${-corner_radius[2]},${corner_radius[2]} `
+              + `h${-area.width + corner_radius[2] + corner_radius[3]} `
+              + `a${corner_radius[3]},${corner_radius[3]} 0 0 1 ${-corner_radius[3]},${-corner_radius[3]} `
+              + `v${area.height + corner_radius[3] + corner_radius[0]} `;
+
+      node = SVGNode('path', {
+        d, class: classes,
+      });
+    }
+    else {
+      node = SVGNode('rect', {
+        x: area.left, 
+        y: area.top, 
+        width: area.width, 
+        height: area.height,
+        class: classes });
+    }
 
     if (title) {
       node.addEventListener('mouseenter', (event) => {
