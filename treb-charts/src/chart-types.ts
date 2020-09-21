@@ -130,11 +130,13 @@ export interface AreaData extends LineBaseData {
 export interface ColumnData extends LineBaseData {
   type: 'column';
   round?: boolean;
+  space?: number;
 }
 
 export interface BarData extends LineBaseData {
   type: 'bar';
   round?: boolean;
+  space?: number;
 }
 
 export interface DonutDataBaseType extends ChartDataBaseType {

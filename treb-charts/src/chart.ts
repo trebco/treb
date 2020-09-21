@@ -1114,7 +1114,11 @@ export class Chart {
           }
 
           const row_height = area.height / count;
-          const row_pct = .7;
+          let row_pct = .7;
+          if (typeof this.chart_data.space === 'number') {
+            row_pct = Math.max(0, Math.min(1, 1 - (this.chart_data.space)));
+          }
+
           const space = row_height * (1 - row_pct) / 2;
           const height = (row_height - space * 2) / series_count;
 
@@ -1200,7 +1204,11 @@ export class Chart {
 
           // columns
           const column_width = area.width / count;
-          const column_pct = .7;
+          let column_pct = .7;
+          if (typeof this.chart_data.space === 'number') {
+            column_pct = Math.max(0, Math.min(1, 1 - (this.chart_data.space)));
+          }
+
           const space = column_width * (1 - column_pct) / 2;
           const width = (column_width - space * 2) / series_count;
 
