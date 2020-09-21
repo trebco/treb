@@ -87,6 +87,15 @@ $font-stack:  "-apple-system",
   .label-target {
     stroke: none;
     fill: transparent;
+    
+  }
+
+  path.label-target {
+    transition: fill .2s;
+  }
+
+  path.label-target:hover {
+    fill: rgba(0, 0, 0, .15);
   }
 
   .data-label {
