@@ -279,6 +279,11 @@ export class Exporter {
               const result = this.parser.Parse(cell.value);
               if (result.expression && result.expression.type === 'call') {
                 switch (result.expression.name.toLowerCase()) {
+                  case 'checkbox':
+                    result.expression = result.expression.args[0];
+                    cell.value = this.parser.Render(result.expression);
+                    break;
+
                   case 'sparkline.column':
                   case 'sparkline.line':
                     cell.value = '';
@@ -291,6 +296,8 @@ export class Exporter {
                     break;
                 }
               }
+
+              // will this put the sparkline value back? (...)
 
               if (change_number_format) {
                 if (result.expression) {
