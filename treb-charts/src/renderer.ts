@@ -1487,16 +1487,42 @@ export class ChartRenderer {
 
     if (corner_radius) {
 
-      d = `M${area.left},${area.top + corner_radius[0]} ` 
-          + `a${corner_radius[0]},${corner_radius[0]} 0 0 1 ${corner_radius[0]},${-corner_radius[0]} `
-          + `h${area.width - corner_radius[0] - corner_radius[1]} `
-          + `a${corner_radius[1]},${corner_radius[1]} 0 0 1 ${corner_radius[1]},${corner_radius[1]} `
-          + `v${area.height - corner_radius[1] - corner_radius[2]} `
-          + `a${corner_radius[2]},${corner_radius[2]} 0 0 1 ${-corner_radius[2]},${corner_radius[2]} `
-          + `h${-area.width + corner_radius[2] + corner_radius[3]} `
-          + `a${corner_radius[3]},${corner_radius[3]} 0 0 1 ${-corner_radius[3]},${-corner_radius[3]} `
-          + `v${-area.height + corner_radius[3] + corner_radius[0]} `;
+      // two cases we have to worry about: top L/R corner radius > height,
+      // and top/bottom L radius > width
 
+      if (corner_radius[0] && 
+          corner_radius[0] === corner_radius[1] &&
+          corner_radius[0] >= area.height) {
+
+        const c = corner_radius[0];
+        const b = corner_radius[0] - area.height;
+        const a = Math.sqrt(c * c - b * b);
+
+        d = `M${area.left + area.width / 2 - a},${area.bottom} a${c},${c} 0 0 1 ${a * 2},0 z`;
+    
+      }
+      else if (corner_radius[1] &&
+               corner_radius[1] === corner_radius[2] &&
+               corner_radius[1] >= area.width) {
+
+        const c = corner_radius[1];
+        const b = corner_radius[1] - area.width;
+        const a = Math.sqrt(c * c - b * b);
+        
+        d = `M${area.left},${area.top + area.height / 2 - a} a${c},${c} 0 0 1 0,${a * 2} z`;
+        
+      }
+      else {
+        d = `M${area.left},${area.top + corner_radius[0]} ` 
+            + `a${corner_radius[0]},${corner_radius[0]} 0 0 1 ${corner_radius[0]},${-corner_radius[0]} `
+            + `h${area.width - corner_radius[0] - corner_radius[1]} `
+            + `a${corner_radius[1]},${corner_radius[1]} 0 0 1 ${corner_radius[1]},${corner_radius[1]} `
+            + `v${area.height - corner_radius[1] - corner_radius[2]} `
+            + `a${corner_radius[2]},${corner_radius[2]} 0 0 1 ${-corner_radius[2]},${corner_radius[2]} `
+            + `h${-area.width + corner_radius[2] + corner_radius[3]} `
+            + `a${corner_radius[3]},${corner_radius[3]} 0 0 1 ${-corner_radius[3]},${-corner_radius[3]} `
+            + `v${-area.height + corner_radius[3] + corner_radius[0]} `;
+      }
     }
     else {
       /*
