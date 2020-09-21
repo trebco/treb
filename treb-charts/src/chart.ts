@@ -115,7 +115,18 @@ export class Chart {
         }
         return cell.value;
       });
+
+      const count = series.reduce((a, entry) => Math.max(a, entry.y.data.length), 0);
+
+      if(count < category_labels.length) {
+        category_labels = category_labels.slice(0, count);
+      }
+
+      while (count > category_labels.length) { category_labels.push(''); }
+
     }
+
+  
 
     this.chart_data = {
       type,
@@ -132,6 +143,7 @@ export class Chart {
     if (args[3]) {
       const options = args[3].toString();
       (this.chart_data as BarData).round = /round/i.test(options);
+      this.chart_data.data_labels = /labels/i.test(options);
     }
 
   }
@@ -1173,6 +1185,7 @@ export class Chart {
 
     case 'column':
       {
+
         // gridlines
         this.renderer.RenderGrid(area, this.chart_data.scale.count, 0, 'chart-grid');
 
@@ -1208,6 +1221,8 @@ export class Chart {
 
             for (let i = 0; i < series.y.data.length; i++ ){
               const value = series.y.data[i];
+              // const format = NumberFormatCache.Get(series.y.format || '0.00');
+
               if (typeof value === 'number') {
 
                 const x = Math.round(area.left + i * column_width + space) + s * width;
@@ -1245,9 +1260,16 @@ export class Chart {
                   */
 
                 if (height) {
+
+                  const label = (this.chart_data.data_labels && !!series.y.labels) ? series.y.labels[i] : '';
+                  const label_point = {
+                    x: Math.round(x + width / 2),
+                    y: Math.round(y - 10),
+                  };
+
                   this.renderer.RenderRectangle(new Area(
                     x, y, x + width, y + height,
-                  ), corners, ['chart-column', `series-${s + 1}`], bar_title || undefined);
+                  ), corners, ['chart-column', `series-${s + 1}`], bar_title || undefined, label, label_point);
                 }
               }
             }

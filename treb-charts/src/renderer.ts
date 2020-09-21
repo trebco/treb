@@ -57,15 +57,29 @@ export class ChartRenderer {
 
   public parent!: HTMLElement;
   public svg_node!: SVGElement;
-  public group!: SVGGElement;
   public text_measurement_node?: SVGTextElement;
 
-  public axis_group?: SVGElement;
+  public container_group: SVGGElement;
+  public group: SVGGElement;
+  public axis_group: SVGGElement;
+  public label_group: SVGGElement;
 
   public size: Size = { width: 0, height: 0 };
   public bounds: Area = new Area();
 
   // public smoothing_factor = 0.2;
+
+  constructor() {
+    this.container_group = SVGNode('g') as SVGGElement;
+
+    this.group = SVGNode('g') as SVGGElement;
+    this.axis_group = SVGNode('g', {class: 'axis-group'}) as SVGGElement;
+    this.label_group = SVGNode('g', {class: 'label-group'}) as SVGGElement;
+
+    this.container_group.appendChild(this.axis_group);
+    this.container_group.appendChild(this.group);
+    this.container_group.appendChild(this.label_group);
+  }
 
   public Initialize(node: HTMLElement): void {
     this.parent = node;
@@ -75,8 +89,8 @@ export class ChartRenderer {
       style: 'overflow: hidden; position: relative; width: 100%; height: 100%;'
     });
 
-    this.group = document.createElementNS(SVGNS, 'g');
-    this.svg_node.appendChild(this.group);
+    // this.group = document.createElementNS(SVGNS, 'g');
+    this.svg_node.appendChild(this.container_group);
 
     // FIXME: validate parent is relative/absolute
 
@@ -230,8 +244,9 @@ export class ChartRenderer {
   }
 
   public Clear(): void {
-    this.axis_group = undefined;
     this.group.textContent = '';
+    this.axis_group.textContent = '';
+    this.label_group.textContent = '';
   }
 
   public Resize(): void {
@@ -358,6 +373,7 @@ export class ChartRenderer {
 
   }
 
+  /*
   public GetAxisNode(): SVGElement {
     if (!this.axis_group) { 
       this.axis_group = SVGNode('g', {class: 'axis-group'});
@@ -365,6 +381,7 @@ export class ChartRenderer {
     }
     return this.axis_group; 
   }
+  */
 
   /** specialization for bar; it's different enough that we want special treatment */
   public RenderXAxisBar(
@@ -405,12 +422,12 @@ export class ChartRenderer {
       }
     }
 
-    const axis = this.GetAxisNode();
+    // const axis = this.GetAxisNode();
 
     for (let i = 0; i < count; i += increment) {
       const x = Math.round(area.left + initial_offset + step * i);
       // if (x + metrics[i].width / 2 >= area.right) { break; }
-      this.RenderText(axis, labels[i], 'center', { x, y: area.bottom }, classes);
+      this.RenderText(this.axis_group, labels[i], 'center', { x, y: area.bottom }, classes);
     }
 
   }
@@ -456,12 +473,12 @@ export class ChartRenderer {
       }
     }
 
-    const axis = this.GetAxisNode();
+    // const axis = this.GetAxisNode();
 
     for (let i = 0; i < count; i += increment) {
       const x = Math.round(area.left + initial_offset + step * i);
       // if (x + metrics[i].width / 2 >= area.right) { break; }
-      this.RenderText(axis, labels[i], 'center', { x, y: area.bottom }, classes);
+      this.RenderText(this.axis_group, labels[i], 'center', { x, y: area.bottom }, classes);
     }
 
   }
@@ -500,12 +517,12 @@ export class ChartRenderer {
       }
     }
 
-    const axis = this.GetAxisNode();
+    // const axis = this.GetAxisNode();
 
     for (let i = 0; i < count; i += increment) {
       const label = labels[i];
       const y = Math.round(area.bottom - step * (i + .5) + label.metrics.height / 4);
-      this.RenderText(axis, label.label, 'right', { x: left, y }, classes);
+      this.RenderText(this.axis_group, label.label, 'right', { x: left, y }, classes);
     }
 
   }
@@ -543,12 +560,12 @@ export class ChartRenderer {
       }
     }
 
-    const axis = this.GetAxisNode();
+    // const axis = this.GetAxisNode();
 
     for (let i = 0; i < count; i += increment) {
       const label = labels[i];
       const y = Math.round(area.bottom - step * i + label.metrics.height / 4);
-      this.RenderText(axis, label.label, 'right', { x: left, y }, classes);
+      this.RenderText(this.axis_group, label.label, 'right', { x: left, y }, classes);
     }
 
   }
@@ -1093,8 +1110,8 @@ export class ChartRenderer {
       data_labels: Array<string|undefined>,
       series_index: number ): void {
 
-    const label_group = SVGNode('g');
-    this.group.appendChild(label_group);
+    // const label_group = SVGNode('g');
+    // this.group.appendChild(label_group);
 
     const count = Math.max(x.length, y.length);
     const xrange = (x_scale.max - x_scale.min) || 1;
@@ -1113,10 +1130,10 @@ export class ChartRenderer {
         const label = data_labels[i];
         if (label) {
 
-          label_group.appendChild(SVGNode('circle', {class: 'label-target', cx: point.x, cy: point.y, r: 10 }));
+          this.label_group.appendChild(SVGNode('circle', {class: 'label-target', cx: point.x, cy: point.y, r: 10 }));
 
           const g = SVGNode('g', {class: 'data-label', transform: `translate(${point.x + 10},${point.y})`});
-          label_group.appendChild(g);
+          this.label_group.appendChild(g);
 
           const circle = SVGNode('circle', {
             cx: -10, y: 0, r: 5, class: `marker-highlight series-${series_index}`
@@ -1462,34 +1479,46 @@ export class ChartRenderer {
     area: Area, 
     corner_radius?: number[],
     classes?: string | string[], 
-    title?: string): void {
+    title?: string, 
+    label?: string,
+    label_point?: Point): void {
 
-    let node: SVGElement;
+    let d = '';
 
     if (corner_radius) {
 
-      const d = `M${area.left},${area.top + corner_radius[0]} ` 
-              + `a${corner_radius[0]},${corner_radius[0]} 0 0 1 ${corner_radius[0]},${-corner_radius[0]} `
-              + `h${area.width - corner_radius[0] - corner_radius[1]} `
-              + `a${corner_radius[1]},${corner_radius[1]} 0 0 1 ${corner_radius[1]},${corner_radius[1]} `
-              + `v${area.height - corner_radius[1] - corner_radius[2]} `
-              + `a${corner_radius[2]},${corner_radius[2]} 0 0 1 ${-corner_radius[2]},${corner_radius[2]} `
-              + `h${-area.width + corner_radius[2] + corner_radius[3]} `
-              + `a${corner_radius[3]},${corner_radius[3]} 0 0 1 ${-corner_radius[3]},${-corner_radius[3]} `
-              + `v${area.height + corner_radius[3] + corner_radius[0]} `;
+      d = `M${area.left},${area.top + corner_radius[0]} ` 
+          + `a${corner_radius[0]},${corner_radius[0]} 0 0 1 ${corner_radius[0]},${-corner_radius[0]} `
+          + `h${area.width - corner_radius[0] - corner_radius[1]} `
+          + `a${corner_radius[1]},${corner_radius[1]} 0 0 1 ${corner_radius[1]},${corner_radius[1]} `
+          + `v${area.height - corner_radius[1] - corner_radius[2]} `
+          + `a${corner_radius[2]},${corner_radius[2]} 0 0 1 ${-corner_radius[2]},${corner_radius[2]} `
+          + `h${-area.width + corner_radius[2] + corner_radius[3]} `
+          + `a${corner_radius[3]},${corner_radius[3]} 0 0 1 ${-corner_radius[3]},${-corner_radius[3]} `
+          + `v${-area.height + corner_radius[3] + corner_radius[0]} `;
 
-      node = SVGNode('path', {
-        d, class: classes,
-      });
     }
     else {
+      /*
       node = SVGNode('rect', {
         x: area.left, 
         y: area.top, 
         width: area.width, 
         height: area.height,
         class: classes });
+      */
+
+      d = `M${area.left},${area.top} ` 
+        + `h${area.width} `
+        + `v${area.height} `
+        + `h${-area.width} `
+        + `v${-area.height} `;
+
     }
+
+    const node = SVGNode('path', {
+      d, class: classes,
+    });
 
     if (title) {
       node.addEventListener('mouseenter', (event) => {
@@ -1501,6 +1530,39 @@ export class ChartRenderer {
     }
 
     this.group.appendChild(node);
+
+    if (label) {
+
+      this.label_group.appendChild(SVGNode('path', {class: 'label-target', d }));
+
+      const point = label_point || {
+        x: Math.round(area.left + area.width / 2),
+        y: Math.round(area.top - 10),
+      };
+
+      const g = SVGNode('g', {class: 'data-label', transform: `translate(${point.x},${point.y})`});
+      this.label_group.appendChild(g);
+
+
+      const text = SVGNode('text', {x: 0, y: 0}, label);
+      g.appendChild(text);
+      const bounds = text.getBoundingClientRect();
+      const h = bounds.height;
+      const w = bounds.width + 8;
+      text.setAttribute('x', Math.floor(-bounds.width/2).toString());
+
+      /*
+      if (w + 15 + point.x >= area.right) {
+        g.setAttribute('transform', `translate(${point.x - w - 15},${point.y})`)
+        // circle.setAttribute('cx', (w + 15).toString());
+      }
+      */
+
+      const rect = SVGNode('path', {d:`M${-w/2},5 h${w} v-${h} h-${w} Z`});
+      g.insertBefore(rect, text);
+
+    }
+
   }
 
   /**
