@@ -17,7 +17,19 @@ export interface RangeScale {
  */
 export const Scale = (min: number, max: number, count = 6.5, limit_count = false): RangeScale => {
 
+  if (max === min) { 
+
+    // we should either have optional behavior here or have this as
+    // some sort of wrapper method -- it just seems arbitrary
+
+    max++;
+    if (min) {
+      min--;
+    }
+  }
+
   const range = max - min;
+
   const log10 = // Math.log10(range);
     Math.log(range) / Math.log(10); // just avoid the problem
 

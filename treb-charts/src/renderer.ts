@@ -455,6 +455,10 @@ export class ChartRenderer {
     let increment = 1;
     let repeat = true;
 
+    const f2 = (labels.length - 1) % 2 === 0;
+    const f3 = (labels.length - 1) % 3 === 0;
+    // const f5 = (labels.length - 1) % 5 === 0;
+
     while (repeat) {
       repeat = false;
       let extent = 0;
@@ -471,6 +475,12 @@ export class ChartRenderer {
 
         extent = center + (metrics[i].width / 2) + label_buffer;
       }
+    }
+
+    // special patch for 0% - 100% range...
+
+    if (increment === 3 && !f3 && f2) { 
+      increment++; 
     }
 
     // const axis = this.GetAxisNode();
