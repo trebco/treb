@@ -1835,7 +1835,7 @@ export class ChartRenderer {
             return { text: part, metrics: m };
           });
 
-          console.info('p', parts);
+          // console.info('p', parts);
 
           callout_label.textContent = '';
           for (const part of parts) {
