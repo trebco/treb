@@ -1529,6 +1529,8 @@ export class Grid {
       return; // FIXME: warn?
     }
 
+    this.layout.HideDropdownCaret();
+
     this.ExecCommand({
       key: CommandKey.MergeCells,
       area: this.primary_selection.area,
@@ -1543,6 +1545,8 @@ export class Grid {
     if (this.primary_selection.empty) {
       return; // FIXME: warn?
     }
+
+    this.layout.HideDropdownCaret();
 
     this.ExecCommand({
       key: CommandKey.UnmergeCells,
