@@ -5613,7 +5613,9 @@ export class Grid {
       // same time.
 
       if (data.validation && !data.locked) {
+        
         let list: CellValue[] | undefined;
+        
         if (data.validation.type === ValidationType.List) {
           list = data.validation.list;
         }
@@ -5625,14 +5627,8 @@ export class Grid {
           this.layout.ShowDropdownCaret(
             (data.merge_area || new Area(this.primary_selection.target)), 
             list, data.value);
-
-          // why is this the right place to do this? feels hacky.
-
-          if (data.merge_area) {
-            this.primary_selection.target = {...data.merge_area.start};
-          }
-
         }
+
       }
       else {
         this.layout.HideDropdownCaret();
@@ -5680,11 +5676,13 @@ export class Grid {
         value = result.value;
       }
     }
-    
+
+    const data = this.active_sheet.CellData(this.primary_selection.target);
+    const area = data.merge_area ? data.merge_area.start : this.primary_selection.target;
 
     this.ExecCommand({
       key: CommandKey.SetRange,
-      area: this.primary_selection.target,
+      area,
       value,
     });
     this.UpdateFormulaBarFormula();
