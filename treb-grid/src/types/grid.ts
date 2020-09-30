@@ -5623,7 +5623,15 @@ export class Grid {
 
         if (list && list.length) {
           this.layout.ShowDropdownCaret(
-              this.primary_selection.target, list, data.value);
+            (data.merge_area || new Area(this.primary_selection.target)), 
+            list, data.value);
+
+          // why is this the right place to do this? feels hacky.
+
+          if (data.merge_area) {
+            this.primary_selection.target = {...data.merge_area.start};
+          }
+
         }
       }
       else {
@@ -5673,6 +5681,7 @@ export class Grid {
       }
     }
     
+
     this.ExecCommand({
       key: CommandKey.SetRange,
       area: this.primary_selection.target,

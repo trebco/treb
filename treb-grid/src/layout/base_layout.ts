@@ -717,9 +717,15 @@ export abstract class BaseLayout {
     this.UpdateTooltip(options);
   }
 
-  public ShowDropdownCaret(address: ICellAddress, list: CellValue[], current: CellValue): void {
+  public ShowDropdownCaret(area: Area, list: CellValue[], current: CellValue): void {
 
-    const target_rect = this.OffsetCellAddressToRectangle(address).Shift(
+    let target_rect = this.OffsetCellAddressToRectangle(area.start);
+    
+    if (area.count > 1) {
+      target_rect = target_rect.Combine(this.OffsetCellAddressToRectangle(area.end));
+    }
+
+    target_rect = target_rect.Shift(
       this.header_size.width, this.header_size.height);
 
     // FIXME: max size? (...)
