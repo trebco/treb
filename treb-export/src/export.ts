@@ -4,7 +4,8 @@ import { template } from './base-template';
 import { Base64 as JSBase64 } from 'js-base64';
 import { Workbook } from './workbook';
 
-import { Style, Area, IArea, DataValidation, ValidationType, ICellAddress } from 'treb-base-types';
+import { Style, Area, IArea, DataValidation, ValidationType, 
+  ICellAddress, IsFlatDataArray, IsNestedRowArray, FlatCellData } from 'treb-base-types';
 import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, UnitCall, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
 
 import { SerializedSheet } from 'treb-grid';
@@ -180,21 +181,28 @@ export class Exporter {
 
         };
 
-        const HandleCell = (cell: any) => {
+        const HandleCell = (cell: FlatCellData) => {
 
           if (typeof cell.row === 'number' && typeof cell.column === 'number') {
 
             last_column = Math.max(last_column, cell.column);
             last_row = Math.max(last_row, cell.row);
 
-            const style = StyleFromCell(cell);
+            // const style = StyleFromCell(cell);
 
+            const range_options: RangeOptions = {
+              style: StyleFromCell(cell),
+              precalc: cell.calculated,
+            };
+
+            /*
             // const range_options: { [index: string]: any } = { style };
             const range_options: RangeOptions = { style };
 
-            if (cell.calculated) {
+            if (cell.calculated !== undefined) {
               range_options.precalc = cell.calculated; // .toString();
             }
+            */
 
             if (cell.area && cell.area.start.row === cell.row && cell.area.start.column === cell.column) {
               range_options.array = Area.CellAddressToLabel(cell.area.start) +
@@ -327,7 +335,30 @@ export class Exporter {
           sheet.SetRange({ row: cell.row + 1, col: cell.column + 1 }, undefined, { style });
         }
 
+        if (IsFlatDataArray(sheet_source.data)) {
+          for (const cell of sheet_source.data) {
+            HandleCell(cell);
+          }
+        }
+        else if (IsNestedRowArray(sheet_source.data)) {
+          for (const block of sheet_source.data) {
+            for (const cell of block.cells) {
+              HandleCell({...cell, row: block.row});
+            }
+          }
+        }
+        else {
+          for (const block of sheet_source.data) {
+            for (const cell of block.cells) {
+              HandleCell({...cell, column: block.column});
+            }
+          }
+        }
+
+        /*
         for (const block of sheet_source.data) {
+
+
           if (block.cells) {
             const row = block.row;
             const column = block.column;
@@ -345,6 +376,7 @@ export class Exporter {
             HandleCell(block);
           }
         }
+        */
 
       }
 
@@ -548,8 +580,10 @@ export class Exporter {
               options.smooth = true;
             }
 
-            const anchor = this.AnnotationRectToAnchor(annotation.rect, sheet_source);
-            sheet.AddChart(anchor, options);
+            if (annotation.rect) {
+              const anchor = this.AnnotationRectToAnchor(annotation.rect, sheet_source);
+              sheet.AddChart(anchor, options);
+            }
 
           }
 

@@ -3,8 +3,8 @@
  * (not sure if there are benefits yet either)
  */
 
-import { Area, ICellAddress } from './area';
-import { Cell, CellValue } from './cell';
+import { Area, IArea, ICellAddress } from './area';
+import { Cell, CellValue, DataValidation } from './cell';
 import { ValueType } from './value-type';
 
 export interface CellSerializationOptions {
@@ -30,6 +30,71 @@ export interface CellSerializationOptions {
   sheet_id?: number;
 
 }
+
+// our cell data is now somewhat complicated, from a type perspective. we 
+// support the original type, which was just an array of cells with each
+// cell having {row, column}. 
+//
+// more recent code compresses this by nesting blocks of rows or columns,
+// using the structure (e.g.) { row, cells } where each cell in cells has 
+// a column.
+// 
+// so type needs to support both flat and nested, where nested can be row-
+// dominant or column-dominant.
+
+export interface BaseCellData {
+  value: CellValue;
+  style_ref?: number;
+  calculated?: CellValue;
+  area?: IArea;
+  merge_area?: IArea;
+  validation?: DataValidation;
+  calculated_type?: ValueType;
+  note?: string;
+  type?: ValueType;
+  sheet_id?: number;
+}
+
+export interface FlatCellData extends BaseCellData {
+  row: number;
+  column: number;
+}
+
+export interface NestedCellData {
+  cells: BaseCellData[];
+}
+
+export interface NestedRowData extends NestedCellData {
+  row: number;
+  cells: Array<{
+    column: number;
+  } & BaseCellData>;
+}
+
+export interface NestedColumnData extends NestedCellData {
+  column: number;
+  cells: Array<{
+    row: number;
+  } & BaseCellData>;
+}
+
+export type SerializedCellData = FlatCellData[]|NestedRowData[]|NestedColumnData[];
+
+// some type guards for the various data types
+
+export const IsFlatData = (test: FlatCellData|NestedCellData): test is FlatCellData => {
+  return !(test as NestedCellData).cells;
+}
+
+export const IsFlatDataArray = (test: FlatCellData[]|NestedCellData[]): test is FlatCellData[] => {
+  return (!!test[0]) && IsFlatData(test[0]);
+};
+
+export const IsNestedRowArray = (test: NestedRowData[]|NestedColumnData[]): test is NestedRowData[] => {
+  return (!!test[0]) && ((test[0] as NestedRowData).row !== undefined);
+};
+
+// ...
 
 /**
  * collection of cells, basically a wrapper around an
@@ -59,12 +124,12 @@ export class Cells {
    * the deserialization routine can call this function to pad out, so we
    * don't need to store it here.
    */
-  public EnsureRow(row: number){
+  public EnsureRow(row: number): void {
     this.rows_ = Math.max(row + 1, this.rows_);
   }
 
   /** @see EnsureRow */
-  public EnsureColumn(column: number){
+  public EnsureColumn(column: number): void {
     this.columns_ = Math.max(column + 1, this.columns_);
   }
 
@@ -74,7 +139,7 @@ export class Cells {
    * be done by external logic. this method only does
    * the mechanical work of inserting rows/columns.
    */
-  public InsertColumns(before = 0, count = 1){
+  public InsertColumns(before = 0, count = 1): void {
 
     // NOTE: iterating a sparse array, in chrome at least, only
     // hits populated keys. the returned array has the same
@@ -93,7 +158,7 @@ export class Cells {
     this.columns_ += count;
   }
 
-  public DeleteColumns(index: number, count= 1){
+  public DeleteColumns(index: number, count= 1): void {
 
     // trap! splice returns _removed_ elements so don't use map()
 
@@ -101,7 +166,7 @@ export class Cells {
     this.columns_ -= count;
   }
 
-  public DeleteRows(index: number, count = 1){
+  public DeleteRows(index: number, count = 1): void {
     this.data.splice(index, count);
     this.rows_ -= count;
   }
@@ -112,7 +177,7 @@ export class Cells {
    * be done by external logic. this method only does
    * the mechanical work of inserting rows/columns.
    */
-  public InsertRows(before = 0, count = 1){
+  public InsertRows(before = 0, count = 1): void {
     const args = [before, 0, []];
     for ( let i = 1; i < count; i++) args.push([]);
     Array.prototype.splice.apply(this.data, args as [number, number, any]);
@@ -135,7 +200,7 @@ export class Cells {
    *
    * @param create_new always return a cell
    */
-  public GetCell(address: ICellAddress, create_new?: boolean) {
+  public GetCell(address: ICellAddress, create_new?: boolean): Cell|undefined {
 
     const { row, column } = address;
 
@@ -234,7 +299,7 @@ export class Cells {
     this.columns_ = columns;
   }
 
-  public FromJSON(data: any[] = []){
+  public FromJSON(data: SerializedCellData = []): void {
 
     this.data = [];
 
@@ -242,6 +307,30 @@ export class Cells {
     // that data is either nested, or not, but never both. therefore, we
     // just need to check the first element.
 
+    if (!IsFlatDataArray(data)) {
+
+      const new_data: FlatCellData[] = [];
+
+      if (IsNestedRowArray(data)) {
+        for (const block of data) {
+          for (const cell of block.cells) {
+            new_data.push({...cell, row: block.row});
+          }
+        }
+      }
+      else {
+        for (const block of data) {
+          for (const cell of block.cells) {
+            new_data.push({...cell, column: block.column});
+          }
+        }
+      }
+
+      data = new_data;
+
+    }
+
+    /*
     if (data[0] && data[0].cells) {
 
       // console.info('reading nested data');
@@ -262,6 +351,7 @@ export class Cells {
       data = new_data;
 
     }
+    */
 
     for (const obj of data) {
 
@@ -321,7 +411,11 @@ export class Cells {
 
   }
 
-  public toJSON(options: CellSerializationOptions = {}){
+  public toJSON(options: CellSerializationOptions = {}) : {
+      data: SerializedCellData;
+      rows: number;
+      columns: number;
+    } {
 
     let start_column = 0;
     let start_row = 0;
@@ -334,7 +428,7 @@ export class Cells {
       end_row = options.subset.end.row;
     }
 
-    const data: any = [];
+    const data: FlatCellData[] = [];
 
     let last_row = -1;
     let last_col = -1;
@@ -396,7 +490,7 @@ export class Cells {
                   ( cell.style.background || cell.style.border_bottom ||
                     cell.style.border_top || cell.style.border_left || cell.style.border_right)))){
 
-            const obj: any = { row, column, value: cell.value };
+            const obj: FlatCellData = { row, column, value: cell.value };
             if (cell.note) obj.note = cell.note;
             if (options.preserve_type) obj.type = cell.type;
             if (options.sheet_id) obj.sheet_id = options.sheet_id;
@@ -448,14 +542,14 @@ export class Cells {
       const row_key_map = Object.keys(row_keys);
       const col_key_map = Object.keys(column_keys);
 
-      const cells: {[index: number]: any} = {};
-      const new_data: any = [];
-
       // extra test to make sure it's not empty
 
       if ((row_key_map.length <= col_key_map.length) && row_key_map.length) {
 
+        const cells: {[index: number]: Array<BaseCellData & {column: number}>} = {};
+
         // use rows
+        const new_data: NestedRowData[] = [];
 
         for (const element of data) {
           const {row, ...remainder} = element;
@@ -471,7 +565,10 @@ export class Cells {
       }
       else if (col_key_map.length) {
 
+        const cells: {[index: number]: Array<BaseCellData & {row: number}>} = {};
+
         // use columns
+        const new_data: NestedColumnData[] = [];
 
         for (const element of data) {
           const {column, ...remainder} = element;
@@ -752,7 +849,7 @@ export class Cells {
    *
    * watch out for typed arrays, which do not satisfy Array.isArray
    */
-  public SetArea(area: Area, values: any[][]) {
+  public SetArea(area: Area, values: CellValue[][]): void {
 
     if (Array.isArray(values) || ArrayBuffer.isView(values)) {
       for (let r = area.start.row, i = 0; r <= area.end.row; r++, i++) {

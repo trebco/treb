@@ -5,7 +5,8 @@ import { Grid, GridEvent, SerializeOptions, Annotation,
 import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
-import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea } from 'treb-base-types';
+import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, 
+  IsFlatData, IsFlatDataArray } from 'treb-base-types';
 import { EventSource, Yield, tmpl } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 import { Toolbar as SimpleToolbar, ToolbarElement } from 'treb-toolbar';
@@ -31,7 +32,7 @@ import '../style/embed.scss';
 // config
 import * as build from '../../package.json';
 import { SerializedModel } from 'treb-grid/src/types/data_model';
-import { FreezePane } from 'treb-grid/src/types/sheet_types';
+import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
 
 interface UndoEntry {
   data: string;
@@ -1665,29 +1666,37 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     const delim_regex = new RegExp(`[\t\n\r"${options.delimiter}]`);
 
-    for (const element of serialized_data.data){
-      let value = '';
-      if ((!options.formulas) && typeof element.calculated !== 'undefined') {
-        value = element.calculated.toString();
+    // we know this is true -- would be nice to get the type system to
+    // recognize that in some fashion. might be too complicated given that
+    // it uses flags, though.
+
+    if (IsFlatDataArray(serialized_data.data)) {
+
+      for (const element of serialized_data.data){
+        let value = '';
+        if ((!options.formulas) && typeof element.calculated !== 'undefined') {
+          value = element.calculated.toString();
+        }
+        else if (typeof element.value === 'string' && element.value[0] === '\'') {
+          value = element.value.substr(1);
+        }
+        else if (typeof element.value !== 'undefined') {
+          value = element.value.toString();
+        }
+
+        if (delim_regex.test(value)) {
+
+          // 1: escape any internal quotes
+          value = value.replace(/"/g, '""');
+
+          // 2: quote
+          value = '"' + value + '"';
+
+        }
+
+        rows[element.row][element.column] = value;
       }
-      else if (typeof element.value === 'string' && element.value[0] === '\'') {
-        value = element.value.substr(1);
-      }
-      else if (typeof element.value !== 'undefined') {
-        value = element.value.toString();
-      }
 
-      if (delim_regex.test(value)) {
-
-        // 1: escape any internal quotes
-        value = value.replace(/"/g, '""');
-
-        // 2: quote
-        value = '"' + value + '"';
-
-      }
-
-      rows[element.row][element.column] = value;
     }
 
     return rows.map(row => row.join(options.delimiter)).join('\r\n');
@@ -1779,14 +1788,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       recalculate = false,
       override_sheet?: string,
       override_selection?: GridSelection,
-      ) {
+      ): void {
 
     if (override_selection) {
-      // console.info("OS", override_selection, data);
-      for (const sheet of data.sheet_data) {
-        if (sheet.id === override_selection.target.sheet_id) {
-          sheet.selection = override_selection;
-          break;
+      if (data.sheet_data) {
+        const sheets = Array.isArray(data.sheet_data) ?
+          data.sheet_data : [data.sheet_data];
+
+        for (const sheet of sheets) {
+          if (sheet.id === override_selection.target.sheet_id) {
+            sheet.selection = override_selection;
+            break;
+          }
         }
       }
     }
@@ -2657,10 +2670,99 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     return new Calculator();
   }
 
+  protected ConvertLocale(data: TREBDocument): void {
+
+    // FIXME: belongs in model? (...)
+
+    // NOTE: we use a new parser instance here because we're modifying
+    // the localization flags; seems safer to use a separate instance and
+    // not change the local instance
+
+    const parser = new Parser();
+
+    let target_decimal_mark: DecimalMarkType;
+    let target_argument_separator: ArgumentSeparatorType;
+
+    // FIXME: these conversions should be easier... we should have a simple
+    // switch in the parser/renderer function
+
+    // FIXME: also we should unify on types for decimal, argument separator
+
+    if (data.decimal_mark === '.'){
+      parser.decimal_mark = DecimalMarkType.Period;
+      parser.argument_separator = ArgumentSeparatorType.Comma;
+      target_decimal_mark = DecimalMarkType.Comma;
+      target_argument_separator = ArgumentSeparatorType.Semicolon;
+    }
+    else {
+      parser.decimal_mark = DecimalMarkType.Comma;
+      parser.argument_separator = ArgumentSeparatorType.Semicolon;
+      target_decimal_mark = DecimalMarkType.Period;
+      target_argument_separator = ArgumentSeparatorType.Comma;
+    }
+
+    const translate = (formula: string): string|undefined => {
+      const parse_result = parser.Parse(formula);
+      if (!parse_result.expression) { return undefined; }
+      return '=' + parser.Render(
+          parse_result.expression, 
+          undefined, 
+          '',
+          target_decimal_mark, 
+          target_argument_separator);
+    };
+
+    if (data.macro_functions) {
+      for (const macro_function of data.macro_functions) {
+        const translated = translate(macro_function.function_def);
+        if (translated) { 
+          macro_function.function_def = translated;
+        }
+      }
+    }
+
+    if (data.sheet_data) {
+
+      const sheets = Array.isArray(data.sheet_data) ? data.sheet_data : [data.sheet_data];
+
+      for (const sheet_data of sheets) {
+
+        if (sheet_data.annotations) {
+          for (const annotation of (sheet_data.annotations as Annotation[])) {
+            if (annotation.formula) {
+              const translated = translate(annotation.formula);
+              if (translated) { 
+                annotation.formula = translated;
+              }
+            }
+          }
+        }
+
+        if (sheet_data.data?.length) {
+
+          // update for grouped data (v5+)
+          for (const block of sheet_data.data) {
+            const cells = IsFlatData(block) ? [block] : block.cells;
+
+            for (const cell of cells) {
+              if (cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
+                const translated = translate(cell.value.slice(1));
+                if (translated) {
+                  cell.value = translated;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+
   /**
    * import data from serialized document, doing locale conversion if necessary
    */
-  protected ImportDocumentData(data: TREBDocument, override_sheet?: string) {
+  protected ImportDocumentData(data: TREBDocument, override_sheet?: string): void {
 
     // FIXME: version check
 
@@ -2674,85 +2776,26 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // as an array...
 
-    const sheets = (data.sheet_data && Array.isArray(data.sheet_data)) ?
-      data.sheet_data : [data.sheet_data];
+    let sheets: SerializedSheet[] = [];
+
+    if (data.sheet_data) {
+      if (Array.isArray(data.sheet_data)) {
+        sheets = data.sheet_data;
+      }
+      else {
+        sheets.push(data.sheet_data);
+      }
+    }
 
     // FIXME: it's not necessary to call reset here unless the
     // document fails, do that with a trap?
 
-    // FIXME: move this to a separate function/lib
-    // properly belongs to model?
+    // l10n
 
     if (data.decimal_mark && data.decimal_mark !== Localization.decimal_separator) {
-
-      const parser = new Parser();
-      let target_decimal_mark: DecimalMarkType; // = DecimalMarkType.Comma;
-      let target_argument_separator: ArgumentSeparatorType; //  = ArgumentSeparatorType.Semicolon;
-
-      // FIXME: these conversions should be easier... we should have a simple
-      // switch in the parser/renderer function
-
-      // FIXME: also we should unify on types for decimal, argument separator
-
-      if (data.decimal_mark === '.'){
-        parser.decimal_mark = DecimalMarkType.Period;
-        parser.argument_separator = ArgumentSeparatorType.Comma;
-        target_decimal_mark = DecimalMarkType.Comma;
-        target_argument_separator = ArgumentSeparatorType.Semicolon;
-      }
-      else {
-        parser.decimal_mark = DecimalMarkType.Comma;
-        parser.argument_separator = ArgumentSeparatorType.Semicolon;
-        target_decimal_mark = DecimalMarkType.Period;
-        target_argument_separator = ArgumentSeparatorType.Comma;
-      }
-
-      if (data.macro_functions) {
-        for (const macro_function of data.macro_functions) {
-          const parse_result = parser.Parse(macro_function.function_def);
-          if (parse_result.expression) {
-            const translated = parser.Render(parse_result.expression, undefined, undefined,
-              target_decimal_mark, target_argument_separator);
-            macro_function.function_def = '=' + translated;
-          }
-        }
-      }
-
-      for (const sheet_data of sheets) {
-        if (sheet_data && sheet_data.annotations) {
-          for (const annotation of (sheet_data.annotations as Annotation[])) {
-            if (annotation.formula) {
-              const parse_result = parser.Parse(annotation.formula);
-              if (parse_result.expression) {
-                const translated = parser.Render(parse_result.expression, undefined, undefined,
-                  target_decimal_mark, target_argument_separator);
-                annotation.formula = '=' + translated;
-              }
-            }
-          }
-        }
-
-        if (sheet_data && sheet_data.data && sheet_data.data.length) {
-
-          // update for grouped data (v5+)
-          for (const block of sheet_data.data) {
-            const cells = block.cells ? block.cells : [block];
-            for (const cell of cells) {
-              if (cell.value && typeof cell.value === 'string' && cell.value[0] === '=') {
-                const parse_result = parser.Parse(cell.value.slice(1));
-                if (parse_result.expression) {
-                  const translated = parser.Render(parse_result.expression, undefined, undefined,
-                    target_decimal_mark, target_argument_separator);
-                  cell.value = '=' + translated;
-                }
-              }
-            }
-          }
-        }
-      }
-
-    } // end l10n conversion
-
+      this.ConvertLocale(data);
+    } 
+    
     // why is it not complaining about this? (...)
 
     this.grid.UpdateSheets(sheets, undefined, override_sheet || data.active_sheet);

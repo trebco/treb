@@ -1,5 +1,6 @@
 
-import { Area, IArea, Style } from 'treb-base-types';
+import { Area, IArea, SerializedCellData, Style } from 'treb-base-types';
+import { Annotation } from './annotation';
 import { GridSelection } from './grid_selection';
 
 export interface UpdateHints {
@@ -46,7 +47,9 @@ export interface ScrollOffset {
 export interface SerializedSheet {
 
   // version: string;
-  data: any; // FIXME
+  // data: any; // FIXME
+  data: SerializedCellData;
+
   sheet_style: Style.Properties;
   rows: number;
   columns: number;
@@ -69,7 +72,7 @@ export interface SerializedSheet {
   name?: string;
 
   selection: GridSelection;
-  annotations?: any[];
+  annotations?: Partial<Annotation>[];
   scroll?: ScrollOffset;
 
   visible?: boolean;

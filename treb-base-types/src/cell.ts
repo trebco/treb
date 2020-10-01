@@ -163,7 +163,7 @@ export class Cell {
   }
   */
 
-  public static GetValueType(value: unknown){
+  public static GetValueType(value: unknown): ValueType {
 
     switch (typeof value){
       
@@ -322,7 +322,7 @@ export class Cell {
     this.render_dirty = true;
   }
 
-  public Set(value: any, type = Cell.GetValueType(value)){
+  public Set(value: CellValue, type = Cell.GetValueType(value)): void {
     this.value = value;
     this.type = type;
     this.formatted =
@@ -337,7 +337,7 @@ export class Cell {
   }
 
   /** sets calculated value and flushes cached value */
-  public SetCalculatedValue(value: any, type = Cell.GetValueType(value)){
+  public SetCalculatedValue(value: CellValue, type = Cell.GetValueType(value)): void {
     if (this.calculated === value) return;
     this.calculated = value;
     this.calculated_type = type;
@@ -457,7 +457,7 @@ export class Cell {
     this.render_dirty = true;
   }
 
-  public SetArrayHead(area: Area, value: any){
+  public SetArrayHead(area: Area, value: CellValue){
     this.type = Cell.GetValueType(value);
     this.value = value;
     this.formatted =

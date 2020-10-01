@@ -2,7 +2,7 @@
 // --- treb imports -----------------------------------------------------------
 
 import { Cell, ValueType, Cells, Style,
-  Area, ICellAddress, CellSerializationOptions } from 'treb-base-types';
+  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { EventSource, Measurement } from 'treb-utils';
 
@@ -70,7 +70,7 @@ export class Sheet {
    * @param hints UpdateHints supports partial deserialization/replacement
    * if we know there are only minor changes (as part of undo/redo, probably)
    */
-  public static FromJSON(json: string | object, style_defaults: Style.Properties, sheet?: Sheet, hints?: UpdateHints) {
+  public static FromJSON(json: string | Partial<SerializedSheet>, style_defaults: Style.Properties, sheet?: Sheet, hints?: UpdateHints): Sheet {
 
     if (hints) console.warn( '(using hints)', hints);
 
@@ -134,6 +134,7 @@ export class Sheet {
     // data: cells (moved after style)
 
     if (!hints || hints.data) {
+      
       sheet.cells.FromJSON(obj.data);
       if (obj.rows) sheet.cells.EnsureRow(obj.rows - 1);
       if (obj.columns) sheet.cells.EnsureColumn(obj.columns - 1);
@@ -144,8 +145,50 @@ export class Sheet {
         // different handling for nested, flat, but we only have to
         // check once because data is either nested or it isn't.
 
+        if (obj.data) {
+          if (IsFlatDataArray(obj.data)) {
+            for (const entry of obj.data) {
+              if (entry.style_ref) {
+                if (!sheet.cell_style[entry.column]) sheet.cell_style[entry.column] = [];
+                sheet.cell_style[entry.column][entry.row] = // entry.style;
+                  JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+              }
+            }
+          }
+          else {
+            if (IsNestedRowArray(obj.data)) {
+              for (const block of obj.data) {
+                const row = block.row;
+                for (const entry of block.cells) {
+                  const column = entry.column;
+                  if (entry.style_ref) {
+                    if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
+                    sheet.cell_style[column][row] = // entry.style;
+                      JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+                  }
+                }
+              }
+            }
+            else {
+              for (const block of obj.data) {
+                const column = block.column;
+                for (const entry of block.cells) {
+                  const row = entry.row;
+                  if (entry.style_ref) {
+                    if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
+                    sheet.cell_style[column][row] = // entry.style;
+                      JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        /*
         if (obj.data && obj.data[0]) {
           if (obj.data[0].cells) {
+            
             if (typeof obj.data[0].row !== 'undefined') {
               for (const block of obj.data) {
                 const row = block.row;
@@ -183,6 +226,8 @@ export class Sheet {
             }
           }
         }
+        */
+
       }
 
     }
@@ -263,36 +308,6 @@ export class Sheet {
     // FIXME
 
     sheet.annotations = (obj.annotations || []).map((entry) => new Annotation(entry));
-
-    /*
-    sheet.annotations = [];
-    if (obj.annotations) {
-      sheet.annotations = obj.annotations.map((entry) => {
-        const annotation = new Annotation(entry);
-        let right = annotation.rect?.right;
-        if (right && sheet?.default_column_width) {
-          for (let i = 0; right >= 0 && i < 1000; i++) {
-            right -= sheet.GetColumnWidth(i);
-            if (right < 0) {
-              sheet.cells.EnsureColumn(i);
-              break;
-            }
-          }
-        }
-        let bottom = annotation.rect?.bottom;
-        if (bottom && sheet?.default_row_height) {
-          for (let i = 0; bottom >= 0 && i < 1000; i++) {
-            bottom -= sheet.GetRowHeight(i);
-            if (bottom < 0) {
-              sheet.cells.EnsureRow(i);
-              break;
-            }
-          }
-        }
-        return annotation;
-      });
-    }
-    */
 
     // FIXME: hint? does anyone use hints?
 
@@ -1597,7 +1612,7 @@ export class Sheet {
    *
    * because we have sparse arrays, we convert them to flat objects first.
    */
-  public toJSON(options: SerializeOptions = {}) {
+  public toJSON(options: SerializeOptions = {}): SerializedSheet {
 
     // flatten height/width arrays
 

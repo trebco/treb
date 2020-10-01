@@ -17,7 +17,7 @@ export interface SheetOptions {
 export interface RangeOptions {
   merge?: boolean;
   style?: number;
-  precalc?: boolean;
+  precalc?: boolean|string|number;
   preserveStyle?: boolean;
   type?: string;
   array?: string;
