@@ -1,8 +1,9 @@
 
 import { GridSelection } from './grid_selection';
-import { SheetEvent } from './sheet_types';
+// import { SheetEvent } from './sheet_types';
 import { Annotation } from './annotation';
 import { Sheet } from './sheet';
+import { Area } from 'treb-base-types';
 
 export interface SheetChangeEvent {
   type: 'sheet-change';
@@ -39,8 +40,24 @@ export interface AnnotationEvent {
   event?: 'move'|'resize'|'create'|'delete'|'update';
 }
 
+export interface DataEvent {
+  type: 'data';
+  area?: Area;
+}
+
+export interface FlushEvent {
+  type: 'flush';
+}
+
+export interface StyleEvent {
+  type: 'style';
+  area?: Area;
+}
+
 export type GridEvent
-  = SheetEvent
+  = DataEvent
+  | StyleEvent
+  | FlushEvent
   | GridErrorEvent
   | StructureEvent
   | AnnotationEvent

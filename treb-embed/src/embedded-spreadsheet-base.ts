@@ -2162,6 +2162,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       serialized.rendered_values = true;
     }
 
+    // this moved to the subclass. the parameter should move to an option,
+    // so that we don't have to maintain the parameter in the base class.
+
     /*
     if (preserve_simulation_data) {
 
@@ -2190,27 +2193,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       area = event.area;
     }
 
-    const result = await this.calculator.Calculate(this.grid.model, area, { formula_only });
-
-    /* this can't happen anymore, we're inlining loop errors
-
-    if (result.status === GraphStatus.Loop) { // && !area) {
-
-      let message = `Loop detected in graph.`;
-      if (this.calculator.loop_hint) {
-        message += ` Check ${this.calculator.loop_hint}.`;
-      }
-
-      this.dialog?.ShowMessageDialog({
-        title: 'Calculation error',
-        message,
-        close_box: true,
-        type: DialogType.error,
-        timeout: 3500,
-      });
-
-    }
-    */
+    // const result = 
+    await this.calculator.Calculate(this.grid.model, area, { formula_only });
 
     this.grid.Update(true); // , area);
     this.UpdateAnnotations();
@@ -2218,7 +2202,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public SaveLocalStorage(key?: string) {
+  public SaveLocalStorage(key?: string): void {
 
     if (!key) {
       key = this.options.storage_key;
@@ -2297,7 +2281,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public FlushUndo(push = true) {
+  public FlushUndo(push = true): void {
 
     // console.info('flush undo');
 
@@ -2311,7 +2295,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public Undo() {
+  public Undo(): void {
 
     if (this.undo_pointer <= 1) {
       console.warn('nothing to undo');

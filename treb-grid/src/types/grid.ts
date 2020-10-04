@@ -26,7 +26,7 @@ import { CellEditor } from '../editors/cell_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
 import { GridEvent } from './grid_events';
-import { SheetEvent, FreezePane, SerializedSheet } from './sheet_types';
+import { FreezePane, SerializedSheet } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
 import { GridOptions, DefaultGridOptions } from './grid_options';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
@@ -841,7 +841,7 @@ export class Grid {
   public FromImportData(
     import_data: {
       sheets: ImportedSheetData[],
-      names?: {[index: string]: string},
+      names?: Record<string, string>,
     },
     render = false,
   ): void {
@@ -858,7 +858,7 @@ export class Grid {
 
     // build a name map for fixing named ranges
 
-    const name_map: {[index: string]: number} = {};
+    const name_map: Record<string, number> = {};
     
     // FIXME: are there macro functions in the data? (...)
 
@@ -1373,7 +1373,7 @@ export class Grid {
     // update style for theme
     this.StyleDefaultFromTheme();
 
-    this.active_sheet.UpdateDefaultRowHeight(true);
+    this.active_sheet.UpdateDefaultRowHeight();
     this.active_sheet.FlushCellStyles();
 
     this.layout.ApplyTheme(this.theme);
@@ -1497,7 +1497,7 @@ export class Grid {
 
     // event handlers and components
 
-    Sheet.sheet_events.Subscribe(this.HandleSheetEvent.bind(this));
+    // Sheet.sheet_events.Subscribe(this.HandleSheetEvent.bind(this));
 
     this.AttachListeners();
 
@@ -1737,31 +1737,8 @@ export class Grid {
 
     }
 
-    // why does the below tranpose method skip undefineds? is it trying
-    // to preserve data? ...
-
-    // it seems like it would have no effect, just not copying undefined -> undefined, 
-    // saving a useless copy at the expense of a test on all cells ...
-
-    /*
-    // transpose. might not be square
-    if (transpose) {
-      const tmp: any[][] = [];
-      const inner_length = (data as any)[0].length;
-      for (let i = 0; i < inner_length; i++) {
-        tmp[i] = [];
-        for (let j = 0; j < data.length; j++) {
-          if (typeof data[j][i] !== 'undefined') {
-            tmp[i][j] = data[j][i];
-          }
-        }
-      }
-      data = tmp;
-    }
-    */
     if (transpose) { data = this.Transpose(data); }
 
-    // this.model.sheet.SetAreaValues(range, data as any[][]);
     this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array });
 
     if (!this.primary_selection.empty && range.Contains(this.primary_selection.target)) {
@@ -2420,7 +2397,11 @@ export class Grid {
     this.tile_update_pending = true;
   }
 
+  /*
   private HandleSheetEvent(event: SheetEvent) {
+
+    console.info("HSE", event.type, event);
+
     switch (event.type) {
       case 'style':
         this.DelayedRender(false, event.area);
@@ -2435,6 +2416,7 @@ export class Grid {
       // console.info('evt', event);
     }
   }
+  */
 
   private RedispatchEvent(event: KeyboardEvent) {
 
@@ -5746,39 +5728,6 @@ export class Grid {
 
   }
 
-  /* not used anymore? (...)
-  private RangeToTSV(range: any, address: Area) {
-
-    const columns = address.columns;
-    const rows = address.rows;
-
-    const data: any = [];
-    for (let i = 0; i < columns; i++) data[i] = [];
-    const c1 = address.start.column;
-    const r1 = address.start.row;
-    range.forEach((cell: any) => {
-      data[cell.column - c1][cell.row - r1] = cell;
-    });
-
-    const tsv = [];
-    for (let r = 0; r < rows; r++) {
-      const row = [];
-      for (let c = 0; c < columns; c++) {
-        let value = '';
-        const ref = data[c][r];
-        if (ref) {
-          if (typeof ref.calculated !== 'undefined') value = ref.calculated;
-          else if (typeof ref.value !== 'undefined') value = ref.value;
-        }
-        row.push(value.toString());
-      }
-      tsv.push(row.join('\t'));
-    }
-
-    return tsv.join('\n');
-  }
-  */
-
   private HandleCopy(event: ClipboardEvent) {
 
     // console.info('handle copy', event, this.primary_selection);
@@ -6858,13 +6807,13 @@ export class Grid {
     if (borders === BorderConstants.None || borders === BorderConstants.All) {
       sheet.UpdateAreaStyle(area, {
         ...top, ...bottom, ...left, ...right,
-      }, true, false, true);
+      }, true);
     }
 
     // top
     if (borders === BorderConstants.Top || borders === BorderConstants.Outside) {
       if (!area.entire_column) {
-        sheet.UpdateAreaStyle(area.top, { ...top }, true, false, true);
+        sheet.UpdateAreaStyle(area.top, { ...top }, true);
       }
     }
 
@@ -6875,7 +6824,7 @@ export class Grid {
         if (area.start.row) {
           sheet.UpdateAreaStyle(new Area(
             { row: area.start.row - 1, column: area.start.column },
-            { row: area.start.row - 1, column: area.end.column }), { ...clear_bottom }, true, false, true);
+            { row: area.start.row - 1, column: area.end.column }), { ...clear_bottom }, true);
         }
       }
     }
@@ -6883,7 +6832,7 @@ export class Grid {
     // bottom
     if (borders === BorderConstants.Bottom || borders === BorderConstants.Outside) {
       if (!area.entire_column) {
-        sheet.UpdateAreaStyle(area.bottom, { ...bottom }, true, false, true);
+        sheet.UpdateAreaStyle(area.bottom, { ...bottom }, true);
       }
     }
 
@@ -6893,14 +6842,14 @@ export class Grid {
       if (!area.entire_column) {
         sheet.UpdateAreaStyle(new Area(
           { row: area.end.row + 1, column: area.start.column },
-          { row: area.end.row + 1, column: area.end.column }), { ...clear_top }, true, false, true);
+          { row: area.end.row + 1, column: area.end.column }), { ...clear_top }, true);
       }
     }
 
     // left
     if (borders === BorderConstants.Left || borders === BorderConstants.Outside) {
       if (!area.entire_row) {
-        sheet.UpdateAreaStyle(area.left, { ...left }, true, false, true);
+        sheet.UpdateAreaStyle(area.left, { ...left }, true);
       }
     }
 
@@ -6911,7 +6860,7 @@ export class Grid {
         if (area.start.column) {
           sheet.UpdateAreaStyle(new Area(
             { row: area.start.row, column: area.start.column - 1 },
-            { row: area.end.row, column: area.start.column - 1 }), { ...clear_right }, true, false, true);
+            { row: area.end.row, column: area.start.column - 1 }), { ...clear_right }, true);
         }
       }
     }
@@ -6919,7 +6868,7 @@ export class Grid {
     // right
     if (borders === BorderConstants.Right || borders === BorderConstants.Outside) {
       if (!area.entire_row) {
-        sheet.UpdateAreaStyle(area.right, { ...right }, true, false, true);
+        sheet.UpdateAreaStyle(area.right, { ...right }, true);
       }
     }
 
@@ -6929,7 +6878,7 @@ export class Grid {
       if (!area.entire_row) {
         sheet.UpdateAreaStyle(new Area(
           { row: area.start.row, column: area.end.column + 1 },
-          { row: area.end.row, column: area.end.column + 1 }), { ...clear_left }, true, false, true);
+          { row: area.end.row, column: area.end.column + 1 }), { ...clear_left }, true);
       }
     }
 
@@ -7074,7 +7023,7 @@ export class Grid {
       this.Error(`You can't change part of an array.`);
     }
     else {
-      this.active_sheet.ClearArea(area, true);
+      this.active_sheet.ClearArea(area);
     }
     
   }
@@ -7188,7 +7137,7 @@ export class Grid {
             // we want to support multiple unmerges at the same time, though,
             // so let's check for multiple. create a list.
 
-            const list: { [index: string]: Area } = {};
+            const list: Record<string, Area> = {};
             const area = new Area(command.area.start, command.area.end);
 
             this.active_sheet.cells.IterateArea(area, (cell: Cell) => {
@@ -7201,10 +7150,8 @@ export class Grid {
 
             const keys = Object.keys(list);
 
-            // suppress events until the last one
-
             for (let i = 0; i < keys.length; i++) {
-              this.active_sheet.UnmergeCells(list[keys[i]], i !== keys.length - 1);
+              this.active_sheet.UnmergeCells(list[keys[i]]);
             }
 
             // see above
@@ -7219,14 +7166,14 @@ export class Grid {
         case CommandKey.UpdateStyle:
           if (IsCellAddress(command.area)) {
             const area = new Area(command.area);
-            this.active_sheet.UpdateCellStyle(command.area, command.style, !!command.delta, true);
+            this.active_sheet.UpdateCellStyle(command.area, command.style, !!command.delta);
             // events.push({type: 'style', area});
             style_area = Area.Join(area, style_area);
             render_area = Area.Join(area, render_area);
           }
           else {
             const area = new Area(command.area.start, command.area.end);
-            this.active_sheet.UpdateAreaStyle(area, command.style, !!command.delta, false, true);
+            this.active_sheet.UpdateAreaStyle(area, command.style, !!command.delta);
             // events.push({type: 'style', area});
             style_area = Area.Join(area, style_area);
             render_area = Area.Join(area, render_area);
@@ -7323,7 +7270,7 @@ export class Grid {
             }
             else {
               for (const entry of row) {
-                this.active_sheet.AutoSizeRow(entry, true);
+                this.active_sheet.AutoSizeRow(entry);
               }
             }
 
@@ -7369,7 +7316,7 @@ export class Grid {
             }
             else {
               for (const entry of column) {
-                this.active_sheet.AutoSizeColumn(entry, false, true);
+                this.active_sheet.AutoSizeColumn(entry, false);
               }
             }
 

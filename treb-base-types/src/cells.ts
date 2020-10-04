@@ -41,6 +41,9 @@ export interface CellSerializationOptions {
 // 
 // so type needs to support both flat and nested, where nested can be row-
 // dominant or column-dominant.
+//
+// by the way, did we ever validate that this structure is significantly
+// smaller, when compressed? (...)
 
 export interface BaseCellData {
   value: CellValue;
@@ -145,7 +148,7 @@ export class Cells {
     // hits populated keys. the returned array has the same
     // indexes. that is very nice.
 
-    this.data = this.data.map((row, ri) => {
+    this.data = this.data.map((row) => {
       if (row.length >= before){
         const tmp = row.slice(0, before);
         let index = before + count;
@@ -178,9 +181,9 @@ export class Cells {
    * the mechanical work of inserting rows/columns.
    */
   public InsertRows(before = 0, count = 1): void {
-    const args = [before, 0, []];
+    const args: [number, number, Cell[]] = [before, 0, []];
     for ( let i = 1; i < count; i++) args.push([]);
-    Array.prototype.splice.apply(this.data, args as [number, number, any]);
+    Array.prototype.splice.apply(this.data, args);
     this.rows_ += count;
   }
 
@@ -223,33 +226,8 @@ export class Cells {
 
   }
 
-  /* *
-   * this method supports returning a new cell OR null if
-   * the object doesn't exist. but that's hard for TS to
-   * understand, so we should create a second method instead
-   * of using a parameter. of course we will leave the parameter
-   * here for backwards compatibility.
-   * /
-  public GetCell(address: ICellAddress, create_new?: boolean){
-    const { row, column } = address;
-    let ref = this.data[row];
-    if (!ref) {
-      if (!create_new) return null;
-      this.data[row] = ref = [];
-      this.rows_ = Math.max(this.rows_, row + 1);
-    }
-    let cell = ref[column];
-    if (!cell) {
-      if (!create_new) return null;
-      cell = ref[column] = new Cell();
-      this.columns_ = Math.max(this.columns_, column + 1);
-    }
-    return cell;
-  }
-  */
-
   /** returns an existing cell or creates a new cell. */
-  public EnsureCell(address: ICellAddress){
+  public EnsureCell(address: ICellAddress): Cell {
     const { row, column } = address;
     let ref = this.data[row];
     if (!ref) {
@@ -268,7 +246,7 @@ export class Cells {
    * with the update, we assume the passed-in data is row-major.
    * when reading an older file, transpose.
    */
-  public FromArray(data: any[] = [], transpose = false){
+  public FromArray(data: CellValue[][] = [], transpose = false): void {
     this.data = [];
 
     let rows = 0;
@@ -589,101 +567,9 @@ export class Cells {
 
   }
 
-  public GetAll(transpose= false){
+  public GetAll(transpose = false){
     return this.GetRange({row: 0, column: 0}, {row: this.rows_ - 1, column: this.columns_ - 1}, transpose);
   }
-
-  /*
-  public GetFormattedRange(from: CellAddress, to?: CellAddress, transpose = false){
-
-    if (!to || from === to || (from.column === to.column && from.row === to.row )){
-      if (this.data[from.row] && this.data[from.row][from.column]){
-        // return this.data[from.column][from.row].GetValue();
-        const cell = this.data[from.row][from.column];
-        return (typeof cell.formatted !== 'undefined') ? cell.formatted : cell.GetValue();
-      }
-      return undefined;
-    }
-
-    const value = [];
-
-    if (transpose){
-      for ( let c = from.column; c <= to.column; c++ ){
-        const column = [];
-        for ( let r = from.row; r <= to.row; r++ ){
-          if (this.data[r] && this.data[r][c]) {
-            const cell = this.data[r][c];
-            column.push(typeof cell.formatted !== undefined ? cell.formatted : cell.GetValue());
-          }
-          else column.push(null);
-        }
-        value.push(column);
-      }
-    }
-    else {
-      for ( let r = from.row; r <= to.row; r++ ){
-        const row = [];
-        for ( let c = from.column; c <= to.column; c++ ){
-          if (this.data[r] && this.data[r][c]) {
-            const cell = this.data[r][c];
-            row.push(typeof cell.formatted !== undefined ? cell.formatted : cell.GetValue());
-          }
-          else row.push(null);
-        }
-        value.push(row);
-      }
-    }
-
-    // console.info(value)
-    return value;
-
-  }
-  */
-
-  /*
-  public FormattedValue(cell: Cell) {
-
-    console.info('c', cell)
-
-    if (typeof cell.formatted === 'string') return cell.formatted;
-    if (cell.formatted) {
-      console.info("P", cell.formatted);
-      return cell.formatted.map(part => part.text).join(' ');
-    }
-    return cell.value;
-  }
-
-  public FormattedRange(from: ICellAddress, to: ICellAddress = from) {
-
-    if (from.row === to.row && from.column === to.column) {
-      if (this.data[from.row] && this.data[from.row][from.column]) {
-        return this.FormattedValue(this.data[from.row][from.column]);
-      }
-      return undefined;
-    }
-
-    const result: any[][] = [];
-    
-    // grab rows
-    const rows = this.data.slice(from.row, to.row + 1);
-
-    // now columns
-    const start = from.column;
-    const end = to.column + 1;
-
-    for (const source of rows) {
-      const target: any[] = [];
-      for (let column = start, index = 0; column < end; column++, index++ ) {
-        const cell = source[column];
-        target.push(this.FormattedValue(cell));
-      }
-      result.push(target);
-    }
-
-    return result;
-
-  }
-  */
 
   /**
    * get raw values (i.e. not calculated). anything outside of actual

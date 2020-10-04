@@ -1,5 +1,5 @@
 
-import { Area, IArea, SerializedCellData, Style } from 'treb-base-types';
+import { IArea, SerializedCellData, Style } from 'treb-base-types';
 import { Annotation } from './annotation';
 import { GridSelection } from './grid_selection';
 
@@ -11,28 +11,6 @@ export interface UpdateHints {
   freeze?: boolean;
   names?: boolean;
 }
-
-export interface DataEvent {
-  type: 'data';
-  area?: Area;
-  // selection?: GridSelection;
-}
-
-export interface FlushEvent {
-  type: 'flush';
-}
-
-export interface StyleEvent {
-  type: 'style';
-  area?: Area;
-  // selection?: GridSelection;
-}
-
-export type SheetEvent
-  = DataEvent
-  | StyleEvent
-  | FlushEvent
-  ;
 
 export interface FreezePane {
   rows: number;

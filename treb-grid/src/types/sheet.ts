@@ -2,13 +2,15 @@
 // --- treb imports -----------------------------------------------------------
 
 import { Cell, ValueType, Cells, Style,
-  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray } from 'treb-base-types';
+  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
-import { EventSource, Measurement } from 'treb-utils';
+import { Measurement } from 'treb-utils';
+
+import type { TextPart } from 'treb-base-types';
 
 // --- local imports ----------------------------------------------------------
 
-import { SheetEvent, UpdateHints, FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
+import { UpdateHints, FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
 import { CreateSelection } from './grid_selection';
 import { Annotation } from './annotation';
@@ -36,7 +38,7 @@ export class Sheet {
    * adding verbose flag so we can figure out who is publishing
    * (and stop -- part of the ExecCommand switchover)
    */
-  public static readonly sheet_events = new EventSource<SheetEvent>(true, 'sheet-events');
+  // public static readonly sheet_events = new EventSource<SheetEvent>(true, 'sheet-events');
 
   // --- class methods --------------------------------------------------------
 
@@ -78,7 +80,7 @@ export class Sheet {
     if (typeof json === 'string') obj = JSON.parse(json);
     else obj = json as SerializedSheet;
 
-    const unflatten_numeric_array = (target: number[], data: { [index: string]: number }, default_value: number) => {
+    const unflatten_numeric_array = (target: number[], data: Record<string, number>) => { // , default_value: number) => {
       Object.keys(data).forEach((key) => {
         const index = Number(key) || 0;
         target[index] = data[key];
@@ -278,7 +280,7 @@ export class Sheet {
 
       sheet.row_height_ = [];
       unflatten_numeric_array(sheet.row_height_, obj.row_height || {},
-        sheet.default_row_height);
+        ); // sheet.default_row_height);
         // obj.default_row_height);
 
       if (sheet.row_height_.length) {
@@ -287,7 +289,7 @@ export class Sheet {
   
       sheet.column_width_ = [];
       unflatten_numeric_array(sheet.column_width_, obj.column_width || {},
-        sheet.default_column_width);
+        ); // sheet.default_column_width);
         // obj.default_column_width);
 
       if (sheet.column_width_.length) {
@@ -460,9 +462,9 @@ export class Sheet {
 
   // then individual (applied) row and column styles (indexed by row/column)
 
-  private row_styles: { [index: number]: Style.Properties } = {};
+  private row_styles: Record<number, Style.Properties> = {};
 
-  private column_styles: { [index: number]: Style.Properties } = {};
+  private column_styles: Record<number, Style.Properties> = {};
 
   /* 
   we used to have "alternate row" styles. it's clumsy, but it is a nice
@@ -483,17 +485,17 @@ export class Sheet {
 
   // public get column_header_count() { return this.column_header_count_; }
 
-  public get header_offset() {
+  public get header_offset(): {x: number, y: number} {
     return { x: this.row_header_width, y: this.column_header_height };
   }
 
   /** accessor: now just a wrapper for the call on cells */
-  public get rows() { return this.cells.rows; }
+  public get rows(): number { return this.cells.rows; }
 
   /** accessor: now just a wrapper for the call on cells */
-  public get columns() { return this.cells.columns; }
+  public get columns(): number { return this.cells.columns; }
 
-  public get id() { return this.id_; }
+  public get id(): number { return this.id_; }
 
   public set id(id: number) {
     this.id_ = id;
@@ -514,7 +516,7 @@ export class Sheet {
 
     this.default_column_width = DEFAULT_COLUMN_WIDTH;
     this.row_header_width = DEFAULT_ROW_HEADER_WIDTH;
-    this.UpdateDefaultRowHeight(true);
+    this.UpdateDefaultRowHeight();
 
     this.id_ = Sheet.base_id++;
 
@@ -522,7 +524,7 @@ export class Sheet {
 
   // --- public methods -------------------------------------------------------
 
-  public MergeCells(area: Area) {
+  public MergeCells(area: Area): void {
 
     // FIXME: it's an error if this area includes some
     // (but not all) of another merge area.
@@ -540,11 +542,9 @@ export class Sheet {
       if (c !== area.start.column || r !== area.start.row) cell.Reset();
     }, true);
 
-    // caller // return this.sheet_events.Publish({ type: 'data', area });
-
   }
 
-  public UnmergeCells(area: Area, inline = false) {
+  public UnmergeCells(area: Area): void {
 
     // this _must_ be the full merge area. to get it, just get
     // the merge property from a particular cell or cells.
@@ -566,34 +566,15 @@ export class Sheet {
       cell.render_dirty = true;
     }, false);
 
-    if (inline) return; // support batching events
-
-    // caller // return this.sheet_events.Publish({ type: 'data', area });
-
   }
 
   /**
    * FIXME: measure the font.
    */
-  public StyleFontSize(style: Style.Properties) {
-
-    /*
-    let font_height = style.font_size;
-
-    if (typeof font_height === 'string') {
-      if (/px/.test(font_height)) {
-        font_height = Math.round(Number(font_height.replace(/px/, '')) * 75) / 100;
-      }
-      else if (/pt/.test(font_height)) {
-        font_height = Number(font_height.replace(/pt/, ''));
-      }
-      else {
-        font_height = Number(font_height.replace(/\D+/g, ''));
-      }
-    }
-    */
+  public StyleFontSize(style: Style.Properties): number {
 
     let font_height = (style.font_size_value || 0);
+
     if (style.font_size_unit === 'px') {
       font_height *= (75 / 100);
     }
@@ -607,37 +588,46 @@ export class Sheet {
    * were more ephemeral. now that we update a single instance, rather
    * than create new instances, we lose this behavior. we should call
    * this when we change sheet style.
+   * 
+   * removing parameter, event
    */
-  public UpdateDefaultRowHeight(suppress_event = false) {
+  public UpdateDefaultRowHeight(): void {
 
     const composite = Style.Composite([this.default_style_properties, this.sheet_style]);
 
     if (typeof window !== 'undefined') {
+
       const measurement = Measurement.MeasureText(Style.Font(composite), 'M');
       const height = Math.round(measurement.height * 1.4);
-      // console.info("DRH", this.default_row_height, Style.Font(composite), measurement);
+
       if (this.default_row_height < height) {
         this.default_row_height = height;
       }
+
     }
+    /*
     else {
       // console.info('worker?');
     }
-    if (!suppress_event) this.PublishStyleEvent(undefined, 1);
+    */
 
   }
 
   /** returns aggregate width of all (known) columns */
-  public get total_width() {
+  public get total_width(): number {
     let width = 0;
-    for (let i = 0; i < this.cells.columns; i++) width += this.GetColumnWidth(i);
+    for (let i = 0; i < this.cells.columns; i++) {
+      width += this.GetColumnWidth(i);
+    }
     return width;
   }
 
   /** returns aggregate height of all (known) rows */
-  public get total_height() {
+  public get total_height(): number {
     let height = 0;
-    for (let i = 0; i < this.cells.rows; i++) height += this.GetRowHeight(i);
+    for (let i = 0; i < this.cells.rows; i++) {
+      height += this.GetRowHeight(i);
+    }
     return height;
   }
 
@@ -645,8 +635,8 @@ export class Sheet {
    * deprecated (or give me a reason to keep it)
    * KEEP IT: just maintain flexibility, it has very low cost
    */
-  public SetRowHeaders(headers: any[]) {
-    this.row_headers = headers;
+  public SetRowHeaders(headers: CellValue[]): void {
+    this.row_headers = headers.map(value => value === undefined ? '' : value.toString());
     if (this.row_headers) {
       this.cells.EnsureRow(this.row_headers.length - 1);
     }
@@ -656,8 +646,8 @@ export class Sheet {
    * deprecated (or give me a reason to keep it)
    * KEEP IT: just maintain flexibility, it has very low cost
    */
-  public SetColumnHeaders(headers: any[]) {
-    this.column_headers = headers;
+  public SetColumnHeaders(headers: CellValue[]): void {
+    this.column_headers = headers.map(value => value === undefined ? '' : value.toString());
     if (headers){
       this.cells.EnsureColumn(headers.length - 1);
     }
@@ -667,7 +657,7 @@ export class Sheet {
    * deprecated
    * KEEP IT: just maintain flexibility, it has very low cost
    */
-  public RowHeader(row: number) {
+  public RowHeader(row: number): string|number {
     if (this.row_headers) {
       if (this.row_headers.length > row) return this.row_headers[row];
       return '';
@@ -680,7 +670,7 @@ export class Sheet {
    * KEEP IT: just maintain flexibility, it has very low cost
    * (we did drop the multiple rows, though)
    */
-  public ColumnHeader(column: number) {
+  public ColumnHeader(column: number): string {
     let s = '';
     if (this.column_headers) {
       if (this.column_headers.length > column) return this.column_headers[column];
@@ -696,25 +686,25 @@ export class Sheet {
     return s;
   }
 
-  public GetRowHeight(row: number) {
+  public GetRowHeight(row: number): number {
     const height = this.row_height_[row];
     if (typeof height === 'undefined') return this.default_row_height;
     return height;
   }
 
-  public SetRowHeight(row: number, height: number) {
+  public SetRowHeight(row: number, height: number): number {
     this.row_height_[row] = height;
     this.cells.EnsureRow(row);
     return height;
   }
 
-  public GetColumnWidth(column: number) {
+  public GetColumnWidth(column: number): number {
     const width = this.column_width_[column];
     if (typeof width === 'undefined') return this.default_column_width;
     return width;
   }
 
-  public SetColumnWidth(column: number, width: number) {
+  public SetColumnWidth(column: number, width: number): number {
     this.column_width_[column] = width;
     this.cells.EnsureColumn(column);
     return width;
@@ -771,7 +761,7 @@ export class Sheet {
    * @param delta merge with existing properties (we will win conflicts)
    * @param inline this is part of another operation, don't do any undo/state updates
    */
-  public UpdateCellStyle(address: ICellAddress, properties: Style.Properties, delta = true, inline = false) {
+  public UpdateCellStyle(address: ICellAddress, properties: Style.Properties, delta = true): void {
 
     // so what this is doing is constructing two merge stacks: one including
     // the cell style, and one without. any deltas among the two are the cell
@@ -793,6 +783,11 @@ export class Sheet {
       Style.Merge(this.cell_style[column][row] || {}, properties, delta),
     ]);
 
+    // this is type "any" because of the assignment, below, which fails
+    // otherwise. however this could be done with spread assignments? (...)
+    // A: no, it's not merging them, it is looking for deltas.
+    // ...but, what if you filtered? (...)
+
     const composite: any = {};
 
     // find properties that are different, those will be the cell style.
@@ -813,10 +808,6 @@ export class Sheet {
     // targeted flush
     this.CellData(address).FlushStyle();
 
-    if (inline) return;
-
-
-    this.PublishStyleEvent(undefined, 7); // console.info("PSE 7");
   }
 
   /**
@@ -826,28 +817,24 @@ export class Sheet {
    * @param delta
    * @param render LEGACY PARAMETER NOT USED
    */
-  public UpdateAreaStyle(area?: Area, style: Style.Properties = {}, delta = true, render = true, inline = false) {
+  public UpdateAreaStyle(area?: Area, style: Style.Properties = {}, delta = true): void {
 
     if (!area) return;
 
     if (area.entire_sheet) {
-      this.UpdateSheetStyle(style, delta, true);
+      this.UpdateSheetStyle(style, delta);
     }
     else if (area.entire_column) {
       for (let column = area.start.column; column <= area.end.column; column++) {
-        this.UpdateColumnStyle(column, style, delta, true);
+        this.UpdateColumnStyle(column, style, delta);
       }
     }
     else if (area.entire_row) {
       for (let row = area.start.row; row <= area.end.row; row++) {
-        this.UpdateRowStyle(row, style, delta, true);
+        this.UpdateRowStyle(row, style, delta);
       }
     }
-    else area.Array().forEach((address) => this.UpdateCellStyle(address, style, delta, true));
-
-    if (inline) return;
-
-    this.PublishStyleEvent(area, 8); // console.info("PSE 10");
+    else area.Array().forEach((address) => this.UpdateCellStyle(address, style, delta));
 
   }
 
@@ -855,8 +842,8 @@ export class Sheet {
    * checks if the given cell has been assigned a specific style, either for
    * the cell itself, or for row and column.
    */
-  public HasCellStyle(address: ICellAddress) {
-    return ((this.cell_style[address.column] && this.cell_style[address.column][address.row]) 
+  public HasCellStyle(address: ICellAddress): boolean {
+    return !!((this.cell_style[address.column] && this.cell_style[address.column][address.row]) 
       || this.row_styles[address.row] 
       || this.column_styles[address.column]
       || this.row_pattern.length );
@@ -866,12 +853,16 @@ export class Sheet {
    * get style only. as noted in the comment to `CellData` there used to be
    * no case where this was useful without calculated value as well; but we
    * now have a case: fixing borders by checking neighboring cells. (testing).
+   * 
+   * switching from null to undefined as "missing" type
    */
-  public CellStyleData(address: ICellAddress) {
+  public CellStyleData(address: ICellAddress): Style.Properties|undefined {
 
     // don't create if it doesn't exist
     const cell = this.cells.GetCell(address);
-    if (!cell) return null;
+    if (!cell) {
+      return undefined;
+    }
 
     // composite style if necessary
     if (!cell.style) {
@@ -887,7 +878,7 @@ export class Sheet {
    * accessor to get cell style without row pattern -- for cut/copy
    * @param address 
    */
-  public GetCopyStyle(address: ICellAddress) {
+  public GetCopyStyle(address: ICellAddress): Style.Properties {
     return this.CompositeStyleForCell(address, true, false);
   }
 
@@ -921,7 +912,7 @@ export class Sheet {
     // otherwise we need to render it. if we have a calculated value, use that.
 
     let type: ValueType;
-    let value: any;
+    let value: CellValue;
 
     if (cell.calculated_type) {
       value = cell.calculated;
@@ -949,7 +940,7 @@ export class Sheet {
 
       // IE11. not sure of the effect of this.
 
-      if (isNaN(value)) {
+      if (isNaN(value as number)) {
         cell.formatted = // Style.Format(cell.style, value); // formats NaN
           (typeof cell.style.nan === 'undefined') ? 'NaN' : cell.style.nan;
       }
@@ -991,20 +982,20 @@ export class Sheet {
    * and calls method. returns a string or array of text parts
    * (@see treb-format).
    */
-  public FormatNumber(value: any, format = '') {
+  public FormatNumber(value: CellValue, format = ''): string|TextPart[] {
     const formatted = NumberFormatCache.Get(format).FormatParts(value);
     if (!formatted.length) return '';
     if (formatted.length === 1 && !formatted[0].flag) { return formatted[0].text || ''; }
     return formatted;
   }
 
-  public ColumnHeaderHeight() {
+  public ColumnHeaderHeight(): number {
     return this.column_header_height || this.default_row_height;
   }
 
   public SetHeaderSize(
     row_header_width = DEFAULT_ROW_HEADER_WIDTH,
-    column_header_height = this.default_row_height) {
+    column_header_height = this.default_row_height): void {
 
     this.row_header_width = row_header_width;
     this.column_header_height = column_header_height;
@@ -1013,8 +1004,11 @@ export class Sheet {
   /**
    * resize row to match character hight, taking into
    * account multi-line values.
+   * 
+   * UPDATE: since the only caller calls with inline = true, removing 
+   * parameter, test, and extra behavior.
    */
-  public AutoSizeRow(row: number, inline = false) {
+  public AutoSizeRow(row: number): void {
 
     let height = this.default_row_height;
     const padding = 9;
@@ -1038,18 +1032,16 @@ export class Sheet {
 
     this.SetRowHeight(row, height);
 
-    if (inline) return;
-    this.PublishStyleEvent(undefined, 9); // console.info("PSE 12");
-
   }
 
   /**
    * auto-sizes the column, but if the allow_shrink parameter is not set
    * it will only enlarge, never shrink the column.
    *
-   * UPDATE: add inline parameter to stop broadcast
+   * UPDATE: since the only caller calls with inline = true, removing 
+   * parameter, test, and extra behavior.
    */
-  public AutoSizeColumn(column: number, allow_shrink = true, inline = false) {
+  public AutoSizeColumn(column: number, allow_shrink = true): void {
 
     if (!Sheet.measurement_canvas) Sheet.measurement_canvas = document.createElement('canvas');
     const context = Sheet.measurement_canvas.getContext('2d');
@@ -1075,13 +1067,10 @@ export class Sheet {
 
     this.SetColumnWidth(column, width);
 
-    if (inline) return;
-    this.PublishStyleEvent(undefined, 10); // console.info("PSE 13");
-
   }
 
   /** returns the style properties for a given style index */
-  public GetStyle(index: number) {
+  public GetStyle(index: number): Style.Properties {
     return this.style_map[index];
   }
 
@@ -1103,7 +1092,7 @@ export class Sheet {
    * @param before_row insert before
    * @param count number to insert
    */
-  public InsertRows(before_row = 0, count = 1) {
+  public InsertRows(before_row = 0, count = 1): boolean {
 
     // this needs to be shared between sheet/cells and the
     // outside spreadsheet logic. we should not be fixing references,
@@ -1143,8 +1132,8 @@ export class Sheet {
     // now we have to fix arrays and merge heads. these lists will keep
     // track of the _new_ starting address.
 
-    const merge_heads: { [index: string]: Area } = {};
-    const array_heads: { [index: string]: Area } = {};
+    const merge_heads: Record<string, Area> = {};
+    const array_heads: Record<string, Area> = {};
 
     // now grab arrays and merge heads that are below the new rows
     // this should include merges that span the new range
@@ -1193,7 +1182,7 @@ export class Sheet {
     // row styles
 
     const row_keys = Object.keys(this.row_styles);
-    const new_row_style: { [index: number]: Style.Properties } = {};
+    const new_row_style: Record<number, Style.Properties> = {};
 
     row_keys.forEach((key) => {
       const index = Number(key);
@@ -1246,7 +1235,7 @@ export class Sheet {
   /**
    * see InsertRow for details
    */
-  public InsertColumns(before_column = 0, count = 1) {
+  public InsertColumns(before_column = 0, count = 1): boolean {
 
     // check for array breaks
 
@@ -1274,8 +1263,8 @@ export class Sheet {
     // now we have to fix arrays and merge heads. these lists will keep
     // track of the _new_ starting address.
 
-    const merge_heads: { [index: string]: Area } = {};
-    const array_heads: { [index: string]: Area } = {};
+    const merge_heads: Record<string, Area> = {};
+    const array_heads: Record<string, Area> = {};
 
     // now grab arrays and merge heads that are below the new rows
     // this should include merges that span the new range
@@ -1321,7 +1310,7 @@ export class Sheet {
     // column styles
 
     const column_keys = Object.keys(this.column_styles);
-    const new_column_style: { [index: number]: Style.Properties } = {};
+    const new_column_style: Record<number, Style.Properties> = {};
 
     column_keys.forEach((key) => {
       const index = Number(key);
@@ -1361,7 +1350,7 @@ export class Sheet {
   }
 
   /** clear cells in area */
-  public ClearArea(area: Area, inline = false) {
+  public ClearArea(area: Area): void {
 
     // this is not allowed if any of the cells are in
     // an array, and the array does not match the passed
@@ -1373,8 +1362,7 @@ export class Sheet {
 
     area = this.RealArea(area);
     this.cells.IterateArea(area, (cell) => cell.Reset());
-    if (inline) { return; }
-    return Sheet.sheet_events.Publish({ type: 'data', area });
+
   }
 
   // ATM we have 4 methods to set value/values. we need a distinction for
@@ -1406,7 +1394,7 @@ export class Sheet {
   }
   */
 
-  public SetAreaValues2(area: Area, values: any|any[][]) {
+  public SetAreaValues2(area: Area, values: any|any[][]): void {
 
     // we don't want to limit this to the existing area, we only
     // want to remove infinities (if set). it's possible to expand
@@ -1422,7 +1410,7 @@ export class Sheet {
   /**
    * set the area as an array formula, based in the top-left cell
    */
-  public SetArrayValue(area: Area, value: any) {
+  public SetArrayValue(area: Area, value: any): void {
     area = this.RealArea(area);
     this.cells.IterateArea(area, (element) => element.SetArray(area), true);
     const cell = this.cells.GetCell(area.start, true);
@@ -1432,7 +1420,7 @@ export class Sheet {
   /**
    * set a single value in a single cell
    */
-  public SetCellValue(address: ICellAddress, value: any) {
+  public SetCellValue(address: ICellAddress, value: any): void {
     const cell = this.cells.GetCell(address, true);
     cell.Set(value);
   }
@@ -1495,7 +1483,7 @@ export class Sheet {
    *
    * @param clamp -- new parameter will optionally clamp to actual sheet size
    */
-  public RealArea(area: Area, clamp = false) {
+  public RealArea(area: Area, clamp = false): Area {
 
     const start = area.start; // this is a copy
     const end = area.end;     // ditto
@@ -1558,10 +1546,12 @@ export class Sheet {
   */
 
   ///
-  public FormattedCellValue(address: ICellAddress) {
+  public FormattedCellValue(address: ICellAddress): CellValue {
 
     const cell = this.CellData(address);
-    if (!cell) return undefined;
+    if (!cell) {
+      return undefined;
+    }
 
     if (typeof cell.formatted === 'string') return cell.formatted;
     if (cell.formatted) {
@@ -1617,7 +1607,8 @@ export class Sheet {
     // flatten height/width arrays
 
     const flatten_numeric_array = (arr: number[], default_value: number) => {
-      const obj: { [index: number]: number } = {};
+      const obj: Record<number, number> = {};
+
       for (let i = 0; i < arr.length; i++) {
         if ((typeof arr[i] !== 'undefined') && arr[i] !== default_value) obj[i] = arr[i];
       }
@@ -1635,7 +1626,7 @@ export class Sheet {
 
     let cell_style_refs = [{}]; // include an empty entry at zero
 
-    const cell_style_map: { [index: string]: number } = {};
+    const cell_style_map: Record<string, number> = {};
 
     const cell_reference_map: number[][] = [];
 
@@ -1987,7 +1978,7 @@ export class Sheet {
    * expect that the unbold style will control. instead of explicitly setting
    * the cell style, we go up the chain and remove any matching properties.
    */
-  private UpdateSheetStyle(properties: Style.Properties, delta = true, inline = false) {
+  private UpdateSheetStyle(properties: Style.Properties, delta = true) {
 
     this.sheet_style = Style.Merge(this.sheet_style, properties, delta);
 
@@ -2019,10 +2010,6 @@ export class Sheet {
 
     this.FlushCellStyles(); // not targeted
 
-    if (inline) return;
-
-    this.PublishStyleEvent(undefined, 4); // console.info("PSE 4");
-
   }
 
   /**
@@ -2032,7 +2019,7 @@ export class Sheet {
    * there's an overriding column property (columns have priority), we will
    * need to update the cell property to match the desired output.
    */
-  private UpdateRowStyle(row: number, properties: Style.Properties, delta = true, inline = false) {
+  private UpdateRowStyle(row: number, properties: Style.Properties, delta = true) {
 
     this.row_styles[row] = Style.Merge(this.row_styles[row] || {}, properties, delta);
 
@@ -2076,16 +2063,12 @@ export class Sheet {
 
     this.cells.IterateArea(this.RealArea(Area.FromRow(row)), (cell) => cell.FlushStyle());
 
-    if (inline) return;
-
-    this.PublishStyleEvent(undefined, 5); // console.info("PSE 5");
-
   }
 
   /**
    * updates column properties. reverse-overrides cells (@see UpdateSheetStyle).
    */
-  private UpdateColumnStyle(column: number, properties: Style.Properties, delta = true, inline = false) {
+  private UpdateColumnStyle(column: number, properties: Style.Properties, delta = true) {
 
     this.column_styles[column] = Style.Merge(this.column_styles[column] || {}, properties, delta);
 
@@ -2130,26 +2113,6 @@ export class Sheet {
     this.cells.IterateArea(this.RealArea(Area.FromColumn(column)), (cell) => cell.FlushStyle());
 
     // FIXME: ROW PATTERN
-
-    if (inline) return;
-
-    this.PublishStyleEvent(undefined, 6); // console.info("PSE 6");
-  }
-
-
-  //
-
-
-  private PublishStyleEvent(area?: Area, log?: any) {
-
-    // block on undo batching; but note that the undo batch won't
-    // publish an event later, so you need to do that manually
-
-    Sheet.sheet_events.Publish({ type: 'style', area });
-
-    // trace (we are trying to remove all calls)
-
-    if (log) { console.info('PSE', log); }
 
   }
 
