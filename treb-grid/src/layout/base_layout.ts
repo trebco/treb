@@ -121,7 +121,8 @@ export abstract class BaseLayout {
 
   private tooltip: HTMLDivElement;
 
-  private dropdown_caret: SVGSVGElement;
+  protected dropdown_caret: SVGSVGElement;
+
   private dropdown_list: HTMLDivElement;
   private dropdown_caret_visible = false;
   private dropdown_callback?: (value: CellValue) => void;
@@ -480,6 +481,8 @@ export abstract class BaseLayout {
     if (!this.tooltip.parentElement) {
       container.appendChild(this.tooltip);
     }
+
+    // FIXME: -> instance specific, b/c trident
 
     if (!this.dropdown_caret.parentElement) {
       container.appendChild(this.dropdown_caret);

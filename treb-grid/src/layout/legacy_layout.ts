@@ -115,6 +115,9 @@ export class LegacyLayout extends BaseLayout {
     container.appendChild(this.grid_cover);
     this.grid_cover.appendChild(this.annotation_container);
 
+    // has layout issues... TODO/FIXME
+    // this.grid_cover.appendChild(this.dropdown_caret);
+
     container.appendChild(this.column_header_cover);
     container.appendChild(this.row_header_cover);
 

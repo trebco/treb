@@ -157,7 +157,10 @@ export class ChartRenderer {
       return text_metrics;
     });
 
-    measure.parentElement?.removeChild(measure);
+    // IE11: SVG element doesn't have parent element? (...)
+
+    // measure.parentElement?.removeChild(measure);
+    group.removeChild(measure);
 
     let y = max_height;
 
