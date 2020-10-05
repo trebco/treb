@@ -5,7 +5,7 @@ import { Tile } from '../types/tile';
 import { DOMUtilities } from '../util/dom_utilities';
 // import { Sheet } from '../types/sheet';
 import { DataModel } from '../types/data_model';
-import { tmpl, NodeModel } from 'treb-utils';
+// import { tmpl, NodeModel } from 'treb-utils';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -103,7 +103,7 @@ export class GridLayout extends BaseLayout {
   }
 
   /** attach node structure to container */
-  public InitializeInternal(container: HTMLElement, scroll_callback: () => void) {
+  public InitializeInternal(container: HTMLElement, scroll_callback: () => void): void {
 
     this.container = container;
     this.container.classList.add('grid-layout');
@@ -120,11 +120,11 @@ export class GridLayout extends BaseLayout {
     container.appendChild(this.row_header_cover);
     container.appendChild(this.mock_selection);
 
-    this.container.addEventListener('scroll', (event) => scroll_callback());
+    this.container.addEventListener('scroll', () => scroll_callback());
 
   }
 
-  public ResizeCursor(resize?: 'row'|'column') {
+  public ResizeCursor(resize?: 'row'|'column'): void {
     switch (resize) {
     case 'row':
       this.row_header_cover.classList.add('resize');
@@ -139,12 +139,12 @@ export class GridLayout extends BaseLayout {
     }
   }
 
-  protected UpdateTileGridPosition(tile: Tile) {
+  protected UpdateTileGridPosition(tile: Tile): void {
     tile.style.gridColumn = `${tile.tile_position.column + 1} / ${tile.tile_position.column + 2}`;
     tile.style.gridRow = `${tile.tile_position.row + 1} / ${tile.tile_position.row + 2}`;
   }
 
-  protected UpdateContainingGrid(){
+  protected UpdateContainingGrid(): void {
 
     if (!this.container) throw new Error('missing container');
 
@@ -178,7 +178,7 @@ export class GridLayout extends BaseLayout {
 
   }
 
-  protected UpdateGridTemplates(columns = true, rows = true) {
+  protected UpdateGridTemplates(columns = true, rows = true): void {
 
     let width = 0;
     let height = 0;

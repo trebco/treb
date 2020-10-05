@@ -734,10 +734,20 @@ export class Cells {
    * and array value methods, although the implementation is separate.
    *
    * watch out for typed arrays, which do not satisfy Array.isArray
+   * 
+   * when would this function get a 1D typed array? can't figure that out.
+   * might have something to do with simulation data, but not sure.
+   * 
+   * just drop for the time being.
+   * 
    */
-  public SetArea(area: Area, values: CellValue[][]): void {
+  public SetArea(area: Area, values: CellValue|CellValue[][]): void {
 
-    if (Array.isArray(values) || ArrayBuffer.isView(values)) {
+    if (ArrayBuffer.isView(values)) {
+      throw new Error('ABIV');
+    }
+
+    if (Array.isArray(values)) { // || ArrayBuffer.isView(values)) {
       for (let r = area.start.row, i = 0; r <= area.end.row; r++, i++) {
         if (!this.data[r]) this.data[r] = [];
         const row = this.data[r];

@@ -193,7 +193,7 @@ export class Parser {
    * (operations, calls, groups) return false to skip the subtree, or true to
    * traverse.
    */
-  public Walk(unit: ExpressionUnit, func: (unit: ExpressionUnit) => boolean) {
+  public Walk(unit: ExpressionUnit, func: (unit: ExpressionUnit) => boolean): void {
     switch (unit.type) {
       case 'address':
       case 'missing':
@@ -519,7 +519,7 @@ export class Parser {
   }
 
   /** generates column label ("A") from column index (0-based) */
-  protected ColumnLabel(column: number) {
+  protected ColumnLabel(column: number): string {
     let s = String.fromCharCode(65 + (column % 26));
     while (column > 25) {
       column = Math.floor(column / 26) - 1;
@@ -1246,7 +1246,13 @@ export class Parser {
    * consumes a row, possibly absolute ($). returns the numeric row
    * (0-based) and metadata
    */
-  protected ConsumeAddressRow(position: number) {
+  protected ConsumeAddressRow(position: number): 
+    { 
+      absolute: boolean;
+      row: number;
+      position: number;
+    }|false {
+
     const absolute = this.data[position] === DOLLAR_SIGN;
     if (absolute) position++;
 
@@ -1270,7 +1276,13 @@ export class Parser {
    * consumes a column, possibly absolute ($). returns the numeric
    * column (0-based) and metadata
    */
-  protected ConsumeAddressColumn(position: number) {
+  protected ConsumeAddressColumn(position: number):
+    { 
+      absolute: boolean;
+      column: number;
+      position: number;
+    }|false {
+
     let column = -1; // clever
     let length = 0; // max 3 chars for column
 
@@ -1417,7 +1429,7 @@ export class Parser {
    * embed a quotation mark, use "" (double-double quote); that's an escaped
    * double-quote.
    */
-  protected ConsumeString() {
+  protected ConsumeString(): string {
     this.index++; // open quote
     const str: number[] = [];
 
@@ -1450,7 +1462,7 @@ export class Parser {
   }
 
   /** run through any intervening whitespace */
-  protected ConsumeWhiteSpace() {
+  protected ConsumeWhiteSpace(): void {
     for (; this.index < this.length;) {
       const char = this.data[this.index];
       if (

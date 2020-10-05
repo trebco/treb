@@ -10,7 +10,7 @@ import type { TextPart } from 'treb-base-types';
 
 // --- local imports ----------------------------------------------------------
 
-import { UpdateHints, FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
+import { FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
 import { CreateSelection } from './grid_selection';
 import { Annotation } from './annotation';
@@ -72,9 +72,7 @@ export class Sheet {
    * @param hints UpdateHints supports partial deserialization/replacement
    * if we know there are only minor changes (as part of undo/redo, probably)
    */
-  public static FromJSON(json: string | Partial<SerializedSheet>, style_defaults: Style.Properties, sheet?: Sheet, hints?: UpdateHints): Sheet {
-
-    if (hints) console.warn( '(using hints)', hints);
+  public static FromJSON(json: string | Partial<SerializedSheet>, style_defaults: Style.Properties, sheet?: Sheet): Sheet {
 
     let obj: SerializedSheet;
     if (typeof json === 'string') obj = JSON.parse(json);
@@ -91,22 +89,6 @@ export class Sheet {
       sheet = new Sheet(style_defaults);
     }
 
-    // new, named ranges [FIXME: move to container?] -- these are
-    // serialized so create objects
-
-    /*
-    if (!hints || hints.names) {
-      sheet.named_ranges.Reset();
-      if (obj.named_ranges) {
-        for (const key of Object.keys(obj.named_ranges)) {
-          sheet.named_ranges.SetName(key, new Area(
-              obj.named_ranges[key].start, obj.named_ranges[key].end), false);
-          }
-      }
-      sheet.named_ranges.RebuildList();
-    }
-    */
-
     // persist ID, name
 
     if (obj.id) {
@@ -118,134 +100,77 @@ export class Sheet {
 
     // styles (part 1) -- moved up in case we use inlined style refs
 
-    if (!hints || hints.style) {
+    sheet.cell_style = [];
 
-      sheet.cell_style = [];
-
-      if (obj.cell_style_refs) {
-        (obj.cell_styles || []).forEach((cell_style: CellStyleRef) => {
-            if (typeof cell_style.ref === 'number') {
-            cell_style.style =
-              JSON.parse(JSON.stringify(obj.cell_style_refs[cell_style.ref])); // clone
-          }
-        });
-      }
-
+    if (obj.cell_style_refs) {
+      (obj.cell_styles || []).forEach((cell_style: CellStyleRef) => {
+          if (typeof cell_style.ref === 'number') {
+          cell_style.style =
+            JSON.parse(JSON.stringify(obj.cell_style_refs[cell_style.ref])); // clone
+        }
+      });
     }
 
     // data: cells (moved after style)
 
-    if (!hints || hints.data) {
-      
-      sheet.cells.FromJSON(obj.data);
-      if (obj.rows) sheet.cells.EnsureRow(obj.rows - 1);
-      if (obj.columns) sheet.cells.EnsureColumn(obj.columns - 1);
+    sheet.cells.FromJSON(obj.data);
+    if (obj.rows) sheet.cells.EnsureRow(obj.rows - 1);
+    if (obj.columns) sheet.cells.EnsureColumn(obj.columns - 1);
 
-      // new style stuff
-      if (!hints || hints.style) {
+    // new style stuff
 
-        // different handling for nested, flat, but we only have to
-        // check once because data is either nested or it isn't.
+      // different handling for nested, flat, but we only have to
+      // check once because data is either nested or it isn't.
 
-        if (obj.data) {
-          if (IsFlatDataArray(obj.data)) {
-            for (const entry of obj.data) {
-              if (entry.style_ref) {
-                if (!sheet.cell_style[entry.column]) sheet.cell_style[entry.column] = [];
-                sheet.cell_style[entry.column][entry.row] = // entry.style;
-                  JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
-              }
-            }
-          }
-          else {
-            if (IsNestedRowArray(obj.data)) {
-              for (const block of obj.data) {
-                const row = block.row;
-                for (const entry of block.cells) {
-                  const column = entry.column;
-                  if (entry.style_ref) {
-                    if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
-                    sheet.cell_style[column][row] = // entry.style;
-                      JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
-                  }
-                }
-              }
-            }
-            else {
-              for (const block of obj.data) {
-                const column = block.column;
-                for (const entry of block.cells) {
-                  const row = entry.row;
-                  if (entry.style_ref) {
-                    if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
-                    sheet.cell_style[column][row] = // entry.style;
-                      JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
-                  }
-                }
-              }
+      if (obj.data) {
+        if (IsFlatDataArray(obj.data)) {
+          for (const entry of obj.data) {
+            if (entry.style_ref) {
+              if (!sheet.cell_style[entry.column]) sheet.cell_style[entry.column] = [];
+              sheet.cell_style[entry.column][entry.row] = // entry.style;
+                JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
             }
           }
         }
-
-        /*
-        if (obj.data && obj.data[0]) {
-          if (obj.data[0].cells) {
-            
-            if (typeof obj.data[0].row !== 'undefined') {
-              for (const block of obj.data) {
-                const row = block.row;
-                for (const entry of block.cells) {
-                  const column = entry.column;
-                  if (entry.style_ref) {
-                    if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
-                    sheet.cell_style[column][row] = // entry.style;
-                      JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
-                  }
-                }
-              }
-            }
-            else {
-              for (const block of obj.data) {
-                const column = block.column;
-                for (const entry of block.cells) {
-                  const row = entry.row;
-                  if (entry.style_ref) {
-                    if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
-                    sheet.cell_style[column][row] = // entry.style;
-                      JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
-                  }
+        else {
+          if (IsNestedRowArray(obj.data)) {
+            for (const block of obj.data) {
+              const row = block.row;
+              for (const entry of block.cells) {
+                const column = entry.column;
+                if (entry.style_ref) {
+                  if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
+                  sheet.cell_style[column][row] = // entry.style;
+                    JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
                 }
               }
             }
           }
           else {
-            for (const entry of obj.data) {
-              if (entry.style_ref) {
-                if (!sheet.cell_style[entry.column]) sheet.cell_style[entry.column] = [];
-                sheet.cell_style[entry.column][entry.row] = // entry.style;
-                  JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+            for (const block of obj.data) {
+              const column = block.column;
+              for (const entry of block.cells) {
+                const row = entry.row;
+                if (entry.style_ref) {
+                  if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
+                  sheet.cell_style[column][row] = // entry.style;
+                    JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+                }
               }
             }
           }
         }
-        */
-
       }
 
-    }
 
     // freeze
 
-    if (!hints || hints.freeze) {
+    sheet.freeze.rows = 0;
+    sheet.freeze.columns = 0;
 
-      sheet.freeze.rows = 0;
-      sheet.freeze.columns = 0;
-
-      if (obj.freeze) {
-        sheet.freeze.rows = obj.freeze.rows || 0;
-        sheet.freeze.columns = obj.freeze.columns || 0;
-      }
-
+    if (obj.freeze) {
+      sheet.freeze.rows = obj.freeze.rows || 0;
+      sheet.freeze.columns = obj.freeze.columns || 0;
     }
 
     // scroll, optionally
@@ -254,54 +179,41 @@ export class Sheet {
 
     // wrap up styles
 
-    if (!hints || hints.style) {
-
-      for (const cell_style of ((obj.cell_styles || []) as CellStyleRef[])) {
-        if (cell_style.style) {
-          if (!sheet.cell_style[cell_style.column]) sheet.cell_style[cell_style.column] = [];
-          // console.info("@2", cell_style.column, cell_style.row, cell_style.style);
-          sheet.cell_style[cell_style.column][cell_style.row] = cell_style.style;
-        }
+    for (const cell_style of ((obj.cell_styles || []) as CellStyleRef[])) {
+      if (cell_style.style) {
+        if (!sheet.cell_style[cell_style.column]) sheet.cell_style[cell_style.column] = [];
+        sheet.cell_style[cell_style.column][cell_style.row] = cell_style.style;
       }
-
-      sheet.sheet_style = obj.sheet_style || {};
-      sheet.row_styles = obj.row_style;
-      sheet.column_styles = obj.column_style;
-      sheet.row_pattern = obj.row_pattern || [];
-
-      if (hints && !hints.data) sheet.FlushCellStyles();
-
     }
 
-    if (!hints || hints.layout) {
+    sheet.sheet_style = obj.sheet_style || {};
+    sheet.row_styles = obj.row_style;
+    sheet.column_styles = obj.column_style;
+    sheet.row_pattern = obj.row_pattern || [];
 
-      // sheet.default_row_height = obj.default_row_height;
-      // sheet.default_column_width = obj.default_column_width;
+    // if (hints && !hints.data) sheet.FlushCellStyles();
 
-      sheet.row_height_ = [];
-      unflatten_numeric_array(sheet.row_height_, obj.row_height || {},
-        ); // sheet.default_row_height);
-        // obj.default_row_height);
+    // sheet.default_row_height = obj.default_row_height;
+    // sheet.default_column_width = obj.default_column_width;
 
-      if (sheet.row_height_.length) {
-        sheet.cells.EnsureRow(sheet.row_height_.length - 1);
-      }
+    sheet.row_height_ = [];
+    unflatten_numeric_array(sheet.row_height_, obj.row_height || {},
+      ); // sheet.default_row_height);
+      // obj.default_row_height);
+
+    if (sheet.row_height_.length) {
+      sheet.cells.EnsureRow(sheet.row_height_.length - 1);
+    }
+
+    sheet.column_width_ = [];
+    unflatten_numeric_array(sheet.column_width_, obj.column_width || {},
+      ); // sheet.default_column_width);
+      // obj.default_column_width);
+
+    if (sheet.column_width_.length) {
+      sheet.cells.EnsureColumn(sheet.column_width_.length - 1);
+    }
   
-      sheet.column_width_ = [];
-      unflatten_numeric_array(sheet.column_width_, obj.column_width || {},
-        ); // sheet.default_column_width);
-        // obj.default_column_width);
-
-      if (sheet.column_width_.length) {
-        sheet.cells.EnsureColumn(sheet.column_width_.length - 1);
-      }
-    
-      if (hints && !hints.data) sheet.FlushCellStyles();
-
-    }
-
-    // FIXME: hint? does anyone use hints?
-
     // NOTE: we're padding out rows/columns here to be under annotations,
     // otherwise the pruning may have removed them. it would probably be
     // preferable to not prune them... that shouldn't add much extra data
@@ -310,8 +222,6 @@ export class Sheet {
     // FIXME
 
     sheet.annotations = (obj.annotations || []).map((entry) => new Annotation(entry));
-
-    // FIXME: hint? does anyone use hints?
 
     if (obj.selection) {
 
@@ -710,50 +620,44 @@ export class Sheet {
     return width;
   }
 
-  /* *
-   * get or set row height. we call this a lot -- I feel like we should
-   * split into separate accessor methods, to avoid the test. or is that
-   * over-optimization? (...)
-   * /
-  public RowHeight(row: number, value?: number): number {
-    if (typeof value !== 'undefined') {
-      this.row_height_[row] = value;
-      this.cells.EnsureRow(row);
-      return value;
+  /**
+   * returns set of properties in B that differ from A. returns 
+   * property values from B.
+   * 
+   * this is the function I could never get to work inline for 
+   * Style.Properties -- not sure why it works better with a generic 
+   * function (although the partial here is new, so maybe it's that?)
+   *
+   * seems to be related to
+   * https://github.com/microsoft/TypeScript/pull/30769
+   * 
+   */
+  public Delta<T>(A: T, B: T): Partial<T> {
+
+    const result: Partial<T> = {};
+
+    // keys that are in either object. this will result in some
+    // duplication, probably not too bad. could precompute array? (...)
+    
+    // you could do that using a composite object, but would be wasteful.
+    // would look good in typescript but generate extra javascript. might
+    // still be faster, though? (...)
+
+    const keys = [...Object.keys(A), ...Object.keys(B)] as Array<keyof T>;
+
+    // FIXME: should check if B[key] is undefined, in which case you don't
+    // want it? (...) that seems appropriate, but since the method we are
+    // replacing did not do that, I'm hesitant to do it now
+
+    for (const key of keys) {
+      if (A[key] !== B[key]) {
+        result[key] = B[key];
+      }
     }
-    const height = this.row_height_[row];
-    if (typeof height === 'undefined') return this.default_row_height;
-    return height;
-  }
-  */
 
-  /* *
-   * get or set column width
-   * /
-  public ColumnWidth(column: number, value?: number): number {
-    if (typeof value !== 'undefined') {
-      this.column_width_[column] = value;
-      this.cells.EnsureColumn(column);
-      return value;
-    }
-    const width = this.column_width_[column];
-    if (typeof width === 'undefined') return this.default_column_width;
-    return width;
+    return result;
+  
   }
-  */
-
-  /* *
-   * apply theme. sets some fonts in sheet.
-   * @param theme
-   * /
-  public ApplyTheme(theme: Theme) {
-
-    this.UpdateSheetStyle({
-      font_face: theme.cell_font,
-      font_size: theme.cell_font_size,
-    }, true, true);
-  }
-  */
 
   /**
    * updates cell styles. flushes cached style.
@@ -783,10 +687,16 @@ export class Sheet {
       Style.Merge(this.cell_style[column][row] || {}, properties, delta),
     ]);
 
+    const composite = this.Delta(underlying, merged);
+
+    /*
     // this is type "any" because of the assignment, below, which fails
     // otherwise. however this could be done with spread assignments? (...)
     // A: no, it's not merging them, it is looking for deltas.
-    // ...but, what if you filtered? (...)
+    // ...but, what if you filtered? (...) [A] how?
+
+    // I think the only way to do it with types would be to use delete, which 
+    // somehow seems wasteful and slow (although I have not validated that)
 
     const composite: any = {};
 
@@ -802,6 +712,7 @@ export class Sheet {
         composite[key] = merged[key];
       }
     }
+    */
 
     this.cell_style[column][row] = composite; // merged;
 
@@ -1074,18 +985,21 @@ export class Sheet {
     return this.style_map[index];
   }
 
-  /**
+  /* *
    * if the cell is in an array, returns the array as an Area.
    * if not, returns falsy (null or undefined).
    *
    * FIXME: is this used? seems like the caller could do this
    * calculation.
-   */
+   * 
+   * Answer was no, so removed
+   * /
   public ContainingArray(address: ICellAddress): Area | undefined {
     const cell = this.cells.GetCell(address);
     if (cell) return cell.area;
     return undefined;
   }
+  */
 
   /**
    *
@@ -1374,27 +1288,7 @@ export class Sheet {
   // also some of this could be moved to the Cells class... if for no
   // other reason than to remove the iteration overhead
 
-  /* *
-   * set a single value in an area (1 cell or more)
-   * /
-  public SetAreaValue(area: Area, value: any) {
-    area = this.RealArea(area);
-    this.cells.SetArea(area, value);
-    // const type = Cell.GetValueType(value);
-    // this.cells.IterateArea(area, (cell) => cell.Set(value, type), true);
-  }
-
-  /* *
-   * set different values (via array) in an area. mst be the
-   * same shape at this point, caller should ensure.
-   * /
-  public SetAreaValues(area: Area, values: any[][]) { // }, parse_numbers = false) {
-    area = this.RealArea(area);
-    this.cells.SetArea(area, values);
-  }
-  */
-
-  public SetAreaValues2(area: Area, values: any|any[][]): void {
+  public SetAreaValues2(area: Area, values: CellValue|CellValue[][]): void {
 
     // we don't want to limit this to the existing area, we only
     // want to remove infinities (if set). it's possible to expand
@@ -1410,7 +1304,7 @@ export class Sheet {
   /**
    * set the area as an array formula, based in the top-left cell
    */
-  public SetArrayValue(area: Area, value: any): void {
+  public SetArrayValue(area: Area, value: CellValue): void {
     area = this.RealArea(area);
     this.cells.IterateArea(area, (element) => element.SetArray(area), true);
     const cell = this.cells.GetCell(area.start, true);
@@ -1420,58 +1314,9 @@ export class Sheet {
   /**
    * set a single value in a single cell
    */
-  public SetCellValue(address: ICellAddress, value: any): void {
+  public SetCellValue(address: ICellAddress, value: CellValue): void {
     const cell = this.cells.GetCell(address, true);
     cell.Set(value);
-  }
-
-  /**
-   * remove unused style properties from cell styles, possibly
-   * dumping the cell style altogether
-   */
-  public PruneCellStyles() {
-
-    for (let column = 0; column < this.cell_style.length; column++) {
-      if (this.cell_style[column]) {
-        const ref: Array<Style.Properties | undefined> = this.cell_style[column];
-        for (let row = 0; row < ref.length; row++) {
-          if (ref[row]) {
-            const replacement: Style.Properties = {};
-
-            const with_style = this.CompositeStyleForCell({ row, column });
-            const without_style = this.CompositeStyleForCell({ row, column }, false);
-
-            // ??? what does this do? It's hard to follow
-
-            const refrow = ref[row];
-            if (refrow) {
-              for (const key of Object.keys(refrow) as Style.PropertyKeys[]) {
-                if (!this.StyleEquals(with_style[key], without_style[key])) {
-                  (replacement as any)[key] = refrow[key];
-                }
-              }
-            }
-
-            if (Object.keys(replacement).length === 0) ref[row] = undefined;
-            else ref[row] = replacement;
-
-          }
-        }
-      }
-    }
-
-  }
-
-  /**
-   * gets the formula for a given cell (instead of the
-   * rendered value), accounting for arrays.
-   */
-  public GetCellFormula(address: ICellAddress) {
-    let cell = this.cells.GetCell(address);
-    if (!cell) return undefined;
-    if (cell.area) cell = this.cells.GetCell(cell.area.start);
-    if (!cell) return undefined;
-    return { formula: cell.value, is_array: !!cell.area };
   }
 
   /**
@@ -1517,34 +1362,6 @@ export class Sheet {
 
   }
 
-  /* *
-   * returns the contents of the given area as tab-separated
-   * values, intended for pasting into excel. this should be
-   * either the raw value or the raw calculated result, if it
-   * exists.
-   * /
-  public GetTSV(area?: Area): string {
-
-    if (!area) area = new Area({ row: Infinity, column: Infinity });
-    area = this.RealArea(area);
-    const lines = [];
-
-    for (let r = area.start.row; r <= area.end.row; r++) {
-      const line = [];
-      for (let c = area.start.column; c <= area.end.column; c++) {
-        const cell = this.CellData({ row: r, column: c });
-        let value = cell.calculated_type ? cell.calculated : cell.value;
-        if (typeof value === 'undefined') value = '';
-        if (/\n/.test(value)) line.push('"' + value + '"');
-        else line.push(value);
-      }
-      lines.push(line.join('\t').replace(/\s+$/, ''));
-    }
-    return lines.join('\n').replace(/\s+$/, '');
-
-  }
-  */
-
   ///
   public FormattedCellValue(address: ICellAddress): CellValue {
 
@@ -1569,17 +1386,17 @@ export class Sheet {
     return cell.value;
   }
 
-  public GetFormattedRange(from: ICellAddress, to: ICellAddress = from) {
+  public GetFormattedRange(from: ICellAddress, to: ICellAddress = from): CellValue|CellValue[][] {
 
     if (from.row === to.row && from.column === to.column) {
       return this.FormattedCellValue(from);
     }
 
-    const result: any[][] = [];
+    const result: CellValue[][] = [];
     
     // grab rows
     for (let row = from.row; row <= to.row; row++) {
-      const target: any[] = [];
+      const target: CellValue[] = [];
       for (let column = from.column; column <= to.column; column++) {
         target.push(this.FormattedCellValue({row, column}));
       }
@@ -1589,7 +1406,6 @@ export class Sheet {
     return result;
 
   }
-  ///
 
   /**
    * generates serializable object. given the new data semantics this
@@ -1838,19 +1654,20 @@ export class Sheet {
     return result;
   }
 
-  /** export values and calcualted values; as for csv export (which is what it's for) */
-  public ExportValueData(transpose = false, dates_as_strings = false, export_functions = false): any[][] {
+  /*
+   * export values and calcualted values; as for csv export (which is what it's for) * /
+  public ExportValueData(transpose = false, dates_as_strings = false, export_functions = false): CellValue[][] {
 
-    const arr = [];
+    const arr: CellValue[][] = [];
     const data = this.cells.data;
 
     if (transpose) {
       const rowcount = data[0].length; // assuming it's a rectangle
       for (let r = 0; r < rowcount; r++) {
-        const row = [];
+        const row: CellValue[] = [];
         for (const column of data) {
           const ref = column[r];
-          let value: any;
+          let value: CellValue;
           if (!export_functions && typeof ref.calculated !== 'undefined') value = ref.calculated;
           else if (typeof ref.value === 'undefined') value = '';
           else value = ref.value;
@@ -1870,9 +1687,9 @@ export class Sheet {
     }
     else {
       for (const column_ref of data) {
-        const column = [];
+        const column: CellValue[] = [];
         for (const ref of column_ref) {
-          let value: any;
+          let value: CellValue;
           if (!export_functions && typeof ref.calculated !== 'undefined') value = ref.calculated;
           else if (typeof ref.value === 'undefined') value = '';
           else value = ref.value;
@@ -1893,9 +1710,10 @@ export class Sheet {
 
     return arr;
   }
+  */
 
   /** flushes ALL rendered styles and caches. made public for theme API */
-  public FlushCellStyles() {
+  public FlushCellStyles(): void {
     this.style_map = [];
     this.style_json_map = [];
     this.cells.FlushCellStyles();
@@ -1908,7 +1726,7 @@ export class Sheet {
    * might set it to 0/0 if there's no rect, just make sure
    * that it gets cleared on layout changes.
    */
-  protected CalculateAnnotationExtent(annotation: Annotation) {
+  protected CalculateAnnotationExtent(annotation: Annotation): void {
 
     // 1000 here is just sanity check, it might be larger
     const sanity = 1000;
@@ -1939,15 +1757,16 @@ export class Sheet {
    
   }
 
-  /**
+  /* *
    * when checking style properties, check falsy but not '' or 0
    * (also strict equivalence)
-   */
-  protected StyleEquals(a: any, b: any) {
+   * /
+  protected StyleEquals(a: any, b: any): boolean {
     return a === b ||
       ((a === false || a === null || a === undefined)
         && (b === false || b === null || b === undefined));
   }
+  */
 
   /*
   protected Serialize() {
@@ -2039,6 +1858,26 @@ export class Sheet {
       }
     }
 
+    /*
+
+    //
+    // seems to be related to
+    // https://github.com/microsoft/TypeScript/pull/30769
+    //
+    // not clear why the behavior should be different, but
+    //
+    // "indexed access with generics now works differently inside & outside a function."
+    // 
+
+    const FilteredAssign = <T>(test: T, source: T, target: T, keys: Array<keyof T>): void => {
+      for (const key of keys) {
+        if (test[key] !== undefined) {
+          target[key] = source[key];
+        }
+      }
+    };
+    */
+
     // if there's a column style, it will override the row
     // style; so we need to set a cell style to compensate.
 
@@ -2046,11 +1885,15 @@ export class Sheet {
       if (this.column_styles[i]) {
         const column_style = this.column_styles[i];
         const override: Style.Properties = this.cell_style[i] ? this.cell_style[i][row] || {} : {};
-        keys.forEach((key) => {
+
+        // FilteredAssign(column_style, properties, override, keys);
+
+        for (const key of keys) {
           if (typeof column_style[key] !== 'undefined') {
             (override as any)[key] = properties[key];
           }
-        });
+        }
+
         if (Object.keys(override).length) {
           // console.info(override);
           if (!this.cell_style[i]) this.cell_style[i] = [];
