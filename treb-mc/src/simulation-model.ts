@@ -5,9 +5,11 @@ import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
 import { DataError, ArgumentError, ValueError } from '../../treb-calculator/src/function-error';
-import { ExpressionUnit } from 'treb-parser';
+// import { ExpressionUnit } from 'treb-parser';
 import { Scale as CreateScale } from 'treb-utils';
 import { DataModel } from 'treb-grid';
+
+export type SimulationResultsData =  Array<Float64Array|number[]>[][];
 
 export enum SimulationState {
   Null, Prep, Simulation, Post,
@@ -46,10 +48,8 @@ export class SimulationModel {
   public lhs = false;
   public state = SimulationState.Null;
   
-  //public results: number[][][][] = [];
-  //public results: Array<Float64Array|number[]>[][] = [];
-  public results: Array<Float64Array|number[]>[][] = [];
-
+  public results: SimulationResultsData = []; 
+  
   public elapsed = 0;
   public trials = 0;
 

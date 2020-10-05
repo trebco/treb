@@ -41,6 +41,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     running: false,
     threads: 0,
     results: [] as ResultContainer[],
+    completed: 0,
     progress: [] as number[],
     aggregate_progress: 0,
   };
@@ -55,6 +56,8 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
   /**
    * returns simulation data for a cell (if any)
+   * 
+   * this is an API method? (...)
    */
   public SimulationData(address: string | ICellAddress): number[]|Float64Array|undefined {
     address = this.EnsureAddress(address);
@@ -188,7 +191,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
    * run MC simulation, in worker. worker is now demand-loaded, so first
    * pass may be slow.
    */
-  public async RunSimulation(trials = 5000, lhs = true): Promise<void> {
+  public async RunSimulation(trials = 5000, lhs = true, stepped = false): Promise<void> {
 
     if (this.simulation_status.running) {
       throw new Error('simulation already running');
@@ -230,11 +233,25 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       throw new Error('worker not initialized');
     }
 
+    /*
+    if (stepped && this.workers.length > 1) {
+      this.dialog?.ShowDialog({
+        title: 'Calculation failed',
+        message: 'Stepped simulation does support multiple workers.',
+        close_box: true,
+        type: DialogType.error,
+        timeout: 3000,
+      });
+      throw new Error('invalid configiration');
+    }
+    */
+
     this.simulation_status.running = true;
     this.simulation_status.threads = this.workers.length;
     this.simulation_status.progress = [];
     this.simulation_status.results = [];
     this.simulation_status.aggregate_progress = 0;
+    this.simulation_status.completed = 0;
 
     for (let i = 0; i < this.workers.length; i++) {
       this.simulation_status.progress.push(0);
@@ -256,9 +273,8 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
     additional_cells = this.calculator.FlattenCellList(additional_cells);
 
-    const per_thread = Math.floor(trials / this.workers.length);
-    const last_thread = trials - (per_thread * (this.workers.length - 1));
-
+    // const per_thread = Math.floor(trials / this.workers.length);
+    // const last_thread = trials - (per_thread * (this.workers.length - 1));
     // console.info('per', per_thread, 'last', last_thread);
 
     let macro_functions: MacroFunction[] | undefined;
@@ -295,12 +311,26 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       });
     }
 
+    // new algo for splitting trials. this is WAY over-optimizing. 
+    // (but that uneven split was irritating).
+
+    let remaining = trials;
+    let count = this.workers.length;
+
     for (const worker of this.workers) {
+
+      const trials = Math.floor(remaining/count--);
+
       worker.postMessage({
         type: 'start', 
-        trials: worker === this.workers[0] ? last_thread : per_thread, 
+        trials,
+        // trials: worker === this.workers[0] ? last_thread : per_thread, 
         lhs,
+        screen_updates: stepped,
       });
+
+      remaining -= trials;
+
     }
 
     await new Promise((resolve) => {
@@ -371,7 +401,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     switch (message.type) {
       case 'update':
 
-        throw new Error('not implemented for multithread (atm)');
+        // throw new Error('not implemented for multithread (atm)');
 
         /** temp
         this.UpdateMCDialog(Number(message.percent_complete || 0));
@@ -384,6 +414,18 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
         if (this.workers[index]) this.workers[index].postMessage({ type: 'step' });
         temp **/
+
+        this.UpdateProgress(message.percent_complete, index);
+        this.simulation_status.results[index] = message.trial_data;
+        this.last_simulation_data =
+          PackResults.ConsolidateResults(this.simulation_status.results.filter(test => !!test));
+
+        this.calculator.UpdateResults(this.last_simulation_data);
+        this.Recalculate().then(() => {
+          this.workers[index].postMessage({ type: 'step' });
+          // if(!this.grid.headless) { this.Focus() }
+        });          
+
         break;
 
       case 'progress':
@@ -392,9 +434,22 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
       case 'complete':
         this.simulation_status.progress[index] = 100;
-        this.simulation_status.results.push(message.trial_data);
 
-        if (this.simulation_status.results.length === this.simulation_status.threads) {
+        // this was a handy way of checking if all results are in; but it 
+        // breaks if we are using "stepped simulation", because we need
+        // to populate the array ahead of time. note also that array methods
+        // (e.g. "every", "some") won't work because they will skip empty
+        // values. so we'll use an explicit counter, which is overkill but
+        // will work well. (although you could use reduce to count...)
+        //
+        // actually using the explicit counter is probably the best way if 
+        // you want to support multi-worker "stepped", which is silly
+
+        // this.simulation_status.results.push(message.trial_data);
+        this.simulation_status.results[index] = message.trial_data;
+        this.simulation_status.completed++;
+
+        if (this.simulation_status.completed === this.simulation_status.threads) {
 
           this.simulation_status.running = false;
           this.last_simulation_data =

@@ -11,7 +11,7 @@ import { GraphStatus } from 'treb-calculator/src/dag/graph';
 
 import * as PackResults from './pack-results';
 import { MCExpressionCalculator } from './simulation-expression-calculator';
-import { SimulationState } from './simulation-model';
+import { SimulationResultsData, SimulationState } from './simulation-model';
 
 
 export class MCCalculator extends Calculator {
@@ -40,7 +40,7 @@ export class MCCalculator extends Calculator {
     lhs: boolean,
     // cells: Cells,
     model: DataModel,
-    additional_cells?: ICellAddress[]) {
+    additional_cells?: ICellAddress[]): GraphStatus {
 
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 
@@ -107,7 +107,7 @@ export class MCCalculator extends Calculator {
    * returns simulation results. this is called after a simulation, results
    * will be returned from the worker(s) back to the main thread.
    */
-  public GetResults() {
+  public GetResults(): SimulationResultsData {
     return this.simulation_expression_calculator.simulation_model.results;
   }
 
@@ -118,7 +118,7 @@ export class MCCalculator extends Calculator {
    * (since we set up the graph). the only things that are going to be dirty
    * are the volatile cells, which set set explicitly.
    */
-  public SimulationTrial(iteration: number){
+  public SimulationTrial(iteration: number) {
 
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 
@@ -209,7 +209,7 @@ export class MCCalculator extends Calculator {
   }
 
   /** basically set null results */
-  public FlushSimulationResults() {
+  public FlushSimulationResults(): void {
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 
     simulation_model.results = [];

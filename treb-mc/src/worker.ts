@@ -4,10 +4,7 @@
  */
 
 import { WorkerMessage } from './worker-types';
-import { Localization, ICellAddress, Area } from 'treb-base-types';
-
-// import { DataModel, Sheet, Annotation, NamedRangeCollection } from 'treb-grid';
-// import { Annotation } from 'treb-grid/src/types/annotation';
+import { Localization, ICellAddress } from 'treb-base-types';
 
 import { DataModel } from 'treb-grid/src/types/data_model';
 import { Sheet } from 'treb-grid/src/types/sheet';
@@ -22,7 +19,6 @@ export class WorkerImpl {
   protected data_model: DataModel = {
     active_sheet: Sheet.Blank({}),
     sheets: [Sheet.Blank({})],
-    // annotations: [],
     named_ranges: new NamedRangeCollection(),
     macro_functions: {},
   };
@@ -38,12 +34,12 @@ export class WorkerImpl {
   constructor(protected base_worker: Worker) {
   }
 
-  public Timestamp(){
+  public Timestamp(): number {
     if (self.performance) return performance.now();
     return Date.now();
   }
 
-  public OnMessage(event: MessageEvent) {
+  public OnMessage(event: MessageEvent): void {
     const message = event.data as WorkerMessage;
     if (!message) return;
 
@@ -101,7 +97,7 @@ export class WorkerImpl {
 
   }
 
-  protected Post(message: WorkerMessage, transfer?: any) {
+  protected Post(message: WorkerMessage, transfer?: any): void {
     this.base_worker.postMessage(message, transfer);
   }
 
@@ -132,7 +128,7 @@ export class WorkerImpl {
   /**
    * runs a single step in a stepped simulation (used for screen updates)
    */
-  protected SimulationStep(){
+  protected SimulationStep(): void {
     if (this.iteration >= this.trials) return;
 
     this.calculator.SimulationTrial(this.iteration);
@@ -171,10 +167,14 @@ export class WorkerImpl {
    * first iteration and then wait for subsequent calls. otherwise it
    * will loop through iterations until complete, and then call Finish().
    */
-  protected Start() {
+  protected Start(): void {
 
-    if (!this.trials) throw(new Error('invalid trial count'));
-    else console.info(`running simulation with ${this.trials} trials, lhs=${this.lhs}`);
+    if (!this.trials) {
+      throw(new Error('invalid trial count'));
+    }
+    else {
+      console.info(`running simulation with ${this.trials} trials, lhs=${this.lhs}${this.screen_updates ? ' (stepped)' : ''}`);
+    }
 
     this.start_time = this.Timestamp(); // performance.now();
 
@@ -211,7 +211,7 @@ export class WorkerImpl {
    * simulation is complete; post a last progress message, then
    * send results.
    */
-  protected Finish(){
+  protected Finish(): void {
 
     // because this will never get sent (floor):
 
