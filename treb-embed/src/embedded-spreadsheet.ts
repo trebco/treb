@@ -12,6 +12,7 @@ import * as PackResults from 'treb-mc/src/pack-results';
 // config
 import * as build from '../../package.json';
 import { DialogType } from './progress-dialog';
+import { Calculator } from 'treb-calculator/src';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
@@ -47,7 +48,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   /**
    * some local cleanup, gets called in various import/load/reset functions
    */
-  public ResetInternal() {
+  public ResetInternal(): void {
     super.ResetInternal();
     this.FlushSimulationResults(); // used to be in Reset()
   }
@@ -55,7 +56,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   /**
    * returns simulation data for a cell (if any)
    */
-  public SimulationData(address: string | ICellAddress) {
+  public SimulationData(address: string | ICellAddress): number[]|Float64Array|undefined {
     address = this.EnsureAddress(address);
     if (!address.sheet_id) {
       address.sheet_id = this.grid.model.active_sheet.id;
@@ -74,13 +75,16 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     return undefined;
   }
 
-  public FlushSimulationResults() {
+  public FlushSimulationResults(): void {
     this.calculator.FlushSimulationResults();
     this.last_simulation_data = undefined;
   }
 
-  public SerializeDocument(preserve_simulation_data = true, rendered_values = true,
-    additional_options: SerializeOptions = {}) {
+  public SerializeDocument(
+      preserve_simulation_data = true, 
+      rendered_values = true,
+      additional_options: SerializeOptions = {}
+      ): TREBDocument {
 
     const serialized = super.SerializeDocument(preserve_simulation_data, rendered_values, additional_options);
 
@@ -124,7 +128,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
    * FIXME: should globalize these? if we do that, the "running" flag
    * needs to be similarly global...
    */
-  public async InitWorkers(max = this.options.max_workers) {
+  public async InitWorkers(max = this.options.max_workers): Promise<void> {
 
     max = max || 1; // could be undefined? (...)
 
@@ -184,7 +188,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
    * run MC simulation, in worker. worker is now demand-loaded, so first
    * pass may be slow.
    */
-  public async RunSimulation(trials = 5000, lhs = true) {
+  public async RunSimulation(trials = 5000, lhs = true): Promise<void> {
 
     if (this.simulation_status.running) {
       throw new Error('simulation already running');
@@ -308,11 +312,11 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   /**
    * overload for MC calculator replaces base calculator
    */
-  protected InitCalculator() {
+  protected InitCalculator(): Calculator {
     return new MCCalculator();
   }
 
-  protected ImportDocumentData(data: TREBDocument, override_sheet?: string) {
+  protected ImportDocumentData(data: TREBDocument, override_sheet?: string): void {
 
     super.ImportDocumentData(data, override_sheet);
 
