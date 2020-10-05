@@ -273,10 +273,6 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
     additional_cells = this.calculator.FlattenCellList(additional_cells);
 
-    // const per_thread = Math.floor(trials / this.workers.length);
-    // const last_thread = trials - (per_thread * (this.workers.length - 1));
-    // console.info('per', per_thread, 'last', last_thread);
-
     let macro_functions: MacroFunction[] | undefined;
 
     // when passing in macro functions, we have to be sure we don't try
@@ -310,6 +306,10 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
         additional_cells,
       });
     }
+
+    // const per_thread = Math.floor(trials / this.workers.length);
+    // const last_thread = trials - (per_thread * (this.workers.length - 1));
+    // console.info('per', per_thread, 'last', last_thread);
 
     // new algo for splitting trials. this is WAY over-optimizing. 
     // (but that uneven split was irritating).
