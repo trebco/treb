@@ -139,6 +139,7 @@ const CreateConfig = (config, entry, additional_aliases) => {
               options: {
                 tags: [
                   { tag: 'tmpl', trim_lines: true, },
+                  { tag: 'composite', trim_lines: true, remove_tag: true, },
                   { tag: 'css', remove_whitespace: true, remove_tag: true, },
                 ],
               }

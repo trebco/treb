@@ -3,7 +3,7 @@
 import { symbols } from './symbol-defs';
 import { CreateSheetOptions, DefaultOptions } from './options';
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
-import { Resizable } from 'treb-utils';
+import { composite, Resizable } from 'treb-utils';
 // import { ToolbarOptions, CompositeToolbar as FormattingToolbar } from './toolbar/';
 import { css } from 'treb-utils';
 
@@ -283,6 +283,18 @@ export class CompositeSheet {
     const new_window = window.open('', '_blank');
     if (!new_window) { return; }
 
+    new_window.document.head.innerHTML = composite`
+      <title>${
+        this.sheet.document_name ?
+        `TREB: ${this.sheet.document_name}` : 
+        'TREB: Untitled Document'}</title>
+      <meta charset='utf-8'>
+      <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+      <meta name='viewport' content='width=device-width,initial-scale=1'>  
+      <link rel='icon' type='image/svg+xml' href='https://treb.app/leaf.svg'>
+    `;
+
+    /*
     new_window.document.title = this.sheet.document_name ?
       `TREB: ${this.sheet.document_name}` : 'TREB: Untitled Document';
 
@@ -290,6 +302,20 @@ export class CompositeSheet {
     // were testing yield() implementations.
 
     // <link rel="icon" type="image/svg+xml" href="/leaf.svg">
+
+    let meta = new_window.document.createElement('meta') as HTMLMetaElement;
+    meta.setAttribute('charset', 'utf-8');
+    new_window.document.head.appendChild(meta);
+
+    meta = new_window.document.createElement('meta') as HTMLMetaElement;
+    meta.httpEquiv = 'X-UA-Compatible';
+    meta.content = 'IE=edge';
+    new_window.document.head.appendChild(meta);
+
+    meta = new_window.document.createElement('meta') as HTMLMetaElement;
+    meta.name = 'viewport';
+    meta.content = 'width=device-width,initial-scale=1';
+    new_window.document.head.appendChild(meta);
 
     const link = new_window.document.createElement('link');
     link.setAttribute('rel', 'icon');
@@ -302,6 +328,7 @@ export class CompositeSheet {
     link.setAttribute('href', 'https://treb.app/leaf.svg');
 
     new_window.document.head.appendChild(link);
+    */
 
     const treb_script = new_window.document.createElement('script');
     treb_script.src = this.sheet.script_path;
