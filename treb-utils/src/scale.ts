@@ -30,11 +30,10 @@ export const Scale = (min: number, max: number, count = 6.5, limit_count = false
 
   const range = max - min;
 
-  const log10 = // Math.log10(range);
-    Math.log(range) / Math.log(10); // just avoid the problem
+  const log10 = Math.log(range) / Math.log(10); // just avoid the problem (problem being IE11 lack of Math.log10)
 
   const scale = Math.floor(Math.abs(log10)) * (log10 < 0 ? -1 : 1) - 1;
-  const steps = [.1, .25, .5, 1, 2.5, 5, 10, 25, 100];
+  const steps = [.1, .25, .5, 1, 2.5, 5, 10, 25, 50, 100];
 
   let step = -1;
   let delta = 0;
@@ -45,6 +44,26 @@ export const Scale = (min: number, max: number, count = 6.5, limit_count = false
     const test_max = Math.ceil(max / test_step) * test_step;
     const test_count = (test_max - test_min) / test_step;
     const test_delta = Math.abs(test_count - count);
+
+    if (step < 0 || test_delta < delta) {
+      if (!limit_count || (test_count <= count)) {
+        delta = test_delta;
+        step = test_step;
+      }
+    }
+
+    /*
+    else if (!limit_count && (test_delta < delta)) {
+      delta = test_delta;
+      step = test_step;
+    }
+    else if (limit_count && test_delta < delta && test_count <= count) {
+      delta = test_delta;
+      step = test_step;
+    }
+    */
+
+    /*
 
     if (step < 0 || test_delta < delta){
       delta = test_delta;
@@ -63,6 +82,8 @@ export const Scale = (min: number, max: number, count = 6.5, limit_count = false
       }
       break;
     }
+    */
+
   }
 
   min = Math.floor(min / step) * step;

@@ -624,6 +624,12 @@ export class SimulationModel {
 
       // new stuff
 
+      'RiskAMP.Scale': {
+        description: 'Creates a uniform scale within a given range',
+        arguments: [{ name: 'min' }, {name: 'max'}],
+        fn: this.Scale.bind(this),
+      },
+
       'RiskAMP.HistogramTable': {
         description: 'Creates a histogram table from a source cell',
         arguments: [{ name: 'reference cell', collector: true, }],
@@ -1258,6 +1264,61 @@ export class SimulationModel {
     const copy = data.filter((element: any) => typeof element === 'number' ? element : 0);
     copy.sort((a: number, b: number) => a - b);
     return copy[Math.round(copy.length / 2)];
+
+  }
+
+  public Scale(min: number, max: number) {
+
+    let rows = 1, columns = 1;
+
+    let cell: Cell|undefined;
+
+    if (this.address.sheet_id) {
+      for (const sheet of this.model?.sheets || []) {
+        if (sheet.id === this.address.sheet_id) {
+          if (sheet.cells.data[this.address.row]) {
+            cell = sheet.cells.data[this.address.row][this.address.column];
+          }
+          break;
+        }
+      }
+    }
+
+    if (!cell) { return ArgumentError; }
+
+    if (cell.area) {
+      const area = new Area(cell.area.start, cell.area.end);
+      rows = area.rows;
+      columns = area.columns;
+    }
+
+    const length = Math.max(rows, columns);
+    const scale = min > max ?
+      CreateScale(max, min, length - 1, true) : 
+      CreateScale(min, max, length - 1, true) ;
+
+    let base = scale.min;
+
+    const result: Array<number|undefined>[] = [[]];
+
+    if (scale.count < length - 1) {
+      base = scale.min - (Math.floor((length - 1 - scale.count) / 2)) * scale.step;
+    }
+
+    if (min > max) {
+      for (let i = 0; i < length; i++) {
+        const bucket = base + i * scale.step;
+        result[0][length - 1 - i] = bucket;
+      }
+    }
+    else {
+      for (let i = 0; i < length; i++) {
+        const bucket = base + i * scale.step;
+        result[0][i] = bucket;
+      }
+    }
+
+    return rows < columns ? Utils.TransposeArray(result) : result;
 
   }
 
