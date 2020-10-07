@@ -1,4 +1,5 @@
 
+import { GraphImpl } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
 import { Vertex } from './vertex';
 
@@ -46,7 +47,7 @@ export class LeafVertex extends SpreadsheetVertex {
    *
    * TODO: perf
    */
-  public UpdateState(){
+  public UpdateState(): void {
 
     // FIXME: hash!
     const state = JSON.stringify(this.edges_in.map((edge) => (edge as SpreadsheetVertex).result));
@@ -59,7 +60,7 @@ export class LeafVertex extends SpreadsheetVertex {
   }
 
   /** overrides calculate function */
-  public Calculate(graph: any): void {
+  public Calculate(graph: GraphImpl): void {
 
     // if we are not dirty, nothing to do
     if (!this.dirty) return;

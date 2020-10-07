@@ -1,25 +1,21 @@
 
-import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
-import { Cell, ICellAddress, ValueType } from 'treb-base-types';
+import { SpreadsheetVertexBase, GraphImpl } from './spreadsheet_vertex_base';
+import { Cell, CellValue, ICellAddress, ValueType } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
-
-type Graph = import('./graph').Graph; // circular; type only
 
 export enum SpreadsheetError {
   None,
   CalculationError,
 }
 
-export interface CalculationResult {
-  value: any;
-  volatile?: boolean;
-}
-
 /**
  * specialization of vertex with attached data and calculation metadata
  */
 export class SpreadsheetVertex extends SpreadsheetVertexBase {
+
+  // I wonder if we should drop this and look up on demand -- might
+  // help in large blocks...
 
   public reference?: Cell;
 
@@ -67,7 +63,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
    * so the caller needs to explicitly address the dirty and volatile lists
    * for this vertex.
    */
-  public TakeReferenceValue() {
+  public TakeReferenceValue(): void {
     if (this.reference) {
       this.result = this.reference.GetValue();
     }
@@ -83,7 +79,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
    * A: for overloading. leaf extends this class, and has a separate
    * calculation routine.
    */
-  public Calculate(graph: Graph): void {
+  public Calculate(graph: GraphImpl): void {
 
     if (!this.dirty) return;
 

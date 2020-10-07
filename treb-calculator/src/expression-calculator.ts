@@ -60,8 +60,8 @@ export class ExpressionCalculator {
       protected readonly parser: Parser) {
   }
 
-  public SetModel(model: DataModel) {
-    // this.cells = model.active_sheet.cells;
+  public SetModel(model: DataModel): void {
+
     this.cells_map = {};
     this.sheet_name_map = {};
 
@@ -109,14 +109,15 @@ export class ExpressionCalculator {
 
   // --- /public API ----------------------------------------------------------
 
-  /**
+  /* *
    * we pass around errors as objects with an error (string) field.
    * this is a simplified check for that type.
-   */
+   * /
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected IsError(value: any) {
     return (typeof value === 'object') && value.error;
   }
+  */
 
   /**
    * testing: can we cache (or close) the reference direcly, saving lookups?
@@ -170,7 +171,8 @@ export class ExpressionCalculator {
 
     if (!start.sheet_id) {
       console.warn('missing sheet id, cellfunction');
-      return () => ReferenceError;
+      // return () => ReferenceError; // this is probably an error; the other paths don't return a function
+      return ReferenceError;
     }
 
     const cells = this.cells_map[start.sheet_id];
@@ -183,10 +185,15 @@ export class ExpressionCalculator {
         return undefined;
       }
       if (cell.calculated_type === ValueType.error) {
-        return { error: cell.GetValue() };
+        return { error: cell.GetValue() } as FunctionError;
       }
       if (cell.type === ValueType.undefined) {
-        return 0;
+
+        // this is done to support calculations referencing empty
+        // cells; the desired behavior here is to treat the undefined
+        // cell as 0 (which is also falsy).
+
+        return 0; 
       }
 
       return cell.GetValue();

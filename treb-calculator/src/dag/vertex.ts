@@ -19,14 +19,14 @@ export class Vertex {
 
   // --- accessors ---
 
-  get has_inbound_edges() { return this.edges_in.length > 0; }
+  get has_inbound_edges(): boolean { return this.edges_in.length > 0; }
 
-  get has_outbound_edges() { return this.edges_out.length > 0; }
+  get has_outbound_edges(): boolean { return this.edges_out.length > 0; }
 
   // --- cleanup operations ---
 
   /** reset this node */
-  public Reset() {
+  public Reset(): void {
 
     for (const edge of this.edges_out) {
       edge.RemoveDependency(this);
@@ -42,7 +42,7 @@ export class Vertex {
   }
 
   /** removes all inbound edges (dependencies) */
-  public ClearDependencies() {
+  public ClearDependencies(): void {
     for (const edge of this.edges_in) {
       edge.RemoveDependent(this);
     }
@@ -52,7 +52,7 @@ export class Vertex {
   // --- basic node operations ---
 
   /** add a dependent. doesn't add if already in the list */
-  public AddDependent(edge: Vertex) {
+  public AddDependent(edge: Vertex): void {
     if (edge === this) return; // circular
     for (const check of this.edges_out) {
       if (check === edge) {
@@ -63,12 +63,12 @@ export class Vertex {
   }
 
   /** remove a dependent */
-  public RemoveDependent(edge: Vertex) {
+  public RemoveDependent(edge: Vertex): void {
     this.edges_out = this.edges_out.filter((check) => check !== edge);
   }
 
   /** add a dependency. doesn't add if already in the list */
-  public AddDependency(edge: Vertex) {
+  public AddDependency(edge: Vertex): void {
     if (edge === this) return; // circular
     for (const check of this.edges_in) {
       if (check === edge) {
@@ -80,7 +80,7 @@ export class Vertex {
   }
 
   /** remove a dependency */
-  public RemoveDependency(edge: Vertex) {
+  public RemoveDependency(edge: Vertex): void {
     this.edges_in = this.edges_in.filter((check) => check !== edge);
   }
 

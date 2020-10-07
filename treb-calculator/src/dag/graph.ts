@@ -1,8 +1,7 @@
 
 import { Vertex, Color } from './vertex';
-import { SpreadsheetVertex, CalculationResult } from './spreadsheet_vertex';
-// import { ArrayVertex } from './array_vertex';
-import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
+import { SpreadsheetVertex  } from './spreadsheet_vertex';
+import { SpreadsheetVertexBase, CalculationResult } from './spreadsheet_vertex_base';
 import { LeafVertex } from './leaf_vertex';
 import { Cells, ICellAddress, Area, IArea, Cell } from 'treb-base-types';
 import { DataModel } from 'treb-grid';
@@ -429,7 +428,7 @@ export abstract class Graph {
   }
 
   /** adds an edge from u -> v */
-  public AddEdge(u: ICellAddress, v: ICellAddress): GraphStatus {
+  public AddEdge(u: ICellAddress, v: ICellAddress): void {
 
     const v_u = this.GetVertex(u, true);
     const v_v = this.GetVertex(v, true);
@@ -460,7 +459,6 @@ export abstract class Graph {
 
     this.loop_check_required = true; // because new edges
 
-    return GraphStatus.OK;
   }
 
   /** removes edge from u -> v */
@@ -869,8 +867,8 @@ export abstract class Graph {
 
   }
 
-  public abstract CalculationCallback(vertex: SpreadsheetVertex): CalculationResult;
-  public abstract SpreadCallback(vertex: SpreadsheetVertex, value: any): void;
+  public abstract CalculationCallback(vertex: SpreadsheetVertexBase): CalculationResult;
+  public abstract SpreadCallback(vertex: SpreadsheetVertexBase, value: any): void;
 
   protected abstract CheckVolatile(vertex: SpreadsheetVertex): boolean;
 

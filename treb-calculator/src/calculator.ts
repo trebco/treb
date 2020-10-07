@@ -4,7 +4,9 @@ import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing } from 'treb-parser';
 
 import { Graph } from './dag/graph';
-import { SpreadsheetVertex, CalculationResult } from './dag/spreadsheet_vertex';
+import { SpreadsheetVertex } from './dag/spreadsheet_vertex';
+import { CalculationResult } from './dag/spreadsheet_vertex_base';
+
 import { ExpressionCalculator } from './expression-calculator';
 import * as Utilities from './utilities';
 
@@ -503,11 +505,13 @@ export class Calculator extends Graph {
             // before you set the short-circuit flag, test result so we
             // can error on circular ref
 
-            const edge_result = this.AddEdge({row, column, sheet_id}, this.expression_calculator.context.address);
+            // const edge_result = 
+            
+            this.AddEdge({row, column, sheet_id}, this.expression_calculator.context.address);
 
-            if (edge_result) {
-              return ReferenceError;
-            }
+            //if (edge_result) {
+            //  return ReferenceError;
+            //}
 
             dirty = true;
 
