@@ -1408,6 +1408,80 @@ export class Sheet {
   }
 
   /**
+   * get all styles used in the sheet. this is used to populate color
+   * and number format lists in the toolbar. we used to just serialize
+   * the document and use that, but that's absurdly wasteful. for this
+   * application we don't even need composites.
+   * 
+   * although, this is a bit dangerous because you could (in theory)
+   * modify the results in place. so maybe we should either duplicate or
+   * just return the requested data...
+   */
+  public NumberFormatsAndColors(
+        color_map: Record<string, number>,
+        number_format_map: Record<string, number>,
+      ): void {
+
+    const parse = (style: Style.Properties) => {
+
+      if (style.number_format) { 
+        number_format_map[style.number_format] = 1; 
+      }
+
+      if (style.text_color && style.text_color !== 'none') {
+        // const color = Measurement.MeasureColorARGB(style.text_color);
+        color_map[style.text_color] = 1;
+      }
+      if (style.background && style.background !== 'none') {
+        // const color = Measurement.MeasureColorARGB(style.background);
+        color_map[style.background] = 1;
+      }
+      if (style.border_top_color && style.border_top_color !== 'none') {
+        // const color = Measurement.MeasureColorARGB(style.border_top_color);
+        color_map[style.border_top_color] = 1;
+      }
+      if (style.border_bottom_color && style.border_bottom_color !== 'none') {
+        // const color = Measurement.MeasureColorARGB(style.border_bottom_color);
+        color_map[style.border_bottom_color] = 1;
+      }
+      if (style.border_left_color && style.border_left_color !== 'none') {
+        // const color = Measurement.MeasureColorARGB(style.border_left_color);
+        color_map[style.border_left_color] = 1;
+      }
+      if (style.border_right_color && style.border_right_color !== 'none') {
+        // const color = Measurement.MeasureColorARGB(style.border_right_color);
+        color_map[style.border_right_color] = 1;
+      }
+
+    };
+
+    parse(this.sheet_style);
+
+    for (const key in this.row_styles) { 
+      parse(this.row_styles[key]);
+    }
+
+    for (const key in this.column_styles) { 
+      parse(this.column_styles[key]);
+    }
+
+    for (const style of this.row_pattern) { 
+      parse(style); 
+    }
+    
+    for (const row of this.cell_style) {
+      if (row) {
+        for (const style of row) {
+          if (style) {
+            parse(style);
+          }
+        }
+      }
+    }
+
+  }
+
+  /**
    * generates serializable object. given the new data semantics this
    * has to change a bit. here is what we are storing:
    *

@@ -7,6 +7,10 @@ export interface ICellAddress {
   sheet_id?: number;
 }
 
+export interface ICellAddress2 extends ICellAddress {
+  sheet_id: number;
+}
+
 /**
  * FIXME: should be just Partial<Area>? (...) OTOH, this at least
  * enforces two addresses, which seems useful

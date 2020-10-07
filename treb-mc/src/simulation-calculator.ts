@@ -4,7 +4,6 @@
 import { Calculator } from 'treb-calculator';
 
 import { ICellAddress } from 'treb-base-types';
-import { CellSerializationOptions } from 'treb-base-types';
 
 import { DataModel } from 'treb-grid/src/types/data_model';
 import { GraphStatus } from 'treb-calculator/src/dag/graph';
@@ -72,14 +71,7 @@ export class MCCalculator extends Calculator {
       }
     }
 
-    const json_options: CellSerializationOptions = {
-      preserve_type: true,
-      calculated_value: true,
-    };
-
-    // const flat = cells.toJSON(json_options);
-    const flat_data = this.BuildCellsList(json_options);
-    const result = this.RebuildGraph(flat_data, {});
+    this.RebuildGraph();
 
     if (this.LoopCheck()) {
       throw new Error('Loop (circular dependency) found in graph');
@@ -99,7 +91,7 @@ export class MCCalculator extends Calculator {
     simulation_model.CorrelateDistributions();
     simulation_model.state = SimulationState.Simulation;
 
-    return result.status;
+    return GraphStatus.OK; // result.status;
 
   }
 

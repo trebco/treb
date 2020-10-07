@@ -542,14 +542,20 @@ export class ToolbarManager {
   }
 
   public UpdateDocumentStyles(formats: string[], colors: string[], update = true): void {
+    
     const format_element = this.map['format'];
     if (!format_element) { return; } // FIXME: throw
 
-    const number_formats: string[] = [];
-    const date_formats: string[] = [];
+    const number_formats: string[] = [
+        'General', 'Number', 'Integer', 'Percent', 'Accounting', 'Currency', 'Scientific',
+    ];
+
+    const date_formats: string[] = [
+      'Timestamp', 'Long Date', 'Short Date',
+    ];
 
     for (const format of formats) {
-      if (NumberFormatCache.SymbolicName(format)) { continue; }
+      if (NumberFormatCache.SymbolicName(NumberFormatCache.Translate(format))) { continue; }
       const instance = NumberFormatCache.Get(format);
       if (instance.date_format) {
         date_formats.push(format);

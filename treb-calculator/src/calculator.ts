@@ -1,5 +1,5 @@
 
-import { Localization, Cell, Area, ICellAddress,
+import { Localization, Cell, Area, ICellAddress, ICellAddress2,
          ValueType, CellSerializationOptions } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitLiteral, UnitMissing } from 'treb-parser';
@@ -629,15 +629,47 @@ export class Calculator extends Graph {
    * wrapper method for calculation. this should be used for 1-time
    * calculations (i.e. not in a simulation).
    */
-  public async Calculate(model: DataModel, area?: Area, options?: CalculationOptions){
-    const result = await this.CalculateInternal(model, area, options);
-    return result;
+  public Calculate(model: DataModel, area?: Area): void {
+
+    this.AttachData(model); // for graph. FIXME
+
+    // this gets checked later, now... it would be better if we could
+    // check it here are skip the later check, but that field is optional
+    // it's better to report the error here so we can trace
+
+    if (area && !area.start.sheet_id) {
+      throw new Error('CalculateInternal called with area w/out sheet ID')
+    }
+
+    if (this.full_rebuild_required) {
+      area = undefined;
+      this.UpdateAnnotations();
+    }
+
+    this.full_rebuild_required = false; // unset
+
+    this.expression_calculator.SetModel(model);
+
+    this.RebuildGraph(area);
+
+    // pretty sure we just don't use this anymore
+
+    this.status = GraphStatus.OK;
+
+    try {
+      this.Recalculate();
+    }
+    catch (err){
+      console.error(err);
+      console.info('calculation error trapped');
+    }
+
   }
 
   /**
    * resets graph and graph status
    */
-  public Reset(){
+  public Reset(): void {
 
     this.status = GraphStatus.OK;
     this.FlushTree();
@@ -655,7 +687,7 @@ export class Calculator extends Graph {
   public CalculateExpression(
       expression: ExpressionUnit,
       address: ICellAddress = {row: -1, column: -1},
-      preserve_flags = false) {
+      preserve_flags = false): any {
 
     return this.expression_calculator.Calculate(expression, address, preserve_flags).value; // dropping volatile flag
   }
@@ -670,44 +702,24 @@ export class Calculator extends Graph {
    * UPDATE: optionally recalculate if there are volatile cells. that's used
    * for loading documents.
    */
-  public RebuildClean(model: DataModel, recalculate_if_volatile = false) {
-
-    const json_options: CellSerializationOptions = {
-      preserve_type: true,
-      calculated_value: true };
+  public RebuildClean(model: DataModel, recalculate_if_volatile = false): void {
 
     this.full_rebuild_required = false; // unset
 
     this.AttachData(model);
     this.expression_calculator.SetModel(model);
 
-    const flat_data = this.BuildCellsList(json_options);
-    const result = this.RebuildGraph(flat_data, {});
+    this.RebuildGraph();
 
     // add leaf vertices for annotations
 
     this.UpdateAnnotations(); // all
 
-    /*
-    if (result.status === GraphStatus.OK) {
-      const loop = this.LoopCheck();
-      if (loop) {
-        result.status = GraphStatus.Loop;
-      }
-    }
-    */
+    this.status = GraphStatus.OK;
 
-    this.status = result ? result.status : GraphStatus.OK;
-
-    if (this.status !== GraphStatus.OK){
-      console.error( 'Loop detected, stopping');
-      return result;
-    }
-    else {
-      this.InitializeGraph();
-      if (recalculate_if_volatile && this.volatile_list.length) {
-        this.Recalculate();
-      }
+    this.InitializeGraph();
+    if (recalculate_if_volatile && this.volatile_list.length) {
+      this.Recalculate();
     }
 
   }
@@ -715,7 +727,7 @@ export class Calculator extends Graph {
   /**
    * remove duplicates from list, dropping absolute
    */
-  public FlattenCellList(list: ICellAddress[]) {
+  public FlattenCellList(list: ICellAddress[]): ICellAddress[] {
 
     const map: {[index: string]: string} = {};
     const flattened: ICellAddress[] = [];
@@ -739,7 +751,7 @@ export class Calculator extends Graph {
    * get a list of cells that need metadata. this is for passing to
    * the simulation as additional cells
    */
-  public MetadataReferences(formula: string) {
+  public MetadataReferences(formula: string): ICellAddress[] {
     const references: ICellAddress[] = [];
     if (!this.model) { return references; }
     const parse_result = this.parser.Parse(formula);
@@ -764,7 +776,7 @@ export class Calculator extends Graph {
     return references;
   }
 
-  public RemoveAnnotation(annotation: Annotation) {
+  public RemoveAnnotation(annotation: Annotation): void {
     const vertex = (annotation.temp.vertex as LeafVertex);
     if (!vertex) { return; }
     vertex.Reset();
@@ -1153,204 +1165,235 @@ export class Calculator extends Graph {
 
   }
 
+  protected RebuildGraphCell(cell: Cell, address: ICellAddress2): void {
+
+    // array head
+    if (cell.area && cell.area.start.column === address.column && cell.area.start.row === address.row) {
+
+      const {start, end} = cell.area;
+
+      const sheet_id = start.sheet_id || address.sheet_id;
+      if (!start.sheet_id) { start.sheet_id = sheet_id; }
+
+      for (let column = start.column; column <= end.column; column++) {
+        for (let row = start.row; row <= end.row; row++) {
+          this.ResetInbound({ column, row, sheet_id }, true, false); // set dirty, don't create
+        }
+      }
+
+      this.SetDirty(address); // implicitly creates vertex for array head (if it doesn't already exist)
+
+      // implicit vertices from array head -> array members. this is required
+      // to correctly propagate dirtiness if a referenced cell changes state
+      // from array -> !array and vice-versa
+
+      for (let column = start.column; column <= end.column; column++) {
+        for (let row = start.row; row <= end.row; row++) {
+          if (row === start.row && column === start.column) { continue; }
+
+          this.AddEdge(start, {...start, row, column});
+        }
+      }
+
+    }
+
+    // formula?
+    if (cell.type === ValueType.formula) {
+
+      this.ResetInbound(address, true); // NOTE: sets dirty AND creates vertex if it doesn't exist
+      const parse_result = this.parser.Parse(cell.value as string);
+
+      // we have a couple of "magic" functions that can have loops
+      // but shouldn't trigger circular references. we need to check
+      // for those here...
+
+      if (parse_result.expression) {
+
+        // FIXME: move macro function parsing here; so that we don't
+        // need special call semantics, and dependencies work as normal.
+
+        // NOTE: the problem with that is you have to deep-parse every function,
+        // here, to look for macros. that might be OK, but the alternative is
+        // just to calculate them on demand, which seems a lot more efficient
+
+        const modified = this.ApplyMacroFunctions(parse_result.expression);
+        if (modified) { parse_result.expression = modified; }
+
+        // ...
+
+        const dependencies = this.RebuildDependencies(parse_result.expression, address.sheet_id, ''); // cell.sheet_id);
+
+        if (parse_result.expression.type === 'call') {
+          const func = this.library.Get(parse_result.expression.name);
+
+          // this is for sparklines... right?
+
+          if (func && (func.render || func.click)) {
+
+            // 'cell' here is not a reference to the actual cell (sadly)
+            // maybe we should fix that...
+
+            if (this.model) {
+
+              // we need a better way to do this
+
+              for (const sheet of this.model.sheets) {
+                if (sheet.id === address.sheet_id) {
+                  const cell2 = sheet.cells.GetCell(address, false); // FIXME <- could just set directly in this function (bc rewrite)
+                  if (cell2) {
+                    cell2.render_function = func.render;
+                    cell2.click_function = func.click;
+                  }
+                  break;
+                }
+              }
+
+            }
+
+          }
+        }
+
+        for (const key of Object.keys(dependencies.ranges)) {
+          const unit = dependencies.ranges[key];
+          const range = new Area(unit.start, unit.end);
+
+          // testing out array vertices (vertices that represent ranges).
+          // this is an effort to reduce the number of vertices in the graph,
+          // especially since these are generally unecessary (except for
+          // formula cells).
+
+          // if you want to drop this, go back to the non-array code below
+          // and it should go back to the old way (but there will still be
+          // some cruft in graph.ts, tests that will need to be removed).
+
+          // actually it's probably something that could be balanced based
+          // on the number of constants vs the number of formulae in the
+          // range. more (or all) constants, use a range. more/all formula,
+          // iterate.
+
+          // --- array version -----------------------------------------------
+
+          /*
+          const status = this.AddArrayVertexEdge(range, cell);
+
+          if (status !== GraphStatus.OK) {
+            global_status = status;
+            if (!initial_reference) initial_reference = { ...cell };
+          }
+          */
+
+          // --- non-array version -------------------------------------------
+
+          range.Iterate((target: ICellAddress) => {
+            this.AddEdge(target, address);
+          });
+
+          // --- end ---------------------------------------------------------
+
+        }
+
+        for (const key of Object.keys(dependencies.addresses)) {
+          const dependency = dependencies.addresses[key];
+          this.AddEdge(dependency, address);
+        }
+
+      }
+
+      const vertex = this.GetVertex(address, true);
+
+      if (vertex) {
+        vertex.expression = parse_result.expression || { type: 'missing', id: -1 };
+        vertex.expression_error = !parse_result.valid;
+      }
+
+    }
+    else if (cell.value !== cell.calculated) {
+
+      // sets dirty and removes inbound edges (in case the cell
+      // previously contained a formula and now it contains a constant).
+
+      this.ResetInbound(address, true, false); // NOTE: sets dirty
+    }
+    else if (cell.type === ValueType.undefined) {
+
+      // in the new framework, we get here on any cleared cell, but
+      // the behavior is OK
+
+      // if we get here, it means that this cell was cleared but is not
+      // 'empty'; in practice, that means it has a merge cell. reset inbound
+      // and set dirty.
+
+      // is this unecessarily flagging a number of cells? (...)
+
+      this.ResetInbound(address, true, false);
+    }
+    else {
+
+      // the reason you never get here is that the standard case is 
+      // value !== calculated. if you enter a constant, we flush 
+      // calculated first; so while the value doesn't change, it no 
+      // longer === calculated.
+
+      // this is just a constant?
+      console.warn('UNHANDLED CASE', cell);
+
+    }
+
+
+  }
+
   /**
    * rebuild the graph; parse expressions, build a dependency map,
    * initialize edges between nodes.
    *
    * FIXME: if we want to compose functions, we could do that here,
-   * which might result in some savings
+   * which might result in some savings [?]
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected RebuildGraph(data: any[], options: CalculationOptions = {}):
-      {status: GraphStatus; reference?: ICellAddress} {
+  protected RebuildGraph(subset?: Area): void {
 
-    // we're finishing the dep/dirty check so we don't miss something
-    // later, but we won't add the loop and we won't calculate.
+    if (subset) {
 
-    let global_status = GraphStatus.OK;
-    let initial_reference: ICellAddress|null = null;
-
-    for (const cell of data){
-
-      // array head
-      if (cell.area && cell.area.start.column === cell.column && cell.area.start.row === cell.row ){
-
-        const sheet_id = cell.area.start.sheet_id || cell.sheet_id;
-        if (!cell.area.start.sheet_id) { cell.area.start.sheet_id = sheet_id; }
-
-        for (let column = cell.area.start.column; column <= cell.area.end.column; column++ ){
-          for (let row = cell.area.start.row; row <= cell.area.end.row; row++ ){
-            this.ResetInbound({column, row, sheet_id}, true, false); // set dirty, don't create
-          }
-        }
-
-        this.SetDirty(cell); // implicitly creates vertex for array head (if it doesn't already exist)
-
-        // implicit vertices from array head -> array members. this is required
-        // to correctly propagate dirtiness if a referenced cell changes state
-        // from array -> !array and vice-versa
-
-        for (let column = cell.area.start.column; column <= cell.area.end.column; column++ ){
-          for (let row = cell.area.start.row; row <= cell.area.end.row; row++ ){
-            if (row === cell.area.start.row && column === cell.area.start.column) { continue; }
-
-            this.AddEdge(cell.area.start, {
-              ...cell.area.start, row, column
-            });
-          }
-        }
-        
+      if (!subset.start.sheet_id) {
+        throw new Error('subset missing sheet id');
       }
 
-      // formula?
-      if (cell.type === ValueType.formula) {
+      const cells = this.cells_map[subset.start.sheet_id];
 
-        this.ResetInbound(cell, true); // NOTE: sets dirty AND creates vertex if it doesn't exist
-        const parse_result = this.parser.Parse(cell.value);
-
-        // we have a couple of "magic" functions that can have loops
-        // but shouldn't trigger circular references. we need to check
-        // for those here...
-
-        if (parse_result.expression) {
-
-          // FIXME: move macro function parsing here; so that we don't
-          // need special call semantics, and dependencies work as normal.
-
-          // NOTE: the problem with that is you have to deep-parse every function,
-          // here, to look for macros. that might be OK, but the alternative is
-          // just to calculate them on demand, which seems a lot more efficient
-
-          const modified = this.ApplyMacroFunctions(parse_result.expression);
-          if (modified) { parse_result.expression = modified; }
-
-          // ...
-
-          const dependencies = this.RebuildDependencies(parse_result.expression, cell.sheet_id, ''); // cell.sheet_id);
-          
-          if (parse_result.expression.type === 'call') {
-            const func = this.library.Get(parse_result.expression.name);
-
-            // this is for sparklines... right?
-
-            if (func && (func.render || func.click)) {
-
-              // 'cell' here is not a reference to the actual cell (sadly)
-              // maybe we should fix that...
-
-              if (this.model) {
-
-                // we need a better way to do this
-                
-                for (const sheet of this.model.sheets) {
-                  if (sheet.id === cell.sheet_id) {
-                    const cell2 = sheet.cells.GetCell(cell, false);
-                    if (cell2) {
-                      cell2.render_function = func.render;
-                      cell2.click_function = func.click;
-                    }
-                    break;
-                  }
-                }
-
-              }
-
+      for (let row = subset.start.row; row <= subset.end.row; row++) {
+        const row_array = cells.data[row];
+        if (row_array) {
+          for (let column = subset.start.column; column <= subset.end.column; column++) {
+            const cell = row_array[column];
+            if (cell) {
+              this.RebuildGraphCell(cell, {row, column, sheet_id: subset.start.sheet_id});
             }
           }
-
-          for (const key of Object.keys(dependencies.ranges)){
-            const unit = dependencies.ranges[key];
-            const range = new Area(unit.start, unit.end);
-
-            // testing out array vertices (vertices that represent ranges).
-            // this is an effort to reduce the number of vertices in the graph,
-            // especially since these are generally unecessary (except for
-            // formula cells).
-
-            // if you want to drop this, go back to the non-array code below
-            // and it should go back to the old way (but there will still be
-            // some cruft in graph.ts, tests that will need to be removed).
-
-            // actually it's probably something that could be balanced based
-            // on the number of constants vs the number of formulae in the
-            // range. more (or all) constants, use a range. more/all formula,
-            // iterate.
-
-            // --- array version -----------------------------------------------
-
-            /*
-            const status = this.AddArrayVertexEdge(range, cell);
-
-            if (status !== GraphStatus.OK) {
-              global_status = status;
-              if (!initial_reference) initial_reference = { ...cell };
-            }
-            */
-
-            // --- non-array version -------------------------------------------
-
-            range.Iterate((address: ICellAddress) => {
-              const status = this.AddEdge(address, cell);
-              if (status !== GraphStatus.OK) {
-                global_status = status;
-                if (!initial_reference) initial_reference = { ...cell };
-              }
-            });
-
-            // --- end ---------------------------------------------------------
-
-          }
-
-          for (const key of Object.keys(dependencies.addresses)){
-            const address = dependencies.addresses[key];
-            const status = this.AddEdge(address, cell);
-            if (status !== GraphStatus.OK) {
-              global_status = status;
-              if (!initial_reference) initial_reference = { ...cell };
-            }
-          }
-
         }
-
-        const vertex = this.GetVertex(cell, true);
-
-        if (vertex) {
-          vertex.expression = parse_result.expression || {type: 'missing', id: -1};
-          vertex.expression_error = !parse_result.valid;
-        }
-
-      }
-      else if (cell.value !== cell.calculated && !options.formula_only){
-
-        // sets dirty and removes inbound edges (in case the cell
-        // previously contained a formula and now it contains a constant).
-
-        this.ResetInbound(cell, true, false); // NOTE: sets dirty
-      }
-      else if (cell.type === ValueType.undefined){
-
-        // if we get here, it means that this cell was cleared but is not
-        // 'empty'; in practice, that means it has a merge cell. reset inbound
-        // and set dirty.
-
-        // is this unecessarily flagging a number of cells? (...)
-
-        this.ResetInbound(cell, true, false);
-      }
-      else {
-
-        // this is just a constant?
-        // console.info("UNHANDLED CASE?", cell);
-
       }
 
     }
+    else {
+      for (const sheet of this.model?.sheets || []) {
+        const rows = sheet.cells.data.length;
+        for (let row = 0; row < rows; row++) {
+          const row_array = sheet.cells.data[row];
+          if (row_array) {
+            const columns = row_array.length;
+            for (let column = 0; column < columns; column++) {
+              const cell = row_array[column];
+              if (cell) {
+                this.RebuildGraphCell(cell, {row, column, sheet_id: sheet.id});
+              }
+            }
+          }
+        }
+      }
+    }
 
-    return {status: global_status, reference: initial_reference || undefined}; // no loops
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected IsNativeOrTypedArray(val: any){
+  protected IsNativeOrTypedArray(val: unknown): boolean {
     return Array.isArray(val) || (val instanceof Float64Array) || (val instanceof Float32Array);
   }
 
@@ -1374,178 +1417,5 @@ export class Calculator extends Graph {
     return volatile;
 
   }
-
-  /**
-   * get a list of cells, possibly subset, for building the graph
-   */
-  protected BuildCellsList(options: CellSerializationOptions) {
-
-    if (options.subset) {
-
-      // if there's a subset, then limit to that sheet
-
-      const sheet_id = options.subset.start.sheet_id;
-      if (!sheet_id) { throw new Error('BuildCellsList called with subset without sheet id'); }
-
-      const cells = this.cells_map[sheet_id];
-      if (!cells) { throw new Error('BuildCellsList called with invalid sheet id'); }
-
-      const flat = cells.toJSON({ ...options, sheet_id });
-
-      return flat.data;
-
-    }
-    else {
-
-      if (!this.model) { throw new Error('BuildCellsList called without model'); }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let data: any[] = [];
-      for (const sheet of this.model.sheets) {
-        const flat = sheet.cells.toJSON({ ...options, sheet_id: sheet.id });
-        data = data.concat(flat.data);
-      }
-
-      return data;
-
-    }
-
-  }
-
-  protected async CalculateInternal(model: DataModel, area?: Area, options?: CalculationOptions){
-
-    // const cells = model.active_sheet.cells;
-
-    this.AttachData(model); // for graph. FIXME
-
-    if (area && !area.start.sheet_id) {
-      throw new Error('CalculateInternal called with area w/out sheet ID')
-    }
-
-    const json_options: CellSerializationOptions = {
-      preserve_type: true,
-
-      // drop subset if we need a full rebuild
-      subset: this.full_rebuild_required ? undefined : area,
-      calculated_value: true,
-    
-    };
-
-    if (this.full_rebuild_required) {
-      this.UpdateAnnotations();
-    }
-
-    this.full_rebuild_required = false; // unset
-
-    let flat_data = this.BuildCellsList(json_options);
-
-    this.expression_calculator.SetModel(model);
-
-    let result: {status: GraphStatus; reference?: ICellAddress} = {
-      status: GraphStatus.OK,
-    };
-
-    if (flat_data.length === 0 && area){
-
-      // clearing. set these as dirty. NOTE: there's another case
-      // where are clearing, but we have values; that happens for
-      // merged cells. in this case we still need to reset, but it
-      // will happen in the RebuildGraph function.
-
-      // NOTE: we need to do something with outbound vertices here.
-      // the issue is if something refers to a cell within an array,
-      // behavior is not well-defined. 
-
-      // NOTE2: that's now handled in graph.
-
-      const edge_list: SpreadsheetVertex[] = [];
-
-      area.Iterate((address: ICellAddress) => {
-        const vertex = this.GetVertex(address, false);
-        if (vertex) {
-          for (const edge of vertex.edges_out) {
-            // console.info('EO', (edge as SpreadsheetVertex).address);
-            edge_list.push(edge as SpreadsheetVertex);
-          }
-        }
-        this.ResetInbound(address, true, false);
-      });
-
-      // check for loops...
-
-      if (this.status !== GraphStatus.OK){
-        json_options.subset = undefined;
-
-        // what would flat be in this context? if data.length (above) is 0,
-        // why would it be different now?
-
-        // flat = cells.toJSON({...json_options, sheet_id: model.active_sheet.id});
-        flat_data = this.BuildCellsList(json_options);
-        result = this.RebuildGraph(flat_data, options);
-      }
-
-      /*
-
-      else if (edge_list.length) {
-
-
-        flat_data = edge_list.map(edge => {
-          if (edge.address) {
-            return this.BuildCellsList({...json_options, subset: new Area(edge.address)})[0];
-          }
-        });
-        console.info("FDL", flat_data);
-        result = this.RebuildGraph(flat_data, options);
-
-      }
-
-      */
-
-
-    }
-    else {
-
-      // what's this about? cleaning up loops is complicated.
-      // we need to check if the last change was a fix, by running
-      // the complete check.
-
-      const initial_state = this.status;
-      result = this.RebuildGraph(flat_data, options);
-
-      if (initial_state){
-        json_options.subset = undefined;
-        flat_data = this.BuildCellsList(json_options);
-        result = this.RebuildGraph(flat_data, options);
-      }
-
-    }
-
-    this.status = result ? result.status : GraphStatus.OK;
-
-    /*
-    if (this.status === GraphStatus.OK) {
-      if(this.LoopCheck()) {
-        result.status = this.status = GraphStatus.Loop;
-      }
-    }
-    */
-
-    if (this.status !== GraphStatus.OK){
-      console.error( 'Loop detected, stopping');
-      return result;
-    }
-
-    try {
-      this.Recalculate();
-    }
-    catch (err){
-      console.error(err);
-      console.info('calculation error trapped');
-    }
-
-    return {status: GraphStatus.OK, reference: null};
-
-  }
-
 
 }

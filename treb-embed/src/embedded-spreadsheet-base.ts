@@ -2186,7 +2186,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** recalc sheet */
-  public async Recalculate(event?: GridEvent, formula_only = false): Promise<void> {
+  public async Recalculate(event?: GridEvent): Promise<void> {
 
     let area: Area | undefined;
     if (event && event.type === 'data' && event.area) {
@@ -2194,7 +2194,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     // const result = 
-    await this.calculator.Calculate(this.grid.model, area, { formula_only });
+    await this.calculator.Calculate(this.grid.model, area);
 
     this.grid.Update(true); // , area);
     this.UpdateAnnotations();
@@ -2495,7 +2495,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
           case 'format':
             if (event.value) {
-              updated_style.number_format = event.value;
+              const translated = NumberFormatCache.SymbolicName(NumberFormatCache.Translate(event.value));
+              updated_style.number_format = translated || event.value;
             }
             break;
 
@@ -2579,71 +2580,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     const number_format_map: {[index: string]: number} = {};
     const color_map: {[index: string]: number} = {};
 
-    // this business is because we want to ensure order, but key ordering
-    // is not guaranteed (even though everyone maintains it).
-
-    let weight = 1; // inverse weight
-    for (const format of [
-        'General', 'Number', 'Integer', 'Percent', 'Accounting', 'Currency', 'Scientific',
-        'Timestamp', 'Long Date', 'Short Date']) {
-      number_format_map[format] = weight++;
-    }
-  
-    const update_from_style = (style: Style.Properties): void => {
-      if (style.number_format) { 
-        number_format_map[style.number_format] = weight; 
-      }
-      if (style.text_color && style.text_color !== 'none') {
-        color_map[style.text_color] = 1;
-      }
-      if (style.background && style.background !== 'none') {
-        color_map[style.background] = 1;
-      }
-      if (style.border_top_color && style.border_top_color !== 'none') {
-        color_map[style.border_top_color] = 1;
-      }
-      if (style.border_bottom_color && style.border_bottom_color !== 'none') {
-        color_map[style.border_bottom_color] = 1;
-      }
-      if (style.border_left_color && style.border_left_color !== 'none') {
-        color_map[style.border_left_color] = 1;
-      }
-      if (style.border_right_color && style.border_right_color !== 'none') {
-        color_map[style.border_right_color] = 1;
-      }
-    }
-
     for (const sheet of this.grid.model.sheets) {
-      const json = sheet.toJSON();
-      
-      update_from_style(json.sheet_style);
-      
-      for (const style of json.cell_style_refs) {
-        update_from_style(style);
-      }
-
-      if (json.row_pattern) {
-        for (const style of json.row_pattern) {
-          update_from_style(style);
-        }
-      }
-
-      for (const key of Object.keys(json.column_style)) {
-        update_from_style(json.column_style[key as any]);
-      }
-      for (const key of Object.keys(json.row_style)) {
-        update_from_style(json.row_style[key as any]);
-      }
-      
-    }
-
-    const number_formats = Object.keys(number_format_map);
-    number_formats.sort((a, b) => {
-      return number_format_map[a] - number_format_map[b];
-    });
+      sheet.NumberFormatsAndColors(color_map, number_format_map);
+    }    
 
     this.toolbar_manager.UpdateDocumentStyles(
-      number_formats, // Object.keys(number_format_map),
+      Object.keys(number_format_map),
       Object.keys(color_map),
       update);
     
