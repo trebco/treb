@@ -1,10 +1,9 @@
 
-import { Localization, Cell, Area, ICellAddress, ICellAddress2,
-         ValueType, CellSerializationOptions } from 'treb-base-types';
+import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
-         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitLiteral, UnitMissing } from 'treb-parser';
+         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing } from 'treb-parser';
 
-import { Graph, GraphStatus } from './dag/graph';
+import { Graph } from './dag/graph';
 import { SpreadsheetVertex, CalculationResult } from './dag/spreadsheet_vertex';
 import { ExpressionCalculator } from './expression-calculator';
 import * as Utilities from './utilities';
@@ -19,16 +18,7 @@ import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './function
 import { DataModel, Annotation, FunctionDescriptor } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
 
-import { ArgumentError, ReferenceError, UnknownError, IsError, ValueError, ExpressionError } from './function-error';
-
-export interface CalculationOptions {
-
-  // at load, and potentially at other times as well, we don't
-  // need to check static values. this will save time.
-
-  formula_only?: boolean;
-
-}
+import { ArgumentError, ReferenceError, UnknownError, IsError, ValueError, ExpressionError, FunctionError } from './function-error';
 
 /**
  * Calculator now extends graph. there's a 1-1 relationship between the
@@ -41,9 +31,10 @@ export interface CalculationOptions {
  *
  * in that event, you need to flush the graph to force rebuilding references
  * (TODO: just rebuild references). after mutating the sheet, call
- *
+ * ```
  * Calculator.Reset();
- *
+ * ```
+ * 
  */
 export class Calculator extends Graph {
 
@@ -55,8 +46,7 @@ export class Calculator extends Graph {
   public readonly parser: Parser = new Parser();
 
   // protected graph: Graph = new Graph(); // |null = null;
-
-  protected status: GraphStatus = GraphStatus.OK;
+  // protected status: GraphStatus = GraphStatus.OK;
 
   // FIXME: why is this a separate class? [actually is this a composition issue?]
   protected expression_calculator = new ExpressionCalculator(
@@ -69,20 +59,17 @@ export class Calculator extends Graph {
 
   constructor() {
     super();
+
     this.UpdateLocale();
 
     // base functions
-    this.library.Register(BaseFunctionLibrary);
-
-    // we split out text functions
-    this.library.Register(TextFunctionLibrary);
-
-    // also stats (wip)
-    this.library.Register(StatisticsFunctionLibrary);
-
-    // also this (wip)
-    this.library.Register(FinanceFunctionLibrary);
-
+    this.library.Register(
+      BaseFunctionLibrary,
+      TextFunctionLibrary,        // we split out text functions
+      StatisticsFunctionLibrary,  // also stats (wip)
+      FinanceFunctionLibrary,     // also this (wip)
+      );
+   
     // aliases
     for (const key of Object.keys(StatisticsFunctionAliases)) {
       this.library.Alias(key, StatisticsFunctionAliases[key]);
@@ -287,7 +274,7 @@ export class Calculator extends Graph {
 
           if (!reference) return ArgumentError;
 
-          const parse_result = this.parser.Parse(reference);
+          const parse_result = this.parser.Parse(reference.toString());
           if (parse_result.error || !parse_result.expression) {
             return ReferenceError;
           }
@@ -319,8 +306,11 @@ export class Calculator extends Graph {
 
   }
 
+  /**
+   * this is a mess
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public SpreadCallback(vertex: SpreadsheetVertex, value: any) {
+  public SpreadCallback(vertex: SpreadsheetVertex, value: any): void {
 
     if (!vertex.address || !vertex.address.sheet_id) {
       throw new Error('spread callback called without sheet id');
@@ -448,13 +438,13 @@ export class Calculator extends Graph {
    * does not set the "short circuit" flag, callers should set as appropriate.
    */
   public DynamicDependencies(
-      expression: ExpressionUnit,
-      offset = false,
-      offset_rows = 0,
-      offset_columns = 0,
-      resize_rows = 1,
-      resize_columns = 1,
-    ) {
+        expression: ExpressionUnit,
+        offset = false,
+        offset_rows = 0,
+        offset_columns = 0,
+        resize_rows = 1,
+        resize_columns = 1,
+      ) : {dirty: boolean, area?: Area}|FunctionError {
 
     if (!this.model) {
       return UnknownError;
@@ -537,7 +527,7 @@ export class Calculator extends Graph {
    * just drop and reconstruct calculator, but we want to stop doing that
    * as part of supporting dynamic extension.
    */
-  public UpdateLocale() {
+  public UpdateLocale(): void {
 
     // don't assume default, always set
 
@@ -554,7 +544,14 @@ export class Calculator extends Graph {
 
   }
 
-  /** lookup in function library */
+  /** 
+   * lookup in function library 
+   * 
+   * it seems like the only place this is called is within this class, 
+   * so we could probably inline and drop this function
+   * 
+   * @deprecated
+   */
   public GetFunction(name: string) {
     return this.library.Get(name);
   }
@@ -629,7 +626,7 @@ export class Calculator extends Graph {
    * wrapper method for calculation. this should be used for 1-time
    * calculations (i.e. not in a simulation).
    */
-  public Calculate(model: DataModel, area?: Area): void {
+  public Calculate(model: DataModel, subset?: Area): void {
 
     this.AttachData(model); // for graph. FIXME
 
@@ -637,24 +634,19 @@ export class Calculator extends Graph {
     // check it here are skip the later check, but that field is optional
     // it's better to report the error here so we can trace
 
-    if (area && !area.start.sheet_id) {
-      throw new Error('CalculateInternal called with area w/out sheet ID')
+    if (subset && !subset.start.sheet_id) {
+      throw new Error('CalculateInternal called with subset w/out sheet ID')
     }
 
     if (this.full_rebuild_required) {
-      area = undefined;
+      subset = undefined;
       this.UpdateAnnotations();
+      this.full_rebuild_required = false; // unset
     }
-
-    this.full_rebuild_required = false; // unset
 
     this.expression_calculator.SetModel(model);
 
-    this.RebuildGraph(area);
-
-    // pretty sure we just don't use this anymore
-
-    this.status = GraphStatus.OK;
+    this.RebuildGraph(subset);
 
     try {
       this.Recalculate();
@@ -671,7 +663,6 @@ export class Calculator extends Graph {
    */
   public Reset(): void {
 
-    this.status = GraphStatus.OK;
     this.FlushTree();
     if (this.model) {
       this.AttachData(this.model);
@@ -715,9 +706,12 @@ export class Calculator extends Graph {
 
     this.UpdateAnnotations(); // all
 
-    this.status = GraphStatus.OK;
+    // there's a weird back-and-forth that happens here 
+    // (calculator -> graph -> calculator) to check for volatile
+    // cells. it could probably be simplified.
 
     this.InitializeGraph();
+    
     if (recalculate_if_volatile && this.volatile_list.length) {
       this.Recalculate();
     }
@@ -783,7 +777,7 @@ export class Calculator extends Graph {
     this.RemoveLeafVertex(vertex);
   }
 
-  public UpdateAnnotations(list?: Annotation|Annotation[]) {
+  public UpdateAnnotations(list?: Annotation|Annotation[]): void {
 
     if (!list && this.model) list = this.model.active_sheet.annotations;
     if (!list) return;
@@ -805,7 +799,7 @@ export class Calculator extends Graph {
 
   }
 
-  public ResolveSheetID(expr: UnitAddress|UnitRange) {
+  public ResolveSheetID(expr: UnitAddress|UnitRange): void {
     if (!this.model) { throw new Error('ResolveSheetID called without model'); }
 
     const target = expr.type === 'address' ? expr : expr.start;
@@ -832,7 +826,7 @@ export class Calculator extends Graph {
    * assuming the expression is an address, range, or named range, resolve
    * to an address/area. returns undefined if the expression can't be resolved.
    */
-  protected ResolveExpressionAddress(expr: ExpressionUnit) {
+  protected ResolveExpressionAddress(expr: ExpressionUnit): Area|undefined {
 
     switch (expr.type) {
       case 'address':
@@ -883,7 +877,7 @@ export class Calculator extends Graph {
   }
 
   /** named range support */
-  protected ConstructAddressUnit(address: ICellAddress, label: string, id: number, position: number) {
+  protected ConstructAddressUnit(address: ICellAddress, label: string, id: number, position: number): UnitAddress {
     return {
       type: 'address',
       row: address.row,
@@ -915,7 +909,7 @@ export class Calculator extends Graph {
       relative_sheet_name: string,
       dependencies: DependencyList = {addresses: {}, ranges: {}},
       sheet_name_map?: {[index: string]: number},
-    ){
+    ): DependencyList {
 
     // does this get redone on every descent? dumb
 
@@ -1030,7 +1024,7 @@ export class Calculator extends Graph {
     return dependencies;
   }
 
-  protected UpdateLeafVertex(vertex: LeafVertex, formula: string){
+  protected UpdateLeafVertex(vertex: LeafVertex, formula: string): void {
 
     if (!this.model) {
       throw new Error('UpdateLeafVertex called without model')
@@ -1154,7 +1148,7 @@ export class Calculator extends Graph {
 
   }
 
-  protected ApplyMacroFunctions(expression: ExpressionUnit) {
+  protected ApplyMacroFunctions(expression: ExpressionUnit): ExpressionUnit|undefined {
 
     if (!this.model) { return; }
 
@@ -1165,6 +1159,9 @@ export class Calculator extends Graph {
 
   }
 
+  /** 
+   * 
+   */
   protected RebuildGraphCell(cell: Cell, address: ICellAddress2): void {
 
     // array head
@@ -1172,7 +1169,7 @@ export class Calculator extends Graph {
 
       const {start, end} = cell.area;
 
-      const sheet_id = start.sheet_id || address.sheet_id;
+      const sheet_id = start.sheet_id || address.sheet_id; // ... should always be ===
       if (!start.sheet_id) { start.sheet_id = sheet_id; }
 
       for (let column = start.column; column <= end.column; column++) {
@@ -1221,37 +1218,19 @@ export class Calculator extends Graph {
 
         // ...
 
-        const dependencies = this.RebuildDependencies(parse_result.expression, address.sheet_id, ''); // cell.sheet_id);
-
         if (parse_result.expression.type === 'call') {
           const func = this.library.Get(parse_result.expression.name);
 
-          // this is for sparklines... right?
+          // this is for sparklines and checkboxes atm
 
           if (func && (func.render || func.click)) {
-
-            // 'cell' here is not a reference to the actual cell (sadly)
-            // maybe we should fix that...
-
-            if (this.model) {
-
-              // we need a better way to do this
-
-              for (const sheet of this.model.sheets) {
-                if (sheet.id === address.sheet_id) {
-                  const cell2 = sheet.cells.GetCell(address, false); // FIXME <- could just set directly in this function (bc rewrite)
-                  if (cell2) {
-                    cell2.render_function = func.render;
-                    cell2.click_function = func.click;
-                  }
-                  break;
-                }
-              }
-
-            }
-
+            cell.render_function = func.render;
+            cell.click_function = func.click;
           }
+
         }
+
+        const dependencies = this.RebuildDependencies(parse_result.expression, address.sheet_id, ''); // cell.sheet_id);
 
         for (const key of Object.keys(dependencies.ranges)) {
           const unit = dependencies.ranges[key];

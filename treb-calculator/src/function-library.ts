@@ -14,37 +14,42 @@ export class FunctionLibrary {
    * register one or more functions. keys in the passed object are
    * considered the canonical function names, and must be (icase) unique.
    */
-  public Register(map: FunctionMap) {
+  public Register(...maps: FunctionMap[]): void {
 
-    for (const name of Object.keys(map)) {
+    for (const map of maps) {
 
-      // some rules for names. the length thing is arbitrary, but come on.
-      // leading ascii-letter is also kind of arbitrary, but it can't be
-      // a number. the legal characters thing is probably broken: we should
-      // allow extended characters.
+      for (const name of Object.keys(map)) {
 
-      if (/[^a-zA-Z0-9._]/.test(name)) {
-        throw new Error('invalid function name (invalid character)');
+        // some rules for names. the length thing is arbitrary, but come on.
+        // leading ascii-letter is also kind of arbitrary, but it can't be
+        // a number. the legal characters thing is probably broken: we should
+        // allow extended characters.
+
+        if (/[^a-zA-Z0-9._]/.test(name)) {
+          throw new Error('invalid function name (invalid character)');
+        }
+
+        if (name.length > 255) {
+          throw new Error('invalid function name (too long, > 255)');
+        }
+
+        if (/^[^a-zA-Z]/.test(name)) {
+          throw new Error('invalid function name (start with an ascii letter)');
+        }
+
+        const normalized = name.toLowerCase();
+        if (this.functions[normalized]) {
+          throw new Error(`function name (${normalized}) is already in use`);
+        }
+
+        const descriptor = map[name] as ExtendedFunctionDescriptor;
+        descriptor.canonical_name = name;
+
+        this.functions[normalized] = descriptor;
       }
 
-      if (name.length > 255) {
-        throw new Error('invalid function name (too long, > 255)');
-      }
-
-      if (/^[^a-zA-Z]/.test(name)) {
-        throw new Error('invalid function name (start with an ascii letter)');
-      }
-
-      const normalized = name.toLowerCase();
-      if (this.functions[normalized]) {
-        throw new Error(`function name (${normalized}) is already in use`);
-      }
-
-      const descriptor = map[name] as ExtendedFunctionDescriptor;
-      descriptor.canonical_name = name;
-
-      this.functions[normalized] = descriptor;
     }
+
   }
 
   /** lookup function (actual map is protected) */
