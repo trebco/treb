@@ -129,6 +129,8 @@ export class ExpressionCalculator {
    */
   protected CellFunction2(expr: UnitAddress) {
 
+    // console.info("CF2", expr);
+
     if (!expr.sheet_id) {
       if (expr.sheet) {
         expr.sheet_id = this.sheet_name_map[expr.sheet.toLowerCase()];
@@ -256,6 +258,7 @@ export class ExpressionCalculator {
 
       {
         const result = this.CalculateExpression(arg, true);
+
         if (result && typeof result === 'object') {
           if (result.type === 'address') { 
             address = result;
@@ -383,7 +386,22 @@ export class ExpressionCalculator {
   }
   */
 
-  /** excutes a function call */
+  /** 
+   * excutes a function call 
+   *
+   * the return type of functions has never been locked down, and as a result
+   * there are a couple of things we need to handle. 
+   * 
+   * return type can be any value, essentially, or array, error object, or 
+   * (in the case of some of the reference/lookup functions) an address or 
+   * range expression. array must be 2d, I think? not sure that that is true.
+   * 
+   * this wrapper function returns a function which returns one of those
+   * things, i.e. it returns (expr) => return type
+   * 
+   * it will only return address/range if the parameter flag is set, so we
+   * could in theory lock it down a bit with overloads.
+   */
   protected CallExpression(outer: UnitCall, return_reference = false) {
 
     // get the function descriptor, which won't change.

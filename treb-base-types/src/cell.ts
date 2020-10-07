@@ -83,6 +83,15 @@ export enum ValueType {
 export type CellValue = undefined | string | number | boolean;
 
 /**
+ * to simplify treatment of values and errors, use a composite return
+ * type that can support both without a lot of sloppy type testing
+ */
+export interface UnionValue {
+  type: ValueType;
+  value: CellValue;
+}
+
+/**
  * validation TODO: date, number, boolean, &c
  */
 export enum ValidationType {
@@ -430,6 +439,33 @@ export class Cell {
     if (typeof this.value === 'string' && this.value[0] === '\'') { return this.value.slice(1); } // @see GetValue
 
     return this.value;
+  }
+
+  /**
+   * this function follows the rule of GetValue3, which is: if the type
+   * is a function but there is no calculated value, then return 0.
+   */
+  public GetValue4(): UnionValue {
+
+    if (this.calculated_type) {
+      return {
+        type: this.calculated_type,
+        value: this.calculated,
+      };
+    }
+
+    if (this.type === ValueType.formula) {
+      return {
+        type: ValueType.number, // but which type? (...)
+        value: 0,
+      }
+    }
+
+    return { 
+      type: this.type, 
+      value: (typeof this.value === 'string' && this.value[0] === '\'') ? this.value.slice(1) : this.value, // @see GetValue 
+    };
+
   }
 
   /**

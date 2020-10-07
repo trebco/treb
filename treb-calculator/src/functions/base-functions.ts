@@ -30,7 +30,7 @@ import { ClickCheckbox, RenderCheckbox } from './checkbox';
 // OK, just one.
 
 /** error function (for gaussian distribution) */
-const erf = (x: number) => {
+const erf = (x: number): number => {
 
   const a1 = 0.254829592;
   const a2 = -0.284496736;
