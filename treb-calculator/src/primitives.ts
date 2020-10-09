@@ -1,165 +1,146 @@
-import { DivideByZeroError } from './function-error';
 
-export type PrimitiveBinaryExpression = (a: number|object, b: number|object) => number|object|boolean;
+import { UnionValue, ValueType } from 'treb-base-types/src';
+import { DivideByZeroError, ValueError } from './function-error';
 
-// NOTE: I perf tested these in chrome, and it was a wash. the imperative
-// functions are maybe a little faster in ffx. I have not tested IE11 but
-// that's basically the reason we are using the explicit ones.
+export type PrimitiveBinaryExpression = (a: UnionValue, b: UnionValue) => UnionValue;
 
-/*
-export const Validate = (fn: (x: any, y: any) => any, a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return fn(a, b);
-};
+type NumericTuple = [number, number, UnionValue?];
 
-export const Add = Validate.bind(0, (x: any, y: any) => x + y);
-export const Subtract = Validate.bind(0, (x: any, y: any) => x - y);
+const NumericTypes = (a: UnionValue, b: UnionValue): NumericTuple => {
 
-*/
+  if (a.type === ValueType.error) { return [0, 0, a]; }
+  if (b.type === ValueType.error) { return [0, 0, b]; }
 
-// UPDATE: adding defaults... these still need work:
+  const result: NumericTuple = [0, 0];
 
-export const Concatenate = (a: any, b: any) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
+  switch (a.type) {
+    case ValueType.number: result[0] = a.value as number; break;
+    case ValueType.boolean: result[0] = a.value ? 1 : 0; break;
+    case ValueType.undefined: break;
+    default: return [0, 0, ValueError()]; // FIXME
+  }
 
-  // treat empty cells as strings
+  switch (b.type) {
+    case ValueType.number: result[1] = b.value as number; break;
+    case ValueType.boolean: result[1] = b.value ? 1 : 0; break;
+    case ValueType.undefined: break;
+    default: return [0, 0, ValueError()]; // FIXME
+  }
 
-  if (typeof a === 'undefined') a = '';
-  if (typeof b === 'undefined') a = '';
-
-  return `${a}${b}`;
+  return result;
 }
 
-export const Equals = (a: number|object|string, b: number|object|string) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-
-  // special case: empty string === undefined
- 
-  if (typeof a === 'undefined' && b === '') { return true; }
-  if (typeof b === 'undefined' && a === '') { return true; }
-
-  // tslint:disable-next-line: triple-equals
-  return (a||0) == (b||0);
+export const Add = (a: UnionValue, b: UnionValue): UnionValue => {
+  const [x, y, z] = NumericTypes(a, b);
+  if (z) { return z; }
+  return { value: x + y, type: ValueType.number };
 };
 
-export const NotEquals = (a: number|object|string, b: number|object|string) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-
-  // special case: empty string === undefined
-
-  if (typeof a === 'undefined' && b === '') { return false; }
-  if (typeof b === 'undefined' && a === '') { return false; }
-
-  // tslint:disable-next-line: triple-equals
-  return (a||0) != (b||0);
+export const Subtract = (a: UnionValue, b: UnionValue): UnionValue => {
+  const [x, y, z] = NumericTypes(a, b);
+  if (z) { return z; }
+  return { value: x - y, type: ValueType.number };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const Identity = (a: any) => {
-  if (typeof a === 'object') return a;
-
-  // undefined => 0 but NOT empty string => 0
-
-  if (typeof a === 'undefined') a = 0;
-  return a;
-}
-
-export const Inverse = (a: number|object) => {
-  if (typeof a === 'object') return a;
-
-  // undefined => 0 but NOT empty string => 0
-
-  if (typeof a === 'undefined') a = 0;
-  return -a;
+export const Power = (a: UnionValue, b: UnionValue): UnionValue => {
+  const [x, y, z] = NumericTypes(a, b);
+  if (z) { return z; }
+  return { value: Math.pow(x, y), type: ValueType.number };
 };
 
-// these are done:
-
-export const Add = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return (a||0) + (b||0);
+export const Multiply = (a: UnionValue, b: UnionValue): UnionValue => {
+  const [x, y, z] = NumericTypes(a, b);
+  if (z) { return z; }
+  return { value: x * y, type: ValueType.number };
 };
 
-export const Subtract = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return (a||0) - (b||0);
+export const Divide = (a: UnionValue, b: UnionValue): UnionValue => {
+  const [x, y, z] = NumericTypes(a, b);
+  if (z) { return z; }
+  if (y === 0) {
+    return DivideByZeroError();
+  }
+  return { value: x / y, type: ValueType.number };
 };
 
-export const Modulo = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return (a||0) % (b||0);
+export const Modulo = (a: UnionValue, b: UnionValue): UnionValue => {
+  const [x, y, z] = NumericTypes(a, b);
+  if (z) { return z; }
+  if (y === 0) {
+    return DivideByZeroError();
+  }
+  return { value: x % y, type: ValueType.number };
 };
 
-export const Multiply = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return (a||0) * (b||0);
+export const Concatenate = (a: UnionValue, b: UnionValue): UnionValue => {
+  if (a.type === ValueType.error) { return a; }
+  if (b.type === ValueType.error) { return b; }
+
+  return {
+    type: ValueType.string, 
+    value: `${a.type === ValueType.undefined ? '' : a.value}${b.type === ValueType.undefined ? '' : b.value}`,
+  };
+
 };
 
-export const Divide = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  if (!b) { return DivideByZeroError; }
-  return (a||0) / (b||0);
+export const Equals = (a: UnionValue, b: UnionValue): UnionValue => {
+  if (a.type === ValueType.error) { return a; }
+  if (b.type === ValueType.error) { return b; }
+  return { type: ValueType.boolean, value: a.value == b.value }; // note ==
 };
 
-export const Power = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return Math.pow((a||0), (b||0));
+export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
+  if (a.type === ValueType.error) { return a; }
+  if (b.type === ValueType.error) { return b; }
+  return { type: ValueType.boolean, value: a.value != b.value }; // note !=
 };
 
-export const GreaterThan = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return (a||0) > (b||0);
+// NOTE: our comparisons don't match Excel with different types -- we could
+// probably figure out what Excel is doing, but I'm not sure it's useful or
+// worthwhile
+
+export const GreaterThan = (a: UnionValue, b: UnionValue): UnionValue => {
+  if (a.type === ValueType.error) { return a; }
+  if (b.type === ValueType.error) { return b; }
+  return { type: ValueType.boolean, value: (a.value||0) > (b.value||0) };
 };
 
-export const LessThan = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return (a||0) < (b||0);
+export const GreaterThanEqual = (a: UnionValue, b: UnionValue): UnionValue => {
+  if (a.type === ValueType.error) { return a; }
+  if (b.type === ValueType.error) { return b; }
+  return { type: ValueType.boolean, value: a.value >= b.value };
 };
 
-export const GreaterThanEquals = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return (a||0) >= (b||0);
+export const LessThan = (a: UnionValue, b: UnionValue): UnionValue => {
+  if (a.type === ValueType.error) { return a; }
+  if (b.type === ValueType.error) { return b; }
+  return { type: ValueType.boolean, value: a.value < b.value };
 };
 
-export const LessThanEquals = (a: number|object, b: number|object) => {
-  if (typeof a === 'object') return a;
-  if (typeof b === 'object') return b;
-  return (a||0) <= (b||0);
+export const LessThanEqual = (a: UnionValue, b: UnionValue): UnionValue => {
+  if (a.type === ValueType.error) { return a; }
+  if (b.type === ValueType.error) { return b; }
+  return { type: ValueType.boolean, value: a.value <= b.value };
 };
 
 export const MapOperator = (operator: string) => {
-
-  switch (operator){
+  switch(operator) {
     case '&': return Concatenate;
     case '+': return Add;
     case '-': return Subtract;
     case '*': return Multiply;
     case '/': return Divide;
     case '^': return Power;
-    case '%': return Modulo;
-    case '>': return GreaterThan;
-    case '<': return LessThan;
-    case '>=': return GreaterThanEquals;
-    case '<=': return LessThanEquals;
-    case '=':   return Equals;
-    case '==':  return Equals;
-    case '!==': return NotEquals;
-    case '<>':  return NotEquals;
+    case '**': return Power;
+    case '%': return Modulo;    // NOTE: not an excel operator
+    case '=': return Equals;
+    case '==': return Equals;
+    case '!=': return Equals;
+    case '<>': return Equals;
+    case '>': return GreaterThan; 
+    case '>=': return GreaterThanEqual; 
+    case '<': return LessThan; 
+    case '<=': return LessThanEqual; 
   }
-
   return undefined;
-
 };

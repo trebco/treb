@@ -6,8 +6,6 @@
  */
 export interface BaseUnit {
   id: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  user_data?: any;
 }
 
 /**

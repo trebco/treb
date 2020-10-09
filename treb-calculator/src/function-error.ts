@@ -1,3 +1,4 @@
+import { UnionValue, ValueType } from 'treb-base-types/src';
 
 export enum ErrorType {
   Argument =    'ARG',
@@ -15,15 +16,44 @@ export interface FunctionError {
   error: ErrorType;
 }
 
-export const ArgumentError: FunctionError = { error: ErrorType.Argument };
-export const ReferenceError: FunctionError = { error: ErrorType.Reference };
+// export const ArgumentError: FunctionError = { error: ErrorType.Argument };
+// export const ReferenceError: FunctionError = { error: ErrorType.Reference };
 export const ExpressionError: FunctionError = { error: ErrorType.Expression };
-export const NameError: FunctionError = { error: ErrorType.Name };
-export const ValueError: FunctionError = { error: ErrorType.Value };
-export const DataError: FunctionError = { error: ErrorType.Data };
-export const DivideByZeroError: FunctionError = { error: ErrorType.Div0 };
-export const UnknownError: FunctionError = { error: ErrorType.Unknown };
+// export const NameError: FunctionError = { error: ErrorType.Name };
+// export const ValueError: FunctionError = { error: ErrorType.Value };
+// export const DataError: FunctionError = { error: ErrorType.Data };
+// export const DivideByZeroError: FunctionError = { error: ErrorType.Div0 };
+// export const UnknownError: FunctionError = { error: ErrorType.Unknown };
 export const NotImplError: FunctionError = { error: ErrorType.NotImpl };
+
+export const DataError = (): UnionValue => {
+  return { type: ValueType.error, value: ErrorType.Data };
+};
+
+export const DivideByZeroError = (): UnionValue => {
+  return { type: ValueType.error, value: ErrorType.Div0 };
+};
+
+export const ArgumentError = (): UnionValue => {
+  return { type: ValueType.error, value: ErrorType.Argument };
+};
+
+export const ValueError = (): UnionValue => {
+  return { type: ValueType.error, value: ErrorType.Value };
+};
+
+export const ReferenceError = (): UnionValue => {
+  return { type: ValueType.error, value: ErrorType.Reference };
+};
+
+export const NameError = (): UnionValue => {
+  return { type: ValueType.error, value: ErrorType.Name };
+};
+
+export const UnknownError = (): UnionValue => {
+  return { type: ValueType.error, value: ErrorType.Unknown };
+};
+
 
 /** type guard function */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

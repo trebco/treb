@@ -3,9 +3,10 @@
  * (not sure if there are benefits yet either)
  */
 
-import { Area, IArea, ICellAddress } from './area';
-import { Cell, CellValue, DataValidation } from './cell';
+import { Area, IArea, ICellAddress, ICellAddress2 } from './area';
+import { Cell, DataValidation } from './cell';
 import { ValueType } from './value-type';
+import { CellValue, UnionValue, UndefinedUnion } from './union';
 
 export interface CellSerializationOptions {
   preserve_type?: boolean;
@@ -689,6 +690,42 @@ export class Cells {
         for ( let c = from.column; c <= to.column; c++ ){
           if (this.data[r] && this.data[r][c]) row.push(this.data[r][c].GetValue2());
           else row.push(undefined);
+        }
+        value.push(row);
+      }
+    }
+
+    return value;
+
+  }
+
+  public GetRange4(from: ICellAddress, to: ICellAddress = from, transpose = false) {
+
+    if (from.row === to.row && from.column === to.column) {
+      if (this.data[from.row] && this.data[from.row][from.column]){
+        return this.data[from.row][from.column].GetValue4();
+      }
+      return { value: undefined, type: ValueType.undefined };
+    }
+
+    const value: UnionValue[][] = [];
+
+    if (transpose){
+      for ( let c = from.column; c <= to.column; c++ ){
+        const column: UnionValue[] = [];
+        for ( let r = from.row; r <= to.row; r++ ){
+          if (this.data[r] && this.data[r][c]) column.push(this.data[r][c].GetValue4());
+          else column.push(UndefinedUnion());
+        }
+        value.push(column);
+      }
+    }
+    else {
+      for ( let r = from.row; r <= to.row; r++ ){
+        const row: UnionValue[] = [];
+        for ( let c = from.column; c <= to.column; c++ ){
+          if (this.data[r] && this.data[r][c]) row.push(this.data[r][c].GetValue4());
+          else row.push(UndefinedUnion());
         }
         value.push(row);
       }

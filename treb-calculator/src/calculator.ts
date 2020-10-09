@@ -1,5 +1,5 @@
 
-import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType } from 'treb-base-types';
+import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing } from 'treb-parser';
 
@@ -84,7 +84,9 @@ export class Calculator extends Graph {
 
     this.library.Register({
 
-      /**
+      /*
+
+      / **
        * this function is here so it has access to the parser.
        * this is crazy expensive. is there a way to reduce cost?
        * 
@@ -98,7 +100,7 @@ export class Calculator extends Graph {
        * be good if we could somehow cache some of the effort,
        * particularly if the list data changes but not the expression.
        * 
-       */
+       * /
       CountIf: {
         arguments: [
           { name: 'range', },
@@ -154,49 +156,7 @@ export class Calculator extends Graph {
         },
       },
 
-      /**
-       * this one does not have to be here, it's just here because
-       * the rest of the reference/lookup functions are here
-       */
-      Rows: {
-        arguments: [{
-          name: 'reference', description: 'Array or reference' },
-        ],
-        volatile: false,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        fn: (reference: any) => {
-          if (!reference) return ArgumentError;
-          if (Array.isArray(reference)) {
-            const column = reference[0];
-            if (Array.isArray(column)) {
-              return column.length;
-            }
-            return ValueError;
-          }
-          return 1;
-        },
-      },
-
-      /**
-       * this one does not have to be here, it's just here because
-       * the rest of the reference/lookup functions are here
-       */
-      Columns: {
-        arguments: [{
-          name: 'reference', description: 'Array or reference' },
-        ],
-        volatile: false,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        fn: (reference: any) => {
-          if (!reference) return ArgumentError;
-          if (Array.isArray(reference)) {
-            return reference.length;
-          }
-          return 1;
-        },
-      },
-
-      /** like indirect, this creates dependencies at calc time */
+      / ** like indirect, this creates dependencies at calc time * /
       Offset: {
         arguments: [{
           name: 'reference', description: 'Base reference', metadata: true, }, {
@@ -266,6 +226,8 @@ export class Calculator extends Graph {
         }).bind(this),
       },
 
+      */
+
       Indirect: {
         arguments: [
           { name: 'reference', description: 'Cell reference (string)' },
@@ -274,37 +236,83 @@ export class Calculator extends Graph {
         volatile: true, // necessary?
         fn: ((reference: string) => {
 
-          if (!reference) return ArgumentError;
+          if (!reference || (typeof reference !== 'string')) {
+            return ArgumentError();
+          }
 
-          const parse_result = this.parser.Parse(reference.toString());
-          if (parse_result.error || !parse_result.expression) {
-            return ReferenceError;
+          const parse_result = this.parser.Parse(reference);
+          if (parse_result.error || !parse_result.expression || 
+              (parse_result.expression.type !== 'address' && parse_result.expression.type !== 'range')) {
+            return ReferenceError();
           }
 
           const check_result = this.DynamicDependencies(parse_result.expression);
 
-          if (IsError(check_result)) {
-            return check_result;
+          if (!check_result) {
+            return ReferenceError();
           }
 
           if (check_result.dirty) {
             const current_vertex =
               this.GetVertex(this.expression_calculator.context.address, true) as SpreadsheetVertex;
             current_vertex.short_circuit = true;
-            return undefined;
+            return { type: ValueType.undefined, value: undefined };
           }
 
-          return parse_result.expression;
-
-          // we don't need to use calculate expression here because arguments
-          // will already have been calculated; we will _always_ get a string
-          // (or something is wrong). right?
-
-          // return this.CalculateExpression(parse_result.expression, undefined, true);
+          return { type: ValueType.object, value: parse_result.expression as any };
 
         }).bind(this),
+
       },
+
+
+      /**
+       * this one does not have to be here, it's just here because
+       * the rest of the reference/lookup functions are here
+       */
+      Rows: {
+        arguments: [{
+          name: 'reference', description: 'Array or reference' },
+        ],
+        volatile: false,
+        fn: (reference: unknown) => {
+          if (!reference) {
+            return ArgumentError();
+          }
+          if (Array.isArray(reference)) {
+            const column = reference[0];
+            if (Array.isArray(column)) {
+              return { type: ValueType.number, value: column.length };
+            }
+            return ValueError();
+          }
+          return { type: ValueType.number, value: 1 };
+        },
+      },
+
+      /**
+       * this one does not have to be here, it's just here because
+       * the rest of the reference/lookup functions are here
+       */
+      Columns: {
+        arguments: [{
+          name: 'reference', description: 'Array or reference' },
+        ],
+        volatile: false,
+        fn: (reference: unknown) => {
+          if (!reference) {
+            return ArgumentError();
+          }
+          if (Array.isArray(reference)) {
+            return { type: ValueType.number, value: reference.length };
+          }
+          return { type: ValueType.number, value: 1 };
+        },
+      },
+
+
     });
+
 
   }
 
@@ -312,7 +320,7 @@ export class Calculator extends Graph {
    * this is a mess
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public SpreadCallback(vertex: SpreadsheetVertex, value: any): void {
+  public SpreadCallback(vertex: SpreadsheetVertex, value: UnionValue|UnionValue[][]): void {
 
     if (!vertex.address || !vertex.address.sheet_id) {
       throw new Error('spread callback called without sheet id');
@@ -324,12 +332,59 @@ export class Calculator extends Graph {
     }
 
     if (!vertex || !vertex.reference) return;
+    const area = vertex.reference.area;
+
+    if (area) {
+      const rows = area.rows;
+      const columns = area.columns;
+
+      if (Array.isArray(value)) {
+
+        value = Utilities.Transpose2(value);
+
+        // FIXME: recycle [?]
+
+        for (let row = 0; row < rows; row++) {
+          if (value[row]) {
+            let column = 0;
+            for (; column < columns && column < value[row].length; column++) {
+              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(value[row][column].value, value[row][column].type);
+            }
+            for (; column < columns; column++) {
+              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined, ValueType.undefined);
+            }
+          }
+          else {
+            for (let column = 0; column < columns; column++) {
+              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined, ValueType.undefined);
+            }
+          }
+        }
+
+      }
+      else { 
+
+        // single, recycle
+
+        for (let row = 0; row < rows; row++) {
+          for (let column = 0; column < columns; column++) {
+            cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(value.value, value.type);
+          }
+        }
+        
+      }
+
+    }
+
+
+    /*
 
     // const ref = vertex.reference.area;
     let type: string = typeof value;
     let dims = 2;
 
-    const calculation_error = (typeof value === 'object' && value.error);
+    // const calculation_error = (typeof value === 'object' && value.error);
+    const calculation_error = (!Array.isArray(value) && value.type === ValueType.error);
 
     // mx1
 
@@ -411,6 +466,9 @@ export class Calculator extends Graph {
     }
 
     // console.info("Spread array value", value, vertex.reference_)
+
+    */
+
   }
 
   /**
@@ -446,13 +504,16 @@ export class Calculator extends Graph {
         offset_columns = 0,
         resize_rows = 1,
         resize_columns = 1,
-      ) : {dirty: boolean, area?: Area}|FunctionError {
+      ) : {dirty: boolean, area: Area}|undefined {
 
     if (!this.model) {
-      return UnknownError;
+      // return UnknownError;
+      return undefined;
     }
 
     let area = this.ResolveExpressionAddress(expression);
+
+    if (!area) { return undefined; }
 
     // flag. we're going to check _all_ dependencies at once, just in
     // case (for this function this would only happen if the argument
@@ -460,7 +521,7 @@ export class Calculator extends Graph {
 
     let dirty = false;
 
-    if (area) {
+//    if (area) {
 
       // check any dirty...
 
@@ -518,7 +579,7 @@ export class Calculator extends Graph {
           }
         }
       }
-    }
+//    }
 
     return { dirty, area };
 

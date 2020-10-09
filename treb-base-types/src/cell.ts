@@ -6,6 +6,8 @@ import { Style } from './style';
 import { TextPart } from './text_part';
 import { ValueType } from './value-type';
 
+import { CellValue, UnionValue } from './union';
+
 // static global to avoid export in typings file
 // const parser = new Parser();
 
@@ -75,21 +77,6 @@ export enum ValueType {
   error = 6,
 }
 */
-
-/** 
- * not sure how useful this really is... it seems like just a way
- * to get rid of linting errors when representing value as 'any'.
- */
-export type CellValue = undefined | string | number | boolean;
-
-/**
- * to simplify treatment of values and errors, use a composite return
- * type that can support both without a lot of sloppy type testing
- */
-export interface UnionValue {
-  type: ValueType;
-  value: CellValue;
-}
 
 /**
  * validation TODO: date, number, boolean, &c

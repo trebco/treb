@@ -1,12 +1,14 @@
 
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ReferenceError, NotImplError, ValueError, ArgumentError } from '../function-error';
-import { Cell, ClickFunctionOptions, ClickFunctionResult } from 'treb-base-types';
-import { Sparkline } from 'treb-sparkline';
+import { ReferenceError, NotImplError, ValueError, ArgumentError, DivideByZeroError } from '../function-error';
+import { Cell, ClickFunctionOptions, ClickFunctionResult, UnionIs, UnionValue, ValueType } from 'treb-base-types';
+import { Sparkline, SparklineRenderOptions } from 'treb-sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
 import { ClickCheckbox, RenderCheckbox } from './checkbox';
+import { UnitAddress } from 'treb-parser/src';
+import { UnionIsExpressionUnit, UnionIsMetadata, UnionOrArray } from '../expression-calculator';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -45,9 +47,114 @@ const erf = (x: number): number => {
 
 };
 
+/** shortcut, although this is wasteful */
+const Box = (value: unknown): UnionValue => { 
+  return {
+    value, type: Cell.GetValueType(value),
+  }
+};
+
+const UnionTrue = { type: ValueType.boolean, value: true };
+const UnionFalse = { type: ValueType.boolean, value: false };
+
 // use a single, static object for base functions
 
 export const BaseFunctionLibrary: FunctionMap = {
+
+
+  Rand: {
+    volatile: true,
+    fn: (): UnionOrArray => { return { type: ValueType.number, value: Math.random() }},
+  },
+
+  RandBetween: {
+    arguments: [{name: 'min'}, {name: 'max'}],
+    volatile: true,
+    fn: (min = 0, max = 1): UnionOrArray => { 
+      if (min > max) { 
+        const tmp = min;
+        min = max;
+        max = tmp;
+      }
+      return { type: ValueType.number, value: Math.random() * (max - min) + min }
+    },
+  },
+
+  Sum: {
+    description: 'Adds arguments and ranges',
+    arguments: [{ boxed: true, name: 'values or ranges' }],
+    fn: (...args: UnionValue[]): UnionOrArray => {
+
+      let sum = 0;
+      const values = Utils.Flatten(args) as UnionValue[];
+
+      for (const value of values) {
+        switch (value.type) {
+          case ValueType.number: sum += value.value; break;
+          case ValueType.boolean: sum += (value.value ? 1 : 0); break;
+          case ValueType.error: return value;
+        }
+      }
+
+      return { type: ValueType.number, value:sum };
+
+    },
+  },
+
+  Now: {
+    description: 'Returns current time',
+    volatile: true,
+    fn: (): UnionOrArray => {
+      return { type: ValueType.number, value: UnlotusDate(new Date().getTime()) };
+    },
+  },
+
+  Today: {
+    description: 'Returns current day',
+    volatile: true,
+    fn: (): UnionOrArray => {
+      const date = new Date();
+      date.setMilliseconds(0);
+      date.setSeconds(0);
+      date.setMinutes(0);
+      date.setHours(12);
+      return { type: ValueType.number, value: UnlotusDate(date.getTime()) };
+    },
+  },
+
+  IfError: {
+    description: 'Returns the original value, or the alternate value if the original value contains an error',
+    arguments: [{ name: 'original value', allow_error: true, boxed: true }, { name: 'alternate value' }],
+    fn: (ref: UnionValue, value_if_error: unknown = 0): UnionValue => {
+      if (ref && ref.type === ValueType.error) {
+        return { value: value_if_error, type: Cell.GetValueType(value_if_error) };
+      }
+      return ref;
+    },
+  },
+
+  IsError: {
+    description: 'Checks if another cell contains an error',
+    arguments: [{ name: 'reference', allow_error: true, boxed: true }],
+    fn: (ref: UnionOrArray): UnionOrArray => {
+
+      if (Array.isArray(ref)) {
+        const values = Utils.Flatten(ref) as UnionValue[];
+        for (const value of values) {
+          if (value.type === ValueType.error) {
+            return { type: ValueType.boolean, value: true };
+          }
+        }
+      }
+      else if (ref) {
+        return { type: ValueType.boolean, value: ref.type === ValueType.error };
+      }
+
+      return { type: ValueType.boolean, value: false };
+
+    },
+  },
+
 
     Cell: {
       description: 'Returns data about a cell',
@@ -62,56 +169,24 @@ export const BaseFunctionLibrary: FunctionMap = {
       
       // volatile: true, 
 
-      fn: (type: string, reference: any) => {
+      fn: (type: string, reference: UnionValue): UnionValue => {
 
-        // console.info('metadata?', reference);
-
-        if (!reference || !reference.address) return ReferenceError;
-        switch (type?.toLowerCase()) {
-          case 'format':
-            return reference.format || ReferenceError;
-          case 'address':
-            return reference.address.label.replace(/\$/g, '');
+        if (!UnionIsMetadata(reference)) {
+          return ReferenceError();
         }
-        return NotImplError;
-      },
-    },
 
-    IsError: {
-      description: 'Checks if another cell contains an error',
-      arguments: [{ name: 'reference', allow_error: true }],
-      fn: (ref: any) => {
-        return (!!ref && !!ref.error);
-      },
-    },
+        if (type) {
+          switch (type.toString().toLowerCase()) {
+            case 'format':
+              return reference.value.format ? // || ReferenceError;
+                { type: ValueType.string, value: reference.value.format } : ReferenceError();
+            case 'address':
+              return { type: ValueType.string, value: reference.value.address.label.replace(/\$/g, '') };
+          }
+        }
 
-    IfError: {
-      description: 'Returns the original value, or the alternate value if the original value contains an error',
-      arguments: [{ name: 'original value', allow_error: true }, { name: 'alternate value' }],
-      fn: (ref: any, value_if_error: any) => {
-        if (!!ref && !!ref.error) return value_if_error;
-        return ref;
-      },
-    },
+        return { type: ValueType.error, value: NotImplError.error };
 
-    Now: {
-      description: 'Returns current time',
-      volatile: true,
-      fn: (): number => {
-        return UnlotusDate(new Date().getTime());
-      },
-    },
-
-    Today: {
-      description: 'Returns current day',
-      volatile: true,
-      fn: (): number => {
-        const date = new Date();
-        date.setMilliseconds(0);
-        date.setSeconds(0);
-        date.setMinutes(0);
-        date.setHours(12);
-        return UnlotusDate(date.getTime());
       },
     },
 
@@ -120,8 +195,8 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [{
         name: 'date',
       }],
-      fn: (source: number): number => {
-        return new Date(LotusDate(source)).getUTCFullYear();
+      fn: (source: number): UnionValue => {
+        return Box(new Date(LotusDate(source)).getUTCFullYear());
       },
     },
 
@@ -131,8 +206,8 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [{
         name: 'date',
       }],
-      fn: (source: number): number => {
-        return new Date(LotusDate(source)).getUTCMonth() + 1; // 0-based
+      fn: (source: number): UnionValue => {
+        return Box(new Date(LotusDate(source)).getUTCMonth() + 1); // 0-based
       },
     },
 
@@ -142,128 +217,173 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [{
         name: 'date',
       }],
-      fn: (source: number): number => {
-        return new Date(LotusDate(source)).getUTCDate();
+      fn: (source: number): UnionValue => {
+        return Box(new Date(LotusDate(source)).getUTCDate());
       },
     },
 
     Radians: {
       description: 'Converts degrees to radians',
       arguments: [{ name: 'Degrees', description: 'Angle in degrees' }],
-      fn: (degrees: number): number => {
-        return degrees * Math.PI / 180;
+      fn: (degrees: number): UnionValue => {
+        return Box(degrees * Math.PI / 180);
       },
     },
 
     Degrees: {
       description: 'Converts radians to degrees',
       arguments: [{ name: 'Radians', description: 'Angle in radians' }],
-      fn: (radians: number): number => {
-        return radians / Math.PI * 180;
+      fn: (radians: number): UnionValue => {
+        return Box(radians / Math.PI * 180);
       },
     },
 
     CountA: {
       description: 'Counts cells that are not empty',
-      fn: (...args: any[]) => {
-        return Utils.Flatten(args).reduce((a: number, b: any) => {
+      fn: (...args: any[]): UnionValue => {
+        return Box(Utils.Flatten(args).reduce((a: number, b: any) => {
           if (typeof b === 'undefined') return a;
           return a + 1;
-        }, 0);
+        }, 0));
       },
     },
 
     Count: {
       description: 'Counts cells that contain numbers',
-      fn: (...args: any[]) => {
-        return Utils.Flatten(args).reduce((a: number, b: any) => {
+      fn: (...args: any[]): UnionValue => {
+        return Box(Utils.Flatten(args).reduce((a: number, b: any) => {
           if (typeof b === 'number') return a + 1;
           return a;
-        }, 0);
+        }, 0));
       },
     },
 
     Or: {
-      fn: (...args: any[]) => {
+      fn: (...args: any[]): UnionValue => {
         let result = false;
         for (const arg of args) {
           result = result || !!arg;
         }
-        return result;
+        return Box(result);
       },
     },
 
     And: {
-      fn: (...args: any[]) => {
+      fn: (...args: any[]): UnionValue => {
         let result = true;
         for (const arg of args) {
           result = result && !!arg;
         }
-        return result;
+        return Box(result);
       },
     },
 
     Not: {
-      fn: (...args: any[]) => {
+      fn: (...args: any[]): UnionValue => {
         if (args.length === 0) {
-          return ArgumentError;
+          return ArgumentError();
         }
         if (args.length === 1) {
-          return !args[0];
+          return Box(!args[0]);
         }
-        console.info(args);
-        return true;
+        return Box(true);
       }
     },
 
-    /**
-     * for the IF function, we need to allow error in parameter
-     * because otherwise we may short-circuit the correct result.
-     */
     If: {
       arguments: [
-        { name: 'Test value' },
-        { name: 'Value if true', allow_error: true, },
-        { name: 'Value if false', allow_error: true, },
+        { name: 'Test value', boxed: true },
+        { name: 'Value if true', boxed: true, allow_error: true },
+        { name: 'Value if false', boxed: true, allow_error: true },
       ],
-      fn: (a: any, b: any = true, c: any = false) => {
+      fn: (a: UnionOrArray, b: UnionOrArray = UnionTrue, c: UnionOrArray = UnionFalse): UnionOrArray => {
 
-        if (a instanceof Float64Array || a instanceof Float32Array) a = Array.from(a);
         if (Array.isArray(a)) {
-          return a.map((x) => {
-            if ((typeof x === 'string') && (x.toLowerCase() === 'f' || x.toLowerCase() === 'false')) x = false;
-            else x = Boolean(x);
-            return x ? b : c;
-          });
+          return a.map((row, x) => row.map((cell, y) => {
+            const value = UnionIs.String(cell) ? 
+              (cell.value.toLowerCase() !== 'false' && cell.value.toLowerCase() !== 'f') : !!cell.value;
+            return value ? (Array.isArray(b) ? b[x][y] : b) : (Array.isArray(c) ? c[x][y]: c);
+          }));
         }
-        if ((typeof a === 'string') && (a.toLowerCase() === 'f' || a.toLowerCase() === 'false')) a = false;
-        else a = Boolean(a);
-        return a ? b : c;
+
+        const value = UnionIs.String(a) ? 
+          (a.value.toLowerCase() !== 'false' && a.value.toLowerCase() !== 'f') : !!a.value;
+
+        return value ? b : c;
+
       },
     },
 
     Power: {
-      fn: (base: number, exponent: number) => Math.pow(base, exponent),
+      fn: (base: number, exponent: number): UnionValue => Box(Math.pow(base, exponent)),
     },
 
     Mod: {
-      fn: (num: number, divisor: number) => {
-        return num % divisor;
+      fn: (num: number, divisor: number): UnionValue => {
+        if (!divisor) { 
+          return DivideByZeroError();
+        }
+        return Box(num % divisor);
+      }
+    },
+
+    /**
+     * sort arguments, but ensure we return empty strings to
+     * fill up the result array
+     */
+    Sort: {
+      arguments: [
+        { name: 'values' }
+      ],
+      fn: (...args: any[]): UnionValue[][] => {
+
+        args = Utils.Flatten(args);
+
+        if(args.every(test => typeof test === 'number')) {
+          args.sort((a, b) => a - b);
+        }
+        else {
+          args.sort(); // lexical
+        }
+
+        return [args.map(value => { return { value, type: Cell.GetValueType(value) }})];
+
       },
     },
 
-    Sum: {
-      description: 'Adds arguments and ranges',
-      fn: (...args: any[]) => {
-        return Utils.Flatten(args).reduce((a: number, b: any) => {
-          const type = typeof b;
-          if (type === 'undefined' || type === 'string') return a;
-          return a + Number(b);
-        }, 0);
+    Transpose: {
+      description: 'Returns transpose of input matrix',
+      arguments: [{name: 'matrix', boxed: true}],
+      fn: (mat: UnionOrArray): UnionOrArray => {
+        if (Array.isArray(mat)) {
+          return Utils.Transpose2(mat);
+        }
+        return mat;
+      } 
+    },
+
+    Max: {
+      fn: (...args: any[]): UnionValue => {
+        return { 
+          type: ValueType.number, 
+          value: Math.max.apply(0, Utils.Flatten(args).filter(x => typeof x === 'number')),
+        };
+      },
+    },
+
+    Min: {
+      fn: (...args: any[]): UnionValue => {
+        return { 
+          type: ValueType.number, 
+          value: Math.min.apply(0, Utils.Flatten(args).filter(x => typeof x === 'number')),
+        };
       },
     },
 
     /*
+
+
+    / *
     MMult: {
       description: 'Multiplies two matrices',
       arguments: [{ name: 'Matrix 1'}, { name: 'Matrix 2'}],
@@ -296,14 +416,11 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       }
     },
-    */
+    * /
 
     SumProduct: {
       description: 'Returns the sum of pairwise products of two or more ranges',
       fn: (...args: any[]) => {
-        // if (args.length < 2) return { error: 'VALUE' };
-        // if (args.length === 0) return 0;
-        // if (args.length === 1) return args[0];
 
         const flattened = args.map(arg => Utils.Flatten(arg));
         const len = Math.max.apply(0, flattened.map(x => x.length));
@@ -317,31 +434,13 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         return sum;
 
-        /*
-        
-        const cols = args[0].length;
-        const rows = args[0][0].length;
-        if (!rows) return ReferenceError;
-
-        let sum = 0;
-        for (let c = 0; c < cols; c++) {
-          for (let r = 0; r < rows; r++) {
-            sum += args.reduce((a, arg, index) => {
-              return a * arg[c][r];
-            }, 1);
-          }
-        }
-        return sum;
-
-        */
-
       },
     },
 
-    /**
+    / **
      * FIXME: does not implement inexact matching (what's the algo for
      * that, anyway? nearest? price is right style? what about ties?)
-     */
+     * /
     VLookup: {
       fn: (value: any, table: any[][], col: number, exact = false) => {
 
@@ -371,20 +470,9 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
-    Max: {
-      fn: (...args: any[]) => {
-        return Math.max.apply(0, Utils.Flatten(args));
-      },
-    },
-
-    Min: {
-      fn: (...args: any[]) => {
-        return Math.min.apply(0, Utils.Flatten(args));
-      },
-    },
 
     Log: {
-      /** default is base 10; allow specific base */
+      / ** default is base 10; allow specific base * /
       fn: (a: number, base?: number) => {
         if (typeof base !== 'undefined') return Math.log(a) / Math.log(base);
         return Math.log10(a);
@@ -395,23 +483,10 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: Math.log,
     },
 
-    Rand: {
-      volatile: true,
-      fn: Math.random,
-    },
-
-    RandBetween: {
-      arguments: [{name: 'min'}, {name: 'max'}],
-      volatile: true,
-      fn: (min: number, max: number) => {
-        return Math.random() * (max - min) + min;
-      },
-    },
-
     Round: {
       description: 'Round to a specified number of digits',
 
-      /** round with variable digits */
+      / ** round with variable digits * /
       fn: (value: number, digits = 0) => {
         const m = Math.pow(10, digits);
         return Math.round(m * value) / m;
@@ -419,7 +494,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     RoundDown: {
-      /** round down with variable digits */
+      / ** round down with variable digits * /
       fn: (value: number, digits = 0) => {
         digits = Math.max(0, digits);
         const m = Math.pow(10, digits);
@@ -428,50 +503,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
 
-    /**
-     * sort arguments, but ensure we return empty strings to
-     * fill up the result array
-     */
-    Sort: {
-      fn: (...args: any[]) => {
 
-        args = Utils.Flatten(args);
-        if(args.every((test) => typeof test === 'number')) {
-          args.sort((a, b) => a - b);
-        }
-        else {
-          args.sort(); // lexical
-        }
-        return args;
-
-        /*
-        args = Utils.Flatten(Utils.UndefinedToEmptyString(args));
-
-        const empty: string[] = [];
-        const filtered = args.filter((test) => {
-          if (!!test || test === 0) return true;
-          empty.push('X');
-          return false;
-        });
-
-        if(filtered.every((test) => typeof test === 'number')) {
-          filtered.sort((a, b) => a - b);
-        }
-        else {
-          filtered.sort(); // lexical
-        }
-
-        return filtered.concat(empty);
-        */
-
-      },
-    },
-
-    Transpose: {
-      description: 'Returns transpose of input matrix',
-      arguments: [{name: 'matrix'}],
-      fn: Utils.TransposeArray,
-    },
 
     Reverse: {
       fn: (a: any) => {
@@ -535,31 +567,30 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+
+    */
+
     Checkbox: {
       arguments: [
-        {name: 'checked'},
+        { name: 'checked' },
       ],
       click: ClickCheckbox,
       render: RenderCheckbox,
-      fn: (checked: boolean): boolean => !!checked,
+      fn: (checked: boolean): UnionValue => {
+        return { value: !!checked, type: ValueType.boolean, }
+      },
     },
 
     'Sparkline.Column': {
       arguments: [
-        {name: 'data'}, 
+        {name: 'data' }, 
         {name: 'color'}, 
         {name: 'negative color'}],
-      render: (options: any) => {
-        const context = options.context as CanvasRenderingContext2D;
-        const width = options.width as number;
-        const height = options.height as number;
-        const cell = options.cell as Cell;
-
-        Sparkline.RenderColumn(width, height, context, cell);
-       
+      render: (options: SparklineRenderOptions): void => {
+        Sparkline.RenderColumn(options.width, options.height, options.context, options.cell);
       },
-      fn: (...args: any[]) => {
-        return args;
+      fn: (...args: unknown[]): UnionValue => {
+        return { type: ValueType.object, value: args };
       },
     },
 
@@ -569,28 +600,16 @@ export const BaseFunctionLibrary: FunctionMap = {
         {name: 'color'},
         {name: 'line width'},
       ],
-      render: (options: any) => {
-        const context = options.context as CanvasRenderingContext2D;
-        const width = options.width as number;
-        const height = options.height as number;
-        const cell = options.cell as Cell;
-
-        Sparkline.RenderLine(width, height, context, cell);
+      render: (options: SparklineRenderOptions): void => {
+        Sparkline.RenderLine(options.width, options.height, options.context, options.cell);
       
       },
-      fn: (...args: any[]) => {
-        return args;
+      fn: (...args: unknown[]): UnionValue => {
+        return { type: ValueType.object, value: args };
       },
     }
 
-
 };
-
-/*
-export const BaseFunctionAliases: {[index: string]: string} = {
-  Mean: 'Average',
-};
-*/
 
 // alias
 
@@ -607,11 +626,6 @@ for (const key of Object.keys(BaseFunctionLibrary)) {
 }
 
 /*
-for (const key of Object.keys(BaseFunctionAliases)) {
-  name_map[key.toLowerCase()] = key;
-}
-*/
-
 for (const name of Object.getOwnPropertyNames(Math)) {
 
   // check if it exists (we have already registered something
@@ -646,13 +660,16 @@ for (const name of Object.getOwnPropertyNames(Math)) {
   }
 
 }
+*/
 
 // IE11: patch log10 function
 
 if (!Math.log10) {
   Math.log10 = (a) => Math.log(a) / Math.log(10);
+  /*
   BaseFunctionLibrary.log10 = {
     fn: (x) => Math.log(x) / Math.log(10),
     category: ['Math Functions'],
   };
+  */
 }

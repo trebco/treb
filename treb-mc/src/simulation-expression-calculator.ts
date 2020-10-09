@@ -1,7 +1,7 @@
 
 // we're deep-linking because these types are not exported by the project
 
-import { ExpressionCalculator } from '../../treb-calculator/src/expression-calculator';
+import { ExpressionCalculator, ExtendedExpressionUnit, UnionIsExpressionUnit, UnionOrArray } from '../../treb-calculator/src/expression-calculator';
 import { ReturnType } from '../../treb-calculator/src/descriptors';
 import { FunctionLibrary } from '../../treb-calculator/src/function-library';
 import { FunctionError, NameError, ReferenceError } from '../../treb-calculator/src/function-error';
@@ -9,7 +9,7 @@ import { FunctionError, NameError, ReferenceError } from '../../treb-calculator/
 import { SimulationModel, SimulationState } from './simulation-model';
 import { MCCompositeFunctionDescriptor } from './descriptors';
 
-import { Cell, ICellAddress } from 'treb-base-types';
+import { Cell, ICellAddress, UndefinedUnion, UnionIs, ValueType, UnionValue } from 'treb-base-types';
 import { Parser, UnitCall } from 'treb-parser';
 
 
@@ -23,7 +23,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
   }
 
   /** excutes a function call */
-  protected CallExpression(outer: UnitCall, return_reference = false) {
+  protected CallExpression(outer: UnitCall, return_reference = false): (expr: UnitCall) => UnionOrArray { // TEMP DISABLING
 
     // get the function descriptor, which won't change.
     // we can bind in closure (also short-circuit check for
@@ -32,13 +32,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
     const func = this.library.Get(outer.name) as MCCompositeFunctionDescriptor;
 
     if (!func) {
-      /*
-      const macro_func = this.data_model.macro_functions[outer.name.toUpperCase()];
-      if (macro_func) {
-        return this.EvaluateMacroFunction(macro_func);
-      }
-      else */
-      return () => NameError;
+      return (expr: UnitCall) => NameError();
     }
 
     // I wonder if we can handle prep separately, outside of
@@ -64,9 +58,12 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
       // NOTE: call_index is not relevant to StoreCellResults
 
+      // FIXME: this uses sheet IDs, correct? [yes]
+
       outer.args.forEach((arg, arg_index) => {
         const descriptor = argument_descriptors[arg_index] || {};
         if (arg && descriptor.collector) {
+
           if (arg.type === 'address') {
             this.simulation_model.StoreCellResults(arg);
           }
@@ -80,19 +77,20 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
             // support for "offset", essentially (see also below)
 
-            const result = this.CalculateExpression(arg, true);
-            if (result) {
-              if (result.type === 'address') {
-                this.simulation_model.StoreCellResults(result);
+            const result = this.CalculateExpression(arg as ExtendedExpressionUnit, true);
+            if (result && UnionIsExpressionUnit(result)) {
+              if (result.value.type === 'address') {
+                this.simulation_model.StoreCellResults(result.value);
               }
-              else if (result.type === 'range') {
-                this.simulation_model.StoreCellResults(result.start);
+              else if (result.value.type === 'range') {
+                this.simulation_model.StoreCellResults(result.value.start);
               }
             }
           }
           else {
             // console.info('mark x...', arg.type)
           }
+
         }
       });
 
@@ -141,18 +139,18 @@ export class MCExpressionCalculator extends ExpressionCalculator {
       // if there's a conditional (like an IF function). although that is the
       // exception rather than the rule...
 
-      // ok we can handle IF functions, at the expense of some tests... 
-      // is it worth it? 
-
-      // const if_function = outer.name.toLowerCase() === 'if';
-      // let skip_argument_index = -1;
-
-      let argument_error: FunctionError|undefined;
+      // NOTE: this version omits the if shortcut -- need to allow errors in that function
+      
+      let argument_error: UnionValue|undefined;
 
       const mapped_args = (expr.args).map((arg, arg_index) => {
 
         // short circuit
         if (argument_error) { return undefined; }
+
+        // get descriptor. if the number of arguments exceeds 
+        // the number of descriptors, recycle the last one
+        const descriptor = argument_descriptors[Math.min(arg_index, argument_descriptors.length - 1)] || {}; 
 
         // // if function, wrong branch
         // if (arg_index === skip_argument_index) { 
@@ -161,11 +159,9 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
         if (typeof arg === 'undefined') { 
           // if (if_function && arg_index === 0) { skip_argument_index = 1; }
-          return undefined; // FIXME: required?
+          return descriptor.boxed ? UndefinedUnion() : undefined;
         }
         
-        const descriptor = argument_descriptors[Math.min(arg_index, argument_descriptors.length - 1)] || {}; // recycle last one
-
         // FIXME (address): what about named ranges (actually those will work),
         // constructed references (we don't support them atm)?
 
@@ -183,7 +179,10 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         // is this adding overhead, with the lookup? maybe we should check type...
 
         if (descriptor.address) {
+
+          // console.warn("NOTIMPL: ADDRESS");// MARK1
           return this.parser.Render(arg).replace(/\$/g, '');
+
         }
         else if (descriptor.metadata) {
 
@@ -217,35 +216,47 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
             // support for "offset", essentially (see also above)
 
-            const result = this.CalculateExpression(arg, true);
-            if (result) {
-              if (result.type === 'address') {
-                return this.simulation_model.StoreCellResults(result);
+            const result = this.CalculateExpression(arg as ExtendedExpressionUnit, true);
+            if (result && UnionIsExpressionUnit(result)) {
+              if (result.value.type === 'address') {
+                return this.simulation_model.StoreCellResults(result.value);
               }
-              else if (result.type === 'range') {
-                return this.simulation_model.StoreCellResults(result.start);
+              else if (result.value.type === 'range') {
+                return this.simulation_model.StoreCellResults(result.value.start);
               }
             }
           }
 
           // if we didn't have a valid reference it's an error
-          argument_error = ReferenceError;
+          argument_error = ReferenceError();
 
         }
         else {
-          const result = this.CalculateExpression(arg);
 
-          if (typeof result === 'object' && result.error && !descriptor.allow_error) {
+          const result = this.CalculateExpression(arg as ExtendedExpressionUnit);
+
+          if (!Array.isArray(result) && result.type === ValueType.error) {
+            if (descriptor.allow_error) {
+              return result; // always boxed
+            }
             argument_error = result;
+            return undefined; // argument not used, so don't bother boxing
+          }          
+          
+          if (descriptor.boxed) {
+            return result;
           }
-          // else if (if_function && arg_index === 0) {
-          //   const result_truthy = (typeof result === 'string') ? result.toLowerCase() !== 'false' : !!result;
-          //   skip_argument_index = result_truthy ? 2 : 1;
-          // }
+          
+          if (Array.isArray(result)) {
+            return result.map(row => row.map(value => value.value));
+          }
+          else {
+            return result.value; // unboxing
+          }
 
-          return result;
         }
 
+        throw new Error('never');
         return undefined; // default
 
       });
@@ -253,12 +264,6 @@ export class MCExpressionCalculator extends ExpressionCalculator {
       if (argument_error) {
         return argument_error;
       }
-
-      /*
-      if (func.custom_render) {
-        this.AssignCustomRenderFunc(func);
-      }
-      */
 
       // if we have any nested calls, they may have updated the index so
       // we use the captured value here.
@@ -270,22 +275,25 @@ export class MCExpressionCalculator extends ExpressionCalculator {
       // null here.
 
       if (func.return_type === ReturnType.reference) {
-        const expr = func.fn.apply(null, mapped_args);
-        if (return_reference) { return expr; }
-        else if (typeof expr === 'object') {
-          if (expr.type === 'address') {
-            return this.CellFunction(expr);
+
+        const result = func.fn.apply(null, mapped_args);
+        
+        if (return_reference) { 
+          return result; 
+        }
+        
+        if (UnionIsExpressionUnit(result)) {
+          if (result.value.type === 'address') {
+            return this.CellFunction2(result.value)();
           }
-          else if (expr.type === 'range') {
-            return this.CellFunction(expr.start, expr.end);
+          else if (result.value.type === 'range') {
+            return this.CellFunction4(result.value.start, result.value.end)
           }
         }
-        return expr; // error?
-      }
 
-      // const result = func.fn.apply(null, mapped_args);
-      // console.info('func result', result);
-      // return result;
+        return result; // error?
+
+      }
 
       return func.fn.apply(null, mapped_args);
 

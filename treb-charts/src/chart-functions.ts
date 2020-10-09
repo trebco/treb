@@ -19,10 +19,10 @@ export const ChartFunctions: FunctionMap = {
     arguments: [
       { name: 'Array...', metadata: true, },
     ],
-    fn: (...args: DecoratedArray<unknown>): DecoratedArray<unknown> => {
-      args._type = 'group';
+    fn: (...args: any) => {
+      (args as DecoratedArray<unknown>)._type = 'group';
       return args;
-    },
+    }
   },
 
   /**
@@ -35,10 +35,11 @@ export const ChartFunctions: FunctionMap = {
       { name: 'X', metadata: true, },
       { name: 'Y', metadata: true, },
     ],
-    fn: (...args: DecoratedArray<unknown>): DecoratedArray<unknown> => {
-      args._type = 'series';
+    fn: (...args: any) => {
+      (args as DecoratedArray<unknown>)._type = 'series';
       return args;
-    },
+    }
+
   },
 
   /*
@@ -50,23 +51,6 @@ export const ChartFunctions: FunctionMap = {
     fn: Identity,
   },
   */
-
-  'Scatter.Line': {
-    arguments: [
-      { name: 'data', metadata: true, },
-      { name: 'ChartTitle' },
-    ],
-    fn: Identity,
-  },
-
-  'Column.Chart': {
-    arguments: [
-      { name: 'Data', metadata: true, },
-      { name: 'Categories', metadata: true, },
-      { name: 'Chart Title' },
-    ],
-    fn: Identity,
-  },
 
   'Bar.Chart': {
     arguments: [
@@ -130,6 +114,23 @@ export const ChartFunctions: FunctionMap = {
       { name: 'Reference Cell 1', metadata: true },
       { name: 'Reference Cell 2', metadata: true },
       { name: 'Title' },
+    ],
+    fn: Identity,
+  },
+
+ 'Scatter.Line': {
+    arguments: [
+      { name: 'data', metadata: true, },
+      { name: 'ChartTitle' },
+    ],
+    fn: Identity,
+  },
+
+ 'Column.Chart': {
+    arguments: [
+      { name: 'Data', metadata: true, },
+      { name: 'Categories', metadata: true, },
+      { name: 'Chart Title' },
     ],
     fn: Identity,
   },

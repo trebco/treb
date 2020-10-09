@@ -33,6 +33,8 @@ const Variance = (data: number[], sample = false) => {
 
 export const StatisticsFunctionLibrary: FunctionMap = {
 
+/*
+
   StDev: {
     description: 'Returns the standard deviation of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
@@ -185,10 +187,12 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     },
   }
 
+  */
+
 };
 
 export const StatisticsFunctionAliases: {[index: string]: string} = {
-  Mean: 'Average',
-  'StDev.P': 'StDev',
-  'Var.P': 'Var',
+//  Mean: 'Average',
+//  'StDev.P': 'StDev',
+//  'Var.P': 'Var',
 };

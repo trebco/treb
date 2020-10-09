@@ -1,6 +1,13 @@
 
 import { Cell } from 'treb-base-types';
 
+export interface SparklineRenderOptions {
+  context: CanvasRenderingContext2D;
+  width: number;
+  height: number;
+  cell: Cell;
+}
+
 enum LineOperation {
   move,
   line,

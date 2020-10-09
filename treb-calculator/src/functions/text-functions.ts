@@ -1,10 +1,12 @@
 
 import { FunctionMap } from '../descriptors';
 import { NumberFormatCache } from 'treb-format';
-import { Localization } from 'treb-base-types';
+import { Localization, UnionValue, ValueType } from 'treb-base-types';
+import * as Utils from '../utilities';
 
 export const TextFunctionLibrary: FunctionMap = {
 
+  /*
   Char: {
     arguments: [{
       name: 'number',
@@ -68,6 +70,33 @@ export const TextFunctionLibrary: FunctionMap = {
       }).join('');
     },
   },
+
+  */
+
+ Concatenate: {
+  description: 'Pastes strings together',
+  fn: (...args: unknown[]): UnionValue => {
+
+    const values = Utils.Flatten(args) as unknown[];
+    const value = values.map((arg) => {
+
+      // this is used when concatenating cells that contain numbers
+      // FIXME: get cell number format? we'd need to use metadata
+
+      const string_arg = (arg as any)?.toString() || '';
+
+      if (typeof arg === 'number' && Localization.decimal_separator === ',') {
+        return string_arg.replace(/\./, ',');
+      }
+
+      return string_arg;
+
+    }).join('');
+
+    return { type: ValueType.string, value };
+
+  },
+},
 
 };
 

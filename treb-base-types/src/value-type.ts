@@ -29,4 +29,5 @@ export enum ValueType {
   // error is a STRING VALUE... object errors are layered on top? is that 
   // correct? (...) it sort of makes sense... since we have separate typing
   error = 6,
+
 }

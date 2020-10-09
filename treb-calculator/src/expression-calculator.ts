@@ -1,21 +1,46 @@
 
 import { FunctionLibrary } from './function-library';
-import { Cell, Cells, ICellAddress, ValueType, Area } from 'treb-base-types';
+import { Cell, Cells, ICellAddress, ValueType, Area, UnionValue, CellValue, UndefinedUnion } from 'treb-base-types';
 import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
-         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitMissing } from 'treb-parser';
+         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
 import { DataModel } from 'treb-grid';
-import { FunctionError, NameError, ReferenceError, ExpressionError } from './function-error';
+import { NameError, ReferenceError, ExpressionError, UnknownError } from './function-error';
 import { ReturnType } from './descriptors';
 
-import * as Utilities from './utilities';
 import * as Primitives from './primitives';
+
+export type ExtendedExpressionUnit = ExpressionUnit & { user_data: any }; // export for MC overload
+
+// FIXME: move
+export type UnionOrArray = UnionValue|UnionValue[][];
+
+// FIXME: move
+export const UnionIsExpressionUnit = (test: UnionOrArray): test is { type: ValueType.object, value: ExpressionUnit } => {
+  return !Array.isArray(test) 
+      && test.type === ValueType.object
+      && (!!(test.value as ExpressionUnit).type);
+};
+
+// FIXME: move
+export const UnionIsMetadata = (test: UnionOrArray): test is { type: ValueType.object, value: ReferenceMetadata } => {
+  return !Array.isArray(test) 
+      && test.type === ValueType.object
+      && ((test.value as ReferenceMetadata).type === 'metadata');
+};
+
+// FIXME: move
+export interface ReferenceMetadata {
+  type: 'metadata';
+  address: UnitAddress; // ICellAddress;
+  value: CellValue;
+  format?: string;
+}
 
 export interface CalculationContext {
   address: ICellAddress;
   model?: DataModel;
   volatile: boolean;
   call_index: number;
-  // name_stack: Array<{[index: string]: ExpressionUnit}>;
 }
 
 export class ExpressionCalculator {
@@ -80,9 +105,11 @@ export class ExpressionCalculator {
    * there's a case where we are calling this from within a function
    * (which is weird, but hey) and to do that we need to preserve flags.
    */
-  public Calculate(expr: ExpressionUnit, addr: ICellAddress, preserve_flags = false){
+  public Calculate(expr: ExpressionUnit, addr: ICellAddress, preserve_flags = false): {
+      value: UnionOrArray, volatile: boolean }{
 
     if (!preserve_flags) {
+
       this.context.address = addr;
       this.context.volatile = false;
       this.context.call_index = 0;
@@ -92,59 +119,33 @@ export class ExpressionCalculator {
 
     }
 
-    const value = this.CalculateExpression(expr);
-
     return {
-      value,
+      value: this.CalculateExpression(expr as ExtendedExpressionUnit),
       volatile: this.context.volatile,
     };
 
   }
 
-  /*
-  protected AssignCustomRenderFunc(func: CompositeFunctionDescriptor) {
-    console.info('acrf', this.context);
-  }
-  */
-
   // --- /public API ----------------------------------------------------------
 
-  /* *
-   * we pass around errors as objects with an error (string) field.
-   * this is a simplified check for that type.
-   * /
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected IsError(value: any) {
-    return (typeof value === 'object') && value.error;
-  }
-  */
-
   /**
-   * testing: can we cache (or close) the reference direcly, saving lookups?
-   * 
-   * A: probably not, if the lookup is calculated... does that ever happen?
-   * A: it does happen, in the Indirect and Offset functions, but those are
-   *    constructed dynamically so they won't be cached. so should be ok to
-   *    close.
+   * resolve value from cell. returns a function bound to specific cell.
    */
-  protected CellFunction2(expr: UnitAddress) {
-
-    // console.info("CF2", expr);
+  protected CellFunction2(expr: UnitAddress): () => UnionValue {
 
     if (!expr.sheet_id) {
       if (expr.sheet) {
         expr.sheet_id = this.sheet_name_map[expr.sheet.toLowerCase()];
       }
       else {
-        return () => ReferenceError;
+        return () => ReferenceError();
       }
     }
 
     const cells = this.cells_map[expr.sheet_id];
-
     if (!cells) {
       console.warn('missing cells reference @ ' + expr.sheet_id);
-      return () => ReferenceError;
+      return () => ReferenceError();
     }
 
     // reference
@@ -152,66 +153,33 @@ export class ExpressionCalculator {
 
     // this is not an error, just a reference to an empty cell
     if (!cell) {
-      return () => undefined;
+      return () => { 
+        return { type: ValueType.undefined, value: undefined } 
+      };
     }
 
     // close
-    return () => cell.GetValue3();
+    return () => cell.GetValue4();
 
   }
 
   /**
-   * returns value for address/range
-   *
-   * note we are "fixing" strings with leading apostrophes. that should
-   * probably be done inside the cell, via a separate method.
-   *
-   * UPDATE: propagate cell errors
+   * returns range as union type. returns a single value for a single cell,
+   * or a 2d array (never a 1d array)
    */
-//  protected CellFunction(c1: number, r1: number, c2?: number, r2?: number){
-  protected CellFunction(start: ICellAddress, end?: ICellAddress){
+  protected CellFunction4(start: ICellAddress, end: ICellAddress): UnionOrArray {
 
     if (!start.sheet_id) {
-      console.warn('missing sheet id, cellfunction');
-      // return () => ReferenceError; // this is probably an error; the other paths don't return a function
-      return ReferenceError;
+      throw new Error('missing sheet id in CellFunction4');
     }
 
     const cells = this.cells_map[start.sheet_id];
-
-    // if (typeof c2 === 'undefined' || typeof r2 === 'undefined') {
-    if (!end) {
-      const cell = cells.GetCell(start);
-
-      if (!cell) {
-        return undefined;
-      }
-      if (cell.calculated_type === ValueType.error) {
-        return { error: cell.GetValue() } as FunctionError;
-      }
-      if (cell.type === ValueType.undefined) {
-
-        // this is done to support calculations referencing empty
-        // cells; the desired behavior here is to treat the undefined
-        // cell as 0 (which is also falsy).
-
-        return 0; 
-      }
-
-      return cell.GetValue();
-    }
-    else {
-      return(cells.GetRange2(
-        start, // {row: r1, column: c1},
-        end, // {row: r2, column: c2},
-        true,
-      ));
-    }
+    return cells.GetRange4(start, end, true);
 
   }
 
   /** breaking this out to de-dupe */
-  protected GetMetadata(arg: ExpressionUnit, map_result: (cell_data: Cell, address: ICellAddress) => any) {
+  protected GetMetadata(arg: ExpressionUnit, map_result: (cell_data: Cell, address: ICellAddress) => any): UnionOrArray {
 
     // FIXME: we used to restrict this to non-cell functions, now
     // we are using it for the cell function (we used to use address,
@@ -243,9 +211,6 @@ export class ExpressionCalculator {
       }
       break;
 
-    case 'literal':
-      return arg.value;
-
     case 'call':
 
       // we need a way to cascade the 'metadata' flag down 
@@ -257,14 +222,13 @@ export class ExpressionCalculator {
       // [how to resolve?]
 
       {
-        const result = this.CalculateExpression(arg, true);
-
-        if (result && typeof result === 'object') {
-          if (result.type === 'address') { 
-            address = result;
+        const result = this.CalculateExpression(arg as ExtendedExpressionUnit, true) as UnionOrArray;
+        if (UnionIsExpressionUnit(result)) {
+          if (result.value.type === 'address') { 
+            address = result.value;
           }
-          else if (result.type === 'range') {
-            range = result;
+          else if (result.value.type === 'range') {
+            range = result.value;
           }
           else {
             return result;
@@ -272,12 +236,16 @@ export class ExpressionCalculator {
         }
         else return result;
       }
+      break;
 
-      // FIXME: binary, &c
-
+    default:
+      return this.CalculateExpression(arg as ExtendedExpressionUnit) as UnionOrArray;
+      
     }
 
     if (address) {
+
+      // don't we have a map? [...] only for names?
 
       let sheet = this.data_model.active_sheet;
       if (address.sheet_id && address.sheet_id !== sheet.id) {
@@ -293,17 +261,21 @@ export class ExpressionCalculator {
       const value = // (cell_data.type === ValueType.formula) ? cell_data.calculated : cell_data.value;
         cell_data.calculated_type ? cell_data.calculated : cell_data.value;
 
-      return {
+      const metadata: ReferenceMetadata = {
+        type: 'metadata',
         address: {...address},
         value,
         format: cell_data.style ? cell_data.style.number_format : undefined,
         ...map_result(cell_data, address),
       };
+
+      return { type: ValueType.object, value: metadata};
+
     }
     else if (range) {
 
       if (range.start.row === Infinity || range.start.column === Infinity) {
-        return ReferenceError; // temp
+        return ReferenceError();
       }
 
       let sheet = this.data_model.active_sheet;
@@ -316,10 +288,10 @@ export class ExpressionCalculator {
         }
       }
 
-      const range_result = [];
+      const range_result: UnionValue[][] = [];
 
       for (let column = range.start.column; column <= range.end.column; column++) {
-        const column_result = [];
+        const column_result: UnionValue[] = [];
         for (let row = range.start.row; row <= range.end.row; row++) {
           const cell_data = sheet.CellData({row, column});
           address = {...range.start, row, column};
@@ -327,12 +299,19 @@ export class ExpressionCalculator {
           const value = // (cell_data.type === ValueType.formula) ? cell_data.calculated : cell_data.value;
             cell_data.calculated_type ? cell_data.calculated : cell_data.value;
 
-          column_result.push({
+          const metadata = {
+            type: 'metadata',
             address,
             value,
             format: cell_data.style ? cell_data.style.number_format : undefined,
             ...map_result(cell_data, address),
+          };
+
+          column_result.push({
+            type: ValueType.object,
+            value: metadata,
           });
+
         }
         range_result.push(column_result);
       }
@@ -340,51 +319,10 @@ export class ExpressionCalculator {
       return range_result;
 
     }
-    else {
 
-      // console.info('no metadata!')
-
-    }
+    return this.CalculateExpression(arg as ExtendedExpressionUnit) as UnionOrArray;
 
   }
-
-  /*
-  protected EvaluateMacroFunction(macro_func: MacroFunction) {
-
-    if (!macro_func.expression) { 
-      return () => ExpressionError;
-    }
-
-    const expression = macro_func.expression;
-
-    return (expr: UnitCall) => {
-
-      // should we evaluate the arguments first, or just pass them in?
-      // I think the logical thing to do is evaluate them first, otherwise
-      // they might do the same work more than once.
-
-      const bound_names: {[index: string]: ExpressionUnit} = {};
-
-      if (macro_func.argument_names) {
-        for (let i = 0; i < macro_func.argument_names.length; i++) {
-          const name = macro_func.argument_names[i].toUpperCase();
-
-          // temp just pass in
-          bound_names[name] = expr.args[i] ? expr.args[i] : {type: 'missing'} as UnitMissing;
-
-        }
-      }
-      
-      this.context.name_stack.unshift(bound_names);
-      const result = this.CalculateExpression(expression);
-      this.context.name_stack.shift();
-
-      return result;
-
-    }
-
-  }
-  */
 
   /** 
    * excutes a function call 
@@ -402,7 +340,7 @@ export class ExpressionCalculator {
    * it will only return address/range if the parameter flag is set, so we
    * could in theory lock it down a bit with overloads.
    */
-  protected CallExpression(outer: UnitCall, return_reference = false) {
+  protected CallExpression(outer: UnitCall, return_reference = false): (expr: UnitCall) => UnionOrArray {
 
     // get the function descriptor, which won't change.
     // we can bind in closure (also short-circuit check for 
@@ -411,13 +349,7 @@ export class ExpressionCalculator {
     const func = this.library.Get(outer.name);
 
     if (!func) {
-      /*
-      const macro_func = this.data_model.macro_functions[outer.name.toUpperCase()];
-      if (macro_func) {
-        return this.EvaluateMacroFunction(macro_func);
-      }
-      else */
-      return () => NameError;
+      return (expr: UnitCall) => NameError();
     }
 
     return (expr: UnitCall) => {
@@ -466,25 +398,33 @@ export class ExpressionCalculator {
       const if_function = outer.name.toLowerCase() === 'if';
       let skip_argument_index = -1;
 
-      let argument_error: FunctionError|undefined;
+      let argument_error: UnionValue|undefined;
+
       const argument_descriptors = func.arguments || []; // map
 
       const mapped_args = expr.args.map((arg, arg_index) => {
 
         // short circuit
-        if (argument_error) { return undefined; }
-
-        // if function, wrong branch
-        if (arg_index === skip_argument_index) { 
+        if (argument_error) { 
           return undefined; 
         }
 
-        if (typeof arg === 'undefined') { 
-          if (if_function && arg_index === 0) { skip_argument_index = 1; }
-          return undefined; // FIXME: required?
+        // get descriptor. if the number of arguments exceeds 
+        // the number of descriptors, recycle the last one
+        const descriptor = argument_descriptors[Math.min(arg_index, argument_descriptors.length - 1)] || {}; 
+        
+        // if function, wrong branch
+        if (arg_index === skip_argument_index) { 
+          return descriptor.boxed ? UndefinedUnion() : undefined;
         }
 
-        const descriptor = argument_descriptors[Math.min(arg_index, argument_descriptors.length - 1)] || {}; // recycle last one
+        // note on type here: we're iterating over the arguments 
+        // described by the parse expression, not the values. although
+        // in this case, wouldn't this be a missing type? (...)
+        if (typeof arg === 'undefined') { 
+          if (if_function && arg_index === 0) { skip_argument_index = 1; }
+          return descriptor.boxed ? UndefinedUnion() : undefined;
+        }
 
         // FIXME (address): what about named ranges (actually those will work),
         // constructed references (we don't support them atm)?
@@ -493,38 +433,71 @@ export class ExpressionCalculator {
         // object, not a string. so FIXME.
 
         if (descriptor.address) {
-          return this.parser.Render(arg).replace(/\$/g, '');
+
+          console.warn("NOTIMPL: ADDRESS");// MARK1
+          return this.parser.Render(arg).replace(/\$/g, ''); // FIXME: type
+
         }
         else if (descriptor.metadata) {
-          return this.GetMetadata(arg, () => { return {}});
+
+          /*
+          console.warn("NOTIMPL: METADATA");// MARK1
+          const md = this.GetMetadata(arg, () => { return {}});
+          console.info("A", arg, "MD", md);
+          return md;
+          */
+          return this.GetMetadata(arg, () => { return {}}); // type is UnionOrArray
+
         }
         else {
-          const result = this.CalculateExpression(arg);
 
-          if (typeof result === 'object' && result.error && !descriptor.allow_error) {
+          const result = this.CalculateExpression(arg as ExtendedExpressionUnit);
+
+          if (!Array.isArray(result) && result.type === ValueType.error) {
+            if (descriptor.allow_error) {
+              return result; // always boxed
+            }
             argument_error = result;
-          }
-          else if (if_function && arg_index === 0) {
-            const result_truthy = (typeof result === 'string') ? result.toLowerCase() !== 'false' : !!result;
+            return undefined; // argument not used, so don't bother boxing
+          }          
+
+          // can't shortcut if you have an array (or we need to test all the values)
+
+          if (if_function && arg_index === 0 && !Array.isArray(result)) {
+            let result_truthy = false; 
+
+            // if (Array.isArray(result)) { result_truthy = true; }
+
+            if (result.type === ValueType.string) {
+              const lowercase = (result.value as string).toLowerCase().trim();
+              result_truthy = lowercase !== 'false' && lowercase !== 'f';
+            }
+            else {
+              result_truthy = !!result.value;
+            }
             skip_argument_index = result_truthy ? 2 : 1;
           }
 
-          return result;
+          if (descriptor.boxed) {
+            return result;
+          }
+          
+          if (Array.isArray(result)) {
+            return result.map(row => row.map(value => value.value));
+          }
+          else {
+            return result.value; // unboxing
+          }
+
         }
 
-        return undefined; // default
-
       });
+
+      console.info("MA", mapped_args);
 
       if (argument_error) {
         return argument_error;
       }
-
-      /*
-      if (func.custom_render) {
-        this.AssignCustomRenderFunc(func);
-      }
-      */
 
       // if we have any nested calls, they may have updated the index so
       // we use the captured value here.
@@ -538,26 +511,33 @@ export class ExpressionCalculator {
       // return func.fn.apply(null, mapped_args);
       
       if (func.return_type === ReturnType.reference) {
-        const expr = func.fn.apply(null, mapped_args);
-        if (return_reference) { return expr; }
-        else if (typeof expr === 'object') {
-          if (expr.type === 'address') {
-            return this.CellFunction(expr);
+
+        const result = func.fn.apply(null, mapped_args);
+        
+        if (return_reference) { 
+          return result; 
+        }
+        
+        if (UnionIsExpressionUnit(result)) {
+          if (result.value.type === 'address') {
+            return this.CellFunction2(result.value)();
           }
-          else if (expr.type === 'range') {
-            return this.CellFunction(expr.start, expr.end);
+          else if (result.value.type === 'range') {
+            return this.CellFunction4(result.value.start, result.value.end)
           }
         }
-        return expr; // error?
-      }
-      return func.fn.apply(null, mapped_args);
 
+        return result; // error?
+
+      }
+
+      return func.fn.apply(null, mapped_args);
 
     };
 
   }
 
-  protected UnaryExpression(x: UnitUnary) { // operator: string, operand: any){
+  protected UnaryExpression(x: UnitUnary): (expr: UnitUnary) => UnionOrArray { // operator: string, operand: any){
 
     // there are basically three code paths here: negate, identity, and error.
     // they have very different semantics so we're going to do them completely
@@ -566,61 +546,44 @@ export class ExpressionCalculator {
     switch (x.operator) {
     case '+':
       return (expr: UnitUnary) => {
-        return this.CalculateExpression(expr.operand);
+        return this.CalculateExpression(expr.operand as ExtendedExpressionUnit);
       };
 
     case '-':
-      return (expr: UnitUnary) => {
-        const operand = this.CalculateExpression(expr.operand);
-        if (Array.isArray(operand)){
-          for (const column of operand){
-            for (let r = 0; r < column.length; r++) column[r] = -column[r];
+      {
+        const func = Primitives.Subtract;
+        const zero = { type: ValueType.number, value: 0};
+
+        return (expr: UnitUnary) => {
+          const operand = this.CalculateExpression(expr.operand as ExtendedExpressionUnit);
+          if (Array.isArray(operand)) {
+            return (operand as UnionValue[][]).map(column => 
+              column.map(value => func(zero, value)));
           }
-          return operand;
-        }
-        return -operand;
-      };
+          return func(zero, operand);
+        };
+
+      }
 
     default:
       return () => {
         console.warn('unexpected unary operator:', x.operator);
-        return ExpressionError;
+        return { type: ValueType.error, value: ExpressionError.error } // ExpressionError;
       };
     }
-
-  }
-
-  /**
-   * FIXME: did we drop this from the parser? I think we may have.
-   * use logical functions AND(), OR()
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected LogicalExpression(operator: string, left: any, right: any){
-
-    // sloppy typing, to support operators? (...)
-
-    left = this.CalculateExpression(left);
-    right = this.CalculateExpression(right);
-
-    switch (operator){
-    case '||': return left || right;
-    case '&&': return left && right;
-    }
-
-    console.info(`(unexpected logical operator: ${operator})`);
-    return ExpressionError;
 
   }
 
   /**
    * expands the size of an array by recycling values in columns and rows
+   * 
+   * FIXME: seems like this is more a generic thing, -> utils lib
    *
    * @param arr 2d array
    * @param columns target columns
    * @param rows target rows
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected RecycleArray(arr: any[][], columns: number, rows: number){
+  protected RecycleArray<T>(arr: T[][], columns: number, rows: number): T[][] {
 
     // NOTE: recycle rows first, more efficient. do it in place?
 
@@ -639,17 +602,10 @@ export class ExpressionCalculator {
     }
 
     return arr;
+
   }
 
-  /**
-   * applies binary operator elementwise over array
-   *
-   * @param operator
-   * @param left guaranteed to be 2d array
-   * @param right guaranteed to be 2d array
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected ElementwiseBinaryExpression(fn: Primitives.PrimitiveBinaryExpression, left: any[][], right: any[][]){
+  protected ElementwiseBinaryExpression(fn: Primitives.PrimitiveBinaryExpression, left: UnionValue[][], right: UnionValue[][]): UnionValue[][] {
 
     const columns = Math.max(left.length, right.length);
     const rows = Math.max(left[0].length, right[0].length);
@@ -657,21 +613,21 @@ export class ExpressionCalculator {
     left = this.RecycleArray(left, columns, rows);
     right = this.RecycleArray(right, columns, rows);
 
-    const result = [];
+    const result: UnionValue[][] = [];
 
     for (let c = 0; c < columns; c++) {
       const col = [];
       for (let r = 0; r < rows; r++ ) {
-        // col[r] = this.ElementalBinaryExpression(operator, left[c][r], right[c][r]);
         col[r] = fn(left[c][r], right[c][r]);
       }
       result.push(col);
     }
 
     return result;
+
   }
 
-  protected BinaryExpression(x: UnitBinary) {
+  protected BinaryExpression(x: UnitBinary): (expr: UnitBinary) => UnionOrArray {
 
     // we are constructing and caching functions for binary expressions.
     // this should simplify calls when parameters change. eventually I'd
@@ -690,7 +646,11 @@ export class ExpressionCalculator {
     if (!fn) {
       return () => { // expr: UnitBinary) => {
         console.info(`(unexpected binary operator: ${x.operator})`);
-        return ExpressionError;
+        // return ExpressionError;
+        return {
+          value: ExpressionError.error, // FIXME
+          type: ValueType.error,
+        }
       };
     }
     else {
@@ -698,8 +658,8 @@ export class ExpressionCalculator {
 
         // sloppy typing, to support operators? (...)
 
-        const left = this.CalculateExpression(expr.left);
-        const right = this.CalculateExpression(expr.right);
+        const left = this.CalculateExpression(expr.left as ExtendedExpressionUnit);
+        const right = this.CalculateExpression(expr.right as ExtendedExpressionUnit);
 
         // check for arrays. do elementwise operations.
 
@@ -722,7 +682,10 @@ export class ExpressionCalculator {
 
   }
 
-  protected Identifier(expr: UnitIdentifier){
+  protected Identifier(expr: UnitIdentifier): () => UnionOrArray {
+
+    // NOTE: TRUE and FALSE don't get here -- they are converted
+    // to literals by the parser? (...)
 
     // the function we create here binds the name because
     // this is a literal identifier. if the value were to change,
@@ -742,14 +705,14 @@ export class ExpressionCalculator {
     switch (upper_case){
     case 'FALSE':
     case 'F':
-      return () => false;
+      return () => {return {value: false, type: ValueType.boolean}};
 
     case 'TRUE':
     case 'T':
-      return () => true;
+      return () => {return {value: true, type: ValueType.boolean}};
 
     case 'UNDEFINED':
-      return () => undefined; // why do we support this?
+      return () => {return {value: undefined, type: ValueType.undefined}}; // why do we support this?
     }
 
     return () => {
@@ -758,10 +721,10 @@ export class ExpressionCalculator {
 
       if (named_range) {
         if (named_range.count === 1) {
-          return this.CellFunction(named_range.start);
+          return this.CellFunction4(named_range.start, named_range.start);
         }
         else {
-          return this.CellFunction(named_range.start, named_range.end);
+          return this.CellFunction4(named_range.start, named_range.end);
         }
       }
 
@@ -775,13 +738,13 @@ export class ExpressionCalculator {
       */
 
       console.info( '** identifier', identifier);
-      return NameError;
+      return NameError();
 
     };
 
   }
 
-  protected GroupExpression(x: UnitGroup) {
+  protected GroupExpression(x: UnitGroup): (expr: UnitGroup) => UnionOrArray {
 
     // a group is an expression in parentheses, either explicit
     // (from the user) or implicit (created to manage operation
@@ -791,16 +754,16 @@ export class ExpressionCalculator {
     // have length !== 1 -- consider that an error.
 
     if (!x.elements || x.elements.length !== 1){
+      console.warn( `Can't handle group !== 1` );
       return () => {
-        console.warn( `Can't handle group !== 1` );
-        return 0;
+        return { type: ValueType.error, value: ExpressionError.error };
       };
     }
-    return (expr: UnitGroup) => this.CalculateExpression(expr.elements[0]);
+    return (expr: UnitGroup) => this.CalculateExpression(expr.elements[0] as ExtendedExpressionUnit);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected CalculateExpression(expr: ExpressionUnit, return_reference = false): any {
+  protected CalculateExpression(expr: ExtendedExpressionUnit, return_reference = false): UnionOrArray {
 
     // user data is a generated function for the expression, at least
     // for the simple ones (atm). see BinaryExpression for more. the
@@ -817,41 +780,41 @@ export class ExpressionCalculator {
       return (expr.user_data = this.CallExpression(expr, return_reference))(expr);
 
     case 'address':
-      return (expr.user_data = this.CellFunction2(expr))();
+      return (expr.user_data = this.CellFunction2(expr))(); // check
 
     case 'range':
-      return (expr.user_data = (x: UnitRange) => this.CellFunction(x.start, x.end))(expr);
+      return (expr.user_data = (x: UnitRange) => this.CellFunction4(x.start, x.end))(expr); // check
 
     case 'binary':
-      return (expr.user_data = this.BinaryExpression(expr))(expr);
+      return (expr.user_data = this.BinaryExpression(expr))(expr); // check
 
     case 'unary':
-      return (expr.user_data = this.UnaryExpression(expr))(expr);
+      return (expr.user_data = this.UnaryExpression(expr))(expr); // check
 
     case 'identifier':
-      return (expr.user_data = this.Identifier(expr))();
+      return (expr.user_data = this.Identifier(expr))(); // check
 
     case 'missing':
-      expr.user_data = () => undefined;
-      return undefined;
+      return (expr.user_data = () => { return { value: undefined, type: ValueType.undefined }})(); // check
 
     case 'literal':
-      expr.user_data = () => expr.value;
-      return expr.value;
-
+      {
+        const literal = { value: expr.value, type: Cell.GetValueType(expr.value) };
+        return (expr.user_data = () => literal)();  // check
+      }
     case 'group':
-      return (expr.user_data = this.GroupExpression(expr))(expr);
+      return (expr.user_data = this.GroupExpression(expr))(expr); // check
 
     case 'array':
       {
-        const transposed = Utilities.TransposeArray(expr.values);
-        expr.user_data = () => transposed;
-        return transposed;
+        return (expr.user_data = () => expr.values.map(row => row.map(value => {
+          return { value, type: Cell.GetValueType(value) }
+        })))(); // check
       }
 
     default:
       console.warn( 'Unhandled parse expr:', expr);
-      return 0;
+      return UnknownError();
     }
   }
 

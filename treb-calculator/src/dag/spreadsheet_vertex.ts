@@ -1,6 +1,6 @@
 
 import { SpreadsheetVertexBase, GraphImpl } from './spreadsheet_vertex_base';
-import { Cell, CellValue, ICellAddress, ValueType } from 'treb-base-types';
+import { Cell, CellValue, ICellAddress, UnionValue, ValueType } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 
@@ -24,7 +24,8 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
   // why is this (?)? can't we use a default junk address?
   public address?: ICellAddress;
 
-  public result: any;
+  public result: UnionValue|UnionValue[][] = { type: ValueType.undefined, value: undefined };
+
   public expression: ExpressionUnit = { type: 'missing', id: -1 };
   public expression_error = false;
   public short_circuit = false;
@@ -65,7 +66,11 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
    */
   public TakeReferenceValue(): void {
     if (this.reference) {
-      this.result = this.reference.GetValue();
+      const value = this.reference.GetValue();
+      this.result = {
+        value,
+        type: Cell.GetValueType(value),
+      };
     }
   }
 
@@ -172,6 +177,9 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
         this.short_circuit = false;
         const result = graph.CalculationCallback.call(graph, this);
+
+        // console.info("RX", result);
+
         this.result = result.value;
 
         // this test is a waste for 99% of calls 
@@ -183,7 +191,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
         // and this one for ~75%?
         if (result.volatile) graph.volatile_list.push(this);
       }
-      else this.result = this.reference.GetValue();
+      else this.result = this.reference.GetValue4();
 
       // is this going to work properly if it's an error? (...)
 
@@ -191,12 +199,20 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
         graph.SpreadCallback.call(graph, this, this.result);
       }
       else if (this.reference.type === ValueType.formula) {
+
+        const single = Array.isArray(this.result) ? this.result[0][0] : this.result;
+
+        // error is implicit
+        this.reference.SetCalculatedValue(single.value, single.type);
+
+        /*
         if (typeof this.result === 'object' && this.result.error) {
           this.reference.SetCalculationError(this.result.error);
         }
         else {
           this.reference.SetCalculatedValue(this.result);
         }
+        */
       }
 
     }

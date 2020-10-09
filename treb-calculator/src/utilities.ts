@@ -7,6 +7,23 @@ export const IsArrayOrTypedArray = (test: any): boolean => {
   return Array.isArray(test) || (test instanceof Float64Array) || (test instanceof Float64Array);
 };
 
+export const Transpose2 = <T> (arr: T[][]): T[][] => {
+
+  const result: T[][] = [];
+
+  const cols = arr.length;
+  const rows = arr[0].length;
+  for (let r = 0; r < rows; r++) {
+    result[r] = [];
+    for (let c = 0; c < cols; c++ ) {
+      result[r][c] = arr[c][r];
+    }
+  }
+
+  return result;
+
+};
+
 export const TransposeArray = (arr: any[][]) => {
 
   if (!arr) return [];
@@ -50,7 +67,7 @@ export const ColumnToString = (column: number) => {
   const original = column;
 
   let s = '';
-  while (1) {
+  for (;;) {
     const c = column % 26;
     s = String.fromCharCode(65 + c) + s;
     column = Math.floor(column / 26);

@@ -1,6 +1,6 @@
 /* eslint-disable no-unexpected-multiline */
 
-import { ICellAddress, Cell, Area } from 'treb-base-types';
+import { ICellAddress, Cell, Area, UnionValue, ValueType } from 'treb-base-types';
 import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
@@ -8,6 +8,7 @@ import { DataError, ArgumentError, ValueError } from '../../treb-calculator/src/
 // import { ExpressionUnit } from 'treb-parser';
 import { Scale as CreateScale } from 'treb-utils';
 import { DataModel } from 'treb-grid';
+import { UnionOrArray } from 'treb-calculator/src/expression-calculator';
 
 export type SimulationResultsData =  Array<Float64Array|number[]>[][];
 
@@ -112,6 +113,8 @@ export class SimulationModel {
         category: ['RiskAMP Random Distributions'],
       },
 
+      /*
+
       'Multivariate.LogNormal': {
         description: 'Returns a sample from the multivariate log-normal distribution',
         simulation_volatile: true,
@@ -182,6 +185,8 @@ export class SimulationModel {
 
       // basic distributions
 
+      */
+
       UniformRangeSample: {
         description: 'Returns one of a set of values, with equal probability and with replacement',
         simulation_volatile: true,
@@ -232,7 +237,7 @@ export class SimulationModel {
         fn: this.probabilityvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
       },
-
+     
       UniformValue: {
         description: 'Returns a sample from the uniform distribution',
         simulation_volatile: true,
@@ -263,6 +268,19 @@ export class SimulationModel {
           { name: 'stdev', description: 'Standard Deviation', default: 1 },
         ],
         fn: this.normalvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
+      PERTValue: {
+        description: 'Returns a sample from the beta-PERT distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'min', description: 'Minimum Value', default: 0 },
+          { name: 'mode', description: 'Most-Likely Value', default: 0.5 },
+          { name: 'max', description: 'Maximum Value', default: 1 },
+          { name: 'lambda', default: 4 },
+        ],
+        fn: this.pertvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
       },
 
@@ -308,19 +326,6 @@ export class SimulationModel {
           { name: 'lambda', default: 4 },
         ],
         fn: this.pertvalue_p.bind(this),
-        category: ['RiskAMP Random Distributions'],
-      },
-
-      PERTValue: {
-        description: 'Returns a sample from the beta-PERT distribution',
-        simulation_volatile: true,
-        arguments: [
-          { name: 'min', description: 'Minimum Value', default: 0 },
-          { name: 'mode', description: 'Most-Likely Value', default: 0.5 },
-          { name: 'max', description: 'Maximum Value', default: 1 },
-          { name: 'lambda', default: 4 },
-        ],
-        fn: this.pertvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
       },
 
@@ -513,6 +518,8 @@ export class SimulationModel {
         category: ['RiskAMP Simulation Functions'],
       },
 
+      /*
+
       // some extra random functions, available because we have the matrix classes
 
       IsPosDef: {
@@ -636,6 +643,9 @@ export class SimulationModel {
         fn: this.HistogramTable.bind(this),
       }
 
+      */
+
+
     };
 
   }
@@ -718,10 +728,13 @@ export class SimulationModel {
 
     // if (range_of_values.area) range_of_values = range_of_values.area.spreadsheet_label;
 
+    // console.info("CMX", JSON.stringify(correlation_matrix, undefined, 2));
+
     if (!this.correlated_distributions[range_of_values]) {
 
       // support lower-triangular
       let correlation = CDMatrix.FromArray(correlation_matrix);
+      
       if (!correlation.IsSymmetric()) {
         for (let m = 1; m < correlation_matrix.length; m++) {
           for (let n = 0; n < m; n++) {
@@ -751,18 +764,21 @@ export class SimulationModel {
   }
 
   public ValidateCorrelationMatrix(correlation_matrix: number[][]) {
+
     let correlation = Matrix.FromArray(correlation_matrix);
     if (!correlation.IsSymmetric()) {
       correlation = correlation.Symmetrize(true);
     }
+
     if (correlation_matrix.some(row => row.some(value => typeof value !== 'number' && typeof value !== 'undefined'))
       || !correlation.IsPosDef()) {
       return false;
     }
+
     return true;
   }
 
-  public multivariate_normal(range_of_values: any, correlation_matrix: number[][], mean = 0, sd = 1) {
+  public multivariate_normal(range_of_values: any, correlation_matrix: number[][], mean = 0, sd = 1): UnionValue {
 
     // this test (and all the other ones) is in the wrong order
 
@@ -772,12 +788,12 @@ export class SimulationModel {
         MC.Normal(this.iterations, { mean, sd, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return { type: ValueType.number, value: this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration] };
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
 
-    return MC.Normal(1, { mean, sd })[0];
+    return { type: ValueType.number, value: MC.Normal(1, { mean, sd })[0] };
   }
 
   public multivariate_lognormal(range_of_values: any, correlation_matrix: number[][], mean = 0, sd = 1) {
@@ -858,37 +874,49 @@ export class SimulationModel {
 
   // --- univariate distributions ----------------------------------------------
 
-  public uniformvalue(min = 0, max = 1) {
+  public uniformvalue(min = 0, max = 1): UnionValue {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
       this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Uniform(this.iterations, { min, max, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return {
+        type: ValueType.number,
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
     }
-    return MC.Uniform(1, { min, max })[0];
+    return {
+      type: ValueType.number,
+      value: MC.Uniform(1, { min, max })[0]
+    };
   }
 
-  public bernoullivalue(p = .5) {
+  public bernoullivalue(p = .5): UnionValue {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
       this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Bernoulli(this.iterations, { p, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return {
+        type: ValueType.number,
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
     }
-    return MC.Bernoulli(1, { p })[0];
+    return {
+      type: ValueType.number,
+      value: MC.Bernoulli(1, { p })[0]
+    };
   }
 
   // alias
-  public probabilityvalue(p = .5) { return this.bernoullivalue(p); }
+  public probabilityvalue(p = .5): UnionValue { return this.bernoullivalue(p); }
 
   // new
-  public sequentialvalue(data: any[][], count = 0) {
+  public sequentialvalue(data: any[][], count = 0): UnionValue {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
     }
@@ -898,63 +926,95 @@ export class SimulationModel {
       const rows = data[0].length;
       const column = Math.floor(index / rows) % data.length;
       const row = index % rows;
-      return data[column][row];
+      return {
+        type: ValueType.number,
+        value: data[column][row]
+      };
     }
-    return data[0][0];
+    return {
+      type: ValueType.number,
+      value: data[0][0]
+    };
   }
 
   // new
-  public indexvalue(max = 0) {
+  public indexvalue(max = 0): UnionValue {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
     }
     else if (this.state === SimulationState.Simulation) {
-      if (max > 0) return (this.iteration % max) + 1;
-      return this.iteration + 1;
+      if (max > 0) {
+        return {
+          type: ValueType.number,
+          value: (this.iteration % max) + 1
+        };
+      }
+      return {
+        type: ValueType.number,
+        value: this.iteration + 1
+      };
     }
-    return 1;
+    return {
+      type: ValueType.number,
+      value: 1
+    };
   }
 
-  public lognormalvalue(mean = 0, sd = 1) {
+  public lognormalvalue(mean = 0, sd = 1): UnionValue {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
       this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.LogNormal(this.iterations, { mean, sd, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return {
+        type: ValueType.number, 
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
     }
-    return MC.LogNormal(1, { mean, sd })[0];
+    return {
+      type: ValueType.number, 
+      value: MC.LogNormal(1, { mean, sd })[0]
+    };
   }
 
-  public normalvalue(mean = 0, sd = 1) {
+  public normalvalue(mean = 0, sd = 1): UnionValue {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
       this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Normal(this.iterations, { mean, sd, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return {
+        type: ValueType.number, 
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
     }
-    return MC.Normal(1, { mean, sd })[0];
+    return {type: ValueType.number, value: MC.Normal(1, { mean, sd })[0] };
   }
 
-  public pertvalue(min = 0, mode = .5, max = 1, lambda = 4) {
+  public pertvalue(min = 0, mode = .5, max = 1, lambda = 4): UnionValue {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
       this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.PERT(this.iterations, { a: min, b: max, c: mode, lambda, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return {
+        type: ValueType.number, 
+        value: this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
     }
-    return MC.PERT(1, { a: min, b: max, c: mode, lambda })[0];
+    return {
+      type: ValueType.number, 
+      value: MC.PERT(1, { a: min, b: max, c: mode, lambda })[0]
+    };
   }
 
-  public pertvalue_p(p10 = 0, mode = .5, p90 = 1, lambda = 4) {
+  public pertvalue_p(p10 = 0, mode = .5, p90 = 1, lambda = 4): UnionValue {
     if (this.state === SimulationState.Prep) {
       const parms = MC.P80Pert(p10, p90, mode, lambda);
       this.InitDistribution();
@@ -962,13 +1022,18 @@ export class SimulationModel {
         MC.PERT(this.iterations, { ...parms, lambda, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return {
+        type: ValueType.number, 
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
     }
-    else {
-      const parms = MC.P80Pert(p10, p90, mode, lambda);
-      return MC.PERT(1, { ...parms, lambda })[0];
-    }
+
+    const parms = MC.P80Pert(p10, p90, mode, lambda);
+    return {
+      type: ValueType.number, 
+      value: MC.PERT(1, { ...parms, lambda })[0]
+    };
   }
 
   /**
@@ -990,7 +1055,7 @@ export class SimulationModel {
     return fun.apply(instance, [1].concat(args))[0];
   }
 
-  public triangularvalue(min = 0, mode = .5, max = 1) {
+  public triangularvalue(min = 0, mode = .5, max = 1): UnionValue {
     // return this.CommonDistributionFunction(MC.Triangular, MC, [{a: min, b: max, c: mode, lhs: this.lhs}]);
 
     if (this.state === SimulationState.Prep) {
@@ -999,30 +1064,42 @@ export class SimulationModel {
         MC.Triangular(this.iterations, { a: min, b: max, c: mode, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return {
+        type: ValueType.number,
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
     }
-    return MC.Triangular(1, { a: min, b: max, c: mode })[0];
+    return {
+      type: ValueType.number,
+      value: MC.Triangular(1, { a: min, b: max, c: mode })[0]
+    };
   }
 
-  public betavalue(a = 1, b = 1) {
+  public betavalue(a = 1, b = 1): UnionValue {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
       this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Beta(this.iterations, { a, b, lhs: this.lhs });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return {
+        type: ValueType.number,
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
     }
-    return MC.Beta(1, { a, b })[0];
+    return {
+      type: ValueType.number,
+      value: MC.Beta(1, { a, b })[0]
+    };
   }
 
-  public samplevalue(range: any[]) {
+  public samplevalue(range: any[]): UnionValue {
     return this.uniformrangesample(range);
   }
 
-  public samplevalue_weighted(range: any[], weights: any[]) {
+  public samplevalue_weighted(range: any[], weights: any[]): UnionValue {
 
     // create a uniform distribution in {0,1}
 
@@ -1043,7 +1120,12 @@ export class SimulationModel {
 
       // assume it's rectangular. if not, there's nothing we can do.
 
-      if (!range || !range.length) return undefined;
+      if (!range || !range.length) {
+        return {
+          type: ValueType.undefined,
+          value: undefined,
+        };
+      }
 
       // FIXME: cache! [see above]
 
@@ -1060,18 +1142,24 @@ export class SimulationModel {
         for (let row = 0; row < range[col].length; row++) {
           step += weights[col][row];
           if (step >= value) {
-            return range[col][row];
+            return {
+              type: ValueType.number,
+              value: range[col][row]
+            };
           }
         }
       }
 
-      return range[0][0];
-
     }
+
+    return {
+      type: ValueType.number,
+      value: range[0][0],
+    };
 
   }
 
-  public uniformrangesample(range: any[]) {
+  public uniformrangesample(range: any[]): UnionValue {
 
     // create a uniform distribution in {0,1}
 
@@ -1080,142 +1168,247 @@ export class SimulationModel {
       this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Uniform(this.iterations, { min: 0, max: 1, lhs: this.lhs });
     }
-    else {
-      const r = (this.state === SimulationState.Simulation) ?
-        this.distributions[this.address.sheet_id || 0]
-          [this.address.column][this.address.row][this.call_index][this.iteration] :
+
+    const r = (this.state === SimulationState.Simulation) ?
+      this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration] :
         MC.Uniform(1, { min: 0, max: 1 })[0];
 
-      // assume it's rectangular. if not, there's nothing we can do.
+    // assume it's rectangular. if not, there's nothing we can do.
 
-      if (!range || !range.length) return undefined;
+    if (!range || !range.length) return {
+      type: ValueType.undefined,
+      value: undefined
+    };
 
-      // const count = range[0].length * range.length;
-      // const index = Math.floor(count * r);
+    // const count = range[0].length * range.length;
+    // const index = Math.floor(count * r);
 
-      const index = Math.floor(range[0].length * range.length * r);
+    const index = Math.floor(range[0].length * range.length * r);
 
-      // const column = index % range.length;
-      // const row = Math.floor(index / range.length);
-      // const val = range[column][row];
+    // const column = index % range.length;
+    // const row = Math.floor(index / range.length);
+    // const val = range[column][row];
 
-      // FIXME: what should undefined look like?
-      return range[index % range.length][Math.floor(index / range.length)] || '';
+    const value = range[index % range.length][Math.floor(index / range.length)] || ''
 
-    }
+    // FIXME: what should undefined look like?
+    return {
+      value,
+      type: Cell.GetValueType(value),
+    };
+
   }
 
   // --- simulation functions --------------------------------------------------
 
-  public simulationtrials() {
-    return this.trials;
+  public simulationtrials(): UnionValue {
+    return { type:ValueType.number, value: this.trials };
   }
 
-  public simulationtime() {
-    return this.elapsed / 1000;
+  public simulationtime(): UnionValue {
+    return { type:ValueType.number, value: this.elapsed / 1000 };
   }
 
-  public simulationvaluesarray(data?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
-    return data;
+  public simulationvaluesarray(data?: number[]): UnionOrArray {
+    
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
+    const result: UnionValue[] = [];
+    for (let i = 0; i < data.length; i++) {
+      result[i] = {type: ValueType.number, value: data[i] };
+    }
+
+    return [result];
+
   }
 
   /**
    * now defaults to ordering by source cell
    */
-  public simulationvaluesarray_ordered(data?: number[], order_by?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
+  public simulationvaluesarray_ordered(data?: number[], order_by?: number[]): UnionOrArray {
 
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+    
     if (!order_by || !order_by.length) {
 
       // can use a simpler sort method in this case
       // be sure to copy so we don't munge the original data
 
-      return data.slice(0).sort((a, b) => a - b);
+      return [data.slice(0).sort((a, b) => a - b).map(value => {
+        return {
+          type: ValueType.number,
+          value,
+        };
+      })];
     }
 
     const tuples = Array.from(data).map((x, i) => [x, order_by[i]]);
     tuples.sort((a, b) => a[1] - b[1]);
 
-    return tuples.map((tuple) => tuple[0]);
+    return [tuples.map((tuple) => {
+      return {
+        type: ValueType.number,
+        value: tuple[0]
+      }
+    })];
+
   }
 
-  public simulationrsquared(dependent?: number[], independent?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!dependent || !dependent.length || !independent || !independent.length) return DataError;
-    return Stats.R2(dependent, independent);
+  public simulationrsquared(dependent?: number[], independent?: number[]): UnionValue {
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!dependent || !dependent.length || !independent || !independent.length) {
+      return DataError();
+    }
+
+    return { type: ValueType.number, value: Stats.R2(dependent, independent)};
   }
 
-  public simulationcorrelation(a?: number[], b?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!a || !a.length || !b || !b.length) return DataError;
-    return Stats.Correlation(a, b);
+  public simulationcorrelation(a?: number[], b?: number[]): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!a || !a.length || !b || !b.length) {
+      return DataError();
+    }
+
+    return { type: ValueType.number, value: Stats.Correlation(a, b) };
   }
 
-  public sortedsimulationindex(data?: number[], index = 1) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
-    if (index < 1 || index > data.length) return ArgumentError;
+  public sortedsimulationindex(data?: number[], index = 1): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
+    if (index < 1 || index > data.length) {
+      return ArgumentError();
+    }
 
     const pairs = Array.from(data).map((x, i) => [x, i + 1]);
     pairs.sort((a, b) => a[0] - b[0]);
 
-    return pairs[index - 1][1];
+    return { type: ValueType.number, value: pairs[index - 1][1] };
+
   }
 
-  public simulationvalue(data?: number[], index = 1) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
-    if (index < 1 || index > data.length) return ArgumentError;
-    return data[index - 1];
+  public simulationvalue(data?: number[], index = 1): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
+    if (index < 1 || index > data.length) {
+      return ArgumentError();
+    }
+
+    return { type:ValueType.number, value: data[index - 1] };
+
   }
 
-  public simulationpercentile(data?: number[], percentile = .5) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
-    return Stats.Percentile(data, percentile);
+  public simulationpercentile(data?: number[], percentile = .5): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
+    return { type:ValueType.number, value: Stats.Percentile(data, percentile) };
   }
 
-  public simulationstandarddeviation(data?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
+  public simulationstandarddeviation(data?: number[]): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
     const stats = Stats.Statistics(data);
-    return stats.stdev;
+    return { type:ValueType.number, value: stats.stdev };
   }
 
-  public simulationvariance(data?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
+  public simulationvariance(data?: number[]): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
     const stats = Stats.Statistics(data);
-    return stats.variance;
+    return { type:ValueType.number, value: stats.variance };
   }
 
-  public simulationskewness(data?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
+  public simulationskewness(data?: number[]): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
     const stats = Stats.Statistics(data);
-    return stats.skewness;
+    return { type:ValueType.number, value: stats.skewness };
   }
 
-  public simulationkurtosis(data?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
+  public simulationkurtosis(data?: number[]): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
     const stats = Stats.Statistics(data);
-    return stats.kurtosis;
+    return { type:ValueType.number, value: stats.kurtosis };
   }
 
-  public simulationinterval(data?: number[], min?: number, max?: number) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
-    return Stats.Interval({ data, min, max });
+  public simulationinterval(data?: number[], min?: number, max?: number): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
+    return { type:ValueType.number, value: Stats.Interval({ data, min, max }) };
   }
 
-  public simulationstandarderror(data?: number[]) {
+  public simulationstandarderror(data?: number[]): UnionValue {
 
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
 
     let sum = 0;
     let variance = 0;
@@ -1230,40 +1423,66 @@ export class SimulationModel {
       variance += (deviation * deviation);
     }
 
-    return (Math.sqrt(variance / data.length)) / Math.sqrt(data.length);
+    return { 
+      type:ValueType.number, 
+      value: (Math.sqrt(variance / data.length)) / Math.sqrt(data.length),
+    };
 
   }
 
-  public simulationmin(data?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
-    return Math.min.apply(0, data);
+  public simulationmin(data?: number[]): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
+    return { type:ValueType.number, value: Math.min.apply(0, data) };
   }
 
-  public simulationmax(data?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
-    return Math.max.apply(0, data);
+  public simulationmax(data?: number[]): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
+    return { type:ValueType.number, value: Math.max.apply(0, data) };
   }
 
-  public simulationmean(data?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
+  public simulationmean(data?: number[]): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
 
     // return data.reduce((a: number, b: number) => a + b, 0) / data.length;
     let sum = 0;
     for (const value of data) sum += value;
-    return sum / data.length;
+    return { type: ValueType.number, value: sum / data.length };
 
   }
 
-  public simulationmedian(data?: number[]) {
-    if (this.state !== SimulationState.Null) return 0;
-    if (!data || !data.length) return DataError;
+  public simulationmedian(data?: number[]): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
 
     const copy = data.filter((element: any) => typeof element === 'number' ? element : 0);
     copy.sort((a: number, b: number) => a - b);
-    return copy[Math.round(copy.length / 2)];
+
+    return {type: ValueType.number, value: copy[Math.round(copy.length / 2)]};
 
   }
 

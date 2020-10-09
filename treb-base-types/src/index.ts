@@ -8,6 +8,7 @@ export * from './rectangle';
 export * from './style';
 export * from './text_part';
 export * from './import';
+export * from './union';
 export * from './value-type';
 
 // import * as Style from './style';

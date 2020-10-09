@@ -7,6 +7,7 @@ import { BarData, CellData, ChartData, DonutSlice, LegendLayout, LegendPosition,
 import { DecoratedArray } from './chart-functions';
 
 import { RangeScale } from 'treb-utils';
+import { UnionValue, ValueType } from 'treb-base-types/src';
 
 // require('../style/charts.scss');
 require('../style/charts.pcss');
@@ -126,7 +127,8 @@ export class Chart {
 
     }
 
-  
+    const title = args[2]?.toString() || undefined;
+    const options = args[3]?.toString() || undefined;
 
     this.chart_data = {
       type,
@@ -135,13 +137,12 @@ export class Chart {
       legend_style: LegendStyle.marker,
       series2: series,
       scale: common.y.scale,
-      title: args[2] || '',
+      title,
       y_labels: type === 'bar' ? category_labels : common.y.labels, // swapped
       x_labels: type === 'bar' ? common.y.labels : category_labels, // swapped
     };
 
-    if (args[3]) {
-      const options = args[3].toString();
+    if (options) {
       (this.chart_data as BarData).round = /round/i.test(options);
       this.chart_data.data_labels = /labels/i.test(options);
     }
@@ -159,8 +160,9 @@ export class Chart {
     if (data[0]) {
       
       const flat = Util.Flatten(data[0]);
+
       if (typeof flat[0] === 'object') {
-        series.label = (flat[0] && flat[0].value) ? flat[0].value.toString() : '';
+        series.label = flat[0]?.value?.value?.toString() || '';
       }
       else {
         series.label = flat[0].toString();
@@ -171,9 +173,9 @@ export class Chart {
 
     if (data[2] && Array.isArray(data[2])) {
       const flat = Util.Flatten(data[2]);
-      series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
-      if (flat[0].format) {
-        series.y.format = flat[0].format as string;
+      series.y.data = flat.map(item => typeof item.value.value === 'number' ? item.value.value : undefined);
+      if (flat[0].value?.format) {
+        series.y.format = flat[0].value?.format as string;
         const format = NumberFormatCache.Get(series.y.format);
         series.y.labels = series.y.data.map(value => (value === undefined) ? undefined : format.Format(value));
       }
@@ -181,9 +183,9 @@ export class Chart {
 
     if (data[1] && Array.isArray(data[1])) {
       const flat = Util.Flatten(data[1]);
-      series.x.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
-      if (flat[0].format) {
-        series.x.format = flat[0].format;
+      series.x.data = flat.map(item => typeof item.value.value === 'number' ? item.value.value : undefined);
+      if (flat[0].value.format) {
+        series.x.format = flat[0].value.format;
       }
     }
 
@@ -217,9 +219,14 @@ export class Chart {
     const series: SeriesType = { x: { data: [] }, y: { data: [] }, };
     const flat = Util.Flatten(data);
 
-    series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
-    if (flat[0].format) {
-      series.y.format = flat[0].format || '';
+    // series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
+
+    series.y.data = flat.map(item => {
+      return typeof item.value.value === 'number' ? item.value.value : undefined;
+    });
+
+    if (flat[0].value.format) {
+      series.y.format = flat[0].value.format || '';
     }
 
     const values = series.y.data.filter(value => value || value === 0) as number[];
@@ -417,12 +424,15 @@ export class Chart {
     const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
     const common = this.CommonData(series);
    
+    const title = args[1]?.toString() || undefined;
+    const options = args[2]?.toString() || undefined;
+
     this.chart_data = {
       legend: common.legend,
       style,
       type: 'scatter2', 
       series, // : [{x, y}],
-      title: args[1] || '', 
+      title, 
 
       x_scale: common.x.scale, 
       x_labels: common.x.labels, 
@@ -434,8 +444,7 @@ export class Chart {
 
     };
 
-    if (args[2]) {
-      const options = args[2].toString();
+    if (options) {
       this.chart_data.markers = /marker/i.test(options);
       this.chart_data.smooth = /smooth/i.test(options);
       this.chart_data.data_labels = /labels/i.test(options);
@@ -577,7 +586,7 @@ export class Chart {
     const flat = Util.Flatten(raw_data);
 
     // we still need the aggregate for range, scale
-    let data = flat.map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
+    let data = flat.map((x) => (typeof x.value.value === 'number') ? x.value.value : undefined) as number[];
 
     /*
     // but now we're potentially splitting into series
@@ -600,9 +609,9 @@ export class Chart {
 
     const labels = Util.Flatten(args[1]).map((label) => {
       if (label && typeof label === 'object') {
-        const value = label.value;
-        if (typeof value === 'number' && label.format) {
-          return NumberFormatCache.Get(label.format).Format(value);
+        const value = label.value?.value;
+        if (typeof value === 'number' && label.value?.format) {
+          return NumberFormatCache.Get(label.value?.format).Format(value);
         }
         else return value ? value.toString() : '';
       }
@@ -735,13 +744,15 @@ export class Chart {
 
     // validate args (actually we only care about the first one)
 
-    if (!this.IsCellData(args[0])) {
-      console.warn('invalid args', args);
+    const union = args[0] as UnionValue;
+    
+    if (!union || union.type !== ValueType.object || !this.IsCellData(union.value)) {
+      console.warn('invalid args [0]', args);
       this.Clear();
       return;
     }
 
-    const src: CellData = args[0];
+    const src: CellData = union.value; // args[0];
     const data: number[] = src.simulation_data || [];
 
     const title = args[1] || '';
