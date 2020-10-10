@@ -3,7 +3,7 @@ import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, ValueError, ArgumentError, DivideByZeroError } from '../function-error';
 import { Box, Cell, ClickFunctionOptions, ClickFunctionResult, UnionIs, UnionValue, ValueType, GetValueType } from 'treb-base-types';
-import { Sparkline, SparklineRenderOptions } from 'treb-sparkline';
+import { Sparkline, SparklineRenderOptions } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
 import { ClickCheckbox, RenderCheckbox } from './checkbox';

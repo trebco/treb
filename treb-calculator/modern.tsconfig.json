@@ -3,7 +3,6 @@
   "references": [
     { "path": "../treb-grid/modern.tsconfig.json" },
     { "path": "../treb-format/modern.tsconfig.json" },
-    { "path": "../treb-sparkline/modern.tsconfig.json" },
     { "path": "../treb-utils/modern.tsconfig.json" }
   ]
 }
