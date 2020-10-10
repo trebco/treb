@@ -5,7 +5,7 @@
 
 import { Area, IArea, ICellAddress, ICellAddress2 } from './area';
 import { Cell, DataValidation } from './cell';
-import { ValueType } from './value-type';
+import { ValueType, GetValueType } from './value-type';
 import { CellValue, UnionValue, UndefinedUnion } from './union';
 
 export interface CellSerializationOptions {
@@ -797,7 +797,7 @@ export class Cells {
       }
     }
     else {
-      const value_type = Cell.GetValueType(values); // otherwise we'd just call it every time
+      const value_type = GetValueType(values); // otherwise we'd just call it every time
 
       for (let r = area.start.row; r <= area.end.row; r++) {
         if (!this.data[r]) this.data[r] = [];

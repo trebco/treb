@@ -1,5 +1,5 @@
 
-import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue } from 'treb-base-types';
+import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue, GetValueType } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing } from 'treb-parser';
 
@@ -7,7 +7,7 @@ import { Graph } from './dag/graph';
 import { SpreadsheetVertex } from './dag/spreadsheet_vertex';
 import { CalculationResult } from './dag/spreadsheet_vertex_base';
 
-import { ExpressionCalculator } from './expression-calculator';
+import { ExpressionCalculator, UnionIsMetadata, UnionOrArray } from './expression-calculator';
 import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
@@ -84,9 +84,7 @@ export class Calculator extends Graph {
 
     this.library.Register({
 
-      /*
-
-      / **
+      /**
        * this function is here so it has access to the parser.
        * this is crazy expensive. is there a way to reduce cost?
        * 
@@ -100,13 +98,13 @@ export class Calculator extends Graph {
        * be good if we could somehow cache some of the effort,
        * particularly if the list data changes but not the expression.
        * 
-       * /
+       */
       CountIf: {
         arguments: [
           { name: 'range', },
           { name: 'criteria', }
         ],
-        fn: (range, criteria) => {
+        fn: (range, criteria): UnionValue => {
 
           const data = Utilities.Flatten(range);
 
@@ -127,28 +125,28 @@ export class Calculator extends Graph {
           const expression = parse_result.expression;
 
           if (parse_result.error || !expression) {
-            return ExpressionError;
+            return ExpressionError();
           }
           if (expression.type !== 'binary') {
             // console.warn('invalid expression [1]', expression);
-            return ExpressionError;
+            return ExpressionError();
           }
           if (expression.left.type !== 'array') {
             // console.warn('invalid expression [1]', expression);
-            return ExpressionError;
+            return ExpressionError();
           }
 
-          expression.left.values = data;
+          expression.left.values = [data];
           const result = this.CalculateExpression(expression);
 
           if (Array.isArray(result)) {
             let count = 0;
             for (const column of result) {
               for (const cell of column) {
-                if (cell) { count++; }
+                if (cell.value) { count++; }
               }
             }
-            return count;
+            return { type: ValueType.number, value: count };
           }
           
           return result; // error?
@@ -156,7 +154,7 @@ export class Calculator extends Graph {
         },
       },
 
-      / ** like indirect, this creates dependencies at calc time * /
+      /** like indirect, this creates dependencies at calc time */
       Offset: {
         arguments: [{
           name: 'reference', description: 'Base reference', metadata: true, }, {
@@ -165,9 +163,11 @@ export class Calculator extends Graph {
         ],
         return_type: ReturnType.reference,
         volatile: true,
-        fn: ((reference: any, rows = 0, columns = 0, width = 1, height = 1) => {
+        fn: ((reference: UnionValue, rows = 0, columns = 0, width = 1, height = 1): UnionValue => {
 
-          if (!reference) return ArgumentError;
+          if (!reference) {
+            return ArgumentError();
+          }
 
           // const parse_result = this.parser.Parse(reference);
           // if (parse_result.error || !parse_result.expression) {
@@ -176,22 +176,23 @@ export class Calculator extends Graph {
 
           // we need a proper type for this... also it might be a range
 
-          if (typeof reference !== 'object' || !reference.address) { return ReferenceError; }
+          if (!UnionIsMetadata(reference)) {
+            return ReferenceError(); 
+          }
 
           const check_result = this.DynamicDependencies(
-            // parse_result.expression,
-            reference.address,
+            reference.value.address,
             true, rows, columns, width, height);
 
-          if (IsError(check_result)) {
-            return check_result;
+          if (!check_result) {
+            return ReferenceError();
           }
 
           if (check_result.dirty) {
             const current_vertex =
               this.GetVertex(this.expression_calculator.context.address, true) as SpreadsheetVertex;
             current_vertex.short_circuit = true;
-            return undefined;
+            return { type: ValueType.undefined, value: undefined };
           }
 
           if (check_result.area) {
@@ -217,16 +218,15 @@ export class Calculator extends Graph {
 
             // return this.CalculateExpression(expression, undefined, true);
 
-            return expression;
+            // return expression;
+            return { type: ValueType.object, value: expression };
 
           }
 
-          return ValueError;
+          return ValueError();
 
         }).bind(this),
       },
-
-      */
 
       Indirect: {
         arguments: [
@@ -455,7 +455,7 @@ export class Calculator extends Graph {
           }
         }
         else {
-          const value_type = Cell.GetValueType(value);
+          const value_type = GetValueType(value);
           for (let c = area.start.column; c <= area.end.column; c++){
             for (let r = area.start.row; r <= area.end.row; r++){
               cells.data[r][c].SetCalculatedValue(value, value_type);
@@ -743,7 +743,7 @@ export class Calculator extends Graph {
   public CalculateExpression(
       expression: ExpressionUnit,
       address: ICellAddress = {row: -1, column: -1},
-      preserve_flags = false): any {
+      preserve_flags = false): UnionOrArray {
 
     return this.expression_calculator.Calculate(expression, address, preserve_flags).value; // dropping volatile flag
   }

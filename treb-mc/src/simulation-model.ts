@@ -1,6 +1,6 @@
 /* eslint-disable no-unexpected-multiline */
 
-import { ICellAddress, Cell, Area, UnionValue, ValueType } from 'treb-base-types';
+import { ICellAddress, Cell, Area, UnionValue, ValueType, GetValueType } from 'treb-base-types';
 import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
@@ -113,8 +113,6 @@ export class SimulationModel {
         category: ['RiskAMP Random Distributions'],
       },
 
-      /*
-
       'Multivariate.LogNormal': {
         description: 'Returns a sample from the multivariate log-normal distribution',
         simulation_volatile: true,
@@ -184,8 +182,6 @@ export class SimulationModel {
       },
 
       // basic distributions
-
-      */
 
       UniformRangeSample: {
         description: 'Returns one of a set of values, with equal probability and with replacement',
@@ -518,53 +514,68 @@ export class SimulationModel {
         category: ['RiskAMP Simulation Functions'],
       },
 
-      /*
-
       // some extra random functions, available because we have the matrix classes
 
       IsPosDef: {
         description: 'Checks that a matrix is positive-definite',
         arguments: [{ name: 'matrix' }],
-        fn: (mat: number[][]) => {
+        fn: (mat: number[][]): UnionOrArray => {
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
-          })) return ValueError;
+          })) return ValueError();
           const m = Matrix.FromArray(mat);
-          return m.IsPosDef();
+          return { type: ValueType.boolean, value: m.IsPosDef() };
         },
       },
 
       MakePosDef: {
         description: 'Returns a matrix that is positive-definite',
         arguments: [{ name: 'matrix' }],
-        fn: (mat: number[][]) => {
+        fn: (mat: number[][]): UnionOrArray => {
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
-          })) return ValueError;
-          const m = Matrix.FromArray(mat);
-          return m.MakePosDef().ToArray();
+          })) return ValueError();
+          const m = Matrix.FromArray(mat).MakePosDef().ToArray();
+
+          return m.map(row => row.map(value => {
+            return {
+              type: ValueType.number,
+              value,
+            };
+          }));
         }
       },
 
       Cholesky: {
         arguments: [{ name: 'matrix' }, { name: 'transpose', default: false }],
         fn: (mat: number[][], transpose = false) => {
-          return Matrix.FromArray(mat).Cholesky(transpose).ToArray();
+          const m = Matrix.FromArray(mat).Cholesky(transpose).ToArray();
+          return m.map(row => row.map(value => {
+            return {
+              type: ValueType.number,
+              value,
+            };
+          }));
         },
       },
 
       EigenValues: {
         description: 'Returns the eigenvalues of the matrix (as column vector)',
         arguments: [{ name: 'matrix' }],
-        fn: (mat: number[][]) => {
+        fn: (mat: number[][]): UnionOrArray => {
 
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
-          })) return ValueError;
+          })) return ValueError();
 
           const m = Matrix.FromArray(mat);
           const e = m.EigenSystem();
-          return e.realvalues;
+          return [e.realvalues.map(value => {
+            return {
+              type: ValueType.number,
+              value,
+            };
+          })];
         },
 
       },
@@ -572,15 +583,24 @@ export class SimulationModel {
       EigenVectors: {
         description: 'Returns the eigenvectors of the matrix (as matrix)',
         arguments: [{ name: 'matrix' }],
-        fn: (mat: number[][]) => {
+        fn: (mat: number[][]): UnionOrArray => {
 
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
-          })) return ValueError;
+          })) return ValueError();
 
           const m = Matrix.FromArray(mat);
           const e = m.EigenSystem();
-          return e.vectors;
+
+          return e.vectors.map(vector => {
+            return Array.from(vector).map(value => {
+              return {
+                type: ValueType.number,
+                value,
+              }
+            });
+          });
+
         },
 
       },
@@ -589,7 +609,7 @@ export class SimulationModel {
         description: 'Multiplies two matrices',
         arguments: [{ name: 'Matrix 1'}, { name: 'Matrix 2'}],
         fn: (a: number[][], b: number[][]) => {
-          if (!a || !b) return ArgumentError;
+          if (!a || !b) return ArgumentError();
 
           const a_cols = a.length || 0;
           const a_rows = a[0]?.length || 0;
@@ -598,7 +618,7 @@ export class SimulationModel {
           const b_rows = b[0]?.length || 0;
   
           if (!a_rows || !b_rows || !a_cols || !b_cols
-             || a_rows !== b_cols || a_cols !== b_rows) return ValueError;
+             || a_rows !== b_cols || a_cols !== b_rows) return ValueError();
   
           // this is backwards. why? because the arrays passed in 
           // are column-major. instead of calling transpose three times
@@ -607,7 +627,13 @@ export class SimulationModel {
           const ma = Matrix.FromArray(a);
           const mb = Matrix.FromArray(b);
 
-          return mb.Multiply(ma).ToArray();
+          const m = mb.Multiply(ma).ToArray();
+          return m.map(row => row.map(value => {
+            return {
+              type: ValueType.number,
+              value,
+            };
+          }));
 
         }  
       },
@@ -619,11 +645,18 @@ export class SimulationModel {
 
           try {
             const mat = Matrix.FromArray(a).Transpose();
-            return mat.Inverse().ToArray(true);
+            const m = mat.Inverse().ToArray(true);
+            return m.map(row => row.map(value => {
+              return {
+                type: ValueType.number,
+                value,
+              };
+            }));
+
           }
           catch (err) {
             console.warn(err);
-            return ValueError;
+            return ValueError();
           }
 
         }
@@ -643,14 +676,12 @@ export class SimulationModel {
         fn: this.HistogramTable.bind(this),
       }
 
-      */
-
 
     };
 
   }
 
-  public CorrelateDistributions() {
+  public CorrelateDistributions(): void {
 
     for (const key of Object.keys(this.correlated_distributions)) {
 
@@ -676,7 +707,7 @@ export class SimulationModel {
    * creates space in the distributions array for this cell. each cell
    * might have multiple distributions, so the value is an array.
    */
-  public InitDistribution() {
+  public InitDistribution(): void {
 
     if (!this.address) throw (new Error('invalid address'));
     if (!this.address.sheet_id) throw (new Error('address missing sheet ID'));
@@ -699,12 +730,14 @@ export class SimulationModel {
     // if (!cell) cell = []; // ?? this is local... not sure what it's expected to do
   }
 
-  public StoreCellResults(address?: ICellAddress) {
+  public StoreCellResults(address?: ICellAddress): Float64Array|number[]|undefined {
 
     // this is equivalent to "add shared rs"
     if (!address) address = this.address;
 
-    if (!address) return null;
+    if (!address) {
+      return undefined;
+    }
 
     if (!address.sheet_id) { throw new Error('SCR called without sheet id'); }
 
@@ -724,11 +757,7 @@ export class SimulationModel {
 
   // --- multivariate distributions --------------------------------------------
 
-  public PrepMultivariate(range_of_values: any, correlation_matrix: number[][]) {
-
-    // if (range_of_values.area) range_of_values = range_of_values.area.spreadsheet_label;
-
-    // console.info("CMX", JSON.stringify(correlation_matrix, undefined, 2));
+  public PrepMultivariate(range_of_values: string, correlation_matrix: number[][]): void {
 
     if (!this.correlated_distributions[range_of_values]) {
 
@@ -763,7 +792,7 @@ export class SimulationModel {
     this.InitDistribution();
   }
 
-  public ValidateCorrelationMatrix(correlation_matrix: number[][]) {
+  public ValidateCorrelationMatrix(correlation_matrix: number[][]): boolean {
 
     let correlation = Matrix.FromArray(correlation_matrix);
     if (!correlation.IsSymmetric()) {
@@ -778,7 +807,7 @@ export class SimulationModel {
     return true;
   }
 
-  public multivariate_normal(range_of_values: any, correlation_matrix: number[][], mean = 0, sd = 1): UnionValue {
+  public multivariate_normal(range_of_values: string, correlation_matrix: number[][], mean = 0, sd = 1): UnionValue {
 
     // this test (and all the other ones) is in the wrong order
 
@@ -796,7 +825,7 @@ export class SimulationModel {
     return { type: ValueType.number, value: MC.Normal(1, { mean, sd })[0] };
   }
 
-  public multivariate_lognormal(range_of_values: any, correlation_matrix: number[][], mean = 0, sd = 1) {
+  public multivariate_lognormal(range_of_values: string, correlation_matrix: number[][], mean = 0, sd = 1): UnionValue  {
 
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
@@ -804,44 +833,44 @@ export class SimulationModel {
         MC.LogNormal(this.iterations, { mean, sd, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return { type: ValueType.number, value: this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration] };
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
 
-    return MC.LogNormal(1, { mean, sd })[0];
+    return { type: ValueType.number, value: MC.LogNormal(1, { mean, sd })[0] };
   }
 
-  public multivariate_beta(range_of_values: any, correlation_matrix: number[][], a = 1, b = 2) {
+  public multivariate_beta(range_of_values: string, correlation_matrix: number[][], a = 1, b = 2): UnionValue  {
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
       this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Beta(this.iterations, { a, b, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return { type: ValueType.number, value: this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration] };
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
-    return MC.Beta(1, { a, b })[0];
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
+    return { type: ValueType.number, value: MC.Beta(1, { a, b })[0] };
   }
 
-  public multivariate_uniform(range_of_values: any, correlation_matrix: number[][], min = 0, max = 1) {
+  public multivariate_uniform(range_of_values: string, correlation_matrix: number[][], min = 0, max = 1): UnionValue  {
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
       this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
         MC.Uniform(this.iterations, { min, max, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return { type: ValueType.number, value: this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration] };
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
-    return MC.Uniform(1, { min, max })[0];
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
+    return { type: ValueType.number, value: MC.Uniform(1, { min, max })[0] };
   }
 
-  public multivariate_pert(range_of_values: any,
-    correlation_matrix: number[][], min = 0, mode = 0.5, max = 1, lambda = 4) {
+  public multivariate_pert(range_of_values: string,
+    correlation_matrix: number[][], min = 0, mode = 0.5, max = 1, lambda = 4): UnionValue  {
 
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
@@ -849,15 +878,15 @@ export class SimulationModel {
         MC.PERT(this.iterations, { a: min, b: max, c: mode, lambda, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return { type: ValueType.number, value: this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration] };
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
-    return MC.PERT(1, { a: min, b: max, c: mode, lambda })[0];
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
+    return { type: ValueType.number, value: MC.PERT(1, { a: min, b: max, c: mode, lambda })[0] };
   }
 
-  public multivariate_triangular(range_of_values: any,
-    correlation_matrix: number[][], min = 0, mode = 0.5, max = 1) {
+  public multivariate_triangular(range_of_values: string,
+    correlation_matrix: number[][], min = 0, mode = 0.5, max = 1): UnionValue  {
 
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
@@ -865,11 +894,11 @@ export class SimulationModel {
         MC.Triangular(this.iterations, { a: min, b: max, c: mode, lhs: this.lhs, ordered: true });
     }
     else if (this.state === SimulationState.Simulation) {
-      return this.distributions[this.address.sheet_id || 0]
-        [this.address.column][this.address.row][this.call_index][this.iteration];
+      return { type: ValueType.number, value: this.distributions[this.address.sheet_id || 0]
+        [this.address.column][this.address.row][this.call_index][this.iteration] };
     }
-    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError; }
-    return MC.Triangular(1, { a: min, b: max, c: mode })[0];
+    if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
+    return { type: ValueType.number, value: MC.Triangular(1, { a: min, b: max, c: mode })[0] };
   }
 
   // --- univariate distributions ----------------------------------------------
@@ -1195,7 +1224,7 @@ export class SimulationModel {
     // FIXME: what should undefined look like?
     return {
       value,
-      type: Cell.GetValueType(value),
+      type: GetValueType(value),
     };
 
   }
@@ -1479,14 +1508,14 @@ export class SimulationModel {
       return DataError();
     }
 
-    const copy = data.filter((element: any) => typeof element === 'number' ? element : 0);
+    const copy = data.filter((element: number) => typeof element === 'number' ? element : 0); // when would this happen? 
     copy.sort((a: number, b: number) => a - b);
 
     return {type: ValueType.number, value: copy[Math.round(copy.length / 2)]};
 
   }
 
-  public Scale(min: number, max: number) {
+  public Scale(min: number, max: number): UnionOrArray {
 
     let rows = 1, columns = 1;
 
@@ -1503,7 +1532,7 @@ export class SimulationModel {
       }
     }
 
-    if (!cell) { return ArgumentError; }
+    if (!cell) { return ArgumentError(); }
 
     if (cell.area) {
       const area = new Area(cell.area.start, cell.area.end);
@@ -1518,7 +1547,8 @@ export class SimulationModel {
 
     let base = scale.min;
 
-    const result: Array<number|undefined>[] = [[]];
+    // const result: Array<number|undefined>[] = [[]];
+    const result: UnionValue[][] = [[]];
 
     if (scale.count < length - 1) {
       base = scale.min - (Math.floor((length - 1 - scale.count) / 2)) * scale.step;
@@ -1527,21 +1557,21 @@ export class SimulationModel {
     if (min > max) {
       for (let i = 0; i < length; i++) {
         const bucket = base + i * scale.step;
-        result[0][length - 1 - i] = bucket;
+        result[0][length - 1 - i] = { type: ValueType.number, value: bucket };
       }
     }
     else {
       for (let i = 0; i < length; i++) {
         const bucket = base + i * scale.step;
-        result[0][i] = bucket;
+        result[0][i] = { type: ValueType.number, value: bucket };
       }
     }
 
-    return rows < columns ? Utils.TransposeArray(result) : result;
+    return rows < columns ? Utils.Transpose2(result) : result;
 
   }
 
-  public HistogramTable(reference: any) {
+  public HistogramTable(reference: any): UnionOrArray {
 
     let rows = 1, columns = 1;
 
@@ -1564,7 +1594,7 @@ export class SimulationModel {
       }
     }
 
-    if (!cell) { return ArgumentError; }
+    if (!cell) { return ArgumentError(); }
 
     if (cell.area) {
       const area = new Area(cell.area.start, cell.area.end);
@@ -1578,7 +1608,10 @@ export class SimulationModel {
     if (Array.isArray(reference) || reference instanceof Float64Array || reference instanceof Float32Array) {
 
       if (reference.length <= 1) {
-        return 0; // ??
+        return {
+          type: ValueType.number,
+          value: 0,
+        }; // ??
       }
 
       if (!Array.isArray(reference)) {
@@ -1592,15 +1625,17 @@ export class SimulationModel {
 
       if (max === min) {
         // ...
-        return 0;
+        return {
+          type: ValueType.number,
+          value: 0,
+        };
       }
      
-      let result: number[][] = [[], []];
+      let result: UnionValue[][] = [[], []];
 
       const scale = CreateScale(min, max, length, true);
   
       let base = scale.min;
-      let last = base;
       let index = 0;
 
       if (scale.count < length) {
@@ -1614,19 +1649,31 @@ export class SimulationModel {
         let count = 0;
         for (; index < reference.length && reference[index] < bucket; index++, count++) { /* */ }
 
-        result[1][i] = count; // (this.trials || 0);
-        result[0][i] = last = bucket;
+        result[1][i] = {
+          type: ValueType.number,
+          value: count,
+        }; // (this.trials || 0);
+        
+        result[0][i] = {
+          type: ValueType.number,
+          value: bucket,
+        };
+
       }
 
       if (depth === 1 ){
         result = [result[1]];
       }
 
-      return (columns > rows) ? Utils.TransposeArray(result) : result;
+      return (columns > rows) ? Utils.Transpose2(result) : result;
 
     }
 
-    return 0;
+    return {
+      type: ValueType.number,
+      value: 0,
+    };
+
   }
 
 }

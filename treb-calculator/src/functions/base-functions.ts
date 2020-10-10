@@ -2,7 +2,7 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, ValueError, ArgumentError, DivideByZeroError } from '../function-error';
-import { Cell, ClickFunctionOptions, ClickFunctionResult, UnionIs, UnionValue, ValueType } from 'treb-base-types';
+import { Box, Cell, ClickFunctionOptions, ClickFunctionResult, UnionIs, UnionValue, ValueType, GetValueType } from 'treb-base-types';
 import { Sparkline, SparklineRenderOptions } from 'treb-sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -45,13 +45,6 @@ const erf = (x: number): number => {
   const t = 1 / (1 + p * x);
   return 1 - ((((((a5 * t + a4) * t) + a3) * t + a2) * t) + a1) * t * Math.exp(-1 * x * x);
 
-};
-
-/** shortcut, although this is wasteful */
-const Box = (value: unknown): UnionValue => { 
-  return {
-    value, type: Cell.GetValueType(value),
-  }
 };
 
 const UnionTrue = { type: ValueType.boolean, value: true };
@@ -127,7 +120,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     arguments: [{ name: 'original value', allow_error: true, boxed: true }, { name: 'alternate value' }],
     fn: (ref: UnionValue, value_if_error: unknown = 0): UnionValue => {
       if (ref && ref.type === ValueType.error) {
-        return { value: value_if_error, type: Cell.GetValueType(value_if_error) };
+        return { value: value_if_error, type: GetValueType(value_if_error) };
       }
       return ref;
     },
@@ -346,7 +339,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           args.sort(); // lexical
         }
 
-        return [args.map(value => { return { value, type: Cell.GetValueType(value) }})];
+        return [args.map(value => { return { value, type: GetValueType(value) }})];
 
       },
     },

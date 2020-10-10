@@ -4,7 +4,7 @@
 import { Area, IArea } from './area';
 import { Style } from './style';
 import { TextPart } from './text_part';
-import { ValueType } from './value-type';
+import { ValueType, GetValueType } from './value-type';
 
 import { CellValue, UnionValue } from './union';
 
@@ -159,6 +159,7 @@ export class Cell {
   }
   */
 
+  /*
   public static GetValueType(value: unknown): ValueType {
 
     switch (typeof value){
@@ -189,6 +190,7 @@ export class Cell {
 
     }
   }
+  */
 
   // --- class fields ---------------------------------------------------------
 
@@ -318,7 +320,7 @@ export class Cell {
     this.render_dirty = true;
   }
 
-  public Set(value: CellValue, type = Cell.GetValueType(value)): void {
+  public Set(value: CellValue, type = GetValueType(value)): void {
     this.value = value;
     this.type = type;
     this.formatted =
@@ -333,7 +335,7 @@ export class Cell {
   }
 
   /** sets calculated value and flushes cached value */
-  public SetCalculatedValue(value: CellValue, type = Cell.GetValueType(value)): void {
+  public SetCalculatedValue(value: CellValue, type = GetValueType(value)): void {
     if (this.calculated === value) return;
     this.calculated = value;
     this.calculated_type = type;
@@ -351,7 +353,7 @@ export class Cell {
         value = value.error;
       }
       else {
-        type = Cell.GetValueType(value);
+        type = GetValueType(value);
       }
     }
     if (this.calculated === value) return;
@@ -481,7 +483,7 @@ export class Cell {
   }
 
   public SetArrayHead(area: Area, value: CellValue){
-    this.type = Cell.GetValueType(value);
+    this.type = GetValueType(value);
     this.value = value;
     this.formatted =
       this.rendered_type =

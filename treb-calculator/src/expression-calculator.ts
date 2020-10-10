@@ -1,6 +1,7 @@
 
 import { FunctionLibrary } from './function-library';
-import { Cell, Cells, ICellAddress, ValueType, Area, UnionValue, CellValue, UndefinedUnion } from 'treb-base-types';
+import { Cell, Cells, ICellAddress, ValueType, GetValueType,
+         Area, UnionValue, CellValue, UndefinedUnion } from 'treb-base-types';
 import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
 import { DataModel } from 'treb-grid';
@@ -568,7 +569,7 @@ export class ExpressionCalculator {
     default:
       return () => {
         console.warn('unexpected unary operator:', x.operator);
-        return { type: ValueType.error, value: ExpressionError.error } // ExpressionError;
+        return ExpressionError();
       };
     }
 
@@ -646,11 +647,7 @@ export class ExpressionCalculator {
     if (!fn) {
       return () => { // expr: UnitBinary) => {
         console.info(`(unexpected binary operator: ${x.operator})`);
-        // return ExpressionError;
-        return {
-          value: ExpressionError.error, // FIXME
-          type: ValueType.error,
-        }
+        return ExpressionError();
       };
     }
     else {
@@ -755,9 +752,7 @@ export class ExpressionCalculator {
 
     if (!x.elements || x.elements.length !== 1){
       console.warn( `Can't handle group !== 1` );
-      return () => {
-        return { type: ValueType.error, value: ExpressionError.error };
-      };
+      return () => ExpressionError();
     }
     return (expr: UnitGroup) => this.CalculateExpression(expr.elements[0] as ExtendedExpressionUnit);
   }
@@ -799,7 +794,7 @@ export class ExpressionCalculator {
 
     case 'literal':
       {
-        const literal = { value: expr.value, type: Cell.GetValueType(expr.value) };
+        const literal = { value: expr.value, type: GetValueType(expr.value) };
         return (expr.user_data = () => literal)();  // check
       }
     case 'group':
@@ -807,8 +802,8 @@ export class ExpressionCalculator {
 
     case 'array':
       {
-        return (expr.user_data = () => expr.values.map(row => row.map(value => {
-          return { value, type: Cell.GetValueType(value) }
+        return (expr.user_data = () => expr.values.map(row => (Array.isArray(row) ? row : [row]).map(value => {
+          return { value, type: GetValueType(value) }
         })))(); // check
       }
 

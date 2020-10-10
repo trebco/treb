@@ -31,3 +31,34 @@ export enum ValueType {
   error = 6,
 
 }
+
+export const GetValueType = (value: unknown): ValueType => {
+
+  switch (typeof value){
+    
+    case 'undefined':
+      return ValueType.undefined;
+
+    case 'number':
+      return ValueType.number;
+
+    case 'boolean':
+      return ValueType.boolean;
+
+    case 'object':
+      if (value === null) {
+        return ValueType.undefined;
+      }
+      return ValueType.object;
+
+    case 'string':
+      if (value[0] === '=') {
+        return ValueType.formula;
+      }
+      return ValueType.string;
+
+    default: // function or symbol
+      return ValueType.error;
+
+  }
+}

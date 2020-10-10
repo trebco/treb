@@ -1,6 +1,6 @@
 
 import { SpreadsheetVertexBase, GraphImpl } from './spreadsheet_vertex_base';
-import { Cell, CellValue, ICellAddress, UnionValue, ValueType } from 'treb-base-types';
+import { Cell, CellValue, ICellAddress, UnionValue, ValueType, GetValueType } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 
@@ -69,7 +69,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
       const value = this.reference.GetValue();
       this.result = {
         value,
-        type: Cell.GetValueType(value),
+        type: GetValueType(value),
       };
     }
   }

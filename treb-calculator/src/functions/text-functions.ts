@@ -6,13 +6,12 @@ import * as Utils from '../utilities';
 
 export const TextFunctionLibrary: FunctionMap = {
 
-  /*
   Char: {
     arguments: [{
       name: 'number',
     }],
-    fn: (num: number) => {
-      return String.fromCodePoint(num);
+    fn: (num: number): UnionValue => {
+      return { type: ValueType.string, value: String.fromCodePoint(num||32) };
     },
     category: ['text'],
   },
@@ -21,8 +20,8 @@ export const TextFunctionLibrary: FunctionMap = {
     arguments: [{
       name: 'string',
     }],
-    fn: (str: string) => {
-      return str.codePointAt(0);
+    fn: (str: string): UnionValue => {
+      return { type: ValueType.number, value: str.codePointAt(0) };
     },
     category: ['text'],
   },
@@ -32,11 +31,8 @@ export const TextFunctionLibrary: FunctionMap = {
       { name: 'value' },
       { name: 'number format' },
     ],
-    fn: (value: number, format?: string) => {
-      if (!format || typeof format !== 'string') {
-        format = '0.00####';
-      }
-      return NumberFormatCache.Get(format).Format(value || 0);
+    fn: (value: number, format = '0.00####'): UnionValue => {
+      return { type: ValueType.string, value: NumberFormatCache.Get(format).Format(value || 0) };
     },
     category: ['text'],
   },
@@ -46,11 +42,36 @@ export const TextFunctionLibrary: FunctionMap = {
       { name: 'string' },
       { name: 'count' },
     ],
-    fn: (str: string, count: number) => {
-      return str.substr(0, count);
+    fn: (str: string, count = 1): UnionValue => {
+      return { type: ValueType.string, value: str.substr(0, count) };
     },
     category: ['text'],
   },
+
+  Right: {
+    arguments: [
+      { name: 'string' },
+      { name: 'count' },
+    ],
+    fn: (str: string, count = 1): UnionValue => {
+      return { type: ValueType.string, value: str.slice(-count) };
+    },
+    category: ['text'],
+  },
+
+  Mid: {
+    arguments: [
+      { name: 'string' },
+      { name: 'left' },
+      { name: 'count' },
+    ],
+    fn: (str: string, left = 0, count = 1): UnionValue => {
+      return { type: ValueType.string, value: str.substr(Math.max(0, left - 1), count) };
+    },
+    category: ['text'],
+  },
+
+/*
 
   Concatenate: {
     description: 'Pastes strings together',

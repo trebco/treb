@@ -811,7 +811,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * use sheet names when referring to cells, to avoid ambiguity, but relative
    * cells will always be the active, or front, sheet.
    */
-  public Evaluate(expression: string): string|number|boolean|undefined {
+  public Evaluate(expression: string) {
 
     const parse_result = this.parser.Parse(expression);
     if (parse_result &&
@@ -828,7 +828,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       });
 
       const result = this.calculator.CalculateExpression(parse_result.expression);
-      return result;
+
+      if (Array.isArray(result)) {
+        return result.map(row => row.map(value => value.value));
+      }
+      else {
+        return result.value;
+      }
 
     }
 
@@ -2085,7 +2091,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
                 const expr_name = parse_result.expression.name.toLowerCase();
                 const result = this.calculator.CalculateExpression(parse_result.expression);
 
-                chart.Exec(expr_name, result);
+                chart.Exec(expr_name, result as any);
 
               }
             }

@@ -18,13 +18,17 @@ export interface FunctionError {
 
 // export const ArgumentError: FunctionError = { error: ErrorType.Argument };
 // export const ReferenceError: FunctionError = { error: ErrorType.Reference };
-export const ExpressionError: FunctionError = { error: ErrorType.Expression };
+//export const ExpressionError: FunctionError = { error: ErrorType.Expression };
 // export const NameError: FunctionError = { error: ErrorType.Name };
 // export const ValueError: FunctionError = { error: ErrorType.Value };
 // export const DataError: FunctionError = { error: ErrorType.Data };
 // export const DivideByZeroError: FunctionError = { error: ErrorType.Div0 };
 // export const UnknownError: FunctionError = { error: ErrorType.Unknown };
 export const NotImplError: FunctionError = { error: ErrorType.NotImpl };
+
+export const ExpressionError = (): UnionValue => {
+  return { type: ValueType.error, value: ErrorType.Expression };
+}
 
 export const DataError = (): UnionValue => {
   return { type: ValueType.error, value: ErrorType.Data };
