@@ -7,7 +7,7 @@ import { BarData, CellData, ChartData, DonutSlice, LegendLayout, LegendPosition,
 import { DecoratedArray } from './chart-functions';
 
 import { RangeScale } from 'treb-utils';
-import { UnionValue, ValueType } from 'treb-base-types/src';
+import { UnionIs, UnionValue, ValueType } from 'treb-base-types/src';
 
 // require('../style/charts.scss');
 require('../style/charts.pcss');
@@ -104,12 +104,23 @@ export class Chart {
     const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
     const common = this.CommonData(series);
 
+    // console.info("CC", series, common);
+
     let category_labels: string[] | undefined;
 
     if (args[1]) {
       const values = Util.Flatten(args[1]);
-      category_labels = values.map(cell => {
+      category_labels = values.map((cell) => {
         if (!cell) { return ''; }
+
+        if (cell.type === ValueType.object && cell.value.type === 'metadata') {
+          if (typeof cell.value.value === 'number') {
+            const format = NumberFormatCache.Get(cell.value.format || DEFAULT_FORMAT);
+            return format.Format(cell.value.value);
+          }
+          return cell.value.value;
+        }
+        
         if (typeof cell.value === 'number') {
           const format = NumberFormatCache.Get(cell.format || DEFAULT_FORMAT);
           return format.Format(cell.value);
@@ -160,6 +171,12 @@ export class Chart {
     if (data[0]) {
       
       const flat = Util.Flatten(data[0]);
+
+      // this could be a string, if it's a literal, or metadata 
+      // [why would we want metadata?]
+      //
+      // OK, check that, should be a string (or other literal)
+      
       if (typeof flat[0] === 'object') {
         series.label = flat[0]?.value?.toString() || '';
       }
@@ -257,7 +274,7 @@ export class Chart {
    * FIXME: consider supporting GROUP(SERIES, [y], ...)
    * 
    */
-  public TransformSeriesData(raw_data: any, default_x?: Array<number|undefined>): SeriesType[] {
+  public TransformSeriesData(raw_data: any, default_x?: UnionValue[]): SeriesType[] {
 
     const list: SeriesType[] = [];
     
@@ -296,10 +313,28 @@ export class Chart {
 
     // if we have a default, use that (and range it)
 
-    if (default_x) {
-      const filtered = default_x.filter(x => x || x === 0) as number[];
+    if (default_x && Array.isArray(default_x)) {
+
+      default_x = Util.Flatten(default_x);
+      let format = '0.00###';
+
+      if (default_x[0] && UnionIs.Extended(default_x[0])) {
+        format = default_x[0].value.format;
+      }
+
+      const data = default_x.map(x => {
+          if (UnionIs.Number(x)) { return x.value; }
+          if (UnionIs.Extended(x)) {
+            return x.value.value;
+          }
+          return undefined;
+        }) as Array<number|undefined>;
+  
+      const filtered = data.filter(x => typeof x === 'number') as number[];
+
       baseline_x = {
-        data: default_x,
+        data,
+        format,
         range: {
           min: Math.min.apply(0, filtered),
           max: Math.max.apply(0, filtered),
@@ -341,7 +376,7 @@ export class Chart {
   }
 
   /** get a unified scale, and formats */
-  public CommonData(series: SeriesType[]) {
+  public CommonData(series: SeriesType[], y_floor?: number, y_ceiling?: number) {
 
     let x_format = '';
     let y_format = '';
@@ -361,8 +396,15 @@ export class Chart {
     const x_max = Math.max.apply(0, x.map(test => test.x.range?.max || 0));
 
     const y = series.filter(test => test.y.range);
-    const y_min = Math.min.apply(0, x.map(test => test.y.range?.min || 0));
-    const y_max = Math.max.apply(0, x.map(test => test.y.range?.max || 0));
+    let y_min = Math.min.apply(0, x.map(test => test.y.range?.min || 0));
+    let y_max = Math.max.apply(0, x.map(test => test.y.range?.max || 0));
+
+    if (typeof y_floor !== 'undefined') {
+      y_min = Math.min(y_min, y_floor);
+    }
+    if (typeof y_ceiling !== 'undefined') {
+      y_max = Math.max(y_max, y_ceiling);
+    }
 
     const x_scale = Util.Scale(x_min, x_max, 7);
     const y_scale = Util.Scale(y_min, y_max, 7);
@@ -456,109 +498,37 @@ export class Chart {
    */
   public CreateLineChart(args: any[], type: 'line'|'area') { // |'bar'|'column') {
 
-    const title = args[2] || '';
-    const raw_data = args[0];
+  console.info("A1", args[1]);
 
-    // we're now expecting this to be metadata (including value).
-    // so we need to unpack. could be an array... could be deep...
-    const flat = Util.Flatten(raw_data);
+    const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0], args[1]) : [];
+    const common = this.CommonData(series, 0, 0);
 
-    // we still need the aggregate for range, scale
-    const data = flat.map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
-
-    // but now we're potentially splitting into series
-    let series: NumberOrUndefinedArray[];
-
-    if (Array.isArray(raw_data) && ((raw_data as any)._type === 'series' || (raw_data as any)._type === 'group')) {
-      series = raw_data.map(entry => {
-        return Util.Flatten(entry).map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
-      });
-    }
-    else {
-      series = [data];
-    }
-
-    /*
-    // we still need the aggregate for range, scale
-    const data = Util.Flatten(raw_data).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
-
-    // but now we're potentially splitting into series
-    let series: NumberOrUndefinedArray[];
-
-    if (Array.isArray(raw_data) && (raw_data as any)._type === 'series') {
-      series = raw_data.map(entry => {
-        return Util.Flatten(entry).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
-      });
-    }
-    else {
-      series = [data];
-    }
-    */
-
-    const range = Util.Range(data);
-
-    // FIXME: optionally force 0 min
-    if (range.min) {
-      range.min = Math.min(0, range.min);
-    }
-
-    const scale = Util.Scale(range.min || 0, range.max || 0, 7);
-    const format_pattern = (flat.length && flat[0].format) ? flat[0].format : '';
-    const y_format = NumberFormatCache.Get(format_pattern || DEFAULT_FORMAT);
-    const y_labels: string[] = [];
-
-    for (let i = 0; i <= scale.count; i++) {
-      y_labels.push(y_format.Format(scale.min + i * scale.step));
-    }
-
-    let x_labels: string[] | undefined;
-    let x_scale: RangeScale | undefined;
-
-    if (args[1]) {
-      const values = Util.Flatten(args[1]);
-      x_labels = values.map(cell => {
-        if (!cell) { return ''; }
-        if (typeof cell.value === 'number') {
-          const format = NumberFormatCache.Get(cell.format || DEFAULT_FORMAT);
-          return format.Format(cell.value);
-        }
-        return cell.value;
-      });
-    }
-    else {
-      const count = Math.max.apply(0, series.map(data => data.length));
-      x_scale = Util.Scale(0, count, 7);
-    }
-
-    // const titles = x_labels ? x_labels.map((x_label, i) => `${x_label} : ${y_format.Format(data[i])}`) : undefined;
-    const titles = undefined;
-
-    let callouts: {values: number[]; labels: string[]} | undefined;
-
-    /*
-    const callout_data = args[5];
-    if (callout_data && Array.isArray(callout_data)) {
-      callouts = {
-        values: callout_data[0],
-        labels: callout_data[1] || callout_data[0].map((x: number) => x.toString()),
-      };
-    }
-    */
-
-    const smooth = (args[4] === 'smooth');
+    const title = args[2]?.toString() || undefined;
+    const options = args[3]?.toString() || undefined;
 
     this.chart_data = {
-      type,
-      series,
-      scale,
-      title,
-      y_labels,
-      x_labels,
-      x_scale,
-      callouts,
-      titles,
-      smooth,
+      legend: common.legend,
+      // style: type, // 'line',
+      type: 'scatter2', 
+      series, // : [{x, y}],
+      title, 
+
+      x_scale: common.x.scale, 
+      x_labels: common.x.labels, 
+
+      y_scale: common.y.scale,
+      y_labels: common.y.labels,
+
+      lines: true,
+      filled: type === 'area',
+
     };
+
+    if (options) {
+      // this.chart_data.markers = /marker/i.test(options);
+      this.chart_data.smooth = /smooth/i.test(options);
+      // this.chart_data.data_labels = /labels/i.test(options);
+    }
 
   }
 
@@ -696,22 +666,26 @@ export class Chart {
 
     // validate first 2 args
 
-    if (!this.IsCellData(args[0])) {
-      console.warn('invalid args [0]');
+    const union = [
+      args[0] as UnionValue,
+      args[1] as UnionValue,
+    ];
+    
+    if (!union[0] || union[0].type !== ValueType.object || !this.IsCellData(union[0].value)) {
+      console.warn('invalid args [0]', args);
       this.Clear();
       return;
     }
-
-    if (!this.IsCellData(args[1])) {
-      console.warn('invalid args [1]');
+    if (!union[1] || union[1].type !== ValueType.object || !this.IsCellData(union[1].value)) {
+      console.warn('invalid args [1]', args);
       this.Clear();
       return;
     }
 
     const title = args[2] || '';
 
-    const A: CellData = args[0];
-    const B: CellData = args[1];
+    const A: CellData = union[0].value;
+    const B: CellData = union[1].value;
 
     let x = (A.simulation_data || []).slice(0);
     let y = (B.simulation_data || []).slice(0);
@@ -996,7 +970,7 @@ export class Chart {
         }
 
         // render
-        this.renderer.RenderXAxis(area, (this.chart_data.type !== 'line' && this.chart_data.type !== 'bar' && this.chart_data.type !== 'scatter2'),
+        this.renderer.RenderXAxis(area, (this.chart_data.type !== 'line' && this.chart_data.type !== 'area' && this.chart_data.type !== 'bar' && this.chart_data.type !== 'scatter2'),
           this.chart_data.x_labels, x_metrics, ['axis-label', 'x-axis-label']);
 
         // update bottom (either we unwound for labels, or we need to do it the first time)
@@ -1029,6 +1003,7 @@ export class Chart {
             this.chart_data.x_scale, 
             this.chart_data.y_scale, 
               !!this.chart_data.lines,
+              !!this.chart_data.filled,
               !!this.chart_data.markers,
               !!this.chart_data.smooth,
               `scatter-plot series-${i + 1}`);
@@ -1071,13 +1046,15 @@ export class Chart {
             this.chart_data.x_scale.max :
             Math.max.apply(0, this.chart_data.series.map(x => x.length));
 
+          console.info("points", points, 'this.chart_data.x_scale.count', this.chart_data.x_scale?.count)
+
           const func = this.chart_data.smooth ?
             this.renderer.RenderSmoothLine : this.renderer.RenderLine;
 
           // gridlines
           this.renderer.RenderGrid(area, 
             this.chart_data.scale.count, 
-            this.chart_data.x_scale ? this.chart_data.x_scale.count : points, 
+            this.chart_data.x_scale ? this.chart_data.x_scale.count + 1 : points, 
             'chart-grid');
 
           // series

@@ -27,6 +27,18 @@ export const Scale = (min: number, max: number, count = 6.5, limit_count = false
       min--;
     }
   }
+  else {
+    
+    // let's fix this specific problem, where you get accumulated fp errors. round to 5 places...
+
+    // const tmp_range = max - min;
+    const rounded = Math.round(max * 100000) / 100000;
+
+    if (Math.abs(rounded - max) / (max - min) < 1e-5) {
+      max = rounded;
+    }
+    
+  }
 
   const range = max - min;
 

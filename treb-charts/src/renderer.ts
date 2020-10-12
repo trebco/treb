@@ -1069,8 +1069,12 @@ export class ChartRenderer {
   /**
    * NOTE: we are munging the point list here, so don't use it after
    * calling this function or pass in a temp copy
+   * 
+   * OK so that was rude, we will not munge the list
    */
-  public CatmullRomChain(points: Point[], n = 30): Point[] {
+  public CatmullRomChain(original: Point[], n = 30): Point[] {
+
+    const points = original.slice(0);
 
     const result: Point[] = [];
     const len = points.length;
@@ -1179,6 +1183,7 @@ export class ChartRenderer {
     x_scale: RangeScale,
     y_scale: RangeScale,
     lines = true,
+    filled = false,
     markers = false,
     smooth = false,
     classes?: string | string[]): void {
@@ -1193,6 +1198,7 @@ export class ChartRenderer {
     const points: Array<Point | undefined> = [];
 
     const d: string[] = [];
+    const areas: string[] = [];
 
     /*
     const group = document.createElementNS(SVGNS, 'g');
@@ -1244,209 +1250,55 @@ export class ChartRenderer {
 
     if (lines) {
 
-      if (smooth) {
-
         // we need to split into segments in the event of missing data
 
         let segment: Point[] = [];
-        const render_segment = () => {
+        const render_segment = smooth ? () => {
 
           // segments < 3 should be straight lines (or points)
           if (segment.length === 2) {
-            d.push(`M${segment[0].x},${segment[0].y} L${segment[1].x},${segment[1].y}`);
+            return `${segment[0].x},${segment[0].y} L${segment[1].x},${segment[1].y}`;
           }
           else if (segment.length > 2) {
             const curve = this.CatmullRomChain(segment);
-            d.push('M' + curve.map(point => `${point.x},${point.y}`).join(' L'));
+            return curve.map(point => `${point.x},${point.y}`).join(' L');
           }
+          return '';
 
+        } : () => {
+          return segment.map(point => `${point.x},${point.y}`).join(' L');
         };
 
         for (const point of points) {
           if (!point) {
-            render_segment();
+            if (segment.length >= 2) {
+              const line = render_segment();
+              d.push('M' + line);
+              areas.push(`M${segment[0].x},${area.bottom}L` + line + `L${segment[segment.length - 1].x},${area.bottom}Z`);
+            }
             segment = [];
           }
           else {
             segment.push(point);
           }
         }
-        // render?
-        if (segment.length) {
-          render_segment();
+ 
+        if (segment.length >= 2) {
+          const line = render_segment();
+          d.push('M' + line);
+          areas.push(`M${segment[0].x},${area.bottom}L` + line + `L${segment[segment.length - 1].x},${area.bottom}Z`);
         }
-
-        /*
-
-        // trailing point
-        let last_point: Point | undefined;
-
-        // trailing line for curve angle
-        let last_line: { a: Point, b: Point } | undefined;
-
-        for (let i = 0; i < points.length; i++) {
-
-          const point = points[i];
-
-          // leading point
-          let next_point = points[i + 1];
-
-          if (point) {
-            // const [a, b] = point;
-            let drawn = false;
-
-            if (last_point) {
-
-              const line1 = {
-                a: last_point, // { x: last_point[0], y: last_point[1] },
-                b: point, // { x: point[0], y: point[1] },
-              };
-              const p1 = this.LineProperties(line1.a, line1.b);
-
-              if (!next_point && last_line) {
-
-                const px1 = this.LineProperties(last_line.a, last_line.b);
-                const angle = p1.angle;
-                const split = (angle * 3 - px1.angle) / 2;
-
-                next_point = {
-                  x: point.x + Math.cos(split) * 25,
-                  y: point.y + Math.sin(split) * 25,
-                };
-
-              }
-
-              if (next_point) {
-
-                const line2 = {
-                  a: point, // { x: point[0], y: point[1] },
-                  b: next_point, // { x: next_point[0], y: next_point[1] },
-                };
-
-                const p2 = this.LineProperties(line2.a, line2.b);
-
-                const angle = (p1.angle + p2.angle) / 2;
-
-                const a1 = Math.cos(angle) * 10 + point.x;
-                const b1 = Math.sin(angle) * 10 + point.y;
-
-                const this_line = { a: point, b: { x: a1, y: b1 } };
-                const this_props = this.LineProperties(this_line.a, this_line.b);
-
-                if (!last_line) {
-
-                  // p1 is the angle of _this_ segment
-                  // this line is the new half-angle
-
-                  const split = (p1.angle * 3 - angle) / 2;
-                  const px = {
-                    x: last_point.x + 20 * Math.cos(split),
-                    y: last_point.y + 20 * Math.sin(split),
-                  }
-
-                  last_line = {
-                    a: last_point, b: px,
-                  };
-
-                  // d2.push(`M${last_point[0]},${last_point[1]} L${px.x},${px.y}`);
-
-                }
-
-                if (last_line) {
-
-                  const last_props = this.LineProperties(last_line.a, last_line.b);
-
-                  if ((last_props.angle >= p1.angle && p1.angle >= this_props.angle)
-                    || (last_props.angle <= p1.angle && p1.angle <= this_props.angle)) {
-
-                    const q = this.LineIntersection(last_line.a, last_line.b, this_line.a, this_line.b);
-                    if (q) {
-                      d.push(`M${last_point.x},${last_point.y} Q${q.x},${q.y} ${point.x},${point.y}`);
-                      drawn = true;
-                    }
-                  }
-                  else {
-
-                    const midpoint = {
-                      x: point.x + (last_point.x - point.x) / 2,
-                      y: point.y + (last_point.y - point.y) / 2,
-                    };
-
-                    const angle_1 = p1.angle; // that's the line 
-                    const angle_2 = this_props.angle; // that's the PRIOR split
-
-                    // this bit is maybe broken, not sure: 
-
-                    const AA = (angle_1 + angle_2) / 2;
-                    const DX = angle_1 - AA;
-                    let BB = angle_1 + 2 * DX;
-
-                    // BB = (p1.angle * 3 - this_props.angle)/2;
-                    const zed = 12;
-
-                    const midline = {
-                      a: { ...midpoint },
-                      b: { x: midpoint.x + Math.cos(BB) * -zed, y: midpoint.y + Math.sin(BB) * -zed },
-                    };
-
-                    // d2.push(`M${midpoint.x + Math.cos(BB) * -zed},${midpoint.y + Math.sin(BB) * -zed}`);
-                    // d2.push(`L${midpoint.x + Math.cos(BB) * zed},${midpoint.y + Math.sin(BB) * zed}`);
-
-                    // drawn = true;
-
-                    const q1 = this.LineIntersection(last_line.a, last_line.b, midline.a, midline.b);
-                    const q2 = this.LineIntersection(this_line.a, this_line.b, midline.a, midline.b);
-
-                    if (q1 && q2) {
-                      d.push(`M${last_point.x},${last_point.y} Q${q1.x},${q1.y} ${midpoint.x},${midpoint.y}`);
-                      d.push(`Q${q2.x},${q2.y} ${point.x},${point.y}`);
-                      drawn = true;
-                    }
-
-                  }
-
-                }
-
-                // const a2 = Math.cos(angle) * -10 + a;
-                // const b2 = Math.sin(angle) * -10 + b;
-
-                // d2.push(`M${a1},${b1} L${a2},${b2}`)
-
-                last_line = this_line;
-
-              }
-            }
-
-            if (!drawn) {
-              d.push(`${last_point ? 'L' : 'M'}${point.x},${point.y}`);
-            }
-
-          }
-
-          last_point = point;
-
-        }
-
-        */
-
-      }
-      else {
-        let command = 'M';
-        for (const point of points) {
-          if (point) {
-            d.push(`${command}${point.x},${point.y}`);
-            command = 'L';
-          }
-          else {
-            command = 'M';
-          }
-        }
-      }
+      
 
     }
 
-    // FIXME: optional
-    group.appendChild(SVGNode('path', {d, class: 'line'}));
+    if (filled) {
+      group.appendChild(SVGNode('path', {d: areas, class: 'fill'}));
+    }
+
+    if (lines) {
+      group.appendChild(SVGNode('path', {d, class: 'line'}));
+    }
 
     if (markers) {
       for (const point of points) {

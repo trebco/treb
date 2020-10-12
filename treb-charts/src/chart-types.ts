@@ -54,6 +54,7 @@ export interface ChartDataBaseType {
   title_layout?: 'top'|'bottom';
 
   lines?: boolean;
+  filled?: boolean;
   markers?: boolean;
   smooth?: boolean;
   data_labels?: boolean;
@@ -85,7 +86,7 @@ export interface ScatterData2 extends ChartDataBaseType {
   x_labels?: string[];
   y_labels?: string[];
 
-  style?: 'plot'|'line';
+  style?: 'plot'|'line'|'area';
 
 }
 

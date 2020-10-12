@@ -31,7 +31,7 @@ export const ChartFunctions: FunctionMap = {
    */
   'Series': {
     arguments: [
-      { name: 'Label', metadata: true, },
+      { name: 'Label' }, // , metadata: true, },
       { name: 'X', metadata: true, },
       { name: 'Y', metadata: true, },
     ],
