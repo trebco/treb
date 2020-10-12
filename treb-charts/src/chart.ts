@@ -160,9 +160,8 @@ export class Chart {
     if (data[0]) {
       
       const flat = Util.Flatten(data[0]);
-
       if (typeof flat[0] === 'object') {
-        series.label = flat[0]?.value?.value?.toString() || '';
+        series.label = flat[0]?.value?.toString() || '';
       }
       else {
         series.label = flat[0].toString();
@@ -423,7 +422,7 @@ export class Chart {
 
     const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
     const common = this.CommonData(series);
-   
+
     const title = args[1]?.toString() || undefined;
     const options = args[2]?.toString() || undefined;
 

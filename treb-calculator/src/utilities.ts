@@ -1,5 +1,7 @@
 
 import { Base64 } from 'js-base64';
+import { UnionOrArray } from './expression-calculator';
+import { UnionValue } from 'treb-base-types';
 
 export const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -155,3 +157,37 @@ export const ApplyArrayFunc = (base: (...args: any[]) => any) => {
     return base(a);
   };
 };
+
+export const ApplyAsArray = (base: (a: any, ...rest: any[]) => UnionValue) => {
+  return (a: any, ...rest: any[]): UnionOrArray => {
+    if (Array.isArray(a)) {
+      return a.map(row => row.map((element: any) => {
+        return base(element, ...rest);
+      }));
+    }
+    else {
+      return base(a, ...rest);
+    }
+  }
+};
+
+export const ApplyAsArray2 = (base: (a: any, b: any, ...rest: any[]) => UnionValue) => {
+  return (a: any, b: any, ...rest: any[]): UnionOrArray => {
+    if (Array.isArray(a)) {
+      if (Array.isArray(b)) {
+        return a.map((row, i: number) => row.map((element: any, j: number) => {
+          return base(element, b[i][j], ...rest);
+        }));
+      }
+      else {
+        return a.map(row => row.map((element: any) => {
+          return base(element, b, ...rest);
+        }));
+      }
+    }
+    else {
+      return base(a, b, ...rest);
+    }
+  }
+};
+

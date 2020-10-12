@@ -1,4 +1,15 @@
 
+/**
+ * moved from sparkline module -- not sure why this needed a separate
+ * module. although on reflection it might be better placed in the charts
+ * module? (...) 
+ * 
+ * perhaps not because we use that module elsewhere and this one is only
+ * ever used in spreadsheets.
+ * 
+ */
+
+
 import { Cell } from 'treb-base-types';
 
 export interface SparklineRenderOptions {
@@ -71,7 +82,10 @@ export class Sparkline {
 
   }
 
-  protected static SparklineCommon(cell: Cell, number_of_colors = 2) {
+  protected static SparklineCommon(cell: Cell, number_of_colors = 2): {
+      values: Array<number|undefined>,
+      colors: string[],
+    } {
 
     // the cell function echoes back arguments. the first argument
     // should be an array, but it will be 2D...
@@ -98,11 +112,11 @@ export class Sparkline {
   }
 
   public static RenderLine(
-    width: number,
-    height: number,
-    context: CanvasRenderingContext2D,
-    cell: Cell,
-  ){
+      width: number,
+      height: number,
+      context: CanvasRenderingContext2D,
+      cell: Cell,
+    ): void {
 
     const {values, colors} = this.SparklineCommon(cell, 1);
 
@@ -177,11 +191,11 @@ export class Sparkline {
 
 
   public static RenderColumn(
-    width: number,
-    height: number,
-    context: CanvasRenderingContext2D,
-    cell: Cell,
-  ){
+      width: number,
+      height: number,
+      context: CanvasRenderingContext2D,
+      cell: Cell,
+    ): void {
 
     const {values, colors} = this.SparklineCommon(cell);
 

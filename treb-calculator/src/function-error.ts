@@ -10,6 +10,7 @@ export enum ErrorType {
   Unknown =     'UNK',
   NotImpl =     'NOTIMPL',
   Div0 =        'DIV/0',
+  NA =          'N/A',
 }
 
 export interface FunctionError {
@@ -25,6 +26,10 @@ export interface FunctionError {
 // export const DivideByZeroError: FunctionError = { error: ErrorType.Div0 };
 // export const UnknownError: FunctionError = { error: ErrorType.Unknown };
 export const NotImplError: FunctionError = { error: ErrorType.NotImpl };
+
+export const NAError = (): UnionValue => {
+  return { type: ValueType.error, value: ErrorType.NA };
+}
 
 export const ExpressionError = (): UnionValue => {
   return { type: ValueType.error, value: ErrorType.Expression };

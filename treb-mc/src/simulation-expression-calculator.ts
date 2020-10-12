@@ -179,10 +179,10 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         // is this adding overhead, with the lookup? maybe we should check type...
 
         if (descriptor.address) {
-
-          // console.warn("NOTIMPL: ADDRESS");// MARK1
-          return this.parser.Render(arg).replace(/\$/g, '');
-
+          return descriptor.boxed ? {
+            type: ValueType.string,
+            value: this.parser.Render(arg).replace(/\$/g, ''),
+          } : this.parser.Render(arg).replace(/\$/g, '');
         }
         else if (descriptor.metadata) {
 

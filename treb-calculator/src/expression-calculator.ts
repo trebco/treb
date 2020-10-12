@@ -350,7 +350,7 @@ export class ExpressionCalculator {
     const func = this.library.Get(outer.name);
 
     if (!func) {
-      return (expr: UnitCall) => NameError();
+      return () => NameError();
     }
 
     return (expr: UnitCall) => {
@@ -434,19 +434,13 @@ export class ExpressionCalculator {
         // object, not a string. so FIXME.
 
         if (descriptor.address) {
-
-          console.warn("NOTIMPL: ADDRESS");// MARK1
-          return this.parser.Render(arg).replace(/\$/g, ''); // FIXME: type
-
+          return descriptor.boxed ? {
+            type: ValueType.string,
+            value: this.parser.Render(arg).replace(/\$/g, ''),
+          } : this.parser.Render(arg).replace(/\$/g, '');
         }
         else if (descriptor.metadata) {
 
-          /*
-          console.warn("NOTIMPL: METADATA");// MARK1
-          const md = this.GetMetadata(arg, () => { return {}});
-          console.info("A", arg, "MD", md);
-          return md;
-          */
           return this.GetMetadata(arg, () => { return {}}); // type is UnionOrArray
 
         }
@@ -493,8 +487,6 @@ export class ExpressionCalculator {
         }
 
       });
-
-      console.info("MA", mapped_args);
 
       if (argument_error) {
         return argument_error;

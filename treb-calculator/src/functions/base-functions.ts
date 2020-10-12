@@ -1,7 +1,7 @@
 
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ReferenceError, NotImplError, ValueError, ArgumentError, DivideByZeroError } from '../function-error';
+import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, NameError } from '../function-error';
 import { Box, Cell, ClickFunctionOptions, ClickFunctionResult, UnionIs, UnionValue, ValueType, GetValueType } from 'treb-base-types';
 import { Sparkline, SparklineRenderOptions } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
@@ -218,23 +218,23 @@ export const BaseFunctionLibrary: FunctionMap = {
     Radians: {
       description: 'Converts degrees to radians',
       arguments: [{ name: 'Degrees', description: 'Angle in degrees' }],
-      fn: (degrees: number): UnionValue => {
+      fn: Utils.ApplyAsArray((degrees: number): UnionValue => {
         return Box(degrees * Math.PI / 180);
-      },
+      }),
     },
 
     Degrees: {
       description: 'Converts radians to degrees',
       arguments: [{ name: 'Radians', description: 'Angle in radians' }],
-      fn: (radians: number): UnionValue => {
+      fn: Utils.ApplyAsArray((radians: number): UnionValue => {
         return Box(radians / Math.PI * 180);
-      },
+      }),
     },
 
     CountA: {
       description: 'Counts cells that are not empty',
-      fn: (...args: any[]): UnionValue => {
-        return Box(Utils.Flatten(args).reduce((a: number, b: any) => {
+      fn: (...args: unknown[]): UnionValue => {
+        return Box(Utils.Flatten(args).reduce((a: number, b: unknown) => {
           if (typeof b === 'undefined') return a;
           return a + 1;
         }, 0));
@@ -243,8 +243,8 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     Count: {
       description: 'Counts cells that contain numbers',
-      fn: (...args: any[]): UnionValue => {
-        return Box(Utils.Flatten(args).reduce((a: number, b: any) => {
+      fn: (...args: unknown[]): UnionValue => {
+        return Box(Utils.Flatten(args).reduce((a: number, b: unknown) => {
           if (typeof b === 'number') return a + 1;
           return a;
         }, 0));
@@ -252,7 +252,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Or: {
-      fn: (...args: any[]): UnionValue => {
+      fn: (...args: unknown[]): UnionValue => {
         let result = false;
         for (const arg of args) {
           result = result || !!arg;
@@ -262,7 +262,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     And: {
-      fn: (...args: any[]): UnionValue => {
+      fn: (...args: unknown[]): UnionValue => {
         let result = true;
         for (const arg of args) {
           result = result && !!arg;
@@ -272,7 +272,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Not: {
-      fn: (...args: any[]): UnionValue => {
+      fn: (...args: unknown[]): UnionValue => {
         if (args.length === 0) {
           return ArgumentError();
         }
@@ -308,16 +308,16 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Power: {
-      fn: (base: number, exponent: number): UnionValue => Box(Math.pow(base, exponent)),
+      fn: Utils.ApplyAsArray2((base: number, exponent: number): UnionValue => Box(Math.pow(base, exponent))),
     },
 
     Mod: {
-      fn: (num: number, divisor: number): UnionValue => {
+      fn: Utils.ApplyAsArray2((num: number, divisor: number): UnionValue => {
         if (!divisor) { 
           return DivideByZeroError();
         }
         return Box(num % divisor);
-      }
+      })
     },
 
     /**
@@ -373,10 +373,8 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+
     /*
-
-
-    / *
     MMult: {
       description: 'Multiplies two matrices',
       arguments: [{ name: 'Matrix 1'}, { name: 'Matrix 2'}],
@@ -409,11 +407,11 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       }
     },
-    * /
+    */
 
     SumProduct: {
       description: 'Returns the sum of pairwise products of two or more ranges',
-      fn: (...args: any[]) => {
+      fn: (...args: any[]): UnionValue  => {
 
         const flattened = args.map(arg => Utils.Flatten(arg));
         const len = Math.max.apply(0, flattened.map(x => x.length));
@@ -425,56 +423,100 @@ export const BaseFunctionLibrary: FunctionMap = {
           }, 1);
         }        
 
-        return sum;
+        return { type: ValueType.number, value: sum };
 
       },
     },
 
-    / **
+    /**
      * FIXME: does not implement inexact matching (what's the algo for
      * that, anyway? nearest? price is right style? what about ties?)
-     * /
+     */
     VLookup: {
-      fn: (value: any, table: any[][], col: number, exact = false) => {
+      fn: (value: any, table: any[][], col: number, inexact = true): UnionValue => {
 
         col = Math.max(0, col - 1);
 
-        let min = Math.abs(value - table[0][0]);
-        let result: any = table[col][0];
+        if (inexact) {
 
-        for (let i = 1; i < table[0].length; i++) {
-          const abs = Math.abs(table[0][i] - value);
-          if (abs < min) {
-            min = abs;
-            result = table[col][i];
+          let min = Math.abs(value - table[0][0]);
+          let result: any = table[col][0];
+
+          for (let i = 1; i < table[0].length; i++) {
+
+            const abs = Math.abs(table[0][i] - value);
+
+            if (abs < min) { // implies first match
+              min = abs;
+              result = table[col][i];
+            }
           }
+
+          return Box(result);
+
+        }
+        else {
+          for (let i = 1; i < table[0].length; i++) {
+            if (table[0][i] == value) { // ==
+              return table[col][i];
+            }
+          }
+          return NAError();
         }
 
-        return result;
       },
     },
 
     Product: {
-      fn: (...args: any[]) => {
-        return Utils.Flatten(args).reduce((a: number, b: any) => {
+      fn: (...args: any[]): UnionValue => {
+        return { type: ValueType.number, value: Utils.Flatten(args).reduce((a: number, b: any) => {
           if (typeof b === 'undefined') return a;
           return a * Number(b);
-        }, 1);
+        }, 1) };
       },
     },
 
-
     Log: {
-      / ** default is base 10; allow specific base * /
-      fn: (a: number, base?: number) => {
-        if (typeof base !== 'undefined') return Math.log(a) / Math.log(base);
-        return Math.log10(a);
-      },
+      /** default is base 10; allow specific base */
+      fn: Utils.ApplyAsArray2((a: number, base = 10): UnionValue => {
+        return { type: ValueType.number, value: Math.log(a) / Math.log(base) };
+      }),
+    },
+
+    Log10: {
+      fn: Utils.ApplyAsArray((a: number): UnionValue => {
+        return { type: ValueType.number, value: Math.log(a) / Math.log(10) };
+      }),
     },
 
     Ln: {
-      fn: Math.log,
+      fn: Utils.ApplyAsArray((a: number): UnionValue => {
+        return { type: ValueType.number, value: Math.log(a) };
+      }),
     },
+
+    Round: {
+      fn: Utils.ApplyAsArray2((a, digits = 0) => {
+        const m = Math.pow(10, digits);
+        return { 
+          type: ValueType.number, 
+          value: Math.round(m * a) / m,
+        };
+      }),
+    },
+
+    RoundDown: {
+      fn: Utils.ApplyAsArray2((a, digits = 0) => {
+        const m = Math.pow(10, digits);
+        const positive = a >= 0;
+        return { 
+          type: ValueType.number, 
+          value: positive ? Math.floor(m * a) / m : Math.ceil(m * a) / m,
+        };
+      }),
+    },
+
+    /*
 
     Round: {
       description: 'Round to a specified number of digits',
@@ -496,36 +538,51 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
 
+    */
 
 
     Reverse: {
-      fn: (a: any) => {
+      arguments: [
+        { boxed: true },
+      ],
+      fn: (a: UnionOrArray): UnionOrArray => {
         if ( Array.isArray(a)) {
           if (a.length === 1 ) return [a[0].reverse()];
           return a.reverse();
         }
-        return a.toString().split('').reverse().join('');
+        return { 
+          type: ValueType.string, 
+          value: a.value.toString().split('').reverse().join(''),
+        };
       },
     },
 
     Abs: {
-      fn: Utils.ApplyArrayFunc(Math.abs),
+      fn: Utils.ApplyAsArray((a) => {
+        return { type: ValueType.number, value: Math.abs(a) };
+      }),
     },
 
-
     Simplify: {
-      fn: (value: number, significant_digits = 2) => {
+      fn: Utils.ApplyAsArray2((value: number, significant_digits = 2): UnionValue => {
         significant_digits = significant_digits || 2;
-        if (value === 0) return value;
+        if (value === 0) {
+          return { type: ValueType.number, value };
+        }
         const negative = value < 0 ? -1 : 1;
         value *= negative;
         const x = Math.pow(10, Math.floor(Math.log10(value)) + 1 - significant_digits);
-        return Math.round(value / x) * x * negative;
-      },
+        return {
+          type: ValueType.number,
+          value: Math.round(value / x) * x * negative
+        };
+      }),
     },
-
+ 
     Erf: {
-      fn: erf,
+      fn: (a: number): UnionValue => {
+        return { type: ValueType.number, value: erf(a) };
+      },
     },
 
     'Norm.Dist': {
@@ -537,31 +594,31 @@ export const BaseFunctionLibrary: FunctionMap = {
         {name: 'standard deviation', default: 1},
       ],
 
-      fn: (x: number, mean = 0, stdev = 1) => {
+      fn: (x: number, mean = 0, stdev = 1): UnionValue => {
 
         // generalized
         const sign = (x < mean) ? -1 : 1;
-        return 0.5 * (1.0 + sign * erf((Math.abs(x - mean)) / (stdev * Math.sqrt(2))));
+        return { 
+          type: ValueType.number, 
+          value: 0.5 * (1.0 + sign * erf((Math.abs(x - mean)) / (stdev * Math.sqrt(2)))),
+        };
 
       },
     },
 
     HexToDec: {
       arguments: [{ description: 'hexadecimal string' }],
-      fn: (hex: string) => {
-        return parseInt(hex, 16);
+      fn: (hex: string): UnionValue => {
+        return { type: ValueType.number, value: parseInt(hex, 16) };
       },
     },
 
     DecToHex: {
       arguments: [{ description: 'number' }],
-      fn: (num: number) => {
-        return num.toString(16);
+      fn: (num: number): UnionValue => {
+        return { type: ValueType.string, value: num.toString(16) };
       },
     },
-
-
-    */
 
     Checkbox: {
       arguments: [
@@ -618,7 +675,6 @@ for (const key of Object.keys(BaseFunctionLibrary)) {
   name_map[key.toLowerCase()] = key;
 }
 
-/*
 for (const name of Object.getOwnPropertyNames(Math)) {
 
   // check if it exists (we have already registered something
@@ -635,14 +691,18 @@ for (const name of Object.getOwnPropertyNames(Math)) {
   switch (type) {
   case 'number':
     BaseFunctionLibrary[name] = {
-      fn: () => value,
+      fn: () => { 
+        return { type: ValueType.number, value }
+      },
       category: ['Math Functions'],
     };
     break;
 
   case 'function':
     BaseFunctionLibrary[name] = {
-      fn: value,
+      fn: (...args: any) => {
+        return Box(value(...args));
+      },
       category: ['Math Functions'],
     };
     break;
@@ -653,9 +713,8 @@ for (const name of Object.getOwnPropertyNames(Math)) {
   }
 
 }
-*/
 
-// IE11: patch log10 function
+// IE11: patch log10 function // FIXME: is this necessary anymore?
 
 if (!Math.log10) {
   Math.log10 = (a) => Math.log(a) / Math.log(10);

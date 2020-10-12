@@ -78,7 +78,6 @@ const directories = [
   'treb-engine',
   'treb-toolbar',
   'treb-calculator',
-  'treb-sparkline',
   'treb-base-types',
 ];
 
