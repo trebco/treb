@@ -10,7 +10,7 @@
  */
 
 const webpack = require('webpack');
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const exec = require('child_process').exec;
 const LicenseCheckerWebpackPlugin = require('license-checker-webpack-plugin');
@@ -57,6 +57,37 @@ const dist_dir = 'build';
 
 const build_dir = path.resolve(__dirname, dist_dir, package.version);
 const current_dir = path.resolve(__dirname, dist_dir, 'current');
+
+
+const PostBuildCleanup = async () => {
+
+  const banner = `/*! v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC-ND: https://treb.app/license */`;
+
+  const files = await fs.readdir(build_dir);
+
+  // remove those LICENSE files -- we already have the 3d party license file
+
+  for (const filename of files) {
+    if (/\.LICENSE\.txt$/.test(filename)) {
+      await fs.remove(path.join(build_dir, filename));
+    }
+  }
+
+  // add banners
+
+  for (const filename of files) {
+    if (/\.js$/.test(filename)) {
+      const fully_qualified = path.join(build_dir, filename);
+      let contents = await fs.readFile(fully_qualified, 'utf-8');
+      if (/^\/\*.*?\*\//.test(contents)) {
+        contents = contents.replace(/^\/\*.*?\*\//, banner);
+        await fs.writeFile(fully_qualified, contents, {encoding: 'utf-8'});
+      }
+
+    }
+  }
+
+};
 
 // clean "current" dir. not recursive.
 
@@ -191,6 +222,10 @@ const CreateConfig = (config, entry, additional_aliases) => {
         '@root': path.resolve(__dirname),
         ...aliases,
         ...additional_aliases,
+      },
+      fallback: {
+        'stream': require.resolve('stream-browserify'),
+        'util': require.resolve('util'),
       }
     },
     output: {
@@ -201,19 +236,16 @@ const CreateConfig = (config, entry, additional_aliases) => {
 
     plugins: [
       new LicenseCheckerWebpackPlugin({ outputFilename: '3d_party.txt' }),
+      /*
       new webpack.BannerPlugin({
         banner: `v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC-ND: https://treb.app/license`,
       }),
-      {
+      */
+     {
         apply: (compiler) => {
           compiler.hooks.beforeCompile.tap('BeforeCompilePlugin', () => {
             console.info('starting ' + config + ' build (' + package.version + ')...', new Date().toString());
           });
-          /*
-          compiler.hooks.afterEmit.tap('AfterEmitPlugin', (compilation) => {
-            PostBuild();
-          });
-          */
         }
       }
     ]
@@ -254,11 +286,15 @@ const postbuild = async (config, err, stats) => {
 
   if (!stats.hasErrors()) {
 
-    fs.mkdir(current_dir, () => {
-      exec('cp -r ' + build_dir + '/* ' + current_dir, (err, stdout, stderr) => {
-        if (stdout) process.stdout.write(stdout);
-        if (stderr) process.stderr.write(stderr);
+    PostBuildCleanup().then(() => {
+
+      fs.mkdir(current_dir, () => {
+        exec('cp -r ' + build_dir + '/* ' + current_dir, (err, stdout, stderr) => {
+          if (stdout) process.stdout.write(stdout);
+          if (stderr) process.stderr.write(stderr);
+        });
       });
+
     });
 
   }
