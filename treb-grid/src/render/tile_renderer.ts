@@ -1077,7 +1077,7 @@ export class TileRenderer {
         style_text_color || this.theme.cell_color || '';
         
       cell.render_function.call(null, {
-        width, height, context, cell,
+        width, height, context, cell, style,
       });
 
       return result;

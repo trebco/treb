@@ -1,15 +1,49 @@
 
-import { RenderFunctionOptions, ClickFunctionOptions, ClickFunctionResult } from 'treb-base-types';
+import { RenderFunctionOptions, ClickFunctionOptions, ClickFunctionResult, Style } from 'treb-base-types';
 
 export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResult => {
   const { x, y, width, height, cell } = options;
   const result: ClickFunctionResult = {};
 
+  const offset = 3;
+
   if (cell && width && height && x && y) {
+
+    const box = {
+      x: offset, // Math.round(width / 2 - 8);
+      y: height - offset - 16, //  Math.round(height / 2 - 8);
+    }
+  
+    if (cell.style) {
+      switch (cell.style.vertical_align) {
+        case Style.VerticalAlign.Top:
+          box.y = offset;
+          break;
+  
+        case Style.VerticalAlign.Middle:
+          box.y = Math.round(height / 2 - 8);
+          break;
+    
+      }
+  
+      switch (cell.style.horizontal_align) {
+        case Style.HorizontalAlign.Right:
+          box.x = Math.round(width - offset - 16);
+          break;
+  
+        case Style.HorizontalAlign.Center:
+          box.x = Math.round(width / 2 - 8);
+          break;
+  
+      }    
+    }
+
+    /*
     const box = {
       x: Math.round(width / 2 - 8),
       y: Math.round(height / 2 - 8),
     };
+    */
 
     if (x >= box.x && x <= box.x + 16 && y >= box.y && y <= box.y + 16) {
       result.value = `=Checkbox(${cell.calculated ? 'FALSE' : 'TRUE'})`;
@@ -27,8 +61,34 @@ export const RenderCheckbox = (options: RenderFunctionOptions): void => {
   context.lineJoin = 'round';
   context.lineCap = 'round';
 
-  const x = Math.round(width / 2 - 8);
-  const y = Math.round(height / 2 - 8);
+  const offset = 3;
+
+  let x = offset; // Math.round(width / 2 - 8);
+  let y = height - offset - 16; //  Math.round(height / 2 - 8);
+
+  if (cell.style) {
+    switch (cell.style.vertical_align) {
+      case Style.VerticalAlign.Top:
+        y = offset;
+        break;
+
+      case Style.VerticalAlign.Middle:
+        y = Math.round(height / 2 - 8);
+        break;
+  
+    }
+
+    switch (cell.style.horizontal_align) {
+      case Style.HorizontalAlign.Right:
+        x = Math.round(width - offset - 16);
+        break;
+
+      case Style.HorizontalAlign.Center:
+        x = Math.round(width / 2 - 8);
+        break;
+
+    }    
+  }
 
   if (cell && cell.calculated) {
     context.lineWidth = .5;
