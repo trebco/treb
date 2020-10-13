@@ -1,5 +1,5 @@
 
-import { UnionValue, ValueType } from 'treb-base-types';
+import { UnionOrArray, UnionValue, ValueType } from 'treb-base-types';
 import { ExpressionUnit, UnitAddress, UnitRange } from 'treb-parser/src';
 
 // FIXME: at least some of this could move to base types
@@ -7,13 +7,6 @@ import { ExpressionUnit, UnitAddress, UnitRange } from 'treb-parser/src';
 export enum ReturnType {
   value, reference
 }
-
-/*
-export const IsExpressionUnit = (test: UnionValue|UnionValue[][]|UnitRange|UnitAddress): test is (UnitRange|UnitAddress) => {
-  const type = (test as ExpressionUnit).type;
-  return (type === 'address' || type === 'range');
-}
-*/
 
 /**
  * descriptor for an individual argument
@@ -114,7 +107,7 @@ export interface CompositeFunctionDescriptor {
    * the actual function. if this is an object member and needs access
    * to the containing instance, make sure to bind it to that instance.
    */
-  fn: (...args: any[]) => UnionValue|UnionValue[][]; // |UnitAddress|UnitRange;
+  fn: (...args: any[]) => UnionOrArray; // |UnitAddress|UnitRange;
 
   /**
    * for the future. some functions should not be available in

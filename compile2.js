@@ -59,17 +59,20 @@ const build_dir = path.resolve(__dirname, dist_dir, package.version);
 const current_dir = path.resolve(__dirname, dist_dir, 'current');
 
 
-const PostBuildCleanup = async () => {
+const PostBuildCleanup = () => {
+
+  // NOTE: making this sync, as opposed to async, to
+  // prevent overlapping IO operations
 
   const banner = `/*! v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC-ND: https://treb.app/license */`;
 
-  const files = await fs.readdir(build_dir);
+  const files = fs.readdirSync(build_dir);
 
   // remove those LICENSE files -- we already have the 3d party license file
 
   for (const filename of files) {
     if (/\.LICENSE\.txt$/.test(filename)) {
-      await fs.remove(path.join(build_dir, filename));
+      fs.removeSync(path.join(build_dir, filename));
     }
   }
 
@@ -78,10 +81,10 @@ const PostBuildCleanup = async () => {
   for (const filename of files) {
     if (/\.js$/.test(filename)) {
       const fully_qualified = path.join(build_dir, filename);
-      let contents = await fs.readFile(fully_qualified, 'utf-8');
+      let contents = fs.readFileSync(fully_qualified, 'utf-8');
       if (/^\/\*.*?\*\//.test(contents)) {
         contents = contents.replace(/^\/\*.*?\*\//, banner);
-        await fs.writeFile(fully_qualified, contents, {encoding: 'utf-8'});
+        fs.writeFileSync(fully_qualified, contents, {encoding: 'utf-8'});
       }
 
     }
@@ -146,9 +149,10 @@ const custom_transformer = (context) => {
 };
 */
 
-const CreateConfig = (config, entry, additional_aliases) => {
+const CreateConfig = (config, entry, additional_aliases, target) => {
   const config_instance = {
 
+    target,
     entry,
 
     mode: dev ? 'development' : 'production',
@@ -225,7 +229,7 @@ const CreateConfig = (config, entry, additional_aliases) => {
       },
       fallback: {
         'stream': require.resolve('stream-browserify'),
-        'util': require.resolve('util'),
+        'util': require.resolve('./lib-util'),
       }
     },
     output: {
@@ -257,12 +261,12 @@ const CreateConfig = (config, entry, additional_aliases) => {
 const modern_compiler = build.modern ? webpack(CreateConfig('modern', modern_entry, {
   '@grid-conditional': path.resolve(__dirname, path.join('treb-grid', 'src', 'conditional', 'modern')),
   '@conditional-config': path.resolve(__dirname, path.join('treb-base-types', 'src', 'config-modern.ts')),
-})) : undefined;
+}, ['web', 'es6'])) : undefined;
 
 const legacy_compiler = build.legacy ? webpack(CreateConfig('legacy', legacy_entry, {
   '@grid-conditional': path.resolve(__dirname, path.join('treb-grid', 'src', 'conditional', 'legacy')),
   '@conditional-config': path.resolve(__dirname, path.join('treb-base-types', 'src', 'config-legacy.ts')),
-})) : undefined;
+}, ['web', 'es5'])) : undefined;
 
 const postbuild = async (config, err, stats) => {
 
@@ -286,15 +290,13 @@ const postbuild = async (config, err, stats) => {
 
   if (!stats.hasErrors()) {
 
-    PostBuildCleanup().then(() => {
+    PostBuildCleanup();
 
-      fs.mkdir(current_dir, () => {
-        exec('cp -r ' + build_dir + '/* ' + current_dir, (err, stdout, stderr) => {
-          if (stdout) process.stdout.write(stdout);
-          if (stderr) process.stderr.write(stderr);
-        });
+    fs.mkdir(current_dir, () => {
+      exec('cp -r ' + build_dir + '/* ' + current_dir, (err, stdout, stderr) => {
+        if (stdout) process.stdout.write(stdout);
+        if (stderr) process.stderr.write(stderr);
       });
-
     });
 
   }

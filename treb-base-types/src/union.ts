@@ -98,3 +98,6 @@ export const Box = (value: unknown, type?: ValueType): UnionValue => {
   
 };
 
+export type UnionOrArray = UnionValue|UnionValue[][];
+
+

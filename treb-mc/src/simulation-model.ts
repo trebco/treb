@@ -1,14 +1,12 @@
 /* eslint-disable no-unexpected-multiline */
 
-import { ICellAddress, Cell, Area, UnionValue, ValueType, GetValueType } from 'treb-base-types';
+import { UnionOrArray, ICellAddress, Cell, Area, UnionValue, ValueType, GetValueType } from 'treb-base-types';
 import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
 import { DataError, ArgumentError, ValueError } from '../../treb-calculator/src/function-error';
-// import { ExpressionUnit } from 'treb-parser';
 import { Scale as CreateScale } from 'treb-utils';
 import { DataModel } from 'treb-grid';
-import { UnionOrArray } from 'treb-calculator/src/expression-calculator';
 
 export type SimulationResultsData =  Array<Float64Array|number[]>[][];
 

@@ -498,8 +498,6 @@ export class Chart {
    */
   public CreateLineChart(args: any[], type: 'line'|'area') { // |'bar'|'column') {
 
-  console.info("A1", args[1]);
-
     const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0], args[1]) : [];
     const common = this.CommonData(series, 0, 0);
 
@@ -1045,8 +1043,6 @@ export class Chart {
           const points = this.chart_data.x_scale ? 
             this.chart_data.x_scale.max :
             Math.max.apply(0, this.chart_data.series.map(x => x.length));
-
-          console.info("points", points, 'this.chart_data.x_scale.count', this.chart_data.x_scale?.count)
 
           const func = this.chart_data.smooth ?
             this.renderer.RenderSmoothLine : this.renderer.RenderLine;

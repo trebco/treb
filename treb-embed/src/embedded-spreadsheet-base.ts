@@ -2168,27 +2168,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       serialized.rendered_values = true;
     }
 
-    // this moved to the subclass. the parameter should move to an option,
-    // so that we don't have to maintain the parameter in the base class.
-
-    /*
-    if (preserve_simulation_data) {
-
-      // it might be useful to prune this a bit, specifically to prune
-      // results that are not referenced. can we use the graph to do that?
-
-      serialized.simulation_data = {
-        elapsed: this.last_simulation_data.elapsed,
-        trials: this.last_simulation_data.trials,
-        results: (this.last_simulation_data.results || []).map((result: any) => {
-          return this.ArrayBufferToBase64(result);
-        }),
-      };
-
-    }
-    */
-
     return serialized;
+    
   }
 
   /** recalc sheet */

@@ -5,7 +5,7 @@ import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage } from 
 import { Localization, ICellAddress } from 'treb-base-types';
 import { SerializeOptions, MacroFunction } from 'treb-grid';
 import { TREBDocument } from './types';
-import { Base64 } from 'js-base64';
+import * as Base64JS from 'base64-js';
 
 import * as PackResults from 'treb-mc/src/pack-results';
 
@@ -13,6 +13,7 @@ import * as PackResults from 'treb-mc/src/pack-results';
 import * as build from '../../package.json';
 import { DialogType } from './progress-dialog';
 import { Calculator } from 'treb-calculator/src';
+// import { Util } from 'riskampjs-mc';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
@@ -100,7 +101,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
         elapsed: this.last_simulation_data.elapsed,
         trials: this.last_simulation_data.trials,
         results: (this.last_simulation_data.results || []).map(result => {
-          return this.ArrayBufferToBase64(result);
+          return Base64JS.fromByteArray(new Uint8Array(result));
         }),
       };
 
@@ -353,14 +354,9 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     if (data.simulation_data) {
       this.last_simulation_data = data.simulation_data;
       this.last_simulation_data.results =
-        (this.last_simulation_data.results || []).map((entry: any) => {
-          const binary = Base64.atob(entry); // this should not work? (...)
-          const len = binary.length;
-          const u8 = new Uint8Array(len);
-          for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);
-          return u8.buffer;
+        (this.last_simulation_data.results || []).map((entry) => {
+          return Base64JS.toByteArray(entry as any).buffer;
         });
-
       this.calculator.UpdateResults(this.last_simulation_data, this.grid.model, false);
     }
     else {
@@ -489,19 +485,6 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
     }
 
-  }
-
-  private ArrayBufferToBase64(data: ArrayBuffer): string {
-    return this.Uint8ToBase64(new Uint8Array(data, 0));
-  }
-
-  private Uint8ToBase64(data: Uint8Array): string {
-    const chunks = [];
-    const block = 0x8000;
-    for (let i = 0; i < data.length; i += block) {
-      chunks.push(String.fromCharCode.apply(null, Array.from(data.subarray(i, i + block))));
-    }
-    return Base64.btoa(chunks.join(''));
   }
 
 

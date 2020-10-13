@@ -1,18 +1,18 @@
 
 import * as JSZip from 'jszip';
-import { template } from './base-template';
-import { Base64 as JSBase64 } from 'js-base64';
+// import { template } from './base-template';
+import { template } from './template-2';
 import { Workbook } from './workbook';
 
 import { Style, Area, IArea, DataValidation, ValidationType, 
-  ICellAddress, IsFlatDataArray, IsNestedRowArray, FlatCellData } from 'treb-base-types';
-import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, UnitCall, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
+         IsFlatDataArray, IsNestedRowArray, FlatCellData } from 'treb-base-types';
+import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, 
+         UnitCall, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
 
 import { SerializedSheet } from 'treb-grid';
 import { RangeOptions } from './sheet';
 import { TwoCellAnchor } from './drawing/drawing';
 import { ChartOptions } from './drawing/chart';
-import { group } from 'console';
 
 /** excel units */
 const one_hundred_pixels = 14.28515625;
@@ -41,9 +41,9 @@ export class Exporter {
   public async Init(zip?: JSZip): Promise<void> {
 
     if (!zip) {
-      const data = JSBase64.decode(template);
-      zip = await new JSZip().loadAsync(data);
+      zip = await new JSZip().loadAsync(template, {base64: true});
     }
+    
     this.archive_ = zip;
 
     this.workbook = new Workbook();

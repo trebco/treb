@@ -1,14 +1,13 @@
 
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, NameError } from '../function-error';
-import { Box, Cell, ClickFunctionOptions, ClickFunctionResult, UnionIs, UnionValue, ValueType, GetValueType } from 'treb-base-types';
+import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError } from '../function-error';
+import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType } from 'treb-base-types';
 import { Sparkline, SparklineRenderOptions } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
 import { ClickCheckbox, RenderCheckbox } from './checkbox';
-import { UnitAddress } from 'treb-parser/src';
-import { UnionIsExpressionUnit, UnionIsMetadata, UnionOrArray } from '../expression-calculator';
+import { UnionIsMetadata } from '../expression-calculator';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -285,9 +284,9 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     If: {
       arguments: [
-        { name: 'Test value', boxed: true },
-        { name: 'Value if true', boxed: true, allow_error: true },
-        { name: 'Value if false', boxed: true, allow_error: true },
+        { name: 'test value', boxed: true },
+        { name: 'value if true', boxed: true, allow_error: true },
+        { name: 'value if false', boxed: true, allow_error: true },
       ],
       fn: (a: UnionOrArray, b: UnionOrArray = UnionTrue, c: UnionOrArray = UnionFalse): UnionOrArray => {
 
@@ -339,7 +338,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           args.sort(); // lexical
         }
 
-        return [args.map(value => { return { value, type: GetValueType(value) }})];
+        return [args.map(value => Box(value))];
 
       },
     },

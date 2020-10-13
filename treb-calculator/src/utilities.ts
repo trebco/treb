@@ -1,7 +1,5 @@
 
-import { Base64 } from 'js-base64';
-import { UnionOrArray } from './expression-calculator';
-import { UnionValue } from 'treb-base-types';
+import { UnionOrArray, UnionValue } from 'treb-base-types';
 
 export const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -93,20 +91,6 @@ export const OffsetFormula = (formula: string, offset: {columns: number, rows: n
   });
   return formula;
 
-};
-
-export const ArrayBufferToBase64 = (data: ArrayBuffer): string => {
-  return Uint8ToBase64(new Uint8Array(data, 0));
-};
-
-export const Uint8ToBase64 = (data: Uint8Array): string => {
-
-  const chunks = [];
-  const block = 0x8000;
-  for (let i = 0; i < data.length; i += block){
-    chunks.push(String.fromCharCode.apply(null, Array.from(data.subarray(i, i + block))));
-  }
-  return Base64.btoa(chunks.join(''));
 };
 
 

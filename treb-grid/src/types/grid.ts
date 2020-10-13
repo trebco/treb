@@ -5730,7 +5730,7 @@ export class Grid {
 
   private HandleCopy(event: ClipboardEvent) {
 
-    // console.info('handle copy', event, this.primary_selection);
+    console.info('handle copy', event, this.primary_selection);
 
     event.stopPropagation();
     event.preventDefault();

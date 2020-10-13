@@ -1,7 +1,7 @@
 
 import { FunctionLibrary } from './function-library';
 import { Cell, Cells, ICellAddress, ValueType, GetValueType,
-         Area, UnionValue, CellValue, UndefinedUnion } from 'treb-base-types';
+         Area, UnionValue, CellValue, UndefinedUnion, UnionOrArray } from 'treb-base-types';
 import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
 import { DataModel } from 'treb-grid';
@@ -11,9 +11,6 @@ import { ReturnType } from './descriptors';
 import * as Primitives from './primitives';
 
 export type ExtendedExpressionUnit = ExpressionUnit & { user_data: any }; // export for MC overload
-
-// FIXME: move
-export type UnionOrArray = UnionValue|UnionValue[][];
 
 // FIXME: move
 export const UnionIsExpressionUnit = (test: UnionOrArray): test is { type: ValueType.object, value: ExpressionUnit } => {

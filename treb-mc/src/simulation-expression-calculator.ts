@@ -1,15 +1,15 @@
 
 // we're deep-linking because these types are not exported by the project
 
-import { ExpressionCalculator, ExtendedExpressionUnit, UnionIsExpressionUnit, UnionOrArray } from '../../treb-calculator/src/expression-calculator';
+import { ExpressionCalculator, ExtendedExpressionUnit, UnionIsExpressionUnit } from '../../treb-calculator/src/expression-calculator';
 import { ReturnType } from '../../treb-calculator/src/descriptors';
 import { FunctionLibrary } from '../../treb-calculator/src/function-library';
-import { FunctionError, NameError, ReferenceError } from '../../treb-calculator/src/function-error';
+import { NameError, ReferenceError } from '../../treb-calculator/src/function-error';
 
 import { SimulationModel, SimulationState } from './simulation-model';
 import { MCCompositeFunctionDescriptor } from './descriptors';
 
-import { Cell, ICellAddress, UndefinedUnion, UnionIs, ValueType, UnionValue } from 'treb-base-types';
+import { Cell, ICellAddress, UndefinedUnion, ValueType, UnionValue, UnionOrArray } from 'treb-base-types';
 import { Parser, UnitCall } from 'treb-parser';
 
 

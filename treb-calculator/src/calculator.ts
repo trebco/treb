@@ -1,5 +1,5 @@
 
-import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue, GetValueType } from 'treb-base-types';
+import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue, UnionOrArray } from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing } from 'treb-parser';
 
@@ -7,7 +7,7 @@ import { Graph } from './dag/graph';
 import { SpreadsheetVertex } from './dag/spreadsheet_vertex';
 import { CalculationResult } from './dag/spreadsheet_vertex_base';
 
-import { ExpressionCalculator, UnionIsMetadata, UnionOrArray } from './expression-calculator';
+import { ExpressionCalculator, UnionIsMetadata } from './expression-calculator';
 import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
@@ -320,7 +320,7 @@ export class Calculator extends Graph {
    * this is a mess
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public SpreadCallback(vertex: SpreadsheetVertex, value: UnionValue|UnionValue[][]): void {
+  public SpreadCallback(vertex: SpreadsheetVertex, value: UnionOrArray): void {
 
     if (!vertex.address || !vertex.address.sheet_id) {
       throw new Error('spread callback called without sheet id');
@@ -482,7 +482,7 @@ export class Calculator extends Graph {
     if (!vertex.address) throw(new Error('vertex missing address'));
     if (vertex.expression_error) {
       return {
-        value: UnknownError,
+        value: UnknownError(),
       };
     }
 
