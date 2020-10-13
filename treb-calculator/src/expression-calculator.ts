@@ -547,8 +547,7 @@ export class ExpressionCalculator {
         return (expr: UnitUnary) => {
           const operand = this.CalculateExpression(expr.operand as ExtendedExpressionUnit);
           if (Array.isArray(operand)) {
-            return (operand as UnionValue[][]).map(column => 
-              column.map(value => func(zero, value)));
+            return operand.map(column => column.map(value => func(zero, value)));
           }
           return func(zero, operand);
         };
