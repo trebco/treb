@@ -91,6 +91,7 @@
         padding: 0px;
         justify-content: center;
         align-items: center;
+        margin: 0px;
         
       }
 
@@ -172,6 +173,7 @@
       font-size: 14px;
       padding-left: 4px;
       width: 10em;
+      margin: 0;
       text-overflow: ellipsis;
     }
 
@@ -180,6 +182,7 @@
       width: 30px;
       height: 30px;
       padding: 0;
+      margin: 0;
       display: flex;
       flex-direction: row;
       overflow: hidden;
@@ -209,6 +212,7 @@
         overflow: hidden;
         color: inherit;
         font-family: inherit;
+        margin: 0;
       }
 
     }
@@ -319,6 +323,7 @@
        FIXME: var sizing
     */
     & button.dropdown-link {
+      margin: 0;
       margin-left: 0px;
       width: 11px;
       position: relative;
