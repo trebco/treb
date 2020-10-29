@@ -506,6 +506,14 @@ export class Grid {
             event.preventDefault();
             node.focus();
 
+            let aspect = 0;
+            if (annotation.data?.original_size
+                  && annotation.data.original_size.width
+                  && annotation.data.original_size.height){
+              aspect = annotation.data.original_size.width / 
+                       annotation.data.original_size.height;
+            }
+
             const bounds = node.getBoundingClientRect();
             const offset = {
               x: bounds.left + event.offsetX - rect.width,
@@ -517,16 +525,30 @@ export class Grid {
               rect.height = move_event.offsetY - offset.y;
               rect.width = move_event.offsetX - offset.x;
 
-              if (move_event.shiftKey) {
-                // move in one direction at a time
+              if (move_event.shiftKey && move_event.ctrlKey) {
+                if (aspect) {
+
+                  const dx = Math.abs(rect.width - origin.width);
+                  const dy = Math.abs(rect.height - origin.height);
+
+                  if (dx < dy) {
+                    rect.width = aspect * rect.height;
+                  }
+                  else {
+                    rect.height = rect.width / aspect;
+                  }
+
+                }
+              }
+              else if (move_event.shiftKey) {
+                // move in one direction at a time [is this backwards? ...]
                 const dx = Math.abs(rect.height - origin.height);
                 const dy = Math.abs(rect.width - origin.width);
 
                 if (dx > dy) { rect.width = origin.width; }
                 else { rect.height = origin.height; }
               }
-
-              if (move_event.ctrlKey) {
+              else if (move_event.ctrlKey) {
                 const point = this.layout.ClampToGrid({
                   x: rect.right, y: rect.bottom,
                 });
