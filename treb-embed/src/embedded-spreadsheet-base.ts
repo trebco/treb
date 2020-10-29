@@ -1151,6 +1151,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     return new Promise<Blob>((resolve, reject) => {
       if (this.export_worker) {
+
+        this.dialog?.ShowDialog({
+          message: 'Importing XLSX...'
+        });
+
         this.export_worker.onmessage = (event) => {
           if (event.data) {
 
@@ -1168,11 +1173,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             this.calculator.AttachData(this.grid.model);
             this.Publish({ type: 'load' });
             this.UpdateDocumentStyles();
-
+            
           }
           else {
             return reject('unknown error (missing data)');
           }
+          
+          this.dialog?.HideDialog();
           resolve();
         };
         this.export_worker.onerror = (event) => {
@@ -1604,9 +1611,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
               }
 
-              this.ImportXLSX(contents).then(() => {
-                finalize();
-              });
+              this.ImportXLSX(contents).then(() => finalize()).catch(err => finalize(err));
+
               return;
             }
             else {
