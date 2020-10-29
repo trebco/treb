@@ -4531,26 +4531,53 @@ export class Grid {
       // it might actually be preferable to override the local cell style,
       // if there is one, if the argument has a style. (...)
 
+      // we can be a little clever here with date functions (if we want),
+      // forcing a date format. this is a bit fragile though. it would be 
+      // nice to coordinate this w/ calculator, but (atm) that would be
+      // very circular -- we need some dependency management
+
       if (!this.active_sheet.HasCellStyle(target)) {
         const formula_parse_result = this.parser.Parse(value);
-        if (formula_parse_result && formula_parse_result.dependencies) {
-          const list = formula_parse_result.dependencies;
-          for (const key of Object.keys(list.addresses)) {
-            const address = list.addresses[key];
-            if (this.active_sheet.HasCellStyle({ ...address })) {
-              const test = this.active_sheet.CellData({ ...address });
-              if (test.style && test.style.number_format) {
-                const style: Style.Properties = {
-                  number_format: test.style.number_format,
-                };
-                // if (array) this.model.sheet.UpdateAreaStyle(selection.area, style, true, true);
-                // else this.model.sheet.UpdateCellStyle(target, style, true, true);
+        if (formula_parse_result) {
+          if (formula_parse_result.expression?.type === 'call') { // we know this but ts doesn't
+            if (!cell.style || !cell.style.number_format || NumberFormatCache.Equals(cell.style.number_format, 'General')) {
+              const func = formula_parse_result.expression.name.toLowerCase();
+              let number_format: string|undefined;
+              switch (func) {
+                case 'today':
+                  number_format = 'Short Date';
+                  break;
+                case 'now':
+                  number_format = 'Timestamp';
+                  break;
+              }
+              if (number_format) {
                 commands.push({
                   key: CommandKey.UpdateStyle,
-                  area: array ? selection.area : target, style, delta: true
+                  area: array ? selection.area : target, style: { number_format }, delta: true
                 });
               }
-              break;
+            }
+          }
+          if (formula_parse_result.dependencies) {
+            const list = formula_parse_result.dependencies;
+            for (const key of Object.keys(list.addresses)) {
+              const address = list.addresses[key];
+              if (this.active_sheet.HasCellStyle({ ...address })) {
+                const test = this.active_sheet.CellData({ ...address });
+                if (test.style && test.style.number_format) {
+                  const style: Style.Properties = {
+                    number_format: test.style.number_format,
+                  };
+                  // if (array) this.model.sheet.UpdateAreaStyle(selection.area, style, true, true);
+                  // else this.model.sheet.UpdateCellStyle(target, style, true, true);
+                  commands.push({
+                    key: CommandKey.UpdateStyle,
+                    area: array ? selection.area : target, style, delta: true
+                  });
+                }
+                break;
+              }
             }
           }
         }
