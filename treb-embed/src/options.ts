@@ -121,6 +121,9 @@ export interface BaseOptions {
   /** defualt screen updates, if you call RunSimulation without an explicit parameter */
   screen_updates?: boolean;
 
+  /** max size for image, in bytes */
+  max_file_size?: number;
+
 }
 
 /**
@@ -142,6 +145,7 @@ export const DefaultOptions: BaseOptions = {
   resizable: true,
   default_trials: 5000,
   screen_updates: false,
+  max_file_size: 1024 * 64,
 };
 
 /**

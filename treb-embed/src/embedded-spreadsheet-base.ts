@@ -646,18 +646,25 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
       event.preventDefault();
-      this.LoadFileInternal(event.dataTransfer.files[0]).then(() => {
-        // ...
-      }).catch((err) => {
-        this.dialog?.ShowDialog({
-          title: 'Error reading file',
-          close_box: true,
-          message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
-          type: DialogType.error,
-          timeout: 3000, 
+      const file = event.dataTransfer.files[0];
+
+      if (/^image/.test(file.type)) {
+        this.InsertImage(file);
+      }
+      else {
+        this.LoadFileInternal(file).then(() => {
+          // ...
+        }).catch((err) => {
+          this.dialog?.ShowDialog({
+            title: 'Error reading file',
+            close_box: true,
+            message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
+            type: DialogType.error,
+            timeout: 3000, 
+          });
+          console.error(err);
         });
-        console.error(err);
-      });
+      }
     }
   }
 
@@ -905,11 +912,26 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public async InsertImage(): Promise<void> {
+  public async InsertImage(file?: File): Promise<void> {
 
-    const file = await this.SelectFile('.png, .jpg, .jpeg, .gif, .svg');
-  
+    if (!file) {
+      file = await this.SelectFile('.png, .jpg, .jpeg, .gif, .svg');
+    }
+
     if (!file) { return; }
+
+    if (this.options.max_file_size && file.size > this.options.max_file_size) {
+      this.dialog?.ShowDialog({
+        type: DialogType.error,
+        message: 'This file exceeds the allowed image size. Please try a smaller image.',
+        title: 'Error adding image',
+        timeout: 3000,
+        close_box: true,
+      });
+      return;
+    }
+
+    const reference = file;
 
     await new Promise<void>((resolve, reject) => {
 
@@ -931,6 +953,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               }
             }
 
+            const img = document.createElement('img');
+            img.src = contents;
+            
             /*
             const img = document.createElement('img');
             img.setAttribute('style', 'position: absolute; display: block');
@@ -946,11 +971,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
             const annotation = this.grid.CreateAnnotation({
               type: 'image',
-              rect: {top: 30, left: 30, width: 300, height: 300},
+              rect: {
+                top: 30, 
+                left: 30, 
+                width: img.width || 300, 
+                height: img.height || 300
+              },
               formula: '',
             });
             annotation.data.src = contents;
-            // annotation.data.original_size = { width, height };
+            annotation.data.original_size = { width: img.width || 300, height: img.height || 300 };
 
           }
           resolve();
@@ -967,7 +997,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       // FIXME: this should be done async, possibly in a worker
 
       setTimeout(() => {
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(reference);
       }, 100);
 
     });
