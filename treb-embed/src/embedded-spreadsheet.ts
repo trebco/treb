@@ -192,7 +192,20 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
    * run MC simulation, in worker. worker is now demand-loaded, so first
    * pass may be slow.
    */
-  public async RunSimulation(trials = 5000, lhs = true, stepped = false): Promise<void> {
+  public async RunSimulation(trials?: number, lhs?: boolean, stepped?: boolean): Promise<void> {
+    //public async RunSimulation(trials = 5000, lhs = true, stepped = false): Promise<void> {
+
+    // parameters derived from options, if present, but keep defaults for backcompat
+
+    if (typeof trials === 'undefined') {
+      trials = this.options.default_trials || 5000;
+    }
+    if (typeof lhs === 'undefined') {
+      lhs = true;
+    }
+    if (typeof stepped === 'undefined') {
+      stepped = !!this.options.screen_updates; // default missing so falsy
+    }
 
     if (this.simulation_status.running) {
       throw new Error('simulation already running');
@@ -205,6 +218,10 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       title: 'Running Monte Carlo simulation',
       message: 'Starting',
       // type: DialogType.info,
+    }).then(() => {
+      if (this.simulation_status.running) {
+        this.AbortSimulation();
+      }
     });
 
     if (!this.workers.length) {
@@ -484,6 +501,38 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
         break;
 
     }
+
+  }
+
+  protected AbortSimulation(): void {
+
+    console.warn('aborting simulation');
+
+    for (const worker of this.workers) {
+      worker.terminate();
+    }
+    this.workers = [];
+
+    // FIXME: unify code w/ above
+
+    this.simulation_status.running = false;
+    // this.last_simulation_data =
+    //  PackResults.ConsolidateResults(this.simulation_status.results);
+
+    requestAnimationFrame(() => {
+      //this.calculator.UpdateResults(this.last_simulation_data);
+      this.Recalculate().then(() => {
+        if(!this.grid.headless) { this.Focus() }
+      });
+
+      this.Publish({ type: 'simulation-aborted' });
+
+      for (const entry of this.simulation_resolution) {
+        entry.call(this);
+      }
+      this.simulation_resolution = [];
+
+    });
 
   }
 

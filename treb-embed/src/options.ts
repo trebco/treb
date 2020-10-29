@@ -112,7 +112,14 @@ export interface BaseOptions {
   /** new option, better support for headless operations (default false) */
   headless?: boolean;
 
+  /** max workers. workers is bounded by available cores, but you can request max < cores */
   max_workers?: number;
+
+  /** default trials if you call RunSimulation without an explicit parameter */
+  default_trials?: number;
+
+  /** defualt screen updates, if you call RunSimulation without an explicit parameter */
+  screen_updates?: boolean;
 
 }
 
@@ -133,6 +140,8 @@ export const DefaultOptions: BaseOptions = {
   add_tab: false,
   max_workers: 1,
   resizable: true,
+  default_trials: 5000,
+  screen_updates: false,
 };
 
 /**

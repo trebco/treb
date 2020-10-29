@@ -56,6 +56,10 @@ export interface DocumentChangeEvent {
   type: 'document-change';
 }
 
+export interface SimulationAbortedEvent {
+  type: 'simulation-aborted';
+}
+
 export interface SimulationCompleteEvent {
   type: 'simulation-complete';
   elapsed: number;
@@ -75,6 +79,7 @@ export interface SelectionEvent {
 export type EmbeddedSheetEvent
   = SimulationCompleteEvent
   | SimulationProgressEvent
+  | SimulationAbortedEvent
   | DocumentChangeEvent
   | DocumentResetEvent
   | DocumentLoadEvent

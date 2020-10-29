@@ -38,6 +38,8 @@ export interface MessageDialogOptions {
   // progress_bar?: boolean;
 }
 
+export type ResolutionFunction = () => void;
+
 /**
  * rebuilding the dialog, like this:
  * 
@@ -89,6 +91,8 @@ export class ProgressDialog {
     this.title_node.style.display = value ? 'block' : 'none';
   }
   */
+
+  private pending_dialog_resoltion: ResolutionFunction[] = [];
 
   private options_: Partial<MessageDialogOptions> = {
     type: DialogType.initial,
@@ -175,6 +179,13 @@ export class ProgressDialog {
     else { 
       this.model.mask.classList.remove('visible'); 
       window.removeEventListener('keydown', this.event_handler);
+      const tmp = this.pending_dialog_resoltion.slice(0);
+      this.pending_dialog_resoltion = [];
+      Promise.resolve().then(() => {
+        for (const func of tmp) {
+          func();
+        }
+      });
     }
 
   }
@@ -295,29 +306,33 @@ export class ProgressDialog {
     this.visible = false;
   }
 
-  public ShowDialog(options: Partial<MessageDialogOptions>): void {
+  public ShowDialog(options: Partial<MessageDialogOptions>): Promise<void> {
+
+    return new Promise((resolve) => {
+
+      this.pending_dialog_resoltion.push(resolve);
+
+      /*
+      this.message = options.message || '';
+      this.title = options.title || '';
+      */
+      this.options = options;
 
 
+      // this.progress_container.style.display = 'none';
 
-    /*
-    this.message = options.message || '';
-    this.title = options.title || '';
-    */
-    this.options = options;
+      this.visible = true;
+      
+      if (this.timeout) { 
+        clearTimeout(this.timeout); 
+        this.timeout = 0;
+      }
+      
+      if (options.timeout) {
+        this.timeout = setTimeout(() => this.HideDialog(), options.timeout);
+      }
 
-
-    // this.progress_container.style.display = 'none';
-
-    this.visible = true;
-    
-    if (this.timeout) { 
-      clearTimeout(this.timeout); 
-      this.timeout = 0;
-    }
-    
-    if (options.timeout) {
-      this.timeout = setTimeout(() => this.HideDialog(), options.timeout);
-    }
+    });
 
   }
 
