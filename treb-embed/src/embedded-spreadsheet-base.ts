@@ -2,11 +2,11 @@
 // treb imports
 import { Grid, GridEvent, SerializeOptions, Annotation,
          BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection } from 'treb-grid';
-import { Parser, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
+import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, 
-  IsFlatData, IsFlatDataArray } from 'treb-base-types';
+  IsFlatData, IsFlatDataArray, Rectangle } from 'treb-base-types';
 import { EventSource, Yield, tmpl } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 import { Toolbar as SimpleToolbar, ToolbarElement } from 'treb-toolbar';
@@ -899,14 +899,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public InsertAnnotation(formula: string, type = 'treb-chart') {
+  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: Partial<Rectangle>): void {
 
     const x = 30;
     const y = 30;
 
+    if (!rect) {
+      rect = {top: y, left: x, width: 300, height: 300};
+    }
+
     this.grid.CreateAnnotation({
       type,
-      rect: {top: y, left: x, width: 300, height: 300},
+      rect,
       formula,
     });
 
@@ -1286,10 +1290,20 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * get selection
    */
-  public GetSelection() {
+  public GetSelection(qualified = false): string {
     const selection = this.grid.GetSelection();
     if (selection.empty) return '';
-    return selection.area.spreadsheet_label;
+
+    const address = selection.area.spreadsheet_label;
+
+    if (qualified) {
+      const active = this.grid.active_sheet.name;
+      return QuotedSheetNameRegex.test(active) ?
+        `'${active}'!${address}` : `${active}!${address}`;
+    }
+    else {
+      return address;
+    }
   }
 
   /** return "live" reference to selection */

@@ -1042,7 +1042,7 @@ export class Grid {
   }
 
   /** insert sheet at the given index (or current index) */
-  public InsertSheet(index?: number): void {
+  public InsertSheet(index?: number, name?: string): void {
 
     if (typeof index === 'undefined') {
       if (!this.model.sheets.some((sheet, i) => {
@@ -1059,6 +1059,7 @@ export class Grid {
     this.ExecCommand({
       key: CommandKey.AddSheet,
       insert_index: index,
+      name,
     });
 
   }
@@ -1108,9 +1109,10 @@ export class Grid {
 
   }
 
-  public AddSheet(): void {
+  public AddSheet(name?: string): void {
     this.ExecCommand({
       key: CommandKey.AddSheet,
+      name,
     });
   }
 
@@ -7472,6 +7474,7 @@ export class Grid {
         case CommandKey.DeleteSheet:
           this.DeleteSheetInternal(command);
           structure_event = true;
+          structure_rebuild_required = true;
           break;
 
         case CommandKey.DuplicateSheet:
@@ -7484,7 +7487,7 @@ export class Grid {
           // const sheet_id = this.AddSheetInternal(undefined, command.insert_index); // default name
           this.ActivateSheetInternal({
             key: CommandKey.ActivateSheet,
-            id: this.AddSheetInternal(undefined, command.insert_index), // default name
+            id: this.AddSheetInternal(command.name, command.insert_index), // default name
           });
           structure_event = true;
           break;

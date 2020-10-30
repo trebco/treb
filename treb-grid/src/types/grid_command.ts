@@ -240,6 +240,7 @@ export interface NullCommand {
 export interface AddSheetCommand {
   key: CommandKey.AddSheet;
   insert_index?: number;
+  name?: string;
 }
 
 export interface DuplicateSheetCommand extends SheetSelection {

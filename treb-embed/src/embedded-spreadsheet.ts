@@ -264,6 +264,11 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     }
     */
 
+    this.Publish({
+      type: 'running-simulation',
+      trials,
+    });
+
     this.simulation_status.running = true;
     this.simulation_status.threads = this.workers.length;
     this.simulation_status.progress = [];
