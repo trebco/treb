@@ -256,7 +256,7 @@ export class ToolbarManager {
     if (this.pattern) { return; }
 
     const svg = tmpl`
-      <svg version='1.1' id='root' style='width: 0px; height: 0px; overflow: hidden;'>
+      <svg version='1.1' id='root' style='width: 0px; height: 0px; overflow: hidden; position: fixed; top: -10px;'>
         <pattern width='3' height='3' patternTransform='rotate(45 0 0)' patternUnits='userSpaceOnUse'>
           <line x1='1' y1='0' x2='1' y2='10' style='stroke-width: 2; stroke: #999'/>
         </pattern>
