@@ -899,13 +899,53 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: Partial<Rectangle>): void {
+  /**
+   * add a sheet, optionally named. name will be rewritten if there's overlap
+   * (FIXME: should throw instead? ...)
+   */
+  public AddSheet(name?: string): void{
+    this.grid.AddSheet(name);
+
+    // before you do anything else you probably need to reset the calculator.
+    // that was causing errors when adding sheet via the grid method and then
+    // calling InsertAnnotation.
+    //
+    // the reason is that calling AddSheet will trigger a calculator reset,
+    // but asynchronously; if you are going to call other API methods we should
+    // do this now. the additional reset won't be a problem (?)
+
+    this.calculator.Reset();
+  }
+
+  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: Partial<Rectangle>|string): void {
 
     const x = 30;
     const y = 30;
 
     if (!rect) {
       rect = {top: y, left: x, width: 300, height: 300};
+    }
+    else if (typeof rect === 'string') {
+      let area: IArea|undefined
+
+      area = this.grid.model.named_ranges.Get(rect);
+      if (!area) {
+        const addresses = rect.split(':');
+        if (addresses.length < 2) {
+          area = new Area(this.EnsureAddress(addresses[0]));
+        }
+        else {
+          area = new Area(
+            this.EnsureAddress(addresses[0]),
+            this.EnsureAddress(addresses[1]));
+        }
+      }
+
+      // FIXME: don't call private functions
+
+      rect = (this.grid as any).layout.CellAddressToRectangle(area.start).Combine(
+        (this.grid as any).layout.CellAddressToRectangle(area.end)).Shift(-1, -1).Expand(1, 1);
+
     }
 
     this.grid.CreateAnnotation({
