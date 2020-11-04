@@ -86,13 +86,35 @@ export const Concatenate = (a: UnionValue, b: UnionValue): UnionValue => {
 export const Equals = (a: UnionValue, b: UnionValue): UnionValue => {
   if (a.type === ValueType.error) { return a; }
   if (b.type === ValueType.error) { return b; }
+  
+  // empty cells equal 0 and ""
+
+  if ((a.type === ValueType.undefined && (b.value === '' || b.value === 0))
+      || (b.type === ValueType.undefined && (a.value === '' || a.value === 0))) {
+
+    return { type: ValueType.boolean, value: true, };
+  }
+
   return { type: ValueType.boolean, value: a.value == b.value }; // note ==
 };
 
+/**
+ * this is duplicative, but it seems better than another function call.
+ * not sure if that is over-optimization (it is).
+ */
 export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
   if (a.type === ValueType.error) { return a; }
   if (b.type === ValueType.error) { return b; }
-  return { type: ValueType.boolean, value: a.value != b.value }; // note !=
+  
+  // empty cells equal 0 and ""
+
+  if ((a.type === ValueType.undefined && (b.value === '' || b.value === 0))
+      || (b.type === ValueType.undefined && (a.value === '' || a.value === 0))) {
+
+    return { type: ValueType.boolean, value: false, };
+  }
+
+  return { type: ValueType.boolean, value: a.value != b.value }; // note ==
 };
 
 // NOTE: our comparisons don't match Excel with different types -- we could
@@ -135,8 +157,8 @@ export const MapOperator = (operator: string) => {
     case '%': return Modulo;    // NOTE: not an excel operator
     case '=': return Equals;
     case '==': return Equals;
-    case '!=': return Equals;
-    case '<>': return Equals;
+    case '!=': return NotEquals;
+    case '<>': return NotEquals;
     case '>': return GreaterThan; 
     case '>=': return GreaterThanEqual; 
     case '<': return LessThan; 
