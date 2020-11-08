@@ -120,7 +120,7 @@ export const ChartFunctions: FunctionMap = {
 
  'Scatter.Line': {
     arguments: [
-      { name: 'data', metadata: true, },
+      { name: 'Data', metadata: true, },
       { name: 'ChartTitle' },
     ],
     fn: Identity,

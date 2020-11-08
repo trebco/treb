@@ -4737,23 +4737,36 @@ export class Grid {
    */
   private FixFormula(formula: string): string {
     if (formula.trim()[0] !== '=') return formula;
-    // if (!formula.trim().startsWith('=')) return formula;
-    // formula = formula.trimLeft();
+
+    const original = formula;
+
     formula = formula.replace(/^\s+/, '');
 
-    let q = false;
-    let a = false;
+    let q = false; // double-quote
+    let a = false; // single-quote (apostrophe)
     let paren = 0;
     let escape = false;
 
-    // for ( let i = 0; i < formula.length; i++ ){
-    //  const c = formula[i];
-    for (const char of formula) {
+    // this breaks on escaped quotes in strings
+    // also there's an escape character, but never unset? (...)
+
+    const len = formula.length;
+    for (let i = 0; i < len; i++) {
+      const char = formula[i];
       if (!escape) {
         switch (char) {
           case '"':
-            if (q) q = false;
-            else if (!a) q = true;
+            if (q) {
+              if (formula[i+1] === '"') {
+                i++; 
+              }
+              else {
+                q = false;
+              }
+            }
+            else if (!a) {
+              q = true;
+            }
             break;
           case '\'':
             if (a) a = false;

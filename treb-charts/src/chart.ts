@@ -96,15 +96,13 @@ export class Chart {
   /**
    * column/bar chart, now using common Series data and routines
    * 
-   * @param args arguments: data, categories, title
+   * @param args arguments: data, categories, title, options
    * @param type 
    */
   public CreateColumnChart(args: any[], type: 'bar'|'column'): void {
 
     const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
     const common = this.CommonData(series);
-
-    // console.info("CC", series, common);
 
     let category_labels: string[] | undefined;
 
@@ -156,6 +154,14 @@ export class Chart {
     if (options) {
       (this.chart_data as BarData).round = /round/i.test(options);
       this.chart_data.data_labels = /labels/i.test(options);
+
+      console.info("LL", series, this.chart_data);
+
+      const match = options.match(/labels="(.*?)"/);
+      if (match && series) {
+        this.ApplyLabels(series, match[1], category_labels);
+      }
+
     }
 
   }
@@ -243,6 +249,8 @@ export class Chart {
 
     if (flat[0].value.format) {
       series.y.format = flat[0].value.format || '';
+      const format = NumberFormatCache.Get(series.y.format || '');
+      series.y.labels = series.y.data.map(value => (value === undefined) ? undefined : format.Format(value));
     }
 
     const values = series.y.data.filter(value => value || value === 0) as number[];
@@ -486,9 +494,41 @@ export class Chart {
     };
 
     if (options) {
+
       this.chart_data.markers = /marker/i.test(options);
       this.chart_data.smooth = /smooth/i.test(options);
       this.chart_data.data_labels = /labels/i.test(options);
+
+      const match = options.match(/labels="(.*?)"/);
+      if (match && this.chart_data.series) {
+        this.ApplyLabels(this.chart_data.series, match[1]);
+      }
+
+    }
+
+  }
+
+  public ApplyLabels(series_list: SeriesType[], pattern: string, category_labels?: string[]): void {
+
+    for (const series of series_list) {
+
+      const format = {
+        x: NumberFormatCache.Get(series.x.format || ''),
+        y: NumberFormatCache.Get(series.y.format || ''),
+      };
+
+      series.y.labels = [];
+
+      for (let i = 0; i < series.y.data.length; i++) {
+
+        const x = category_labels ? category_labels[i] : 
+                  (typeof series.x.data[i] === 'number' ? format.x.Format(series.x.data[i]) : '');
+        const y = typeof series.y.data[i] === 'number' ? format.y.Format(series.y.data[i]) : '';
+
+        series.y.labels[i] = pattern.replace(/\bx\b/g, x).replace(/\by\b/g, y);
+
+      }
+
     }
 
   }

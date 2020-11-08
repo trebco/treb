@@ -323,7 +323,11 @@ export class Parser {
         );
 
       case 'literal':
-        if (typeof unit.value === 'string') return '"' + unit.value + '"';
+        if (typeof unit.value === 'string') {
+
+          // escape any quotation marks in string
+          return '"' + unit.value.replace(/"/g, '""') + '"';
+        }
         else if (convert_decimal && typeof unit.value === 'number') {
           if (unit.text) {
             // here we want to translate the literal typed-in value.
