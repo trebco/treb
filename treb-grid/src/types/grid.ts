@@ -3821,6 +3821,18 @@ export class Grid {
       }
     }
 
+    // special case: top-left is array and source_area is the whole, exact array
+    if (cells[0][0].area && cells[0][0].area.Equals(source_area)) {
+        console.info('match!');
+        this.ExecCommand({
+          key: CommandKey.SetRange,
+          value: cells[0][0].value,
+          array: true,
+          area: target_area,
+        });
+        return;
+    }
+
     const data: CellValue[][] = [];
     let style: Style.Properties[][] = [];
 
