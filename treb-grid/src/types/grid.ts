@@ -23,6 +23,7 @@ import { CreateLayout } from '@grid-conditional/layout_manager';
 import { GridSelection } from './grid_selection';
 import { Theme, ExtendedTheme, CalculateSupplementalColors, LoadThemeProperties } from './theme';
 import { CellEditor } from '../editors/cell_editor';
+import { FormulaEditorBase } from '../editors/formula_editor_base';
 
 import { TileRenderer } from '../render/tile_renderer';
 import { GridEvent } from './grid_events';
@@ -1660,6 +1661,12 @@ export class Grid {
 
   public SelectAll(): void {
     this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
+    this.RenderSelections();
+  }
+
+  /** API method */
+  public SelectRange(range?: Area): void {
+    this.Select(this.primary_selection, range);
     this.RenderSelections();
   }
 

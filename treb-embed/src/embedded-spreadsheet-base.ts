@@ -1387,6 +1387,39 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.Publish({ type: 'reset' });
   }
 
+  public Select(range: IArea|ICellAddress|string) {
+    let area: Area|undefined;
+
+    if (range) {
+      if (typeof range === 'string') {
+        const named_range = this.grid.model.named_ranges.Get(range);
+        if (named_range) {
+          area = named_range.Clone();
+        }
+        else {
+          const addresses = range.split(':');
+          if (addresses.length < 2) {
+            area = new Area(this.EnsureAddress(addresses[0]));
+          }
+          else {
+            area = new Area(
+              this.EnsureAddress(addresses[0]),
+              this.EnsureAddress(addresses[1]));
+          }
+        }
+      }
+      else if (IsCellAddress(range)) {
+        area = new Area(range);
+      }
+      else {
+        area = new Area(range.start, range.end);
+      }
+    }
+
+    this.grid.SelectRange(area);
+
+  }
+
   public ApplyStyle(range?: IArea|ICellAddress|string, style: Style.Properties = {}, delta = true) {
 
     let area: Area|undefined;
