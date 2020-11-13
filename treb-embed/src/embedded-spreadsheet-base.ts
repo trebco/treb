@@ -9,7 +9,7 @@ import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea,
   IsFlatData, IsFlatDataArray, Rectangle } from 'treb-base-types';
 import { EventSource, Yield, tmpl } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
-import { Toolbar as SimpleToolbar, ToolbarElement } from 'treb-toolbar';
+import { Toolbar as SimpleToolbar, Toolbar, ToolbarElement } from 'treb-toolbar';
 import { ToolbarManager } from './toolbar-manager';
 
 // local
@@ -42,6 +42,10 @@ interface UndoEntry {
 enum CalculationOptions {
   automatic,
   manual,
+}
+
+export interface ToolbarCtl {
+  Show: (show: boolean) => void;
 }
 
 /**
@@ -200,6 +204,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   protected active_selection_style?: Style.Properties;
+
+  public toolbar_ctl?: ToolbarCtl;
 
   /** localized parser instance. we're sharing. */
   private get parser() { 

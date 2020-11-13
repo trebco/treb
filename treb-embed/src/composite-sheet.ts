@@ -195,6 +195,8 @@ export class CompositeSheet {
 
       this.outer_container.appendChild(this.toolbar_container);
 
+      this.sheet.toolbar_ctl = { Show: (show: boolean) => this.ShowToolbar(show) };
+
     }
 
     if (this.options.export) {
