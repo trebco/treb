@@ -254,6 +254,19 @@ export class SimulationModel {
         category: ['RiskAMP Random Distributions'],
       },
 
+      TruncatedNormalValue: {
+        description: 'Returns a sample from the normal distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'mean', description: 'Mean', default: 0 },
+          { name: 'stdev', description: 'Standard Deviation', default: 1 },
+          { name: 'min', description: 'Minimum Value' },
+          { name: 'max', description: 'Maximum Value' },
+        ],
+        fn: this.truncatednormalvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+      },
+
       NormalValue: {
         description: 'Returns a sample from the normal distribution',
         simulation_volatile: true,
@@ -1004,6 +1017,22 @@ export class SimulationModel {
       type: ValueType.number, 
       value: MC.LogNormal(1, { mean, sd })[0]
     };
+  }
+
+  public truncatednormalvalue(mean = 0, sd = 1, min?: number, max?: number): UnionValue {
+    if (this.state === SimulationState.Prep) {
+      this.InitDistribution();
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+        MC.TruncatedNormal(this.iterations, { mean, sd, lhs: this.lhs, min, max });
+    }
+    else if (this.state === SimulationState.Simulation) {
+      return {
+        type: ValueType.number, 
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
+    }
+    return {type: ValueType.number, value: MC.TruncatedNormal(1, { mean, sd, min, max })[0] };
   }
 
   public normalvalue(mean = 0, sd = 1): UnionValue {
