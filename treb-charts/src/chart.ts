@@ -155,8 +155,6 @@ export class Chart {
       (this.chart_data as BarData).round = /round/i.test(options);
       this.chart_data.data_labels = /labels/i.test(options);
 
-      console.info("LL", series, this.chart_data);
-
       const match = options.match(/labels="(.*?)"/);
       if (match && series) {
         this.ApplyLabels(series, match[1], category_labels);
