@@ -31,6 +31,7 @@ export class NumberFormatCache {
     Integer: '0',
     Percent: '0.00%',
     General: '0.00###',
+    Fraction: '# ?/?',
     Dollar: '$* _(#,##0.00_);$* (#,##0.00);$* -???',
     Exponential: '0.000e',
 

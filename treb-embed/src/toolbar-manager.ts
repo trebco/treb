@@ -547,7 +547,7 @@ export class ToolbarManager {
     if (!format_element) { return; } // FIXME: throw
 
     const number_formats: string[] = [
-        'General', 'Number', 'Integer', 'Percent', 'Accounting', 'Currency', 'Scientific',
+        'General', 'Number', 'Integer', 'Percent', 'Fraction', 'Accounting', 'Currency', 'Scientific',
     ];
 
     const date_formats: string[] = [

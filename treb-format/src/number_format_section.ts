@@ -19,8 +19,26 @@ export class NumberFormatSection {
   /** flag: this is the string section, don't format numbers */
   public string_format = false;
 
+  /** flag: this is a fractional format */
+  public fraction_format = false;
+
   /** flag: time in 12-hour format  */
   public twelve_hour = false;
+
+  /** fraction: fixed denominator */
+  public fraction_denominator = 0;
+
+  /** fraction includes integer */
+  public fraction_integer = true;
+
+  /** align fraction digits (using ???) [TODO] */
+  public fraction_align = 0;
+
+  /** 
+   * fraction denominator digits. we will limit to [1,4] but this can
+   * be zero if there's an explicit denominator.
+   */
+  public fraction_denominator_digits = 0;
 
   /** prepend zeros */
   public integer_min_digits = 0;

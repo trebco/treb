@@ -9,12 +9,14 @@ const UNDERSCORE = 0x5F;  // TODO
 const QUESTION_MARK = 0x3F;
 const ZERO = 0x30;
 const PERIOD = 0x2E;
+const SPACE = 0x20;
 const COMMA = 0x2C;
 const PERCENT = 0x25;
 const DOUBLE_QUOTE = 0x22;
 const NUMBER_SIGN = 0x23;
 const SEMICOLON = 0x3B;
 const BACKSLASH = 0x5C;
+const FORWARDSLASH = 0x2F;
 const AT = 0x40;
 const LEFT_BRACE = 0x5B;
 const RIGHT_BRACE = 0x5D;
@@ -70,7 +72,6 @@ export class FormatParser {
     }
 
     // not a date; reset and try again
-
     this.char_index = 0;
     this.current_section = new NumberFormatSection();
     this.sections = [this.current_section];
@@ -148,10 +149,63 @@ export class FormatParser {
     throw new Error('unterminated format');
   }
 
+  /** 
+   * pre-scan for fractional format, check for legal/illegal chars.
+   * fraction format has an optional integer, spaces, then the fractional
+   * part. 
+   * 
+   * except for the denominator, all characters are represented as # or ?, 
+   * but formats seem to be a little forgiving (not sure we have to be). 
+   * essentially, should look something like
+   * ```
+   * # ##/##
+   * ? ??/??
+   * #/32
+   * #/64
+   * # #/16
+   * ```
+   */
+  protected static ScanFractionFormat(): boolean {
+
+    const fraction_regex = /^([#?]+ +){0,1}([#?]+)\/([#?0-9]+)(?:$|[^#?0-9])/;
+    const text = this.pattern.substr(this.char_index);
+
+    const match = text.match(fraction_regex);
+    if (!match) { 
+      return false; 
+    }
+
+    const len = (match[1] || '').length + match[2].length + match[3].length + 1;
+
+    // flag
+    this.current_section.fraction_format = true;
+
+    // has integer section
+    this.current_section.fraction_integer = !!match[1];
+
+    // fixed denominator
+    const fixed_denominator = Number(match[3]);
+    if (!isNaN(fixed_denominator)) {
+      this.current_section.fraction_denominator = fixed_denominator;
+    }
+    else {
+      this.current_section.fraction_denominator_digits = match[3].length;
+    }
+    
+    this.char_index += len;
+    this.current_section.has_number_format = true;
+
+    return true;
+  }
+
   /**
    * number format proper contains only the following characters:
    * +-0#.,
    * anything else will be ignored
+   * 
+   * [UPDATE] fractional number formats can contain spaces and 
+   * the / character (in fact they would have to contain that).
+   * 
    */
   protected static ConsumeNumberFormat(): void {
 
@@ -270,6 +324,17 @@ export class FormatParser {
   protected static ConsumeChar(): void {
 
     const char = this.characters[this.char_index];
+
+    // check for fraction format. this can't happen in a string section,
+    // and if there's already a number format then treat it as text (garbage).
+
+    if (char === QUESTION_MARK || char === NUMBER_SIGN) {
+      if (!this.current_section.has_number_format && 
+          !this.current_section.string_format &&
+           this.ScanFractionFormat()) {
+        return;
+      }
+    }
 
     switch (char) {
       case SEMICOLON:

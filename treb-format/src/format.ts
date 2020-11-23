@@ -2,6 +2,7 @@
 import { FormatParser } from './format_parser';
 import { NumberFormatSection } from './number_format_section';
 import { Localization, TextPartFlag, TextPart } from 'treb-base-types';
+import { format } from 'path';
 
 //
 // excel time is explicitly universal, so we need all dates in and out 
@@ -74,6 +75,8 @@ export const UnlotusDate = (value: number, local = true): number => {
 export class NumberFormat {
 
   public static grouping_regexp = /\d{1,3}(?=(\d{3})+(?!\d))/g;
+
+  public static fraction_limits = [9, 99, 999, 9999];
 
   /**
    * render text parts to string
@@ -546,6 +549,66 @@ export class NumberFormat {
     return Math.round(m * value) / m;
   }
 
+  public FormatFraction(value: number, section: NumberFormatSection): string {
+
+    if (section.percent) {
+      value *= 100;
+    }
+
+    let candidate = {
+      denominator: 1,
+      numerator: Math.round(value),
+      error: Math.abs(Math.round(value) - value),
+    };
+
+    if (section.fraction_denominator) {
+      candidate.denominator = section.fraction_denominator;
+      candidate.numerator = Math.round(value * candidate.denominator);
+    }
+    else {
+    
+      if (candidate.error) {
+        const limit = NumberFormat.fraction_limits[section.fraction_denominator_digits - 1] || NumberFormat.fraction_limits[0];
+        for (let denominator = 2; denominator <= limit; denominator++) {
+          const numerator = Math.round(value * denominator);
+          const error = Math.abs(numerator/denominator - value);
+          if (error < candidate.error) {
+            candidate = {
+              numerator, denominator, error,
+            };
+            if (!error) { break; }
+          }
+        }
+      }
+
+    }
+
+    const text: string[] = [];
+
+    if (section.fraction_integer) {
+      const integer = Math.floor(candidate.numerator / candidate.denominator);
+      candidate.numerator %= candidate.denominator;
+      if (integer || !candidate.numerator) {
+        text.push(integer.toString());
+        if (candidate.numerator) {
+          text.push(' ');
+        }
+      }
+    }
+    else if (!candidate.numerator) {
+      text.push('0');
+    }
+
+    if (candidate.numerator) {
+      text.push(candidate.numerator.toString());
+      text.push('/');
+      text.push(candidate.denominator.toString());
+    }
+
+    return text.join('');
+
+  }
+
   public BaseFormat(value: any){
 
     if (this.sections[0].date_format) {
@@ -592,7 +655,10 @@ export class NumberFormat {
 
     let representation = '';
 
-    if (section.exponential) {
+    if (section.fraction_format) {
+      representation = this.FormatFraction(value, section);
+    }
+    else if (section.exponential) {
       representation = abs_value.toExponential(section.decimal_max_digits);
     }
     else {
@@ -608,16 +674,20 @@ export class NumberFormat {
 
     const parts = representation.split('.');
 
-    while (parts[0].length < section.integer_min_digits) {
-      parts[0] = ('0000000000000000' + parts[0]).slice(-section.integer_min_digits);
-    }
+    if (!section.fraction_format) {
 
-    if (section.integer_min_digits === 0 && parts[0] === '0') {
-      parts[0] = ''; // not sure why anyone would want that
-    }
+      while (parts[0].length < section.integer_min_digits) {
+        parts[0] = ('0000000000000000' + parts[0]).slice(-section.integer_min_digits);
+      }
 
-    if (section.grouping) {
-      parts[0] = parts[0].replace(NumberFormat.grouping_regexp, '$&' + Localization.grouping_separator);
+      if (section.integer_min_digits === 0 && parts[0] === '0') {
+        parts[0] = ''; // not sure why anyone would want that
+      }
+
+      if (section.grouping) {
+        parts[0] = parts[0].replace(NumberFormat.grouping_regexp, '$&' + Localization.grouping_separator);
+      }
+
     }
 
     return { parts, section };
