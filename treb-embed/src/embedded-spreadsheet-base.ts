@@ -152,6 +152,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /** user data moved to model */
   public set user_data(data: any|undefined) {
     this.grid.model.user_data = data;
+    this.DocumentChange();
   }
 
   /** automatic/manual */
