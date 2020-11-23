@@ -188,9 +188,9 @@ export class FormatParser {
     if (!isNaN(fixed_denominator)) {
       this.current_section.fraction_denominator = fixed_denominator;
     }
-    else {
-      this.current_section.fraction_denominator_digits = match[3].length;
-    }
+
+    // we do this regardless; it's used when collapsing values to zero
+    this.current_section.decimal_max_digits = this.current_section.fraction_denominator_digits = match[3].length;
     
     this.char_index += len;
     this.current_section.has_number_format = true;

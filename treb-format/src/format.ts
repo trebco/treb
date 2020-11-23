@@ -273,7 +273,24 @@ export class NumberFormat {
       let nf = '';
       let i = 0;
 
-      if (section.has_number_format) {
+      if (section.fraction_format) {
+        if (section.fraction_integer) {
+          nf += '? ';
+        }
+        let pattern = '';
+        for (let j = 0; j < section.fraction_denominator_digits; j++) {
+          pattern += '#';
+        }
+        nf += pattern;
+        nf += '/';
+        if (section.fraction_denominator) {
+          nf += section.fraction_denominator;
+        }
+        else {
+          nf += pattern;
+        }
+      }
+      else if (section.has_number_format) {
         for (i = 0; i < section.integer_min_digits; i++) {
           nf += '0';
         }
@@ -655,10 +672,12 @@ export class NumberFormat {
 
     let representation = '';
 
+    // special handling for fractions skips most of the other bits
     if (section.fraction_format) {
-      representation = this.FormatFraction(value, section);
+      return { parts: [this.FormatFraction(abs_value, section)], section };
     }
-    else if (section.exponential) {
+    
+    if (section.exponential) {
       representation = abs_value.toExponential(section.decimal_max_digits);
     }
     else {
@@ -674,20 +693,16 @@ export class NumberFormat {
 
     const parts = representation.split('.');
 
-    if (!section.fraction_format) {
+    while (parts[0].length < section.integer_min_digits) {
+      parts[0] = ('0000000000000000' + parts[0]).slice(-section.integer_min_digits);
+    }
 
-      while (parts[0].length < section.integer_min_digits) {
-        parts[0] = ('0000000000000000' + parts[0]).slice(-section.integer_min_digits);
-      }
+    if (section.integer_min_digits === 0 && parts[0] === '0') {
+      parts[0] = ''; // not sure why anyone would want that
+    }
 
-      if (section.integer_min_digits === 0 && parts[0] === '0') {
-        parts[0] = ''; // not sure why anyone would want that
-      }
-
-      if (section.grouping) {
-        parts[0] = parts[0].replace(NumberFormat.grouping_regexp, '$&' + Localization.grouping_separator);
-      }
-
+    if (section.grouping) {
+      parts[0] = parts[0].replace(NumberFormat.grouping_regexp, '$&' + Localization.grouping_separator);
     }
 
     return { parts, section };
