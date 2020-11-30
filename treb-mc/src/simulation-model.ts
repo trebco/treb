@@ -2,7 +2,7 @@
 
 import { UnionOrArray, ICellAddress, Cell, Area, UnionValue, ValueType, GetValueType } from 'treb-base-types';
 import * as Utils from '../../treb-calculator/src/utilities';
-import { Matrix, CDMatrix, MC, Stats } from 'riskampjs-mc';
+import { Matrix, CDMatrix, MC, Stats, Random } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
 import { DataError, ArgumentError, ValueError } from '../../treb-calculator/src/function-error';
 import { Scale as CreateScale } from 'treb-utils';
@@ -53,7 +53,7 @@ export class SimulationModel {
   public trials = 0;
 
   public set seed(seed: number) {
-    console.info('seed not implemented');
+    Random.Seed(seed);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

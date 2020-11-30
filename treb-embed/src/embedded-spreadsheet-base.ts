@@ -1854,7 +1854,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     const type = parts.length ? parts[parts.length - 1].toLowerCase() : SaveFileType.treb;
 
     if (parts.length <= 1) {
-      filename = (document_name).toLowerCase().replace(/\W+/g, '-') + '.' + type;
+      if ((type === SaveFileType.csv || type === SaveFileType.tsv) && this.grid.model.sheets.length > 1) {
+        const active_sheet = this.grid.model.active_sheet.name;
+        filename = (document_name + '-' + active_sheet).toLowerCase().replace(/\W+/g, '-') + '.' + type;
+      }
+      else {
+        filename = (document_name).toLowerCase().replace(/\W+/g, '-') + '.' + type;
+      }
     }
 
     switch (type) {

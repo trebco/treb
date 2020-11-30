@@ -1,6 +1,8 @@
 
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
+import { Random } from 'riskampjs-mc';
+
 // import { ResultContainer } from 'treb-calculator';
 import { Localization, ICellAddress } from 'treb-base-types';
 import { SerializeOptions, MacroFunction } from 'treb-grid';
@@ -317,6 +319,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     for (const worker of this.workers) {
       worker.postMessage({
         type: 'configure',
+        seed: Math.round(Random.Next() * 1e14),
         locale: Localization.locale,
         sheets: this.grid.model.sheets.map((sheet) => {
           return sheet.toJSON({

@@ -23,6 +23,7 @@ export interface ConfigMessage {
   type: 'configure';
   locale: string;
   // sheet: any;
+  seed?: number;
   sheets: any[];
   additional_cells?: ICellAddress[];
   named_ranges?: {[index: string]: IArea};
