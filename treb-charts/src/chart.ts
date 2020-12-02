@@ -745,11 +745,95 @@ export class Chart {
   }
 
   /**
+   * updated MC histogram. this will not support IE11 (because of typed arrays)
+   * 
+   * [reference cell, title, ..., suggested bins = 12]
+   */
+  public CreateHistogram(args: any[]): void {
+
+    const union = args[0] as UnionValue;
+    
+    if (!union || union.type !== ValueType.object || !this.IsCellData(union.value)) {
+      console.warn('invalid args [0]', args);
+      this.Clear();
+      return;
+    }
+
+    const src: CellData = union.value; // args[0];
+    const data = src.simulation_data || [];
+
+    let suggested_bins = 12;
+    if (typeof args[3] === 'number') {
+      suggested_bins = args[3];
+    }
+
+    const scale = Util.Scale(Math.min.apply(0, data), Math.max.apply(0, data), suggested_bins);
+    const bins: number[] = [];
+    const label_values: number[] = [];
+
+    for (let i = 0; i <= scale.count; i++) {
+      bins[i] = 0;
+      label_values[i] = (scale.min + i * scale.step);
+    }
+
+    for (const value of data) {
+      const bin = Math.round((value - scale.min) / scale.step);
+      bins[bin]++;
+    }
+
+    let format = NumberFormatCache.Get('#,##0');
+  
+    const values = bins.filter(value => value || value === 0) as number[];
+
+    const series: SeriesType[] = [{
+      y: {
+        data: bins,
+        format: '#,##0',
+        labels: bins.map(value => (value === undefined) ? undefined : format.Format(value)),
+        range: {
+          min: Math.min.apply(0, values), 
+          max: Math.max.apply(0, values), 
+        },
+      },
+      x: {
+        data: [],
+        range: {
+          min: 0,
+          max: Math.max(0, bins.length - 1),
+        }
+      },
+    }];
+
+    for (let i = 0; i < series[0].y.data.length; i++) { series[0].x.data.push(i); }
+
+    const common = this.CommonData(series);
+    format = NumberFormatCache.Get(union.value?.format || 'General');
+    const category_labels = label_values.map(x => format.Format(x));
+
+    const title = args[1]?.toString() || undefined;
+
+    series[0].y.labels = (series[0].y.labels || []).map((label, index) => {
+      return category_labels[index] + ' ' +  label;
+    });
+
+    this.chart_data = {
+      type: 'column',
+      series2: series,
+      scale: common.y.scale,
+      title,
+      y_labels: common.y.labels, 
+      x_labels: category_labels, 
+      data_labels: true,
+    };
+
+  }
+
+  /* *
    * create histogram.
    *
    * args: cell data, title, format-x, format-y, bins
-   */
-  public CreateHistogram(args: any[]) { // data: number[]) {
+   * /
+  public OldCreateHistogram(args: any[]) { // data: number[]) {
 
     // validate args (actually we only care about the first one)
 
@@ -867,6 +951,7 @@ export class Chart {
     // this.chart_type = ChartType.histogram;
 
   }
+  */
 
   /** pass-through */
   public Resize() {
