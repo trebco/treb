@@ -821,7 +821,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** API FIXME: only for riskamp embedded... */
-  public CreateChart() {
+  public CreateChart(): Chart {
+
+    // FIXME: we should just always do this
+
+    if (!this.registered_libraries['treb-charts']) {
+      this.calculator.RegisterFunction(ChartFunctions);
+      this.registered_libraries['treb-charts'] = true;
+      this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+    }
+
     return new Chart();
   }
 
