@@ -820,6 +820,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     return NumberFormatCache.Get(format).Format(value);
   }
 
+  /** API FIXME: only for riskamp embedded... */
+  public CreateChart() {
+    return new Chart();
+  }
+
   /**
    * evaluate an arbitrary expression in the spreadsheet. you should generally
    * use sheet names when referring to cells, to avoid ambiguity, but relative

@@ -194,7 +194,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
    * run MC simulation, in worker. worker is now demand-loaded, so first
    * pass may be slow.
    */
-  public async RunSimulation(trials?: number, lhs?: boolean, stepped?: boolean): Promise<void> {
+  public async RunSimulation(trials?: number, lhs?: boolean, stepped?: boolean, additional_cells: ICellAddress[] = []): Promise<void> {
     //public async RunSimulation(trials = 5000, lhs = true, stepped = false): Promise<void> {
 
     // parameters derived from options, if present, but keep defaults for backcompat
@@ -285,7 +285,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     // NOTE: accessing grid.cells, find a better approach [??]
 
     // let additional_cells =  this.additional_cells.slice(0);
-    let additional_cells: ICellAddress[] = [];
+    // let additional_cells: ICellAddress[] = [];
 
     // add any required additional collector cells from annotations (charts)
 
