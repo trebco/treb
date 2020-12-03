@@ -1440,6 +1440,12 @@ export class ChartRenderer {
       const bounds = text.getBoundingClientRect();
       const h = bounds.height;
       const w = bounds.width + 8;
+
+      if (point.y - bounds.height < 4) {
+        point.y -= (point.y - bounds.height - 4);
+        g.setAttribute('transform', `translate(${point.x},${point.y})`);
+      }
+      
       text.setAttribute('x', Math.floor(-bounds.width/2).toString());
 
       /*
