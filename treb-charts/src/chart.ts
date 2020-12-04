@@ -750,64 +750,90 @@ export class Chart {
    * [reference cell, title, ..., suggested bins = 12]
    */
   public CreateHistogram(args: any[]): void {
+   
+    const min: number[] = [];
+    const max: number[] = [];
 
-    const union = args[0] as UnionValue;
-    
-    if (!union || union.type !== ValueType.object || !this.IsCellData(union.value)) {
-      console.warn('invalid args [0]', args);
+    const data: UnionValue[] = Array.isArray(args[0]) ? args[0] : [args[0]];
+
+    for (const union of data) {
+      if (!union || union.type !== ValueType.object || !this.IsCellData(union.value)) {
+        console.warn('invalid args [0]', args);
+        this.Clear();
+        return;
+      }
+
+      const data = union.value.simulation_data || [];
+      if (data.length) {
+        min.push(Math.min.apply(0, data));
+        max.push(Math.max.apply(0, data));
+      }
+    }
+
+    if (!min.length || !max.length) {
+      console.info('no data');
       this.Clear();
       return;
     }
-
-    const src: CellData = union.value; // args[0];
-    const data = src.simulation_data || [];
 
     let suggested_bins = 12;
     if (typeof args[3] === 'number') {
       suggested_bins = args[3];
     }
 
-    const scale = Util.Scale(Math.min.apply(0, data), Math.max.apply(0, data), suggested_bins);
-    const bins: number[] = [];
+    const scale = Util.Scale(Math.min.apply(0, min), Math.max.apply(0, max), suggested_bins);
     const label_values: number[] = [];
 
     for (let i = 0; i <= scale.count; i++) {
-      bins[i] = 0;
       label_values[i] = (scale.min + i * scale.step);
     }
 
-    for (const value of data) {
-      const bin = Math.round((value - scale.min) / scale.step);
-      bins[bin]++;
-    }
+    const series = data.map((union: UnionValue) => {
+     
+      const src: CellData = union.value; // args[0];
+      const data = src.simulation_data || [];
 
-    let format = NumberFormatCache.Get('#,##0');
+      const bins: number[] = [];
+      for (let i = 0; i <= scale.count; i++) {
+        bins[i] = 0;
+      }
   
-    const values = bins.filter(value => value || value === 0) as number[];
+      for (const value of data) {
+        const bin = Math.round((value - scale.min) / scale.step);
+        bins[bin]++;
+      }
 
-    const series: SeriesType[] = [{
-      y: {
-        data: bins,
-        format: '#,##0',
-        labels: bins.map(value => (value === undefined) ? undefined : format.Format(value)),
-        range: {
-          min: Math.min.apply(0, values), 
-          max: Math.max.apply(0, values), 
+      const format = NumberFormatCache.Get('#,##0');
+    
+      const values = bins.filter(value => value || value === 0) as number[];
+
+      const series: SeriesType = {
+        y: {
+          data: bins,
+          format: '#,##0',
+          labels: bins.map(value => (value === undefined) ? undefined : format.Format(value)),
+          range: {
+            min: Math.min.apply(0, values), 
+            max: Math.max.apply(0, values), 
+          },
         },
-      },
-      x: {
-        data: [],
-        range: {
-          min: 0,
-          max: Math.max(0, bins.length - 1),
-        }
-      },
-    }];
+        x: {
+          data: [],
+          range: {
+            min: 0,
+            max: Math.max(0, bins.length - 1),
+          }
+        },
+      };
 
-    for (let i = 0; i < series[0].y.data.length; i++) { series[0].x.data.push(i); }
+      for (let i = 0; i < series.y.data.length; i++) { series.x.data.push(i); }
+
+      return series;
+
+    });
 
     const common = this.CommonData(series);
-    format = NumberFormatCache.Get(union.value?.format || 'General');
+    const format = NumberFormatCache.Get(data[0].value?.format || 'General');
     const category_labels = label_values.map(x => format.Format(x));
 
     const title = args[1]?.toString() || undefined;
