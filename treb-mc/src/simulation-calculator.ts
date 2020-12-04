@@ -48,7 +48,7 @@ export class MCCalculator extends Calculator {
     simulation_model.lhs = lhs;
     simulation_model.correlated_distributions = {};
 
-    const cells = model.active_sheet.cells;
+    // const cells = model.active_sheet.cells;
 
     // calling the flush method, instead of flushing tree directly,
     // will also set status -> OK. note that (atm, at least) we don't
@@ -59,15 +59,35 @@ export class MCCalculator extends Calculator {
     this.expression_calculator.SetModel(model);
 
     // add additional cells to monitor, but only if they actually
-    // exist; otherwise they will generate calc errors.
+    // exist; otherwise they will generate calc errors. 
+    //
+    // cells passed as "additional cells" MUST HAVE SHEET ID (will throw)
 
     if (additional_cells && additional_cells.length) {
       for (const address of additional_cells) {
-        const cell = cells.GetCell(address, false);
+
+        if (!address.sheet_id) {
+          throw new Error('additional cell passed without sheet id');
+        }
+
+        for (const sheet of this.model?.sheets || []) {
+          if (sheet.id === address.sheet_id) {
+            const cell = sheet.cells.GetCell(address, false);
+            if (cell) {
+              simulation_model.StoreCellResults(address);
+            }
+            break;
+          }
+        }
+
+        /*
+        const cell = cells.GetCell(address, false); // whoops
         if (cell) {
           simulation_model.StoreCellResults(address);
         }
-        // else console.info( 'Skipping empty cell', address);
+        else console.info( 'Skipping empty cell', address);
+        */
+
       }
     }
 
