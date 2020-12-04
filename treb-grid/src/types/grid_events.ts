@@ -16,6 +16,11 @@ export interface GridSelectionEvent {
   selection: GridSelection;
 }
 
+export interface GridAlternateSelectionEvent {
+  type: 'alternate-selection';
+  selection: GridSelection;
+}
+
 export interface GridErrorEvent {
   type: 'error';
   message?: string;
@@ -63,4 +68,5 @@ export type GridEvent
   | AnnotationEvent
   | SheetChangeEvent
   | GridSelectionEvent
+  | GridAlternateSelectionEvent
   ;

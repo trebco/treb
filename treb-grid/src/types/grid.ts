@@ -185,6 +185,8 @@ export class Grid {
 
   private RESIZE_PIXEL_BUFFER = 5;
 
+  private select_argument = false; // temp, WIP
+
   /**
    * flag indicating we're resizing, or hovering over a resize.
    * we use this so we know what to do when we see a click on the headers.
@@ -3764,6 +3766,9 @@ export class Grid {
         if (this.cell_editor && this.cell_editor.visible) {
           // ...
         }
+        else if (this.select_argument) {
+          // ...
+        }
         else if (this.formula_bar) {
           // console.info('calling focus editor');
           this.formula_bar.FocusEditor();
@@ -4010,6 +4015,12 @@ export class Grid {
     else if (this.formula_bar && this.formula_bar.selecting) {
       this.formula_bar.InsertReference(label, 0);
     }
+    else if (this.select_argument) {
+      this.grid_events.Publish({
+        type: 'alternate-selection',
+        selection: this.active_selection,
+      });
+    }
   }
 
   /**
@@ -4020,7 +4031,8 @@ export class Grid {
    */
   private SelectingArgument() {
     return (this.cell_editor && this.cell_editor.visible && this.cell_editor.selecting)
-      || (this.formula_bar && this.formula_bar.selecting);
+      || (this.formula_bar && this.formula_bar.selecting)
+      || (this.select_argument);
   }
 
   /**
