@@ -236,6 +236,29 @@ export class Parser {
     }
   }
 
+  /** utility: transpose array */
+  public Transpose(arr: Array < Array <string|boolean|number|undefined> >): Array < Array <string|boolean|number|undefined> > {
+
+    const m = arr.length;
+    const transposed: Array < Array <string|boolean|number|undefined> > = [];
+    let n = 0;
+
+    for (let i = 0; i < m; i++){ 
+      if (Array.isArray(arr[i])) {
+        n = Math.max(n, arr[i].length);
+      }
+    }
+
+    for (let i = 0; i < n; i++) {
+      transposed[i] = [];
+      for (let j = 0; j < m; j++) {
+        transposed[i][j] = arr[j][i];
+      }
+    }
+
+    return transposed;
+  }
+
   /**
    * renders the passed expression as a string.
    * @param unit base expression
@@ -281,8 +304,12 @@ export class Parser {
         return missing;
 
       case 'array':
+
+        // we have to transpose because we're column-major but the 
+        // format is row-major
+
         return '{' +
-          unit.values.map((row) => row.map((value) => {
+          this.Transpose(unit.values).map((row) => row.map((value) => {
             if (typeof value === 'string') {
               return '"' + value + '"';
             }
@@ -962,12 +989,15 @@ export class Parser {
         switch (item) {
 
           case SEMICOLON:
-            column = 0;
-            row++;
+            //column = 0;
+            //row++;
+            column++;
+            row = 0;
             break;
 
           case COMMA:
-            column++;
+            //column++;
+            row++;
             break;
 
           case CLOSE_BRACE:
