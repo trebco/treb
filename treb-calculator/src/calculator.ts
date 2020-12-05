@@ -15,6 +15,7 @@ import { FunctionMap, ReturnType } from './descriptors';
 import { BaseFunctionLibrary } from './functions/base-functions';
 import { FinanceFunctionLibrary } from './functions/finance-functions';
 import { TextFunctionLibrary, TextFunctionAliases } from './functions/text-functions';
+import { InformationFunctionLibrary } from './functions/information-functions';
 import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './functions/statistics-functions';
 
 import { DataModel, Annotation, FunctionDescriptor } from 'treb-grid';
@@ -70,6 +71,7 @@ export class Calculator extends Graph {
       TextFunctionLibrary,        // we split out text functions
       StatisticsFunctionLibrary,  // also stats (wip)
       FinanceFunctionLibrary,     // also this (wip)
+      InformationFunctionLibrary, // etc
       );
    
     // aliases
@@ -310,6 +312,39 @@ export class Calculator extends Graph {
         },
       },
 
+      /**
+       * this should be in the 'information' library but it needs reference
+       * to the underlying cell (unresolved)
+       */
+      IsFormula: {
+        description: 'Returns true if the reference is a formula',
+        arguments: [{
+          name: 'Reference',
+          metadata: true,
+        }],
+        fn: Utilities.ApplyAsArray((ref: UnionValue): UnionValue => {
+
+          // this is wasteful because we know that the range will all
+          // be in the same sheet... we don't need to look up every time
+
+          if (ref?.value?.address) {
+            for (const sheet of this.model?.sheets||[]) {
+              if (sheet.id === ref.value.address.sheet_id) {
+                const cell = sheet.cells.GetCell(ref.value.address, false);
+                return { 
+                  type: ValueType.boolean, 
+                  value: cell?.type === ValueType.formula,
+                };
+              }
+            }
+          }
+
+          return { 
+            type: ValueType.boolean, value: false,
+          };
+
+        }),
+      },
 
     });
 
