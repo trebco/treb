@@ -146,7 +146,19 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     }
 
     const worker_name = build['build-entry-points']['calculation-worker'];
-    const thread_count = Math.min(navigator.hardwareConcurrency || 1, max);
+
+    // we were hard-limiting workers to the hardware consistency value, but
+    // that (apparently) is not available in Safari, so... just allow the 
+    // user to do what they want.
+
+    // FIXME: should warn about this? (...)
+
+    let thread_count = Math.max(1, max);
+    if (typeof navigator.hardwareConcurrency === 'number') {
+      thread_count = Math.min(thread_count, navigator.hardwareConcurrency);
+    }
+
+    // const thread_count = Math.min(navigator.hardwareConcurrency || 1, max);
 
     console.info(`creating ${thread_count} thread${thread_count === 1 ? '' : 's'}`);
 
