@@ -35,6 +35,7 @@ export class CellEditor extends FormulaEditorBase {
     this.editor_node = DOMUtilities.CreateDiv('in-cell-editor', this.container_node);
     this.editor_node.setAttribute('contenteditable', 'true');
     this.editor_node.setAttribute('spellcheck', 'false');
+    this.editor_node.setAttribute('tabindex', '-1');
 
     this.UpdateTheme();
 
@@ -112,6 +113,7 @@ export class CellEditor extends FormulaEditorBase {
       this.editor_node.textContent = value_string;
 
       if (this.use_create_text_range) {
+
         Yield().then(() => {
           const r = (document.body as any).createTextRange();
           r.moveToElementText(this.editor_node);
@@ -187,13 +189,15 @@ export class CellEditor extends FormulaEditorBase {
     this.container_node.style.minWidth = rect.width + 'px';
     this.container_node.style.height = rect.height + 'px';
 
+    this.container_node.style.opacity = '1';
     this.container_node.style.display = 'table';
-    this.editor_node.focus();
+    
+    this.editor_node?.focus();
 
     if (event){
       if (this.support_cloned_events) {
         const cloned_event = new KeyboardEvent(event.type, event);
-        this.editor_node.dispatchEvent(cloned_event);
+        this.editor_node?.dispatchEvent(cloned_event);
       }
       else {
         const modifiers: string[] = [];
@@ -212,7 +216,7 @@ export class CellEditor extends FormulaEditorBase {
           modifiers.join(' '),
           event.repeat,
           '');
-        this.editor_node.dispatchEvent(cloned_event);
+        this.editor_node?.dispatchEvent(cloned_event);
       }
     }
 
@@ -230,7 +234,9 @@ export class CellEditor extends FormulaEditorBase {
     if (!this.container_node) return;
 
     this.visible_ = false;
-    this.container_node.style.display = 'none';
+    // this.container_node.style.display = 'none';
+    this.container_node.style.opacity = '0';
+
     this.autocomplete.Hide();
   }
 
