@@ -1646,15 +1646,25 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  /** load a file (desktop) */
-  public async LoadLocalFile(): Promise<void> {
+  /** 
+   * load a file (desktop) 
+   *
+   * UPDATE: returns success/failure, where success indicates we have
+   * successfully loaded a file. failure could be canceling out of the 
+   * dialog, or a load error.
+   */
+  public async LoadLocalFile(): Promise<boolean> {
 
     const file = await(this.SelectFile(
       '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
 
     if (file) { 
     
-      this.LoadFileInternal(file).catch(() => {
+      try {
+        await this.LoadFileInternal(file);
+        return true;
+      }
+      catch(err) {
         this.dialog?.ShowDialog({
           title: 'Error reading file',
           close_box: true,
@@ -1662,10 +1672,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           type: DialogType.error,
           timeout: 3000,
         });
-
-      });
+        return false;
+      }
 
     }
+
+    return false;
 
   }
 
