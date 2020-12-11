@@ -145,28 +145,28 @@ export class GridLayout extends BaseLayout {
   }
 
   protected UpdateContainingGrid(): void {
-
+    
     if (!this.container) throw new Error('missing container');
 
-    this.header_size.width = this.model.active_sheet.header_offset.x;
-    this.header_size.height = this.model.active_sheet.header_offset.y;
+    this.header_size.width = this.header_offset.x;
+    this.header_size.height = this.header_offset.y;
 
     // update the containing grid (layout for column/row headers)
 
-    let x = this.model.active_sheet.header_offset.x;
-    let y = this.model.active_sheet.header_offset.y;
+    let x = this.header_offset.x;
+    let y = this.header_offset.y;
 
     if (this.model.active_sheet.freeze.columns) {
-      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) x += this.model.active_sheet.GetColumnWidth(i);
+      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) x += this.ColumnWidth(i);
     }
     if (this.model.active_sheet.freeze.rows) {
-      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) y += this.model.active_sheet.GetRowHeight(i);
+      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) y += this.RowHeight(i);
     }
 
     // this.container.style.gridTemplateColumns = `${x}px auto`;
     // this.container.style.gridTemplateRows = `${y}px auto`;
-    this.container.style.gridTemplateColumns = `${this.model.active_sheet.header_offset.x}px auto`;
-    this.container.style.gridTemplateRows = `${this.model.active_sheet.header_offset.y}px auto`;
+    this.container.style.gridTemplateColumns = `${this.header_offset.x}px auto`;
+    this.container.style.gridTemplateRows = `${this.header_offset.y}px auto`;
 
     this.corner_canvas.setAttribute('width', `${this.dpr * x}`);
     this.corner_canvas.setAttribute('height', `${this.dpr * y}`);
@@ -202,11 +202,11 @@ export class GridLayout extends BaseLayout {
     // frozen selection -- now used for selection highlights
     // as well (moved from render headers)
 
-    let y = this.model.active_sheet.header_offset.y;
+    let y = this.header_offset.y;
     if (this.model.active_sheet.freeze.rows) {
       // let y = 0;
       for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) {
-        y += this.model.active_sheet.GetRowHeight(i);
+        y += this.RowHeight(i);
       }
     }
 
@@ -218,10 +218,10 @@ export class GridLayout extends BaseLayout {
       this.row_header_selection.style.top = '0px'; // `${this.model.sheet.header_offset.y}px`;
     this.row_header_selection.style.left = `0px`;
 
-    let x = this.model.active_sheet.header_offset.x;
+    let x = this.header_offset.x;
     if (this.model.active_sheet.freeze.columns) {
       for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) {
-        x += this.model.active_sheet.GetColumnWidth(i);
+        x += this.ColumnWidth(i);
       }
     }
     this.column_header_selection.style.display = 'block';
@@ -247,15 +247,15 @@ export class GridLayout extends BaseLayout {
 
     this.grid_selection.style.width = `${width}px`;
     this.grid_selection.style.height = `${height}px`;
-    this.grid_selection.style.top = `${this.model.active_sheet.header_offset.y}px`;
-    this.grid_selection.style.left = `${this.model.active_sheet.header_offset.x}px`;
+    this.grid_selection.style.top = `${this.header_offset.y}px`;
+    this.grid_selection.style.left = `${this.header_offset.x}px`;
 
     // annotations
 
     this.annotation_container.style.width = `${width}px`;
     this.annotation_container.style.height = `${height}px`;
-    this.annotation_container.style.top = `${this.model.active_sheet.header_offset.y}px`;
-    this.annotation_container.style.left = `${this.model.active_sheet.header_offset.x}px`;
+    this.annotation_container.style.top = `${this.header_offset.y}px`;
+    this.annotation_container.style.left = `${this.header_offset.x}px`;
 
   }
 

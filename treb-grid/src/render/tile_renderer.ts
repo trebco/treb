@@ -155,6 +155,7 @@ export class TileRenderer {
 
   }
 
+
   /**
    * 
    */
@@ -169,19 +170,19 @@ export class TileRenderer {
       // font_size: this.theme.interface_font_size,
       font_size_unit: this.theme.interface_font_size_unit,
       font_size_value: this.theme.interface_font_size_value,
-    });
+    }, this.layout.scale);
 
     const scale = this.layout.dpr;
-    const header_size = this.model.active_sheet.header_offset;
+    const header_size = this.layout.header_offset;
 
     let x = header_size.x;
     for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) {
-      x += this.model.active_sheet.GetColumnWidth(i);
+      x += this.layout.ColumnWidth(i);
     }
 
     let y = header_size.y;
     for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) {
-      y += this.model.active_sheet.GetRowHeight(i);
+      y += this.layout.RowHeight(i);
     }
 
     context.setTransform(scale, 0, 0, scale, 0, 0);
@@ -207,10 +208,13 @@ export class TileRenderer {
 
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.font = `${this.theme.interface_font_size_value}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
+
+    const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
+    context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
+    
     context.fillStyle = this.theme.header_text_color || '';
 
-    if (this.model.active_sheet.freeze.rows && this.model.active_sheet.header_offset.x > 1) {
+    if (this.model.active_sheet.freeze.rows && this.layout.header_offset.x > 1) {
 
       context.setTransform(scale, 0, 0, scale, 0, 0);
       context.translate(0, header_size.y);
@@ -220,7 +224,7 @@ export class TileRenderer {
 
       let row_index = 0;
       for (; row_index < this.model.active_sheet.freeze.rows; row_index++) {
-        const height = this.model.active_sheet.GetRowHeight(row_index);
+        const height = this.layout.RowHeight(row_index);
         context.fillStyle = this.theme.header_text_color || '';
         if (height >= font_metrics.block) {
           context.fillText(`${row_index + 1}`,
@@ -259,7 +263,7 @@ export class TileRenderer {
 
     }
 
-    if (this.model.active_sheet.freeze.columns && this.model.active_sheet.header_offset.y > 1) {
+    if (this.model.active_sheet.freeze.columns && this.layout.header_offset.y > 1) {
 
       context.strokeStyle = this.theme.grid_color || '';
       context.setTransform(scale, 0, 0, scale, 0, 0);
@@ -270,7 +274,7 @@ export class TileRenderer {
 
       let column_index = 0;
       for (; column_index < this.model.active_sheet.freeze.columns; column_index++) {
-        const width = this.model.active_sheet.GetColumnWidth(column_index);
+        const width = this.layout.ColumnWidth(column_index);
         const text = Area.ColumnToLabel(column_index);
         const metrics = context.measureText(text);
         if (width > metrics.width) {
@@ -320,14 +324,14 @@ export class TileRenderer {
 
     const scale = this.layout.dpr;
 
-    const header_size = this.model.active_sheet.header_offset;
+    const header_size = this.layout.header_offset;
 
     const font_metrics = FontMetricsCache.get({
       font_face: this.theme.interface_font_face,
       // font_size: this.theme.interface_font_size,
       font_size_unit: this.theme.interface_font_size_unit,
       font_size_value: this.theme.interface_font_size_value,
-    });
+    }, this.layout.scale);
 
     for (let column = tiles.start.column; column <= tiles.end.column; column++) {
 
@@ -340,11 +344,14 @@ export class TileRenderer {
       if (tile.dirty || force) {
 
         context.fillStyle = this.theme.header_background_color || '';
-        context.fillRect(0, 0, tile.logical_size.width, this.model.active_sheet.header_offset.y);
+        context.fillRect(0, 0, tile.logical_size.width, this.layout.header_offset.y);
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.font = `${this.theme.interface_font_size_value}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
+
+        const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
+        context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
+        
         context.fillStyle = this.theme.header_text_color || '';
         context.strokeStyle = this.theme.grid_color || '';
 
@@ -354,7 +361,7 @@ export class TileRenderer {
 
         let column_index = tile.first_cell.column;
         for (; column_index <= tile.last_cell.column; column_index++) {
-          const width = this.model.active_sheet.GetColumnWidth(column_index);
+          const width = this.layout.ColumnWidth(column_index);
           const text = Area.ColumnToLabel(column_index);
           const metrics = context.measureText(text);
           if (width > metrics.width) {
@@ -395,11 +402,14 @@ export class TileRenderer {
         context.fillStyle = this.theme.header_background_color || '';
         context.setTransform(scale, 0, 0, scale, 0, 0);
         // context.fillRect(0, 0, tile.logical_size.width, tile.logical_size.height);
-        context.fillRect(0, 0, this.model.active_sheet.header_offset.x, tile.logical_size.height);
+        context.fillRect(0, 0, this.layout.header_offset.x, tile.logical_size.height);
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.font = `${this.theme.interface_font_size_value}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
+        
+        const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
+        context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
+        
         context.fillStyle = this.theme.header_text_color || '';
         context.strokeStyle = this.theme.grid_color || '';
 
@@ -409,7 +419,7 @@ export class TileRenderer {
 
         let row_index = tile.first_cell.row;
         for (; row_index <= tile.last_cell.row; row_index++) {
-          const height = this.model.active_sheet.GetRowHeight(row_index);
+          const height = this.layout.RowHeight(row_index);
           context.fillStyle = this.theme.header_text_color || '';
           if (height >= font_metrics.block) {
             context.fillText(`${row_index + 1}`,
@@ -508,11 +518,11 @@ export class TileRenderer {
     // console.info('r', tile.first_cell);
 
     for (let column = tile.first_cell.column; column <= tile.last_cell.column; column++) {
-      const width = this.model.active_sheet.GetColumnWidth(column);
+      const width = this.layout.ColumnWidth(column);
       if (!width) continue;
       top = 0;
       for (let row = tile.first_cell.row; row <= tile.last_cell.row; row++) {
-        const height = this.model.active_sheet.GetRowHeight(row);
+        const height = this.layout.RowHeight(row);
         if (height) {
 
           context.setTransform(scale, 0, 0, scale, left, top);
@@ -550,12 +560,12 @@ export class TileRenderer {
 
     if (tile.first_cell.row <= this.model.active_sheet.freeze.rows - 1) {
       for (let i = tile.first_cell.row; i < this.model.active_sheet.freeze.rows && i <= tile.last_cell.row; i++) {
-        copy_height += this.model.active_sheet.GetRowHeight(i);
+        copy_height += this.layout.RowHeight(i);
       }
     }
     if (tile.first_cell.column <= this.model.active_sheet.freeze.columns - 1) {
       for (let i = tile.first_cell.column; i < this.model.active_sheet.freeze.columns && i <= tile.last_cell.column; i++) {
-        copy_width += this.model.active_sheet.GetColumnWidth(i);
+        copy_width += this.layout.ColumnWidth(i);
       }
     }
 
@@ -601,8 +611,8 @@ export class TileRenderer {
       // FIXME: offset for !first tile
 
       corner_context.setTransform(scale, 0, 0, scale,
-        this.model.active_sheet.header_offset.x * scale,
-        this.model.active_sheet.header_offset.y * scale);
+        this.layout.header_offset.x * scale,
+        this.layout.header_offset.y * scale);
 
       corner_context.drawImage(tile, 0, 0, copy_width * scale,
         copy_height * scale, 0, 0, copy_width, copy_height);
@@ -979,11 +989,11 @@ export class TileRenderer {
         (address.column === cell.merge_area.start.column)) {
 
         for (let column = cell.merge_area.start.column + 1; column <= cell.merge_area.end.column; column++) {
-          width += this.model.active_sheet.GetColumnWidth(column);
+          width += this.layout.ColumnWidth(column);
         }
 
         for (let row = cell.merge_area.start.row + 1; row <= cell.merge_area.end.row; row++) {
-          height += this.model.active_sheet.GetRowHeight(row);
+          height += this.layout.RowHeight(row);
         }
 
         // get last cell for borders
@@ -1077,7 +1087,7 @@ export class TileRenderer {
         style_text_color || this.theme.cell_color || '';
         
       cell.render_function.call(null, {
-        width, height, context, cell, style,
+        width, height, context, cell, style, scale: this.layout.scale || 1,
       });
 
       return result;
@@ -1099,7 +1109,7 @@ export class TileRenderer {
     // (eventually) painting to the buffer context. just remember to set
     // font in the buffer context.
 
-    const font = Style.Font(style, this.model.active_sheet.scale);
+    const font = Style.Font(style, this.layout.scale);
 
     if (font !== this.last_font) {
       context.font = this.last_font = font; // set in context so we can measure
@@ -1190,7 +1200,7 @@ export class TileRenderer {
 
           const target_address = { row: address.row, column: overflow_right_column };
           const target_cell = this.model.active_sheet.CellData(target_address);
-          const target_width = this.model.active_sheet.GetColumnWidth(overflow_right_column);
+          const target_width = this.layout.ColumnWidth(overflow_right_column);
           overflow_pixels_right -= target_width;
           if (target_cell && !target_cell.type && !target_cell.calculated_type) {
 
@@ -1234,7 +1244,7 @@ export class TileRenderer {
 
           const target_address = { row: address.row, column: overflow_left_column };
           const target_cell = this.model.active_sheet.CellData(target_address);
-          const target_width = this.model.active_sheet.GetColumnWidth(overflow_left_column);
+          const target_width = this.layout.ColumnWidth(overflow_left_column);
           overflow_pixels_left -= target_width;
           if (target_cell && !target_cell.type && !target_cell.calculated_type) {
 
@@ -1333,7 +1343,7 @@ export class TileRenderer {
       }
     }
 
-    const metrics = FontMetricsCache.get(style);
+    const metrics = FontMetricsCache.get(style, this.layout.scale);
 
     // set stroke for underline
 

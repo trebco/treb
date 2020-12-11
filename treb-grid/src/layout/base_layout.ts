@@ -69,6 +69,15 @@ export abstract class BaseLayout {
 
   public header_size: Size = {width: 0, height: 0};
 
+  public total_height = 0;
+  public total_width = 0;
+
+  public default_row_height = 0;
+  public default_column_width = 0;
+  public header_offset = {
+    x: 0, y: 0,
+  };
+
   /** freeze rows/columns */
   // public freeze = { rows: 0, columns: 0 };
 
@@ -80,11 +89,7 @@ export abstract class BaseLayout {
   public dpr = Math.max(1, self.devicePixelRatio || 1);
 
   /** separate scale, user-controlled (testing...) */
-  // public scale = .75;
-
-  // public get composite_scale() {
-  //  return this.dpr * this.scale;
-  // }
+  public scale = 1;
 
   /**
    * this is a reference to the node that handles scrolling. it needs
@@ -313,6 +318,36 @@ export abstract class BaseLayout {
 
   }
 
+  /** wrapper around sheet method, incorporating scale */
+  public ColumnWidth(column: number): number {
+    return Math.round(this.model.active_sheet.GetColumnWidthX(column) * this.scale);
+  }
+
+  /** wrapper around sheet method, incorporating scale */
+  public RowHeight(row: number): number {
+    return Math.round(this.model.active_sheet.GetRowHeightX(row) * this.scale);
+  }
+
+  /** 
+   * wrapper around sheet method, incorporating scale
+   * 
+   * NOTE: this does not update total size, so unless there's a subsequent call
+   * to a layout update, total size will be out of sync 
+   */
+  public SetRowHeight(row: number, height: number): void {
+    this.model.active_sheet.SetRowHeightX(row, Math.round(height / this.scale));
+  }
+
+  /** 
+   * wrapper around sheet method, incorporating scale 
+   * 
+   * NOTE: this does not update total size, so unless there's a subsequent call
+   * to a layout update, total size will be out of sync 
+   */
+  public SetColumnWidth(column: number, width: number): void {
+    this.model.active_sheet.SetColumnWidthX(column, Math.round(width / this.scale));
+  }
+
   /**
    * show/hide grid selections. used when selecting annotations.
    */
@@ -403,11 +438,14 @@ export abstract class BaseLayout {
 
   }
 
-  public UpdateAnnotation(elements: Annotation|Annotation[]) {
+  public UpdateAnnotation(elements: Annotation|Annotation[]): void {
     if (!Array.isArray(elements)) elements = [elements];
     for (const annotation of elements) {
       if (annotation.node) {
 
+        annotation.node.dataset.scale = this.scale.toString();
+        annotation.node.style.fontSize = `${10 * this.scale}pt`;
+  
         // FIXME: merge cells? [...]
 
         /*
@@ -421,7 +459,14 @@ export abstract class BaseLayout {
         }
         else */
         if (annotation.rect) {
-          annotation.rect.ApplyStyle(annotation.node);
+
+          // NOTE: this isn't exactly right because the cells scale by rounded
+          // amounts. if we scale exactly, we will often miss the mark by a 
+          // few pixels. that could be addressed, though... TODO
+
+          annotation.scaled_rect = annotation.rect.Scale(this.scale);
+          annotation.scaled_rect.ApplyStyle(annotation.node);
+
         }
       }
     }
@@ -435,7 +480,7 @@ export abstract class BaseLayout {
    * NOTE: IE destroys nodes if you do this? (...)
    * patch in legacy... actually we'll do it here
    */
-  public RemoveAnnotationNodes() {
+  public RemoveAnnotationNodes(): void {
 
     // we were using a shortcut, innerText = '', but if you do that
     // in IE it destroys the nodes (!) -- so we need to explicitly
@@ -452,7 +497,7 @@ export abstract class BaseLayout {
 
   }
 
-  public AddAnnotation(annotation: Annotation) {
+  public AddAnnotation(annotation: Annotation): void {
     if (!annotation.node) {
       throw new Error('annotation node missing');
     }
@@ -653,10 +698,27 @@ export abstract class BaseLayout {
     // TODO: dropdown caret
 
     this.dropdown_list.style.fontFamily = theme.cell_font || '';
-    this.dropdown_list.style.fontSize = 
-      (theme.cell_font_size_value || '10') + (theme.cell_font_size_unit || 'pt');
+    const font_size = (theme.cell_font_size_value || 10) * this.scale;
+    this.dropdown_list.style.fontSize = (font_size) + (theme.cell_font_size_unit || 'pt');
 
   }
+
+  public UpdateTotalSize(): void {
+
+    this.total_height = 0;
+    const rows = this.model.active_sheet.rows;
+    for (let i = 0; i < rows; i++) {
+      this.total_height += this.RowHeight(i);
+    }
+
+    this.total_width = 0;
+    const columns = this.model.active_sheet.columns;
+    for (let i = 0; i < columns; i++) {
+      this.total_width += this.ColumnWidth(i);
+    }
+
+  }
+
 
   public UpdateContentsSize(): void {
 
@@ -733,7 +795,7 @@ export abstract class BaseLayout {
 
     // FIXME: max size? (...)
 
-    const height = Math.max(8, Math.min(20, target_rect.height));
+    const height = Math.round(this.scale * Math.max(8, Math.min(20, target_rect.height)));
 
     this.dropdown_caret.style.height = `${height}px`;
     this.dropdown_caret.style.width = `${height}px`;
@@ -870,7 +932,7 @@ export abstract class BaseLayout {
       y -= this.scroll_reference_node.scrollTop;
 
       for (let i = 0; i < this.model.active_sheet.freeze.rows; i++ ){
-        height += this.model.active_sheet.GetRowHeight(i);
+        height += this.RowHeight(i);
         if (height >= y) {
           result.row = i;
           return result;
@@ -888,7 +950,7 @@ export abstract class BaseLayout {
 
         result.row = tile.first_cell.row;
         for (; result.row <= tile.last_cell.row; result.row++ , top -= height) {
-          height = this.model.active_sheet.GetRowHeight(result.row);
+          height = this.RowHeight(result.row);
           if (height > top) {
             return result;
           }
@@ -914,7 +976,7 @@ export abstract class BaseLayout {
       x -= this.scroll_reference_node.scrollLeft;
 
       for (let i = 0; i < this.model.active_sheet.freeze.columns; i++){
-        width += this.model.active_sheet.GetColumnWidth(i);
+        width += this.ColumnWidth(i);
         if (width >= x) {
           result.column = i;
           return result;
@@ -933,7 +995,7 @@ export abstract class BaseLayout {
         result.column = tile.first_cell.column;
 
         for (; result.column <= tile.last_cell.column; result.column++ , left -= width) {
-          width = this.model.active_sheet.GetColumnWidth(result.column);
+          width = this.ColumnWidth(result.column);
           if (width > left) return result;
         }
 
@@ -986,10 +1048,10 @@ export abstract class BaseLayout {
             result.column = cell.first_cell.column;
 
             for (; result.column <= cell.last_cell.column; result.column++ , left -= width) {
-              width = this.model.active_sheet.GetColumnWidth(result.column);
+              width = this.ColumnWidth(result.column);
               if (width > left) {
                 for (; result.row <= cell.last_cell.row; result.row++ , top -= height) {
-                  height = this.model.active_sheet.GetRowHeight(result.row);
+                  height = this.RowHeight(result.row);
                   if (height > top) {
                     return result;
                   }
@@ -1096,6 +1158,18 @@ export abstract class BaseLayout {
     this.column_header_tiles = [];
     this.grid_tiles = [];
 
+    // update local references (scaled). this has to be done before layout.
+
+    const sheet = this.model.active_sheet;
+
+    this.default_row_height = Math.round(sheet.default_row_height_x * this.scale);
+    this.default_column_width = Math.round(sheet.default_column_width_x * this.scale);
+
+    this.header_offset = {
+      x: Math.round(sheet.header_offset_x.x * this.scale),
+      y: Math.round(sheet.header_offset_x.y * this.scale),
+    };
+
     this.UpdateContainingGrid();
 
     let rows = this.model.active_sheet.rows;
@@ -1106,27 +1180,39 @@ export abstract class BaseLayout {
 
     // get total size of the grid from sheet
 
-    let total_height = this.model.active_sheet.total_height;
-    let total_width = this.model.active_sheet.total_width;
+    let total_height = 0;
+    let total_width = 0;
 
+    for (let i = 0; i < rows; i++) {
+      total_height += this.RowHeight(i);
+    }
+
+    for (let i = 0; i < columns; i++) {
+      total_width += this.ColumnWidth(i);
+    }
+
+    if (!total_width || !total_height) {
+      throw('unexpected missing total size');
+    }
+  
     // console.info('total size:', total_width, ', ', total_height);
 
-    if (!total_height) total_height = this.model.active_sheet.default_row_height * rows;
-    if (!total_width) total_width = this.model.active_sheet.default_column_width * columns;
+    if (!total_height) total_height = this.default_row_height * rows;
+    if (!total_width) total_width = this.default_column_width * columns;
 
     if (this.container.offsetWidth > total_width){
 
       const add_columns = Math.ceil((this.container.offsetWidth - total_width) /
-      this.model.active_sheet.default_column_width);
-      total_width += add_columns * this.model.active_sheet.default_column_width;
+        this.default_column_width);
+      total_width += add_columns * this.default_column_width;
       columns += add_columns;
 
     }
 
     if (this.container.offsetHeight > total_height){
       const add_rows = Math.ceil((this.container.offsetHeight - total_height) /
-        this.model.active_sheet.default_row_height);
-      total_height += add_rows * this.model.active_sheet.default_row_height;
+        this.default_row_height);
+      total_height += add_rows * this.default_row_height;
       rows += add_rows;
     }
 
@@ -1150,7 +1236,7 @@ export abstract class BaseLayout {
     let tile_column = 0;
 
     for (let c = 0; c < columns; c++){
-      const column_width = this.model.active_sheet.GetColumnWidth(c);
+      const column_width = this.ColumnWidth(c);
       if (tile_width && tile_width + column_width > this.default_tile_size.width){
 
         // push and move to the next tile, starting with this column
@@ -1177,7 +1263,7 @@ export abstract class BaseLayout {
     let tile_row = 0;
 
     for (let r = 0; r < rows; r++){
-      const row_height = this.model.active_sheet.GetRowHeight(r);
+      const row_height = this.RowHeight(r);
       if (tile_height && tile_height + row_height > this.default_tile_size.height){
         tile_heights.push(tile_height);
         tile_rows.push(tile_row);
@@ -1203,10 +1289,10 @@ export abstract class BaseLayout {
     let header_width = 0;
 
     for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) {
-      header_height += this.model.active_sheet.GetRowHeight(i);
+      header_height += this.RowHeight(i);
     }
     for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) {
-      header_width += this.model.active_sheet.GetColumnWidth(i);
+      header_width += this.ColumnWidth(i);
     }
 
     for (let c = 0; c < column_tile_count; c++ ) {
@@ -1220,7 +1306,7 @@ export abstract class BaseLayout {
 
       // create a column header tile for this column
       this.column_header_tiles.push(this.CreateTile('column-header-tile',
-        {height: this.model.active_sheet.header_offset.y, width: tile_widths[c]},
+        {height: this.header_offset.y, width: tile_widths[c]},
         {row: 0, column: c},
         {row: 0, column: tile_columns[c]},
         {rows: 0, columns: column_extent},
@@ -1248,7 +1334,7 @@ export abstract class BaseLayout {
         // first column, create header
         if (!c){
           this.row_header_tiles.push(this.CreateTile('row-header-tile',
-            {height: tile_heights[r], width: this.model.active_sheet.header_offset.x},
+            {height: tile_heights[r], width: this.header_offset.x},
             {row: r, column: 0},
             {row: tile_rows[r], column: 0}, // first cell
             {rows: row_extent, columns: 1},
@@ -1284,6 +1370,9 @@ export abstract class BaseLayout {
 
     }
 
+    this.total_height = total_height;
+    this.total_width = total_width;
+
     this.rectangle_cache.Clear();
     this.UpdateGridTemplates(true, true);
 
@@ -1294,7 +1383,7 @@ export abstract class BaseLayout {
    * a column to a tile in either the header or the grid.
    * FIXME: speed up w/ lookup cache
    */
-  public TileIndexForColumn(column: number){
+  public TileIndexForColumn(column: number): number{
     for (const tile of this.column_header_tiles) {
       if (tile.first_cell.column <= column && tile.last_cell.column >= column) {
         return tile.tile_position.column;
@@ -1308,7 +1397,7 @@ export abstract class BaseLayout {
    * a column to a tile in either the header or the grid.
    * FIXME: speed up w/ lookup cache
    */
-  public TileIndexForRow(row: number){
+  public TileIndexForRow(row: number): number{
     for (const tile of this.row_header_tiles) {
       if (tile.first_cell.row <= row && tile.last_cell.row >= row) {
           return tile.tile_position.row;
@@ -1323,7 +1412,7 @@ export abstract class BaseLayout {
    * UPDATE fix for entire column/row/sheet (the Intersects() method
    * doesn't support infinities, for some reason: FIX THAT)
    */
-  public DirtyHeaders(area?: Area) {
+  public DirtyHeaders(area?: Area): void {
 
     if (!area) return;
 
@@ -1354,7 +1443,7 @@ export abstract class BaseLayout {
 
   }
 
-  public DirtyAll(){
+  public DirtyAll(): void {
     for (const column of this.grid_tiles) {
       for (const tile of column) {
         tile.dirty = true;
@@ -1362,7 +1451,7 @@ export abstract class BaseLayout {
     }
   }
 
-  public DirtyArea(area: Area){
+  public DirtyArea(area: Area): void {
 
     if (!this.initialized) return;
 
@@ -1461,7 +1550,7 @@ export abstract class BaseLayout {
       let height = 0;
 
       for (let r = tile.first_cell.row; r <= tile.last_cell.row; r++){
-        height += this.model.active_sheet.GetRowHeight(r);
+        height += this.RowHeight(r);
       }
 
       const height_match = (tile.logical_size.height === height);
@@ -1512,14 +1601,14 @@ export abstract class BaseLayout {
 
     if (this.model.active_sheet.freeze.rows) {
       let freeze_height = 0;
-      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) freeze_height += this.model.active_sheet.GetRowHeight(i);
+      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) freeze_height += this.RowHeight(i);
       for (const tile of this.frozen_row_tiles) {
         tile.style.height = `${freeze_height}px`;
         tile.height = freeze_height * this.dpr;
       }
 
       // corner includes header size
-      freeze_height += this.model.active_sheet.header_offset.y;
+      freeze_height += this.header_offset.y;
       this.corner_canvas.style.height = `${freeze_height}px`;
       this.corner_canvas.height = freeze_height * this.dpr;
 
@@ -1541,7 +1630,7 @@ export abstract class BaseLayout {
    * update all widths. start_column is a hint that can save some work
    * by skipping unaffected tiles
    */
-  public UpdateTileWidths(mark_dirty = true, start_column = -1) {
+  public UpdateTileWidths(mark_dirty = true, start_column = -1): void {
 
     let x = 0;
 
@@ -1557,7 +1646,7 @@ export abstract class BaseLayout {
       let width = 0;
 
       for (let c = tile.first_cell.column; c <= tile.last_cell.column; c++){
-        width += this.model.active_sheet.GetColumnWidth(c);
+        width += this.ColumnWidth(c);
       }
 
       const width_match = (tile.logical_size.width === width);
@@ -1608,14 +1697,14 @@ export abstract class BaseLayout {
 
     if (this.model.active_sheet.freeze.columns) {
       let freeze_width = 0;
-      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) freeze_width += this.model.active_sheet.GetColumnWidth(i);
+      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) freeze_width += this.ColumnWidth(i);
       for (const tile of this.frozen_column_tiles) {
         tile.style.width = `${freeze_width}px`;
         tile.width = freeze_width * this.dpr;
       }
 
       // corner includes header size
-      freeze_width += this.model.active_sheet.header_offset.x;
+      freeze_width += this.header_offset.x;
       this.corner_canvas.style.width = `${freeze_width}px`;
       this.corner_canvas.width = freeze_width * this.dpr;
 
@@ -1707,14 +1796,14 @@ export abstract class BaseLayout {
 
             // offset to cell
             for (let c = cell.first_cell.column; c < clone.column; c++){
-              rect.left += this.model.active_sheet.GetColumnWidth(c);
+              rect.left += this.ColumnWidth(c);
             }
             for (let r = cell.first_cell.row; r < clone.row; r++){
-              rect.top += this.model.active_sheet.GetRowHeight(r);
+              rect.top += this.RowHeight(r);
             }
 
-            rect.width = this.model.active_sheet.GetColumnWidth(clone.column);
-            rect.height = this.model.active_sheet.GetRowHeight(clone.row);
+            rect.width = this.ColumnWidth(clone.column);
+            rect.height = this.RowHeight(clone.row);
 
             this.rectangle_cache.Set(clone.column, clone.row, rect);
 
@@ -1773,6 +1862,7 @@ export abstract class BaseLayout {
       }
     }
 
+    this.UpdateTotalSize();
     this.UpdateGridTemplates(true, false);
     this.UpdateContentsSize();
 
@@ -1821,6 +1911,7 @@ export abstract class BaseLayout {
       }
     }
 
+    this.UpdateTotalSize();
     this.UpdateGridTemplates(false, true);
     this.UpdateContentsSize();
 

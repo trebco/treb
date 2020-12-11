@@ -340,6 +340,9 @@ export class Grid {
       new LegacyLayout(this.model);
     */
     this.layout = CreateLayout(this.model);
+    if (options.initial_scale) {
+      this.layout.scale = options.initial_scale;
+    }
 
     this.tile_renderer = new TileRenderer(this.theme, this.layout, this.model, this.options);
     this.selection_renderer = new SelectionRenderer(
@@ -432,20 +435,45 @@ export class Grid {
     return annotation;
   }
 
+  public UpdateScale(scale = 1): void {
+    this.layout.scale = scale;
+    this.UpdateLayout();
+    this.UpdateAnnotationLayout();
+    this.layout.UpdateAnnotation(this.active_sheet.annotations);
+    this.layout.ApplyTheme(this.theme);
+    this.cell_editor?.UpdateTheme(scale);
+    this.grid_events.Publish({
+      type: 'scale', 
+      scale,
+    });
+  }
+
+  /** placeholder */
+  public UpdateAnnotationLayout(): void {
+    // ...
+  }
+
   /** add an annotation. it will be returned with a usable node. */
   public AddAnnotation(annotation: Annotation, toll_events = false, add_to_layout = true): void {
 
     if (!annotation.node) {
       annotation.node = document.createElement('div');
+      annotation.node.dataset.scale = this.layout.scale.toString();
+      annotation.node.style.fontSize = `${10 * this.layout.scale}pt`;
 
-      if (annotation.node && annotation.rect) {
+      if (annotation.node) {
         const node = annotation.node;
-        const rect = annotation.rect;
 
         // support focus
         node.setAttribute('tabindex', '-1');
 
         node.addEventListener('mousedown', (event) => {
+
+          const rect = annotation.scaled_rect;
+          if (!rect) {
+            console.info('missing scaled rect!');
+            return;
+          }
 
           const origin = {
             left: rect.left,
@@ -564,6 +592,8 @@ export class Grid {
 
             }, () => {
               annotation.extent = undefined; // reset
+              annotation.rect = rect.Scale(1/this.layout.scale);
+
               this.grid_events.Publish({ type: 'annotation', annotation, event: 'resize' });
             });
 
@@ -602,6 +632,13 @@ export class Grid {
         });
 
         annotation.node.addEventListener('keydown', (event) => {
+      
+          const rect = annotation.scaled_rect;
+          if (!rect) {
+            console.info('missing scaled rect!');
+            return;
+          }
+
           const target = { x: rect.left, y: rect.top };
           switch (event.key) {
             case 'ArrowUp':
@@ -672,12 +709,16 @@ export class Grid {
           target.y = Math.max(target.y, 0);
 
           if (rect.left !== target.x || rect.top !== target.y) {
-            rect.left = target.x;
-            rect.top = target.y;
+            rect.left = Math.round(target.x);
+            rect.top = Math.round(target.y);
             node.style.top = (rect.top) + 'px';
             node.style.left = (rect.left) + 'px';
+
             annotation.extent = undefined; // reset
             this.grid_events.Publish({ type: 'annotation', event: 'move', annotation });
+
+            annotation.rect = rect.Scale(1/this.layout.scale);
+
           }
 
         });
@@ -913,13 +954,19 @@ export class Grid {
 
       for (let i = 0; i < sheet_data[si].column_widths.length; i++) {
         if (typeof sheet_data[si].column_widths[i] !== 'undefined') {
-          this.model.sheets[si].SetColumnWidth(i, sheet_data[si].column_widths[i]);
+
+          // OK this is unscaled, we are setting unscaled from source data
+
+          this.model.sheets[si].SetColumnWidthX(i, sheet_data[si].column_widths[i]);
         }
       }
 
       for (let i = 0; i < sheet_data[si].row_heights.length; i++) {
         if (typeof sheet_data[si].row_heights[i] !== 'undefined') {
-          this.model.sheets[si].SetRowHeight(i, sheet_data[si].row_heights[i]);
+
+          // OK this is unscaled, we are setting unscaled from source data
+
+          this.model.sheets[si].SetRowHeightX(i, sheet_data[si].row_heights[i]);
         }
       }
 
@@ -1410,7 +1457,9 @@ export class Grid {
       this.UpdateLayout(); // in case we have changed font size
       this.selection_renderer.Flush();
 
-      if (this.cell_editor) this.cell_editor.UpdateTheme();
+      if (this.cell_editor) {
+        this.cell_editor.UpdateTheme(this.layout.scale);
+      }
       if (this.formula_bar) this.formula_bar.UpdateTheme();
 
       this.Repaint(true, true, true);
@@ -2741,6 +2790,7 @@ export class Grid {
       this.theme,
       this.model,
       autocomplete);
+    this.cell_editor.UpdateTheme(this.layout.scale);
 
     this.cell_editor.autocomplete_matcher = this.autocomplete_matcher;
 
@@ -3018,7 +3068,7 @@ export class Grid {
       this.layout.HideDropdownCaret();
 
       // height of ROW
-      const original_height = this.active_sheet.GetRowHeight(row);
+      const original_height = this.layout.RowHeight(row);
       let height = original_height;
 
       const rect = this.layout.OffsetCellAddressToRectangle({ row, column: 0 });
@@ -3037,12 +3087,12 @@ export class Grid {
       for (const annotation of this.active_sheet.annotations) {
         const y = rect.bottom - 1; // -1? border or something?
 
-        if (!annotation.rect || annotation.rect.bottom < y) { continue; }
-        if (y <= annotation.rect.top && annotation.move_with_cells) {
-          move_annotation_list.push({ annotation, y: annotation.rect.top });
+        if (!annotation.scaled_rect || annotation.scaled_rect.bottom < y) { continue; }
+        if (y <= annotation.scaled_rect.top && annotation.move_with_cells) {
+          move_annotation_list.push({ annotation, y: annotation.scaled_rect.top });
         }
-        else if (y > annotation.rect.top && annotation.resize_with_cells) {
-          size_annotation_list.push({ annotation, height: annotation.rect.height });
+        else if (y > annotation.scaled_rect.top && annotation.resize_with_cells) {
+          size_annotation_list.push({ annotation, height: annotation.scaled_rect.height });
         }
       }
 
@@ -3052,7 +3102,7 @@ export class Grid {
 
           height = delta + original_height;
           // tile_sizes[tile_index] = tile_height + delta;
-          this.active_sheet.SetRowHeight(row, height);
+          this.layout.SetRowHeight(row, height);
 
           this.layout.UpdateTooltip({
             text: `${height}px`,
@@ -3060,17 +3110,28 @@ export class Grid {
           });
 
           for (const { annotation, y } of move_annotation_list) {
-            if (annotation.rect) {
-              annotation.rect.top = y + delta;
+            if (annotation.scaled_rect) {
+              annotation.scaled_rect.top = y + delta;
             }
           }
           for (const { annotation, height } of size_annotation_list) {
-            if (annotation.rect) {
-              annotation.rect.height = height + delta;
+            if (annotation.scaled_rect) {
+              annotation.scaled_rect.height = height + delta;
             }
           }
 
           requestAnimationFrame(() => {
+
+            for (const {annotation} of size_annotation_list) {
+              if (annotation.scaled_rect) {
+                annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+              }
+            }
+            for (const {annotation} of move_annotation_list) {
+              if (annotation.scaled_rect) {
+                annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+              }
+            }
 
             // FIXME: use command
 
@@ -3231,7 +3292,7 @@ export class Grid {
       //
 
       // width of COLUMN
-      const original_width = this.active_sheet.GetColumnWidth(column);
+      const original_width = this.layout.ColumnWidth(column);
       let width = original_width;
 
       const rect = this.layout.OffsetCellAddressToRectangle({ row: 0, column });
@@ -3252,13 +3313,13 @@ export class Grid {
 
       for (const annotation of this.active_sheet.annotations) {
         const x = rect.right - 1; // -1? border or something?
-        if (!annotation.rect || annotation.rect.right < x) { continue; }
+        if (!annotation.scaled_rect || annotation.scaled_rect.right < x) { continue; }
 
-        if (x <= annotation.rect.left && annotation.move_with_cells) {
-          move_annotation_list.push({ annotation, x: annotation.rect.left });
+        if (x <= annotation.scaled_rect.left && annotation.move_with_cells) {
+          move_annotation_list.push({ annotation, x: annotation.scaled_rect.left });
         }
-        else if (x > annotation.rect.left && annotation.resize_with_cells) {
-          size_annotation_list.push({ annotation, width: annotation.rect.width });
+        else if (x > annotation.scaled_rect.left && annotation.resize_with_cells) {
+          size_annotation_list.push({ annotation, width: annotation.scaled_rect.width });
         }
       }
 
@@ -3275,20 +3336,32 @@ export class Grid {
           });
 
           // tile_sizes[tile_index] = tile_width + delta;
-          this.active_sheet.SetColumnWidth(column, width);
+          this.layout.SetColumnWidth(column, width);
 
           for (const { annotation, x } of move_annotation_list) {
-            if (annotation.rect) {
-              annotation.rect.left = x + delta;
+            if (annotation.scaled_rect) {
+              annotation.scaled_rect.left = x + delta;
             }
           }
           for (const { annotation, width } of size_annotation_list) {
-            if (annotation.rect) {
-              annotation.rect.width = width + delta;
+            if (annotation.scaled_rect) {
+              annotation.scaled_rect.width = width + delta;
             }
           }
 
           requestAnimationFrame(() => {
+
+            for (const {annotation} of size_annotation_list) {
+              if (annotation.scaled_rect) {
+                annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+              }
+            }
+            for (const {annotation} of move_annotation_list) {
+              if (annotation.scaled_rect) {
+                annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+              }
+            }
+
             this.layout.UpdateTileWidths(true, column);
             this.Repaint(false, true); // repaint full tiles
             this.layout.UpdateAnnotation(this.active_sheet.annotations);
@@ -5078,12 +5151,12 @@ export class Grid {
   private StepVisibleRows(start: number, step: number) {
     if (step > 0) {
       for (let i = 0; i < step; i++) {
-        if (!this.active_sheet.GetRowHeight(++start)) i--;
+        if (!this.layout.RowHeight(++start)) i--;
       }
     }
     else if (step < 0) {
       for (let i = 0; i > step; i--) {
-        if (--start >= 0 && !this.active_sheet.GetRowHeight(start)) i++;
+        if (--start >= 0 && !this.layout.RowHeight(start)) i++;
       }
     }
 
@@ -5097,12 +5170,12 @@ export class Grid {
   private StepVisibleColumns(start: number, step: number) {
     if (step > 0) {
       for (let i = 0; i < step; i++) {
-        if (!this.active_sheet.GetColumnWidth(++start)) i--;
+        if (!this.layout.ColumnWidth(++start)) i--;
       }
     }
     else if (step < 0) {
       for (let i = 0; i > step; i--) {
-        if (--start >= 0 && !this.active_sheet.GetColumnWidth(start)) i++;
+        if (--start >= 0 && !this.layout.ColumnWidth(start)) i++;
       }
     }
     return start;
@@ -6499,21 +6572,23 @@ export class Grid {
         column: 0,
       });
 
-      const height = this.active_sheet.default_row_height * command.count + 1; // ?
+      const height = this.layout.default_row_height * command.count + 1; // ?
 
       for (const annotation of this.active_sheet.annotations) {
-        if (annotation.rect) {
+        if (annotation.scaled_rect) {
 
-          if (start.top >= annotation.rect.bottom) {
+          if (start.top >= annotation.scaled_rect.bottom) {
             continue;
           }
-          else if (start.top <= annotation.rect.top) {
-            annotation.rect.top += (height - 1); // grid
+          else if (start.top <= annotation.scaled_rect.top) {
+            annotation.scaled_rect.top += (height - 1); // grid
           }
           else {
-            annotation.rect.height += height;
+            annotation.scaled_rect.height += height;
             resize_annotations_list.push(annotation);
           }
+          
+          annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
 
           update_annotations_list.push(annotation);
         }
@@ -6535,42 +6610,42 @@ export class Grid {
       }
 
       for (const annotation of this.active_sheet.annotations) {
-        if (annotation.rect) {
+        if (annotation.scaled_rect) {
 
-          if (annotation.rect.bottom <= rect.top) {
+          if (annotation.scaled_rect.bottom <= rect.top) {
             continue; // unaffected
           }
 
           // affected are is entirely above of annotation: move only
-          if (annotation.rect.top >= rect.bottom - 1) { // grid
-            annotation.rect.top -= (rect.height);
+          if (annotation.scaled_rect.top >= rect.bottom - 1) { // grid
+            annotation.scaled_rect.top -= (rect.height);
           }
 
           // affected area is entirely underneath the annotation: size only
-          else if (annotation.rect.top <= rect.top && annotation.rect.bottom >= rect.bottom) {
-            annotation.rect.height = Math.max(annotation.rect.height - rect.height, 10);
+          else if (annotation.scaled_rect.top <= rect.top && annotation.scaled_rect.bottom >= rect.bottom) {
+            annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - rect.height, 10);
             resize_annotations_list.push(annotation);
           }
 
           // affected area completely contains the annotation: do nothing, or delete? (...)
-          else if (annotation.rect.top >= rect.top && annotation.rect.bottom <= rect.bottom) {
+          else if (annotation.scaled_rect.top >= rect.top && annotation.scaled_rect.bottom <= rect.bottom) {
             // ...
             continue; // do nothing, for now
           }
 
           // top edge: shift AND clip?
-          else if (annotation.rect.top >= rect.top && annotation.rect.bottom > rect.bottom) {
-            const shift = annotation.rect.top - rect.top + 1; // grid
+          else if (annotation.scaled_rect.top >= rect.top && annotation.scaled_rect.bottom > rect.bottom) {
+            const shift = annotation.scaled_rect.top - rect.top + 1; // grid
             const clip = rect.height - shift;
-            annotation.rect.top -= shift;
-            annotation.rect.height = Math.max(annotation.rect.height - clip, 10);
+            annotation.scaled_rect.top -= shift;
+            annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - clip, 10);
             resize_annotations_list.push(annotation);
           }
 
           // bottom edge: clip, I guess
-          else if (annotation.rect.top < rect.top && annotation.rect.bottom <= rect.bottom) {
-            const clip = annotation.rect.bottom - rect.top;
-            annotation.rect.height = Math.max(annotation.rect.height - clip, 10);
+          else if (annotation.scaled_rect.top < rect.top && annotation.scaled_rect.bottom <= rect.bottom) {
+            const clip = annotation.scaled_rect.bottom - rect.top;
+            annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - clip, 10);
             resize_annotations_list.push(annotation);
           }
 
@@ -6579,6 +6654,7 @@ export class Grid {
             // console.info("AR", annotation.rect, "R", rect);
           }
 
+          annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
           update_annotations_list.push(annotation);
 
         }
@@ -6697,22 +6773,23 @@ export class Grid {
         column: command.before_column,
       });
 
-      const width = this.active_sheet.default_column_width * command.count + 1; // ?
+      const width = this.layout.default_column_width * command.count + 1; // ?
 
       for (const annotation of this.active_sheet.annotations) {
-        if (annotation.rect) {
+        if (annotation.scaled_rect) {
 
-          if (start.left >= annotation.rect.right) {
+          if (start.left >= annotation.scaled_rect.right) {
             continue;
           }
-          else if (start.left <= annotation.rect.left) {
-            annotation.rect.left += (width - 1); // grid
+          else if (start.left <= annotation.scaled_rect.left) {
+            annotation.scaled_rect.left += (width - 1); // grid
           }
           else {
-            annotation.rect.width += width;
+            annotation.scaled_rect.width += width;
             resize_annotations_list.push(annotation);
           }
 
+          annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
           update_annotations_list.push(annotation);
         }
       }
@@ -6733,42 +6810,42 @@ export class Grid {
       }
 
       for (const annotation of this.active_sheet.annotations) {
-        if (annotation.rect) {
+        if (annotation.scaled_rect) {
 
-          if (annotation.rect.right <= rect.left) {
+          if (annotation.scaled_rect.right <= rect.left) {
             continue; // unaffected
           }
 
           // affected are is entirely to the left of annotation: move only
-          if (annotation.rect.left >= rect.right - 1) { // grid
-            annotation.rect.left -= (rect.width);
+          if (annotation.scaled_rect.left >= rect.right - 1) { // grid
+            annotation.scaled_rect.left -= (rect.width);
           }
 
           // affected area is entirely underneath the annotation: size only
-          else if (annotation.rect.left <= rect.left && annotation.rect.right >= rect.right) {
-            annotation.rect.width = Math.max(annotation.rect.width - rect.width, 10);
+          else if (annotation.scaled_rect.left <= rect.left && annotation.scaled_rect.right >= rect.right) {
+            annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - rect.width, 10);
             resize_annotations_list.push(annotation);
           }
 
           // affected area completely contains the annotation: do nothing, or delete? (...)
-          else if (annotation.rect.left >= rect.left && annotation.rect.right <= rect.right) {
+          else if (annotation.scaled_rect.left >= rect.left && annotation.scaled_rect.right <= rect.right) {
             // ...
             continue; // do nothing, for now
           }
 
           // left edge: shift AND clip?
-          else if (annotation.rect.left >= rect.left && annotation.rect.right > rect.right) {
-            const shift = annotation.rect.left - rect.left + 1; // grid
+          else if (annotation.scaled_rect.left >= rect.left && annotation.scaled_rect.right > rect.right) {
+            const shift = annotation.scaled_rect.left - rect.left + 1; // grid
             const clip = rect.width - shift;
-            annotation.rect.left -= shift;
-            annotation.rect.width = Math.max(annotation.rect.width - clip, 10);
+            annotation.scaled_rect.left -= shift;
+            annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - clip, 10);
             resize_annotations_list.push(annotation);
           }
 
           // right edge: clip, I guess
-          else if (annotation.rect.left < rect.left && annotation.rect.right <= rect.right) {
-            const clip = annotation.rect.right - rect.left;
-            annotation.rect.width = Math.max(annotation.rect.width - clip, 10);
+          else if (annotation.scaled_rect.left < rect.left && annotation.scaled_rect.right <= rect.right) {
+            const clip = annotation.scaled_rect.right - rect.left;
+            annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - clip, 10);
             resize_annotations_list.push(annotation);
           }
 
@@ -6777,6 +6854,7 @@ export class Grid {
             // console.info("AR", annotation.rect, "R", rect);
           }
 
+          annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
           update_annotations_list.push(annotation);
 
         }
@@ -7359,7 +7437,7 @@ export class Grid {
             if (typeof row === 'number') row = [row];
             if (typeof command.height === 'number') {
               for (const entry of row) {
-                this.active_sheet.SetRowHeight(entry, command.height);
+                this.layout.SetRowHeight(entry, command.height);
               }
             }
             else {
@@ -7376,7 +7454,7 @@ export class Grid {
 
             if (this.layout.container
               && this.layout.container.offsetHeight
-              && this.layout.container.offsetHeight > this.active_sheet.total_height) {
+              && this.layout.container.offsetHeight > this.layout.total_height) {
               this.UpdateLayout();
             }
             else {
@@ -7405,7 +7483,7 @@ export class Grid {
 
             if (typeof command.width === 'number') {
               for (const entry of column) {
-                this.active_sheet.SetColumnWidth(entry, command.width);
+                this.layout.SetColumnWidth(entry, command.width);
               }
             }
             else {
@@ -7427,7 +7505,7 @@ export class Grid {
 
             if (this.layout.container
               && this.layout.container.offsetWidth
-              && this.layout.container.offsetWidth > this.active_sheet.total_width) {
+              && this.layout.container.offsetWidth > this.layout.total_width) {
               this.UpdateLayout();
             }
             else {

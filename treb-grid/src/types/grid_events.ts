@@ -59,10 +59,16 @@ export interface StyleEvent {
   area?: Area;
 }
 
+export interface ScaleEvent {
+  type: 'scale';
+  scale: number;
+}
+
 export type GridEvent
   = DataEvent
   | StyleEvent
   | FlushEvent
+  | ScaleEvent
   | GridErrorEvent
   | StructureEvent
   | AnnotationEvent

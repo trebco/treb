@@ -15,20 +15,20 @@ class FontMetricsCacheInstance {
 
   private cache: {[index: string]: FontMetricsInfo} = {};
 
-  public get(style: Style.Properties){
-    const font = Style.Font(style);
-
+  public get(style: Style.Properties, scale: number){
+    const font = Style.Font(style, scale);
     let metrics: FontMetricsInfo = this.cache[font] || { ascent: 10, descent: 2, block: 18 };
     if (!this.cache[font] || this.cache[font].block === 1) {
-      metrics = this.cache[font] = this.MeasureFont(style);
+      metrics = this.cache[font] = this.MeasureFont(style, scale);
     }
     return metrics;
   }
 
-  private MeasureFont(properties: Style.Properties): FontMetricsInfo {
+  private MeasureFont(properties: Style.Properties, scale: number): FontMetricsInfo {
     if (!fontmetrics_instance) fontmetrics_instance = new FontMetrics();
+    const font_size = (properties.font_size_value || 10) * scale;
     fontmetrics_instance.SetFont(properties.font_face || '',
-      (properties.font_size_value || 0) + (properties.font_size_unit || 'pt'),
+      font_size + (properties.font_size_unit || 'pt'),
       properties.font_bold ? 600 : 400);
 
     const fm1 = fontmetrics_instance.Measure('M');

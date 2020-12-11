@@ -199,7 +199,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     this.measurement_node = document.createElement('div');
   }
 
-  public UpdateTheme() {
+  public UpdateTheme(scale: number) {
     // ...
   }
 

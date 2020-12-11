@@ -57,14 +57,15 @@ export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResul
 export const RenderCheckbox = (options: RenderFunctionOptions): void => {
 
   const {context, width, height, cell} = options;
+  const scale = options.scale || 1;
 
   context.lineJoin = 'round';
   context.lineCap = 'round';
 
-  const offset = 3;
+  const offset = 3 * scale;
 
   let x = offset; // Math.round(width / 2 - 8);
-  let y = height - offset - 16; //  Math.round(height / 2 - 8);
+  let y = height - offset - 16 * scale; //  Math.round(height / 2 - 8);
 
   if (cell.style) {
     switch (cell.style.vertical_align) {
@@ -73,18 +74,18 @@ export const RenderCheckbox = (options: RenderFunctionOptions): void => {
         break;
 
       case Style.VerticalAlign.Middle:
-        y = Math.round(height / 2 - 8);
+        y = Math.round(height / 2 - 8 * scale);
         break;
   
     }
 
     switch (cell.style.horizontal_align) {
       case Style.HorizontalAlign.Right:
-        x = Math.round(width - offset - 16);
+        x = Math.round(width - offset - 16 * scale);
         break;
 
       case Style.HorizontalAlign.Center:
-        x = Math.round(width / 2 - 8);
+        x = Math.round(width / 2 - 8 * scale);
         break;
 
     }    
@@ -96,12 +97,12 @@ export const RenderCheckbox = (options: RenderFunctionOptions): void => {
     context.beginPath();
 
     context.moveTo(x, y);
-    context.lineTo(x + 16, y);
-    context.lineTo(x + 16, y + 16);
-    context.lineTo(x, y + 16);
+    context.lineTo(x + 16 * scale, y);
+    context.lineTo(x + 16 * scale, y + 16 * scale);
+    context.lineTo(x, y + 16 * scale);
     context.closePath();
 
-    context.moveTo(x + 15, y + 4);
+    context.moveTo(x + 15 * scale, y + 4 * scale);
     for (const point of [
         [13.59, 2.58],
         [6, 10.17],
@@ -109,15 +110,15 @@ export const RenderCheckbox = (options: RenderFunctionOptions): void => {
         [1, 8],
         [6, 13],
       ]) {
-      context.lineTo(x + point[0], y + point[1]);
+      context.lineTo(x + point[0] * scale, y + point[1] * scale);
     }
     context.closePath();
     context.fill();
 
   }
   else {
-    context.lineWidth = 2;
-    context.strokeRect(x, y, 16, 16);
+    context.lineWidth = Math.max(2, 2 * scale);
+    context.strokeRect(x, y, 16 * scale, 16 * scale);
   }
 
 };

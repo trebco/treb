@@ -9,6 +9,10 @@
  * originally this file used sass so we used some sass library functions
  * to do the same thing. all we are doing is (1) set alpha on a color and
  * (2) darken a color.
+ *
+ * UPDATE to support scaling: we won't explicitly set font size (or family).
+ * those should be set in containing nodes, possibly from theme or style.
+ * we will base our scale 100 at font size 10pt, and scale from there.
  */
 
 /**
@@ -52,16 +56,20 @@ $font-stack:  "-apple-system",
   .series-12 { color: #FFFFB3; }
 
   /* default font */
+  /*
   font-family: $font-stack;
+  */
 
   /* chart title, at top or bottom */
   .chart-title {
-    font-size: 14pt;
+    /* font-size: 14pt; */
+    font-size: 1.4em;
   }
 
   /* axis labels */
   .axis-group {
-    font-size: 9pt;  
+    /* font-size: 9pt; */
+    font-size: .9em;
   }
 
   /* default text color */
@@ -72,7 +80,8 @@ $font-stack:  "-apple-system",
 
   /* legend uses matching series colors */
   .legend {
-    font-size: 10.5pt;
+    /* font-size: 10.5pt; */
+    font-size: 1.05em;
     rect {
       fill: currentColor;
     }
@@ -191,7 +200,8 @@ $font-stack:  "-apple-system",
  
     /* this is the actual label */
     text.callout-label {
-      font-size: 10pt;
+      /* font-size: 10pt; */
+      font-size: 1em;
     }
 
   }

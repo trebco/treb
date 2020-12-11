@@ -38,6 +38,9 @@ export interface GridOptions {
   /** always show grid, even if there is background color */
   grid_over_background?: boolean;
 
+  /** initial scale for layout */
+  initial_scale?: number;
+
 }
 
 export const DefaultGridOptions: GridOptions = {

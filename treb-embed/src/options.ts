@@ -124,6 +124,9 @@ export interface BaseOptions {
   /** max size for image, in bytes */
   max_file_size?: number;
 
+  /** initial scale */
+  scale?: number;
+
 }
 
 /**

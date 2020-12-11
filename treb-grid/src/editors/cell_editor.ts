@@ -37,7 +37,7 @@ export class CellEditor extends FormulaEditorBase {
     this.editor_node.setAttribute('spellcheck', 'false');
     this.editor_node.setAttribute('tabindex', '-1');
 
-    this.UpdateTheme();
+    // this.UpdateTheme();
 
     this.editor_node.addEventListener('input', () => {
       this.Reconstruct();
@@ -71,13 +71,19 @@ export class CellEditor extends FormulaEditorBase {
 
   }
 
-  public UpdateTheme(){
+  public UpdateTheme(scale: number): void {
 
     if (this.editor_node) {
       this.editor_node.style.color = this.theme.cell_color || '';
       this.editor_node.style.fontFamily = this.theme.cell_font || '';
+
+      let font_size = this.theme.cell_font_size_value || 10;
+      if (scale) {
+        font_size = font_size * scale;
+      }
+
       this.editor_node.style.fontSize = // `${this.theme.cell_font_size}`;
-        `${this.theme.cell_font_size_value}${this.theme.cell_font_size_unit}`;
+        `${font_size}${this.theme.cell_font_size_unit}`;
 
       this.editor_node.style.borderColor = this.theme.grid_color || '';
       this.editor_node.style.backgroundColor = this.theme.cell_background_color || '';

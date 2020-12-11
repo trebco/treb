@@ -17,6 +17,9 @@ export class Annotation {
   /** coordinates, in sheet space */
   public rect?: Rectangle;
 
+  /** display coordinates, possibly scaled. not persisted. */
+  public scaled_rect?: Rectangle;
+
   /** opaque data. this is serialized, so it's persistent data */
   public data: any = {};
 
@@ -84,14 +87,16 @@ export class Annotation {
     for (const key of Object.keys(this)){
       if (key !== 'rect' && key !== 'cell_address' && opts[key]) (this as any)[key] = opts[key];
     }
-    if (opts.rect) this.rect = Rectangle.Create(opts.rect);
+    if (opts.rect) {
+      this.rect = Rectangle.Create(opts.rect);
+    }
   }
 
   /**
    * serialization method drops node and trims
    */
-  public toJSON(){
-    const result: any = { rect: this.rect };
+  public toJSON(): Partial<Annotation> {
+    const result: Partial<Annotation> = { rect: this.rect };
 
     if (this.data) result.data = this.data;
     if (this.formula) result.formula = this.formula;

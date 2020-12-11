@@ -1,25 +1,14 @@
 
-/**
- * this interface is used to support construction from rectangles
- * or things that resemble rectangles
- */
-export interface IRectangle {
-  top?: number;
-  left?: number;
-  width?: number;
-  height?: number;
-}
+export class Rectangle {
 
-export class Rectangle implements IRectangle {
-
-  public get right(){ return this.left + this.width; }
-  public get bottom(){ return this.top + this.height; }
+  public get right(): number { return this.left + this.width; }
+  public get bottom(): number { return this.top + this.height; }
 
   /**
-   * create a rectangle from an object that looks like a rectangle,
-   * probably a serialized object
+   * create a rectangle from an object that looks 
+   * like a rectangle, probably a serialized object
    */
-  public static Create(obj: IRectangle){
+  public static Create(obj: Partial<Rectangle>): Rectangle {
     return new Rectangle(
       obj.left || 0,
       obj.top || 0,
@@ -33,17 +22,21 @@ export class Rectangle implements IRectangle {
                 public height = 0 ){}
 
   /** returns a new rect shifted from this one by (x,y) */
-  public Shift(x = 0, y = 0) {
+  public Shift(x = 0, y = 0): Rectangle {
     return new Rectangle(this.left + x, this.top + y, this.width, this.height );
   }
 
+  public Scale(scale_x = 1, scale_y = scale_x): Rectangle {
+    return new Rectangle(this.left * scale_x, this.top * scale_y, this.width * scale_x, this.height * scale_y);
+  }
+
   /** returns a new rect expanded from this one by (x,y) */
-  public Expand(x = 0, y = 0){
+  public Expand(x = 0, y = 0): Rectangle {
     return new Rectangle(this.left, this.top, this.width + x, this.height + y );
   }
 
   /** returns a new rectangle that combines this rectangle with the argument */
-  public Combine(rect: Rectangle){
+  public Combine(rect: Rectangle): Rectangle {
     return new Rectangle(
       Math.min(this.left, rect.left),
       Math.min(this.top, rect.top),

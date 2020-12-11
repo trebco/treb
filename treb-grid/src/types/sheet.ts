@@ -286,15 +286,15 @@ export class Sheet {
   };
 
   /** testing */
-  public scale = 1.0;
+  // public scale = 1.0;
 
   public visible = true;
 
   /** standard width (FIXME: static?) */
-  public default_column_width = 100;
+  public default_column_width_x = 100;
 
   /** standard height (FIXME: static?) */
-  public default_row_height = 25;
+  public default_row_height_x = 25;
 
   /** cells data */
   public readonly cells: Cells = new Cells();
@@ -346,10 +346,10 @@ export class Sheet {
   private column_headers: string[] = [];
 
   /** size of header */
-  private row_header_width = 100;
+  private row_header_width_x = 100;
 
   /** size of header */
-  private column_header_height = 25;
+  private column_header_height_x = 25;
 
   // we cache composite styles so we don't wind up with objects
   // for every cell, when all we need is a single reference.
@@ -395,8 +395,8 @@ export class Sheet {
 
   // public get column_header_count() { return this.column_header_count_; }
 
-  public get header_offset(): {x: number, y: number} {
-    return { x: this.row_header_width, y: this.column_header_height };
+  public get header_offset_x(): {x: number, y: number} {
+    return { x: this.row_header_width_x, y: this.column_header_height_x };
   }
 
   /** accessor: now just a wrapper for the call on cells */
@@ -424,8 +424,8 @@ export class Sheet {
     // FIXME: the below should be called in a separate 'init' method
     // that can be called after we change styles (since it will measure)
 
-    this.default_column_width = DEFAULT_COLUMN_WIDTH;
-    this.row_header_width = DEFAULT_ROW_HEADER_WIDTH;
+    this.default_column_width_x = DEFAULT_COLUMN_WIDTH;
+    this.row_header_width_x = DEFAULT_ROW_HEADER_WIDTH;
     this.UpdateDefaultRowHeight();
 
     this.id_ = Sheet.base_id++;
@@ -510,8 +510,8 @@ export class Sheet {
       const measurement = Measurement.MeasureText(Style.Font(composite), 'M');
       const height = Math.round(measurement.height * 1.4);
 
-      if (this.default_row_height < height) {
-        this.default_row_height = height;
+      if (this.default_row_height_x < height) {
+        this.default_row_height_x = height;
       }
 
     }
@@ -523,23 +523,25 @@ export class Sheet {
 
   }
 
-  /** returns aggregate width of all (known) columns */
-  public get total_width(): number {
+  /* * returns aggregate width of all (known) columns * /
+  public get total_width_x(): number {
     let width = 0;
     for (let i = 0; i < this.cells.columns; i++) {
-      width += this.GetColumnWidth(i);
+      width += this.GetColumnWidthX(i);
     }
     return width;
   }
+  */
 
-  /** returns aggregate height of all (known) rows */
-  public get total_height(): number {
+  /* * returns aggregate height of all (known) rows * /
+  public get total_height_x(): number {
     let height = 0;
     for (let i = 0; i < this.cells.rows; i++) {
-      height += this.GetRowHeight(i);
+      height += this.GetRowHeightX(i);
     }
     return height;
   }
+  */
 
   /**
    * deprecated (or give me a reason to keep it)
@@ -596,25 +598,25 @@ export class Sheet {
     return s;
   }
 
-  public GetRowHeight(row: number): number {
+  public GetRowHeightX(row: number): number {
     const height = this.row_height_[row];
-    if (typeof height === 'undefined') return this.default_row_height;
+    if (typeof height === 'undefined') return this.default_row_height_x;
     return height;
   }
 
-  public SetRowHeight(row: number, height: number): number {
+  public SetRowHeightX(row: number, height: number): number {
     this.row_height_[row] = height;
     this.cells.EnsureRow(row);
     return height;
   }
 
-  public GetColumnWidth(column: number): number {
+  public GetColumnWidthX(column: number): number {
     const width = this.column_width_[column];
-    if (typeof width === 'undefined') return this.default_column_width;
+    if (typeof width === 'undefined') return this.default_column_width_x;
     return width;
   }
 
-  public SetColumnWidth(column: number, width: number): number {
+  public SetColumnWidthX(column: number, width: number): number {
     this.column_width_[column] = width;
     this.cells.EnsureColumn(column);
     return width;
@@ -900,16 +902,25 @@ export class Sheet {
     return formatted;
   }
 
-  public ColumnHeaderHeight(): number {
-    return this.column_header_height || this.default_row_height;
-  }
+  // no references... removing
+  //public ColumnHeaderHeight(): number {
+  //  return this.column_header_height || this.default_row_height_x;
+  //}
 
+  /**
+   * the only place this is called is in a method that shows/hides headers;
+   * it sets the size either to 1 (hidden) or undefined, which uses the 
+   * defaults here. that suggests we should have a show/hide method instead.
+   * 
+   * @param row_header_width 
+   * @param column_header_height 
+   */
   public SetHeaderSize(
     row_header_width = DEFAULT_ROW_HEADER_WIDTH,
-    column_header_height = this.default_row_height): void {
+    column_header_height = this.default_row_height_x): void {
 
-    this.row_header_width = row_header_width;
-    this.column_header_height = column_header_height;
+    this.row_header_width_x = row_header_width;
+    this.column_header_height_x = column_header_height;
   }
 
   /**
@@ -921,7 +932,7 @@ export class Sheet {
    */
   public AutoSizeRow(row: number): void {
 
-    let height = this.default_row_height;
+    let height = this.default_row_height_x;
     const padding = 9;
 
     for (let column = 0; column < this.cells.columns; column++) {
@@ -941,7 +952,7 @@ export class Sheet {
       }
     }
 
-    this.SetRowHeight(row, height);
+    this.SetRowHeightX(row, height);
 
   }
 
@@ -961,7 +972,7 @@ export class Sheet {
     let width = 12;
     const padding = 4 * 2; // FIXME: parameterize
 
-    if (!allow_shrink) width = this.GetColumnWidth(column);
+    if (!allow_shrink) width = this.GetColumnWidthX(column);
 
     for (let row = 0; row < this.cells.rows; row++) {
       const cell = this.CellData({ row, column });
@@ -976,7 +987,7 @@ export class Sheet {
       }
     }
 
-    this.SetColumnWidth(column, width);
+    this.SetColumnWidthX(column, width);
 
   }
 
@@ -1689,11 +1700,11 @@ export class Sheet {
 
       // why are these serialized? (...) export!
 
-      default_row_height: this.default_row_height,
-      default_column_width: this.default_column_width,
+      default_row_height: this.default_row_height_x,
+      default_column_width: this.default_column_width_x,
 
-      row_height: flatten_numeric_array(this.row_height_, this.default_row_height),
-      column_width: flatten_numeric_array(this.column_width_, this.default_column_width),
+      row_height: flatten_numeric_array(this.row_height_, this.default_row_height_x),
+      column_width: flatten_numeric_array(this.column_width_, this.default_column_width_x),
 
       selection: JSON.parse(JSON.stringify(this.selection)),
       annotations: JSON.parse(JSON.stringify(this.annotations)),
@@ -1808,9 +1819,9 @@ export class Sheet {
     annotation.extent = { row: 0, column: 0 };
 
     let right = annotation.rect?.right;
-    if (right && this.default_column_width) { // also sanity check
+    if (right && this.default_column_width_x) { // also sanity check
       for (let i = 0; right >= 0 && i < sanity; i++) {
-        right -= this.GetColumnWidth(i);
+        right -= this.GetColumnWidthX(i); // FIXME: check // it's ok, rect is scaled to unit
         if (right < 0) {
           annotation.extent.column = i;
           break;
@@ -1819,9 +1830,9 @@ export class Sheet {
     }
 
     let bottom = annotation.rect?.bottom;
-    if (bottom && this.default_row_height) {
+    if (bottom && this.default_row_height_x) {
       for (let i = 0; bottom >= 0 && i < sanity; i++) {
-        bottom -= this.GetRowHeight(i);
+        bottom -= this.GetRowHeightX(i); // FIXME: check // it's ok, rect is scaled to unit
         if (bottom < 0) {
           annotation.extent.row = i;
           break;

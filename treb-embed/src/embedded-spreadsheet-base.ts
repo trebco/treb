@@ -314,6 +314,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       // tab_bar: this.options.tab_bar,
     };
 
+    if (this.options.scale) {
+      grid_options.initial_scale = this.options.scale;
+    }
+
     // what is happening here? this is dumb
 
     if (typeof this.options.formula_bar !== 'undefined') {
@@ -428,6 +432,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             this.DocumentChange();
             this.UpdateDocumentStyles(false);
             this.UpdateSelectionStyle();
+            break;
+
+          case 'scale':
+            this.RebuildAllAnnotations();
             break;
 
           case 'annotation':
@@ -818,6 +826,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   public FormatNumber(value: number, format: string) {
     return NumberFormatCache.Get(format).Format(value);
+  }
+
+  /** public API for scale */
+  public SetScale(scale = 1) {
+    this.grid.UpdateScale(scale);
   }
 
   /** API FIXME: only for riskamp embedded... */

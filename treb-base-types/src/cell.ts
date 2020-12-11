@@ -16,6 +16,7 @@ export interface RenderFunctionOptions {
   width: number;
   context: CanvasRenderingContext2D;
   cell: Cell;
+  scale?: number;
 }
 
 export interface ClickFunctionOptions {
