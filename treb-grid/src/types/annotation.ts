@@ -59,6 +59,9 @@ export class Annotation {
   /** layout node, obviously not serialized */
   public node?: HTMLDivElement;
 
+  /** content node */
+  public content_node?: HTMLDivElement;
+
   /**
    * optional formula. the formula will be updated on structure events
    * (insert/delete row/column).

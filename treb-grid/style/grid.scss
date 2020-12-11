@@ -134,7 +134,42 @@
         background: rgba(255, 255, 255, .5);
         border: 1px solid #999;
         z-index: 1;
+        
+        .annotation-content {
+          position: absolute;
+          top: 0px;
+          left: 0px;
+          height: 100%;
+          width: 100%;
+          font-family: inherit;
+          font-size: inherit;
+          z-index: 1;
+        }
 
+        .annotation-move-target {
+          position: absolute;
+          z-index: 2;
+          cursor: move;
+          top: 0px;
+          left: 0px;
+          height: 10%;
+          min-height: 14px;
+          width: 100%;
+        }
+
+        .annotation-resize-target {
+          position: absolute;
+          z-index: 3;
+          cursor: nwse-resize;
+          bottom: 0px;
+          right: 0px;
+          width: 10%;
+          height: 10%;
+          min-height: 14px;
+          min-width: 14px;
+        }
+
+        /*
         &::before {
           content: '';
           position: absolute;
@@ -160,12 +195,24 @@
           box-sizing: border-box;
           border: 7px solid transparent;
         }
+        */
 
         &:focus, &.retain-focus {
           outline: 2px solid lightblue;
         }
 
       }
+
+      .move-buffer {
+        position: absolute;
+        border: 1px solid red;
+        height: 10%;
+        top: 0px;
+        width: 100%;
+        left: 0px;
+        cursor: move;
+      }
+
 
       z-index: $z-index-annotations;
       pointer-events: none;

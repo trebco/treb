@@ -2209,7 +2209,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
     annotation.inflated = true;
 
-    if (annotation.node && annotation.data) {
+    if (annotation.content_node && annotation.data) {
 
       if (annotation.type === 'treb-chart') {
 
@@ -2220,7 +2220,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         {
 
           const chart = new Chart();
-          chart.Initialize(annotation.node);
+          chart.Initialize(annotation.content_node);
 
           // const chart = (self as any).TREB.CreateChart2(annotation.node) as Chart;
 
@@ -2291,7 +2291,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           };
 
           /** call once */
-          if (annotation.node.parentElement) {
+          if (annotation.node?.parentElement) {
             if (!this.grid.headless) {
               update_chart();
             }
@@ -2307,7 +2307,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         }
         img.style.width = '100%';
         img.style.height = '100%';
-        annotation.node.appendChild(img);
+        annotation.content_node.appendChild(img);
       }
     }
   }

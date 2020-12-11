@@ -50,6 +50,7 @@ import { DataModel, MacroFunction, SerializedModel } from './data_model';
 import { NamedRangeCollection } from './named_range';
 
 import '../../style/grid.scss';
+import { DOMUtilities } from '../util/dom_utilities';
 
 interface ClipboardCellData {
   address: ICellAddress;
@@ -461,6 +462,10 @@ export class Grid {
       annotation.node.dataset.scale = this.layout.scale.toString();
       annotation.node.style.fontSize = `${10 * this.layout.scale}pt`;
 
+      annotation.content_node = DOMUtilities.CreateDiv('annotation-content', annotation.node);
+      const move_target = DOMUtilities.CreateDiv('annotation-move-target', annotation.node);
+      const resize_target = DOMUtilities.CreateDiv('annotation-resize-target', annotation.node);
+
       if (annotation.node) {
         const node = annotation.node;
 
@@ -481,12 +486,11 @@ export class Grid {
             width: rect.width,
             height: rect.height,
           };
+
           const bounding_rect = node.getBoundingClientRect();
 
-          // FIXME: these 13s come from the stylesheet, we need to
-          // either read these or make them dynamic somehow
+          if (event.target === move_target) {
 
-          if (event.offsetY <= 13) { // move
             event.stopPropagation();
             event.preventDefault();
             node.focus();
@@ -530,10 +534,13 @@ export class Grid {
             });
 
             return;
-          }
 
-          if ((bounding_rect.width - event.offsetX <= 13) &&
-            (bounding_rect.height - event.offsetY <= 13)) {
+          }
+          else if (event.target === resize_target) {
+
+          //if ((bounding_rect.width - event.offsetX <= 13) &&
+          //  (bounding_rect.height - event.offsetY <= 13)) {
+
             event.stopPropagation();
             event.preventDefault();
             node.focus();
@@ -548,8 +555,8 @@ export class Grid {
 
             const bounds = node.getBoundingClientRect();
             const offset = {
-              x: bounds.left + event.offsetX - rect.width,
-              y: bounds.top + event.offsetY - rect.height,
+              x: bounds.left + event.offsetX - rect.width + resize_target.offsetLeft,
+              y: bounds.top + event.offsetY - rect.height + resize_target.offsetTop,
             };
 
             MouseDrag(this.layout.mask, 'nw-resize', (move_event) => {
