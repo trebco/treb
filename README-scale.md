@@ -35,6 +35,7 @@ row-header width, column-header height (+ corner size)
 ICE (font size, layout is ok)
 scale annotations
 update annotations on scale/rescale
+font metrics in tile render
 
 
 
