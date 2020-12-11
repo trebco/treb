@@ -97,7 +97,7 @@ export abstract class BaseLayout {
    */
   public scroll_reference_node!: HTMLElement;
 
-  public get scroll_offset() {
+  public get scroll_offset(): {x: number, y: number} {
     if (!this.scroll_reference_node) {
       return { x: 0, y: 0 };
     }
@@ -320,12 +320,12 @@ export abstract class BaseLayout {
 
   /** wrapper around sheet method, incorporating scale */
   public ColumnWidth(column: number): number {
-    return Math.round(this.model.active_sheet.GetColumnWidthX(column) * this.scale);
+    return Math.round(this.model.active_sheet.GetColumnWidth(column) * this.scale);
   }
 
   /** wrapper around sheet method, incorporating scale */
   public RowHeight(row: number): number {
-    return Math.round(this.model.active_sheet.GetRowHeightX(row) * this.scale);
+    return Math.round(this.model.active_sheet.GetRowHeight(row) * this.scale);
   }
 
   /** 
@@ -335,7 +335,7 @@ export abstract class BaseLayout {
    * to a layout update, total size will be out of sync 
    */
   public SetRowHeight(row: number, height: number): void {
-    this.model.active_sheet.SetRowHeightX(row, Math.round(height / this.scale));
+    this.model.active_sheet.SetRowHeight(row, Math.round(height / this.scale));
   }
 
   /** 
@@ -345,7 +345,7 @@ export abstract class BaseLayout {
    * to a layout update, total size will be out of sync 
    */
   public SetColumnWidth(column: number, width: number): void {
-    this.model.active_sheet.SetColumnWidthX(column, Math.round(width / this.scale));
+    this.model.active_sheet.SetColumnWidth(column, Math.round(width / this.scale));
   }
 
   /**
@@ -568,7 +568,7 @@ export abstract class BaseLayout {
    * a copy event on ctrl+c (or any other system copy event).
    * seems to break IE, so split.
    */
-  public MockSelection(){
+  public MockSelection(): void {
 
     if (!this.container) {
       return;
@@ -1162,12 +1162,12 @@ export abstract class BaseLayout {
 
     const sheet = this.model.active_sheet;
 
-    this.default_row_height = Math.round(sheet.default_row_height_x * this.scale);
-    this.default_column_width = Math.round(sheet.default_column_width_x * this.scale);
+    this.default_row_height = Math.round(sheet.default_row_height * this.scale);
+    this.default_column_width = Math.round(sheet.default_column_width * this.scale);
 
     this.header_offset = {
-      x: Math.round(sheet.header_offset_x.x * this.scale),
-      y: Math.round(sheet.header_offset_x.y * this.scale),
+      x: Math.round(sheet.header_offset.x * this.scale),
+      y: Math.round(sheet.header_offset.y * this.scale),
     };
 
     this.UpdateContainingGrid();

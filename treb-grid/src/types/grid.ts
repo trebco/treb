@@ -23,7 +23,7 @@ import { CreateLayout } from '@grid-conditional/layout_manager';
 import { GridSelection } from './grid_selection';
 import { Theme, ExtendedTheme, CalculateSupplementalColors, LoadThemeProperties } from './theme';
 import { CellEditor } from '../editors/cell_editor';
-import { FormulaEditorBase } from '../editors/formula_editor_base';
+// import { FormulaEditorBase } from '../editors/formula_editor_base';
 
 import { TileRenderer } from '../render/tile_renderer';
 import { GridEvent } from './grid_events';
@@ -958,7 +958,7 @@ export class Grid {
 
           // OK this is unscaled, we are setting unscaled from source data
 
-          this.model.sheets[si].SetColumnWidthX(i, sheet_data[si].column_widths[i]);
+          this.model.sheets[si].SetColumnWidth(i, sheet_data[si].column_widths[i]);
         }
       }
 
@@ -967,7 +967,7 @@ export class Grid {
 
           // OK this is unscaled, we are setting unscaled from source data
 
-          this.model.sheets[si].SetRowHeightX(i, sheet_data[si].row_heights[i]);
+          this.model.sheets[si].SetRowHeight(i, sheet_data[si].row_heights[i]);
         }
       }
 
