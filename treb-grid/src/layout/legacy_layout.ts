@@ -131,8 +131,8 @@ export class LegacyLayout extends BaseLayout {
       event.stopPropagation();
       event.preventDefault();
 
-      const left = this.model.active_sheet.header_offset.x - this.scroller.scrollLeft;
-      const top = this.model.active_sheet.header_offset.y - this.scroller.scrollTop;
+      const left = this.header_offset.x - this.scroller.scrollLeft;
+      const top = this.header_offset.y - this.scroller.scrollTop;
 
       this.column_header_cover.style.left =
         this.column_header.style.left = `${left}px`;
@@ -145,11 +145,11 @@ export class LegacyLayout extends BaseLayout {
 
       this.row_header_cover.style.top =
         this.grid_cover.style.top =
-        `${this.model.active_sheet.header_offset.y - this.scroller.scrollTop}px`;
+        `${this.header_offset.y - this.scroller.scrollTop}px`;
 
       this.column_header_cover.style.left =
         this.grid_cover.style.left =
-        `${this.model.active_sheet.header_offset.x - this.scroller.scrollLeft}px`;
+        `${this.header_offset.x - this.scroller.scrollLeft}px`;
 
       // eventually
       scroll_callback();
@@ -188,8 +188,8 @@ export class LegacyLayout extends BaseLayout {
       event.stopPropagation();
       event.preventDefault();
 
-      if (x < this.model.active_sheet.header_offset.x) {
-        if (y < this.model.active_sheet.header_offset.y) {
+      if (x < this.header_offset.x) {
+        if (y < this.header_offset.y) {
           if (x < 10 && y < 10) {
             // legacy notification
           }
@@ -201,16 +201,16 @@ export class LegacyLayout extends BaseLayout {
           this.row_header_cover.dispatchEvent(cloned_event);
         }
       }
-      else if (y < this.model.active_sheet.header_offset.y) {
+      else if (y < this.header_offset.y) {
         this.column_header_cover.dispatchEvent(cloned_event);
       }
       else {
-        const x2 = x - this.model.active_sheet.header_offset.x + this.scroll_reference_node.scrollLeft;
-        const y2 = y - this.model.active_sheet.header_offset.y + this.scroll_reference_node.scrollTop;
+        const x2 = x - this.header_offset.x + this.scroll_reference_node.scrollLeft;
+        const y2 = y - this.header_offset.y + this.scroll_reference_node.scrollTop;
         for (const annotation of this.model.active_sheet.annotations) {
-          if (annotation.rect &&
+          if (annotation.scaled_rect &&
               annotation.node &&
-              annotation.rect.Contains(x2, y2)) {
+              annotation.scaled_rect.Contains(x2, y2)) {
             if (event.type === 'mousedown' && document.activeElement !== annotation.node) {
               annotation.node.focus();
               if (this.container) {
@@ -292,7 +292,7 @@ export class LegacyLayout extends BaseLayout {
     let top = 0;
 
     if (/frozen-column-tile/.test(tile.className)) {
-      left = this.model.active_sheet.header_offset.x;
+      left = this.header_offset.x;
     }
     else {
       for (let i = 0; i < tile.tile_position.column; i++) {
@@ -304,7 +304,7 @@ export class LegacyLayout extends BaseLayout {
     }
 
     if (/frozen-row-tile/.test(tile.className)) {
-      top = this.model.active_sheet.header_offset.y;
+      top = this.header_offset.y;
     }
     else {
       for (let i = 0; i < tile.tile_position.row; i++) {
@@ -324,26 +324,26 @@ export class LegacyLayout extends BaseLayout {
 
     if (!this.container) throw new Error('missing container');
 
-    this.header_size.width = this.model.active_sheet.header_offset.x;
-    this.header_size.height = this.model.active_sheet.header_offset.y;
+    this.header_size.width = this.header_offset.x;
+    this.header_size.height = this.header_offset.y;
 
     // update the containing grid (layout for column/row headers)
 
-    let x = this.model.active_sheet.header_offset.x;
-    let y = this.model.active_sheet.header_offset.y;
+    let x = this.header_offset.x;
+    let y = this.header_offset.y;
 
     if (this.model.active_sheet.freeze.columns) {
-      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) x += this.model.active_sheet.GetColumnWidth(i);
+      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) x += this.ColumnWidth(i);
     }
     if (this.model.active_sheet.freeze.rows) {
-      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) y += this.model.active_sheet.GetRowHeight(i);
+      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) y += this.RowHeight(i);
     }
 
-    this.column_header.style.left = `${this.model.active_sheet.header_offset.x + this.scroller.scrollLeft}px`;
-    this.row_header.style.top = `${this.model.active_sheet.header_offset.y + this.scroller.scrollTop}px`;
+    this.column_header.style.left = `${this.header_offset.x + this.scroller.scrollLeft}px`;
+    this.row_header.style.top = `${this.header_offset.y + this.scroller.scrollTop}px`;
 
-    this.contents.style.left = `${this.model.active_sheet.header_offset.x + this.scroller.scrollLeft}px`;
-    this.contents.style.top = `${this.model.active_sheet.header_offset.y + this.scroller.scrollTop}px`;
+    this.contents.style.left = `${this.header_offset.x + this.scroller.scrollLeft}px`;
+    this.contents.style.top = `${this.header_offset.y + this.scroller.scrollTop}px`;
 
     // this.annotation_container.style.left = `${this.scroller.scrollLeft}px`;
     // this.annotation_container.style.top = `${this.scroller.scrollTop}px`;
@@ -382,11 +382,11 @@ export class LegacyLayout extends BaseLayout {
       }
 
       this.column_header_cover.style.height =
-        `${this.model.active_sheet.header_offset.y}px`;
+        `${this.header_offset.y}px`;
 
       this.column_header_cover.style.left =
         this.grid_cover.style.left =
-        `${this.model.active_sheet.header_offset.x + this.scroller.scrollLeft}px`;
+        `${this.header_offset.x + this.scroller.scrollLeft}px`;
 
       this.grid_cover.style.width =
         this.grid_selection.style.width =
@@ -415,11 +415,11 @@ export class LegacyLayout extends BaseLayout {
       }
 
       this.row_header_cover.style.width =
-        `${this.model.active_sheet.header_offset.x}px`;
+        `${this.header_offset.x}px`;
 
       this.row_header_cover.style.top =
         this.grid_cover.style.top =
-        `${this.model.active_sheet.header_offset.y + this.scroller.scrollTop}px`;
+        `${this.header_offset.y + this.scroller.scrollTop}px`;
 
       this.grid_cover.style.height =
         this.grid_selection.style.height =
@@ -428,9 +428,9 @@ export class LegacyLayout extends BaseLayout {
 
     }
 
-    let y = this.model.active_sheet.header_offset.y;
+    let y = this.header_offset.y;
     for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) {
-      y += this.model.active_sheet.GetRowHeight(i);
+      y += this.RowHeight(i);
     }
     this.row_header_selection.style.display = 'block';
     this.row_header_selection.style.width = this.grid_selection.style.width; // `${width}px`;
@@ -440,9 +440,9 @@ export class LegacyLayout extends BaseLayout {
       this.row_header_selection.style.top = `0px`; // `${this.model.sheet.header_offset.y}px`;
     this.row_header_selection.style.left = `0px`;
 
-    let x = this.model.active_sheet.header_offset.x;
+    let x = this.header_offset.x;
     for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) {
-      x += this.model.active_sheet.GetColumnWidth(i);
+      x += this.ColumnWidth(i);
     }
     this.column_header_selection.style.display = 'block';
     this.corner_selection.style.width =

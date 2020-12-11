@@ -525,6 +525,7 @@ export class Grid {
 
             }, () => {
               annotation.extent = undefined; // reset
+              annotation.rect = rect.Scale(1/this.layout.scale);
               this.grid_events.Publish({ type: 'annotation', annotation, event: 'move' });
             });
 
