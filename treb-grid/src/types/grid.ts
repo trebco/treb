@@ -3076,6 +3076,37 @@ export class Grid {
 
       this.layout.HideDropdownCaret();
 
+      if (this.IsDoubleClick({ row, column: -1 })) {
+
+        let rows = [row];
+
+        if (!this.primary_selection.empty &&
+          this.primary_selection.area.rows > 1 &&
+          this.primary_selection.area.start.column === Infinity &&
+          this.primary_selection.area.ContainsRow(row)) {
+
+          // update all selected columns. these could be in different tiles.
+
+          // in case the whole sheet is selected
+          const area = this.active_sheet.RealArea(this.primary_selection.area);
+
+          rows = [];
+          for (let r = area.start.row; r <= area.end.row; r++) {
+            rows.push(r);
+          }
+
+        }
+
+        // call with height = undefined, means auto-size
+
+        this.ExecCommand({
+          key: CommandKey.ResizeRows,
+          row: rows,
+        });
+
+        return;
+      }
+      
       // height of ROW
       const original_height = this.layout.RowHeight(row);
       let height = original_height;
