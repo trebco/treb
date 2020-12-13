@@ -230,7 +230,8 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
   const TestNode = (
       class_name: string|string[],
       properties: string|string[],
-      remove = false) => {
+      remove = false,
+      subnode?: string) => {
 
     const subelement = document.createElement('div');
 
@@ -239,7 +240,17 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
     subelement.setAttribute('class', class_name.join(' '));
     node.appendChild(subelement);
 
-    const css = (window.getComputedStyle(subelement) || {}) as any;
+    let css: any;
+
+    if (subnode) {
+      const subsubelement = document.createElement('div');
+      subsubelement.className = subnode;
+      subelement.appendChild(subsubelement);
+      css = (window.getComputedStyle(subsubelement) || {}) as any;
+    }
+    else {
+      css = (window.getComputedStyle(subelement) || {}) as any;
+    }
 
     if (typeof properties === 'string') properties = [properties];
     const results = properties.map((property) => {
@@ -303,13 +314,16 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
 
   const cell_classes = ['cell'];
 
+  /*
   if (UA.is_windows) {
     cell_classes.push('override-windows');
   }
+  */
 
   const cell = TestNode(cell_classes,
-    ['font-family', 'fill', 'font-size', 'border-color', 'stroke', 'border-bottom-color']);
-
+    ['font-family', 'fill', 'font-size', 'border-color', 'stroke', 'border-bottom-color'], undefined, 
+    UA.is_windows ? 'override-windows' : undefined);
+  
   theme.cell_font = cell[0];
   theme.cell_background_color = cell[1];
 
