@@ -33,6 +33,7 @@ import '../style/embed.scss';
 import * as build from '../../package.json';
 import { SerializedModel } from 'treb-grid/src/types/data_model';
 import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
+import { ExtendedTheme } from 'treb-grid/src/types/theme';
 
 interface UndoEntry {
   data: string;
@@ -719,9 +720,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * update theme if any css properties have changed. this calls
    * the grid method but we also have to update our dialog.
+   * 
+   * FIXME: toolbar? (...)
    */
-  public UpdateTheme(): void {
-    this.grid.UpdateTheme();
+  public UpdateTheme(override?: Partial<ExtendedTheme>): void {
+    this.grid.UpdateTheme(undefined, override);
     this.dialog?.UpdateTheme({
       mask: this.grid.theme.interface_dialog_mask,
       border: this.grid.theme.interface_dialog_border,

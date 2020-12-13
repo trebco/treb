@@ -1427,7 +1427,7 @@ export class Grid {
   /**
    * @param initial first call, from the grid Initialize() method
    */
-  public UpdateTheme(initial = false): void {
+  public UpdateTheme(initial = false, additional_properties?: Partial<ExtendedTheme>): void {
 
     if (!initial) {
       for (const key of Object.keys(this.theme)) {
@@ -1446,6 +1446,7 @@ export class Grid {
     const composite = CalculateSupplementalColors({
       ...theme_properties,
       ...this.theme,
+      ...additional_properties,
     });
 
     for (const key of Object.keys(composite)) {
