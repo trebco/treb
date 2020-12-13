@@ -68,8 +68,9 @@
     stroke: #333;
 
     .override-windows {
+      /* font-size: calc(16em/14); */
       font-size: 16px;
-      /* stroke: #000; */
+      
       stroke: inherit;
       border-color: inherit;
       fill: inherit;

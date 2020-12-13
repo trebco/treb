@@ -225,81 +225,37 @@ const ParseFontSize = (size: string) => {
 
 export const LoadThemeProperties = (container?: HTMLElement): Theme => {
   const theme: Theme = {};
-  let node!: HTMLElement;
 
-  const TestNode = (
-      class_name: string|string[],
-      properties: string|string[],
-      remove = false,
-      subnode?: string) => {
+  const Append = (parent: HTMLElement, classes: string): HTMLDivElement => {
+    const node = document.createElement('div');
+    node.setAttribute('class', classes);
+    parent.appendChild(node);
+    return node;
+  }
 
-    const subelement = document.createElement('div');
-
-    if (typeof class_name === 'string') class_name = [class_name];
-    // subelement.classList.add(...class_name); // IE11
-    subelement.setAttribute('class', class_name.join(' '));
-    node.appendChild(subelement);
-
-    let css: any;
-
-    if (subnode) {
-      const subsubelement = document.createElement('div');
-      subsubelement.className = subnode;
-      subelement.appendChild(subsubelement);
-      css = (window.getComputedStyle(subsubelement) || {}) as any;
-    }
-    else {
-      css = (window.getComputedStyle(subelement) || {}) as any;
-    }
-
-    if (typeof properties === 'string') properties = [properties];
-    const results = properties.map((property) => {
-      return css[property];
-    });
-
-    if (remove) {
-      node.removeChild(subelement);
-    }
-
-    return results;
-  };
+  const ElementCSS = (parent: HTMLElement, classes: string): CSSStyleDeclaration => 
+    window.getComputedStyle(Append(parent, classes));
 
   const parent = container || document;
   const existing_node = parent.querySelector('.treb-theme-container');
 
-  if (existing_node) {
-    node = existing_node as HTMLElement;
-  }
+  const node = existing_node ? 
+    existing_node as HTMLElement :
+    Append(container || document.body, 'treb-theme-container treb-theme override');
 
-  if (!node) {
-    node = document.createElement('div');
-    if (!node) {
-      throw new Error('could not create node');
-    }
-    // node.setAttribute('id', 'treb-theme-container');
-    node.classList.add('treb-theme-container');
+  const CSS = ElementCSS.bind(0, node);
 
-    // IE11 can't do two classes at once... ?
-    node.classList.add('treb-theme');
-    node.classList.add('override');
+  let css = CSS('primary-selection');
+  theme.primary_selection_color = css.stroke;
+  theme.primary_selection_line_dash_array = css.strokeDasharray;
 
-    if (container) {
-      container.appendChild(node);
-    }
-    else {
-      document.body.appendChild(node);
-    }
-  }
-
-  const primary_selection = TestNode('primary-selection', ['stroke', 'stroke-dasharray']);
-
-  theme.primary_selection_color = primary_selection[0];
-  theme.primary_selection_line_dash_array = primary_selection[1];
-  theme.additional_selection_line_dash_array = TestNode('additional-selections', 'stroke-dasharray')[0];
+  css = CSS('additional-selections');
+  theme.additional_selection_line_dash_array = css.strokeDasharray;
 
   const color_array = [];
   for (let i = 0; i < 32; i++ ){
-    const stroke = TestNode('additional-selection-' + (i + 1), 'stroke')[0];
+    css = CSS('additional-selection-' + (i + 1));
+    const stroke = css.stroke;
     if (stroke && stroke !== 'none') {
       color_array.push(stroke);
     }
@@ -308,101 +264,91 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
     theme.additional_selection_color = color_array;
   }
 
-  theme.grid_color = TestNode('grid', 'stroke')[0];
+  css = CSS('grid');
+  theme.grid_color = css.stroke;
 
-  // NOTE: ffx doesn't have "border-color", it needs to pick a side. also IE11.
+  css = UA.is_windows ?
+    css = window.getComputedStyle(Append(Append(node, 'cell'), 'override-windows')) :
+    css = CSS('cell');
 
-  const cell_classes = ['cell'];
+  theme.cell_font = css.fontFamily;
+  theme.cell_background_color = css.fill;
 
-  /*
-  if (UA.is_windows) {
-    cell_classes.push('override-windows');
-  }
-  */
+  let font_size = ParseFontSize(css.fontSize);
+  theme.cell_font_size_unit = font_size.unit;
+  theme.cell_font_size_value = font_size.value;
 
-  const cell = TestNode(cell_classes,
-    ['font-family', 'fill', 'font-size', 'border-color', 'stroke', 'border-bottom-color'], undefined, 
-    UA.is_windows ? 'override-windows' : undefined);
-  
-  theme.cell_font = cell[0];
-  theme.cell_background_color = cell[1];
+  theme.border_color = css.borderColor || css.borderBottomColor;
+  theme.cell_color = css.stroke;
 
-  const cell_font_size = ParseFontSize(cell[2]);
-  theme.cell_font_size_unit = cell_font_size.unit;
-  theme.cell_font_size_value = cell_font_size.value;
-  // theme.cell_font_size = cell[2]; // FontSize(cell[2]);
+  css = CSS('freeze-highlight');
+  theme.frozen_highlight_overlay = css.fill;
+  theme.frozen_highlight_border = css.stroke;
 
-  theme.border_color = cell[3];
-  theme.cell_color = cell[4];
- 
-  if (!theme.border_color && cell[5]) theme.border_color = cell[5];
+  css = CSS('interface');
+  theme.interface_font_face = css.fontFamily;
 
-  const highlight = TestNode('freeze-highlight', ['fill', 'stroke']);
-  theme.frozen_highlight_overlay = highlight[0];
-  theme.frozen_highlight_border = highlight[1];
+  font_size = ParseFontSize(css.fontSize);
+  theme.interface_font_size_value = font_size.value;
+  theme.interface_font_size_unit = font_size.unit;
 
-  // tslint:disable-next-line:variable-name
-  const interface_ = TestNode('interface', ['font-family', 'font-size']);
-  theme.interface_font_face = interface_[0];
+  css = CSS('interface dialog');
+  theme.interface_dialog_color = css.stroke;
+  theme.interface_dialog_background = css.fill;
+  theme.interface_dialog_border = css.borderBottomColor;
+  theme.interface_dialog_font_face = css.fontFamily;
+  theme.interface_dialog_font_size = css.fontSize;
 
-  const interface_font_size = ParseFontSize(interface_[1]);
-  theme.interface_font_size_value = interface_font_size.value;
-  theme.interface_font_size_unit = interface_font_size.unit;
+  css = CSS('interface mask');
+  theme.interface_dialog_mask = css.fill;
 
-  const dialog = TestNode(['interface', 'dialog'], ['stroke', 'fill', 'border-bottom-color', 'font-family', 'font-size']);
-  theme.interface_dialog_color = dialog[0];
-  theme.interface_dialog_background = dialog[1];
-  theme.interface_dialog_border = dialog[2];
-  theme.interface_dialog_font_face = dialog[3];
-  theme.interface_dialog_font_size = dialog[4];
+  css = CSS('header');
+  theme.header_background_color = css.fill;
+  theme.header_text_color = css.stroke;
 
-  const mask = TestNode(['interface', 'mask'], ['fill']);
-  theme.interface_dialog_mask = mask[0];
+  css = CSS('tooltip');
+  theme.tooltip_font_face = css.fontFamily;
+  theme.tooltip_font_size = css.fontSize;
+  theme.tooltip_background = css.fill;
+  theme.tooltip_color = css.stroke;
 
-  const header = TestNode('header', ['fill', 'stroke']);
-  theme.header_background_color = header[0];
-  theme.header_text_color = header[1];
+  css = CSS('formula-bar');
+  theme.formula_bar_font_face = css.fontFamily;
+  theme.formula_bar_font_size = css.fontSize;
+  theme.formula_bar_background_color = css.fill;
+  theme.formula_bar_color = css.stroke;
 
-  const tooltip = TestNode('tooltip', ['font-family', 'font-size', 'fill', 'stroke']);
-  theme.tooltip_font_face = tooltip[0];
-  theme.tooltip_font_size = tooltip[1]; // FontSize(tooltip[1]);
-  theme.tooltip_background = tooltip[2];
-  theme.tooltip_color = tooltip[3];
+  css = CSS('formula-bar locked');
+  theme.formula_bar_locked_background_color = css.fill;
 
-  const formula_bar = TestNode('formula-bar', ['font-family', 'font-size', 'fill', 'stroke']);
-  theme.formula_bar_font_face = formula_bar[0];
-  theme.formula_bar_font_size = formula_bar[1];
-  theme.formula_bar_background_color = formula_bar[2];
-  theme.formula_bar_color = formula_bar[3];
+  css = CSS('autocomplete');
+  theme.autocomplete_color = css.stroke;
+  theme.autocomplete_background = css.fill;
 
-  const locked = TestNode(['formula-bar', 'locked'], ['fill']);
-  theme.formula_bar_locked_background_color = locked[0];
+  css = CSS('autocomplete highlight');
+  theme.autocomplete_highlight_color = css.stroke;
+  theme.autocomplete_highlight_background = css.fill;
 
-  const ac = TestNode('autocomplete', ['stroke', 'fill']);
-  theme.autocomplete_color = ac[0];
-  theme.autocomplete_background = ac[1];
+  css = CSS('node-marker');
+  theme.note_marker_color = css.fill;
 
-  const ac_highlight = TestNode(['autocomplete', 'highlight'], ['stroke', 'fill']);
-  theme.autocomplete_highlight_color = ac_highlight[0];
-  theme.autocomplete_highlight_background = ac_highlight[1];
+  css = CSS('tab-bar');
+  theme.tab_bar_font_face = css.fontFamily;
+  theme.tab_bar_font_size = css.fontSize;
+  theme.tab_bar_background = css.fill;
+  theme.tab_bar_color = css.stroke;
 
-  const note_marker = TestNode(['note-marker'], ['fill']);
-  theme.note_marker_color = note_marker[0];
-
-  const tab_bar = TestNode(['tab-bar'], ['font-family', 'font-size', 'fill', 'stroke']);
-  theme.tab_bar_font_face = tab_bar[0];
-  theme.tab_bar_font_size = tab_bar[1];
-  theme.tab_bar_background = tab_bar[2];
-  theme.tab_bar_color = tab_bar[3];
-
-  const tab_bar_active = TestNode(['tab-bar', 'active'], ['fill', 'stroke']);
-  theme.tab_bar_active_background = tab_bar_active[0];
-  theme.tab_bar_active_color = tab_bar_active[1];
+  css = CSS('tab-bar active');
+  theme.tab_bar_active_background = css.fill;
+  theme.tab_bar_active_color = css.stroke;
 
   // console.info(theme);
   // document.body.removeChild(node);
 
-  (node.parentElement as Element).removeChild(node);
+  // this is a little odd, since we have the check above for "existing element";
+  // should we switch on that? or is that never used, and we can drop it? (...)
+
+  (node.parentElement as Element)?.removeChild(node);
 
   return theme;
 };
