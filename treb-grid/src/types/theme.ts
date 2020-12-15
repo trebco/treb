@@ -329,7 +329,7 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
   theme.autocomplete_highlight_color = css.stroke;
   theme.autocomplete_highlight_background = css.fill;
 
-  css = CSS('node-marker');
+  css = CSS('note-marker');
   theme.note_marker_color = css.fill;
 
   css = CSS('tab-bar');
