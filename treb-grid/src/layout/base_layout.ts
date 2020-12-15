@@ -488,6 +488,12 @@ export abstract class BaseLayout {
     for (const annotation of elements) {
       if (annotation.node) {
 
+        /*
+        if (annotation.node.dataset.scale && annotation.node.dataset.scale !== this.scale.toString()) {
+          console.info('scale out of sync');
+        }
+        */
+        
         annotation.node.dataset.scale = this.scale.toString();
         annotation.node.style.fontSize = `${10 * this.scale}pt`;
 

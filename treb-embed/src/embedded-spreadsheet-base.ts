@@ -2216,9 +2216,20 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // only inflate once, to prevent overwriting instance methods
 
     if (annotation.inflated) {
+      if (annotation.dirty) {
+        if (annotation.resize_callback) {
+          annotation.resize_callback();
+        }
+        annotation.dirty = false;
+      }
       return;
     }
+
     annotation.inflated = true;
+
+    if (annotation.dirty) {
+      annotation.dirty = false;
+    }
 
     if (annotation.content_node && annotation.data) {
 

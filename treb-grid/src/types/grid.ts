@@ -445,16 +445,25 @@ export class Grid {
   }
 
   public UpdateScale(scale = 1): void {
+    
     this.layout.scale = scale;
     this.UpdateLayout();
     this.UpdateAnnotationLayout();
     this.layout.UpdateAnnotation(this.active_sheet.annotations);
     this.layout.ApplyTheme(this.theme);
     this.cell_editor?.UpdateTheme(scale);
+
     this.grid_events.Publish({
       type: 'scale', 
       scale,
     });
+
+    for (const sheet of this.model.sheets) {
+      for (const annotation of sheet.annotations) {
+        annotation.dirty = true;
+      }
+    }
+
   }
 
   /** placeholder */

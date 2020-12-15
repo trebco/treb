@@ -100,6 +100,12 @@ export class Annotation {
   public content_node?: HTMLDivElement;
 
   /**
+   * advisory, meaning we probably need an update if there's an opportunity.
+   * only advisory and not persisted.
+   */
+  public dirty?: boolean;
+
+  /**
    * optional formula. the formula will be updated on structure events
    * (insert/delete row/column).
    */
