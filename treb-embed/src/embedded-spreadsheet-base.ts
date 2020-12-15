@@ -980,8 +980,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       // FIXME: don't call private functions
 
+      // NOTE: if we call this funcction to get the rect, we get the
+      // scaled rect -- when rendering, it will scale this rect, so 
+      // we effectively get scaled twice. we need to correct...
+
+      // MAYBE add a parameter to the CATR call that unscales? (...)
+
       rect = (this.grid as any).layout.CellAddressToRectangle(area.start).Combine(
-        (this.grid as any).layout.CellAddressToRectangle(area.end)).Shift(-1, -1).Expand(1, 1);
+        (this.grid as any).layout.CellAddressToRectangle(area.end)).Shift(-1, -1).Expand(1, 1).
+          Scale(1/(this.grid as any).layout.scale);
+      
 
     }
 
