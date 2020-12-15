@@ -19,7 +19,7 @@ import { RectangleCache } from './rectangle_cache';
 // force separation of all the functions between the two types (I think)
 
 import { Area as TileRange, CellValue } from 'treb-base-types';
-import { Annotation } from '../types/annotation';
+import { Annotation, AnnotationLayout, Corner, Offset } from '../types/annotation';
 export { Area as TileRange } from 'treb-base-types';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -438,6 +438,51 @@ export abstract class BaseLayout {
 
   }
 
+  /**
+   * 
+   */
+  public PointToAnnotationCorner(point: Point): Corner {
+    const address = this.PointToAddress_Grid(point);
+    const cell_rect = this.CellAddressToRectangle(address);
+    return {
+      address,
+      offset: {
+        x: (point.x - cell_rect.left) / cell_rect.width,
+        y: (point.y - cell_rect.top) / cell_rect.height,
+      },
+    };
+  }
+
+  /**
+   * utility for managing (new) annotation layout. we offset the {top, left}
+   * by {1, 1} pixel so that the alignment snaps to cell boundaries.
+   */
+  public RectToAnnotationLayout(rect: Partial<Rectangle>): AnnotationLayout {
+    return {
+      tl: this.PointToAnnotationCorner({x: (rect.left||0) + 1, y: (rect.top||0) + 1}),
+      br: this.PointToAnnotationCorner({x: rect.right || rect.left || 100, y: rect.bottom || rect.top || 100}),
+    };
+  }
+
+  /**
+   * @see RectToAnnotationLayout regarding the 1 pixel shift
+   */
+  public AnnotationLayoutToRect(layout: AnnotationLayout): Rectangle {
+    
+    const tl = this.CellAddressToRectangle(layout.tl.address);
+    const br = this.CellAddressToRectangle(layout.br.address);
+
+    const left = tl.left + tl.width * layout.tl.offset.x - 1;
+    const top = tl.top + tl.height * layout.tl.offset.y - 1;
+
+    return new Rectangle(
+      left, top, 
+      br.left + br.width * layout.br.offset.x - left,
+      br.top + br.height * layout.br.offset.y - top,
+    );
+    
+  }
+
   public UpdateAnnotation(elements: Annotation|Annotation[]): void {
     if (!Array.isArray(elements)) elements = [elements];
     for (const annotation of elements) {
@@ -445,7 +490,17 @@ export abstract class BaseLayout {
 
         annotation.node.dataset.scale = this.scale.toString();
         annotation.node.style.fontSize = `${10 * this.scale}pt`;
-  
+
+        // update the layout here if necessary. after that it should
+        // be persisted (assuming it's saved). eventually this should
+        // be superfluous...
+
+        if (annotation.rect && !annotation.layout) {
+          annotation.scaled_rect = annotation.rect.Scale(this.scale);
+          annotation.layout = this.RectToAnnotationLayout(annotation.scaled_rect);
+        }
+
+
         // FIXME: merge cells? [...]
 
         /*
@@ -458,7 +513,23 @@ export abstract class BaseLayout {
           rect.ApplyStyle(annotation.node);
         }
         else */
-        if (annotation.rect) {
+        if (annotation.layout) {
+
+          const rect = this.AnnotationLayoutToRect(annotation.layout);
+          rect.ApplyStyle(annotation.node);
+
+          // NOTE: we still set the scaled rect, because that's used in 
+          // manipulating at scale. we will need to make sure that we update
+          // the layout when the scaled rect / regular rect changes...
+
+          annotation.scaled_rect = rect; // .Scale(this.scale);
+
+        }
+
+        /*
+        else if (annotation.rect) {
+
+          console.warn('DEPRECATED: annotation is using rect for layout');
 
           // NOTE: this isn't exactly right because the cells scale by rounded
           // amounts. if we scale exactly, we will often miss the mark by a 
@@ -468,6 +539,7 @@ export abstract class BaseLayout {
           annotation.scaled_rect.ApplyStyle(annotation.node);
 
         }
+        */
       }
     }
   }

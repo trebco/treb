@@ -408,7 +408,14 @@ export class Grid {
    * paste immediately on top of the original.
    */
   public CreateAnnotation(properties: unknown = {}, add_to_sheet = true, offset = false): Annotation {
-    const annotation = new Annotation(properties);
+    const annotation = new Annotation(properties as Partial<Annotation>);
+
+    // this part of the method is intended to prevent overlap, but it 
+    // doesn't work for some reason (not sure); so we'll drop it temp
+
+    // (was it just because we didn't use the parameter? ...)
+
+    /*
     if (offset && annotation.rect) {
       let recheck = true;
       while (recheck) {
@@ -423,6 +430,7 @@ export class Grid {
         }
       }
     }
+    */
 
     if (add_to_sheet) {
 
@@ -529,7 +537,8 @@ export class Grid {
 
             }, () => {
               annotation.extent = undefined; // reset
-              annotation.rect = rect.Scale(1/this.layout.scale);
+              // annotation.rect = rect.Scale(1/this.layout.scale);
+              annotation.layout = this.layout.RectToAnnotationLayout(rect);
               this.grid_events.Publish({ type: 'annotation', annotation, event: 'move' });
             });
 
@@ -600,7 +609,8 @@ export class Grid {
 
             }, () => {
               annotation.extent = undefined; // reset
-              annotation.rect = rect.Scale(1/this.layout.scale);
+              // annotation.rect = rect.Scale(1/this.layout.scale);
+              annotation.layout = this.layout.RectToAnnotationLayout(rect);
 
               this.grid_events.Publish({ type: 'annotation', annotation, event: 'resize' });
             });
@@ -725,7 +735,8 @@ export class Grid {
             annotation.extent = undefined; // reset
             this.grid_events.Publish({ type: 'annotation', event: 'move', annotation });
 
-            annotation.rect = rect.Scale(1/this.layout.scale);
+            // annotation.rect = rect.Scale(1/this.layout.scale);
+            annotation.layout = this.layout.RectToAnnotationLayout(rect);
 
           }
 
@@ -3164,12 +3175,14 @@ export class Grid {
 
             for (const {annotation} of size_annotation_list) {
               if (annotation.scaled_rect) {
-                annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+                // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+                annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
               }
             }
             for (const {annotation} of move_annotation_list) {
               if (annotation.scaled_rect) {
-                annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+                // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+                annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
               }
             }
 
@@ -3393,12 +3406,14 @@ export class Grid {
 
             for (const {annotation} of size_annotation_list) {
               if (annotation.scaled_rect) {
-                annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+                // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+                annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
               }
             }
             for (const {annotation} of move_annotation_list) {
               if (annotation.scaled_rect) {
-                annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+                // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+                annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
               }
             }
 
@@ -6628,7 +6643,8 @@ export class Grid {
             resize_annotations_list.push(annotation);
           }
           
-          annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+          // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+          annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
 
           update_annotations_list.push(annotation);
         }
@@ -6694,7 +6710,9 @@ export class Grid {
             // console.info("AR", annotation.rect, "R", rect);
           }
 
-          annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+          // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+          annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+
           update_annotations_list.push(annotation);
 
         }
@@ -6829,7 +6847,9 @@ export class Grid {
             resize_annotations_list.push(annotation);
           }
 
-          annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+          // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+          annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+
           update_annotations_list.push(annotation);
         }
       }
@@ -6894,7 +6914,9 @@ export class Grid {
             // console.info("AR", annotation.rect, "R", rect);
           }
 
-          annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+          // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+          annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+
           update_annotations_list.push(annotation);
 
         }

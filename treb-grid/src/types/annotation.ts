@@ -1,5 +1,23 @@
 
-import { Rectangle, ICellAddress } from 'treb-base-types';
+import { Rectangle, ICellAddress, ICellAddress2 } from 'treb-base-types';
+
+/**
+ * offset from corner, as % of cell
+ */
+export interface Offset {
+  x: number;
+  y: number;
+}
+
+export interface Corner {
+  address: ICellAddress;
+  offset: Offset;
+}  
+
+export interface AnnotationLayout {
+  tl: Corner;
+  br: Corner;
+}
 
 /**
  * new annotation class. annotations are arbitrary content
@@ -10,15 +28,34 @@ import { Rectangle, ICellAddress } from 'treb-base-types';
  * because there's an element of layout involved, callers should
  * interact with annotations through the grid class rather than the
  * sheet.
+ * 
+ * we are redesigning layout so that instead of a rectangle, in 
+ * coordinate space, annotations use extents and offsets in cell space.
+ * so layout should now have a TL cell and a BR cell plus offsets for 
+ * each. Offset is implemented as a % of the given cell, so offsets are 
+ * inverted in the TL/BR cells.
+ * 
+ * UPDATE: actually while the inverted BR offset makes intuitive sense,
+ * it doesn't make technical sense -- easier to always calcluate offsets
+ * in the same direction. so offsets are always positive.
+ * 
+ * we'll leave the old extent in there (for now, at least) to prevent
+ * any unintended consequences. 
+ * 
  */
 
 export class Annotation {
 
   /** coordinates, in sheet space */
-  public rect?: Rectangle;
+  public rect_?: Rectangle;
+
+  public get rect(): Rectangle|undefined { return this.rect_; }
 
   /** display coordinates, possibly scaled. not persisted. */
   public scaled_rect?: Rectangle;
+
+  /** the new layout, persisted and takes preference over the old one */
+  public layout?: AnnotationLayout;
 
   /** opaque data. this is serialized, so it's persistent data */
   public data: any = {};
@@ -86,12 +123,18 @@ export class Annotation {
    * if you are iterating keys on `this`, there has to be an initial value
    * or the key won't exist.
    */
-  constructor(opts: any = {}) {
-    for (const key of Object.keys(this)){
-      if (key !== 'rect' && key !== 'cell_address' && opts[key]) (this as any)[key] = opts[key];
+  constructor(opts: Partial<Annotation> = {}) {
+    for (const key of Object.keys(this) as Array<keyof Annotation>){
+      if (key !== 'layout' && key !== 'rect' && opts[key]) { // key !== 'cell_address' && opts[key]) {
+        (this as any)[key] = opts[key];
+      }
+    }
+
+    if (opts.layout) {
+      this.layout = JSON.parse(JSON.stringify(opts.layout));
     }
     if (opts.rect) {
-      this.rect = Rectangle.Create(opts.rect);
+      this.rect_ = Rectangle.Create(opts.rect);
     }
   }
 
@@ -113,6 +156,7 @@ export class Annotation {
     if (!this.move_with_cells) result.move_with_cells = this.move_with_cells;
     if (!this.resize_with_cells) result.resize_with_cells = this.resize_with_cells;
 
+    if (this.layout) result.layout = this.layout;
     if (this.extent) result.extent = this.extent;
 
     return result;
