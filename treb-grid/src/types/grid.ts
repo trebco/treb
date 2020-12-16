@@ -1125,7 +1125,7 @@ export class Grid {
     if (typeof index === 'undefined') {
       if (!this.model.sheets.some((sheet, i) => {
         if (sheet === this.active_sheet) {
-          index = i;
+          index = i + 1;
           return true;
         }
         return false;
@@ -3235,17 +3235,17 @@ export class Grid {
 
           }
 
-          for (const { annotation } of size_annotation_list) {
-            if (annotation.resize_callback) {
-              annotation.resize_callback.call(undefined);
-            }
-          }
-
           this.ExecCommand({
             key: CommandKey.ResizeRows,
             row: rows,
             height,
           });
+
+          for (const { annotation } of size_annotation_list) {
+            if (annotation.resize_callback) {
+              annotation.resize_callback.call(undefined);
+            }
+          }
 
         });
 
@@ -3462,17 +3462,17 @@ export class Grid {
 
           }
 
-          for (const { annotation } of size_annotation_list) {
-            if (annotation.resize_callback) {
-              annotation.resize_callback.call(undefined);
-            }
-          }
-
           this.ExecCommand({
             key: CommandKey.ResizeColumns,
             column: columns,
             width,
           });
+
+          for (const { annotation } of size_annotation_list) {
+            if (annotation.resize_callback) {
+              annotation.resize_callback.call(undefined);
+            }
+          }
 
         });
 

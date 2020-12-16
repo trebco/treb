@@ -1793,6 +1793,16 @@ export class Sheet {
    */
   protected CalculateAnnotationExtent(annotation: Annotation): void {
 
+    // this is much easier with layout, but we are leaving the old
+    // coude to support older files -- OTOH, the layout will be created
+    // at some point, we just need to make sure that happens before this
+    // is called
+
+    if (annotation.layout) {
+      annotation.extent = {...annotation.layout.br.address};
+      return;
+    }
+
     // 1000 here is just sanity check, it might be larger
     const sanity = 1000;
 

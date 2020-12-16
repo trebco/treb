@@ -1455,7 +1455,10 @@ export class ChartRenderer {
       }
       */
 
-      const rect = SVGNode('path', {d:`M${-w/2},5 h${w} v-${h} h-${w} Z`});
+      const vertical_padding = Math.ceil(h * .125);
+
+      // const rect = SVGNode('path', {d:`M${-w/2},${vertical_padding} h${w} v-${h + vertical_padding / 2} h-${w} Z`});
+      const rect = SVGNode('rect', {rx: 3, x: -w/2, y: Math.round(-h + vertical_padding * 2/3), width: w, height: h + vertical_padding});
       g.insertBefore(rect, text);
 
     }
