@@ -69,6 +69,9 @@ const LC_E = 0x65;
 const UC_Z = 0x5a;
 const LC_Z = 0x7a;
 
+const ACCENTED_RANGE_START = 192;
+const ACCENTED_RANGE_END = 312;
+
 /**
  * precedence map
  */
@@ -634,7 +637,7 @@ export class Parser {
           const operator = this.ConsumeOperator();
           if (operator) stream.push(operator);
           else {
-            this.error = `unexpected character: ${String.fromCharCode(unit)}`;
+            this.error = `unexpected character [1]: ${String.fromCharCode(unit)}, ${unit}`;
             this.valid = false;
             this.index++;
           }
@@ -808,7 +811,7 @@ export class Parser {
             index = stream.length;
           }
           else {
-            this.error = `unexpected character: ${element.operator}`;
+            this.error = `unexpected character [2]: ${element.operator}`;
             this.error_position = element.position;
             this.valid = false;
             return {
@@ -954,7 +957,8 @@ export class Parser {
       (char >= LC_A && char <= LC_Z) ||
       char === UNDERSCORE ||
       char === SINGLE_QUOTE ||
-      char === DOLLAR_SIGN
+      char === DOLLAR_SIGN ||
+      (char >= ACCENTED_RANGE_START && char <= ACCENTED_RANGE_END) // adding accented characters, needs some testing
     ) {
 
       // FIXME: this only tests for ASCII tokens? (...)
@@ -1110,6 +1114,7 @@ export class Parser {
       if (
         (char >= UC_A && char <= UC_Z) ||
         (char >= LC_A && char <= LC_Z) ||
+        (char >= ACCENTED_RANGE_START && char <= ACCENTED_RANGE_END) ||
         char === UNDERSCORE ||
         char === DOLLAR_SIGN ||
         char === PERIOD ||
