@@ -28,6 +28,10 @@ export interface AddSheetEvent {
   type: 'add-sheet';
 }
 
+export interface DeleteSheetEvent {
+  type: 'delete-sheet';
+}
+
 export interface CancelEvent {
   type: 'cancel';
 }
@@ -36,6 +40,7 @@ export type TabEvent
    = CancelEvent
    | AddSheetEvent
    | RenameSheetEvent
+   | DeleteSheetEvent
    | ReorderSheetEvent
    | ActivateSheetEvent
    ;
@@ -70,7 +75,7 @@ export class TabBar extends EventSource<TabEvent> {
   // tslint:disable-next-line: variable-name
   private _visible = false;
 
-  public get visible() {
+  public get visible(): boolean {
     return this._visible;
   }
 
@@ -87,7 +92,7 @@ export class TabBar extends EventSource<TabEvent> {
 
   }
 
-  public IsDoubleClick(index: number, timeout = 300){
+  public IsDoubleClick(index: number, timeout = 300): boolean {
 
     if (this.double_click_data.index === index ) {
       clearTimeout(this.double_click_data.timeout);
@@ -95,24 +100,25 @@ export class TabBar extends EventSource<TabEvent> {
       this.double_click_data.timeout = undefined;
       return true;
     }
-    else {
-      if (this.double_click_data.timeout) {
-        clearTimeout(this.double_click_data.timeout);
-      }
-      this.double_click_data.index = index;
-      this.double_click_data.timeout = setTimeout(() => {
-        this.double_click_data.index = undefined;
-        this.double_click_data.timeout = undefined;
-      }, timeout);
+
+    if (this.double_click_data.timeout) {
+      clearTimeout(this.double_click_data.timeout);
     }
+    this.double_click_data.index = index;
+    this.double_click_data.timeout = setTimeout(() => {
+      this.double_click_data.index = undefined;
+      this.double_click_data.timeout = undefined;
+    }, timeout);
+
+    return false;
 
   }
 
-  public Hide() {
+  public Hide(): void {
     this.Show(false);
   }
 
-  public Show(show = true) {
+  public Show(show = true): void {
     if (!this.container) { return; }
     // this.container.style.display = show ? 'block' : 'none';
 
@@ -162,7 +168,7 @@ export class TabBar extends EventSource<TabEvent> {
   /**
    * update tabs from model.
    */
-  public Update() {
+  public Update(): void {
 
     // this is a hack to normalize behavior if you try to re-order
     // a tab that's not the active tab. what ordinarily happens is
@@ -196,6 +202,18 @@ export class TabBar extends EventSource<TabEvent> {
 
     // clear
     this.node.innerText = '';
+
+    if (this.options.delete_tab) {
+      const tab = document.createElement('div');
+      tab.classList.add('delete-tab');
+      tab.innerHTML = `<svg viewbox='0 0 16 16'><path d='M4,4 L12,12 M12,4 L4,12'/></svg>`;
+      tab.style.order = (-1).toString();
+      tab.setAttribute('title', 'Delete current sheet');
+      tab.addEventListener('click', () => {
+        this.Publish({ type: 'delete-sheet' });
+      });
+      this.node.appendChild(tab);
+    }
 
     // store tabs
     const tabs: HTMLElement[] = [];
@@ -371,7 +389,7 @@ export class TabBar extends EventSource<TabEvent> {
       add_tab.classList.add('add-tab');
       add_tab.style.order = (this.model.sheets.length * 2).toString();
       add_tab.innerText = '+';
-      add_tab.setAttribute('title', 'Add Sheet');
+      add_tab.setAttribute('title', 'Add sheet');
       add_tab.addEventListener('click', () => {
         this.Publish({ type: 'add-sheet' });
       });
@@ -382,6 +400,31 @@ export class TabBar extends EventSource<TabEvent> {
       this.node.appendChild(add_tab);
 
     }
+
+    /*
+    if (this.options.delete_tab) {
+
+      const spacer = document.createElement('div');
+      spacer.setAttribute('class', 'tab-bar-spacer');
+      spacer.style.order = (this.model.sheets.length * 2 + 1).toString();
+      this.node.appendChild(spacer);
+
+      const delete_tab = document.createElement('a');
+      delete_tab.classList.add('delete-tab');
+      delete_tab.style.order = (this.model.sheets.length * 2 + 2).toString();
+      delete_tab.innerText = 'Delete Sheet';
+      delete_tab.setAttribute('title', 'Delete Sheet');
+      delete_tab.addEventListener('click', () => {
+        this.Publish({ type: 'delete-sheet' });
+      });
+
+      // delete_tab.style.color = this.theme.tab_bar_color || '';
+      // delete_tab.style.background = this.theme.tab_bar_background || '';
+
+      this.node.appendChild(delete_tab);
+
+    }
+    */
 
   }
 

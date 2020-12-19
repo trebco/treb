@@ -20,7 +20,7 @@
 
     /* tabs should be under tab bar? (...) */
 
-    & .tab, & .add-tab {
+    & .tab, & .add-tab { /* , & .delete-tab { */
 
       font-size: inherit;
       padding: .25em .75em;
@@ -34,6 +34,48 @@
       z-index: 1;
       margin-right: -2px;
 
+    }
+
+    & .delete-tab {
+
+      font-size: inherit;
+      padding: .25em .75em;
+      cursor: default;
+      display: inline-flex;
+      align-items: center;
+      flex-direction: row;
+
+      border-bottom-left-radius: 5px;
+      border-bottom-right-radius: 5px;
+
+      /* border: 1px solid #ccc; */
+      border-top-width: 0px;
+      z-index: 1;
+      margin-right: -2px; 
+      /* margin-right: 1em; */
+
+      svg {
+        width: 1em;
+        height: 1em;
+        opacity: .5;
+        pointer-events: none;
+        transition: opacity .125s ease-in-out;
+      }
+
+      &:hover svg {
+        opacity: .75;
+      }
+
+      path {
+        stroke: currentColor;
+        stroke-width: 1.5px;
+        stroke-linecap: round;
+      }
+
+    }
+
+    & .tab-bar-spacer {
+      flex-grow: 1;
     }
 
     /** don't overflow/ellipsis the add tab button */

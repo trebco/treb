@@ -47,9 +47,9 @@ export interface AnnotationLayout {
 export class Annotation {
 
   /** coordinates, in sheet space */
-  public rect_?: Rectangle;
+  public rect?: Rectangle;
 
-  public get rect(): Rectangle|undefined { return this.rect_; }
+  // public get rect(): Rectangle|undefined { return this.rect_; }
 
   /** display coordinates, possibly scaled. not persisted. */
   public scaled_rect?: Rectangle;
@@ -129,9 +129,10 @@ export class Annotation {
    * if you are iterating keys on `this`, there has to be an initial value
    * or the key won't exist.
    */
-  constructor(opts: Partial<Annotation> = {}) {
+  constructor(opts: Partial<Annotation>&{rect?: Partial<Rectangle>} = {}) {
     for (const key of Object.keys(this) as Array<keyof Annotation>){
-      if (key !== 'layout' && key !== 'rect' && opts[key]) { // key !== 'cell_address' && opts[key]) {
+      if (key !== 'layout' // && key !== 'rect' 
+          && opts[key]) { // key !== 'cell_address' && opts[key]) {
         (this as any)[key] = opts[key];
       }
     }
@@ -140,7 +141,7 @@ export class Annotation {
       this.layout = JSON.parse(JSON.stringify(opts.layout));
     }
     if (opts.rect) {
-      this.rect_ = Rectangle.Create(opts.rect);
+      this.rect = Rectangle.Create(opts.rect);
     }
   }
 
@@ -148,7 +149,7 @@ export class Annotation {
    * serialization method drops node and trims
    */
   public toJSON(): Partial<Annotation> {
-    const result: Partial<Annotation> = { rect: this.rect };
+    const result: Partial<Annotation> = {}; // { rect: this.rect };
 
     if (this.data) result.data = this.data;
     if (this.formula) result.formula = this.formula;

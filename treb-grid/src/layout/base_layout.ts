@@ -1858,15 +1858,42 @@ export abstract class BaseLayout {
     if (clone.column === Infinity || clone.column < 0) clone.column = 0;
 
     let rect = this.rectangle_cache.Get(clone.column, clone.row);
-    if (rect) { return rect; }
+    if (rect) { 
+      return rect; 
+    }
 
     rect = new Rectangle();
+
+    // NOTE: in the case of addresses that are out of scope, we get
+    // coordinates of 0. this is a problem when we are measuring charts
+    // that are beyond the edge of the data. 
+
+    // that's only a propblem on load, because the extra layout information
+    // is not calculated yet -- once the sheet is rendered once, we will
+    // have tiles to fit.
+
+    // ACTUALLY that's not the problem. the problem is that tiles aren't 
+    // generated yet -- when this is called from UpdateSheets, it's using 
+    // stale tiles. not sure how to deal with that. a workaround is to 
+    // have the annotation layout -> rect function use column widths/row heights
+    // without tiles, but this should be normalized.
+
+    // are we really saving a lot by using the tile method vs the row/column
+    // method? ... let's drop to the simpler method for the time being
+
+    // HERE IS A SOLUTION: have UpdateSheets call AddAnnotation but not add
+    // them until after layout is done for the first time (which you could
+    // do by having QueueLayout return a promise...)
+
+    /*
 
     // find the tile
     for (const column of this.grid_tiles) {
       if (column[0].last_cell.column >= clone.column) {
         for (const cell of column) {
           if (cell.last_cell.row >= clone.row ){
+
+            // this is an absolute hit -- we have the correct tile.
 
             // offset to top of tile
             rect.left = cell.pixel_start.x;
@@ -1888,9 +1915,25 @@ export abstract class BaseLayout {
             return rect;
           }
         }
-        return rect;
       }
     }
+
+    // if we didn't find it, calculate it the old way just using sheet data
+    
+    */
+
+    rect.left = rect.top = 0;
+    for (let i = 0; i < clone.column; i++) {
+      rect.left += this.ColumnWidth(i);
+    }
+    for (let i = 0; i < clone.row; i++) {
+      rect.top += this.RowHeight(i);
+    }
+    rect.width = this.ColumnWidth(clone.column);
+    rect.height = this.RowHeight(clone.row);
+
+    this.rectangle_cache.Set(clone.column, clone.row, rect);
+
     return rect;
 
   }

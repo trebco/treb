@@ -341,6 +341,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       grid_options.add_tab = this.options.add_tab;
     }
 
+    if (this.options.delete_tab) {
+      grid_options.delete_tab = this.options.add_tab;
+    }
+
     if (this.options.expand) {
       grid_options.expand = true;
     }
@@ -1893,7 +1897,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public SaveLocalFile(
     /* type: SaveFileType = SaveFileType.treb,*/
     filename: string = SaveFileType.treb,
-    preserve_simulation_data = true, pretty = false) {
+    preserve_simulation_data = true, pretty = false): void {
 
     const document_name = this.grid.model.document_name || 'document'; // FIXME: options
 
@@ -2187,7 +2191,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * this method should be called after changing the headless flag
    */
-  public RebuildAllAnnotations() {
+  public RebuildAllAnnotations(): void {
     for (const annotation of this.grid.model.active_sheet.annotations) {
       this.InflateAnnotation(annotation);
       if (annotation.resize_callback) {
@@ -2203,7 +2207,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * inflate all annotations. intended to be called after a document
    * load (including undo), which does not send `create` events.
    */
-  public InflateAnnotations(){
+  public InflateAnnotations(): void {
     for (const annotation of this.grid.model.active_sheet.annotations) {
       this.InflateAnnotation(annotation);
     }

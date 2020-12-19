@@ -1531,6 +1531,7 @@ export class Grid {
     }
 
     if (this.options.tab_bar) {
+
       this.tab_bar = new TabBar(this.layout, this.model, this.options, this.theme, grid_container);
       this.tab_bar.Subscribe((event) => {
         switch (event.type) {
@@ -1539,6 +1540,10 @@ export class Grid {
 
           case 'reorder-sheet':
             this.ReorderSheet(event.index, event.move_before);
+            break;
+
+          case 'delete-sheet':
+            this.DeleteSheet();
             break;
 
           case 'add-sheet':

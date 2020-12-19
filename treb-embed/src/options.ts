@@ -85,6 +85,9 @@ export interface BaseOptions {
   /** allow add tab */
   add_tab?: boolean;
 
+  /** show delete tab */
+  delete_tab?: boolean;
+
   /** set a reference in global (self) */
   global_name?: string;
 
