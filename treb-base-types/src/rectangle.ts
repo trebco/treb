@@ -16,6 +16,14 @@ export class Rectangle {
       obj.height || 0);
   }
 
+  public static IsRectangle(obj: unknown): obj is Partial<Rectangle> {
+    return (typeof obj === 'object') &&
+      (typeof (obj as any)?.left === 'number') && 
+      (typeof (obj as any)?.top === 'number') && 
+      (typeof (obj as any)?.width === 'number') && 
+      (typeof (obj as any)?.height === 'number');
+  }
+
   constructor(  public left = 0,
                 public top = 0,
                 public width = 0,

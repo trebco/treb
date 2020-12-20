@@ -151,7 +151,7 @@ export const DefaultOptions: BaseOptions = {
   resizable: true,
   default_trials: 5000,
   screen_updates: false,
-  max_file_size: 1024 * 64,
+  max_file_size: 1024 * 92,
 };
 
 /**

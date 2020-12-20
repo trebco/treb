@@ -402,7 +402,7 @@ export abstract class BaseLayout {
    * returns true if we've made changes, so you can trigger any necessary
    * events or side-effects
    */
-  public AnnotationLayoutOrder(annotation: Annotation, delta: number) {
+  public AnnotationLayoutOrder(annotation: Annotation, delta: number): boolean {
 
     // find index
     let index = -1;
@@ -464,6 +464,17 @@ export abstract class BaseLayout {
     return {
       tl: this.PointToAnnotationCorner({x: (rect.left||0) + 1, y: (rect.top||0) + 1}),
       br: this.PointToAnnotationCorner({x: rect.right || rect.left || 100, y: rect.bottom || rect.top || 100}),
+    };
+  }
+
+  public AddressToAnnotationLayout(tl: ICellAddress, br: ICellAddress): AnnotationLayout {
+    const rects = {
+      tl: this.CellAddressToRectangle(tl),
+      br: this.CellAddressToRectangle(br),
+    };
+    return {
+      tl: this.PointToAnnotationCorner({x: (rects.tl.left||0), y: (rects.tl.top||0)}),
+      br: this.PointToAnnotationCorner({x: rects.br.right || rects.tl.left || 100, y: rects.br.bottom || rects.tl.left || 100}),
     };
   }
 
@@ -914,7 +925,14 @@ export abstract class BaseLayout {
     }
   }
 
-  public ScrollTo(address: ICellAddress){
+  public GetScrollOffset(): Point {
+    return {
+      x: this.scroll_reference_node.scrollLeft + this.header_offset.x,
+      y: this.scroll_reference_node.scrollTop + this.header_offset.y,
+    };
+  }
+
+  public ScrollTo(address: ICellAddress): void {
     const target_rect = this.CellAddressToRectangle(address);
     this.scroll_reference_node.scrollTop = target_rect.top;
     this.scroll_reference_node.scrollLeft = target_rect.left;
@@ -924,7 +942,7 @@ export abstract class BaseLayout {
    * scroll address into view, at top-left or bottom-right depending on
    * target and current position. also offsets for frozen rows, columns.
    */
-  public ScrollIntoView(address: ICellAddress){
+  public ScrollIntoView(address: ICellAddress): void {
 
     const target_rect = this.CellAddressToRectangle(address);
 

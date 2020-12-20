@@ -960,48 +960,42 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   public InsertAnnotation(formula: string, type = 'treb-chart', rect?: Partial<Rectangle>|string): void {
 
-    const x = 30;
-    const y = 30;
+    let target: Partial<Rectangle>|Partial<Area>|undefined;
 
-    if (!rect) {
-      rect = {top: y, left: x, width: 300, height: 300};
-    }
-    else if (typeof rect === 'string') {
-      let area: IArea|undefined
-
-      area = this.grid.model.named_ranges.Get(rect);
-      if (!area) {
-        const addresses = rect.split(':');
-        if (addresses.length < 2) {
-          area = new Area(this.EnsureAddress(addresses[0]));
-        }
-        else {
-          area = new Area(
-            this.EnsureAddress(addresses[0]),
-            this.EnsureAddress(addresses[1]));
-        }
+    if (rect) {
+      if (Rectangle.IsRectangle(rect)) {
+        target = rect;
       }
+      else if (typeof rect === 'string') {
+        let area: IArea|undefined
 
-      // FIXME: don't call private functions
+        area = this.grid.model.named_ranges.Get(rect);
+        if (!area) {
+          const addresses = rect.split(':');
+          if (addresses.length < 2) {
+            area = new Area(this.EnsureAddress(addresses[0]));
+          }
+          else {
+            area = new Area(
+              this.EnsureAddress(addresses[0]),
+              this.EnsureAddress(addresses[1]));
+          }
+        }
+  
+        if (area) { 
+          target = area; 
+        }
 
-      // NOTE: if we call this funcction to get the rect, we get the
-      // scaled rect -- when rendering, it will scale this rect, so 
-      // we effectively get scaled twice. we need to correct...
-
-      // MAYBE add a parameter to the CATR call that unscales? (...)
-
-      rect = (this.grid as any).layout.CellAddressToRectangle(area.start).Combine(
-        (this.grid as any).layout.CellAddressToRectangle(area.end)).Shift(-1, -1).Expand(1, 1).
-          Scale(1/(this.grid as any).layout.scale);
-      
-
+      }
     }
+
+    const {x, y} = this.grid.GetScrollOffset();
+    const scale = (this.grid as any).layout.scale || 1;
 
     this.grid.CreateAnnotation({
       type,
-      rect,
       formula,
-    });
+    }, undefined, undefined, target || {top: y/scale + 30, left: x/scale + 30, width: 300, height: 300});
 
   }
 
@@ -1063,15 +1057,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             // src attribute is set before it's inflated. 
 
             const annotation = this.grid.CreateAnnotation({
-              type: 'image',
-              rect: {
+                type: 'image',
+                formula: '',
+              }, undefined, undefined, {
                 top: 30, 
                 left: 30, 
                 width: img.width || 300, 
                 height: img.height || 300
-              },
-              formula: '',
-            });
+              });
+
             annotation.data.src = contents;
             annotation.data.original_size = { width: img.width || 300, height: img.height || 300 };
 

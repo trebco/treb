@@ -398,7 +398,7 @@ export class Grid {
     }
     return undefined;
   }
-
+  
   /**
    * create an annotation, with properties, without an original object.
    * optionally (and by default) add to sheet.
@@ -406,32 +406,53 @@ export class Grid {
    * @param offset check for a matching position (top-left) and if found,
    * shift by (X) pixels. intended for copy-paste, where we don't want to
    * paste immediately on top of the original.
+   * 
+   * @param target new parameter allows setting annotation as rect or as
+   * cell range
    */
-  public CreateAnnotation(properties: unknown = {}, add_to_sheet = true, offset = false): Annotation {
+  public CreateAnnotation(properties: unknown = {}, add_to_sheet = true, offset = false, target?: Partial<Area>|Partial<Rectangle>): Annotation {
     const annotation = new Annotation(properties as Partial<Annotation>);
 
-    // this part of the method is intended to prevent overlap, but it 
-    // doesn't work for some reason (not sure); so we'll drop it temp
+    if (offset) {
 
-    // (was it just because we didn't use the parameter? ...)
+      // to offset, we have to have layout (or at least scaled rect)
+      if (!annotation.layout && annotation.scaled_rect) {
+        annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+      }
 
-    /*
-    if (offset && annotation.rect) {
-      let recheck = true;
-      while (recheck) {
-        recheck = false;
-        for (const test of this.active_sheet.annotations) {
-          if (test === annotation) { continue; }
-          if (test.rect && test.rect.top === annotation.rect.top && test.rect.left === annotation.rect.left) {
-            annotation.rect = annotation.rect.Shift(20, 20);
-            recheck = true;
-            break;
+      if (!annotation.layout) {
+        console.warn(`can't offset annotation without layout`);
+      }
+      else {
+        let target_rect = this.layout.AnnotationLayoutToRect(annotation.layout).Shift(20, 20);
+        let recheck = true;
+        while (recheck) {
+          recheck = false;
+          for (const test of this.active_sheet.annotations) {
+            if (test === annotation) { continue; }
+            if (test.scaled_rect && test.scaled_rect.top === target_rect.top && test.scaled_rect.left === target_rect.left) {
+              target_rect = target_rect.Shift(20, 20);
+              recheck = true;
+              break;
+            }
           }
         }
+        annotation.layout = this.layout.RectToAnnotationLayout(target_rect);
       }
     }
-    */
 
+    if (target) {
+      if (Rectangle.IsRectangle(target)) {
+        console.info('creating from rectangle,', target);
+        annotation.layout = undefined;
+        annotation.rect = Rectangle.Create(target);
+      }
+      else if (target.start) {
+        annotation.rect = undefined;
+        annotation.layout = this.layout.AddressToAnnotationLayout(target.start, target.end||target.start);
+      }
+    }
+    
     if (add_to_sheet) {
 
       // ensure we haven't already added this
@@ -2135,6 +2156,10 @@ export class Grid {
     }
   }
 
+  public GetScrollOffset() {
+    return this.layout.GetScrollOffset();
+  }
+
   // --- private methods -------------------------------------------------------
 
   private DeleteSheetInternal(command: DeleteSheetCommand) {
@@ -3187,16 +3212,17 @@ export class Grid {
 
           requestAnimationFrame(() => {
 
+            // don't call the standard layout functions here. just move
+            // the rects with the given deltas. we will sort it out later.
+
             for (const {annotation} of size_annotation_list) {
-              if (annotation.scaled_rect) {
-                // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-                annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+              if (annotation.scaled_rect && annotation.node) {
+                annotation.scaled_rect.ApplyStyle(annotation.node);
               }
             }
             for (const {annotation} of move_annotation_list) {
-              if (annotation.scaled_rect) {
-                // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-                annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+              if (annotation.scaled_rect && annotation.node) {
+                annotation.scaled_rect.ApplyStyle(annotation.node);
               }
             }
 
@@ -3204,7 +3230,8 @@ export class Grid {
 
             this.layout.UpdateTileHeights(true, row);
             this.Repaint(false, true); // repaint full tiles
-            this.layout.UpdateAnnotation(this.active_sheet.annotations);
+            // this.layout.UpdateAnnotation(this.active_sheet.annotations);
+
           });
 
         }
@@ -3246,7 +3273,16 @@ export class Grid {
             height,
           });
 
+          for (const { annotation } of move_annotation_list) {
+            if (annotation.scaled_rect) {
+              annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+            }
+          }
+
           for (const { annotation } of size_annotation_list) {
+            if (annotation.scaled_rect) {
+              annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+            }
             if (annotation.resize_callback) {
               annotation.resize_callback.call(undefined);
             }
@@ -3418,22 +3454,25 @@ export class Grid {
 
           requestAnimationFrame(() => {
 
+            // don't call the standard layout functions here. just move
+            // the rects with the given deltas. we will sort it out later.
+
             for (const {annotation} of size_annotation_list) {
-              if (annotation.scaled_rect) {
-                // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-                annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+              if (annotation.scaled_rect && annotation.node) {
+                annotation.scaled_rect.ApplyStyle(annotation.node);
               }
             }
             for (const {annotation} of move_annotation_list) {
-              if (annotation.scaled_rect) {
-                // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-                annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+              if (annotation.scaled_rect && annotation.node) {
+                annotation.scaled_rect.ApplyStyle(annotation.node);
               }
             }
 
             this.layout.UpdateTileWidths(true, column);
             this.Repaint(false, true); // repaint full tiles
-            this.layout.UpdateAnnotation(this.active_sheet.annotations);
+            
+            // this.layout.UpdateAnnotation(this.active_sheet.annotations);
+
           });
 
         }
@@ -3473,7 +3512,16 @@ export class Grid {
             width,
           });
 
+          for (const { annotation } of move_annotation_list) {
+            if (annotation.scaled_rect) {
+              annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+            }
+          }
+
           for (const { annotation } of size_annotation_list) {
+            if (annotation.scaled_rect) {
+              annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+            }
             if (annotation.resize_callback) {
               annotation.resize_callback.call(undefined);
             }
