@@ -5,7 +5,7 @@ import { DataModel } from '../types/data_model';
 
 import { Tile } from '../types/tile';
 import { Point, Extent, Size, Position, Area, ICellAddress, Rectangle } from 'treb-base-types';
-import { RectangleCache } from './rectangle_cache';
+// import { RectangleCache } from './rectangle_cache';
 
 // aliasing Area as TileRange. this seemed like a good idea, initially, because
 // it can help clarify the function calls and return values when we "overload"
@@ -143,7 +143,10 @@ export abstract class BaseLayout {
   /**
    * cache of lookup rectangles (address -> canvas rect)
    */
-  private rectangle_cache = new RectangleCache();
+  // private rectangle_cache = new RectangleCache();
+
+  private row_cache: number[] = [];
+  private column_cache: number[] = [];
 
   /**
    * flag so we don't try to paint before we have tiles
@@ -1451,7 +1454,10 @@ export abstract class BaseLayout {
     this.total_height = total_height;
     this.total_width = total_width;
 
-    this.rectangle_cache.Clear();
+    // this.rectangle_cache.Clear();
+    this.row_cache = [];
+    this.column_cache = [];
+
     this.UpdateGridTemplates(true, true);
 
   }
@@ -1700,7 +1706,10 @@ export abstract class BaseLayout {
     this.UpdateGridTemplates(false, true);
 
     this.row_header.style.height = this.contents.style.height = `${y}px`;
-    this.rectangle_cache.Clear();
+
+    // this.rectangle_cache.Clear();
+    this.row_cache = [];
+    this.column_cache = [];
 
   }
 
@@ -1797,7 +1806,9 @@ export abstract class BaseLayout {
 
     this.column_header.style.width = this.contents.style.width = `${x}px`;
 
-    this.rectangle_cache.Clear();
+    // this.rectangle_cache.Clear();
+    this.row_cache = [];
+    this.column_cache = [];
 
   }
 
@@ -1847,94 +1858,86 @@ export abstract class BaseLayout {
    * finds the rectangle, in the coordinate space of the grid node,
    * of the cell with the given address. uses a cache since we wind
    * up looking up the same rectangles a lot.
+   * 
+   * UPDATE dropping rectangle cache in favor of holding row and 
+   * column edges. I realized we were holding a lot of redundant 
+   * information, and this should be resonably fast.
+   * 
+   * TODO could probably be slightly more efficient by holding the
+   * left edge of the column/row at the index; then we don't have to
+   * have special behavior for column/row 0.
    */
   public CellAddressToRectangle(address: ICellAddress): Rectangle {
 
-    // limit. create a working object
+    // limit
 
-    const clone = {row: address.row, column: address.column};
+    const row = address.row === Infinity || address.row < 0 ? 0 : address.row;
+    const column = address.column === Infinity || address.column < 0 ? 0 : address.column;
 
-    if (clone.row === Infinity || clone.row < 0) clone.row = 0;
-    if (clone.column === Infinity || clone.column < 0) clone.column = 0;
+    // build out the caches if necessary
 
-    let rect = this.rectangle_cache.Get(clone.column, clone.row);
-    if (rect) { 
-      return rect; 
+    if (this.column_cache.length <= column + 1) {
+
+      if (!this.column_cache.length) {
+        this.column_cache[0] = 0;
+      }
+
+      for (let i = this.column_cache.length - 1; i <= column; i++) {
+        this.column_cache[i + 1] = this.column_cache[i] + this.ColumnWidth(i);
+      }
+
     }
 
-    rect = new Rectangle();
+    if (this.row_cache.length <= row + 1) {
 
-    // NOTE: in the case of addresses that are out of scope, we get
-    // coordinates of 0. this is a problem when we are measuring charts
-    // that are beyond the edge of the data. 
+      if (!this.row_cache.length) {
+        this.row_cache[0] = 0;
+      }
 
-    // that's only a propblem on load, because the extra layout information
-    // is not calculated yet -- once the sheet is rendered once, we will
-    // have tiles to fit.
+      for (let i = this.row_cache.length - 1; i <= row; i++) {
+        this.row_cache[i + 1] = this.row_cache[i] + this.RowHeight(i);
+      }
 
-    // ACTUALLY that's not the problem. the problem is that tiles aren't 
-    // generated yet -- when this is called from UpdateSheets, it's using 
-    // stale tiles. not sure how to deal with that. a workaround is to 
-    // have the annotation layout -> rect function use column widths/row heights
-    // without tiles, but this should be normalized.
+    }
 
-    // are we really saving a lot by using the tile method vs the row/column
-    // method? ... let's drop to the simpler method for the time being
+    // now we can construct the rectangle
 
-    // HERE IS A SOLUTION: have UpdateSheets call AddAnnotation but not add
-    // them until after layout is done for the first time (which you could
-    // do by having QueueLayout return a promise...)
+    const left = this.column_cache[column];
+    const top = this.row_cache[row];
+
+    return new Rectangle(left, top,
+      this.column_cache[column + 1] - left,
+      this.row_cache[row + 1] - top);
 
     /*
 
-    // find the tile
-    for (const column of this.grid_tiles) {
-      if (column[0].last_cell.column >= clone.column) {
-        for (const cell of column) {
-          if (cell.last_cell.row >= clone.row ){
+    // ensure we have column and row
 
-            // this is an absolute hit -- we have the correct tile.
-
-            // offset to top of tile
-            rect.left = cell.pixel_start.x;
-            rect.top = cell.pixel_start.y;
-
-            // offset to cell
-            for (let c = cell.first_cell.column; c < clone.column; c++){
-              rect.left += this.ColumnWidth(c);
-            }
-            for (let r = cell.first_cell.row; r < clone.row; r++){
-              rect.top += this.RowHeight(r);
-            }
-
-            rect.width = this.ColumnWidth(clone.column);
-            rect.height = this.RowHeight(clone.row);
-
-            this.rectangle_cache.Set(clone.column, clone.row, rect);
-
-            return rect;
-          }
-        }
+    if (this.column_cache.length <= column) {
+      if (!this.column_cache.length) {
+        this.column_cache[0] = this.ColumnWidth(0);
+      }
+      for (let i = this.column_cache.length; i <= column; i++) {
+        this.column_cache[i] = this.column_cache[i - 1] + this.ColumnWidth(i);
       }
     }
 
-    // if we didn't find it, calculate it the old way just using sheet data
-    
+    if (this.row_cache.length <= row) {
+      if (!this.row_cache.length) {
+        this.row_cache[0] = this.RowHeight(0);
+      }
+      for (let i = this.row_cache.length; i <= row; i++) {
+        this.row_cache[i] = this.row_cache[i - 1] + this.RowHeight(i);
+      }
+    }
+
+    const left = column ? this.column_cache[column - 1] : 0;
+    const top = row ? this.row_cache[row - 1] : 0;
+
+    return new Rectangle(
+      left, top, this.column_cache[column] - left, this.row_cache[row] - top);
+
     */
-
-    rect.left = rect.top = 0;
-    for (let i = 0; i < clone.column; i++) {
-      rect.left += this.ColumnWidth(i);
-    }
-    for (let i = 0; i < clone.row; i++) {
-      rect.top += this.RowHeight(i);
-    }
-    rect.width = this.ColumnWidth(clone.column);
-    rect.height = this.RowHeight(clone.row);
-
-    this.rectangle_cache.Set(clone.column, clone.row, rect);
-
-    return rect;
 
   }
 

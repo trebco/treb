@@ -7,7 +7,7 @@ import { Rectangle } from 'treb-base-types';
  * (vs what, a lookup table? sparse arrays are basically a lookup
  * table, and we can assume they're reasonably efficient)
  */
-export class RectangleCache {
+/*export*/ class RectangleCache {
 
   private cache: Rectangle[][] = [];
 
