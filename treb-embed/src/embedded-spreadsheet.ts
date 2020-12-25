@@ -15,6 +15,7 @@ import * as PackResults from 'treb-mc/src/pack-results';
 import * as build from '../../package.json';
 import { DialogType } from './progress-dialog';
 import { Calculator } from 'treb-calculator/src';
+import { RunSimulationOptions } from './options';
 // import { Util } from 'riskampjs-mc';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
@@ -23,6 +24,9 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   protected last_simulation_data?: ResultContainer;
 
   protected calculator!: MCCalculator;
+
+  /** seed state for "replay simulation" */
+  protected replay_buffer: number[] = [];
 
   /**
    * these (practically speaking, there should only be one) are resolve()
@@ -205,24 +209,29 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   /**
    * run MC simulation, in worker. worker is now demand-loaded, so first
    * pass may be slow.
+   * 
+   * we spend a lot of time setting and updating options, but no one uses
+   * them; most callers set instance options, which are used by default. we
+   * should remove one of these routes since it's confusing to have both.
    */
-  public async RunSimulation(trials?: number, lhs?: boolean, stepped?: boolean, additional_cells: ICellAddress[] = []): Promise<void> {
-    //public async RunSimulation(trials = 5000, lhs = true, stepped = false): Promise<void> {
+  public async RunSimulation(
+      trials = this.options.default_trials || 5000,
+      opts: Partial<RunSimulationOptions> = {}): Promise<void> {
 
-    // parameters derived from options, if present, but keep defaults for backcompat
+    const { lhs, stepped } = {
+      lhs: !!this.options.lhs,
+      stepped: !!this.options.screen_updates,
+      ...opts,
+    };
 
-    if (typeof trials === 'undefined') {
-      trials = this.options.default_trials || 5000;
-    }
-    if (typeof lhs === 'undefined') {
-      lhs = true;
-    }
-    if (typeof stepped === 'undefined') {
-      stepped = !!this.options.screen_updates; // default missing so falsy
-    }
+    let additional_cells = opts.additional_cells||[]; 
 
     if (this.simulation_status.running) {
       throw new Error('simulation already running');
+    }
+
+    if (typeof opts.seed === 'number') {
+      Random.Seed(opts.seed);
     }
 
     // this.UpdateMCDialog(0, 'Initializing', true);
@@ -328,10 +337,17 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       }
     }
 
-    for (const worker of this.workers) {
-      worker.postMessage({
+    // hold state for replay, but watch out if it's not the same size
+
+    const seed_buffer: number[] = this.workers.map(_ => Random.Next() * 1e14);
+    if (opts.replay) {
+      this.replay_buffer.map((x, i) => seed_buffer[i] = x);
+    }
+
+    for (let i = 0; i < this.workers.length; i++) {
+      this.workers[i].postMessage({
         type: 'configure',
-        seed: Math.round(Random.Next() * 1e14),
+        seed: seed_buffer[i], // : Math.round(Random.Next() * 1e14),
         locale: Localization.locale,
         sheets: this.grid.model.sheets.map((sheet) => {
           return sheet.toJSON({
@@ -344,6 +360,8 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
         additional_cells,
       });
     }
+
+    this.replay_buffer = seed_buffer;
 
     // const per_thread = Math.floor(trials / this.workers.length);
     // const last_thread = trials - (per_thread * (this.workers.length - 1));

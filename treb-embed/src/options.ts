@@ -121,8 +121,11 @@ export interface BaseOptions {
   /** default trials if you call RunSimulation without an explicit parameter */
   default_trials?: number;
 
-  /** defualt screen updates, if you call RunSimulation without an explicit parameter */
+  /** default screen updates, if you call RunSimulation without an explicit parameter */
   screen_updates?: boolean;
+
+  /** default LHS, if you call RunSimulation without an explicit parameter */
+  lhs?: boolean;
 
   /** max size for image, in bytes */
   max_file_size?: number;
@@ -151,8 +154,18 @@ export const DefaultOptions: BaseOptions = {
   resizable: true,
   default_trials: 5000,
   screen_updates: false,
+  lhs: true,
   max_file_size: 1024 * 92,
 };
+
+export interface RunSimulationOptions {
+  trials: number;
+  lhs: boolean;
+  stepped: boolean;
+  additional_cells: ICellAddress[];
+  seed: number;
+  replay: boolean;
+}
 
 /**
  * actual options requires the container node

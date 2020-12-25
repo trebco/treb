@@ -25,6 +25,7 @@ export class WorkerImpl {
   protected screen_updates = false;
   protected calculator = new MCCalculator();
   protected start_time = 0;
+  protected seed?: number;
 
   protected additional_cells: ICellAddress[] = [];
 
@@ -78,6 +79,11 @@ export class WorkerImpl {
           this.data_model.macro_functions[macro_function.name.toUpperCase()] = macro_function;
         }
       }
+
+      // seed is optional. we will use it in the Init method, so we
+      // store it before running, but then we will drop it.
+
+      this.seed = message.seed;
 
       // ... macro functions ...
 
@@ -180,7 +186,14 @@ export class WorkerImpl {
 
     // first, full calc
 
-    const status = this.calculator.InitSimulation(this.trials, this.lhs, this.data_model, this.additional_cells);
+    const status = this.calculator.InitSimulation(
+      this.trials, 
+      this.lhs, 
+      this.data_model, 
+      this.additional_cells,
+      this.seed);
+
+    this.seed = undefined;  // clear 
 
     if (status !== GraphStatus.OK) throw(new Error('graph failed'));
 

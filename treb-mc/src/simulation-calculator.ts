@@ -39,7 +39,8 @@ export class MCCalculator extends Calculator {
     lhs: boolean,
     // cells: Cells,
     model: DataModel,
-    additional_cells?: ICellAddress[]): GraphStatus {
+    additional_cells?: ICellAddress[],
+    seed?: number): GraphStatus {
 
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 
@@ -47,6 +48,10 @@ export class MCCalculator extends Calculator {
     simulation_model.results = [];
     simulation_model.lhs = lhs;
     simulation_model.correlated_distributions = {};
+
+    if (typeof seed === 'number'){ 
+      simulation_model.seed = seed;
+    }
 
     // const cells = model.active_sheet.cells;
 
