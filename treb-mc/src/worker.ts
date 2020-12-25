@@ -179,7 +179,7 @@ export class WorkerImpl {
       throw(new Error('invalid trial count'));
     }
     else {
-      console.info(`running simulation with ${this.trials} trials, lhs=${this.lhs}${this.screen_updates ? ' (stepped)' : ''}`);
+      // console.info(`running simulation with ${this.trials} trials, lhs=${this.lhs}${this.screen_updates ? ' (stepped)' : ''}`);
     }
 
     this.start_time = this.Timestamp(); // performance.now();
