@@ -6852,6 +6852,13 @@ export class Grid {
 
     // patch all sheets
 
+    // you know we have a calculator that has backward-and-forward references.
+    // we could theoretically ask the calculator what needs to be changed.
+    //
+    // for the most part, we try to maintain separation between the display
+    // (this) and the calculator. we could ask, but this isn't terrible and 
+    // helps maintain that separation.
+
     const active_sheet_name = this.active_sheet.name.toLowerCase();
 
     for (const sheet of this.model.sheets) {
