@@ -253,6 +253,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     Or: {
       fn: (...args: unknown[]): UnionValue => {
         let result = false;
+        args = Utils.Flatten(args);
         for (const arg of args) {
           result = result || !!arg;
         }
@@ -263,6 +264,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     And: {
       fn: (...args: unknown[]): UnionValue => {
         let result = true;
+        args = Utils.Flatten(args);
         for (const arg of args) {
           result = result && !!arg;
         }
