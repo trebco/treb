@@ -947,7 +947,7 @@ export class SimulationModel {
       };
     }
     return {
-      type: ValueType.number,
+      type: ValueType.boolean,
       value: MC.Bernoulli(1, { p })[0]
     };
   }
