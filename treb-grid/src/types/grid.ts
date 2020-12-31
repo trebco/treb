@@ -496,6 +496,7 @@ export class Grid {
   public AddAnnotation(annotation: Annotation, toll_events = false, add_to_layout = true): void {
 
     if (!annotation.node) {
+
       annotation.node = document.createElement('div');
       annotation.node.dataset.scale = this.layout.scale.toString();
       annotation.node.style.fontSize = `${10 * this.layout.scale}pt`;
@@ -1356,6 +1357,9 @@ export class Grid {
     }
     */
 
+    // otherwise layout of annotations won't work properly
+    this.layout.ClearLayoutCaches();
+    
     for (const sheet of this.model.sheets) {
       for (const annotation of sheet.annotations) {
         this.AddAnnotation(annotation, true, (sheet === this.active_sheet));

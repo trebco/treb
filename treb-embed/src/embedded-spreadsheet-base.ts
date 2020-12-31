@@ -1349,7 +1349,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       
       if (blob) {
         FileSaver.saveAs(blob, filename + '.xlsx', {autoBom: false});
-        //FileSaver.saveAs(blob, filename + '.xlsx', true);
         this.last_save_version = this.file_version; // even though it's an export, consider it clean
       }
 
@@ -1950,7 +1949,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     if (text && filename) {
       const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      FileSaver.saveAs(blob, filename, true);
+      FileSaver.saveAs(blob, filename, {autoBom: false});
     }
 
   }
@@ -2202,7 +2201,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * load (including undo), which does not send `create` events.
    */
   public InflateAnnotations(): void {
-    for (const annotation of this.grid.model.active_sheet.annotations) {
+     for (const annotation of this.grid.model.active_sheet.annotations) {
       this.InflateAnnotation(annotation);
     }
   }

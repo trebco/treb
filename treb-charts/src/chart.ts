@@ -990,6 +990,7 @@ export class Chart {
   public Update() {
 
     // reset
+    this.renderer.Resize(); // just too many problems
     this.renderer.Prerender();
     this.renderer.Clear();
 

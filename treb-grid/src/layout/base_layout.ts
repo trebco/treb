@@ -5,7 +5,6 @@ import { DataModel } from '../types/data_model';
 
 import { Tile } from '../types/tile';
 import { Point, Extent, Size, Position, Area, ICellAddress, Rectangle } from 'treb-base-types';
-// import { RectangleCache } from './rectangle_cache';
 
 // aliasing Area as TileRange. this seemed like a good idea, initially, because
 // it can help clarify the function calls and return values when we "overload"
@@ -139,11 +138,6 @@ export abstract class BaseLayout {
   // private error_highlight_timeout?: any;
 
   private note_node: HTMLDivElement;
-
-  /**
-   * cache of lookup rectangles (address -> canvas rect)
-   */
-  // private rectangle_cache = new RectangleCache();
 
   private row_cache: number[] = [];
   private column_cache: number[] = [];
@@ -516,6 +510,9 @@ export abstract class BaseLayout {
         // be superfluous...
 
         if (annotation.rect && !annotation.layout) {
+
+          console.info('rect and no layout');
+
           annotation.scaled_rect = annotation.rect.Scale(this.scale);
           annotation.layout = this.RectToAnnotationLayout(annotation.scaled_rect);
         }
@@ -1472,12 +1469,15 @@ export abstract class BaseLayout {
     this.total_height = total_height;
     this.total_width = total_width;
 
-    // this.rectangle_cache.Clear();
-    this.row_cache = [];
-    this.column_cache = [];
-
+    this.ClearLayoutCaches();
+    
     this.UpdateGridTemplates(true, true);
 
+  }
+
+  public ClearLayoutCaches(): void {
+    this.row_cache = [];
+    this.column_cache = [];
   }
 
   /**
@@ -1725,10 +1725,9 @@ export abstract class BaseLayout {
 
     this.row_header.style.height = this.contents.style.height = `${y}px`;
 
-    // this.rectangle_cache.Clear();
-    this.row_cache = [];
-    this.column_cache = [];
+    this.ClearLayoutCaches();
 
+    
   }
 
   /**
@@ -1824,10 +1823,9 @@ export abstract class BaseLayout {
 
     this.column_header.style.width = this.contents.style.width = `${x}px`;
 
-    // this.rectangle_cache.Clear();
-    this.row_cache = [];
-    this.column_cache = [];
+    this.ClearLayoutCaches();
 
+    
   }
 
   public ClampToGrid(point: Point) {
@@ -1926,36 +1924,6 @@ export abstract class BaseLayout {
     return new Rectangle(left, top,
       this.column_cache[column + 1] - left,
       this.row_cache[row + 1] - top);
-
-    /*
-
-    // ensure we have column and row
-
-    if (this.column_cache.length <= column) {
-      if (!this.column_cache.length) {
-        this.column_cache[0] = this.ColumnWidth(0);
-      }
-      for (let i = this.column_cache.length; i <= column; i++) {
-        this.column_cache[i] = this.column_cache[i - 1] + this.ColumnWidth(i);
-      }
-    }
-
-    if (this.row_cache.length <= row) {
-      if (!this.row_cache.length) {
-        this.row_cache[0] = this.RowHeight(0);
-      }
-      for (let i = this.row_cache.length; i <= row; i++) {
-        this.row_cache[i] = this.row_cache[i - 1] + this.RowHeight(i);
-      }
-    }
-
-    const left = column ? this.column_cache[column - 1] : 0;
-    const top = row ? this.row_cache[row - 1] : 0;
-
-    return new Rectangle(
-      left, top, this.column_cache[column] - left, this.row_cache[row] - top);
-
-    */
 
   }
 
