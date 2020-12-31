@@ -1677,7 +1677,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public async LoadLocalFile(): Promise<boolean> {
 
     const file = await(this.SelectFile(
-      '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
+      '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json'));
 
     if (file) { 
     
