@@ -120,14 +120,13 @@ export class TabBar extends EventSource<TabEvent> {
 
   public Show(show = true): void {
     if (!this.container) { return; }
-    // this.container.style.display = show ? 'block' : 'none';
 
     this._visible = show;
 
     if (show) {
       this.grid_container.classList.add('treb-tab-bar-layout');
       this.grid_container.parentElement?.classList.add('has-tab-bar');
-      this.container.style.display = 'block';
+      this.container.style.display = 'flex';
     }
     else {
       this.grid_container.classList.remove('treb-tab-bar-layout');

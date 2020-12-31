@@ -9,7 +9,16 @@
 
   .treb-tab-bar-container {
 
-    display: block;
+    /* 
+     * NOTE: this is becoming flex/row/space-between so that RiskAMP web 
+     * can insert a node in there. not sure that this is a useful long-term
+     * way to handle this, but it's acceptable for now.
+     */
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
     order: 3;
 
     & .treb-tab-bar {
