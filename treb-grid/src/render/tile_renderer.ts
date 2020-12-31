@@ -976,8 +976,8 @@ export class TileRenderer {
     // special case for overflows (this has been set by someone to the left)
 
     if (tile.needs_full_repaint &&
-      cell.renderer_data &&
-      cell.renderer_data.overflowed) {
+      cell.renderer_data?.overflowed) {
+
       return {};
     }
 
@@ -1191,11 +1191,10 @@ export class TileRenderer {
         let overflow_right_column = address.column;
         let overflow_left_column = address.column;
 
-        // cap at max
+        // cap at max. use actual max, not sheet max (which reflects the
+        // extent  of spreadsheet data, but not visible cells).
 
-        const last_column = this.model.active_sheet.columns - 1;
-
-        while (overflow_pixels_right > 0 && overflow_right_column < last_column) {
+        while (overflow_pixels_right > 0 && overflow_right_column < this.layout.last_column) {
           overflow_right_column++;
 
           const target_address = { row: address.row, column: overflow_right_column };

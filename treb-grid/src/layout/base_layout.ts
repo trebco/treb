@@ -68,6 +68,12 @@ export abstract class BaseLayout {
 
   public header_size: Size = {width: 0, height: 0};
 
+  /**
+   * last rendered column. this is used to calculate the limits of
+   * cell overflows, which may exceed actual data in the sheet.
+   */
+  public last_column = 0;
+
   public total_height = 0;
   public total_width = 0;
 
@@ -1305,6 +1311,8 @@ export abstract class BaseLayout {
 
     }
 
+    this.last_column = columns;
+
     if (this.container.offsetHeight > total_height){
       const add_rows = Math.ceil((this.container.offsetHeight - total_height) /
         this.default_row_height);
@@ -1579,7 +1587,10 @@ export abstract class BaseLayout {
   /**
    * returns the current render area, as grid area. this may be larger than
    * the visible area, because we are doing some offscreen rendering.
-   */
+   * 
+   * no one calls this anymore? (...) we
+   * @deprecated 
+   * /
   public RenderArea(tile_range?: TileRange): Area {
 
     if (!tile_range) {
@@ -1594,6 +1605,7 @@ export abstract class BaseLayout {
       row: last.last_cell.row, column: last.last_cell.column });
 
   }
+  */
 
   /** calculate first visible tile based on scroll position */
   public VisibleTiles(): TileRange {
