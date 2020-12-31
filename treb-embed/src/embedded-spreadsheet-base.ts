@@ -444,7 +444,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             break;
 
           case 'annotation':
-
             // FIXME: maybe need to update vertices (on create, update, delete,
             // not on move or resize)
 
@@ -640,6 +639,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.calculator.UpdateAnnotations(annotation);
 
     }
+
+    // we also need to update annotations that are already inflated
+    // [FIXME: merge this code]
+
+    this.UpdateAnnotations();
 
   }
 
@@ -2154,7 +2158,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * this is called after recalc, check any annotations
    * (just sparklines atm) and update if necessary.
    */
-  public UpdateAnnotations() {
+  public UpdateAnnotations(): void {
     for (const annotation of this.grid.model.active_sheet.annotations) {
       if (annotation.temp.vertex) {
         const vertex = annotation.temp.vertex as LeafVertex;
@@ -2213,7 +2217,17 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // only inflate once, to prevent overwriting instance methods
 
     if (annotation.inflated) {
+
+      // I don't think we're using dirty anymore... actually we still
+      // need it right now. it gets _set_ on express scale change, so
+      // when we switch back to this sheet it will be updated even though
+      // the data has not changed.
+
+      // assuming rendering charts is fairly cheap, the alternative would
+      // be to just always repaint. OTOH what is the cost of this flag?
+
       if (annotation.dirty) {
+
         if (annotation.resize_callback) {
           annotation.resize_callback();
         }
