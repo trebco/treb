@@ -26,8 +26,10 @@ enum LineOperation {
 
 export class Sparkline {
 
-  public static SingleColor = ['#333'];
-  public static TwoColors = ['green', 'red'];
+  // public static SingleColor = ['#333'];
+  // public static TwoColors = ['green', 'red'];
+
+  public static readonly default_color = '#888'; // should never be used, but jic
 
   /**
    * three possible cases: 
@@ -82,7 +84,7 @@ export class Sparkline {
 
   }
 
-  protected static SparklineCommon(cell: Cell, number_of_colors = 2): {
+  protected static SparklineCommon(cell: Cell): {
       values: Array<number|undefined>,
       colors: string[],
     } {
@@ -92,18 +94,21 @@ export class Sparkline {
 
     let values: Array<number|undefined> = [];
 
-    // if you pass a color, it gets used for both positive and negative -- 
-    // pass two colors to define both
+    // use text color, or default. because this is called from renderer,
+    // theme default _should_ always be passed in, so we should (theoretically)
+    // never need our default.
 
-    let colors = number_of_colors === 2 ? this.TwoColors : this.SingleColor;
+    const colors: string[] = [ 
+        cell.style?.text_color || this.default_color,
+        cell.style?.text_color || this.default_color ];
 
     if (Array.isArray(cell.calculated)) {
       values = this.UnpackValues(cell.calculated[0]);
       if (typeof cell.calculated[1] === 'string') {
-        colors = [cell.calculated[1]];
-        if (number_of_colors > 1) {
-          colors[1] = (typeof cell.calculated[2] === 'string') ? cell.calculated[2] : colors[0];
-        }
+        colors[0] = cell.calculated[1];
+      }
+      if (typeof cell.calculated[2] === 'string') {
+        colors[1] = cell.calculated[2];
       }
     }
 
@@ -118,7 +123,7 @@ export class Sparkline {
       cell: Cell,
     ): void {
 
-    const {values, colors} = this.SparklineCommon(cell, 1);
+    const {values, colors} = this.SparklineCommon(cell);
 
     const x_margin = 0.05; // FIXME: parameterize? (...)
     const y_margin = 0.10;
