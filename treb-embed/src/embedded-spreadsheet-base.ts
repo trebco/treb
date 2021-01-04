@@ -1240,7 +1240,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.export_worker = await this.LoadWorker(worker_name);
     }
 
-    return new Promise<Blob>((resolve, reject) => {
+    // this originally returned a Promise<Blob> but the actual
+    // code path always calls resolve(), so it should probably be
+    // Promise<void>. for the time I'm punting but this should be 
+    // cleaned up. FIXME
+
+    return new Promise<Blob|void>((resolve, reject) => {
       if (this.export_worker) {
 
         this.dialog?.ShowDialog({

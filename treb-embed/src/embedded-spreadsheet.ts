@@ -33,7 +33,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
    * functions from running simulations. when a simulation is complete or
    * canceled, we will resolve and clear the list.
    */
-  private simulation_resolution: Array<() => void> = [];
+  private simulation_resolution: Array<(...args: any) => void> = [];
 
   /**
    * calculation worker (no longer using worker-loader)
