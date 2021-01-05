@@ -9,13 +9,15 @@ import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea,
   IsFlatData, IsFlatDataArray, Rectangle } from 'treb-base-types';
 import { EventSource, Yield, tmpl } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
-import { Toolbar as SimpleToolbar, Toolbar, ToolbarElement } from 'treb-toolbar';
-import { ToolbarManager } from './toolbar-manager';
+// import { Toolbar as SimpleToolbar, Toolbar, ToolbarElement } from 'treb-toolbar';
+// import { ToolbarManager } from './toolbar-manager';
 
 // local
 import { ProgressDialog, DialogType } from './progress-dialog';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions, DefaultExportOptions } from './options';
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
+
+import { SelectionState, Toolbar } from './toolbar';
 
 // TYPE ONLY
 // type Chart = import('../../treb-charts/src/index').Chart;
@@ -198,12 +200,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   protected dialog?: ProgressDialog;
 
-  // public toolbar?: SimpleToolbar;
-  protected toolbar_manager?: ToolbarManager;
+  protected toolbar?: Toolbar;
 
-  public get toolbar(): SimpleToolbar|undefined { 
-    return this.toolbar_manager ? this.toolbar_manager.toolbar : undefined;
-  }
+  // public toolbar?: SimpleToolbar;
+  // protected toolbar_manager?: ToolbarManager;
+
+  //public get toolbar(): SimpleToolbar|undefined { 
+  //  return this.toolbar_manager ? this.toolbar_manager.toolbar : undefined;
+  //}
 
   protected active_selection_style?: Style.Properties;
 
@@ -2545,64 +2549,89 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     });
   }
 
-  /*
-  public HideDialog() {
-    this.dialog?.HideDialog();
-  }
-  */
+  public CreateToolbar(container: HTMLElement): Toolbar {
+    this.toolbar = new Toolbar(container);
+    this.toolbar.Subscribe((event) => {
 
-  /*
-  public ShowProgressDialog(message?: string, progress?: number) {
-    this.dialog?.ShowProgressDialog(message, progress);
-  }
-  */
-
-  /*
-  public ShowMessageDialog(options: Partial<MessageDialogOptions>, timeout = 0) {
-    const dialog = this.dialog;
-    if (dialog) {
-      dialog.ShowMessageDialog(options);
-      if (timeout) {
-        setTimeout(() => dialog.HideDialog(), timeout);
+      let updated_style: Style.Properties= {};
+      
+      if (event.type === 'format') {
+        updated_style.number_format = event.format || 'General';
       }
-    }
+      else if (event.type === 'button') {
+        switch (event.command) {
 
+          case 'increase-decimal':
+          case 'decrease-decimal':
+            if (this.active_selection_style) {
+              const format = NumberFormatCache.Get(this.active_selection_style.number_format||'General');
+              if (format.date_format) { break; }
+              const clone = new NumberFormat(format.pattern);
+              if (event.command === 'increase-decimal') {
+                clone.IncreaseDecimal();
+              }
+              else {
+                clone.DecreaseDecimal();
+              }
+              updated_style.number_format = clone.toString();
+            }
+            break;
+
+          case 'merge':
+            this.grid.MergeSelection();
+            break
+          case 'unmerge':
+            this.grid.UnmergeSelection();
+            break;
+
+          case 'wrap':
+            updated_style = { 
+              wrap: this.active_selection_style ? 
+                    !this.active_selection_style.wrap : true,
+            };
+            break;
+
+          case 'align-left':
+            updated_style = { horizontal_align: Style.HorizontalAlign.Left };
+            break;
+          case 'align-center':
+            updated_style = { horizontal_align: Style.HorizontalAlign.Center };
+            break;
+          case 'align-right':
+            updated_style = { horizontal_align: Style.HorizontalAlign.Right };
+            break;
+      
+          case 'align-top':
+            updated_style = { vertical_align: Style.VerticalAlign.Top };
+            break;
+          case 'align-middle':
+            updated_style = { vertical_align: Style.VerticalAlign.Middle };
+            break;
+          case 'align-bottom':
+            updated_style = { vertical_align: Style.VerticalAlign.Bottom };
+            break;
+      
+          default:
+            console.info('unhandled', event.command);
+            break;
+        }
+      }
+
+      if (Object.keys(updated_style).length){ 
+        this.grid.ApplyStyle(undefined, updated_style, true);
+      }
+
+      this.Focus();
+
+    });
+
+    this.UpdateDocumentStyles(false);
+    this.UpdateSelectionStyle(undefined, false);
+
+    return this.toolbar;
   }
-  */
 
   /*
-  public ShowMessageDialog(message?: string, timeout = 0) { 
-    const dialog = this.dialog;
-    if (dialog) {
-      dialog.ShowMessageDialog(message);
-      if (timeout) {
-        setTimeout(() => dialog.HideDialog(), timeout);
-      }
-    }
-  }
-  */
-
-  /* * show/hide dialog, generic message * /
-  public ShowDialog(show = true, message?: string, timeout = 0) {
-    this.dialog.Show(show, message);
-
-    // FIXME: use a token so we don't close another dialog
-    // FIXME (dialog): allow click to dismiss
-
-    if (timeout) {
-      setTimeout(() => {
-        this.ShowDialog(false);
-      }, timeout);
-    }
-  }
-  */
-
-  /* * paint message to dialog (implicit show=true)  * /
-  public UpdateDialog(message?: string, progress?: number) {
-    this.dialog?.Update(message, progress);
-  }
-  */
-
   public CreateToolbar(container: HTMLElement): SimpleToolbar|undefined {
 
     if (this.toolbar_manager) {
@@ -2732,16 +2761,50 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     return this.toolbar_manager.toolbar;
   }
+  */
 
   /** update selection style for the toolbar */
   public UpdateSelectionStyle(selection?: GridSelection, update = true): void {
 
-    let merged = false;
-    let note: string|undefined;
+
+
+    const freeze = this.grid.GetFreeze();
+
+    const state: SelectionState = {
+      frozen: !!freeze.rows || !!freeze.columns,
+    };
 
     if (!selection) { 
       selection = this.grid.GetSelection(); 
     }
+
+    if (selection && !selection.empty) {
+      
+      state.merge = false;
+      let data = this.grid.model.active_sheet.CellData(selection.target);
+
+      state.merge = !!data.merge_area;
+      if (state.merge && data.merge_area && (
+          data.merge_area.start.row !== selection.target.row ||
+          data.merge_area.start.column !== selection.target.column)) {
+        data = this.grid.model.active_sheet.CellData(data.merge_area.start);
+      }
+
+      this.active_selection_style = data.style;
+      state.comment = !!data.note;
+      state.style = data.style ? {...data.style} : undefined;
+
+    }
+    else {
+      this.active_selection_style = {};
+    }
+
+    this.toolbar?.UpdateState(state);
+
+    /*
+    let merged = false;
+    let note: string|undefined;
+
         
     if (selection && !selection.empty) {
 
@@ -2770,12 +2833,19 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       note, 
       (!!freeze.rows || !!freeze.columns),
       update);
+      */
 
   }
 
   public UpdateDocumentStyles(update = true): void {
 
+    if (!this.toolbar) { 
+      return; 
+    }
+
+    /*
     if (!this.toolbar_manager) { return; }
+    */
 
     const number_format_map: {[index: string]: number} = {};
     const color_map: {[index: string]: number} = {};
@@ -2784,11 +2854,20 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       sheet.NumberFormatsAndColors(color_map, number_format_map);
     }    
 
+    this.toolbar.UpdateDocumentStyles(
+      Object.keys(number_format_map),
+      Object.keys(color_map),
+      update);
+
+    console.info(number_format_map, color_map);
+
+    /*
     this.toolbar_manager.UpdateDocumentStyles(
       Object.keys(number_format_map),
       Object.keys(color_map),
       update);
-    
+    */
+
   }
 
   /** overloadable for subclasses */

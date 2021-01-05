@@ -61,9 +61,9 @@ const ListDir = async (dir_path) => {
 };
 
 const Attr = (src, name) => {
-  const rex = new RegExp(name + `=['"](.*?)['"]`);
+  const rex = new RegExp(name + `=['"]([\\s\\S]*?)['"]`);
   const match = src.match(rex);
-  if (match) return match[1];
+  if (match) return match[1].replace(/[\r\n\s]+/g, ' ');
   return undefined;
 }
 

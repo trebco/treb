@@ -6,6 +6,7 @@ import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { composite, Resizable } from 'treb-utils';
 // import { ToolbarOptions, CompositeToolbar as FormattingToolbar } from './toolbar/';
 import { css } from 'treb-utils';
+import { Toolbar } from './toolbar';
 
 import '../style/composite-sheet.scss';
 import 'treb-base-types/style/resizable.css';
@@ -60,6 +61,7 @@ export class CompositeSheet {
 
   /** toolbar instance, moved from embedded sheet */
   // public toolbar?: FormattingToolbar;
+  public toolbar?: Toolbar;
 
   /** 
    * inject svg symbol defs (once)
@@ -559,10 +561,11 @@ export class CompositeSheet {
 
     if (show) {
 
+      /*
       // if (!this.toolbar && this.toolbar_container) {
       if (!this.sheet.toolbar && this.toolbar_container) {
 
-        /*
+        / *
 
         const options: ToolbarOptions = {
           add_delete_sheet: !!this.options.add_tab,
@@ -579,7 +582,7 @@ export class CompositeSheet {
           this.toolbar_container, 
           options);
   
-          */
+          * /
 
         this.sheet.CreateToolbar(this.toolbar_container);
 
@@ -589,8 +592,11 @@ export class CompositeSheet {
         if (toolbar_node) {
           (toolbar_node as HTMLElement).style.marginBottom = '0';
         }
+        */
 
-      }
+        if (this.toolbar_container && !this.toolbar) {
+          this.toolbar = this.sheet.CreateToolbar(this.toolbar_container);
+        }
 
       this.outer_container.classList.add(toolbar_open_class);
     }

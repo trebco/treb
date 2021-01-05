@@ -55,6 +55,8 @@ export const symbol_defs: {[index: string]: SymbolDef} =
       }
     ]
   },
+
+  */
   'wrap': {
     'paths': [
       {
@@ -71,7 +73,6 @@ export const symbol_defs: {[index: string]: SymbolDef} =
       }
     ]
   },
-    */
 
   'align-middle': {
     'paths': [
