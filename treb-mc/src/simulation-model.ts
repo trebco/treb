@@ -1286,22 +1286,25 @@ export class SimulationModel {
 
   /**
    * now defaults to ordering by source cell
+   * UPDATE: now does that properly. if there's no sort argument, use the 
+   * source cell. if there's a source cell but no data, return an error.
    */
   public simulationvaluesarray_ordered(data?: number[], order_by?: number[]): UnionOrArray {
 
     if (this.state !== SimulationState.Null) {
       return { type: ValueType.number, value: 0 };
     }
-    if (!data || !data.length) {
+
+    if (!data || !data.length || (order_by && !order_by.length)) {
       return DataError();
     }
     
-    if (!order_by || !order_by.length) {
+    if (!order_by) {
 
       // can use a simpler sort method in this case
       // be sure to copy so we don't munge the original data
 
-      return [data.slice(0).sort((a, b) => a - b).map(value => {
+      return [Array.prototype.slice.call(data, 0).sort((a, b) => a - b).map(value => {
         return {
           type: ValueType.number,
           value,
