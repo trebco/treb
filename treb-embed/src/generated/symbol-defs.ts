@@ -22,6 +22,7 @@ export interface SymbolDef {
 
 export const symbol_defs: {[index: string]: SymbolDef} = 
 {
+  /*
   'vertical-dots': {
     'paths': [
       {
@@ -44,6 +45,8 @@ export const symbol_defs: {[index: string]: SymbolDef} =
       }
     ]
   },
+  */
+ 
   /*
   'comment': {
     'paths': [
@@ -56,7 +59,7 @@ export const symbol_defs: {[index: string]: SymbolDef} =
     ]
   },
 
-  */
+  * /
   'wrap': {
     'paths': [
       {
@@ -353,6 +356,7 @@ export const symbol_defs: {[index: string]: SymbolDef} =
       }
     ]
   },
+  */
 
   'column-chart': {
     'paths': [

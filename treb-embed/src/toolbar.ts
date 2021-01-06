@@ -2,14 +2,14 @@
 import { tmpl, composite, NodeModel } from 'treb-utils';
 import { icons } from './generated/toolbar4';
 import { symbol_defs } from './generated/symbol-defs';
-import { Style, Localization, ICellAddress, Area } from 'treb-base-types';
+import { Style, Localization, Area } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement, Color } from 'treb-utils';
-
-import '../style/toolbar-4.pcss';
 import { EmbeddedSpreadsheetOptions } from './options';
 import { GridSelection } from 'treb-grid';
+
+import '../style/toolbar-4.pcss';
 
 /**
  * state that should be reflected in toolbar buttons/selections
@@ -399,7 +399,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       (this.model.comment as HTMLElement).click();
     }, 300);
     */
-   
+
   }
 
   public CommitColor(color: string): void {

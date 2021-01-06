@@ -7,8 +7,7 @@
     { "path": "../treb-mc/modern.tsconfig.json" },
     { "path": "../treb-charts/modern.tsconfig.json" },
     { "path": "../treb-calculator/modern.tsconfig.json" },
-    { "path": "../treb-base-types/modern.tsconfig.json" },
-    { "path": "../treb-toolbar/modern.tsconfig.json" }
+    { "path": "../treb-base-types/modern.tsconfig.json" }
   ],
   "include": [
     "../package.json",
