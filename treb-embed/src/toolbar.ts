@@ -532,6 +532,10 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       merge.dataset.command = 'merge';
       merge.setAttribute('title', 'Merge cells');
     }
+    
+    const format = state.style?.number_format || '';
+    (this.model['number-format-input'] as HTMLInputElement).value = 
+      NumberFormatCache.SymbolicName(format) || format;
 
     Object.keys(map).forEach(key => {
       if ((map as any)[key]) {
