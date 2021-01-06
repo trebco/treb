@@ -2550,16 +2550,103 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   public CreateToolbar(container: HTMLElement): Toolbar {
-    this.toolbar = new Toolbar(container);
+    this.toolbar = new Toolbar(container, this.options);
     this.toolbar.Subscribe((event) => {
 
       let updated_style: Style.Properties= {};
       
+      const insert_annotation = (func: string) => {
+        const selection = this.grid.GetSelection();
+        if (selection && !selection.empty) {
+          const label = selection.area.spreadsheet_label;
+          this.InsertAnnotation(`=${func}(${label},,"${label}")`);
+        }
+      };
+
       if (event.type === 'format') {
         updated_style.number_format = event.format || 'General';
       }
       else if (event.type === 'button') {
         switch (event.command) {
+
+          case 'update-comment':
+            this.SetNote(event.data?.comment || '');
+            break;
+
+          case 'clear-comment':
+            this.SetNote('');
+            break;
+
+          case 'border':
+            {
+              let width = 1;
+              let border = (event.data?.border || '').replace(/^border-/, '');
+
+              if (border === 'double-bottom') {
+                border = 'bottom';
+                width = 2;
+              }
+
+              if (border) {
+                this.grid.ApplyBorders(
+                  undefined, 
+                  border, 
+                  event.data?.color || undefined, 
+                  width,
+                );
+              }
+
+            }
+            break;
+
+          case 'color':
+          case 'background-color':
+          case 'foreground-color':
+          case 'border-color':
+
+            switch (event.data?.target) {
+              case 'border':
+                updated_style.border_top_color =
+                  updated_style.border_bottom_color = 
+                  updated_style.border_left_color = 
+                  updated_style.border_right_color = event.data?.color || 'none';
+                break;
+              case 'foreground':
+                updated_style.text_color = event.data?.color || 'none';
+                console.info('text color ->', updated_style.text_color);
+                break;
+              case 'background':
+                updated_style.background = event.data?.color || 'none';
+                console.info('background color ->', updated_style.background);
+                break;
+            }
+            break;
+
+          case 'insert-row': this.grid.InsertRow(); break;
+          case 'insert-column': this.grid.InsertColumn(); break;
+          case 'delete-row': this.grid.DeleteRows(); break;
+          case 'delete-column': this.grid.DeleteColumns(); break;
+          case 'insert-sheet': this.grid.InsertSheet(); break;
+          case 'delete-sheet': this.grid.DeleteSheet(); break;
+
+          case 'freeze':
+            {
+              const freeze = this.grid.GetFreeze();
+              if (freeze.rows || freeze.columns) {
+                this.Freeze(0, 0);
+              }
+              else {
+                this.FreezeSelection();
+              }
+            }
+            break;
+
+          case 'insert-image': this.InsertImage(); break;
+
+          case 'donut-chart': insert_annotation('Donut.Chart'); break;
+          case 'column-chart': insert_annotation('Column.Chart'); break;
+          case 'bar-chart': insert_annotation('Bar.Chart'); break;
+          case 'line-chart': insert_annotation('Line.Chart'); break;
 
           case 'increase-decimal':
           case 'decrease-decimal':
@@ -2779,7 +2866,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     if (selection && !selection.empty) {
-      
+
+      state.selection = selection;
       state.merge = false;
       let data = this.grid.model.active_sheet.CellData(selection.target);
 
@@ -2791,7 +2879,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
 
       this.active_selection_style = data.style;
-      state.comment = !!data.note;
+      state.comment = data.note;
       state.style = data.style ? {...data.style} : undefined;
 
     }
@@ -2859,7 +2947,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       Object.keys(color_map),
       update);
 
-    console.info(number_format_map, color_map);
+    // console.info(number_format_map, color_map);
 
     /*
     this.toolbar_manager.UpdateDocumentStyles(

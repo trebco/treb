@@ -2,12 +2,14 @@
 import { tmpl, composite, NodeModel } from 'treb-utils';
 import { icons } from './generated/toolbar4';
 import { symbol_defs } from './generated/symbol-defs';
-import { Style, Localization } from 'treb-base-types';
+import { Style, Localization, ICellAddress, Area } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
 import { NumberFormatCache } from 'treb-format';
+import { Measurement, Color } from 'treb-utils';
 
 import '../style/toolbar-4.pcss';
-import { callbackify } from 'util';
+import { EmbeddedSpreadsheetOptions } from './options';
+import { GridSelection } from 'treb-grid';
 
 /**
  * state that should be reflected in toolbar buttons/selections
@@ -16,7 +18,8 @@ export interface SelectionState {
   style?: Style.Properties;
   merge?: boolean;
   frozen?: boolean;
-  comment?: boolean;
+  comment?: string;
+  selection?: GridSelection;
 }
 
 export interface ToolbarCancelEvent {
@@ -26,6 +29,7 @@ export interface ToolbarCancelEvent {
 export interface ToolbarClickEvent {
   type: 'button';
   command: string;
+  data?: any;
 }
 
 export interface ToolbarNumberFormatEvent {
@@ -48,10 +52,29 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
   public number_formats: string[] = [];
   public date_formats: string[] = [];
+  public colors: string[] = [];
+  public color_target?: string;
 
-  constructor(container: HTMLElement) {
+  public state?: SelectionState;
 
+  /** the current color, if you click the button (not the dropdown) */
+  public background_color? = 'yellow';
+
+  /** the current color, if you click the button (not the dropdown) */
+  public foreground_color? = 'blue';
+
+  /** the current color, if you click the button (not the dropdown) */
+  public border_color? = '';
+
+  constructor(container: HTMLElement, options: EmbeddedSpreadsheetOptions) {
     super();
+
+    for (const value of [0, 64, 128, 192, 212, 256]) {
+      this.colors.push(`rgb(${value}, ${value}, ${value})`);
+    }
+    for (const color of ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']){ 
+      this.colors.push(color);
+    }
 
     // 
     // NOTE regarding dropdowns: you can't nest a button (interactive element)
@@ -78,28 +101,42 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           ${this.Icon('extra/wrap')}
         </button>
         
-        ${this.IconButton('bootstrap/chat-left', 'comment', true, 'Add comment')}
+        <div class='group'>
+          <button id='comment' class='drop-button' title='Comment'>
+            ${this.Icon('fa/light/message')}
+          </button>
+          <div class='drop-menu' tabindex='-1'>
+            <div class='comment-editor'>
+              <div class='label' id='comment-label'></div>
+              <textarea id='comment-text' class='comment-textarea'></textarea>
+              <div class='comment-buttons'>
+                <button data-command='clear-comment'>Clear</button>
+                <button id='update-comment' data-command='update-comment'>Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div class='group'>
-          <button class='color-button'>
+          <button class='color-button' data-command='background-color'>
             ${this.Icon('fa/light/fill-drip')}
-            <div class='color-bar' style='color:red;'></div>
+            <div id='background-color-bar' class='color-bar' style='color:${this.background_color};'></div>
           </button>
           <button class='drop'></button>
-          <div class='drop-menu color-chooser' tabindex='-1'></div>
+          <div class='drop-menu color-chooser' data-target='background' tabindex='-1'></div>
         </div>
 
         <div class='group'>
-          <button class='color-button'>
+          <button class='color-button' data-command='foreground-color'>
             ${this.Icon('fa/light/font')}
-            <div class='color-bar' style='color:blue;'></div>
+            <div id='foreground-color-bar' class='color-bar' style='color:${this.foreground_color};'></div>
           </button>
           <button class='drop'></button>
-          <div class='drop-menu color-chooser' tabindex='-1'></div>
+          <div class='drop-menu color-chooser' data-target='foreground' tabindex='-1'></div>
         </div>
 
         <div class='group'>
-          ${this.IconButton('extra/border-double-bottom2', 'update-border', 'border-double-bottom', 'Double bottom border')}
+          ${this.IconButton('fa/light/border-bottom', 'update-border', 'border-bottom', 'Bottom border')}
           <button class='drop'>
           </button>
           <div class='drop-menu' tabindex='-1'>
@@ -110,14 +147,14 @@ export class Toolbar extends EventSource<ToolbarEvent> {
               <li>${this.IconButton('fa/light/border-bottom', 'border-bottom', true, 'Bottom border', 'update-border')}</li>
               <li>${this.IconButton('extra/border-double-bottom2', 'border-double-bottom', true, 'Double bottom border', 'update-border')}</li>
               <li>${this.IconButton('fa/light/border-all', 'border-all', true, 'All borders', 'update-border')}</li>
-              <li>${this.IconButton('fa/light/border-outer', 'border-outer', true, 'Outside borders', 'update-border')}</li>
+              <li>${this.IconButton('fa/light/border-outer', 'border-outside', true, 'Outside borders', 'update-border')}</li>
               <li>${this.IconButton('fa/light/border-none', 'border-none', true, 'Clear borders', 'update-border')}</li>
               <hr/>
               <li>
                 <button id='border-color' class='drop-button' data-position='horizontal' title='Border color'>
                   ${this.Icon('fa/light/palette')}
                 </button>
-                <div class='drop-menu color-chooser' tabindex='-1'></div>
+                <div class='drop-menu color-chooser' data-target='border' tabindex='-1'></div>
               </li>
             </ul>
           </div>
@@ -139,11 +176,13 @@ export class Toolbar extends EventSource<ToolbarEvent> {
               <li><button class='text' data-command='delete-row'>Delete row</button></li>
               <li><button class='text' data-command='delete-column'>Delete column</button></li>
             </ul>
-            <ul>
+            ${options.add_tab ?
+            `<ul>
               <hr/>
               <li><button class='text' data-command='insert-sheet'>Insert sheet</button></li>
               <li><button class='text' data-command='delete-sheet'>Delete sheet</button></li>
-            </ul>
+            </ul>` : ''
+            }
           </div>
         </div>
 
@@ -182,17 +221,59 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         </div>
 
         <div class='staging'>
-          <div id='color-chooser'>
-            ZOOPA MONS
+          <div id='color-chooser' class='color-chooser-main'>
+            <div id='color-list' class='color-list'></div>
+            <div class='new-color'>
+              <input id='color-input' placeholder='Color'>
+              <button id='color-button'>
+                ${this.Icon('fa/light/check')}
+              </button>
+            </div>
           </div>
         </div>
 
       </div>
     `;
 
+    // handle colors
+
+    const color_button = this.model['color-button'] as HTMLElement;
+    const color_input = this.model['color-input'] as HTMLInputElement;
+
+    color_button.addEventListener('click', () => {
+      this.CommitColor(color_input.value || '');
+    });
+
+    color_input.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        this.CommitColor(color_input.value || '');
+      }
+    });
+    color_input.addEventListener('input', () => {
+      color_button.style.backgroundColor = '';
+      const value = color_input.value || '';
+      // requestAnimationFrame(() => color_button.style.backgroundColor = value);
+      color_button.style.backgroundColor = value;
+
+      const color = Measurement.MeasureColor(value);
+      const hsl = Color.RGBToHSL(color[0], color[1], color[2]); // can't destructure? 
+
+      color_button.style.color = (hsl.l > .5) ? '' : '#fff';
+      
+    });
+
+    (this.model['comment-text'] as HTMLTextAreaElement).addEventListener('keydown', event => {
+      if (event.key === 'Enter' && event.ctrlKey) {
+        event.stopPropagation();
+        event.preventDefault();
+        (this.model['update-comment'] as HTMLElement).click(); 
+        return;
+      }
+    });
+
     let cached_format = '';
     const format_input = this.model['number-format-input'] as HTMLInputElement;
-    format_input.addEventListener('focus', (event: FocusEvent) => cached_format = format_input.value || '');
+    format_input.addEventListener('focus', () => cached_format = format_input.value || '');
     format_input.addEventListener('keydown', (event: KeyboardEvent) => {
       switch (event.key) {
         case 'Enter':
@@ -213,12 +294,47 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     this.model.root.addEventListener('click', (event) => {
       const element = (event.target as HTMLElement);
-      const command = element?.dataset?.command;
+      let command = element?.dataset?.command;
 
       if (command) {
+        const data: any = {};
+
+        if (/^border-/.test(command)) {
+          data.border = command;
+          data.color = this.border_color || '';
+          command  = 'border';
+        }
+        else {
+          switch (command) {
+            case 'clear-comment':
+            case 'update-comment':
+              if (this.state?.selection && !this.state.selection.empty) {
+                data.address = {...this.state.selection.target};
+              }
+              data.comment = (this.model['comment-text'] as HTMLTextAreaElement).value || '';
+              break;
+
+            case 'background-color':
+              data.target = 'background';
+              data.color = this.background_color || '';
+              break;
+
+            case 'foreground-color':
+              data.target = 'foreground';
+              data.color = this.foreground_color || '';
+              break;
+
+            case 'border-color':
+              data.target = 'border';
+              data.color = this.border_color || '';
+              break;
+
+          }
+        }
         this.Publish({
           type: 'button', 
           command,
+          data,
         });
         return;
       }
@@ -234,37 +350,81 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           parent = parent.parentElement;
         }
         if (parent) {
+          let focus_target: HTMLElement|undefined;
           const sibling = element.nextSibling as HTMLElement;
           if (sibling?.classList?.contains('drop-menu')) {
+
+            if (element === this.model.comment) {
+              this.model['comment-label'].textContent = 
+                this.state?.selection?.target ?
+                  Area.CellAddressToLabel(this.state?.selection.target) : '';
+              (this.model['comment-text'] as HTMLTextAreaElement).value = this.state?.comment || '';
+              focus_target = this.model['comment-text'];
+            }
 
             if (sibling.dataset.numberFormats !== undefined) {
               this.RenderNumberFormats(sibling);
             }
             
             if (sibling.classList.contains('color-chooser')) {
+              this.color_target = sibling.dataset?.target || '';
+              this.RenderColors(this.model['color-list']);
+
+              // reset color
+              color_input.value = '';
+              color_button.style.backgroundColor = '';
+              color_button.style.color = '';
               sibling.appendChild(this.model['color-chooser'])
             }
             if (element.dataset?.position === 'horizontal') {
-              this.Focus(sibling, element.offsetWidth + 12, element.offsetTop - 8);
+              this.Focus(sibling, element.offsetWidth + 12, element.offsetTop - 8, focus_target);
             }
             else {
-              this.Focus(sibling, 0, element.offsetHeight + 4);
+              this.Focus(sibling, 0, element.offsetHeight + 4, focus_target);
             }
           }
         }
         return;
       }
 
-      console.info(event.target);
+      // console.info(event.target);
 
     });
 
     // console.info(this.model);
     container.appendChild(this.model.root);
 
+    /*
+    setTimeout(() => {
+      (this.model.comment as HTMLElement).click();
+    }, 300);
+    */
+   
   }
 
-  public Focus(element: HTMLElement, left: number, top: number): void {
+  public CommitColor(color: string): void {
+    switch (this.color_target) {
+      case 'background':
+        this.model['background-color-bar'].style.color = color;
+        this.background_color = color;
+        break;
+      case 'foreground':
+        this.model['foreground-color-bar'].style.color = color;
+        this.foreground_color = color;
+        break;
+      case 'border':
+        // this.model['border-color-bar'].style.color = color;
+        this.border_color = color;
+        break;
+    }
+
+    this.Publish({ type: 'button', command: 'color', data: {
+      color,
+      target: this.color_target || '',
+    }});
+  }
+
+  public Focus(element: HTMLElement, left: number, top: number, focus_target?: HTMLElement): void {
 
     element.style.left = left + 'px';
     element.style.top = top + 'px';
@@ -299,6 +459,13 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       else if (target.dataset?.command || target.classList?.contains('drop-button')) {
         return;
       }
+      else if (target.classList?.contains('color-swatch')) {
+        const color = target?.dataset?.color || '';
+        this.CommitColor(color);
+      }
+
+      // console.info(target);
+
       event.stopPropagation();
     };
     element.addEventListener('click', click);
@@ -317,11 +484,13 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     element.addEventListener('focusout', focusout);
 
     // allow the class to update
-    requestAnimationFrame(() => element.focus());
+    requestAnimationFrame(() => (focus_target||element).focus());
 
   }
 
   public UpdateState(state: SelectionState): void {
+
+    this.state = state;
 
     const map = {
       'align-center': state.style && state.style?.horizontal_align === Style.HorizontalAlign.Center,
@@ -333,9 +502,20 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       'align-bottom': state.style && state.style?.vertical_align === Style.VerticalAlign.Bottom,
 
       'wrap': state.style && !!state.style.wrap,
-      'freeze': !!state.frozen, 
-      'comment': state.comment,
+      'comment': !!state.comment,
     };
+
+    // this.comment = state.comment || '';
+
+    const freeze = this.model.freeze;
+    if (state.frozen) {
+      freeze.classList.add('active');
+      freeze.setAttribute('title', 'Unfreeze panes');
+    }
+    else {
+      freeze.classList.remove('active');
+      freeze.setAttribute('title', 'Freeze panes');
+    }
 
     const merge = this.model.merge;
     if (state.merge) {
@@ -360,6 +540,33 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
   }
 
+  public RenderColors(target: HTMLElement): void {
+
+    const html: string[] = [
+      `<div class='row'>`,
+      `<button class='color-swatch default-color' data-color='' title='Default color'></button>`];
+
+    let i = 0;
+    for ( ; i < 6 && i < this.colors.length; i++) {
+      const color = this.colors[i];
+      html.push(`<button class='color-swatch' data-color='${color}' title='${color}' style='background-color: ${color}'></button>`)
+    }
+    html.push('</div>');
+
+    while (i < this.colors.length) {
+      html.push(`<div class='row'>`);
+      const end = i + 7;
+      for ( ; i < this.colors.length && i < end; i++) {
+        const color = this.colors[i];
+        html.push(`<button class='color-swatch' data-color='${color}' title='${color}' style='background-color: ${color}'></button>`)
+      }
+      html.push('</div>');
+    }
+
+    target.innerHTML = html.join('');
+
+  }
+
   public RenderNumberFormats(target: HTMLElement): void {
     target.innerHTML = composite`
       <ul>
@@ -378,54 +585,42 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
   public UpdateDocumentStyles(formats: string[], colors: string[], update: boolean): void {
    
-      const number_formats: string[] = [
-          'General', 'Number', 'Integer', 'Percent', 'Fraction', 'Accounting', 'Currency', 'Scientific',
-      ];
-  
-      const date_formats: string[] = [
-        'Timestamp', 'Long Date', 'Short Date',
-      ];
-  
-      for (const format of formats) {
-        if (NumberFormatCache.SymbolicName(NumberFormatCache.Translate(format))) { continue; }
-        const instance = NumberFormatCache.Get(format);
-        if (instance.date_format) {
-          date_formats.push(format);
-        }
-        else {
-          number_formats.push(format);
-        }
-      }
-  
-      this.number_formats = number_formats;
-      this.date_formats = date_formats;
+    const number_formats: string[] = [
+        'General', 'Number', 'Integer', 'Percent', 'Fraction', 'Accounting', 'Currency', 'Scientific',
+    ];
 
-      /*
+    const date_formats: string[] = [
+      'Timestamp', 'Long Date', 'Short Date',
+    ];
 
-      // let index = 0;
-      const string_to_element = (text: string): ToolbarElement => {
-        return { 
-          type: ToolbarElementType.text, 
-          text, 
-          data: { style: { number_format: text }},
-        };
-      };
-  
-      format_element.list = [
-        // ...this.default_number_formats.map(string_to_element),
-        ...number_formats.map(string_to_element),
-        separator,
-        // ...this.default_date_formats.map(string_to_element),
-        ...date_formats.map(string_to_element),
-      ];
-  
-      this.toolbar.UpdateColors(colors);
-  
-      if (update) {
-        this.Update();
+    for (const format of formats) {
+      if (NumberFormatCache.SymbolicName(NumberFormatCache.Translate(format))) { continue; }
+      const instance = NumberFormatCache.Get(format);
+      if (instance.date_format) {
+        date_formats.push(format);
       }
-  
-      */
+      else {
+        number_formats.push(format);
+      }
+    }
+
+    this.number_formats = number_formats;
+    this.date_formats = date_formats;
+
+    // FIXME: cache measured colors
+
+    const compare = this.colors.map(color => Measurement.MeasureColor(color));
+    for (const color of colors) {
+
+      // FIXME: sanitize input
+
+      const rgb = Measurement.MeasureColor(color);
+      if (!compare.some(test => (test[0] === rgb[0]) && (test[1] === rgb[1]) && (test[2] === rgb[2]))) {
+        // console.info('adding', color)
+        this.colors.push(color);
+        compare.push(rgb);
+      }
+    }
   
   }
 

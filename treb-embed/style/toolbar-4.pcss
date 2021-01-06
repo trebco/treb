@@ -80,6 +80,46 @@
     }
   }
 
+  .comment-editor {
+    display: flex;
+    flex-direction: column;
+    padding: .25em;
+
+    textarea {
+      font-family: inherit;
+      color: inherit;
+      font-size: .875rem;
+      flex-grow: 1;
+      min-height: 14em;
+      min-width: 10em;
+      outline: none;
+      border: 1px solid rgb(209, 213, 219);
+      border-radius: 0.125rem;
+    }
+
+    .comment-buttons {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-end;
+      margin-top: .5em;
+
+      button {
+        font-family: inherit;
+        font-size: .875rem;
+        width: auto;
+        padding: 0 .5em;
+        height: 32px;
+        min-height: 0;
+      }
+
+      button + button {
+        margin-left: .5em;
+      }
+
+    }
+
+  }
+
   & > * + * {
     margin-left: 0.5rem;
   }
@@ -113,6 +153,7 @@
         height: 3px;
         margin-top: 2px;
         background: currentColor;
+        box-shadow: 0px 0px 1px 1px rgba(0,0,0,.125);
       }
     }
 
@@ -120,7 +161,7 @@
       background: #f3f4f6;
     }
 
-    &.active {
+    &.active, &:focus {
       background: #f3f4f6;
     }
 
@@ -160,6 +201,71 @@
 
     & > * {
       pointer-events: none;
+    }
+
+  }
+
+  .color-chooser-main {
+    padding: .25em;
+  }
+
+  .new-color {
+
+    margin-top: .5em;
+
+    display: flex;
+    flex-direction: row;
+
+    > * + * {
+      margin-left: .25em;
+    }
+
+    input, button {
+      border-radius: 3px;
+      border: 1px solid rgb(209, 213, 219);
+    }
+
+    input {
+      flex-grow: 1;
+      width: 6em;
+      font-family: inherit;
+      outline: none;
+      padding: 2px 6px;
+    }
+
+    button {
+      min-height: 28px;
+      min-width: 28px;
+      height: 28px;
+      width: 28px;
+    }
+
+  }
+
+  .color-list {
+    
+    display: flex;
+    flex-direction: column;
+
+    .row {
+      display: flex;
+      flex-direction: row;
+    }
+
+    button.color-swatch {
+
+      &.default-color {
+        background: #fff;
+        border: 1px dashed #333;
+      }
+
+      border: 1px solid rgb(209, 213, 219);
+      width: 1.375rem;
+      height: 1.375rem;
+      min-height: 1.375rem;
+      min-width: 1.375rem;
+      margin: 3px;
+      padding: 0;
     }
 
   }
