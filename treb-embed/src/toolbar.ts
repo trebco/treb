@@ -151,9 +151,11 @@ export class Toolbar extends EventSource<ToolbarEvent> {
               <li>${this.IconButton('fa/light/border-none', 'border-none', true, 'Clear borders', 'update-border')}</li>
               <hr/>
               <li>
-                <button id='border-color' class='drop-button' data-position='horizontal' title='Border color'>
+                <button id='border-color' class='color-button drop-button' data-position='horizontal' title='Border color'>
                   ${this.Icon('fa/light/palette')}
+                  <div id='border-color-bar' class='color-bar' style='color:${this.border_color};'></div>
                 </button>
+
                 <div class='drop-menu color-chooser' data-target='border' tabindex='-1'></div>
               </li>
             </ul>
@@ -413,7 +415,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         this.foreground_color = color;
         break;
       case 'border':
-        // this.model['border-color-bar'].style.color = color;
+        if (this.model['border-color-bar']) { 
+          this.model['border-color-bar'].style.color = color;
+        }
         this.border_color = color;
         break;
     }
