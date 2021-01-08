@@ -19,9 +19,29 @@ class FontMetricsCacheInstance {
     const font = Style.Font(style, scale);
     let metrics: FontMetricsInfo = this.cache[font] || { ascent: 10, descent: 2, block: 18 };
     if (!this.cache[font] || this.cache[font].block === 1) {
-      metrics = this.cache[font] = this.MeasureFont(style, scale);
+      metrics = this.cache[font] = this.MeasureFont2(font);
     }
     return metrics;
+  }
+  
+  private MeasureFont2(font: string): FontMetricsInfo {
+    if (!fontmetrics_instance) fontmetrics_instance = new FontMetrics();
+    fontmetrics_instance.SetFont2(font);
+
+    const fm1 = fontmetrics_instance.Measure('M');
+    const fm2 = fontmetrics_instance.Measure('p');
+
+    const paren = fontmetrics_instance.Measure(')');
+    const hash1 = fontmetrics_instance.Measure('#');
+    const hash2 = fontmetrics_instance.Measure('##');
+
+    return {
+      ascent: fm1.ascent,
+      descent: fm2.descent,
+      block: Math.ceil((fm1.ascent + fm2.descent) * 1.4),
+      paren: paren.width,
+      hash: hash2.width - hash1.width,
+    };
   }
 
   private MeasureFont(properties: Style.Properties, scale: number): FontMetricsInfo {
@@ -30,6 +50,7 @@ class FontMetricsCacheInstance {
     fontmetrics_instance.SetFont(properties.font_face || '',
       font_size + (properties.font_size_unit || 'pt'),
       properties.font_bold ? 600 : 400);
+    // fontmetrics_instance.SetFont2(font);
 
     const fm1 = fontmetrics_instance.Measure('M');
     const fm2 = fontmetrics_instance.Measure('p');

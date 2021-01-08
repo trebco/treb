@@ -50,16 +50,43 @@ export class FontMetrics {
 
   private padding = 0;
 
-  private cached_font: string = '';
+  private cached_font= '';
 
-  public get context() { return this.context_; }
+  public get context(): CanvasRenderingContext2D|undefined { return this.context_; }
 
   constructor(){
     this.canvas = document.createElement('canvas');
     this.context_ = this.canvas.getContext('2d') || undefined;
   }
 
-  public SetFont(font_family: string, font_size: number|string, font_weight = 400) {
+  public SetFont2(font: string): void {
+
+    if (!this.context_) throw new Error('missing context in fontmetrics');
+
+    if ( this.cached_font === font ) return;
+
+    // in this version we have a font string. but how to get the appropriate size? 
+
+    // NOTE: we're setting font here, so we can measure 'M' and then use that
+    // to set canvas size. BUT, when we set canvas size, that flushes the font --
+    // so we have to set it again. or it won't work.
+
+    this.context_.font = font;
+    const width = this.context_.measureText('M').width;
+
+    this.padding = width * 1;
+    this.canvas.width = width * 4;
+    this.canvas.height = width * 4 + this.padding;
+
+    this.context_.textBaseline = 'top';
+    this.context_.textAlign = 'center';
+    this.context_.font = font;
+
+    this.cached_font = font;
+
+  }
+
+  public SetFont(font_family: string, font_size: number|string, font_weight = 400): void {
 
     if (!this.context_) throw new Error('missing context in fontmetrics');
     if (!font_size ) throw new Error('invalid font size (0)');
@@ -87,6 +114,8 @@ export class FontMetrics {
     this.context_.textBaseline = 'top';
     this.context_.textAlign = 'center';
     this.context_.font = font;
+
+    const mt = this.context_.measureText('M');
 
     this.cached_font = font;
 
