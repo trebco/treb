@@ -35,15 +35,21 @@ class FontMetricsCacheInstance {
     const hash1 = fontmetrics_instance.Measure('#');
     const hash2 = fontmetrics_instance.Measure('##');
 
-    return {
+    const metrics: FontMetricsInfo = {
       ascent: fm1.ascent,
       descent: fm2.descent,
-      block: Math.ceil((fm1.ascent + fm2.descent) * 1.4),
+      //block: Math.ceil((fm1.ascent + fm2.descent) * 1.5),
+      block: Math.ceil((fm1.ascent + fm2.descent) + 6), // this is better, but I don't know where these 6 pixels come from
       paren: paren.width,
       hash: hash2.width - hash1.width,
     };
+    console.info(font); console.info(metrics);
+
+    return metrics;
+
   }
 
+  /*
   private MeasureFont(properties: Style.Properties, scale: number): FontMetricsInfo {
     if (!fontmetrics_instance) fontmetrics_instance = new FontMetrics();
     const font_size = (properties.font_size_value || 10) * scale;
@@ -67,6 +73,7 @@ class FontMetricsCacheInstance {
       hash: hash2.width - hash1.width,
     };
   }
+  */
 
 }
 

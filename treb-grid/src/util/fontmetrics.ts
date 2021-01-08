@@ -86,6 +86,7 @@ export class FontMetrics {
 
   }
 
+  /*
   public SetFont(font_family: string, font_size: number|string, font_weight = 400): void {
 
     if (!this.context_) throw new Error('missing context in fontmetrics');
@@ -120,7 +121,8 @@ export class FontMetrics {
     this.cached_font = font;
 
   }
-
+  */
+ 
   public UpdateText(char: string) {
     if (!this.context_) throw new Error('missing context in fontmetrics');
     this.context_.clearRect(0, 0, this.canvas.width, this.canvas.height);
