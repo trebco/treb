@@ -43,7 +43,7 @@ class FontMetricsCacheInstance {
       paren: paren.width,
       hash: hash2.width - hash1.width,
     };
-    console.info(font); console.info(metrics);
+    // console.info(font); console.info(metrics);
 
     return metrics;
 
