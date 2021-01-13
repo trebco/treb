@@ -339,7 +339,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
     // hold state for replay, but watch out if it's not the same size
 
-    const seed_buffer: number[] = this.workers.map(_ => Random.Next() * 1e14);
+    const seed_buffer: number[] = this.workers.map(() => Random.Next() * 1e14);
     if (opts.replay) {
       this.replay_buffer.map((x, i) => seed_buffer[i] = x);
     }
@@ -363,6 +363,15 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
     this.replay_buffer = seed_buffer;
 
+    // NOTE: we want to set our local seed as well, otherwise calculated
+    // values on update look different on replay. that's not a technical
+    // problem but it does tend to violate user expectation.
+
+    // we can work around that by using the first generated seed locally.
+    // this will either be random, or the cached value.
+
+    Random.Seed(seed_buffer[0]);
+    
     // const per_thread = Math.floor(trials / this.workers.length);
     // const last_thread = trials - (per_thread * (this.workers.length - 1));
     // console.info('per', per_thread, 'last', last_thread);
