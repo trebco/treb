@@ -2613,11 +2613,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
                 break;
               case 'foreground':
                 updated_style.text_color = event.data?.color || 'none';
-                console.info('text color ->', updated_style.text_color);
+                // console.info('text color ->', updated_style.text_color);
                 break;
               case 'background':
                 updated_style.background = event.data?.color || 'none';
-                console.info('background color ->', updated_style.background);
+                // console.info('background color ->', updated_style.background);
                 break;
             }
             break;
