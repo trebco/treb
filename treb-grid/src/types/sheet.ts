@@ -1018,7 +1018,9 @@ export class Sheet {
         const cell1 = this.cells.GetCell({ row: before_row - 1, column }, false);
         if (cell1 && cell1.area) {
           const cell2 = this.cells.GetCell({ row: before_row, column }, false);
-          if (cell2 && cell2.area && cell2.area.Equals(cell1.area)) return false; // failed
+          if (cell2 && cell2.area && cell2.area.Equals(cell1.area)) {
+            return false; // failed
+          }
         }
       }
     }

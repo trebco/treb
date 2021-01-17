@@ -6649,7 +6649,11 @@ export class Grid {
    */
   private InsertRowsInternal(command: InsertRowsCommand) { // before_row = 0, count = 1) {
 
-    this.active_sheet.InsertRows(command.before_row, command.count);
+    if (!this.active_sheet.InsertRows(command.before_row, command.count)){
+      this.Error(`You can't change part of an array.`);
+      return;
+    }
+
     this.model.named_ranges.PatchNamedRanges(0, 0, command.before_row, command.count);
 
     const active_sheet_name = this.active_sheet.name.toLowerCase();
@@ -6843,7 +6847,11 @@ export class Grid {
    */
   private InsertColumnsInternal(command: InsertColumnsCommand) { // before_column = 0, count = 1) {
 
-    this.active_sheet.InsertColumns(command.before_column, command.count);
+    if (!this.active_sheet.InsertColumns(command.before_column, command.count)) {
+      this.Error(`You can't change part of an array.`);
+      return;
+    }
+    
     this.model.named_ranges.PatchNamedRanges(command.before_column, command.count, 0, 0);
 
     // FIXME: we need an event here? 
