@@ -96,7 +96,7 @@
       &.expanded {
         .editor-container {
           transition: height .1s ease-in-out;
-          height: 4em;
+          height: 4.5em;
           .formula-editor {
             overflow-y: auto;
           }
@@ -109,7 +109,12 @@
         outline: none;
         overflow-y: hidden;
         overflow-x: hidden;
-        line-height: normal;
+
+        /** 
+         * 1.35 is better on safari, seems like a wash on windows.
+         * can we browser-limit this? (...)
+         */
+        line-height: 1.35; /* normal; */
 
         flex-grow: 1; /* keeps content at the top */
         min-height: 1em;

@@ -13,11 +13,25 @@
      * NOTE: this is becoming flex/row/space-between so that RiskAMP web 
      * can insert a node in there. not sure that this is a useful long-term
      * way to handle this, but it's acceptable for now.
-     */
+     *
+     * NOTE: that causes some safari layout issues. I think this is related
+     * to flex layout and calculated size (as usual). 
+     *
+     * Issue 1 is compressing the tab bar. that seems to be resolved by
+     * setting treb-tab-bar height to 100%.
+     *
+     * Issue 2 is that the size changes when adding/removing tabs. it seems
+     * like some pixels get shifted off screen.
+     * 
+     * Can we just solve this a different way for RAW, and leave tabs alone?
+     * (...)
+     */ 
 
+     /*
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+     */
 
     order: 3;
 

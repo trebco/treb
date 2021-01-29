@@ -136,7 +136,7 @@ export class TabBar extends EventSource<TabEvent> {
 
   }
 
-  public UpdateTheme() {
+  public UpdateTheme(): void {
 
     if (!this.node) { return; }
 
@@ -151,7 +151,7 @@ export class TabBar extends EventSource<TabEvent> {
 
   }
 
-  public SetActive(tab: HTMLElement, active: boolean) {
+  public SetActive(tab: HTMLElement, active: boolean): void {
     if (active) {
       tab.classList.add('selected');
       tab.style.color = this.theme.tab_bar_active_color || '';
@@ -199,8 +199,35 @@ export class TabBar extends EventSource<TabEvent> {
     this.grid_container.classList.add('treb-tab-bar-layout');
     this.grid_container.parentElement?.classList.add('has-tab-bar');
 
+    const target = this.node;
+
     // clear
-    this.node.innerText = '';
+    // target.innerText = '';
+
+    let end_nodes = false;
+    const children = Array.prototype.map.call(target.children, (child) => child);
+    for (const child of children as HTMLElement[]) {
+      if (!child.dataset.preserve) {
+        target.removeChild(child);
+      }
+      else {
+        end_nodes = true;
+      }
+    }
+
+    if (!end_nodes) {
+      let div = document.createElement('div');
+      div.classList.add('tab-bar-spacer')
+      div.style.order = '9998';
+      div.dataset.preserve = 'true';
+      target.appendChild(div);
+
+      div = document.createElement('div');
+      div.classList.add('tab-bar-end');
+      div.style.order = '9999';
+      div.dataset.preserve = 'true';
+      target.appendChild(div);
+    }
 
     if (this.options.delete_tab) {
       const tab = document.createElement('div');
@@ -211,7 +238,7 @@ export class TabBar extends EventSource<TabEvent> {
       tab.addEventListener('click', () => {
         this.Publish({ type: 'delete-sheet' });
       });
-      this.node.appendChild(tab);
+      target.appendChild(tab);
     }
 
     // store tabs
@@ -377,7 +404,7 @@ export class TabBar extends EventSource<TabEvent> {
       tab.addEventListener('dblclick', doubleclick);
       tab.addEventListener('mousedown', mousedown);
 
-      this.node.appendChild(tab);
+      target.appendChild(tab);
       tabs.push(tab);
 
     }
@@ -396,7 +423,7 @@ export class TabBar extends EventSource<TabEvent> {
       add_tab.style.color = this.theme.tab_bar_color || '';
       add_tab.style.background = this.theme.tab_bar_background || '';
 
-      this.node.appendChild(add_tab);
+      target.appendChild(add_tab);
 
     }
 
@@ -406,7 +433,7 @@ export class TabBar extends EventSource<TabEvent> {
       const spacer = document.createElement('div');
       spacer.setAttribute('class', 'tab-bar-spacer');
       spacer.style.order = (this.model.sheets.length * 2 + 1).toString();
-      this.node.appendChild(spacer);
+      target.appendChild(spacer);
 
       const delete_tab = document.createElement('a');
       delete_tab.classList.add('delete-tab');
@@ -420,7 +447,7 @@ export class TabBar extends EventSource<TabEvent> {
       // delete_tab.style.color = this.theme.tab_bar_color || '';
       // delete_tab.style.background = this.theme.tab_bar_background || '';
 
-      this.node.appendChild(delete_tab);
+      target.appendChild(delete_tab);
 
     }
     */
