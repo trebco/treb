@@ -1903,7 +1903,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public SaveLocalFile(
     /* type: SaveFileType = SaveFileType.treb,*/
     filename: string = SaveFileType.treb,
-    preserve_simulation_data = true, pretty = false): void {
+    preserve_simulation_data = true, 
+    pretty = false, 
+    additional_options?: SerializeOptions): void {
 
     const document_name = this.grid.model.document_name || 'document'; // FIXME: options
 
@@ -1935,7 +1937,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       case SaveFileType.treb:
       case SaveFileType.json:
-        data = this.SerializeDocument(preserve_simulation_data);
+        data = this.SerializeDocument(preserve_simulation_data, undefined, additional_options);
         text = JSON.stringify(data, undefined, pretty ? 2 : undefined);
         this.last_save_version = this.file_version; // clean
 

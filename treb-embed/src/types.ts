@@ -12,6 +12,12 @@ export enum SaveFileType {
 export interface TREBSimulationData {
   elapsed: number;
   trials: number;
+
+  /** 
+   * add a flag to indicate we are saving data as 32-bit.
+   * implicit default is 64-bit.
+   */
+  bitness?: number;
   results: any;
 }
 

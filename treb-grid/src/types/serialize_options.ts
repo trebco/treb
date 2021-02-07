@@ -27,4 +27,7 @@ export interface SerializeOptions {
   /** prune unused rows/columns */
   shrink?: boolean;
 
+  /** save simulation data as 32-bit, reduces size */
+  use_float32?: boolean;
+
 }
