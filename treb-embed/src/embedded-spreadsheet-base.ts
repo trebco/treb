@@ -948,6 +948,23 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  public DeleteSheet(name?: string): void {
+    if (name) {
+      name = name.toLowerCase();
+      for (let i = 0; i < this.grid.model.sheets.length; i++) {
+        const sheet = this.grid.model.sheets[i];
+        if (sheet.name.toLowerCase() === name) {
+          this.grid.DeleteSheet(i);
+          break;
+        }
+      }
+    }
+    else {
+      this.grid.DeleteSheet();
+    }
+    this.calculator.Reset();
+  }
+
   /**
    * add a sheet, optionally named. name will be rewritten if there's overlap
    * (FIXME: should throw instead? ...)
