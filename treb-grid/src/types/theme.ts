@@ -2,6 +2,31 @@
 import { Measurement, Color } from 'treb-utils';
 import { UA } from '../util/ua';
 
+/*
+ * so this is a little strange. we use CSS to populate a theme object,
+ * then we create HTML nodes and assign styles to them from the theme
+ * object. we should cut out the middleman and use CSS to style nodes.
+ * 
+ * how did we get here? because we paint, we originally used a theme object.
+ * it made sense to put non-painted theme info in there so it was all in one
+ * place.
+ * 
+ * then subsequently we figured out we could use css, apply it, and read out
+ * values to populate the theme. so the theme object became internal-only, 
+ * but still held all the HTML theme data.
+ * 
+ * I guess it didn't occur to me at the time that you could use CSS for 
+ * everything except painting, and then pull out only those values you
+ * actually need for painting.
+ * 
+ * It has since occurred to me, and this should be a focus of future
+ * development (thinking v9). not sure what the overall benefits will be,
+ * but it should reduce complexity at least a little.
+ * 
+ * As part of that I want to generally switch to percentage font sizes for
+ * spreadsheet cells.
+ */
+
 /** theme options - colors and fonts */
 export interface Theme {
 
