@@ -59,7 +59,7 @@ const build_dir = path.resolve(__dirname, dist_dir, package.version);
 const current_dir = path.resolve(__dirname, dist_dir, 'current');
 
 
-const PostBuildCleanup = () => {
+const UpdateFiles = () => {
 
   // NOTE: making this sync, as opposed to async, to
   // prevent overlapping IO operations
@@ -78,6 +78,7 @@ const PostBuildCleanup = () => {
 
   // add banners
 
+  console.info('adding banners');
   for (const filename of files) {
     if (/\.js$/.test(filename)) {
       const fully_qualified = path.join(build_dir, filename);
@@ -86,9 +87,20 @@ const PostBuildCleanup = () => {
         contents = contents.replace(/^\/\*.*?\*\//, banner);
         fs.writeFileSync(fully_qualified, contents, {encoding: 'utf-8'});
       }
-
+      else {
+        contents = banner + '\n' + contents;
+        fs.writeFileSync(fully_qualified, contents, {encoding: 'utf-8'});
+      }
     }
   }
+
+  console.info('copying files');
+  fs.mkdir(current_dir, () => {
+    exec('cp -r ' + build_dir + '/* ' + current_dir, (err, stdout, stderr) => {
+      if (stdout) process.stdout.write(stdout);
+      if (stderr) process.stderr.write(stderr);
+    });
+  });
 
 };
 
@@ -269,7 +281,7 @@ const legacy_compiler = build.legacy ? webpack(CreateConfig('legacy', legacy_ent
   '@conditional-config': path.resolve(__dirname, path.join('treb-base-types', 'src', 'config-legacy.ts')),
 }, ['web', 'es5'])) : undefined;
 
-const postbuild = async (config, err, stats) => {
+const postbuild_report = async (config, err, stats, toll) => {
 
   // console.info(config, err, stats);
 
@@ -282,41 +294,62 @@ const postbuild = async (config, err, stats) => {
     return;
   }
 
-    console.info('\n' + stats.toString({
-      all: false,
-      builtAt: true,
-      colors: true,
-      errors: true,
-    }));
-
-  if (!stats.hasErrors()) {
-
-    PostBuildCleanup();
-
-    fs.mkdir(current_dir, () => {
-      exec('cp -r ' + build_dir + '/* ' + current_dir, (err, stdout, stderr) => {
-        if (stdout) process.stdout.write(stdout);
-        if (stderr) process.stderr.write(stderr);
-      });
-    });
-
-  }
+  console.info('\n' + stats.toString({
+    all: false,
+    builtAt: true,
+    colors: true,
+    errors: true,
+  }));
 
 }
 
 if (watch) {
   if (build.legacy) {
-    legacy_compiler.watch({}, (err, stats) => postbuild('legacy', err, stats));
+    legacy_compiler.watch({}, (err, stats) => {
+      postbuild_report('legacy', err, stats)
+      if (!stats.hasErrors()) {
+        UpdateFiles();
+      }
+    });
   }
   if (build.modern) {
-    modern_compiler.watch({}, (err, stats) => postbuild('modern', err, stats));
+    modern_compiler.watch({}, (err, stats) => {
+      postbuild_report('modern', err, stats);
+      if (!stats.hasErrors()) {
+        UpdateFiles();
+      }
+    });
   }
 }
 else {
+
+  // only call the update method once, avoid file collisions
+  // (would that ever happen? we're single threaded)
+
+  const promises = [];
+
   if (build.modern) {
-    modern_compiler.run((err, stats) => postbuild('legacy', err, stats));
+    promises.push(new Promise((resolve) => {
+      modern_compiler.run((err, stats) => {
+        postbuild_report('legacy', err, stats);
+        resolve(stats);
+      });
+    }));
   }
+  
   if (build.legacy) {
-    legacy_compiler.run((err, stats) => postbuild('modern', err, stats));
+    promises.push(new Promise((resolve) => {
+      legacy_compiler.run((err, stats) => {
+        postbuild_report('modern', err, stats);
+        resolve(stats);
+      });
+    }));
   }
+
+  Promise.all(promises).then((values) => {
+    if (values.every(stats => !stats.hasErrors())) {
+      UpdateFiles();
+    }
+  });
+
 }
