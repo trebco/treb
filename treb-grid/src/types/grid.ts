@@ -1481,7 +1481,12 @@ export class Grid {
       }
     }
 
-    const theme_properties = LoadThemeProperties(this.grid_container);
+    let composite: Theme = {};
+
+    if (this.grid_container) {
+      const theme_properties = LoadThemeProperties(this.grid_container);
+      composite = {...theme_properties};
+    }
 
     // NOTE: this prevents it from rebuilding based on changes to the
     // stylesheet; putting this.theme second overrides any new values.
@@ -1496,8 +1501,9 @@ export class Grid {
       ...additional_properties,
     });
     */
-    const composite: Theme = {
-      ...theme_properties,
+    composite = {
+      ...composite,
+      // ...theme_properties,
       ...this.theme,
       ...additional_properties,
     };
@@ -1542,6 +1548,23 @@ export class Grid {
 
     this.grid_container = grid_container;
 
+    // so here we want the class list to read
+    //
+    // ... treb-main [treb-ua-windows] treb-theme ...
+    //
+    // our internal styles will be scoped to `.treb-main` and optionally
+    // `.treb-main.treb-ua-windows`; then you should be able to override
+    // using `.treb-main.treb-theme`. we have some extra classes we still 
+    // need to clean up, though.
+
+    grid_container.classList.add('treb-main');
+
+    if (UA.is_windows) {
+      grid_container.classList.add('treb-ua-windows');
+    }
+
+    grid_container.classList.add('treb-theme');
+
     this.ApplyTheme();
 
     const container = document.createElement('div');
@@ -1552,7 +1575,6 @@ export class Grid {
     grid_container.appendChild(higher_level_container);
 
     // grid_container.appendChild(container);
-    grid_container.classList.add('treb-main');
 
     let autocomplete: Autocomplete | undefined;
 

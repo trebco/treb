@@ -28,28 +28,20 @@ $text-reference-color-3: rgb(182, 109, 13);
 $text-reference-color-4: rgb(33, 118, 174);
 $text-reference-color-5: rgb(254, 47, 1);
 
-.treb-embed-container {
+
+.treb-main {
 
   /*
-  font-family: $font-stack;
 
-  NOTE: there's a containing style from embed, so we can probably
-  skip some of this (like the box-sizing reset) -- unless there's a 
-  possibility it will come out of embed.
+  NOTE: much of the theme/style is supplied by the embed lib, which 
+  sets things like font. we decided to leave it there because it's applied
+  to more than just the treb-main node (also to the dialog), so it's easier
+  to keep it consistent over there. 
+  
+  We have the children, grid-specific, in here. you can still use a single
+  theme to override.
 
-  that's why we took out the font stack, btw.
   */
-
-  font-family: inherit;
-  font-style: normal;
-  font-weight: 400;
-  color: #333;
-
-  box-sizing: border-box;
-
-  & * {
-    box-shadow: border-box;
-  } 
 
   /** 
    * highlight in the corner of a cell when there's a comment. this is painted.
@@ -57,15 +49,6 @@ $text-reference-color-5: rgb(254, 47, 1);
   .note-marker {
     background: #6FAB20;
   }
-
-  /** 
-   * I don't want to use rems, because they're not universal. rem refers
-   * to the root element, so it can be styled. but this should be the 
-   * defining size of all children; everything from here can be relative.
-   *
-   * also that should simplify browser overloading.
-   */
-  font-size: 12pt; /* <-- 12pt === 16px? */
 
   /** 
    * grid row/column headers. these are painted, so this CSS is read,
@@ -91,12 +74,10 @@ $text-reference-color-5: rgb(254, 47, 1);
    * section, but it seems superfluous.
    */
   .grid-cells {
-    font-size: 16px; 
-    font-weight: 400;
-    font-family: calibri, $font-stack;
+    font-size: 14px;
     color: #333;
     background: #fff;
-    border-color: #333;
+    border-color: #666;
     stroke: rgb(204, 204, 212);
   }
 
@@ -330,163 +311,11 @@ $text-reference-color-5: rgb(254, 47, 1);
 }
 
 /**
- * theme defaults, as css. experimenting.
+ * special override for windows, using calibri (which is too small).
+ * you should still be able to override with a regular theme style,
+ * or (potentially) also override for windows specifically. fancy!
  */
-
- /*
-.treb-theme {
-
-  / * primary selection * /
-
-  .primary-selection {
-    stroke: rgb(64, 192, 64);
-  }
-
-  / * additional selections, global and then individual colors * /
-
-  .additional-selections {
-    stroke-dasharray: 3 2;
-  }
-
-  .additional-selection-1 {
-    stroke: rgba(251, 177, 60, 1);
-  }
-
-  .additional-selection-2 {
-    stroke: rgba(87, 184, 255, 1);
-  }
-
-  .additional-selection-3 {
-    stroke: rgba(182, 109, 13, 1);
-  }
-
-  .additional-selection-4 {
-    stroke: rgba(33, 118, 174, 1);
-  }
-
-  .additional-selection-5 {
-    stroke: rgba(254, 104, 71, 1);
-  }
-
-  / * headers * /
-
-  .header {
-    fill: #eee;
-    stroke: #666;
-  }
-
-  / * highlight * /
-
-  .freeze-highlight {
-    fill: rgba(87, 184, 255, .25);
-    stroke: rgba(33, 118, 174, 1);
-  }
-
-  / * grid * /
-
-  .grid {
-    stroke: #ccc;
-  }
-
-  / * cells * /
-
-  .cell {
-    font-family: "calibri", $font-stack;
-    fill: #fff;
-    font-size: 14px;
-    border-color: #333;
-    stroke: #333;
-
-    .override-windows {
-      / * font-size: calc(16em/14); * /
-      font-size: 16px;
-      
-      stroke: inherit;
-      border-color: inherit;
-      fill: inherit;
-      font-family: inherit;
-    }
-
-  }
-
-  / * formula bar/address label * /
-
-  .formula-bar {
-    font-family: $font-stack;
-    font-weight: 400;
-    font-size: 16px;
-    fill: #fff;
-    stroke: #333;
-
-    &.locked {
-      fill: #def;
-    }
-
-  }
-
-  / * interface * /
-
-  .interface {
-    font-family: $font-stack;
-    font-size: 10pt;
-
-    &.dialog {
-      fill: #fff;
-      stroke: #333;
-      border-color: #666;
-      font-family: $font-stack;
-      font-size: 16px;
-    }
-
-    &.mask {
-      fill: rgba(255, 255, 255, .5);
-    }
-
-  }
-
-  .tab-bar {
-
-    font-family: $font-stack;
-    font-size: 14px;
-    stroke: #333;
-    fill: #eee;
-
-    &.active {
-      stroke: #333;
-      fill: #fff;
-    }
-
-  }
-
-  / * column/row resize tooltip * /
-
-  .tooltip {
-    stroke: #fff;
-    fill: rgba(0, 0, 0, .8);    
-    font-size: 11pt;
-    font-family: $font-stack;
-  }
-
-  / * ac * /
-
-  .autocomplete {
-
-    fill: #fff;
-    stroke: #333;
-
-    &.highlight {
-      fill: #339966;
-      stroke: #fff;
-    }
-
-  }
-
-  / * notes * /
-
-  .note-marker {
-    fill: #6FAB20;
-  }
-
+ .treb-ua-windows .grid-cells {
+  font-size: 12pt; 
+  font-family: "Calibri", $font-stack;
 }
-
-*/

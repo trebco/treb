@@ -94,7 +94,7 @@ const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
   return style;
 }
 
-export const LoadThemeProperties = (container?: HTMLElement): Theme => {
+export const LoadThemeProperties = (container: HTMLElement): Theme => {
   const theme: Theme = {};
 
   const Append = (parent: HTMLElement, classes: string): HTMLDivElement => {
@@ -104,15 +104,17 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
     return node;
   }
 
-  const ElementCSS = (parent: HTMLElement, classes: string): CSSStyleDeclaration => 
-    window.getComputedStyle(Append(parent, classes));
+  const ElementCSS = (parent: HTMLElement, classes: string): CSSStyleDeclaration => {
+    return window.getComputedStyle(Append(parent, classes));
+  }
 
-  const parent = container || document;
-  const existing_node = parent.querySelector('.treb-theme-container');
+  // const parent = container || document;
+  // const existing_node = parent.querySelector('.treb-theme-container');
 
-  const node = existing_node ? 
-    existing_node as HTMLElement :
-    Append(container || document.body, 'treb-theme-container treb-theme override');
+  const node = // existing_node ? 
+    // existing_node as HTMLElement :
+    // Append(container, 'treb-theme-container treb-theme override ' + ua);
+    Append(container, 'X');
 
   const CSS = ElementCSS.bind(0, node);
 
@@ -135,7 +137,7 @@ export const LoadThemeProperties = (container?: HTMLElement): Theme => {
   // this is a little odd, since we have the check above for "existing element";
   // should we switch on that? or is that never used, and we can drop it? (...)
 
-  (node.parentElement as Element)?.removeChild(node);
+  // (node.parentElement as Element)?.removeChild(node);
 
   return theme;
 };

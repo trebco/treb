@@ -1,7 +1,11 @@
 
 @import 'dialog.scss';
 
-.treb-embed-container, .treb-embed-mask {
+/** 
+ * switching to the treb-main class, so we can unify...
+ */
+
+.treb-main, .treb-embed-mask {
   
   font-family:
     -apple-system, 
@@ -25,7 +29,7 @@
 
 }
 
-.treb-embed-container {
+.treb-main {
   position: absolute;
   top: 0px;
   left: 0px;

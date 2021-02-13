@@ -363,8 +363,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     if (container) {
 
+      // we used to set a class on this node, but grid will set 
+      // "treb-main treb-theme" and some other stuff, we can use those
+      // as necessary
+
       this.node = document.createElement('div');
-      this.node.setAttribute('class', 'treb-embed-container');
       container.appendChild(this.node);
 
       // handle key. TODO: move undo to grid (makes more sense)
