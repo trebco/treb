@@ -1,6 +1,4 @@
 
-// import { Measurement, Color } from 'treb-utils';
-import { UA } from '../util/ua';
 import { Style } from 'treb-base-types';
 
 /*
@@ -108,17 +106,8 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
     return window.getComputedStyle(Append(parent, classes));
   }
 
-  // const parent = container || document;
-  // const existing_node = parent.querySelector('.treb-theme-container');
-
-  const node = // existing_node ? 
-    // existing_node as HTMLElement :
-    // Append(container, 'treb-theme-container treb-theme override ' + ua);
-    Append(container, 'X');
-
+  const node = Append(container, '');
   const CSS = ElementCSS.bind(0, node);
-
-  // FIXME: UA override...
 
   let css = CSS('grid-cells');
   theme.grid_cell = StyleFromCSS(css);
@@ -137,7 +126,7 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   // this is a little odd, since we have the check above for "existing element";
   // should we switch on that? or is that never used, and we can drop it? (...)
 
-  // (node.parentElement as Element)?.removeChild(node);
+  (node.parentElement as Element)?.removeChild(node);
 
   return theme;
 };
