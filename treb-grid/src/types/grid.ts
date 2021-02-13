@@ -21,7 +21,8 @@ import { TileRange, BaseLayout } from '../layout/base_layout';
 import { CreateLayout } from '@grid-conditional/layout_manager';
 
 import { GridSelection } from './grid_selection';
-import { Theme, ExtendedTheme, CalculateSupplementalColors, LoadThemeProperties } from './theme';
+//import { Theme, ExtendedTheme, CalculateSupplementalColors, LoadThemeProperties } from './theme';
+import { Theme, LoadThemeProperties } from './theme';
 import { CellEditor } from '../editors/cell_editor';
 // import { FormulaEditorBase } from '../editors/formula_editor_base';
 
@@ -90,7 +91,7 @@ export class Grid {
    * various components, but it's no longer initialized until the
    * initialization step (when we have a node).
    */
-  public readonly theme: ExtendedTheme;
+  public readonly theme: Theme; // ExtendedTheme;
 
   /**
    * local sheet instance. we always have a sheet, change the data
@@ -1472,7 +1473,7 @@ export class Grid {
   /**
    * @param initial first call, from the grid Initialize() method
    */
-  public UpdateTheme(initial = false, additional_properties?: Partial<ExtendedTheme>): void {
+  public UpdateTheme(initial = false, additional_properties?: Partial<Theme /*ExtendedTheme*/ >): void {
 
     if (!initial) {
       for (const key of Object.keys(this.theme)) {
@@ -1488,11 +1489,18 @@ export class Grid {
     // depending on whether we want to keep using object theme, we might
     // remove that. for the time being we'll use a flag...
 
+    /*
     const composite = CalculateSupplementalColors({
       ...theme_properties,
       ...this.theme,
       ...additional_properties,
     });
+    */
+    const composite: Theme = {
+      ...theme_properties,
+      ...this.theme,
+      ...additional_properties,
+    };
 
     for (const key of Object.keys(composite)) {
       (this.theme as any)[key] = (composite as any)[key];
@@ -1509,12 +1517,12 @@ export class Grid {
     if (!initial) {
 
       this.UpdateLayout(); // in case we have changed font size
-      this.selection_renderer.Flush();
+      // this.selection_renderer.Flush();
 
       if (this.cell_editor) {
         this.cell_editor.UpdateTheme(this.layout.scale);
       }
-      if (this.formula_bar) this.formula_bar.UpdateTheme();
+      // if (this.formula_bar) this.formula_bar.UpdateTheme();
 
       this.Repaint(true, true, true);
     }
@@ -1934,6 +1942,8 @@ export class Grid {
       style: properties,
       delta,
     });
+
+    this.UpdateFormulaBarFormula();
 
   }
 
@@ -2457,15 +2467,15 @@ export class Grid {
 
   private StyleDefaultFromTheme() {
 
-    this.theme_style_properties.font_face = this.theme.cell_font;
-    this.theme_style_properties.font_size_unit = this.theme.cell_font_size_unit;
-    this.theme_style_properties.font_size_value = this.theme.cell_font_size_value;
-    this.theme_style_properties.text_color = this.theme.cell_color || 'none';
+    this.theme_style_properties.font_face = this.theme.grid_cell?.font_face || '';
+    this.theme_style_properties.font_size_unit = this.theme.grid_cell?.font_size_unit || 'pt';
+    this.theme_style_properties.font_size_value = this.theme.grid_cell?.font_size_value || 10;
+    this.theme_style_properties.text_color = this.theme.grid_cell?.text_color || 'none';
 
-    this.theme_style_properties.border_top_color =
-      this.theme_style_properties.border_left_color =
-      this.theme_style_properties.border_right_color =
-      this.theme_style_properties.border_bottom_color = this.theme.border_color || 'none';
+    this.theme_style_properties.border_top_color = this.theme.grid_cell?.border_top_color || 'none';
+    this.theme_style_properties.border_left_color = this.theme.grid_cell?.border_left_color || 'none';
+    this.theme_style_properties.border_right_color = this.theme.grid_cell?.border_right_color || 'none';
+    this.theme_style_properties.border_bottom_color = this.theme.grid_cell?.border_bottom_color || 'none';
 
   }
 
@@ -2504,13 +2514,16 @@ export class Grid {
    */
   private HighlightFreezeArea() {
 
-    if (this.theme.frozen_highlight_overlay) {
+    // if (this.theme.frozen_highlight_overlay) {
 
       for (const node of [
         this.layout.corner_selection,
         this.layout.row_header_selection,
         this.layout.column_header_selection]) {
 
+        node.classList.add('highlight-area');
+
+        /*
         node.style.transition = 'background .33s, border-bottom-color .33s, border-right-color .33s';
         node.style.background = this.theme.frozen_highlight_overlay;
 
@@ -2518,15 +2531,17 @@ export class Grid {
           node.style.borderBottomColor = this.theme.frozen_highlight_border;
           node.style.borderRightColor = this.theme.frozen_highlight_border;
         }
+        */
 
         setTimeout(() => {
-          node.style.background = 'transparent';
-          node.style.borderBottomColor = 'transparent';
-          node.style.borderRightColor = 'transparent';
+          node.classList.remove('highlight-area');
+          // node.style.background = 'transparent';
+          // node.style.borderBottomColor = 'transparent';
+          // node.style.borderRightColor = 'transparent';
         }, 400);
       }
 
-    }
+    // }
 
   }
 
@@ -5180,7 +5195,7 @@ export class Grid {
 
     // locked: can't edit!
 
-    if (cell.locked) {
+    if (cell.style?.locked) { // if (cell.locked) {
       console.info('cell is locked for editing');
       return;
     }
@@ -5878,7 +5893,7 @@ export class Grid {
       }
 
       // const locked = data.style && data.style.locked;
-      this.formula_bar.editable = !data.locked;
+      this.formula_bar.editable = !data.style?.locked;
       const value = this.NormalizeCellValue(data);
 
       // this isn't necessarily the best place for this, except that
@@ -5886,7 +5901,7 @@ export class Grid {
       // sync up, so it would be a separate function but called at the
       // same time.
 
-      if (data.validation && !data.locked) {
+      if (data.validation && !data.style?.locked) {
         
         let list: CellValue[] | undefined;
         

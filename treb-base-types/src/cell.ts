@@ -253,8 +253,14 @@ export class Cell {
 
   public click_function?: (options: ClickFunctionOptions) => ClickFunctionResult;
 
+  /** 
+   * moving locked property to style. not because it's properly a style,
+   * or not properly a property of cell, but rather because that will allow
+   * us to cascade the property over areas.
+   */
+
   /** not editable */
-  public locked?: boolean;
+  // public locked?: boolean;
 
   public validation?: DataValidation;
 

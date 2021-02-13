@@ -2,7 +2,7 @@
 import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectangle } from 'treb-base-types';
 
 import { Tile } from '../types/tile';
-import { ExtendedTheme } from '../types/theme';
+import { Theme } from '../types/theme';
 
 import { FontMetricsCache } from '../util/font_metrics_cache';
 import { BaseLayout, TileRange } from '../layout/base_layout';
@@ -60,7 +60,7 @@ export class TileRenderer {
   protected buffer_canvas_size: Size = { width: 256, height: 256 };
 
   constructor(
-    protected theme: ExtendedTheme,
+    protected theme: Theme,
     protected layout: BaseLayout,
     protected model: DataModel,
     protected options: GridOptions, ) {
@@ -165,12 +165,15 @@ export class TileRenderer {
     const context = (corner as HTMLCanvasElement).getContext('2d', { alpha: false });
     if (!context) throw new Error('invalid context');
 
+    /*
     const font_metrics = FontMetricsCache.get({
       font_face: this.theme.interface_font_face,
       // font_size: this.theme.interface_font_size,
       font_size_unit: this.theme.interface_font_size_unit,
       font_size_value: this.theme.interface_font_size_value,
     }, this.layout.scale);
+    */
+   const font_metrics = FontMetricsCache.get(this.theme.headers || {}, this.layout.scale);
 
     const scale = this.layout.dpr;
     const header_size = this.layout.header_offset;
@@ -186,7 +189,8 @@ export class TileRenderer {
     }
 
     context.setTransform(scale, 0, 0, scale, 0, 0);
-    context.fillStyle = this.theme.header_background_color || '';
+    // context.fillStyle = this.theme.header_background_color || '';
+    context.fillStyle = this.theme.headers?.background || '';
     // context.fillRect(0, 0, x, y);
     context.fillRect(0, 0, x, header_size.y);
     context.fillRect(0, 0, header_size.x, y);
@@ -209,10 +213,11 @@ export class TileRenderer {
     context.textAlign = 'center';
     context.textBaseline = 'middle';
 
-    const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
-    context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
-    
-    context.fillStyle = this.theme.header_text_color || '';
+    // const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
+    // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
+    context.font = Style.Font(this.theme.headers||{});
+
+    context.fillStyle = this.theme.headers?.text_color || '';
 
     if (this.model.active_sheet.freeze.rows && this.layout.header_offset.x > 1) {
 
@@ -225,7 +230,7 @@ export class TileRenderer {
       let row_index = 0;
       for (; row_index < this.model.active_sheet.freeze.rows; row_index++) {
         const height = this.layout.RowHeight(row_index);
-        context.fillStyle = this.theme.header_text_color || '';
+        context.fillStyle = this.theme.headers?.text_color || '';
         if (height >= font_metrics.block) {
           context.fillText(`${row_index + 1}`,
             header_size.x / 2, height / 2);
@@ -278,7 +283,7 @@ export class TileRenderer {
         const text = Area.ColumnToLabel(column_index);
         const metrics = context.measureText(text);
         if (width > metrics.width) {
-          context.fillStyle = this.theme.header_text_color || '';
+          context.fillStyle = this.theme.headers?.text_color || '';
           context.fillText(text, width / 2, header_size.y / 2);
         }
         /*
@@ -326,12 +331,15 @@ export class TileRenderer {
 
     const header_size = this.layout.header_offset;
 
+    /*
     const font_metrics = FontMetricsCache.get({
       font_face: this.theme.interface_font_face,
       // font_size: this.theme.interface_font_size,
       font_size_unit: this.theme.interface_font_size_unit,
       font_size_value: this.theme.interface_font_size_value,
     }, this.layout.scale);
+    */
+    const font_metrics = FontMetricsCache.get(this.theme.headers || {}, this.layout.scale);
 
     for (let column = tiles.start.column; column <= tiles.end.column; column++) {
 
@@ -343,16 +351,17 @@ export class TileRenderer {
 
       if (tile.dirty || force) {
 
-        context.fillStyle = this.theme.header_background_color || '';
+        context.fillStyle = this.theme.headers?.background || '';
         context.fillRect(0, 0, tile.logical_size.width, this.layout.header_offset.y);
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
 
-        const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
-        context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
-        
-        context.fillStyle = this.theme.header_text_color || '';
+        // const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
+        // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
+        context.font = Style.Font(this.theme.headers||{});
+
+        context.fillStyle = this.theme.headers?.text_color || '';
         context.strokeStyle = this.theme.grid_color || '';
 
         context.beginPath();
@@ -365,7 +374,7 @@ export class TileRenderer {
           const text = Area.ColumnToLabel(column_index);
           const metrics = context.measureText(text);
           if (width > metrics.width) {
-            context.fillStyle = this.theme.header_text_color || '';
+            context.fillStyle = this.theme.headers?.text_color || '';
             context.fillText(text, width / 2, header_size.y / 2);
           }
           /*
@@ -399,7 +408,7 @@ export class TileRenderer {
 
         const context = tile.getContext('2d', { alpha: false });
         if (!context) continue;
-        context.fillStyle = this.theme.header_background_color || '';
+        context.fillStyle = this.theme.headers?.background || '';
         context.setTransform(scale, 0, 0, scale, 0, 0);
         // context.fillRect(0, 0, tile.logical_size.width, tile.logical_size.height);
         context.fillRect(0, 0, this.layout.header_offset.x, tile.logical_size.height);
@@ -407,10 +416,11 @@ export class TileRenderer {
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         
-        const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
-        context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
-        
-        context.fillStyle = this.theme.header_text_color || '';
+        // const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
+        // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
+        context.font = Style.Font(this.theme.headers||{});
+
+        context.fillStyle = this.theme.headers?.text_color || '';
         context.strokeStyle = this.theme.grid_color || '';
 
         context.beginPath();
@@ -420,7 +430,7 @@ export class TileRenderer {
         let row_index = tile.first_cell.row;
         for (; row_index <= tile.last_cell.row; row_index++) {
           const height = this.layout.RowHeight(row_index);
-          context.fillStyle = this.theme.header_text_color || '';
+          context.fillStyle = this.theme.headers?.text_color || '';
           if (height >= font_metrics.block) {
             context.fillText(`${row_index + 1}`,
               header_size.x / 2, height / 2);
@@ -832,7 +842,7 @@ export class TileRenderer {
 
     if (composite.border_bottom && composite.border_bottom_color) {
       if (composite.border_bottom_color === 'none') { 
-        composite.border_bottom_color = this.theme.border_color || ''; 
+        composite.border_bottom_color = this.theme.grid_cell?.border_bottom_color || ''; 
       }
       context.strokeStyle = composite.border_bottom_color;
       context.beginPath();
@@ -851,7 +861,7 @@ export class TileRenderer {
 
     if (composite.border_top && composite.border_top_color) {
       if (composite.border_top_color === 'none') { 
-        composite.border_top_color = this.theme.border_color || ''; 
+        composite.border_top_color = this.theme.grid_cell?.border_top_color || ''; 
       }
       context.strokeStyle = composite.border_top_color;
       context.beginPath();
@@ -869,7 +879,7 @@ export class TileRenderer {
 
     if (composite.border_left && composite.border_left_color) {
       if (composite.border_left_color === 'none') { 
-        composite.border_left_color = this.theme.border_color || ''; 
+        composite.border_left_color = this.theme.grid_cell?.border_left_color || ''; 
       }
   
       context.strokeStyle = composite.border_left_color;
@@ -881,7 +891,7 @@ export class TileRenderer {
 
     if (composite.border_right && composite.border_right_color) {
       if (composite.border_right_color === 'none') { 
-        composite.border_right_color = this.theme.border_color || ''; 
+        composite.border_right_color = this.theme.grid_cell?.border_bottom_color || ''; 
       }
 
       context.strokeStyle = composite.border_right_color;
@@ -926,7 +936,7 @@ export class TileRenderer {
     else {
       context.fillStyle = this.theme.grid_color || '';
       context.fillRect(0, 0, width, height);
-      context.fillStyle = this.theme.cell_background_color || '';
+      context.fillStyle = this.theme.grid_cell?.background || '';
       context.fillRect(0, 0, width - 1, height - 1);
     }
 
@@ -1082,9 +1092,9 @@ export class TileRenderer {
         width, 
         height);
 
-      const style_text_color = style.text_color === 'none' ? (this.theme.cell_color ||  '') : style.text_color;
+      const style_text_color = style.text_color === 'none' ? (this.theme.grid_cell?.text_color ||  '') : style.text_color;
       context.strokeStyle = context.fillStyle =
-        style_text_color || this.theme.cell_color || '';
+        style_text_color || this.theme.grid_cell?.text_color || '';
         
       cell.render_function.call(null, {
         width, height, context, cell, style, scale: this.layout.scale || 1,
@@ -1318,7 +1328,7 @@ export class TileRenderer {
           element.cell.style.background &&
           element.cell.style.background !== 'none' &&
           !this.options.grid_over_background) {
-        context.fillStyle = (element.cell.style || {}).background || this.theme.cell_background_color || '';
+        context.fillStyle = (element.cell.style || {}).background || this.theme.grid_cell?.background || '';
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
       }
       else {
@@ -1329,7 +1339,7 @@ export class TileRenderer {
           context.fillStyle = element.cell.style.background;
         }
         else {
-          context.fillStyle = this.theme.cell_background_color || '';
+          context.fillStyle = this.theme.grid_cell?.background || '';
         }
 
         context.fillRect(element.background.left, element.background.top,
@@ -1351,11 +1361,11 @@ export class TileRenderer {
     // to text color, background color and border color.
 
     context.lineWidth = 1;
-    const style_text_color = style.text_color === 'none' ? (this.theme.cell_color ||  '') : style.text_color;
+    const style_text_color = style.text_color === 'none' ? (this.theme.grid_cell?.text_color ||  '') : style.text_color;
 
     context.strokeStyle = context.fillStyle =
       text_data.format ? text_data.format :
-        style_text_color || this.theme.cell_color || '';
+        style_text_color || this.theme.grid_cell?.text_color || '';
 
     context.beginPath();
 

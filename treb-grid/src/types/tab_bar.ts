@@ -5,7 +5,7 @@ import { Sheet } from './sheet';
 import { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import { GridOptions } from './grid_options';
-import { ExtendedTheme } from '../types/theme';
+import { Theme } from '../types/theme';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';
@@ -83,7 +83,7 @@ export class TabBar extends EventSource<TabEvent> {
       private layout: BaseLayout,
       private model: DataModel,
       private options: GridOptions,
-      private theme: ExtendedTheme,
+      private theme: Theme,
       private grid_container: HTMLElement,
     ) {
 
@@ -136,6 +136,7 @@ export class TabBar extends EventSource<TabEvent> {
 
   }
 
+  /* nothing is painted 
   public UpdateTheme(): void {
 
     if (!this.node) { return; }
@@ -150,17 +151,18 @@ export class TabBar extends EventSource<TabEvent> {
     this.node.style.fontSize = font_size || '';
 
   }
+  */
 
   public SetActive(tab: HTMLElement, active: boolean): void {
     if (active) {
       tab.classList.add('selected');
-      tab.style.color = this.theme.tab_bar_active_color || '';
-      tab.style.background = this.theme.tab_bar_active_background || '';
+      // tab.style.color = this.theme.tab_bar_active_color || '';
+      // tab.style.background = this.theme.tab_bar_active_background || '';
     }
     else {
       tab.classList.remove('selected');
-      tab.style.color = this.theme.tab_bar_color || '';
-      tab.style.background = this.theme.tab_bar_background || '';
+      // tab.style.color = this.theme.tab_bar_color || '';
+      // tab.style.background = this.theme.tab_bar_background || '';
     }
   }
 
@@ -420,8 +422,8 @@ export class TabBar extends EventSource<TabEvent> {
         this.Publish({ type: 'add-sheet' });
       });
 
-      add_tab.style.color = this.theme.tab_bar_color || '';
-      add_tab.style.background = this.theme.tab_bar_background || '';
+      // add_tab.style.color = this.theme.tab_bar_color || '';
+      // add_tab.style.background = this.theme.tab_bar_background || '';
 
       target.appendChild(add_tab);
 
@@ -467,7 +469,7 @@ export class TabBar extends EventSource<TabEvent> {
     this.node.classList.add('treb-tab-bar');
     this.container.appendChild(this.node);
 
-    this.UpdateTheme();
+    // this.UpdateTheme();
 
   }
 

@@ -1,13 +1,14 @@
 
-import { Rectangle } from 'treb-base-types';
+import { Style, Rectangle } from 'treb-base-types';
 import { Yield } from 'treb-utils';
 
 import { DOMUtilities } from '../util/dom_utilities';
-import { ExtendedTheme } from '../types/theme';
+import { Theme } from '../types/theme';
 import { GridSelection } from '../types/grid_selection';
 import { FormulaEditorBase } from './formula_editor_base';
 import { Autocomplete } from './autocomplete';
 import { DataModel } from '../types/data_model';
+
 
 export class CellEditor extends FormulaEditorBase {
 
@@ -23,7 +24,7 @@ export class CellEditor extends FormulaEditorBase {
   /** accessor for editor visible */
   public get visible(){ return this.visible_; }
 
-  constructor(private container: HTMLElement, theme: ExtendedTheme, model: DataModel, autocomplete: Autocomplete){
+  constructor(private container: HTMLElement, theme: Theme, model: DataModel, autocomplete: Autocomplete){
 
     super(theme, model, autocomplete);
 
@@ -74,24 +75,30 @@ export class CellEditor extends FormulaEditorBase {
   public UpdateTheme(scale: number): void {
 
     if (this.editor_node) {
-      this.editor_node.style.color = this.theme.cell_color || '';
-      this.editor_node.style.fontFamily = this.theme.cell_font || '';
+      // this.editor_node.style.color = this.theme.cell_color || '';
 
+      /*
+      this.editor_node.style.fontFamily = this.theme.cell_font || '';
       let font_size = this.theme.cell_font_size_value || 10;
       if (scale) {
         font_size = font_size * scale;
       }
-
       this.editor_node.style.fontSize = // `${this.theme.cell_font_size}`;
         `${font_size}${this.theme.cell_font_size_unit}`;
+      */
+
+     // this.editor_node.style.backgroundColor = this.theme.cell_background_color || '';
+
+      this.editor_node.style.color = this.theme.grid_cell?.text_color || '';
+      this.editor_node.style.font = Style.Font(this.theme.grid_cell||{});
+      this.editor_node.style.backgroundColor = this.theme.grid_cell?.background || '';
 
       this.editor_node.style.borderColor = this.theme.grid_color || '';
-      this.editor_node.style.backgroundColor = this.theme.cell_background_color || '';
     }
 
-    if (this.autocomplete) {
-      this.autocomplete.UpdateTheme();
-    }
+    //if (this.autocomplete) {
+    //  this.autocomplete.UpdateTheme();
+    //}
 
   }
 

@@ -1,7 +1,7 @@
 
 import { Rectangle, ICellAddress } from 'treb-base-types';
 import { BaseLayout } from '../layout/base_layout';
-import { ExtendedTheme } from '../types/theme';
+import { Theme } from '../types/theme';
 import { SVGSelectionBlock, SelectionOffset } from './svg_selection_block';
 import { GridSelection } from '../types/grid_selection';
 import { HeaderOverlay, Orientation } from './svg_header_overlay';
@@ -24,7 +24,7 @@ export class SelectionRenderer {
   private corner_column_overlay!: HeaderOverlay;
 
   constructor(
-      private theme: ExtendedTheme,
+      private theme: Theme,
       private layout: BaseLayout,
       private model: DataModel,
       private primary_selection: GridSelection,
@@ -33,7 +33,7 @@ export class SelectionRenderer {
 
   }
 
-  public Initialize() {
+  public Initialize(): void {
 
     // create header overlays
 
@@ -50,7 +50,7 @@ export class SelectionRenderer {
   /**
    * we cache blocks that have inline style information. if style
    * information updates we will have to flush the cache and rebuild.
-   */
+   * /
   public Flush() {
 
     // clean up, then call initialize to reconstruct
@@ -91,6 +91,7 @@ export class SelectionRenderer {
     this.corner_selections = [];
 
   }
+  */
 
   /**
    * renders all (primary and additional) selections. selections are painted
@@ -260,7 +261,28 @@ export class SelectionRenderer {
     if (!selection_block) {
       selection_block = new SVGSelectionBlock(!index, this.theme);
       node_set[index] = selection_block;
-      node.appendChild(selection_block.g);
+
+      if (index) { 
+        
+        // alternate, should indicate a different way
+
+        // we're adding a node to contain alternate selections just so that
+        // we can use 1n, 2n, 3n indexing in CSS... although nth-of-type looks
+        // like it might help, it won't. it doesn't mean nth-instance.
+
+        let group: SVGElement = node.querySelector('.alternate-selections') as SVGElement;
+        if (!group) {
+          group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          group.setAttribute('class', 'alternate-selections');
+          node.appendChild(group);
+        }
+        group?.appendChild(selection_block.g);
+      }
+      else {
+        // primary
+        node.appendChild(selection_block.g);
+      }
+
     }
 
     if (offset) selection_block.Offset(offset);
@@ -301,7 +323,7 @@ export class SelectionRenderer {
         11, 11);
     }
     else {
-      block.SetThemeColor(index - 1);
+      // block.SetThemeColor(index - 1);
     }
 
     // FIXME: with giant selection svg, we should clip the selection rect
@@ -327,7 +349,7 @@ export class SelectionRenderer {
 
     // FIXME: this could be wrapped up in one call
 
-    block.SetOutline(rect);
+    block.SetOutline(rect, !!index);
 
     if (!index) {
 

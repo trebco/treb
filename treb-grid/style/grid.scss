@@ -229,7 +229,9 @@
     /** separate selection node for frozen rows/columns (needs different stacking) */
     .frozen-selection {
       
-      background: transparent;
+      /* background: transparent; */
+      transition: background .33s;
+
       position: absolute;
       z-index: $z-index-frozen-selection;
       overflow: hidden; /* needed for IE11 (put in legacy?) */

@@ -35,7 +35,7 @@ import '../style/embed.scss';
 import * as build from '../../package.json';
 import { SerializedModel } from 'treb-grid/src/types/data_model';
 import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
-import { ExtendedTheme } from 'treb-grid/src/types/theme';
+import { Theme } from 'treb-grid/src/types/theme';
 
 interface UndoEntry {
   data: string;
@@ -562,14 +562,17 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // create mask dialog
 
     if (container) {
-      this.dialog = new ProgressDialog(container, {
+      this.dialog = new ProgressDialog(container); /* , {
+        / *
         mask: this.grid.theme.interface_dialog_mask,
         border: this.grid.theme.interface_dialog_border,
         background: this.grid.theme.interface_dialog_background,
         text: this.grid.theme.interface_dialog_color,
         fontFamily: this.grid.theme.interface_dialog_font_face,
         fontSize: this.grid.theme.interface_dialog_font_size,
+        * /
       });
+      */
       // requestAnimationFrame(() => this.About());
     }
 
@@ -735,8 +738,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    * FIXME: toolbar? (...)
    */
-  public UpdateTheme(override?: Partial<ExtendedTheme>): void {
+  public UpdateTheme(override?: Partial<Theme>): void {
     this.grid.UpdateTheme(undefined, override);
+    /*
     this.dialog?.UpdateTheme({
       mask: this.grid.theme.interface_dialog_mask,
       border: this.grid.theme.interface_dialog_border,
@@ -745,6 +749,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       fontSize: `${this.grid.theme.interface_font_size_value}${this.grid.theme.interface_font_size_unit}`,
       fontFamily: `${this.grid.theme.interface_font_face}`,
     });
+    */
   }
 
   /**
@@ -2688,6 +2693,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             break
           case 'unmerge':
             this.grid.UnmergeSelection();
+            break;
+
+          case 'lock':
+            updated_style = { 
+              locked: 
+                this.active_selection_style ?
+                  !this.active_selection_style.locked : true,
+              };
             break;
 
           case 'wrap':

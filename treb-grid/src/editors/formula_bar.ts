@@ -2,7 +2,7 @@
 import { Yield } from 'treb-utils';
 
 import { DOMUtilities } from '../util/dom_utilities';
-import { ExtendedTheme } from '../types/theme';
+import { Theme } from '../types/theme';
 import { FormulaEditorBase, FormulaEditorEvent } from './formula_editor_base';
 import { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
@@ -119,21 +119,26 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.editor_node.setAttribute('contenteditable', editable.toString());
 
     if (!editable) {
-      this.container_node.style.backgroundColor =
-        this.theme.formula_bar_locked_background_color ||
-        this.theme.formula_bar_background_color ||
-        '';
+      this.container_node.classList.add('locked');
+
+      // this.container_node.style.backgroundColor =
+      //  this.theme.formula_bar_locked_background_color ||
+      //  this.theme.formula_bar_background_color ||
+      //  '';
     }
     else {
-      this.container_node.style.backgroundColor =
-        this.theme.formula_bar_background_color || '';
+      // this.container_node.style.backgroundColor =
+      //  this.theme.formula_bar_background_color || '';
+
+      this.container_node.classList.remove('locked');
+
     }
 
   }
 
   constructor(
     private container: HTMLElement,
-    theme: ExtendedTheme,
+    theme: Theme,
     model: DataModel,
     private options: GridOptions,
     autocomplete: Autocomplete,
@@ -256,7 +261,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     // this.drag_corner = Dom2.CreateDiv(this.container_node, 'drag-corner');
     // this.drag_corner.addEventListener('mousedown', (event) => this.StartDrag(event));
 
-    this.UpdateTheme();
+    // this.UpdateTheme();
   }
 
   public IsElement(element: HTMLElement): boolean {
@@ -329,6 +334,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     }
   }
 
+  /*
   public UpdateTheme(): void {
 
     let font_size = this.theme.formula_bar_font_size || null;
@@ -359,6 +365,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     }
 
   }
+  */
 
   private GetTextContent(node: Node) {
 

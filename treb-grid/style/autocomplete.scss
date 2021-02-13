@@ -3,14 +3,17 @@
  * this is getting attached to the document (why? b/c fixed pos?)
  * so it inherits a lot. that's not good.
  */
-.treb-ac-list {
+
+   /* this is no longer attached to document, we can trim some of these */
+  /* also a lot of this should move to theme */
+
+
+.treb-main .treb-autocomplete {
+
 
   box-sizing: border-box;
   * { box-sizing: border-box; }
 
-  background: #fff;
-  border-radius: 2px;
-  border: 1px solid #ccc;
   position: fixed;
   top: -1000px;
   font-size: inherit;
@@ -20,41 +23,32 @@
 
   max-height: 10em;
   overflow-y: auto;
-  box-shadow: $default-box-shadow;
-  
   z-index: $z-index-autocomplete;
 
   ul {
+
     font-size: inherit;
-    font-weight: 400;
+    font-weight: inherit;
 
     list-style-type: none;
     padding: 0;
     margin: 0;
     li {
       font-size: inherit;
-      font-weight: 400;
-
+      font-weight: inherit;
+  
       padding: 0;
       margin: 0;
-      color: #000;
 
       a {
-        font-weight: 400;
+        font-size: inherit;
+        font-weight: inherit;
         display: inline-block;
         width: 100%;
         padding: 3px 6px;
         text-decoration: none;
         cursor: default;
         color: inherit;
-
-        /* &:hover, */
-
-        &.selected {
-          background: #339966;
-          color: #fff;
-        }
-
       }
     }
 
@@ -78,25 +72,9 @@
   }
 }
 
-.treb-ac-tooltip {
+.treb-main .treb-autocomplete-tooltip {
   z-index: $z-index-autocomplete;
   top: -1000px;
-  background: #fffbb5;
-  border-radius: 2px;
   position: fixed;
-  padding: 3px 8px;
-  margin: 4px 0px;
-  font-size: inherit;
-  line-height: normal;
   white-space: pre;
-  color: inherit;
-
-  & .active-argument {
-    font-weight: 800;
-  }
-
-  & .function-description {
-    font-style: italic;
-  }
-
 }

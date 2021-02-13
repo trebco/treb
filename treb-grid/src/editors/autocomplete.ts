@@ -1,7 +1,7 @@
 
 import { DOMUtilities } from '../util/dom_utilities';
 import { Rectangle } from 'treb-base-types';
-import { ExtendedTheme } from '../types/theme';
+import { Theme } from '../types/theme';
 import { AutocompleteExecResult, DescriptorType } from './autocomplete_matcher';
 import { css } from 'treb-utils';
 
@@ -27,7 +27,7 @@ export type AcceptCallback = (result: AutocompleteResult) => void;
 export interface AutocompleteOptions {
   autocomplete_prefer_top?: boolean;
   tooltip_prefer_top?: boolean;
-  theme?: ExtendedTheme;
+  theme?: Theme;
   container?: HTMLElement;
 }
 
@@ -46,19 +46,24 @@ export class Autocomplete {
   private autocomplete_data: AutocompleteExecResult = {};
 
   private callback?: AcceptCallback;
-  private scope: string;
+
+  // ALTHOUGH we are dropping scope from _this_ node, it might be 
+  // useful to add it to the containing node... something to think 
+  // about
+
+  // private scope: string;
 
   private active_element?: HTMLElement;
 
   constructor(private options: AutocompleteOptions = {}){
 
-    this.scope = 'AC' + Math.round(Math.random() * Math.pow(10, 10)).toString(16);
+    // this.scope = 'AC' + Math.round(Math.random() * Math.pow(10, 10)).toString(16);
 
     this.stylesheet = DOMUtilities.Create('style', undefined, document.body);
     this.completion_list = DOMUtilities.CreateDiv(
-      'treb-cell-editor-ac-list treb-ac-list',
+      'treb-cell-editor-ac-list treb-autocomplete',
       options.container || document.body,
-      this.scope);
+      ); // this.scope);
 
     this.completion_list.addEventListener('mousedown', (event) => this.ListMouseDown(event));
 
@@ -66,14 +71,15 @@ export class Autocomplete {
 
     this.completion_list.addEventListener('mousemove', (event) => this.ListMouseMove(event));
 
-    this.tooltip = DOMUtilities.CreateDiv('treb-cell-editor-ac-tooltip treb-ac-tooltip',
+    this.tooltip = DOMUtilities.CreateDiv('treb-cell-editor-ac-tooltip treb-autocomplete-tooltip',
       options.container || document.body,
-      this.scope);
+      ); // this.scope);
 
-    this.UpdateTheme();
+    // this.UpdateTheme();
 
   }
 
+  /*
   public UpdateTheme(): void {
     if (this.options.theme) {
 
@@ -88,7 +94,7 @@ export class Autocomplete {
       const font_size = (this.options.theme.cell_font_size_value || 0) +
         (this.options.theme.cell_font_size_unit || 'pt');
 
-      /*
+      / *
       let font_size: string|null = null;
       if (typeof this.options.theme.cell_font_size === 'string') {
         font_size = this.options.theme.cell_font_size;
@@ -96,13 +102,13 @@ export class Autocomplete {
       else if (typeof this.options.theme.cell_font_size === 'number') {
         font_size = this.options.theme.cell_font_size + 'pt';
       }
-      */
+      * /
 
       this.completion_list.style.fontSize =
         this.tooltip.style.fontSize =
         font_size || '';
 
-      /*
+      / *
       this.stylesheet.textContent = `
 
       .treb-ac-list[${this.scope}] {
@@ -120,7 +126,7 @@ export class Autocomplete {
       }
 
       `.replace(/\s+/g, ' ').trim();
-      */
+      * /
 
      this.stylesheet.textContent = css`
 
@@ -141,6 +147,7 @@ export class Autocomplete {
      
     }
   }
+  */
 
   public Hide(): void {
     this.tooltip.style.top = '-1000px';

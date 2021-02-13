@@ -45,10 +45,12 @@ export namespace Style {
     font_size_value?: number;
 
     font_face?: string;
-    font_bold?: boolean;
+    font_bold?: boolean; // FIXME: switch to weight
     font_italic?: boolean;
     font_underline?: boolean;
     font_strike?: boolean;
+
+    font_weight?: number;
 
     border_top?: number;
     border_right?: number;
@@ -72,7 +74,10 @@ export namespace Style {
 
     // this is not properly in style -- should be in cell
 
-    // locked?: boolean;
+    // UPDATE: whether it's appropriate or not, style is a better place
+    // because it can cascade
+
+    locked?: boolean;
 
   }
 
@@ -170,15 +175,41 @@ export namespace Style {
     }
     */
 
-    const font_size = ((properties.font_size_value || 0) * scale) +
-      (properties.font_size_unit || 'pt');
+    const parts: string[] = [];
 
+    if (properties.font_weight) {
+      parts.push(properties.font_weight.toString());
+    }
+    else if (properties.font_bold) {
+      parts.push('bold');
+    }
+
+    if (properties.font_italic) {
+      parts.push('italic');
+    }
+
+    parts.push(((properties.font_size_value || 0) * scale).toFixed(2) + 
+      (properties.font_size_unit || 'pt'));
+
+    parts.push(properties.font_face || '');
+
+    return parts.join(' ');
+
+    /*
     // console.info("FS", font_size);
 
-    return (properties.font_bold ? 'bold ' : '')
-      + (properties.font_italic ? 'italic ' : '')
-      + font_size + ' ' + properties.font_face;
-
+    if (properties.font_weight) {
+      return (properties.font_weight + ' ')
+        + (properties.font_italic ? 'italic ' : '')
+        + font_size + ' ' + properties.font_face;
+    }
+    else {
+      return (properties.font_bold ? 'bold ' : '')
+        + (properties.font_italic ? 'italic ' : '')
+        + font_size + ' ' + properties.font_face;
+    }
+    */
+   
   };
 
 }

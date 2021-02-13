@@ -1,7 +1,7 @@
 
 import { Rectangle } from 'treb-base-types';
 
-import { ExtendedTheme } from '../types/theme';
+import { Theme } from '../types/theme';
 
 /**
  * the original selections -- a canvas overlaid over the tile canvases --
@@ -23,37 +23,31 @@ export class SVGSelectionBlock {
 
   public g: SVGGElement;
   public outline: SVGRectElement;
-  public fill?: SVGPathElement;
+  public fill?: SVGElement; // SVGPathElement;
   public nub?: SVGRectElement;
 
   constructor( primary: boolean,
-               private theme: ExtendedTheme,
+               private theme: Theme,
                private offset: SelectionOffset = {x: 0, y: 0}) {
 
     this.g = document.createElementNS(SVGNS, 'g');
     this.g.setAttribute('transform', `translate(${offset.x}, ${offset.y})`);
+    
     this.outline = document.createElementNS(SVGNS, 'rect');
-    this.outline.setAttribute('stroke-width', '2');
+    this.outline.setAttribute('class', 'outline');
 
     if (primary) {
 
-      // primary selections have a separate fill, plus the nub
+      this.g.setAttribute('class', 'selection primary-selection');
 
-      this.outline.setAttribute('fill', 'none');
-      this.outline.setAttribute('stroke', theme.primary_selection_color || '');
-
-      if (theme.primary_selection_line_dash_array) {
-        this.outline.setAttribute('stroke-dasharray', theme.primary_selection_line_dash_array);
-      }
+      // primary selections have a separate fill, plus the nub. separate
+      // fill because the "target" is unfilled.
 
       this.fill = document.createElementNS(SVGNS, 'path');
-      this.fill.setAttribute('stroke', 'none');
-      this.fill.setAttribute('fill', theme.primary_selection_overlay_color || '');
+      this.fill.setAttribute('class', 'fill');
 
       this.nub = document.createElementNS(SVGNS, 'rect');
-      this.nub.setAttribute('fill', theme.primary_selection_color || '');
-      this.nub.setAttribute('stroke', '#fff');
-      this.nub.setAttribute('stroke-width', '1');
+      this.nub.setAttribute('class', 'nub');
 
       this.g.appendChild(this.fill);
       this.g.appendChild(this.outline);
@@ -61,22 +55,33 @@ export class SVGSelectionBlock {
 
     }
     else {
+      this.g.setAttribute('class', 'selection alternate-selection');
 
       // secondary selections. fill is not used, we just fill the rect
 
-      this.SetThemeColor(0);
-      if (theme.additional_selection_line_dash_array) {
-        this.outline.setAttribute('stroke-dasharray', theme.additional_selection_line_dash_array);
-      }
+      // UPDATE: adding the fill, for styling purposes; we can set color,
+      // and use currentColor, but we can't set opacity separately so we
+      // need another node. which is a waste, but ergonomics ftw!
+
+      this.fill = document.createElementNS(SVGNS, 'rect');
+      this.fill.setAttribute('class', 'fill');
+
+      // this.SetThemeColor(0);
+      // if (theme.additional_selection_line_dash_array) {
+      //  this.outline.setAttribute('stroke-dasharray', theme.additional_selection_line_dash_array);
+      // }
+
+      this.g.appendChild(this.fill);
       this.g.appendChild(this.outline);
 
     }
   }
 
-  public Offset(offset: SelectionOffset) {
+  public Offset(offset: SelectionOffset): void {
     this.g.setAttribute('transform', `translate(${offset.x}, ${offset.y})`);
   }
 
+  /*
   public SetThemeColor(index = 0) {
 
     if (Array.isArray(this.theme.additional_selection_color)) {
@@ -110,16 +115,25 @@ export class SVGSelectionBlock {
     }
 
   }
+  */
 
   public Show(show = true) {
     this.g.style.display = show ? 'block' : 'none';
   }
 
-  public SetOutline(rect: Rectangle) {
+  public SetOutline(rect: Rectangle, fill = false): void {
     this.outline.setAttribute('x', (rect.left - 1).toString());
     this.outline.setAttribute('y', (rect.top - 1).toString());
     this.outline.setAttribute('width', (rect.width + 1).toString());
     this.outline.setAttribute('height', (rect.height + 1).toString());
+
+    if (fill && this.fill) {
+      this.fill.setAttribute('x', (rect.left).toString());
+      this.fill.setAttribute('y', (rect.top).toString());
+      this.fill.setAttribute('width', (rect.width).toString());
+      this.fill.setAttribute('height', (rect.height).toString());
+    }
+
   }
 
   public SetFill(inside: Rectangle, outside: Rectangle) {

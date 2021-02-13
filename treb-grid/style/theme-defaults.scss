@@ -1,17 +1,348 @@
 
+/** 
+ * new theme! should add a class name (use treb-main?)
+ */
+
+/**
+ * we're using variables for selection colors because the colors are used
+ * in more than one place; that's a drawback of using CSS, but I think overall
+ * the benefits are still worth it.
+ *
+ * just FYI primary selection color is used in header overlay; and alternate
+ * selection color is used to highlight in formula editors (TODO/WIP).
+ */
+$primary-selection-color: rgb(64, 192, 64);
+$alternate-selection-color-1: rgb(251, 177, 60);
+$alternate-selection-color-2: rgb(87, 184, 255);
+$alternate-selection-color-3: rgb(182, 109, 13);
+$alternate-selection-color-4: rgb(33, 118, 174);
+$alternate-selection-color-5: rgb(254, 104, 71);
+
+/**
+ * slightly darking colors for text highlighting
+ * algo: convert to HSL; if L > .5, regenerate with L = .5; back to RGB (why?)
+ */
+$text-reference-color-1: rgb(250, 155, 5);
+$text-reference-color-2: rgb(0, 147, 255);
+$text-reference-color-3: rgb(182, 109, 13);
+$text-reference-color-4: rgb(33, 118, 174);
+$text-reference-color-5: rgb(254, 47, 1);
+
+.treb-embed-container {
+
+  /*
+  font-family: $font-stack;
+
+  NOTE: there's a containing style from embed, so we can probably
+  skip some of this (like the box-sizing reset) -- unless there's a 
+  possibility it will come out of embed.
+
+  that's why we took out the font stack, btw.
+  */
+
+  font-family: inherit;
+  font-style: normal;
+  font-weight: 400;
+  color: #333;
+
+  box-sizing: border-box;
+
+  & * {
+    box-shadow: border-box;
+  } 
+
+  /** 
+   * highlight in the corner of a cell when there's a comment. this is painted.
+   */
+  .note-marker {
+    background: #6FAB20;
+  }
+
+  /** 
+   * I don't want to use rems, because they're not universal. rem refers
+   * to the root element, so it can be styled. but this should be the 
+   * defining size of all children; everything from here can be relative.
+   *
+   * also that should simplify browser overloading.
+   */
+  font-size: 12pt; /* <-- 12pt === 16px? */
+
+  /** 
+   * grid row/column headers. these are painted, so this CSS is read,
+   * instead of applied.
+   */
+  .grid-headers {
+    font-family: inherit;
+    font-size: 10pt;
+    font-weight: normal;
+    font-style: normal;
+    background: rgb(238, 238, 242);
+    color: #666;
+  }
+
+  /** 
+   * cells in the grid. background is the unstyled background color 
+   * (should probably be in grid, not here). border-color is the default,
+   * if there is a border width applied but no specific color. 
+   *
+   * everything can be overridden by cell/column/row/sheet styles.
+   *
+   * stroke here is the color for grid lines. that used to be a separate
+   * section, but it seems superfluous.
+   */
+  .grid-cells {
+    font-size: 16px; 
+    font-weight: 400;
+    font-family: calibri, $font-stack;
+    color: #333;
+    background: #fff;
+    border-color: #333;
+    stroke: rgb(204, 204, 212);
+  }
+
+  /**
+   * this is used for freeze-area highlights
+   */
+  .frozen-selection {
+    &.highlight-area {
+      background: rgba(87, 184, 255, .25);
+      border-left-color: rgba(33, 118, 174, 1); /* not using */
+      border-bottom-color: rgba(33, 118, 174, 1); /* not using */
+    }
+  }
+
+  /** 
+   * tooltip when entering formula
+   * FIXME: could go into some sort of container with the list? (...) 
+   */
+  .treb-autocomplete-tooltip {
+
+    font-size: 14px; /* FIXME: relative */
+
+    background: #fffbb5;
+    border-radius: 2px;
+    color: inherit;
+  
+    & .active-argument {
+      font-weight: 700;
+    }
+  
+    & .function-description {
+      font-style: italic;
+    }
+  
+    padding: 3px 8px;
+    margin: 4px 0px;
+    line-height: normal;
+
+  }
+
+  /** 
+   * autocomplete for functions (and names)
+   */
+  .treb-autocomplete {
+
+    font-size: 14px; /* FIXME: relative? could be larger, actually */
+    background: #fff;
+    border-radius: 2px;
+    border: 1px solid #ccc;
+    box-shadow: $default-box-shadow;
+
+    li {
+      color: #333;
+      a.selected {
+        background: #339966;
+        color: #fff;
+      }
+    }
+
+  }
+
+  /** header overlays (indicate selection) */
+  .header-overlay {
+
+    stroke: none;
+    color: $primary-selection-color;
+
+    .overlay {
+      fill: rgb(0, 0, 0); /* FIXME: use color? */
+      stroke: none;
+      opacity: 0.05;
+    }
+
+    .highlight {
+      fill: currentColor;
+    }
+
+  }
+
+  /** 
+   * these are highlight colors in editors. we are not consolidating 
+   * because we may need to adjust a little bit (some are too light to 
+   * be useful).
+   */
+
+  .in-cell-editor, .formula-editor {
+
+    span:nth-of-type(1n) {
+      color: $text-reference-color-1;
+    }
+
+    span:nth-of-type(2n) {
+      color: $text-reference-color-2;
+    }
+
+    span:nth-of-type(3n) {
+      color: $text-reference-color-3;
+    }
+
+    span:nth-of-type(4n) {
+      color: $text-reference-color-4;
+    }
+
+    span:nth-of-type(5n) {
+      color: $text-reference-color-5;
+    }
+
+  }
+
+  /** 
+   * selections
+   */
+  .grid-selection, .frozen-selection {
+
+    /** common */
+    .selection {
+      stroke-width: 2px;
+      .outline {
+        stroke: currentColor;
+        fill: none;
+      }
+      .fill {
+        stroke: none;
+        fill: currentColor;
+        opacity: .1;
+      }
+    }
+
+    /** common to alternate selections */
+    .alternate-selection {
+      stroke-dasharray: 3 2;
+    }
+
+    .alternate-selection:nth-of-type(1n) {
+      color: $alternate-selection-color-1;
+    }
+
+    .alternate-selection:nth-of-type(2n) {
+      color: $alternate-selection-color-2;
+    }
+
+    .alternate-selection:nth-of-type(3n) {
+      color: $alternate-selection-color-3;
+    }
+
+    .alternate-selection:nth-of-type(4n) {
+      color: $alternate-selection-color-4;
+    }
+
+    .alternate-selection:nth-of-type(5n) {
+      color: $alternate-selection-color-5;
+    }
+
+    /** 
+     * primary selection has a separate fill node, because the "target" is
+     * not filled
+     */
+    .primary-selection {
+      color: $primary-selection-color;
+      .nub {
+        stroke: #fff;
+        fill: currentColor;
+        stroke-width: 1px;
+      }
+    }
+  }
+
+  /**
+   * column/row size tooltip
+   * TODO/FIXME: should this have a box-shadow?
+   */
+  .treb-tooltip {
+
+    font-size: 11pt; /** FIXME: relative */
+
+    background: rgba(0, 0, 0, .8);
+    color: #fff;
+    border-color: rgba(0, 0, 0, .8); /* for arrow */
+
+  }
+
+  /**
+   * styling the tab bar, at bottom; includes the add-tab tab and
+   * remove tab button
+   */
+  .treb-tab-bar {
+
+    font-size: 14px; /* FIXME: could be relative? */
+
+    .tab, .add-tab {
+      background: rgb(238, 238, 242);
+      &.selected {
+        background: #fff;
+      }
+    }
+
+  }
+
+  /**
+   * formula bar and address label. includes f(x) button which we don't use ATM
+   *
+   * FIXME: a lot of formula bar styling is in a separate stylesheet
+   * (formula-bar.scss); that's OK for layout styling but colors and fonts
+   * should centralize here. TODO/WIP.
+   */
+  .treb-formula-bar {
+    .address-label, .editor-container {
+      background: #fff;
+
+      &.locked {
+        background: rgb(238, 244, 252);
+        position: relative;
+
+        &:after {
+          position: absolute;
+          right: 2px;
+          top: 2px;
+          content: '';
+          width: 11px;
+          height: 11px;
+          opacity: .4;
+          background-image: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M416 224H400V144C400 65 335 0 256 0S112 65 112 144V224H96C61 224 32 253 32 288V448C32 483 61 512 96 512H416C451 512 480 483 480 448V288C480 253 451 224 416 224ZM176 144C176 100 212 64 256 64S336 100 336 144V224H176V144Z' fill='currentColor'/%3E%3C/svg%3E");
+        }
+
+      }
+
+    }
+
+  }
+
+}
+
 /**
  * theme defaults, as css. experimenting.
  */
 
+ /*
 .treb-theme {
 
-  /* primary selection */
+  / * primary selection * /
 
   .primary-selection {
     stroke: rgb(64, 192, 64);
   }
 
-  /* additional selections, global and then individual colors */
+  / * additional selections, global and then individual colors * /
 
   .additional-selections {
     stroke-dasharray: 3 2;
@@ -37,38 +368,37 @@
     stroke: rgba(254, 104, 71, 1);
   }
 
-  /* headers */
+  / * headers * /
 
   .header {
     fill: #eee;
     stroke: #666;
   }
 
-  /* highlight */
+  / * highlight * /
 
   .freeze-highlight {
     fill: rgba(87, 184, 255, .25);
     stroke: rgba(33, 118, 174, 1);
   }
 
-  /* grid */
+  / * grid * /
 
   .grid {
     stroke: #ccc;
   }
 
-  /* cells */
+  / * cells * /
 
   .cell {
     font-family: "calibri", $font-stack;
     fill: #fff;
     font-size: 14px;
     border-color: #333;
-    /* stroke: #333; */
     stroke: #333;
 
     .override-windows {
-      /* font-size: calc(16em/14); */
+      / * font-size: calc(16em/14); * /
       font-size: 16px;
       
       stroke: inherit;
@@ -79,7 +409,7 @@
 
   }
 
-  /* formula bar/address label */
+  / * formula bar/address label * /
 
   .formula-bar {
     font-family: $font-stack;
@@ -94,7 +424,7 @@
 
   }
 
-  /* interface */
+  / * interface * /
 
   .interface {
     font-family: $font-stack;
@@ -128,7 +458,7 @@
 
   }
 
-  /* column/row resize tooltip */
+  / * column/row resize tooltip * /
 
   .tooltip {
     stroke: #fff;
@@ -137,7 +467,7 @@
     font-family: $font-stack;
   }
 
-  /* ac */
+  / * ac * /
 
   .autocomplete {
 
@@ -151,10 +481,12 @@
 
   }
 
-  /* notes */
+  / * notes * /
 
   .note-marker {
     fill: #6FAB20;
   }
 
 }
+
+*/

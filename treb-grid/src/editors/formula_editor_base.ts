@@ -7,7 +7,7 @@ import { GridSelection } from '../types/grid_selection';
 import { Autocomplete, AutocompleteResult } from './autocomplete';
 import { AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
 
-import { ExtendedTheme } from '../types/theme';
+import { Theme } from '../types/theme';
 import { DataModel } from '../types/data_model';
 import { UA } from '../util/ua';
 
@@ -189,7 +189,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
   }
 
   constructor(
-      protected readonly theme: ExtendedTheme,
+      protected readonly theme: Theme,
       protected readonly model: DataModel,
       protected readonly autocomplete: Autocomplete){
 
@@ -343,6 +343,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
   }
 
+  /*
   protected HighlightColor(index: number, overlay = false) {
     if (overlay) {
       if (Array.isArray(this.theme.additional_selection_overlay_color)) {
@@ -359,6 +360,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
       return this.theme.additional_selection_text_color || '';
     }
   }
+  */
 
   /**
    * replace text with node structure for highlighting.
@@ -429,7 +431,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
       // address/range
       const span = document.createElement('span');
-      span.style.color = this.HighlightColor(this.reference_index_map[i], false);
+      // span.style.color = this.HighlightColor(this.reference_index_map[i], false);
       fragment.appendChild(span);
 
       const child_text_node = document.createTextNode(label);

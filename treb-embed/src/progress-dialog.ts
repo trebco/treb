@@ -2,9 +2,9 @@
 import {tmpl, NodeModel} from 'treb-utils'; 
 import * as build from '../../package.json';
 
-/**
+/* *
  * colors, which can be controlled by the grid theme
- */
+ * /
 export interface MaskDialogOptions {
   background?: string;
   border?: string;
@@ -14,6 +14,7 @@ export interface MaskDialogOptions {
   fontSize?: string|number;
   fontFamily?: string;
 }
+*/
 
 export enum DialogType {
   default = '', 
@@ -173,10 +174,12 @@ export class ProgressDialog {
     this.visible_ = value;
 
     if (value) { 
+      (this.parent_node.firstChild as HTMLElement)?.classList.add('masked');
       this.model.mask.classList.add('visible'); 
       window.addEventListener('keydown', this.event_handler);
     }
     else { 
+      (this.parent_node.firstChild as HTMLElement)?.classList.remove('masked');
       this.model.mask.classList.remove('visible'); 
       window.removeEventListener('keydown', this.event_handler);
       const tmp = this.pending_dialog_resoltion.slice(0);
@@ -194,7 +197,7 @@ export class ProgressDialog {
     return this.visible_;
   }
 
-  constructor(private parent_node: HTMLElement, options: MaskDialogOptions = {}) {
+  constructor(private parent_node: HTMLElement) { // }, options: MaskDialogOptions = {}) {
 
     this.model = tmpl`
       <div id='mask' class='treb-embed-mask'>
@@ -232,7 +235,7 @@ export class ProgressDialog {
     parent_node.appendChild(this.model.mask);
 
     // this.dialog.textContent = ' ';
-    this.UpdateTheme(options);
+    // this.UpdateTheme(options);
 
   }
 
@@ -243,6 +246,7 @@ export class ProgressDialog {
     return div;
   }
 
+  /*
   public UpdateTheme(options: MaskDialogOptions): void {
 
     if (options.mask) {
@@ -269,13 +273,14 @@ export class ProgressDialog {
     //  this.dialog.style.borderColor = options.border;
     // }
 
-    /*
+    / *
     if (options.progress) {
       this.progress_bar.style.backgroundColor = options.progress;
     }
-    */
+    * /
 
   }
+  */
 
   public Update(options: Partial<MessageDialogOptions>, delta = true): void {
 

@@ -1,10 +1,10 @@
 
 import { DOMUtilities } from '../util/dom_utilities';
-import { ExtendedTheme } from '../types/theme';
+import { Theme } from '../types/theme';
 import { DataModel } from '../types/data_model';
 
 import { Tile } from '../types/tile';
-import { Point, Extent, Size, Position, Area, ICellAddress, Rectangle } from 'treb-base-types';
+import { Style, Point, Extent, Size, Position, Area, ICellAddress, Rectangle } from 'treb-base-types';
 
 // aliasing Area as TileRange. this seemed like a good idea, initially, because
 // it can help clarify the function calls and return values when we "overload"
@@ -773,28 +773,32 @@ export abstract class BaseLayout {
   /**
    * applies theme to nodes, as necessary
    */
-  public ApplyTheme(theme: ExtendedTheme): void {
+  public ApplyTheme(theme: Theme): void {
     this.row_header.style.backgroundColor =
       this.column_header.style.backgroundColor =
       this.corner.style.backgroundColor =
-      theme.header_background_color || ''; // this.theme.header_background;
+        theme.headers?.background || '';
+        // theme.header_background_color || ''; // this.theme.header_background;
 
     this.corner.style.borderColor =
       theme.grid_color || ''; // this.theme.header_border_color;
     // this.layout.row_header.style.backgroundColor = this.theme.header_background;
     // this.layout.column_header.style.backgroundColor = this.theme.header_background;
 
+    /*
     this.tooltip.style.fontFamily = theme.tooltip_font_face || '';
     this.tooltip.style.fontSize = theme.tooltip_font_size ? `${theme.tooltip_font_size}pt` : '';
     this.tooltip.style.backgroundColor = theme.tooltip_background || '';
     this.tooltip.style.borderColor = theme.tooltip_background || ''; // for arrow
     this.tooltip.style.color = theme.tooltip_color || '';
+    */
 
     // TODO: dropdown caret
 
-    this.dropdown_list.style.fontFamily = theme.cell_font || '';
-    const font_size = (theme.cell_font_size_value || 10) * this.scale;
-    this.dropdown_list.style.fontSize = (font_size) + (theme.cell_font_size_unit || 'pt');
+    // this.dropdown_list.style.fontFamily = theme.cell_font || '';
+    // const font_size = (theme.cell_font_size_value || 10) * this.scale;
+    // this.dropdown_list.style.fontSize = (font_size) + (theme.cell_font_size_unit || 'pt');
+    this.dropdown_list.style.font = Style.Font(theme.grid_cell || {});
 
   }
 
@@ -1000,7 +1004,7 @@ export abstract class BaseLayout {
 
   }
 
-  public UpdateTooltip(options: TooltipOptions = {}){
+  public UpdateTooltip(options: TooltipOptions = {}): void {
     if (typeof options.text !== 'undefined') {
       this.tooltip.textContent = options.text;
     }

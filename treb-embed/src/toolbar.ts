@@ -83,7 +83,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     // 
 
     this.model = tmpl`
-      <div id='root' class='treb-toolbar-4'>
+      <div id='root' class='treb-toolbar'>
 
         <div class='group'>
           ${this.IconButton('bootstrap/text-left', 'align-left', true, 'Align left')}
@@ -188,7 +188,10 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           </div>
         </div>
 
+        <div class='group'>
         ${this.IconButton('fa/light/snowflake', 'freeze')}
+        ${this.IconButton('fa/light/lock-keyhole', 'lock')}
+        </div>
 
         <div class='group'>
           <div class='container'>
@@ -519,6 +522,15 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     else {
       freeze.classList.remove('active');
       freeze.setAttribute('title', 'Freeze panes');
+    }
+
+    if (state.style?.locked) {
+      this.model.lock.classList.add('active');
+      this.model.lock.setAttribute('title', 'Unlock cells');
+    } 
+    else {
+      this.model.lock.classList.remove('active');
+      this.model.lock.setAttribute('title', 'Lock cells');
     }
 
     const merge = this.model.merge;

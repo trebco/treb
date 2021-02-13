@@ -57,6 +57,7 @@ export interface BaseCellData {
   note?: string;
   type?: ValueType;
   sheet_id?: number;
+  // locked?: boolean;
 }
 
 export interface FlatCellData extends BaseCellData {
@@ -382,6 +383,9 @@ export class Cells {
       if (obj.validation) {
         cell.validation = obj.validation;
       }
+      //if (obj.locked) {
+      //  cell.locked = obj.locked;
+      //}
 
     }
 
@@ -491,6 +495,9 @@ export class Cells {
             if (cell.validation) {
               obj.validation = cell.validation; // safe? 
             }
+            //if (cell.locked) {
+            //  obj.locked = cell.locked; // d'oh
+            //}
 
             if (options.cell_style_refs &&
                 options.cell_style_refs[column] &&

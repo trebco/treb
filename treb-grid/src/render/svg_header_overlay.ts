@@ -1,5 +1,5 @@
 
-import { ExtendedTheme } from '../types/theme';
+import { Theme } from '../types/theme';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -15,18 +15,18 @@ export class HeaderOverlay {
   private highlight: SVGRectElement;
 
   constructor(
-      private theme: ExtendedTheme,
+      private theme: Theme,
       private container: SVGElement,
       private orientation: Orientation) {
 
     this.g = document.createElementNS(SVGNS, 'g');
+    this.g.setAttribute('class', 'header-overlay');
+
     this.overlay = document.createElementNS(SVGNS, 'rect');
-    this.overlay.setAttribute('fill', 'rgba(0, 0, 0, .05)');
-    this.overlay.setAttribute('stroke', 'none');
+    this.overlay.setAttribute('class', 'overlay');
 
     this.highlight = document.createElementNS(SVGNS, 'rect');
-    this.highlight.setAttribute('fill', this.theme.primary_selection_color || '');
-    this.highlight.setAttribute('stroke', 'none');
+    this.highlight.setAttribute('class', 'highlight');
 
     this.g.style.display = 'none';
     this.g.appendChild(this.highlight);
