@@ -67,9 +67,16 @@ class ValueParserType {
     // maybe go backwards... remove things that properly belong in
     // dates: numbers, dashes and slashes (+ comma, whitespace)
 
+    // dots are in some l10n systems... maybe we should check first?
+
     // Q: what does lowercase do for accented characters? (...)
 
-    const tmp = text.replace(/[\d\-\\/,\s]+/g, ' ').toLocaleLowerCase();
+    // NOTE: as it turns out, Date.parse() only handles US-EN. so
+    // all this is unecessary (and unused) in other locales. to really
+    // do this properly we will probably need to write our own locale-
+    // aware date parser. which is probably a lot of work. TODO.
+
+    const tmp = text.replace(/[\d\-\\/,.\s]+/g, ' ').toLocaleLowerCase();
 
     // then split into individual strings. trim and drop empty
 
@@ -93,11 +100,13 @@ class ValueParserType {
     // FIXME: cache/precalc
     // let's do it lazily
 
+    // NOTE: portugeuse seems to include periods in their abbreviations...
+
     if (!this.compare_month) {
       this.compare_month = {};
       for (let i = 0; i < 12; i++) {
-        this.compare_month[Localization.date_components.long_months[i].toLocaleLowerCase()] = i;
-        this.compare_month[Localization.date_components.short_months[i].toLocaleLowerCase()] = i;
+        this.compare_month[Localization.date_components.long_months[i].toLocaleLowerCase().replace(/\./, '')] = i;
+        this.compare_month[Localization.date_components.short_months[i].toLocaleLowerCase().replace(/\./, '')] = i;
         // comparison[Localization.date_components.long_months[i][0].toLocaleLowerCase()] = i;
       }
     }
@@ -105,8 +114,8 @@ class ValueParserType {
     if (!this.compare_day) {
       this.compare_day = {};
       for (let i = 0; i < 7; i++) {
-        this.compare_day[Localization.date_components.long_days[i].toLocaleLowerCase()] = i;
-        this.compare_day[Localization.date_components.short_days[i].toLocaleLowerCase()] = i;
+        this.compare_day[Localization.date_components.long_days[i].toLocaleLowerCase().replace(/\./, '')] = i;
+        this.compare_day[Localization.date_components.short_days[i].toLocaleLowerCase().replace(/\./, '')] = i;
       }
     }
 
