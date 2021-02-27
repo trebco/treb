@@ -822,6 +822,10 @@ export class TileRenderer {
         composite.border_top = test.border_bottom;
         composite.border_top_color = test.border_bottom_color;
       }
+      else if (style.background && style.background !== 'none') {
+        composite.border_top = 1;
+        composite.border_top_color = style.background;
+      }
     }
 
     if (!composite.border_left && address.column) {
@@ -829,6 +833,10 @@ export class TileRenderer {
       if (test && test.border_right) {
         composite.border_left = test.border_right;
         composite.border_left_color = test.border_right_color;
+      }
+      else if (style.background && style.background !== 'none') {
+        composite.border_left = 1;
+        composite.border_left_color = style.background;
       }
     }
 
