@@ -217,6 +217,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
             // support for "offset", essentially (see also above)
 
             const result = this.CalculateExpression(arg as ExtendedExpressionUnit, true);
+
             if (result && UnionIsExpressionUnit(result)) {
               if (result.value.type === 'address') {
                 return this.simulation_model.StoreCellResults(result.value);
@@ -229,6 +230,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
           // if we didn't have a valid reference it's an error
           argument_error = ReferenceError();
+          return argument_error;
 
         }
         else {

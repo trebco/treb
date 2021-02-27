@@ -184,6 +184,7 @@ export class Calculator extends Graph {
 
           const check_result = this.DynamicDependencies(
             reference.value.address,
+            this.expression_calculator.context.address,
             true, rows, columns, width, height);
 
           if (!check_result) {
@@ -248,7 +249,9 @@ export class Calculator extends Graph {
             return ReferenceError();
           }
 
-          const check_result = this.DynamicDependencies(parse_result.expression);
+          const check_result = this.DynamicDependencies(
+            parse_result.expression,
+            this.expression_calculator.context.address);
 
           if (!check_result) {
             return ReferenceError();
@@ -534,6 +537,7 @@ export class Calculator extends Graph {
    */
   public DynamicDependencies(
         expression: ExpressionUnit,
+        context?: ICellAddress,
         offset = false,
         offset_rows = 0,
         offset_columns = 0,
@@ -546,7 +550,11 @@ export class Calculator extends Graph {
       return undefined;
     }
 
-    let area = this.ResolveExpressionAddress(expression);
+    // UPDATE: use current context (passed in as argument) to resolve
+    // relative references. otherwise the reference will change depending
+    // on current/active sheet
+
+    let area = this.ResolveExpressionAddress(expression, context);
 
     if (!area) { return undefined; }
 
@@ -560,7 +568,10 @@ export class Calculator extends Graph {
 
       // check any dirty...
 
-      area = this.model.active_sheet.RealArea(area);
+      // THIS IS ALMOST CERTAINLY WRONG. we should not be using active_sheet
+      // here, we should use the area sheet. FIXME
+
+      area = this.model.active_sheet.RealArea(area); 
 
       const sheet_id = area.start.sheet_id;
 
@@ -899,24 +910,35 @@ export class Calculator extends Graph {
 
   }
 
-  public ResolveSheetID(expr: UnitAddress|UnitRange): void {
+  /**
+   * returns false if the sheet cannot be resolved, which probably
+   * means the name changed (that's the case we are working on with
+   * this fix).
+   */
+  public ResolveSheetID(expr: UnitAddress|UnitRange, context?: ICellAddress): boolean {
     if (!this.model) { throw new Error('ResolveSheetID called without model'); }
 
     const target = expr.type === 'address' ? expr : expr.start;
-    if (!target.sheet_id) {
-      if (target.sheet) {
-        const lc = target.sheet.toLowerCase();
-        for (const sheet of this.model.sheets) {
-          if (sheet.name.toLowerCase() === lc) {
-            target.sheet_id = sheet.id;
-            break;
-          }
+
+    if (target.sheet_id) {
+      return true;
+    }
+
+    if (target.sheet) {
+      const lc = target.sheet.toLowerCase();
+      for (const sheet of this.model.sheets) {
+        if (sheet.name.toLowerCase() === lc) {
+          target.sheet_id = sheet.id;
+          return true;
         }
       }
-      else {
-        target.sheet_id = this.model.active_sheet.id;
-      }
     }
+    else {
+      target.sheet_id = context?.sheet_id || this.model.active_sheet.id;
+      return true;
+    }
+
+    return false; // the error
 
   }
 
@@ -926,16 +948,20 @@ export class Calculator extends Graph {
    * assuming the expression is an address, range, or named range, resolve
    * to an address/area. returns undefined if the expression can't be resolved.
    */
-  protected ResolveExpressionAddress(expr: ExpressionUnit): Area|undefined {
+  protected ResolveExpressionAddress(expr: ExpressionUnit, context?: ICellAddress): Area|undefined {
 
     switch (expr.type) {
       case 'address':
-        this.ResolveSheetID(expr);
-        return new Area(expr);
+        if (this.ResolveSheetID(expr, context)) {
+          return new Area(expr);
+        }
+        break;
 
       case 'range':
-        this.ResolveSheetID(expr);
-        return new Area(expr.start, expr.end);
+        if (this.ResolveSheetID(expr, context)) {
+          return new Area(expr.start, expr.end);
+        }
+        break;
 
       case 'identifier':
         if (this.model) {
