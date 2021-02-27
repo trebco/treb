@@ -77,16 +77,31 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
 
   /**
    * merge two areas and return a new area.
-   * @param a
-   * @param b
+   * UPDATE to support arbitrary arguments
    */
-  public static Join(a: IArea, b?: IArea) {
-    const area = new Area(a.start, a.end);
-    if (b) {
-      area.ConsumeAddress(b.start);
-      area.ConsumeAddress(b.end);
+  public static Join(base: IArea, ...args: Array<IArea|undefined>): Area {
+    const area = new Area(base.start, base.end);
+    for (const arg of args) {
+      if (arg) {
+        area.ConsumeAddress(arg.start);
+        area.ConsumeAddress(arg.end);
+      }
     }
     return area;
+  }
+
+  /**
+   * creates an area that expands the original area in all directions
+   * (except at the top/left edges)
+   */
+  public static Bleed(area: IArea, length = 1): Area {
+    return new Area({
+        row: Math.max(0, area.start.row - length),
+        column: Math.max(0, area.start.column - length),
+      }, {
+        row: area.end.row + length,
+        column: area.end.column + length,
+      });
   }
 
   // private iterator_index: ICellAddress = { row: -1, column: -1, sheet_id: 0 };

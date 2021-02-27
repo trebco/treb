@@ -444,7 +444,7 @@ export class Sheet {
     // assuming we're good to go...
 
     area = area.Clone();
-    this.cells.IterateArea(area, (cell, c, r) => {
+    this.cells.Apply(area, (cell, c, r) => {
       cell.merge_area = area;
       cell.render_dirty = true;
 
@@ -462,7 +462,7 @@ export class Sheet {
     // let's check:
 
     let match = true;
-    this.cells.IterateArea(area, (cell) => {
+    this.cells.Apply(area, (cell) => {
       match = match && !!cell.merge_area && area.Equals(cell.merge_area);
     }, false);
 
@@ -471,7 +471,7 @@ export class Sheet {
       return;
     }
 
-    this.cells.IterateArea(area, (cell) => {
+    this.cells.Apply(area, (cell) => {
       cell.merge_area = undefined;
       cell.render_dirty = true;
     }, false);
@@ -701,6 +701,16 @@ export class Sheet {
     // targeted flush
     this.CellData(address).FlushStyle();
 
+  }
+
+  /**
+   * invalidate sets the "render dirty" flag on cells, whether there
+   * is any change or not. we are currently using it to force rendering
+   * when border/background changes, and we need to handle bleed into
+   * neighboring cells.
+   */
+  public Invalidate(area: Area): void {
+    this.cells.Apply(this.RealArea(area), cell => cell.render_dirty = true);
   }
 
   /**
@@ -1268,7 +1278,7 @@ export class Sheet {
     // assuming it's ok, :
 
     area = this.RealArea(area);
-    this.cells.IterateArea(area, (cell) => cell.Reset());
+    this.cells.Apply(area, (cell) => cell.Reset());
 
   }
 
@@ -1299,7 +1309,7 @@ export class Sheet {
    */
   public SetArrayValue(area: Area, value: CellValue): void {
     area = this.RealArea(area);
-    this.cells.IterateArea(area, (element) => element.SetArray(area), true);
+    this.cells.Apply(area, (element) => element.SetArray(area), true);
     const cell = this.cells.GetCell(area.start, true);
     cell.SetArrayHead(area, value);
   }
@@ -1981,7 +1991,7 @@ export class Sheet {
 
     // FIXME: ROW PATTERN
 
-    this.cells.IterateArea(this.RealArea(Area.FromRow(row)), (cell) => cell.FlushStyle());
+    this.cells.Apply(this.RealArea(Area.FromRow(row)), (cell) => cell.FlushStyle());
 
   }
 
@@ -2030,7 +2040,7 @@ export class Sheet {
       }
     }
 
-    this.cells.IterateArea(this.RealArea(Area.FromColumn(column)), (cell) => cell.FlushStyle());
+    this.cells.Apply(this.RealArea(Area.FromColumn(column)), (cell) => cell.FlushStyle());
 
     // FIXME: ROW PATTERN
 

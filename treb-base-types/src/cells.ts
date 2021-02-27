@@ -3,7 +3,7 @@
  * (not sure if there are benefits yet either)
  */
 
-import { Area, IArea, ICellAddress, ICellAddress2 } from './area';
+import { Area, IArea, ICellAddress, ICellAddress2, IsCellAddress } from './area';
 import { Cell, DataValidation } from './cell';
 import { ValueType, GetValueType } from './value-type';
 import { CellValue, UnionValue, UndefinedUnion } from './union';
@@ -227,6 +227,33 @@ export class Cells {
     return this.data[row][column];
 
   }
+
+  /**
+   * apply function to range or address. skips empty cells (for now...)
+   * (already have this function, it's called "IterateArea". "Apply" is better.)
+   * /
+  public Apply(target: ICellAddress|IArea, func: (cell: Cell) => void): void {
+
+    if (IsCellAddress(target)) {
+      target = new Area(target);
+    }
+
+    const start = target.start;
+    const end = target.end;
+
+    for (let r = start.row; r <= end.row; r++) {
+      if (this.data[r]) {
+        const row = this.data[r];
+        for (let c = start.column; c < end.column; c++) {
+          if (this.data[r][c]) {
+            func.call(undefined, row[c]);
+          }
+        }
+      }
+    }
+
+  }
+  */
 
   /** returns an existing cell or creates a new cell. */
   public EnsureCell(address: ICellAddress): Cell {
@@ -743,18 +770,29 @@ export class Cells {
   }
 
   /**
-   * iterates over area (using loops) and runs function per-cell
+   * apply function to address/area
    */
-  public IterateArea(area: Area, f: (cell: Cell, c?: number, r?: number) => void, create_missing_cells = false){
+  public Apply(area: Area|ICellAddress, f: (cell: Cell, c?: number, r?: number) => void, create_missing_cells = false): void {
+
+    // allow single address
+    if (IsCellAddress(area)) {
+      area = new Area(area);
+    }
 
     // why not just cap? (...)
-    if (area.entire_column || area.entire_row) throw new Error('don\'t iterate infinite cells');
+    if (area.entire_column || area.entire_row) {
+      throw new Error(`don't iterate infinite cells`);
+    }
+    
+    // these are accessors so we don't want them in the loop
+    const start = area.start;
+    const end = area.end;
 
     if (create_missing_cells){
-      for ( let r = area.start.row; r <= area.end.row; r++ ){
+      for ( let r = start.row; r <= end.row; r++ ){
         if (!this.data[r]) this.data[r] = [];
         const row = this.data[r];
-        for ( let c = area.start.column; c <= area.end.column; c++ ){
+        for ( let c = start.column; c <= end.column; c++ ){
           if (!row[c]) row[c] = new Cell();
           f(row[c], c, r);
         }
@@ -762,10 +800,10 @@ export class Cells {
     }
     else {
       // we can loop over indexes that don't exist, just check for existence
-      for ( let r = area.start.row; r <= area.end.row; r++ ){
+      for ( let r = start.row; r <= end.row; r++ ){
         if (this.data[r]){
           const row = this.data[r];
-          for ( let c = area.start.column; c <= area.end.column; c++ ){
+          for ( let c = start.column; c <= end.column; c++ ){
             if (row[c]) f(row[c], c, r);
           }
         }

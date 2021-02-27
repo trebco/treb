@@ -4751,7 +4751,7 @@ export class Grid {
     else if (array) {
       let existing_array = false;
       // let reference: Area;
-      this.active_sheet.cells.IterateArea(selection.area, (element: Cell) => {
+      this.active_sheet.cells.Apply(selection.area, (element: Cell) => {
         if (element.area) {
           // column = column || 0;
           // row = row || 0;
@@ -5754,7 +5754,7 @@ export class Grid {
 
       while (recheck) {
         recheck = false;
-        this.active_sheet.cells.IterateArea(real_area, (cell: Cell) => {
+        this.active_sheet.cells.Apply(real_area, (cell: Cell) => {
           if (cell.merge_area && !real_area.ContainsArea(cell.merge_area)) {
             area.ConsumeArea(cell.merge_area);
             real_area = this.active_sheet.RealArea(area);
@@ -7251,6 +7251,9 @@ export class Grid {
     this.grid_events.Publish({ type: 'style', area });
     */
 
+    return Area.Bleed(area);
+
+    /*
     return new Area(
       {
         row: Math.max(0, area.start.row - 1),
@@ -7260,6 +7263,7 @@ export class Grid {
       column: area.end.column + 1,
     },
     );
+    */
 
   }
 
@@ -7364,7 +7368,7 @@ export class Grid {
     let error = false;
     area = this.active_sheet.RealArea(area); // collapse
 
-    this.active_sheet.cells.IterateArea(area, (cell) => {
+    this.active_sheet.cells.Apply(area, (cell) => {
       if (cell.area && !area.ContainsArea(cell.area)) {
         // throw new Error('can\'t change part of an array');
         error = true;
@@ -7492,7 +7496,7 @@ export class Grid {
             const list: Record<string, Area> = {};
             const area = new Area(command.area.start, command.area.end);
 
-            this.active_sheet.cells.IterateArea(area, (cell: Cell) => {
+            this.active_sheet.cells.Apply(area, (cell: Cell) => {
               if (cell.merge_area) {
                 const label = Area.CellAddressToLabel(cell.merge_area.start) + ':'
                   + Area.CellAddressToLabel(cell.merge_area.end);
@@ -7516,20 +7520,41 @@ export class Grid {
           break;
 
         case CommandKey.UpdateStyle:
-          if (IsCellAddress(command.area)) {
-            const area = new Area(command.area);
-            this.active_sheet.UpdateCellStyle(command.area, command.style, !!command.delta);
-            // events.push({type: 'style', area});
+          {
+            // to account for our background bleeding up/left, when applying
+            // style changes we may need to render one additional row/column.
+
+            let area: Area|undefined;
+
+            if (IsCellAddress(command.area)) {
+              area = new Area(command.area);
+              this.active_sheet.UpdateCellStyle(command.area, command.style, !!command.delta);
+            }
+            else {
+              area = new Area(command.area.start, command.area.end);
+              this.active_sheet.UpdateAreaStyle(area, command.style, !!command.delta);
+            }
+
             style_area = Area.Join(area, style_area);
+
+            // we can limit bleed handling to cases where it's necessary...
+            // if we really wanted to optimize we could call invalidate on .left, .top, &c
+
+            if (!command.delta 
+                || command.style.background
+                || command.style.border_top
+                || command.style.border_left
+                || command.style.border_right
+                || command.style.border_bottom) {
+
+              area = Area.Bleed(area); // bleed by 1 to account for borders/background 
+              this.active_sheet.Invalidate(area);
+
+            }
+
             render_area = Area.Join(area, render_area);
           }
-          else {
-            const area = new Area(command.area.start, command.area.end);
-            this.active_sheet.UpdateAreaStyle(area, command.style, !!command.delta);
-            // events.push({type: 'style', area});
-            style_area = Area.Join(area, style_area);
-            render_area = Area.Join(area, render_area);
-          }
+
           break;
 
         case CommandKey.DataValidation:
