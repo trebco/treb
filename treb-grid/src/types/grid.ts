@@ -252,6 +252,9 @@ export class Grid {
    */
   private hover_note_visible = false;
 
+  /** same for title/link info */
+  private hover_title_visible = false;
+
   /**
    * additional selections that are rendered but not otherwise used.
    * this array is now readonly, so we can bind it to the selection
@@ -2350,6 +2353,15 @@ export class Grid {
       throw new Error('cannot activate hidden sheet');
     }
 
+    // hide note, title 
+
+    // FIXME: I don't like that we're maintaining these local flags. those
+    // should be encapsulated somewhere, along with the show/hide methods.
+
+    this.layout.HideTitle();
+    this.layout.HideTooltip();
+    this.hover_note_visible = this.hover_title_visible = false;
+
     // cache primary selection in the sheet we are deactivating
     // FIXME: cache scroll position, too!
 
@@ -3623,19 +3635,31 @@ export class Grid {
       address = { row: area.start.row, column: area.end.column };
     }
 
-    const note = cell ? cell.note : undefined;
+    // just FYI we have separate note/tooltip because if not you could
+    // "mask" the one by using the other (whichever one was dominant).
 
-    if (note) {
-
-      // move and show
-      this.layout.ShowNote(note, address, event);
+    if (cell?.note) {
+      this.layout.ShowNote(cell.note, address, event);
       this.hover_note_visible = true;
     }
     else if (this.hover_note_visible) {
-
-      // hide
       this.layout.HideNote();
       this.hover_note_visible = false;
+    }
+
+    // FIXME: hide hover_title on sheet change
+
+    // it shouldn't be necessary to check calculated here, but 
+    // for some reason there was a lingering title if I deleted the 
+    // cell function via an editor (cleaned correctly if I deleted the cell
+    // using the delete key outside of an editor).
+
+    if (cell?.calculated && cell?.renderer_data?.title) {
+      this.layout.ShowTitle(cell.renderer_data.title, address, event);
+      this.hover_title_visible = true;
+    }
+    else if (this.hover_title_visible) {
+      this.layout.HideTitle();
     }
 
     // set
@@ -3869,6 +3893,15 @@ export class Grid {
             // update formula bar formula
             this.UpdateFormulaBarFormula();
 
+          }
+
+          if (result.event) {
+            Yield().then(() => {
+              this.grid_events.Publish({
+                type: 'cell-event',
+                data: result.event,
+              });
+            });
           }
 
           return;

@@ -45,6 +45,11 @@ export interface AnnotationEvent {
   event?: 'move'|'resize'|'create'|'delete'|'update';
 }
 
+export interface CellEvent {
+  type: 'cell-event',
+  data?: any,
+}
+
 export interface DataEvent {
   type: 'data';
   area?: Area;
@@ -66,6 +71,7 @@ export interface ScaleEvent {
 
 export type GridEvent
   = DataEvent
+  | CellEvent
   | StyleEvent
   | FlushEvent
   | ScaleEvent

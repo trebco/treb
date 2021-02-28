@@ -42,7 +42,7 @@ export const UnionIsExtended = (test: UnionValue): test is { type: ValueType.obj
 }
 */
 
-/** composite type guard */
+/** composite type guard (why do all these test for type formula? is that a bug?) */
 export const UnionIs = {
 
   Undefined: (test: UnionValue): test is { type: ValueType.undefined, value: undefined } => {

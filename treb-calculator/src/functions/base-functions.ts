@@ -2,12 +2,14 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError } from '../function-error';
-import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType } from 'treb-base-types';
+import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType, RenderFunctionResult } from 'treb-base-types';
 import { Sparkline, SparklineRenderOptions } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
 import { ClickCheckbox, RenderCheckbox } from './checkbox';
 import { UnionIsMetadata } from '../expression-calculator';
+
+import { ClickHyperlink, RenderHyperlink } from './hyperlink';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -621,6 +623,21 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    Hyperlink: {
+      arguments: [
+        { name: 'text' },
+        { name: 'URL or reference' },
+      ],
+      click: ClickHyperlink,
+      render: RenderHyperlink,
+      fn: (text: string, reference: string): UnionValue => {
+        return { 
+          type: ValueType.string, 
+          value: [text, reference],
+        };
+      },
+    },
+
     Checkbox: {
       arguments: [
         { name: 'checked' },
@@ -637,8 +654,9 @@ export const BaseFunctionLibrary: FunctionMap = {
         {name: 'data' }, 
         {name: 'color'}, 
         {name: 'negative color'}],
-      render: (options: SparklineRenderOptions): void => {
+      render: (options: SparklineRenderOptions): RenderFunctionResult => {
         Sparkline.RenderColumn(options.width, options.height, options.context, options.cell);
+        return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
         return { type: ValueType.object, value: args };
@@ -651,9 +669,9 @@ export const BaseFunctionLibrary: FunctionMap = {
         {name: 'color'},
         {name: 'line width'},
       ],
-      render: (options: SparklineRenderOptions): void => {
+      render: (options: SparklineRenderOptions): RenderFunctionResult => {
         Sparkline.RenderLine(options.width, options.height, options.context, options.cell);
-      
+        return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
         return { type: ValueType.object, value: args };

@@ -133,6 +133,8 @@ export interface BaseOptions {
   /** initial scale */
   scale?: number;
 
+  hyperlinks?: string|false;
+
 }
 
 /**
@@ -155,6 +157,7 @@ export const DefaultOptions: BaseOptions = {
   default_trials: 5000,
   screen_updates: false,
   lhs: true,
+  hyperlinks: '_blank',
   max_file_size: 1024 * 92,
 };
 

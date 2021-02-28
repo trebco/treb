@@ -21,6 +21,19 @@ interface RenderTextPart {
   text: string;
   hidden: boolean;
   width: number;
+
+  // adding optional layout info (for hyperlink, basically)
+
+  top?: number;
+  left?: number;
+  height?: number;
+}
+
+interface PreparedText {
+  strings: RenderTextPart[];
+  single: boolean;
+  width: number;
+  format?: string;
 }
 
 interface RenderCellResult {
@@ -640,7 +653,8 @@ export class TileRenderer {
    *
    * NOTE: style font must already be set in context
    */
-  protected PrepText(context: CanvasRenderingContext2D, cell: Cell, cell_width: number) {
+  protected PrepText(context: CanvasRenderingContext2D, cell: Cell, cell_width: number, override_text?: string): PreparedText {
+
     const strings: RenderTextPart[] = [];
     const style: Style.Properties = cell.style || {};
 
@@ -650,15 +664,20 @@ export class TileRenderer {
     let single = false;
 
     let override_formatting: string | undefined;
+    let formatted = cell.formatted;
 
-    if (Array.isArray(cell.formatted)) {
+    if (typeof override_text === 'string') {
+      formatted = override_text;
+    }
+
+    if (Array.isArray(formatted)) {
 
       // type 1 is a multi-part formatted string; used for number formats.
       // we support invisible characters and padded (expanded) characters
 
       // this is a single line, with number formatting
 
-      for (const part of cell.formatted) {
+      for (const part of formatted) {
         if (part.flag === TextPartFlag.formatting) {
           override_formatting = part.text;
           continue;
@@ -700,21 +719,20 @@ export class TileRenderer {
       single = true;
 
     }
-    else if (cell.formatted === '') {
+    else if (formatted === '') {
 
       // undefined cells return this value; we don't need to do any calculation
 
       strings.push({ text: '', hidden: false, width: 0 });
 
     }
-    else if (cell.formatted) {
+    else if (formatted) {
 
       // type 2 is a single string, but may be split into newlines either
       // explicitly or implicitly via wrap
 
       // ALSO we don't show leading apostrophes, as those indicate a string
 
-      let formatted = cell.formatted;
       if (cell.type === ValueType.string && formatted[0] === '\'') {
         formatted = formatted.slice(1);
       }
@@ -1091,6 +1109,24 @@ export class TileRenderer {
       }
     }
 
+    // want to do some surgery here, need to consider any side-effects. 
+    
+    // specifically, to support hyperlinks, I want to (1) do the text 
+    // calculation before calling the cell's render_function (so we can figure 
+    // out layout); and (2) let the render function indicate that it does not 
+    // want to exit, i.e. it's only a prerender for calc purposes.
+
+    // although that layout calc won't be good enough to account for things
+    // like overflow... also here we are just splitting the string, not 
+    // generating text boxes (think about justification, wrap)
+
+    // doing this a little differently... render function can pass but can
+    // also ask us to preserve layout (text rectangles)
+
+    let preserve_layout_info = false;
+    let renderer_title: string|undefined;
+    let override_text: string|undefined;
+
     if (cell.render_function) {
       this.RenderCellBackground(
         !!cell.note,
@@ -1104,11 +1140,26 @@ export class TileRenderer {
       context.strokeStyle = context.fillStyle =
         style_text_color || this.theme.grid_cell?.text_color || '';
         
-      cell.render_function.call(null, {
+      const render_result = cell.render_function.call(undefined, {
         width, height, context, cell, style, scale: this.layout.scale || 1,
       });
 
-      return result;
+      if (render_result.handled) {
+        return result;
+      }
+
+      if (render_result.metrics) {
+        preserve_layout_info = true;
+      }
+
+      if (render_result.title) {
+        renderer_title = render_result.title;
+      }
+      
+      if (typeof render_result.override_text !== 'undefined') {
+        override_text = render_result.override_text;
+      }
+
     }
 
     // if there's no context, we just need to render the background
@@ -1135,13 +1186,16 @@ export class TileRenderer {
 
     if (dirty || !cell.renderer_data || cell.renderer_data.width !== width || cell.renderer_data.height !== height) {
       cell.renderer_data = { 
-        text_data: this.PrepText(context, cell, width), 
+        text_data: this.PrepText(context, cell, width, override_text), 
         width, 
-        height 
+        height,
       };
+      if (renderer_title) {
+        cell.renderer_data.title = renderer_title;
+      }
     }
 
-    const text_data = cell.renderer_data.text_data;
+    const text_data = cell.renderer_data.text_data as PreparedText;
 
     // overflow is always a huge headache. here are the basic rules:
 
@@ -1405,6 +1459,9 @@ export class TileRenderer {
 
     context.beginPath();
 
+    // is this actually top, or is it bottom? it may have been top at some 
+    // point but I'm pretty sure it's baseline, now (alphabetic). FIXME
+
     let top = Math.round(height - text_height);
 
     switch (style.vertical_align) {
@@ -1436,11 +1493,19 @@ export class TileRenderer {
       }
 
       context.fillText(text, left, top);
-
+      
     }
-    else if (text_data.single) {
+    else if (text_data.single) { // && 17 > 20) {
 
       // in this case text_part.width is composite
+
+      // why are single and multiple lines in different paths?
+      // wouldn't single be the same as 1-entry multiple? is this
+      // an optimization? (...)
+
+      // tested with above condition and seems to work exactly the 
+      // same... and saves duplication... TODO
+
 
       if (horizontal_align === Style.HorizontalAlign.Center) {
         left = Math.round((width - text_data.width) / 2);
@@ -1472,6 +1537,13 @@ export class TileRenderer {
             context.lineTo(left + part.width, strike_y);
           }
         }
+
+        if (preserve_layout_info) {
+          part.left = left;
+          part.top = top - metrics.block;
+          part.height = metrics.block;
+        }
+
         left += part.width;
       }
 
@@ -1502,6 +1574,13 @@ export class TileRenderer {
         }
 
         context.fillText(part.text, left, top);
+
+        if (preserve_layout_info) {
+          part.left = left;
+          part.top = top - metrics.block;
+          part.height = metrics.block;
+        }
+
         top += metrics.block;
       }
 

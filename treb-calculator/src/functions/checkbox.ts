@@ -1,5 +1,5 @@
 
-import { RenderFunctionOptions, ClickFunctionOptions, ClickFunctionResult, Style } from 'treb-base-types';
+import { RenderFunctionOptions, ClickFunctionOptions, ClickFunctionResult, Style, RenderFunctionResult } from 'treb-base-types';
 
 export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResult => {
   const { x, y, width, height, cell } = options;
@@ -54,7 +54,7 @@ export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResul
   return result;
 };
 
-export const RenderCheckbox = (options: RenderFunctionOptions): void => {
+export const RenderCheckbox = (options: RenderFunctionOptions): RenderFunctionResult => {
 
   const {context, width, height, cell} = options;
   const scale = options.scale || 1;
@@ -120,5 +120,7 @@ export const RenderCheckbox = (options: RenderFunctionOptions): void => {
     context.lineWidth = Math.max(2, 2 * scale);
     context.strokeRect(x, y, 16 * scale, 16 * scale);
   }
+
+  return { handled: true }; // painted
 
 };

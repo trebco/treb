@@ -1,3 +1,4 @@
+
 .treb-note {
 
   position: fixed;
@@ -26,5 +27,38 @@
   font-size: 10.5pt;
 
   white-space: pre-line;
+
+}
+
+.treb-hover-title {
+
+  position: fixed;
+  padding: 7px 10px;
+  border-radius: 2px;
+  box-shadow: $default-box-shadow;
+  z-index: $z-index-note;
+  line-height: normal;
+
+  top: 100px;
+  left: 100px;
+
+  max-width: 15em; /* which em? seems to be way too large */
+  min-width: 15em;
+
+  opacity: 0;
+  transition: opacity .2s;
+
+  /* themeable properties */
+
+  font-family: $font-stack; /* can't we inherit? ... */
+
+  border: 1px solid #ddd;
+  color: #333;
+  background: #fff;
+  font-size: 10.5pt;
+
+  white-space: pre-line;
+
+  pointer-events: none;
 
 }

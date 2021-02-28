@@ -1,6 +1,5 @@
 
-import { UnionOrArray, UnionValue, ValueType } from 'treb-base-types';
-import { ExpressionUnit, UnitAddress, UnitRange } from 'treb-parser/src';
+import { UnionOrArray, RenderFunction, ClickFunction } from 'treb-base-types';
 
 // FIXME: at least some of this could move to base types
 
@@ -97,11 +96,11 @@ export interface CompositeFunctionDescriptor {
   // simulation_volatile?: boolean;
 
   /**
-   * 
+   * FIXME: we need to unify type with what's in the cell class
    */
-  render?: (options: any) => void;
+  render?: RenderFunction; // (options: any) => boolean;
 
-  click?: (options: any) => {value?: any };
+  click?: ClickFunction; // (options: any) => {value?: any };
 
   /**
    * the actual function. if this is an object member and needs access

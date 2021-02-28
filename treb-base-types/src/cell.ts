@@ -19,6 +19,22 @@ export interface RenderFunctionOptions {
   scale?: number;
 }
 
+export interface RenderFunctionResult {
+  handled: boolean;
+
+  /** set true to add text metrics to cell rendering data */
+  metrics?: boolean;
+
+  /** set to add "title" (tooltip) info */
+  title?: string;
+
+  /** override text [FIXME: union type?] */
+  override_text?: string;
+
+}
+
+export type RenderFunction = (options: RenderFunctionOptions) => RenderFunctionResult;
+
 export interface ClickFunctionOptions {
   cell: Cell;
   x?: number;
@@ -27,10 +43,33 @@ export interface ClickFunctionOptions {
   height?: number;
 }
 
-export interface ClickFunctionResult {
-  value?: CellValue;
-  block_selection?: boolean;
+export interface ClickFunctionEvent {
+  type: string;
+  data?: any;
 }
+
+export interface ClickFunctionResult {
+
+  /**
+   * change the cell value, to the value passed here
+   */
+  value?: CellValue;
+
+  /** 
+   * set to true to block normal click handling semantics 
+   * (selecting the cell, generally) 
+   */
+  block_selection?: boolean;
+
+  /** 
+   * return an event that will be broadcast to listeners using the standard
+   * event dispatch
+   */
+  event?: ClickFunctionEvent;
+}
+
+export type ClickFunction = (options: ClickFunctionOptions) => ClickFunctionResult;
+
 
 /**
  * restructuring from the old system, which had lots of separate arrays for
@@ -249,9 +288,18 @@ export class Cell {
 
   public note?: string;
 
-  public render_function?: (options: RenderFunctionOptions) => void;
+  /** 
+   * TODO: add a return value which affects control flow. default/falsy should
+   * behave as now, for backwards compatibility; but it should be possible to
+   * return a value that says "don't exit the standard rendering process"
+   * 
+   * UPDATE: return value now means "I have handled this", so if you paint you
+   * should return true. that's a breaking change but we should get help from
+   * tooling.
+   */
+  public render_function?: RenderFunction; // (options: RenderFunctionOptions) => RenderFunctionResult;
 
-  public click_function?: (options: ClickFunctionOptions) => ClickFunctionResult;
+  public click_function?: ClickFunction; // (options: ClickFunctionOptions) => ClickFunctionResult;
 
   /** 
    * moving locked property to style. not because it's properly a style,

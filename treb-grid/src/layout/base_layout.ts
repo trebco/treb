@@ -145,6 +145,8 @@ export abstract class BaseLayout {
 
   private note_node: HTMLDivElement;
 
+  private title_node: HTMLDivElement;
+
   private row_cache: number[] = [];
   private column_cache: number[] = [];
 
@@ -316,6 +318,7 @@ export abstract class BaseLayout {
     this.mock_selection.innerHTML = '&nbsp;';
 
     this.note_node = DOMUtilities.CreateDiv('treb-note');
+    this.title_node = DOMUtilities.CreateDiv('treb-hover-title');
 
     this.HideNote();
 
@@ -356,6 +359,35 @@ export abstract class BaseLayout {
    */
   public ShowSelections(show = true): void {
     this.grid_selection.style.display = show ? 'block' : 'none';
+  }
+
+  public HideTitle(): void {
+    this.title_node.style.opacity = '0';
+    // this.title_node.style.pointerEvents = 'none';
+  }
+
+  public ShowTitle(text: string, address: ICellAddress, event?: MouseEvent): void {
+    this.title_node.textContent = text;
+
+    if (!this.title_node.parentElement) return;
+
+    const note_size = this.title_node.getBoundingClientRect();
+    const container = this.title_node.parentElement.getBoundingClientRect();
+
+    const rect = this.OffsetCellAddressToRectangle(address).Shift(
+      this.header_size.width, this.header_size.height);
+
+    this.title_node.style.left = (
+      container.left + rect.left - this.scroll_reference_node.scrollLeft + 0) + 'px';
+
+    this.title_node.style.top = (
+      container.top + rect.bottom - this.scroll_reference_node.scrollTop + 2) + 'px';
+
+    // FIXME: use class
+
+    this.title_node.style.opacity = '1';
+    // this.title_node.style.pointerEvents = 'auto';
+
   }
 
   public HideNote(): void {
@@ -634,6 +666,10 @@ export abstract class BaseLayout {
     
     if (!this.note_node.parentElement) {
       container.appendChild(this.note_node);
+    }
+
+    if (!this.title_node.parentElement) {
+      container.appendChild(this.title_node);
     }
 
     this.InitializeInternal(container, scroll_callback);

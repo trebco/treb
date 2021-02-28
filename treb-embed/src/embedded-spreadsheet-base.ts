@@ -1,12 +1,12 @@
 
 // treb imports
 import { Grid, GridEvent, SerializeOptions, Annotation,
-         BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection } from 'treb-grid';
+         BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection, CellEvent } from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, 
-  IsFlatData, IsFlatDataArray, Rectangle } from 'treb-base-types';
+  IsFlatData, IsFlatDataArray, Rectangle, ValueType, UnionIs } from 'treb-base-types';
 import { EventSource, Yield, tmpl } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 // import { Toolbar as SimpleToolbar, Toolbar, ToolbarElement } from 'treb-toolbar';
@@ -493,6 +493,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             }
             this.UpdateSelectionStyle();
             break;
+
+          case 'cell-event':
+            this.HandleCellEvent(event);
+            break;
+
         }
       });
 
@@ -590,6 +595,65 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     });
     */
 
+  }
+
+  public HandleCellEvent(event: CellEvent): void {
+
+    const type = event.data?.type;
+    if (type === 'hyperlink') {
+
+      const hyperlink_error = 'hyperlink invalid target';
+      const data = event.data.data || '';
+
+      if (typeof data === 'string') {
+
+        if (/^https{0,1}:\/\//i.test(data)) {
+
+          if (!this.options.hyperlinks) {
+            console.warn('hyperlinks are disabled');
+            return;
+          }
+
+          const a = document.createElement('a');
+          a.setAttribute('target', this.options.hyperlinks);
+          a.setAttribute('href', data);
+          a.setAttribute('noreferrer', 'true');
+          a.setAttribute('nofollow', 'true');
+          a.click();
+          
+          return;
+              
+        }
+        else {
+
+          const parse_result = this.parser.Parse(data);
+          if (parse_result.expression) {
+
+            // probably can always allow reference links
+
+            if (parse_result.expression.type === 'address') {
+              if (parse_result.expression.sheet || parse_result.expression.sheet_id) {
+                this.ActivateSheet((parse_result.expression.sheet || parse_result.expression.sheet_id) as string|number);
+              }
+              this.Select(data);
+              return;
+            }
+            else if (parse_result.expression.type === 'range') {
+              if (parse_result.expression.start.sheet || parse_result.expression.start.sheet_id) {
+                this.ActivateSheet((parse_result.expression.start.sheet || parse_result.expression.start.sheet_id) as string|number);
+              }
+              this.Select(data);
+              return;
+            }
+
+          }
+        }
+
+        console.warn(hyperlink_error, 2);
+        return;
+
+      }
+    }
   }
 
   /**
