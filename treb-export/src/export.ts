@@ -5,7 +5,7 @@ import { template } from './template-2';
 import { Workbook } from './workbook';
 
 import { Style, Area, IArea, DataValidation, ValidationType, 
-         IsFlatDataArray, IsNestedRowArray, FlatCellData } from 'treb-base-types';
+         IsFlatDataArray, IsNestedRowArray, FlatCellData, ICellAddress } from 'treb-base-types';
 import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, 
          UnitCall, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
 
@@ -13,6 +13,7 @@ import { SerializedSheet } from 'treb-grid';
 import { RangeOptions } from './sheet';
 import { TwoCellAnchor } from './drawing/drawing';
 import { ChartOptions } from './drawing/chart';
+import { AnnotationLayout, Corner as LayoutCorner } from 'treb-grid/src/types/annotation';
 
 /** excel units */
 const one_hundred_pixels = 14.28515625;
@@ -481,6 +482,7 @@ export class Exporter {
               options.data.push(this.NormalizeAddress(y, sheet_source));
 
               if (label) {
+
                 if (!options.names) { options.names = []; }
 
                 if (label.type === 'address') {
@@ -548,15 +550,58 @@ export class Exporter {
             else if (title_arg && title_arg.type === 'address') {
               options.title = this.NormalizeAddress(title_arg, sheet_source);
             }
+            else {
+
+              // FIXME: formula here will not work. we need to bring
+              // a calculator into this class? (!) or somehow cache the value...
+
+              // console.info('chart title arg', title_arg)
+            }
+
+            // we changed our Series() to Group(), and then added a new Series()
+            // function which adds data labels and per-series X values... will
+            // need to incorporate somehow. for now, just s/series/group to get
+            // the data in the chart
+
+            // oh we already did that... duh
 
             if (parse_result.expression.args[0]) {
               const arg0 = parse_result.expression.args[0];
-              if (type === 'scatter2' || type === 'bar' || type === 'column') {
+              if (type === 'scatter2' || type === 'bar' || type === 'column' || type === 'scatter') {
                 parse_series(arg0, options);
               }
               else if (arg0.type === 'range') {
                 options.data.push(this.NormalizeAddress(arg0, sheet_source));
               }
+
+              // so the next cases cannot happen? (...) donut? (...)
+
+              else if (arg0.type === 'call' && /group/i.test(arg0.name)) {
+                for (const series of arg0.args) {
+
+                  // in group, could be a range or a Series()
+                  if (series.type === 'range') {
+                    options.data.push(this.NormalizeAddress(series, sheet_source));
+                  }
+                  else if (series.type === 'call' && /series/i.test(series.name)) {
+
+                    // in Series(), args are (name, X, range of data)
+
+                    if (series.args[2] && series.args[2].type === 'range') {
+                      options.data.push(this.NormalizeAddress(series.args[2], sheet_source));
+                    }
+                  }
+                }
+              }
+              else if (arg0.type === 'call' && /series/i.test(arg0.name)) {
+
+                // another case, single Series()
+                if (arg0.args[2] && arg0.args[2].type === 'range') {
+                  options.data.push(this.NormalizeAddress(arg0.args[2], sheet_source));
+                }
+              }
+
+              /*
               else if (arg0.type === 'call' && /series/i.test(arg0.name)) {
                 for (const series of arg0.args) {
                   if (series.type === 'range') {
@@ -564,6 +609,7 @@ export class Exporter {
                   }
                 }
               }
+              */
             }
 
             if (type !== 'scatter2') {
@@ -581,8 +627,13 @@ export class Exporter {
             }
 
             if (annotation.rect) {
-              const anchor = this.AnnotationRectToAnchor(annotation.rect, sheet_source);
-              sheet.AddChart(anchor, options);
+              sheet.AddChart(this.AnnotationRectToAnchor(annotation.rect, sheet_source), options);
+            }
+            else if (annotation.layout) {
+              sheet.AddChart(this.AnnotationLayoutToAnchor(annotation.layout, sheet_source), options);
+            }
+            else {
+              console.warn('annotation missing layout');
             }
 
           }
@@ -611,6 +662,37 @@ export class Exporter {
     }
 
     await this.workbook.Finalize();
+  }
+
+  /** 
+   * new-style annotation layout (kind of a two-cell anchor) to two-cell anchor
+   */
+  public AnnotationLayoutToAnchor(layout: AnnotationLayout, sheet: SerializedSheet): TwoCellAnchor {
+
+    // our offsets are % of cell. their offsets are in excel units, 
+    // but when the chart is added our method will convert from pixels.
+
+    const address_to_anchor = (corner: LayoutCorner) => {
+      
+      const width = (sheet.column_width && sheet.column_width[corner.address.column]) ? 
+        sheet.column_width[corner.address.column] : (sheet.default_column_width || 100);
+      
+      const height = (sheet.row_height && sheet.row_height[corner.address.row]) ? 
+        sheet.row_height[corner.address.row] : (sheet.default_row_height || 20);
+
+      return {
+        ...corner.address,
+        row_offset: Math.round(corner.offset.y * height),
+        column_offset: Math.round(corner.offset.x * width),
+      };
+
+    };
+    
+    return {
+      from: address_to_anchor(layout.tl),
+      to: address_to_anchor(layout.br),
+    };
+
   }
 
   /**

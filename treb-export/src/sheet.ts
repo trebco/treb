@@ -53,7 +53,7 @@ export class Sheet {
   /**
    * deep copy (via element -> xml -> element)
    */
-  public CloneElement(elt: Element) {
+  public CloneElement(elt: Element): Element {
     return ElementTree.parse(new Tree(elt).write({ xml_declaration: false })).getroot();
   }
 
@@ -131,7 +131,7 @@ export class Sheet {
   /**
    * xml string -> dom, get dimension ref
    */
-  public Parse() {
+  public Parse(): void {
     if (this.dom) return;
     if (!this.xml) throw new Error('sheet missing xml');
 

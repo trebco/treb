@@ -137,6 +137,9 @@ export class Chart {
     
   }
 
+  /**
+   * this now unifies scatter and line charts
+   */
   public CreateScatter2(): ElementTree.ElementTree {
     
     const template = JSON.parse(JSON.stringify(chart_template)); 
@@ -174,6 +177,7 @@ export class Chart {
       series['c:order'] = { _a: { val: i.toString() }};
 
       if (this.options.names && this.options.names[i]) {
+
         const name = this.options.names[i];
         switch (name.type) {
           case 'literal':
@@ -256,6 +260,7 @@ export class Chart {
 
   }
 
+  /*
   public CreateScatterChart() {
 
     const template = JSON.parse(JSON.stringify(chart_template)); 
@@ -275,15 +280,50 @@ export class Chart {
 
     const cser = this.FindNode('c:ser', template);
 
+    let legend = false;
+
     for (let i = 0; i < this.options.data.length; i++) {
 
       const series = JSON.parse(JSON.stringify(scatter_series));
 
       series['c:idx'] = { _a: { val: i.toString() }};
       series['c:order'] = { _a: { val: i.toString() }};
+
+      // snip
+      // ... FIXME: unify
+
+      if (this.options.names && this.options.names[i]) {
+
+        const name = this.options.names[i];
+        switch (name.type) {
+          case 'literal':
+            series['c:tx'] = {
+              'c:v': {
+                _t: name.value.toString(),
+              }
+            };
+            legend = true;
+            break;
+
+          case 'range':
+          case 'address':
+            series['c:tx'] = {
+              'c:strRef': {
+                'c:f': {
+                  _t: name.label,
+                },
+              }
+            };
+            legend = true;
+            break;
+        }
+      }
+
+      // /snip
+
       series['c:spPr']['a:ln']['a:solidFill']['a:schemeClr']._a['val'] = `accent${i+1}`;
 
-      /*
+      / *
       if (!i && this.options.labels) {
         series['c:cat'] = {
           'c:strRef': {
@@ -293,7 +333,7 @@ export class Chart {
           }
         }
       }
-      */
+      * /
 
       const val = this.FindNode('c:yVal/c:numRef/c:f', series);
       if (val) {
@@ -311,9 +351,24 @@ export class Chart {
 
     }
 
+    if (legend) {
+      const cchart = this.FindNode('c:chart', template);
+      if (cchart) {
+        cchart['c:legend'] = {
+          'c:legendPos': {
+            _a: {val: 'b'},
+          },
+          'c:overlay': {
+            _a: {val: '0'},
+          }
+        };
+      }
+    }
+
     return this.ObjectToXML(template);
 
   }
+  */
 
   public CreateBarChart() {
 
@@ -406,11 +461,12 @@ export class Chart {
       case 'donut':
         return this.CreateDonutChart().write({xml_declaration: true});
       
+      case 'scatter':
       case 'scatter2':
         return this.CreateScatter2().write({xml_declaration: true});
 
-      case 'scatter':
-        return this.CreateScatterChart().write({xml_declaration: true});
+      //case 'scatter':
+      //  return this.CreateScatterChart().write({xml_declaration: true});
 
       case 'column':
       case 'bar':
