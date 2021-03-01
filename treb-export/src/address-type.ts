@@ -19,6 +19,12 @@ export interface RangeType {
   sheet?: string;
 }
 
+export interface HyperlinkType {
+  address: AddressType;
+  reference: string;
+  text: string;
+}
+
 /** typeguard for range */
 export const is_range = (candidate: any): candidate is RangeType => {
   return 'from' in candidate &&

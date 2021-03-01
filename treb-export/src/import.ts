@@ -4,7 +4,7 @@ import * as ElementTree from 'elementtree';
 import { Workbook } from './workbook';
 import { ImportedSheetData, ValueType } from 'treb-base-types';
 import { Sheet } from './sheet';
-import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address } from './address-type';
+import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address, HyperlinkType } from './address-type';
 import { Parser, ParseResult } from 'treb-parser';
 // import { Style } from 'treb-base-types';
 
@@ -48,7 +48,7 @@ export class Importer {
     }
 
     this.workbook = new Workbook();
-    await this.workbook.Init(this.archive_);
+    await this.workbook.Init(this.archive_, undefined, true);
   }
 
   public ParseCell(
@@ -56,7 +56,8 @@ export class Importer {
       element: ElementTree.Element,
       shared_formulae: SharedFormulaMap,
       arrays: RangeType[],
-      merges: RangeType[]) {
+      merges: RangeType[],
+      links: HyperlinkType[]) {
 
     // must have, at minimum, an address (must be a single cell? FIXME)
     const address_attr = element.attrib.r;
@@ -176,6 +177,25 @@ export class Importer {
       result.style_ref = Number(element.attrib.s);
     }
 
+    for (const link of links) {
+      if (link.address.row === address.row && link.address.col === address.col) {
+
+        // NOTE: this will not work until the function is calculated,
+        // because of how we handle this function (which is itself hacky).
+
+        // get the text from the cell, ignore what's in the thing
+        const text = result.value || link.text;
+        
+        result.type = ValueType.formula;
+        result.value = `=Hyperlink("${text}", "${link.reference}")`;
+        result.calculated_type = ValueType.string;
+        result.calculated = text;
+
+        // FIXME: pop?
+
+      }
+    }
+
     for (const range of merges) {
       if (InRange(range, shifted)) {
         result.merge_area = {
@@ -232,6 +252,7 @@ export class Importer {
     const shared_formulae: {[index: string]: SharedFormula} = {};
     const arrays: RangeType[] = [];
     const merges: RangeType[] = [];
+    const links: HyperlinkType[] = [];
 
     const merge_cells = sheet.dom.find('./mergeCells');
     if (merge_cells) {
@@ -242,6 +263,48 @@ export class Importer {
             merges.push(ShiftRange(merge, -1, -1));
           }
         }
+      }
+    }
+
+    const hyperlinks = sheet.dom.find('./hyperlinks');
+
+    if (hyperlinks) {
+      for (const child of hyperlinks.getchildren()) {
+
+        let address = sheet.TranslateAddress(child.attrib.ref || '');
+        if (is_range(address)) {
+          address = address.from;
+        }
+
+        let text = '';
+        let reference = '';
+
+        if (child.attrib['r:id']) {
+
+          text = 'remote link';
+          reference = '';
+
+          if (!sheet.rels_dom) {
+            sheet.ReadRels();
+          }
+
+          if (sheet.rels_dom) {
+            const relationship = sheet.rels_dom.find(`./Relationship[@Id='${child.attrib['r:id']}']`);
+            if (relationship) {
+              reference = relationship.attrib.Target || ''; 
+            }
+          }
+          else {
+            console.warn('missing rels dom!');
+          }
+
+        }
+        else {
+          reference = child.attrib.location || '';
+          text = child.attrib.display || '';
+        }
+
+        links.push({ address, reference, text });
       }
     }
 
@@ -261,7 +324,7 @@ export class Importer {
           }
 
           for (const child of row.getchildren()) {
-            const cell = this.ParseCell(sheet, child, shared_formulae, arrays, merges);
+            const cell = this.ParseCell(sheet, child, shared_formulae, arrays, merges, links);
             if (cell) {
               data.push(cell);
               // max_column = Math.max(max_column, cell.column); // use extent

@@ -136,7 +136,7 @@ export class Workbook {
   /**
    * read all sheets (async)
    */
-  public async GetWorksheets(preparse = false){
+  public async GetWorksheets(preparse = false, read_rels = false){
     if (!this.zip) throw new Error('missing zip');
 
     for (const sheet of this.sheets) {
@@ -148,6 +148,12 @@ export class Workbook {
           const data = await this.zip.file(sheet.path)?.async('text');
           sheet.xml = data;
           if (preparse) sheet.Parse();
+
+          if (read_rels) {
+            sheet.rels_xml = await this.zip.file(sheet.rels_path)?.async('text');
+            if (preparse) sheet.ReadRels();
+          }
+
         }
       }
     }
@@ -477,7 +483,7 @@ export class Workbook {
   /**
    *
    */
-  public async Init(zip?: JSZip, preparse = false){
+  public async Init(zip?: JSZip, preparse = false, read_rels = false){
 
     // let wb = this;
     if (zip) { this.zip = zip; }
@@ -531,7 +537,7 @@ export class Workbook {
     });
 
     // await this.GetWorksheets(Object.keys(this.sheets).slice(0), preparse);
-    await this.GetWorksheets(preparse);
+    await this.GetWorksheets(preparse, read_rels);
 
   }
 

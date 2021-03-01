@@ -30,6 +30,7 @@ export class Sheet {
   public rels_dom?: Tree;
 
   public xml?: string;
+  public rels_xml?: string;
   public dom?: Tree;
   public shared_strings?: SharedStrings;
   public extent?: RangeType;
@@ -128,6 +129,24 @@ export class Sheet {
       a = this.Address(rc);
     }
     return { a, rc };
+  }
+
+  public ReadRels(): void {
+
+    if (this.rels_dom) {
+      return;
+    }
+
+    if (!this.rels_xml) {
+      console.warn('missing rels xml');
+      return;
+    }
+
+    this.rels_dom = ElementTree.parse(this.rels_xml);
+    if (!this.rels_dom) {
+      throw new Error('parsing rels dom failed');
+    }
+
   }
 
   /**
