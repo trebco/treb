@@ -381,7 +381,7 @@ export abstract class BaseLayout {
       container.left + rect.left - this.scroll_reference_node.scrollLeft + 0) + 'px';
 
     this.title_node.style.top = (
-      container.top + rect.bottom - this.scroll_reference_node.scrollTop + 2) + 'px';
+      container.top + rect.bottom - this.scroll_reference_node.scrollTop + 8) + 'px';
 
     // FIXME: use class
 

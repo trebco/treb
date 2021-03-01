@@ -23,13 +23,13 @@ export interface RenderFunctionResult {
   handled: boolean;
 
   /** set true to add text metrics to cell rendering data */
-  metrics?: boolean;
+  // metrics?: boolean;
 
   /** set to add "title" (tooltip) info */
-  title?: string;
+  // title?: string;
 
   /** override text [FIXME: union type?] */
-  override_text?: string;
+  // override_text?: string;
 
 }
 
@@ -288,6 +288,12 @@ export class Cell {
 
   public note?: string;
 
+  /**
+   * moving hyperlink in here, as a cell property. hyperlink will not be
+   * removed on value change, but will be removed on clear/delete.
+   */
+  public hyperlink?: string;
+
   /** 
    * TODO: add a return value which affects control flow. default/falsy should
    * behave as now, for backwards compatibility; but it should be possible to
@@ -362,6 +368,7 @@ export class Cell {
     this.type = ValueType.undefined;
     this.value
       = this.note
+      = this.hyperlink
       = this.formatted
       = this.rendered_type
       = this.style
@@ -531,6 +538,7 @@ export class Cell {
       this.formatted =
       this.rendered_type =
       this.style =
+      this.hyperlink = // note?
       this.calculated =
       this.calculated_type = undefined;
     this.area = area;

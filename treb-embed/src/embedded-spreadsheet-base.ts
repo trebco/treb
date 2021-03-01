@@ -1192,6 +1192,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   ///////////
 
   /**
+   * set link in cell. set value to '' to remove link. link can be an 
+   * http/https URL or a spreadsheet reference (as text).
+   */
+  public SetLink(address: string|ICellAddress, reference = ''): void {
+    address = this.EnsureAddress(address);
+    this.grid.SetLink(address, reference);
+  }
+
+  /**
    * show or hide sheet, by name or index
    */
   public ShowSheet(index: number|string = 0, show = true): void {

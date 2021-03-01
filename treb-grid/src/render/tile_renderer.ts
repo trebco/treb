@@ -653,7 +653,7 @@ export class TileRenderer {
    *
    * NOTE: style font must already be set in context
    */
-  protected PrepText(context: CanvasRenderingContext2D, cell: Cell, cell_width: number, override_text?: string): PreparedText {
+  protected PrepText(context: CanvasRenderingContext2D, cell: Cell, cell_width: number /*, override_text?: string*/ ): PreparedText {
 
     const strings: RenderTextPart[] = [];
     const style: Style.Properties = cell.style || {};
@@ -666,9 +666,11 @@ export class TileRenderer {
     let override_formatting: string | undefined;
     let formatted = cell.formatted;
 
+    /*
     if (typeof override_text === 'string') {
       formatted = override_text;
     }
+    */
 
     if (Array.isArray(formatted)) {
 
@@ -1123,9 +1125,13 @@ export class TileRenderer {
     // doing this a little differently... render function can pass but can
     // also ask us to preserve layout (text rectangles)
 
-    let preserve_layout_info = false;
-    let renderer_title: string|undefined;
-    let override_text: string|undefined;
+    // let preserve_layout_info = false;
+    // let renderer_title: string|undefined;
+    // let override_text: string|undefined;
+
+    // ...updating...
+
+    const preserve_layout_info = !!cell.hyperlink;
 
     if (cell.render_function) {
       this.RenderCellBackground(
@@ -1148,6 +1154,7 @@ export class TileRenderer {
         return result;
       }
 
+      /*
       if (render_result.metrics) {
         preserve_layout_info = true;
       }
@@ -1159,6 +1166,7 @@ export class TileRenderer {
       if (typeof render_result.override_text !== 'undefined') {
         override_text = render_result.override_text;
       }
+      */
 
     }
 
@@ -1186,13 +1194,13 @@ export class TileRenderer {
 
     if (dirty || !cell.renderer_data || cell.renderer_data.width !== width || cell.renderer_data.height !== height) {
       cell.renderer_data = { 
-        text_data: this.PrepText(context, cell, width, override_text), 
+        text_data: this.PrepText(context, cell, width), // , override_text), 
         width, 
         height,
       };
-      if (renderer_title) {
-        cell.renderer_data.title = renderer_title;
-      }
+      //if (renderer_title) {
+      //  cell.renderer_data.title = renderer_title;
+      //}
     }
 
     const text_data = cell.renderer_data.text_data as PreparedText;

@@ -36,6 +36,7 @@ export enum CommandKey {
   Clear,
   UpdateTheme,
   SetNote,
+  SetLink,
   Freeze,
   SetName,
   ShowHeaders,
@@ -205,6 +206,12 @@ export interface SetNoteCommand {
   note?: string;
 }
 
+export interface SetLinkCommand {
+  key: CommandKey.SetLink;
+  address: ICellAddress;
+  reference?: string;
+}
+
 /**
  * clear an area, or the entire sheet
  */
@@ -299,6 +306,7 @@ export type Command =
   | SelectCommand
   | FreezeCommand
   | SetNoteCommand
+  | SetLinkCommand
   | SetNameCommand
   | AddSheetCommand
   | SetRangeCommand

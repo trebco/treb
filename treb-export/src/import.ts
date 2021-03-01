@@ -179,20 +179,8 @@ export class Importer {
 
     for (const link of links) {
       if (link.address.row === address.row && link.address.col === address.col) {
-
-        // NOTE: this will not work until the function is calculated,
-        // because of how we handle this function (which is itself hacky).
-
-        // get the text from the cell, ignore what's in the thing
-        const text = result.value || link.text;
-        
-        result.type = ValueType.formula;
-        result.value = `=Hyperlink("${text}", "${link.reference}")`;
-        result.calculated_type = ValueType.string;
-        result.calculated = text;
-
+        result.hyperlink = link.reference;
         // FIXME: pop?
-
       }
     }
 
@@ -291,7 +279,7 @@ export class Importer {
           if (sheet.rels_dom) {
             const relationship = sheet.rels_dom.find(`./Relationship[@Id='${child.attrib['r:id']}']`);
             if (relationship) {
-              reference = relationship.attrib.Target || ''; 
+              reference = relationship.attrib.Target || '';
             }
           }
           else {

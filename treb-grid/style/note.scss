@@ -42,8 +42,8 @@
   top: 100px;
   left: 100px;
 
-  max-width: 15em; /* which em? seems to be way too large */
-  min-width: 15em;
+  /* max-width: 15em; / * which em? seems to be way too large */
+  min-width: 10em;
 
   opacity: 0;
   transition: opacity .2s;

@@ -236,6 +236,15 @@ export class Exporter {
 
             }
 
+            if (cell.hyperlink) {
+              hyperlinks.push({
+                row: cell.row + 1,
+                column: cell.column + 1,
+                text: '',
+                reference: cell.hyperlink,
+              });
+            }
+
             if (cell.validation) {
               const validation = cell.validation as DataValidation;
               let formula = '';
@@ -300,6 +309,7 @@ export class Exporter {
                     cell.value = this.parser.Render(result.expression);
                     break;
 
+                  /*
                   case 'hyperlink':
                     if (cell.calculated && Array.isArray(cell.calculated)) {
                       hyperlinks.push({
@@ -318,6 +328,7 @@ export class Exporter {
                       console.warn('hyperlink has no calculated value')
                     }
                     break;
+                  */
 
                   case 'sparkline.column':
                   case 'sparkline.line':

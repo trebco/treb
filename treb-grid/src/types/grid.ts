@@ -127,6 +127,16 @@ export class Grid {
 
   // --- private members -------------------------------------------------------
 
+  // testing
+  private hover_data: {
+    note?: boolean;
+    link?: boolean;
+    cell?: Cell;
+    point?: {x: number, y: number};
+    handler?: number;
+    pointer?: boolean;
+    address?: ICellAddress; // = { row: -1, column: -1 };
+  } = {};
 
   private batch = false;
 
@@ -151,9 +161,9 @@ export class Grid {
    *
    * FIXME: find a solution for this.
    */
-  private get cells() {
-    return this.active_sheet.cells;
-  }
+  //private get cells() {
+  //  return this.active_sheet.cells;
+  //}
 
   private grid_container?: HTMLElement;
 
@@ -245,15 +255,15 @@ export class Grid {
   /**
    * current mouse move cell
    */
-  private hover_cell: ICellAddress = { row: -1, column: -1 };
+  // private hover_cell: ICellAddress = { row: -1, column: -1 };
 
   /**
    * flag indicating we're showing a note, so we can stop
    */
-  private hover_note_visible = false;
+  // private hover_note_visible = false;
 
   /** same for title/link info */
-  private hover_title_visible = false;
+  // private hover_tracking_link = false;
 
   /**
    * additional selections that are rendered but not otherwise used.
@@ -389,6 +399,24 @@ export class Grid {
       key: CommandKey.SetNote,
       address,
       note,
+    });
+
+  }
+
+  /**
+   * set hyperlink, like set note
+   */
+  public SetLink(address?: ICellAddress, reference?: string): void {
+
+    if (!address) {
+      if (this.primary_selection.empty) return;
+      address = this.primary_selection.target;
+    }
+
+    this.ExecCommand({
+      key: CommandKey.SetLink,
+      address,
+      reference,
     });
 
   }
@@ -2358,9 +2386,8 @@ export class Grid {
     // FIXME: I don't like that we're maintaining these local flags. those
     // should be encapsulated somewhere, along with the show/hide methods.
 
-    this.layout.HideTitle();
-    this.layout.HideTooltip();
-    this.hover_note_visible = this.hover_title_visible = false;
+    this.HideHoverInfo();
+
 
     // cache primary selection in the sheet we are deactivating
     // FIXME: cache scroll position, too!
@@ -3099,7 +3126,7 @@ export class Grid {
     // this is used for the grid, but we can cheat and use it for the header
     const rect = this.layout.OffsetCellAddressToRectangle({ row: header.row, column: 0 });
 
-    if (this.hover_cell.row !== -1 || this.hover_cell.column !== -1) {
+    if (this.hover_data.address && (this.hover_data.address.row !== -1 || this.hover_data.address.column !== -1)) {
       this.HoverCell({ row: -1, column: -1 });
     }
 
@@ -3130,7 +3157,7 @@ export class Grid {
     // this is used for the grid, but we can cheat and use it for the header
     const rect = this.layout.OffsetCellAddressToRectangle({ row: 0, column: header.column });
 
-    if (this.hover_cell.row !== -1 || this.hover_cell.column !== -1) {
+    if (this.hover_data.address && (this.hover_data.address.row !== -1 || this.hover_data.address.column !== -1)) {
       this.HoverCell({ row: -1, column: -1 });
     }
 
@@ -3626,12 +3653,12 @@ export class Grid {
 
     // does this cell have a note?
 
-    let cell = this.cells.GetCell(address, false);
+    let cell = this.active_sheet.cells.GetCell(address, false);
 
     if (cell?.merge_area) {
       const area = cell.merge_area;
       address = area.start;
-      cell = this.cells.GetCell(address, false);
+      cell = this.active_sheet.cells.GetCell(address, false);
       address = { row: area.start.row, column: area.end.column };
     }
 
@@ -3640,11 +3667,11 @@ export class Grid {
 
     if (cell?.note) {
       this.layout.ShowNote(cell.note, address, event);
-      this.hover_note_visible = true;
+      this.hover_data.note = true;
     }
-    else if (this.hover_note_visible) {
+    else if (this.hover_data.note) {
       this.layout.HideNote();
-      this.hover_note_visible = false;
+      this.hover_data.note = false;
     }
 
     // FIXME: hide hover_title on sheet change
@@ -3654,17 +3681,36 @@ export class Grid {
     // cell function via an editor (cleaned correctly if I deleted the cell
     // using the delete key outside of an editor).
 
-    if (cell?.calculated && cell?.renderer_data?.title) {
-      this.layout.ShowTitle(cell.renderer_data.title, address, event);
-      this.hover_title_visible = true;
+    if (cell?.hyperlink) {
+      this.layout.ShowTitle('Link: ' + cell.hyperlink, address, event);
+      this.hover_data.link = true;
+      this.hover_data.cell = cell;
     }
-    else if (this.hover_title_visible) {
+    else if (this.hover_data.link) {
       this.layout.HideTitle();
+      this.hover_data.cell = undefined;
     }
 
     // set
 
-    this.hover_cell = { ...address };
+    this.hover_data.address = { ...address };
+
+  }
+
+  private HideHoverInfo() {
+
+    this.layout.HideTitle();
+    this.layout.HideTooltip();
+
+    this.hover_data.note = this.hover_data.link = false;
+    this.hover_data.cell = undefined;
+
+    // clean up cursor, if modified
+
+    if (this.hover_data.pointer) {
+      this.layout.grid_cover.classList.remove('link-pointer');
+    }
+    this.hover_data.pointer = false;
 
   }
 
@@ -3695,10 +3741,38 @@ export class Grid {
 
     // don't show hints if we are editing
 
+    let address: ICellAddress|undefined;
+
     if (!(this.cell_editor && this.cell_editor.visible)) {
-      const address = this.layout.PointToAddress_Grid(offset_point);
-      if (this.hover_cell.row !== address.row || this.hover_cell.column !== address.column) {
+      address = this.layout.PointToAddress_Grid(offset_point);
+      if (!this.hover_data.address 
+          || this.hover_data.address.row !== address.row 
+          || this.hover_data.address.column !== address.column) {
         this.HoverCell(address, event);
+      }
+    }
+
+    if (this.hover_data.link && address) {
+      this.hover_data.point = offset_point;
+
+      if (!this.hover_data.handler) {
+        this.hover_data.handler = requestAnimationFrame(() => {
+          const link_active = 
+            (this.hover_data.address 
+              && this.hover_data.point
+              && this.hover_data.cell
+              && this.PointInTextPart(this.hover_data.address, this.hover_data.point, this.hover_data.cell));
+          if (link_active !== !!this.hover_data.pointer) {
+            this.hover_data.pointer = link_active;
+            if (link_active) {
+              this.layout.grid_cover.classList.add('link-pointer');
+            }
+            else {
+              this.layout.grid_cover.classList.remove('link-pointer');
+            }
+          }
+          this.hover_data.handler = undefined;
+        });
       }
     }
 
@@ -3757,6 +3831,40 @@ export class Grid {
         this.double_click_data.timeout = undefined;
       }, timeout);
     }
+
+  }
+
+  private PointInTextPart(address: ICellAddress, offset_point: {x: number, y: number}, cell: Cell) {
+
+    let rectangle = this.layout.CellAddressToRectangle(address);
+
+    if (cell.merge_area) {
+      rectangle = rectangle.Combine(
+        this.layout.CellAddressToRectangle(cell.merge_area.end));
+    }
+
+    const x = offset_point.x - rectangle.left;
+    const y = offset_point.y - rectangle.top;
+
+    const parts = cell.renderer_data?.text_data?.strings || [];
+    for (const part of parts) {
+      // validate?
+      if (typeof part.left === 'number' 
+          && typeof part.top === 'number' 
+          && typeof part.width === 'number' 
+          && typeof part.height === 'number' ) {
+
+        if (x >= part.left 
+            && y >= part.top
+            && x <= (part.left + part.width)
+            && y <= (part.top + part.height)) {
+          
+          return true;
+        }
+      }
+    }
+
+    return false;
 
   }
 
@@ -3856,6 +3964,23 @@ export class Grid {
       if (cell.merge_area) {
         address = cell.merge_area.start;
         cell = this.active_sheet.CellData(cell.merge_area.start);
+      }
+
+      if (cell.hyperlink) {
+        if (this.PointInTextPart(address, offset_point, cell)) {
+          const link = cell.hyperlink;
+           Yield().then(() => {
+            this.grid_events.Publish({
+              type: 'cell-event',
+              data: {
+                type: 'hyperlink',
+                data: link,
+              }
+            });
+          });
+          this.ClearDoubleClick();
+          return;
+        }
       }
 
       if (cell.click_function) {
@@ -4626,7 +4751,9 @@ export class Grid {
     else if (columns < 0) start.column = selection.area.start.column;
     */
 
-    let cell = this.cells.GetCell(selection.target, false);
+    const cells = this.active_sheet.cells;
+
+    let cell = cells.GetCell(selection.target, false);
     if (!cell || (cell.type === ValueType.undefined && !cell.area)) {
       return false;
     }
@@ -4660,20 +4787,20 @@ export class Grid {
       let has_value = false;
       if (rows) {
         for (let column = selection.area.start.column; !has_value && column <= selection.area.end.column; column++) {
-          cell = this.cells.GetCell({ row: test.row, column }, false);
+          cell = cells.GetCell({ row: test.row, column }, false);
           has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
           if (!has_value && cell && cell.merge_area) {
-            cell = this.cells.GetCell(cell.merge_area.start, false);
+            cell = cells.GetCell(cell.merge_area.start, false);
             has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
           }
         }
       }
       else {
         for (let row = selection.area.start.row; !has_value && row <= selection.area.end.row; row++) {
-          cell = this.cells.GetCell({ row, column: test.column }, false);
+          cell = cells.GetCell({ row, column: test.column }, false);
           has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
           if (!has_value && cell && cell.merge_area) {
-            cell = this.cells.GetCell(cell.merge_area.start, false);
+            cell = cells.GetCell(cell.merge_area.start, false);
             has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
           }
         }
@@ -5231,9 +5358,11 @@ export class Grid {
 
     // new, hide note if visible
 
-    if (this.hover_note_visible) {
-      this.layout.HideNote();
-    }
+    this.HideHoverInfo();
+
+    // if (this.hover_data.note) {
+    //  this.layout.HideNote();
+    // }
 
     // merged cell, make sure we get/set value from the head
     // also get full rect for the editor
@@ -7782,22 +7911,44 @@ export class Grid {
           structure_rebuild_required = true;
           break;
 
+        case CommandKey.SetLink:
         case CommandKey.SetNote:
           {
-            let cell = this.cells.GetCell(command.address, true);
+            // note and link are basically the same, although there's a 
+            // method for setting note (not sure why)
+
+            let sheet = this.active_sheet;
+            if (command.address.sheet_id) {
+              for (const test of this.model.sheets) {
+                if (test.id === command.address.sheet_id) {
+                  sheet = test;
+                  break;
+                }
+              }
+            }
+
+            let cell = sheet.cells.GetCell(command.address, true);
             if (cell) {
 
               let area: Area;
               if (cell.merge_area) {
                 area = new Area(cell.merge_area.start);
-                cell = this.cells.GetCell(cell.merge_area.start, true);
+                cell = sheet.cells.GetCell(cell.merge_area.start, true);
               }
               else {
                 area = new Area(command.address);
               }
 
-              cell.SetNote(command.note);
-              this.DelayedRender(false, area);
+              if (command.key === CommandKey.SetNote) {
+                cell.SetNote(command.note);
+              }
+              else {
+                cell.hyperlink = command.reference || undefined;
+              }
+
+              if (sheet === this.active_sheet) {
+                this.DelayedRender(false, area);
+              }
 
               // treat this as style, because it affects painting but
               // does not require calculation.

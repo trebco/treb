@@ -55,6 +55,7 @@ export interface BaseCellData {
   validation?: DataValidation;
   calculated_type?: ValueType;
   note?: string;
+  hyperlink?: string;
   type?: ValueType;
   sheet_id?: number;
   // locked?: boolean;
@@ -369,8 +370,12 @@ export class Cells {
         // cell.calculated_type = obj.calculated_type;
         cell.SetCalculatedValue(obj.calculated, obj.calculated_type);
       }
+
       if (typeof obj.note !== 'undefined') {
         cell.note = obj.note;
+      }
+      if (typeof obj.hyperlink !== 'undefined') {
+        cell.hyperlink = obj.hyperlink;
       }
 
       // stop wrecking arrays
@@ -501,7 +506,13 @@ export class Cells {
                     cell.style.border_top || cell.style.border_left || cell.style.border_right)))){
 
             const obj: FlatCellData = { row, column, value: cell.value };
-            if (cell.note) obj.note = cell.note;
+            if (cell.note) {
+              obj.note = cell.note;
+            }
+            if (cell.hyperlink) {
+              obj.hyperlink = cell.hyperlink;
+            }
+
             if (options.preserve_type) obj.type = cell.type;
             if (options.sheet_id) obj.sheet_id = options.sheet_id;
             if (options.calculated_value &&

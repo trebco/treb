@@ -9,8 +9,6 @@ import { LotusDate, UnlotusDate } from 'treb-format';
 import { ClickCheckbox, RenderCheckbox } from './checkbox';
 import { UnionIsMetadata } from '../expression-calculator';
 
-import { ClickHyperlink, RenderHyperlink } from './hyperlink';
-
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
  * functions and associated metadata (there's also a list of aliases).
@@ -620,21 +618,6 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [{ description: 'number' }],
       fn: (num: number): UnionValue => {
         return { type: ValueType.string, value: num.toString(16) };
-      },
-    },
-
-    Hyperlink: {
-      arguments: [
-        { name: 'text' },
-        { name: 'URL or reference' },
-      ],
-      click: ClickHyperlink,
-      render: RenderHyperlink,
-      fn: (text: string, reference: string): UnionValue => {
-        return { 
-          type: ValueType.string, 
-          value: [text, reference],
-        };
       },
     },
 
