@@ -7944,6 +7944,7 @@ export class Grid {
               }
               else {
                 cell.hyperlink = command.reference || undefined;
+                cell.render_dirty = true;
               }
 
               if (sheet === this.active_sheet) {
