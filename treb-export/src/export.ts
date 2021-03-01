@@ -5,7 +5,7 @@ import { template } from './template-2';
 import { Workbook } from './workbook';
 
 import { Style, Area, IArea, DataValidation, ValidationType, 
-         IsFlatDataArray, IsNestedRowArray, FlatCellData, ICellAddress } from 'treb-base-types';
+         IsFlatDataArray, IsNestedRowArray, FlatCellData, ICellAddress, ValueType } from 'treb-base-types';
 import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, 
          UnitCall, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
 
@@ -92,6 +92,13 @@ export class Exporter {
         column: number;
         // validation: DataValidation;
         formula: string;
+      }> = [];
+
+      const hyperlinks: Array<{
+        row: number;
+        column: number;
+        text: string;
+        reference: string;
       }> = [];
 
       const sparklines: Array<{
@@ -293,6 +300,25 @@ export class Exporter {
                     cell.value = this.parser.Render(result.expression);
                     break;
 
+                  case 'hyperlink':
+                    if (cell.calculated && Array.isArray(cell.calculated)) {
+                      hyperlinks.push({
+                        row: cell.row + 1,
+                        column: cell.column + 1,
+                        text: cell.calculated[0] || '',
+                        reference: cell.calculated[1] || '',
+                      });
+
+                      // change to string
+                      cell.value = cell.calculated[0] || '';
+                      range_options.precalc = undefined;
+                      
+                    }
+                    else {
+                      console.warn('hyperlink has no calculated value')
+                    }
+                    break;
+
                   case 'sparkline.column':
                   case 'sparkline.line':
                     cell.value = '';
@@ -317,7 +343,10 @@ export class Exporter {
               }
             }
 
-            sheet.SetRange({ row: cell.row + 1, col: cell.column + 1 }, cell.value, range_options);
+            // check
+            if (cell.value !== undefined || range_options.style || range_options.array || range_options.merge) {
+              sheet.SetRange({ row: cell.row + 1, col: cell.column + 1 }, cell.value, range_options);
+            }
           }
           else {
             // console.info("NO", cell);
@@ -652,6 +681,10 @@ export class Exporter {
 
       if (sparklines.length) {
         sheet.AddSparklines(sparklines);
+      }
+
+      if (hyperlinks.length) {
+        sheet.AddHyperlinks(hyperlinks);
       }
 
 

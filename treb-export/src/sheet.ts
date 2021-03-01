@@ -46,6 +46,8 @@ export class Sheet {
 
   public drawings: Drawing[] = [];
 
+  public next_relationship = 1;
+
   constructor(public options: SheetOptions = {}) {
 
   }
@@ -201,6 +203,7 @@ export class Sheet {
    * (separately).
    *
    * NOTE order matters. must be after sheetData and before pageMargins.
+   * FIXME: what about hyperlinks? (...)
    * 
    * @param range
    */
@@ -240,7 +243,7 @@ export class Sheet {
   /**
    * this is part (3) from docs/charts.md -- add a chart node to sheet.
    * NOTE: we're basing the _rels number here on drawings only. should
-   * switch to an internal counter...
+   * switch to an internal counter... (done; we need it for hyperlinks too)
    */
   public AddChart(anchor: TwoCellAnchor, options: ChartOptions) {
 
@@ -250,7 +253,7 @@ export class Sheet {
     if (!drawing) {
 
       drawing = new Drawing(); // anchor, false, false, options);
-      const relationship = this.drawings.length + 1; // <-- here
+      const relationship = this.next_relationship++;
 
       drawing.sheet_drawing_relationship = relationship;
 
@@ -573,6 +576,82 @@ export class Sheet {
     }
 
     container.set('count', container.getchildren().length.toString());
+
+  }
+
+  public AddHyperlinks(links: Array<{
+      row: number;
+      column: number;
+      text: string;
+      reference: string;
+    }>): void {
+
+    if (!this.dom) {
+      return;
+    }
+
+    let hyperlinks_node = this.dom.find('./hyperlinks');
+    if (!hyperlinks_node) {
+
+      // have to ensure that it gets put after "sheetData" and before "pageMargins"
+      // or it will _not_ work. 
+      //
+      // FIXME: what about mergeCells, which has the same issue?
+
+      hyperlinks_node = Element('hyperlinks');
+      const root = this.dom.getroot();
+      const children = [];
+      for (const child of (root as any)._children) {
+        children.push(child);
+        if (child.tag === 'sheetData') {
+          children.push(hyperlinks_node);
+        }
+      }
+      (root as any)._children = children;
+
+    }
+
+    for (const link of links) {
+
+      const ref = this.Address({row: link.row, col: link.column});
+
+      if (/^https{0,1}:\/\//i.test(link.reference)) {
+
+        // external URL
+
+        // create element
+        const relationship = this.next_relationship++;
+        ElementTree.SubElement(hyperlinks_node, 'hyperlink', {
+          ref,
+          'r:id': `rId${relationship}`,
+        });
+
+        // create new rels if necessary
+        if (!this.rels_dom) { 
+          this.rels_dom = this.CreateRelationships();
+        }
+
+        // add relationship
+        ElementTree.SubElement(this.rels_dom.getroot(), 'Relationship', {
+          Id: `rId${relationship}`,
+          Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+          Target: link.reference,
+          TargetMode: 'External',
+        });
+
+      }
+      else {
+
+        // document reference
+
+        // create element
+        const hyperlink = ElementTree.SubElement(hyperlinks_node, 'hyperlink', {
+          ref,
+          location: link.reference, // target
+          display: link.text,
+        });
+      };
+    }
 
   }
 

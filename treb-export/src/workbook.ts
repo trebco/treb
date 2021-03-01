@@ -433,7 +433,7 @@ export class Workbook {
       const rel = NextRel();
       const type = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet';
 
-      console.info('inserting sheet', index);
+      // console.info('inserting sheet', index);
 
       this.rels[rel] = {
         target: path,
