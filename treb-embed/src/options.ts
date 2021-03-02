@@ -168,6 +168,12 @@ export interface RunSimulationOptions {
   additional_cells: ICellAddress[];
   seed: number;
   replay: boolean;
+
+  /** 
+   * this is added to support RAW, which may override the dialog 
+   * and has (potentially) different behavior
+   */
+  abort_on_dialog_close: boolean;
 }
 
 /**

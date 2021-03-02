@@ -235,7 +235,8 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       trials = this.options.default_trials || 5000,
       opts: Partial<RunSimulationOptions> = {}): Promise<void> {
 
-    const { lhs, stepped } = {
+    const { lhs, stepped, abort_on_dialog_close } = {
+      abort_on_dialog_close: true,
       lhs: !!this.options.lhs,
       stepped: !!this.options.screen_updates,
       ...opts,
@@ -259,7 +260,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       message: 'Starting',
       // type: DialogType.info,
     }).then(() => {
-      if (this.simulation_status.running) {
+      if (this.simulation_status.running && abort_on_dialog_close) {
         this.AbortSimulation();
       }
     });
