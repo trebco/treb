@@ -46,6 +46,22 @@ const erf = (x: number): number => {
 
 };
 
+/** imprecise but reasonably fast normsinv function */
+const inverse_normal = (q: number): number => {
+
+  if (q === 0.50) {
+    return 0;
+  }
+  
+  const p = (q < 1.0 && q > 0.5) ? (1 - q) : q;
+  const t = Math.sqrt(Math.log(1.0 / Math.pow(p, 2.0)));
+  const x = t - (2.515517 + 0.802853 * t + 0.010328 * Math.pow(t, 2.0)) /
+    (1.0 + 1.432788 * t + 0.189269 * Math.pow(t, 2.0) + 0.001308 * Math.pow(t, 3.0));
+
+  return (q > 0.5 ? x : -x);
+
+};
+
 const UnionTrue = { type: ValueType.boolean, value: true };
 const UnionFalse = { type: ValueType.boolean, value: false };
 
@@ -584,6 +600,37 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: (a: number): UnionValue => {
         return { type: ValueType.number, value: erf(a) };
       },
+    },
+
+    'NormsInv': {
+      
+      description: 'Inverse of the normal cumulative distribution', 
+      arguments: [
+        {name: 'probability'},
+      ],
+
+      fn: (q: number): UnionValue => {
+        return {
+          type: ValueType.number,
+          value: inverse_normal(q),
+        }
+      }
+    },
+
+    'Norm.Inv': {
+      description: 'Inverse of the normal cumulative distribution', 
+      arguments: [
+        {name: 'probability'},
+        {name: 'mean', default: 0},
+        {name: 'standard deviation', default: 1},
+      ],
+
+      fn: (q: number, mean = 0, stdev = 1): UnionValue => {
+        return {
+          type: ValueType.number,
+          value: inverse_normal(q) * stdev + mean,
+        }
+      }
     },
 
     'Norm.Dist': {
