@@ -94,7 +94,7 @@ export class Importer {
       if (mapped.v && mapped.v.text) {
         const index = Number(mapped.v.text);
         if (!isNaN(index) && sheet.shared_strings) {
-          value = sheet.shared_strings.GetSharedString(index);
+          value = sheet.shared_strings.GetSharedString(index) || '';
           if (value[0] === '=') { value = '\'' + value; }
         }
       }
@@ -222,7 +222,7 @@ export class Importer {
 
   }
 
-  public SheetCount() {
+  public SheetCount(): number {
     return this.workbook.Count();
   }
 
@@ -332,27 +332,53 @@ export class Importer {
       }
     }
 
+    const column_styles: number[] = [];
+    let default_column_style = -1;
+
     const column_widths: number[] = [];
     const columns = sheet.dom.find(`./cols`);
     if (columns) {
       for (const child of columns.getchildren()) {
-        if (child.tag === 'col' && child.attrib.customWidth) {
+        if (child.tag === 'col') {
+          if (child.attrib.style) {
+            // console.info("COLUMN STYLE", child);
 
-          const min = Number(child.attrib.min);
-          let max = Number(child.attrib.max);
-          let width = Number(child.attrib.width);
+            const style = Number(child.attrib.style);
+            const min = Number(child.attrib.min);
+            const max = Number(child.attrib.max);
 
-          if (!isNaN(min) && !isNaN(max) && !isNaN(width)) {
+            if (!isNaN(min) && !isNaN(max) && !isNaN(style)) {
 
-            // otherwise it will set -> 16384
-            if (sheet.extent) {
-              max = Math.min(max, sheet.extent.to.col + 1);
+              if (sheet.extent && max >= sheet.extent.to.col || max - min > 100) { // just spitballing on that last one
+                default_column_style = style;
+              }
+              else {
+                for (let i = min; i <= max; i++) {
+                  column_styles[i] = style;
+                }
+              }
+
             }
 
-            width = Math.round(width / one_hundred_pixels * 100);
-            for (let i = min; i <= max; i++) column_widths[i - 1] = width;
           }
+          if (child.attrib.customWidth) {
 
+            const min = Number(child.attrib.min);
+            let max = Number(child.attrib.max);
+            let width = Number(child.attrib.width);
+
+            if (!isNaN(min) && !isNaN(max) && !isNaN(width)) {
+
+              // otherwise it will set -> 16384
+              if (sheet.extent) {
+                max = Math.min(max, sheet.extent.to.col + 1);
+              }
+
+              width = Math.round(width / one_hundred_pixels * 100);
+              for (let i = min; i <= max; i++) column_widths[i - 1] = width;
+            }
+
+          }
         }
       }
     }
@@ -453,8 +479,10 @@ export class Importer {
     return cells;
     */
 
+    // console.info("SS", sheet.shared_strings);
+    // console.info("S", this.workbook.style_cache, this.workbook.style_cache.CellXfToStyles());
 
-    return {
+    const result: ImportedSheetData = {
       name: sheet.options.name,
       cells: data,
       default_column_width,
@@ -462,6 +490,16 @@ export class Importer {
       row_heights,
       styles: this.workbook.style_cache.CellXfToStyles(),
     };
+
+    if (default_column_style >= 0) {
+      result.sheet_style = default_column_style;
+    }
+
+    if (column_styles.length) {
+      result.column_styles = column_styles;
+    }
+
+    return result;
 
   }
 

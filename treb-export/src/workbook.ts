@@ -116,20 +116,83 @@ export class Workbook {
     // simple strings as before (but now with correct indexes).
     // FIXME.
 
+    // NOTE: there are overlaps, which renders this structure slightly broken.
+    // I'll explain: we have two shared strings with the same text. the SS 
+    // class is a map of text -> index, for historical reasons. if there's 
+    // duplicate data, it's overwritten and the lookups fail.
+
+    // solution: use a forward table. we should be doing that anyway. make
+    // it optional, so we don't break any backcompat.
+
     this.shared_strings.dom = ElementTree.parse(data);
     this.shared_strings.map = {};
     this.shared_strings.len = 0;
+
+    const reverse_map: string[] = [];
 
     this.shared_strings.dom.findall('./si').forEach((elt, idx) => {
       const children = elt.getchildren();
       if (children && children.length){
         const child = children[0];
-        if (child.tag === 't' && child.text){
-          this.shared_strings.map[child.text.toString()] = idx;
+
+        // simple string looks like
+        //
+        // <si>
+        //   <t>text here!</t>
+        // </si>
+
+        if (child.tag === 't' && (typeof child.text === 'string')){
+          const text = child.text.toString();
+          this.shared_strings.map[text] = idx;
+          reverse_map[idx] = text;
         }
+        else if (child.tag === 'r') {
+
+          // complex string looks like
+          //
+          // <si>
+          //   <r>
+          //     <rPr>(...style data...)</rPr>
+          //     <t>text part</t>
+          //   </r>
+          // </si>
+          //
+          // where there can be multiple r tags with different styling.
+          // since we don't support that atm, let's drop style and just
+          // collect text.
+
+          const text_parts: string[] = [];
+
+          for (const composite of children) {
+            if (composite.tag === 'r') {
+              const composite_children = composite.getchildren();
+              if (composite_children && composite_children[1] && composite_children[1].tag === 't') {
+                text_parts.push(composite_children[1].text?.toString() || '');
+              }
+            }
+          }
+
+          const text = text_parts.join('') || '';
+          this.shared_strings.map[text] = idx;
+          reverse_map[idx] = text;
+
+        }
+        else {
+          console.info('bad shared string @', idx, elt);
+        }
+
+        // console.info(idx, child);
+
+      }
+      else {
+        console.info('no children?', elt);
       }
       this.shared_strings.len++;
     });
+
+    if (reverse_map.length) {
+      this.shared_strings.reverse_map = reverse_map;
+    }
 
   }
 

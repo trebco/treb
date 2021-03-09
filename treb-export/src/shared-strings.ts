@@ -8,11 +8,23 @@ export class SharedStrings {
   public map: {[index: string]: number} = {};
   public len = 0;
 
+  // reverse map is undefined by default, so it won't be used when
+  // constructing. it should only be used when reading.
+
+  public reverse_map?: string[] = undefined;
 
   /**
    * get string by index (mapped in reverse)
    */
   public GetSharedString(index: number){
+
+    if (this.reverse_map) {
+      const check = this.reverse_map[index];
+      if (typeof check !== undefined) {
+        return check;
+      }
+    }
+
     for (const key of Object.keys(this.map)){
       if (this.map[key] === index) return key;
     }

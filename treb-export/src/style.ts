@@ -369,6 +369,10 @@ export class StyleCache {
       else if (typeof font.color_theme === 'number') {
         const index = Theme.color_map[font.color_theme];
         const color = this.theme.colors[index];
+
+        // why was I _not_ accepting system here? (...) there's an argument
+        // against system 1 -> default... 
+        
         if (color && color.type !== 'system' && color.value) {
           if (typeof font.color_tint === 'number') {
             props.text_color = '#' + this.TintColor(color.value, font.color_tint);
@@ -377,6 +381,17 @@ export class StyleCache {
             props.text_color = '#' + color.value;
           }
         }
+
+        else if (color && color.type === 'system' && color.value) {
+
+          // let's drop color index 1, as that should be default? (...)
+          // should do this higher up
+
+          if (font.color_theme !== 1) {
+            props.text_color = '#' + color.value;
+          }
+        }
+
       }
 
     }
@@ -940,7 +955,7 @@ export class StyleCache {
       return border;
     });
 
-    this.cell_xfs = this.dom.findall('./cellXfs/xf').map((element) => {
+    this.cell_xfs = this.dom.findall('./cellXfs/xf').map((element, index) => {
       const xf: CellXf = {
         number_format: Number(element.attrib.numFmtId),
         font: Number(element.attrib.fontId),
@@ -953,15 +968,17 @@ export class StyleCache {
         if (child.tag === 'alignment') {
           if (child.attrib.horizontal) {
             xf.horizontal_alignment = child.attrib.horizontal;
-            if (child.attrib.wrapText) {
-              xf.wrap_text = true;
-            }
           }
           if (child.attrib.vertical) {
             xf.vertical_alignment = child.attrib.vertical;
           }
+          if (child.attrib.wrapText) {
+            xf.wrap_text = true;
+          }
         }
       }
+
+      console.info(index, xf, element);
 
       return xf;
     });

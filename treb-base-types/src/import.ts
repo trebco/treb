@@ -11,5 +11,10 @@ export interface ImportedSheetData {
   column_widths: number[];
   row_heights: number[];
   styles: Style.Properties[];
+
+  // optional, for backcompat
+  sheet_style?: number;
+  column_styles?: number[];
+
 }
 

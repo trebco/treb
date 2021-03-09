@@ -1014,7 +1014,36 @@ export class Grid {
 
     this.ClearSelection(this.primary_selection);
 
+    // why is this parsing/translation done here instead of in the sheet class?
+
     for (let si = 0; si < sheet_data.length; si++) {
+
+      const styles = sheet_data[si].styles;
+
+      // adding sheet style...
+
+      // 0 is implicitly just a general style
+
+      const sheet_style = sheet_data[si].sheet_style;
+      if (sheet_style) {
+        this.model.sheets[si].UpdateAreaStyle(
+          new Area({row: Infinity, column: Infinity}, {row: Infinity, column: Infinity}), 
+          styles[sheet_style]);
+      }
+
+      // and column styles...
+
+      const column_styles = sheet_data[si].column_styles;
+      if (column_styles) {
+        for (let i = 0; i < column_styles.length; i++) {
+
+          // 0 is implicitly just a general style
+
+          if (column_styles[i]) {
+            this.model.sheets[si].UpdateAreaStyle(new Area({row: Infinity, column: i}, {row: Infinity, column: i}), styles[column_styles[i]]);
+          }
+        }
+      }
 
       // this.cells.FromJSON(cell_data);
       this.model.sheets[si].cells.FromJSON(sheet_data[si].cells);
@@ -1030,7 +1059,7 @@ export class Grid {
       for (const info of sheet_data[si].cells) {
         if (info.style_ref) {
           if (!cs[info.column]) cs[info.column] = [];
-          cs[info.column][info.row] = sheet_data[si].styles[info.style_ref];
+          cs[info.column][info.row] = styles[info.style_ref];
         }
       }
 
