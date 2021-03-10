@@ -2,12 +2,11 @@
 import { Yield } from 'treb-utils';
 
 import { DOMUtilities } from '../util/dom_utilities';
-import { Theme } from '../types/theme';
+import { Theme } from 'treb-base-types';
 import { FormulaEditorBase, FormulaEditorEvent } from './formula_editor_base';
 import { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
 import { DataModel } from '../types/data_model';
-import { UA } from '../util/ua';
 
 export interface FormulaBarResizeEvent {
   type: 'formula-bar-resize';

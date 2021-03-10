@@ -2,7 +2,7 @@
 import { tmpl, composite, NodeModel } from 'treb-utils';
 import { icons } from './generated/toolbar4';
 import { symbol_defs } from './generated/symbol-defs';
-import { Style, Localization, Area } from 'treb-base-types';
+import { Style, Localization, Area, Theme } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement, Color } from 'treb-utils';
@@ -58,18 +58,20 @@ export class Toolbar extends EventSource<ToolbarEvent> {
   public state?: SelectionState;
 
   /** the current color, if you click the button (not the dropdown) */
-  public background_color? = 'yellow';
+  public background_color?: Style.Color = { text: 'yellow' };
 
   /** the current color, if you click the button (not the dropdown) */
-  public foreground_color? = 'blue';
+  public foreground_color: Style.Color = { text: 'blue' };
 
   /** the current color, if you click the button (not the dropdown) */
-  public border_color? = '';
+  public border_color?: Style.Color = undefined; // { theme: 0 };
 
-  constructor(container: HTMLElement, options: EmbeddedSpreadsheetOptions) {
+  public theme_color_map: string[] = [];
+
+  constructor(container: HTMLElement, options: EmbeddedSpreadsheetOptions, theme: Theme) {
     super();
 
-    for (const value of [0, 64, 128, 192, 212, 256]) {
+    for (const value of [0, 128, 192, 212, 256]) {
       this.colors.push(`rgb(${value}, ${value}, ${value})`);
     }
     for (const color of ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet']){ 
@@ -120,7 +122,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         <div class='group'>
           <button class='color-button' data-command='background-color'>
             ${this.Icon('fa/light/fill-drip')}
-            <div id='background-color-bar' class='color-bar' style='color:${this.background_color};'></div>
+            <div id='background-color-bar' class='color-bar' style='color:yellow;'></div>
           </button>
           <button class='drop'></button>
           <div class='drop-menu color-chooser' data-target='background' tabindex='-1'></div>
@@ -129,7 +131,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         <div class='group'>
           <button class='color-button' data-command='foreground-color'>
             ${this.Icon('fa/light/font')}
-            <div id='foreground-color-bar' class='color-bar' style='color:${this.foreground_color};'></div>
+            <div id='foreground-color-bar' class='color-bar' style='color:blue;'></div>
           </button>
           <button class='drop'></button>
           <div class='drop-menu color-chooser' data-target='foreground' tabindex='-1'></div>
@@ -153,7 +155,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
               <li>
                 <button id='border-color' class='color-button drop-button' data-position='horizontal' title='Border color'>
                   ${this.Icon('fa/light/palette')}
-                  <div id='border-color-bar' class='color-bar' style='color:${this.border_color};'></div>
+                  <div id='border-color-bar' class='color-bar' style='color:#333;'></div>
                 </button>
 
                 <div class='drop-menu color-chooser' data-target='border' tabindex='-1'></div>
@@ -227,9 +229,14 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         <div class='staging'>
           <div id='color-chooser' class='color-chooser-main'>
+            <div class='color-header'>Theme colors</div>
+            <div id='theme-color-list' class='color-list'></div>
+
+            <div class='color-header other-colors'>Other colors</div>
             <div id='color-list' class='color-list'></div>
+            
             <div class='new-color'>
-              <input id='color-input' placeholder='Color'>
+              <input id='color-input' placeholder='New Color'>
               <button id='color-button'>
                 ${this.Icon('fa/light/check')}
               </button>
@@ -245,13 +252,16 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     const color_button = this.model['color-button'] as HTMLElement;
     const color_input = this.model['color-input'] as HTMLInputElement;
 
+    this.UpdateTheme(theme);
+    // this.RenderThemeColors(this.model['theme-color-list'] as HTMLElement);
+
     color_button.addEventListener('click', () => {
-      this.CommitColor(color_input.value || '');
+      this.CommitColor({text: color_input.value || ''});
     });
 
     color_input.addEventListener('keydown', (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
-        this.CommitColor(color_input.value || '');
+        this.CommitColor({text: color_input.value || ''});
       }
     });
     color_input.addEventListener('input', () => {
@@ -306,7 +316,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         if (/^border-/.test(command)) {
           data.border = command;
-          data.color = this.border_color || '';
+          data.color = this.border_color; // || '';
           command  = 'border';
         }
         else {
@@ -321,17 +331,17 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
             case 'background-color':
               data.target = 'background';
-              data.color = this.background_color || '';
+              data.color = this.background_color;
               break;
 
             case 'foreground-color':
               data.target = 'foreground';
-              data.color = this.foreground_color || '';
+              data.color = this.foreground_color;
               break;
 
             case 'border-color':
               data.target = 'border';
-              data.color = this.border_color || '';
+              data.color = this.border_color;
               break;
 
           }
@@ -407,28 +417,56 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
   }
 
-  public CommitColor(color: string): void {
-    switch (this.color_target) {
-      case 'background':
-        this.model['background-color-bar'].style.color = color;
-        this.background_color = color;
-        break;
-      case 'foreground':
-        this.model['foreground-color-bar'].style.color = color;
-        this.foreground_color = color;
-        break;
-      case 'border':
-        if (this.model['border-color-bar']) { 
-          this.model['border-color-bar'].style.color = color;
-        }
-        this.border_color = color;
-        break;
+  public ResolveColor(color: Style.Color|undefined, default_color: Style.Color): string {
+
+    if (!color) {
+      color = default_color;
     }
 
-    this.Publish({ type: 'button', command: 'color', data: {
-      color,
-      target: this.color_target || '',
-    }});
+    if (color.text) {
+      return color.text;
+    }
+
+    if (typeof color.theme === 'number') {
+      return this.theme_color_map[color.theme] || '';
+    }
+
+    return '';
+
+  }
+
+  public CommitColor(color?: Style.Color): void {
+
+      switch (this.color_target) {
+
+        case 'background':
+          this.model['background-color-bar'].style.color = this.ResolveColor(color, {theme: 1});
+          this.background_color = color ? { ...color } : undefined;
+          break;
+
+        case 'border':
+          this.model['border-color-bar'].style.color = this.ResolveColor(color, {theme: 0});
+          this.border_color = color ? { ...color } : undefined;
+          break;
+
+        case 'foreground':
+          if (!color) {
+            color = { theme: 0 };
+          }
+          this.model['foreground-color-bar'].style.color = this.ResolveColor(color, {theme: 0});
+          this.foreground_color = { ...color };
+          break;
+
+      }
+
+      this.Publish({ 
+          type: 'button', 
+          command: 'color', 
+          data: {
+            color: color ? { ...color } : undefined,
+            target: this.color_target || '',
+          }
+        });
   }
 
   public Focus(element: HTMLElement, left: number, top: number, focus_target?: HTMLElement): void {
@@ -467,8 +505,16 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         return;
       }
       else if (target.classList?.contains('color-swatch')) {
-        const color = target?.dataset?.color || '';
-        this.CommitColor(color);
+
+        if (typeof target?.dataset?.theme !== 'undefined') {
+          let index = Number(target?.dataset?.theme);
+          if (isNaN(index)) { index = 0; }
+          this.CommitColor({ theme: index || 0 });
+        }
+        else {
+          const color = target?.dataset?.color || '';
+          this.CommitColor(color ? {text: color} : undefined);
+        }
       }
 
       // console.info(target);
@@ -560,6 +606,42 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
   }
 
+  public UpdateTheme(theme: Theme): void {
+    const target = this.model['theme-color-list'] as HTMLElement;
+    const html: string[] = []; // [`<div class='row'>`];
+
+    const labels = [
+      'Text',
+      'Background',
+      'Text',
+      'Background',
+      'Accent',
+      'Accent',
+      'Accent',
+      'Accent',
+      'Accent',
+      'Accent',
+    ]
+
+    let i = 0;
+
+    this.theme_color_map = [];
+
+    if (theme.theme_colors) {
+      html.push(`<div class='row'>`);
+      for (i = 0; i < 10; i++) {
+        const color = theme.theme_colors[i] || '#000';
+        html.push(`<button class='color-swatch' data-theme=${i} title='${labels[i]}: ${color}' style='background: ${color};'></button>`);
+        this.theme_color_map[i] = color;
+      }
+      html.push(`</div>`);
+
+    }
+
+    // html.push(`</div>`);
+    target.innerHTML = html.join('');
+  }
+
   public RenderColors(target: HTMLElement): void {
 
     const html: string[] = [
@@ -567,7 +649,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       `<button class='color-swatch default-color' data-color='' title='Default color'></button>`];
 
     let i = 0;
-    for ( ; i < 6 && i < this.colors.length; i++) {
+    for ( ; i < 9 && i < this.colors.length; i++) {
       const color = this.colors[i];
       html.push(`<button class='color-swatch' data-color='${color}' title='${color}' style='background-color: ${color}'></button>`)
     }
@@ -575,7 +657,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     while (i < this.colors.length) {
       html.push(`<div class='row'>`);
-      const end = i + 7;
+      const end = i + 10;
       for ( ; i < this.colors.length && i < end; i++) {
         const color = this.colors[i];
         html.push(`<button class='color-swatch' data-color='${color}' title='${color}' style='background-color: ${color}'></button>`)

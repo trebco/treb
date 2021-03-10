@@ -6,8 +6,8 @@ import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } 
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, 
-  IsFlatData, IsFlatDataArray, Rectangle, ValueType, UnionIs } from 'treb-base-types';
-import { EventSource, Yield, tmpl } from 'treb-utils';
+  IsFlatData, IsFlatDataArray, Rectangle, Theme } from 'treb-base-types';
+import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 // import { Toolbar as SimpleToolbar, Toolbar, ToolbarElement } from 'treb-toolbar';
 // import { ToolbarManager } from './toolbar-manager';
@@ -33,9 +33,10 @@ import '../style/embed.scss';
 
 // config
 import * as build from '../../package.json';
+
+// what is this? if these are being used outside of grid they should be exported
 import { SerializedModel } from 'treb-grid/src/types/data_model';
 import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
-import { Theme } from 'treb-grid/src/types/theme';
 
 interface UndoEntry {
   data: string;
@@ -807,6 +808,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   public UpdateTheme(override?: Partial<Theme>): void {
     this.grid.UpdateTheme(undefined, override);
+    if (this.toolbar) {
+      this.toolbar.UpdateTheme(this.grid.theme);
+    }
     /*
     this.dialog?.UpdateTheme({
       mask: this.grid.theme.interface_dialog_mask,
@@ -1334,6 +1338,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   /**
    * why is this public?
+   * more importantly, why is this async and returns a promise explicitly?
+   * won't that return a Promise<Promise>? (...)
    */
   public async ImportXLSX(data: string) {
 
@@ -1450,7 +1456,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * rare the separation is better. might be able to do some common-chunking
    * with webpack (although I'm not sure how well that plays w/ ts).
    */
-  public Export(){
+  public Export(): void {
     this.ExportBlob().then((blob) => {
 
       let filename = 'export';
@@ -2650,7 +2656,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   public CreateToolbar(container: HTMLElement): Toolbar {
-    this.toolbar = new Toolbar(container, this.options);
+    this.toolbar = new Toolbar(container, this.options, this.grid.theme);
     this.toolbar.Subscribe((event) => {
 
       let updated_style: Style.Properties= {};
@@ -2688,7 +2694,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               }
 
               if (border) {
-                this.grid.ApplyBorders(
+                this.grid.ApplyBorders2(
                   undefined, 
                   border, 
                   event.data?.color || undefined, 
@@ -2706,18 +2712,21 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
             switch (event.data?.target) {
               case 'border':
-                updated_style.border_top_color =
-                  updated_style.border_bottom_color = 
-                  updated_style.border_left_color = 
-                  updated_style.border_right_color = event.data?.color || 'none';
+                updated_style.border_top_fill =
+                  updated_style.border_bottom_fill = 
+                  updated_style.border_left_fill = 
+                  updated_style.border_right_fill = event.data?.color || {};
                 break;
               case 'foreground':
-                updated_style.text_color = event.data?.color || 'none';
-                // console.info('text color ->', updated_style.text_color);
+
+                // FIXME: theme colors
+                updated_style.text = event.data?.color || {};
+
                 break;
               case 'background':
-                updated_style.background = event.data?.color || 'none';
-                // console.info('background color ->', updated_style.background);
+
+                // FIXME: theme colors
+                updated_style.fill = event.data?.color || {};
                 break;
             }
             break;

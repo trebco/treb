@@ -10,6 +10,7 @@ export * from './text_part';
 export * from './import';
 export * from './union';
 export * from './value-type';
+export * from './theme';
 
 // import * as Style from './style';
 // export { Style };

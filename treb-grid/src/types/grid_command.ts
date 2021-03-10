@@ -169,7 +169,8 @@ export interface UpdateBordersCommand {
   key: CommandKey.UpdateBorders;
   area: IArea;
   borders: BorderConstants;
-  color?: string; // pending
+  // color?: string; // pending
+  color?: Style.Color;
 
   /** defaults to one. optional for the case of "none" (remove borders) */
   width?: number;

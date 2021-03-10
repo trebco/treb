@@ -1,8 +1,8 @@
 
-import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectangle } from 'treb-base-types';
+import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectangle, 
+         Theme, ThemeColor, ThemeColor2 } from 'treb-base-types';
 
 import { Tile } from '../types/tile';
-import { Theme } from '../types/theme';
 
 import { FontMetricsCache } from '../util/font_metrics_cache';
 import { BaseLayout, TileRange } from '../layout/base_layout';
@@ -202,9 +202,9 @@ export class TileRenderer {
     }
 
     context.setTransform(scale, 0, 0, scale, 0, 0);
-    // context.fillStyle = this.theme.header_background_color || '';
-    context.fillStyle = this.theme.headers?.background || '';
-    // context.fillRect(0, 0, x, y);
+    context.fillStyle = // this.theme.headers?.background || '';
+      this.theme.headers?.fill ? ThemeColor(this.theme, this.theme.headers.fill) : '';
+
     context.fillRect(0, 0, x, header_size.y);
     context.fillRect(0, 0, header_size.x, y);
 
@@ -230,7 +230,8 @@ export class TileRenderer {
     // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
     context.font = Style.Font(this.theme.headers||{});
 
-    context.fillStyle = this.theme.headers?.text_color || '';
+    // context.fillStyle = this.theme.headers?.text_color || '';
+    context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
 
     if (this.model.active_sheet.freeze.rows && this.layout.header_offset.x > 1) {
 
@@ -243,7 +244,10 @@ export class TileRenderer {
       let row_index = 0;
       for (; row_index < this.model.active_sheet.freeze.rows; row_index++) {
         const height = this.layout.RowHeight(row_index);
-        context.fillStyle = this.theme.headers?.text_color || '';
+
+        //context.fillStyle = this.theme.headers?.text_color || '';
+        context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
+
         if (height >= font_metrics.block) {
           context.fillText(`${row_index + 1}`,
             header_size.x / 2, height / 2);
@@ -296,7 +300,10 @@ export class TileRenderer {
         const text = Area.ColumnToLabel(column_index);
         const metrics = context.measureText(text);
         if (width > metrics.width) {
-          context.fillStyle = this.theme.headers?.text_color || '';
+
+          // context.fillStyle = this.theme.headers?.text_color || '';
+          context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
+
           context.fillText(text, width / 2, header_size.y / 2);
         }
         /*
@@ -364,7 +371,9 @@ export class TileRenderer {
 
       if (tile.dirty || force) {
 
-        context.fillStyle = this.theme.headers?.background || '';
+        context.fillStyle = // this.theme.headers?.background || '';
+          this.theme.headers?.fill ? ThemeColor(this.theme, this.theme.headers.fill) : '';
+
         context.fillRect(0, 0, tile.logical_size.width, this.layout.header_offset.y);
 
         context.textAlign = 'center';
@@ -374,7 +383,8 @@ export class TileRenderer {
         // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
         context.font = Style.Font(this.theme.headers||{});
 
-        context.fillStyle = this.theme.headers?.text_color || '';
+        // context.fillStyle = this.theme.headers?.text_color || '';
+        context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
         context.strokeStyle = this.theme.grid_color || '';
 
         context.beginPath();
@@ -387,7 +397,8 @@ export class TileRenderer {
           const text = Area.ColumnToLabel(column_index);
           const metrics = context.measureText(text);
           if (width > metrics.width) {
-            context.fillStyle = this.theme.headers?.text_color || '';
+            // context.fillStyle = this.theme.headers?.text_color || '';
+            context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
             context.fillText(text, width / 2, header_size.y / 2);
           }
           /*
@@ -421,7 +432,9 @@ export class TileRenderer {
 
         const context = tile.getContext('2d', { alpha: false });
         if (!context) continue;
-        context.fillStyle = this.theme.headers?.background || '';
+        context.fillStyle = // this.theme.headers?.background || '';
+          this.theme.headers?.fill ? ThemeColor(this.theme, this.theme.headers.fill) : '';
+
         context.setTransform(scale, 0, 0, scale, 0, 0);
         // context.fillRect(0, 0, tile.logical_size.width, tile.logical_size.height);
         context.fillRect(0, 0, this.layout.header_offset.x, tile.logical_size.height);
@@ -433,7 +446,9 @@ export class TileRenderer {
         // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
         context.font = Style.Font(this.theme.headers||{});
 
-        context.fillStyle = this.theme.headers?.text_color || '';
+        // context.fillStyle = this.theme.headers?.text_color || '';
+        context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
+
         context.strokeStyle = this.theme.grid_color || '';
 
         context.beginPath();
@@ -443,7 +458,9 @@ export class TileRenderer {
         let row_index = tile.first_cell.row;
         for (; row_index <= tile.last_cell.row; row_index++) {
           const height = this.layout.RowHeight(row_index);
-          context.fillStyle = this.theme.headers?.text_color || '';
+          //context.fillStyle = this.theme.headers?.text_color || '';
+          context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
+
           if (height >= font_metrics.block) {
             context.fillText(`${row_index + 1}`,
               header_size.x / 2, height / 2);
@@ -805,128 +822,226 @@ export class TileRenderer {
 
   }
 
+  protected ResolveColors(style: Style.Properties): Style.Properties {
+
+    const resolved = {...style};
+    resolved.text = { text: ThemeColor(this.theme, style.text) };
+
+    // TODO: other colors
+
+    return resolved;
+
+  }
+
   protected RenderCellBorders(
     address: ICellAddress,
     context: CanvasRenderingContext2D,
     style: Style.Properties,
     left = 0, top = 0, width = 0, height = 0): void {
 
-    context.lineWidth = 1;
+    // edges are complicated. borders cover grid lines. fill also covers
+    // grid lines, in all four directions. the bottom and right cells should
+    // control, which is handy because we usually paint in that order, but 
+    // sometimes we are painting out of order so we still need to think about
+    // it.
 
-    if (!address.row) {
-      top++;
-      height--;
-    }
+    // borders take precedence over fills for corners. so a border can
+    // "bite into" a fill that covers multiple cells.
 
-    if (!address.column) {
-      left++;
-      width--;
-    }
+    // --- first calculate ---
 
-    // this is better than the old way (mirroring borders) but I don't
-    // like that we do all these extra lookups. could we cache this somewhere?
+    // this is a field for the background between a double border; generally
+    // speaking it should be the cell background color of the cell the border
+    // belongs to...
+
+    let double_border_center = '';
+
+    // this is a flag because we check more than once
 
     const composite = { ...style };
 
+    const valid_fill = Style.ValidColor(style.fill);
+
+    const edges: {
+      above: Style.Properties,
+      below: Style.Properties,
+      left: Style.Properties,
+      right: Style.Properties,
+    } = {
+      below: this.model.active_sheet.CellStyleData({row: address.row + 1, column: address.column}) || {},
+      right: this.model.active_sheet.CellStyleData({row: address.row, column: address.column + 1}) || {},
+      above: address.row ? this.model.active_sheet.CellStyleData({row: address.row - 1, column: address.column}) || {} : {},
+      left: address.column ? this.model.active_sheet.CellStyleData({row: address.row, column: address.column - 1}) || {} : {},
+    };
+
+    // if the cell underneath has a top border, that overrides our bottom
+    // border (although these should be normalized somewhere?)
+    
+    if (edges.below.border_top) {
+      composite.border_bottom = edges.below.border_top;
+      composite.border_bottom_fill = edges.below.border_bottom_fill;
+
+      if (edges.below.border_top === 2) {
+        double_border_center = 
+          ThemeColor2(this.theme, edges.below.fill) || 
+          ThemeColor2(this.theme, this.theme.grid_cell?.fill) || '#fff';
+      }
+
+    }
+    else if (style.border_bottom === 2) {
+      double_border_center = 
+        ThemeColor2(this.theme, style.fill) || 
+        ThemeColor2(this.theme, this.theme.grid_cell?.fill) || '#fff';
+    }
+
+    // if we still don't have a bottom border, check fill, starting with
+    // the cell underneath, because that controls.
+    
     if (!composite.border_bottom) {
-      const test = this.model.active_sheet.CellStyleData({ row: address.row + 1, column: address.column });
-      if (test && test.border_top) {
-        composite.border_bottom = test.border_top;
-        composite.border_bottom_color = test.border_top_color;
+      if (Style.ValidColor(edges.below.fill)) {
+        composite.border_bottom = 1;
+        composite.border_bottom_fill = edges.below.fill;
+      }
+      else if (valid_fill) {
+        composite.border_bottom = 1;
+        composite.border_bottom_fill = style.fill;
       }
     }
 
-    if (!composite.border_top && address.row) {
-      const test = this.model.active_sheet.CellStyleData({ row: address.row - 1, column: address.column });
-      if (test && test.border_bottom) {
-        composite.border_top = test.border_bottom;
-        composite.border_top_color = test.border_bottom_color;
-      }
-      else if (style.background && style.background !== 'none') {
-        composite.border_top = 1;
-        composite.border_top_color = style.background;
-      }
-    }
+    // now do the same thing with the cell to the right...
 
-    if (!composite.border_left && address.column) {
-      const test = this.model.active_sheet.CellStyleData({ row: address.row, column: address.column - 1 });
-      if (test && test.border_right) {
-        composite.border_left = test.border_right;
-        composite.border_left_color = test.border_right_color;
-      }
-      else if (style.background && style.background !== 'none') {
-        composite.border_left = 1;
-        composite.border_left_color = style.background;
-      }
+    if (edges.right.border_left) {
+      composite.border_right = edges.right.border_left;
+      composite.border_right_fill = edges.right.border_left_fill;
     }
 
     if (!composite.border_right) {
-      const test = this.model.active_sheet.CellStyleData({ row: address.row, column: address.column + 1 });
-      if (test && test.border_left) {
-        composite.border_right = test.border_left;
-        composite.border_right_color = test.border_left_color;
+      if (Style.ValidColor(edges.right.fill)) {
+        composite.border_right = 1;
+        composite.border_right_fill = edges.right.fill;
+      }
+      else if (valid_fill) {
+        composite.border_right = 1;
+        composite.border_right_fill = style.fill;
       }
     }
 
-    if (composite.border_bottom && composite.border_bottom_color) {
-      if (composite.border_bottom_color === 'none') { 
-        composite.border_bottom_color = this.theme.grid_cell?.border_bottom_color || ''; 
-      }
-      context.strokeStyle = composite.border_bottom_color;
-      context.beginPath();
+    // for top and left, border overrides fill but our fill controls 
 
-      if (composite.border_bottom > 1) {
-        context.moveTo(left, top + height - 1.5);
-        context.lineTo(left + width, top + height - 1.5);
+    if (!composite.border_top) {
+      if (edges.above.border_bottom) {
+        composite.border_top = edges.above.border_bottom;
+        composite.border_top_fill = edges.above.border_bottom_fill;
+
+        if (edges.above.border_bottom === 2) {
+          double_border_center = 
+            ThemeColor2(this.theme, edges.above.fill) || 
+            ThemeColor2(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        }
+
+      }
+      else if (valid_fill) {
+        composite.border_top = 1;
+        composite.border_top_fill = style.fill;
+      }
+      else if (Style.ValidColor(edges.above.fill)) {
+        composite.border_top = 1;
+        composite.border_top_fill = edges.above.fill;
+      }
+    }
+    
+    if (!composite.border_left) {
+      if (edges.left.border_right) {
+        composite.border_left = edges.left.border_right;
+        composite.border_left_fill = edges.left.border_right_fill;
+      }
+      else if (valid_fill) {
+        composite.border_left = 1;
+        composite.border_left_fill = style.fill;
+      }
+      else if (Style.ValidColor(edges.left.fill)) {
+        composite.border_left = 1;
+        composite.border_left_fill = edges.left.fill;
+      }
+    }
+
+    // --- then paint ---
+
+    context.lineWidth = 1; // ??
+
+    if (composite.border_left) {
+      const x = (address.column === 0 ? 0.5 : -0.5) + left;
+      context.strokeStyle = ThemeColor2(this.theme, composite.border_left_fill);      
+      context.beginPath();
+      context.moveTo(x, top - 1);
+      context.lineTo(x, top + height);
+      context.stroke();
+    }
+
+    if (composite.border_top) {
+      const y = (address.row === 0 ? 0.5 : -0.5) + top;
+      if (composite.border_top === 1) {
+        context.strokeStyle = ThemeColor2(this.theme, composite.border_top_fill);      
+        context.beginPath();
+        context.moveTo(left - 1, y);
+        context.lineTo(left + width, y);
+        context.stroke();
       }
       else {
-        context.moveTo(left, top + height - 0.5);
-        context.lineTo(left + width, top + height - 0.5);
-      }
 
-      context.stroke();
+        context.strokeStyle = double_border_center;
+        context.beginPath();
+        context.moveTo(left - 1, y);
+        context.lineTo(left + width, y);
+        context.stroke();
+
+        context.strokeStyle = ThemeColor2(this.theme, composite.border_top_fill);      
+        context.beginPath();
+        context.moveTo(left - 1, y - 1);
+        context.lineTo(left + width, y - 1);
+        context.moveTo(left - 1, y + 1);
+        context.lineTo(left + width, y + 1);
+        context.stroke();
+      }
     }
 
-    if (composite.border_top && composite.border_top_color) {
-      if (composite.border_top_color === 'none') { 
-        composite.border_top_color = this.theme.grid_cell?.border_top_color || ''; 
-      }
-      context.strokeStyle = composite.border_top_color;
-      context.beginPath();
+    if (composite.border_bottom) {
 
-      if (composite.border_top > 1) {
-        context.moveTo(left - 0.5, top + 0.5);
-        context.lineTo(left + width, top + 0.5);
+      const y = top + height - 0.5;
+
+      if (composite.border_bottom === 1) {
+        context.strokeStyle = ThemeColor2(this.theme, composite.border_bottom_fill);      
+        context.beginPath();
+        context.moveTo(left - 1, y);
+        context.lineTo(left + width, y);
+        context.stroke();
       }
       else {
-        context.moveTo(left - 0.5, top - 0.5);
-        context.lineTo(left + width, top - 0.5);
+
+        context.strokeStyle = double_border_center;
+        context.beginPath();
+        context.moveTo(left - 1, y);
+        context.lineTo(left + width, y);
+        context.stroke();
+
+        context.strokeStyle = ThemeColor2(this.theme, composite.border_bottom_fill);      
+        context.beginPath();
+        context.moveTo(left - 1, y - 1);
+        context.lineTo(left + width, y - 1);
+        context.moveTo(left - 1, y + 1);
+        context.lineTo(left + width, y + 1);
+        context.stroke();
       }
-      context.stroke();
     }
 
-    if (composite.border_left && composite.border_left_color) {
-      if (composite.border_left_color === 'none') { 
-        composite.border_left_color = this.theme.grid_cell?.border_left_color || ''; 
-      }
-  
-      context.strokeStyle = composite.border_left_color;
+    if (composite.border_right) {
+      const x = left + width - 0.5;
+      context.strokeStyle = ThemeColor2(this.theme, composite.border_right_fill);      
       context.beginPath();
-      context.moveTo(left - 0.5, top);
-      context.lineTo(left - 0.5, top + height);
+      context.moveTo(x, top - 1);
+      context.lineTo(x, top + height);
       context.stroke();
-    }
 
-    if (composite.border_right && composite.border_right_color) {
-      if (composite.border_right_color === 'none') { 
-        composite.border_right_color = this.theme.grid_cell?.border_bottom_color || ''; 
-      }
-
-      context.strokeStyle = composite.border_right_color;
-      context.beginPath();
-      context.moveTo(left + width - 0.5, top);
-      context.lineTo(left + width - 0.5, top + height);
-      context.stroke();
     }
 
   }
@@ -938,35 +1053,24 @@ export class TileRenderer {
     style: Style.Properties,
     width: number, height: number): void {
 
-    // we now flow the painted background over the grid, so
-    // we only need to paint the grid if there's no active
-    // background. still not sure I like this...
+    // so here we draw the background and the bottom and right grid edges.
+    // fill is enclosed here, the border method has logic for border colors,
+    // because it turns out to be complicated.
+    
+    context.fillStyle = this.theme.grid_color;
+    context.fillRect(0, 0, width, height);
 
-    // UPDATE: now optional
-
-    if (style.background && style.background !== 'none') {
-      if (this.options.grid_over_background) {
-        context.fillStyle = this.theme.grid_color || '';
-        context.fillRect(0, 0, width, height);
-
-        if (style.background !== 'none') {
-          context.fillStyle = style.background;
-          context.fillRect(0, 0, width - 1, height - 1);
-        }
-      }
-      else {
-        if (style.background !== 'none') {
-          context.fillStyle = style.background;
-          context.fillRect(0, 0, width, height);
-        }
-      }
-    }
-    else {
-      context.fillStyle = this.theme.grid_color || '';
-      context.fillRect(0, 0, width, height);
-      context.fillStyle = this.theme.grid_cell?.background || '';
+    const fill = ThemeColor2(this.theme, style.fill);
+    if (fill) {
+      context.fillStyle = fill;
       context.fillRect(0, 0, width - 1, height - 1);
     }
+    else {
+      context.fillStyle = ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+      context.fillRect(0, 0, width - 1, height - 1);
+    }
+
+    // why is this here? (it's rendered as background, I guess)
 
     if (note) {
 
@@ -977,7 +1081,7 @@ export class TileRenderer {
       // FIXME: why is the default in here, and not in theme defaults?
       // actually it is in theme defaults, probably was here first.
 
-      context.fillStyle = this.theme.note_marker_color || '#d2c500';
+      context.fillStyle = this.theme.note_marker_color;
       context.beginPath();
       context.moveTo(width - offset_x, offset_y);
       context.lineTo(width - offset_x - length, offset_y);
@@ -1041,8 +1145,8 @@ export class TileRenderer {
           if (end_cell_style) {
             style.border_bottom = end_cell_style.border_bottom;
             style.border_right = end_cell_style.border_right;
-            style.border_bottom_color = end_cell_style.border_bottom_color;
-            style.border_right_color = end_cell_style.border_right_color;
+            style.border_bottom_fill = end_cell_style.border_bottom_fill;
+            style.border_right_fill = end_cell_style.border_right_fill;
           }
         }
 
@@ -1142,12 +1246,28 @@ export class TileRenderer {
         width, 
         height);
 
-      const style_text_color = style.text_color === 'none' ? (this.theme.grid_cell?.text_color ||  '') : style.text_color;
+      // FIXME: what's with the double read here? going to preserve it 
+      // for theme color switch, but it's very unclear what it's for
+
+      // it's almost certainly unecessary now... clean up
+
+      // const style_text_color = style.text_color === 'none' ? (this.theme.grid_cell?.text_color ||  '') : style.text_color;
+
+      const style_text_color = style.text === 'none' ? 
+          ThemeColor(this.theme, this.theme.grid_cell?.text) : 
+          ThemeColor(this.theme, style.text);
+
       context.strokeStyle = context.fillStyle =
-        style_text_color || this.theme.grid_cell?.text_color || '';
-        
+        style_text_color || ThemeColor(this.theme, this.theme.grid_cell?.text);
+
+      // there's an issue with theme colors, the function may not be able
+      // to translate so we need to update the style (using a copy) to
+      // resolve colors
+
+      const apply_style = this.ResolveColors(style);
+
       const render_result = cell.render_function.call(undefined, {
-        width, height, context, cell, style, scale: this.layout.scale || 1,
+        width, height, context, cell, style: apply_style, scale: this.layout.scale || 1,
       });
 
       if (render_result.handled) {
@@ -1394,32 +1514,38 @@ export class TileRenderer {
 
     for (const element of overflow_backgrounds) {
 
-      if (element.cell.style &&
-          element.cell.style.background &&
-          element.cell.style.background !== 'none' &&
+      if ( element.cell.style?.fill &&
+           (element.cell.style.fill.text || element.cell.style.fill.theme || element.cell.style.fill.theme === 0) &&
           !this.options.grid_over_background) {
-        context.fillStyle = (element.cell.style || {}).background || this.theme.grid_cell?.background || '';
+        
+        context.fillStyle = ThemeColor(this.theme, element.cell.style.fill);
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
       }
       else {
         context.fillStyle = this.theme.grid_color || '';
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
 
-        if (element.cell.style && element.cell.style.background && element.cell.style.background !== 'none') {
-          context.fillStyle = element.cell.style.background;
-        }
-        else {
-          context.fillStyle = this.theme.grid_cell?.background || '';
-        }
+        // how could this ever be true, given the test above? (...)
+
+        // if (element.cell.style && element.cell.style.background && element.cell.style.background !== 'none') {
+        //  context.fillStyle = element.cell.style.background;
+        // }
+        // else {
+        //  context.fillStyle = this.theme.grid_cell?.background || '';
+        //}
+
+        context.fillStyle = this.theme.grid_cell?.fill ? ThemeColor(this.theme, this.theme.grid_cell.fill) : '';
 
         context.fillRect(element.background.left, element.background.top,
           element.background.width, element.background.height);
       }
 
       if (element.cell.style) {
+
         this.RenderCellBorders(element.address, context, element.cell.style,
           element.border.left, element.border.top, element.border.width, element.border.height);
       }
+
     }
 
     const metrics = FontMetricsCache.get(style, this.layout.scale);
@@ -1431,11 +1557,13 @@ export class TileRenderer {
     // to text color, background color and border color.
 
     context.lineWidth = 1;
-    const style_text_color = style.text_color === 'none' ? (this.theme.grid_cell?.text_color ||  '') : style.text_color;
+    const style_text_color = style.text === 'none' ? 
+        ThemeColor(this.theme, this.theme.grid_cell?.text) : 
+        ThemeColor(this.theme, style.text);
 
     context.strokeStyle = context.fillStyle =
       text_data.format ? text_data.format :
-        style_text_color || this.theme.grid_cell?.text_color || '';
+        style_text_color || ThemeColor(this.theme, this.theme.grid_cell?.text);
 
     context.beginPath();
 

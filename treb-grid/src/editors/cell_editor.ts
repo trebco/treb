@@ -1,9 +1,8 @@
 
-import { Style, Rectangle } from 'treb-base-types';
+import { Style, Theme, ThemeColor, Rectangle } from 'treb-base-types';
 import { Yield } from 'treb-utils';
 
 import { DOMUtilities } from '../util/dom_utilities';
-import { Theme } from '../types/theme';
 import { GridSelection } from '../types/grid_selection';
 import { FormulaEditorBase } from './formula_editor_base';
 import { Autocomplete } from './autocomplete';
@@ -89,9 +88,11 @@ export class CellEditor extends FormulaEditorBase {
 
      // this.editor_node.style.backgroundColor = this.theme.cell_background_color || '';
 
-      this.editor_node.style.color = this.theme.grid_cell?.text_color || '';
-      this.editor_node.style.font = Style.Font(this.theme.grid_cell||{});
-      this.editor_node.style.backgroundColor = this.theme.grid_cell?.background || '';
+      // this.editor_node.style.color = this.theme.grid_cell?.text_color || '';
+      this.editor_node.style.color = ThemeColor(this.theme, this.theme.grid_cell?.text);
+
+      this.editor_node.style.font = Style.Font(this.theme.grid_cell||{}, scale);
+      this.editor_node.style.backgroundColor = this.theme.grid_cell?.fill ? ThemeColor(this.theme, this.theme.grid_cell.fill) : '';
 
       this.editor_node.style.borderColor = this.theme.grid_color || '';
     }

@@ -31,6 +31,25 @@ $text-reference-color-5: rgb(254, 47, 1);
 
 .treb-main {
 
+  /* 
+  
+  theme colors (new). these are in addition to the cell text and background,
+  which are technically theme colors as well and should maybe move into this
+  section? not sure
+
+  */
+
+  .theme-color-1  { color: #44546A; }
+  .theme-color-2  { color: #E7E6E6; }
+  .theme-color-3  { color: #4472C4; }
+  .theme-color-4  { color: #ED7D31; }
+  .theme-color-5  { color: #A5A5A5; }
+  .theme-color-6  { color: #FFC000; }
+  .theme-color-7  { color: #5B9BD5; }
+  .theme-color-8  { color: #70AD47; }
+  .theme-color-9  { color: #0563C1; }
+  .theme-color-10 { color: #954F72; }
+
   /*
 
   NOTE: much of the theme/style is supplied by the embed lib, which 

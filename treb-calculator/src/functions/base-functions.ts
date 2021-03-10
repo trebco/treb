@@ -2,7 +2,7 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError } from '../function-error';
-import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType, RenderFunctionResult } from 'treb-base-types';
+import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions } from 'treb-base-types';
 import { Sparkline, SparklineRenderOptions } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -684,8 +684,8 @@ export const BaseFunctionLibrary: FunctionMap = {
         {name: 'data' }, 
         {name: 'color'}, 
         {name: 'negative color'}],
-      render: (options: SparklineRenderOptions): RenderFunctionResult => {
-        Sparkline.RenderColumn(options.width, options.height, options.context, options.cell);
+      render: (options: RenderFunctionOptions): RenderFunctionResult => {
+        Sparkline.RenderColumn(options.width, options.height, options.context, options.cell, options.style);
         return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
@@ -699,8 +699,8 @@ export const BaseFunctionLibrary: FunctionMap = {
         {name: 'color'},
         {name: 'line width'},
       ],
-      render: (options: SparklineRenderOptions): RenderFunctionResult => {
-        Sparkline.RenderLine(options.width, options.height, options.context, options.cell);
+      render: (options: RenderFunctionOptions): RenderFunctionResult => {
+        Sparkline.RenderLine(options.width, options.height, options.context, options.cell, options.style);
         return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {

@@ -1,10 +1,9 @@
 
 import { DOMUtilities } from '../util/dom_utilities';
-import { Theme } from '../types/theme';
 import { DataModel } from '../types/data_model';
 
 import { Tile } from '../types/tile';
-import { Style, Point, Extent, Size, Position, Area, ICellAddress, Rectangle } from 'treb-base-types';
+import { Style, Theme, Point, Extent, Size, Position, Area, ICellAddress, Rectangle, ThemeColor } from 'treb-base-types';
 
 // aliasing Area as TileRange. this seemed like a good idea, initially, because
 // it can help clarify the function calls and return values when we "overload"
@@ -813,7 +812,9 @@ export abstract class BaseLayout {
     this.row_header.style.backgroundColor =
       this.column_header.style.backgroundColor =
       this.corner.style.backgroundColor =
-        theme.headers?.background || '';
+        theme.headers?.fill ? ThemeColor(theme, theme.headers.fill) : '';
+
+        // theme.headers?.background || '';
         // theme.header_background_color || ''; // this.theme.header_background;
 
     this.corner.style.borderColor =

@@ -10,7 +10,7 @@
  */
 
 
-import { Cell } from 'treb-base-types';
+import { Cell, Style } from 'treb-base-types';
 
 export interface SparklineRenderOptions {
   context: CanvasRenderingContext2D;
@@ -84,7 +84,7 @@ export class Sparkline {
 
   }
 
-  protected static SparklineCommon(cell: Cell): {
+  protected static SparklineCommon(cell: Cell, style: Style.Properties): {
       values: Array<number|undefined>,
       colors: string[],
     } {
@@ -97,10 +97,9 @@ export class Sparkline {
     // use text color, or default. because this is called from renderer,
     // theme default _should_ always be passed in, so we should (theoretically)
     // never need our default.
-
-    const colors: string[] = [ 
-        cell.style?.text_color || this.default_color,
-        cell.style?.text_color || this.default_color ];
+   
+    const text_color = style.text?.text || this.default_color;
+    const colors: string[] = [ text_color, text_color ];
 
     if (Array.isArray(cell.calculated)) {
       values = this.UnpackValues(cell.calculated[0]);
@@ -121,9 +120,10 @@ export class Sparkline {
       height: number,
       context: CanvasRenderingContext2D,
       cell: Cell,
+      style: Style.Properties,
     ): void {
 
-    const {values, colors} = this.SparklineCommon(cell);
+    const {values, colors} = this.SparklineCommon(cell, style);
 
     const x_margin = 0.05; // FIXME: parameterize? (...)
     const y_margin = 0.10;
@@ -200,9 +200,10 @@ export class Sparkline {
       height: number,
       context: CanvasRenderingContext2D,
       cell: Cell,
+      style: Style.Properties,
     ): void {
 
-    const {values, colors} = this.SparklineCommon(cell);
+    const {values, colors} = this.SparklineCommon(cell, style);
 
     // const x_margin = 0.05; // FIXME: parameterize? (...)
     // const y_margin = 0.10;

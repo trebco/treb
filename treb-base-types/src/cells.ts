@@ -502,7 +502,7 @@ export class Cells {
                 (cell.calculated_type && options.calculated_value) ||
                 (cell.validation) ||
                 (options.decorated_cells && cell.style &&
-                  ( cell.style.background || cell.style.border_bottom ||
+                  ( cell.style.fill || cell.style.border_bottom ||
                     cell.style.border_top || cell.style.border_left || cell.style.border_right)))){
 
             const obj: FlatCellData = { row, column, value: cell.value };

@@ -1,13 +1,28 @@
 
 import {
-  Rectangle, ValueType, Style, Area, IArea, 
-  Cell, CellValue, Extent, ICellAddress, 
-  IsCellAddress, Localization, ImportedSheetData, ValidationType
+  Area, 
+  Cell, 
+  Theme, 
+  Style, 
+  IArea, 
+  Extent, 
+  CellValue, 
+  Rectangle, 
+  ValueType, 
+  Localization, 
+  ICellAddress, 
+  IsCellAddress, 
+  ValidationType,
+  ImportedSheetData, 
+  LoadThemeProperties,
+  DefaultTheme,
 } from 'treb-base-types';
+
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
   QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress
 } from 'treb-parser';
+
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
 import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
@@ -22,7 +37,7 @@ import { CreateLayout } from '@grid-conditional/layout_manager';
 
 import { GridSelection } from './grid_selection';
 //import { Theme, ExtendedTheme, CalculateSupplementalColors, LoadThemeProperties } from './theme';
-import { Theme, LoadThemeProperties } from './theme';
+// import { Theme, LoadThemeProperties } from './theme';
 import { CellEditor } from '../editors/cell_editor';
 // import { FormulaEditorBase } from '../editors/formula_editor_base';
 
@@ -322,7 +337,7 @@ export class Grid {
   /**
    * FIXME: NO PARAMETER INITIALIZATIONS
    */
-  constructor(options: GridOptions = {}, theme: Theme = {}) {
+  constructor(options: GridOptions = {}, theme: Theme = DefaultTheme) {
 
     // construct model. it's a little convoluted because the
     // "active sheet" reference points to one of the array members
@@ -341,7 +356,7 @@ export class Grid {
 
     // set properties here, we will update in initialize()
 
-    this.theme = { ...theme };
+    this.theme = JSON.parse(JSON.stringify(theme));
 
     // apply default options, meaning that you need to explicitly set/unset
     // in order to change behavior. FIXME: this is ok for flat structure, but
@@ -1541,12 +1556,20 @@ export class Grid {
       }
     }
 
-    let composite: Theme = {};
+    let composite: Theme = JSON.parse(JSON.stringify(DefaultTheme));
 
     if (this.grid_container) {
       const theme_properties = LoadThemeProperties(this.grid_container);
       composite = {...theme_properties};
     }
+
+    // all this is super confusing, probably the result of theme going
+    // back and forth from css to object. needs a scrub.
+
+    // I think theme is permanent, so we wind up doing a lot of stuff
+    // to manage properties -- make it ephemeral with a getter or a wrapper?
+
+    
 
     // NOTE: this prevents it from rebuilding based on changes to the
     // stylesheet; putting this.theme second overrides any new values.
@@ -1562,9 +1585,9 @@ export class Grid {
     });
     */
     composite = {
-      ...composite,
       // ...theme_properties,
       ...this.theme,
+      ...composite,
       ...additional_properties,
     };
 
@@ -2054,6 +2077,28 @@ export class Grid {
    * @param width
    */
   public ApplyBorders(area?: Area, borders: BorderConstants = BorderConstants.None, color?: string, width = 1): void {
+
+    if (!area) {
+      if (this.primary_selection.empty) { return; }
+      area = this.primary_selection.area;
+    }
+
+    if (borders === BorderConstants.None) {
+      width = 0;
+    }
+
+    this.ExecCommand({
+      key: CommandKey.UpdateBorders,
+      color: { text: color },
+      area,
+      borders,
+      width,
+    });
+
+  }
+
+  /** updated API method, probably change the name */
+  public ApplyBorders2(area?: Area, borders: BorderConstants = BorderConstants.None, color?: Style.Color, width = 1): void {
 
     if (!area) {
       if (this.primary_selection.empty) { return; }
@@ -2560,12 +2605,24 @@ export class Grid {
     this.theme_style_properties.font_face = this.theme.grid_cell?.font_face || '';
     this.theme_style_properties.font_size_unit = this.theme.grid_cell?.font_size_unit || 'pt';
     this.theme_style_properties.font_size_value = this.theme.grid_cell?.font_size_value || 10;
-    this.theme_style_properties.text_color = this.theme.grid_cell?.text_color || 'none';
 
+    // this.theme_style_properties.text = this.theme.grid_cell?.text || 'none';
+    // this.theme_style_properties.text_theme = this.theme.grid_cell?.text_theme || 0;
+
+    // this.theme_style_properties.text = this.theme.grid_cell?.text ?
+    //  { ...this.theme.grid_cell?.text } : {};
+
+      /*
     this.theme_style_properties.border_top_color = this.theme.grid_cell?.border_top_color || 'none';
     this.theme_style_properties.border_left_color = this.theme.grid_cell?.border_left_color || 'none';
     this.theme_style_properties.border_right_color = this.theme.grid_cell?.border_right_color || 'none';
     this.theme_style_properties.border_bottom_color = this.theme.grid_cell?.border_bottom_color || 'none';
+    */
+
+    this.theme_style_properties.border_top_fill = {theme: 0};
+    this.theme_style_properties.border_left_fill = {theme: 0};
+    this.theme_style_properties.border_right_fill = {theme: 0};
+    this.theme_style_properties.border_bottom_fill = {theme: 0};
 
   }
 
@@ -7333,18 +7390,21 @@ export class Grid {
 
     // default to "none", which means "default"
 
-    if (!command.color) {
-      command.color = 'none';
-    }
-
-    //if (typeof command.color !== 'undefined') {
-      top.border_top_color =
-        bottom.border_bottom_color =
-        left.border_left_color =
-        right.border_right_color = command.color;
+    //if (!command.color) {
+    //  command.color = 'none';
     //}
 
+    //if (typeof command.color !== 'undefined') {
+    if (command.color) {
 
+      // this is now an object so we need to clone it (might be faster to JSON->JSON)
+
+      top.border_top_fill = {...command.color};
+      bottom.border_bottom_fill = {...command.color};
+      left.border_left_fill = {...command.color};
+      right.border_right_fill = {...command.color};
+
+    }
 
     // inside all/none
     if (borders === BorderConstants.None || borders === BorderConstants.All) {
@@ -7732,7 +7792,7 @@ export class Grid {
             // if we really wanted to optimize we could call invalidate on .left, .top, &c
 
             if (!command.delta 
-                || command.style.background
+                || command.style.fill
                 || command.style.border_top
                 || command.style.border_left
                 || command.style.border_right

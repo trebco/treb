@@ -7,6 +7,8 @@
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Style {
 
+  const empty_json = JSON.stringify({});
+
   /** horizontal align constants */
   export enum HorizontalAlign {
     None = 0,
@@ -21,6 +23,12 @@ export namespace Style {
     Top = 1,
     Bottom = 2,
     Middle = 3,
+  }
+
+  export interface Color {
+    theme?: number;
+    tint?: number;
+    text?: string;
   }
 
   export interface Properties {
@@ -62,12 +70,22 @@ export namespace Style {
     // perhaps be an object, but for the time being for colors,
     // "" in a merge means "remove this property".
 
-    background?: string;
-    text_color?: string;
-    border_top_color?: string;
-    border_left_color?: string;
-    border_right_color?: string;
-    border_bottom_color?: string;
+    // background?: string;
+    // text_color?: string;
+    
+    //border_top_color?: string;
+    //border_left_color?: string;
+    //border_right_color?: string;
+    //border_bottom_color?: string;
+
+    // changing colors to support styles... starting with text
+    text?: Color;
+    fill?: Color;
+
+    border_top_fill?: Color;
+    border_left_fill?: Color;
+    border_right_fill?: Color;
+    border_bottom_fill?: Color;
 
     // NEW
     // FIXME: change name to editable, default true? (...)
@@ -82,6 +100,7 @@ export namespace Style {
   }
 
   export type PropertyKeys = keyof Style.Properties;
+
 
   /**
    * note that there are no default colors; those should be set
@@ -104,39 +123,86 @@ export namespace Style {
     font_italic: false,         // ...
     font_underline: false,      // ...
     font_strike: false,         // 
-    background: 'none',
-    text_color: 'none',
-    border_top_color: 'none',
-    border_left_color: 'none',
-    border_right_color: 'none',
-    border_bottom_color: 'none',
+    // background: 'none',
+
+    // text_color: 'none',
+    // text: 'theme',
+    // text_theme: 0,
+    text: { theme: 0 },
+
+    // border_top_color: 'none',
+    // border_left_color: 'none',
+    // border_right_color: 'none',
+    // border_bottom_color: 'none',
+    
     border_top: 0,               // adding defaults so these prune propery
     border_left: 0,
     border_right: 0,
     border_bottom: 0,
   };
 
-  /**
+  /* *
    * this version of merge is used to support explicit deletes, via
    * "undefined" properties. we use a trick via JSON to skip iterating
    * properties (I believe this is faster, but have not tested).
-   */
+   * /
   export const Merge2 = (dest: Properties, src: Properties): Properties => {
     return JSON.parse(JSON.stringify({...dest, ...src}));
   }
+  */
 
   /**
    * merge. returns a new object, does not update dest in place.
    * NOTE: if it does not update dest in place, then what would be
    * the use case for a non-delta merge? (...)
    */
-  export const Merge = (dest: Properties, src: Properties, delta = true) => {
+  export const Merge = (dest: Properties, src: Properties, delta = true): Properties => {
     const properties: Properties = delta ? {...dest, ...src} : {...src};
-    return properties;
+    return JSON.parse(JSON.stringify(properties));
   };
 
-  export const Composite = (list: Properties[]) => {
-    return list.reduce((composite, item) => ({...composite, ...item}), {});
+  export const Composite = (list: Properties[]): Properties => {
+    return JSON.parse(JSON.stringify(list.reduce((composite, item) => ({...composite, ...item}), {})));
+  };
+
+  export const Empty = (style: Properties): boolean => {
+    return JSON.stringify(style) === empty_json;
+  };
+
+  export const ValidColor = (color?: Color): boolean => {
+    return !!(color && (color.text || color.theme || color.theme === 0));
+  };
+
+  export const Prune = (style: Properties): void => {
+
+    // text default is theme 0, so we can remove that if we see it. 
+    // same for borders, we can group
+
+    if (style.text && !style.text.text && !style.text.theme) {
+      style.text = undefined;
+    }
+
+    if (style.border_top_fill && !style.border_top_fill.text && !style.border_top_fill.theme) {
+      style.border_top_fill = undefined;
+    }
+
+    if (style.border_left_fill && !style.border_left_fill.text && !style.border_left_fill.theme) {
+      style.border_left_fill = undefined;
+    }
+
+    if (style.border_right_fill && !style.border_right_fill.text && !style.border_right_fill.theme) {
+      style.border_right_fill = undefined;
+    }
+
+    if (style.border_bottom_fill && !style.border_bottom_fill.text && !style.border_bottom_fill.theme) {
+      style.border_bottom_fill = undefined;
+    }
+
+    // background has no default, so check for 0
+    if (style.fill && !style.fill.text && !style.fill.theme && style.fill.theme !== 0) {
+      style.fill = undefined;
+    }
+
   };
 
   /* *

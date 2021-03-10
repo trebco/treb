@@ -1,5 +1,5 @@
 
-import { Area, Cell, Rectangle, Localization } from 'treb-base-types';
+import { Area, Cell, Theme, Rectangle, Localization } from 'treb-base-types';
 import { Yield, EventSource } from 'treb-utils';
 import { Parser, UnitRange, UnitAddress } from 'treb-parser';
 
@@ -7,7 +7,6 @@ import { GridSelection } from '../types/grid_selection';
 import { Autocomplete, AutocompleteResult } from './autocomplete';
 import { AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
 
-import { Theme } from '../types/theme';
 import { DataModel } from '../types/data_model';
 import { UA } from '../util/ua';
 

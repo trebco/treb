@@ -66,25 +66,32 @@ interface ColorAttributes {
  * more sense as a map of simple objects
  */
 export interface BorderStyle {
+
   left_style?: string; // 'thin' | ??
   left_color?: number; // indexed // FIXME: argb
   left_color_rgba?: string;
+  left_color_theme?: number;
 
   right_style?: string;
   right_color?: number;
   right_color_rgba?: string;
+  right_color_theme?: number;
 
   top_style?: string;
   top_color?: number;
   top_color_rgba?: string;
+  top_color_theme?: number;
 
   bottom_style?: string;
   bottom_color?: number;
   bottom_color_rgba?: string;
+  bottom_color_theme?: number;
 
   diagonal_style?: string;
   diagonal_color?: number;
   diagonal_color_rgba?: string;
+  diagonal_color_theme?: number;
+
 }
 
 export interface StyleOptions {
@@ -207,50 +214,72 @@ export class StyleCache {
     if (composite.font_bold) font.bold = true;
     if (composite.font_italic) font.italic = true;
     if (composite.font_underline) font.underline = true;
-    if (composite.text_color && composite.text_color !== Style.DefaultProperties.text_color) {
-      font.color_argb = composite.text_color;
+
+    //if (composite.text_color && composite.text_color !== Style.DefaultProperties.text_color) {
+    //  font.color_argb = composite.text_color;
+    //}
+
+    if (composite.text) {
+      if (composite.text.text) {
+        font.color_argb = composite.text.text;
+      }
+      else if (typeof composite.text.theme === 'number') {
+        font.color_theme = composite.text.theme;
+      }
     }
 
     if (composite.border_top) {
       border.top_style = 'thin';
-      if (!composite.border_top_color || composite.border_top_color === 'none') {
-        border.top_color = 64;
+      if (composite.border_top_fill?.text) {
+        border.top_color_rgba = composite.border_top_fill.text;
+      }
+      else if (typeof composite.border_top_fill?.theme === 'number') {
+        border.top_color_theme = composite.border_top_fill.theme;
       }
       else {
-        border.top_color_rgba = composite.border_top_color;
+        border.top_color = 64;
       }
     }
     if (composite.border_bottom) {
-      if (!composite.border_bottom_color || composite.border_bottom_color === 'none') {
-        border.bottom_color = 64;
-      }
-      else {
-        border.bottom_color_rgba = composite.border_bottom_color;
-      }
       if (composite.border_bottom > 1) {
         border.bottom_style = 'double';
       }
       else {
         border.bottom_style = 'thin';
       }
+      if (composite.border_bottom_fill?.text) {
+        border.bottom_color_rgba = composite.border_bottom_fill.text;
+      }
+      else if (typeof composite.border_bottom_fill?.theme === 'number') {
+        border.bottom_color_theme = composite.border_bottom_fill.theme;
+      }
+      else {
+        border.bottom_color = 64;
+      }
     }
     if (composite.border_left) {
-      if (!composite.border_left_color || composite.border_left_color === 'none') {
+      border.left_style = 'thin';
+      if (composite.border_left_fill?.text) {
+        border.left_color_rgba = composite.border_left_fill.text;
+      }
+      else if (typeof composite.border_left_fill?.theme === 'number') {
+        border.left_color_theme = composite.border_left_fill.theme;
+      }
+      else {
         border.left_color = 64;
       }
-      else {
-        border.left_color_rgba = composite.border_left_color;
-      }
-      border.left_style = 'thin';
     }
     if (composite.border_right) {
-      if (!composite.border_right_color || composite.border_right_color === 'none') {
-        border.right_color = 64;
+      border.right_style = 'thin';
+      if (composite.border_right_fill?.text) {
+        border.right_color_rgba = composite.border_right_fill.text;
+      }
+      else if (typeof composite.border_right_fill?.theme === 'number') {
+        border.right_color_theme = composite.border_right_fill.theme;
       }
       else {
-        border.right_color_rgba = composite.border_right_color;
+        border.right_color = 64;
       }
-      border.right_style = 'thin';
     }
 
     // leave blank for bottom, default
@@ -276,11 +305,12 @@ export class StyleCache {
         break;
     }
 
-    if (composite.background) {
-      // fill.color_argb = composite.background;
+    if (composite.fill) {
       fill.pattern_type = 'solid';
-      fill.fg_color = {
-        argb: composite.background,
+      fill.fg_color = composite.fill.text ? {
+        argb: composite.fill.text,
+      } : {
+        theme: composite.fill.theme || 1,
       }
       options.fill = fill;
     }
@@ -360,13 +390,28 @@ export class StyleCache {
       if (font.strike) props.font_strike = true;
 
       if (font.color_argb) {
-        props.text_color = '#' + (
-          font.color_argb.length > 6 ?
-          font.color_argb.substr(font.color_argb.length - 6) :
-          font.color_argb);
+        props.text = { 
+          text: '#' + (
+            font.color_argb.length > 6 ?
+            font.color_argb.substr(font.color_argb.length - 6) :
+            font.color_argb)
+        };
       }
 
       else if (typeof font.color_theme === 'number') {
+
+        // const index = Theme.color_map[];
+
+        // skipping 0, it's implicit
+
+        if (font.color_theme) {
+          props.text = { theme: font.color_theme };
+        }
+
+        /*
+        // FIXME: update to theme
+        console.warn('update to theme colors');
+
         const index = Theme.color_map[font.color_theme];
         const color = this.theme.colors[index];
 
@@ -375,10 +420,10 @@ export class StyleCache {
         
         if (color && color.type !== 'system' && color.value) {
           if (typeof font.color_tint === 'number') {
-            props.text_color = '#' + this.TintColor(color.value, font.color_tint);
+            props.text = '#' + this.TintColor(color.value, font.color_tint);
           }
           else {
-            props.text_color = '#' + color.value;
+            props.text = '#' + color.value;
           }
         }
 
@@ -388,9 +433,10 @@ export class StyleCache {
           // should do this higher up
 
           if (font.color_theme !== 1) {
-            props.text_color = '#' + color.value;
+            props.text = '#' + color.value;
           }
         }
+        */
 
       }
 
@@ -400,17 +446,23 @@ export class StyleCache {
     if (fill && fill.pattern_type !== 'none') {
       if (fill.pattern_type === 'gray') {
         const value = Math.round((fill.pattern_gray || 0) / 1000 * 255);
-        props.background = `rgb(${value}, ${value}, ${value})`;
+        // props.background = `rgb(${value}, ${value}, ${value})`;
+        props.fill = { text: `rgb(${value}, ${value}, ${value})` };
       }
       if (fill.pattern_type === 'solid') {
         if (fill.fg_color) {
           if (fill.fg_color.argb) {
-            props.background = '#' + (
-              fill.fg_color.argb.length > 6 ?
-              fill.fg_color.argb.substr(fill.fg_color.argb.length - 6) :
-              fill.fg_color.argb);
+            props.fill = { text: '#' + (
+                fill.fg_color.argb.length > 6 ?
+                fill.fg_color.argb.substr(fill.fg_color.argb.length - 6) :
+                fill.fg_color.argb)
+              };
           }
           else if (typeof fill.fg_color.theme === 'number') {
+
+            props.fill = { theme: fill.fg_color.theme };
+
+            /*
             const index = Theme.color_map[fill.fg_color.theme];
             const color = this.theme.colors[index];
             // if (color && color.type !== 'system' && color.value) {
@@ -422,6 +474,8 @@ export class StyleCache {
                 props.background = '#' + color.value;
               }
             }
+            */
+
           }
         }
       }
@@ -726,11 +780,14 @@ export class StyleCache {
         break;
       case 'solid':
         if (fill.fg_color) {
-          pattern_fill.append(Element('fgColor', { 
-            rgb: fill.fg_color.argb || '',
-            indexed: fill.fg_color.indexed?.toString() || '',
-            tint: fill.fg_color.tint?.toString() || '',
-          }));
+          const attrs: Record<string, string> = {};
+
+          if (fill.fg_color.argb) { attrs.rgb = fill.fg_color.argb; }
+          if (fill.fg_color.indexed) { attrs.indexed = fill.fg_color.indexed.toString(); }
+          if (fill.fg_color.tint) { attrs.tint = fill.fg_color.tint.toString(); }
+          if (typeof fill.fg_color.theme !== 'undefined') { attrs.theme = fill.fg_color.theme.toString(); }
+
+          pattern_fill.append(Element('fgColor', attrs));
         }
         break;
       case 'gray':
@@ -978,7 +1035,7 @@ export class StyleCache {
         }
       }
 
-      console.info(index, xf, element);
+      // console.info(index, xf, element);
 
       return xf;
     });

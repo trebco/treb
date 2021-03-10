@@ -1,5 +1,5 @@
 
-import { Theme } from '../types/theme';
+import { Theme } from 'treb-base-types';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 

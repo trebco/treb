@@ -5,7 +5,7 @@ import { Sheet } from './sheet';
 import { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import { GridOptions } from './grid_options';
-import { Theme } from '../types/theme';
+import { Theme } from 'treb-base-types';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';

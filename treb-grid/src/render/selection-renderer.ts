@@ -1,7 +1,6 @@
 
-import { Rectangle, ICellAddress } from 'treb-base-types';
+import { Theme, Rectangle, ICellAddress } from 'treb-base-types';
 import { BaseLayout } from '../layout/base_layout';
-import { Theme } from '../types/theme';
 import { SVGSelectionBlock, SelectionOffset } from './svg_selection_block';
 import { GridSelection } from '../types/grid_selection';
 import { HeaderOverlay, Orientation } from './svg_header_overlay';

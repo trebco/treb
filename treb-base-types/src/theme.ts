@@ -36,15 +36,48 @@ export interface Theme {
   grid_cell?: Style.Properties;
 
   /** gridlines color */
-  grid_color?: string;
+  grid_color: string;
 
   /** color of grid lines */
-  grid?: Style.Properties;
+  // grid?: Style.Properties;
 
   /** color of in-cell note marker */
-  note_marker_color?: string;
+  note_marker_color: string;
+
+  /** theme colors */
+  theme_colors?: string[];
 
 }
+
+export const DefaultTheme: Theme = {
+  grid_color: 'red', // '#ccc',
+  note_marker_color: '#d2c500',
+};
+
+export const ThemeColor = (theme: Theme, color?: Style.Color): string => {
+  if (color?.text) {
+    return color.text === 'none' ? '' : color.text;
+  }
+  return theme.theme_colors ? theme.theme_colors[color?.theme || 0] : '';
+};
+
+export const ThemeColor2 = (theme: Theme, color?: Style.Color, default_index?: number): string => {
+
+  if (color?.text) {
+    return color.text === 'none' ? '' : color.text;
+  }
+
+  if (color?.theme || color?.theme === 0) {
+    return theme.theme_colors ? theme.theme_colors[color.theme] : '';
+  }
+
+  if (default_index || default_index === 0) {
+    return theme.theme_colors ? theme.theme_colors[default_index] : '';
+  }
+
+  return '';
+
+};
 
 const ParseFontSize = (size: string) => {
 
@@ -66,8 +99,8 @@ const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
   const { value, unit } = ParseFontSize(css.fontSize||'');
 
   const style: Style.Properties = {
-    background: css.backgroundColor || 'none',
-    text_color: css.color || 'none',
+    fill: { text: css.backgroundColor }, // || 'none',
+    text: { text: css.color },
     font_size_unit: unit,
     font_size_value: value,
     font_face: css.fontFamily,
@@ -75,10 +108,12 @@ const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
 
   // not sure about this... should maybe be undefined?
 
-  style.border_bottom_color = css.borderBottomColor || ''; // 'none';
-  style.border_top_color = css.borderTopColor || ''; // 'none';
-  style.border_left_color = css.borderLeftColor || ''; // 'none';
-  style.border_right_color = css.borderRightColor || ''; // 'none';
+  // console.info("BC?", css.borderBottomColor);
+
+  //style.border_bottom_color = css.borderBottomColor || ''; // 'none';
+  //style.border_top_color = css.borderTopColor || ''; // 'none';
+  //style.border_left_color = css.borderLeftColor || ''; // 'none';
+  //style.border_right_color = css.borderRightColor || ''; // 'none';
 
   if (/italic/i.test(css.font)) {
     style.font_italic = true;
@@ -93,7 +128,8 @@ const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
 }
 
 export const LoadThemeProperties = (container: HTMLElement): Theme => {
-  const theme: Theme = {};
+
+  const theme: Theme = JSON.parse(JSON.stringify(DefaultTheme));
 
   const Append = (parent: HTMLElement, classes: string): HTMLDivElement => {
     const node = document.createElement('div');
@@ -122,6 +158,25 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
 
   css = CSS('note-marker');
   theme.note_marker_color = css.backgroundColor;
+
+  // theme colors
+  
+  node.style.color='rgba(1,2,3,.4)'; // this is an attempt at a unique identifier
+  css = CSS('');
+  const compare = css.color;
+
+  theme.theme_colors = [
+    theme.grid_cell.text?.text || 'rgb(51, 51, 51)',
+    theme.grid_cell.fill?.text || 'rgb(255, 255, 255)',
+  ];
+
+  for (let i = 1; i < 32; i++) {
+    css = CSS(`theme-color-${i}`);
+    if (!css.color || css.color === compare) {
+      break;
+    }
+    theme.theme_colors.push(css.color);
+  }
 
   // this is a little odd, since we have the check above for "existing element";
   // should we switch on that? or is that never used, and we can drop it? (...)

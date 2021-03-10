@@ -1,7 +1,5 @@
 
-import { Rectangle } from 'treb-base-types';
-
-import { Theme } from '../types/theme';
+import { Theme, Rectangle } from 'treb-base-types';
 
 /**
  * the original selections -- a canvas overlaid over the tile canvases --

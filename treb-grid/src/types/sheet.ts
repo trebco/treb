@@ -98,15 +98,78 @@ export class Sheet {
       sheet.name = obj.name;
     }
 
+    const patch_style = (style: Style.Properties) => {
+
+      // this part is for back compat with older color schemes, it 
+      // could theoretically come out if we don't care (or maybe have a tool)
+
+      const ref = (style as Style.Properties & { 
+        text_color?: string; 
+        background?: string; 
+        border_top_color?: string;
+        border_left_color?: string;
+        border_bottom_color?: string;
+        border_right_color?: string;
+      });
+
+      if (ref.text_color) {
+        if (ref.text_color !== 'none') {
+          ref.text = { text: ref.text_color };
+        }
+        ref.text_color = undefined; // will get cleared, eventually
+      }
+      
+      if (ref.background) {
+        if (ref.background !== 'none') {
+          ref.fill = { text: ref.background };
+        }
+        ref.background = undefined; // ibid
+      }
+
+      if (ref.border_top_color) {
+        if (ref.border_top_color !== 'none') {
+          ref.border_top_fill = { text: ref.border_top_color };
+        }
+        ref.border_top_color = undefined;
+      }
+
+      if (ref.border_left_color) {
+        if (ref.border_left_color !== 'none') {
+          ref.border_left_fill = { text: ref.border_left_color };
+        }
+        ref.border_left_color = undefined;
+      }
+
+      if (ref.border_bottom_color) {
+        if (ref.border_bottom_color !== 'none') {
+          ref.border_bottom_fill = { text: ref.border_bottom_color };
+        }
+        ref.border_bottom_color = undefined;
+      }
+
+      if (ref.border_right_color) {
+        if (ref.border_right_color !== 'none') {
+          ref.border_right_fill = { text: ref.border_right_color };
+        }
+        ref.border_right_color = undefined;
+      }
+
+    };
+
+    const cell_style_refs = obj.cell_style_refs;
+    for (const entry of cell_style_refs) {
+      patch_style(entry);
+    }
+
     // styles (part 1) -- moved up in case we use inlined style refs
 
     sheet.cell_style = [];
 
-    if (obj.cell_style_refs) {
+    if (cell_style_refs) {
       (obj.cell_styles || []).forEach((cell_style: CellStyleRef) => {
           if (typeof cell_style.ref === 'number') {
           cell_style.style =
-            JSON.parse(JSON.stringify(obj.cell_style_refs[cell_style.ref])); // clone
+            JSON.parse(JSON.stringify(cell_style_refs[cell_style.ref])); // clone
         }
       });
     }
@@ -128,7 +191,7 @@ export class Sheet {
             if (entry.style_ref) {
               if (!sheet.cell_style[entry.column]) sheet.cell_style[entry.column] = [];
               sheet.cell_style[entry.column][entry.row] = // entry.style;
-                JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+                JSON.parse(JSON.stringify(cell_style_refs[entry.style_ref])); // clone
             }
           }
         }
@@ -141,7 +204,7 @@ export class Sheet {
                 if (entry.style_ref) {
                   if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
                   sheet.cell_style[column][row] = // entry.style;
-                    JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+                    JSON.parse(JSON.stringify(cell_style_refs[entry.style_ref])); // clone
                 }
               }
             }
@@ -154,7 +217,7 @@ export class Sheet {
                 if (entry.style_ref) {
                   if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
                   sheet.cell_style[column][row] = // entry.style;
-                    JSON.parse(JSON.stringify(obj.cell_style_refs[entry.style_ref])); // clone
+                    JSON.parse(JSON.stringify(cell_style_refs[entry.style_ref])); // clone
                 }
               }
             }
@@ -190,6 +253,24 @@ export class Sheet {
     sheet.row_styles = obj.row_style;
     sheet.column_styles = obj.column_style;
     sheet.row_pattern = obj.row_pattern || [];
+
+    // patch other styles
+
+    patch_style(sheet.sheet_style||{});
+    for (const entry of sheet.row_pattern) {
+      patch_style(entry);
+    }
+
+    for (const key of Object.keys(sheet.column_styles)) {
+      patch_style(sheet.column_styles[key as any]);
+    }
+
+    for (const key of Object.keys(sheet.row_styles)) {
+      patch_style(sheet.row_styles[key as any]);
+    }
+
+    // ok
+
 
     // if (hints && !hints.data) sheet.FlushCellStyles();
 
@@ -1431,29 +1512,30 @@ export class Sheet {
         number_format_map[style.number_format] = 1; 
       }
 
-      if (style.text_color && style.text_color !== 'none') {
+      if (style.text?.text && style.text.text !== 'none') {
         // const color = Measurement.MeasureColorARGB(style.text_color);
-        color_map[style.text_color] = 1;
+        color_map[style.text.text] = 1;
       }
-      if (style.background && style.background !== 'none') {
-        // const color = Measurement.MeasureColorARGB(style.background);
-        color_map[style.background] = 1;
+
+      if (style.fill?.text) {
+        color_map[style.fill.text] = 1;
       }
-      if (style.border_top_color && style.border_top_color !== 'none') {
-        // const color = Measurement.MeasureColorARGB(style.border_top_color);
-        color_map[style.border_top_color] = 1;
+
+      //if (style.background && style.background !== 'none') {
+      //  color_map[style.background] = 1;
+      //}
+
+      if (style.border_top_fill?.text) {
+        color_map[style.border_top_fill.text] = 1;        
       }
-      if (style.border_bottom_color && style.border_bottom_color !== 'none') {
-        // const color = Measurement.MeasureColorARGB(style.border_bottom_color);
-        color_map[style.border_bottom_color] = 1;
+      if (style.border_left_fill?.text) {
+        color_map[style.border_left_fill.text] = 1;        
       }
-      if (style.border_left_color && style.border_left_color !== 'none') {
-        // const color = Measurement.MeasureColorARGB(style.border_left_color);
-        color_map[style.border_left_color] = 1;
+      if (style.border_right_fill?.text) {
+        color_map[style.border_right_fill.text] = 1;        
       }
-      if (style.border_right_color && style.border_right_color !== 'none') {
-        // const color = Measurement.MeasureColorARGB(style.border_right_color);
-        color_map[style.border_right_color] = 1;
+      if (style.border_bottom_fill?.text) {
+        color_map[style.border_bottom_fill.text] = 1;        
       }
 
     };
@@ -1530,6 +1612,8 @@ export class Sheet {
     // than leaving empty indexes as undefined -- that requires a type test
     // (to avoid zeros).
 
+    const empty_json = JSON.stringify({});
+
     // actually we could just offset the index by 1... (see above)
 
     for (let c = 0; c < this.cell_style.length; c++) {
@@ -1539,12 +1623,14 @@ export class Sheet {
         for (let r = 0; r < column.length; r++) {
           if (column[r]) {
             const style_as_json = JSON.stringify(column[r]);
-            let reference_index = cell_style_map[style_as_json];
-            if (typeof reference_index !== 'number') {
-              cell_style_map[style_as_json] = reference_index = cell_style_refs.length;
-              cell_style_refs.push(column[r]);
+            if (style_as_json !== empty_json) {
+              let reference_index = cell_style_map[style_as_json];
+              if (typeof reference_index !== 'number') {
+                cell_style_map[style_as_json] = reference_index = cell_style_refs.length;
+                cell_style_refs.push(column[r]);
+              }
+              cell_reference_map[c][r] = reference_index;
             }
-            cell_reference_map[c][r] = reference_index;
           }
         }
       }
@@ -1559,6 +1645,23 @@ export class Sheet {
     const column_style = JSON.parse(JSON.stringify(this.column_styles));
     const row_pattern = JSON.parse(JSON.stringify(this.row_pattern));
 
+    // clean up empty colors
+
+    for (const style of cell_style_refs) {
+      Style.Prune(style);
+    }
+    
+    Style.Prune(sheet_style);
+    
+    for (const key of Object.keys(row_style)) {
+      Style.Prune(row_style[key]);
+    }
+
+    for (const key of Object.keys(column_style)) {
+      Style.Prune(column_style[key]);
+    }
+
+
     const translate_border_color = (color: string|undefined, default_color: string|undefined): string|undefined => {
       if (typeof color !== 'undefined' && color !== 'none') {
         if (color === default_color) {
@@ -1570,6 +1673,21 @@ export class Sheet {
       }
       return undefined;
     }
+
+    const translate_border_fill = (color: Style.Color = {}, default_color: Style.Color = {}) => {
+      const result: Style.Color = { 
+        ...default_color,
+        ...color,
+      };
+      if (result.text) {
+        result.text = Measurement.MeasureColorARGB(result.text);
+        return result;
+      }
+      else if (typeof result.theme === 'number') {
+        return result;
+      }
+      return undefined;
+    };
 
     // translate, if necessary
     if (options.export_colors) {
@@ -1584,22 +1702,30 @@ export class Sheet {
       }
       for (const style of style_list as Style.Properties[]) {
 
-        style.border_top_color = translate_border_color(style.border_top_color, Style.DefaultProperties.border_top_color);
-        style.border_left_color = translate_border_color(style.border_left_color, Style.DefaultProperties.border_left_color);
-        style.border_right_color = translate_border_color(style.border_right_color, Style.DefaultProperties.border_right_color);
-        style.border_bottom_color = translate_border_color(style.border_bottom_color, Style.DefaultProperties.border_bottom_color);
+        style.border_top_fill = translate_border_fill(style.border_top_fill, Style.DefaultProperties.border_top_fill);
+        style.border_left_fill = translate_border_fill(style.border_left_fill, Style.DefaultProperties.border_top_fill);
+        style.border_right_fill = translate_border_fill(style.border_right_fill, Style.DefaultProperties.border_top_fill);
+        style.border_bottom_fill = translate_border_fill(style.border_bottom_fill, Style.DefaultProperties.border_top_fill);
 
-        if (typeof style.background !== 'undefined' && style.background !== 'none') {
-          style.background = Measurement.MeasureColorARGB(style.background);
+        //style.border_top_color = translate_border_color(style.border_top_color, Style.DefaultProperties.border_top_color);
+        //style.border_left_color = translate_border_color(style.border_left_color, Style.DefaultProperties.border_left_color);
+        //style.border_right_color = translate_border_color(style.border_right_color, Style.DefaultProperties.border_right_color);
+        //style.border_bottom_color = translate_border_color(style.border_bottom_color, Style.DefaultProperties.border_bottom_color);
+
+        if (style.fill?.text) {
+          style.fill.text = Measurement.MeasureColorARGB(style.fill.text);
         }
-        if (typeof style.text_color !== 'undefined' && style.text_color !== 'none') {
-          if (style.text_color === Style.DefaultProperties.text_color) {
-            style.text_color = undefined;
-          }
-          else {
-            style.text_color = Measurement.MeasureColorARGB(style.text_color);
+
+        //if (typeof style.background !== 'undefined' && style.background !== 'none') {
+        //  style.background = Measurement.MeasureColorARGB(style.background);
+        //}
+
+        if (style.text) {
+          if (style.text.text && style.text.text !== 'none') {
+            style.text.text = Measurement.MeasureColorARGB(style.text.text);
           }
         }
+
       }
     }
 
