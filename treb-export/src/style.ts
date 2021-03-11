@@ -307,10 +307,14 @@ export class StyleCache {
 
     if (composite.fill) {
       fill.pattern_type = 'solid';
-      fill.fg_color = composite.fill.text ? {
-        argb: composite.fill.text,
-      } : {
-        theme: composite.fill.theme || 1,
+      if (composite.fill.text) {
+        fill.fg_color = { argb: composite.fill.text };  
+      }
+      else if (typeof composite.fill.theme === 'number') {
+        fill.fg_color = { theme: composite.fill.theme };
+      }
+      else {
+        fill.fg_color = { theme: 1 };
       }
       options.fill = fill;
     }

@@ -183,6 +183,7 @@ export class Exporter {
           const composite = Style.Composite(list);
           
           const options = this.workbook.style_cache.StyleOptionsFromProperties(composite);
+          
           const style = this.workbook.style_cache.EnsureStyle(options);
 
           return style;
@@ -276,7 +277,7 @@ export class Exporter {
                     formula = sheet_name + '!' + formula;
                   }
 
-                  console.info('f', formula);
+                  // console.info('f', formula);
                   
               }
               else if (validation.type === ValidationType.List) {
