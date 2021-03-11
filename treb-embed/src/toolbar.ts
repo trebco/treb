@@ -61,7 +61,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
   public background_color?: Style.Color = { text: 'yellow' };
 
   /** the current color, if you click the button (not the dropdown) */
-  public foreground_color: Style.Color = { text: 'blue' };
+  public foreground_color?: Style.Color = { text: 'blue' };
 
   /** the current color, if you click the button (not the dropdown) */
   public border_color?: Style.Color = undefined; // { theme: 0 };
@@ -440,21 +440,21 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       switch (this.color_target) {
 
         case 'background':
-          this.model['background-color-bar'].style.color = this.ResolveColor(color, {theme: 1});
+          this.model['background-color-bar'].style.color = this.ResolveColor(color, {theme: 0});
           this.background_color = color ? { ...color } : undefined;
           break;
 
         case 'border':
-          this.model['border-color-bar'].style.color = this.ResolveColor(color, {theme: 0});
+          this.model['border-color-bar'].style.color = this.ResolveColor(color, {theme: 1});
           this.border_color = color ? { ...color } : undefined;
           break;
 
         case 'foreground':
           if (!color) {
-            color = { theme: 0 };
+            color = { theme: 1 };
           }
-          this.model['foreground-color-bar'].style.color = this.ResolveColor(color, {theme: 0});
-          this.foreground_color = { ...color };
+          this.model['foreground-color-bar'].style.color = this.ResolveColor(color, {theme: 1});
+          this.foreground_color = color ? { ...color } : undefined;
           break;
 
       }
@@ -611,10 +611,10 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     const html: string[] = []; // [`<div class='row'>`];
 
     const labels = [
-      'Text',
       'Background',
       'Text',
       'Background',
+      'Text',
       'Accent',
       'Accent',
       'Accent',

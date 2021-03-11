@@ -1665,24 +1665,6 @@ export class Sheet {
     const column_style = JSON.parse(JSON.stringify(this.column_styles));
     const row_pattern = JSON.parse(JSON.stringify(this.row_pattern));
 
-    /*
-    // clean up empty colors
-
-    for (const style of cell_style_refs) {
-      Style.Prune(style);
-    }
-    
-    Style.Prune(sheet_style);
-    
-    for (const key of Object.keys(row_style)) {
-      Style.Prune(row_style[key]);
-    }
-
-    for (const key of Object.keys(column_style)) {
-      Style.Prune(column_style[key]);
-    }
-    */
-
     const translate_border_color = (color: string|undefined, default_color: string|undefined): string|undefined => {
       if (typeof color !== 'undefined' && color !== 'none') {
         if (color === default_color) {

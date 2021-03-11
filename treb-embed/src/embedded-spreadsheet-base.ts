@@ -2728,8 +2728,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
                 break;
               case 'foreground':
 
-                // FIXME: theme colors
-                updated_style.text = event.data?.color || {};
+                // empty would work here because it means "use default"; but
+                // if we set it explicitly, it can be removed on composite delta
+                updated_style.text = event.data?.color || { theme: 1 };
 
                 break;
               case 'background':

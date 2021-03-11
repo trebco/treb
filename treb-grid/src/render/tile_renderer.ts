@@ -825,7 +825,7 @@ export class TileRenderer {
   protected ResolveColors(style: Style.Properties): Style.Properties {
 
     const resolved = {...style};
-    resolved.text = { text: ThemeColor(this.theme, style.text) };
+    resolved.text = { text: ThemeColor2(this.theme, style.text, 1) };
 
     // TODO: other colors
 
@@ -1309,19 +1309,7 @@ export class TileRenderer {
         width, 
         height);
 
-      // FIXME: what's with the double read here? going to preserve it 
-      // for theme color switch, but it's very unclear what it's for
-
-      // it's almost certainly unecessary now... clean up
-
-      // const style_text_color = style.text_color === 'none' ? (this.theme.grid_cell?.text_color ||  '') : style.text_color;
-
-      const style_text_color = style.text === 'none' ? 
-          ThemeColor(this.theme, this.theme.grid_cell?.text) : 
-          ThemeColor(this.theme, style.text);
-
-      context.strokeStyle = context.fillStyle =
-        style_text_color || ThemeColor(this.theme, this.theme.grid_cell?.text);
+      context.strokeStyle = context.fillStyle = ThemeColor2(this.theme, style.text, 1);
 
       // there's an issue with theme colors, the function may not be able
       // to translate so we need to update the style (using a copy) to
@@ -1620,13 +1608,9 @@ export class TileRenderer {
     // to text color, background color and border color.
 
     context.lineWidth = 1;
-    const style_text_color = style.text === 'none' ? 
-        ThemeColor(this.theme, this.theme.grid_cell?.text) : 
-        ThemeColor(this.theme, style.text);
 
     context.strokeStyle = context.fillStyle =
-      text_data.format ? text_data.format :
-        style_text_color || ThemeColor(this.theme, this.theme.grid_cell?.text);
+      text_data.format ? text_data.format : ThemeColor2(this.theme, style.text, 1);
 
     context.beginPath();
 
