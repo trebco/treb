@@ -129,7 +129,7 @@ export namespace Style {
     // text_color: 'none',
     // text: 'theme',
     // text_theme: 0,
-    text: { theme: 0 },
+    text: { theme: 1 },
 
     // border_top_color: 'none',
     // border_left_color: 'none',

@@ -2619,10 +2619,12 @@ export class Grid {
     this.theme_style_properties.border_bottom_color = this.theme.grid_cell?.border_bottom_color || 'none';
     */
 
+    /*
     this.theme_style_properties.border_top_fill = {theme: 0};
     this.theme_style_properties.border_left_fill = {theme: 0};
     this.theme_style_properties.border_right_fill = {theme: 0};
     this.theme_style_properties.border_bottom_fill = {theme: 0};
+    */
 
   }
 

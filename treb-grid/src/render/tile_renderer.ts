@@ -839,24 +839,39 @@ export class TileRenderer {
     style: Style.Properties,
     left = 0, top = 0, width = 0, height = 0): void {
 
-      // if (3>2) return;
+    // cell borders is one of those things that seems simple, even trivial, 
+    // until you actually try to do it. then it turns out to be ridiculously
+    // complicated.
 
-    // edges are complicated. borders cover grid lines. fill also covers
-    // grid lines, in all four directions. the bottom and right cells should
-    // control, which is handy because we usually paint in that order, but 
-    // sometimes we are painting out of order so we still need to think about
-    // it.
-
-    // borders take precedence over fills for corners. so a border can
-    // "bite into" a fill that covers multiple cells.
-
-    // NOTE: we need to fix background painting over borders at the 
-    // corners; this requires some complicated calculations... although
-    // we should know?
-
-    // MAYBE the thing to do is paint everything, backgrounds first then
-    // local borders then edge borders. it's wasteful but it may be the only
-    // way to composite properly.
+    // one complicating factor that we are adding is that we don't necessarily
+    // paint in order, because we may update single cells at a time. so we need
+    // to account for shared borders in two directions.
+    
+    // general rules:
+    //
+    // (1) borders take priority over fills 
+    //
+    // (2) bottom cell, then right cell, take priority over this cell (except
+    //     with regards to rule 1, so our border takes precendence over bottom
+    //     cell fill, but not bottom cell border).
+    // 
+    // some other things to note:
+    //
+    // - double borders (we only handle double-bottom, atm) flow _into_ the 
+    //   neighboring cell, instead of just using the shared border. in this 
+    //   case the shared edge should be colored wrt to the cell that owns the
+    //   double border, either that cell's fill or default.
+    // 
+    // - if we have a fill, we are painting the shared border; but in this case
+    //   you also have to consider the top-left corner, which could be a border
+    //   owned by a cell offset by (-1, -1) and because of rule 1, above, that
+    //   pixel needs to stay border.
+    //
+    // - that theoretically applies to other corners as well, but somehow that
+    //   hasn't come up? (...) 
+    //
+    // - instead of clipping all the corners, when necessary, why not just paint
+    //   the diagonals? might save time
 
     // ---
 
@@ -865,61 +880,65 @@ export class TileRenderer {
       below: Style.Properties,
       left: Style.Properties,
       right: Style.Properties,
-      corner: Style.Properties,
+      tl: Style.Properties,
+      tr: Style.Properties,
+      bl: Style.Properties,
+      br: Style.Properties,
     } = {
       below: this.model.active_sheet.CellStyleData({row: address.row + 1, column: address.column}) || {},
       right: this.model.active_sheet.CellStyleData({row: address.row, column: address.column + 1}) || {},
       above: address.row ? this.model.active_sheet.CellStyleData({row: address.row - 1, column: address.column}) || {} : {},
       left: address.column ? this.model.active_sheet.CellStyleData({row: address.row, column: address.column - 1}) || {} : {},
-      corner: (address.column && address.row) ? 
+
+      tl: (address.column && address.row) ? 
         this.model.active_sheet.CellStyleData({row: address.row - 1, column: address.column - 1}) || {} : {},
+      tr: (address.row) ? 
+        this.model.active_sheet.CellStyleData({row: address.row - 1, column: address.column + 1}) || {} : {},
+      bl: (address.column) ? 
+        this.model.active_sheet.CellStyleData({row: address.row + 1, column: address.column - 1}) || {} : {},
+      br: this.model.active_sheet.CellStyleData({row: address.row + 1, column: address.column + 1}) || {},
     };
 
     let color = '';
 
-    const corner_border = (edges.corner.border_bottom || edges.corner.border_right);
+    /*
+    const tl_border = edges.tl.border_bottom || edges.tl.border_right || 0;
+    const tr_border = edges.tr.border_bottom || edges.tr.border_left || 0;
+    const bl_border = edges.bl.border_top || edges.bl.border_right || 0;
+    const br_border = edges.br.border_top || edges.br.border_left || 0;
+    */
+
+    // --- start with fills ----------------------------------------------------
 
     // paint top background
 
     if (Style.ValidColor(edges.above.fill)) {
       context.fillStyle = ThemeColor2(this.theme, edges.above.fill);
-
-      if (corner_border) {
-        //context.fillStyle = 'orange';
-        context.fillRect(left + 0, top - 1, width, 1);
-      }
-      else {
-        //context.fillStyle = 'green';
-        context.fillRect(left + 0, top - 1, width, 1);
-      }
+      context.fillRect(left + 0, top - 1, width, 1);
     }
 
     // paint left background
 
     if (Style.ValidColor(edges.left.fill)) {
       context.fillStyle = ThemeColor2(this.theme, edges.left.fill);
-      //context.fillRect(-1, -1, 1, height + 1);
-
-      if (corner_border) {
-        context.fillRect(left - 1, top + 1, 1, height - 1);
-      }
-      else {
-        context.fillRect(left - 1, top + 0, 1, height);
-      }
+      // const start = tl_border ? 1 : 0;
+      // context.fillRect(left - 1, top + start, 1, height - start);
+      context.fillRect(left - 1, top, 1, height);
     }
 
     // paint our background. note this one goes up, left
 
     if (Style.ValidColor(style.fill)) {
       context.fillStyle = ThemeColor2(this.theme, style.fill);
-
-      if (corner_border) {
-        // context.fillStyle = 'purple';
+      /*
+      if (tl_border) {
+        const offset = (tl_border === 2) ? 1 : 0;
         context.fillRect(left + 0, top + 0, width , height ); // don't we need to paint the other edges? (...)
         context.fillRect(left + 0, top - 1, width + 0, 1);
-        context.fillRect(left - 1, top + 0, 1, height + 0);
+        context.fillRect(left - 1, top + offset, 1, height - offset);
       }
-      else {
+      else */
+      {
         context.fillRect(left - 1, top - 1, width + 1, height + 1);
       }
     }
@@ -929,7 +948,13 @@ export class TileRenderer {
     color = ThemeColor2(this.theme, edges.right.fill);
     if (color) {
       context.fillStyle = color;
+
+      //const start = tr_border ? 1 : 0;
+      //const end = br_border ? 1 : 0;
+      //context.fillRect(left + width - 1, top - 1 + start, 1, height + 1 - start - end);
+
       context.fillRect(left + width - 1, top - 1, 1, height + 1);
+
     }
 
     // fill of cell underneath
@@ -940,258 +965,146 @@ export class TileRenderer {
       context.fillRect(left - 1, top + height - 1, width + 1, 1);
     }
 
+    // --- corner borders ------------------------------------------------------
+
+    if (edges.right.border_top && !edges.right.border_left) {
+      context.fillStyle = ThemeColor2(this.theme, edges.right.border_top_fill, 1);
+      context.fillRect(left + width - 1, top - 2 + edges.right.border_top, 1, 1);
+    }
+    if (edges.tr.border_left) {
+      context.fillStyle = ThemeColor2(this.theme, edges.tr.border_left_fill, 1);
+      context.fillRect(left + width - 1, top - 1, 1, 1);
+    }
+    if (edges.tr.border_bottom) {
+      context.fillStyle = ThemeColor2(this.theme, edges.tr.border_bottom_fill, 1);
+      context.fillRect(left + width - 1, top - 2 + edges.tr.border_bottom, 1, 1);
+    }
+
+    if (edges.left.border_top && !edges.left.border_right) {
+      context.fillStyle = ThemeColor2(this.theme, edges.left.border_right_fill, 1);
+      context.fillRect(left - 1, top - 2 + edges.left.border_top, 1, 1);
+    }
+    if (edges.tl.border_right) {
+      context.fillStyle = ThemeColor2(this.theme, edges.tl.border_right_fill, 1);
+      context.fillRect(left - 1, top - 1, 1, 1);
+    }
+    if (edges.tl.border_bottom) {
+      context.fillStyle = ThemeColor2(this.theme, edges.tl.border_bottom_fill, 1);
+      context.fillRect(left - 1, top - 2 + edges.tl.border_bottom, 1, 1);
+    }
+
+    if (edges.right.border_bottom && !edges.right.border_left) {
+      context.fillStyle = ThemeColor2(this.theme, edges.right.border_bottom_fill, 1);
+      context.fillRect(left + width - 1, top + height - edges.right.border_bottom, 1, 1);
+    }
+    if (edges.br.border_left) {
+      context.fillStyle = ThemeColor2(this.theme, edges.br.border_left_fill, 1);
+      context.fillRect(left + width - 1, top + height - 1, 1, 1);
+    }
+    if (edges.br.border_top) {
+      context.fillStyle = ThemeColor2(this.theme, edges.br.border_top_fill, 1);
+      context.fillRect(left + width - 1, top + height - edges.br.border_top, 1, 1);
+    }
+
+    if (edges.left.border_bottom && !edges.left.border_right) {
+      context.fillStyle = ThemeColor2(this.theme, edges.left.border_bottom_fill, 1);
+      context.fillRect(left - 1, top + height - edges.left.border_bottom, 1, 1);
+    }
+    if (edges.bl.border_right) {
+      context.fillStyle = ThemeColor2(this.theme, edges.bl.border_right_fill, 1);
+      context.fillRect(left - 1, top + height - 1, 1, 1);
+    }
+    if (edges.bl.border_top) {
+      context.fillStyle = ThemeColor2(this.theme, edges.bl.border_top_fill, 1);
+      context.fillRect(left - 1, top + height - edges.bl.border_top, 1, 1);
+    }
+
+    // --- neighbor borders ----------------------------------------------------
+
     // paint top border
 
-    // good
     if (edges.above.border_bottom) {
-      context.fillStyle = ThemeColor2(this.theme, edges.above.border_bottom_fill);
-      context.fillRect(left - 1, top - 1, width + 1, 1);
+      context.fillStyle = ThemeColor2(this.theme, edges.above.border_bottom_fill, 1);
+      if (edges.above.border_bottom === 2) {
+        context.fillRect(left - 1, top - 2, width + 1, 1);
+        context.fillRect(left - 1, top - 0, width + 1, 1);
+        context.fillStyle = ThemeColor2(this.theme, edges.above.fill) 
+          || ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        context.fillRect(left - 1, top - 1, width + 1, 1);
+      }
+      else {
+        context.fillRect(left - 1, top - 1, width + 1, 1);
+      }
     }
 
     // paint left border
 
-    // ok
     if (edges.left.border_right) {
-      context.fillStyle = ThemeColor2(this.theme, edges.left.border_right_fill);
+      context.fillStyle = ThemeColor2(this.theme, edges.left.border_right_fill, 1);
       context.fillRect(left - 1, top - 1, 1, height + 1);
     }
 
     // paint right border?
 
     if (edges.right.border_left) {
-      context.fillStyle = ThemeColor2(this.theme, edges.left.border_left_fill);
+      context.fillStyle = ThemeColor2(this.theme, edges.left.border_left_fill, 1);
       context.fillRect(left + width - 1, top - 1, 1, height + 1);
     }
 
     // bottom? (...)
 
     if (edges.below.border_top) {
-      context.fillStyle = ThemeColor2(this.theme, edges.below.border_top_fill);
-      context.fillRect(left - 1, top + height - 1, width + 1, 1);
+      context.fillStyle = ThemeColor2(this.theme, edges.below.border_top_fill, 1);
+      if (edges.below.border_top === 2) {
+        context.fillRect(left - 1, top + height - 2, width + 1, 1);
+        context.fillRect(left - 1, top + height - 0, width + 1, 1);
+        context.fillStyle = ThemeColor2(this.theme, edges.below.fill) 
+          || ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        context.fillRect(left - 1, top + height - 1, width + 1, 1);
+      }
+      else {
+        context.fillRect(left - 1, top + height - 1, width + 1, 1);
+      }
     }
 
-    // paint our borders
+    // -- our borders ----------------------------------------------------------
 
     if (style.border_top) {
-      context.fillStyle = ThemeColor2(this.theme, style.border_top_fill);
-      context.fillRect(left - 1, top - 1, width + 1, 1);
+      context.fillStyle = ThemeColor2(this.theme, style.border_top_fill, 1);
+      if (style.border_top === 2) {
+        context.fillRect(left - 1, top - 2, width + 1, 1);
+        context.fillRect(left - 1, top + 0, width + 1, 1);
+        context.fillStyle = ThemeColor2(this.theme, style.fill) 
+          || ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        context.fillRect(left - 1, top - 1, width + 1, 1);
+      }
+      else {
+        context.fillRect(left - 1, top - 1, width + 1, 1);
+      }
     }
 
-    // ok
     if (style.border_left) {
-      context.fillStyle = ThemeColor2(this.theme, style.border_left_fill);
+      context.fillStyle = ThemeColor2(this.theme, style.border_left_fill, 1);
       context.fillRect(left - 1, top - 1, 1, height + 1);
     }
 
-    // ok
     if (style.border_right) {
-      context.fillStyle = ThemeColor2(this.theme, style.border_right_fill);
+      context.fillStyle = ThemeColor2(this.theme, style.border_right_fill, 1);
       context.fillRect(left + width - 1, top - 1, 1, height + 1);
     }
 
-    // good 
     if (style.border_bottom) {
-      context.fillStyle = ThemeColor2(this.theme, style.border_bottom_fill);
-      context.fillRect(left - 1, top + height - 1, width + 1, 1);
-    }
-
-    // ---
-
-
-    return;
-
-    // --- first calculate ---
-
-    // this is a field for the background between a double border; generally
-    // speaking it should be the cell background color of the cell the border
-    // belongs to...
-
-    let double_border_center = '';
-
-    // this is a flag because we check more than once
-
-    const composite = { ...style };
-
-    const valid_fill = Style.ValidColor(style.fill);
-
-    let top_is_border = !!(style.border_top);
-    let bottom_is_border = !!(style.border_bottom);
-
-    // if the cell underneath has a top border, that overrides our bottom
-    // border (although these should be normalized somewhere?)
-    
-    if (edges.below.border_top) {
-      composite.border_bottom = edges.below.border_top;
-      composite.border_bottom_fill = edges.below.border_bottom_fill;
-      bottom_is_border = true;
-
-      if (edges.below.border_top === 2) {
-        double_border_center = 
-          ThemeColor2(this.theme, edges.below.fill) || 
-          ThemeColor2(this.theme, this.theme.grid_cell?.fill) || '#fff';
-      }
-
-    }
-    else if (style.border_bottom === 2) {
-      double_border_center = 
-        ThemeColor2(this.theme, style.fill) || 
-        ThemeColor2(this.theme, this.theme.grid_cell?.fill) || '#fff';
-    }
-
-    // if we still don't have a bottom border, check fill, starting with
-    // the cell underneath, because that controls.
-    
-    if (!composite.border_bottom) {
-      if (Style.ValidColor(edges.below.fill)) {
-        composite.border_bottom = 1;
-        composite.border_bottom_fill = edges.below.fill;
-      }
-      else if (valid_fill) {
-        composite.border_bottom = 1;
-        composite.border_bottom_fill = style.fill;
-      }
-    }
-
-    // now do the same thing with the cell to the right...
-
-    if (edges.right.border_left) {
-      composite.border_right = edges.right.border_left;
-      composite.border_right_fill = edges.right.border_left_fill;
-    }
-
-    if (!composite.border_right) {
-      if (Style.ValidColor(edges.right.fill)) {
-        composite.border_right = 1;
-        composite.border_right_fill = edges.right.fill;
-      }
-      else if (valid_fill) {
-        composite.border_right = 1;
-        composite.border_right_fill = style.fill;
-      }
-    }
-
-    // for top and left, border overrides fill but our fill controls 
-
-    if (!composite.border_top) {
-      if (edges.above.border_bottom) {
-        composite.border_top = edges.above.border_bottom;
-        composite.border_top_fill = edges.above.border_bottom_fill;
-        top_is_border = true;
-
-        if (edges.above.border_bottom === 2) {
-          double_border_center = 
-            ThemeColor2(this.theme, edges.above.fill) || 
-            ThemeColor2(this.theme, this.theme.grid_cell?.fill) || '#fff';
-        }
-
-      }
-      else if (valid_fill) {
-        composite.border_top = 1;
-        composite.border_top_fill = style.fill;
-      }
-      else if (Style.ValidColor(edges.above.fill)) {
-        composite.border_top = 1;
-        composite.border_top_fill = edges.above.fill;
-      }
-    }
-    
-    if (!composite.border_left) {
-      if (edges.left.border_right) {
-        composite.border_left = edges.left.border_right;
-        composite.border_left_fill = edges.left.border_right_fill;
-      }
-      else if (valid_fill) {
-        composite.border_left = 1;
-        composite.border_left_fill = style.fill;
-      }
-      else if (Style.ValidColor(edges.left.fill)) {
-        composite.border_left = 1;
-        composite.border_left_fill = edges.left.fill;
-      }
-    }
-
-    // --- then paint ---
-
-    context.lineWidth = 1; // ??
-
-    if (composite.border_left) {
-      const x = (address.column === 0 ? 0.5 : -0.5) + left;
-      context.strokeStyle = ThemeColor2(this.theme, composite.border_left_fill);      
-      context.beginPath();
-
-      context.moveTo(x, top - 1);
-      context.lineTo(x, top + height);
-      context.stroke();
-    }
-
-    if (composite.border_top) {
-      const y = (address.row === 0 ? 0.5 : -0.5) + top;
-      if (composite.border_top === 1) {
-        context.strokeStyle = ThemeColor2(this.theme, composite.border_top_fill);      
-        context.beginPath();
-        //context.moveTo(left - 1, y);
-        //context.lineTo(left + width, y);
-        context.moveTo(left - 0.5, y);
-        context.lineTo(left + width + 0.5, y);
-        context.stroke();
+      context.fillStyle = ThemeColor2(this.theme, style.border_bottom_fill, 1);
+      if (style.border_bottom === 2) {
+        context.fillRect(left - 1, top + height - 2, width + 1, 1);
+        context.fillRect(left - 1, top + height + 0, width + 1, 1);
+        context.fillStyle = ThemeColor2(this.theme, style.fill) 
+          || ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        context.fillRect(left - 1, top + height - 1, width + 1, 1);
       }
       else {
-
-        context.strokeStyle = double_border_center;
-        context.beginPath();
-        context.moveTo(left - 1, y);
-        context.lineTo(left + width, y);
-        context.stroke();
-
-        context.strokeStyle = ThemeColor2(this.theme, composite.border_top_fill);      
-        context.beginPath();
-        context.moveTo(left - 1, y - 1);
-        context.lineTo(left + width, y - 1);
-        context.moveTo(left - 1, y + 1);
-        context.lineTo(left + width, y + 1);
-        context.stroke();
+        context.fillRect(left - 1, top + height - 1, width + 1, 1);
       }
-    }
-
-    if (composite.border_bottom) {
-
-      const y = top + height - 0.5;
-
-      if (composite.border_bottom === 1) {
-        context.strokeStyle = ThemeColor2(this.theme, composite.border_bottom_fill);      
-        context.beginPath();
-        //context.moveTo(left - 1, y);
-        //context.lineTo(left + width, y);
-        context.moveTo(left - 0.5, y);
-        context.lineTo(left + width + 0.5, y);
-        context.stroke();
-      }
-      else {
-
-        context.strokeStyle = double_border_center;
-        context.beginPath();
-        context.moveTo(left - 1, y);
-        context.lineTo(left + width, y);
-        context.stroke();
-
-        context.strokeStyle = ThemeColor2(this.theme, composite.border_bottom_fill);      
-        context.beginPath();
-        context.moveTo(left - 1, y - 1);
-        context.lineTo(left + width, y - 1);
-        context.moveTo(left - 1, y + 1);
-        context.lineTo(left + width, y + 1);
-        context.stroke();
-      }
-    }
-
-    if (composite.border_right) {
-      const x = left + width - 0.5;
-      context.strokeStyle = ThemeColor2(this.theme, composite.border_right_fill);      
-      context.beginPath();
-      context.moveTo(x, top - 1);
-      context.lineTo(x, top + height);
-      context.stroke();
-
     }
 
   }

@@ -404,6 +404,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             break;
 
           case 'selection':
+            // console.info('selection event');
             this.UpdateSelection(event.selection);
             this.UpdateSelectionStyle(event.selection);
             break;
@@ -2556,11 +2557,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   public PushUndo(json?: string, last_selection?: string): void {
 
-    // console.info('push undo');
+    const selection = last_selection || this.last_selection;
+
+    // console.info('push undo', JSON.stringify(selection));
 
     if (this.undo_stack[this.undo_pointer - 1]) {
-      this.undo_stack[this.undo_pointer - 1].selection = last_selection || this.last_selection;
-      // console.info('set at pointer', this.undo_pointer-1, this.last_selection);
+      this.undo_stack[this.undo_pointer - 1].selection = selection;
+       // console.info('set at pointer', this.undo_pointer-1, this.last_selection);
     }
     
     if (!json) {
@@ -2622,8 +2625,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // in the undo stack. so we don't need to recalculate; paint immediately.
     // prevents flickering.
 
-    this.LoadDocument(JSON.parse(undo_entry.data), undefined, false, undefined, undefined, 
-      undo_entry.selection ? JSON.parse(undo_entry.selection) : undefined);
+    const selection: GridSelection|undefined = 
+      undo_entry.selection ? JSON.parse(undo_entry.selection) : undefined
+
+    // console.info('selection?', undo_entry.selection);
+
+    this.LoadDocument(JSON.parse(undo_entry.data), undefined, false, undefined, undefined, selection);
 
     this.file_version--; // decrement
 
@@ -2636,7 +2643,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * we can also use this to better manage selection in the undo system...
    * 
    */
-  public UpdateSelection(selection: GridSelection) {
+  public UpdateSelection(selection: GridSelection): void {
+
+    // console.info("US", JSON.stringify(selection));
 
     // cache for undo
     this.last_selection = JSON.stringify(selection);    

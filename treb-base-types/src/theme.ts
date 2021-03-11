@@ -179,8 +179,8 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   const compare = css.color;
 
   theme.theme_colors = [
-    theme.grid_cell.text?.text || 'rgb(51, 51, 51)',
     theme.grid_cell.fill?.text || 'rgb(255, 255, 255)',
+    theme.grid_cell.text?.text || 'rgb(51, 51, 51)',
   ];
 
   for (let i = 1; i < 32; i++) {
