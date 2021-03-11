@@ -839,6 +839,8 @@ export class TileRenderer {
     style: Style.Properties,
     left = 0, top = 0, width = 0, height = 0): void {
 
+      // if (3>2) return;
+
     // edges are complicated. borders cover grid lines. fill also covers
     // grid lines, in all four directions. the bottom and right cells should
     // control, which is handy because we usually paint in that order, but 
@@ -847,6 +849,156 @@ export class TileRenderer {
 
     // borders take precedence over fills for corners. so a border can
     // "bite into" a fill that covers multiple cells.
+
+    // NOTE: we need to fix background painting over borders at the 
+    // corners; this requires some complicated calculations... although
+    // we should know?
+
+    // MAYBE the thing to do is paint everything, backgrounds first then
+    // local borders then edge borders. it's wasteful but it may be the only
+    // way to composite properly.
+
+    // ---
+
+    const edges: {
+      above: Style.Properties,
+      below: Style.Properties,
+      left: Style.Properties,
+      right: Style.Properties,
+      corner: Style.Properties,
+    } = {
+      below: this.model.active_sheet.CellStyleData({row: address.row + 1, column: address.column}) || {},
+      right: this.model.active_sheet.CellStyleData({row: address.row, column: address.column + 1}) || {},
+      above: address.row ? this.model.active_sheet.CellStyleData({row: address.row - 1, column: address.column}) || {} : {},
+      left: address.column ? this.model.active_sheet.CellStyleData({row: address.row, column: address.column - 1}) || {} : {},
+      corner: (address.column && address.row) ? 
+        this.model.active_sheet.CellStyleData({row: address.row - 1, column: address.column - 1}) || {} : {},
+    };
+
+    let color = '';
+
+    const corner_border = (edges.corner.border_bottom || edges.corner.border_right);
+
+    // paint top background
+
+    if (Style.ValidColor(edges.above.fill)) {
+      context.fillStyle = ThemeColor2(this.theme, edges.above.fill);
+
+      if (corner_border) {
+        //context.fillStyle = 'orange';
+        context.fillRect(left + 0, top - 1, width, 1);
+      }
+      else {
+        //context.fillStyle = 'green';
+        context.fillRect(left + 0, top - 1, width, 1);
+      }
+    }
+
+    // paint left background
+
+    if (Style.ValidColor(edges.left.fill)) {
+      context.fillStyle = ThemeColor2(this.theme, edges.left.fill);
+      //context.fillRect(-1, -1, 1, height + 1);
+
+      if (corner_border) {
+        context.fillRect(left - 1, top + 1, 1, height - 1);
+      }
+      else {
+        context.fillRect(left - 1, top + 0, 1, height);
+      }
+    }
+
+    // paint our background. note this one goes up, left
+
+    if (Style.ValidColor(style.fill)) {
+      context.fillStyle = ThemeColor2(this.theme, style.fill);
+
+      if (corner_border) {
+        // context.fillStyle = 'purple';
+        context.fillRect(left + 0, top + 0, width , height ); // don't we need to paint the other edges? (...)
+        context.fillRect(left + 0, top - 1, width + 0, 1);
+        context.fillRect(left - 1, top + 0, 1, height + 0);
+      }
+      else {
+        context.fillRect(left - 1, top - 1, width + 1, height + 1);
+      }
+    }
+
+    // fill of cell to the right
+
+    color = ThemeColor2(this.theme, edges.right.fill);
+    if (color) {
+      context.fillStyle = color;
+      context.fillRect(left + width - 1, top - 1, 1, height + 1);
+    }
+
+    // fill of cell underneath
+
+    color = ThemeColor2(this.theme, edges.below.fill);
+    if (color) {
+      context.fillStyle = color;
+      context.fillRect(left - 1, top + height - 1, width + 1, 1);
+    }
+
+    // paint top border
+
+    // good
+    if (edges.above.border_bottom) {
+      context.fillStyle = ThemeColor2(this.theme, edges.above.border_bottom_fill);
+      context.fillRect(left - 1, top - 1, width + 1, 1);
+    }
+
+    // paint left border
+
+    // ok
+    if (edges.left.border_right) {
+      context.fillStyle = ThemeColor2(this.theme, edges.left.border_right_fill);
+      context.fillRect(left - 1, top - 1, 1, height + 1);
+    }
+
+    // paint right border?
+
+    if (edges.right.border_left) {
+      context.fillStyle = ThemeColor2(this.theme, edges.left.border_left_fill);
+      context.fillRect(left + width - 1, top - 1, 1, height + 1);
+    }
+
+    // bottom? (...)
+
+    if (edges.below.border_top) {
+      context.fillStyle = ThemeColor2(this.theme, edges.below.border_top_fill);
+      context.fillRect(left - 1, top + height - 1, width + 1, 1);
+    }
+
+    // paint our borders
+
+    if (style.border_top) {
+      context.fillStyle = ThemeColor2(this.theme, style.border_top_fill);
+      context.fillRect(left - 1, top - 1, width + 1, 1);
+    }
+
+    // ok
+    if (style.border_left) {
+      context.fillStyle = ThemeColor2(this.theme, style.border_left_fill);
+      context.fillRect(left - 1, top - 1, 1, height + 1);
+    }
+
+    // ok
+    if (style.border_right) {
+      context.fillStyle = ThemeColor2(this.theme, style.border_right_fill);
+      context.fillRect(left + width - 1, top - 1, 1, height + 1);
+    }
+
+    // good 
+    if (style.border_bottom) {
+      context.fillStyle = ThemeColor2(this.theme, style.border_bottom_fill);
+      context.fillRect(left - 1, top + height - 1, width + 1, 1);
+    }
+
+    // ---
+
+
+    return;
 
     // --- first calculate ---
 
@@ -862,17 +1014,8 @@ export class TileRenderer {
 
     const valid_fill = Style.ValidColor(style.fill);
 
-    const edges: {
-      above: Style.Properties,
-      below: Style.Properties,
-      left: Style.Properties,
-      right: Style.Properties,
-    } = {
-      below: this.model.active_sheet.CellStyleData({row: address.row + 1, column: address.column}) || {},
-      right: this.model.active_sheet.CellStyleData({row: address.row, column: address.column + 1}) || {},
-      above: address.row ? this.model.active_sheet.CellStyleData({row: address.row - 1, column: address.column}) || {} : {},
-      left: address.column ? this.model.active_sheet.CellStyleData({row: address.row, column: address.column - 1}) || {} : {},
-    };
+    let top_is_border = !!(style.border_top);
+    let bottom_is_border = !!(style.border_bottom);
 
     // if the cell underneath has a top border, that overrides our bottom
     // border (although these should be normalized somewhere?)
@@ -880,6 +1023,7 @@ export class TileRenderer {
     if (edges.below.border_top) {
       composite.border_bottom = edges.below.border_top;
       composite.border_bottom_fill = edges.below.border_bottom_fill;
+      bottom_is_border = true;
 
       if (edges.below.border_top === 2) {
         double_border_center = 
@@ -932,6 +1076,7 @@ export class TileRenderer {
       if (edges.above.border_bottom) {
         composite.border_top = edges.above.border_bottom;
         composite.border_top_fill = edges.above.border_bottom_fill;
+        top_is_border = true;
 
         if (edges.above.border_bottom === 2) {
           double_border_center = 
@@ -973,6 +1118,7 @@ export class TileRenderer {
       const x = (address.column === 0 ? 0.5 : -0.5) + left;
       context.strokeStyle = ThemeColor2(this.theme, composite.border_left_fill);      
       context.beginPath();
+
       context.moveTo(x, top - 1);
       context.lineTo(x, top + height);
       context.stroke();
@@ -983,8 +1129,10 @@ export class TileRenderer {
       if (composite.border_top === 1) {
         context.strokeStyle = ThemeColor2(this.theme, composite.border_top_fill);      
         context.beginPath();
-        context.moveTo(left - 1, y);
-        context.lineTo(left + width, y);
+        //context.moveTo(left - 1, y);
+        //context.lineTo(left + width, y);
+        context.moveTo(left - 0.5, y);
+        context.lineTo(left + width + 0.5, y);
         context.stroke();
       }
       else {
@@ -1012,8 +1160,10 @@ export class TileRenderer {
       if (composite.border_bottom === 1) {
         context.strokeStyle = ThemeColor2(this.theme, composite.border_bottom_fill);      
         context.beginPath();
-        context.moveTo(left - 1, y);
-        context.lineTo(left + width, y);
+        //context.moveTo(left - 1, y);
+        //context.lineTo(left + width, y);
+        context.moveTo(left - 0.5, y);
+        context.lineTo(left + width + 0.5, y);
         context.stroke();
       }
       else {

@@ -29,6 +29,7 @@ export namespace Style {
     theme?: number;
     tint?: number;
     text?: string;
+    none?: boolean;
   }
 
   export interface Properties {
@@ -170,9 +171,10 @@ export namespace Style {
   };
 
   export const ValidColor = (color?: Color): boolean => {
-    return !!(color && (color.text || color.theme || color.theme === 0));
+    return !!(color && (!color.none) && (color.text || color.theme || color.theme === 0));
   };
 
+  /*
   export const Prune = (style: Properties): void => {
 
     // text default is theme 0, so we can remove that if we see it. 
@@ -204,7 +206,8 @@ export namespace Style {
     }
 
   };
-
+  */
+ 
   /* *
    * overlay. will always put defaults at the bottom.
    * /

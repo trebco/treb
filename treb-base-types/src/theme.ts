@@ -61,7 +61,20 @@ export const ThemeColor = (theme: Theme, color?: Style.Color): string => {
   return theme.theme_colors ? theme.theme_colors[color?.theme || 0] : '';
 };
 
+/** 
+ * this includes an implicit check for valid color, if a color 
+ * can't be resolved it returns ''
+ */
 export const ThemeColor2 = (theme: Theme, color?: Style.Color, default_index?: number): string => {
+
+  /*
+
+  this check is implicit because it's expected to be rarer
+
+  if (color?.none) {
+    return undefined;
+  }
+  */
 
   if (color?.text) {
     return color.text === 'none' ? '' : color.text;

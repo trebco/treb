@@ -713,9 +713,29 @@ export class Sheet {
     // replacing did not do that, I'm hesitant to do it now
 
     for (const key of keys) {
-      if (A[key] !== B[key]) {
-        result[key] = B[key];
+      const a = A[key];
+      const b = B[key];
+
+      // we are not checking for arrays, that's not a consideration atm
+
+      if (typeof a === 'object' && typeof b === 'object') {
+
+        // is this faster than checking properties? 
+        // especially if we know the list?
+
+        if (JSON.stringify(a) !== JSON.stringify(b)) {
+          result[key] = b;
+        }
+        
       }
+      else if (a !== b) {
+        result[key] = b;
+      }
+
+      //if (A[key] !== B[key]) {
+      //  result[key] = B[key];
+      //}
+
     }
 
     return result;
@@ -1645,6 +1665,7 @@ export class Sheet {
     const column_style = JSON.parse(JSON.stringify(this.column_styles));
     const row_pattern = JSON.parse(JSON.stringify(this.row_pattern));
 
+    /*
     // clean up empty colors
 
     for (const style of cell_style_refs) {
@@ -1660,7 +1681,7 @@ export class Sheet {
     for (const key of Object.keys(column_style)) {
       Style.Prune(column_style[key]);
     }
-
+    */
 
     const translate_border_color = (color: string|undefined, default_color: string|undefined): string|undefined => {
       if (typeof color !== 'undefined' && color !== 'none') {
@@ -2110,7 +2131,7 @@ export class Sheet {
         if (Object.keys(override).length) {
           // console.info(override);
           if (!this.cell_style[i]) this.cell_style[i] = [];
-          this.cell_style[i][row] = override;
+          this.cell_style[i][row] = JSON.parse(JSON.stringify(override));
         }
       }
     }
@@ -2118,6 +2139,27 @@ export class Sheet {
     // FIXME: ROW PATTERN
 
     this.cells.Apply(this.RealArea(Area.FromRow(row)), (cell) => cell.FlushStyle());
+
+  }
+
+  /**
+   * styles are applied as a stack, 
+   * 
+   * sheet
+   * row pattern
+   * row
+   * column
+   * cell
+   * 
+   * there are some cases where we wind up with overridden but matching
+   * styles that are duplicative. they can be removed, although it's not 
+   * necessarily useful to do it in real time -- we can do it on load/save
+   * or perhaps on idle.
+   * 
+   */
+  private FlattenStyles() {
+
+    this.CompositeStyleForCell
 
   }
 
