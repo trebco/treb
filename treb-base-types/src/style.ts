@@ -112,7 +112,7 @@ export namespace Style {
   export const DefaultProperties: Properties = {
     horizontal_align: HorizontalAlign.None,
     vertical_align: VerticalAlign.None,
-    number_format: '0.00###',   // use symbolic, e.g. "general"
+    number_format: 'General', // '0.######',   // use symbolic, e.g. "general"
     nan: 'NaN',
     // font_size: 10,              // should have units
 

@@ -30,7 +30,7 @@ export class NumberFormatCache {
     Number: '0.00',
     Integer: '0',
     Percent: '0.00%',
-    General: '0.00###',
+    General: '0.######',
     Fraction: '# ?/?',
     Dollar: '$* _(#,##0.00_);$* (#,##0.00);$* -???',
     Exponential: '0.000e',
@@ -132,6 +132,11 @@ export class NumberFormatCache {
       this.symbolc_name_map[key.toLowerCase()] = key;
     }
 
+    // we're doing this to hide it, but we might as well allow it
+    // since js interfaces will find it regardless
+
+    this.cache['General'].magic_decimal = true;
+
     for (const key of Object.keys(this.aliases)) {
       this.cache[key] = this.cache[this.aliases[key]];
       this.symbolc_name_map[key.toLowerCase()] = key;
@@ -146,4 +151,4 @@ export class NumberFormatCache {
 
 NumberFormatCache.InitCache();
 
-// (self as any).NFC = NumberFormatCache;
+ (self as any).NFC = NumberFormatCache;

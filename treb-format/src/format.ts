@@ -139,11 +139,13 @@ export class NumberFormat {
   // this is a flag for string representation
   protected cloned: boolean[] = [];
 
+  /** for the "General" field, a magic decimal point */
+  public magic_decimal = false;
  
   constructor(pattern: string){
     this._pattern = pattern;
     this.sections = FormatParser.Parse(pattern);
-
+  
     // nothing?
 
     if (!this.sections.length) this.sections = [];
@@ -358,6 +360,13 @@ export class NumberFormat {
       }
     }
     else {
+
+      // magic 
+
+      if (this.magic_decimal && parts[1] === '') {
+        parts.splice(1, 1);
+      }
+
       text_parts = [
         ...(section.prefix.map((text_part) => {
           return {...text_part};
