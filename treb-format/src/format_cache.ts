@@ -151,4 +151,4 @@ export class NumberFormatCache {
 
 NumberFormatCache.InitCache();
 
- (self as any).NFC = NumberFormatCache;
+// (self as any).NFC = NumberFormatCache;
