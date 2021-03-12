@@ -64,7 +64,7 @@ const UpdateFiles = () => {
   // NOTE: making this sync, as opposed to async, to
   // prevent overlapping IO operations
 
-  const banner = `/*! v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC-ND: https://treb.app/license */`;
+  const banner = `/*! v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */`;
 
   const files = fs.readdirSync(build_dir);
 

@@ -875,6 +875,8 @@ export class TileRenderer {
 
     // ---
 
+    // FIXME: use numpad naming
+
     const edges: {
       above: Style.Properties,
       below: Style.Properties,
@@ -899,48 +901,31 @@ export class TileRenderer {
       br: this.model.active_sheet.CellStyleData({row: address.row + 1, column: address.column + 1}) || {},
     };
 
-    let color = '';
-
-    /*
-    const tl_border = edges.tl.border_bottom || edges.tl.border_right || 0;
-    const tr_border = edges.tr.border_bottom || edges.tr.border_left || 0;
-    const bl_border = edges.bl.border_top || edges.bl.border_right || 0;
-    const br_border = edges.br.border_top || edges.br.border_left || 0;
-    */
 
     // --- start with fills ----------------------------------------------------
 
     // paint top background
 
-    if (Style.ValidColor(edges.above.fill)) {
-      context.fillStyle = ThemeColor2(this.theme, edges.above.fill);
+    let color = ThemeColor2(this.theme, edges.above.fill);
+    if (color) {
+      context.fillStyle = color
       context.fillRect(left + 0, top - 1, width, 1);
     }
 
     // paint left background
 
-    if (Style.ValidColor(edges.left.fill)) {
-      context.fillStyle = ThemeColor2(this.theme, edges.left.fill);
-      // const start = tl_border ? 1 : 0;
-      // context.fillRect(left - 1, top + start, 1, height - start);
+    color = ThemeColor2(this.theme, edges.left.fill);
+    if (color) {
+      context.fillStyle = color
       context.fillRect(left - 1, top, 1, height);
     }
 
     // paint our background. note this one goes up, left
 
-    if (Style.ValidColor(style.fill)) {
-      context.fillStyle = ThemeColor2(this.theme, style.fill);
-      /*
-      if (tl_border) {
-        const offset = (tl_border === 2) ? 1 : 0;
-        context.fillRect(left + 0, top + 0, width , height ); // don't we need to paint the other edges? (...)
-        context.fillRect(left + 0, top - 1, width + 0, 1);
-        context.fillRect(left - 1, top + offset, 1, height - offset);
-      }
-      else */
-      {
-        context.fillRect(left - 1, top - 1, width + 1, height + 1);
-      }
+    color = ThemeColor2(this.theme, style.fill);
+    if (color) {
+      context.fillStyle = color;
+      context.fillRect(left - 1, top - 1, width + 1, height + 1);
     }
 
     // fill of cell to the right
@@ -948,11 +933,6 @@ export class TileRenderer {
     color = ThemeColor2(this.theme, edges.right.fill);
     if (color) {
       context.fillStyle = color;
-
-      //const start = tr_border ? 1 : 0;
-      //const end = br_border ? 1 : 0;
-      //context.fillRect(left + width - 1, top - 1 + start, 1, height + 1 - start - end);
-
       context.fillRect(left + width - 1, top - 1, 1, height + 1);
 
     }
