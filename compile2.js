@@ -210,6 +210,7 @@ const CreateConfig = (config, entry, additional_aliases, target) => {
                   // replacements for various package.json strings
 
                   ...build_entry_replacements,
+                  
                   { text: 'process.env.BUILD_VERSION', replacement: `"${package.version}"` },
                   { text: 'process.env.BUILD_NAME', replacement: `"${package.name}"` },
 
