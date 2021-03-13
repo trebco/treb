@@ -12,7 +12,6 @@ import * as Base64JS from 'base64-js';
 import * as PackResults from 'treb-mc/src/pack-results';
 
 // config
-import * as build from '../../package.json';
 import { DialogType } from './progress-dialog';
 import { Calculator } from 'treb-calculator/src';
 import { RunSimulationOptions } from './options';
@@ -166,7 +165,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       this.workers = [];
     }
 
-    const worker_name = build['build-entry-points']['calculation-worker'];
+    const worker_name = process.env.BUILD_ENTRY_CALCULATION_WORKER || '';
 
     // we were hard-limiting workers to the hardware consistency value, but
     // that (apparently) is not available in Safari, so... just allow the 

@@ -3,42 +3,39 @@ import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 // import { AutoEmbed } from './auto-embed';
 import { CompositeSheet } from './composite-sheet';
 import { AutoEmbedManager } from './auto-embed';
-import { CreateSheetOptions } from './options';
+import { CreateSheetOptions, EmbeddedSpreadsheetOptions } from './options';
 import { NumberFormatCache, ValueParser } from 'treb-format';
 
-import * as build from '../../package.json';
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 
-// gate on existing: intended to prevent running this multiple times.
+interface TREBNamespace {
+  CreateEngine?: (options: EmbeddedSpreadsheetOptions) => EmbeddedSpreadsheetBase,
+  CreateSpreadsheet?: (options: CreateSheetOptions) => EmbeddedSpreadsheetBase,
+  version?: string,
+  Format?: {
+    format: (value: number, format: string) => string,
+    parse: (value: string) => string|number|boolean|undefined,
+  },
+}
 
-if (!(self as any).TREB?.CreateSpreadsheet) {
+(() => {
 
-  // find path for worker loaders
+  const TREB: TREBNamespace = ((self as any).TREB) || {};
 
-  EmbeddedSpreadsheetBase.SniffPath();
+  // gate on existing: intended to prevent running this multiple times.
 
-  // create (or attach to) global TREB namespace
+  if (!TREB.CreateSpreadsheet) {
 
-  (() => {
-    if (!(self as any).TREB) { (self as any).TREB = {}; }
-    const TREB: any = (self as any).TREB;
+    // find path for worker loaders
 
-    // TREB.CreateSpreadsheet = (options: CreateSheetOptions) => AutoEmbed.CreateSheet(options);
+    EmbeddedSpreadsheetBase.SniffPath();
+
+    TREB.version = process.env.BUILD_VERSION; // this is fake, it will get replaced
 
     // support headless
     if (EmbeddedSpreadsheetBase.enable_engine) {
       TREB.CreateEngine = (options = {}) => new EmbeddedSpreadsheet(options);
     }
-
-    // ...why the indirection? 
-    // [A: at one point, at least, we also had the charts library in there;
-    //  this serves to identify that it's the version of the embedded sheet]
-
-    // TREB['treb-embed'] = { version: (build as any).version };
-
-    // removing
-
-    TREB.version = build.version;
 
     TREB.CreateSpreadsheet = (options: CreateSheetOptions) => {
       return CompositeSheet.Create(options);
@@ -51,15 +48,16 @@ if (!(self as any).TREB?.CreateSpreadsheet) {
       };
     }
 
-  })();
+    (self as any).TREB = TREB;
 
+    // FIXME: what if it's already loaded? (...)
 
-  // FIXME: what if it's already loaded? (...)
+    // document.addEventListener('DOMContentLoaded', () => AutoEmbed.Run());
+    document.addEventListener('DOMContentLoaded', () => AutoEmbedManager.Run());
 
-  // document.addEventListener('DOMContentLoaded', () => AutoEmbed.Run());
-  document.addEventListener('DOMContentLoaded', () => AutoEmbedManager.Run());
+  }
 
-}
+})();
 
 // re-export
 

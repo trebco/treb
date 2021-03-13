@@ -31,9 +31,6 @@ import * as FileSaver from 'file-saver';
 // import 'treb-grid/style/grid.scss';
 import '../style/embed.scss';
 
-// config
-import * as build from '../../package.json';
-
 // what is this? if these are being used outside of grid they should be exported
 import { SerializedModel } from 'treb-grid/src/types/data_model';
 import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
@@ -80,7 +77,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     const tags = document.querySelectorAll('script');
 
     // FIXME: fragile!
-    const default_script_name = build['build-entry-points'].main;
+    const default_script_name = process.env.BUILD_ENTRY_MAIN || '';
     const rex = new RegExp(default_script_name);
 
     // tslint:disable-next-line:prefer-for-of
@@ -250,16 +247,19 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * ...
    */
   private last_selection?: string;
-  
+
+  /**
+   * this is used in exactly one place: the popout code.
+   */
   public get script_path(): string {
 
-    let name = build['build-entry-points'].main;
+    let name = process.env.BUILD_ENTRY_MAIN || '';
 
     if (EmbeddedSpreadsheetBase.treb_language) {
       name += '-' + EmbeddedSpreadsheetBase.treb_language;
     }
 
-    if (!/\.js$/.test(name)) name += '.js'; // ('-' + build.version + '.js');
+    if (!/\.js$/.test(name)) name += '.js';
 
     let treb_path = EmbeddedSpreadsheetBase.treb_base_path;
 
@@ -1345,7 +1345,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public async ImportXLSX(data: string) {
 
     if (!this.export_worker) {
-      const worker_name = build['build-entry-points']['export-worker'];
+      const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
       this.export_worker = await this.LoadWorker(worker_name);
     }
 
@@ -1405,10 +1405,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** export method returns a blob, for electron client */
-  public async ExportBlob() {
+  public async ExportBlob(): Promise<Blob> {
 
     if (!this.export_worker) {
-      const worker_name = build['build-entry-points']['export-worker'];
+      const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
       this.export_worker = await this.LoadWorker(worker_name);
   }
 
@@ -2480,8 +2480,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     const grid_data = this.grid.Serialize(serialize_options);
 
     const serialized: TREBDocument = {
-      app: build.name,
-      version: build.version,
+      app: process.env.BUILD_NAME || '',
+      version: process.env.BUILD_VERSION || '',
       name: this.grid.model.document_name, // may be undefined
       user_data: this.grid.model.user_data, // may be undefined
       decimal_mark: Localization.decimal_separator,
@@ -2655,11 +2655,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   public About(): void {
     this.dialog?.ShowDialog({
-      // title: 'About TREB',
-      // close_box: true,
-      // html: `TREB version ${build.version}<div class='smaller'><a target=_blank href='https://treb.app'>http://treb.app</a></div>`,
-      // timeout: 3000,
-      // icon: true,
       type: DialogType.about,
     });
   }
@@ -3264,7 +3259,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       name += '-' + EmbeddedSpreadsheetBase.treb_language;
     }
 
-    if (!/\.js$/.test(name)) name += ('-' + build.version + '.js');
+    if (!/\.js$/.test(name)) name += ('-' + process.env.BUILD_VERSION + '.js');
 
     let worker: Worker;
     let treb_path = EmbeddedSpreadsheetBase.treb_base_path;

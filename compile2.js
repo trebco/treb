@@ -161,6 +161,19 @@ const custom_transformer = (context) => {
 };
 */
 
+// these are text replacements for the "build entry points" which we 
+// rely on for loading workers at runtime. since we are dropping 
+// package.json from the build, we need a way to identify these files.
+
+const build_entry_replacements = [];
+
+for (const key of Object.keys(package['build-entry-points'])) {
+  const text = `process.env.BUILD_ENTRY_${key.replace(/\W/g, '_').toUpperCase()}`;
+  build_entry_replacements.push({
+    text, replacement: `"${package['build-entry-points'][key]}"`,
+  });
+}
+
 const CreateConfig = (config, entry, additional_aliases, target) => {
   const config_instance = {
 
@@ -181,6 +194,41 @@ const CreateConfig = (config, entry, additional_aliases, target) => {
               },
             },
             {
+              // this is our text replacement plugin. it's intended to get 
+              // the JSON file out of there in favor of simple string replacements.
+              //
+              // the trick here is we use things that look acceptable at build
+              // time, but are unique enough to find and replace. we pay no 
+              // attention to context; if you are replacing something that looks
+              // like a variable (e.g. process.env.X) with a string, you probably
+              // need to quote the replacement.
+
+              loader: path.resolve('./replace-plugin.js'),
+              options: {
+                replace: [
+
+                  // replacements for various package.json strings
+
+                  ...build_entry_replacements,
+                  { text: 'process.env.BUILD_VERSION', replacement: `"${package.version}"` },
+                  { text: 'process.env.BUILD_NAME', replacement: `"${package.name}"` },
+
+                  // new thing, the result is a boolean (although ts will think it's a
+                  // string, you can check for truthy/falsy). the aim here is to get a
+                  // hard boolean around blocks for dead code elimination, although I'm
+                  // not sure that actually works (works great in rollup)
+
+                  // LATER: seems to work, FWIW, but check if you use it.
+
+                  { text: 'process.env.PRODUCTION', replacement: dev ? 'false' : 'true' }
+
+                ],
+              }
+            },
+            {
+              // this is our template compressor plugin. see the source file
+              // (in this directory).
+
               loader: path.resolve('./template-compressor.js'),
               options: {
                 tags: [
