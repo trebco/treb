@@ -135,7 +135,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
   },
 
   Rate: {
-    description: 'Returns the interest rate of an annuity',
+    description: 'Returns the interest rate of a loan',
     arguments: [
       { name: 'Periods', },
       { name: 'Payment', },
@@ -201,7 +201,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
   },
 
   FV: {
-    description: 'Returns the future value of an annuity',
+    description: 'Returns the future value of an investment',
     arguments: [
       { name: 'Rate', },
       { name: 'Periods', },
@@ -215,7 +215,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
   },
 
   PV: {
-    description: 'Returns the present value of an annuity',
+    description: 'Returns the present value of an investment',
     arguments: [
       { name: 'Rate', },
       { name: 'Periods', },
@@ -239,7 +239,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
   },
 
   NPER: {
-    description: 'Returns the number of periods of an annuity',
+    description: 'Returns the number of periods of an investment',
     arguments: [
       { name: 'Rate', },
       { name: 'Payment', },
@@ -262,7 +262,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
   },
 
   PMT: {
-    description: 'Returns the periodic payment of an annuity',
+    description: 'Returns the periodic payment of a loan',
     arguments: [
       { name: 'Rate', },
       { name: 'Periods', },
