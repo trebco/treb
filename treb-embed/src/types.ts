@@ -18,6 +18,7 @@ export interface TREBSimulationData {
    * implicit default is 64-bit.
    */
   bitness?: number;
+  encoding?: 'b64'|'z85';
   results: any;
 }
 

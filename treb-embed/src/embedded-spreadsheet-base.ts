@@ -3175,6 +3175,33 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /**
+   * compare two semantic versions. returns an object indicating 
+   * the greater version (or equal), plus individual component comparisons.
+   */
+  protected CompareVersions(a = '', b = '') {
+
+    const av = a.split('.').map(value => Number(value) || 0).concat([0, 0, 0]);
+    const bv = b.split('.').map(value => Number(value) || 0).concat([0, 0, 0]);
+
+    const levels = ['major', 'minor', 'patch'];
+    const result: {
+      match: number,
+      level?: 'major'|'minor'|'patch'
+    } = { match: 0 };
+
+    for (let i = 0; i < 3; i++) {
+      if (av[i] !== bv[i]) {
+        result.match = av[i] > bv[i] ? 1 : -1;
+        result.level = levels[i] as 'major'|'minor'|'patch';
+        break;
+      }
+    }
+
+    return result;
+    
+  }
+
+  /**
    * import data from serialized document, doing locale conversion if necessary
    */
   protected ImportDocumentData(data: TREBDocument, override_sheet?: string): void {
@@ -3192,6 +3219,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // as an array...
 
     let sheets: SerializedSheet[] = [];
+
+    const compare = this.CompareVersions(data.version, process.env.BUILD_VERSION);
+    if (compare.match > 0) {
+      if (compare.level === 'major' || compare.level === 'minor') {
+        console.warn(`The file you are opening was created with a newer version of TREB (${data.version} vs ${process.env.BUILD_VERSION}).\nYou may encounter compatibility errors.`);
+      }
+    }
 
     if (data.sheet_data) {
       if (Array.isArray(data.sheet_data)) {

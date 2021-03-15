@@ -8,6 +8,7 @@ import { Localization, ICellAddress } from 'treb-base-types';
 import { SerializeOptions, MacroFunction } from 'treb-grid';
 import { TREBDocument } from './types';
 import * as Base64JS from 'base64-js';
+import * as z85 from 'z85-codec';
 
 import * as PackResults from 'treb-mc/src/pack-results';
 
@@ -102,29 +103,35 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       // it might be useful to prune this a bit, specifically to prune
       // results that are not referenced. can we use the graph to do that?
 
+      serialized.simulation_data = {
+        elapsed: this.last_simulation_data.elapsed,
+        trials: this.last_simulation_data.trials,
+        results: undefined,
+      };
+
       // testing 32-bit data...
 
       if (additional_options.use_float32) {
-        serialized.simulation_data = {
-          elapsed: this.last_simulation_data.elapsed,
-          trials: this.last_simulation_data.trials,
-          bitness: 32,
-          results: (this.last_simulation_data.results || []).map(result => {
+        serialized.simulation_data.bitness = 32;
+        serialized.simulation_data.results = (this.last_simulation_data.results || []).map(result => {
 
-            // 64 -> 32
-            const array32 = Float32Array.from(new Float64Array(result)); 
-            return Base64JS.fromByteArray(new Uint8Array(array32.buffer));
-          }),
-        };
+          // 64 -> 32
+          const array32 = Float32Array.from(new Float64Array(result)); 
+          return additional_options.use_z85 ? 
+              z85.encode(new Uint8Array(array32.buffer)) : 
+              Base64JS.fromByteArray(new Uint8Array(array32.buffer));
+        });
       }
       else {
-        serialized.simulation_data = {
-          elapsed: this.last_simulation_data.elapsed,
-          trials: this.last_simulation_data.trials,
-          results: (this.last_simulation_data.results || []).map(result => {
-            return Base64JS.fromByteArray(new Uint8Array(result));
-          }),
-        };
+        serialized.simulation_data.results = (this.last_simulation_data.results || []).map(result => {
+          return additional_options.use_z85 ? 
+              z85.encode(new Uint8Array(result)) : 
+              Base64JS.fromByteArray(new Uint8Array(result));
+        });
+      }
+
+      if (additional_options.use_z85) { 
+        serialized.simulation_data.encoding = 'z85'; 
       }
 
     }
@@ -433,21 +440,33 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     super.ImportDocumentData(data, override_sheet);
 
     if (data.simulation_data) {
-
+      const z = data.simulation_data.encoding === 'z85';
       this.last_simulation_data = data.simulation_data;
 
       if (data.simulation_data.bitness === 32) {
         this.last_simulation_data.results =
           (this.last_simulation_data.results || []).map((entry) => {
-            const array32 = new Float32Array(Base64JS.toByteArray(entry as any).buffer);
-            return Float64Array.from(array32).buffer;
+            if (z) {
+              const decoded = z85.decode(entry as any);
+              return decoded ? Float64Array.from(decoded).buffer : new Float64Array().buffer;
+            }
+            else {
+              const array32 = new Float32Array(Base64JS.toByteArray(entry as any).buffer);
+              return Float64Array.from(array32).buffer;
+            }
           });
 
       }
       else {
         this.last_simulation_data.results =
           (this.last_simulation_data.results || []).map((entry) => {
-            return Base64JS.toByteArray(entry as any).buffer;
+            if (z) {
+              const decoded = z85.decode(entry as any);
+              return decoded ? decoded.buffer : new Uint8Array().buffer;
+            }
+            else {
+              return Base64JS.toByteArray(entry as any).buffer;
+            }
           });
       }
       this.calculator.UpdateResults(this.last_simulation_data, this.grid.model, false);
