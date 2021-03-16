@@ -228,7 +228,7 @@ export class TileRenderer {
 
     // const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
     // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
-    context.font = Style.Font(this.theme.headers||{});
+    context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
 
     // context.fillStyle = this.theme.headers?.text_color || '';
     context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
@@ -381,7 +381,7 @@ export class TileRenderer {
 
         // const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
         // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
-        context.font = Style.Font(this.theme.headers||{});
+        context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
 
         // context.fillStyle = this.theme.headers?.text_color || '';
         context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
@@ -444,7 +444,7 @@ export class TileRenderer {
         
         // const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
         // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
-        context.font = Style.Font(this.theme.headers||{});
+        context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
 
         // context.fillStyle = this.theme.headers?.text_color || '';
         context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
