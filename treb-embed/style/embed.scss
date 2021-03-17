@@ -37,8 +37,9 @@
   height: 100%;
   z-index: 1;
 
+  transition: opacity .2s ease;
   &.masked {
-    opacity: .6; 
+    opacity: .6;
   }
 
 }
