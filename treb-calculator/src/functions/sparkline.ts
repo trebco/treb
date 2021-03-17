@@ -231,7 +231,7 @@ export class Sparkline {
 
     if (values.length) {
 
-      const step = (width - 2 * x_margin) / values.length;
+      const step = (width - 2 * x_margin - 2) / (values.length-1);
       const pixel_range = (height - 2 * y_margin); // ?
       const base = y_margin;
 
