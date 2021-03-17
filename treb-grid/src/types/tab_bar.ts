@@ -401,7 +401,10 @@ export class TabBar extends EventSource<TabEvent> {
 
       };
 
-      tab.innerText = sheet.name;
+      // you need the inner span for ellipsis, if we want that
+
+      tab.textContent = sheet.name;
+      // tab.innerHTML = `<span>${sheet.name}</span>`;
 
       tab.addEventListener('dblclick', doubleclick);
       tab.addEventListener('mousedown', mousedown);

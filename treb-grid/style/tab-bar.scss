@@ -39,6 +39,7 @@
       display: flex;
       flex-direction: row;
       z-index: 1;
+      max-width: 100%;
     }
 
     /* tabs should be under tab bar? (...) */
@@ -103,10 +104,26 @@
     }
 
     /** don't overflow/ellipsis the add tab button */
+
+    /**
+     * for ellipsis to work, it seems like it has to be inside
+     * a span in the tab. since we are not using it atm I removed
+     * that span, but if we want ellpisis it will need to come back.
+     */
+
     & .tab {
       white-space: nowrap;
-      text-overflow: ellipsis;
+      /* text-overflow: ellipsis; */
       overflow-x: hidden;
+
+      /*
+      span {
+        text-overflow: ellipsis;
+        overflow-x: hidden;
+ 
+      }
+      */
+
     }
 
     & .tab.selected {
