@@ -1655,7 +1655,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * load a network document. using xhr/fetch, this will be
    * limited to local or CORS.
    */
-  public async LoadNetworkDocument(uri: string, options?: EmbeddedSpreadsheetOptions) {
+  public async LoadNetworkDocument(uri: string, options?: EmbeddedSpreadsheetOptions): Promise<void> {
 
     const scroll = options ? options.scroll : undefined;
     const recalculate = options ? !!options.recalculate : false;
