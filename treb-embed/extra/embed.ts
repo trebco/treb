@@ -39,8 +39,6 @@
       
       const base = (script.src||'').replace(/[^/]+\.js[^/]*?$/i, '');
 
-      console.info('injecting, using base', base);
-
       script = document.createElement('script');
       script.setAttribute('type', 'module');
       script.setAttribute('data-reference', 'treb');
