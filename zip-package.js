@@ -11,6 +11,8 @@ const current_dir = path.resolve(__dirname, dist_dir, 'current');
 
 const BuildZip = async () => {
 
+  // moved to compiler
+  /*
   await new Promise((resolve, reject) => {
     exec('cp ' + path.resolve(__dirname, 'treb-embed/distribution') + '/* ' + build_dir, (err, stdout, stderr) => {
       if (err) return reject(err);
@@ -19,6 +21,7 @@ const BuildZip = async () => {
       resolve();
     });
   });
+  */
 
   await new Promise((resolve, reject) => {
 

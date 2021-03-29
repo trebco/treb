@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "alwaysStrict": true,
+    "target": "es3",
+    "outFile": "embed.js"
+  },
+  "files": [
+    "embed.ts"
+  ]
+}

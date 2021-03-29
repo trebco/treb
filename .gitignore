@@ -4,3 +4,6 @@ dist
 dist2
 .vscode
 coverage
+
+# intermediate file (post-build, pre-minify)
+treb-embed/extra/embed.js
