@@ -54,6 +54,11 @@ interface TREBNamespace {
 
     // document.addEventListener('DOMContentLoaded', () => AutoEmbed.Run());
     document.addEventListener('DOMContentLoaded', () => AutoEmbedManager.Run());
+    document.addEventListener('readystatechange', () => {
+      if (document.readyState === 'complete') {
+        AutoEmbedManager.Run()
+      }
+    });
 
   }
 
