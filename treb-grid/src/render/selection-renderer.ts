@@ -22,6 +22,9 @@ export class SelectionRenderer {
   private corner_row_overlay!: HeaderOverlay;
   private corner_column_overlay!: HeaderOverlay;
 
+  // tmp
+  public cached_additional_selections = '';
+
   constructor(
       private theme: Theme,
       private layout: BaseLayout,
@@ -99,8 +102,10 @@ export class SelectionRenderer {
    * omitted).
    *
    * updated for svg selections. erase is now required, so parameter is removed.
+   * update: add an optional (default true) parameter to re-render additional
+   * selections; this will support cache for selections that don't change.
    */
-  public RenderSelections(show_primary_selection = true): void {
+  public RenderSelections(show_primary_selection = true, rerender = true): void {
 
     // this is a dumb way of doing this... it's also error prone,
     // because it needs to track all the function exits (there are
@@ -114,7 +119,7 @@ export class SelectionRenderer {
     // temp (we could change the signature and just take an array)
     const aggregate = [this.primary_selection].concat(this.additional_selections);
 
-    this.RenderSelectionGroup(aggregate, this.layout.grid_selection, undefined, undefined, this.grid_selections);
+    this.RenderSelectionGroup(aggregate, this.layout.grid_selection, undefined, undefined, this.grid_selections, undefined, rerender);
 
     // this is the layout rect for row/column header highlights (primary selection only)
 
@@ -220,7 +225,8 @@ export class SelectionRenderer {
       visible_a: boolean[]|undefined,
       visible_b: boolean[]|undefined,
       group: SVGSelectionBlock[],
-      offset?: SelectionOffset) {
+      offset?: SelectionOffset,
+      rerender = true) {
 
     for (let i = 0; i < aggregate.length; i++ ){
 
@@ -228,8 +234,10 @@ export class SelectionRenderer {
         (aggregate[i].area.start.sheet_id === this.model.active_sheet.id);
 
       if (sheet_match && !aggregate[i].empty && (!visible_a || visible_a[i]) && (!visible_b || visible_b[i])) {
-        const block = this.EnsureGridSelectionBlock(node, group, i, offset);
-        this.RenderSVGSelection(aggregate[i], block, i);
+        if (rerender || !aggregate[i].rendered) {
+          const block = this.EnsureGridSelectionBlock(node, group, i, offset);
+          this.RenderSVGSelection(aggregate[i], block, i);
+        }
       }
       else {
         if (group[i]) group[i].Show(false);
@@ -363,6 +371,9 @@ export class SelectionRenderer {
 
       block.SetFill(target_rect, rect);
       block.SetNub(rect);
+    }
+    else {
+      selection.rendered = true;
     }
 
     block.Show();

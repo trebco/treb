@@ -19,6 +19,9 @@ export interface GridSelection {
   /** there is nothing selected, even though this object exists */
   empty?: boolean;
 
+  /** for cacheing addtional selections. optimally don't serialize */
+  rendered?: boolean;
+
 }
 
 /**

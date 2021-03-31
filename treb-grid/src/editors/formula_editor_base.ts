@@ -1,11 +1,11 @@
 
 import { Area, Cell, Theme, Rectangle, Localization } from 'treb-base-types';
 import { Yield, EventSource } from 'treb-utils';
-import { Parser, UnitRange, UnitAddress } from 'treb-parser';
+import { Parser, UnitRange, UnitAddress, ParseResult, ExpressionUnit } from 'treb-parser';
 
 import { GridSelection } from '../types/grid_selection';
 import { Autocomplete, AutocompleteResult } from './autocomplete';
-import { AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
+import { AutocompleteExecResult, AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
 
 import { DataModel } from '../types/data_model';
 import { UA } from '../util/ua';
@@ -143,6 +143,8 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
   // ...
   protected last_parse_string = '';
+  protected last_parse_result?: ParseResult;
+
   // protected dependency_list?: DependencyList;
   protected reference_list?: Array<UnitRange|UnitAddress>;
   protected dependency_list: Area[] = [];
@@ -247,28 +249,38 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
   }
 
   /** called when there's AC data to display (or tooltip) */
-  public Autocomplete(data: any){
+  public Autocomplete(data: AutocompleteExecResult, target_node?: Node): void {
 
-    if (!this.container_node) return;
+    if (!this.container_node) {
+      return;
+    }
 
-    const client_rect = this.container_node.getBoundingClientRect();
+    let client_rect: DOMRect;
+    if (target_node?.nodeType === Node.ELEMENT_NODE) {
+      client_rect = (target_node as Element).getBoundingClientRect();
+    }
+    else {
+      client_rect = this.container_node.getBoundingClientRect();
+    }
+
     const rect = new Rectangle(
       Math.round(client_rect.left),
       Math.round(client_rect.top),
       client_rect.width, client_rect.height);
 
     this.autocomplete.Show(this.AcceptAutocomplete.bind(this), data, rect);
+
   }
 
   /** flush insert reference, so the next insert uses a new element */
-  protected FlushReference(){
+  protected FlushReference(): void {
     this.editor_insert_node = undefined;
   }
 
   /**
    * get text substring to caret position, irrespective of node structure
    */
-  protected SubstringToCaret(node: HTMLDivElement){
+  protected SubstringToCaret(node: HTMLDivElement): string {
 
     // FIXME: x/browser
 
@@ -276,8 +288,15 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     // seems to be ok in chrome (natch), ffx, [ie/edge? saf? test]
 
     const selection = window.getSelection();
-    if (!selection) throw new Error('error getting selection');
- 
+    if (!selection) {
+      throw new Error('error getting selection');
+    }
+
+    if (selection.rangeCount === 0) {
+      console.warn('range count is 0');
+      return '';
+    }
+
     const range = selection.getRangeAt(0);
     const preCaretRange = range.cloneRange();
 
@@ -295,7 +314,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
    * change -- this is used in the case where there's a single keypress
    * between two selections, otherwise we keep the initial block
    */
-  protected UpdateSelectState(flush = false){
+  protected UpdateSelectState(flush = false): void {
 
     let selecting = false;
     let formula = false;
@@ -308,6 +327,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     if (text.trim()[0] === '='){
       formula = true;
       const sub = this.SubstringToCaret(this.editor_node).trim();
+
       if (sub.length){
         const char = sub[sub.length - 1];
         if (FormulaEditorBase.FormulaChars.some((a) => char === a)) selecting = true;
@@ -322,7 +342,14 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
         const matcher = this.autocomplete_matcher;
 
         if (matcher) {
-          Yield().then(() => this.Autocomplete(matcher.Exec({ text, cursor: sub.length })));
+          Yield().then(() => {
+            const exec_result = matcher.Exec({ text, cursor: sub.length });
+            const node = 
+              this.NodeAtIndex(exec_result.completions ? 
+                    (exec_result.position || 0) :
+                    (exec_result.function_position || 0));
+            this.Autocomplete(exec_result, node);
+          });
         }
 
       }
@@ -330,7 +357,12 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
     if (selecting !== this.selecting_){
       this.selecting_ = selecting;
-      if (flush || !selecting) this.Publish({type: 'end-selection'});
+      if (!selecting) {
+        this.Reconstruct(); // because we skipped the last one (should just switch order?)
+      }
+      if (flush || !selecting) {
+        this.Publish({type: 'end-selection'});
+      }
     }
 
     // special case
@@ -340,6 +372,18 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
     this.Publish({ type: 'update', text, dependencies });
 
+  }
+
+  protected NodeAtIndex(index: number): Node|undefined {
+    const children = this.editor_node?.childNodes || [];
+    for (let i = 0; i < children.length; i++) {
+      const len = children[i].textContent?.length || 0;
+      if (len > index) {
+        return children[i];
+      }
+      index -= len;
+    }
+    return undefined;
   }
 
   /*
@@ -370,8 +414,9 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
    * UPDATE: this breaks when entering hanzi, probably true of all
    * multibyte unicode characters
    *
+   * removing unused parameter
    */
-  protected Reconstruct(preserve_caret = true) {
+  protected Reconstruct(): void {
 
     if (!this.enable_reconstruct) return; // disabled
 
@@ -379,11 +424,20 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     this.ParseDependencies();
     if (!this.reference_list ) return;
 
+    // here we would normally set spellcheck to true for strings,
+    // but that seems to break IME (at least in chrome). what we 
+    // should do is have spellcheck default to true and then turn
+    // it off for functions. also we should only do this on parse,
+    // because that only happens when text changes.
+
     const text = this.editor_node.textContent || '';
+
     if (text.trim()[0] !== '=') {
-      this.editor_node.setAttribute('spellcheck', 'true');
+      // this.editor_node.setAttribute('spellcheck', 'true');
       return;
     }
+
+    this.editor_node.spellcheck = false;
 
     // we might not have to do this, if the text hasn't changed
     // (or the text has only changed slightly...) this might actually
@@ -396,6 +450,10 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
     if (this.selecting) return;
 
+    // why do we parse dependencies (above) if the text hasn't changed? (...)
+    // actually that routine will also short-circuit, although it would presumably
+    // be better to not call it
+
     if (text.trim() === this.last_reconstructed_text.trim()) {
       return;
     }
@@ -405,17 +463,103 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     const subtext = this.SubstringToCaret(this.editor_node);
     const caret = subtext.length;
 
-    // const nodes: Node[] = [];
-    // const fragment = new DocumentFragment();
+    // why are we using a document fragment? something to do with x-browser? 
+    // (...)
+    // actually I think it's so we can construct like a regular document, but
+    // do it off screen (double-buffered), not sure if it makes that much of 
+    // a difference. I suppose you could use a container node instead... ?
+
     const fragment = document.createDocumentFragment();
 
-    let start = 0;
+    // this is the node that will contain the caret/cursor
     let selection_target_node: Node|undefined;
+
+    // this is the caret/cursor offset within that node
     let selection_offset = 0;
+
+    let last_node: Node|undefined;
+    let last_text = '';
+
+    if (this.last_parse_result) {
+
+      // somewhat unfortunate but we drop the = from the original text when
+      // parsing, so all of the offsets are off by 1.
+
+      let base = 0;
+      let label = '';
+      let reference_index = 0;
+
+      const append_node = (start: number, text: string, type: string) => {
+        const text_node = document.createTextNode(text);
+        if (type === 'text') {
+          fragment.appendChild(text_node);
+        }
+        else {
+          const span = document.createElement('span');
+          span.appendChild(text_node);
+          span.dataset.position = start.toString();
+          span.dataset.type = type;
+
+          if (type === 'address' || type === 'range') {
+            span.classList.add(`highlight-${(this.reference_index_map[reference_index++] % 5) + 1}`);
+          }
+          else if (type === 'identifier') {
+            if (this.model.named_ranges.Get(text)) {
+              span.classList.add(`highlight-${(this.reference_index_map[reference_index++] % 5) + 1}`);
+            }
+          }
+
+          fragment.appendChild(span);
+        }
+
+        if (caret >= start && caret < start + text.length) {
+          // console.info('caret is in this one:', text);
+          selection_target_node = text_node;
+          selection_offset = caret - start;
+        }
+
+        return text_node;
+      };
+
+      if (this.last_parse_result.expression) {
+        FormulaEditorBase.Parser.Walk(this.last_parse_result.expression, (unit: ExpressionUnit) => {
+
+          switch (unit.type) {
+            case 'address':
+            case 'range':
+            case 'call':
+            case 'identifier':
+
+              // any leading text we have skipped, create a text node
+              if (unit.position !== base - 1) {
+                append_node(base, text.substring(base, unit.position + 1), 'text');
+              }
+
+              label = (unit.type === 'call' || unit.type === 'identifier') ? unit.name : unit.label;
+              append_node(unit.position + 1, label, unit.type);
+
+              base = unit.position + label.length + 1;
+              break;
+          }
+
+          // range is unusual because we don't recurse (return false)
+          return unit.type !== 'range';
+        
+        });
+      }
+
+      // balance, create another text node. hang on to this one.
+      last_text = text.substring(base) || '';
+      last_node = append_node(base, last_text, 'text');
+
+    }
+
+    /*
+    let start = 0;
 
     for (let i = 0; i < this.reference_list.length; i++ ){
       const reference = this.reference_list[i];
-
+      
       // use the original text, so we're not auto-capitalizing
       // (even though I like doing that)
       const label = text.substr(reference.position + 1, reference.label.length);
@@ -430,6 +574,8 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
       // address/range
       const span = document.createElement('span');
+      span.classList.add(`highlight-${(this.reference_index_map[i] % 5) + 1}`);
+
       // span.style.color = this.HighlightColor(this.reference_index_map[i], false);
       fragment.appendChild(span);
 
@@ -458,7 +604,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     // space -- after the named range you might enter a comma or close
     // paren or something.
 
-    /*
+    / *
     let remainder_node: Node;
     if(/^\s+$/.test(remainder)) {
       remainder_node = document.createElement('span');
@@ -467,20 +613,22 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     else {
       remainder_node = document.createTextNode(remainder);
     }
-    */
+    * /
 
     fragment.appendChild(remainder_node);
+    */
 
     if (!selection_target_node) {
-      if (text.length === caret) {
+     if (text.length === caret) {
         const selection_span = document.createElement('span');
         fragment.appendChild(selection_span);
         selection_target_node = selection_span;
         selection_offset = 0;
       }
       else {
-        selection_target_node = remainder_node;
-        selection_offset = caret - start;
+        selection_target_node = last_node; // remainder_node;
+        selection_offset = Math.max(0, last_text.length - (text.length - caret));
+        // console.info("FIXME!", text.length - caret);
       }
     }
 
@@ -489,6 +637,8 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
     this.editor_node.textContent = '';
     this.editor_node.appendChild(fragment);
+
+    // console.info("STC", selection_target_node, selection_offset);
 
     if (selection_target_node) {
       const range = document.createRange();
@@ -505,9 +655,11 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     // return fragment;
   }
 
-  protected ParseDependencies() {
+  protected ParseDependencies(): void {
 
-    if (!this.editor_node) return [];
+    if (!this.editor_node) {
+      return;
+    }
 
     const text = this.editor_node.textContent || '';
 
@@ -532,6 +684,9 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
       if (text) {
         const parse_result = FormulaEditorBase.Parser.Parse(text);
         this.last_parse_string = text;
+        this.last_parse_result = parse_result;
+
+        // console.info("SA?", self); (self as any).LPR = this.last_parse_result;
 
         this.reference_list = []; // parse_result.full_reference_list;
 
@@ -713,7 +868,8 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     // (debugging...)
 
     if (!UA.is_firefox) {
-      this.Reconstruct(true);
+      // this.Reconstruct(true);
+      this.Reconstruct();
     }
 
     selection = window.getSelection();

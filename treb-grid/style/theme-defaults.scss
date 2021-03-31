@@ -184,23 +184,28 @@ $text-reference-color-5: rgb(254, 47, 1);
 
   .in-cell-editor, .formula-editor {
 
-    span:nth-of-type(1n) {
+    /* span:nth-of-type(1n) { */
+    span.highlight-1 {
       color: $text-reference-color-1;
     }
 
-    span:nth-of-type(2n) {
-      color: $text-reference-color-2;
+    /* span:nth-of-type(2n) { */
+    span.highlight-2 {
+        color: $text-reference-color-2;
     }
 
-    span:nth-of-type(3n) {
-      color: $text-reference-color-3;
+    /* span:nth-of-type(3n) { */
+    span.highlight-3 {
+        color: $text-reference-color-3;
     }
 
-    span:nth-of-type(4n) {
+    /* span:nth-of-type(4n) { */
+      span.highlight-4 {
       color: $text-reference-color-4;
     }
 
-    span:nth-of-type(5n) {
+    /* span:nth-of-type(5n) { */
+    span.highlight-5 {
       color: $text-reference-color-5;
     }
 

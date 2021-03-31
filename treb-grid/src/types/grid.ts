@@ -1808,9 +1808,8 @@ export class Grid {
    * to work properly (because it creates a selection)
    */
   public Focus(): void {
-    if (this.container) {
-      this.container.focus();
-    }
+    this.container?.focus();
+    // this.capture?.focus();
   }
 
   public SetValidation(target?: ICellAddress, data?: CellValue[]|IArea) {
@@ -4789,12 +4788,12 @@ export class Grid {
    * render selections. we are wrapping this up in a method so we can
    * hide the primary selection in some cases (one case).
    */
-  private RenderSelections() {
+  private RenderSelections(rerender = true) {
 
     const show_primary_selection = (!this.editing_state) ||
       (this.editing_cell.sheet_id === this.active_sheet.id);
 
-    this.selection_renderer.RenderSelections(show_primary_selection);
+    this.selection_renderer.RenderSelections(show_primary_selection, rerender);
   }
 
   /**
@@ -5885,11 +5884,28 @@ export class Grid {
 
   }
 
+
   /** highlight formula dependencies */
   private HighlightDependencies(dependencies: Area[], render = true) {
 
+    // it's slow to make big selections, probably because they are 
+    // giant SVGs; so we should cache. as a first try we can cache the
+    // depenendency list... the dumbest way possible...
+
+    //const json = JSON.stringify(dependencies);
+    //if (json === this.selection_renderer.cached_additional_selections) {
+    //  return;
+    //}
+    //this.selection_renderer.cached_additional_selections = json;
+
     // FIXME: cache, in case we parse the same string repeatedly?
-    this.ClearAdditionalSelections(); // flush
+    // this.ClearAdditionalSelections(); // flush
+
+    // ok, we're no longer clearing, so we need to do some management...
+    // start by dropping any excess [actually we need to do this at the
+    // end to account for dupes]
+
+    // this.additional_selections.splice(dependencies.length);
 
     // this was causing chaos when I was typing a function, because
     // it was interpreting it as column 32 million. it started as
@@ -5906,18 +5922,42 @@ export class Grid {
     // FIXME: we should actually limit by max of existing range or
     // displayed range, which may be larger (or is that implicit? ...)
 
-    for (let area of dependencies) {
+    let index = 0;
+    step: for (let area of dependencies) {
       if ((area.start.row === Infinity || area.start.row < this.active_sheet.rows) &&
         (area.start.column === Infinity || area.start.column < this.active_sheet.columns)) {
 
-        // const hide = (!!area.start.sheet_id && area.start.sheet_id !== this.active_sheet.id);
+          area = this.active_sheet.RealArea(area);
+          const label = area.spreadsheet_label;
 
-        area = this.active_sheet.RealArea(area);
-        this.AddAdditionalSelection(area.start, area);
+          if (this.additional_selections[index] 
+              && this.additional_selections[index].area.spreadsheet_label === label) {
+            // console.info('leaving selection @', index);
+            index++;
+          }
+          else {
+            // this.AddAdditionalSelection(area.start, area);
+
+            // check if there is a _prior_ add'l selection that matches
+            for (let i = 0; i < index; i++) {
+              if (this.additional_selections[i].area.spreadsheet_label === label
+                  && this.additional_selections[i].area.start.sheet_id === area.start.sheet_id) {
+                // console.info('skipping dupe');
+                continue step;
+              }
+            }
+
+            // ok, add
+            this.additional_selections[index++] = { target: area.start, area };
+
+          }
+
       }
     }
 
-    if (render) this.RenderSelections();
+    this.additional_selections.splice(index); // excess
+
+    if (render) this.RenderSelections(false); // allow cache!
 
   }
 
@@ -5928,12 +5968,13 @@ export class Grid {
    * we now support empty selections (hiding) in the case of references
    * to other sheets. if we don't do that, the colors get out of sync.
    */
-  private AddAdditionalSelection(target: ICellAddress, area: Area) {
+  private AddAdditionalSelection(target: ICellAddress, area: Area): boolean {
     const label = area.spreadsheet_label;
     if (this.additional_selections.some((test) => {
       return (test.area.spreadsheet_label === label);
-    })) return;
+    })) return false;
     this.additional_selections.push({ target, area });
+    return true;
   }
 
   /** remove all additonla (argument) selections */
@@ -6262,18 +6303,19 @@ export class Grid {
     }
   }
 
+  // private capture?: HTMLInputElement;
+
   private AttachListeners() {
     if (!this.container) throw new Error('invalid container');
 
     /*
-    this.container.addEventListener('scroll', (event) => {
-      const tiles = this.layout.VisibleTiles();
-      if (!tiles.Equals(this.render_tiles)) {
-        this.render_tiles = tiles;
-        if (!this.layout_token) {
-          this.layout_token = requestAnimationFrame(() => this.Repaint());
-        }
-      }
+    this.capture = document.createElement('input');
+    this.capture.style.position = 'absolute';
+    this.capture.style.zIndex = '902';
+    this.capture.classList.add('capture');
+    this.container.appendChild(this.capture);
+    this.capture.addEventListener('keydown', (event) => {
+      event.stopPropagation();
     });
     */
 
@@ -6283,6 +6325,11 @@ export class Grid {
 
     // mouse down events for selection
     this.layout.grid_cover.addEventListener('mousedown', (event) => this.MouseDown_Grid(event));
+    //this.layout.grid_cover.addEventListener('mouseup', () => {
+    // // console.info('cfu', this.capture);
+    //  this.Focus();
+    //})
+
     this.layout.column_header_cover.addEventListener('mousedown', (event) => this.MouseDown_ColumnHeader(event));
     this.layout.row_header_cover.addEventListener('mousedown', (event) => this.MouseDown_RowHeader(event));
 
@@ -6295,6 +6342,12 @@ export class Grid {
 
     // key handler
     this.container.addEventListener('keydown', (event) => this.KeyDown(event));
+
+    /*
+    this.container.addEventListener('compositionstart', (event) => {
+      console.info('composition start!');
+    });
+    */
 
     // select all?
     this.layout.corner.addEventListener('dblclick', () => {

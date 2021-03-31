@@ -45,11 +45,13 @@ export interface AutocompleteExecResult {
   tooltip?: string;
   arguments?: string;
   description?: string;
+  function_position?: number;
 }
 
 export interface TooltipParserResult {
   function: string|undefined;
   argument: number;
+  position: number;
 }
 
 export class AutocompleteMatcher {
@@ -134,6 +136,8 @@ export class AutocompleteMatcher {
           return (index === parsed.argument) ? `<span class="active-argument">${argument}</span>` : argument;
         }).join(Localization.argument_separator + ' ') + ')';
         result.description = func.description ? `<span class="function-description">${func.description}</span>` : '';
+        result.function_position = parsed.position || 0;
+
       }
     }
 
@@ -149,7 +153,10 @@ export class AutocompleteMatcher {
   public ParseTooltip(expression: string): TooltipParserResult {
 
     // these two things are actually unrelated, we just need to push/pop them at the same time
-    const stack: Array<{buffer: string; argument: number }> = [];
+    const stack: Array<{
+      buffer: string; 
+      position: number;
+      argument: number; }> = [];
 
     let argument = 0;
     let buffer = '';
@@ -157,6 +164,7 @@ export class AutocompleteMatcher {
     // state flag
     let quote = false;
 
+    let position = 0;
     for (const letter of expression) {
      
       const char = letter.charCodeAt(0);
@@ -169,6 +177,7 @@ export class AutocompleteMatcher {
             stack.push({
               buffer: buffer.trim(), // there is no case where spaces get in this buffer
               argument,
+              position: position - buffer.length,
             });
             buffer = '';
             argument = 0;
@@ -204,10 +213,16 @@ export class AutocompleteMatcher {
     
           }
       }
+
+      position++;
+
     }
 
+    const last_func = stack.pop();
+
     return {
-      function: stack.pop()?.buffer || undefined,
+      function: last_func?.buffer || undefined,
+      position: last_func?.position || 0,
       argument,
     };
 

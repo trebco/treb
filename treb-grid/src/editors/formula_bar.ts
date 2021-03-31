@@ -179,26 +179,34 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.container_node = DOMUtilities.CreateDiv('editor-container', inner_node);
     this.editor_node = DOMUtilities.CreateDiv('formula-editor', this.container_node);
     this.editor_node.setAttribute('contenteditable', 'true');
-    this.editor_node.setAttribute('spellcheck', 'false');
+    // this.editor_node.setAttribute('spellcheck', 'false');
+    this.editor_node.spellcheck = true; // change the default
 
     this.editor_node.addEventListener('focusin', () => {
 
+      // can't happen
+      if (!this.editor_node) { return; }
+
+      /*
       if (this.editor_node) {
         this.editor_node.setAttribute('spellcheck', 'false');
       }
+      */
 
       // console.info('focus in');
 
-      let text = this.editor_node ? this.editor_node.textContent || '' : '';
+      // let text = this.editor_node ? this.editor_node.textContent || '' : '';
+      let text = this.editor_node.textContent || '';
 
       // if (text.startsWith('{') && text.endsWith('}')){
       if (text[0] === '{' && text[text.length - 1] === '}') {
         text = text.substr(1, text.length - 2);
-        if (this.editor_node) {
-          this.editor_node.textContent = text;
-          this.last_reconstructed_text = '';
-        }
+        this.editor_node.textContent = text;
+        this.last_reconstructed_text = '';
       }
+
+      this.editor_node.spellcheck = text[0] !== '='; // true except for functions
+
       this.autocomplete.ResetBlock();
 
       /*
@@ -209,7 +217,8 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
       }
       */
       Yield().then(() => {
-        this.Reconstruct(true);
+        // this.Reconstruct(true);
+        this.Reconstruct();
       });
 
       const dependencies = this.ListDependencies();
@@ -433,6 +442,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   }
 
   private FormulaKeyUp(event: KeyboardEvent){
+
     const ac_result = this.autocomplete.HandleKey('keyup', event);
     if (ac_result.handled) return;
     this.FlushReference();

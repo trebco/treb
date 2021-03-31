@@ -34,14 +34,17 @@ export class CellEditor extends FormulaEditorBase {
     this.container_node = DOMUtilities.CreateDiv('in-cell-editor-container notranslate', container);
     this.editor_node = DOMUtilities.CreateDiv('in-cell-editor', this.container_node);
     this.editor_node.setAttribute('contenteditable', 'true');
-    this.editor_node.setAttribute('spellcheck', 'false');
+    // this.editor_node.setAttribute('spellcheck', 'false');
     this.editor_node.setAttribute('tabindex', '-1');
+    this.editor_node.spellcheck = true; // change the default
 
     // this.UpdateTheme();
 
     this.editor_node.addEventListener('input', () => {
+
       this.Reconstruct();
       this.UpdateSelectState();
+
     });
 
     /** special handler for keyup */
@@ -108,9 +111,15 @@ export class CellEditor extends FormulaEditorBase {
 
     if (!this.editor_node || !this.container_node) return;
 
-    this.Publish({ type: 'start-editing', editor: 'ice' });
+    this.Publish({ 
+      type: 'start-editing', 
+      editor: 'ice',
+    });
 
-    this.editor_node.setAttribute('spellcheck', 'false');
+    const value_string = value?.toString() || '';
+    
+    // this.editor_node.setAttribute('spellcheck', 'false');
+    this.editor_node.spellcheck = value_string[0] !== '=';
 
     // ensure clear
     this.FlushReference();
@@ -121,7 +130,6 @@ export class CellEditor extends FormulaEditorBase {
 
     if (typeof value !== 'undefined'){
 
-      const value_string = value.toString();
       const percent = value_string[0] !== '=' && value_string[value_string.length - 1] === '%';
       const value_length = value_string.length;
       this.editor_node.textContent = value_string;
@@ -210,8 +218,13 @@ export class CellEditor extends FormulaEditorBase {
 
     if (event){
       if (this.support_cloned_events) {
-        const cloned_event = new KeyboardEvent(event.type, event);
-        this.editor_node?.dispatchEvent(cloned_event);
+
+        // we don't need to do this? IME is still breaking, but this seems
+        // to work without dispatching the event... perhaps that's because
+        // of the INPUT event? not sure
+
+        // const cloned_event = new KeyboardEvent(event.type, event);
+        // this.editor_node?.dispatchEvent(cloned_event);
       }
       else {
         const modifiers: string[] = [];
@@ -230,6 +243,7 @@ export class CellEditor extends FormulaEditorBase {
           modifiers.join(' '),
           event.repeat,
           '');
+
         this.editor_node?.dispatchEvent(cloned_event);
       }
     }

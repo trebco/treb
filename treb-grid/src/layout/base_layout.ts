@@ -789,6 +789,10 @@ export abstract class BaseLayout {
 
     // for the time being we will use bottom.
 
+    // why were we prepainting (because firefox, below?) and why was this so
+    // slow? do we need to preset the context text parameters? 
+
+    /*
     const context = tile.getContext('2d', {alpha: false});
 
     if (context) {
@@ -797,9 +801,10 @@ export abstract class BaseLayout {
 
       // prepaint -- firefox is a little slow so flashes empty tiles sometimes
 
-      context.fillStyle = '#fff'; // FIXME: use theme color
-      context.fillRect(0, 0, tile.width, tile.height);
+      // context.fillStyle = '#fff'; // FIXME: use theme color
+      // context.fillRect(0, 0, tile.width, tile.height);
     }
+    */
 
     return tile;
 
@@ -821,6 +826,12 @@ export abstract class BaseLayout {
       theme.grid_color || ''; // this.theme.header_border_color;
     // this.layout.row_header.style.backgroundColor = this.theme.header_background;
     // this.layout.column_header.style.backgroundColor = this.theme.header_background;
+
+    for (const row of this.grid_tiles) {
+      for (const tile of row) {
+        tile.style.backgroundColor = ThemeColor(theme, theme.grid_cell?.fill) || '#fff';
+      }
+    }
 
     /*
     this.tooltip.style.fontFamily = theme.tooltip_font_face || '';
@@ -1246,7 +1257,7 @@ export abstract class BaseLayout {
 
   }
 
-  public UpdateTiles(){
+  public UpdateTiles(): void {
 
     // so the new layout uses variable-sized tiles, which are sized
     // to a number of rows/columns (FIXME: nearest to a given size?)
@@ -1337,7 +1348,7 @@ export abstract class BaseLayout {
     if (!total_width || !total_height) {
       throw('unexpected missing total size');
     }
-  
+
     // console.info('total size:', total_width, ', ', total_height);
 
     if (!total_height) total_height = this.default_row_height * rows;

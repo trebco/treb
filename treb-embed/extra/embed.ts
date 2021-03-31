@@ -28,6 +28,11 @@
 
   // add TREB scripts (if necessary)
 
+  // should we perhaps be a little smarter and look at the actual script
+  // file name? the only time that would come up is if we had both types
+  // of embedding at the same time (and even then it would probably only
+  // load once)
+
   if (!document.head.querySelector(`[data-reference=treb]`)) {
 
     // find a reference to _this_ script (presumably, although there are 
