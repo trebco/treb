@@ -1,0 +1,42 @@
+
+.treb-main {
+  .treb-grid {
+
+      /** double node stucture for better control */
+      .overlay-editor-container {
+        position: absolute;
+        opacity: 0;
+        outline: none;
+        /*
+        overflow: hidden;
+        overflow: visible;
+        */
+        background: orange;
+        display: table;
+      }
+
+      /** double node stucture for better control */
+      .overlay-editor {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        min-width: 100%;
+        height: 100%;
+        min-height: 100%;
+        overflow: hidden;
+        
+        padding: 1px 5px; /* V H */
+
+        white-space: nowrap;
+        display: table-cell;
+        vertical-align: bottom;
+        z-index: $z-index-cell-editor;
+        
+        /* border: 1px dotted red; // does not show because table/table cell? */
+
+        outline: none; /* new chrome style */
+        width: auto;
+      }
+
+  }
+}

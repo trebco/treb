@@ -38,8 +38,9 @@ import { CreateLayout } from '@grid-conditional/layout_manager';
 import { GridSelection } from './grid_selection';
 //import { Theme, ExtendedTheme, CalculateSupplementalColors, LoadThemeProperties } from './theme';
 // import { Theme, LoadThemeProperties } from './theme';
-import { CellEditor } from '../editors/cell_editor';
 // import { FormulaEditorBase } from '../editors/formula_editor_base';
+
+import { OverlayEditor, OverlayEditorResult } from '../editors/overlay_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
 import { GridEvent } from './grid_events';
@@ -204,8 +205,8 @@ export class Grid {
   /** this is used when testing if a typed character is numeric */
   private decimal_separator_code = 0x2e; // "."
 
-  /** in-cell editor */
-  private cell_editor?: CellEditor;
+  /** new key capture overlay/ICE */
+  private overlay_editor?: OverlayEditor;
 
   /** formula bar editor (optional) */
   private formula_bar?: FormulaBar;
@@ -519,7 +520,7 @@ export class Grid {
     this.UpdateAnnotationLayout();
     this.layout.UpdateAnnotation(this.active_sheet.annotations);
     this.layout.ApplyTheme(this.theme);
-    this.cell_editor?.UpdateTheme(scale);
+    this.overlay_editor?.UpdateTheme(scale);
 
     this.grid_events.Publish({
       type: 'scale', 
@@ -1608,9 +1609,8 @@ export class Grid {
       this.UpdateLayout(); // in case we have changed font size
       // this.selection_renderer.Flush();
 
-      if (this.cell_editor) {
-        this.cell_editor.UpdateTheme(this.layout.scale);
-      }
+      this.overlay_editor?.UpdateTheme(this.layout.scale);
+
       // if (this.formula_bar) this.formula_bar.UpdateTheme();
 
       this.Repaint(true, true, true);
@@ -1747,14 +1747,12 @@ export class Grid {
 
     // Sheet.sheet_events.Subscribe(this.HandleSheetEvent.bind(this));
 
-    this.AttachListeners();
-
-    if (this.options.in_cell_editor) {
-      if (!autocomplete) {
-        autocomplete = new Autocomplete({ theme: this.theme, container });
-      }
-      this.InitCellEditor(autocomplete);
+    if (!autocomplete) {
+      autocomplete = new Autocomplete({ theme: this.theme, container });
     }
+    this.InitOverlayEditor(autocomplete);
+
+    this.AttachListeners();
 
     // set local state and update
 
@@ -1808,8 +1806,8 @@ export class Grid {
    * to work properly (because it creates a selection)
    */
   public Focus(): void {
-    this.container?.focus();
-    // this.capture?.focus();
+    // this.container?.focus();
+    this.overlay_editor?.Focus();
   }
 
   public SetValidation(target?: ICellAddress, data?: CellValue[]|IArea) {
@@ -3001,31 +2999,28 @@ export class Grid {
 
   }
 
-  private InitCellEditor(autocomplete: Autocomplete) {
+  private InitOverlayEditor(autocomplete: Autocomplete) {
+    if (!this.container) {
+      return;
+    }
 
-    // if (!this.container) { return; }
+    this.overlay_editor = new OverlayEditor(
+        this.container,
+        this.theme,
+        this.model,
+        autocomplete);
 
-    // why is the parent grid cover? this causes us to lose mouse move events.
-    // we could check bubbles but that might be expensive...
+    this.overlay_editor.UpdateTheme(this.layout.scale);
+    this.overlay_editor.autocomplete_matcher = this.autocomplete_matcher;
 
-    // for some reason it expands nicely in the cover node, but not in the
-    // container node. not sure why. can probably be fixed?
-
-    this.cell_editor = new CellEditor(
-      this.layout.scroll_reference_node,
-      this.theme,
-      this.model,
-      autocomplete);
-    this.cell_editor.UpdateTheme(this.layout.scale);
-
-    this.cell_editor.autocomplete_matcher = this.autocomplete_matcher;
-
-    this.cell_editor.Subscribe((event) => {
-
+    this.overlay_editor.Subscribe(event => {
       switch (event.type) {
-
+        
         // see notes in formula editor event handler re: start editing,
         // stop editing  and commit.
+
+        // UPDATE: discard and commit are now moved inline in the key
+        // handler, since the nodes are unified
 
         case 'stop-editing':
           this.editing_state = EditingState.NotEditing;
@@ -3042,59 +3037,19 @@ export class Grid {
           }
           break;
 
-        case 'discard':
-
-          this.editing_state = EditingState.NotEditing;
-
-          this.DismissEditor();
-          this.DelayedRender();
-          break;
-
-        case 'commit':
-
-          // console.info('commit');
-
-          // FIXME: unify this (to the extent possible) w/ the other editor
-
-          if (this.active_sheet.id !== this.editing_cell.sheet_id) {
-            if (this.editing_cell.sheet_id) {
-              this.ActivateSheetID(this.editing_cell.sheet_id);
-            }
-          }
-
-          this.editing_state = EditingState.NotEditing;
-
-          if (event.selection) {
-            this.SetInferredType(event.selection, event.value, event.array);
-          }
-          this.DismissEditor();
-
-          // we should maybe not call this if there's an event? we
-          // may just be repainting it immediately afterwards. 
-
-          // (referring to UpdateFormulaBarFormula, which is now switched)
-
-          if (event.event) {
-            this.RedispatchEvent(event.event);
-          }
-          else {
-            this.UpdateFormulaBarFormula();
-          }
-
-          if (this.options.repaint_on_cell_change) { // || !formula){
-            this.DelayedRender(false, event.selection ? event.selection.area : undefined);
-          }
-
-          break;
-
         case 'end-selection':
           this.ClearSelection(this.active_selection);
           this.DelayedRender();
           break;
 
       }
+
     });
+
+
   }
+
+
 
   private DelayedRender(force = false, area?: Area, full_tile = false) {
 
@@ -3830,7 +3785,7 @@ export class Grid {
 
     let address: ICellAddress|undefined;
 
-    if (!(this.cell_editor && this.cell_editor.visible)) {
+    if (!this.overlay_editor?.editing) {
       address = this.layout.PointToAddress_Grid(offset_point);
       if (!this.hover_data.address 
           || this.hover_data.address.row !== address.row 
@@ -3961,7 +3916,9 @@ export class Grid {
    */
   private MouseDown_Grid(event: MouseEvent) {
 
-    if (this.cell_editor && this.cell_editor.visible && this.cell_editor.HandleMouseEvent(event)) return;
+    if (this.overlay_editor?.HandleMouseEvent(event)) {
+      return;
+    }
 
     event.stopPropagation();
     event.preventDefault();
@@ -3975,7 +3932,7 @@ export class Grid {
 
     // unless we're selecting an argument, close the ICE
 
-    if (this.cell_editor && this.cell_editor.visible && !this.cell_editor.selecting) {
+    if (this.overlay_editor?.editing && !this.overlay_editor?.selecting) {
       this.DismissEditor();
     }
 
@@ -4006,7 +3963,7 @@ export class Grid {
 
     if (!selecting_argument) {
       if (this.IsDoubleClick(base_address)) {
-        this.EditCell({ target: base_address, area: new Area(base_address) }, false);
+        this.OverlayEditCell({ target: base_address, area: new Area(base_address) }, false);
         return;
       }
     }
@@ -4239,14 +4196,13 @@ export class Grid {
       this.UpdateAddressLabel();
 
       if (selecting_argument) {
-        if (this.cell_editor && this.cell_editor.visible) {
+        if (this.overlay_editor?.editing) {
           // ...
         }
         else if (this.select_argument) {
           // ...
         }
         else if (this.formula_bar) {
-          // console.info('calling focus editor');
           this.formula_bar.FocusEditor();
         }
       }
@@ -4485,8 +4441,8 @@ export class Grid {
 
     }
 
-    if (this.cell_editor && this.cell_editor.visible && this.cell_editor.selecting) {
-      this.cell_editor.InsertReference(label, 0);
+    if (this.overlay_editor?.editing && this.overlay_editor.selecting) {
+      this.overlay_editor.InsertReference(label, 0);
     }
     else if (this.formula_bar && this.formula_bar.selecting) {
       this.formula_bar.InsertReference(label, 0);
@@ -4506,24 +4462,79 @@ export class Grid {
    * FIXME: why is this not an accessor?
    */
   private SelectingArgument() {
-    return (this.cell_editor && this.cell_editor.visible && this.cell_editor.selecting)
+    return (this.overlay_editor?.editing && this.overlay_editor?.selecting)
       || (this.formula_bar && this.formula_bar.selecting)
       || (this.select_argument);
   }
 
   /**
-   * event handler for keyboard events. some we handle directly (directional
-   * navigation), some we ignore (most control-key combinations), and if you
-   * type text we start the in-cell editor and pass on the event.
+   * consolidated event handler for overlay, which both handles grid keys
+   * and acts as the ICE, depending on state. going to be a little tricky
+   * to keep track of code paths.
+   * 
+   * old comment:
+   * 
+   *   event handler for keyboard events. some we handle directly (directional
+   *   navigation), some we ignore (most control-key combinations), and if you
+   *   type text we start the in-cell editor and pass on the event.
+   * 
+   * which is largely still true, except that we can handle the ICE more 
+   * directly.
+   * 
    */
-  private KeyDown(event: KeyboardEvent) {
+  private OverlayKeyDown(event: KeyboardEvent) {
+
+    // handle ICE here... (if ICE is already open; starting ICE is later)
+
+    // this can only be true if overlay editor is not undef, but typescript
+    // doesn't seem to get that, so we will reduce to a single test with
+    // somewhat clumsier code
 
     let editor_open = false;
 
-    if (this.cell_editor) {
-      editor_open = this.cell_editor.visible;
-      if (editor_open && this.cell_editor.HandleKeyEvent(event)) return;
+    if (this.overlay_editor&& this.overlay_editor.editing) {
+      editor_open = true;
+      const result = this.overlay_editor.HandleKeyDown(event);
+      switch (result) {
+        case OverlayEditorResult.handled:
+          return;
+
+        case OverlayEditorResult.discard:
+          this.editing_state = EditingState.NotEditing;
+          this.DismissEditor();
+          this.DelayedRender();
+          return;
+
+        case OverlayEditorResult.commit:
+
+          // FIXME: unify this (to the extent possible) w/ the other editor
+
+          if (this.active_sheet.id !== this.editing_cell.sheet_id) {
+            if (this.editing_cell.sheet_id) {
+              this.ActivateSheetID(this.editing_cell.sheet_id);
+            }
+          }
+          this.editing_state = EditingState.NotEditing;
+
+          if (this.overlay_editor?.selection) {
+            const value = this.overlay_editor?.edit_node.textContent || undefined;
+            const array = (event.key === 'Enter' && event.ctrlKey && event.shiftKey);
+            this.SetInferredType(this.overlay_editor.selection, value, array);
+          }
+          
+          this.DismissEditor();
+
+          if (this.options.repaint_on_cell_change) {
+            this.DelayedRender(false, this.overlay_editor?.selection.area || undefined);
+          }
+
+        ////
+
+          break;
+      }
     }
+
+    // ---
 
     const selecting_argument = this.SelectingArgument();
 
@@ -4749,7 +4760,10 @@ export class Grid {
         default:
           // console.info('ek', event.key);
 
-          if (!selection.empty) this.EditCell(selection, true, event);
+          if (!selection.empty) {
+            this.OverlayEditCell(selection, true, event);
+          }
+
           return;
       }
     }
@@ -5339,12 +5353,11 @@ export class Grid {
    */
   private DismissEditor() {
 
-    if (!this.cell_editor) return;
-
     this.editing_state = EditingState.NotEditing;
 
-    this.Focus();
-    this.cell_editor.Hide();
+    this.Focus(); // not necessary
+
+    this.overlay_editor?.CloseEditor();
 
     this.ClearAdditionalSelections();
     this.ClearSelection(this.active_selection);
@@ -5427,6 +5440,10 @@ export class Grid {
   }
 
   /**
+   * start the ICE, using the new overlay editor 
+   * 
+   * old comment:
+   * 
    * starts the in-cell editor at the given sheet address. this method doesn't
    * handle scroll-into-view, do that first if necessary.
    *
@@ -5435,21 +5452,23 @@ export class Grid {
    * for double-click
    * @param event if this is triggered by typing, we want to pass the key
    * event directly to the editor (actually we'll pass a synthetic copy)
+   * 
+   * @param selection 
+   * @param flush 
+   * @param event 
    */
-  private EditCell(selection: GridSelection, flush = true, event?: KeyboardEvent) {
-    if (!this.cell_editor) return;
+  private OverlayEditCell(selection: GridSelection, flush = true, event?: KeyboardEvent) {
 
+    if (!this.options.in_cell_editor) {
+      return; // no ICE
+    }
+    
     let address = selection.target || selection.area.start;
     let cell = this.active_sheet.CellData(address);
     let rect: Rectangle;
 
-    // new, hide note if visible
-
+    // hide note if visible
     this.HideHoverInfo();
-
-    // if (this.hover_data.note) {
-    //  this.layout.HideNote();
-    // }
 
     // merged cell, make sure we get/set value from the head
     // also get full rect for the editor
@@ -5464,7 +5483,7 @@ export class Grid {
       rect = this.layout.OffsetCellAddressToRectangle(address);
     }
 
-    // locked: can't edit!
+    // locked: can't edit! note we have to do the merge check first
 
     if (cell.style?.locked) { // if (cell.locked) {
       console.info('cell is locked for editing');
@@ -5489,6 +5508,10 @@ export class Grid {
 
     let cell_value = cell.value;
 
+    // if called from a keypress, we will overwrite whatever is in there so we
+    // can just leave text as is -- except for handling %, which needs to get 
+    // injected.
+
     if (flush) {
 
       if ((cell.type === ValueType.number || cell.rendered_type === ValueType.number) && cell.style &&
@@ -5511,7 +5534,7 @@ export class Grid {
     // cell rect, offset for headers. FIXME: do we always offset for headers?
     // if so, that should go in the method.
 
-    this.cell_editor.Edit(selection, rect.Shift(-1, -1).Expand(1, 1), cell_value, event);
+    this.overlay_editor?.Edit(selection, rect.Shift(-1, -1).Expand(1, 1), cell_value, event);
 
   }
 
@@ -6069,8 +6092,13 @@ export class Grid {
 
     if (selection === this.primary_selection) {
 
-      this.layout.MockSelection();
+      // removed for overlay; return for IE?
+      // actually no, not for IE, because the mock function skips IE anyway;
+      // we left it in for safari (??)
 
+      // this.layout.MockSelection(); 
+
+      // FIXME: drop support for old edge
       if (UA.is_edge) { this.Focus(); }
 
       this.grid_events.Publish({
@@ -6303,21 +6331,8 @@ export class Grid {
     }
   }
 
-  // private capture?: HTMLInputElement;
-
   private AttachListeners() {
     if (!this.container) throw new Error('invalid container');
-
-    /*
-    this.capture = document.createElement('input');
-    this.capture.style.position = 'absolute';
-    this.capture.style.zIndex = '902';
-    this.capture.classList.add('capture');
-    this.container.appendChild(this.capture);
-    this.capture.addEventListener('keydown', (event) => {
-      event.stopPropagation();
-    });
-    */
 
     this.container.addEventListener('copy', this.HandleCopy.bind(this));
     this.container.addEventListener('cut', this.HandleCut.bind(this));
@@ -6341,7 +6356,8 @@ export class Grid {
     this.layout.grid_cover.addEventListener('mousemove', (event) => this.MouseMove_Grid(event));
 
     // key handler
-    this.container.addEventListener('keydown', (event) => this.KeyDown(event));
+    // this.container.addEventListener('keydown', (event) => this.KeyDown(event));
+    this.overlay_editor?.edit_node.addEventListener('keydown', (event) => this.OverlayKeyDown(event));
 
     /*
     this.container.addEventListener('compositionstart', (event) => {
@@ -6513,7 +6529,9 @@ export class Grid {
   private HandlePaste(event: ClipboardEvent) {
 
     // otherwise we capture
-    if (this.cell_editor && this.cell_editor.visible) return;
+    if (this.overlay_editor?.editing) {
+      return;
+    }
 
     event.stopPropagation();
     event.preventDefault();
