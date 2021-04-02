@@ -2,40 +2,97 @@
 .treb-main {
   .treb-grid {
 
-      /** double node stucture for better control */
+      /* double node stucture for better control */
+      /* control of what? */
+
+      /* 
+       * the original structure used table/table-cell for layout,
+       * which has some nice properties but also has some legacy
+       * weirdness. we should be able to get what we want without
+       * that. (what we want being full-height, full-width, bottom
+       * justify) (I think)
+       */
+
+      /*
+       * the only way to do this without the table is to have _three_
+       * nodes -- the container, which maps to the cell; an inner container,
+       * which stretches horizontally and vertically; and then the actual
+       * editor, which sits at the bottom (normally). is this really better
+       * than the table structure?
+       */
+
+      /*
+       * so we wound up with three nodes _and_ the table -- the worst 
+       * of all worlds! but it does what we want, aligning bottom and then
+       * one of left/right/center, growing in the right direction(s).
+       */
+
       .overlay-editor-container {
+        padding: 0;
+        margin: 0;
+
+        /* gets positioned to the rect */
         position: absolute;
+
+        /* gets set on edit, along with pointer-events */
         opacity: 0;
+
+        /* probably unecessary */
         outline: none;
-        /*
-        overflow: hidden;
-        overflow: visible;
-        */
-        background: orange;
-        display: table;
+
+        /* should not see * /
+        background: orange; */
+
+        z-index: $z-index-cell-editor;
+
       }
 
-      /** double node stucture for better control */
-      .overlay-editor {
-        position: relative;
-        width: 100%;
-        max-width: 100%;
-        min-width: 100%;
+      .overlay-inset {
+
+        display: table;
+        border-collapse: collapse;
+        border-spacing: 0px;
+        position: absolute;
+
         height: 100%;
-        min-height: 100%;
-        overflow: hidden;
-        
-        padding: 1px 5px; /* V H */
+        min-width: 100%;
+
+        &.align-left {
+          left: 0px;
+        }
+
+        &.align-center {
+          left: calc(50% + 1px);
+          transform: translateX(-50%);
+          .overlay-editor {
+            text-align: center;
+          }
+        }
+
+        &.align-right {
+          right: -1px;
+          .overlay-editor {
+            text-align: right;
+          }
+        }
+
+      }
+
+      .overlay-editor {
+        position: absolute;
+        position: relative;
+
+        /* V H */
+        padding: 1px 5px;
+
 
         white-space: nowrap;
-        display: table-cell;
         vertical-align: bottom;
-        z-index: $z-index-cell-editor;
-        
-        /* border: 1px dotted red; // does not show because table/table cell? */
+
+        display: table-cell;
 
         outline: none; /* new chrome style */
-        width: auto;
+  
       }
 
   }

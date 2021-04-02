@@ -30,7 +30,7 @@ class FontMetricsCacheInstance {
 
     const fm1 = fontmetrics_instance.Measure('M');
     const fm2 = fontmetrics_instance.Measure('p');
-
+    
     const paren = fontmetrics_instance.Measure(')');
     const hash1 = fontmetrics_instance.Measure('#');
     const hash2 = fontmetrics_instance.Measure('##');

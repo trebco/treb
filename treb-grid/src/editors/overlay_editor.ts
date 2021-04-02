@@ -6,14 +6,15 @@
  * this is development branch only atm
  */
 
-import { Style, Theme, ThemeColor, CellValue, Rectangle } from 'treb-base-types';
+import { Style, Theme, ThemeColor, CellValue, Rectangle, ThemeColor2, Cell } from 'treb-base-types';
 import { Yield } from 'treb-utils';
-import { DOMUtilities } from '../util/dom_utilities';
+// import { DOMUtilities } from '../util/dom_utilities';
 import { GridSelection } from '../types/grid_selection';
 import { FormulaEditorBase } from './formula_editor_base';
 import { Autocomplete } from './autocomplete';
 import { DataModel } from '../types/data_model';
 import { UA } from '../util/ua';
+// import { FontMetricsCache } from '../util/font_metrics_cache';
 
 /**
  * new return type for key event handler, has some additional state
@@ -26,7 +27,7 @@ export enum OverlayEditorResult {
 }
 
 /** legacy */
-const support_cloned_events = (typeof KeyboardEvent === 'function');
+// const support_cloned_events = (typeof KeyboardEvent === 'function');
 
 /** legacy */
 const use_create_text_range = (typeof ((document?.body as any)?.createTextRange) === 'function');
@@ -39,8 +40,11 @@ export class OverlayEditor extends FormulaEditorBase {
   public edit_node: HTMLElement;
   public edit_container: HTMLElement;
 
+  public edit_inset: HTMLElement;
+
   private _editing = false;
 
+  public scale = 1; // this should go into theme, since it tends to follow it
   
   public get editing(): boolean {
     return this._editing;
@@ -77,6 +81,35 @@ export class OverlayEditor extends FormulaEditorBase {
     this.edit_node.contentEditable = 'true';
     this.edit_node.tabIndex = -1;
     this.edit_node.spellcheck = true; // default
+
+    //
+    // so clearly I am doing this when rendering, not sure how it
+    // happens, but we're offsetting by this much. checked on mac
+    // (dpr = 2) and windows (dpr = 1, dpr = 1.5). 1 is the default.
+    // 
+    // NOTE that there's a `resolution` media query, not implemented in safari
+    //
+    // https://bugs.webkit.org/show_bug.cgi?id=78087
+    //
+    // and another nonstandard -webkit-max-device-pixel-ratio, which seems
+    // to be in all modern browsers (possibly with -moz prefix in ffx). OTOH 
+    // this is not complicated and only called on construct, so probably fine,
+    // if somewhat obscure.
+    //
+
+    // NOTE: it's not that simple (see linux). it has something to do with
+    // measuring the font. we probably need to figure out exactly what we are
+    // doing in the renderer, and do that. which also means it might be cell
+    // specific if there are font face/size changes. also we can get it to
+    // offset incorrectly on windows with some fonts (I'm looking at you, comic 
+    // sans)
+
+    // although it probably still has something to do with dpr, maybe that's 
+    // a factor...
+
+    if (self.devicePixelRatio && self.devicePixelRatio > 1) {
+      this.edit_node.style.paddingBottom = `${self.devicePixelRatio}px`;
+    }
 
     this.edit_node.addEventListener('input', () => {
 
@@ -115,7 +148,14 @@ export class OverlayEditor extends FormulaEditorBase {
 
     });
 
-    this.edit_container.appendChild(this.edit_node);
+    this.edit_inset = document.createElement('div');
+    this.edit_inset.classList.add('overlay-inset');
+    
+    // this.edit_container.appendChild(this.edit_node);
+
+    this.edit_container.appendChild(this.edit_inset);
+    this.edit_inset.appendChild(this.edit_node);
+
     container.appendChild(this.edit_container);
 
     this.edit_container.style.opacity = '0';
@@ -147,6 +187,8 @@ export class OverlayEditor extends FormulaEditorBase {
     this.edit_node.spellcheck = true; // default
     this.autocomplete.Hide();
 
+    this.active_cell = undefined;
+
   }
 
   /**
@@ -174,12 +216,55 @@ export class OverlayEditor extends FormulaEditorBase {
 
   }
 
-  public Edit(gridselection: GridSelection, rect: Rectangle, value?: CellValue, event?: Event): void {
+  public Edit(gridselection: GridSelection, rect: Rectangle, cell: Cell, value?: CellValue, event?: Event): void {
 
     this.Publish({ 
       type: 'start-editing', 
       editor: 'ice',
     });
+
+    this.active_cell = cell;
+    const style: Style.Properties = cell.style || {};
+
+    this.edit_node.style.font = Style.Font(style, this.scale);
+    this.edit_node.style.color = ThemeColor2(this.theme, style.text, 1);
+    // this.edit_node.style.backgroundColor = ThemeColor(this.theme, style.fill);
+    this.edit_inset.style.backgroundColor = ThemeColor(this.theme, style.fill);
+
+    switch (style.horizontal_align) {
+      case Style.HorizontalAlign.Right:
+        this.edit_inset.classList.add('align-right');
+        this.edit_inset.classList.remove('align-center');
+        this.edit_inset.classList.remove('align-left');
+        break;
+      case Style.HorizontalAlign.Center:
+        this.edit_inset.classList.remove('align-right');
+        this.edit_inset.classList.add('align-center');
+        this.edit_inset.classList.remove('align-left');
+        break;
+      default:
+        this.edit_inset.classList.remove('align-right');
+        this.edit_inset.classList.remove('align-center');
+        this.edit_inset.classList.add('align-left');
+        break;
+    }
+
+    /*
+    const canvas = document.createElement('canvas') as HTMLCanvasElement;
+    const context = canvas.getContext('2d');
+    if (context) {
+      context.font = Style.Font(style, this.scale);
+      const metrics = context.measureText('Fishery');
+      console.info('m', metrics);
+    }
+    */
+
+    this.edit_node.style.paddingBottom = `${Math.max(0, (self.devicePixelRatio||1) - 1)}px`;
+    
+    // console.info('pb', this.edit_node.style.paddingBottom);
+
+    // TODO: alignment, underline (strike?)
+    // bold/italic already work because those are font properties. 
 
     const value_string = value?.toString() || '';
 
@@ -356,12 +441,15 @@ export class OverlayEditor extends FormulaEditorBase {
 
   public UpdateTheme(scale: number): void {
 
-    this.edit_node.style.color = ThemeColor(this.theme, this.theme.grid_cell?.text);
-    this.edit_node.style.font = Style.Font(this.theme.grid_cell||{}, scale);
-    this.edit_node.style.backgroundColor = this.theme.grid_cell?.fill ? ThemeColor(this.theme, this.theme.grid_cell.fill) : '';
+    this.scale = scale;
+
+    //this.edit_container.style.color = ThemeColor(this.theme, this.theme.grid_cell?.text);
+    //this.edit_container.style.font = Style.Font(this.theme.grid_cell||{}, scale);
+    //this.edit_container.style.backgroundColor = this.theme.grid_cell?.fill ? ThemeColor(this.theme, this.theme.grid_cell.fill) : '';
 
     // why have a border at all? (...)
-    this.edit_node.style.borderColor = this.theme.grid_color || '';
+    // actually border is not displayed... or is it? (...)
+    // this.edit_container.style.borderColor = this.theme.grid_color || '';
 
   }
 

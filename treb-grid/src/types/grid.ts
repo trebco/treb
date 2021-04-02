@@ -2704,26 +2704,6 @@ export class Grid {
   }
 
   /*
-  private HandleSheetEvent(event: SheetEvent) {
-
-    console.info("HSE", event.type, event);
-
-    switch (event.type) {
-      case 'style':
-        this.DelayedRender(false, event.area);
-        this.grid_events.Publish(event);
-        break;
-
-      case 'data':
-        this.grid_events.Publish(event);
-        break;
-
-      default:
-      // console.info('evt', event);
-    }
-  }
-  */
-
   private RedispatchEvent(event: KeyboardEvent) {
 
     let cloned_event: KeyboardEvent;
@@ -2752,11 +2732,16 @@ export class Grid {
       cloned_event = new KeyboardEvent(event.type, event);
     }
 
-    if (cloned_event && this.container) {
-      this.container.dispatchEvent(cloned_event);
+    //if (cloned_event && this.container) {
+    //  this.container.dispatchEvent(cloned_event);
+    //}
+
+    if (cloned_event && this.overlay_editor) {
+      this.overlay_editor.edit_node.dispatchEvent(cloned_event);
     }
 
   }
+  */
 
   private HandleAddressLabelEvent(text?: string) {
 
@@ -2954,7 +2939,19 @@ export class Grid {
           // unifying
           if (event.event) {
 
-            this.RedispatchEvent(event.event);
+            // this was broken out because we used it in multiple places
+            // (here are in the ICE) but we don't do that anymore, it could
+            // come back inline.
+
+            // or we could probably even just drop it, since for the formula
+            // bar we only have to handle some basic keys
+
+            // and now that I think about it, why are we cloning and 
+            // dispatching instead of just calling the method? 
+
+            // this.RedispatchEvent(event.event);
+
+            this.OverlayKeyDown(event.event);
 
             /*
             let cloned_event: KeyboardEvent;
@@ -3924,11 +3921,17 @@ export class Grid {
     event.preventDefault();
 
     const selecting_argument = this.SelectingArgument();
+    
     if (!selecting_argument && this.additional_selections.length) {
       this.ClearAdditionalSelections();
     }
 
-    this.Focus();
+    if (!selecting_argument || !this.formula_bar?.selecting) {
+
+      // not sure why this breaks the formula bar handler
+
+      this.Focus();
+    }
 
     // unless we're selecting an argument, close the ICE
 
@@ -5353,6 +5356,14 @@ export class Grid {
    */
   private DismissEditor() {
 
+    // console.info("dismiss editor", this.overlay_editor?.active_cell, this.overlay_editor?.selection);
+
+    if (this.overlay_editor?.active_cell) {
+      this.overlay_editor.active_cell.editing = false;
+      this.overlay_editor.active_cell.render_dirty = true;
+      this.DelayedRender(undefined, this.overlay_editor.selection.area);
+    }
+
     this.editing_state = EditingState.NotEditing;
 
     this.Focus(); // not necessary
@@ -5534,7 +5545,12 @@ export class Grid {
     // cell rect, offset for headers. FIXME: do we always offset for headers?
     // if so, that should go in the method.
 
-    this.overlay_editor?.Edit(selection, rect.Shift(-1, -1).Expand(1, 1), cell_value, event);
+    this.overlay_editor?.Edit(selection, rect.Shift(-1, -1).Expand(1, 1), cell, cell_value, event);
+
+    cell.editing = true;
+    cell.render_dirty = true;
+
+    this.DelayedRender(false, selection.area);
 
   }
 

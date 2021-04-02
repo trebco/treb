@@ -4,10 +4,16 @@ import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectang
 
 import { Tile } from '../types/tile';
 
-import { FontMetricsCache } from '../util/font_metrics_cache';
+// import { FontMetricsCache } from '../util/font_metrics_cache';
+import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
+
+
 import { BaseLayout, TileRange } from '../layout/base_layout';
 import { DataModel } from '../types/data_model';
 import { GridOptions } from '../types/grid_options';
+
+const BASELINE = 'bottom';
+const WK = /webkit/i.test(navigator?.userAgent || '') ? 1 : 0;
 
 interface OverflowCellInfo {
   address: ICellAddress;
@@ -89,7 +95,7 @@ export class TileRenderer {
       this.buffer_context = context;
       this.buffer_context.setTransform(scale, 0, 0, scale, 0, 0);
       this.buffer_context.textAlign = 'left';
-      this.buffer_context.textBaseline = 'alphabetic';
+      this.buffer_context.textBaseline = BASELINE; // 'alphabetic';
     }
 
   }
@@ -123,7 +129,7 @@ export class TileRenderer {
       if (context) {
         this.buffer_context = context;
         this.buffer_context.textAlign = 'left';
-        this.buffer_context.textBaseline = 'alphabetic';
+        this.buffer_context.textBaseline = BASELINE;
       }
 
     }
@@ -178,15 +184,8 @@ export class TileRenderer {
     const context = (corner as HTMLCanvasElement).getContext('2d', { alpha: false });
     if (!context) throw new Error('invalid context');
 
-    /*
-    const font_metrics = FontMetricsCache.get({
-      font_face: this.theme.interface_font_face,
-      // font_size: this.theme.interface_font_size,
-      font_size_unit: this.theme.interface_font_size_unit,
-      font_size_value: this.theme.interface_font_size_value,
-    }, this.layout.scale);
-    */
-   const font_metrics = FontMetricsCache.get(this.theme.headers || {}, this.layout.scale);
+    // const font_metrics = FontMetricsCache.get(this.theme.headers || {}, this.layout.scale);
+    const m2 = FontMetricsCache2.Get(Style.Font(this.theme.headers || {}, this.layout.scale));
 
     const scale = this.layout.dpr;
     const header_size = this.layout.header_offset;
@@ -248,7 +247,7 @@ export class TileRenderer {
         //context.fillStyle = this.theme.headers?.text_color || '';
         context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
 
-        if (height >= font_metrics.block) {
+        if (height >= m2.block * 1.2) {
           context.fillText(`${row_index + 1}`,
             header_size.x / 2, height / 2);
         }
@@ -351,15 +350,8 @@ export class TileRenderer {
 
     const header_size = this.layout.header_offset;
 
-    /*
-    const font_metrics = FontMetricsCache.get({
-      font_face: this.theme.interface_font_face,
-      // font_size: this.theme.interface_font_size,
-      font_size_unit: this.theme.interface_font_size_unit,
-      font_size_value: this.theme.interface_font_size_value,
-    }, this.layout.scale);
-    */
-    const font_metrics = FontMetricsCache.get(this.theme.headers || {}, this.layout.scale);
+    // const font_metrics = FontMetricsCache.get(this.theme.headers || {}, this.layout.scale);
+    const m2 = FontMetricsCache2.Get(Style.Font(this.theme.headers || {}, this.layout.scale));
 
     for (let column = tiles.start.column; column <= tiles.end.column; column++) {
 
@@ -461,7 +453,7 @@ export class TileRenderer {
           //context.fillStyle = this.theme.headers?.text_color || '';
           context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
 
-          if (height >= font_metrics.block) {
+          if (height >= m2.block * 1.2) {
             context.fillText(`${row_index + 1}`,
               header_size.x / 2, height / 2);
           }
@@ -544,6 +536,8 @@ export class TileRenderer {
 
     const context = tile.getContext('2d', { alpha: false });
     if (!context) { return; } // should throw
+
+    context.textBaseline = BASELINE;
 
     const scale = this.layout.dpr;
 
@@ -681,7 +675,7 @@ export class TileRenderer {
     let single = false;
 
     let override_formatting: string | undefined;
-    let formatted = cell.formatted;
+    let formatted = cell.editing ? '' : cell.formatted; // <-- empty on editing, to remove overflows
 
     /*
     if (typeof override_text === 'string') {
@@ -1354,7 +1348,7 @@ export class TileRenderer {
       //}
     }
 
-    const text_data = cell.renderer_data.text_data as PreparedText;
+    const text_data: PreparedText = cell.renderer_data.text_data as PreparedText;
 
     // overflow is always a huge headache. here are the basic rules:
 
@@ -1579,7 +1573,8 @@ export class TileRenderer {
 
     }
 
-    const metrics = FontMetricsCache.get(style, this.layout.scale);
+    //const m1 = FontMetricsCache.get(style, this.layout.scale);
+    const m2 = FontMetricsCache2.Get(font);
 
     // set stroke for underline
 
@@ -1596,8 +1591,10 @@ export class TileRenderer {
 
     let left = this.cell_edge_buffer;
 
+    const line_height = 1.3;
+
     const line_count = text_data.single ? 1 : text_data.strings.length;
-    const text_height = (line_count * metrics.block);
+    const text_height = (line_count * m2.block * line_height);
 
     // we stopped clipping initially because it was expensive -- but then
     // we were doing it on every cell. it's hard to imagine that clipping
@@ -1625,24 +1622,41 @@ export class TileRenderer {
     // is this actually top, or is it bottom? it may have been top at some 
     // point but I'm pretty sure it's baseline, now (alphabetic). FIXME
 
-    let top = Math.round(height - text_height);
+    /*
+    let baseline = Math.round(height - text_height);
 
     switch (style.vertical_align) {
       case Style.VerticalAlign.Top:
-        top = 2;
+        baseline = 2;
         break;
       case Style.VerticalAlign.Middle:
-        top = Math.round((height - text_height) / 2 + 2);
+        baseline = Math.round((height - text_height) / 2 + 2);
         break;
     }
 
-    top += metrics.ascent + 3;
+    baseline += metrics.ascent + 3;
+
+    // FIX: FIXME (vertical align)
+    */
+
+    let original_baseline = Math.round(height - 1 - (m2.block * line_height * (line_count - 1)) + WK); // switched baseline to "bottom"
+
+    switch (style.vertical_align) {
+      case Style.VerticalAlign.Top:
+        original_baseline = Math.round(m2.block * line_height) + 1;
+        break;
+      case Style.VerticalAlign.Middle:
+        original_baseline = Math.round((height - text_height) / 2 + m2.block * line_height);
+        break;
+    }
+
+    // console.info("baseline", original_baseline, 's?', text_data.single);
 
     if ((cell.type === ValueType.number || cell.calculated_type === ValueType.number) && overflow) {
 
       // number overflow is easy
 
-      const count = Math.floor((width - 2 * this.cell_edge_buffer) / metrics.hash);
+      const count = Math.floor((width - 2 * this.cell_edge_buffer) / m2.hash);
 
       let text = '';
       for (let i = 0; i < count; i++) { text += '#'; }
@@ -1655,20 +1669,15 @@ export class TileRenderer {
         left = width - this.cell_edge_buffer - text_width;
       }
 
-      context.fillText(text, left, top);
+      context.fillText(text, left, original_baseline);
       
     }
-    else if (text_data.single) { // && 17 > 20) {
+    else if (text_data.single) {
 
-      // in this case text_part.width is composite
-
-      // why are single and multiple lines in different paths?
-      // wouldn't single be the same as 1-entry multiple? is this
-      // an optimization? (...)
-
-      // tested with above condition and seems to work exactly the 
-      // same... and saves duplication... TODO
-
+      // single refers to single-line text that has multiple components,
+      // including spacing or hidden text. single line text (not formatted)
+      // probably doesn't have this flag set, it will use the next block.
+      // these could (should?) be consolidated
 
       if (horizontal_align === Style.HorizontalAlign.Center) {
         left = Math.round((width - text_data.width) / 2);
@@ -1677,9 +1686,8 @@ export class TileRenderer {
         left = width - this.cell_edge_buffer - text_data.width;
       }
 
-      // let path_started = false;
-      const underline_y = top + metrics.block - 3.5 - metrics.ascent - 3; // calc? ...
-      const strike_y = Math.round(top  - metrics.ascent / 2) + 0.5;
+      const underline_y = original_baseline - 1.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
+      const strike_y = Math.round(original_baseline - m2.ascender / 2) + 0.5; 
 
       // we want a single underline, possibly spanning hidden elements,
       // but not starting or stopping on a hidden element (usually invisible
@@ -1687,12 +1695,9 @@ export class TileRenderer {
 
       for (const part of text_data.strings) {
         if (!part.hidden) {
-          context.fillText(part.text, left, top);
+          context.fillText(part.text, left, original_baseline);
           if (style.font_underline) {
-            // if (!path_started) {
-            //  path_started = true;
             context.moveTo(left, underline_y);
-            //}
             context.lineTo(left + part.width, underline_y);
           }
           if (style.font_strike) {
@@ -1703,8 +1708,8 @@ export class TileRenderer {
 
         if (preserve_layout_info) {
           part.left = left;
-          part.top = top - metrics.block;
-          part.height = metrics.block;
+          part.top = original_baseline - m2.block;
+          part.height = m2.block;
         }
 
         left += part.width;
@@ -1712,6 +1717,9 @@ export class TileRenderer {
 
     }
     else {
+
+      let baseline = original_baseline;
+      let index = 0;
 
       for (const part of text_data.strings) {
 
@@ -1725,26 +1733,28 @@ export class TileRenderer {
         }
 
         if (style.font_underline) {
-          const underline_y = top + metrics.block - 3.5 - metrics.ascent - 3;
+          const underline_y = baseline - 1.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
           context.moveTo(left, underline_y);
           context.lineTo(left + part.width, underline_y);
         }
         
         if (style.font_strike) {
-          const strike_y = Math.round(top  - metrics.ascent / 2) + 1.5;
+          const strike_y = Math.round(baseline - m2.ascender / 2) + 0.5; 
           context.moveTo(left, strike_y);
           context.lineTo(left + part.width, strike_y);
         }
 
-        context.fillText(part.text, left, top);
+        context.fillText(part.text, left, baseline);
 
         if (preserve_layout_info) {
           part.left = left;
-          part.top = top - metrics.block;
-          part.height = metrics.block;
+          part.top = baseline - m2.block;
+          part.height = m2.block;
         }
 
-        top += metrics.block;
+        // baseline += m2.block * line_height;
+        index++;
+        baseline = Math.round(original_baseline + index * m2.block * line_height);
       }
 
     }

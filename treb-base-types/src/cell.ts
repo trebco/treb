@@ -295,6 +295,9 @@ export class Cell {
    */
   public hyperlink?: string;
 
+  /* flag indicates do not paint */
+  public editing?: boolean;
+
   /** 
    * TODO: add a return value which affects control flow. default/falsy should
    * behave as now, for backwards compatibility; but it should be possible to
