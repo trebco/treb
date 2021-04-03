@@ -3,7 +3,6 @@ import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
 import { Random } from 'riskampjs-mc';
 
-// import { ResultContainer } from 'treb-calculator';
 import { Localization, ICellAddress } from 'treb-base-types';
 import { SerializeOptions, MacroFunction } from 'treb-grid';
 import { TREBDocument } from './types';
@@ -11,17 +10,19 @@ import { TREBDocument } from './types';
 // we are stuck on an old version of this, and I can't remember 
 // why; nor can I remember why this is better than any other solution 
 // (including built-in browser functions) 
+
+// whelp I guess I updated that, not broken, so NHNF?
 import * as Base64JS from 'base64-js';
 
+// testing (should remove)
 import * as z85 from 'z85-codec';
 
 import * as PackResults from 'treb-mc/src/pack-results';
 
 // config
 import { DialogType } from './progress-dialog';
-import { Calculator } from 'treb-calculator/src';
+import { Calculator } from 'treb-calculator/src'; // <-- why direct?
 import { RunSimulationOptions } from './options';
-// import { Util } from 'riskampjs-mc';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 

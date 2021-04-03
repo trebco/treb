@@ -1639,7 +1639,7 @@ export class TileRenderer {
     // FIX: FIXME (vertical align)
     */
 
-    let original_baseline = Math.round(height - 1 - (m2.block * line_height * (line_count - 1)) + WK); // switched baseline to "bottom"
+    let original_baseline = Math.round(height - 2 - (m2.block * line_height * (line_count - 1)) + WK); // switched baseline to "bottom"
 
     switch (style.vertical_align) {
       case Style.VerticalAlign.Top:

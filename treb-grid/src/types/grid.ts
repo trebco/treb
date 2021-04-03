@@ -5485,7 +5485,8 @@ export class Grid {
     // cell rect, offset for headers. FIXME: do we always offset for headers?
     // if so, that should go in the method.
 
-    this.overlay_editor?.Edit(selection, rect.Shift(-1, -1).Expand(1, 1), cell, cell_value, event);
+    // this.overlay_editor?.Edit(selection, rect.Shift(-1, -1).Expand(1, 1), cell, cell_value, event);
+    this.overlay_editor?.Edit(selection, rect.Expand(-1, -1), cell, cell_value, event);
 
     cell.editing = true;
     cell.render_dirty = true;

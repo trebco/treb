@@ -8,13 +8,11 @@
 
 import { Style, Theme, ThemeColor, CellValue, Rectangle, ThemeColor2, Cell } from 'treb-base-types';
 import { Yield } from 'treb-utils';
-// import { DOMUtilities } from '../util/dom_utilities';
 import { GridSelection } from '../types/grid_selection';
 import { FormulaEditorBase } from './formula_editor_base';
 import { Autocomplete } from './autocomplete';
 import { DataModel } from '../types/data_model';
 import { UA } from '../util/ua';
-// import { FontMetricsCache } from '../util/font_metrics_cache';
 
 /**
  * new return type for key event handler, has some additional state
@@ -107,9 +105,9 @@ export class OverlayEditor extends FormulaEditorBase {
     // although it probably still has something to do with dpr, maybe that's 
     // a factor...
 
-    if (self.devicePixelRatio && self.devicePixelRatio > 1) {
-      this.edit_node.style.paddingBottom = `${self.devicePixelRatio}px`;
-    }
+    //if (self.devicePixelRatio && self.devicePixelRatio > 1) {
+    //  this.edit_node.style.paddingBottom = `${self.devicePixelRatio}px`;
+    //}
 
     this.edit_node.addEventListener('input', () => {
 
@@ -259,7 +257,7 @@ export class OverlayEditor extends FormulaEditorBase {
     }
     */
 
-    this.edit_node.style.paddingBottom = `${Math.max(0, (self.devicePixelRatio||1) - 1)}px`;
+    this.edit_node.style.paddingBottom = `${ Math.max(0, (self.devicePixelRatio||1) - 1)}px`;
     
     // console.info('pb', this.edit_node.style.paddingBottom);
 

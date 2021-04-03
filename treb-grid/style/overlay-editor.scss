@@ -57,22 +57,27 @@
         height: 100%;
         min-width: 100%;
 
+        margin-bottom: -10px;
+
         &.align-left {
           left: 0px;
         }
 
         &.align-center {
-          left: calc(50% + 1px);
+          /* left: calc(50% + 1px); */
+          left: 50%;
           transform: translateX(-50%);
           .overlay-editor {
             text-align: center;
+            padding-right: 1px;
           }
         }
 
         &.align-right {
-          right: -1px;
+          right: 0px;
           .overlay-editor {
             text-align: right;
+            padding-right: 2.5px;
           }
         }
 
@@ -83,7 +88,7 @@
         position: relative;
 
         /* V H */
-        padding: 1px 5px;
+        padding: 0px 4px;
 
 
         white-space: nowrap;
@@ -95,5 +100,74 @@
   
       }
 
+      /* here we go again... * /
+
+      .overlay-editor-container {
+        padding: 0;
+        margin: 0;
+
+        / * gets positioned to the rect * /
+        position: absolute;
+
+        / * gets set on edit, along with pointer-events * /
+        opacity: 0;
+
+        / * probably unecessary * /
+        outline: none;
+
+        z-index: $z-index-cell-editor;
+
+      }
+
+      .overlay-inset {
+
+        position: absolute;
+        height: 100%;
+        min-width: 100%;
+
+        &.align-left {
+          .overlay-editor {
+            padding-left: 4.5px;
+            padding-right: 4px;
+          }
+        }
+
+        &.align-center {
+          left: calc(50%);
+          transform: translateX(-50%);
+          .overlay-editor {
+            text-align: center;
+            transform: translateX(-50%) translateY(-100%);
+            left: calc(50%);
+            padding-left: 4.5px;
+            padding-right: 2px;
+          }
+        }
+
+        &.align-right {
+          right: 0px;
+          .overlay-editor {
+            text-align: right;
+            transform: translateX(-100%) translateY(-100%);
+            left: calc(100%);
+            padding-left: 2.5px;
+            padding-right: 2.5px;
+          }
+        }
+
+      }
+
+      .overlay-editor {
+        position: relative;
+        top: calc(100%);
+        transform: translateY(-100%);
+        display: inline-block;
+ 
+        white-space: nowrap;
+
+        outline: none; / * new chrome style * /
+  
+      }
+      */
   }
 }
