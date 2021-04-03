@@ -2,7 +2,7 @@
 // --- treb imports -----------------------------------------------------------
 
 import { Cell, ValueType, Cells, Style,
-  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue } from 'treb-base-types';
+  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';
 
@@ -1923,6 +1923,72 @@ export class Sheet {
     this.style_map = [];
     this.style_json_map = [];
     this.cells.FlushCellStyles();
+  }
+
+  public ImportData(data: ImportedSheetData): void {
+
+    const styles = data.styles;
+
+    // adding sheet style...
+
+    // 0 is implicitly just a general style
+
+    const sheet_style = data.sheet_style;
+    if (sheet_style) {
+      this.UpdateAreaStyle(
+        new Area({row: Infinity, column: Infinity}, {row: Infinity, column: Infinity}), 
+        styles[sheet_style]);
+    }
+
+    // and column styles...
+
+    const column_styles = data.column_styles;
+    if (column_styles) {
+      for (let i = 0; i < column_styles.length; i++) {
+
+        // 0 is implicitly just a general style
+
+        if (column_styles[i]) {
+          this.UpdateAreaStyle(new Area({row: Infinity, column: i}, {row: Infinity, column: i}), styles[column_styles[i]]);
+        }
+      }
+    }
+
+    // this.cells.FromJSON(cell_data);
+    this.cells.FromJSON(data.cells);
+    if (data.name) {
+      this.name = data.name || '';
+    }
+
+    // 0 is implicitly just a general style
+
+    const cs = this.cell_style;
+    for (const info of data.cells) {
+      if (info.style_ref) {
+        if (!cs[info.column]) cs[info.column] = [];
+        cs[info.column][info.row] = styles[info.style_ref];
+      }
+    }
+
+    for (let i = 0; i < data.column_widths.length; i++) {
+      if (typeof data.column_widths[i] !== 'undefined') {
+
+        // OK this is unscaled, we are setting unscaled from source data
+
+        this.SetColumnWidth(i, data.column_widths[i]);
+      }
+    }
+
+    for (let i = 0; i < data.row_heights.length; i++) {
+      if (typeof data.row_heights[i] !== 'undefined') {
+
+        // OK this is unscaled, we are setting unscaled from source data
+
+        this.SetRowHeight(i, data.row_heights[i]);
+      }
+    }
+
+
   }
 
   // --- protected ------------------------------------------------------------

@@ -704,10 +704,10 @@ export class Cells {
 
   }
 
-  /**
+  /* *
    * updated version of GetRange that preserves errors, by calling
    * the GetValue2 cell function.
-   */
+   * /
   public GetRange2(from: ICellAddress, to?: ICellAddress, transpose = false) {
 
     if (!to || from === to || (from.column === to.column && from.row === to.row )){
@@ -743,6 +743,7 @@ export class Cells {
     return value;
 
   }
+  */
 
   public GetRange4(from: ICellAddress, to: ICellAddress = from, transpose = false) {
 

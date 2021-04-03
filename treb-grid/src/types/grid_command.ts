@@ -1,7 +1,6 @@
 
 import { ICellAddress, IArea, Style, CellValue } from 'treb-base-types';
 import { BorderConstants } from './border_constants';
-import { Sheet } from './sheet';
 
 /**
  * switching to an exec-command based model, so we can serialize
@@ -157,7 +156,7 @@ export interface SetRangeCommand {
   array?: boolean;
 
   /** missing data implies clear cell(s) */
-  value?: any;
+  value?: CellValue|CellValue[][];
 }
 
 /** update borders for the given area. this is different than updating

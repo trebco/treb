@@ -1636,29 +1636,6 @@ export abstract class BaseLayout {
 
   }
 
-  /**
-   * returns the current render area, as grid area. this may be larger than
-   * the visible area, because we are doing some offscreen rendering.
-   * 
-   * no one calls this anymore? (...) we
-   * @deprecated 
-   * /
-  public RenderArea(tile_range?: TileRange): Area {
-
-    if (!tile_range) {
-      tile_range = this.VisibleTiles();
-    }
-
-    const first = this.grid_tiles[tile_range.start.column][tile_range.start.row];
-    const last = this.grid_tiles[tile_range.end.column][tile_range.end.row];
-
-    return new Area({
-      row: first.first_cell.row, column: first.first_cell.column }, {
-      row: last.last_cell.row, column: last.last_cell.column });
-
-  }
-  */
-
   /** calculate first visible tile based on scroll position */
   public VisibleTiles(): TileRange {
 

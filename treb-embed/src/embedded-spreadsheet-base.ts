@@ -5,7 +5,7 @@ import { Grid, GridEvent, SerializeOptions, Annotation,
 import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
-import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, 
+import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue,
   IsFlatData, IsFlatDataArray, Rectangle, Theme } from 'treb-base-types';
 import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
@@ -874,7 +874,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param recycle recycle values. we only recycle single values or vectors -- we will not recycle a matrix.
    * @param transpose transpose before inserting (data is row-major)
    */
-  public SetRange(range: ICellAddress|IArea|string, data: any, recycle = false, transpose = false, array = false): void {
+  public SetRange(range: ICellAddress|IArea|string, data: CellValue|CellValue[][], recycle = false, transpose = false, array = false): void {
 
     let area: Area;
 

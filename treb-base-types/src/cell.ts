@@ -44,10 +44,16 @@ export interface ClickFunctionOptions {
   height?: number;
 }
 
+// I believe this was intended for hyperlinks, but they don't work that
+// way any more; going to remove, temp, but not sure if we actually need
+// it (not used for checkbox)
+
+/*
 export interface ClickFunctionEvent {
   type: string;
   data?: any;
 }
+*/
 
 export interface ClickFunctionResult {
 
@@ -66,7 +72,7 @@ export interface ClickFunctionResult {
    * return an event that will be broadcast to listeners using the standard
    * event dispatch
    */
-  event?: ClickFunctionEvent;
+  // event?: ClickFunctionEvent;
 }
 
 export type ClickFunction = (options: ClickFunctionOptions) => ClickFunctionResult;
@@ -412,7 +418,7 @@ export class Cell {
   /**
    * composite method for setting value or error, based on value
    */
-  public SetCalculatedValueOrError(value: any, type?: ValueType) {
+  public SetCalculatedValueOrError(value: any, type?: ValueType): void {
     if (typeof type === 'undefined') {
       if (typeof value === 'object' && value.error) {
         type = ValueType.error;
@@ -434,7 +440,7 @@ export class Cell {
    * literal strings, we strip leading apostrophes (these are used to
    * prevent parsing of literal strings that look like other things).
    */
-  public GetValue(){
+  public GetValue(): CellValue {
     if (this.calculated_type) return this.calculated;
     // if (this.type === ValueType.string &&
     //    this.value && this.value[0] === '\'') return this.value.slice(1);
@@ -447,12 +453,12 @@ export class Cell {
     return this.value;
   }
 
-  /**
+  /* *
    * new version of GetValue that preserves errors. for non-errors this
    * behaves identically to the original GetValue. for errors, returns
    * an error object {error: string};
-   */
-  public GetValue2() {
+   * /
+  public GetValue2(): CellValue | {error: CellValue} {
     if (this.calculated_type) {
       return (this.calculated_type === ValueType.error) ?
         { error: this.calculated } : this.calculated;
@@ -463,8 +469,9 @@ export class Cell {
 
     return this.value;
   }
+  */
 
-  /**
+  /* *
    * we have an issue where a reference to an empty cell winds up returning
    * a string, goes into a numerical calculation, and slows everything down.
    *
@@ -475,7 +482,7 @@ export class Cell {
    *
    * in this case because it's the function value, I think returning 0 is ok.
    * BUT, it still might make sense to return undefined.
-   */
+   * /
   public GetValue3(): CellValue|{error: string} { // |FunctionError {
 
     // so... what is this? shouldn't this be an object? (...)
@@ -495,6 +502,7 @@ export class Cell {
 
     return this.value;
   }
+  */
 
   /**
    * this function follows the rule of GetValue3, which is: if the type
@@ -526,17 +534,17 @@ export class Cell {
   /**
    * set note. set undefined to clear.
    */
-  public SetNote(note?: string) {
+  public SetNote(note?: string): void {
     this.note = note;
     this.render_dirty = true;
   }
 
   /** sets error (FIXME: error type) */
-  public SetCalculationError(err = 'ERR'){
+  public SetCalculationError(err = 'ERR'): void {
     this.SetCalculatedValue(err, ValueType.error);
   }
 
-  public SetArray(area: Area){
+  public SetArray(area: Area): void {
     this.type = ValueType.undefined;
     this.value =
       this.formatted =
@@ -549,7 +557,7 @@ export class Cell {
     this.render_dirty = true;
   }
 
-  public SetArrayHead(area: Area, value: CellValue){
+  public SetArrayHead(area: Area, value: CellValue): void {
     this.type = GetValueType(value);
     this.value = value;
     this.formatted =

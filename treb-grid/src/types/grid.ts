@@ -6,6 +6,7 @@ import {
   Style, 
   IArea, 
   Extent, 
+  Is2DArray,
   CellValue, 
   Rectangle, 
   ValueType, 
@@ -44,7 +45,7 @@ import { OverlayEditor, OverlayEditorResult } from '../editors/overlay_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
 import { GridEvent } from './grid_events';
-import { FreezePane, SerializedSheet } from './sheet_types';
+import { FreezePane, LegacySerializedSheet } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
 import { GridOptions, DefaultGridOptions } from './grid_options';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
@@ -999,8 +1000,7 @@ export class Grid {
   }
 
   /** 
-   * this method is called after an XLSX import. the data comes from the 
-   * worker handling the import. we should be able to nail down this type [FIXME]
+   * this method is called after an XLSX import.
    */
   public FromImportData(
     import_data: {
@@ -1030,73 +1030,12 @@ export class Grid {
 
     this.ClearSelection(this.primary_selection);
 
-    // why is this parsing/translation done here instead of in the sheet class?
+    // moved data import into sheet
 
-    for (let si = 0; si < sheet_data.length; si++) {
-
-      const styles = sheet_data[si].styles;
-
-      // adding sheet style...
-
-      // 0 is implicitly just a general style
-
-      const sheet_style = sheet_data[si].sheet_style;
-      if (sheet_style) {
-        this.model.sheets[si].UpdateAreaStyle(
-          new Area({row: Infinity, column: Infinity}, {row: Infinity, column: Infinity}), 
-          styles[sheet_style]);
-      }
-
-      // and column styles...
-
-      const column_styles = sheet_data[si].column_styles;
-      if (column_styles) {
-        for (let i = 0; i < column_styles.length; i++) {
-
-          // 0 is implicitly just a general style
-
-          if (column_styles[i]) {
-            this.model.sheets[si].UpdateAreaStyle(new Area({row: Infinity, column: i}, {row: Infinity, column: i}), styles[column_styles[i]]);
-          }
-        }
-      }
-
-      // this.cells.FromJSON(cell_data);
-      this.model.sheets[si].cells.FromJSON(sheet_data[si].cells);
-      if (sheet_data[si].name) {
-        this.model.sheets[si].name = sheet_data[si].name || '';
-      }
-
-      name_map[this.model.sheets[si].name] = this.model.sheets[si].id;
-
-      // 0 is implicitly just a general style
-
-      const cs = (this.model.sheets[si] as any).cell_style;
-      for (const info of sheet_data[si].cells) {
-        if (info.style_ref) {
-          if (!cs[info.column]) cs[info.column] = [];
-          cs[info.column][info.row] = styles[info.style_ref];
-        }
-      }
-
-      for (let i = 0; i < sheet_data[si].column_widths.length; i++) {
-        if (typeof sheet_data[si].column_widths[i] !== 'undefined') {
-
-          // OK this is unscaled, we are setting unscaled from source data
-
-          this.model.sheets[si].SetColumnWidth(i, sheet_data[si].column_widths[i]);
-        }
-      }
-
-      for (let i = 0; i < sheet_data[si].row_heights.length; i++) {
-        if (typeof sheet_data[si].row_heights[i] !== 'undefined') {
-
-          // OK this is unscaled, we are setting unscaled from source data
-
-          this.model.sheets[si].SetRowHeight(i, sheet_data[si].row_heights[i]);
-        }
-      }
-
+    for (let i = 0; i < sheet_data.length; i++) {
+      const sheet = this.model.sheets[i];
+      sheet.ImportData(sheet_data[i]);
+      name_map[sheet.name] = sheet.id;
     }
 
     this.model.named_ranges.Reset();
@@ -1353,7 +1292,7 @@ export class Grid {
 
   /** new version for multiple sheets */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public UpdateSheets(data: SerializedSheet[], render = false, activate_sheet?: number | string): void {
+  public UpdateSheets(data: LegacySerializedSheet[], render = false, activate_sheet?: number | string): void {
 
     // remove existing annotations from layout
 
@@ -1404,8 +1343,8 @@ export class Grid {
 
     // support old style files
 
-    if (data[0] && (data[0] as any).primary_selection) {
-      const selection = ((data[0] as any).primary_selection) as GridSelection;
+    if (data[0] && data[0].primary_selection) {
+      const selection = (data[0].primary_selection) as GridSelection;
       if (!selection.empty) {
         this.Select(this.primary_selection,
           new Area(selection.area.start, selection.area.end), selection.target);
@@ -1552,8 +1491,8 @@ export class Grid {
   public UpdateTheme(initial = false, additional_properties?: Partial<Theme /*ExtendedTheme*/ >): void {
 
     if (!initial) {
-      for (const key of Object.keys(this.theme)) {
-        delete (this.theme as any)[key]; // = undefined;
+      for (const key of Object.keys(this.theme) as Array<keyof Theme>) {
+        delete this.theme[key];
       }
     }
 
@@ -1592,9 +1531,10 @@ export class Grid {
       ...additional_properties,
     };
 
-    for (const key of Object.keys(composite)) {
-      (this.theme as any)[key] = (composite as any)[key];
-    }
+    Object.assign(this.theme, composite);
+    //for (const key of Object.keys(composite) as Array<keyof Theme>) {
+    //  this.theme[key] = composite[key] as any; // solve this problem in typescript
+    //}
 
     // update style for theme
     this.StyleDefaultFromTheme();
@@ -1810,7 +1750,12 @@ export class Grid {
     this.overlay_editor?.Focus();
   }
 
-  public SetValidation(target?: ICellAddress, data?: CellValue[]|IArea) {
+  /**
+   * set "data validation", which (atm) only supports a list of options
+   * and will render as a dropdown; the list can be a list of values or
+   * a range reference.
+   */
+  public SetValidation(target?: ICellAddress, data?: CellValue[]|IArea): void {
 
     if (!target) {
       if (this.primary_selection.empty) {
@@ -1929,6 +1874,10 @@ export class Grid {
    * set data in given range
    * API method
    *
+   * not sure why we have support for ArrayBufferView in here. this is an API
+   * method, called by the embed sheet's API method, so there are no particular
+   * requirements. we should lock down the allowable types.
+   * 
    * @param range target range. if range is smaller than data, range controls.
    * if range is larger, behavior depends on the recycle parameter.
    * @param data single value, array (column), or 2d array
@@ -1936,65 +1885,65 @@ export class Grid {
    * rows/columns -- we will not recycle a matrix.
    * @param transpose transpose before inserting (data is column-major)
    */
-  public SetRange(range: Area, data: any, recycle = false, transpose = false, array = false): void {
+  public SetRange(range: Area, data: CellValue|CellValue[]|CellValue[][], recycle = false, transpose = false, array = false): void {
 
      // single value, easiest
-    if (!Array.isArray(data) && !ArrayBuffer.isView(data)) {
+    if (!Array.isArray(data)) {
+
       if (recycle || array) {
-        // this.model.sheet.SetAreaValue(range, data);
         this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array });
       }
       else {
-        // this.model.sheet.SetCellValue(range.start, data);
         this.ExecCommand({ key: CommandKey.SetRange, area: range.start, value: data, array });
       }
 
-      if (!this.primary_selection.empty && range.Contains(this.primary_selection.target)) {
-        this.UpdateFormulaBarFormula();
-      }
-
-      return;
     }
+    else {
 
-    // flat array -- we can recycle. recycling is R style (values, not rows)
-    if (!Array.isArray((data as any)[0]) && !ArrayBuffer.isView((data as any)[0])) {
+      if (!Is2DArray(data)) {
 
-      if (recycle) {
+        // flat array -- we can recycle. recycling is R style (values, not rows).
+        // in any event convert to [][]
 
-        const rows = range.entire_column ? this.active_sheet.rows : range.rows;
-        const columns = range.entire_row ? this.active_sheet.columns : range.columns;
-        const count = rows * columns;
+        if (recycle) {
 
-        if (count > (data as any).length) {
-          let tmp = (data as any).slice(0);
-          const multiple = Math.ceil(count / tmp.length);
-          for (let i = 1; i < multiple; i++) {
-            tmp = tmp.concat((data as any).slice(0));
+          const rows = range.entire_column ? this.active_sheet.rows : range.rows;
+          const columns = range.entire_row ? this.active_sheet.columns : range.columns;
+          const count = rows * columns;
+
+          if (count > data.length) {
+            let tmp = data.slice(0);
+            const multiple = Math.ceil(count / tmp.length);
+            for (let i = 1; i < multiple; i++) {
+              tmp = tmp.concat(data.slice(0));
+            }
+            data = tmp;
           }
-          data = tmp;
+
+          // reshape
+          const reshaped: CellValue[][] = [];
+          for (let c = 0, index = 0; c < columns; c++, index += rows) {
+            reshaped[c] = data.slice(index, index + rows);
+          }
+          data = reshaped;
+
+        }
+        else {
+          data = [data];
         }
 
-        // reshape
-        const reshaped: any[][] = [];
-        for (let c = 0, index = 0; c < columns; c++, index += rows) {
-          reshaped[c] = data.slice(index, index + rows);
-        }
-        data = reshaped;
+      }
 
-      }
-      else {
-        data = [data];
-      }
+      if (transpose) { data = this.Transpose(data); }
+
+      this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array });
 
     }
-
-    if (transpose) { data = this.Transpose(data); }
-
-    this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array });
 
     if (!this.primary_selection.empty && range.Contains(this.primary_selection.target)) {
       this.UpdateFormulaBarFormula();
     }
+
 
   }
 
@@ -2294,7 +2243,7 @@ export class Grid {
     }
   }
 
-  public GetScrollOffset() {
+  public GetScrollOffset(): {x: number, y: number} {
     return this.layout.GetScrollOffset();
   }
 
@@ -4067,6 +4016,7 @@ export class Grid {
 
           }
 
+          /*
           if (result.event) {
             Yield().then(() => {
               this.grid_events.Publish({
@@ -4075,6 +4025,7 @@ export class Grid {
               });
             });
           }
+          */
 
           return;
         }
@@ -5263,7 +5214,7 @@ export class Grid {
   private FixFormula(formula: string): string {
     if (formula.trim()[0] !== '=') return formula;
 
-    const original = formula;
+    // const original = formula;
 
     formula = formula.replace(/^\s+/, '');
 
@@ -7662,11 +7613,18 @@ export class Grid {
       // single cell
       // UPDATE: could be array
 
+      // type is value|value[][], pull out first value. at some point 
+      // we may have supported value[], or maybe they were passed in 
+      // accidentally, but check regardless.
+
+      const value = Array.isArray(command.value) ?
+        Array.isArray(command.value[0]) ? command.value[0][0] : command.value[0] : command.value;
+
       if (command.array) {
-        sheet.SetArrayValue(area, command.value);
+        sheet.SetArrayValue(area, value);
       }
       else {
-        sheet.SetCellValue(command.area, command.value);
+        sheet.SetCellValue(command.area, value);
       }
 
       return area;
@@ -7683,7 +7641,11 @@ export class Grid {
       // FIXME: clean this up!
 
       if (command.array) {
-        sheet.SetArrayValue(area, command.value);
+
+        const value = Array.isArray(command.value) ?
+          Array.isArray(command.value[0]) ? command.value[0][0] : command.value[0] : command.value;
+        
+        sheet.SetArrayValue(area, value);
       }
       else {
         sheet.SetAreaValues2(area, command.value);
@@ -7997,6 +7959,8 @@ export class Grid {
               { column: Infinity, row: row[row.length - 1] });
             */
 
+            this.layout.UpdateTotalSize();
+
             if (this.layout.container
               && this.layout.container.offsetHeight
               && this.layout.container.offsetHeight > this.layout.total_height) {
@@ -8047,6 +8011,8 @@ export class Grid {
               {row: Infinity, column: column[column.length - 1]});
   
             */
+
+            this.layout.UpdateTotalSize();
 
             if (this.layout.container
               && this.layout.container.offsetWidth

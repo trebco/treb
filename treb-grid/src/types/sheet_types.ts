@@ -56,3 +56,9 @@ export interface SerializedSheet {
   visible?: boolean;
 
 }
+
+/**
+ * support for legacy sheet data
+ * (I think we can drop)
+ */
+export type LegacySerializedSheet = SerializedSheet & { primary_selection?: GridSelection }

@@ -3,6 +3,11 @@ import { ValueType, GetValueType } from './value-type';
 
 export type CellValue = undefined | string | number | boolean;
 
+/** utility method */
+export const Is2DArray = <T>(obj: undefined|T|T[]|T[][]): obj is T[][] => {
+  return !!obj && Array.isArray(obj) && Array.isArray(obj[0]);
+}
+
 /**
  * to simplify treatment of values and errors, use a composite return
  * type that can support both without a lot of sloppy type testing
