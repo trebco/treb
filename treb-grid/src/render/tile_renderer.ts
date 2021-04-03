@@ -1686,7 +1686,7 @@ export class TileRenderer {
         left = width - this.cell_edge_buffer - text_data.width;
       }
 
-      const underline_y = original_baseline - 1.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
+      const underline_y = original_baseline - 0.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
       const strike_y = Math.round(original_baseline - m2.ascender / 2) + 0.5; 
 
       // we want a single underline, possibly spanning hidden elements,
@@ -1733,7 +1733,7 @@ export class TileRenderer {
         }
 
         if (style.font_underline) {
-          const underline_y = baseline - 1.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
+          const underline_y = baseline - 0.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
           context.moveTo(left, underline_y);
           context.lineTo(left + part.width, underline_y);
         }
