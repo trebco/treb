@@ -32,15 +32,8 @@ import { TabBar } from './tab_bar';
 import { Sheet } from './sheet';
 import { TileRange, BaseLayout } from '../layout/base_layout';
 
-// import { GridLayout } from '../layout/grid_layout';
-// import { LegacyLayout } from '../layout/legacy_layout';
 import { CreateLayout } from '@grid-conditional/layout_manager';
-
 import { GridSelection } from './grid_selection';
-//import { Theme, ExtendedTheme, CalculateSupplementalColors, LoadThemeProperties } from './theme';
-// import { Theme, LoadThemeProperties } from './theme';
-// import { FormulaEditorBase } from '../editors/formula_editor_base';
-
 import { OverlayEditor, OverlayEditorResult } from '../editors/overlay_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
@@ -79,7 +72,6 @@ interface ClipboardCellData {
 }
 
 interface DoubleClickData {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   timeout?: number;
   address?: ICellAddress;
 }
@@ -89,9 +81,6 @@ enum EditingState {
   CellEditor = 1,
   FormulaBar = 2,
 }
-
-// const DEFAULT_NEW_SHEET_ROWS = 30;
-// const DEFAULT_NEW_SHEET_COLUMNS = 20;
 
 export class Grid {
 
