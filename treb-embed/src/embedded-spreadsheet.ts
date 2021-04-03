@@ -7,7 +7,12 @@ import { Random } from 'riskampjs-mc';
 import { Localization, ICellAddress } from 'treb-base-types';
 import { SerializeOptions, MacroFunction } from 'treb-grid';
 import { TREBDocument } from './types';
+
+// we are stuck on an old version of this, and I can't remember 
+// why; nor can I remember why this is better than any other solution 
+// (including built-in browser functions) 
 import * as Base64JS from 'base64-js';
+
 import * as z85 from 'z85-codec';
 
 import * as PackResults from 'treb-mc/src/pack-results';
