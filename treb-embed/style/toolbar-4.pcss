@@ -149,8 +149,36 @@ $swatch-width: 1.1em;
 
   }
 
-  & > * + * {
+  // wide toolbar is default (god bless sass comments)
+
+  .group.narrow {
+    display: none;
+  }
+
+  .group.wide {
+    display: flex;
+  }
+
+  & > *:not(.narrow) + *:not(.narrow) {
     margin-left: 0.5em;
+  }
+
+  // narrow toolbar 
+
+  &.narrow {
+
+    .group.wide {
+      display: none;
+    }    
+
+    .group.narrow {
+      display: flex;
+    }
+
+    & > *:not(.wide) + *:not(.wide) {
+      margin-left: 0.5em;
+    }
+
   }
 
   .container, button {
@@ -368,7 +396,9 @@ $swatch-width: 1.1em;
       border-top-left-radius: 0px;
       border-bottom-left-radius: 0px;
     }
+
   }
+ 
 
   .split-button {
     display: flex;

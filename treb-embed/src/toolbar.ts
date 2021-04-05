@@ -87,23 +87,60 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     this.model = tmpl`
       <div id='root' class='treb-toolbar'>
 
-        <div class='group'>
+        <div class='group narrow'>
+          ${this.IconButton('bootstrap/text-left', 'text-align', 'align-left', 'Align left')}
+          <button class='drop'></button>
+          <div class='drop-menu' tabindex='-1'>
+            <ul>
+              <li>${this.IconButton('bootstrap/text-left', 'align-left-drop', 'align-left', 'Align left', 'text-align')}</li>
+              <li>${this.IconButton('bootstrap/text-center', 'align-center-drop', 'align-center', 'Align center', 'text-align')}</li>
+              <li>${this.IconButton('bootstrap/text-right', 'align-right-drop', 'align-right', 'Align right', 'text-align')}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class='group narrow'>
+          ${this.IconButton('fa/light/arrow-up-to-line', 'vertical-align', 'align-top', 'Align top')}
+          <button class='drop'></button>
+          <div class='drop-menu' tabindex='-1'>
+            <ul>
+              <li>${this.IconButton('fa/light/arrow-up-to-line', 'align-top-drop', 'align-top', 'Align top', 'vertical-align')}</li>
+              <li>${this.IconButton('bootstrap/arrows-collapse', 'align-middle-drop', 'align-middle', 'Align middle', 'vertical-align')}</li>
+              <li>${this.IconButton('fa/light/arrow-down-to-line', 'align-bottom-drop', 'align-bottom', 'Align bottom', 'vertical-align')}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class='group wide'>
           ${this.IconButton('bootstrap/text-left', 'align-left', true, 'Align left')}
           ${this.IconButton('bootstrap/text-center', 'align-center', true, 'Align center')}
           ${this.IconButton('bootstrap/text-right', 'align-right', true, 'Align right')}
         </div>
 
-        <div class='group'>
+        <div class='group wide'>
           ${this.IconButton('fa/light/arrow-up-to-line', 'align-top', true, 'Align top')}
           ${this.IconButton('bootstrap/arrows-collapse', 'align-middle', true, 'Align middle')}
           ${this.IconButton('fa/light/arrow-down-to-line', 'align-bottom', true, 'Align bottom')}
         </div>
 
-        <button id='wrap' data-command='wrap' title='Wrap text'>
-          ${this.Icon('extra/wrap')}
-        </button>
-        
         <div class='group'>
+
+          <button id='wrap' data-command='wrap' title='Wrap text'>
+            ${this.Icon('extra/wrap')}
+          </button>
+
+          <button id='merge' data-command='merge' title='Merge cells'>
+            ${this.Icon('fa/light/expand', 'active-icon')}
+            ${this.Icon('fa/light/compress', 'inactive-icon')}
+          </button>
+          
+          ${this.IconButton('fa/light/lock-keyhole', 'lock')}
+
+        <!--
+        </div>
+        <div class='group'>
+        -->
+        
           <button id='comment' class='drop-button' title='Comment'>
             ${this.Icon('fa/light/message')}
           </button>
@@ -120,7 +157,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         </div>
 
         <div class='group'>
-          <button class='color-button' data-command='background-color'>
+          <button class='color-button' data-command='background-color' title='Background color'>
             ${this.Icon('fa/light/fill-drip')}
             <div id='background-color-bar' class='color-bar' style='color:yellow;'></div>
           </button>
@@ -129,7 +166,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         </div>
 
         <div class='group'>
-          <button class='color-button' data-command='foreground-color'>
+          <button class='color-button' data-command='foreground-color' title='Text color'>
             ${this.Icon('fa/light/font')}
             <div id='foreground-color-bar' class='color-bar' style='color:blue;'></div>
           </button>
@@ -164,10 +201,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           </div>
         </div>
 
-        <button id='merge' data-command='merge' title='Merge cells'>
-          ${this.Icon('fa/light/expand', 'active-icon')}
-          ${this.Icon('fa/light/compress', 'inactive-icon')}
-        </button>
+        <!-- merge was here -->
         
         <div class='group'>
           <button id='layout' class='drop-button' title='Rows/columns'>
@@ -192,7 +226,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         <div class='group'>
         ${this.IconButton('fa/light/snowflake', 'freeze')}
-        ${this.IconButton('fa/light/lock-keyhole', 'lock')}
+        <!-- lock was here -->
         </div>
 
         <div class='group'>
@@ -406,6 +440,10 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     });
 
+    if (/narrow/i.test((options.toolbar || '').toString())) {
+      this.model.root.classList.add('narrow');
+    }
+
     // console.info(this.model);
     container.appendChild(this.model.root);
 
@@ -557,6 +595,10 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       'wrap': state.style && !!state.style.wrap,
       'comment': !!state.comment,
     };
+
+    // new narrow dropdowns
+    // ...
+    
 
     // this.comment = state.comment || '';
 

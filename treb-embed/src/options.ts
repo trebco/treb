@@ -104,7 +104,7 @@ export interface BaseOptions {
    * toolbar
    * FIXME: fix options
    */
-  toolbar?: boolean | 'show' | 'compressed' | 'show-compressed';
+  toolbar?: boolean | 'show' | 'narrow' | 'show-narrow';
 
   /** file options in the toolbar */
   file_menu?: boolean;

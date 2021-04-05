@@ -153,7 +153,7 @@ export class CompositeSheet {
     if (!this.options.collapsed) {
       this.outer_container.classList.add('sidebar-open');
     }
-    if (this.options.toolbar === 'show' || this.options.toolbar === 'show-compressed') {
+    if (this.options.toolbar === 'show' || this.options.toolbar === 'show-narrow') {
       this.outer_container.classList.add('toolbar-open');
     }
 
@@ -271,7 +271,7 @@ export class CompositeSheet {
       }
     }
 
-    if (this.options.toolbar === 'show' || this.options.toolbar === 'show-compressed') {
+    if (this.options.toolbar === 'show' || this.options.toolbar === 'show-narrow') {
       this.ShowToolbar(true);
     }
 
