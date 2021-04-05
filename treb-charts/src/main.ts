@@ -2,7 +2,7 @@
 import { Chart } from './';
 
 // tslint:disable-next-line: no-var-requires
-require('../style/charts.scss');
+require('../style/charts.pcss');
 
 if (!(self as any).TREB) {
   (self as any).TREB = {};
