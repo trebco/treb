@@ -111,6 +111,20 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           </div>
         </div>
 
+        ${options.file_menu ? `
+        <div class='group wide'>
+          <button title='File options' class='drop-button'>${this.Icon('fa/light/save')}</button>
+          <div class='drop-menu' tabindex='-1'>
+            <ul>
+              <li><button class='text' data-command='import-desktop'>Import file</button></li>
+              <li><button class='text' data-command='save-json'>Save as JSON</button></li>
+              <li><button class='text' data-command='export-xlsx'>Export XLSX</button></li>
+              <li><button class='text' data-command='reset'>Reset/clear</button></li>
+            </ul>
+          </div>
+        </div>
+        ` : ''}
+
         <div class='group wide'>
           ${this.IconButton('bootstrap/text-left', 'align-left', true, 'Align left')}
           ${this.IconButton('bootstrap/text-center', 'align-center', true, 'Align center')}
@@ -136,11 +150,6 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           
           ${this.IconButton('fa/light/lock-keyhole', 'lock')}
 
-        <!--
-        </div>
-        <div class='group'>
-        -->
-        
           <button id='comment' class='drop-button' title='Comment'>
             ${this.Icon('fa/light/message')}
           </button>

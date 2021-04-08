@@ -9,8 +9,6 @@ import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValu
   IsFlatData, IsFlatDataArray, Rectangle, Theme } from 'treb-base-types';
 import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
-// import { Toolbar as SimpleToolbar, Toolbar, ToolbarElement } from 'treb-toolbar';
-// import { ToolbarManager } from './toolbar-manager';
 
 // local
 import { ProgressDialog, DialogType } from './progress-dialog';
@@ -199,13 +197,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   protected dialog?: ProgressDialog;
 
   protected toolbar?: Toolbar;
-
-  // public toolbar?: SimpleToolbar;
-  // protected toolbar_manager?: ToolbarManager;
-
-  //public get toolbar(): SimpleToolbar|undefined { 
-  //  return this.toolbar_manager ? this.toolbar_manager.toolbar : undefined;
-  //}
 
   protected active_selection_style?: Style.Properties;
 
@@ -2820,6 +2811,25 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             updated_style = { vertical_align: Style.VerticalAlign.Bottom };
             break;
       
+          case 'reset':
+            this.Reset();
+            break;
+          case 'import-desktop':
+            this.LoadLocalFile();
+            break;
+          //case 'import-url':
+          //  this.ImportURL();
+          //  break;
+          case 'save-json':
+            this.SaveLocalFile();
+            break;
+          case 'save-csv':
+            this.SaveLocalFile(SaveFileType.csv);
+            break;
+          case 'export-xlsx':
+            this.Export();
+            break;
+
           default:
             console.info('unhandled', event.command);
             break;
