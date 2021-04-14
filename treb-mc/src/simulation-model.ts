@@ -451,6 +451,7 @@ export class SimulationModel {
         description: 'Returns the iteration number of a sorted value for this cell',
         arguments: [
           { name: 'reference cell', description: 'Source Cell', collector: true },
+          { name: 'index', }
         ],
         fn: this.sortedsimulationindex.bind(this),
         category: ['RiskAMP Simulation Functions'],
