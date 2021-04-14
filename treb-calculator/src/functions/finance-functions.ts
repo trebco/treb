@@ -1,7 +1,8 @@
 
 
 import { FunctionMap } from '../descriptors';
-import { UnionValue, ValueType } from 'treb-base-types';
+import { CellValue, Is2DArray, UnionIs, UnionOrArray, UnionValue, ValueType } from 'treb-base-types';
+import { Flatten } from '../utilities';
 
 // use a single, static object for base functions
 
@@ -63,6 +64,102 @@ const ppmt_function = (rate: number, period: number, periods: number, pv = 0, fv
 };
 
 export const FinanceFunctionLibrary: FunctionMap = {
+
+  /**
+   * Excel's NPV function is somewhat broken because it assumes the first
+   * (usually negative) cashflow is in year 1, not year 0. so the thing to
+   * do is just use it on the future cashflows and add the initial outlay
+   * as a scalar value.
+   */
+  NPV: {
+    description: 'Returns the present value of a series of future cashflows',
+    arguments: [
+      { name: 'Rate' },
+      { name: 'Cashflow' },
+    ],
+    fn: (rate = 0, ...args: any[]): UnionValue => {
+
+      let result = 0;
+
+      const flat = Flatten(args);
+      for (let i = 0; i < flat.length; i++) {
+        const arg = flat[i];
+        if (typeof arg === 'number') {
+          result += Math.pow(1 + rate, -(i + 1)) * arg;
+        }
+      }
+      
+      return {
+        type: ValueType.number, value: result,
+      }
+    }
+  },
+
+  IRR: {
+    description: 'Calculates the internal rate of return of a series of cashflows',
+    arguments: [
+      { name: 'Cashflows' },
+      { name: 'Guess', default: .1 },
+    ],
+    fn: (args: CellValue[], guess = .1): UnionValue => {
+
+      const flat = Flatten(args).map(value => typeof value === 'number' ? value : 0);
+
+      const step = .1; // initial step
+
+      const bounds = [
+        {found: false, value: 0},
+        {found: false, value: 0},
+      ];
+
+      // FIXME: parameterize max step count, resolution?
+
+      for (let i = 0; i < 50; i++) {
+
+        // calculate npv
+        let npv = 0;
+        for (let j = 0; j < flat.length; j++) { npv += Math.pow(1 + guess, -(j + 1)) * flat[j]; }
+
+        if (Math.abs(npv) <= 0.00125) { // resolution
+          // console.info(`** found in ${i + 1} steps`)
+          return {
+            type: ValueType.number,
+            value: guess,
+          }
+        }
+
+        // search space is unbounded, unfortunately. we can expand exponentially
+        // until we have bounds, at which point it's a standard bounded binary search
+
+        // ...or we can expand linearly, using a reasonable initial step size?
+
+        if (npv > 0) {
+          bounds[0].value = bounds[0].found ? Math.max(bounds[0].value, guess) : guess;
+          bounds[0].found = true;
+          if (!bounds[1].found) {
+            guess += step;
+            continue;
+          }
+        }
+        else {
+          bounds[1].value = bounds[1].found ? Math.min(bounds[1].value, guess) : guess;
+          bounds[1].found = true;
+          if (!bounds[0].found) {
+            guess -= step;
+            continue;
+          }
+        }
+
+        guess = bounds[0].value + (bounds[1].value - bounds[0].value) / 2;
+
+      }
+
+      return {
+        type: ValueType.error,
+        value: 'NUM',
+      }
+    },
+  },
 
   CUMPRINC: {
     description: 'Returns cumulative principal paid on a loan between two periods',
