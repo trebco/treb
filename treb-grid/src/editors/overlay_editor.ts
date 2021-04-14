@@ -277,6 +277,7 @@ export class OverlayEditor extends FormulaEditorBase {
       this.edit_node.spellcheck = false;
     }
 
+    this.autocomplete.ResetBlock();
     this.FlushReference();
     this.selection = gridselection;
 
