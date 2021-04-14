@@ -23,6 +23,12 @@ export interface RangeOptions {
   array?: string;
 }
 
+export enum VisibleState {
+  visible,
+  hidden,
+  very_hidden,
+}
+
 export class Sheet {
 
   public path?: string;
@@ -34,6 +40,8 @@ export class Sheet {
   public dom?: Tree;
   public shared_strings?: SharedStrings;
   public extent?: RangeType;
+
+  public visible_state?: VisibleState;
 
   public tab_selected = false;
 

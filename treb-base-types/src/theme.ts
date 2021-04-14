@@ -76,12 +76,6 @@ export const DefaultTheme: Theme = {
  * @deprecated
  */
 export const ThemeColor = (theme: Theme, color?: Style.Color): string => {
-  /*
-  if (color?.text) {
-    return color.text === 'none' ? '' : color.text;
-  }
-  return theme.theme_colors ? theme.theme_colors[color?.theme || 0] : '';
-  */
   return ThemeColor2(theme, color, 0);
 };
 

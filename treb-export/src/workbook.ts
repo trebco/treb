@@ -2,7 +2,7 @@
 
 import * as ElementTree from 'elementtree';
 import { Element, ElementTree as Tree } from 'elementtree';
-import { Sheet } from './sheet';
+import { Sheet, VisibleState } from './sheet';
 import { SharedStrings } from './shared-strings';
 import { StyleCache } from './style';
 import { Theme } from './theme';
@@ -34,6 +34,7 @@ export class Workbook {
 
   public style_cache = new StyleCache(); // public temp
   public theme = new Theme();
+  public active_tab = 0;
 
   private zip?: JSZip;
   private shared_strings = new SharedStrings();
@@ -45,18 +46,15 @@ export class Workbook {
 
   private rels_dom?: Tree;
 
-  // public GetSheet(sheet: string|number) {
-  public GetSheet(sheet: number) {
-    // if (typeof sheet === 'string') return this.sheets[name];
-    // else return this.sheets[Object.keys(this.sheets)[0]];
+  public GetSheet(sheet: number): Sheet {
     return this.sheets[sheet];
   }
 
-  public Count() {
+  public Count(): number {
     return this.sheets.length;
   }
 
-  public RenameSheet(index: number, name: string) {
+  public RenameSheet(index: number, name: string): void {
     if (!this.dom) throw new Error('missing dom');
 
     // local: does this matter? might as well keep it consistent
@@ -73,13 +71,13 @@ export class Workbook {
 
   }
 
-  public async ReadStyles() {
+  public async ReadStyles(): Promise<void> {
     if (!this.zip) throw new Error('missing zip');
     const data = await this.zip.file('xl/styles.xml')?.async('text') as string;
     this.style_cache.Init(data, this.theme);
   }
 
-  public async ReadTheme() {
+  public async ReadTheme(): Promise<void> {
     if (!this.zip) throw new Error('missing zip');
     const file = this.zip.file('xl/theme/theme1.xml');
     if (file) {
@@ -91,7 +89,7 @@ export class Workbook {
   /**
    * break out strings table
    */
-  public async ReadStringsTable(){
+  public async ReadStringsTable(): Promise<void> {
 
     if (!this.zip) throw new Error('missing zip');
 
@@ -199,7 +197,7 @@ export class Workbook {
   /**
    * read all sheets (async)
    */
-  public async GetWorksheets(preparse = false, read_rels = false){
+  public async GetWorksheets(preparse = false, read_rels = false): Promise<void> {
     if (!this.zip) throw new Error('missing zip');
 
     for (const sheet of this.sheets) {
@@ -584,8 +582,24 @@ export class Workbook {
     this.dom = ElementTree.parse(data);
     this.sheets = []; // {};
 
+    ///
+
+    const workbook_view = this.dom.find('./bookViews/workbookView');
+    if (workbook_view?.attrib?.activeTab) {
+      this.active_tab = Number(workbook_view?.attrib?.activeTab) || 0;
+    }
+
+    /*
+    <bookViews>
+      <workbookView xWindow="40410" yWindow="4665" windowWidth="24645" windowHeight="15690" firstSheet="1" activeTab="2"
+    */
+
+    ///
+
     this.dom.findall('./sheets/sheet').forEach((sheet) => {
       const name = sheet.attrib.name;
+      const state = sheet.attrib.state;
+
       if (name) {
         const worksheet = new Sheet({
           // wb: wb,
@@ -593,6 +607,13 @@ export class Workbook {
           id: Number(sheet.attrib.sheetId),
           rid: sheet.attrib['r:id']});
         
+        if (state === 'hidden') {
+          worksheet.visible_state = VisibleState.hidden;
+        }
+        else if (state === 'veryHidden') {
+          worksheet.visible_state = VisibleState.very_hidden;
+        }
+    
         worksheet.shared_strings = this.shared_strings;
         // this.sheets[name] = worksheet;
         this.sheets.push(worksheet);

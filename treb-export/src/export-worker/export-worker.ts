@@ -33,6 +33,7 @@ const ImportSheet = async (data: any) => {
     const results = {
       sheets: [] as ImportedSheetData[],
       names: importer.workbook.GetNamedRanges(),
+      active_tab: importer.workbook.active_tab,
     };
 
     for (let i = 0; i < count; i++) {

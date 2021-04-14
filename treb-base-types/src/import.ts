@@ -16,5 +16,7 @@ export interface ImportedSheetData {
   sheet_style?: number;
   column_styles?: number[];
 
+  hidden?: boolean;
+
 }
 

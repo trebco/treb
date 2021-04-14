@@ -995,6 +995,7 @@ export class Grid {
     import_data: {
       sheets: ImportedSheetData[],
       names?: Record<string, string>,
+      active_tab?: number,
     },
     render = false,
   ): void {
@@ -1007,7 +1008,27 @@ export class Grid {
       return Sheet.Blank(this.theme_style_properties).toJSON();
     });
 
-    this.UpdateSheets(base_sheets, true);
+    // it's possible that the first sheet is hidden, in which case we 
+    // want to activate a different sheet. we'll do this by peeking at
+    // the import data here to find the first non-hidden sheet; if there
+    // aren't any, default to zero.
+
+    // FIXME: use whatever sheet the import has active, no reason to reset
+
+    let visible_sheet: number|undefined;
+    if (typeof import_data.active_tab === 'number') {
+      visible_sheet = base_sheets[import_data.active_tab]?.id;
+    }
+    else {
+      for (let i = 0; i < import_data.sheets.length; i++) {
+        if (!import_data.sheets[i].hidden) {
+          visible_sheet = base_sheets[i].id;
+          break;
+        }
+      }
+    }
+
+    this.UpdateSheets(base_sheets, true, visible_sheet);
 
     // build a name map for fixing named ranges
 

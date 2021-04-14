@@ -3,7 +3,7 @@ import * as JSZip from 'jszip';
 import * as ElementTree from 'elementtree';
 import { Workbook } from './workbook';
 import { ImportedSheetData, ValueType } from 'treb-base-types';
-import { Sheet } from './sheet';
+import { Sheet, VisibleState } from './sheet';
 import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address, HyperlinkType } from './address-type';
 import { Parser, ParseResult } from 'treb-parser';
 // import { Style } from 'treb-base-types';
@@ -490,6 +490,10 @@ export class Importer {
       row_heights,
       styles: this.workbook.style_cache.CellXfToStyles(),
     };
+
+    if (sheet.visible_state === VisibleState.hidden || sheet.visible_state === VisibleState.very_hidden) {
+      result.hidden = true;
+    }
 
     if (default_column_style >= 0) {
       result.sheet_style = default_column_style;

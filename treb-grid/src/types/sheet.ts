@@ -1988,6 +1988,9 @@ export class Sheet {
       }
     }
 
+    if (data.hidden) {
+      this.visible = false;
+    }
 
   }
 
