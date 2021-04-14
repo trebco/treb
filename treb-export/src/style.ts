@@ -21,6 +21,7 @@ export interface Font {
 
 export interface NumberFormat {
   id?: number;
+  symbolic_name?: string;
   format?: string;
 }
 
@@ -213,7 +214,11 @@ export class StyleCache {
       // we have some symbolic number formats that we'll need to
       // translate. these are defined by the cache.
 
-      options.number_format = { format: NumberFormatCache.Translate(composite.number_format) };
+      options.number_format = { 
+        format: NumberFormatCache.Translate(composite.number_format),
+        symbolic_name: composite.number_format, // for reference later
+      };
+
     }
 
     if (composite.font_bold) font.bold = true;
@@ -580,6 +585,30 @@ export class StyleCache {
     // being, just use 0 for no properties.
 
     if (typeof number_format.format === 'undefined') return 0;
+
+    // we changed the casing on this at some point, so let's be
+    // broad here. general is important because it has the magic
+    // decimal point, we don't want to revert to an explicit style
+    // because there's no description syntax for that
+
+    if (number_format.symbolic_name) {
+      if (/^general$/i.test(number_format.symbolic_name)) {
+        return 0;
+      }
+    }
+
+    // check the rest of the built-in types... note this is not an array?
+    // (why not?) also, is the length guaranteed?
+
+    for (let i = 0; i < 100; i++) {
+      const check = StyleCache.default_styles[i];
+      if (!check) {
+        break;
+      }
+      if (check === number_format.format) {
+        return i;
+      }
+    }
 
     for (const candidate of this.number_formats) {
       if (candidate.format === number_format.format) return candidate.id || 0;
