@@ -8,7 +8,7 @@ class ColorFunctions {
   /** darken rgb color by amount (%), optionally relative */
   public Darken(r: number, g: number, b: number, amount: number, relative = false) {
 
-    // tslint:disable-next-line:prefer-const
+    // eslint-disable-next-line prefer-const
     let { h, s, l } = this.RGBToHSL(r, g, b);
     if (relative) l -= l * amount / 100;
     else l -= amount / 100;
@@ -19,7 +19,7 @@ class ColorFunctions {
   /** lighten rgb color by amount (%), optionally relative */
   public Lighten(r: number, g: number, b: number, amount: number, relative = false) {
 
-    // tslint:disable-next-line:prefer-const
+    // eslint-disable-next-line prefer-const
     let { h, s, l } = this.RGBToHSL(r, g, b);
     if (relative) l += l * amount / 100;
     else l += amount / 100;
@@ -82,7 +82,11 @@ class ColorFunctions {
       b = this.HueToRGB(p, q, h - 1 / 3);
     }
 
-    return { r, g, b };
+    return { 
+      r: Math.round(r * 255), 
+      g: Math.round(g * 255), 
+      b: Math.round(b * 255), 
+    };
   }
 
   private HueToRGB(p: number, q: number, t: number) {

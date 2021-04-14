@@ -448,6 +448,7 @@ export class StyleCache {
 
     const fill = this.fills[xf.fill || 0];
     if (fill && fill.pattern_type !== 'none') {
+
       if (fill.pattern_type === 'gray') {
         const value = Math.round((fill.pattern_gray || 0) / 1000 * 255);
         // props.background = `rgb(${value}, ${value}, ${value})`;
@@ -464,7 +465,14 @@ export class StyleCache {
           }
           else if (typeof fill.fg_color.theme === 'number') {
 
-            props.fill = { theme: fill.fg_color.theme };
+            props.fill = { 
+              theme: fill.fg_color.theme,
+              // tint: fill.fg_color.tint,
+            };
+
+            if (fill.fg_color.tint) {
+              props.fill.tint = Math.round(fill.fg_color.tint * 1000) / 1000;
+            }
 
             /*
             const index = Theme.color_map[fill.fg_color.theme];

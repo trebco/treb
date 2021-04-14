@@ -1,5 +1,5 @@
 
-import { Style } from 'treb-base-types';
+import { Style, Color } from 'treb-base-types';
 
 /*
  * so this is a little strange. we use CSS to populate a theme object,
@@ -47,6 +47,23 @@ export interface Theme {
   /** theme colors */
   theme_colors?: string[];
 
+  /** as RGB, so we can adjust them */
+  theme_colors_rgb?: number[][];
+
+  /**
+   * cache tinted colors. the way this works is we index by the 
+   * theme color first, then by the tint value. 
+   * 
+   * TODO: we could reduce the tint space... the values look like
+   * they are fairly regular (todo)
+   * 
+   * what we are doing now is rounding to 2 decimal places on import, that 
+   * cleans up the super precise values we get from excel to more reasonable
+   * values for keys, and I don't think most people can tell the difference
+   * between tinting 25% vs 24.99999872%
+   */
+  tint_cache?: Record<number, string>[];
+
 }
 
 export const DefaultTheme: Theme = {
@@ -54,11 +71,53 @@ export const DefaultTheme: Theme = {
   note_marker_color: '#d2c500',
 };
 
+/**
+ * now just a wrapper, we should remove
+ * @deprecated
+ */
 export const ThemeColor = (theme: Theme, color?: Style.Color): string => {
+  /*
   if (color?.text) {
     return color.text === 'none' ? '' : color.text;
   }
   return theme.theme_colors ? theme.theme_colors[color?.theme || 0] : '';
+  */
+  return ThemeColor2(theme, color, 0);
+};
+
+/**
+ * we cache values in the theme object so that we can dump it when we 
+ * reload or update the theme.
+ */
+const TintedColor = (theme: Theme, index: number, tint: number) => {
+
+  if (!theme.tint_cache) {
+    theme.tint_cache = [];
+  }
+
+  if (!theme.tint_cache[index]) {
+    theme.tint_cache[index] = {};
+  }
+
+  let color = theme.tint_cache[index][tint];
+  if (!color) {
+
+    const rgb = theme.theme_colors_rgb ? theme.theme_colors_rgb[index] : [0, 0, 0];
+    let tinted: {r: number, g: number, b: number};
+    if (tint > 0) {
+      tinted = Color.Lighten(rgb[0], rgb[1], rgb[2], tint * 100, true);
+    }
+    else {
+      tinted = Color.Darken(rgb[0], rgb[1], rgb[2], -tint * 100, true);
+    }
+    color = `rgb(${tinted.r},${tinted.g},${tinted.b})`;
+    // console.info(index, tint, color);
+    theme.tint_cache[index][tint] = color;
+
+  }
+
+  return color;
+
 };
 
 /** 
@@ -67,26 +126,28 @@ export const ThemeColor = (theme: Theme, color?: Style.Color): string => {
  */
 export const ThemeColor2 = (theme: Theme, color?: Style.Color, default_index?: number): string => {
 
-  /*
-
-  this check is implicit because it's expected to be rarer
-
-  if (color?.none) {
-    return undefined;
-  }
-  */
+  // explicit color, or none
 
   if (color?.text) {
     return color.text === 'none' ? '' : color.text;
   }
 
+  // theme color. we need a way to cache these lookups, especially for tinting
+
   if (color?.theme || color?.theme === 0) {
+    if (color.tint) {
+      return TintedColor(theme, color.theme, color.tint);
+    }
     return theme.theme_colors ? theme.theme_colors[color.theme] : '';
   }
+
+  // default from argument
 
   if (default_index || default_index === 0) {
     return theme.theme_colors ? theme.theme_colors[default_index] : '';
   }
+
+  // actual default, which is nothing
 
   return '';
 
@@ -191,6 +252,22 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
     theme.theme_colors.push(css.color);
   }
 
+  // we could just parse, we know the returned css format is going
+  // to be an rgb triple (I think?)
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 3;
+  canvas.height = 3;
+  const context = canvas.getContext('2d');
+  if (context) {
+    theme.theme_colors_rgb= theme.theme_colors.map((color) => {
+      context.fillStyle = color;
+      context.fillRect(0, 0, 3, 3);
+      const imagedata = context.getImageData(1, 1, 1, 1);
+      return Array.from(imagedata.data);
+    });
+  }
+  
   // this is a little odd, since we have the check above for "existing element";
   // should we switch on that? or is that never used, and we can drop it? (...)
 

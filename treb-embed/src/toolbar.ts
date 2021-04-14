@@ -2,10 +2,10 @@
 import { tmpl, composite, NodeModel } from 'treb-utils';
 import { icons } from './generated/toolbar4';
 import { symbol_defs } from './generated/symbol-defs';
-import { Style, Localization, Area, Theme } from 'treb-base-types';
+import { Style, Localization, Area, Theme, Color } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
 import { NumberFormatCache } from 'treb-format';
-import { Measurement, Color } from 'treb-utils';
+import { Measurement } from 'treb-utils';
 import { EmbeddedSpreadsheetOptions } from './options';
 import { GridSelection } from 'treb-grid';
 
