@@ -3851,9 +3851,11 @@ export class Grid {
    */
   private MouseDown_Grid(event: MouseEvent) {
 
+    /* removed, overlay editor does not use
     if (this.overlay_editor?.HandleMouseEvent(event)) {
       return;
     }
+    */
 
     event.stopPropagation();
     event.preventDefault();

@@ -80,6 +80,9 @@ export class OverlayEditor extends FormulaEditorBase {
     this.edit_node.tabIndex = -1;
     this.edit_node.spellcheck = true; // default
 
+    // attempting to cancel "auto" keyboard on ios
+    this.edit_node.inputMode = 'none';
+
     //
     // so clearly I am doing this when rendering, not sure how it
     // happens, but we're offsetting by this much. checked on mac
@@ -165,11 +168,12 @@ export class OverlayEditor extends FormulaEditorBase {
 
   }
 
-  /** this is here only for compatibility with the old ICE; not sure if we need it */
+  /* * this is here only for compatibility with the old ICE; not sure if we need it * /
   public HandleMouseEvent(event: MouseEvent): boolean {
 
     return false;
   }
+  */
 
   public Focus(): void {
     this.edit_node.focus();
