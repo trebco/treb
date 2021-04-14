@@ -71,26 +71,31 @@ export interface BorderStyle {
   left_color?: number; // indexed // FIXME: argb
   left_color_rgba?: string;
   left_color_theme?: number;
+  left_color_tint?: number;
 
   right_style?: string;
   right_color?: number;
   right_color_rgba?: string;
   right_color_theme?: number;
+  right_color_tint?: number;
 
   top_style?: string;
   top_color?: number;
   top_color_rgba?: string;
   top_color_theme?: number;
+  top_color_tint?: number;
 
   bottom_style?: string;
   bottom_color?: number;
   bottom_color_rgba?: string;
   bottom_color_theme?: number;
+  bottom_color_tint?: number;
 
   diagonal_style?: string;
   diagonal_color?: number;
   diagonal_color_rgba?: string;
   diagonal_color_theme?: number;
+  diagonal_color_tint?: number;
 
 }
 
@@ -225,6 +230,9 @@ export class StyleCache {
       }
       else if (typeof composite.text.theme === 'number') {
         font.color_theme = composite.text.theme;
+        if (composite.text.tint) {
+          font.color_tint = composite.text.tint;
+        }
       }
     }
 
@@ -235,6 +243,9 @@ export class StyleCache {
       }
       else if (typeof composite.border_top_fill?.theme === 'number') {
         border.top_color_theme = composite.border_top_fill.theme;
+        if (composite.border_top_fill.tint) {
+          border.top_color_tint = composite.border_top_fill.tint;
+        }
       }
       else {
         border.top_color = 64;
@@ -252,6 +263,9 @@ export class StyleCache {
       }
       else if (typeof composite.border_bottom_fill?.theme === 'number') {
         border.bottom_color_theme = composite.border_bottom_fill.theme;
+        if (composite.border_bottom_fill.tint) {
+          border.bottom_color_tint = composite.border_bottom_fill.tint;
+        }
       }
       else {
         border.bottom_color = 64;
@@ -264,6 +278,9 @@ export class StyleCache {
       }
       else if (typeof composite.border_left_fill?.theme === 'number') {
         border.left_color_theme = composite.border_left_fill.theme;
+        if (composite.border_left_fill.tint) {
+          border.left_color_tint = composite.border_left_fill.tint;
+        }
       }
       else {
         border.left_color = 64;
@@ -276,6 +293,9 @@ export class StyleCache {
       }
       else if (typeof composite.border_right_fill?.theme === 'number') {
         border.right_color_theme = composite.border_right_fill.theme;
+        if (composite.border_right_fill.tint) {
+          border.right_color_tint = composite.border_right_fill.tint;
+        }
       }
       else {
         border.right_color = 64;
@@ -312,6 +332,9 @@ export class StyleCache {
       }
       else if (typeof composite.fill.theme === 'number') {
         fill.fg_color = { theme: composite.fill.theme };
+        if (composite.fill.tint) {
+          fill.fg_color.tint = composite.fill.tint;
+        }
       }
       else {
         fill.fg_color = { theme: 1 };
