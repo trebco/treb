@@ -24,8 +24,8 @@
           grid-row-end: 2;
           grid-column-start: 2;
           grid-column-end: 3;
-          position: sticky;
           position: -webkit-sticky;
+          position: sticky;
           top: 0px;
         }
 
@@ -35,8 +35,8 @@
           grid-row-end: 3;
           grid-column-start: 1;
           grid-column-end: 2;
-          position: sticky;
           position: -webkit-sticky;
+          position: sticky;
           left: 0px;
         }
       }
@@ -68,8 +68,8 @@
         grid-row-end: 2;
         grid-column-start: 1;
         grid-column-end: 2;
-        position: sticky;
         position: -webkit-sticky;
+        position: sticky;
       }
 
       /** contains row header tiles */
@@ -78,8 +78,8 @@
         grid-row-end: 3;
         grid-column-start: 1;
         grid-column-end: 2;
-        position: sticky;
         position: -webkit-sticky;
+        position: sticky;
         display: grid;
         grid-template-columns: auto;
         grid-template-rows: auto;
@@ -91,8 +91,8 @@
         grid-row-end: 2;
         grid-column-start: 2;
         grid-column-end: 3;
-        position: sticky;
         position: -webkit-sticky;
+        position: sticky;
         display: grid;
         grid-template-columns: auto;
         grid-template-rows: auto;
