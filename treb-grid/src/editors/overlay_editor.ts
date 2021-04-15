@@ -176,6 +176,17 @@ export class OverlayEditor extends FormulaEditorBase {
   */
 
   public Focus(): void {
+
+    // we get unexpected scroll behavior if we focus on the overlay editor
+    // when it is not already focused, and the grid is scrolled. that's because
+    // by default the editor is at (0, 0), so we need to move it before we 
+    // focus on it (but only in this case).
+
+    if (this.edit_node !== document.activeElement) {
+      this.edit_container.style.top = `${this.container.scrollTop + 2}px`;
+      this.edit_container.style.left = `${this.container.scrollLeft + 2}px`;
+    }
+
     this.edit_node.focus();
   }
 

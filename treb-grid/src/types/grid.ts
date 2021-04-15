@@ -3892,6 +3892,7 @@ export class Grid {
       // not sure why this breaks the formula bar handler
 
       this.Focus();
+        
     }
 
     // unless we're selecting an argument, close the ICE
@@ -3942,7 +3943,7 @@ export class Grid {
     };
 
     const overlay_classes: string[] = [];
-
+    
     // on shift-click, consolidate selection. that only works if there's
     // a target in the original selection.
 
