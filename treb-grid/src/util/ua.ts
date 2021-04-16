@@ -15,8 +15,11 @@ class UAType {
   public readonly is_ipad = /iPad|iPhone/.test(navigator.userAgent);
 
   /** more testing. firefox android doesn't support grid+sticky (apparently) */
-  public readonly is_android = /android/i.test(navigator.userAgent);
+  public readonly is_android = /android|samsung/i.test(navigator.userAgent);
 
+  /** mobile we want slightly different keyboard behavior */
+  public readonly is_mobile = this.is_ipad || this.is_android;
+ 
   /** more testing. firefox android doesn't support grid+sticky (apparently) */
   public readonly is_firefox = /firefox/i.test(navigator.userAgent);
 
@@ -68,7 +71,8 @@ const null_ua = {
     is_windows: false,
     is_modern: true,
     is_node: true,
-    
+    is_mobile: false,
+
 };
 
 export const UA = (typeof navigator === 'undefined') ? null_ua : new UAType();

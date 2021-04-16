@@ -1756,8 +1756,16 @@ export class Grid {
    * to work properly (because it creates a selection)
    */
   public Focus(): void {
+
+    // FIXME: cache a pointer
+    if (UA.is_mobile) {
+      this.container?.focus();
+    }
+    else {
+      this.overlay_editor?.Focus();
+    }
+
     // this.container?.focus();
-    this.overlay_editor?.Focus();
   }
 
   /**
@@ -3928,6 +3936,9 @@ export class Grid {
 
     if (!selecting_argument) {
       if (this.IsDoubleClick(base_address)) {
+        if (UA.is_mobile) {
+          this.overlay_editor?.edit_node?.focus(); // FIXME: use method
+        }
         this.OverlayEditCell({ target: base_address, area: new Area(base_address) }, false);
         return;
       }
@@ -4459,7 +4470,7 @@ export class Grid {
 
     let editor_open = false;
 
-    if (this.overlay_editor&& this.overlay_editor.editing) {
+    if (this.overlay_editor && this.overlay_editor.editing) {
       editor_open = true;
       const result = this.overlay_editor.HandleKeyDown(event);
       switch (result) {
@@ -5330,7 +5341,7 @@ export class Grid {
 
     this.editing_state = EditingState.NotEditing;
 
-    this.Focus(); // not necessary
+    this.Focus(); // not necessary [NECESSARY FOR MOBILE]
 
     this.overlay_editor?.CloseEditor();
 
