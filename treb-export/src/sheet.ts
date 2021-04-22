@@ -1,7 +1,9 @@
 
 import * as ElementTree from 'elementtree';
 import { Element, ElementTree as Tree } from 'elementtree';
-import { AddressType, RangeType, is_range, is_address } from './address-type';
+import { ExtendedElement } from './extended-element';
+
+import { AddressType, RangeType, is_range } from './address-type';
 import { SharedStrings } from './shared-strings';
 import { UnitCall } from 'treb-parser';
 // import { Sparkline } from 'treb-sparkline/src';
@@ -44,12 +46,12 @@ export class Sheet {
   public visible_state?: VisibleState;
 
   public tab_selected = false;
+  public default_width = 0;
 
   private column_widths?: number[];
   private column_styles?: number[];
   private default_column_style = -1;
 
-  private default_width = 0;
   private tail_width = 0;
   // private column_style?: any;
 
@@ -125,7 +127,7 @@ export class Sheet {
   /**
    * convert an address (either style) to BOTH A1 and R1C1
    */
-  public NormalizeAddress(rng: string | AddressType | RangeType) {
+  public NormalizeAddress(rng: string | AddressType | RangeType): { a: string, rc: RangeType|AddressType } {
     let a: string;
     let rc: AddressType | RangeType;
     if (typeof rng === 'string') {
@@ -184,7 +186,7 @@ export class Sheet {
     }
   }
 
-  public Finalize() {
+  public Finalize(): void {
     if (!this.dom) throw new Error('can\'t call finalize without parse');
 
     // tab selected
@@ -211,7 +213,7 @@ export class Sheet {
   }
 
   /** remove all merges */
-  public ResetMerges() {
+  public ResetMerges(): void {
     if (!this.dom) throw new Error('missing dom');
 
     const mc = this.dom.find(`./mergeCells`);
@@ -220,7 +222,7 @@ export class Sheet {
     }
 
     const root = this.dom.getroot();
-    (root as any)._children = (root as any)._children.filter((test: Element) => test !== mc);
+    (root as ExtendedElement)._children = (root as ExtendedElement)._children.filter((test: Element) => test !== mc);
 
   }
 
@@ -234,7 +236,7 @@ export class Sheet {
    * 
    * @param range
    */
-  public AddMerge(range: string) {
+  public AddMerge(range: string): void {
     if (!this.dom) throw new Error('missing dom');
 
     let mc = this.dom.find(`./mergeCells`);
@@ -244,13 +246,13 @@ export class Sheet {
       mc = Element('mergeCells');
       const root = this.dom.getroot();
       const children = [];
-      for (const child of (root as any)._children) {
+      for (const child of (root as ExtendedElement)._children) {
         children.push(child);
         if (child.tag === 'sheetData') {
           children.push(mc);
         }
       }
-      (root as any)._children = children;
+      (root as ExtendedElement)._children = children;
 
     }
 
@@ -262,7 +264,7 @@ export class Sheet {
 
   }
 
-  public CreateRelationships() {
+  public CreateRelationships(): ElementTree.ElementTree {
     const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>`;
     return ElementTree.parse(rels);
   }
@@ -272,7 +274,7 @@ export class Sheet {
    * NOTE: we're basing the _rels number here on drawings only. should
    * switch to an internal counter... (done; we need it for hyperlinks too)
    */
-  public AddChart(anchor: TwoCellAnchor, options: ChartOptions) {
+  public AddChart(anchor: TwoCellAnchor, options: ChartOptions): void {
 
     if (!this.dom) throw new Error('missing dom');
 
@@ -322,7 +324,7 @@ export class Sheet {
    * }
    *
    */
-  public SetRange(rng: AddressType | RangeType | string, val: any, options: RangeOptions = {}) {
+  public SetRange(rng: AddressType | RangeType | string, val: any, options: RangeOptions = {}): void {
 
     if (!this.dom) throw new Error('missing dom');
 
@@ -366,18 +368,20 @@ export class Sheet {
 
     if (!remove) this.EnsureExtent(rc);
 
-    let row = this.dom.find(`./sheetData/row/[@r="${rc.row}"]`);
+    let row = this.dom.find(`./sheetData/row/[@r="${rc.row}"]`) as ExtendedElement;
     if (!row) {
-      if (remove) return; // ok
+      if (remove) {
+        return; // ok
+      }
 
       // add row. FIXME: spans
       const sheet_data = this.dom.find('./sheetData');
       if (sheet_data) {
-        row = ElementTree.SubElement(sheet_data, 'row');
+        row = ElementTree.SubElement(sheet_data, 'row') as ExtendedElement;
         row.set('r', String(rc.row));
 
         // sort rows
-        (sheet_data as any)._children.sort((a: Element, b: Element) => {
+        (sheet_data as ExtendedElement)._children.sort((a: Element, b: Element) => {
           return Number(a.attrib.r) - Number(b.attrib.r);
         });
       }
@@ -387,21 +391,21 @@ export class Sheet {
 
     // removing?
     if (remove) {
-      (row as any)._children = (row as any)._children.filter((child: Element) => {
+      row._children = row._children.filter((child: Element) => {
         return !(child.tag === 'c' && child.attrib.r === a);
       });
       return;
     }
 
-    let cell = row.find(`c/[@r="${a}"]`);
+    let cell = row.find(`c/[@r="${a}"]`) as ExtendedElement;
     if (!cell) {
 
       // add cell
-      cell = ElementTree.SubElement(row, 'c');
+      cell = ElementTree.SubElement(row, 'c') as ExtendedElement;
       cell.set('r', a);
 
       // sort cols.  can we cache these values somewhere?
-      (row as any)._children.sort((a: Element, b: Element) => {
+      row._children.sort((a: Element, b: Element) => {
         const arc = this.TranslateAddress(a.attrib.r || '');
         const brc = this.TranslateAddress(b.attrib.r || '');
         return (arc as AddressType).col - (brc as AddressType).col;
@@ -414,7 +418,7 @@ export class Sheet {
       return;
     }
 
-    (cell as any)._children = [];
+    cell._children = [];
     cell.tail = null;
 
     // FIXME: I don't think this is necessary for s="0"
@@ -491,8 +495,10 @@ export class Sheet {
    * pad out the "dimension" to ensure excel reads all the data.
    * this will get written on finalize().
    */
-  public EnsureExtent(rc: AddressType) {
-    if (!this.extent) throw new Error('missing extent');
+  public EnsureExtent(rc: AddressType): void {
+    if (!this.extent) {
+      throw new Error('missing extent');
+    }
 
     this.extent.from.row = Math.min(this.extent.from.row, rc.row);
     this.extent.from.col = Math.min(this.extent.from.col, rc.col);
@@ -504,7 +510,7 @@ export class Sheet {
   /**
    * remove cache.  will force update.
    */
-  public RemoveCache(rng: AddressType | RangeType) {
+  public RemoveCache(rng: AddressType | RangeType): void {
 
     if (!this.dom) throw new Error('missing dom');
 
@@ -519,12 +525,16 @@ export class Sheet {
     }
 
     const row = this.dom.find(`./sheetData/row/[@r="${rc.row}"]`);
-    if (!row) return;
+    if (!row) {
+      return;
+    }
 
-    const cell = row.find(`c/[@r="${a}"]`);
-    if (!cell) return;
+    const cell = row.find(`c/[@r="${a}"]`) as ExtendedElement;
+    if (!cell) {
+      return;
+    }
 
-    (cell as any)._children = (cell as any)._children.filter((child: Element) => {
+    cell._children = cell._children.filter((child: Element) => {
       return (child.tag !== 'v');
     });
 
@@ -533,8 +543,11 @@ export class Sheet {
 
   /** 
    * updated to use the table
+   * 
+   * FIXME: why undefined? should return default. also, what's up with
+   * both tail and default?
    */
-  public GetColumnWidth(col: number) {
+  public GetColumnWidth(col: number): number|undefined {
     this.MapColumnWidths();
     if (this.column_widths) {
       if (col >= this.column_widths.length) return this.tail_width;
@@ -548,7 +561,7 @@ export class Sheet {
    *
    * FIXME: make it work for empty rows
    */
-  public SetRowHeight(row: number, height: number) {
+  public SetRowHeight(row: number, height: number): void {
     if (this.dom) {
       const element = this.dom.find(`./sheetData/row/[@r="${row}"]`);
       if (element) {
@@ -576,13 +589,13 @@ export class Sheet {
 
       const root = this.dom.getroot();
       const children = [];
-      for (const child of (root as any)._children) {
+      for (const child of (root as ExtendedElement)._children) {
         children.push(child);
         if (child.tag === 'sheetData') {
           children.push(container);
         }
       }
-      (root as any)._children = children;
+      (root as ExtendedElement)._children = children;
 
     }
 
@@ -628,13 +641,13 @@ export class Sheet {
       hyperlinks_node = Element('hyperlinks');
       const root = this.dom.getroot();
       const children = [];
-      for (const child of (root as any)._children) {
+      for (const child of (root as ExtendedElement)._children) {
         children.push(child);
         if (child.tag === 'sheetData') {
           children.push(hyperlinks_node);
         }
       }
-      (root as any)._children = children;
+      (root as ExtendedElement)._children = children;
 
     }
 
@@ -672,12 +685,13 @@ export class Sheet {
         // document reference
 
         // create element
-        const hyperlink = ElementTree.SubElement(hyperlinks_node, 'hyperlink', {
+        ElementTree.SubElement(hyperlinks_node, 'hyperlink', {
           ref,
           location: link.reference, // target
           display: link.text,
         });
-      };
+
+      }
     }
 
   }
@@ -793,7 +807,7 @@ export class Sheet {
 
     if (sort) {
       // sort rows
-      (sheet_data as any)._children.sort((a: Element, b: Element) => {
+      (sheet_data as ExtendedElement)._children.sort((a: Element, b: Element) => {
         return Number(a.attrib.r) - Number(b.attrib.r);
       });
     }
@@ -817,7 +831,7 @@ export class Sheet {
   /** 
    * updated to use the table
    */
-  public SetColumnWidth(col: number | number[], width: number) {
+  public SetColumnWidth(col: number | number[], width: number): void {
     this.MapColumnWidths();
     if (this.column_widths) {
       if (Array.isArray(col)) {
@@ -832,26 +846,31 @@ export class Sheet {
    * unmap column widths from the table
    * UPDATE: use style, too
    */
-  public UnmapColumnWidths() {
+  public UnmapColumnWidths(): void {
 
-    if (!this.column_widths || !this.column_widths.length) return; // not necessary
-    if (!this.dom) throw new Error('missing dom');
+    if (!this.column_widths || !this.column_widths.length) {
+      return; // not necessary
+    }
 
-    let cols = this.dom.find('./cols');
+    if (!this.dom) {
+      throw new Error('missing dom');
+    }
+
+    let cols = this.dom.find('./cols') as ExtendedElement;
     if (!cols) {
-      cols = Element('cols');
+      cols = Element('cols') as ExtendedElement;
       const root = this.dom.getroot();
       const children = [];
-      for (const child of (root as any)._children) {
+      for (const child of (root as ExtendedElement)._children) {
         if (child.tag === 'sheetData') {
           children.push(cols);
         }
         children.push(child);
       }
-      (root as any)._children = children;
+      (root as ExtendedElement)._children = children;
     }
 
-    (cols as any)._children = [];
+    cols._children = [];
 
     let col;
     let start = 1;
@@ -879,7 +898,14 @@ export class Sheet {
         start = col;
       }
     }
-    blocks.push({ min: start, max: 16384, width });
+
+    if (width !== this.default_width) {
+      blocks.push({ min: start, max: start, width });
+      blocks.push({ min: max, max: 16384, width: this.default_width });
+    }
+    else {
+      blocks.push({ min: start, max: 16384, width });
+    }
 
     for (const block of blocks) {
 
@@ -899,17 +925,16 @@ export class Sheet {
         node.attrib.customWidth = '1';
         if (width === 0) node.attrib.hidden = '1';
       }
-      (cols as any)._children.push(node);
+      cols._children.push(node);
 
     }
-
 
   }
 
   /**
    * cache these to simplify processing.  we'll need to rebuild in finalize().
    */
-  public MapColumnWidths() {
+  public MapColumnWidths(): void {
 
     if (this.column_widths) return;
     if (!this.dom) throw new Error('missing dom');
@@ -920,7 +945,7 @@ export class Sheet {
     // set default tail width: may not be set otherwise
     this.tail_width = 9.140625;
 
-    const cols = this.dom.find('./cols');
+    const cols = this.dom.find('./cols') as ExtendedElement;
     let default_width_set = false;
 
     if (!cols) {
@@ -930,7 +955,7 @@ export class Sheet {
       return;
     }
 
-    for (const col of (cols as any)._children as Element[]) {
+    for (const col of cols._children) {
 
       if (null != col.attrib.style) {
         //if (this.column_style && this.column_style !== col.attrib.style) {

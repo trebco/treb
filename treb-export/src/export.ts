@@ -430,6 +430,11 @@ export class Exporter {
         }
       }
 
+      if (sheet_source.default_column_width) {
+        sheet.default_width = sheet_source.default_column_width / 100 * one_hundred_pixels;
+      }
+
+
       // style: row styles
       if (last_row >= 0) {
         const pattern_length = sheet_source.row_pattern?.length || 0;
