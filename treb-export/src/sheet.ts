@@ -356,7 +356,7 @@ export class Sheet {
       return;
     }
 
-    if (typeof val === 'undefined' && !options.merge && !options.precalc && typeof options.style !== 'undefined') {
+    if (typeof val === 'undefined' && !options.merge && (options.precalc === undefined) && typeof options.style !== 'undefined') {
       // console.info('decorated, setting empty string', rng);
       val = '';
     }
@@ -435,7 +435,7 @@ export class Sheet {
 
     if (cell.attrib.t) delete (cell.attrib.t);
 
-    if (typeof val === 'undefined' && options.precalc) {
+    if (typeof val === 'undefined' && options.precalc !== undefined) {
       val = options.precalc;
     }
 
