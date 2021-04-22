@@ -16,8 +16,9 @@ import { Style, Theme, Point, Extent, Size, Position, Area, ICellAddress, Rectan
 // define area as a generic, then define it on some arbitrary value. that would
 // force separation of all the functions between the two types (I think)
 
-import { Area as TileRange, CellValue } from 'treb-base-types';
-import { Annotation, AnnotationLayout, Corner, Offset } from '../types/annotation';
+import { Area as TileRange, CellValue, AnnotationLayout, Corner } from 'treb-base-types';
+import { Annotation } from '../types/annotation';
+
 export { Area as TileRange } from 'treb-base-types';
 
 const SVGNS = 'http://www.w3.org/2000/svg';

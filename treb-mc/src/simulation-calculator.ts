@@ -60,8 +60,9 @@ export class MCCalculator extends Calculator {
     // need to deal with spreadsheet leaf nodes in the worker thread.
 
     this.Reset();
-    this.AttachData(model);
-    this.expression_calculator.SetModel(model);
+    // this.AttachData(model);
+    // this.expression_calculator.SetModel(model);
+    this.AttachModel(model);
 
     // add additional cells to monitor, but only if they actually
     // exist; otherwise they will generate calc errors. 

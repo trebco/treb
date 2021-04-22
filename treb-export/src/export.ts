@@ -5,7 +5,7 @@ import { template } from './template-2';
 import { Workbook } from './workbook';
 
 import { Style, Area, IArea, DataValidation, ValidationType, 
-         IsFlatDataArray, IsNestedRowArray, FlatCellData, ICellAddress, ValueType } from 'treb-base-types';
+         IsFlatDataArray, IsNestedRowArray, FlatCellData } from 'treb-base-types';
 import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, 
          UnitCall, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
 
@@ -13,7 +13,7 @@ import { SerializedSheet } from 'treb-grid';
 import { RangeOptions } from './sheet';
 import { TwoCellAnchor } from './drawing/drawing';
 import { ChartOptions } from './drawing/chart';
-import { AnnotationLayout, Corner as LayoutCorner } from 'treb-grid/src/types/annotation';
+import { AnnotationLayout, Corner as LayoutCorner } from 'treb-base-types';
 
 /** excel units */
 const one_hundred_pixels = 14.28515625;

@@ -57,7 +57,7 @@ export abstract class Graph {
    * attach data. normally this is done as part of a calculation, but we can
    * do it without a calculation to support annotations that use leaf vertices
    */
-  public AttachData(model: DataModel): void {
+  protected AttachData(model: DataModel): void {
     this.model = model;
     this.cells_map = {};
     for (const sheet of model.sheets) {

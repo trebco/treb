@@ -1028,6 +1028,11 @@ export class Grid {
       }
     }
 
+    // why do we call this? it seems like we do all the work over again
+    // below. we should either import first, then call update, or not 
+    // call update and just do the work here. although the better approach
+    // would be to unify and reduce any duplication.
+
     this.UpdateSheets(base_sheets, true, visible_sheet);
 
     // build a name map for fixing named ranges
@@ -1075,12 +1080,18 @@ export class Grid {
       this.model.named_ranges.RebuildList();
     }
 
+    // should already be added, right?
+
+    for (const element of this.active_sheet.annotations) {
+      this.AddAnnotation(element, true);
+    }
+
     // no longer sending explicit layout event here
 
     this.QueueLayoutUpdate();
 
     this.StyleDefaultFromTheme();
-
+        
     if (render) {
       this.Repaint(false, false); // true, true);
     }

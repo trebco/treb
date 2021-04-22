@@ -1,12 +1,34 @@
 
 import { Style } from './style';
+import { ValueType } from './value-type';
+import { IArea } from './area';
+import { AnnotationLayout } from './layout';
+
+export interface CellParseResult {
+  row: number,
+  column: number,
+  type: ValueType,
+  value: number|string|undefined|boolean,
+  calculated?: number|string|undefined|boolean,
+  calculated_type?: ValueType,
+  style_ref?: number,
+  hyperlink?: string,
+  merge_area?: IArea,
+  area?: IArea,
+}
+
+export interface AnchoredAnnotation {
+  layout: AnnotationLayout;
+  type?: string;
+  formula?: string;
+}
 
 /**
  * this is moved from export to avoid a circular reference
  */
 export interface ImportedSheetData {
   name: string|undefined;
-  cells: any[];
+  cells: CellParseResult[];
   default_column_width: number;
   column_widths: number[];
   row_heights: number[];
@@ -15,6 +37,9 @@ export interface ImportedSheetData {
   // optional, for backcompat
   sheet_style?: number;
   column_styles?: number[];
+
+  // new
+  annotations?: AnchoredAnnotation[];
 
   hidden?: boolean;
 

@@ -1366,9 +1366,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
             // this one _is_ the grid cells
 
-            this.calculator.AttachData(this.grid.model);
+            this.calculator.AttachModel(this.grid.model);
             this.Publish({ type: 'load' });
             this.UpdateDocumentStyles();
+
+            // add to support import charts
+
+            this.InflateAnnotations();
             
           }
           else {
@@ -1522,7 +1526,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * this is shrinking to the point of being unecessary... although we are
    * possibly overloading it.
    */
-  public ResetInternal() {
+  public ResetInternal(): void {
     // this.additional_cells = [];
     this.calculator.Reset();
     this.FlushUndo();
@@ -1531,10 +1535,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** clear/reset sheet, back to initial state */
-  public Reset() {
+  public Reset(): void {
     this.grid.Clear();
     this.ResetInternal();
-    this.calculator.AttachData(this.grid.model); // for leaf nodes
+    this.calculator.AttachModel(this.grid.model); // for leaf nodes
     this.Publish({ type: 'reset' });
   }
 
@@ -2404,6 +2408,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
                 });
 
                 const expr_name = parse_result.expression.name.toLowerCase();
+
                 const result = this.calculator.CalculateExpression(parse_result.expression);
 
                 chart.Exec(expr_name, result as any);

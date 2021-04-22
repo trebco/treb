@@ -12,6 +12,7 @@ export * from './union';
 export * from './value-type';
 export * from './theme';
 export * from './color';
+export * from './layout';
 
 // import * as Style from './style';
 // export { Style };

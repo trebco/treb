@@ -734,12 +734,23 @@ export class Calculator extends Graph {
   }
 
   /**
+   * wrap the attachdata function so we can update the expression calculator
+   * at the same time (we should unwind this a little bit, it's an artifact
+   * of graph being a separate class)
+   */
+  public AttachModel(model: DataModel): void {
+    this.AttachData(model);
+    this.expression_calculator.SetModel(model);
+  }
+
+  /**
    * wrapper method for calculation. this should be used for 1-time
    * calculations (i.e. not in a simulation).
    */
   public Calculate(model: DataModel, subset?: Area): void {
 
-    this.AttachData(model); // for graph. FIXME
+    // this.AttachData(model); // for graph. FIXME
+    this.AttachModel(model);
 
     // this gets checked later, now... it would be better if we could
     // check it here are skip the later check, but that field is optional
@@ -755,7 +766,7 @@ export class Calculator extends Graph {
       this.full_rebuild_required = false; // unset
     }
 
-    this.expression_calculator.SetModel(model);
+    // this.expression_calculator.SetModel(model);
 
     this.RebuildGraph(subset);
 
@@ -776,7 +787,8 @@ export class Calculator extends Graph {
 
     this.FlushTree();
     if (this.model) {
-      this.AttachData(this.model);
+      // this.AttachData(this.model);
+      this.AttachModel(this.model);
     }
     this.full_rebuild_required = true;
 
@@ -808,8 +820,9 @@ export class Calculator extends Graph {
 
     this.full_rebuild_required = false; // unset
 
-    this.AttachData(model);
-    this.expression_calculator.SetModel(model);
+    // this.AttachData(model);
+    // this.expression_calculator.SetModel(model);
+    this.AttachModel(model);
 
     this.RebuildGraph();
 

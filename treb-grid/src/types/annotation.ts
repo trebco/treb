@@ -1,23 +1,6 @@
 
-import { Rectangle, ICellAddress, ICellAddress2 } from 'treb-base-types';
 
-/**
- * offset from corner, as % of cell
- */
-export interface Offset {
-  x: number;
-  y: number;
-}
-
-export interface Corner {
-  address: ICellAddress;
-  offset: Offset;
-}  
-
-export interface AnnotationLayout {
-  tl: Corner;
-  br: Corner;
-}
+import { Rectangle, ICellAddress, AnnotationLayout } from 'treb-base-types';
 
 /**
  * new annotation class. annotations are arbitrary content

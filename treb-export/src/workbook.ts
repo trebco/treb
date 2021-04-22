@@ -8,9 +8,10 @@ import { StyleCache } from './style';
 import { Theme } from './theme';
 
 import * as JSZip from 'jszip';
-import { Drawing } from './drawing/drawing';
+import { Drawing, TwoCellAnchor, CellAnchor } from './drawing/drawing';
 import { Chart } from './drawing/chart';
-import { IArea, Area } from 'treb-base-types/src';
+import { IArea, Area } from 'treb-base-types';
+import { ExtendedElement } from './extended-element';
 
 const XMLTypeMap = {
   'sheet':          'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
@@ -23,6 +24,26 @@ const XMLTypeMap = {
   'colors':         'application/vnd.ms-office.chartcolorstyle+xml',
 };
 
+export enum ChartType {
+  Unknown = 0, Column, Bar, Line, Scatter, Donut, Pie
+}
+
+export interface ChartSeries {
+  values?: string;
+  categories?: string;
+  title?: string;
+}
+
+export interface ChartDescription {
+  title?: string;
+  type: ChartType; 
+  series?: ChartSeries[];
+}
+
+export interface AnchoredChartDescription {
+  chart?: ChartDescription, 
+  anchor: TwoCellAnchor,
+}
 
 interface Relationship {
   id?: string;
@@ -84,6 +105,228 @@ export class Workbook {
       const data = await file.async('text');
       this.theme.Init(data);
     }
+  }
+
+  public async ReadChart(reference: string): Promise<ChartDescription|undefined> {
+
+    if (!this.zip) {
+      throw new Error('missing zip');
+    }
+
+    const data = await this.zip.file(reference.replace(/^../, 'xl'))?.async('text') as string;
+    if (!data) { return undefined; }
+
+    const chart_root = ElementTree.parse(data);
+    const title_node = chart_root.find('./c:chart/c:title')
+
+    const result: ChartDescription = {
+      type: ChartType.Unknown
+    };
+
+    if (title_node) {
+
+      // FIXME: other types of title? (...)
+
+      const node = title_node.find('./c:tx/c:strRef/c:f');
+      if (node) {
+        result.title = node.text?.toString();
+      }
+      else {
+        const nodes = title_node.findall('./c:tx/c:rich/a:p/a:r/a:t');
+        if (nodes && nodes.length) {
+          result.title = '"' + nodes.map(subnode => subnode.text?.toString() || '').join('') + '"';
+        }
+      }
+
+    }
+
+    const ParseSeries = (node: ElementTree.Element, scatter = false): ChartSeries[] => {
+
+      const series: ChartSeries[] = [];
+
+      const series_nodes = node.findall('./c:ser');
+      for (const series_node of series_nodes) {
+        
+        let index = series.length;
+        const order_node = series_node.find('c:order');
+        if (order_node) {
+          index = Number(order_node.attrib.val||0) || 0;
+        }
+
+        const series_data: ChartSeries = {};
+
+        let title_node = series_node.find('c:tx/c:v');
+        if (title_node) {
+          const title = title_node.text?.toString();
+          if (title) {
+            series_data.title = `"${title}"`;
+          }
+        }
+        else {
+          title_node = series_node.find('c:tx/c:strRef/c:f');
+          if (title_node) {
+            series_data.title = title_node.text?.toString();
+          }
+        }
+
+        if (scatter) {
+          const x = series_node.find('c:xVal/c:numRef/c:f');
+          if (x) {
+            series_data.categories = x.text?.toString();
+          }
+          const y = series_node.find('c:yVal/c:numRef/c:f');
+          if (y) {
+            series_data.values = y.text?.toString();
+          }
+        }
+        else {
+          const value_node = series_node.find('c:val/c:numRef/c:f');
+          if (value_node) {
+            series_data.values = value_node.text?.toString();
+          }
+
+          let cat_node = series_node.find('c:cat/c:strRef/c:f');
+          if (!cat_node) {
+            cat_node = series_node.find('c:cat/c:numRef/c:f');
+          }
+          if (cat_node) {
+            series_data.categories = cat_node.text?.toString();
+          }
+        }
+
+        series[index] = series_data;
+      }
+
+      return series;
+
+    };
+
+    let node = chart_root.find('./c:chart/c:plotArea/c:barChart');
+    if (node) {
+
+      result.type = ChartType.Bar;
+      const bar_dir_node = node.find('./c:barDir');
+      if (bar_dir_node) {
+        if (bar_dir_node.attrib.val === 'col') {
+          result.type = ChartType.Column;
+        }
+      }
+      result.series = ParseSeries(node);
+    }
+
+    if (!node) {
+      node = chart_root.find('./c:chart/c:plotArea/c:lineChart');
+      if (node) {
+        result.type = ChartType.Line;
+        result.series = ParseSeries(node);
+      }
+    }
+
+    if (!node) {
+      node = chart_root.find('./c:chart/c:plotArea/c:doughnutChart');
+      if (node) {
+        result.type = ChartType.Donut;
+        result.series = ParseSeries(node);
+      }
+    }
+
+    if (!node) {
+      node = chart_root.find('./c:chart/c:plotArea/c:pieChart');
+      if (node) {
+        result.type = ChartType.Pie;
+        result.series = ParseSeries(node);
+      }
+    }
+
+    if (!node) {
+      node = chart_root.find('./c:chart/c:plotArea/c:scatterChart');
+      if (node) {
+        result.type = ChartType.Scatter;
+        result.series = ParseSeries(node, true);
+      }
+    }
+
+    return result;
+
+  }
+
+  public async ReadDrawing(reference: string): Promise<AnchoredChartDescription[] | undefined> {
+
+    if (!this.zip) {
+      throw new Error('missing zip');
+    }
+   
+    const data = await this.zip.file(reference.replace(/^../, 'xl'))?.async('text') as string;
+    if (!data) {
+      return undefined;
+    }
+    const drawing_root = ElementTree.parse(data);
+
+    const rels = await this.zip.file(reference.replace(/^..\/drawings/, 'xl/drawings/_rels') + '.rels')?.async('text') as string;
+    if (!rels) {
+      console.info('missing rels', reference.replace(/^..\/drawings/, 'xl/drawings/_rels') + '.rels');
+      return undefined;
+    }
+    const drawing_rels = ElementTree.parse(rels);
+
+    const anchor_nodes = drawing_root.findall('./xdr:twoCellAnchor');
+    const results: AnchoredChartDescription[] = [];
+
+    /* FIXME: move to drawing? */
+    const ParseAnchor = (node?: ExtendedElement): CellAnchor => {
+      const anchor: CellAnchor = {
+        column: 0, 
+        column_offset: 0,
+        row: 0, 
+        row_offset: 0,
+      };
+      if (node) {
+        for (const child of node._children) {
+          const value = Number(child.text) || 0;
+          switch (child.tag) {
+            case 'xdr:col':
+              anchor.column = value;
+              break;
+            case 'xdr:colOff':
+              anchor.column_offset = value; // FIXME: scale
+              break;
+            case 'xdr:row':
+              anchor.row = value;
+              break;
+            case 'xdr:rowOff':
+              anchor.row_offset = value; // FIXME: scale
+              break;
+          }
+        }
+      }
+      return anchor;
+    };
+
+    for (const anchor_node of anchor_nodes || []) {
+
+      const anchor: TwoCellAnchor = {
+        from: ParseAnchor(anchor_node.find('./xdr:from') as ExtendedElement || undefined), 
+        to: ParseAnchor(anchor_node.find('./xdr:to') as ExtendedElement || undefined),
+      };
+      const result: AnchoredChartDescription = { anchor };
+
+      const chart_reference = anchor_node.find('./xdr:graphicFrame/a:graphic/a:graphicData/c:chart');
+      if (chart_reference) {
+        const rid = chart_reference.attrib['r:id'];
+        if (rid) {
+          const chart_rel = drawing_rels.find(`./Relationship[@Id="${rid}"]`);
+          if (chart_rel && chart_rel.attrib.Target) {
+            result.chart = await this.ReadChart(chart_rel.attrib.Target);
+          }
+        }
+      }
+     
+      results.push(result);
+
+    }
+
+    return results;
+
   }
 
   /**
@@ -226,7 +469,7 @@ export class Workbook {
     modified_by?: string;
     created?: Date;
     modified?: Date;
-  }) {
+  }): Promise<void> {
 
     if (!this.zip) { return; }
 
@@ -269,7 +512,7 @@ export class Workbook {
   /**
    * finalize: rewrite xml, save in zip file.
    */
-  public async Finalize(opts: any = {}){
+  public async Finalize(opts: any = {}): Promise<void> {
 
     if (!this.zip) throw new Error('missing zip');
     if (!this.dom) throw new Error('missing dom');
@@ -477,7 +720,7 @@ export class Workbook {
   /**
    * clone sheet 0 so we have X total sheets
    */
-  public InsertSheets(total_sheet_count: number) {
+  public InsertSheets(total_sheet_count: number): void {
     if (!this.dom) throw new Error('missing dom');
     if (!this.rels_dom) throw new Error('missing rels_dom');
 
@@ -544,7 +787,7 @@ export class Workbook {
   /**
    *
    */
-  public async Init(zip?: JSZip, preparse = false, read_rels = false){
+  public async Init(zip?: JSZip, preparse = false, read_rels = false): Promise<void> {
 
     // let wb = this;
     if (zip) { this.zip = zip; }

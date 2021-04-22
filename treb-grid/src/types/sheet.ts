@@ -1988,6 +1988,10 @@ export class Sheet {
       }
     }
 
+    for (const annotation of data.annotations || []) {
+      this.annotations.push(new Annotation(annotation));
+    }
+
     if (data.hidden) {
       this.visible = false;
     }
