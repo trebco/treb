@@ -481,7 +481,7 @@ export class Grid {
 
     if (target) {
       if (Rectangle.IsRectangle(target)) {
-        console.info('creating from rectangle,', target);
+        // console.info('creating from rectangle,', target);
         annotation.layout = undefined;
         annotation.rect = Rectangle.Create(target);
       }
@@ -6366,7 +6366,7 @@ export class Grid {
 
   private HandleCopy(event: ClipboardEvent) {
 
-    console.info('handle copy', event, this.primary_selection);
+    // console.info('handle copy', event, this.primary_selection);
 
     event.stopPropagation();
     event.preventDefault();

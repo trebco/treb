@@ -548,7 +548,7 @@ export abstract class BaseLayout {
 
         if (annotation.rect && !annotation.layout) {
 
-          console.info('rect and no layout');
+          // console.info('rect and no layout');
 
           annotation.scaled_rect = annotation.rect.Scale(this.scale);
           annotation.layout = this.RectToAnnotationLayout(annotation.scaled_rect);
