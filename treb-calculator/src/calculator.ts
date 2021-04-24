@@ -1352,8 +1352,9 @@ export class Calculator extends Graph {
         // here, to look for macros. that might be OK, but the alternative is
         // just to calculate them on demand, which seems a lot more efficient
 
-        const modified = this.ApplyMacroFunctions(parse_result.expression);
-        if (modified) { parse_result.expression = modified; }
+        // TEMP removing old macro handling
+        // const modified = this.ApplyMacroFunctions(parse_result.expression);
+        // if (modified) { parse_result.expression = modified; }
 
         // ...
 

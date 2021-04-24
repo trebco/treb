@@ -139,26 +139,30 @@ export class MCExpressionCalculator extends ExpressionCalculator {
       // if there's a conditional (like an IF function). although that is the
       // exception rather than the rule...
 
-      // NOTE: this version omits the if shortcut -- need to allow errors in that function
-      
+      const if_function = outer.name.toUpperCase() === 'IF';
+      let skip_argument_index = -1;
+
       let argument_error: UnionValue|undefined;
 
       const mapped_args = (expr.args).map((arg, arg_index) => {
 
         // short circuit
-        if (argument_error) { return undefined; }
+        if (argument_error) { 
+          return undefined; 
+        }
 
         // get descriptor. if the number of arguments exceeds 
         // the number of descriptors, recycle the last one
         const descriptor = argument_descriptors[Math.min(arg_index, argument_descriptors.length - 1)] || {}; 
 
         // // if function, wrong branch
-        // if (arg_index === skip_argument_index) { 
-        //  return undefined; 
-        // }
+        if (arg_index === skip_argument_index) { 
+          // console.info('skipped');
+          return descriptor.boxed ? UndefinedUnion() : undefined;
+        }
 
         if (typeof arg === 'undefined') { 
-          // if (if_function && arg_index === 0) { skip_argument_index = 1; }
+          if (if_function && arg_index === 0) { skip_argument_index = 1; }
           return descriptor.boxed ? UndefinedUnion() : undefined;
         }
         
@@ -244,7 +248,27 @@ export class MCExpressionCalculator extends ExpressionCalculator {
             argument_error = result;
             return undefined; // argument not used, so don't bother boxing
           }          
-          
+
+          // can't shortcut if you have an array (or we need to test all the values)
+
+          if (if_function && arg_index === 0 && !Array.isArray(result)) {
+            let result_truthy = false; 
+
+            // if (Array.isArray(result)) { result_truthy = true; }
+
+            if (result.type === ValueType.string) {
+              const lowercase = (result.value as string).toLowerCase().trim();
+              result_truthy = lowercase !== 'false' && lowercase !== 'f';
+            }
+            else {
+              result_truthy = !!result.value;
+            }
+
+            // console.info("RTT", result_truthy);
+
+            skip_argument_index = result_truthy ? 2 : 1;
+          }          
+
           if (descriptor.boxed) {
             return result;
           }

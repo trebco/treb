@@ -4,7 +4,7 @@ import { Cell, Cells, ICellAddress, ValueType, GetValueType,
          Area, UnionValue, CellValue, UndefinedUnion, UnionOrArray } from 'treb-base-types';
 import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
-import { DataModel } from 'treb-grid';
+import { DataModel, MacroFunction } from 'treb-grid';
 import { NameError, ReferenceError, ExpressionError, UnknownError } from './function-error';
 import { ReturnType } from './descriptors';
 
@@ -70,6 +70,8 @@ export class ExpressionCalculator {
 
   // local reference
   protected named_range_map: {[index: string]: Area} = {};
+
+  // protected bound_name_stack: Array<Record<string, ExpressionUnit>> = [];
 
   //
   protected data_model!: DataModel;
@@ -320,6 +322,68 @@ export class ExpressionCalculator {
 
     return this.CalculateExpression(arg as ExtendedExpressionUnit) as UnionOrArray;
 
+  }
+
+  protected RewriteMacro(
+      unit: ExpressionUnit, 
+      names: Record<string, ExpressionUnit>,
+    ): ExpressionUnit { 
+
+    let expr: ExpressionUnit;
+
+    switch (unit.type) {
+
+      case 'identifier':
+        expr = names[unit.name.toUpperCase()];
+        if (expr) {
+          return JSON.parse(JSON.stringify(expr)) as ExpressionUnit;
+        }
+        break;
+
+      case 'binary':
+        unit.left = this.RewriteMacro(unit.left, names);
+        unit.right = this.RewriteMacro(unit.right, names);
+        break;
+  
+      case 'unary':
+        unit.operand = this.RewriteMacro(unit.operand, names);
+        break;
+  
+      case 'group':
+        unit.elements = unit.elements.map(element => this.RewriteMacro(element, names));
+        break;
+
+      case 'call':
+        unit.args = unit.args.map(arg => this.RewriteMacro(arg, names));
+        break;
+
+      }
+
+      return unit;
+
+  }
+
+  protected CallMacro(outer: UnitCall, macro: MacroFunction): (expr: UnitCall) => UnionOrArray {
+
+    if (!macro.expression) {
+      return () => ExpressionError();
+    }
+    const text_expr = JSON.stringify(macro.expression);
+    const names: Record<string, ExpressionUnit> = {};
+    const upper_case_names = macro.argument_names?.map(name => name.toUpperCase()) || [];
+
+    return (expr: UnitCall) => {
+
+      const clone = JSON.parse(text_expr);
+
+      for (let i = 0; i < upper_case_names.length; i++) {
+        names[upper_case_names[i]] = expr.args[i] || { type: 'missing' };
+      }
+
+      return this.CalculateExpression(this.RewriteMacro(clone, names) as ExtendedExpressionUnit);
+
+    }
+      
   }
 
   /** 
@@ -702,6 +766,16 @@ export class ExpressionCalculator {
 
     return () => {
 
+      /*
+      if (this.bound_name_stack[0]) {
+        const expr = this.bound_name_stack[0][upper_case];
+        if (expr) {
+          console.info("BOUND", upper_case, expr);
+          return this.CalculateExpression(expr as ExtendedExpressionUnit);
+        }
+      }
+      */
+
       const named_range = this.named_range_map[upper_case];
 
       if (named_range) {
@@ -760,7 +834,13 @@ export class ExpressionCalculator {
 
     switch (expr.type){
     case 'call':
-      return (expr.user_data = this.CallExpression(expr, return_reference))(expr);
+      {
+        const macro = this.data_model.macro_functions[expr.name.toUpperCase()];
+        if (macro) {
+          return (expr.user_data = this.CallMacro(expr, macro))(expr);
+        }
+        return (expr.user_data = this.CallExpression(expr, return_reference))(expr);
+      }
 
     case 'address':
       return (expr.user_data = this.CellFunction2(expr))(); // check
