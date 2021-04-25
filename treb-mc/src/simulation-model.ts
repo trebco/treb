@@ -109,6 +109,7 @@ export class SimulationModel {
         ],
         fn: this.multivariate_normal.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       'Multivariate.LogNormal': {
@@ -122,6 +123,7 @@ export class SimulationModel {
         ],
         fn: this.multivariate_lognormal.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       'Multivariate.Uniform': {
@@ -135,6 +137,7 @@ export class SimulationModel {
         ],
         fn: this.multivariate_uniform.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       'Multivariate.Beta': {
@@ -148,6 +151,7 @@ export class SimulationModel {
         ],
         fn: this.multivariate_beta.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       'Multivariate.PERT': {
@@ -163,6 +167,7 @@ export class SimulationModel {
         ],
         fn: this.multivariate_pert.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       'Multivariate.Triangular': {
@@ -177,6 +182,7 @@ export class SimulationModel {
         ],
         fn: this.multivariate_triangular.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       // basic distributions
@@ -189,6 +195,7 @@ export class SimulationModel {
         ],
         fn: this.uniformrangesample.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       SampleValue: {
@@ -199,6 +206,7 @@ export class SimulationModel {
         ],
         fn: this.samplevalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       'SampleValue.Weighted': {
@@ -210,6 +218,7 @@ export class SimulationModel {
         ],
         fn: this.samplevalue_weighted.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       BernoulliValue: {
@@ -220,6 +229,7 @@ export class SimulationModel {
         ],
         fn: this.bernoullivalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       ProbabilityValue: {
@@ -230,6 +240,7 @@ export class SimulationModel {
         ],
         fn: this.probabilityvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
      
       UniformValue: {
@@ -241,6 +252,7 @@ export class SimulationModel {
         ],
         fn: this.uniformvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       BetaValue: {
@@ -252,6 +264,7 @@ export class SimulationModel {
         ],
         fn: this.betavalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       TruncatedNormalValue: {
@@ -265,6 +278,7 @@ export class SimulationModel {
         ],
         fn: this.truncatednormalvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       NormalValue: {
@@ -276,6 +290,7 @@ export class SimulationModel {
         ],
         fn: this.normalvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       PERTValue: {
@@ -289,6 +304,7 @@ export class SimulationModel {
         ],
         fn: this.pertvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       LognormalValue: {
@@ -300,6 +316,7 @@ export class SimulationModel {
         ],
         fn: this.lognormalvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       SequentialValue: {
@@ -311,6 +328,7 @@ export class SimulationModel {
         ],
         fn: this.sequentialvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       IndexValue: {
@@ -321,6 +339,7 @@ export class SimulationModel {
         ],
         fn: this.indexvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       'PERTValue.P': {
@@ -334,6 +353,7 @@ export class SimulationModel {
         ],
         fn: this.pertvalue_p.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       TriangularValue: {
@@ -346,6 +366,7 @@ export class SimulationModel {
         ],
         fn: this.triangularvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
+        extension: true,
       },
 
       // stats
@@ -358,6 +379,7 @@ export class SimulationModel {
         ],
         fn: this.simulationcorrelation.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationRSquared: {
@@ -369,6 +391,7 @@ export class SimulationModel {
         ],
         fn: this.simulationrsquared.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationSkewness: {
@@ -378,6 +401,7 @@ export class SimulationModel {
         ],
         fn: this.simulationskewness.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationKurtosis: {
@@ -387,6 +411,7 @@ export class SimulationModel {
         ],
         fn: this.simulationkurtosis.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationPercentile: {
@@ -397,6 +422,7 @@ export class SimulationModel {
         ],
         fn: this.simulationpercentile.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationInterval: {
@@ -408,6 +434,7 @@ export class SimulationModel {
         ],
         fn: this.simulationinterval.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationMean: {
@@ -416,6 +443,7 @@ export class SimulationModel {
           { name: 'reference cell', description: 'Source Cell', collector: true },
         ],
         fn: this.simulationmean.bind(this),
+        extension: true,
         category: ['RiskAMP Simulation Functions'],
       },
 
@@ -426,6 +454,7 @@ export class SimulationModel {
         ],
         fn: this.simulationmedian.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationValue: {
@@ -436,6 +465,7 @@ export class SimulationModel {
         ],
         fn: this.simulationvalue.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationValuesArray: {
@@ -445,6 +475,7 @@ export class SimulationModel {
         ],
         fn: this.simulationvaluesarray.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SortedSimulationIndex: {
@@ -455,6 +486,7 @@ export class SimulationModel {
         ],
         fn: this.sortedsimulationindex.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       'SimulationValuesArray.Ordered': {
@@ -465,6 +497,7 @@ export class SimulationModel {
         ],
         fn: this.simulationvaluesarray_ordered.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationMin: {
@@ -474,6 +507,7 @@ export class SimulationModel {
         ],
         fn: this.simulationmin.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationMax: {
@@ -483,6 +517,7 @@ export class SimulationModel {
         ],
         fn: this.simulationmax.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationStandardError: {
@@ -492,6 +527,7 @@ export class SimulationModel {
         ],
         fn: this.simulationstandarderror.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationStandardDeviation: {
@@ -501,6 +537,7 @@ export class SimulationModel {
         ],
         fn: this.simulationstandarddeviation.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationVariance: {
@@ -510,6 +547,7 @@ export class SimulationModel {
         ],
         fn: this.simulationvariance.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       // special
@@ -518,12 +556,14 @@ export class SimulationModel {
         description: 'Returns the number of trials from the last simulation',
         fn: this.simulationtrials.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       SimulationTime: {
         description: 'Returns the elapsed time of the last simulation',
         fn: this.simulationtime.bind(this),
         category: ['RiskAMP Simulation Functions'],
+        extension: true,
       },
 
       // some extra random functions, available because we have the matrix classes
@@ -538,6 +578,7 @@ export class SimulationModel {
           const m = Matrix.FromArray(mat);
           return { type: ValueType.boolean, value: m.IsPosDef() };
         },
+        extension: true,
       },
 
       MakePosDef: {
@@ -555,7 +596,8 @@ export class SimulationModel {
               value,
             };
           }));
-        }
+        },
+        extension: true,
       },
 
       Cholesky: {
@@ -569,6 +611,7 @@ export class SimulationModel {
             };
           }));
         },
+        extension: true,
       },
 
       EigenValues: {
@@ -589,7 +632,7 @@ export class SimulationModel {
             };
           })];
         },
-
+        extension: true,
       },
 
       EigenVectors: {
@@ -614,7 +657,7 @@ export class SimulationModel {
           });
 
         },
-
+        extension: true,
       },
 
       MMult: {
@@ -680,12 +723,14 @@ export class SimulationModel {
         description: 'Creates a uniform scale within a given range',
         arguments: [{ name: 'min' }, {name: 'max'}],
         fn: this.Scale.bind(this),
+        extension: true,
       },
 
       'RiskAMP.HistogramTable': {
         description: 'Creates a histogram table from a source cell',
         arguments: [{ name: 'reference cell', collector: true, }],
         fn: this.HistogramTable.bind(this),
+        extension: true,
       }
 
 

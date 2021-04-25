@@ -119,6 +119,14 @@ export interface CompositeFunctionDescriptor {
    */
   category?: string[];
 
+  /*
+   * if we want to collapse imports (convert functions -> literal calculated 
+   * values) this flag indicates which functions should be converted. we could
+   * theoretically use the category flag but that could be fuzzy, so we will
+   * have an explicit flag. applies only to the MC functions atm.
+   */
+  extension?: boolean;
+
   /**
    * support returning references
    */
