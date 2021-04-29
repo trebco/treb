@@ -2256,8 +2256,8 @@ export class Grid {
    * scrolls so that the given cell is in the top-left (assuming that is
    * possible)
    */
-  public ScrollTo(address: ICellAddress): void {
-    this.layout.ScrollTo(address);
+  public ScrollTo(address: ICellAddress, x = true, y = true): void {
+    this.layout.ScrollTo(address, x, y);
   }
 
   /**
@@ -7863,34 +7863,54 @@ export class Grid {
             // style changes we may need to render one additional row/column.
 
             let area: Area|undefined;
+            let sheet = this.active_sheet;
 
             if (IsCellAddress(command.area)) {
               area = new Area(command.area);
-              this.active_sheet.UpdateCellStyle(command.area, command.style, !!command.delta);
+              if (area.start.sheet_id && area.start.sheet_id !== this.active_sheet.id) {
+                for (const test of this.model.sheets) {
+                  if (test.id === area.start.sheet_id) {
+                    sheet = test;
+                    break;
+                  }
+                }
+              }
+              sheet.UpdateCellStyle(command.area, command.style, !!command.delta);
             }
             else {
               area = new Area(command.area.start, command.area.end);
-              this.active_sheet.UpdateAreaStyle(area, command.style, !!command.delta);
+              if (area.start.sheet_id && area.start.sheet_id !== this.active_sheet.id) {
+                for (const test of this.model.sheets) {
+                  if (test.id === area.start.sheet_id) {
+                    sheet = test;
+                    break;
+                  }
+                }
+              }
+              sheet.UpdateAreaStyle(area, command.style, !!command.delta);
             }
 
-            style_area = Area.Join(area, style_area);
+            if (sheet === this.active_sheet) {
+              style_area = Area.Join(area, style_area);
+            
+              // we can limit bleed handling to cases where it's necessary...
+              // if we really wanted to optimize we could call invalidate on .left, .top, &c
 
-            // we can limit bleed handling to cases where it's necessary...
-            // if we really wanted to optimize we could call invalidate on .left, .top, &c
+              if (!command.delta 
+                  || command.style.fill
+                  || command.style.border_top
+                  || command.style.border_left
+                  || command.style.border_right
+                  || command.style.border_bottom) {
 
-            if (!command.delta 
-                || command.style.fill
-                || command.style.border_top
-                || command.style.border_left
-                || command.style.border_right
-                || command.style.border_bottom) {
+                area = Area.Bleed(area); // bleed by 1 to account for borders/background 
+                this.active_sheet.Invalidate(area);
 
-              area = Area.Bleed(area); // bleed by 1 to account for borders/background 
-              this.active_sheet.Invalidate(area);
+              }
 
+              render_area = Area.Join(area, render_area);
+              
             }
-
-            render_area = Area.Join(area, render_area);
           }
 
           break;

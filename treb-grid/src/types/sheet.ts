@@ -89,6 +89,13 @@ export class Sheet {
       sheet = new Sheet(style_defaults);
     }
 
+    if (obj.default_column_width) {
+      sheet.default_column_width = obj.default_column_width;
+    }
+    if (obj.default_row_height) {
+      sheet.default_row_height = obj.default_row_height;
+    }
+
     // persist ID, name
 
     if (obj.id) {

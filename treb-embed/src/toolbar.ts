@@ -679,7 +679,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     this.theme_color_map = [];
 
     if (theme.theme_colors) {
-      html.push(`<div class='row'>`);
+      html.push(`<div class='color-list-row'>`);
       for (i = 0; i < 10; i++) {
         const color = theme.theme_colors[i] || '#000';
         html.push(`<button class='color-swatch' data-theme=${i} title='${labels[i]}: ${color}' style='background: ${color};'></button>`);
@@ -696,7 +696,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
   public RenderColors(target: HTMLElement): void {
 
     const html: string[] = [
-      `<div class='row'>`,
+      `<div class='color-list-row'>`,
       `<button class='color-swatch default-color' data-color='' title='Default color'></button>`];
 
     let i = 0;
@@ -707,7 +707,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     html.push('</div>');
 
     while (i < this.colors.length) {
-      html.push(`<div class='row'>`);
+      html.push(`<div class='color-list-row'>`);
       const end = i + 10;
       for ( ; i < this.colors.length && i < end; i++) {
         const color = this.colors[i];

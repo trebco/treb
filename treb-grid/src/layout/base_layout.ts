@@ -988,10 +988,14 @@ export abstract class BaseLayout {
     };
   }
 
-  public ScrollTo(address: ICellAddress): void {
+  public ScrollTo(address: ICellAddress, x = true, y = true): void {
     const target_rect = this.CellAddressToRectangle(address);
-    this.scroll_reference_node.scrollTop = target_rect.top;
-    this.scroll_reference_node.scrollLeft = target_rect.left;
+    if (y) {
+      this.scroll_reference_node.scrollTop = target_rect.top;
+    }
+    if (x) {
+      this.scroll_reference_node.scrollLeft = target_rect.left;
+    }
   }
 
   /**

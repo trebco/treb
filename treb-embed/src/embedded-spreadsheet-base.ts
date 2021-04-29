@@ -659,7 +659,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public async Batch(func: () => void): Promise<void> {
 
     const cached_selection = this.last_selection;
-    const events = this.grid.Batch(func);
+    const events = this.grid.Batch(func, false);
 
     let recalc = false;
     let reset = false;
@@ -1261,8 +1261,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     return result;
   }
 
-  public ScrollTo(address: string | ICellAddress): void {
-    this.grid.ScrollTo(this.EnsureAddress(address));
+  public ScrollTo(address: string | ICellAddress, x = true, y = true): void {
+    this.grid.ScrollTo(this.EnsureAddress(address), x, y);
   }
 
   /**
