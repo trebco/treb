@@ -913,6 +913,8 @@ export class Sheet {
   public SurroundingStyle(address: ICellAddress): Style.Properties[] {
     const map: Style.Properties[] = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
 
+    // FIXME: what about merges? (...)
+
     let column_right = address.column + 1;
     let column_left = address.column - 1;
     let row_below = address.row + 1;
