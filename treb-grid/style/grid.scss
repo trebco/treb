@@ -203,7 +203,8 @@
         */
 
         &:focus, &.retain-focus {
-          outline: 2px solid lightblue;
+          // outline: 2px solid lightblue;
+          box-shadow: 0 0 0 3px #0ea5e954;
         }
 
       }

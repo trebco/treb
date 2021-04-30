@@ -60,6 +60,8 @@ export interface CellXf {
 interface ColorAttributes {
   indexed?: string;
   rgb?: string;
+  theme?: string;
+  tint?: string;
 }
 
 /**
@@ -221,6 +223,15 @@ export class StyleCache {
 
     }
 
+    if (composite.font_size_unit && composite.font_size_value) {
+      if (composite.font_size_unit !== 'pt') {
+        console.warn(`can't handle non-point font (FIXME)`);
+      }
+      else {
+        font.size = composite.font_size_value;
+      }
+    }
+
     if (composite.font_bold) font.bold = true;
     if (composite.font_italic) font.italic = true;
     if (composite.font_underline) font.underline = true;
@@ -241,7 +252,8 @@ export class StyleCache {
       }
     }
 
-    if (composite.border_top) {
+    if (composite.border_top && composite.border_top_fill) {
+
       border.top_style = 'thin';
       if (composite.border_top_fill?.text) {
         border.top_color_rgba = composite.border_top_fill.text;
@@ -256,7 +268,8 @@ export class StyleCache {
         border.top_color = 64;
       }
     }
-    if (composite.border_bottom) {
+    if (composite.border_bottom && composite.border_bottom_fill) {
+
       if (composite.border_bottom > 1) {
         border.bottom_style = 'double';
       }
@@ -276,7 +289,8 @@ export class StyleCache {
         border.bottom_color = 64;
       }
     }
-    if (composite.border_left) {
+    if (composite.border_left && composite.border_left_fill) {
+
       border.left_style = 'thin';
       if (composite.border_left_fill?.text) {
         border.left_color_rgba = composite.border_left_fill.text;
@@ -291,7 +305,8 @@ export class StyleCache {
         border.left_color = 64;
       }
     }
-    if (composite.border_right) {
+    if (composite.border_right && composite.border_right_fill) {
+
       border.right_style = 'thin';
       if (composite.border_right_fill?.text) {
         border.right_color_rgba = composite.border_right_fill.text;
@@ -651,18 +666,32 @@ export class StyleCache {
 
       if ( candidate.diagonal_color === border.diagonal_color
         && candidate.diagonal_color_rgba === border.diagonal_color_rgba
+        && candidate.diagonal_color_theme === border.diagonal_color_theme
+        && candidate.diagonal_color_tint === border.diagonal_color_tint
         && candidate.diagonal_style === border.diagonal_style
+
         && candidate.left_color === border.left_color
         && candidate.left_color_rgba === border.left_color_rgba
+        && candidate.left_color_theme === border.left_color_theme
+        && candidate.left_color_tint === border.left_color_tint
         && candidate.left_style === border.left_style
+
         && candidate.right_color === border.right_color
         && candidate.right_color_rgba === border.right_color_rgba
+        && candidate.right_color_theme === border.right_color_theme
+        && candidate.right_color_tint === border.right_color_tint
         && candidate.right_style === border.right_style
+
         && candidate.top_color === border.top_color
         && candidate.top_color_rgba === border.top_color_rgba
+        && candidate.top_color_theme === border.top_color_theme
+        && candidate.top_color_tint === border.top_color_tint
         && candidate.top_style === border.top_style
+
         && candidate.bottom_color === border.bottom_color
         && candidate.bottom_color_rgba === border.bottom_color_rgba
+        && candidate.bottom_color_theme === border.bottom_color_theme
+        && candidate.bottom_color_tint === border.bottom_color_tint
         && candidate.bottom_style === border.bottom_style ) {
 
         return i;
@@ -720,6 +749,12 @@ export class StyleCache {
       if (border.left_color_rgba) {
         attrs.rgb = border.left_color_rgba;
       }
+      else if (typeof border.left_color_theme === 'number') {
+        attrs.theme = border.left_color_theme.toString();
+        if (border.left_color_tint) {
+          attrs.tint = border.left_color_tint.toString();
+        }
+      }
       else {
         attrs.indexed = (border.left_color || 0).toString();
       } 
@@ -734,6 +769,12 @@ export class StyleCache {
       const attrs: ColorAttributes = {};
       if (border.right_color_rgba) {
         attrs.rgb = border.right_color_rgba;
+      }
+      else if (typeof border.right_color_theme === 'number') {
+        attrs.theme = border.right_color_theme.toString();
+        if (border.right_color_tint) {
+          attrs.tint = border.right_color_tint.toString();
+        }
       }
       else {
         attrs.indexed = (border.right_color || 0).toString();
@@ -750,6 +791,12 @@ export class StyleCache {
       if (border.top_color_rgba) {
         attrs.rgb = border.top_color_rgba;
       }
+      else if (typeof border.top_color_theme === 'number') {
+        attrs.theme = border.top_color_theme.toString();
+        if (border.top_color_tint) {
+          attrs.tint = border.top_color_tint.toString();
+        }
+      }
       else {
         attrs.indexed = (border.top_color || 0).toString();
       } 
@@ -759,11 +806,20 @@ export class StyleCache {
 
     const bottom = Element('bottom');
     if (border.bottom_style) {
+
+      console.info("BOTTOM STYLE", border);
+
       bottom.attrib.style = border.bottom_style;
       // bottom.append(Element('color', {indexed: (border.bottom_color || 0).toString() }));
       const attrs: ColorAttributes = {};
       if (border.bottom_color_rgba) {
         attrs.rgb = border.bottom_color_rgba;
+      }
+      else if (typeof border.bottom_color_theme === 'number') {
+        attrs.theme = border.bottom_color_theme.toString();
+        if (border.bottom_color_tint) {
+          attrs.tint = border.bottom_color_tint.toString();
+        }
       }
       else {
         attrs.indexed = (border.bottom_color || 0).toString();
@@ -883,22 +939,38 @@ export class StyleCache {
    */
   public EnsureFont(font: Font): number {
 
-    const props = Object.keys(font).filter((key) => typeof (font as any)[key] !== 'undefined');
+    // this is what we create, so we need to test against it
+
+    const composite_font: Font = {...this.fonts[0], ...font};
+
+    // const props = Object.keys(font).filter((key) => typeof (font as any)[key] !== 'undefined');
     for (let i = 0; i < this.fonts.length; i++ ){
       const candidate = this.fonts[i];
-      let match = true;
-      for (const prop of props) {
-        match = match && (font as any)[prop] === (candidate as any)[prop];
-      }
+      //let match = true;
+      //for (const prop of props) {
+      //  match = match && (font as any)[prop] === (candidate as any)[prop];
+      //}
+
+      const match = (candidate.bold === composite_font.bold) 
+        && (candidate.italic === composite_font.italic)
+        && (candidate.underline === composite_font.underline)
+        && (candidate.size === composite_font.size)
+        && (candidate.strike === composite_font.strike)
+        && (candidate.color_argb === composite_font.color_argb)
+        && (candidate.color_theme === composite_font.color_theme)
+        && (candidate.color_tint === composite_font.color_tint)
+        && (candidate.family === composite_font.family);
+
       if (match) {
         return i;
       }
+
     }
 
     this.modified = true;
 
-    const new_font: Font = {...this.fonts[0], ...font};
-    this.fonts.push(new_font);
+    // const composite_font = test; // {...this.fonts[0], ...font};
+    this.fonts.push(composite_font);
 
     // add the node structure
 
@@ -909,26 +981,26 @@ export class StyleCache {
     fonts.attrib.count = (Number(fonts.attrib.count || 0) + 1).toString();
 
     const new_element = Element('font');
-    new_element.append(Element('sz', { val: (new_font.size || 0).toString() }));
+    new_element.append(Element('sz', { val: (composite_font.size || 0).toString() }));
 
     // new_element.append(Element('color', { theme: (new_font.color_theme || 0).toString() }));
     // new_element.append(Element('color', { theme: (new_font.color_theme || 0).toString() }));
 
-    if (typeof new_font.color_argb !== 'undefined') {
-      new_element.append(Element('color', { rgb: new_font.color_argb }));
+    if (typeof composite_font.color_argb !== 'undefined') {
+      new_element.append(Element('color', { rgb: composite_font.color_argb }));
     }
     else {
-      new_element.append(Element('color', { theme: (new_font.color_theme || 0).toString() }));
+      new_element.append(Element('color', { theme: (composite_font.color_theme || 0).toString() }));
     }
 
-    new_element.append(Element('name', { val: new_font.name }));
-    new_element.append(Element('family', { val: (new_font.family || 0).toString() }));
-    new_element.append(Element('scheme', { val: new_font.scheme }));
+    new_element.append(Element('name', { val: composite_font.name }));
+    new_element.append(Element('family', { val: (composite_font.family || 0).toString() }));
+    new_element.append(Element('scheme', { val: composite_font.scheme }));
 
-    if (new_font.bold) new_element.append(Element('b'));
-    if (new_font.underline) new_element.append(Element('u'));
-    if (new_font.italic) new_element.append(Element('i'));
-    if (new_font.strike) new_element.append(Element('strike'));
+    if (composite_font.bold) new_element.append(Element('b'));
+    if (composite_font.underline) new_element.append(Element('u'));
+    if (composite_font.italic) new_element.append(Element('i'));
+    if (composite_font.strike) new_element.append(Element('strike'));
 
     fonts.append(new_element);
 

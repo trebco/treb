@@ -656,10 +656,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    * @param func 
    */
-  public async Batch(func: () => void): Promise<void> {
+  public async Batch(func: () => void, paint = false): Promise<void> {
 
     const cached_selection = this.last_selection;
-    const events = this.grid.Batch(func, false);
+    const events = this.grid.Batch(func, paint);
 
     let recalc = false;
     let reset = false;

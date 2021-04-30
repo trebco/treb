@@ -527,6 +527,7 @@ export class Workbook {
 
     if (this.style_cache.modified && this.style_cache.dom) {
       const xml = this.style_cache.dom.write({xml_declaration: true});
+      // console.info(xml);
       await this.zip.file( 'xl/styles.xml', xml);
     }
 

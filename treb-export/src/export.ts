@@ -162,12 +162,15 @@ export class Exporter {
             list.push(sheet_source.row_pattern[cell.row % sheet_source.row_pattern.length]);
           }
 
-          if (sheet_source.column_style && sheet_source.column_style[cell.column]) {
-            list.push(sheet_source.column_style[cell.column]);
-          }
+          // is this backwards, vis a vis our rendering? I think it might be...
+          // YES: should be row pattern -> row -> column -> cell [corrected]
 
           if (sheet_source.row_style && sheet_source.row_style[cell.row]) {
             list.push(sheet_source.row_style[cell.row]);
+          }
+
+          if (sheet_source.column_style && sheet_source.column_style[cell.column]) {
+            list.push(sheet_source.column_style[cell.column]);
           }
 
           if (cell.ref) {
@@ -183,7 +186,7 @@ export class Exporter {
           const composite = Style.Composite(list);
           
           const options = this.workbook.style_cache.StyleOptionsFromProperties(composite);
-          
+
           const style = this.workbook.style_cache.EnsureStyle(options);
 
           return style;
@@ -473,7 +476,23 @@ export class Exporter {
             if (sheet_source.column_style[i]) {
               list.push(sheet_source.column_style[i]);
             }
+
+            // NOTE: cell to the bottom or right may override this cell's 
+            // borders. not sure how excel deals with that though. we should
+            // probably skip in that case, need some neighbor lookups (make
+            // sure that neighbor has both width and color).
+
             options = this.workbook.style_cache.StyleOptionsFromProperties(Style.Composite(list));
+
+            /*
+            const composite = Style.Composite(list);
+            { // if (composite.border_bottom||composite.border_left||composite.border_right||composite.border_bottom) {
+              console.info('options')
+              console.dir(Style.Composite(list));
+              console.dir(options);
+            }
+            */
+            
             style = this.workbook.style_cache.EnsureStyle(options);
 
             if (style) {
