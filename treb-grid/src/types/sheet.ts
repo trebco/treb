@@ -861,6 +861,91 @@ export class Sheet {
   }
 
   /**
+   * returns the next non-hidden column. so if you are column C (2) and columns
+   * D, E, and F are hidden, then it will return 6 (G).
+   */
+  public NextVisibleColumn(column: number): number {
+    for (++column; this.column_width_[column] === 0; column++) { /* */ }
+    return column;
+  }
+
+  /** 
+   * @see NextVisibleColumn 
+   * because this one goes left, it may return -1 meaning you are at the left edge 
+   */
+  public PreviousVisibleColumn(column: number): number {
+    for (--column; column >= 0 && this.column_width_[column] === 0; column--) { /* */ }
+    return column;
+  }
+
+  /**
+   * @see NextVisibleColumn
+   */
+  public NextVisibleRow(row: number): number {
+    for (++row; this.row_height_[row] === 0; row++) { /* */ }
+    return row;
+  }
+
+  /**
+   * @see PreviousVisibleColumn
+   */
+  public PreviousVisibleRow(row: number): number {
+    for (--row; row >= 0 && this.row_height_[row] === 0; row--) { /* */ }
+    return row;
+  }
+
+  /**
+   * returns style properties for cells surrounding this cell, 
+   * mapped like a number pad:
+   * 
+   * +---+---+---+
+   * | 7 | 8 | 9 |
+   * +---+---+---+
+   * | 4 | X | 6 |
+   * +---+---+---+
+   * | 1 | 2 | 3 |
+   * +---+---+---+
+   * 
+   * presuming you already have X (5). this is called by renderer, we 
+   * move it here so we can inline the next/previous loops.
+   * 
+   */
+  public SurroundingStyle(address: ICellAddress): Style.Properties[] {
+    const map: Style.Properties[] = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
+
+    let column_right = address.column + 1;
+    let column_left = address.column - 1;
+    let row_below = address.row + 1;
+    let row_above = address.row - 1;
+
+    for (; this.column_width_[column_right] === 0; column_right++) { /* */ }
+    for (; this.row_height_[row_below] === 0; row_below++) { /* */ }
+
+    for (; column_left >= 0 && this.column_width_[column_left] === 0; column_left--) { /* */ }
+    for (; row_above >= 0 && this.row_height_[row_above] === 0; row_above--) { /* */ }
+
+    if (column_left >= 0 && row_above >= 0) {
+      map[7] = this.CellStyleData({row: row_above, column: column_left}) || {};
+    }
+    
+    if (column_left >= 0) {
+      map[4] = this.CellStyleData({row: address.row, column: column_left}) || {};
+      map[1] = this.CellStyleData({row: row_below, column: column_left}) || {};
+    }
+    
+    if (row_above >= 0) {
+      map[8] = this.CellStyleData({row: row_above, column: address.column}) || {};
+      map[9] = this.CellStyleData({row: row_above, column: column_right}) || {};
+    }
+
+    map[6] = this.CellStyleData({row: address.row, column: column_right}) || {};
+    map[2] = this.CellStyleData({row: row_below, column: address.column}) || {};
+    map[3] = this.CellStyleData({row: row_below, column: column_right}) || {};
+
+    return map;
+  }
+
+  /**
    * get style only. as noted in the comment to `CellData` there used to be
    * no case where this was useful without calculated value as well; but we
    * now have a case: fixing borders by checking neighboring cells. (testing).

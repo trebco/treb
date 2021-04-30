@@ -253,6 +253,7 @@ export interface AddSheetCommand {
 export interface DuplicateSheetCommand extends SheetSelection {
   key: CommandKey.DuplicateSheet;
   new_name?: string;
+  insert_before?: string|number;
 }
 
 export interface DeleteSheetCommand extends SheetSelection {

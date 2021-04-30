@@ -1228,11 +1228,12 @@ export class Grid {
   /**
    * duplicate sheet by index or (omitting index) the current active sheet
    */
-  public DuplicateSheet(index?: number, name?: string): void {
+  public DuplicateSheet(index?: number, name?: string, insert_before?: number|string): void {
 
     const command: DuplicateSheetCommand = {
       key: CommandKey.DuplicateSheet,
       new_name: name,
+      insert_before,
     };
 
     if (typeof index === 'undefined') {
@@ -2377,6 +2378,21 @@ export class Grid {
     
     if (!source || insert_index < 0) {
       throw new Error('source sheet not found');
+    }
+
+    // explicit insert index
+
+    if (typeof command.insert_before === 'number') {
+      insert_index = command.insert_before;
+    }
+    else if (typeof command.insert_before === 'string') {
+      const lc = command.insert_before.toLowerCase();
+      for (let i = 0; i < this.model.sheets.length; i++) {
+        if (this.model.sheets[i].name.toLowerCase() === lc) {
+          insert_index = i;
+          break;
+        }
+      }        
     }
 
     const options: SerializeOptions = {

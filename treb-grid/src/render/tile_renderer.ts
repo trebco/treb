@@ -867,40 +867,21 @@ export class TileRenderer {
     // - instead of clipping all the corners, when necessary, why not just paint
     //   the diagonals? might save time
 
+
+    // I think there are some opportunities for caching here (TODO)
+
     // ---
 
-    // FIXME: use numpad naming
+    // (moved to sheet, using numpad naming)
 
-    const edges: {
-      above: Style.Properties,
-      below: Style.Properties,
-      left: Style.Properties,
-      right: Style.Properties,
-      tl: Style.Properties,
-      tr: Style.Properties,
-      bl: Style.Properties,
-      br: Style.Properties,
-    } = {
-      below: this.model.active_sheet.CellStyleData({row: address.row + 1, column: address.column}) || {},
-      right: this.model.active_sheet.CellStyleData({row: address.row, column: address.column + 1}) || {},
-      above: address.row ? this.model.active_sheet.CellStyleData({row: address.row - 1, column: address.column}) || {} : {},
-      left: address.column ? this.model.active_sheet.CellStyleData({row: address.row, column: address.column - 1}) || {} : {},
-
-      tl: (address.column && address.row) ? 
-        this.model.active_sheet.CellStyleData({row: address.row - 1, column: address.column - 1}) || {} : {},
-      tr: (address.row) ? 
-        this.model.active_sheet.CellStyleData({row: address.row - 1, column: address.column + 1}) || {} : {},
-      bl: (address.column) ? 
-        this.model.active_sheet.CellStyleData({row: address.row + 1, column: address.column - 1}) || {} : {},
-      br: this.model.active_sheet.CellStyleData({row: address.row + 1, column: address.column + 1}) || {},
-    };
-
+    const numpad = this.model.active_sheet.SurroundingStyle(address);
+    
 
     // --- start with fills ----------------------------------------------------
 
     // paint top background
 
-    let color = ThemeColor2(this.theme, edges.above.fill);
+    let color = ThemeColor2(this.theme, numpad[8].fill);
     if (color) {
       context.fillStyle = color
       context.fillRect(left + 0, top - 1, width, 1);
@@ -908,7 +889,7 @@ export class TileRenderer {
 
     // paint left background
 
-    color = ThemeColor2(this.theme, edges.left.fill);
+    color = ThemeColor2(this.theme, numpad[4].fill);
     if (color) {
       context.fillStyle = color
       context.fillRect(left - 1, top, 1, height);
@@ -924,7 +905,7 @@ export class TileRenderer {
 
     // fill of cell to the right
 
-    color = ThemeColor2(this.theme, edges.right.fill);
+    color = ThemeColor2(this.theme, numpad[6].fill);
     if (color) {
       context.fillStyle = color;
       context.fillRect(left + width - 1, top - 1, 1, height + 1);
@@ -933,7 +914,7 @@ export class TileRenderer {
 
     // fill of cell underneath
 
-    color = ThemeColor2(this.theme, edges.below.fill);
+    color = ThemeColor2(this.theme, numpad[2].fill);
     if (color) {
       context.fillStyle = color;
       context.fillRect(left - 1, top + height - 1, width + 1, 1);
@@ -941,68 +922,68 @@ export class TileRenderer {
 
     // --- corner borders ------------------------------------------------------
 
-    if (edges.right.border_top && !edges.right.border_left) {
-      context.fillStyle = ThemeColor2(this.theme, edges.right.border_top_fill, 1);
-      context.fillRect(left + width - 1, top - 2 + edges.right.border_top, 1, 1);
+    if (numpad[6].border_top && !numpad[6].border_left) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[6].border_top_fill, 1);
+      context.fillRect(left + width - 1, top - 2 + numpad[6].border_top, 1, 1);
     }
-    if (edges.tr.border_left) {
-      context.fillStyle = ThemeColor2(this.theme, edges.tr.border_left_fill, 1);
+    if (numpad[9].border_left) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[9].border_left_fill, 1);
       context.fillRect(left + width - 1, top - 1, 1, 1);
     }
-    if (edges.tr.border_bottom) {
-      context.fillStyle = ThemeColor2(this.theme, edges.tr.border_bottom_fill, 1);
-      context.fillRect(left + width - 1, top - 2 + edges.tr.border_bottom, 1, 1);
+    if (numpad[9].border_bottom) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[9].border_bottom_fill, 1);
+      context.fillRect(left + width - 1, top - 2 + numpad[9].border_bottom, 1, 1);
     }
 
-    if (edges.left.border_top && !edges.left.border_right) {
-      context.fillStyle = ThemeColor2(this.theme, edges.left.border_right_fill, 1);
-      context.fillRect(left - 1, top - 2 + edges.left.border_top, 1, 1);
+    if (numpad[4].border_top && !numpad[4].border_right) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[4].border_right_fill, 1);
+      context.fillRect(left - 1, top - 2 + numpad[4].border_top, 1, 1);
     }
-    if (edges.tl.border_right) {
-      context.fillStyle = ThemeColor2(this.theme, edges.tl.border_right_fill, 1);
+    if (numpad[7].border_right) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[7].border_right_fill, 1);
       context.fillRect(left - 1, top - 1, 1, 1);
     }
-    if (edges.tl.border_bottom) {
-      context.fillStyle = ThemeColor2(this.theme, edges.tl.border_bottom_fill, 1);
-      context.fillRect(left - 1, top - 2 + edges.tl.border_bottom, 1, 1);
+    if (numpad[7].border_bottom) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[7].border_bottom_fill, 1);
+      context.fillRect(left - 1, top - 2 + numpad[7].border_bottom, 1, 1);
     }
 
-    if (edges.right.border_bottom && !edges.right.border_left) {
-      context.fillStyle = ThemeColor2(this.theme, edges.right.border_bottom_fill, 1);
-      context.fillRect(left + width - 1, top + height - edges.right.border_bottom, 1, 1);
+    if (numpad[6].border_bottom && !numpad[6].border_left) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[6].border_bottom_fill, 1);
+      context.fillRect(left + width - 1, top + height - numpad[6].border_bottom, 1, 1);
     }
-    if (edges.br.border_left) {
-      context.fillStyle = ThemeColor2(this.theme, edges.br.border_left_fill, 1);
+    if (numpad[3].border_left) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[3].border_left_fill, 1);
       context.fillRect(left + width - 1, top + height - 1, 1, 1);
     }
-    if (edges.br.border_top) {
-      context.fillStyle = ThemeColor2(this.theme, edges.br.border_top_fill, 1);
-      context.fillRect(left + width - 1, top + height - edges.br.border_top, 1, 1);
+    if (numpad[3].border_top) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[3].border_top_fill, 1);
+      context.fillRect(left + width - 1, top + height - numpad[3].border_top, 1, 1);
     }
 
-    if (edges.left.border_bottom && !edges.left.border_right) {
-      context.fillStyle = ThemeColor2(this.theme, edges.left.border_bottom_fill, 1);
-      context.fillRect(left - 1, top + height - edges.left.border_bottom, 1, 1);
+    if (numpad[4].border_bottom && !numpad[4].border_right) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[4].border_bottom_fill, 1);
+      context.fillRect(left - 1, top + height - numpad[4].border_bottom, 1, 1);
     }
-    if (edges.bl.border_right) {
-      context.fillStyle = ThemeColor2(this.theme, edges.bl.border_right_fill, 1);
+    if (numpad[1].border_right) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[1].border_right_fill, 1);
       context.fillRect(left - 1, top + height - 1, 1, 1);
     }
-    if (edges.bl.border_top) {
-      context.fillStyle = ThemeColor2(this.theme, edges.bl.border_top_fill, 1);
-      context.fillRect(left - 1, top + height - edges.bl.border_top, 1, 1);
+    if (numpad[1].border_top) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[1].border_top_fill, 1);
+      context.fillRect(left - 1, top + height - numpad[1].border_top, 1, 1);
     }
 
     // --- neighbor borders ----------------------------------------------------
 
     // paint top border
 
-    if (edges.above.border_bottom) {
-      context.fillStyle = ThemeColor2(this.theme, edges.above.border_bottom_fill, 1);
-      if (edges.above.border_bottom === 2) {
+    if (numpad[8].border_bottom) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[8].border_bottom_fill, 1);
+      if (numpad[8].border_bottom === 2) {
         context.fillRect(left - 1, top - 2, width + 1, 1);
         context.fillRect(left - 1, top - 0, width + 1, 1);
-        context.fillStyle = ThemeColor2(this.theme, edges.above.fill) 
+        context.fillStyle = ThemeColor2(this.theme, numpad[8].fill) 
           || ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
         context.fillRect(left - 1, top - 1, width + 1, 1);
       }
@@ -1013,26 +994,26 @@ export class TileRenderer {
 
     // paint left border
 
-    if (edges.left.border_right) {
-      context.fillStyle = ThemeColor2(this.theme, edges.left.border_right_fill, 1);
+    if (numpad[4].border_right) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[4].border_right_fill, 1);
       context.fillRect(left - 1, top - 1, 1, height + 1);
     }
 
     // paint right border?
 
-    if (edges.right.border_left) {
-      context.fillStyle = ThemeColor2(this.theme, edges.left.border_left_fill, 1);
+    if (numpad[6].border_left) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[4].border_left_fill, 1);
       context.fillRect(left + width - 1, top - 1, 1, height + 1);
     }
 
     // bottom? (...)
 
-    if (edges.below.border_top) {
-      context.fillStyle = ThemeColor2(this.theme, edges.below.border_top_fill, 1);
-      if (edges.below.border_top === 2) {
+    if (numpad[2].border_top) {
+      context.fillStyle = ThemeColor2(this.theme, numpad[2].border_top_fill, 1);
+      if (numpad[2].border_top === 2) {
         context.fillRect(left - 1, top + height - 2, width + 1, 1);
         context.fillRect(left - 1, top + height - 0, width + 1, 1);
-        context.fillStyle = ThemeColor2(this.theme, edges.below.fill) 
+        context.fillStyle = ThemeColor2(this.theme, numpad[2].fill) 
           || ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
         context.fillRect(left - 1, top + height - 1, width + 1, 1);
       }
