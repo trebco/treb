@@ -666,6 +666,48 @@ export class Parser {
   protected BinaryToRange(unit: ExpressionUnit): ExpressionUnit {
     if (unit.type === 'binary') {
       if (unit.operator === ':') {
+
+        /*
+
+        // we need to resolve this, and the below is valid for a selection
+        // of rows; however, I need to understand what the implications of
+        // adding the range dependency will be since this is unusual syntax...
+
+        // the following are legal:
+
+        // (1) two numbers, in either order
+        //
+        // 15:16
+        // 16:16
+        // 16:15
+        //
+        // (2) with one or both optionally having a $
+        //
+        // 15:$16
+        // $16:$16
+        //
+        // (3) two column identifiers, in either order
+        // 
+        // A:F
+        // B:A
+        //
+        // (4) and the same with $
+        //
+        // $A:F
+        // $A:$F
+        // 
+
+        if (unit.left.type === 'literal' && 
+            typeof unit.left.value === 'number' &&
+            unit.right.type === 'literal' &&
+            typeof unit.right.value === 'number'
+            ) {
+          console.info('double lit numbers!');
+          // 
+
+        }
+        */
+
         if (unit.left.type === 'address' && unit.right.type === 'address') {
           // construct a label using the full text. there's a possibility,
           // I suppose, that there are spaces (this should probably not be
