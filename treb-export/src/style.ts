@@ -807,7 +807,7 @@ export class StyleCache {
     const bottom = Element('bottom');
     if (border.bottom_style) {
 
-      console.info("BOTTOM STYLE", border);
+      // console.info("BOTTOM STYLE", border);
 
       bottom.attrib.style = border.bottom_style;
       // bottom.append(Element('color', {indexed: (border.bottom_color || 0).toString() }));
