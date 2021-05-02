@@ -729,7 +729,7 @@ export abstract class BaseLayout {
   // testing moving this here...
   public AnnotationMouseDown(annotation: Annotation, node: HTMLElement, event: MouseEvent, move_target: HTMLElement, resize_target: HTMLElement): Promise<GridEvent|void> {
 
-    console.info('annotation mousedown (in layout)', annotation);
+    // console.info('annotation mousedown (in layout)', annotation);
 
     const rect = annotation.scaled_rect;
     if (!rect) {
