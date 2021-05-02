@@ -1,5 +1,5 @@
 
-import { SpreadsheetVertexBase, GraphCallbackData } from './spreadsheet_vertex_base';
+import { SpreadsheetVertexBase, GraphCallbacks } from './spreadsheet_vertex_base';
 import { Cell, Box, ICellAddress, UnionOrArray, UndefinedUnion, ValueType } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
@@ -82,7 +82,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
    * A: for overloading. leaf extends this class, and has a separate
    * calculation routine.
    */
-  public Calculate(graph: GraphCallbackData): void {
+  public Calculate(graph: GraphCallbacks): void {
 
     if (!this.dirty) return;
 

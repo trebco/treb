@@ -1,5 +1,5 @@
 
-import { GraphCallbackData } from './spreadsheet_vertex_base';
+import { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
 import { Vertex } from './vertex';
 
@@ -62,7 +62,7 @@ export class LeafVertex extends SpreadsheetVertex {
   }
 
   /** overrides calculate function */
-  public Calculate(graph: GraphCallbackData): void {
+  public Calculate(graph: GraphCallbacks): void {
 
     // if we are not dirty, nothing to do
     if (!this.dirty) return;

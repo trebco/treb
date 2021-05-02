@@ -1,6 +1,6 @@
 
 import { Vertex } from './vertex';
-import { GraphCallbackData, SpreadsheetVertexBase } from './spreadsheet_vertex_base';
+import { GraphCallbacks, SpreadsheetVertexBase } from './spreadsheet_vertex_base';
 import { Area, ICellAddress2 } from 'treb-base-types';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
 import { Color } from './vertex';
@@ -130,7 +130,7 @@ export class ArrayVertex extends SpreadsheetVertexBase {
     }
   }  
 
-  public Calculate(graph: GraphCallbackData): void {
+  public Calculate(graph: GraphCallbacks): void {
 
     // this is copied from SpreadsheetVertex, just removing the 
     // actual calculation (because we have no output). 

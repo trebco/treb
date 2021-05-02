@@ -2297,9 +2297,24 @@ export class Grid {
     });
 
     // empty? create new, activate
+    // UPDATE: we also need to create if all remaining sheets are hidden
 
     if (!sheets.length) {
       sheets.push(Sheet.Blank(this.theme_style_properties));
+      index = 0;
+    }
+    else if (sheets.every(test => !test.visible)) {
+      // console.info('all remaining sheets are hidden!');
+      sheets.unshift(Sheet.Blank(this.theme_style_properties));
+      index = 0;
+    }
+    else {
+      if (index >= sheets.length) {
+        index = 0;
+      }
+      while (!sheets[index].visible) {
+        index++;
+      }
     }
 
     this.model.sheets = sheets;
@@ -2307,7 +2322,11 @@ export class Grid {
     // need to activate a new sheet? use the next one (now in the slot
     // we just removed). this will roll over properly if we're at the end.
 
+    // UPDATE: we need to make sure that the target is not hidden, or we 
+    // can't activate it
+
     if (is_active) {
+      // console.info('activate @', index);
       this.ActivateSheetInternal({ key: CommandKey.ActivateSheet, index });
     }
 

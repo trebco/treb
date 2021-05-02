@@ -2,7 +2,7 @@
 import { Vertex, Color } from './vertex';
 import { SpreadsheetVertex  } from './spreadsheet_vertex';
 import { ArrayVertex  } from './array-vertex';
-import { SpreadsheetVertexBase, CalculationResult, GraphCallbackData } from './spreadsheet_vertex_base';
+import { SpreadsheetVertexBase, CalculationResult, GraphCallbacks } from './spreadsheet_vertex_base';
 import { LeafVertex } from './leaf_vertex';
 import { Cells, ICellAddress, ICellAddress2, Area, IArea, UnionOrArray } from 'treb-base-types';
 import { DataModel } from 'treb-grid';
@@ -18,7 +18,7 @@ export enum GraphStatus {
 /**
  * graph is now abstract, as we are extending it with the calculator.
  */
-export abstract class Graph implements GraphCallbackData {
+export abstract class Graph implements GraphCallbacks {
 
   /**
    * list of vertices, indexed by address as [sheet id][column][row]
