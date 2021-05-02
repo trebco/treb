@@ -461,6 +461,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
                 case 'update':
                   if (event.annotation.update_callback) {
                     event.annotation.update_callback();
+                    this.grid.AnnotationUpdated(event.annotation);
                   }
                   else {
                     console.info('annotation update event without update callback');
@@ -470,9 +471,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
                 case 'resize':
                   if (event.annotation.resize_callback) {
                     event.annotation.resize_callback();
+                    this.grid.AnnotationUpdated(event.annotation);
                   }
                   break;
               }
+
             }
             else {
               console.info('annotation event without annotation');
@@ -2278,6 +2281,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           if (annotation.update_callback) {
             annotation.update_callback();
           }
+          this.grid.AnnotationUpdated(annotation);
         }
       }
     }

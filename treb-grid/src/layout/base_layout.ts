@@ -5,6 +5,9 @@ import { DataModel } from '../types/data_model';
 import { Tile } from '../types/tile';
 import { Style, Theme, Point, Extent, Size, Position, Area, ICellAddress, Rectangle, ThemeColor } from 'treb-base-types';
 
+import { MouseDrag } from '../types/drag_mask';
+import { GridEvent } from '../types/grid_events';
+
 // aliasing Area as TileRange. this seemed like a good idea, initially, because
 // it can help clarify the function calls and return values when we "overload"
 // area to refer to ranges of tiles.
@@ -62,6 +65,10 @@ export abstract class BaseLayout {
   public corner_selection!: SVGElement;
   public row_header_selection!: SVGElement;
   public column_header_selection!: SVGElement;
+
+  public corner_annotations!: HTMLDivElement;
+  public row_header_annotations!: HTMLDivElement;
+  public column_header_annotations!: HTMLDivElement;
 
   public frozen_row_tiles: Tile[] = [];
   public frozen_column_tiles: Tile[] = [];
@@ -463,10 +470,24 @@ export abstract class BaseLayout {
     // update layout, use z-indexes
 
     for (let i = 0; i < this.model.active_sheet.annotations.length; i++ ){
+
+      // updating to shift frozen annotations as well
+
+      const key = this.model.active_sheet.annotations[i].key;
+      const elements = this.container?.querySelectorAll(`.annotation[data-key="${key}"]`)
+      if (elements) {
+        for (let j = 0; j < elements?.length; j++) {
+          (elements[j] as HTMLElement).style.zIndex = (i + 1).toString();
+        }
+      }
+
+      /*
       const node = this.model.active_sheet.annotations[i].node;
       if (node) {
         node.style.zIndex = (i + 1).toString();
       }
+      */
+
     }
 
     return true;
@@ -558,16 +579,6 @@ export abstract class BaseLayout {
 
         // FIXME: merge cells? [...]
 
-        /*
-        if (annotation.cell_address) {
-          let rect = this.CellAddressToRectangle(annotation.cell_address.start);
-          if (annotation.cell_address.count > 1) {
-            rect = rect.Combine(this.CellAddressToRectangle(annotation.cell_address.end));
-          }
-          rect = rect.Expand(-1, -1);
-          rect.ApplyStyle(annotation.node);
-        }
-        else */
         if (annotation.layout) {
 
           const rect = this.AnnotationLayoutToRect(annotation.layout);
@@ -581,22 +592,101 @@ export abstract class BaseLayout {
 
         }
 
-        /*
-        else if (annotation.rect) {
+        annotation.node.dataset.key = annotation.key.toString();
 
-          console.warn('DEPRECATED: annotation is using rect for layout');
+        // FIXME: only do this if necessary (if frozen).
 
-          // NOTE: this isn't exactly right because the cells scale by rounded
-          // amounts. if we scale exactly, we will often miss the mark by a 
-          // few pixels. that could be addressed, though... TODO
-
-          annotation.scaled_rect = annotation.rect.Scale(this.scale);
-          annotation.scaled_rect.ApplyStyle(annotation.node);
-
+        if (this.model.active_sheet.freeze.rows || this.model.active_sheet.freeze.columns) {
+          this.CloneFrozenAnnotation(annotation);
         }
-        */
+
       }
     }
+  }
+
+  /** returns a list of copies painted to frozen panes, for move/size */
+  public GetFrozenAnnotations(annotation: Annotation): HTMLElement[] {
+    const containers = [this.row_header_annotations, this.column_header_annotations, this.corner_annotations];
+    return containers.map((container) => container.querySelector(`.annotation[data-key="${annotation.key}"]`)).filter(test => test !== null) as HTMLElement[];
+  }
+
+  /**
+   * clone all annotations into freeze panes
+   */
+  public CloneFrozenAnnotations(): void {
+    for (const annotation of this.model.active_sheet.annotations) {
+      if (annotation.node && annotation.key) {
+        this.CloneFrozenAnnotation(annotation);
+      }
+    }
+  }
+
+  /**
+   * remove all annotations from freeze panes
+   * 
+   */
+   public ClearFrozenAnnotations(): void {
+    for (const container of [this.row_header_annotations, this.column_header_annotations, this.corner_annotations]) {
+      const elements = container.querySelectorAll('.annotation');
+      for (let i = 0; i < elements.length; i++) {
+        // FIXME: remove event listeners
+        elements[i].parentElement?.removeChild(elements[i]);
+      }
+    }
+  }
+
+  /**
+   * remove a frozen annotation
+   * @param annotation 
+   */
+  public RemoveFrozenAnnotation(annotation: Annotation): void {
+    for (const container of [this.row_header_annotations, this.column_header_annotations, this.corner_annotations]) {
+      const element = container.querySelector(`.annotation[data-key="${annotation.key}"]`);
+      if (element) {
+        // FIXME: remove event listeners
+        element.parentElement?.removeChild(element);
+      }
+    }
+  }
+
+  /**
+   * clone a single annotation. usually this will be used on create, but
+   * we batch them when we freeze panes (from unfrozen)
+   */
+  public CloneFrozenAnnotation(annotation: Annotation): void {
+    for (const container of [this.row_header_annotations, this.column_header_annotations, this.corner_annotations]) {
+
+      // FIXME: could reuse? not sure it's worth it
+      let element: Element|Node|null|undefined = container.querySelector(`.annotation[data-key="${annotation.key}"]`);
+      if (element) {
+        element.parentElement?.removeChild(element);
+      }
+      element = annotation.node?.cloneNode(true);
+      
+      if (element) {
+
+        const move_target = (element as HTMLElement).querySelector('.annotation-move-target') as HTMLElement;
+        const resize_target = (element as HTMLElement).querySelector('.annotation-resize-target') as HTMLElement;
+
+        (element as HTMLElement).addEventListener('mousedown', (event: MouseEvent) => {
+          const node = annotation.node;
+          requestAnimationFrame(() => {
+            // console.info('calling focus on', node);
+            node?.focus();
+          });
+          this.AnnotationMouseDown(annotation, annotation.node as HTMLElement, event, move_target, resize_target);
+        });
+        container.appendChild(element);
+      }
+
+    }
+  }
+
+  public RemoveAnnotation(annotation: Annotation): void {
+    if (annotation.node) {
+      annotation.node.parentElement?.removeChild(annotation.node);
+    }
+    this.RemoveFrozenAnnotation(annotation);
   }
 
   /**
@@ -622,6 +712,10 @@ export abstract class BaseLayout {
       this.annotation_container.removeChild(child);
     }
 
+    if (this.model.active_sheet.freeze.rows || this.model.active_sheet.freeze.columns) {
+      this.ClearFrozenAnnotations();
+    }
+
   }
 
   public AddAnnotation(annotation: Annotation): void {
@@ -630,6 +724,174 @@ export abstract class BaseLayout {
     }
     this.annotation_container.appendChild(annotation.node);
     this.UpdateAnnotation(annotation);
+  }
+
+  // testing moving this here...
+  public AnnotationMouseDown(annotation: Annotation, node: HTMLElement, event: MouseEvent, move_target: HTMLElement, resize_target: HTMLElement): Promise<GridEvent|void> {
+
+    console.info('annotation mousedown (in layout)', annotation);
+
+    const rect = annotation.scaled_rect;
+    if (!rect) {
+      console.info('missing scaled rect!');
+      return Promise.reject(); // ?
+    }
+
+    return new Promise<GridEvent|void>((resolve) => {
+
+      const origin = {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+      };
+
+      const bounding_rect = node.getBoundingClientRect();
+
+      if (event.target === move_target) {
+
+        event.stopPropagation();
+        event.preventDefault();
+        node.focus();
+
+        const offset = {
+          x: bounding_rect.left + event.offsetX - rect.left,
+          y: bounding_rect.top + event.offsetY - rect.top,
+        };
+
+        MouseDrag(this.mask, 'move', (move_event) => {
+
+          const elements = [node, ...this.GetFrozenAnnotations(annotation)];
+
+          rect.top = move_event.offsetY - offset.y;
+          rect.left = move_event.offsetX - offset.x;
+
+          if (move_event.shiftKey) {
+
+            // move in one direction at a time
+            const dx = Math.abs(rect.left - origin.left);
+            const dy = Math.abs(rect.top - origin.top);
+
+            if (dx <= dy) { rect.left = origin.left; }
+            else { rect.top = origin.top; }
+
+          }
+
+          if (move_event.ctrlKey) {
+            const point = this.ClampToGrid({
+              x: rect.left, y: rect.top,
+            });
+            rect.left = point.x;
+            rect.top = point.y;
+          }
+
+          // node.style.top = (rect.top) + 'px';
+          // node.style.left = (rect.left) + 'px';
+
+          for (const element of elements) {
+            element.style.top = (rect.top) + 'px';
+            element.style.left = (rect.left) + 'px';
+          }
+
+        }, () => {
+          annotation.extent = undefined; // reset
+          // annotation.rect = rect.Scale(1/this.scale);
+          annotation.layout = this.RectToAnnotationLayout(rect);
+          // this.grid_events.Publish({ type: 'annotation', annotation, event: 'move' });
+          resolve({ type: 'annotation', annotation, event: 'move' })
+        });
+
+        return;
+
+      }
+      else if (event.target === resize_target) {
+
+      //if ((bounding_rect.width - event.offsetX <= 13) &&
+      //  (bounding_rect.height - event.offsetY <= 13)) {
+
+        event.stopPropagation();
+        event.preventDefault();
+        node.focus();
+
+        let aspect = 0;
+        if (annotation.data?.original_size
+              && annotation.data.original_size.width
+              && annotation.data.original_size.height){
+          aspect = annotation.data.original_size.width / 
+                  annotation.data.original_size.height;
+        }
+
+        const bounds = node.getBoundingClientRect();
+        const offset = {
+          x: bounds.left + event.offsetX - rect.width + resize_target.offsetLeft,
+          y: bounds.top + event.offsetY - rect.height + resize_target.offsetTop,
+        };
+
+        MouseDrag(this.mask, 'nw-resize', (move_event) => {
+
+          const elements = [node, ...this.GetFrozenAnnotations(annotation)];
+
+          rect.height = move_event.offsetY - offset.y;
+          rect.width = move_event.offsetX - offset.x;
+
+          if (move_event.shiftKey && move_event.ctrlKey) {
+            if (aspect) {
+
+              const dx = Math.abs(rect.width - origin.width);
+              const dy = Math.abs(rect.height - origin.height);
+
+              if (dx < dy) {
+                rect.width = aspect * rect.height;
+              }
+              else {
+                rect.height = rect.width / aspect;
+              }
+
+            }
+          }
+          else if (move_event.shiftKey) {
+            // move in one direction at a time [is this backwards? ...]
+            const dx = Math.abs(rect.height - origin.height);
+            const dy = Math.abs(rect.width - origin.width);
+
+            if (dx > dy) { rect.width = origin.width; }
+            else { rect.height = origin.height; }
+          }
+          else if (move_event.ctrlKey) {
+            const point = this.ClampToGrid({
+              x: rect.right, y: rect.bottom,
+            });
+            rect.width = point.x - rect.left + 1;
+            rect.height = point.y - rect.top + 1;
+          }
+
+          // node.style.height = (rect.height) + 'px';
+          // node.style.width = (rect.width) + 'px';
+
+          for (const element of elements) {
+            element.style.height = (rect.height) + 'px';
+            element.style.width = (rect.width) + 'px';
+          }
+
+        }, () => {
+          annotation.extent = undefined; // reset
+          // annotation.rect = rect.Scale(1/this.scale);
+          annotation.layout = this.RectToAnnotationLayout(rect);
+
+          // this.grid_events.Publish({ type: 'annotation', annotation, event: 'resize' });
+          resolve({ type: 'annotation', annotation, event: 'resize' });
+
+        });
+
+        return;
+      }
+      else {
+        resolve();
+      }
+
+    });
+
+
   }
 
   /**
@@ -825,8 +1087,8 @@ export abstract class BaseLayout {
 
     this.corner.style.borderColor =
       theme.grid_color || ''; // this.theme.header_border_color;
-    // this.layout.row_header.style.backgroundColor = this.theme.header_background;
-    // this.layout.column_header.style.backgroundColor = this.theme.header_background;
+    // this.row_header.style.backgroundColor = this.theme.header_background;
+    // this.column_header.style.backgroundColor = this.theme.header_background;
 
     for (const row of this.grid_tiles) {
       for (const tile of row) {

@@ -27,7 +27,13 @@ import { Rectangle, ICellAddress, AnnotationLayout } from 'treb-base-types';
  * 
  */
 
+let key_generator = 100;
+
 export class Annotation {
+
+  private key_ = (key_generator++);
+  
+  public get key(): number { return this.key_; }
 
   /** coordinates, in sheet space */
   public rect?: Rectangle;
