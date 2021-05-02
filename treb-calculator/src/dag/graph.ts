@@ -1,9 +1,10 @@
 
 import { Vertex, Color } from './vertex';
 import { SpreadsheetVertex  } from './spreadsheet_vertex';
-import { SpreadsheetVertexBase, CalculationResult } from './spreadsheet_vertex_base';
+import { ArrayVertex2  } from './array-vertex-2';
+import { SpreadsheetVertexBase, CalculationResult, GraphCallbackData } from './spreadsheet_vertex_base';
 import { LeafVertex } from './leaf_vertex';
-import { Cells, ICellAddress, Area, IArea, Cell } from 'treb-base-types';
+import { Cells, ICellAddress, ICellAddress2, Area, IArea, Cell, ValueType, UnionOrArray } from 'treb-base-types';
 import { DataModel } from 'treb-grid';
 
 // FIXME: this is a bad habit if you're testing on falsy for OK.
@@ -17,13 +18,17 @@ export enum GraphStatus {
 /**
  * graph is now abstract, as we are extending it with the calculator.
  */
-export abstract class Graph {
+export abstract class Graph implements GraphCallbackData {
 
-  // public vertices: Array<Array<SpreadsheetVertex|undefined>> = [];
+  /**
+   * list of vertices, indexed by address as [sheet id][column][row]
+   */
   public vertices: Array<Array<Array<SpreadsheetVertex|undefined>>> = [[]];
 
   public volatile_list: SpreadsheetVertexBase[] = [];
+
   public cells_map: {[index: number]: Cells} = {};
+
   public model?: DataModel;
 
   /**
@@ -34,23 +39,18 @@ export abstract class Graph {
   // special
   public leaf_vertices: LeafVertex[] = [];
 
-  // special
-  // public array_vertices: {[index: string]: ArrayVertex} = {};
-
   /** lock down access */
   private dirty_list: SpreadsheetVertexBase[] = [];
 
   /** flag set on add edge */
   private loop_check_required = false;
 
-  /*
-  public IsArrayVertex(vertex: Vertex): vertex is ArrayVertex {
-    return vertex.type === 'array-vertex';
+  public IsArrayVertex2(vertex: Vertex): vertex is ArrayVertex2 {
+    return vertex.type === ArrayVertex2.type;
   }
-  */
 
   public IsSpreadsheetVertex(vertex: Vertex): vertex is SpreadsheetVertex {
-    return vertex.type === 'spreadsheet-vertex';
+    return vertex.type === SpreadsheetVertex.type;
   }
 
   /**
@@ -73,8 +73,11 @@ export abstract class Graph {
     this.volatile_list = [];
     this.vertices = [[]];
     this.leaf_vertices = [];
-    // this.array_vertices = {};
     this.cells_map = {};
+
+    /** array vertex maintains its own list */
+    ArrayVertex2.Clear();
+
   }
 
   public ResolveArrayHead(address: ICellAddress): ICellAddress {
@@ -200,6 +203,10 @@ export abstract class Graph {
 
     // this.CreateImplicitEdgeToArrays(vertex);
 
+    // this is back, in the new form
+
+    ArrayVertex2.CreateImplicitEdges(vertex, address as ICellAddress2);
+
     return vertex;
 
   }
@@ -211,8 +218,11 @@ export abstract class Graph {
 
     const vertex = this.GetVertex(address, false);
     if (!vertex) return;
+
     vertex.Reset();
     this.vertices[address.sheet_id][address.column][address.row] = undefined;
+
+    // ArrayVertex2.CheckOutbound();
 
   }
 
@@ -222,21 +232,25 @@ export abstract class Graph {
     if (vertex) vertex.Reset();
   }
 
+
   /**
    * resets the vertex by removing inbound edges and clearing formula flag.
    * we have an option to set dirty because they get called together
    * frequently, saves a lookup.
    */
-  public ResetInbound(address: ICellAddress, set_dirty = false, create = true): void {
+  public ResetInbound(address: ICellAddress, set_dirty = false, create = true, remove = false): void {
+
+    // console.info("RIB", address.row, address.column, 'd?', set_dirty);
 
     const vertex = this.GetVertex(address, create);
 
     if (!vertex) {
-      /*
       if (set_dirty) {
-        this.SetArraysDirty(address);
+        const list = ArrayVertex2.GetContainingArrays(address as ICellAddress2);
+        for (const entry of list) {
+          this.SetVertexDirty(entry);
+        }
       }
-      */
       return;
     }
 
@@ -251,9 +265,13 @@ export abstract class Graph {
     // vertex.expression = { type: 'missing', id: -1 };
     // vertex.expression_error = false;
     
+    if (remove) {
+      this.RemoveVertex(address);
+    }
+
   }
 
-  /* * for dev * /
+  /* * dev * /
   public ForceClean() {
     for (const l1 of this.vertices) {
       if (l1) {
@@ -271,7 +289,7 @@ export abstract class Graph {
 
   }
 
-  / * * for dev, check if any vertices are dirtices * /
+  / * * dev, check if any vertices are dirtices * /
   public CheckDirty() {
 
     for (const l1 of this.vertices) {
@@ -427,6 +445,91 @@ export abstract class Graph {
     
   }
 
+  /** 
+   * new array vertices
+   */
+  public AddArrayEdge(u: Area, v: ICellAddress): void {
+
+    // console.info('add array edge', u, v);
+
+    if (!u.start.sheet_id) {
+      throw new Error('AddArrayEdge called without sheet ID');
+    }
+
+    // this should have already been added...
+    const v_v = this.GetVertex(v, true);
+
+    // create or use existing
+    const [array_vertex, created] = ArrayVertex2.GetVertex(u);
+
+    // add an edge
+    v_v.DependsOn(array_vertex);
+
+    // force a check on next calculation pass
+    this.loop_check_required = true;
+
+    if (!created) {
+      // console.info('reusing, so not adding edges');
+      return;
+    }
+
+    // now add edges from/to nodes THAT ALREADY EXIST
+
+    // range can't span sheets, so we only need one set to look up
+
+    const map = this.vertices[u.start.sheet_id];
+
+    // this might happen on create, we can let it go because the 
+    // references will be added when the relevant sheet is added
+
+    if (!map) {
+      return;
+    }
+
+    // ...
+
+    if (u.entire_row) {
+      // console.group('entire row(s)')
+      for (let column = 0; column < map.length; column++) {
+        if (map[column]) {
+          for (let row = u.start.row; row <= u.end.row; row++ ) {
+            const vertex = map[column][row];
+            if (vertex) {
+              // console.info('add', column, row);
+              array_vertex.DependsOn(vertex);
+            }
+          }
+        }
+      }
+      console.groupEnd();
+    }
+    else if (u.entire_column) {
+      // console.group('entire column(s)');
+      for (let column = u.start.column; column <= u.end.column; column++) {
+        if(map[column]) {
+          for (const vertex of map[column]) {
+            if (vertex?.address) {
+              // console.info('add', vertex.address);
+              array_vertex.DependsOn(vertex);
+            }
+          }
+        }
+      }
+      console.groupEnd();
+    }
+    else {
+      for (let row = u.start.row; row <= u.end.row; row++) {
+        for (let column = u.start.column; column <= u.end.column; column++) {
+          const vertex = map[column][row];
+          if (vertex) {
+            array_vertex.DependsOn(vertex);
+          }
+        }
+      }
+    }
+
+  }
+
   /** adds an edge from u -> v */
   public AddEdge(u: ICellAddress, v: ICellAddress): void {
 
@@ -441,8 +544,7 @@ export abstract class Graph {
     // const status = this.LoopCheck(v_v, v_u);
     // if (status === GraphStatus.Loop) { return status; }
 
-    v_u.AddDependent(v_v);
-    v_v.AddDependency(v_u);
+    v_v.DependsOn(v_u);
 
     // add implicit edge to array head. this is required at start
     // because the array isn't set implicitly (why not?)
@@ -474,6 +576,10 @@ export abstract class Graph {
 
   }
 
+  /**
+   * not used? remove
+   * @deprecated
+   */
   public SetAreaDirty(area: IArea): void {
 
     if (area.start.column === Infinity
@@ -499,16 +605,7 @@ export abstract class Graph {
 
   }
 
-  /* * sets area dirty, convenience shortcut * /
-  public SetAreaDirtyX(area: Area) {
-    area.Iterate((address: ICellAddress) => {
-      const vertex = this.GetVertex(address, false);
-      if (vertex) this.SetDirty(address);
-    });
-  }
-  */
-
-  public SetVertexDirty(vertex: SpreadsheetVertex): void {
+  public SetVertexDirty(vertex: SpreadsheetVertexBase): void {
 
     // see below re: concern about relying on this
 
@@ -518,41 +615,8 @@ export abstract class Graph {
     vertex.dirty = true;
 
     for (const edge of vertex.edges_out) {
-      this.SetVertexDirty(edge as SpreadsheetVertex);
+      this.SetVertexDirty(edge as SpreadsheetVertexBase);
     }
-
-    /*
-
-    // is it safe to assume that, if the dirty flag is set, it's
-    // on the dirty list? I'm not sure that's the case if there's
-    // an error.
-
-    // A: definitely not. investigating...
-
-
-
-    this.dirty_list.push(vertex);
-    vertex.SetDirty();
-
-    // so for arrays, make sure every member of the array is
-    // dirty (if there's a vertex). only call this from the 
-    // array head (and don't call the array head).
-
-    if (vertex.reference && vertex.reference.area && vertex.array_head) {
-      const {start, end} = vertex.reference.area;
-      const sheet_id = start.sheet_id || vertex.address?.sheet_id;
-      for (let column = start.column; column <= end.column; column++) {
-        for (let row = start.row; row <= end.row; row++) {
-          if (column === start.column && row === start.row) { continue; } // same same
-
-          const member = this.GetVertex({row, column, sheet_id}, false);
-          if (member && !member.dirty) { this.SetVertexDirty(member); }
-
-        }
-      }
-    }
-
-    */
 
   }
 
@@ -563,148 +627,6 @@ export abstract class Graph {
     this.SetVertexDirty(vertex);
 
   }
-
-  // --- array vertices... testing ---
-
-  /*
-  public CreateImplicitEdgeToArray(array_vertex: ArrayVertex): void {
-
-    if (!array_vertex.area.start.sheet_id) {
-      console.info('area missing sheet id');
-      return;
-    }
-
-    array_vertex.area.Iterate((address) => {
-      const vertex = this.GetVertex(address, false);
-      // const vertex = this.GetVertex(this.ResolveArrayHead(address), false);
-      if (vertex) {
-        // console.info('CreateImplicitEdgeToArray', vertex.address, array_vertex.area);
-        array_vertex.AddDependency(vertex);
-        vertex.AddDependent(array_vertex);
-      }
-      else {
-        console.info('no vertex in CIE', address);
-      }
-    });
-
-  }
-
-  public CreateImplicitEdgeToArrays(vertex: SpreadsheetVertex): void {
-
-    if (!vertex.address) {
-      console.info('vertex missing address');
-      return;
-    }
-    if (!vertex.address.sheet_id) {
-      console.info('vertex missing sheet id');
-      return;
-    }
-
-    for (const key of Object.keys(this.array_vertices)) {
-      const array_vertex = this.array_vertices[key];
-      if (array_vertex.area.start.sheet_id === vertex.address.sheet_id &&
-          array_vertex.area.Contains(vertex.address)) {
-
-        // console.info('CreateImplicitEdgeToArray', vertex.address, array_vertex.area);
-        array_vertex.AddDependency(vertex);
-        vertex.AddDependent(array_vertex);
-      }
-    }
-  }
-  */
-
-  /*
-  public SetArraysDirty(address: ICellAddress): void {
-
-    throw new Error('set arrays dirty');
-
-    / *
-    // console.info("SAD", address)
-
-    for (const key of Object.keys(this.array_vertices)) {
-      const array_vertex = this.array_vertices[key];
-      if (array_vertex.area.start.sheet_id === address.sheet_id &&
-          array_vertex.area.Contains(address)) {
-        this.dirty_list.push(array_vertex);
-        array_vertex.SetDirty();
-      }
-    }
-    * /
-
-  }
-  */
-
-  /*
-  public GetArrayVertex(area: Area, create: true): ArrayVertex;
-
-  public GetArrayVertex(area: Area, create?: boolean): ArrayVertex|undefined;
-
-  public GetArrayVertex(area: Area, create: boolean): ArrayVertex|undefined {
-    const label = area.start.sheet_id + '!' + area.spreadsheet_label;
-    let vertex = this.array_vertices[label];
-    if (!vertex && create) {
-      vertex = new ArrayVertex();
-      vertex.area = area.Clone();
-      this.array_vertices[label] = vertex;
-      this.CreateImplicitEdgeToArray(vertex);
-    }
-    return vertex;
-  }
-
-  public AddArrayVertex(area: Area) {
-    return this.GetArrayVertex(area, true);
-  }
-
-  public RemoveArrayVertex(area: Area) {
-
-    // FIXME: set undefined, and wait for another cleanup? or delete?
-
-    const label = area.spreadsheet_label;
-    const vertex = this.array_vertices[label];
-    if (!vertex) { return; }
-    vertex.Reset();
-    delete this.array_vertices[area.spreadsheet_label];
-
-  }
-  */
-
-  /* * add edge from u -> v 
-   * 
-   * not used atm, removing (symbol) 
-   * /
-  public AddArrayVertexEdge__(u: Area, v: ICellAddress): GraphStatus {
-
-    if (u.start.sheet_id === v.sheet_id && u.Contains(v)) {
-      return GraphStatus.Loop;
-    }
-
-    const v_u = this.GetArrayVertex(u, true); // create if necessary
-    const v_v = this.GetVertex(v, true);
-
-    // const status = this.LoopCheck(v_v, v_u);
-    // if (status === GraphStatus.Loop) { return status; }
-
-    v_u.AddDependent(v_v);
-    v_v.AddDependency(v_u);
-
-    return GraphStatus.OK;
-
-  }
-  */
-
-  /* * remove edge from u -> v * /
-  public RemoveArrayVertexEdge(u: Area, v: ICellAddress): void {
-
-    const v_u = this.GetArrayVertex(u, false);
-    const v_v = this.GetVertex(v, false);
-
-    if (!v_u || !v_v) { return; }
-
-    v_u.RemoveDependent(v_v);
-    v_v.RemoveDependency(v_u);
-
-  }
-  */
 
   // --- leaf vertex api ---
 
@@ -746,14 +668,9 @@ export abstract class Graph {
    * edges).
    */
   public AddLeafVertexEdge(u: ICellAddress, v: LeafVertex): GraphStatus {
-
     const v_u = this.GetVertex(u, true);
-
-    v_u.AddDependent(v);
-    v.AddDependency(v_u);
-
+    v.DependsOn(v_u);
     return GraphStatus.OK;
-
   }
 
   /** removes edge from u -> v */
@@ -830,31 +747,7 @@ export abstract class Graph {
       this.ResetLoopState();
       this.loop_check_required = false;
 
-      /*
-      for (const vertex of calculation_list) {
-        if (vertex.color === Color.white) {
-          console.info('loop check');
-          if (vertex.LoopCheck2()) {
-            vertex.dirty = false;
-  
-            // this should alwys be true, because it has edges so
-            // it must be a formula (right?)
-     
-            (vertex as SpreadsheetVertex)?.reference?.SetCalculationError('LOOP');
-
-          }
-        }
-      }
-      */
-
     }
-
-    /*
-    for(const vertex of calculation_list as SpreadsheetVertex[]) {
-      console.info("CL", `R${vertex.address?.row} C${vertex.address?.column}`, vertex);
-
-    } 
-    */
 
     // console.info("CL", calculation_list)
 
@@ -868,7 +761,8 @@ export abstract class Graph {
   }
 
   public abstract CalculationCallback(vertex: SpreadsheetVertexBase): CalculationResult;
-  public abstract SpreadCallback(vertex: SpreadsheetVertexBase, value: any): void;
+
+  public abstract SpreadCallback(vertex: SpreadsheetVertexBase, value: UnionOrArray): void;
 
   protected abstract CheckVolatile(vertex: SpreadsheetVertex): boolean;
 

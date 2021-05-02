@@ -406,7 +406,10 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
   }
 
   public Iterate(f: (...args: any[]) => any){
-    if (this.entire_column || this.entire_row) return;
+    if (this.entire_column || this.entire_row) {
+      console.warn(`don't iterate infinite area`);
+      return;
+    }
     for (let c = this.start_.column; c <= this.end_.column; c++){
       for (let r = this.start_.row; r <= this.end_.row; r++){
         f({column: c, row: r, sheet_id: this.start_.sheet_id});

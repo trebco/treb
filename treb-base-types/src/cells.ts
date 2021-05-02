@@ -617,6 +617,43 @@ export class Cells {
     return this.GetRange({row: 0, column: 0}, {row: this.rows_ - 1, column: this.columns_ - 1}, transpose);
   }
 
+  /** simply cannot make this work with overloads (prove me wrong) */
+  public Normalize2(from: ICellAddress, to: ICellAddress): {from: ICellAddress, to: ICellAddress} {
+
+    if (from.column === Infinity) {
+      from = { ...from, column: 0, };
+    }
+
+    if (from.row === Infinity) {
+      from = { ...from, row: 0, };
+    }
+
+    if (to.column === Infinity) {
+      to = { ...to, column: this.columns_ - 1};
+    }
+
+    if (to.row === Infinity) {
+      to = { ...to, row: this.rows_ - 1};
+    }
+
+    return {from, to};
+  }
+
+  /** simply cannot make this work with overloads (prove me wrong) */
+  public Normalize1(from: ICellAddress): ICellAddress {
+
+    if (from.column === Infinity) {
+      from = { ...from, column: 0, };
+    }
+
+    if (from.row === Infinity) {
+      from = { ...from, row: 0, };
+    }
+
+    return from;
+
+  }
+
   /**
    * get raw values (i.e. not calculated). anything outside of actual
    * range will be undefined OR not populated. 
@@ -634,6 +671,8 @@ export class Cells {
    * @param transpose
    */
   public RawValue(from: ICellAddress, to: ICellAddress = from): CellValue | CellValue[][] | undefined {
+
+    ({from, to} = this.Normalize2(from, to));
 
     if (from.row === to.row && from.column === to.column) {
       if (this.data[from.row] && this.data[from.row][from.column]) {
@@ -666,6 +705,13 @@ export class Cells {
 
   /** gets range as values */
   public GetRange(from: ICellAddress, to?: ICellAddress, transpose = false){
+
+    if (to) {
+      ({from, to} = this.Normalize2(from, to));
+    }
+    else {
+      from = this.Normalize1(from);
+    }
 
     // console.info("getrange", from, to, transpose);
 
@@ -746,6 +792,8 @@ export class Cells {
   */
 
   public GetRange4(from: ICellAddress, to: ICellAddress = from, transpose = false) {
+
+    ({from, to} = this.Normalize2(from, to));
 
     if (from.row === to.row && from.column === to.column) {
       if (this.data[from.row] && this.data[from.row][from.column]){

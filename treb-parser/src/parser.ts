@@ -11,6 +11,7 @@ import {
   ParseResult,
   ArgumentSeparatorType,
   DecimalMarkType,
+  UnitLiteral,
 } from './parser-types';
 
 interface PrecedenceList {
@@ -554,6 +555,7 @@ export class Parser {
 
   /** generates column label ("A") from column index (0-based) */
   protected ColumnLabel(column: number): string {
+    if (column === Infinity) { return ''; }
     let s = String.fromCharCode(65 + (column % 26));
     while (column > 25) {
       column = Math.floor(column / 26) - 1;
@@ -568,17 +570,29 @@ export class Parser {
     offset: { rows: number; columns: number },
   ): string {
     let column = address.column;
-    if (!address.absolute_column) column += offset.columns;
+    if (!address.absolute_column && address.column !== Infinity) column += offset.columns;
 
     let row = address.row;
-    if (!address.absolute_row) row += offset.rows;
+    if (!address.absolute_row && address.row !== Infinity) row += offset.rows;
 
-    if (row < 0 || column < 0) return '#REF';
+    if (row < 0 || column < 0 || (row === Infinity && column === Infinity)) return '#REF';
 
     let label = '';
     if (address.sheet) {
       label = (QuotedSheetNameRegex.test(address.sheet) ?
         '\'' + address.sheet + '\'' : address.sheet) + '!';
+    }
+
+    if (row === Infinity) {
+      return label + 
+        (address.absolute_column ? '$' : '') +
+        this.ColumnLabel(column);
+    }
+
+    if (column === Infinity) {
+      return label + 
+        (address.absolute_row ? '$' : '') +
+        (row + 1)
     }
 
     return (
@@ -658,55 +672,139 @@ export class Parser {
   }
 
   /**
+   * helper function, @see BinaryToRange
+   * @param unit 
+   * @returns 
+   */
+  protected UnitToAddress(unit: UnitLiteral|UnitIdentifier): UnitAddress|undefined {
+
+    // console.info("U2", unit);
+
+    // for literals, only numbers are valid
+    if (unit.type === 'literal') {
+      if (typeof unit.value === 'number' && unit.value > 0 && !/\./.test(unit.text||'')) {
+        return {
+          type: 'address',
+          position: unit.position,
+          label: unit.value.toString(),
+          row: unit.value - 1,
+          id: this.id_counter++,
+          column: Infinity,
+        };
+      }
+    }
+    else {
+
+      // UPDATE: sheet names... we may actually need a subparser for this?
+      // or can we do it with a regex? (...)
+
+      let sheet: string|undefined;
+      let name = unit.name;
+
+      const tokens = name.split('!');
+      if (tokens.length > 1) {
+        sheet = tokens.slice(0, tokens.length - 1).join('!');
+        name = name.substr(sheet.length + 1);
+        if (sheet[0] === '\'') {
+          if (sheet.length > 1 && sheet[sheet.length - 1] === '\'') {
+            sheet = sheet.substr(1, sheet.length - 2);
+          }
+          else {
+            // console.info('mismatched single quote');
+            return undefined;
+          }
+        }
+      }
+
+      const absolute = name[0] === '$';
+      name = (absolute ? name.substr(1) : name).toUpperCase();
+      const as_number = Number(name);
+
+      // if it looks like a number, consider it a number and then be strict
+      if (!isNaN(as_number)) {
+        if (as_number > 0 && as_number !== Infinity && !/\./.test(name)) {
+          return {
+            type: 'address',
+            position: unit.position,
+            absolute_row: absolute,
+            label: unit.name,
+            row: as_number - 1,
+            id: this.id_counter++,
+            column: Infinity,
+            sheet,
+          };
+        }
+      }
+      else if (/[A-Z]{1,3}/.test(name)) {
+        
+        let column = -1; // clever
+
+        for (let i = 0; i < name.length; i++) {
+          const char = name[i].charCodeAt(0);
+          column = 26 * (1 + column) + (char - UC_A);
+        }
+
+        return {
+          type: 'address',
+          position: unit.position,
+          absolute_column: absolute,
+          label: unit.name,
+          column,
+          id: this.id_counter++,
+          row: Infinity,
+          sheet,
+        }
+
+      }
+
+    }
+
+    return undefined;
+  }
+
+  /**
    * converts binary operations with a colon operator to ranges. this also
    * validates that there are no colon operations with non-address operands
    * (which is why it's called after precendence reordering; colon has the
    * highest preference). recursive only over binary ops AND unary ops.
+   * 
+   * NOTE: there are other legal arguments to a colon operator. specifically:
+   * 
+   * (1) two numbers, in either order
+   *
+   * 15:16
+   * 16:16
+   * 16:15
+   *
+   * (2) with one or both optionally having a $
+   *
+   * 15:$16
+   * $16:$16
+   *
+   * (3) two column identifiers, in either order
+   * 
+   * A:F
+   * B:A
+   *
+   * (4) and the same with $
+   *
+   * $A:F
+   * $A:$F
+   * 
+   * because none of these are legal in any other context, we leave the 
+   * default treatment of them UNLESS they are arguments to the colon 
+   * operator, in which case we will grab them. that does mean we parse
+   * them twice, but (...)
+   * 
+   * FIXME: will need some updated to rendering these, we don't have any
+   * handler for rendering infinity
    */
   protected BinaryToRange(unit: ExpressionUnit): ExpressionUnit {
     if (unit.type === 'binary') {
       if (unit.operator === ':') {
 
-        /*
-
-        // we need to resolve this, and the below is valid for a selection
-        // of rows; however, I need to understand what the implications of
-        // adding the range dependency will be since this is unusual syntax...
-
-        // the following are legal:
-
-        // (1) two numbers, in either order
-        //
-        // 15:16
-        // 16:16
-        // 16:15
-        //
-        // (2) with one or both optionally having a $
-        //
-        // 15:$16
-        // $16:$16
-        //
-        // (3) two column identifiers, in either order
-        // 
-        // A:F
-        // B:A
-        //
-        // (4) and the same with $
-        //
-        // $A:F
-        // $A:$F
-        // 
-
-        if (unit.left.type === 'literal' && 
-            typeof unit.left.value === 'number' &&
-            unit.right.type === 'literal' &&
-            typeof unit.right.value === 'number'
-            ) {
-          console.info('double lit numbers!');
-          // 
-
-        }
-        */
+        let range: UnitRange|undefined;
+        let label = '';
 
         if (unit.left.type === 'address' && unit.right.type === 'address') {
           // construct a label using the full text. there's a possibility,
@@ -719,7 +817,7 @@ export class Parser {
           const start_index = unit.left.position + unit.left.label.length;
           const end_index = unit.right.position;
 
-          const range: UnitRange = {
+          range = {
             type: 'range',
             id: this.id_counter++,
             position: unit.left.position,
@@ -730,9 +828,8 @@ export class Parser {
               this.expression.substring(start_index, end_index) +
               unit.right.label,
           };
-          this.dependencies.ranges[
-            range.start.label + ':' + range.end.label
-          ] = range;
+
+          label = range.start.label + ':' + range.end.label;
 
           this.address_refcount[range.start.label]--;
           this.address_refcount[range.end.label]--;
@@ -745,15 +842,107 @@ export class Parser {
             );
           });
 
+        }
+        else if ((unit.left.type === 'literal' || unit.left.type === 'identifier')
+                && (unit.right.type === 'literal' || unit.right.type === 'identifier')) {
+
+          // see if we can plausibly interpret both of these as rows or columns
+
+          const left = this.UnitToAddress(unit.left);
+          const right = this.UnitToAddress(unit.right);
+
+          // and they need to match
+
+          if (left && right
+              && ((left.column === Infinity && right.column === Infinity)
+                  || (left.row === Infinity && right.row === Infinity))) {
+
+            label = left.label + ':' + right.label;
+
+            // we don't support out-of-order ranges, so we should correct.
+            // they just won't work otherwise. (TODO/FIXME)
+           
+            range = {
+              type: 'range',
+              id: this.id_counter++,
+              position: unit.left.position,
+              start: left,
+              end: right,
+              label,
+            };
+
+          }
+                    
+        }
+
+        /*
+        else if ( unit.left.type === 'literal' 
+                  && unit.right.type === 'literal' 
+                  && typeof unit.left.value === 'number' 
+                  && typeof unit.right.value === 'number') {
+
+          // technically we don't want to support any number that has
+          // a decimal place, but I'm not sure we have a useful way of
+          // measuring that... could look at the original text?
+
+          if (unit.left.value > 0 
+              && unit.right.value > 0
+              && !/\./.test(unit.left.text||'')
+              && !/\./.test(unit.right.text||'')
+              ) {
+
+            label = unit.left.value.toString() + ':' + unit.right.value.toString();
+
+            console.info('m2:', label);
+
+            const left: UnitAddress = {
+              type: 'address',
+              position: unit.left.position,
+              label: unit.left.value.toString(),
+              row: unit.left.value - 1,
+              id: this.id_counter++,
+              column: Infinity,
+            };
+
+            const right: UnitAddress = {
+              type: 'address',
+              position: unit.right.position,
+              label: unit.right.value.toString(),
+              row: unit.right.value - 1,
+              id: this.id_counter++,
+              column: Infinity,
+            };
+
+            range = {
+              type: 'range',
+              id: this.id_counter++,
+              position: unit.left.position,
+              start: left,
+              end: right,
+              label,
+            };
+
+          }
+          
+        }
+        */
+
+        if (range) {
+
+          this.dependencies.ranges[label] = range;
+
           // and add the range
           this.full_reference_list.push(range);
 
           return range;
+
         }
         else {
           this.error = `unexpected character: :`;
           this.valid = false;
+          // console.info('xx', unit);
         }
+
       }
 
       // recurse
@@ -1266,13 +1455,22 @@ export class Parser {
 
     // FIXME: should mark this (!) when it hits, rather than search
 
+    // UPDATE: ! is legal in sheet names, although it needs to be quoted.
+
     let sheet: string | undefined;
     const tokens = token.split('!');
 
+    if (tokens.length > 1) {
+      sheet = tokens.slice(0, tokens.length - 1).join('!');
+      position += sheet.length + 1;
+    }
+
+    /*
     if (tokens.length === 2) {
       sheet = tokens[0];
       position += (tokens[0].length + 1);
     }
+    */
 
     // FIXME: can inline
 

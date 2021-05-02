@@ -11,7 +11,7 @@ import { ExpressionCalculator, UnionIsMetadata } from './expression-calculator';
 import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
-import { FunctionMap, ReturnType } from './descriptors';
+import { ExtendedFunctionDescriptor, FunctionMap, ReturnType } from './descriptors';
 import { BaseFunctionLibrary } from './functions/base-functions';
 import { FinanceFunctionLibrary } from './functions/finance-functions';
 import { TextFunctionLibrary, TextFunctionAliases } from './functions/text-functions';
@@ -355,9 +355,8 @@ export class Calculator extends Graph {
   }
 
   /**
-   * this is a mess
+   * this is a mess [not as bad as it used to be]
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public SpreadCallback(vertex: SpreadsheetVertex, value: UnionOrArray): void {
 
     if (!vertex.address || !vertex.address.sheet_id) {
@@ -413,99 +412,6 @@ export class Calculator extends Graph {
       }
 
     }
-
-
-    /*
-
-    // const ref = vertex.reference.area;
-    let type: string = typeof value;
-    let dims = 2;
-
-    // const calculation_error = (typeof value === 'object' && value.error);
-    const calculation_error = (!Array.isArray(value) && value.type === ValueType.error);
-
-    // mx1
-
-    if (!calculation_error && type === 'object' && value.data){
-      if (this.IsNativeOrTypedArray(value.data)){
-        type = 'array';
-        value = Utilities.TransposeArray(value.data);
-      }
-      else {
-        type = 'array';
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        value = [[''].concat(value.rownames)].concat(value.colnames.map((name: any) => {
-          return [name].concat(value.data[name]);
-        }));
-      }
-    }
-    else if (this.IsNativeOrTypedArray(value)){
-      value = Utilities.TransposeArray(value);
-      type = 'array';
-      dims = 1;
-    }
-
-    const area = vertex.reference.area;
-    if (area){
-
-      // clear array -- will it always exist? (...)
-      for (let row = area.start.row; row <= area.end.row; row++) {
-        for (let column = area.start.column; column <= area.end.column; column++) {
-          cells.data[row][column].SetCalculatedValue(undefined, ValueType.undefined);
-        }
-      }
-      
-      if (type === 'array' ){
-
-        if (dims === 1){
-          let row = area.start.row;
-          let column = area.start.column;
-          for (let r = 0; r < value.length && r < area.rows; r++, row++ ){
-            if (this.IsNativeOrTypedArray(value[r])){
-              for (let c = 0; c < value[r].length && c < area.columns; c++, column++ ){
-                cells.data[row][column].SetCalculatedValueOrError(value[r][c]);
-              }
-              column = area.start.column;
-            }
-            else {
-              cells.data[row][column].SetCalculatedValueOrError(value[r]);
-            }
-          }
-        }
-        else {
-          for (let c = value.length; c < area.columns; c++ ) value[c] = []; // padding columns for loop
-          for (let c = 0, column = area.start.column; c < area.columns; c++, column++ ){
-            for (let r = 0, row = area.start.row; r < area.rows; r++, row++ ){
-              cells.data[row][column].SetCalculatedValueOrError(value[c][r]);
-            }
-          }
-        }
-      }
-      else {
-
-        // test before loops
-        if (calculation_error) {
-          for (let c = area.start.column; c <= area.end.column; c++){
-            for (let r = area.start.row; r <= area.end.row; r++){
-              cells.data[r][c].SetCalculationError(value.error);
-            }
-          }
-        }
-        else {
-          const value_type = GetValueType(value);
-          for (let c = area.start.column; c <= area.end.column; c++){
-            for (let r = area.start.row; r <= area.end.row; r++){
-              cells.data[r][c].SetCalculatedValue(value, value_type);
-            }
-          }
-        }
-      }
-    }
-
-    // console.info("Spread array value", value, vertex.reference_)
-
-    */
 
   }
 
@@ -663,7 +569,7 @@ export class Calculator extends Graph {
    * 
    * @deprecated
    */
-  public GetFunction(name: string) {
+  public GetFunction(name: string): ExtendedFunctionDescriptor {
     return this.library.Get(name);
   }
 
@@ -710,7 +616,7 @@ export class Calculator extends Graph {
    * TODO: support updating AC (need grid change, possibly call from EmbeddedSheet)
    * FIXME: this is going to break in simulations (maybe not an issue?)
    */
-  public RegisterFunction(map: FunctionMap) {
+  public RegisterFunction(map: FunctionMap): void {
 
     for (const name of Object.keys(map)) {
       const descriptor = map[name];
@@ -1403,9 +1309,21 @@ export class Calculator extends Graph {
 
           // --- non-array version -------------------------------------------
 
+          /*
           range.Iterate((target: ICellAddress) => {
             this.AddEdge(target, address);
           });
+          */
+
+          // --- trying again... ---------------------------------------------
+
+          if (range.entire_row || range.entire_column) {
+            this.AddArrayEdge(range, address);
+          }
+          else {
+            range.Iterate((target: ICellAddress) => this.AddEdge(target, address));
+          }
+
 
           // --- end ---------------------------------------------------------
 
@@ -1444,7 +1362,13 @@ export class Calculator extends Graph {
 
       // is this unecessarily flagging a number of cells? (...)
 
-      this.ResetInbound(address, true, false);
+      this.ResetInbound(address, true, false, true);
+
+      // we should be able to remove this vertex altogether; watch
+      // out for arrays here
+
+      // this.RemoveVertex(address); // implicit
+      
     }
     else {
 

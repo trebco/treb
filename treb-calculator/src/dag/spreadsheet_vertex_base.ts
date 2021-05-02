@@ -10,9 +10,8 @@ export interface CalculationResult {
 
 /**
  * this is a subset of Graph so we can avoid the circular dependency.
- * not sure how to make this abstract in the instance, though... (TODO)
  */
-export interface GraphImpl {
+export interface GraphCallbackData {
   CalculationCallback: (vertex: SpreadsheetVertexBase) => CalculationResult;
   SpreadCallback: (vertex: SpreadsheetVertexBase, value: UnionOrArray) => void;
   volatile_list: SpreadsheetVertexBase[];
@@ -20,5 +19,5 @@ export interface GraphImpl {
 
 export abstract class SpreadsheetVertexBase extends Vertex {
   public dirty = false;
-  public abstract Calculate(graph: GraphImpl): void;
+  public abstract Calculate(graph: GraphCallbackData): void;
 }

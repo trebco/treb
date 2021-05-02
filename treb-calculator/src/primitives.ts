@@ -13,6 +13,8 @@ const NumericTypes = (a: UnionValue, b: UnionValue): NumericTuple => {
 
   const result: NumericTuple = [0, 0];
 
+  // FIXME: what about empty string? should === 0?
+
   switch (a.type) {
     case ValueType.number: result[0] = a.value as number; break;
     case ValueType.boolean: result[0] = a.value ? 1 : 0; break;

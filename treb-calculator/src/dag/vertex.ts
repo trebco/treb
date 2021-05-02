@@ -5,9 +5,16 @@ export enum Color {
 
 export class Vertex {
 
+  /** 
+   * vertex and its subclasses have a type parameter for type 
+   * guards/reflection; each instance has a type that is set
+   * to the static class type.
+   */
+  public static type = 'vertex';
+
   // --- members ---
 
-  public type = 'vertex'; // for type guard
+  public type = Vertex.type; // for type guard
 
   public color = Color.white; // for loop check
 
@@ -82,6 +89,26 @@ export class Vertex {
   /** remove a dependency */
   public RemoveDependency(edge: Vertex): void {
     this.edges_in = this.edges_in.filter((check) => check !== edge);
+  }
+
+  /** 
+   * this is a composite operation, because the operations are always called 
+   * in pairs. this means create a pair of links such that _edge_ depends on
+   * _this_.
+   */
+  public LinkTo(edge: Vertex): void {
+    this.AddDependent(edge);
+    edge.AddDependency(this);
+  }
+
+  /**
+   * this is an alteranate formulation that may make more intuitive sense.
+   * it creates a pair of forward/backward links, such that _this_ depends
+   * on _edge_.
+   */
+  public DependsOn(edge: Vertex): void {
+    this.AddDependency(edge);
+    edge.AddDependent(this);
   }
 
   /**

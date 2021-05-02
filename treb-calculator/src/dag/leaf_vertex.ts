@@ -1,5 +1,5 @@
 
-import { GraphImpl } from './spreadsheet_vertex_base';
+import { GraphCallbackData } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
 import { Vertex } from './vertex';
 
@@ -21,8 +21,10 @@ import { Vertex } from './vertex';
  */
 export class LeafVertex extends SpreadsheetVertex {
 
+  public static type = 'leaf-vertex';
+
   public state_id = 0;
-  public type = 'leaf-vertex'; // for type guard
+  public type = LeafVertex.type; // for type guard
 
   protected state_representation = '';
 
@@ -60,7 +62,7 @@ export class LeafVertex extends SpreadsheetVertex {
   }
 
   /** overrides calculate function */
-  public Calculate(graph: GraphImpl): void {
+  public Calculate(graph: GraphCallbackData): void {
 
     // if we are not dirty, nothing to do
     if (!this.dirty) return;

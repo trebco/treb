@@ -5994,7 +5994,7 @@ export class Grid {
 
           }
 
-      }
+      } 
     }
 
     this.additional_selections.splice(index); // excess

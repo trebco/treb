@@ -1,6 +1,6 @@
 
-import { SpreadsheetVertexBase, GraphImpl } from './spreadsheet_vertex_base';
-import { Cell, Box, ICellAddress, UnionOrArray, UndefinedUnion, ValueType, GetValueType } from 'treb-base-types';
+import { SpreadsheetVertexBase, GraphCallbackData } from './spreadsheet_vertex_base';
+import { Cell, Box, ICellAddress, UnionOrArray, UndefinedUnion, ValueType } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 
@@ -13,6 +13,8 @@ export enum SpreadsheetError {
  * specialization of vertex with attached data and calculation metadata
  */
 export class SpreadsheetVertex extends SpreadsheetVertexBase {
+
+  public static type = 'spreadsheet-vertex';
 
   // I wonder if we should drop this and look up on demand -- might
   // help in large blocks...
@@ -30,7 +32,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
   public expression_error = false;
   public short_circuit = false;
 
-  public type = 'spreadsheet-vertex'; // for type guard
+  public type = SpreadsheetVertex.type; // for type guard
 
   /** 
    * it seems like this could be cached, if it gets checked a lot 
@@ -80,7 +82,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
    * A: for overloading. leaf extends this class, and has a separate
    * calculation routine.
    */
-  public Calculate(graph: GraphImpl): void {
+  public Calculate(graph: GraphCallbackData): void {
 
     if (!this.dirty) return;
 
