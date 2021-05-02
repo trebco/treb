@@ -1,10 +1,10 @@
 
 import { Vertex, Color } from './vertex';
 import { SpreadsheetVertex  } from './spreadsheet_vertex';
-import { ArrayVertex2  } from './array-vertex-2';
+import { ArrayVertex  } from './array-vertex';
 import { SpreadsheetVertexBase, CalculationResult, GraphCallbackData } from './spreadsheet_vertex_base';
 import { LeafVertex } from './leaf_vertex';
-import { Cells, ICellAddress, ICellAddress2, Area, IArea, Cell, ValueType, UnionOrArray } from 'treb-base-types';
+import { Cells, ICellAddress, ICellAddress2, Area, IArea, UnionOrArray } from 'treb-base-types';
 import { DataModel } from 'treb-grid';
 
 // FIXME: this is a bad habit if you're testing on falsy for OK.
@@ -45,9 +45,11 @@ export abstract class Graph implements GraphCallbackData {
   /** flag set on add edge */
   private loop_check_required = false;
 
-  public IsArrayVertex2(vertex: Vertex): vertex is ArrayVertex2 {
-    return vertex.type === ArrayVertex2.type;
+  /*
+  public IsArrayVertex(vertex: Vertex): vertex is ArrayVertex {
+    return vertex.type === ArrayVertex.type;
   }
+  */
 
   public IsSpreadsheetVertex(vertex: Vertex): vertex is SpreadsheetVertex {
     return vertex.type === SpreadsheetVertex.type;
@@ -76,7 +78,7 @@ export abstract class Graph implements GraphCallbackData {
     this.cells_map = {};
 
     /** array vertex maintains its own list */
-    ArrayVertex2.Clear();
+    ArrayVertex.Clear();
 
   }
 
@@ -205,7 +207,7 @@ export abstract class Graph implements GraphCallbackData {
 
     // this is back, in the new form
 
-    ArrayVertex2.CreateImplicitEdges(vertex, address as ICellAddress2);
+    ArrayVertex.CreateImplicitEdges(vertex, address as ICellAddress2);
 
     return vertex;
 
@@ -246,7 +248,7 @@ export abstract class Graph implements GraphCallbackData {
 
     if (!vertex) {
       if (set_dirty) {
-        const list = ArrayVertex2.GetContainingArrays(address as ICellAddress2);
+        const list = ArrayVertex.GetContainingArrays(address as ICellAddress2);
         for (const entry of list) {
           this.SetVertexDirty(entry);
         }
@@ -460,7 +462,7 @@ export abstract class Graph implements GraphCallbackData {
     const v_v = this.GetVertex(v, true);
 
     // create or use existing
-    const [array_vertex, created] = ArrayVertex2.GetVertex(u);
+    const [array_vertex, created] = ArrayVertex.GetVertex(u);
 
     // add an edge
     v_v.DependsOn(array_vertex);

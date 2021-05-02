@@ -26,9 +26,9 @@ import { Color } from './vertex';
  * [FIXME: that initial create step could definitely be optimized to limit checks]
  * 
  */
-export class ArrayVertex2 extends SpreadsheetVertexBase {
+export class ArrayVertex extends SpreadsheetVertexBase {
 
-  public static type = 'array-vertex-2';
+  public static type = 'array-vertex';
 
   /**
    * this is the list of currently used array vertices. it will get cleaned
@@ -39,9 +39,9 @@ export class ArrayVertex2 extends SpreadsheetVertexBase {
    * we start using a lot of these: split by sheet ID, sort in start/end order,
    * and so on. 
    */
-  private static list: ArrayVertex2[] = [];
+  private static list: ArrayVertex[] = [];
 
-  public type = ArrayVertex2.type; // for type guard
+  public type = ArrayVertex.type; // for type guard
 
   /** the target area */
   public area: Area;
@@ -61,13 +61,13 @@ export class ArrayVertex2 extends SpreadsheetVertexBase {
    * returns existing vertex. returns the vertex and a flag indicating
    * if this was created new (true) or not (false).
    */
-  public static GetVertex(area: Area): [vertex: ArrayVertex2, created: boolean] {
+  public static GetVertex(area: Area): [vertex: ArrayVertex, created: boolean] {
     for (const entry of this.list) {
       if ((entry.area.start.sheet_id === area.start.sheet_id) && entry.area.Equals(area)) {
         return [entry, false];
       }
     }
-    return [new ArrayVertex2(area), true];
+    return [new ArrayVertex(area), true];
   }
 
   /**
@@ -80,9 +80,9 @@ export class ArrayVertex2 extends SpreadsheetVertexBase {
   /**
    * returns a list of arrays that contain this address
    */
-  public static GetContainingArrays(address: ICellAddress2): ArrayVertex2[] {
+  public static GetContainingArrays(address: ICellAddress2): ArrayVertex[] {
     // console.info('av2 get arrays:', address.row, address.column);
-    const list: ArrayVertex2[] = [];
+    const list: ArrayVertex[] = [];
     for (const entry of this.list) {
       if ((entry.area.start.sheet_id === address.sheet_id) && entry.area.Contains(address)) {
         // console.info("match", entry.area.spreadsheet_label);
@@ -114,7 +114,7 @@ export class ArrayVertex2 extends SpreadsheetVertexBase {
   private constructor(range: Area) {
     super();
     this.area = range.Clone();
-    ArrayVertex2.list.push(this);
+    ArrayVertex.list.push(this);
   }
 
   /**
@@ -126,7 +126,7 @@ export class ArrayVertex2 extends SpreadsheetVertexBase {
     if (!this.edges_out.length) {
       // console.info('removing dead array vertex');
       this.Reset();
-      ArrayVertex2.list = ArrayVertex2.list.filter(test => test !== this);
+      ArrayVertex.list = ArrayVertex.list.filter(test => test !== this);
     }
   }  
 
