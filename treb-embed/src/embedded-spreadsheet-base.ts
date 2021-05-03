@@ -454,6 +454,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
                 case 'create':
                   this.InflateAnnotation(event.annotation);
                   this.calculator.UpdateAnnotations(event.annotation);
+                  this.grid.AnnotationUpdated(event.annotation);
                   break;
                 case 'delete':
                   this.calculator.RemoveAnnotation(event.annotation); // clean up vertex
