@@ -498,8 +498,11 @@ export abstract class BaseLayout {
    * 
    */
   public PointToAnnotationCorner(point: Point): Corner {
-    const address = this.PointToAddress_Grid(point);
+    const address = this.PointToAddress_Grid(point, undefined, false);
     const cell_rect = this.CellAddressToRectangle(address);
+
+    // console.info('p2ac', point, address);
+
     return {
       address,
       offset: {
@@ -570,7 +573,8 @@ export abstract class BaseLayout {
 
         if (annotation.rect && !annotation.layout) {
 
-          // console.info('rect and no layout');
+          // this is breaking on freeze when the spreadsheet is scrolled because
+          // the top-left uses the freeze panes. stop doing that.
 
           annotation.scaled_rect = annotation.rect.Scale(this.scale);
           annotation.layout = this.RectToAnnotationLayout(annotation.scaled_rect);
@@ -748,6 +752,9 @@ export abstract class BaseLayout {
         height: rect.height,
       };
 
+      const scroll_node = this.scroll_reference_node;
+      const scroll_rect = scroll_node.getBoundingClientRect();
+
       const bounding_rect = node.getBoundingClientRect();
 
       // IE11 is not targeting the child nodes? why not? (...)
@@ -764,9 +771,46 @@ export abstract class BaseLayout {
           y: bounding_rect.top + event.offsetY - rect.top,
         };
 
+        const elements = [node, ...this.GetFrozenAnnotations(annotation)];
+        const scroll_delta = 25;
+        
+        const grid_rect =
+          this.CellAddressToRectangle({ row: 0, column: 0 }).Combine(
+            this.CellAddressToRectangle({
+              row: this.model.active_sheet.rows - 1,
+              column: this.model.active_sheet.columns - 1,
+            })).Expand(-1, -1);
+
         MouseDrag(this.mask, 'move', (move_event) => {
 
-          const elements = [node, ...this.GetFrozenAnnotations(annotation)];
+          // check if we are oob the grid
+          // FIXME: clamp annotation to cell bounds (...) this is OK for now though
+
+          if (move_event.offsetY - scroll_rect.top < this.header_offset.y) {
+            const delta = Math.min(scroll_delta, scroll_node.scrollTop);
+            scroll_node.scrollTop -= delta; 
+            offset.y += delta;
+          }
+          else if (move_event.offsetY - scroll_rect.top >= scroll_rect.height) {
+            if (scroll_node.scrollTop + scroll_rect.height < grid_rect.height) {
+              const delta = scroll_delta;
+              scroll_node.scrollTop += delta; 
+              offset.y -= delta;
+            }
+          }
+
+          if (move_event.offsetX - scroll_rect.left < this.header_offset.x) {
+            const delta = Math.min(scroll_delta, scroll_node.scrollLeft);
+            scroll_node.scrollLeft -= delta;
+            offset.x += delta;
+          }
+          else if (move_event.offsetX - scroll_rect.left >= scroll_rect.width) {
+            if (scroll_node.scrollLeft + scroll_rect.width < grid_rect.width) {
+              const delta = scroll_delta;
+              scroll_node.scrollLeft += delta;
+              offset.x -= delta;
+            }
+          }
 
           rect.top = move_event.offsetY - offset.y;
           rect.left = move_event.offsetX - offset.x;
@@ -1436,22 +1480,26 @@ export abstract class BaseLayout {
   /**
    * point to cell address (grid only)
    */
-  public PointToAddress_Grid(point: Point, cap_maximum = false): ICellAddress {
+  public PointToAddress_Grid(point: Point, cap_maximum = false, offset_freeze = true): ICellAddress {
 
     // offset for freeze pane
 
-    if (this.model.active_sheet.freeze.rows) {
-      const frozen_height = this.frozen_row_tiles[0].logical_size.height;
-      if (point.y - this.scroll_reference_node.scrollTop < frozen_height) {
-        point.y -= this.scroll_reference_node.scrollTop;
-      }
-    }
+    if (offset_freeze) {
 
-    if (this.model.active_sheet.freeze.columns) {
-      const frozen_width = this.frozen_column_tiles[0].logical_size.width;
-      if (point.x - this.scroll_reference_node.scrollLeft < frozen_width) {
-        point.x -= this.scroll_reference_node.scrollLeft;
+      if (this.model.active_sheet.freeze.rows) {
+        const frozen_height = this.frozen_row_tiles[0].logical_size.height;
+        if (point.y - this.scroll_reference_node.scrollTop < frozen_height) {
+          point.y -= this.scroll_reference_node.scrollTop;
+        }
       }
+
+      if (this.model.active_sheet.freeze.columns) {
+        const frozen_width = this.frozen_column_tiles[0].logical_size.width;
+        if (point.x - this.scroll_reference_node.scrollLeft < frozen_width) {
+          point.x -= this.scroll_reference_node.scrollLeft;
+        }
+      }
+
     }
 
     const result = { row: 0, column: 0 };
