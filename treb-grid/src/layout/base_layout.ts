@@ -1949,7 +1949,7 @@ export abstract class BaseLayout {
 
   }
 
-  public UpdateTileHeights(mark_dirty = true, start_row = -1) {
+  public UpdateTileHeights(mark_dirty = true, start_row = -1): void {
 
     let y = 0;
 

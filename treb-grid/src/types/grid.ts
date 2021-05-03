@@ -905,7 +905,7 @@ export class Grid {
    * superfluous but (assuming it's one at a time) should not be too expensive
    */
   public AnnotationUpdated(annotation: Annotation): void {
-    console.info('call trhog', annotation);
+    // console.info('call trhog', annotation);
     this.layout.CloneFrozenAnnotation(annotation);    
   }
 
@@ -3388,19 +3388,25 @@ export class Grid {
         y: tooltip_base,
       });
 
-      const move_annotation_list: Array<{ annotation: Annotation; y: number }> = [];
-      const size_annotation_list: Array<{ annotation: Annotation; height: number }> = [];
+      const move_annotation_list: Array<{ annotation: Annotation; y: number, nodes: HTMLElement[] }> = [];
+      const size_annotation_list: Array<{ annotation: Annotation; height: number, nodes: HTMLElement[] }> = [];
 
       for (const annotation of this.active_sheet.annotations) {
         const y = rect.bottom - 1; // -1? border or something?
 
         if (!annotation.scaled_rect || annotation.scaled_rect.bottom < y) { continue; }
+
+        const nodes: HTMLElement[] = [...this.layout.GetFrozenAnnotations(annotation)];
+        if (annotation.node) { nodes.push(annotation.node); }
+
         if (y <= annotation.scaled_rect.top && annotation.move_with_cells) {
-          move_annotation_list.push({ annotation, y: annotation.scaled_rect.top });
+          move_annotation_list.push({ annotation, y: annotation.scaled_rect.top, nodes });
         }
+
         else if (y > annotation.scaled_rect.top && annotation.resize_with_cells) {
-          size_annotation_list.push({ annotation, height: annotation.scaled_rect.height });
+          size_annotation_list.push({ annotation, height: annotation.scaled_rect.height, nodes });
         }
+
       }
 
       MouseDrag(this.layout.mask, 'row-resize', (move_event: MouseEvent) => {
@@ -3432,6 +3438,22 @@ export class Grid {
             // don't call the standard layout functions here. just move
             // the rects with the given deltas. we will sort it out later.
 
+            for (const {annotation, nodes} of size_annotation_list) {
+              if (annotation.scaled_rect) {
+                for (const node of nodes) {
+                  annotation.scaled_rect.ApplyStyle(node);
+                }
+              }
+            }
+            for (const {annotation, nodes} of move_annotation_list) {
+              if (annotation.scaled_rect) {
+                for (const node of nodes) {
+                  annotation.scaled_rect.ApplyStyle(node);
+                }
+              }
+            }
+
+            /*
             for (const {annotation} of size_annotation_list) {
               if (annotation.scaled_rect && annotation.node) {
                 annotation.scaled_rect.ApplyStyle(annotation.node);
@@ -3442,12 +3464,13 @@ export class Grid {
                 annotation.scaled_rect.ApplyStyle(annotation.node);
               }
             }
+            */
 
             // FIXME: use command
 
             this.layout.UpdateTileHeights(true, row);
             this.Repaint(false, true); // repaint full tiles
-            // this.layout.UpdateAnnotation(this.active_sheet.annotations);
+            this.layout.UpdateAnnotation(this.active_sheet.annotations);
 
           });
 
@@ -3628,18 +3651,21 @@ export class Grid {
       // list of annotations that may be affected by this operation. 
       // this operation will either affect position or size, but not both.
 
-      const move_annotation_list: Array<{ annotation: Annotation; x: number }> = [];
-      const size_annotation_list: Array<{ annotation: Annotation; width: number }> = [];
+      const move_annotation_list: Array<{ annotation: Annotation; x: number, nodes: HTMLElement[] }> = [];
+      const size_annotation_list: Array<{ annotation: Annotation; width: number, nodes: HTMLElement[] }> = [];
 
       for (const annotation of this.active_sheet.annotations) {
         const x = rect.right - 1; // -1? border or something?
         if (!annotation.scaled_rect || annotation.scaled_rect.right < x) { continue; }
 
+        const nodes: HTMLElement[] = [...this.layout.GetFrozenAnnotations(annotation)];
+        if (annotation.node) { nodes.push(annotation.node); }
+
         if (x <= annotation.scaled_rect.left && annotation.move_with_cells) {
-          move_annotation_list.push({ annotation, x: annotation.scaled_rect.left });
+          move_annotation_list.push({ annotation, x: annotation.scaled_rect.left, nodes });
         }
         else if (x > annotation.scaled_rect.left && annotation.resize_with_cells) {
-          size_annotation_list.push({ annotation, width: annotation.scaled_rect.width });
+          size_annotation_list.push({ annotation, width: annotation.scaled_rect.width, nodes });
         }
       }
 
@@ -3674,6 +3700,7 @@ export class Grid {
             // don't call the standard layout functions here. just move
             // the rects with the given deltas. we will sort it out later.
 
+            /*
             for (const {annotation} of size_annotation_list) {
               if (annotation.scaled_rect && annotation.node) {
                 annotation.scaled_rect.ApplyStyle(annotation.node);
@@ -3682,6 +3709,21 @@ export class Grid {
             for (const {annotation} of move_annotation_list) {
               if (annotation.scaled_rect && annotation.node) {
                 annotation.scaled_rect.ApplyStyle(annotation.node);
+              }
+            }
+            */
+            for (const {annotation, nodes} of size_annotation_list) {
+              if (annotation.scaled_rect) {
+                for (const node of nodes) {
+                  annotation.scaled_rect.ApplyStyle(node);
+                }
+              }
+            }
+            for (const {annotation, nodes} of move_annotation_list) {
+              if (annotation.scaled_rect) {
+                for (const node of nodes) {
+                  annotation.scaled_rect.ApplyStyle(node);
+                }
               }
             }
 

@@ -196,6 +196,8 @@ export class GridLayout extends BaseLayout {
         return `${tile.logical_size.width}px`;
       }).join(' ');
 
+    this.column_header.style.gridTemplateRows = `${this.header_offset.y}px auto`;
+
     this.row_header.style.gridTemplateRows =
     this.contents.style.gridTemplateRows =
       this.row_header_tiles.map((tile) => {
@@ -213,6 +215,8 @@ export class GridLayout extends BaseLayout {
         y += this.RowHeight(i);
       }
     }
+
+    this.column_header.style.height = `${y}px`;
 
     this.row_header_selection.style.display = 'block';
     this.row_header_selection.style.width = `${width}px`;
