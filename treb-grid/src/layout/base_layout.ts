@@ -654,6 +654,7 @@ export abstract class BaseLayout {
    * we batch them when we freeze panes (from unfrozen)
    */
   public CloneFrozenAnnotation(annotation: Annotation): void {
+
     for (const container of [this.row_header_annotations, this.column_header_annotations, this.corner_annotations]) {
 
       // FIXME: could reuse? not sure it's worth it
@@ -680,6 +681,7 @@ export abstract class BaseLayout {
       }
 
     }
+
   }
 
   public RemoveAnnotation(annotation: Annotation): void {
@@ -747,6 +749,9 @@ export abstract class BaseLayout {
       };
 
       const bounding_rect = node.getBoundingClientRect();
+
+      // IE11 is not targeting the child nodes? why not? (...)
+      // console.info('target', (event.target as HTMLElement)?.className);
 
       if (event.target === move_target) {
 

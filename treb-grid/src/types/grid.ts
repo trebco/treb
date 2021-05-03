@@ -716,6 +716,7 @@ export class Grid {
         node.setAttribute('tabindex', '-1');
 
         node.addEventListener('mousedown', (event) => {
+
           // this.AnnotationMouseDown(annotation, event, move_target, resize_target);
           this.layout.AnnotationMouseDown(annotation, node, event, move_target, resize_target).then(event => {
             // console.info('resolved', event);
@@ -2747,14 +2748,21 @@ export class Grid {
    */
   private HighlightFreezeArea() {
 
-    // if (this.theme.frozen_highlight_overlay) {
-
       for (const node of [
         this.layout.corner_selection,
         this.layout.row_header_selection,
         this.layout.column_header_selection]) {
 
-        node.classList.add('highlight-area');
+        // in IE11 SVG nodes don't have classList
+
+        const base_class = node.getAttribute('class') || '';
+
+        if (UA.trident) {
+          node.setAttribute('class', base_class + ' highlight-area');
+        }
+        else {
+          node.classList.add('highlight-area');
+        }
 
         /*
         node.style.transition = 'background .33s, border-bottom-color .33s, border-right-color .33s';
@@ -2767,14 +2775,17 @@ export class Grid {
         */
 
         setTimeout(() => {
-          node.classList.remove('highlight-area');
+          if (UA.trident) {
+            node.setAttribute('class', base_class);
+          }
+          else {
+            node.classList.remove('highlight-area');
+          }
           // node.style.background = 'transparent';
           // node.style.borderBottomColor = 'transparent';
           // node.style.borderRightColor = 'transparent';
         }, 400);
       }
-
-    // }
 
   }
 

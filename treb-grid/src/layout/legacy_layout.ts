@@ -42,16 +42,19 @@ export class LegacyLayout extends BaseLayout {
     this.row_header_selection = document.createElementNS(SVGNS, 'svg');
     this.row_header_selection.setAttribute('class', 'frozen-selection');
     this.column_header.appendChild(this.row_header_selection);
+    this.row_header_annotations = DOMUtilities.CreateDiv('frozen-annotation-container frozen-annotation-container-rows', this.column_header);
 
     // ...columns
     this.column_header_selection = document.createElementNS(SVGNS, 'svg');
     this.column_header_selection.setAttribute('class', 'frozen-selection');
     this.row_header.appendChild(this.column_header_selection);
+    this.column_header_annotations = DOMUtilities.CreateDiv('frozen-annotation-container frozen-annotation-container-columns', this.row_header);
 
     // ...corner
     this.corner_selection = document.createElementNS(SVGNS, 'svg');
     this.corner_selection.setAttribute('class', 'frozen-selection');
     this.corner.appendChild(this.corner_selection);
+    this.corner_annotations = DOMUtilities.CreateDiv('frozen-annotation-container frozen-annotation-container-corner', this.corner);
 
     this.annotation_container = DOMUtilities.CreateDiv('annotation-container');
 
@@ -453,6 +456,59 @@ export class LegacyLayout extends BaseLayout {
       this.column_header_selection.style.left = `0px`; // `${this.model.sheet.header_offset.x}px`;
 
     this.corner_selection.style.display = 'block';
+
+    // ... 
+
+
+    const scaled_header = {
+      x: this.model.active_sheet.header_offset.x * this.scale,
+      y: this.model.active_sheet.header_offset.y * this.scale,
+    };
+
+    const freeze = this.model.active_sheet.freeze;
+    
+    if (freeze.rows && freeze.columns) {
+      this.row_header_annotations.style.display = 'block';
+      this.column_header_annotations.style.display = 'block';
+      this.corner_annotations.style.display = 'block';
+    }
+    else if (freeze.rows) {
+      this.row_header_annotations.style.display = 'block';
+      this.column_header_annotations.style.display = 'none';
+      this.corner_annotations.style.display = 'none';
+    }
+    else if (freeze.columns) {
+      this.row_header_annotations.style.display = 'none';
+      this.column_header_annotations.style.display = 'block';
+      this.corner_annotations.style.display = 'none';
+    }
+    else {
+      this.row_header_annotations.style.display = 'none';
+      this.column_header_annotations.style.display = 'none';
+      this.corner_annotations.style.display = 'none';
+    }
+
+    this.row_header_annotations.style.width = this.grid_selection.style.width;
+    this.corner_annotations.style.height = 
+      this.row_header_annotations.style.height = `${y - scaled_header.y}px`;
+    this.corner_annotations.style.top = 
+      this.row_header_annotations.style.top = `${scaled_header.y}px`;
+
+    this.column_header_annotations.style.width =
+      this.corner_annotations.style.width = `${x - scaled_header.x}px`;
+    this.column_header_annotations.style.height = this.grid_selection.style.height;
+    this.corner_annotations.style.left = 
+      this.column_header_annotations.style.left = `${scaled_header.x}px`;
+
+
+    /*
+      this.column_header_annotations.style.background = `rgba(255, 0, 0, .2)`;
+      this.row_header_annotations.style.background = `rgba(255, 0, 0, .2)`;
+      this.corner_annotations.style.background = `rgba(0, 255, 0, .2)`;
+    */
+
+    //
+
 
     /*
     if (this.model.sheet.freeze.rows && this.model.sheet.freeze.columns) {

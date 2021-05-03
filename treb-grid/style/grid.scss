@@ -176,7 +176,8 @@
 
         &:focus, &.retain-focus, &.clone-focus {
           // outline: 2px solid lightblue;
-          box-shadow: 0 0 0 3px #0ea5e954;
+          // box-shadow: 0 0 0 3px #0ea5e954;
+          box-shadow: 0px 0px 0px 3px rgba(14, 165, 233, 0.33); // IE can't handle RGBA hex
         }
 
       }
