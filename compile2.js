@@ -228,7 +228,15 @@ const CreateConfig = (config, entry, additional_aliases, target) => {
 
                   // LATER: seems to work, FWIW, but check if you use it.
 
-                  { text: 'process.env.PRODUCTION', replacement: dev ? 'false' : 'true' }
+                  { text: 'process.env.PRODUCTION', replacement: dev ? 'false' : 'true' },
+
+                  // another new thing, replacement for our conditional compilation, which
+                  // no longer works in ts-lib 9.x (not sure why; don't care)
+
+                  { 
+                    text: /conditional\/(?:modern|legacy)/g, 
+                    replacement: `conditional/${/modern/i.test(config) ? 'modern' : 'legacy'}`,
+                  },
 
                 ],
               }
@@ -331,15 +339,8 @@ const CreateConfig = (config, entry, additional_aliases, target) => {
   return config_instance;
 };
 
-const modern_compiler = build.modern ? webpack(CreateConfig('modern', modern_entry, {
-  '@grid-conditional': path.resolve(__dirname, path.join('treb-grid', 'src', 'conditional', 'modern')),
-  '@conditional-config': path.resolve(__dirname, path.join('treb-base-types', 'src', 'config-modern.ts')),
-}, ['web', 'es6'])) : undefined;
-
-const legacy_compiler = build.legacy ? webpack(CreateConfig('legacy', legacy_entry, {
-  '@grid-conditional': path.resolve(__dirname, path.join('treb-grid', 'src', 'conditional', 'legacy')),
-  '@conditional-config': path.resolve(__dirname, path.join('treb-base-types', 'src', 'config-legacy.ts')),
-}, ['web', 'es5'])) : undefined;
+const modern_compiler = build.modern ? webpack(CreateConfig('modern', modern_entry, {}, ['web', 'es6'])) : undefined;
+const legacy_compiler = build.legacy ? webpack(CreateConfig('legacy', legacy_entry, {}, ['web', 'es5'])) : undefined;
 
 const postbuild_report = async (config, err, stats, toll) => {
 

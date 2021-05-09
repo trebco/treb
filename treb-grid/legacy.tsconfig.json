@@ -5,12 +5,6 @@
     { "path": "../treb-format/legacy.tsconfig.json" },
     { "path": "../treb-utils/legacy.tsconfig.json" },
     { "path": "../treb-parser/legacy.tsconfig.json" }
-  ],
-  "compilerOptions": {
-    "paths": {
-      "@grid-conditional/*": ["treb-grid/src/conditional/legacy/*"]
-    }
-  }
-
+  ]
 }
 
