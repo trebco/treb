@@ -264,7 +264,12 @@ const CreateConfig = (config, entry, additional_aliases, target) => {
             //{ loader: 'css-loader', options: { importLoaders: 1 } },
             //'postcss-loader'
 
-            'style-loader',
+            { 
+              loader: 'style-loader', 
+              options: { 
+                injectType: 'singletonStyleTag' 
+              } 
+            },
             'css-loader',
             'sass-loader',
 
