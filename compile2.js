@@ -16,6 +16,7 @@ const exec = require('child_process').exec;
 const execSync = require('child_process').execSync;
 const LicenseCheckerWebpackPlugin = require('license-checker-webpack-plugin');
 //const TerserPlugin = require('terser-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const package = require('./package.json');
 
@@ -26,6 +27,8 @@ let watch = false;
 let dev = false;
 let clean = false;
 
+let extract_css = false;
+
 // optionally limit build to one module
 const build = { legacy: false, modern: false };
 
@@ -35,6 +38,10 @@ for (const arg of process.argv) {
   if (arg === '--legacy') build.legacy = true;
   if (arg === '--modern') build.modern = true;
   if (arg === '--clean') clean = true;
+  if (arg === '-e' || arg === '--extract-css') {
+    extract_css = true;
+    console.warn('\n** extracting CSS: you may need to clean this up later\n');
+  }
 }
 
 // default is build both
@@ -259,11 +266,16 @@ const CreateConfig = (config, entry, additional_aliases, target) => {
         {
           test: /\.[sp]*css$/,
           sideEffects: true,
-          use: [
-            //'style-loader',
-            //{ loader: 'css-loader', options: { importLoaders: 1 } },
-            //'postcss-loader'
 
+          // if the flag is set, extract css to an external file. if not, 
+          // inline it. for use with CSP. not sure atm how to best integrate 
+          // this.
+
+          use: extract_css ? [
+            MiniCssExtractPlugin.loader,
+            'css-loader',
+            'sass-loader',
+          ] : [
             { 
               loader: 'style-loader', 
               options: { 
@@ -272,7 +284,6 @@ const CreateConfig = (config, entry, additional_aliases, target) => {
             },
             'css-loader',
             'sass-loader',
-
           ],
         },
       ]
@@ -325,13 +336,9 @@ const CreateConfig = (config, entry, additional_aliases, target) => {
     },
 
     plugins: [
+
       new LicenseCheckerWebpackPlugin({ outputFilename: '3d_party.txt' }),
-      /*
-      new webpack.BannerPlugin({
-        banner: `v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC-ND: https://treb.app/license`,
-      }),
-      */
-     {
+      {
         apply: (compiler) => {
           compiler.hooks.beforeCompile.tap('BeforeCompilePlugin', () => {
             console.info('starting ' + config + ' build (' + package.version + ')...', new Date().toString());
@@ -340,6 +347,10 @@ const CreateConfig = (config, entry, additional_aliases, target) => {
       }
     ]
   };
+
+  if (extract_css) {
+    config_instance.plugins.unshift(new MiniCssExtractPlugin());
+  }
 
   return config_instance;
 };

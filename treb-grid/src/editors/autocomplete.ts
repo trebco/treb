@@ -37,7 +37,6 @@ export class Autocomplete {
 
   private completion_list: HTMLDivElement;
   private tooltip: HTMLDivElement;
-  private stylesheet: HTMLStyleElement;
 
   private selected_index = 0;
   private block = false;
@@ -57,7 +56,6 @@ export class Autocomplete {
 
     // this.scope = 'AC' + Math.round(Math.random() * Math.pow(10, 10)).toString(16);
 
-    this.stylesheet = DOMUtilities.Create('style', undefined, document.body);
     this.completion_list = DOMUtilities.CreateDiv(
       'treb-cell-editor-ac-list treb-autocomplete',
       options.container || document.body,

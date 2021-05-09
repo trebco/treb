@@ -86,8 +86,12 @@ export class ChartRenderer {
 
     this.svg_node = SVGNode('svg', {
       class: 'treb-chart',
-      style: 'overflow: hidden; position: relative; width: 100%; height: 100%;'
+      // style: 'overflow: hidden; position: relative; width: 100%; height: 100%;'
     });
+    this.svg_node.style.overflow = 'hidden';
+    this.svg_node.style.position = 'relative';
+    this.svg_node.style.width = '100%';
+    this.svg_node.style.height = '100%';
 
     // this.group = document.createElementNS(SVGNS, 'g');
     this.svg_node.appendChild(this.container_group);
@@ -292,8 +296,9 @@ export class ChartRenderer {
     const text = SVGNode('text', {
       class: 'chart-title', 
       x: Math.round(area.width / 2), 
-      style: 'text-anchor: middle',
+      // style: 'text-anchor: middle',
     }, title);
+    text.style.textAnchor = 'middle';
 
     this.group.appendChild(text);
     const bounds = text.getBoundingClientRect();
