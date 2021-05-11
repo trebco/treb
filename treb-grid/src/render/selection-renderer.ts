@@ -319,7 +319,17 @@ export class SelectionRenderer {
     if (area.count > 1) {
       rect = rect.Combine(this.layout.CellAddressToRectangle(area.end));
     }
+    else if (index) {
 
+      // update: select merge areas for alternate selections when single
+
+      const data = this.model.active_sheet.CellData(selection.target);
+      if (data.merge_area) {
+        rect = this.layout.CellAddressToRectangle(data.merge_area.start);
+        rect = rect.Combine(this.layout.CellAddressToRectangle(data.merge_area.end));
+      }
+    }
+    
     // nub select target wants the base rectangle (not offset for tiles)
     // FIXME: parameterize size
 
