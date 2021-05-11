@@ -189,6 +189,28 @@ for (const key of Object.keys(package['build-entry-points'])) {
 }
 
 const CreateConfig = (config, entry, additional_aliases, target) => {
+
+  const style_loaders = extract_css ?
+
+    // if the flag is set, extract css to an external file. if not, 
+    // inline it. for use with CSP. not sure atm how to best integrate 
+    // this.
+
+    [
+      MiniCssExtractPlugin.loader,
+      'css-loader',
+      'sass-loader',
+    ] : [
+      { 
+        loader: 'style-loader', 
+        options: { 
+          injectType: 'singletonStyleTag' 
+        } 
+      },
+      'css-loader',
+      'sass-loader',
+    ];
+
   const config_instance = {
 
     target,
@@ -267,24 +289,8 @@ const CreateConfig = (config, entry, additional_aliases, target) => {
           test: /\.[sp]*css$/,
           sideEffects: true,
 
-          // if the flag is set, extract css to an external file. if not, 
-          // inline it. for use with CSP. not sure atm how to best integrate 
-          // this.
+          use: style_loaders,
 
-          use: extract_css ? [
-            MiniCssExtractPlugin.loader,
-            'css-loader',
-            'sass-loader',
-          ] : [
-            { 
-              loader: 'style-loader', 
-              options: { 
-                injectType: 'singletonStyleTag' 
-              } 
-            },
-            'css-loader',
-            'sass-loader',
-          ],
         },
       ]
     },

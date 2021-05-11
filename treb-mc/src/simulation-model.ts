@@ -1,6 +1,6 @@
 /* eslint-disable no-unexpected-multiline */
 
-import { UnionOrArray, ICellAddress, Cell, Area, UnionValue, ValueType, GetValueType } from 'treb-base-types';
+import { UnionOrArray, ICellAddress, Cell, Area, UnionValue, ValueType, GetValueType, Is2DArray } from 'treb-base-types';
 import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats, Random } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
@@ -731,6 +731,14 @@ export class SimulationModel {
         arguments: [{ name: 'reference cell', collector: true, }],
         fn: this.HistogramTable.bind(this),
         extension: true,
+      },
+
+      'RiskAMP.Permutation': {
+        description: 'Creates a random permutation of source data',
+        arguments: [{ name: 'range', boxed: true }],
+        fn: this.Permutation.bind(this),
+        extension: true,
+        simulation_volatile: true,
       }
 
 
@@ -1589,6 +1597,62 @@ export class SimulationModel {
 
     return {type: ValueType.number, value: copy[Math.round(copy.length / 2)]};
 
+  }
+
+  public Permutation(range: UnionOrArray): UnionOrArray {
+
+    if (Array.isArray(range)) {
+      
+      const rows = range.length;
+      const cols = range[0].length;
+
+      if (!rows || !cols) {
+        return ArgumentError();
+      }
+
+      const flat = range.reduce((a, arr) => arr.concat(a), []);
+      const count = rows * cols;
+      const shuffled: number[] = [];
+      for (let i = 0; i < count; i++) {
+        shuffled[i] = i;
+      }
+
+      if (flat.length !== count) {
+        console.info('invalid?', count, range, flat);
+        throw new Error('invalid length');
+      }
+
+      const field = MC.Uniform(count);
+
+      // console.info('f', flat, 'field', field.map((x: number) => Math.floor(x * count)));
+
+      for (let i = 0; i < count; i++)
+      {
+        const j = i + Math.floor(field[i] * (count - i));
+        const tmp = shuffled[i];
+        shuffled[i] = shuffled[j];
+        shuffled[j] = tmp;
+      }
+
+      const result: UnionValue[][] = [];
+      let index = 0;
+      for (let r = 0; r < rows; r++) {
+        const row: UnionValue[] = [];
+        for (let c = 0; c < cols; c++) {
+          const x = shuffled[index++];
+          row.push({ ...flat[x] });
+        }
+        result.push(row);
+      }
+
+      return result;
+
+    }
+    else {
+      return {...range}; // single value?
+    }
+
+    return { type: ValueType.number, value: 1 };
   }
 
   public Scale(min: number, max: number): UnionOrArray {

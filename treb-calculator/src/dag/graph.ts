@@ -554,11 +554,21 @@ export abstract class Graph implements GraphCallbacks {
     // watch out for missing sheet ID!
 
     if (v_u.reference && v_u.reference.area && !v_u.array_head) {
+
+      // console.info('add implicit edge -> array head (?), u', u, ', v', v);
+
+      // the old version added an implicit edge from array head -> array
+      // member, not sure why that was a good idea (or why it doesn't work);
+      // add an implicit edge -> v instead... 
+      // 
+      // maybe we thought it was a good idea because it would consolidate 
+      // all the edges through the member? you still get edges, though...
+
       this.AddEdge({
         ...u,
         row: v_u.reference.area.start.row,
         column: v_u.reference.area.start.column,
-      }, u);
+      }, v);
     }
 
     this.loop_check_required = true; // because new edges
