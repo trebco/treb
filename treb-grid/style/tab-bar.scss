@@ -61,6 +61,43 @@
 
     }
 
+    & .treb-scale-control {
+      font-size: inherit;
+      padding: .25em .75em;
+      padding: .25em 1em;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      opacity: .75;
+      transition: opacity .15s ease;
+
+      &:hover {
+        opacity: 1;
+      }
+
+      & > div {
+        pointer-events: none;
+        min-width: 3em;
+        text-align: center;
+      }
+
+      & button {
+        font-size: inherit;
+        border-radius: 2px;
+        width: 1em;
+        height: 1em;
+        border: 1px solid currentColor;
+        background: transparent;
+        color: inherit;
+        margin: 0 .25em;
+        position: relative;
+        padding: 0;
+        line-height: 0;
+      }
+
+    }
+
     & .delete-tab {
 
       font-size: inherit;

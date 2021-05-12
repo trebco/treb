@@ -20,6 +20,12 @@ export interface GridOptions {
   /** show the tab bar */
   tab_bar?: boolean|'auto';
 
+  /** scale controls. implies tab bar */
+  scale_control?: boolean;
+
+  /** save/load scale to storage, with the given key */
+  persist_scale_key?: string;
+
   /** allow add tab */
   add_tab?: boolean;
 

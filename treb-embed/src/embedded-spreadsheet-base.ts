@@ -333,6 +333,30 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       grid_options.tab_bar = this.options.tab_bar;
     }
 
+    if (this.options.scale_control) {
+
+      grid_options.scale_control = true;
+      grid_options.tab_bar = true; // implied, not auto
+
+      if (this.options.persist_scale) {
+        if (this.options.persist_scale === true) {
+          grid_options.persist_scale_key = 'spreadsheet-scale';
+        }
+        else {
+          grid_options.persist_scale_key = 'spreadsheet-scale-' + this.options.persist_scale;
+        }
+        const json = localStorage.getItem(grid_options.persist_scale_key);
+        if (json) {
+          try {
+            const obj = JSON.parse(json);
+            grid_options.initial_scale = obj.scale || 1;
+          }
+          catch (e) {}
+        }
+      }
+
+    }
+
     if (this.options.add_tab) {
       grid_options.add_tab = this.options.add_tab;
     }

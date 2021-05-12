@@ -366,7 +366,13 @@ export class Grid {
     */
     this.layout = CreateLayout(this.model);
     if (options.initial_scale) {
+      if (typeof options.initial_scale === 'string') {
+        options.initial_scale = Number(options.initial_scale);
+      }
       this.layout.scale = options.initial_scale;
+
+      // not created yet
+      // this.tab_bar?.UpdateScale(options.initial_scale);
     }
 
     this.tile_renderer = new TileRenderer(this.theme, this.layout, this.model, this.options);
@@ -515,6 +521,7 @@ export class Grid {
     this.layout.UpdateAnnotation(this.active_sheet.annotations);
     this.layout.ApplyTheme(this.theme);
     this.overlay_editor?.UpdateTheme(scale);
+    this.tab_bar?.UpdateScale(scale);
 
     this.grid_events.Publish({
       type: 'scale', 
@@ -1717,6 +1724,36 @@ export class Grid {
           case 'cancel':
             break;
 
+          case 'scale':
+            {
+              let scale = this.layout.scale;
+
+              // RiskAMP web used 5% increments above 100% and 2.5% below...
+              // that worked well, but it does require the decimal point 
+              // which (IMO) looks messy
+
+              switch (event.action) {
+                case 'increase':
+                  scale += 0.05;
+                  break;
+                case 'decrease':
+                  scale -= 0.05;
+                  break;
+                default:
+                  scale = event.action;
+              }
+
+              scale = Math.round(scale * 100) / 100;
+              scale = Math.min(2, Math.max(scale, .5));
+
+              if (this.options.persist_scale_key) {
+                localStorage.setItem(this.options.persist_scale_key, JSON.stringify({scale}));
+              }
+
+              this.UpdateScale(scale);
+            }
+            break;
+
           case 'reorder-sheet':
             this.ReorderSheet(event.index, event.move_before);
             break;
@@ -1739,6 +1776,7 @@ export class Grid {
         }
         this.Focus();
       });
+
     }
 
     // set container and add class for our styles

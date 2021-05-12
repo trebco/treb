@@ -36,8 +36,14 @@ export interface CancelEvent {
   type: 'cancel';
 }
 
+export interface ScaleEvent {
+  type: 'scale';
+  action: 'increase'|'decrease'|number;
+}
+
 export type TabEvent
    = CancelEvent
+   | ScaleEvent
    | AddSheetEvent
    | RenameSheetEvent
    | DeleteSheetEvent
@@ -64,6 +70,8 @@ export class TabBar extends EventSource<TabEvent> {
 
   private node?: HTMLElement;
   private container?: HTMLElement;
+  private scale_label?: HTMLElement;
+  private scale = 1;
 
   private dragging = false;
 
@@ -88,6 +96,8 @@ export class TabBar extends EventSource<TabEvent> {
     ) {
 
     super();
+
+    this.scale = this.options.initial_scale || 1;
     this.Init(grid_container);
 
   }
@@ -166,6 +176,14 @@ export class TabBar extends EventSource<TabEvent> {
     }
   }
 
+  /** change scale if we have a scale label */
+  public UpdateScale(scale: number) {
+    if (this.scale_label) {
+      this.scale = scale;
+      this.scale_label.textContent = `${Math.round(scale * 1000) / 10}%`;
+    }
+  }
+
   /**
    * update tabs from model.
    */
@@ -228,6 +246,33 @@ export class TabBar extends EventSource<TabEvent> {
       div.classList.add('tab-bar-end');
       div.style.order = '9999';
       div.dataset.preserve = 'true';
+
+      if (this.options.scale_control) {
+        const node = document.createElement('div');
+        node.classList.add('treb-scale-control');
+
+        let button = document.createElement('button');
+        button.classList.add('treb-decrease-scale');
+        button.textContent = '-';
+        button.title = 'Decrease scale';
+        button.addEventListener('click', () => this.Publish({ type: 'scale', action: 'decrease', }));
+        node.appendChild(button);
+
+        this.scale_label = document.createElement('div');
+        node.appendChild(this.scale_label);
+        this.UpdateScale(this.scale); // so we only have to write the scaling routine once
+
+        button = document.createElement('button');
+        button.classList.add('treb-increase-scale');
+        button.textContent = '+';
+        button.title = 'Increase scale';
+        button.addEventListener('click', () => this.Publish({ type: 'scale', action: 'increase', }));
+        node.appendChild(button);
+
+        div.appendChild(node);
+      }
+ 
+
       target.appendChild(div);
     }
 
@@ -236,7 +281,7 @@ export class TabBar extends EventSource<TabEvent> {
       tab.classList.add('delete-tab');
       tab.innerHTML = `<svg viewbox='0 0 16 16'><path d='M4,4 L12,12 M12,4 L4,12'/></svg>`;
       tab.style.order = (-1).toString();
-      tab.setAttribute('title', 'Delete current sheet');
+      tab.title = 'Delete current sheet';
       tab.addEventListener('click', () => {
         this.Publish({ type: 'delete-sheet' });
       });
@@ -420,7 +465,7 @@ export class TabBar extends EventSource<TabEvent> {
       add_tab.classList.add('add-tab');
       add_tab.style.order = (this.model.sheets.length * 2).toString();
       add_tab.innerText = '+';
-      add_tab.setAttribute('title', 'Add sheet');
+      add_tab.title = 'Add sheet';
       add_tab.addEventListener('click', () => {
         this.Publish({ type: 'add-sheet' });
       });
@@ -471,6 +516,8 @@ export class TabBar extends EventSource<TabEvent> {
     this.node = document.createElement('div');
     this.node.classList.add('treb-tab-bar');
     this.container.appendChild(this.node);
+
+
 
     // this.UpdateTheme();
 
