@@ -8178,7 +8178,7 @@ export class Grid {
             }
             else {
               for (const entry of row) {
-                this.active_sheet.AutoSizeRow(entry);
+                this.active_sheet.AutoSizeRow(entry, this.theme.grid_cell);
               }
             }
 

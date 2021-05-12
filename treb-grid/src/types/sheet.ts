@@ -569,12 +569,31 @@ export class Sheet {
   /**
    * FIXME: measure the font.
    */
-  public StyleFontSize(style: Style.Properties): number {
+  public StyleFontSize(style: Style.Properties, default_properties: Style.Properties = {}): number {
 
     let font_height = (style.font_size_value || 0);
 
-    if (style.font_size_unit === 'px') {
-      font_height *= (75 / 100);
+    let scale = 0;
+    
+    switch (style.font_size_unit) {
+      case 'px': 
+        font_height *= (75 / 100);
+        break;
+
+      case 'em':
+        scale = style.font_size_value || 1;
+        break;
+
+      case '%':
+        scale = (style.font_size_value || 100) / 100;
+        break;
+    }
+
+    if (scale) {
+      font_height = scale * (default_properties.font_size_value || 10);
+      if (default_properties.font_size_unit === 'px') {
+        font_height *= (75 / 100);
+      }
     }
 
     return font_height || 10;
@@ -1115,7 +1134,7 @@ export class Sheet {
    * UPDATE: since the only caller calls with inline = true, removing 
    * parameter, test, and extra behavior.
    */
-  public AutoSizeRow(row: number): void {
+  public AutoSizeRow(row: number, default_properties: Style.Properties = {}): void {
 
     let height = this.default_row_height;
     const padding = 9;
@@ -1132,7 +1151,7 @@ export class Sheet {
 
       if (style && text && text.length) {
         const lines = text.split(/\n/);
-        const font_height = this.StyleFontSize(style);
+        const font_height = this.StyleFontSize(style, default_properties);
         height = Math.max(height, ((font_height || 10) + padding) * lines.length);
       }
     }
