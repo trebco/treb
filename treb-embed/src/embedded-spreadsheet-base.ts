@@ -345,14 +345,28 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         else {
           grid_options.persist_scale_key = 'spreadsheet-scale-' + this.options.persist_scale;
         }
-        const json = localStorage.getItem(grid_options.persist_scale_key);
-        if (json) {
-          try {
-            const obj = JSON.parse(json);
-            grid_options.initial_scale = obj.scale || 1;
+
+        // persisted scale should _not_ override parameter/option... only
+        // set here if option is blank... actually, no, that's not right.
+        // persisted scale should override parameter, because if you do NOT
+        // want that behavior you can just disable persisting. so there are 
+        // clear ways to accomplish any of
+
+        // (1) no initial scale, persist
+        // (2) initial scale, don't persist (revert to parameter)
+        // (3) initial scale but persist and use persisted value if available
+
+        // if (!this.options.scale_control) {
+          const json = localStorage.getItem(grid_options.persist_scale_key);
+          if (json) {
+            try {
+              const obj = JSON.parse(json);
+              grid_options.initial_scale = obj.scale || 1;
+            }
+            catch (e) {}
           }
-          catch (e) {}
-        }
+        // }
+
       }
 
     }
