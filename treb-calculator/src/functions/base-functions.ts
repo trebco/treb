@@ -324,6 +324,25 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    Fact: {
+      description: 'Returns the factorial of a number',
+      arguments: [
+        { name: 'number' },
+      ],
+      fn: Utils.ApplyAsArray((number: number): UnionValue => {
+        number = Math.floor(number);
+        let value = 1;
+        while (number > 1) {
+          value *= number;
+          number--;
+        }
+        return {
+          type: ValueType.number,
+          value,
+        }
+      }),
+    },
+
     Power: {
       fn: Utils.ApplyAsArray2((base: number, exponent: number): UnionValue => Box(Math.pow(base, exponent))),
     },
