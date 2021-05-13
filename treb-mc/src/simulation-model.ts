@@ -767,6 +767,35 @@ export class SimulationModel {
 
   }
 
+  /**
+   * returns the shape of the caller, in case it's an array.
+   * we can use this to allocate the response array to match.
+   */
+  public CallerArea(): { rows: number, columns: number } {
+  
+    let rows = 1, columns = 1;
+    let cell: Cell|undefined;
+  
+    if (this.address.sheet_id) {
+      for (const sheet of this.model?.sheets || []) {
+        if (sheet.id === this.address.sheet_id) {
+          if (sheet.cells.data[this.address.row]) {
+            cell = sheet.cells.data[this.address.row][this.address.column];
+          }
+          break;
+        }
+      }
+    }
+
+    if (cell?.area) {
+      rows = cell.area.rows;
+      columns = cell.area.columns;
+    }
+
+    return { rows, columns };
+
+  }
+
   public CorrelateDistributions(): void {
 
     for (const key of Object.keys(this.correlated_distributions)) {
@@ -1626,27 +1655,9 @@ export class SimulationModel {
 
       // special case, no argument
 
-      let rows = 1, columns = 1;
-      let cell: Cell|undefined;
-  
-      if (this.address.sheet_id) {
-        for (const sheet of this.model?.sheets || []) {
-          if (sheet.id === this.address.sheet_id) {
-            if (sheet.cells.data[this.address.row]) {
-              cell = sheet.cells.data[this.address.row][this.address.column];
-            }
-            break;
-          }
-        }
-      }
-      if (!cell) { return ArgumentError(); }
-  
-      if (cell.area) {
-        rows = cell.area.rows;
-        columns = cell.area.columns;
-      }
-
+      const { rows, columns } = this.CallerArea();
       const count = rows * columns;
+
       if (count <= 0) { return ArgumentError(); }
       const shuffled = ShuffledIntegers(count);
 
@@ -1708,6 +1719,7 @@ export class SimulationModel {
 
   public Scale(min: number, max: number): UnionOrArray {
 
+    /*
     let rows = 1, columns = 1;
 
     let cell: Cell|undefined;
@@ -1730,6 +1742,9 @@ export class SimulationModel {
       rows = area.rows;
       columns = area.columns;
     }
+    */
+
+    const { rows, columns } = this.CallerArea();
 
     const length = Math.max(rows, columns);
     const scale = min > max ?
@@ -1764,34 +1779,12 @@ export class SimulationModel {
 
   public HistogramTable(reference: any): UnionOrArray {
 
-    let rows = 1, columns = 1;
-
     // this function used to rely on the Cell structure being passed
     // as the address. we used to do that, in error. while we might want
     // to bring it back, for the time being we will look up in the model
     // instead.
 
-    // const cell = ((this.address as any) as Cell);
-    let cell: Cell|undefined;
-
-    if (this.address.sheet_id) {
-      for (const sheet of this.model?.sheets || []) {
-        if (sheet.id === this.address.sheet_id) {
-          if (sheet.cells.data[this.address.row]) {
-            cell = sheet.cells.data[this.address.row][this.address.column];
-          }
-          break;
-        }
-      }
-    }
-
-    if (!cell) { return ArgumentError(); }
-
-    if (cell.area) {
-      const area = new Area(cell.area.start, cell.area.end);
-      rows = area.rows;
-      columns = area.columns;
-    }
+    const {rows, columns} = this.CallerArea();
 
     const length = Math.max(rows, columns);
     const depth = Math.min(rows, columns);
