@@ -18,6 +18,27 @@ interface DistributionKey extends ICellAddress {
   call_index: number;
 }
 
+const ShuffledIntegers = (count: number) => {
+  
+  const field = MC.Uniform(count);
+
+  const shuffled: number[] = [];
+  for (let i = 0; i < count; i++) {
+    shuffled[i] = i;
+  }
+
+  for (let i = 0; i < count; i++)
+  {
+    const j = i + Math.floor(field[i] * (count - i));
+    const tmp = shuffled[i];
+    shuffled[i] = shuffled[j];
+    shuffled[j] = tmp;
+  }
+
+  return shuffled;
+
+}
+
 /**
  * class represents a model, including simulation data and functions. the
  * spreadsheet functions refer to an instance of the model, which retains
@@ -1601,6 +1622,48 @@ export class SimulationModel {
 
   public Permutation(range: UnionOrArray): UnionOrArray {
 
+    if (!range) {
+
+      // special case, no argument
+
+      let rows = 1, columns = 1;
+      let cell: Cell|undefined;
+  
+      if (this.address.sheet_id) {
+        for (const sheet of this.model?.sheets || []) {
+          if (sheet.id === this.address.sheet_id) {
+            if (sheet.cells.data[this.address.row]) {
+              cell = sheet.cells.data[this.address.row][this.address.column];
+            }
+            break;
+          }
+        }
+      }
+      if (!cell) { return ArgumentError(); }
+  
+      if (cell.area) {
+        rows = cell.area.rows;
+        columns = cell.area.columns;
+      }
+
+      const count = rows * columns;
+      if (count <= 0) { return ArgumentError(); }
+      const shuffled = ShuffledIntegers(count);
+
+      const result: UnionValue[][] = [];
+      let index = 0;
+      for (let c = 0; c < columns; c++) {
+        const column: UnionValue[] = [];
+        for (let r = 0; r < rows; r++) {
+          column.push({ type: ValueType.number, value: shuffled[index++] });
+        }
+        result.push(column);
+      }
+
+      return result;
+      
+    }
+
     if (Array.isArray(range)) {
       
       const rows = range.length;
@@ -1612,30 +1675,19 @@ export class SimulationModel {
 
       const flat = range.reduce((a, arr) => arr.concat(a), []);
       const count = rows * cols;
-      const shuffled: number[] = [];
-      for (let i = 0; i < count; i++) {
-        shuffled[i] = i;
-      }
 
       if (flat.length !== count) {
         console.info('invalid?', count, range, flat);
         throw new Error('invalid length');
       }
 
-      const field = MC.Uniform(count);
-
-      // console.info('f', flat, 'field', field.map((x: number) => Math.floor(x * count)));
-
-      for (let i = 0; i < count; i++)
-      {
-        const j = i + Math.floor(field[i] * (count - i));
-        const tmp = shuffled[i];
-        shuffled[i] = shuffled[j];
-        shuffled[j] = tmp;
-      }
+      const shuffled = ShuffledIntegers(count);
 
       const result: UnionValue[][] = [];
       let index = 0;
+
+      // is this backwards? somehow it still seems to work...
+
       for (let r = 0; r < rows; r++) {
         const row: UnionValue[] = [];
         for (let c = 0; c < cols; c++) {
@@ -1652,7 +1704,6 @@ export class SimulationModel {
       return {...range}; // single value?
     }
 
-    return { type: ValueType.number, value: 1 };
   }
 
   public Scale(min: number, max: number): UnionOrArray {
