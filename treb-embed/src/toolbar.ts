@@ -1,6 +1,6 @@
 
 import { tmpl, composite, NodeModel } from 'treb-utils';
-import { icons } from './generated/toolbar4';
+import { icons } from './generated/toolbar42';
 import { symbol_defs } from './generated/symbol-defs';
 import { Style, Localization, Area, Theme, Color } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
@@ -269,6 +269,15 @@ export class Toolbar extends EventSource<ToolbarEvent> {
             </ul>
           </div>
         </div>
+
+        ${ options.toolbar_recalculate_button ? `
+            <div class='group end-group'>
+              <button data-command='recalculate' title='Recalculate'>
+                ${this.Icon('fa/light/arrows-rotate')}
+              </button>
+            </div>
+        ` : ``
+        }
 
         <div class='staging'>
           <div id='color-chooser' class='color-chooser-main'>

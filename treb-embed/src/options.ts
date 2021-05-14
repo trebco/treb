@@ -112,6 +112,9 @@ export interface BaseOptions {
   /** chart menu in the toolbar */
   chart_menu?: boolean;
 
+  /** recalculate button in the toolbar */
+  toolbar_recalculate_button?: boolean;
+
   /** new option, better support for headless operations (default false) */
   headless?: boolean;
 

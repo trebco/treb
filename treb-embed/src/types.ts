@@ -47,8 +47,24 @@ export interface ResizeEvent {
   type: 'resize';
 }
 
+export enum LoadSource {
+  DRAG_AND_DROP = 'drag-and-drop',
+  LOCAL_FILE = 'local-file',
+  NETWORK_FILE = 'network-file',
+  LOCAL_STORAGE = 'local-storage',
+  UNDO = 'undo',
+}
+
+export enum LoadType {
+  TREB = 'treb',
+  CSV = 'csv',
+  XLSX = 'xlsx',
+}
+
 export interface DocumentLoadEvent {
   type: 'load';
+  source?: LoadSource;
+  file_type?: LoadType;
 }
 
 export interface DocumentResetEvent {

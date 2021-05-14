@@ -7,10 +7,14 @@ const fs = require('fs');
 const path = require('path');
 
 let source_dir = '';
+const filters = [];
 
 for (let i = 0; i < process.argv.length; i++) {
   if( process.argv[i] === '--source' && i < process.argv.length - 1) {
     source_dir = process.argv[++i];
+  }
+  else if (process.argv[i] === '--filter' && i < process.argv.length - 1) {
+    filters.push(new RegExp(process.argv[++i], 'i'));
   }
 }
 
@@ -208,6 +212,11 @@ const Convert = async () => {
   const lib = {};
 
   for (const file of files) {
+
+    if (filters.some(regex => regex.test(file))) {
+      continue;
+    }
+    
     const svg = await ReadFile(file);
     const name = path.relative(source_dir, file).toLowerCase().replace(/.svg$/i, '').replace(/[^\w\/]+/g, '-');
     // console.info(name, ParseSVG(svg));

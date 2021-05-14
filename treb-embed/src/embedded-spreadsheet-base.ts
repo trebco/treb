@@ -13,7 +13,7 @@ import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 // local
 import { ProgressDialog, DialogType } from './progress-dialog';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions, DefaultExportOptions } from './options';
-import { EmbeddedSheetEvent, TREBDocument, SaveFileType } from './types';
+import { EmbeddedSheetEvent, TREBDocument, SaveFileType, LoadSource } from './types';
 
 import { SelectionState, Toolbar } from './toolbar';
 
@@ -277,17 +277,24 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // optionally data from storage, with fallback
 
     let data: string|undefined;
+    let source: LoadSource|undefined;
 
     if (this.options.storage_key && !this.options.toll_initial_load) {
       data = localStorage.getItem(this.options.storage_key) || undefined;
+      if (data) {
+        source = LoadSource.LOCAL_STORAGE;
+      }
+
       if (!data && this.options.alternate_document) {
         network_document = this.options.alternate_document;
       }
+      
       window.addEventListener('beforeunload', () => {
         if (this.options.storage_key) {
           this.SaveLocalStorage(this.options.storage_key);
         }
       });
+
     }
 
     let container: HTMLElement|undefined;
@@ -556,7 +563,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // FIXME: this should yield so we can subscribe to events before the initial load
 
     if (data) {
-      this.LoadDocument(JSON.parse(data), undefined, undefined, !!options.recalculate);
+      this.LoadDocument(JSON.parse(data), undefined, undefined, !!options.recalculate, undefined, undefined, source);
     }
     else if (!network_document) {
 
@@ -785,7 +792,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         this.InsertImage(file);
       }
       else {
-        this.LoadFileInternal(file).then(() => {
+        this.LoadFileInternal(file, LoadSource.DRAG_AND_DROP).then(() => {
           // ...
         }).catch((err) => {
           this.dialog?.ShowDialog({
@@ -1375,7 +1382,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * more importantly, why is this async and returns a promise explicitly?
    * won't that return a Promise<Promise>? (...)
    */
-  public async ImportXLSX(data: string) {
+  public async ImportXLSX(data: string, source: LoadSource) {
 
     if (!this.export_worker) {
       const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
@@ -1409,7 +1416,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             // this one _is_ the grid cells
 
             this.calculator.AttachModel(this.grid.model);
-            this.Publish({ type: 'load' });
+            this.Publish({ type: 'load', source, });
             this.UpdateDocumentStyles();
 
             // add to support import charts
@@ -1676,7 +1683,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (json) {
       try {
         const data = JSON.parse(json);
-        this.LoadDocument(data);
+        this.LoadDocument(data, undefined, undefined, undefined, undefined, undefined, LoadSource.LOCAL_STORAGE);
         return true;
       }
       catch(err) {
@@ -1710,7 +1717,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       if (typeof response === 'string') {
         if (csv) {
-          this.LoadCSV(response);
+          this.LoadCSV(response, LoadSource.NETWORK_FILE);
         }
         else if (tsv) {
           // ...
@@ -1732,7 +1739,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           }
 
           const json = JSON.parse(response);
-          this.LoadDocument(json, scroll, undefined, recalculate, override_sheet);
+          this.LoadDocument(json, scroll, undefined, recalculate, override_sheet, undefined, LoadSource.NETWORK_FILE);
 
         }
       }
@@ -1837,7 +1844,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (file) { 
     
       try {
-        await this.LoadFileInternal(file);
+        await this.LoadFileInternal(file, LoadSource.LOCAL_FILE);
         return true;
       }
       catch(err) {
@@ -1858,7 +1865,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** called when we have a file to write to */
-  public LoadFileInternal(file: File): Promise<void> {
+  public LoadFileInternal(file: File, source: LoadSource): Promise<void> {
 
     if (!file) { return Promise.resolve(); }
 
@@ -1867,6 +1874,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     return new Promise<void>((resolve, reject) => {
 
       // FIXME: worker?
+      // FIXME: is this not getting called for CSVs? (...)
 
       const finalize = (err?: string) => {
         reader.onload = null;
@@ -1882,7 +1890,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         try {
           if (reader.result) {
             if (/\.csv$/i.test(file.name)) {
-              this.LoadCSV(reader.result as string);
+              this.LoadCSV(reader.result as string, source);
             }
             else if (/\.xls[xm]$/i.test(file.name)) {
               let contents: string;
@@ -1907,13 +1915,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
               }
 
-              this.ImportXLSX(contents).then(() => finalize()).catch(err => finalize(err));
+              this.ImportXLSX(contents, source).then(() => finalize()).catch(err => finalize(err));
 
               return;
             }
             else {
               const data = JSON.parse(reader.result as string);
-              this.LoadDocument(data);
+              this.LoadDocument(data, undefined, undefined, undefined, undefined, undefined, source);
             }
           }
           finalize();
@@ -2111,11 +2119,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public LoadCSV(csv: string) {
+  public LoadCSV(csv: string, source: LoadSource) {
     this.grid.FromCSV(csv);
     this.ResetInternal();
     this.grid.Update(true);
-    this.Publish({ type: 'load' });
+    this.Publish({ type: 'load', source });
     this.UpdateDocumentStyles();
 
   }
@@ -2134,6 +2142,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       recalculate = false,
       override_sheet?: string,
       override_selection?: GridSelection,
+      source?: LoadSource,
       ): void {
 
     if (override_selection) {
@@ -2198,7 +2207,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     }
 
-    this.Publish({ type: 'load' }); // FIXME: should not happen on undo...
+    this.Publish({ type: 'load', source }); // FIXME: should not happen on undo...
     this.UpdateDocumentStyles();
     this.loaded = true;
     
@@ -2669,7 +2678,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // console.info('selection?', undo_entry.selection);
 
-    this.LoadDocument(JSON.parse(undo_entry.data), undefined, false, undefined, undefined, selection);
+    this.LoadDocument(JSON.parse(undo_entry.data), undefined, false, undefined, undefined, selection, LoadSource.UNDO);
 
     this.file_version--; // decrement
 
@@ -2876,6 +2885,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             break;
           case 'export-xlsx':
             this.Export();
+            break;
+
+          case 'recalculate':
+            this.Recalculate();
             break;
 
           default:
