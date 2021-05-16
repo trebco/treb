@@ -15,6 +15,7 @@ export interface GraphCallbacks {
   CalculationCallback: (vertex: SpreadsheetVertexBase) => CalculationResult;
   SpreadCallback: (vertex: SpreadsheetVertexBase, value: UnionOrArray) => void;
   volatile_list: SpreadsheetVertexBase[];
+  calculation_list: SpreadsheetVertexBase[];
 }
 
 export abstract class SpreadsheetVertexBase extends Vertex {

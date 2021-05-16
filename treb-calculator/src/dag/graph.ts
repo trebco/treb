@@ -27,6 +27,8 @@ export abstract class Graph implements GraphCallbacks {
 
   public volatile_list: SpreadsheetVertexBase[] = [];
 
+  public calculation_list: SpreadsheetVertexBase[] = [];
+
   public cells_map: {[index: number]: Cells} = {};
 
   public model?: DataModel;
@@ -748,7 +750,8 @@ export abstract class Graph implements GraphCallbacks {
     for (const vertex of this.volatile_list) {
       this.SetVertexDirty(vertex as SpreadsheetVertex);
     }
-    const calculation_list = this.dirty_list.slice(0);
+    // const calculation_list = this.dirty_list.slice(0);
+    this.calculation_list = this.dirty_list.slice(0);
 
     this.volatile_list = [];
     this.dirty_list = [];
@@ -766,9 +769,15 @@ export abstract class Graph implements GraphCallbacks {
     // recalculate everything that's dirty. FIXME: optimize path
     // so we do fewer wasted checks of "are all my deps clean"?
 
-    for (const vertex of calculation_list) {
-      vertex.Calculate(this);
+    // for (const vertex of calculation_list) {
+    //  vertex.Calculate(this);
+    //}
+
+    for (let i = 0; i < this.calculation_list.length; i++) {
+      this.calculation_list[i].Calculate(this);
     }
+
+    this.calculation_list = [];
 
   }
 

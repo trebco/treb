@@ -220,8 +220,28 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
     this.dirty = false;
 
-    for (const edge of this.edges_out){
-      (edge as SpreadsheetVertex).Calculate(graph);
+    // so this is causing problems in long chains. we need
+    // to do this !recursively. there's a slight problem in 
+    // that we do it in the loop check as well... not sure
+    // how this will play out.
+
+    // some options:
+    // (1) push (dirty) edges onto a global list (or list contained in graph)
+    // (2) return boolean, with one state indicating our dependencies need calculating
+    // (3) return a list of dirty dependencies, caller can push onto their list
+    //
+    // (4) because dirty vertices are on the list, you could just loop until
+    //     the list is clean (i.e. restart and exit if there are no dirty 
+    //     vertices left)... that's kind of the same as pushing onto the back of 
+    //     the list but it avoids extending the list (not sure if that that is 
+    //     a useful optimization or not)
+    // 
+
+    for (const edge of this.edges_out as SpreadsheetVertexBase[]){
+      // (edge as SpreadsheetVertex).Calculate(graph);
+      if (edge.dirty) {
+        graph.calculation_list.push(edge);
+      }
     }
 
   }
