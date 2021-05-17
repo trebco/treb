@@ -1,6 +1,6 @@
 
 import { DataModel } from './data_model';
-import { EventSource } from 'treb-utils';
+import { composite, EventSource, tmpl } from 'treb-utils';
 import { Sheet } from './sheet';
 import { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
@@ -252,8 +252,12 @@ export class TabBar extends EventSource<TabEvent> {
         node.classList.add('treb-scale-control');
 
         let button = document.createElement('button');
-        button.classList.add('treb-decrease-scale');
-        button.textContent = '-';
+        button.innerHTML = composite`
+          <svg viewBox='0 0 16 16'>
+            <path d='M4,8 h8'/>
+          </svg>
+        `;
+
         button.title = 'Decrease scale';
         button.addEventListener('click', () => this.Publish({ type: 'scale', action: 'decrease', }));
         node.appendChild(button);
@@ -263,8 +267,12 @@ export class TabBar extends EventSource<TabEvent> {
         this.UpdateScale(this.scale); // so we only have to write the scaling routine once
 
         button = document.createElement('button');
-        button.classList.add('treb-increase-scale');
-        button.textContent = '+';
+        button.innerHTML = composite`
+          <svg viewBox='0 0 16 16'>
+            <path d='M4,8 h8 M8,4 v8'/>
+          </svg>
+        `;
+
         button.title = 'Increase scale';
         button.addEventListener('click', () => this.Publish({ type: 'scale', action: 'increase', }));
         node.appendChild(button);

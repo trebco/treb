@@ -69,12 +69,13 @@
       flex-direction: row;
       align-items: center;
 
+      /*
       opacity: .75;
       transition: opacity .15s ease;
-
       &:hover {
         opacity: 1;
       }
+      */
 
       & > div {
         pointer-events: none;
@@ -94,6 +95,12 @@
         position: relative;
         padding: 0;
         line-height: 0;
+
+        & svg path {
+          stroke: currentColor;
+          stroke-width: 1px;
+        }
+
       }
 
     }
