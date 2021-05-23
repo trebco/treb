@@ -1,5 +1,7 @@
 
-import { Style, Color } from 'treb-base-types';
+
+import { Style } from './style';
+import { Color } from './color';
 
 /*
  * so this is a little strange. we use CSS to populate a theme object,

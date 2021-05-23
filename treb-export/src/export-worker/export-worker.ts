@@ -1,14 +1,16 @@
 
 
-// import { Importer, Exporter } from '../';
-import { Importer } from '../import';
-import { Exporter } from '../export';
+// import { Importer } from '../import';
+// import { Exporter } from '../export';
 import { ImportedSheetData, IArea } from 'treb-base-types/src';
 
+import { Importer } from '../import2';
+
 const ctx: Worker = self as any;
-const exporter = new Exporter();
+// const exporter = new Exporter();
 
 const ExportSheets = async (data: any) => {
+  /*
   if (data.sheet) {
     await exporter.Init();
     await exporter.ExportSheets(data.sheet);
@@ -20,6 +22,7 @@ const ExportSheets = async (data: any) => {
 
     ctx.postMessage({ status: 'complete', blob: corrected });
   }
+  */
 };
 
 const ImportSheet = async (data: any) => {
@@ -32,13 +35,15 @@ const ImportSheet = async (data: any) => {
     const count = importer.SheetCount();
     const results = {
       sheets: [] as ImportedSheetData[],
-      names: importer.workbook.GetNamedRanges(),
-      active_tab: importer.workbook.active_tab,
+      names: importer.workbook?.GetNamedRanges(),
+      active_tab: importer.workbook?.active_tab,
     };
 
     for (let i = 0; i < count; i++) {
       const result = await importer.GetSheet(i);
-      results.sheets.push(result);
+      if (result) {
+        results.sheets.push(result);
+      }
     }
     ctx.postMessage({ status: 'complete', results });
 
