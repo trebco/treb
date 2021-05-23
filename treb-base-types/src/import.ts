@@ -3,6 +3,7 @@ import { Style } from './style';
 import { ValueType } from './value-type';
 import { IArea } from './area';
 import { AnnotationLayout } from './layout';
+import { DataValidation } from './cell';
 
 export interface CellParseResult {
   row: number,
@@ -13,6 +14,7 @@ export interface CellParseResult {
   calculated_type?: ValueType,
   style_ref?: number,
   hyperlink?: string,
+  validation?: DataValidation,
   merge_area?: IArea,
   area?: IArea,
 }

@@ -7,6 +7,7 @@ import { Area, IArea, ICellAddress, ICellAddress2, IsCellAddress } from './area'
 import { Cell, DataValidation } from './cell';
 import { ValueType, GetValueType } from './value-type';
 import { CellValue, UnionValue, UndefinedUnion } from './union';
+import { Style } from './style';
 
 export interface CellSerializationOptions {
   preserve_type?: boolean;
@@ -307,7 +308,10 @@ export class Cells {
     this.columns_ = columns;
   }
 
-  public FromJSON(data: SerializedCellData = []): void {
+  /**
+   * UPDATE: adding optional style refs, for export
+   */
+  public FromJSON(data: SerializedCellData = [], style_refs?: Style.Properties[]): void {
 
     this.data = [];
 
@@ -369,6 +373,12 @@ export class Cells {
         // cell.calculated = obj.calculated;
         // cell.calculated_type = obj.calculated_type;
         cell.SetCalculatedValue(obj.calculated, obj.calculated_type);
+      }
+
+      if (style_refs) {
+        if (typeof obj.style_ref !== 'undefined') {
+          cell.style = style_refs[obj.style_ref];
+        }
       }
 
       if (typeof obj.note !== 'undefined') {

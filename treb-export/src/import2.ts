@@ -4,7 +4,7 @@ import * as JSZip from 'jszip';
 import { AnchoredChartDescription, ChartType, Workbook } from './workbook2';
 import { Parser, ParseResult } from 'treb-parser';
 import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address, HyperlinkType } from './address-type';
-import { ImportedSheetData, AnchoredAnnotation, CellParseResult, ValueType, AnnotationLayout, Corner as LayoutCorner } from 'treb-base-types/src';
+import { ImportedSheetData, AnchoredAnnotation, CellParseResult, ValueType, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, ValidationType } from 'treb-base-types/src';
 import { Sheet, VisibleState } from './workbook-sheet2';
 import { CellAnchor } from './drawing/drawing';
 import { XMLUtils } from './xml-utils';
@@ -71,7 +71,9 @@ export class Importer {
     shared_formulae: SharedFormulaMap,
     arrays: RangeType[],
     merges: RangeType[],
-    links: HyperlinkType[]): CellParseResult | undefined {
+    links: HyperlinkType[],
+    validations: Array<{ address: ICellAddress, validation: DataValidation }>,
+    ): CellParseResult | undefined {
 
     // must have, at minimum, an address (must be a single cell? FIXME)
     const address_attr = element.a$?.r;
@@ -245,6 +247,13 @@ export class Importer {
       }
     }
 
+    for (const validation of validations) {
+      if (validation.address.row === shifted.row && validation.address.column === shifted.col) {
+        result.validation = validation.validation;
+        break;
+      }
+    }
+
     for (const range of merges) {
       if (InRange(range, shifted)) {
         result.merge_area = {
@@ -296,6 +305,10 @@ export class Importer {
     const arrays: RangeType[] = [];
     const merges: RangeType[] = [];
     const links: HyperlinkType[] = [];
+    const validations: Array<{
+      address: ICellAddress,
+      validation: DataValidation,
+    }> = [];
     const annotations: AnchoredAnnotation[] = [];
 
     const FindAll = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
@@ -313,6 +326,54 @@ export class Importer {
       }
     }
 
+    // validation
+
+    const validation_entries = FindAll('worksheet/dataValidations/dataValidation');
+    for (const entry of validation_entries) {
+      const type = entry.a$?.type;
+      const ref = entry.a$?.sqref;
+      const formula = entry.formula1;
+
+      if (ref && formula && type === 'list') {
+        let address: ICellAddress|undefined;
+        let validation: DataValidation|undefined;
+        let parse_result = this.parser.Parse(ref);
+        if (parse_result.expression && parse_result.expression.type === 'address') {
+          address = parse_result.expression;
+        }
+        parse_result = this.parser.Parse(formula);
+        if (parse_result.expression) {
+          if (parse_result.expression.type === 'range') {
+            validation = {
+              type: ValidationType.Range,
+              area: parse_result.expression,
+            };
+          }
+          else if (parse_result.expression.type === 'literal') {
+            validation = {
+              type: ValidationType.List,
+              list: parse_result.expression.value.toString().split(/,/).map(value => {
+                const tmp = this.parser.Parse(value);
+                if (tmp.expression?.type === 'literal') {
+                  return tmp.expression.value;
+                }
+                if (tmp.expression?.type === 'identifier') {
+                  return tmp.expression.name;
+                }
+                return undefined;
+              }),
+            };
+          }
+        }
+
+        if (address && validation) {
+          validations.push({address, validation});
+        }
+
+      }
+
+    }
+    
     // links
 
     const hyperlinks = FindAll('worksheet/hyperlinks/hyperlink');
@@ -362,7 +423,7 @@ export class Importer {
       if (!Array.isArray(cells)) { cells = [cells]; }
 
       for (const element of cells) {
-        const cell = this.ParseCell(sheet, element, shared_formulae, arrays, merges, links);
+        const cell = this.ParseCell(sheet, element, shared_formulae, arrays, merges, links, validations);
         if (cell) {
           data.push(cell);
         }

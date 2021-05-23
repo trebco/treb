@@ -4,12 +4,25 @@
 // import { Exporter } from '../export';
 import { ImportedSheetData, IArea } from 'treb-base-types/src';
 
+import { Exporter } from '../export2';
 import { Importer } from '../import2';
 
 const ctx: Worker = self as any;
-// const exporter = new Exporter();
+const exporter = new Exporter();
 
 const ExportSheets = async (data: any) => {
+
+  if (data.sheet) {
+    await exporter.Init();
+    await exporter.Export(data.sheet);
+
+    const blob = await exporter.AsBlob(1);
+    const corrected = (blob as Blob).slice(0, (blob as Blob).size,
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    ctx.postMessage({ status: 'complete', blob: corrected });
+  }
+
   /*
   if (data.sheet) {
     await exporter.Init();

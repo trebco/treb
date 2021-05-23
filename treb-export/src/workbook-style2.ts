@@ -66,12 +66,27 @@ interface ColorAttributes {
   tint?: string;
 }
 
+export interface BorderEdge {
+  style?: string;
+  color?: number; // indexed
+  rgba?: string;
+  theme?: number;
+  tint?: number;
+}
+
 /**
  * this is flat so we can map/copy better, even thought it makes
  * more sense as a map of simple objects
  */
 export interface BorderStyle {
 
+  top: BorderEdge,
+  left: BorderEdge,
+  bottom: BorderEdge,
+  right: BorderEdge,
+  diagonal: BorderEdge,
+
+  /*
   left_style?: string; // 'thin' | ??
   left_color?: number; // indexed // FIXME: argb
   left_color_rgba?: string;
@@ -101,7 +116,12 @@ export interface BorderStyle {
   diagonal_color_rgba?: string;
   diagonal_color_theme?: number;
   diagonal_color_tint?: number;
+  */
 
+}
+
+const default_border = {
+  top: {}, left: {}, bottom: {}, right: {}, diagonal: {},
 }
 
 export interface StyleOptions {
@@ -208,7 +228,8 @@ export class StyleCache {
 
     const font: Font = {};
     const fill: Fill = { pattern_type: 'none' };
-    const border: BorderStyle = {};
+    const border: BorderStyle = JSON.parse(JSON.stringify(default_border));
+
     const options: StyleOptions = {
       font, border,
     };
@@ -254,73 +275,73 @@ export class StyleCache {
       }
     }
 
-    if (composite.border_top && composite.border_top_fill) {
+    if (composite.border_top) { // && composite.border_top_fill) {
 
-      border.top_style = 'thin';
+      border.top.style = 'thin';
       if (composite.border_top_fill?.text) {
-        border.top_color_rgba = composite.border_top_fill.text;
+        border.top.rgba = composite.border_top_fill.text;
       }
       else if (typeof composite.border_top_fill?.theme === 'number') {
-        border.top_color_theme = composite.border_top_fill.theme;
+        border.top.theme = composite.border_top_fill.theme;
         if (composite.border_top_fill.tint) {
-          border.top_color_tint = composite.border_top_fill.tint;
+          border.top.tint = composite.border_top_fill.tint;
         }
       }
       else {
-        border.top_color = 64;
+        border.top.color = 64;
       }
     }
-    if (composite.border_bottom && composite.border_bottom_fill) {
+    if (composite.border_bottom) { // && composite.border_bottom_fill) {
 
       if (composite.border_bottom > 1) {
-        border.bottom_style = 'double';
+        border.bottom.style = 'double';
       }
       else {
-        border.bottom_style = 'thin';
+        border.bottom.style = 'thin';
       }
       if (composite.border_bottom_fill?.text) {
-        border.bottom_color_rgba = composite.border_bottom_fill.text;
+        border.bottom.rgba = composite.border_bottom_fill.text;
       }
       else if (typeof composite.border_bottom_fill?.theme === 'number') {
-        border.bottom_color_theme = composite.border_bottom_fill.theme;
+        border.bottom.theme = composite.border_bottom_fill.theme;
         if (composite.border_bottom_fill.tint) {
-          border.bottom_color_tint = composite.border_bottom_fill.tint;
+          border.bottom.tint = composite.border_bottom_fill.tint;
         }
       }
       else {
-        border.bottom_color = 64;
+        border.bottom.color = 64;
       }
     }
-    if (composite.border_left && composite.border_left_fill) {
+    if (composite.border_left) { // && composite.border_left_fill) {
 
-      border.left_style = 'thin';
+      border.left.style = 'thin';
       if (composite.border_left_fill?.text) {
-        border.left_color_rgba = composite.border_left_fill.text;
+        border.left.rgba = composite.border_left_fill.text;
       }
       else if (typeof composite.border_left_fill?.theme === 'number') {
-        border.left_color_theme = composite.border_left_fill.theme;
+        border.left.theme = composite.border_left_fill.theme;
         if (composite.border_left_fill.tint) {
-          border.left_color_tint = composite.border_left_fill.tint;
+          border.left.tint = composite.border_left_fill.tint;
         }
       }
       else {
-        border.left_color = 64;
+        border.left.color = 64;
       }
     }
-    if (composite.border_right && composite.border_right_fill) {
+    if (composite.border_right) { // && composite.border_right_fill) {
 
-      border.right_style = 'thin';
+      border.right.style = 'thin';
       if (composite.border_right_fill?.text) {
-        border.right_color_rgba = composite.border_right_fill.text;
+        border.right.rgba = composite.border_right_fill.text;
       }
       else if (typeof composite.border_right_fill?.theme === 'number') {
-        border.right_color_theme = composite.border_right_fill.theme;
+        border.right.theme = composite.border_right_fill.theme;
         if (composite.border_right_fill.tint) {
-          border.right_color_tint = composite.border_right_fill.tint;
+          border.right.tint = composite.border_right_fill.tint;
         }
       }
       else {
-        border.right_color = 64;
+        border.right.color = 64;
       }
     }
 
@@ -574,17 +595,17 @@ export class StyleCache {
 
     const border = this.borders[xf.border || 0];
     if (border) {
-      if (border.bottom_style) {
-        if (border.bottom_style === 'double') {
+      if (border.bottom.style) {
+        if (border.bottom.style === 'double') {
           props.border_bottom = 2;
         }
         else {
           props.border_bottom = 1;
         }
       }
-      if (border.left_style) props.border_left = 1;
-      if (border.top_style) props.border_top = 1;
-      if (border.right_style) props.border_right = 1;
+      if (border.left.style) props.border_left = 1;
+      if (border.top.style) props.border_top = 1;
+      if (border.right.style) props.border_right = 1;
     }
 
     return props;
@@ -595,7 +616,6 @@ export class StyleCache {
     return this.cell_xfs.map((xf) => this.CellXfToStyle(xf));
   }
 
-  /** ** ** ** ** ** 
 
   public EnsureNumberFormat(number_format: NumberFormat): number {
 
@@ -641,6 +661,7 @@ export class StyleCache {
     };
     this.number_formats.push(new_format);
 
+    /*
     if (!this.dom) throw new Error('missing dom');
     let number_formats = this.dom.find('./numFmts');
 
@@ -658,9 +679,26 @@ export class StyleCache {
       numFmtId: new_format.id.toString(),
       formatCode: new_format.format,
     }));
+    */
 
     return new_format.id;
 
+  }
+
+  public CompareBorderEdge(a: BorderEdge, b: BorderEdge) {
+    return a.color === b.color
+      && a.rgba === b.rgba
+      && a.style === b.style
+      && a.theme === b.theme
+      && a.tint === b.tint;
+  }
+
+  public CompareBorder(a: BorderStyle, b: BorderStyle) {
+    return this.CompareBorderEdge(a.top, b.top)
+      && this.CompareBorderEdge(a.left, b.left)
+      && this.CompareBorderEdge(a.bottom, b.bottom)
+      && this.CompareBorderEdge(a.right, b.right)
+      && this.CompareBorderEdge(a.diagonal, b.diagonal);
   }
 
   public EnsureBorder(border: BorderStyle): number {
@@ -668,36 +706,7 @@ export class StyleCache {
     for (let i = 0; i < this.borders.length; i++ ){
       const candidate = this.borders[i];
 
-      if ( candidate.diagonal_color === border.diagonal_color
-        && candidate.diagonal_color_rgba === border.diagonal_color_rgba
-        && candidate.diagonal_color_theme === border.diagonal_color_theme
-        && candidate.diagonal_color_tint === border.diagonal_color_tint
-        && candidate.diagonal_style === border.diagonal_style
-
-        && candidate.left_color === border.left_color
-        && candidate.left_color_rgba === border.left_color_rgba
-        && candidate.left_color_theme === border.left_color_theme
-        && candidate.left_color_tint === border.left_color_tint
-        && candidate.left_style === border.left_style
-
-        && candidate.right_color === border.right_color
-        && candidate.right_color_rgba === border.right_color_rgba
-        && candidate.right_color_theme === border.right_color_theme
-        && candidate.right_color_tint === border.right_color_tint
-        && candidate.right_style === border.right_style
-
-        && candidate.top_color === border.top_color
-        && candidate.top_color_rgba === border.top_color_rgba
-        && candidate.top_color_theme === border.top_color_theme
-        && candidate.top_color_tint === border.top_color_tint
-        && candidate.top_style === border.top_style
-
-        && candidate.bottom_color === border.bottom_color
-        && candidate.bottom_color_rgba === border.bottom_color_rgba
-        && candidate.bottom_color_theme === border.bottom_color_theme
-        && candidate.bottom_color_tint === border.bottom_color_tint
-        && candidate.bottom_style === border.bottom_style ) {
-
+      if (this.CompareBorder(candidate, border)){
         return i;
       }
 
@@ -705,8 +714,10 @@ export class StyleCache {
     
     this.modified = true;
 
-    const new_border: BorderStyle = {...border};
+    const new_border: BorderStyle = JSON.parse(JSON.stringify(border)); // {...border};
     this.borders.push(new_border);
+
+    /*
 
     if (!this.dom) throw new Error('missing dom');
     const borders = this.dom.find('./borders');
@@ -811,9 +822,11 @@ export class StyleCache {
     new_element.append(diagonal);
 
     borders.append(new_element);
+    */
 
     return this.borders.length - 1;
   }
+
 
   public MatchColor(a: XlColor|undefined, b: XlColor|undefined): boolean {
 
@@ -844,6 +857,7 @@ export class StyleCache {
     const new_fill: Fill = {...fill};
     this.fills.push(new_fill);
 
+    /*
     // add the node structure
 
     if (!this.dom) throw new Error('missing dom');
@@ -880,14 +894,16 @@ export class StyleCache {
     new_element.append(pattern_fill);
 
     fills.append(new_element);
+    */
+
     return this.fills.length - 1;
   }
 
-  / * *
+  /**
    * for the time being we are ignoring font face, family, size, color and
    * scheme (whatever that is). every font is based on font 0, the default.
    * we add bold/italic/underline as necessary.
-   * /
+   */
   public EnsureFont(font: Font): number {
 
     // this is what we create, so we need to test against it
@@ -923,6 +939,7 @@ export class StyleCache {
     // const composite_font = test; // {...this.fonts[0], ...font};
     this.fonts.push(composite_font);
 
+    /*
     // add the node structure
 
     if (!this.dom) throw new Error('missing dom');
@@ -954,17 +971,17 @@ export class StyleCache {
     if (composite_font.strike) new_element.append(Element('strike'));
 
     fonts.append(new_element);
+    */
 
     return this.fonts.length - 1;
 
   }
 
-
   public EnsureStyle(options: StyleOptions): number {
 
     // find indexes for props
     const font_index = this.EnsureFont(options.font || {});
-    const border_index = this.EnsureBorder(options.border || {});
+    const border_index = this.EnsureBorder(options.border || default_border);
     const number_format_index = this.EnsureNumberFormat(options.number_format || {});
     const fill_index = this.EnsureFill(options.fill || { pattern_type: 'none' });
 
@@ -1005,6 +1022,8 @@ export class StyleCache {
 
     this.cell_xfs.push(new_xf);
 
+    /*
+
     // add the node structure
 
     if (!this.dom) throw new Error('missing dom');
@@ -1039,11 +1058,11 @@ export class StyleCache {
     }
 
     xfs.append(new_element);
+    */
 
     return this.cell_xfs.length - 1;
 
   }
-  */
 
   public FromXML(xml: any, theme: Theme): void {
 
@@ -1068,28 +1087,28 @@ export class StyleCache {
 
     this.borders = composite.map(element => {
 
-      const border: BorderStyle = {};
+      const border: BorderStyle = JSON.parse(JSON.stringify(default_border));
 
       // we're relying on these being empty strings -> falsy, not a good look
 
       if (element.left) {
-        border.left_style = element.left.a$.style;
-        border.left_color = Number(element.left.color?.a$?.indexed);
+        border.left.style = element.left.a$.style;
+        border.left.color = Number(element.left.color?.a$?.indexed);
       }
 
       if (element.right) {
-        border.right_style = element.right.a$.style;
-        border.right_color = Number(element.right.color?.a$?.indexed);
+        border.right.style = element.right.a$.style;
+        border.right.color = Number(element.right.color?.a$?.indexed);
       }
 
       if (element.top) {
-        border.top_style = element.top.a$.style;
-        border.top_color = Number(element.top.color?.a$?.indexed);
+        border.top.style = element.top.a$.style;
+        border.top.color = Number(element.top.color?.a$?.indexed);
       }
 
       if (element.bottom) {
-        border.bottom_style = element.bottom.a$.style;
-        border.bottom_color = Number(element.bottom.color?.a$?.indexed);
+        border.bottom.style = element.bottom.a$.style;
+        border.bottom.color = Number(element.bottom.color?.a$?.indexed);
       }
       
       return border;
