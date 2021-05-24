@@ -295,44 +295,64 @@ export class Exporter {
           'xmlns:x16r2':  'http://schemas.microsoft.com/office/spreadsheetml/2015/02/main', 
           'xmlns:xr':     'http://schemas.microsoft.com/office/spreadsheetml/2014/revision',
         },
-        fonts: {
-          a$: { count: fonts.length },
-          font: fonts,
-        },
-        fills: {
-          a$: { count: fills.length },
-          fill: fills,
-        },
-        borders: {
-          a$: { count: borders.length },
-          border: borders,
-        },
-        /*
-        cellStyleXfs: {
-          xf: [],
-        },
-        */
-        cellXfs: {
-          a$: { count: xfs.length },
-          xf: xfs,
-        },
-        /*
-        cellStyles: {
-          cellStyle: [],
-        },
-        dxfs: {
-
-        },
-        tableStyles: {
-
-        },
-        */
       },
     };
 
+    // we're only adding elements here if they are not empty, but in 
+    // practice only numFmts can be empty (because there are implicit 
+    // formats); everything else has a default 0 entry
+
+    if (style_cache.number_formats.length) {
+      dom.styleSheet.numFmts = {
+        a$: { count: style_cache.number_formats.length },
+        numFmt: style_cache.number_formats.map(format => {
+          return {
+            a$: {
+              numFmtId: format.id,
+              formatCode: format.format,
+            },  
+          };
+        }),
+      };
+    }
+
+    if (fonts.length) {
+      dom.styleSheet.fonts = {
+        a$: { count: fonts.length },
+        font: fonts,
+      };
+    }
+
+    if (fills.length) {
+      dom.styleSheet.fills = {
+        a$: { count: fills.length },
+        fill: fills,
+      };
+    }
+
+    if (borders.length) {
+      dom.styleSheet.borders = {
+        a$: { count: borders.length },
+        border: borders,
+      };
+    }
+
+    if (xfs.length) {
+      dom.styleSheet.cellXfs = {
+        a$: { count: xfs.length },
+        xf: xfs,
+      };
+    };
+
+    // not used:
+    //
+    //  cellStyleXfs
+    //  cellStyles
+    //  dxfs
+    //  tableStyles
+    
     let xml = XMLDeclaration + this.xmlparser.parse(dom);
     // console.info(xml);
-
     await this.zip?.file('xl/styles.xml', xml);
 
   }
@@ -716,7 +736,6 @@ export class Exporter {
               
               if (cell.area && cell.area.start.row === r && cell.area.start.column === c) {
                 if (typeof f === 'string') {
-                  console.info("ARRAY JEAD 2", cell.area);  
                   f = {
                     t$: f,
                     a$: {

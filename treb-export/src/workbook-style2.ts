@@ -641,10 +641,7 @@ export class StyleCache {
 
     for (let i = 0; i < 100; i++) {
       const check = StyleCache.default_styles[i];
-      if (!check) {
-        break;
-      }
-      if (check === number_format.format) {
+      if (check && check === number_format.format) {
         return i;
       }
     }
@@ -984,6 +981,8 @@ export class StyleCache {
     const border_index = this.EnsureBorder(options.border || default_border);
     const number_format_index = this.EnsureNumberFormat(options.number_format || {});
     const fill_index = this.EnsureFill(options.fill || { pattern_type: 'none' });
+
+    console.info("ENF?", options.number_format, number_format_index);
 
     // now find an XF that matches
     for (let i = 0; i < this.cell_xfs.length; i++){
