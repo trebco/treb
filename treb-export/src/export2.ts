@@ -8,8 +8,7 @@
 import * as JSZip from 'jszip';
 import * as he from 'he';
 
-/** excel units (is this duplicated? move) */
-const one_hundred_pixels = 14.28515625;
+import { ColumnWidthToPixels, PixelsToColumnWidth } from './column-width';
 
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`;
 
@@ -1134,7 +1133,8 @@ export class Exporter {
       }> = [];
 
       if (sheet.default_column_width) {
-        dom.worksheet.sheetFormatPr.a$.defaultColumnWidth = sheet.default_column_width * one_hundred_pixels / 100;
+        dom.worksheet.sheetFormatPr.a$.defaultColWidth = // sheet.default_column_width * one_hundred_pixels / 100;
+          PixelsToColumnWidth(sheet.default_column_width);
       }
 
       for (let c = 0; c < sheet.columns; c++) {
@@ -1144,7 +1144,11 @@ export class Exporter {
             && (typeof sheet.column_width[c] === 'number')
             && sheet.column_width[c] !== sheet.default_column_width) {
 
-          entry.width = sheet.column_width[c] * one_hundred_pixels / 100;
+          entry.width = // sheet.column_width[c] * one_hundred_pixels / 100;
+            PixelsToColumnWidth(sheet.column_width[c]);
+
+          // console.info("COLUMN", c, 'width', sheet.column_width[c], 'calc?', entry.width, '100p', one_hundred_pixels);
+
         }
         if (sheet.column_style[c]) {
           entry.style = style_cache.EnsureStyle(style_cache.StyleOptionsFromProperties(sheet.column_style[c]));
@@ -1172,7 +1176,8 @@ export class Exporter {
               a$.customWidth = 1;
             }
             else {
-              a$.width = (sheet.default_column_width || 100) / 100 * one_hundred_pixels;
+              a$.width = // (sheet.default_column_width || 100) / 100 * one_hundred_pixels;
+                PixelsToColumnWidth(sheet.default_column_width || 90);
             }
             return {a$};
           });

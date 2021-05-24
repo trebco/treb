@@ -9,6 +9,9 @@ import { Sheet, VisibleState } from './workbook-sheet2';
 import { CellAnchor } from './drawing2/drawing2';
 import { XMLUtils } from './xml-utils';
 
+// import { one_hundred_pixels } from './constants';
+import { ColumnWidthToPixels } from './column-width';
+
 interface SharedFormula {
   row: number;
   column: number;
@@ -17,9 +20,6 @@ interface SharedFormula {
 }
 
 interface SharedFormulaMap { [index: string]: SharedFormula }
-
-/** excel HORIZONTAL units (vertical is different? seems to be 4/3) */
-const one_hundred_pixels = 14.28515625;
 
 export class Importer {
 
@@ -438,7 +438,8 @@ export class Importer {
       if (sheet_format.a$?.defaultColWidth) {
         const width = Number(sheet_format.a$.defaultColWidth);
         if (!isNaN(width)) {
-          default_column_width = Math.round(width / one_hundred_pixels * 100);
+          // default_column_width = Math.round(width / one_hundred_pixels * 100);
+          default_column_width = ColumnWidthToPixels(width);
         }
       }
       if (sheet_format.a$?.defaultRowHeight) {
@@ -499,7 +500,9 @@ export class Importer {
             // max = Math.min(max, sheet.extent.to.col + 1);
             // }
 
-            width = Math.round(width / one_hundred_pixels * 100);
+            // width = Math.round(width / one_hundred_pixels * 100);
+            width = ColumnWidthToPixels(width);
+
             for (let i = min; i <= max; i++) column_widths[i - 1] = width;
           }
         }
