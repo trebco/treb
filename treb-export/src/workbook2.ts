@@ -1,8 +1,10 @@
 
 import * as JSZip from 'jszip';
 import * as xmlparser from 'fast-xml-parser';
+import * as he from 'he';
 
-import { Drawing, TwoCellAnchor, CellAnchor } from './drawing/drawing';
+//import { Drawing, TwoCellAnchor, CellAnchor } from './drawing/drawing';
+import { Drawing, TwoCellAnchor, CellAnchor } from './drawing2/drawing2';
 
 // import { ImportedSheetData, IArea } from 'treb-base-types/src';
 import { SharedStrings } from './shared-strings2';
@@ -11,7 +13,7 @@ import { Theme } from './workbook-theme2';
 import { Sheet, VisibleState } from './workbook-sheet2';
 import { RelationshipMap, Relationship } from './relationship';
 
-import { XMLUtils } from './xml-utils';
+import { XMLUtils, XMLOptions, XMLOptions2 } from './xml-utils';
 
 const XMLTypeMap = {
   'sheet':          'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
@@ -45,25 +47,6 @@ export interface AnchoredChartDescription {
   anchor: TwoCellAnchor,
 }
 
-const XMLOptions: Partial<xmlparser.X2jOptions> = {
-  ignoreAttributes: false,
-  attributeNamePrefix: '__',
-  trimValues: false,
-  textNodeName: 'text__',
-};
-
-/**
- * group attributes under `a$`, and don't add attribute prefixes (should be 
- * implicit on that option, but hey).
- */
-const XMLOptions2: Partial<xmlparser.X2jOptions> = {
-  ignoreAttributes: false,
-  attrNodeName: 'a$',
-  attributeNamePrefix: '',
-  textNodeName: 't$',
-  trimValues: false,
-  arrayMode: false,
-};
 
 export class Workbook {
 

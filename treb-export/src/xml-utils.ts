@@ -1,3 +1,33 @@
+
+import * as he from 'he';
+import * as xmlparser from 'fast-xml-parser';
+
+export const XMLTagProcessor = (value: string, name: string): string => {
+  return he.decode(value);
+};
+
+export const XMLOptions: Partial<xmlparser.X2jOptions> = {
+  ignoreAttributes: false,
+  attributeNamePrefix: '__',
+  trimValues: false,
+  textNodeName: 'text__',
+  tagValueProcessor: XMLTagProcessor,
+};
+
+/**
+ * group attributes under `a$`, and don't add attribute prefixes (should be 
+ * implicit on that option, but hey).
+ */
+export const XMLOptions2: Partial<xmlparser.X2jOptions> = {
+  ignoreAttributes: false,
+  attrNodeName: 'a$',
+  attributeNamePrefix: '',
+  textNodeName: 't$',
+  trimValues: false,
+  arrayMode: false,
+  tagValueProcessor: XMLTagProcessor,
+};
+
 /**
  * some utility functions for working with the xml/json
  * objects we get from fast-xml-parser.

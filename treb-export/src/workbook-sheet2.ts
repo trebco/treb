@@ -24,8 +24,8 @@
 import { AddressType, RangeType, is_range } from './address-type';
 import { SharedStrings } from './shared-strings2';
 import { UnitCall } from 'treb-parser';
-import { Drawing, TwoCellAnchor } from './drawing/drawing';
-import { ChartOptions } from './drawing/chart';
+import { Drawing, TwoCellAnchor } from './drawing2/drawing2';
+import { ChartOptions } from './drawing2/chart2';
 import { RelationshipMap } from './relationship';
 
 export interface SheetOptions {

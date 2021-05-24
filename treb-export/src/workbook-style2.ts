@@ -982,8 +982,6 @@ export class StyleCache {
     const number_format_index = this.EnsureNumberFormat(options.number_format || {});
     const fill_index = this.EnsureFill(options.fill || { pattern_type: 'none' });
 
-    console.info("ENF?", options.number_format, number_format_index);
-
     // now find an XF that matches
     for (let i = 0; i < this.cell_xfs.length; i++){
       const xf = this.cell_xfs[i];

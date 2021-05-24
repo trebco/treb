@@ -84,7 +84,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         min = max;
         max = tmp;
       }
-      return { type: ValueType.number, value: Math.random() * (max - min) + min }
+      return { type: ValueType.number, value: Math.floor(Math.random() * (max + 1 - min) + min) }
     },
   },
 

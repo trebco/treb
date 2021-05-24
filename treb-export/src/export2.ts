@@ -14,29 +14,25 @@ const one_hundred_pixels = 14.28515625;
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`;
 
 import { template } from './template-2';
-import { Workbook } from './workbook';
 import { SerializedSheet } from 'treb-grid';
 
-import { IArea, Area, ICellAddress, Cells, ValueType, CellValue, Style, DataValidation, ValidationType } from 'treb-base-types';
-import { Parser } from 'treb-parser';
+import { IArea, Area, ICellAddress, Cells, ValueType, CellValue, Style, DataValidation, ValidationType,
+         AnnotationLayout, Corner as LayoutCorner } from 'treb-base-types';
 
 import * as xmlparser from 'fast-xml-parser';
 import { SharedStrings } from './shared-strings2';
 import { StyleCache, XlColor, BorderEdge } from './workbook-style2';
 import { Theme } from './workbook-theme2';
 
-import { Relationship, RelationshipMap, AddRel } from './relationship';
+import { RelationshipMap, AddRel } from './relationship';
+import { XMLOptions2 } from './xml-utils';
 
-// FIXME: this came from workbook, unify
-const XMLOptions2: Partial<xmlparser.X2jOptions> = {
-  ignoreAttributes: false,
-  attrNodeName: 'a$',
-  attributeNamePrefix: '',
-  textNodeName: 't$',
-  trimValues: false,
-  arrayMode: false,
-};
+import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, 
+         UnitCall, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
 
+// FIXME: move
+import { Chart, ChartOptions } from './drawing2/chart2';
+import { Drawing, TwoCellAnchor } from './drawing2/drawing2';
 
 export class Exporter {
 
@@ -64,7 +60,7 @@ export class Exporter {
 
   }
 
-  public async WriteRels(rels: RelationshipMap, path: string) {
+  public async WriteRels(rels: RelationshipMap, path: string, dump = false) {
 
     if (!this.zip) {
       throw new Error('missing zip');
@@ -93,7 +89,9 @@ export class Exporter {
     };
 
     let xml = XMLDeclaration + this.xmlparser.parse(dom);
-    // console.info(xml);
+    if (dump) {
+      console.info(xml);
+    }
     await this.zip?.file(path, xml);
 
   }
@@ -451,6 +449,327 @@ export class Exporter {
 
   };
 
+  /** overload for return type */
+  public NormalizeAddress(unit: UnitAddress, sheet: SerializedSheet): UnitAddress;
+
+  /** overload for return type */
+  public NormalizeAddress(unit: UnitRange, sheet: SerializedSheet): UnitRange;
+
+  /**
+   * for charts we need addresses to be absolute ($)  and ensure there's
+   * a sheet name -- use the active sheet if it's not explicitly referenced
+   */
+  public NormalizeAddress(unit: UnitAddress|UnitRange, sheet: SerializedSheet): UnitAddress|UnitRange {
+
+    const addresses = (unit.type === 'address') ? [unit] : [unit.start, unit.end];
+
+    for (const address of addresses) {
+      address.absolute_row = true;
+      address.absolute_column = true;
+      if (!address.sheet) {
+        address.sheet = sheet.name;
+      }
+    }
+    if (unit.type === 'range') {
+      unit.end.sheet = undefined;
+    }
+
+    unit.label = this.parser.Render(unit);
+    return unit; // fluent
+
+  }
+
+
+  /** 
+   * new-style annotation layout (kind of a two-cell anchor) to two-cell anchor
+   */
+   public AnnotationLayoutToAnchor(layout: AnnotationLayout, sheet: SerializedSheet): TwoCellAnchor {
+
+    // our offsets are % of cell. their offsets are in excel units, 
+    // but when the chart is added our method will convert from pixels.
+
+    const address_to_anchor = (corner: LayoutCorner) => {
+      
+      const width = (sheet.column_width && sheet.column_width[corner.address.column]) ? 
+        sheet.column_width[corner.address.column] : (sheet.default_column_width || 100);
+      
+      const height = (sheet.row_height && sheet.row_height[corner.address.row]) ? 
+        sheet.row_height[corner.address.row] : (sheet.default_row_height || 20);
+
+      return {
+        ...corner.address,
+        row_offset: Math.round(corner.offset.y * height),
+        column_offset: Math.round(corner.offset.x * width),
+      };
+
+    };
+    
+    return {
+      from: address_to_anchor(layout.tl),
+      to: address_to_anchor(layout.br),
+    };
+
+  }
+
+  /**
+   * convert a rectangle (pixels) to a two-cell anchor. note that
+   * our offsets are in pixels, they'll need to be changed to whatever
+   * the target units are.
+   */
+  public AnnotationRectToAnchor(
+      annotation_rect: { 
+        left: number; 
+        top: number; 
+        width: number; 
+        height: number; 
+      }, 
+      sheet: SerializedSheet): TwoCellAnchor {
+    
+    const anchor: TwoCellAnchor = {
+      from: {row: -1, column: -1},
+      to: {row: -1, column: -1},
+    };
+
+    const rect = {
+      ...annotation_rect,  // {top, left, width, height}
+      right: annotation_rect.left + annotation_rect.width,
+      bottom: annotation_rect.top + annotation_rect.height,
+    };
+    
+    for (let x = 0, column = 0; column < 1000; column++) {
+      const width = (sheet.column_width && sheet.column_width[column]) ? sheet.column_width[column] : (sheet.default_column_width || 100);
+      if (anchor.from.column < 0 && rect.left <= x + width) {
+        anchor.from.column = column;
+        anchor.from.column_offset = (rect.left - x);
+      }
+      if (anchor.to.column < 0 && rect.right <= x + width) {
+        anchor.to.column = column;
+        anchor.to.column_offset = (rect.right - x);
+        break;
+      }
+      x += width;
+    }
+
+    for (let y = 0, row = 0; row < 1000; row++) {
+      const height = (sheet.row_height && sheet.row_height[row]) ? sheet.row_height[row] : (sheet.default_row_height || 20);
+      if (anchor.from.row < 0 && rect.top <= y + height) {
+        anchor.from.row = row;
+        anchor.from.row_offset = (rect.top - y);
+      }
+      if (anchor.to.row < 0 && rect.bottom <= y + height) {
+        anchor.to.row = row;
+        anchor.to.row_offset = (rect.bottom - y);
+        break;
+      }
+      y += height;
+    }
+
+    return anchor;
+
+  }
+
+  public ParseCharts(sheet_source: SerializedSheet) {
+    
+    const charts: Array<{
+      anchor: TwoCellAnchor,
+      options: ChartOptions,
+    }> = [];
+
+    const parse_series = (arg: ExpressionUnit, options: ChartOptions) => {
+
+      if (arg.type === 'range') {
+        options.data.push(this.NormalizeAddress(arg, sheet_source));
+      }
+      else if (arg.type === 'call') {
+        if (/group/i.test(arg.name)) {
+          // recurse
+          for (const value of (arg.args || [])) {
+            parse_series(value, options);
+          }
+        }
+        else if (/series/i.test(arg.name)) {
+
+          const [label, x, y] = arg.args; // y is required
+          
+          if (y && y.type === 'range') {
+            options.data.push(this.NormalizeAddress(y, sheet_source));
+
+            if (label) {
+
+              if (!options.names) { options.names = []; }
+
+              if (label.type === 'address') {
+                this.NormalizeAddress(label, sheet_source);
+              }
+              
+              if (label.type === 'range') {
+                this.NormalizeAddress(label.start, sheet_source);
+                options.names[options.data.length - 1] = label.start;
+              }
+              else {
+                options.names[options.data.length - 1] = label;
+              }
+              
+            }
+
+            if (!options.labels2) { options.labels2 = []; }
+            if (x && x.type === 'range') {
+              options.labels2[options.data.length - 1] = this.NormalizeAddress(x, sheet_source);
+            }
+          }
+          else {
+            console.info('invalid series missing Y')
+          }
+
+        }
+      }
+
+    };
+
+    for (const annotation of sheet_source.annotations || []) {
+
+      const parse_result = this.parser.Parse(annotation.formula || '');
+      if (parse_result.expression && parse_result.expression.type === 'call') {
+        
+        let type = '';
+        switch (parse_result.expression.name.toLowerCase()) {
+          case 'line.chart':
+            type = 'scatter';
+            break;
+          case 'scatter.line':
+            type = 'scatter2';
+            break;
+          case 'donut.chart':
+            type = 'donut';
+            break;
+          case 'bar.chart':
+            type = 'bar';
+            break;
+          case 'column.chart':
+            type = 'column';
+            break;
+        }
+
+        if (type === 'column' || type === 'donut' || type === 'bar' || type === 'scatter' || type === 'scatter2') {
+
+          const options: ChartOptions = { type, data: [] };
+
+          const title_index = (type === 'scatter2') ? 1 : 2;
+          const title_arg = parse_result.expression.args[title_index];
+
+          if (title_arg && title_arg.type === 'literal') {
+            options.title = title_arg;
+          }
+          else if (title_arg && title_arg.type === 'address') {
+            options.title = this.NormalizeAddress(title_arg, sheet_source);
+          }
+          else {
+
+            // FIXME: formula here will not work. we need to bring
+            // a calculator into this class? (!) or somehow cache the value...
+
+            // console.info('chart title arg', title_arg)
+          }
+
+          // we changed our Series() to Group(), and then added a new Series()
+          // function which adds data labels and per-series X values... will
+          // need to incorporate somehow. for now, just s/series/group to get
+          // the data in the chart
+
+          // oh we already did that... duh
+
+          if (parse_result.expression.args[0]) {
+            const arg0 = parse_result.expression.args[0];
+            if (type === 'scatter2' || type === 'bar' || type === 'column' || type === 'scatter') {
+              parse_series(arg0, options);
+            }
+            else if (arg0.type === 'range') {
+              options.data.push(this.NormalizeAddress(arg0, sheet_source));
+            }
+
+            // so the next cases cannot happen? (...) donut? (...)
+
+            else if (arg0.type === 'call' && /group/i.test(arg0.name)) {
+              for (const series of arg0.args) {
+
+                // in group, could be a range or a Series()
+                if (series.type === 'range') {
+                  options.data.push(this.NormalizeAddress(series, sheet_source));
+                }
+                else if (series.type === 'call' && /series/i.test(series.name)) {
+
+                  // in Series(), args are (name, X, range of data)
+
+                  if (series.args[2] && series.args[2].type === 'range') {
+                    options.data.push(this.NormalizeAddress(series.args[2], sheet_source));
+                  }
+                }
+              }
+            }
+            else if (arg0.type === 'call' && /series/i.test(arg0.name)) {
+
+              // another case, single Series()
+              if (arg0.args[2] && arg0.args[2].type === 'range') {
+                options.data.push(this.NormalizeAddress(arg0.args[2], sheet_source));
+              }
+            }
+
+            /*
+            else if (arg0.type === 'call' && /series/i.test(arg0.name)) {
+              for (const series of arg0.args) {
+                if (series.type === 'range') {
+                  options.data.push(this.NormalizeAddress(series, sheet_source));
+                }
+              }
+            }
+            */
+          }
+
+          if (type !== 'scatter2') {
+            if (parse_result.expression.args[1] && parse_result.expression.args[1].type === 'range') {
+              options.labels = this.NormalizeAddress(parse_result.expression.args[1], sheet_source);
+            }
+          }
+
+          if (type === 'scatter' 
+              && parse_result.expression.args[4]
+              && parse_result.expression.args[4].type === 'literal'
+              && parse_result.expression.args[4].value.toString().toLowerCase() === 'smooth') {
+
+            options.smooth = true;
+          }
+          else if (type === 'scatter2' && parse_result.expression.args[2]) {
+            if (parse_result.expression.args[2].type === 'literal' 
+                && /smooth/i.test(parse_result.expression.args[2].value.toString())) {
+              options.smooth = true;
+            }
+          }
+
+          if (annotation.rect) {
+            charts.push({
+              anchor: this.AnnotationRectToAnchor(annotation.rect, sheet_source), options});
+            // sheet.AddChart(this.AnnotationRectToAnchor(annotation.rect, sheet_source), options);
+          }
+          else if (annotation.layout) {
+            charts.push({
+              anchor: this.AnnotationLayoutToAnchor(annotation.layout, sheet_source), options});
+            // sheet.AddChart(this.AnnotationLayoutToAnchor(annotation.layout, sheet_source), options);
+          }
+          else {
+            console.warn('annotation missing layout');
+          }
+
+        }
+
+      }
+      
+
+    }
+
+    return charts;
+
+  }
+
   public async Export(source: {
       sheet_data: SerializedSheet[];
       active_sheet?: number;
@@ -483,6 +802,13 @@ export class Exporter {
 
     data = await this.zip?.file('xl/styles.xml')?.async('text') as string;
     style_cache.FromXML(xmlparser.parse(data || '', XMLOptions2), theme);
+
+    // reset counters
+
+    Drawing.next_drawing_index = 1;
+    Chart.next_chart_index = 1;
+
+    const drawings: Drawing[] = [];
 
     // --- now sheets ----------------------------------------------------------
 
@@ -546,7 +872,7 @@ export class Exporter {
               footer: 0.3,
             },
           },
-          // drawing: {},
+          drawing: {},
           extLst: {
             ext: {
               a$: {
@@ -807,6 +1133,10 @@ export class Exporter {
         index: number;
       }> = [];
 
+      if (sheet.default_column_width) {
+        dom.worksheet.sheetFormatPr.a$.defaultColumnWidth = sheet.default_column_width * one_hundred_pixels / 100;
+      }
+
       for (let c = 0; c < sheet.columns; c++) {
         const entry: { style?: number, width?: number, index: number } = { index: c };
         if (sheet.column_width 
@@ -934,13 +1264,23 @@ export class Exporter {
                 && result.expression.args.length > 0) {
               const arg = result.expression.args[0];
               if (arg.type === 'range' || arg.type === 'address') {
+
+                const start = (arg.type === 'range') ? arg.start : arg;
+                if (!start.sheet) {
+                  if (typeof start.sheet_id !== 'undefined') {
+                    start.sheet = sheet_name_map[start.sheet_id];
+                  }
+                  else {
+                    start.sheet = sheet.name;
+                  }
+                }
                 source = this.parser.Render(arg);
+
               }
             }
 
             const a$: any = {
               displayEmptyCellsAs: 'gap',
-              // 'xr2:uid': '{CBFBAD21-B720-46A8-BBE7-649AAE7CB760}',
             };
 
             if (/column/i.test(sparkline.formula)) {
@@ -965,6 +1305,75 @@ export class Exporter {
       }
 
       dom.worksheet.sheetData = sheet_data;
+
+      // --- charts ------------------------------------------------------------
+
+      const charts = this.ParseCharts(sheet);
+
+      // if a sheet has one or more charts, it has a single drawing. for a 
+      // drawing, we need
+      //
+      // (1) entry in sheet xml
+      // (2) drawing xml file
+      // (3) relationship sheet -> drawing
+      // (4) drawing rels file (for charts, later)
+      // (5) entry in [ContentTypes]
+      //
+      // each chart in the drawing then needs
+      //
+      // (1) entry in drawing file
+      // (2) chart xml file
+      // (3) relationship drawing -> chart
+      // (4) chart/colors xml file
+      // (5) chart/style xml file
+      // (6) chart rels file
+      // (7) relationship chart -> colors
+      // (8) relationship chart -> style
+      // (9) entry in [ContentTypes]
+      //
+      // check: we can get away with not including colors or style, which
+      // will revert to defaults -- let's do that for the time being if we can
+
+      if (charts.length) {
+
+        const drawing = new Drawing();
+
+        for (const chart of charts) {
+          drawing.AddChart(chart.options, chart.anchor);
+        }
+
+        for (const {chart} of drawing.charts) {
+          const dom = chart.toJSON();
+          const xml = XMLDeclaration + this.xmlparser.parse(dom);
+          await this.zip?.file(`xl/charts/chart${chart.index}.xml`, xml);
+          await this.WriteRels(chart.relationships, `xl/charts/_rels/chart${chart.index}.xml.rels`);
+        }
+
+        await this.WriteRels(drawing.relationships, `xl/drawings/_rels/drawing${drawing.index}.xml.rels`);
+
+        const xml = XMLDeclaration + this.xmlparser.parse(drawing.toJSON());
+        // console.info(xml);
+
+        await this.zip?.file(`xl/drawings/drawing${drawing.index}.xml`, xml);
+
+        drawings.push(drawing); // for [ContentTypes]
+
+        const drawing_rel = AddRel(sheet_rels, 
+            `http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing`, 
+            `../drawings/drawing${drawing.index}.xml`);
+
+        dom.worksheet.drawing = {
+          a$: {
+            'r:id': drawing_rel,
+          },
+        };
+
+      }
+      else {
+        delete dom.worksheet.drawing;
+      }
+
+      // --- end? --------------------------------------------------------------
 
       // it seems like chrome, at least, will maintain order. but this is 
       // not gauranteed and we can't rely on it. the best thing to do might
@@ -1054,12 +1463,29 @@ export class Exporter {
         Override: [
           { a$: { PartName: "/xl/workbook.xml", ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml" }},
 
+          // sheets
           ...source.sheet_data.map((sheet, index) => {
             return { a$: {
                 ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
                 PartName: `/xl/worksheets/sheet${index + 1}.xml`,
             }};
           }),
+
+          // charts and drawings
+          ...drawings.reduce((a: any, drawing) => {
+            return a.concat([
+              ...drawing.charts.map(chart => {
+                return { a$: {
+                    ContentType: 'application/vnd.openxmlformats-officedocument.drawingml.chart+xml',
+                    PartName: `/xl/charts/chart${chart.chart.index}.xml`,
+                  }};
+              }),
+              { a$: {
+                ContentType: 'application/vnd.openxmlformats-officedocument.drawing+xml',
+                PartName: `/xl/drawings/drawing${drawing.index}.xml`,
+              }},
+            ]);
+          }, []),
 
           { a$: { PartName: "/xl/theme/theme1.xml", ContentType: "application/vnd.openxmlformats-officedocument.theme+xml" }},
           { a$: { PartName: "/xl/styles.xml", ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml" }},
