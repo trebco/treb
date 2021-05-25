@@ -116,10 +116,11 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           <button title='File options' class='drop-button'>${this.Icon('fa/light/save')}</button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
+              <li><button class='text' data-command='reset'>New Document</button></li>
+              <hr/>
               <li><button class='text' data-command='import-desktop'>Import file</button></li>
               <li><button class='text' data-command='save-json'>Save as JSON</button></li>
               <li><button class='text' data-command='export-xlsx'>Export XLSX</button></li>
-              <li><button class='text' data-command='reset'>Reset/clear</button></li>
             </ul>
           </div>
         </div>

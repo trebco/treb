@@ -92,6 +92,14 @@ $swatch-width: 1.1em;
         margin-top: .125em;
       }
 
+      /* use hr/ instead
+      li.separator {
+        height: 3px;
+        border-bottom: 1px solid rgb(209, 213, 219);
+        margin-bottom: 3px;
+      }
+      */
+
       button {
         border-color: transparent;
       }
