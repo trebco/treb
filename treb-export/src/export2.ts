@@ -779,13 +779,27 @@ export class Exporter {
 
     // --- create a map --------------------------------------------------------
 
+    // active_sheet, in source, is a sheet ID. we need to map
+    // that to an index. luckily we preserve index order. we can
+    // do that as a side effect of creating the map, although we
+    // will need a loop index.
+
+    let active_sheet = 0;
+
     const sheet_name_map: string[] = [];
-    for (const sheet of source.sheet_data) {
+    for (let index = 0; index < source.sheet_data.length; index++) {
+      const sheet = source.sheet_data[index];
+
       const id = sheet.id || 0;
       if (id) {
         sheet_name_map[id] = sheet.name || '';
       }
+      if (id === source.active_sheet) {
+        active_sheet = index;
+      }
     }
+
+    // console.info("active sheet", source.active_sheet, active_sheet);
 
     // --- init workbook globals -----------------------------------------------
 
@@ -843,7 +857,7 @@ export class Exporter {
           sheetViews: {
             sheetView: {
               a$: {
-                tabSelected: 1,
+                // tabSelected: (sheet_index === active_sheet ? 1 : 0),
                 workbookViewId: 0,
               },
             },
@@ -1438,15 +1452,24 @@ export class Exporter {
             defaultThemeVersion: '166925',
           },
         },
+        bookViews: {
+          workbookView: {
+            a$: {
+              activeTab: (active_sheet || 0),
+            },
+          },
+        },
         sheets: {
           sheet: source.sheet_data.map((sheet, index) => {
-            return {
-              a$: {
-                name: sheet.name || `Sheet${index + 1}`,
-                sheetId: index + 1,
-                'r:id': worksheet_rels_map[index],
-              },
+            const a$: any = {
+              name: sheet.name || `Sheet${index + 1}`,
+              sheetId: index + 1,
+              'r:id': worksheet_rels_map[index],
             };
+            if (sheet.visible === false) {
+              a$.state = 'hidden';
+            }
+            return { a$ };
           }),
         }
       },

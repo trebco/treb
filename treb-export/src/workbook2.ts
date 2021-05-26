@@ -172,7 +172,7 @@ export class Workbook {
         worksheet.rels = await this.ReadRels(worksheet.rels_path);
 
         worksheet.Parse();
-        console.info("TS", worksheet);
+        // console.info("TS", worksheet);
 
         this.sheets.push(worksheet);
       }
