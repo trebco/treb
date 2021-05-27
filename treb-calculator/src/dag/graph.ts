@@ -408,6 +408,20 @@ export abstract class Graph implements GraphCallbacks {
           // some wasted checks, although I'm not sure how to deal with that
           // without duplicating the edge list.
 
+          // concept: stack is a list of [edge, skip = 0]
+          // when processing an entry, do
+          //
+          // const x of (skip ? v.edges_out.slice(skip) : v.edges_out)
+          //
+          // or maybe be efficient and not fancy,
+          // 
+          // for (let i = skip; i < v.edges_out.length; i++)
+          //
+          // or what you should actually do is use the stack field as the loop
+          // variable, so it persists. or put something in the vertex so it 
+          // persists and applies to things that are placed on the stack more
+          // than once. 
+
           const v = stack[stack.length - 1];
           let completed = true;
 
