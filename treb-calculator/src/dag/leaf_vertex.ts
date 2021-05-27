@@ -1,7 +1,7 @@
 
 import { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
-import { Vertex } from './vertex';
+import { Vertex, Color } from './vertex';
 
 /**
  * second specialization of vertex: this class is for non-cell elements
@@ -25,6 +25,15 @@ export class LeafVertex extends SpreadsheetVertex {
 
   public state_id = 0;
   public type = LeafVertex.type; // for type guard
+  
+  /**
+   * leaf vertex defaults to black (i.e. tested) because leaf nodes cannot have 
+   * outbound edges. it is still possible to change this, since it's a property 
+   * we can't override the set accessor, but it's not worth making it an 
+   * accessor in the superclass just for this purpose since regular vertices 
+   * should vastly outnumber leaves.
+   */
+  public color = Color.black;
 
   protected state_representation = '';
 

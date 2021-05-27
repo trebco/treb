@@ -1,4 +1,12 @@
 
+/**
+ * colors for the CLRS color algorithm. 
+ * 
+ * these colors are useful because gray is "in between" white and black, but
+ * (outside of the general move away from using white/black as identifiers) it 
+ * might be easier to conceptualize with descriptive labels like "untested" 
+ * (white), "being tested", (gray) and "testing complete" (black).
+ */
 export enum Color {
   white, gray, black
 }
@@ -131,12 +139,39 @@ export class Vertex {
   public LoopCheck(): boolean {
     this.color = Color.gray;
 
+    const stack: Vertex[] = [this];
+    while (stack.length) {
+
+      const u = stack.pop();
+      let complete = true;
+
+      for (const v of (u as Vertex).edges_out) {
+        if (v.color === Color.white) {
+          v.color = Color.gray;
+          stack.push(v);
+          complete = false;
+        }
+        else if (v.color === Color.gray) {
+          // console.info("found loop", this, v);
+          this.color = Color.white; // someone else can test
+          return true; // loop
+        }
+      }
+
+      if (complete) {
+        (u as Vertex).color = Color.black;
+      }
+
+    }
+
+    /*
     for (const edge of this.edges_out) {
       if (edge.color === Color.gray || (edge.color === Color.white && edge.LoopCheck())) { 
         this.color = Color.white; // someone else can test
         return true; // loop
       } 
     }
+    */
 
     this.color = Color.black;
     return false;

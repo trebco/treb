@@ -347,7 +347,8 @@ export abstract class Graph implements GraphCallbacks {
           if (l2) {
             for (const vertex of l2) {
               if (vertex) {
-                vertex.color = Color.white; 
+                // vertex.color = Color.white; 
+                vertex.color = vertex.edges_out.length ? Color.white : Color.black;
               }
             }
           }
@@ -358,18 +359,28 @@ export abstract class Graph implements GraphCallbacks {
     // this is unecessary
 
     for (const vertex of this.leaf_vertices) {
-      if (vertex.edges_in.length) {
-        vertex.color = Color.white;
-      }
+      vertex.color = Color.black;
     }
     
   }
+
+  /* DEV * /
+  public ForceLoopCheck() {
+    this.loop_check_required = true;
+    this.ResetLoopState();
+    return this.LoopCheck();
+  }
+  */
 
   /**
    * global check returns true if there is any loop. this is more efficient
    * than detecting loops on every call to AddEdge. uses the color algorithm
    * from CLRS.
    * 
+   * UPDATE we switched to a stack-based check because we were hitting 
+   * recursion limits, although that seemed to only happen in workers -- 
+   * perhaps they have different stack [in the malloc sense] sizes? in any 
+   * event, I think the version below is now stable. 
    */
   public LoopCheck(): boolean {
 
@@ -389,7 +400,7 @@ export abstract class Graph implements GraphCallbacks {
           if (l2) {
             for (const vertex of l2) {
               if (vertex) { 
-                vertex.color = Color.white; 
+                vertex.color = vertex.edges_out.length ? Color.white : Color.black;
                 list.push(vertex);
               }
             }
@@ -397,6 +408,58 @@ export abstract class Graph implements GraphCallbacks {
         }
       }
     }
+
+    // we were having problems with large calculation loops (basically long
+    // lists of x+1) using a recursive DFS. so we need to switch to a stack,
+    // just in case, hopefully it won't be too expensive.
+
+    const stack: Vertex[] = [];
+
+    for (const vertex of list) {
+      if (vertex.color === Color.white) {
+
+        vertex.color = Color.gray;
+        stack.push(vertex);
+
+        while (stack.length) {
+
+          const u = stack.pop();
+
+          // we need to remove this vertex (u) from future testing if there
+          // are multiple roots that point to the same leaf; otherwise we 
+          // get false positive on loops. also this reduces the required 
+          // number of tests at the expense of some additional bookkeeping.
+
+          // effectively this flag means "u has no children with color white 
+          // or gray", so we can mark u as black and don't need to test it
+          // again.
+
+          let complete = true;
+
+          for (const v of (u as Vertex).edges_out) {
+            if (v.color === Color.white) {
+              complete = false;
+              v.color = Color.gray;
+              stack.push(v);
+            }
+            else if (v.color === Color.gray) {
+              this.loop_hint = this.RenderAddress((vertex as SpreadsheetVertex).address);
+              // console.info('loop detected @', this.loop_hint, `(${this.RenderAddress((v as SpreadsheetVertex).address)} is gray, testing ${this.RenderAddress((u as SpreadsheetVertex).address)})`);
+              console.info('loop detected @', this.loop_hint);
+              return true; // loop
+            }
+          }
+
+          if (complete) {
+            (u as SpreadsheetVertex).color = Color.black;
+          }
+
+        }
+        vertex.color = Color.black;
+      }
+    }
+
+    /*
 
     const tail = (vertex: Vertex): boolean => {
       vertex.color = Color.gray;
@@ -419,6 +482,7 @@ export abstract class Graph implements GraphCallbacks {
     for (const vertex of list) {
       if (vertex.color === Color.white && tail(vertex)) { return true; }
     }
+    */
 
     this.loop_check_required = false;
     this.loop_hint = undefined;
