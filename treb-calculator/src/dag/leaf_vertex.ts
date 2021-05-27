@@ -28,9 +28,9 @@ export class LeafVertex extends SpreadsheetVertex {
   
   /**
    * leaf vertex defaults to black (i.e. tested) because leaf nodes cannot have 
-   * outbound edges. it is still possible to change this, since it's a property 
-   * we can't override the set accessor, but it's not worth making it an 
-   * accessor in the superclass just for this purpose since regular vertices 
+   * outbound edges. it is still possible to change this, because it's a property 
+   * and we can't override the set accessor, but making it an accessor in the 
+   * superclass just for this purpose is not worthwhile since regular vertices 
    * should vastly outnumber leaves.
    */
   public color = Color.black;
