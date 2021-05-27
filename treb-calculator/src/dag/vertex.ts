@@ -138,31 +138,47 @@ export class Vertex {
    */
   public LoopCheck(): boolean {
     this.color = Color.gray;
+   
+    // switch to stack algorithm. see the method in Graph for details.
 
     const stack: Vertex[] = [this];
+
     while (stack.length) {
 
-      const u = stack.pop();
-      let complete = true;
+      const v = stack[stack.length - 1];
+      let completed = true;
 
-      for (const v of (u as Vertex).edges_out) {
-        if (v.color === Color.white) {
-          v.color = Color.gray;
-          stack.push(v);
-          complete = false;
+      if (v.color !== Color.black) {
+
+        for (const edge of v.edges_out) {
+
+          if (edge.color === Color.gray) {
+
+            // this is different than the graph algo, here we reset the 
+            // color when we hit a loop.
+
+            this.color = Color.white; // someone else can test
+            return true; // loop
+   
+          }
+          else if (edge.color === Color.white) {
+            edge.color = Color.gray;
+            stack.push(edge);
+            completed = false;
+          }
+
         }
-        else if (v.color === Color.gray) {
-          // console.info("found loop", this, v);
-          this.color = Color.white; // someone else can test
-          return true; // loop
-        }
+
       }
 
-      if (complete) {
-        (u as Vertex).color = Color.black;
+      if (completed) {
+        stack.pop();
+        v.color = Color.black;
       }
 
     }
+
+    // the old recursive version
 
     /*
     for (const edge of this.edges_out) {

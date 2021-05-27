@@ -316,28 +316,8 @@ export abstract class Graph implements GraphCallbacks {
   */
 
   /**
-   * set all vertices to white, for the color algorithm. includes
-   * leaf vertices, although it's not necessary to check them -- we 
-   * are including in case they show up via calc
-   * 
-   * it should not be necessary to check constants or formula with
-   * no inbound edges (deps) so we can start those black
-   * 
-   * actually those are immaterial as they should (theoretically) never
-   * get tested, if we are testing lazily
-   * 
-   * actually you should be able to omit nodes with no edges out, as
-   * well... right? b/c there's no way they loop.
-   * 
-   * actually all of that is a waste of time. if a vertex is never 
-   * checked then it doesn't matter what color it is. save the test,
-   * just set everyone.
-   * 
-   * that's not quite right, because you don't want loop errors to show
-   * up in cells that don't have deps, it doesn't make sense -- you want
-   * errors to show up where there are problems. not 100% sure how to 
-   * solve that, yet...
-   * 
+   * reset all vertices. this method is used so we can run the loop check
+   * as part of the graph calculation, instead of requiring the separate call.
    */
   public ResetLoopState(): void {
 
@@ -364,14 +344,6 @@ export abstract class Graph implements GraphCallbacks {
     
   }
 
-  /* DEV * /
-  public ForceLoopCheck() {
-    this.loop_check_required = true;
-    this.ResetLoopState();
-    return this.LoopCheck();
-  }
-  */
-
   /**
    * global check returns true if there is any loop. this is more efficient
    * than detecting loops on every call to AddEdge. uses the color algorithm
@@ -381,13 +353,15 @@ export abstract class Graph implements GraphCallbacks {
    * recursion limits, although that seemed to only happen in workers -- 
    * perhaps they have different stack [in the malloc sense] sizes? in any 
    * event, I think the version below is now stable. 
+   * 
+   * @param force force a check, for dev/debug
    */
-  public LoopCheck(): boolean {
+  public LoopCheck(force = false): boolean {
 
     // this flag is only set on AddEdge, and only cleared when we successfully
     // get through this function. so if there are no new edges, we can bypass.
 
-    if (!this.loop_check_required) { return false; }
+    if (!this.loop_check_required && !force) { return false; }
 
     // vertices is array [][][]
     // build a list so we can simplify the second loop (waste of space?)
@@ -413,49 +387,69 @@ export abstract class Graph implements GraphCallbacks {
     // lists of x+1) using a recursive DFS. so we need to switch to a stack,
     // just in case, hopefully it won't be too expensive.
 
+    // ---
+
+    // unwind recursion -> stack. seems to work OK. could we not just 
+    // use the list as the initial stack? (...)
+    
     const stack: Vertex[] = [];
 
     for (const vertex of list) {
       if (vertex.color === Color.white) {
 
-        vertex.color = Color.gray;
+        vertex.color = Color.gray; // testing
         stack.push(vertex);
 
         while (stack.length) {
 
-          const u = stack.pop();
+          // so leave it on the stack until we're done. we may "recurse", in
+          // which case we need to come back to this item when the children
+          // have been handled. we will wind up looping again, so there are 
+          // some wasted checks, although I'm not sure how to deal with that
+          // without duplicating the edge list.
 
-          // we need to remove this vertex (u) from future testing if there
-          // are multiple roots that point to the same leaf; otherwise we 
-          // get false positive on loops. also this reduces the required 
-          // number of tests at the expense of some additional bookkeeping.
+          const v = stack[stack.length - 1];
+          let completed = true;
 
-          // effectively this flag means "u has no children with color white 
-          // or gray", so we can mark u as black and don't need to test it
-          // again.
+          if (v.color !== Color.black) {
 
-          let complete = true;
+            for (const edge of v.edges_out) {
 
-          for (const v of (u as Vertex).edges_out) {
-            if (v.color === Color.white) {
-              complete = false;
-              v.color = Color.gray;
-              stack.push(v);
+              if (edge.color === Color.gray) {
+                this.loop_hint = this.RenderAddress((vertex as SpreadsheetVertex).address);
+                console.info('loop detected @', this.loop_hint);
+                return true; // exit
+              }
+              else if (edge.color === Color.white) {
+
+                // here we're pushing onto the stack, so these will be handled
+                // next, but since v is still on the stack once those are done
+                // we will hit v again. 
+
+                edge.color = Color.gray;
+                stack.push(edge);
+                completed = false;
+              }
+
             }
-            else if (v.color === Color.gray) {
-              this.loop_hint = this.RenderAddress((vertex as SpreadsheetVertex).address);
-              // console.info('loop detected @', this.loop_hint, `(${this.RenderAddress((v as SpreadsheetVertex).address)} is gray, testing ${this.RenderAddress((u as SpreadsheetVertex).address)})`);
-              console.info('loop detected @', this.loop_hint);
-              return true; // loop
-            }
+
           }
 
-          if (complete) {
-            (u as SpreadsheetVertex).color = Color.black;
+          // if we have not pushed anything onto the stack (we have not 
+          // recursed), then we can clean up; since the stack is still the 
+          // same we can pop() now.
+
+          if (completed) {
+            stack.pop();
+            v.color = Color.black; // v is complete, just in case we test it again
           }
 
         }
+
+        // OK, tested and complete
+
         vertex.color = Color.black;
+
       }
     }
 
