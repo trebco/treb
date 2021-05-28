@@ -2283,23 +2283,31 @@ export class Sheet {
     // if there's a column style, it will override the row
     // style; so we need to set a cell style to compensate.
 
+    // "override" because a reserved word in ts 4.3.2, possibly accidentally?
+    // or possibly it was already a reserved word, and was handled incorrectly?
+    // not sure. stop using it. 
+    //
+    // Actually just by the by, if it does work as described in
+    //
+    // https://github.com/microsoft/TypeScript/issues/2000
+    //
+    // then we should start using it where appropriate, because it is good.
+    // just don't use it here as a variable name.
+
     for (let i = 0; i < this.cells.columns; i++) {
       if (this.column_styles[i]) {
         const column_style = this.column_styles[i];
-        const override: Style.Properties = this.cell_style[i] ? this.cell_style[i][row] || {} : {};
-
-        // FilteredAssign(column_style, properties, override, keys);
+        const overrides: Style.Properties = this.cell_style[i] ? this.cell_style[i][row] || {} : {};
 
         for (const key of keys) {
           if (typeof column_style[key] !== 'undefined') {
-            (override as any)[key] = properties[key];
+            (overrides as any)[key] = properties[key];
           }
         }
 
-        if (Object.keys(override).length) {
-          // console.info(override);
+        if (Object.keys(overrides).length) {
           if (!this.cell_style[i]) this.cell_style[i] = [];
-          this.cell_style[i][row] = JSON.parse(JSON.stringify(override));
+          this.cell_style[i][row] = JSON.parse(JSON.stringify(overrides));
         }
       }
     }
