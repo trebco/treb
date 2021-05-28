@@ -29,6 +29,11 @@
 
 }
 
+// this switched around, we now set class on the parent
+.masked > .treb-main {
+  opacity: .6;
+}
+
 .treb-main {
   position: absolute;
   top: 0px;
@@ -38,9 +43,12 @@
   z-index: 1;
 
   transition: opacity .2s ease;
+
+  /*
   &.masked {
     opacity: .6;
   }
+  */
 
 }
 

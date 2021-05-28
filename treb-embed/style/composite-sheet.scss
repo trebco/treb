@@ -53,13 +53,21 @@ $toolbar_height: 38px;
 
 }
 
+/**
+ * mask the sidebar (via opacity) if the dialog is showing
+ */
+.sidebar-open .masked ~ .embedded-spreadsheet-sidebar {
+  opacity: .6;
+  pointer-events: none;
+}
+
 .toolbar-container {
   position: absolute;
   top: 0;
   left: 0;
   opacity: 0;
   pointer-events: none;
-  transition: opacity $transition_options;
+  transition: opacity .2s ease; // $transition_options;
 }
 
 /** 
@@ -82,6 +90,14 @@ $toolbar_height: 38px;
     pointer-events: initial;
   }
  
+}
+
+/**
+ * mask the toolbar (via opacity) if the dialog is showing
+ */
+.toolbar-open .masked + .toolbar-container {
+  pointer-events: none;
+  opacity: .6;
 }
 
 /**

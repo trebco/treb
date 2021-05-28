@@ -172,13 +172,23 @@ export class ProgressDialog {
     if (value === this.visible_) { return; }
     this.visible_ = value;
 
+    // we want to mask not just the spreadsheet but also the toolbar and 
+    // sidebar. unfortunately we built the node structure the other way.
+    // not a real problem though, just requires some reacharound
+
+    // actually check that we can do that with CSS -- siblings FTW
+
     if (value) { 
-      (this.parent_node.firstChild as HTMLElement)?.classList.add('masked');
+      // (this.parent_node.firstChild as HTMLElement)?.classList.add('masked');
+      this.parent_node.classList.add('masked');
+
       this.model.mask.classList.add('visible'); 
       window.addEventListener('keydown', this.event_handler);
     }
     else { 
-      (this.parent_node.firstChild as HTMLElement)?.classList.remove('masked');
+      // (this.parent_node.firstChild as HTMLElement)?.classList.remove('masked');
+      this.parent_node.classList.remove('masked');
+
       this.model.mask.classList.remove('visible'); 
       window.removeEventListener('keydown', this.event_handler);
       const tmp = this.pending_dialog_resoltion.slice(0);
