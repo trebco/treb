@@ -1501,6 +1501,8 @@ export class Grid {
 
     this.StyleDefaultFromTheme();
 
+    // TODO: reset scroll
+
     if (render) {
       this.Repaint(false, false);
     }
