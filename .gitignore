@@ -6,6 +6,7 @@ dist2
 coverage
 
 treb-export/test
+treb-parser/test
 
 # intermediate file (post-build, pre-minify)
 treb-embed/extra/embed.js
