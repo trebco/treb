@@ -19,6 +19,29 @@ export interface UnitLiteral extends BaseUnit {
 }
 
 /**
+ * testing: complex
+ */
+export interface UnitComplex extends BaseUnit {
+  type: 'complex';
+  position: number;
+  real: number;
+  imaginary: number;
+  text?: string;
+}
+
+/**
+ * testing: complex
+ * this represents just the imaginary part. it's for internal use and should
+ * never be returned as a value.
+ */
+export interface UnitImaginary extends BaseUnit {
+  type: 'imaginary';
+  position: number;
+  value: number;
+  text?: string;
+}
+
+/**
  * expression unit representing an array of primitive values. array
  * can contain mixed values, and holes. array cannot contain arrays,
  * or any other complex type.
@@ -132,6 +155,8 @@ export interface UnitRange extends BaseUnit {
 /** discriminated union for type guards */
 export type ExpressionUnit =
   | UnitLiteral
+  | UnitComplex
+  | UnitImaginary
   | UnitArray
   | UnitIdentifier
   | UnitCall

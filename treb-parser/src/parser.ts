@@ -70,6 +70,9 @@ const LC_E = 0x65;
 const UC_Z = 0x5a;
 const LC_Z = 0x7a;
 
+const LC_I = 0x69;
+const LC_J = 0x6a;
+
 const ACCENTED_RANGE_START = 192;
 const ACCENTED_RANGE_END = 312;
 
@@ -120,6 +123,10 @@ const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
  * FIXME: split rendering into a separate class? would be a little cleaner.
  */
 export class Parser {
+
+  /** flag to enable/disable */
+  public support_complex_numbers = false;
+
   /**
    * argument separator. this can be changed prior to parsing/rendering.
    * FIXME: use an accessor to ensure type, outside of ts?
@@ -142,6 +149,11 @@ export class Parser {
    * internal decimal mark, as a number.
    */
   protected decimal_mark_char = PERIOD;
+
+  /**
+   * imaginary number value. this is "i", except for those EE weirdos who use "j".
+   */
+  protected imaginary_number: 0x69|0x6A = LC_I;
 
   /**
    * internal counter for incrementing IDs
@@ -202,6 +214,7 @@ export class Parser {
       case 'address':
       case 'missing':
       case 'literal':
+      case 'complex':
       case 'identifier':
       case 'operator':
         func(unit);
@@ -276,6 +289,7 @@ export class Parser {
     missing = '(missing)',
     convert_decimal?: DecimalMarkType,
     convert_argument_separator?: ArgumentSeparatorType,
+    convert_imaginary_number?: 'i'|'j',
   ): string {
     // use default separator, unless we're explicitly converting.
 
@@ -285,6 +299,11 @@ export class Parser {
     }
     else if (convert_argument_separator === ArgumentSeparatorType.Semicolon) {
       separator = '; ';
+    }
+
+    let imaginary_character = (this.imaginary_number === LC_I) ? 'i' : 'j';
+    if (convert_imaginary_number) {
+      imaginary_character = convert_imaginary_number;
     }
 
     // this is only used if we're converting.
@@ -353,6 +372,9 @@ export class Parser {
           )
         );
 
+      case 'complex':
+        return `${unit.real||0}${unit.imaginary < 0 ? '' : '+'}${unit.imaginary}${imaginary_character}`;
+      
       case 'literal':
         if (typeof unit.value === 'string') {
 
@@ -611,7 +633,7 @@ export class Parser {
    * @param exit exit on specific characters
    */
   protected ParseGeneric(exit: number[] = [0]): ExpressionUnit | null {
-    const stream: ExpressionUnit[] = [];
+    let stream: ExpressionUnit[] = [];
 
     for (; this.index < this.length;) {
       const unit = this.ParseNext(stream.length === 0);
@@ -662,6 +684,12 @@ export class Parser {
       }
     }
 
+    if (this.support_complex_numbers && stream.length) {
+      stream = this.CompositeComplexNumbers(stream);
+    }
+
+    // console.info("STREAM\n", stream, "\n\n");
+
     if (stream.length === 0) return null;
     if (stream.length === 1) return stream[0];
 
@@ -669,6 +697,118 @@ export class Parser {
     // convert and validate ranges
 
     return this.BinaryToRange(this.ArrangeUnits(stream));
+  }
+
+  /**
+   * we parse real and imaginary numbers, but we want the output to contain
+   * complex numbers. this stage reads a stream of basic units (before we 
+   * build binary or unary blocks) and translates complex numbers.
+   * 
+   * there are three things we're looking for (three-and-a-half):
+   *
+   * (1) a naked imaginary number, like 3i. turn this into a complex number
+   *     with the same value.
+   *
+   * (2) a token "i" (or "j", depending). if we support complex numbers then
+   *     treat this as 1i, turn it into a complex number.
+   *
+   * (3) a composite complex number that looks like (real)(+/-)(imaginary).
+   *     turn that into a complex number. 
+   * 
+   * (+) we may also see something like 3.2+i, where "i" will be represented 
+   *     as an identifier (as in (2) above). in that case treat it as +/- 1i.
+   * 
+   * 
+   * @param stream 
+   */
+  protected CompositeComplexNumbers(stream: ExpressionUnit[]): ExpressionUnit[] {
+
+    // FIXME: cache this
+    const imaginary = this.imaginary_number === LC_I ? 'i' : 'j';
+
+    let result: ExpressionUnit[] = [];
+
+    for (let i = 0; i < stream.length; i++) {
+      const a = stream[i];
+      const b = stream[i + 1];
+      const c = stream[i + 2];
+
+      //
+      // handle case 3 (and 3 1/2) first because it will consume 3 tokens
+      //
+
+      if (a.type === 'literal' 
+            && typeof a.value === 'number' 
+            && b && c 
+            && b.type === 'operator'
+            && (b.operator === '+' || b.operator === '-')
+            && (c.type === 'imaginary' || (c.type === 'identifier' && c.name === imaginary))) {
+
+        let text = a.text + b.operator;
+        let imaginary_value = 1;
+
+        if (c.type === 'imaginary') {
+          text += (c.text || '');
+          imaginary_value = c.value;
+        }
+        else {
+          text += 'i';
+        }
+
+        if (b.operator === '-') {
+          imaginary_value = -imaginary_value;
+        }
+
+        result.push({
+          type: 'complex',
+          position: a.position,
+          text: text, 
+          id: a.id,
+          imaginary: imaginary_value,
+          real: a.value,
+        });
+
+        // jump
+        i += 2;
+      }
+      else if (a.type === 'imaginary') {
+
+        // this is case 1
+
+        // convert to complex
+        result.push({
+          type: 'complex',
+          position: a.position,
+          text: a.text, 
+          id: a.id,
+          imaginary: a.value,
+          real: 0,
+        });
+
+      }
+      else if (a.type === 'identifier' && a.name === imaginary) {
+
+        // this is case 2, something that looks like an identifier.
+        // FIXME: this will probably break column range notation like i:i
+
+        // call this 1i
+        result.push({
+          type: 'complex',
+          position: a.position,
+          text: a.name, 
+          id: a.id,
+          imaginary: 1,
+          real: 0,
+        });
+
+      }
+      else {
+        result.push(a);
+      }
+    }
+
+    return result;
+
   }
 
   /**
@@ -1145,6 +1285,7 @@ export class Parser {
       // FIXME: is there a case where period needs to be handled the
       // same way as plus and minus, below?
 
+      /*
       const position = this.index;
       const [value, text] = this.ConsumeNumber();
 
@@ -1155,6 +1296,10 @@ export class Parser {
         value,
         text,
       };
+      */
+
+      return this.ConsumeNumber();
+
     }
     else if (char === OPEN_BRACE) {
       return this.ConsumeArray();
@@ -1172,15 +1317,22 @@ export class Parser {
         (check >= ZERO && check <= NINE) ||
         check === this.decimal_mark_char
       ) {
+
+        /*
         const position = this.index;
         const [value, text] = this.ConsumeNumber();
+
         return {
           type: 'literal',
           id: this.id_counter++,
           position,
           value,
           text,
-        }; // : this.ConsumeNumber() };
+        };
+        */
+       
+        return this.ConsumeNumber();
+
       }
     }
     else if (
@@ -1616,8 +1768,17 @@ export class Parser {
    * UPDATE: exporting original text string for preservation/insertion.
    * this function now returns a tuple of [value, text].
    *
+   * UPDATE: we now (at least in a branch) consume complex numbers. the last 
+   * element of the return array is a boolean which is set if the value is an 
+   * imaginary number. when parsing, we will only see the imaginary part; 
+   * we'll use a separate step to put complex numbers together.
+   * 
+   * 
    */
-  protected ConsumeNumber(): [number, string] {
+  protected ConsumeNumber(): ExpressionUnit { // [number, string, boolean] {
+
+    const starting_position = this.index;
+
     // for exponential notation
     let exponent = 0;
     let negative_exponent = false;
@@ -1630,6 +1791,8 @@ export class Parser {
 
     let state: 'integer' | 'fraction' | 'exponent' = 'integer';
     let position = 0;
+
+    let imaginary = false;
 
     const start_index = this.index;
 
@@ -1674,6 +1837,13 @@ export class Parser {
         }
         else break; // not sure what this is, then
       }
+      else if (char === this.imaginary_number && this.support_complex_numbers) {
+        if (state === 'integer' || state === 'fraction') {
+          this.index++; // consume
+          imaginary = true;
+          break; // end of token
+        }
+      }
       else if (char >= ZERO && char <= NINE) {
         switch (state) {
           case 'integer':
@@ -1697,9 +1867,17 @@ export class Parser {
       value = value * Math.pow(10, (negative_exponent ? -1 : 1) * exponent);
     }
 
-    const text = this.expression.substring(start_index, this.index) || '';
+    // const text = this.expression.substring(start_index, this.index) || '';
+    // return [negative ? -value : value, text, imaginary];
 
-    return [negative ? -value : value, text];
+    return {
+      type: imaginary ? 'imaginary' : 'literal',
+      id: this.id_counter++,
+      position: starting_position,
+      value: negative ? -value : value,
+      text: this.expression.substring(start_index, this.index) || '',
+    };
+
   }
 
   /**
