@@ -6,6 +6,10 @@ dist2
 coverage
 
 treb-export/test
+treb-parser/test
 
-# intermediate file (post-build, pre-minify)
+#
+# this is a build artifact (post-build, pre-minify). 
+# the original file is embed.ts. 
+#
 treb-embed/extra/embed.js
