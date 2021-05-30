@@ -106,7 +106,10 @@ export class AutocompleteMatcher {
       // FIXME: quoted strings...
 
       // if it's a token, and ends with a legal character
-      match = data.text.match(/(?:^|[^A-Za-z_])([A-Za-z_][\w\d_.]*)\s*$/);
+      // UPDATE: adding the negative leading \d to fix entering complex numbers
+
+      match = data.text.match(/(?:^|[^A-Za-z_\d])([A-Za-z_][\w\d_.]*)\s*$/);
+
       if (match) {
         const token = match[1];
         const rex = new RegExp('^' + token.replace('.', '\\.'), 'i');

@@ -153,7 +153,12 @@ export class Parser {
   /**
    * imaginary number value. this is "i", except for those EE weirdos who use "j".
    */
-  protected imaginary_number: 0x69|0x6A = LC_I;
+  protected imaginary_char: 0x69|0x6A = LC_I;
+
+  /**
+   * imaginary number as text for matching
+   */
+  protected imaginary_number: 'i'|'j' = 'i';
 
   /**
    * internal counter for incrementing IDs
@@ -301,7 +306,7 @@ export class Parser {
       separator = '; ';
     }
 
-    let imaginary_character = (this.imaginary_number === LC_I) ? 'i' : 'j';
+    let imaginary_character = this.imaginary_number;
     if (convert_imaginary_number) {
       imaginary_character = convert_imaginary_number;
     }
@@ -684,6 +689,24 @@ export class Parser {
       }
     }
 
+    // why do we build ranges after doing reordering? since ranges
+    // have the highest precedence (after complex numbers), why not
+    // just run through them now? also we could merge the complex
+    // composition (or not, since that's optional)
+
+    // ...
+
+    // OK, doing that now (testing). a side benefit is that this solves
+    // one of the problems we had with complex numbers, mismatching naked
+    // column identifiers like I:J. if we do ranges first we will not run
+    // into that problem.
+
+    if (stream.length) {
+      stream = this.BinaryToRange2(stream);
+    }
+
+    // ok now complex
+
     if (this.support_complex_numbers && stream.length) {
       stream = this.CompositeComplexNumbers(stream);
     }
@@ -696,7 +719,8 @@ export class Parser {
     // fix ordering of binary operations based on precedence; also
     // convert and validate ranges
 
-    return this.BinaryToRange(this.ArrangeUnits(stream));
+    // return this.BinaryToRange(this.ArrangeUnits(stream));
+    return this.ArrangeUnits(stream);
   }
 
   /**
@@ -723,9 +747,6 @@ export class Parser {
    */
   protected CompositeComplexNumbers(stream: ExpressionUnit[]): ExpressionUnit[] {
 
-    // FIXME: cache this
-    const imaginary = this.imaginary_number === LC_I ? 'i' : 'j';
-
     let result: ExpressionUnit[] = [];
 
     for (let i = 0; i < stream.length; i++) {
@@ -742,17 +763,24 @@ export class Parser {
             && b && c 
             && b.type === 'operator'
             && (b.operator === '+' || b.operator === '-')
-            && (c.type === 'imaginary' || (c.type === 'identifier' && c.name === imaginary))) {
+            && (c.type === 'imaginary' || (c.type === 'identifier' && c.name === this.imaginary_number))) {
 
-        let text = a.text + b.operator;
+        // let text = a.text + b.operator;
         let imaginary_value = 1;
 
+        // binary-to-range has a better mechanism for text, it uses the 
+        // positions as indexes into the original expression (updated)
+
+        let text = '';
+
         if (c.type === 'imaginary') {
-          text += (c.text || '');
+          // text += (c.text || '');
           imaginary_value = c.value;
+          text = this.expression.substring(a.position, b.position + (c.text?.length || 0));
         }
         else {
-          text += 'i';
+          // text += 'i';
+          text = this.expression.substring(a.position, b.position + c.name.length);
         }
 
         if (b.operator === '-') {
@@ -786,7 +814,7 @@ export class Parser {
         });
 
       }
-      else if (a.type === 'identifier' && a.name === imaginary) {
+      else if (a.type === 'identifier' && a.name === this.imaginary_number) {
 
         // this is case 2, something that looks like an identifier.
         //
@@ -905,6 +933,27 @@ export class Parser {
   }
 
   /**
+   * rewrite of binary to range. this version operates on the initial stream,
+   * which should be OK because range has the highest precedence so we would
+   * never reorder a range.
+   * 
+   * ACTUALLY this will break in the case of 
+   * 
+   * -15:16 
+   * 
+   * (I think that's the only case). we can fix that though. this should
+   * not impact the case of `2-15:16`, because in that case the - will look
+   * like an operator and not part of the number. the same goes for a leading
+   * `+` which will get dropped implicitly but has no effect (we might want
+   * to preserve it for consistency though).
+   * 
+   * NOTE: that error existed in the old version, too, and this way is perhaps
+   * better for fixing it. we should merge this into main.
+   * 
+   * 
+   * old version comments:
+   * ---
+   * 
    * converts binary operations with a colon operator to ranges. this also
    * validates that there are no colon operations with non-address operands
    * (which is why it's called after precendence reordering; colon has the
@@ -941,7 +990,186 @@ export class Parser {
    * FIXME: will need some updated to rendering these, we don't have any
    * handler for rendering infinity
    */
-  protected BinaryToRange(unit: ExpressionUnit): ExpressionUnit {
+  protected BinaryToRange2(stream: ExpressionUnit[]): ExpressionUnit[] {
+    const result: ExpressionUnit[] = [];
+
+    for (let i = 0; i < stream.length; i++) {
+
+      const a = stream[i];
+      const b = stream[i + 1];
+      const c = stream[i + 2];
+
+      let range: UnitRange|undefined;
+      let label = '';
+
+      let negative: UnitOperator|undefined; // this is a fix for the error case `-14:15`, see below
+
+      if (a && b && c && b.type === 'operator' && b.operator === ':') {
+
+        if (a.type === 'address' && c.type === 'address') {
+
+          // construct a label using the full text. there's a possibility,
+          // I suppose, that there are spaces (this should probably not be
+          // legal). this is a canonical label, though (generated)
+
+          // it might be better to let this slip, or treat it as an error
+          // and force a correction... not sure (TODO/FIXME)
+
+          const start_index = a.position + a.label.length;
+          const end_index = c.position;
+
+          range = {
+            type: 'range',
+            id: this.id_counter++,
+            position: a.position,
+            start: a,
+            end: c,
+            label:
+              a.label +
+              this.expression.substring(start_index, end_index) +
+              c.label,
+          };
+
+          label = range.start.label + ':' + range.end.label;
+
+          this.address_refcount[range.start.label]--;
+          this.address_refcount[range.end.label]--;
+
+          // remove entries from the list for start, stop
+          const positions = [a.position, c.position];
+          this.full_reference_list = this.full_reference_list.filter((test) => {
+            return (
+              test.position !== positions[0] && test.position !== positions[1]
+            );
+          });
+
+        }
+        else if ((a.type === 'literal' || a.type === 'identifier')
+                && (c.type === 'literal' || c.type === 'identifier')) {
+
+          // see if we can plausibly interpret both of these as rows or columns
+
+          // this is a fix for the case of `-14:15`, which is kind of a rare
+          // case but could happen. in that case we need to invert the first number,
+          // so it parses as an address properly, and also insert a "-" which
+          // should be treated as a unary operator.
+
+          // if this happens, the first part must look like a negative number,
+          // e.g. -10, so there are no leading spaces or intervening spaces
+          // between the - and the value. therefore...
+
+          let left = this.UnitToAddress(a);
+          if (!left && a.type === 'literal' && typeof a.value === 'number' && a.value < 0) {
+            const test = {
+              ...a,
+              text: (a.text || '').replace(/^-/, ''), // <- ...sign always in position 0
+              position: a.position + 1, // <- ...advance 1
+              value: -a.value, // <- ...invert value
+            };
+            left = this.UnitToAddress(test);
+
+            if (left) {
+
+              // if that worked, we need to insert an operator into the
+              // stream to reflect the - sign. we use the original position.
+
+              negative = {
+                type: 'operator',
+                operator: '-',
+                position: a.position,
+                id: this.id_counter++,
+              }
+            }
+
+          }
+
+          const right = this.UnitToAddress(c);
+
+          // and they need to match
+
+          if (left && right
+              && ((left.column === Infinity && right.column === Infinity)
+                  || (left.row === Infinity && right.row === Infinity))) {
+
+            label = left.label + ':' + right.label;
+
+            // we don't support out-of-order ranges, so we should correct.
+            // they just won't work otherwise. (TODO/FIXME)
+          
+            range = {
+              type: 'range',
+              id: this.id_counter++,
+              position: left.position,
+              start: left,
+              end: right,
+              label,
+            };
+
+          }
+        }
+
+      }
+
+      if (range) {
+
+        if (negative) {
+          result.push(negative);
+        }
+
+        result.push(range);
+        this.dependencies.ranges[label] = range;
+        this.full_reference_list.push(range);
+
+        // skip
+        i += 2;
+      }
+      else {
+        result.push(a);
+      }
+
+    }
+
+    return result;
+  }
+
+  /**
+   * converts binary operations with a colon operator to ranges. this also
+   * validates that there are no colon operations with non-address operands
+   * (which is why it's called after precendence reordering; colon has the
+   * highest preference). recursive only over binary ops AND unary ops.
+   * 
+   * NOTE: there are other legal arguments to a colon operator. specifically:
+   * 
+   * (1) two numbers, in either order
+   *
+   * 15:16
+   * 16:16
+   * 16:15
+   *
+   * (2) with one or both optionally having a $
+   *
+   * 15:$16
+   * $16:$16
+   *
+   * (3) two column identifiers, in either order
+   * 
+   * A:F
+   * B:A
+   *
+   * (4) and the same with $
+   *
+   * $A:F
+   * $A:$F
+   * 
+   * because none of these are legal in any other context, we leave the 
+   * default treatment of them UNLESS they are arguments to the colon 
+   * operator, in which case we will grab them. that does mean we parse
+   * them twice, but (...)
+   * 
+   * FIXME: will need some updated to rendering these, we don't have any
+   * handler for rendering infinity
+   */
+  protected BinaryToRangeX(unit: ExpressionUnit): ExpressionUnit {
     if (unit.type === 'binary') {
       if (unit.operator === ':') {
 
@@ -1089,8 +1317,8 @@ export class Parser {
 
       // recurse
 
-      unit.left = this.BinaryToRange(unit.left);
-      unit.right = this.BinaryToRange(unit.right);
+      unit.left = this.BinaryToRangeX(unit.left);
+      unit.right = this.BinaryToRangeX(unit.right);
     }
 
     // this should no longer be required, because we explicitly check
@@ -1140,9 +1368,14 @@ export class Parser {
           // in this case we do it with recursion.
 
           if (unary_operators[element.operator]) {
-            const right = this.BinaryToRange(
-              this.ArrangeUnits(stream.slice(index + 1)),
-            );
+
+            // MARK X
+
+            // const right = this.BinaryToRange(
+            //  this.ArrangeUnits(stream.slice(index + 1)),
+            //);
+
+            const right = this.ArrangeUnits(stream.slice(index + 1));
 
             // this ensures we return the highest-level group, even if we recurse
             if (!this.valid) {
@@ -1839,7 +2072,7 @@ export class Parser {
         }
         else break; // not sure what this is, then
       }
-      else if (char === this.imaginary_number && this.support_complex_numbers) {
+      else if (char === this.imaginary_char && this.support_complex_numbers) {
         if (state === 'integer' || state === 'fraction') {
           this.index++; // consume
           imaginary = true;
