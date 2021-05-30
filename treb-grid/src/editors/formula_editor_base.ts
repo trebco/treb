@@ -91,12 +91,6 @@ export type FormulaEditorEvent
  */
 export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorEvent> {
 
-  /**
-   * single instance of parser, it's stateless and we're not threaded 
-   * FIXME: why not share parser with grid?
-   */
-  protected static Parser = new Parser();
-
   protected static readonly FormulaChars = ('$^&*(-+={[<>/~%' + Localization.argument_separator).split(''); // FIXME: i18n
 
   /**
@@ -190,6 +184,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
   }
 
   constructor(
+      protected readonly parser: Parser,
       protected readonly theme: Theme,
       protected readonly model: DataModel,
       protected readonly autocomplete: Autocomplete){
@@ -522,7 +517,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
       };
 
       if (this.last_parse_result.expression) {
-        FormulaEditorBase.Parser.Walk(this.last_parse_result.expression, (unit: ExpressionUnit) => {
+        this.parser.Walk(this.last_parse_result.expression, (unit: ExpressionUnit) => {
 
           switch (unit.type) {
             case 'address':
@@ -682,7 +677,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
       this.reference_index_map = [];
 
       if (text) {
-        const parse_result = FormulaEditorBase.Parser.Parse(text);
+        const parse_result = this.parser.Parse(text);
         this.last_parse_string = text;
         this.last_parse_result = parse_result;
 

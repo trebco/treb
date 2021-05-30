@@ -8,6 +8,7 @@
 
 import { Style, Theme, ThemeColor, CellValue, Rectangle, ThemeColor2, Cell } from 'treb-base-types';
 import { Yield } from 'treb-utils';
+import { Parser } from 'treb-parser';
 import { GridSelection } from '../types/grid_selection';
 import { FormulaEditorBase } from './formula_editor_base';
 import { Autocomplete } from './autocomplete';
@@ -65,9 +66,9 @@ export class OverlayEditor extends FormulaEditorBase {
     }
   }
 
-  constructor(private container: HTMLElement, theme: Theme, model: DataModel, autocomplete: Autocomplete) {
+  constructor(private container: HTMLElement, parser: Parser, theme: Theme, model: DataModel, autocomplete: Autocomplete) {
 
-    super(theme, model, autocomplete);
+    super(parser, theme, model, autocomplete);
 
     this.edit_container = document.createElement('div');
     this.edit_container.classList.add('overlay-editor-container');

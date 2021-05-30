@@ -2972,6 +2972,7 @@ export class Grid {
 
     this.formula_bar = new FormulaBar(
       grid_container,
+      this.parser,
       this.theme,
       this.model,
       this.options, autocomplete);
@@ -3145,6 +3146,7 @@ export class Grid {
 
     this.overlay_editor = new OverlayEditor(
         this.container,
+        this.parser,
         this.theme,
         this.model,
         autocomplete);
