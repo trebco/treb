@@ -5,11 +5,7 @@ import { Area, IArea } from './area';
 import { Style } from './style';
 import { TextPart } from './text_part';
 import { ValueType, GetValueType } from './value-type';
-
 import { CellValue, UnionValue } from './union';
-
-// static global to avoid export in typings file
-// const parser = new Parser();
 
 export interface RenderFunctionOptions {
   height: number;
