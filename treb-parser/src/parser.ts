@@ -789,7 +789,9 @@ export class Parser {
       else if (a.type === 'identifier' && a.name === imaginary) {
 
         // this is case 2, something that looks like an identifier.
-        // FIXME: this will probably break column range notation like i:i
+        //
+        // FIXME: this will break column range notation like i:i.
+        // perhaps we should do the range operation first.
 
         // call this 1i
         result.push({
