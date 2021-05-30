@@ -868,6 +868,12 @@ export class ExpressionCalculator {
     case 'group':
       return (expr.user_data = this.GroupExpression(expr))(expr); // check
 
+    case 'complex':
+      {
+        const literal = {value: {real: expr.real, imaginary: expr.imaginary}, type: ValueType.complex };
+        return (expr.user_data = () => literal)();  // check
+      }
+
     case 'array':
       {
         return (expr.user_data = () => expr.values.map(row => (Array.isArray(row) ? row : [row]).map(value => {
