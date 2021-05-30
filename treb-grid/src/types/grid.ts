@@ -21,11 +21,11 @@ import {
 
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
-  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress
+  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress, ParseResult
 } from 'treb-parser';
 
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
-import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat } from 'treb-format';
+import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat, ParseResult as ParseResult2 } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
 import { TabBar } from './tab_bar';
@@ -5329,7 +5329,14 @@ export class Grid {
 
     // next try to infer the number format, with hints as to format
 
-    const parse_result = ValueParser.TryParse(value);
+    const expression = this.parser.Parse(value || '').expression;
+
+    const parse_result: ParseResult2 = (expression && expression.type === 'complex') ?
+      {
+        type: ValueType.complex,
+        value: { real: expression.real, imaginary: expression.imaginary },
+      } :    
+      ValueParser.TryParse(value);
 
     if (!is_function && parse_result.type === ValueType.number) {
 
@@ -5618,6 +5625,11 @@ export class Grid {
       if (cell_value && Localization.decimal_separator === ',') {
         cell_value = cell.value.toString().replace(/\./, ',');
       }
+    }
+    else if (cell.ValueIsComplex()) {
+      // FIXME: need a formatter for complex
+      cell_value = `${cell.value.real || 0}${ cell.value.imaginary > 0 ? '+' : ''}${cell.value.imaginary || 0}i`;
+
     }
 
     return cell_value;

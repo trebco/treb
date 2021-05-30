@@ -1,7 +1,7 @@
 
-import { ValueType, GetValueType } from './value-type';
+import { ValueType, Complex, GetValueType } from './value-type';
 
-export type CellValue = undefined | string | number | boolean;
+export type CellValue = undefined | string | number | boolean | Complex;
 
 /** utility method */
 export const Is2DArray = <T>(obj: undefined|T|T[]|T[][]): obj is T[][] => {
@@ -64,6 +64,10 @@ export const UnionIs = {
 
   Boolean: (test: UnionValue): test is { type: ValueType.boolean, value: boolean } => {
     return test.type === ValueType.formula;
+  },
+
+  Complex: (test: UnionValue): test is { type: ValueType.complex, value: Complex } => {
+    return test.type === ValueType.complex;
   },
 
   String: (test: UnionValue): test is { type: ValueType.string, value: string } => {

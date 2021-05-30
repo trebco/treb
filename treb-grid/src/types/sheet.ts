@@ -2,7 +2,7 @@
 // --- treb imports -----------------------------------------------------------
 
 import { Cell, ValueType, Cells, Style,
-  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData } from 'treb-base-types';
+  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData, Complex } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';
 
@@ -1078,6 +1078,13 @@ export class Sheet {
     else if (type === ValueType.formula && cell.calculated === undefined) {
       cell.formatted = '';
       cell.rendered_type = ValueType.string;
+    }
+    else if (type === ValueType.complex) {
+      const complex = value as Complex;
+
+      // FIXME: need a formatter for complex
+      cell.formatted = `${complex.real || 0}${ complex.imaginary > 0 ? '+' : ''}${complex.imaginary || 0}i`;
+      cell.rendered_type = ValueType.complex;
     }
     else {
 

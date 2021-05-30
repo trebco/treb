@@ -2,6 +2,18 @@
 // split from cell for separate import, 
 // @see format-index.ts
 
+export interface Complex {
+  real: number,
+  imaginary: number,
+}
+
+export const IsComplex = (value: any): value is Complex => {
+  return (typeof value === 'object')
+          && (!!value)
+          && (typeof value.real === 'number')
+          && (typeof value.imaginary === 'number');
+};
+
 /**
  * I _think_ using enums is faster. I'm not actually sure about that, though.
  * it stands to reason that a single int compare is faster than a string
@@ -30,6 +42,9 @@ export enum ValueType {
   // correct? (...) it sort of makes sense... since we have separate typing
   error = 6,
 
+  // this is new and in testing
+  complex = 7,
+
 }
 
 export const GetValueType = (value: unknown): ValueType => {
@@ -48,6 +63,9 @@ export const GetValueType = (value: unknown): ValueType => {
     case 'object':
       if (value === null) {
         return ValueType.undefined;
+      }
+      else if (IsComplex(value)) {
+        return ValueType.complex;
       }
       return ValueType.object;
 

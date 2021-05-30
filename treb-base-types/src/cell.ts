@@ -4,7 +4,7 @@
 import { Area, IArea } from './area';
 import { Style } from './style';
 import { TextPart } from './text_part';
-import { ValueType, GetValueType } from './value-type';
+import { ValueType, GetValueType, Complex } from './value-type';
 import { CellValue, UnionValue } from './union';
 
 export interface RenderFunctionOptions {
@@ -343,6 +343,11 @@ export class Cell {
   /** type guard */
   public ValueIsBoolean() : this is { value: boolean } {
     return this.type === ValueType.boolean;
+  }
+
+  /** type guard */
+  public ValueIsComplex() : this is { value: Complex } {
+    return this.type === ValueType.complex;
   }
 
   ///

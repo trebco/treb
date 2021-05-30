@@ -125,7 +125,7 @@ const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
 export class Parser {
 
   /** flag to enable/disable */
-  public support_complex_numbers = false;
+  public support_complex_numbers = true; // false;
 
   /**
    * argument separator. this can be changed prior to parsing/rendering.
