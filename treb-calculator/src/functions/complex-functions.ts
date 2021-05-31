@@ -2,7 +2,7 @@
 import { FunctionMap } from '../descriptors';
 import { IsComplex, UnionValue, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
-import { ValueError } from '../function-error';
+import { ArgumentError, ValueError } from '../function-error';
 import { RectangularToPolar } from '../complex-math';
 
 export const ComplexFunctionLibrary: FunctionMap = {
@@ -14,7 +14,6 @@ export const ComplexFunctionLibrary: FunctionMap = {
       metadata: true,
     }],
     fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
-      console.info("RR", ref);
       return { 
         type: ValueType.boolean, 
         value: ref?.value && IsComplex(ref.value.value),
@@ -120,6 +119,10 @@ export const ComplexFunctionLibrary: FunctionMap = {
    * unfortunately we can't override the log function because the complex
    * log function has a different meaning even when applied to reals, i.e.
    * Log(a + 0i) !== ln(a)
+   * 
+   * note that Log(0) is undefined -- we need to return an error here, but
+   * what error? let's do #VALUE
+   * 
    */
   ComplexLog: {
     description: 'Returns the principal value Log(z) of a complex number z',
@@ -130,6 +133,11 @@ export const ComplexFunctionLibrary: FunctionMap = {
 
       // real -> complex
       if (a.type === ValueType.number) {
+
+        if (!a.value) {
+          return ValueError();
+        }
+
         a = {
           type: ValueType.complex,
           value: {
@@ -141,10 +149,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
 
       // other zero -> complex
       else if (a.type === ValueType.undefined || (a.type === ValueType.string && a.value === '')) {
-        a = {
-          type: ValueType.complex,
-          value: { real: 0, imaginary: 0 },
-        };
+        return ValueError();
       }
 
       if (a.type === ValueType.complex) {
