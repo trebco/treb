@@ -2,7 +2,7 @@
 // --- treb imports -----------------------------------------------------------
 
 import { Cell, ValueType, Cells, Style,
-  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData, Complex } from 'treb-base-types';
+  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData, Complex, TextPartFlag } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';
 
@@ -1080,30 +1080,58 @@ export class Sheet {
       cell.rendered_type = ValueType.string;
     }
     else if (type === ValueType.complex) {
+
+      // formatting complex value (note for searching)
+      // here testing "mathematical italic small i", "𝑖", U+1D456
+      //
+      // I'm not sure this is a good idea, the character might not be available
+      // in a particular font (not sure if those are auto-filled or what)
+      //
+      // what we _should_ do is have a formatting flag (in text part) to
+      // indicate italic, and then render a regular lower-case i in italic.
+      // that also means that if you copy it as text, it's still just a regular
+      // i and not a high-value unicode character. which is helpful.
+
+      // OK we tried that and it looked like crap. I would like to go back
+      // to using "𝑖" but I'm not sure... maybe a flag>
+
+      // const imaginary_char = ' 𝑖'; // this also has a "thin space"
+      // const imaginary_char = ' 𝑖'; // this also has a "hair space"
+      // const imaginary_char = 'i';
+      const imaginary_char = '𝑖'; // this also has a "hair space"
+
       const complex = value as Complex;
       if (isNaN(complex.real)|| isNaN(complex.imaginary)) {
+
+        // render nan for nan values
+
         cell.formatted = // Style.Format(cell.style, value); // formats NaN
           (typeof cell.style.nan === 'undefined') ? 'NaN' : cell.style.nan;
       }
       else {
 
+        // optionally render as real, imaginary, or complex, depending
+        // on what's available. FIXME: this should be optional? (...)
+
         const format = NumberFormatCache.Get(cell.style.number_format || '');
-        const components: string[] = [];
+        cell.formatted = [] as TextPart[];
 
         if (complex.real || (!complex.real && !complex.imaginary)) {
-          components.push(format.Format(complex.real));
+          cell.formatted.push(...format.FormatParts(complex.real));
           if (complex.imaginary) {
-            components.push(complex.imaginary < 0 ? ' - ' : ' + ');
-            components.push(format.Format(Math.abs(complex.imaginary)));
-            components.push('i');
+            cell.formatted.push({text: complex.imaginary < 0 ? ' - ' : ' + '});
+            cell.formatted.push(...format.FormatParts(Math.abs(complex.imaginary)));
+            // cell.formatted.push({text: 'i', flag: TextPartFlag.italic});
+            cell.formatted.push({text: imaginary_char});
           }
         }
         else if (complex.imaginary) {
-          components.push(format.Format(complex.imaginary));
-          components.push('i');
+          cell.formatted.push(...format.FormatParts(complex.imaginary));
+          // cell.formatted.push({text: 'i', flag: TextPartFlag.italic});
+          cell.formatted.push({text: imaginary_char});
         }
 
-        cell.formatted = components.join('');
+        cell.formatted = cell.formatted;
 
       }
 

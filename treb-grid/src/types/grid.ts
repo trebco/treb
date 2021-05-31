@@ -5638,6 +5638,9 @@ export class Grid {
         formatted.imaginary = formatted.imaginary.replace(/\./, ',');
       }
       
+      // formatting complex value (note for searching)
+      // NOTE that this format uses an ASCII "i"; intended to simplify editing.
+
       cell_value = `${formatted.real}${cell.value.imaginary < 0 ? ' - ' : ' + '}${formatted.imaginary}i`;
 
     }

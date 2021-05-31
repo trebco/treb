@@ -378,7 +378,11 @@ export class Parser {
         );
 
       case 'complex':
-        return `${unit.real||0}${unit.imaginary < 0 ? '' : '+'}${unit.imaginary}${imaginary_character}`;
+
+        // formatting complex value (note for searching)
+        // this uses small regular "i"
+
+        return `${unit.real||0}${unit.imaginary < 0 ? ' - ' : ' + '}${Math.abs(unit.imaginary)}${imaginary_character}`;
       
       case 'literal':
         if (typeof unit.value === 'string') {

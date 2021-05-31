@@ -28,6 +28,8 @@ interface RenderTextPart {
   hidden: boolean;
   width: number;
 
+  // italic?: boolean; // for imaginary // looks like crap
+
   // adding optional layout info (for hyperlink, basically)
 
   top?: number;
@@ -697,8 +699,26 @@ export class TileRenderer {
         }
 
         const mt_width = context.measureText(part.text).width;
-        const render_part = { width: mt_width, text: part.text, hidden: part.flag === TextPartFlag.hidden };
+        const render_part: RenderTextPart = { 
+          width: mt_width, 
+          text: part.text, 
+          hidden: part.flag === TextPartFlag.hidden 
+        };
+
+        /*
+        if (part.flag === TextPartFlag.italic) {
+          render_part.italic = true;
+          const cached_font = context.font;
+          if (!/italic/i.test(cached_font)) { 
+            context.font = 'italic ' + cached_font;
+            render_part.width = context.measureText(part.text).width;
+          }
+          context.font = cached_font;
+        }
+        */
+
         strings.push(render_part);
+
         if (part.flag === TextPartFlag.padded) {
           pad_entry = render_part;
         }
@@ -1662,6 +1682,9 @@ export class TileRenderer {
     }
     else if (text_data.single) {
 
+      // const cached_font = context.font;
+      // const italic_font = /italic/i.test(cached_font) ? cached_font : 'italic ' + cached_font;
+
       // single refers to single-line text that has multiple components,
       // including spacing or hidden text. single line text (not formatted)
       // probably doesn't have this flag set, it will use the next block.
@@ -1683,7 +1706,19 @@ export class TileRenderer {
 
       for (const part of text_data.strings) {
         if (!part.hidden) {
+
+          /*
+          if (part.italic) {
+            context.font = italic_font;
+            context.fillText(part.text, left, original_baseline);
+            context.font = cached_font;
+          }
+          else {
+            context.fillText(part.text, left, original_baseline);
+          }
+          */
           context.fillText(part.text, left, original_baseline);
+
           if (style.font_underline) {
             context.moveTo(left, underline_y);
             context.lineTo(left + part.width, underline_y);
@@ -1709,6 +1744,9 @@ export class TileRenderer {
       let baseline = original_baseline;
       let index = 0;
 
+      const cached_font = context.font;
+      const italic_font = /italic/i.test(cached_font) ? cached_font : 'italic ' + cached_font;
+
       for (const part of text_data.strings) {
 
         // here we justify based on part, each line might have different width
@@ -1732,6 +1770,16 @@ export class TileRenderer {
           context.lineTo(left + part.width, strike_y);
         }
 
+        /*
+        if (part.italic) {
+          context.font = italic_font;
+          context.fillText(part.text, left, baseline);
+          context.font = cached_font;
+        }
+        else {
+          context.fillText(part.text, left, baseline);
+        }
+        */
         context.fillText(part.text, left, baseline);
 
         if (preserve_layout_info) {
