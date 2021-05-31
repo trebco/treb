@@ -1081,9 +1081,18 @@ export class Sheet {
     }
     else if (type === ValueType.complex) {
       const complex = value as Complex;
+      if (isNaN(complex.real)|| isNaN(complex.imaginary)) {
+        cell.formatted = // Style.Format(cell.style, value); // formats NaN
+          (typeof cell.style.nan === 'undefined') ? 'NaN' : cell.style.nan;
+      }
+      else {
+        const formatted = {
+          real: this.FormatNumber(complex.real, cell.style.number_format),
+          imaginary: this.FormatNumber(Math.abs(complex.imaginary), cell.style.number_format),
+        };
+        cell.formatted = formatted.real + (complex.imaginary < 0 ? ' - ' : ' + ') + formatted.imaginary + 'i';
+      }
 
-      // FIXME: need a formatter for complex
-      cell.formatted = `${complex.real || 0}${ complex.imaginary > 0 ? '+' : ''}${complex.imaginary || 0}i`;
       cell.rendered_type = ValueType.complex;
     }
     else {

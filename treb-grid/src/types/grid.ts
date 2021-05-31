@@ -5627,8 +5627,18 @@ export class Grid {
       }
     }
     else if (cell.ValueIsComplex()) {
-      // FIXME: need a formatter for complex
-      cell_value = `${cell.value.real || 0}${ cell.value.imaginary > 0 ? '+' : ''}${cell.value.imaginary || 0}i`;
+
+      const formatted = { 
+        real: cell.value.real.toString(),
+        imaginary: cell.value.imaginary.toString(),
+      };
+
+      if (Localization.decimal_separator === ',') {
+        formatted.real = formatted.real.replace(/\./, ',');
+        formatted.imaginary = formatted.imaginary.replace(/\./, ',');
+      }
+      
+      cell_value = `${formatted.real}${cell.value.imaginary < 0 ? ' - ' : ' + '}${formatted.imaginary}i`;
 
     }
 

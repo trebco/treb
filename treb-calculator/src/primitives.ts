@@ -6,6 +6,7 @@ export type PrimitiveBinaryExpression = (a: UnionValue, b: UnionValue) => UnionV
 
 type NumericTuple = [number, number, UnionValue?, UnionValue?, UnionValue?];
 
+/** FIXME: move to complex lib */
 const EnsureComplex = (a?: UnionValue, real: number = 0): { type: ValueType.complex, value: {real: number, imaginary: number}} => {
 
   if (a && a.type === ValueType.complex) {
@@ -22,6 +23,7 @@ const EnsureComplex = (a?: UnionValue, real: number = 0): { type: ValueType.comp
 
 }
 
+/** FIXME: move to complex lib */
 const PolarToRectangular = (a: {r: number, theta: number}): Complex => {
 
   const {r, theta} = a;
@@ -29,24 +31,31 @@ const PolarToRectangular = (a: {r: number, theta: number}): Complex => {
   const real = r * Math.cos(theta);
   const imaginary = r * Math.sin(theta);
 
-  console.info("P2R",  
-    `r ${r} theta (o) ${theta * 57.29577951308232}`, '->',
-    `${real||0}${imaginary < 0 ? '' : '+'}${imaginary}i`);
+  // console.info("P2R",  `r ${r} theta (o) ${theta * 57.29577951308232}`, '->', `${real||0}${imaginary < 0 ? '' : '+'}${imaginary}i`);
 
   return { real, imaginary }
 };
 
+/** FIXME: move to complex lib */
 const RectangularToPolar = (value: Complex): {r: number, theta: number} => {
 
   const r = Math.sqrt(value.real * value.real + value.imaginary * value.imaginary);
   const theta = Math.atan2(value.imaginary, value.real);
 
-  console.info("R2P", `${value.real||0}${value.imaginary < 0 ? '' : '+'}${value.imaginary}i`, '->', 
-    `r ${r} theta (o) ${theta * 57.29577951308232}`);
-
+  // console.info("R2P", `${value.real||0}${value.imaginary < 0 ? '' : '+'}${value.imaginary}i`, '->', `r ${r} theta (o) ${theta * 57.29577951308232}`);
 
   return { r, theta };
 };
+
+/** FIXME: move to complex lib */
+const MultiplyComplex = (a: Complex, b: Complex): Complex => {
+  return {
+    real: (a.real * b.real) - (a.imaginary * b.imaginary),
+    imaginary: a.real * b.imaginary + a.imaginary * b.real,
+  }
+};
+
+
 
 const NumericTypes = (a: UnionValue, b: UnionValue): NumericTuple => {
 
@@ -97,6 +106,11 @@ const NumericTypes = (a: UnionValue, b: UnionValue): NumericTuple => {
       return [0, 0, ValueError()]; // FIXME
   }
 
+  if (result[3] || result[4]) {
+    result[3] = EnsureComplex(result[3], result[0]);
+    result[4] = EnsureComplex(result[4], result[1]);
+  }
+
   return result;
 }
 
@@ -105,9 +119,7 @@ export const Add = (a: UnionValue, b: UnionValue): UnionValue => {
 
   if (z) { return z; }
 
-  if (c1 || c2) {
-    c1 = EnsureComplex(c1, x);
-    c2 = EnsureComplex(c2, y);
+  if (c1 && c2) {
     return {
       value: {
         real: c1.value.real + c2.value.real, 
@@ -126,9 +138,7 @@ export const Subtract = (a: UnionValue, b: UnionValue): UnionValue => {
 
   if (z) { return z; }
 
-  if (c1 || c2) {
-    c1 = EnsureComplex(c1, x);
-    c2 = EnsureComplex(c2, y);
+  if (c1 && c2) {
     return {
       value: {
         real: c1.value.real - c2.value.real, 
@@ -145,9 +155,7 @@ export const Power = (a: UnionValue, b: UnionValue): UnionValue => {
   let [x, y, z, c1, c2] = NumericTypes(a, b);
   if (z) { return z; }
 
-  if (c1||c2) {
-    c1 = EnsureComplex(c1, x);
-    c2 = EnsureComplex(c2, y);
+  if (c1 && c2) {
 
     if (!c2.value.imaginary) {
 
@@ -169,23 +177,13 @@ export const Power = (a: UnionValue, b: UnionValue): UnionValue => {
   return { value: Math.pow(x, y), type: ValueType.number };
 };
 
-const MultiplyComplex = (a: Complex, b: Complex): Complex => {
-  return {
-    real: (a.real * b.real) - (a.imaginary * b.imaginary),
-    imaginary: a.real * b.imaginary + a.imaginary * b.real,
-  }
-};
-
 export const Multiply = (a: UnionValue, b: UnionValue): UnionValue => {
 
   let [x, y, z, c1, c2] = NumericTypes(a, b);
 
   if (z) { return z; }
 
-  if (c1 || c2) {
-    
-    c1 = EnsureComplex(c1, x);
-    c2 = EnsureComplex(c2, y);
+  if (c1 && c2) {
 
     return {
       type: ValueType.complex,
@@ -201,10 +199,7 @@ export const Divide = (a: UnionValue, b: UnionValue): UnionValue => {
   let [x, y, z, c1, c2] = NumericTypes(a, b);
   if (z) { return z; }
 
-  if (c1||c2) {
-
-    c1 = EnsureComplex(c1, x);
-    c2 = EnsureComplex(c2, y);
+  if (c1 && c2) {
 
     const conjugate = { real: c2.value.real, imaginary: -c2.value.imaginary };
 
