@@ -1,13 +1,15 @@
 
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError } from '../function-error';
+import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
 import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions } from 'treb-base-types';
 import { Sparkline, SparklineRenderOptions } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
 import { ClickCheckbox, RenderCheckbox } from './checkbox';
 import { UnionIsMetadata } from '../expression-calculator';
+
+import { Exp as ComplexExp, Power as ComplexPower, RectangularToPolar } from '../complex-math';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -344,7 +346,28 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Power: {
-      fn: Utils.ApplyAsArray2((base: number, exponent: number): UnionValue => Box(Math.pow(base, exponent))),
+      arguments: [
+        { boxed: true, }
+      ],
+      fn: Utils.ApplyAsArray2((base: UnionValue, exponent: UnionValue): UnionValue => {
+        if (base.type === ValueType.complex || exponent.type === ValueType.complex) {
+
+          const a = base.type === ValueType.complex ? base.value : 
+            { real: base.value || 0, imaginary: 0, };
+          const b = exponent.type === ValueType.complex ? exponent.value :
+            { real: exponent.value || 0, imaginary: 0, };
+
+          const value = ComplexPower(a, b);
+          return value.imaginary ? 
+            { type: ValueType.complex, value } : 
+            { type: ValueType.number, value: value.real };
+
+        }
+        else {
+          return Box(Math.pow(base.value, exponent.value))
+        }
+
+      }),
     },
 
     Mod: {
@@ -592,10 +615,41 @@ export const BaseFunctionLibrary: FunctionMap = {
         };
       },
     },
+    
+    /**
+     * exp was not broken out, but added so we can support complex numbers.
+     */
+    Exp: {
+      arguments: [
+        { boxed: true },
+      ],
+      fn: Utils.ApplyAsArray((x: UnionValue) => {
+        if (x.type === ValueType.complex) {
+          const value = ComplexExp(x.value);
+          return value.imaginary ? 
+            { type: ValueType.complex, value } : 
+            { type: ValueType.number, value: value.real };
+        }
+        return { type: ValueType.number, value: Math.exp(x.value || 0) };
+      }),
+    },
 
+    /**
+     * abs was already broken out so we could support array application,
+     * then updated to support complex numbers.
+     */
     Abs: {
-      fn: Utils.ApplyAsArray((a) => {
-        return { type: ValueType.number, value: Math.abs(a) };
+      arguments: [
+        { boxed: true },
+      ],
+      fn: Utils.ApplyAsArray((a: UnionValue) => {
+        if (a.type === ValueType.complex) {
+          return { 
+            type: ValueType.number, 
+            value: Math.sqrt(a.value.real * a.value.real + a.value.imaginary * a.value.imaginary), 
+          };
+        }
+        return { type: ValueType.number, value: Math.abs(a.value || 0) };
       }),
     },
 

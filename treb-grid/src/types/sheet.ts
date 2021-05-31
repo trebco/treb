@@ -1086,11 +1086,25 @@ export class Sheet {
           (typeof cell.style.nan === 'undefined') ? 'NaN' : cell.style.nan;
       }
       else {
-        const formatted = {
-          real: this.FormatNumber(complex.real, cell.style.number_format),
-          imaginary: this.FormatNumber(Math.abs(complex.imaginary), cell.style.number_format),
-        };
-        cell.formatted = formatted.real + (complex.imaginary < 0 ? ' - ' : ' + ') + formatted.imaginary + 'i';
+
+        const format = NumberFormatCache.Get(cell.style.number_format || '');
+        const components: string[] = [];
+
+        if (complex.real || (!complex.real && !complex.imaginary)) {
+          components.push(format.Format(complex.real));
+          if (complex.imaginary) {
+            components.push(complex.imaginary < 0 ? ' - ' : ' + ');
+            components.push(format.Format(Math.abs(complex.imaginary)));
+            components.push('i');
+          }
+        }
+        else if (complex.imaginary) {
+          components.push(format.Format(complex.imaginary));
+          components.push('i');
+        }
+
+        cell.formatted = components.join('');
+
       }
 
       cell.rendered_type = ValueType.complex;

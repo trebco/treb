@@ -1,7 +1,8 @@
 
 import { FunctionMap } from '../descriptors';
-import { UnionValue, ValueType } from 'treb-base-types';
+import { IsComplex, UnionValue, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
+import { ValueError } from '../function-error';
 
 export const InformationFunctionLibrary: FunctionMap = {
 

@@ -2,11 +2,20 @@
 import { Complex, IsComplex, UnionValue, ValueType } from 'treb-base-types/src';
 import { DivideByZeroError, ValueError } from './function-error';
 
+import * as ComplexLib from './complex-math';
+
+// import { PolarToRectangular, RectangularToPolar, 
+//         MultiplyComplex, DivideComplex, PowerComplex } from './complex-math';
+
 export type PrimitiveBinaryExpression = (a: UnionValue, b: UnionValue) => UnionValue;
 
 type NumericTuple = [number, number, UnionValue?, UnionValue?, UnionValue?];
 
-/** FIXME: move to complex lib */
+/** 
+ * a is either a complex union value or undefined. if it's defined,
+ * return it. if it's undefined, return a complex number with the given 
+ * real value. 
+ */
 const EnsureComplex = (a?: UnionValue, real: number = 0): { type: ValueType.complex, value: {real: number, imaginary: number}} => {
 
   if (a && a.type === ValueType.complex) {
@@ -23,38 +32,14 @@ const EnsureComplex = (a?: UnionValue, real: number = 0): { type: ValueType.comp
 
 }
 
-/** FIXME: move to complex lib */
-const PolarToRectangular = (a: {r: number, theta: number}): Complex => {
-
-  const {r, theta} = a;
-
-  const real = r * Math.cos(theta);
-  const imaginary = r * Math.sin(theta);
-
-  // console.info("P2R",  `r ${r} theta (o) ${theta * 57.29577951308232}`, '->', `${real||0}${imaginary < 0 ? '' : '+'}${imaginary}i`);
-
-  return { real, imaginary }
-};
-
-/** FIXME: move to complex lib */
-const RectangularToPolar = (value: Complex): {r: number, theta: number} => {
-
-  const r = Math.sqrt(value.real * value.real + value.imaginary * value.imaginary);
-  const theta = Math.atan2(value.imaginary, value.real);
-
-  // console.info("R2P", `${value.real||0}${value.imaginary < 0 ? '' : '+'}${value.imaginary}i`, '->', `r ${r} theta (o) ${theta * 57.29577951308232}`);
-
-  return { r, theta };
-};
-
-/** FIXME: move to complex lib */
-const MultiplyComplex = (a: Complex, b: Complex): Complex => {
-  return {
-    real: (a.real * b.real) - (a.imaginary * b.imaginary),
-    imaginary: a.real * b.imaginary + a.imaginary * b.real,
-  }
-};
-
+/**
+ * return a complex number or, if there's no imaginary component, reduce it to a real
+ */
+const BoxComplex = (value: Complex): UnionValue => {
+  return value.imaginary ? 
+    { type: ValueType.complex, value } : 
+    { type: ValueType.number, value: value.real };
+}
 
 
 const NumericTypes = (a: UnionValue, b: UnionValue): NumericTuple => {
@@ -106,6 +91,9 @@ const NumericTypes = (a: UnionValue, b: UnionValue): NumericTuple => {
       return [0, 0, ValueError()]; // FIXME
   }
 
+  // if we have one complex value, ensure we have two, so
+  // we don't have to test again.
+
   if (result[3] || result[4]) {
     result[3] = EnsureComplex(result[3], result[0]);
     result[4] = EnsureComplex(result[4], result[1]);
@@ -120,13 +108,10 @@ export const Add = (a: UnionValue, b: UnionValue): UnionValue => {
   if (z) { return z; }
 
   if (c1 && c2) {
-    return {
-      value: {
+    return BoxComplex({
         real: c1.value.real + c2.value.real, 
         imaginary: c1.value.imaginary + c2.value.imaginary,
-      },
-      type: ValueType.complex,
-    };
+      });
   }
 
   return { value: x + y, type: ValueType.number };
@@ -139,13 +124,10 @@ export const Subtract = (a: UnionValue, b: UnionValue): UnionValue => {
   if (z) { return z; }
 
   if (c1 && c2) {
-    return {
-      value: {
+    return BoxComplex({
         real: c1.value.real - c2.value.real, 
         imaginary: c1.value.imaginary - c2.value.imaginary,
-      },
-      type: ValueType.complex,
-    };
+      });
   }
 
   return { value: x - y, type: ValueType.number };
@@ -156,22 +138,7 @@ export const Power = (a: UnionValue, b: UnionValue): UnionValue => {
   if (z) { return z; }
 
   if (c1 && c2) {
-
-    if (!c2.value.imaginary) {
-
-      const polar = RectangularToPolar(c1.value);
-      const result = PolarToRectangular({
-        r: Math.pow(polar.r, c2.value.real), 
-        theta: polar.theta * c2.value.real,
-      });
-
-      return { value: result, type: ValueType.complex };
-
-    }
-    else {
-      return ValueError();
-    }
-
+    return BoxComplex(ComplexLib.Power(c1.value, c2.value));
   }
 
   return { value: Math.pow(x, y), type: ValueType.number };
@@ -184,12 +151,7 @@ export const Multiply = (a: UnionValue, b: UnionValue): UnionValue => {
   if (z) { return z; }
 
   if (c1 && c2) {
-
-    return {
-      type: ValueType.complex,
-      value: MultiplyComplex(c1.value, c2.value),
-    };
-
+    return BoxComplex(ComplexLib.Multiply(c1.value, c2.value));
   }
 
   return { value: x * y, type: ValueType.number };
@@ -200,24 +162,7 @@ export const Divide = (a: UnionValue, b: UnionValue): UnionValue => {
   if (z) { return z; }
 
   if (c1 && c2) {
-
-    const conjugate = { real: c2.value.real, imaginary: -c2.value.imaginary };
-
-    const numerator = MultiplyComplex(c1.value, conjugate);
-    const denominator = MultiplyComplex(c2.value, conjugate);
-
-    if (denominator.imaginary) {
-      throw new Error('invalid denom!');
-    }
-
-    return {
-      type: ValueType.complex,
-      value: {
-        real: numerator.real / denominator.real,
-        imaginary: numerator.imaginary / denominator.real, 
-      },
-    };
-
+    return BoxComplex(ComplexLib.Divide(c1.value, c2.value));
   }
 
   if (y === 0) {

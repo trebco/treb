@@ -1345,7 +1345,11 @@ export class TileRenderer {
 
     let clip = false;
 
-    const is_number = (cell.type === ValueType.number || cell.calculated_type === ValueType.number);
+    const is_number = (
+        cell.type === ValueType.number || 
+        cell.calculated_type === ValueType.number ||
+        cell.type === ValueType.complex || 
+        cell.calculated_type === ValueType.complex);
 
     let horizontal_align = style.horizontal_align;
     if (horizontal_align === Style.HorizontalAlign.None) {
@@ -1633,7 +1637,10 @@ export class TileRenderer {
 
     // console.info("baseline", original_baseline, 's?', text_data.single);
 
-    if ((cell.type === ValueType.number || cell.calculated_type === ValueType.number) && overflow) {
+    if ((cell.type === ValueType.number || 
+         cell.calculated_type === ValueType.number || 
+         cell.type === ValueType.complex || 
+         cell.calculated_type === ValueType.complex) && overflow) {
 
       // number overflow is easy
 
