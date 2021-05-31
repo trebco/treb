@@ -385,12 +385,15 @@ export class Parser {
         // formatting complex value (note for searching)
         // this uses small regular "i"
 
+            console.info("CPX", unit);
+
         if (unit.real || (!unit.imaginary)) {
 
           // has real, or === 0
 
           if (unit.imaginary) {
-            return `${unit.real||0}${unit.imaginary < 0 ? ' - ' : ' + '}${Math.abs(unit.imaginary)}${imaginary_character}`;
+            const i = Math.abs(unit.imaginary);
+            return `${unit.real||0}${unit.imaginary < 0 ? ' - ' : ' + '}${i === 1 ? '' : i}${imaginary_character}`;
           }
           else {
             return (unit.real||0).toString(); 
@@ -398,7 +401,7 @@ export class Parser {
 
         }
         else {
-          return `${unit.imaginary}${imaginary_character}`;
+          return `${unit.imaginary === 1 ? '' : unit.imaginary}${imaginary_character}`;
         }
         break;
       
