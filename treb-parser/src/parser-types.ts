@@ -27,19 +27,27 @@ export interface UnitComplex extends BaseUnit {
   real: number;
   imaginary: number;
   text?: string;
+
+  /** 
+   * this flag takes the place of the old "imaginary" unit type;
+   * it's an indication that this unit has been composited, so don't
+   * do it again. not sure this is actually needed by the parser... is it?
+   */
+  composited?: boolean;
 }
 
-/**
+/* *
  * testing: complex
  * this represents just the imaginary part. it's for internal use and should
  * never be returned as a value.
- */
+ * /
 export interface UnitImaginary extends BaseUnit {
   type: 'imaginary';
   position: number;
   value: number;
   text?: string;
 }
+*/
 
 /**
  * expression unit representing an array of primitive values. array
@@ -156,7 +164,7 @@ export interface UnitRange extends BaseUnit {
 export type ExpressionUnit =
   | UnitLiteral
   | UnitComplex
-  | UnitImaginary
+//  | UnitImaginary
   | UnitArray
   | UnitIdentifier
   | UnitCall

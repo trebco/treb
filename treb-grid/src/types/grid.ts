@@ -21,7 +21,7 @@ import {
 
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
-  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress, ParseResult
+  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress, ParseResult, UnitComplex
 } from 'treb-parser';
 
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
@@ -5329,7 +5329,24 @@ export class Grid {
 
     // next try to infer the number format, with hints as to format
 
-    const expression = this.parser.Parse(value || '').expression;
+    let expression = this.parser.Parse(value || '').expression;
+
+    if (expression?.type === 'group' && expression.elements.length === 1
+        && expression.elements[0].type === 'complex') {
+      
+      // invert, following spreadsheet convention?. I don't like this 
+      // and we should not do it, but I'm not sure what the alternative
+      // would be -- remove the parens? 
+
+      /*
+      expression = expression.elements[0] as UnitComplex;
+      expression.real = -expression.real;
+      expression.imaginary = -expression.imaginary;
+      */
+
+      expression = expression.elements[0];
+
+    }
 
     const parse_result: ParseResult2 = (expression && expression.type === 'complex') ?
       {

@@ -385,7 +385,22 @@ export class Parser {
         // formatting complex value (note for searching)
         // this uses small regular "i"
 
-        return `${unit.real||0}${unit.imaginary < 0 ? ' - ' : ' + '}${Math.abs(unit.imaginary)}${imaginary_character}`;
+        if (unit.real || (!unit.imaginary)) {
+
+          // has real, or === 0
+
+          if (unit.imaginary) {
+            return `${unit.real||0}${unit.imaginary < 0 ? ' - ' : ' + '}${Math.abs(unit.imaginary)}${imaginary_character}`;
+          }
+          else {
+            return (unit.real||0).toString(); 
+          }
+
+        }
+        else {
+          return `${unit.imaginary}${imaginary_character}`;
+        }
+        break;
       
       case 'literal':
         if (typeof unit.value === 'string') {
@@ -560,6 +575,12 @@ export class Parser {
 
     const expr = this.ParseGeneric();
 
+    // last pass: convert any remaining imaginary values to complex values.
+    // FIXME: could do this elsewhere? not sure we should be adding yet
+    // another loop...
+
+    // (moving)
+
     // remove extraneous addresses
 
     // NOTE: we still may have duplicates that have different absolute/relative
@@ -712,10 +733,64 @@ export class Parser {
       
       stream = this.BinaryToRange2(stream);
 
+      // so we're moving complex handling to post-reordering, to support
+      // precedence properly. there's still one thing we have to do here,
+      // though: handle those cases of naked imaginary values "i". these
+      // will be text identifiers, because they don't look like anything 
+      // else. the previous routine will have pulled out column ranges like
+      // I:I so we don't have to worry about that anymore.
+
+      stream = stream.map(test => {
+        if (test.type === 'identifier' && test.name === this.imaginary_number) {
+
+          // we're returning an imaginary type, which can be composited
+          // to a complex number. later on we will do a last-pass to convert
+          // dangling imaginary numbers to complex values (with real 0).
+
+          /*
+          return {
+            type: 'imaginary',
+            value: 1,
+            position: test.position,
+            id: this.id_counter++,
+          };
+          */
+
+          return {
+            type: 'complex',
+            real: 0,
+            imaginary: 1,
+            position: test.position,
+            text: test.name,
+            id: this.id_counter++,
+          };
+          
+        }
+        return test;
+      });
+
+      // ...
+
       // now complex. since this is no longer gated, we could merge
       // with the range parsing above
 
-      stream = this.CompositeComplexNumbers(stream);
+      // I'm not sure about this anymore. I think perhaps we should not
+      // do this. consider this example:
+      //
+      // =B3 * 2 + 1i
+      // 
+      // shouldn't normal precedence rules apply? if you want 2 + 1i to be
+      // complex, it should be in parens. 
+
+      // HOWEVER, we should still compose composite numbers if they're not
+      // functions, so they don't get converted to strings. do we have a 
+      // flag for that? 
+
+      // OR, perhaps we could construct a complex number if the stream
+      // length === 3, in which case there's no other alternative? what happens
+      // with precedence then? should this operate on binaries? ...
+
+      // stream = this.CompositeComplexNumbers(stream);
 
     }
 
@@ -728,10 +803,11 @@ export class Parser {
     // convert and validate ranges
 
     // return this.BinaryToRange(this.ArrangeUnits(stream));
-    return this.ArrangeUnits(stream);
+    // return this.ArrangeUnits(stream);
+    return this.BinaryToComplex(this.ArrangeUnits(stream));
   }
 
-  /**
+  /* *
    * we parse real and imaginary numbers, but we want the output to contain
    * complex numbers. this stage reads a stream of basic units (before we 
    * build binary or unary blocks) and translates complex numbers.
@@ -752,8 +828,8 @@ export class Parser {
    * 
    * 
    * @param stream 
-   */
-  protected CompositeComplexNumbers(stream: ExpressionUnit[]): ExpressionUnit[] {
+   * /
+  protected CompositeComplexNumbers(stream: ExpressionUnit[], composite = false): ExpressionUnit[] {
 
     let result: ExpressionUnit[] = [];
 
@@ -763,10 +839,12 @@ export class Parser {
       const c = stream[i + 2];
 
       //
+      // case 3 is now gated by a flag, which we use for non-functions.
       // handle case 3 (and 3 1/2) first because it will consume 3 tokens
       //
 
-      if (a.type === 'literal' 
+      if (composite 
+            && a.type === 'literal' 
             && typeof a.value === 'number' 
             && b && c 
             && b.type === 'operator'
@@ -806,6 +884,7 @@ export class Parser {
 
         // jump
         i += 2;
+
       }
       else if (a.type === 'imaginary') {
 
@@ -848,6 +927,7 @@ export class Parser {
     return result;
 
   }
+  */
 
   /**
    * helper function, @see BinaryToRange
@@ -1141,6 +1221,76 @@ export class Parser {
   }
 
   /**
+   * we've now come full circle. we started with handling ranges as 
+   * binary operators; then we added complex composition as a first-pass
+   * function; then we moved ranges to a first-pass function; and now we're
+   * moving complex composition to a lower-level restructuring of binary
+   * operations.
+   * 
+   * that allows better precedence handling for (potentially) ambiguous
+   * constructions like =B3 * 2 + 3i. we do have parens, so.
+   * 
+   * @param unit 
+   * @returns 
+   */
+  protected BinaryToComplex(unit: ExpressionUnit): ExpressionUnit {
+
+    if (unit.type === 'binary'){
+      if ((unit.operator === '+' || unit.operator === '-')
+          && unit.left.type === 'literal' 
+          && typeof unit.left.value === 'number'
+          && unit.right.type === 'complex' // 'imaginary') {
+          && !unit.right.composited ){
+
+        // ok, compose
+        // console.info("WANT TO COMPOSE", unit);
+
+        let text = '';
+
+        text = this.expression.substring(unit.left.position, unit.right.position + (unit.right.text?.length || 0));
+
+        let imaginary_value = unit.right.imaginary;
+
+        if (unit.operator === '-') {
+          imaginary_value = -imaginary_value;
+        }
+
+        return {
+          type: 'complex',
+          position: unit.left.position,
+          text: text, 
+          id: this.id_counter++,
+          imaginary: imaginary_value,
+          real: unit.left.value,
+          composited: true,
+        };
+
+      }
+      else {
+        unit.left = this.BinaryToComplex(unit.left);
+        unit.right = this.BinaryToComplex(unit.right);
+      }
+    }
+
+    /*
+    else if (unit.type === 'imaginary') {
+      return {
+        type: 'complex',
+        real: 0,
+        imaginary: unit.value,
+        position: unit.position,
+        text: unit.text,
+        id: unit.id,
+      };
+    }
+    */
+
+    return unit;
+
+  }
+
+
+  /**
    * converts binary operations with a colon operator to ranges. this also
    * validates that there are no colon operations with non-address operands
    * (which is why it's called after precendence reordering; colon has the
@@ -1383,7 +1533,8 @@ export class Parser {
             //  this.ArrangeUnits(stream.slice(index + 1)),
             //);
 
-            const right = this.ArrangeUnits(stream.slice(index + 1));
+            // const right = this.ArrangeUnits(stream.slice(index + 1));
+            const right = this.BinaryToComplex(this.ArrangeUnits(stream.slice(index + 1)));
 
             // this ensures we return the highest-level group, even if we recurse
             if (!this.valid) {
@@ -2113,6 +2264,29 @@ export class Parser {
     // const text = this.expression.substring(start_index, this.index) || '';
     // return [negative ? -value : value, text, imaginary];
 
+    if (imaginary) {
+      return {
+        type: 'complex',
+        id: this.id_counter++,
+        position: starting_position,
+        imaginary: negative ? -value : value,
+        real: 0,
+        text: this.expression.substring(start_index, this.index) || '',
+      };
+  
+    }
+    else {
+      return {
+        type: 'literal',
+        id: this.id_counter++,
+        position: starting_position,
+        value: negative ? -value : value,
+        text: this.expression.substring(start_index, this.index) || '',
+      };
+  
+    }
+
+    /*
     return {
       type: imaginary ? 'imaginary' : 'literal',
       id: this.id_counter++,
@@ -2120,6 +2294,7 @@ export class Parser {
       value: negative ? -value : value,
       text: this.expression.substring(start_index, this.index) || '',
     };
+    */
 
   }
 
