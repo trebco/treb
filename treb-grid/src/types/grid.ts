@@ -5630,7 +5630,7 @@ export class Grid {
 
       const formatted = { 
         real: cell.value.real.toString(),
-        imaginary: cell.value.imaginary.toString(),
+        imaginary: Math.abs(cell.value.imaginary).toString(),
       };
 
       if (Localization.decimal_separator === ',') {
