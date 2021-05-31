@@ -49,7 +49,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
   },
 
   Imaginary: {
-    description: 'Returns the imaginary part of a complex number (as a real)',
+    description: 'Returns the imaginary part of a complex number (as real)',
     arguments: [
       { boxed: true },
     ],
@@ -73,7 +73,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
   },
 
   Arg: {
-    description: 'Returns the primary argument of a complex number',
+    description: 'Returns the principal argument of a complex number',
     arguments: [
       { boxed: true },
     ],
