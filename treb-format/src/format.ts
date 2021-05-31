@@ -362,6 +362,7 @@ export class NumberFormat {
       if (value.imaginary) {
 
         // also has imaginary part
+        const i = Math.abs(value.imaginary);
         parts.push({text: value.imaginary < 0 ? ' - ' : ' + '});
         parts.push(...this.FormatParts(Math.abs(value.imaginary)), {text: NumberFormat.imaginary_character});
 
@@ -370,7 +371,7 @@ export class NumberFormat {
     else if (value.imaginary) {
 
       // only imaginary part
-      parts.push(...this.FormatParts(Math.abs(value.imaginary)), {text: NumberFormat.imaginary_character});
+      parts.push(...this.FormatParts(value.imaginary), {text: NumberFormat.imaginary_character});
     
     }
 
