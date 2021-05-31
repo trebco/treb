@@ -385,7 +385,7 @@ export class Parser {
         // formatting complex value (note for searching)
         // this uses small regular "i"
 
-            console.info("CPX", unit);
+        // console.info("CPX", unit);
 
         if (unit.real || (!unit.imaginary)) {
 
