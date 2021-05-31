@@ -142,7 +142,21 @@ export interface BaseOptions {
   /** save/load scale. this can optionally have a string key to disambiguate */
   persist_scale?: boolean|string;
 
+  /** target window for hyperlinks (default _blank); set false to disable hyperlinks altogether */
   hyperlinks?: string|false;
+
+  /** 
+   * support complex numbers. the meaning of this flag is changing -- the parser
+   * is going to always support complex numbers, but we might load a different 
+   * set of functions if they're not expected to be used.
+   */
+  complex?: boolean;
+
+  /** 
+   * FOR RENDERING ONLY, the imaginary number. this is intended to support 
+   * switching to "𝑖" for rendering, or " 𝑖" (same with a leading hair-space).
+   */
+  imaginary_value?: string;
 
 }
 
@@ -168,6 +182,8 @@ export const DefaultOptions: BaseOptions = {
   lhs: true,
   hyperlinks: '_blank',
   max_file_size: 1024 * 92,
+  complex: false,
+  imaginary_value: 'i',
 };
 
 export interface RunSimulationOptions {

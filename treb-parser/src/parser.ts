@@ -125,7 +125,8 @@ const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
 export class Parser {
 
   /** flag to enable/disable */
-  public support_complex_numbers = true; // false;
+  // enabling always
+  // public static support_complex_numbers = false;
 
   /**
    * argument separator. this can be changed prior to parsing/rendering.
@@ -151,7 +152,9 @@ export class Parser {
   protected decimal_mark_char = PERIOD;
 
   /**
-   * imaginary number value. this is "i", except for those EE weirdos who use "j".
+   * imaginary number value. this is "i", except for those EE weirdos who 
+   * use "j". although I guess those guys put it in front, so it won't really
+   * work anyway... let's stick with "i" for now.
    */
   protected imaginary_char: 0x69|0x6A = LC_I;
 
@@ -706,13 +709,14 @@ export class Parser {
     // into that problem.
 
     if (stream.length) {
+      
       stream = this.BinaryToRange2(stream);
-    }
 
-    // ok now complex
+      // now complex. since this is no longer gated, we could merge
+      // with the range parsing above
 
-    if (this.support_complex_numbers && stream.length) {
       stream = this.CompositeComplexNumbers(stream);
+
     }
 
     // console.info("STREAM\n", stream, "\n\n");
@@ -2076,7 +2080,7 @@ export class Parser {
         }
         else break; // not sure what this is, then
       }
-      else if (char === this.imaginary_char && this.support_complex_numbers) {
+      else if (char === this.imaginary_char) {
         if (state === 'integer' || state === 'fraction') {
           this.index++; // consume
           imaginary = true;

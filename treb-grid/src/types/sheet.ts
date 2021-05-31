@@ -1095,44 +1095,18 @@ export class Sheet {
       // OK we tried that and it looked like crap. I would like to go back
       // to using "𝑖" but I'm not sure... maybe a flag>
 
-      // const imaginary_char = ' 𝑖'; // this also has a "thin space"
-      // const imaginary_char = ' 𝑖'; // this also has a "hair space"
-      // const imaginary_char = 'i';
-      const imaginary_char = '𝑖'; // this also has a "hair space"
+      // NOTE: all that moved to NumberFormat
 
       const complex = value as Complex;
       if (isNaN(complex.real)|| isNaN(complex.imaginary)) {
 
         // render nan for nan values
-
         cell.formatted = // Style.Format(cell.style, value); // formats NaN
           (typeof cell.style.nan === 'undefined') ? 'NaN' : cell.style.nan;
       }
       else {
-
-        // optionally render as real, imaginary, or complex, depending
-        // on what's available. FIXME: this should be optional? (...)
-
         const format = NumberFormatCache.Get(cell.style.number_format || '');
-        cell.formatted = [] as TextPart[];
-
-        if (complex.real || (!complex.real && !complex.imaginary)) {
-          cell.formatted.push(...format.FormatParts(complex.real));
-          if (complex.imaginary) {
-            cell.formatted.push({text: complex.imaginary < 0 ? ' - ' : ' + '});
-            cell.formatted.push(...format.FormatParts(Math.abs(complex.imaginary)));
-            // cell.formatted.push({text: 'i', flag: TextPartFlag.italic});
-            cell.formatted.push({text: imaginary_char});
-          }
-        }
-        else if (complex.imaginary) {
-          cell.formatted.push(...format.FormatParts(complex.imaginary));
-          // cell.formatted.push({text: 'i', flag: TextPartFlag.italic});
-          cell.formatted.push({text: imaginary_char});
-        }
-
-        cell.formatted = cell.formatted;
-
+        cell.formatted = format.FormatComplex(complex);
       }
 
       cell.rendered_type = ValueType.complex;

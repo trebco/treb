@@ -1,7 +1,7 @@
 
 import { FormatParser } from './format_parser';
 import { NumberFormatSection } from './number_format_section';
-import { Localization, TextPartFlag, TextPart } from 'treb-base-types';
+import { Localization, TextPartFlag, TextPart, Complex } from 'treb-base-types';
 import { format } from 'path';
 
 //
@@ -77,6 +77,15 @@ export class NumberFormat {
   public static grouping_regexp = /\d{1,3}(?=(\d{3})+(?!\d))/g;
 
   public static fraction_limits = [9, 99, 999, 9999];
+
+  /**
+   * this is now exposed so it can be changed, for rendering; some options are 
+   * 
+   * "i" - regular i, and the default
+   * "𝑖" - mathematical italic small i", U+1D456
+   * " 𝑖" - the same, with a leading hair space (U+200A)
+   */
+  public static imaginary_character = 'i';
 
   /**
    * render text parts to string
@@ -336,6 +345,36 @@ export class NumberFormat {
 
     }).join(';');
 
+  }
+
+  /** temporary */
+  public FormatComplex(value: Complex): TextPart[] {
+
+      // formatting complex value (note for searching)
+
+    const parts: TextPart[] = [];
+
+    if (value.real || (!value.real && !value.imaginary)) {
+      
+      // has real part, or is === 0 
+      parts.push(...this.FormatParts(value.real));
+
+      if (value.imaginary) {
+
+        // also has imaginary part
+        parts.push({text: value.imaginary < 0 ? ' - ' : ' + '});
+        parts.push(...this.FormatParts(Math.abs(value.imaginary)), {text: NumberFormat.imaginary_character});
+
+      }
+    }
+    else if (value.imaginary) {
+
+      // only imaginary part
+      parts.push(...this.FormatParts(Math.abs(value.imaginary)), {text: NumberFormat.imaginary_character});
+    
+    }
+
+    return parts;
   }
 
   /**
