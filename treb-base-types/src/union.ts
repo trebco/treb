@@ -17,6 +17,11 @@ export interface UnionValue {
   value: CellValue | any;
 }
 
+export interface ComplexUnion {
+  type: ValueType.complex;
+  value: Complex;
+}
+
 /*
 export const UnionIsUndef = (test: UnionValue): test is { type: ValueType.undefined, value: undefined } => {
   return test.type === ValueType.undefined;

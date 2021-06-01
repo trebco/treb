@@ -35,6 +35,9 @@ Functions updated to support complex arguments
 + Abs
 + Sum
 + Power
++ MMult
++ MInverse
+* MDeterm
 
 
 

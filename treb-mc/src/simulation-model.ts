@@ -681,6 +681,7 @@ export class SimulationModel {
         extension: true,
       },
 
+      /*
       MMult: {
         description: 'Multiplies two matrices',
         arguments: [{ name: 'Matrix 1'}, { name: 'Matrix 2'}],
@@ -713,7 +714,9 @@ export class SimulationModel {
 
         }  
       },
+      */
 
+      /*
       MInverse: {
         description: 'Returns the inverse matrix',
         arguments: [{ name: 'Matrix' }],
@@ -737,6 +740,7 @@ export class SimulationModel {
 
         }
       },
+      */
 
       // new stuff
 

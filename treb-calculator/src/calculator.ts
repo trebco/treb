@@ -18,6 +18,7 @@ import { TextFunctionLibrary, TextFunctionAliases } from './functions/text-funct
 import { InformationFunctionLibrary } from './functions/information-functions';
 import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './functions/statistics-functions';
 import { ComplexFunctionLibrary } from './functions/complex-functions';
+import { MatrixFunctionLibrary } from './functions/matrix-functions';
 
 import { DataModel, Annotation, FunctionDescriptor } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
@@ -74,7 +75,8 @@ export class Calculator extends Graph {
       FinanceFunctionLibrary,     // also this (wip)
       InformationFunctionLibrary, // etc
       ComplexFunctionLibrary,
-      
+      MatrixFunctionLibrary,
+
       );
    
     // aliases
