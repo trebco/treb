@@ -22,10 +22,15 @@ Current functions and operators that support complex arguments. If any function 
 
 #### Functions
 
-+ Exp
+Functions specifically written for complex numbers
+
 + ComplexLog
 + Real
 + Imaginary
+
+Functions updated to support complex arguments 
+
++ Exp
 + Arg
 + Abs
 + Sum
