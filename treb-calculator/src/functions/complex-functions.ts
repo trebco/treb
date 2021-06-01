@@ -1,6 +1,6 @@
 
 import { FunctionMap } from '../descriptors';
-import { IsComplex, UnionValue, ValueType } from 'treb-base-types';
+import { IsComplex, UnionOrArray, UnionValue, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
 import { ArgumentError, ValueError } from '../function-error';
 import { RectangularToPolar } from '../complex-math';
@@ -71,6 +71,32 @@ export const ComplexFunctionLibrary: FunctionMap = {
     }),
   },
 
+  Conjugate: {
+    description: 'Returns the conjugate of a complex number',
+    arguments: [
+      { boxed: true },
+    ],
+    fn: Utils.ApplyAsArray((arg: UnionValue): UnionValue => {
+      if (arg.type === ValueType.complex) {
+        return {
+          type: ValueType.complex,
+          value: {
+            real: arg.value.real,
+            imaginary: -arg.value.imaginary,
+          },
+        };
+      }
+      else if (arg.type === ValueType.number || arg.type === ValueType.undefined || !arg.value) {
+        return {
+          type: ValueType.number, value: arg.value || 0,
+        };
+      }
+      else {
+        return ValueError();
+      }
+    }),
+  },
+
   Arg: {
     description: 'Returns the principal argument of a complex number',
     arguments: [
@@ -113,6 +139,32 @@ export const ComplexFunctionLibrary: FunctionMap = {
         },
       }
     },
+  },
+
+  Complex: {
+    description: 'Ensures that the given value will be treated as a complex number',
+    arguments: [
+      { boxed: true },
+    ],
+    fn: Utils.ApplyAsArray((a: UnionValue): UnionValue => {
+      
+      if (a.type === ValueType.complex) {
+        return a;
+      }
+      
+      if (a.type === ValueType.number || a.type === ValueType.undefined || !a.value) {
+        return { 
+          type: ValueType.complex, 
+          value: {
+            imaginary: 0,
+            real: a.value || 0,
+          },
+        }
+      }
+
+      return ValueError();
+
+    }),
   },
 
   /**

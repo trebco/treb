@@ -1,6 +1,6 @@
 
 import { FunctionMap } from '../descriptors';
-import { Complex, IsComplex, ComplexUnion, UnionOrArray, UnionValue, ValueType } from 'treb-base-types';
+import { Complex, IsComplex, ComplexUnion, UnionOrArray, UnionValue, ValueType, ComplexOrReal } from 'treb-base-types';
 import * as Utils from '../utilities';
 import { ArgumentError, ValueError } from '../function-error';
 import * as ComplexMath from '../complex-math';
@@ -69,15 +69,9 @@ export const MatrixFunctionLibrary: FunctionMap = {
       if (!result) {
         return ValueError();
       }
-      
-      if (result.imaginary) {
-        return {
-          type: ValueType.complex,
-          value: result,
-        }
-      }
 
-      return { type: ValueType.number, value: result.real };
+      return ComplexOrReal(result);
+
     },
   },
 
@@ -105,18 +99,7 @@ export const MatrixFunctionLibrary: FunctionMap = {
         return ValueError();
       }
       
-      return inverse.map(row => row.map(value => {
-        if (value.imaginary) {
-          return {
-            type: ValueType.complex,
-            value,
-          };
-        }
-        return {
-          type: ValueType.number,
-          value: value.real,
-        }
-      }));
+      return inverse.map(row => row.map(value => ComplexOrReal(value)));
       
     },
   },
@@ -150,18 +133,7 @@ export const MatrixFunctionLibrary: FunctionMap = {
 
       // convert to reals where possible
 
-      return product.map(row => row.map(value => {
-        if (value.imaginary) {
-          return {
-            type: ValueType.complex,
-            value,
-          };
-        }
-        return {
-          type: ValueType.number,
-          value: value.real,
-        }
-      }));
+      return product.map(row => row.map(value => ComplexOrReal(value)));
 
     },
   }

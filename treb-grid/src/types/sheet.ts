@@ -1105,7 +1105,7 @@ export class Sheet {
           (typeof cell.style.nan === 'undefined') ? 'NaN' : cell.style.nan;
       }
       else {
-        const format = NumberFormatCache.Get(cell.style.number_format || '');
+        const format = NumberFormatCache.Get(cell.style.number_format || '', true);
         cell.formatted = format.FormatComplex(complex);
       }
 

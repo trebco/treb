@@ -125,9 +125,8 @@ const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
 export class Parser {
 
   /** flag to enable/disable */
-  // enabling always
-  // public static support_complex_numbers = false;
-
+  public static support_complex_numbers = true;
+  
   /**
    * argument separator. this can be changed prior to parsing/rendering.
    * FIXME: use an accessor to ensure type, outside of ts?
@@ -385,24 +384,31 @@ export class Parser {
         // formatting complex value (note for searching)
         // this uses small regular "i"
 
-        // console.info("CPX", unit);
+        // here we use "0i" for complex numbers without an imaginary
+        // component, to ensure that we don't change these into reals.
 
-        if (unit.real || (!unit.imaginary)) {
+        // this is a complex problem having to do with how we handle 
+        // exponentiation of reals, but for now leave this as is.
 
-          // has real, or === 0
+        // we will drop 0 real values, and 1i/-1i are rendered as i/-i.
 
-          if (unit.imaginary) {
-            const i = Math.abs(unit.imaginary);
-            return `${unit.real||0}${unit.imaginary < 0 ? ' - ' : ' + '}${i === 1 ? '' : i}${imaginary_character}`;
+        {
+          if (unit.real) {
+          const i = Math.abs(unit.imaginary);
+            return `${unit.real||0}${unit.imaginary < 0 ? ' - ' : ' + '}${i === 1 ? '' : i}i`;
+          }
+          else if (unit.imaginary === -1) {
+            return `-i`;
+          }
+          else if (unit.imaginary === 1) {
+            return `i`;
           }
           else {
-            return (unit.real||0).toString(); 
+            return `${unit.imaginary}i`;
           }
 
         }
-        else {
-          return `${unit.imaginary === 1 ? '' : unit.imaginary}${imaginary_character}`;
-        }
+
         break;
       
       case 'literal':
@@ -743,34 +749,23 @@ export class Parser {
       // else. the previous routine will have pulled out column ranges like
       // I:I so we don't have to worry about that anymore.
 
-      stream = stream.map(test => {
-        if (test.type === 'identifier' && test.name === this.imaginary_number) {
+      if (Parser.support_complex_numbers) {
+        stream = stream.map(test => {
+          if (test.type === 'identifier' && test.name === this.imaginary_number) {
 
-          // we're returning an imaginary type, which can be composited
-          // to a complex number. later on we will do a last-pass to convert
-          // dangling imaginary numbers to complex values (with real 0).
-
-          /*
-          return {
-            type: 'imaginary',
-            value: 1,
-            position: test.position,
-            id: this.id_counter++,
-          };
-          */
-
-          return {
-            type: 'complex',
-            real: 0,
-            imaginary: 1,
-            position: test.position,
-            text: test.name,
-            id: this.id_counter++,
-          };
-          
-        }
-        return test;
-      });
+            return {
+              type: 'complex',
+              real: 0,
+              imaginary: 1,
+              position: test.position,
+              text: test.name,
+              id: this.id_counter++,
+            };
+            
+          }
+          return test;
+        });
+      }
 
       // ...
 
@@ -1273,6 +1268,27 @@ export class Parser {
         unit.left = this.BinaryToComplex(unit.left);
         unit.right = this.BinaryToComplex(unit.right);
       }
+    }
+    else if (unit.type === 'unary' && 
+            (unit.operator === '-' || unit.operator === '+') &&
+             unit.operand.type === 'complex' &&
+             unit.operand.text === this.imaginary_number ) {
+
+      // sigh... patch fix for very special case of "-i"
+      // actually: why do I care about this? we could let whomever is using
+      // the result deal with this particular case... although it's more
+      // properly our responsibility if we are parsing complex numbers.
+
+      // we only have to worry about mischaracterizing the range label, 
+      // e.g. "-i:j", but we should have already handled that in a prior pass.
+
+      return {
+        ...unit.operand,
+        position: unit.position,
+        text: this.expression.substring(unit.position, unit.operand.position + (unit.operand.text || '').length),
+        imaginary: unit.operand.imaginary * (unit.operator === '-' ? -1 : 1),
+      };
+
     }
 
     /*
@@ -2234,7 +2250,7 @@ export class Parser {
         }
         else break; // not sure what this is, then
       }
-      else if (char === this.imaginary_char) {
+      else if (char === this.imaginary_char && Parser.support_complex_numbers) {
         if (state === 'integer' || state === 'fraction') {
           this.index++; // consume
           imaginary = true;

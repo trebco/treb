@@ -85,7 +85,19 @@ export class NumberFormat {
    * "𝑖" - mathematical italic small i", U+1D456
    * " 𝑖" - the same, with a leading hair space (U+200A)
    */
-  public static imaginary_character = 'i';
+  public static imaginary_character = '𝑖'; //  'i';
+
+  /**
+   * also for complex rendering, the minus sign. there's a unicode 
+   * symbol U+2212 which (at least in calibri) is wider than the regular minus 
+   * sign/hyphen. I like this but it looks a bit odd if negative numbers are 
+   * rendered using the other one.
+   * 
+   * "-" - hyphen
+   * "−" - minus
+   */
+  public static minus_character = '-'; // hyphen
+  // public static minus_character = '−'; // minus
 
   /**
    * render text parts to string
@@ -350,25 +362,54 @@ export class NumberFormat {
   /** temporary */
   public FormatComplex(value: Complex): TextPart[] {
 
-      // formatting complex value (note for searching)
+    // formatting complex value (note for searching)
+
+    // this needs some work. some thoughts:
+    //
+    // (1) allow fractions and decimals, but not percent or exponential notation
+    // (2) change default for General to have fewer decimal places
+    // (3) use the section's integer specification to decide on whether to
+    //     write "1i" or just "i"
+    // (4) drop either real or imaginary part (but not both) if it renders as 
+    //     all zeros
+    // (5) change default fraction to #/## (actually we should do that always)
+
+
+    // check if the imaginary format will render as 0.00i -- we want to 
+    // handle this differently.
+
+    let imaginary_format: TextPart[] = [];
+    let real_format: TextPart[] = [];
+
+    let has_imaginary_value = !!value.imaginary;
+    if (has_imaginary_value) {
+      imaginary_format = this.FormatParts(value.imaginary);
+      has_imaginary_value = imaginary_format.some(element => /[1-9]/.test(element.text));
+    }
+
+    let has_real_value = !!value.real;
+    if (has_real_value) {
+      real_format = this.FormatParts(value.real);
+      has_real_value = real_format.some(element => /[1-9]/.test(element.text));
+    }
 
     const parts: TextPart[] = [];
 
-    if (value.real || (!value.real && !value.imaginary)) {
+    if (has_real_value || (!value.real && !has_imaginary_value)) {
       
       // has real part, or is === 0 
       parts.push(...this.FormatParts(value.real));
 
-      if (value.imaginary) {
+      if (has_imaginary_value) {
 
         // also has imaginary part
         const i = Math.abs(value.imaginary);
-        parts.push({text: value.imaginary < 0 ? ' - ' : ' + '});
+        parts.push({text: value.imaginary < 0 ? ` ${NumberFormat.minus_character} ` : ' + '});
         parts.push(...this.FormatParts(Math.abs(value.imaginary)), {text: NumberFormat.imaginary_character});
 
       }
     }
-    else if (value.imaginary) {
+    else if (has_imaginary_value) {
 
       // only imaginary part
       parts.push(...this.FormatParts(value.imaginary), {text: NumberFormat.imaginary_character});

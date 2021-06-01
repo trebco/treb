@@ -114,4 +114,15 @@ export const Box = (value: unknown, type?: ValueType): UnionValue => {
 
 export type UnionOrArray = UnionValue|UnionValue[][];
 
+export const ComplexOrReal = (value: Complex): UnionValue => {
+  if (value.imaginary) {
+    return {
+      type: ValueType.complex,
+      value,
+    };
+  }
+  return { type: ValueType.number, value: value.real };
+}
+
+
 

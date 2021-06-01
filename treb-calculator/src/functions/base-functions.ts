@@ -2,7 +2,7 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
-import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions } from 'treb-base-types';
+import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal } from 'treb-base-types';
 import { Sparkline, SparklineRenderOptions } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -112,11 +112,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
       }
 
-      if (sum.imaginary) {
-        return { type: ValueType.complex, value: sum };
-      }
-
-      return { type: ValueType.number, value: sum.real };
+      return ComplexOrReal(sum);
 
     },
   },
@@ -362,6 +358,16 @@ export const BaseFunctionLibrary: FunctionMap = {
         { name: 'exponent', boxed: true, }
       ],
       fn: Utils.ApplyAsArray2((base: UnionValue, exponent: UnionValue): UnionValue => {
+
+        /*
+        if (base.type === ValueType.number) {
+          base = {
+            type: ValueType.complex,
+            value: { imaginary: 0, real: base.value },
+          };
+        }
+        */
+
         if (base.type === ValueType.complex || exponent.type === ValueType.complex) {
 
           const a = base.type === ValueType.complex ? base.value : 
@@ -370,9 +376,8 @@ export const BaseFunctionLibrary: FunctionMap = {
             { real: exponent.value || 0, imaginary: 0, };
 
           const value = ComplexPower(a, b);
-          return value.imaginary ? 
-            { type: ValueType.complex, value } : 
-            { type: ValueType.number, value: value.real };
+
+          return ComplexOrReal(value);
 
         }
         else {
@@ -638,9 +643,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: Utils.ApplyAsArray((x: UnionValue) => {
         if (x.type === ValueType.complex) {
           const value = ComplexExp(x.value);
-          return value.imaginary ? 
-            { type: ValueType.complex, value } : 
-            { type: ValueType.number, value: value.real };
+          return ComplexOrReal(value);
         }
         return { type: ValueType.number, value: Math.exp(x.value || 0) };
       }),
@@ -745,19 +748,28 @@ export const BaseFunctionLibrary: FunctionMap = {
         {boxed: true},
       ],
       fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
+
+        // little bit torn on this. what should sqrt(-1) return? a complex 
+        // number, or NaN? or should we control that with a flag? 
+
         if (ref.type === ValueType.complex) {
           const value = ComplexPower(ref.value, {real: 0.5, imaginary: 0});
-          if (value.imaginary) {
-            return {
-              type: ValueType.complex,
-              value,
-            };
-          }
-          return { 
-            type: ValueType.number,
-            value: value.real,
-          };
+          return ComplexOrReal(value);
         }
+        else if (ref.type === ValueType.undefined || !ref.value) {
+          return {
+            type: ValueType.number, value: 0,
+          }
+        }
+        /*
+        else if (ref.type === ValueType.number && ref.value < 0) {
+          const value = ComplexPower({real: ref.value, imaginary: 0}, {real: 0.5, imaginary: 0});
+          return {
+            type: ValueType.complex,
+            value,
+          }
+        }
+        */
         else {
           return {
             type: ValueType.number,

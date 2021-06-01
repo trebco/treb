@@ -183,7 +183,7 @@ export const DefaultOptions: BaseOptions = {
   hyperlinks: '_blank',
   max_file_size: 1024 * 92,
   complex: false,
-  imaginary_value: 'i',
+  // imaginary_value: 'i',
 };
 
 export interface RunSimulationOptions {
