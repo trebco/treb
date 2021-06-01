@@ -95,18 +95,28 @@ export const BaseFunctionLibrary: FunctionMap = {
     arguments: [{ boxed: true, name: 'values or ranges' }],
     fn: (...args: UnionValue[]): UnionOrArray => {
 
-      let sum = 0;
+      let sum = { real: 0, imaginary: 0 };
+
       const values = Utils.Flatten(args) as UnionValue[];
 
       for (const value of values) {
+
         switch (value.type) {
-          case ValueType.number: sum += value.value; break;
-          case ValueType.boolean: sum += (value.value ? 1 : 0); break;
+          case ValueType.number: sum.real += value.value; break;
+          case ValueType.boolean: sum.real += (value.value ? 1 : 0); break;
+          case ValueType.complex:
+            sum.real += value.value.real;
+            sum.imaginary += value.value.imaginary;
+            break;
           case ValueType.error: return value;
         }
       }
 
-      return { type: ValueType.number, value:sum };
+      if (sum.imaginary) {
+        return { type: ValueType.complex, value: sum };
+      }
+
+      return { type: ValueType.number, value: sum.real };
 
     },
   },
@@ -346,8 +356,10 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Power: {
+      description: 'Returns raised to the given power',
       arguments: [
-        { boxed: true, }
+        { name: 'base', boxed: true, },
+        { name: 'exponent', boxed: true, }
       ],
       fn: Utils.ApplyAsArray2((base: UnionValue, exponent: UnionValue): UnionValue => {
         if (base.type === ValueType.complex || exponent.type === ValueType.complex) {
@@ -727,6 +739,34 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    Sqrt: {
+      description: 'Returns the square root of the argument',
+      arguments: [
+        {boxed: true},
+      ],
+      fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
+        if (ref.type === ValueType.complex) {
+          const value = ComplexPower(ref.value, {real: 0.5, imaginary: 0});
+          if (value.imaginary) {
+            return {
+              type: ValueType.complex,
+              value,
+            };
+          }
+          return { 
+            type: ValueType.number,
+            value: value.real,
+          };
+        }
+        else {
+          return {
+            type: ValueType.number,
+            value: Math.sqrt(ref.value),
+          }
+        }
+      }),
+    },
+
     HexToDec: {
       arguments: [{ description: 'hexadecimal string' }],
       fn: (hex: string): UnionValue => {
@@ -797,12 +837,29 @@ for (const key of Object.keys(BaseFunctionLibrary)) {
   name_map[key.toLowerCase()] = key;
 }
 
+// block these names from auto-import from Math
+
+const block_list = [
+  'pow', 
+];
+
+const block_map: Record<string, string> = {};
+for (const entry of block_list) {
+  block_map[entry.toLowerCase()] = entry;
+}
+
 for (const name of Object.getOwnPropertyNames(Math)) {
 
   // check if it exists (we have already registered something
   // with the same name) -- don't override existing
 
-  if (name_map[name.toLowerCase()]) { continue; }
+  const lc = name.toLowerCase();
+
+  if (name_map[lc]) { continue; }
+
+  // also explicitly block some names we don't want to include (pow vs. power, etc)
+
+  if (block_map[lc]) { continue; }
 
   const descriptor = Object.getOwnPropertyDescriptor(Math, name);
   if (!descriptor) { continue; }
