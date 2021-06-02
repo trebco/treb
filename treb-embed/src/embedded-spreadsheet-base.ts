@@ -957,13 +957,28 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   /**
    * format a number with an arbitrary formatter
+   * 
+   * FIXME: should this support complex numbers? not sure...
    */
   public ParseNumber(text: string) {
+
+    /*
+    const expr = this.parser.Parse(text);
+    if (expr.expression?.type === 'complex') {
+      return {
+        real: expr.expression.real,
+        imaginary: expr.expression.imaginary,
+      };
+    }
+    */
+   
     return ValueParser.TryParse(text).value;
   }
 
   /**
    * format a number with an arbitrary formatter
+   *
+   * FIXME: should this support complex numbers? not sure...
    */
   public FormatNumber(value: number, format: string) {
     return NumberFormatCache.Get(format).Format(value);
