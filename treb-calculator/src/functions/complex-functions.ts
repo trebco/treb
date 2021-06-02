@@ -146,6 +146,9 @@ export const ComplexFunctionLibrary: FunctionMap = {
     arguments: [
       { boxed: true },
     ],
+
+    // FIXME: this should use flatten? not sure
+
     fn: Utils.ApplyAsArray((a: UnionValue): UnionValue => {
       
       if (a.type === ValueType.complex) {
