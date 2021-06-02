@@ -2,7 +2,8 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ValueError, FunctionError } from '../function-error';
-import { UnionValue, ValueType } from 'treb-base-types';
+import { Complex, UnionValue, ValueType } from 'treb-base-types';
+import * as ComplexMath from '../complex-math';
 
 const Variance = (data: number[], sample = false) => {
 
@@ -117,10 +118,54 @@ export const StatisticsFunctionLibrary: FunctionMap = {
   },
 
   GeoMean: {
+
+    description: 'Returns the geometric mean of all numeric arguments',
+    arguments: [{ boxed: true }],
+
     fn: (...args: any[]): UnionValue => {
-      args = Utils.Flatten(args);
+
+      args = Utils.Flatten(args); 
+
       let count = 0;
-      let product = 1;
+      let product: Complex = {real: 1, imaginary: 0};
+      let complex = false;
+      let negative = false;
+
+      for (const arg of args as UnionValue[]) {
+        
+        if (arg.type === ValueType.complex) {
+          complex = true;
+          product = ComplexMath.Multiply(product, arg.value);
+          count++;
+        }
+        else if (arg.type === ValueType.number) {
+          if (arg.value < 0) {
+            negative = true;
+          }
+          count++;
+          // product = ComplexMath.Multiply(product, {real: arg.value, imaginary: 0});
+          product.real *= arg.value;
+          product.imaginary *= arg.value;
+
+        }
+
+      }
+
+      if (complex) {
+        const value = ComplexMath.Power(product, {real: 1/count, imaginary: 0});
+        if (value.imaginary) {
+          return { type: ValueType.complex, value };
+        }
+        return { type: ValueType.number, value: value.real };
+      }
+      else {
+        if (negative) {
+          return ValueError();
+        }
+        return { type: ValueType.number, value: Math.pow(product.real, 1 / count) };
+      }
+
+      /*
       for (const arg of args) {
         if (typeof arg === 'undefined') { continue; }
         const value = Number(arg);
@@ -129,18 +174,46 @@ export const StatisticsFunctionLibrary: FunctionMap = {
         product *= value;
       }
       return { type: ValueType.number, value: Math.pow(product, 1 / count) };
+      */
+
+
+
     },
   },
 
   Average: {
+
+    description: 'Returns the arithmetic mean of all numeric arguments',
+    arguments: [{ boxed: true }],
+
     fn: (...args: any[]): UnionValue => {
       args = Utils.Flatten(args);
-      const value = args.reduce((a: number, b: any) => {
-        if (typeof b === 'undefined') return a;
-        return a + Number(b);
-      }, 0) / args.length;
 
-      return { type: ValueType.number, value };
+      const result = { real: 0, imaginary: 0 };
+      let count = 0;
+
+      for (const ref of args as UnionValue[]) {
+        if (ref.type === ValueType.error) {
+          return ref;
+        }
+        if (ref.type === ValueType.number) {
+          result.real += ref.value;
+          count++;
+        }
+        if (ref.type === ValueType.complex) {
+          result.real += ref.value.real;
+          result.imaginary += ref.value.imaginary;
+          count++;
+        }
+      }
+
+      result.real /= count;
+      result.imaginary /= count;
+      
+      if (result.imaginary) {
+        return { type: ValueType.complex, value: result, };
+      }
+      return { type: ValueType.number, value: result.real };
 
     },
   },

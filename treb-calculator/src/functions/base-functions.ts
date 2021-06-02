@@ -2,14 +2,14 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
-import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal } from 'treb-base-types';
+import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex } from 'treb-base-types';
 import { Sparkline, SparklineRenderOptions } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
 import { ClickCheckbox, RenderCheckbox } from './checkbox';
 import { UnionIsMetadata } from '../expression-calculator';
 
-import { Exp as ComplexExp, Power as ComplexPower, RectangularToPolar } from '../complex-math';
+import { Exp as ComplexExp, Power as ComplexPower, RectangularToPolar, Multiply as ComplexMultply } from '../complex-math';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -352,7 +352,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Power: {
-      description: 'Returns raised to the given power',
+      description: 'Returns base raised to the given power',
       arguments: [
         { name: 'base', boxed: true, },
         { name: 'exponent', boxed: true, }
@@ -549,11 +549,31 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Product: {
+      arguments: [{boxed: true}],
       fn: (...args: any[]): UnionValue => {
+
+        let product: Complex = { real: 1, imaginary: 0 };
+
+        args = Utils.Flatten(args);
+        for (const arg of args as UnionValue[]) {
+          if (arg.type === ValueType.complex) {
+            product = ComplexMultply(product, arg.value);
+          }
+          else if (arg.type === ValueType.number) {
+            product.real *= arg.value;
+            product.imaginary *= arg.value;
+          }
+        }
+
+        return ComplexOrReal(product);
+
+        /*
         return { type: ValueType.number, value: Utils.Flatten(args).reduce((a: number, b: any) => {
           if (typeof b === 'undefined') return a;
           return a * Number(b);
         }, 1) };
+        */
+
       },
     },
 
