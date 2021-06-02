@@ -272,6 +272,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     this.options = { ...DefaultOptions, ...options };
 
+    // set these options ASAP, they are static to the relevant classes
+
+    if (this.options.complex) {
+      // Parser.support_complex_numbers = true;
+    }
+    if (typeof this.options.imaginary_value === 'string') {
+      NumberFormat.imaginary_character = this.options.imaginary_value;
+    }
+
     let network_document = this.options.network_document;
 
     // optionally data from storage, with fallback
@@ -948,13 +957,28 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   /**
    * format a number with an arbitrary formatter
+   * 
+   * FIXME: should this support complex numbers? not sure...
    */
   public ParseNumber(text: string) {
+
+    /*
+    const expr = this.parser.Parse(text);
+    if (expr.expression?.type === 'complex') {
+      return {
+        real: expr.expression.real,
+        imaginary: expr.expression.imaginary,
+      };
+    }
+    */
+   
     return ValueParser.TryParse(text).value;
   }
 
   /**
    * format a number with an arbitrary formatter
+   *
+   * FIXME: should this support complex numbers? not sure...
    */
   public FormatNumber(value: number, format: string) {
     return NumberFormatCache.Get(format).Format(value);

@@ -22,6 +22,10 @@ export enum TextPartFlag {
   /** formatting (e.g. [red]) */
   formatting = 6,
 
+  /* * testing, for complex 
+  italic = 7,
+  */
+
 }
 
 export interface TextPart {

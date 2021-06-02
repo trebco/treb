@@ -123,10 +123,7 @@ const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
  * FIXME: split rendering into a separate class? would be a little cleaner.
  */
 export class Parser {
-
-  /** flag to enable/disable */
-  public support_complex_numbers = false;
-
+ 
   /**
    * argument separator. this can be changed prior to parsing/rendering.
    * FIXME: use an accessor to ensure type, outside of ts?
@@ -151,7 +148,9 @@ export class Parser {
   protected decimal_mark_char = PERIOD;
 
   /**
-   * imaginary number value. this is "i", except for those EE weirdos who use "j".
+   * imaginary number value. this is "i", except for those EE weirdos who 
+   * use "j". although I guess those guys put it in front, so it won't really
+   * work anyway... let's stick with "i" for now.
    */
   protected imaginary_char: 0x69|0x6A = LC_I;
 
@@ -378,7 +377,36 @@ export class Parser {
         );
 
       case 'complex':
-        return `${unit.real||0}${unit.imaginary < 0 ? '' : '+'}${unit.imaginary}${imaginary_character}`;
+
+        // formatting complex value (note for searching)
+        // this uses small regular "i"
+
+        // here we use "0i" for complex numbers without an imaginary
+        // component, to ensure that we don't change these into reals.
+
+        // this is a complex problem having to do with how we handle 
+        // exponentiation of reals, but for now leave this as is.
+
+        // we will drop 0 real values, and 1i/-1i are rendered as i/-i.
+
+        {
+          if (unit.real) {
+          const i = Math.abs(unit.imaginary);
+            return `${unit.real||0}${unit.imaginary < 0 ? ' - ' : ' + '}${i === 1 ? '' : i}i`;
+          }
+          else if (unit.imaginary === -1) {
+            return `-i`;
+          }
+          else if (unit.imaginary === 1) {
+            return `i`;
+          }
+          else {
+            return `${unit.imaginary}i`;
+          }
+
+        }
+
+        break;
       
       case 'literal':
         if (typeof unit.value === 'string') {
@@ -553,6 +581,12 @@ export class Parser {
 
     const expr = this.ParseGeneric();
 
+    // last pass: convert any remaining imaginary values to complex values.
+    // FIXME: could do this elsewhere? not sure we should be adding yet
+    // another loop...
+
+    // (moving)
+
     // remove extraneous addresses
 
     // NOTE: we still may have duplicates that have different absolute/relative
@@ -702,13 +736,55 @@ export class Parser {
     // into that problem.
 
     if (stream.length) {
+      
       stream = this.BinaryToRange2(stream);
-    }
 
-    // ok now complex
+      // so we're moving complex handling to post-reordering, to support
+      // precedence properly. there's still one thing we have to do here,
+      // though: handle those cases of naked imaginary values "i". these
+      // will be text identifiers, because they don't look like anything 
+      // else. the previous routine will have pulled out column ranges like
+      // I:I so we don't have to worry about that anymore.
 
-    if (this.support_complex_numbers && stream.length) {
-      stream = this.CompositeComplexNumbers(stream);
+      stream = stream.map(test => {
+        if (test.type === 'identifier' && test.name === this.imaginary_number) {
+
+          return {
+            type: 'complex',
+            real: 0,
+            imaginary: 1,
+            position: test.position,
+            text: test.name,
+            id: this.id_counter++,
+          };
+          
+        }
+        return test;
+      });
+
+      // ...
+
+      // now complex. since this is no longer gated, we could merge
+      // with the range parsing above
+
+      // I'm not sure about this anymore. I think perhaps we should not
+      // do this. consider this example:
+      //
+      // =B3 * 2 + 1i
+      // 
+      // shouldn't normal precedence rules apply? if you want 2 + 1i to be
+      // complex, it should be in parens. 
+
+      // HOWEVER, we should still compose composite numbers if they're not
+      // functions, so they don't get converted to strings. do we have a 
+      // flag for that? 
+
+      // OR, perhaps we could construct a complex number if the stream
+      // length === 3, in which case there's no other alternative? what happens
+      // with precedence then? should this operate on binaries? ...
+
+      // stream = this.CompositeComplexNumbers(stream);
+
     }
 
     // console.info("STREAM\n", stream, "\n\n");
@@ -720,10 +796,11 @@ export class Parser {
     // convert and validate ranges
 
     // return this.BinaryToRange(this.ArrangeUnits(stream));
-    return this.ArrangeUnits(stream);
+    // return this.ArrangeUnits(stream);
+    return this.BinaryToComplex(this.ArrangeUnits(stream));
   }
 
-  /**
+  /* *
    * we parse real and imaginary numbers, but we want the output to contain
    * complex numbers. this stage reads a stream of basic units (before we 
    * build binary or unary blocks) and translates complex numbers.
@@ -744,8 +821,8 @@ export class Parser {
    * 
    * 
    * @param stream 
-   */
-  protected CompositeComplexNumbers(stream: ExpressionUnit[]): ExpressionUnit[] {
+   * /
+  protected CompositeComplexNumbers(stream: ExpressionUnit[], composite = false): ExpressionUnit[] {
 
     let result: ExpressionUnit[] = [];
 
@@ -755,10 +832,12 @@ export class Parser {
       const c = stream[i + 2];
 
       //
+      // case 3 is now gated by a flag, which we use for non-functions.
       // handle case 3 (and 3 1/2) first because it will consume 3 tokens
       //
 
-      if (a.type === 'literal' 
+      if (composite 
+            && a.type === 'literal' 
             && typeof a.value === 'number' 
             && b && c 
             && b.type === 'operator'
@@ -798,6 +877,7 @@ export class Parser {
 
         // jump
         i += 2;
+
       }
       else if (a.type === 'imaginary') {
 
@@ -840,6 +920,7 @@ export class Parser {
     return result;
 
   }
+  */
 
   /**
    * helper function, @see BinaryToRange
@@ -1133,6 +1214,97 @@ export class Parser {
   }
 
   /**
+   * we've now come full circle. we started with handling ranges as 
+   * binary operators; then we added complex composition as a first-pass
+   * function; then we moved ranges to a first-pass function; and now we're
+   * moving complex composition to a lower-level restructuring of binary
+   * operations.
+   * 
+   * that allows better precedence handling for (potentially) ambiguous
+   * constructions like =B3 * 2 + 3i. we do have parens, so.
+   * 
+   * @param unit 
+   * @returns 
+   */
+  protected BinaryToComplex(unit: ExpressionUnit): ExpressionUnit {
+
+    if (unit.type === 'binary'){
+      if ((unit.operator === '+' || unit.operator === '-')
+          && unit.left.type === 'literal' 
+          && typeof unit.left.value === 'number'
+          && unit.right.type === 'complex' // 'imaginary') {
+          && !unit.right.composited ){
+
+        // ok, compose
+        // console.info("WANT TO COMPOSE", unit);
+
+        let text = '';
+
+        text = this.expression.substring(unit.left.position, unit.right.position + (unit.right.text?.length || 0));
+
+        let imaginary_value = unit.right.imaginary;
+
+        if (unit.operator === '-') {
+          imaginary_value = -imaginary_value;
+        }
+
+        return {
+          type: 'complex',
+          position: unit.left.position,
+          text: text, 
+          id: this.id_counter++,
+          imaginary: imaginary_value,
+          real: unit.left.value,
+          composited: true,
+        };
+
+      }
+      else {
+        unit.left = this.BinaryToComplex(unit.left);
+        unit.right = this.BinaryToComplex(unit.right);
+      }
+    }
+    else if (unit.type === 'unary' && 
+            (unit.operator === '-' || unit.operator === '+') &&
+             unit.operand.type === 'complex' &&
+             unit.operand.text === this.imaginary_number ) {
+
+      // sigh... patch fix for very special case of "-i"
+      // actually: why do I care about this? we could let whomever is using
+      // the result deal with this particular case... although it's more
+      // properly our responsibility if we are parsing complex numbers.
+
+      // we only have to worry about mischaracterizing the range label, 
+      // e.g. "-i:j", but we should have already handled that in a prior pass.
+
+      return {
+        ...unit.operand,
+        position: unit.position,
+        text: this.expression.substring(unit.position, unit.operand.position + (unit.operand.text || '').length),
+        imaginary: unit.operand.imaginary * (unit.operator === '-' ? -1 : 1),
+      };
+
+    }
+
+    /*
+    else if (unit.type === 'imaginary') {
+      return {
+        type: 'complex',
+        real: 0,
+        imaginary: unit.value,
+        position: unit.position,
+        text: unit.text,
+        id: unit.id,
+      };
+    }
+    */
+
+    return unit;
+
+  }
+
+
+  /**
    * converts binary operations with a colon operator to ranges. this also
    * validates that there are no colon operations with non-address operands
    * (which is why it's called after precendence reordering; colon has the
@@ -1375,7 +1547,8 @@ export class Parser {
             //  this.ArrangeUnits(stream.slice(index + 1)),
             //);
 
-            const right = this.ArrangeUnits(stream.slice(index + 1));
+            // const right = this.ArrangeUnits(stream.slice(index + 1));
+            const right = this.BinaryToComplex(this.ArrangeUnits(stream.slice(index + 1)));
 
             // this ensures we return the highest-level group, even if we recurse
             if (!this.valid) {
@@ -2072,7 +2245,7 @@ export class Parser {
         }
         else break; // not sure what this is, then
       }
-      else if (char === this.imaginary_char && this.support_complex_numbers) {
+      else if (char === this.imaginary_char) {
         if (state === 'integer' || state === 'fraction') {
           this.index++; // consume
           imaginary = true;
@@ -2096,7 +2269,12 @@ export class Parser {
       else break;
     }
 
-    let value = integer + fraction * Math.pow(10, -decimal);
+    // NOTE: multiplying returns fp noise, but dividing does not? need
+    // to check more browsers... maybe we should store the value in some
+    // other form? (that's a larger TODO)
+
+    // let value = integer + fraction * Math.pow(10, -decimal);
+    let value = integer + fraction / (Math.pow(10, decimal)); // <- this is cleaner? 
 
     if (state === 'exponent') {
       value = value * Math.pow(10, (negative_exponent ? -1 : 1) * exponent);
@@ -2105,6 +2283,29 @@ export class Parser {
     // const text = this.expression.substring(start_index, this.index) || '';
     // return [negative ? -value : value, text, imaginary];
 
+    if (imaginary) {
+      return {
+        type: 'complex',
+        id: this.id_counter++,
+        position: starting_position,
+        imaginary: negative ? -value : value,
+        real: 0,
+        text: this.expression.substring(start_index, this.index) || '',
+      };
+  
+    }
+    else {
+      return {
+        type: 'literal',
+        id: this.id_counter++,
+        position: starting_position,
+        value: negative ? -value : value,
+        text: this.expression.substring(start_index, this.index) || '',
+      };
+  
+    }
+
+    /*
     return {
       type: imaginary ? 'imaginary' : 'literal',
       id: this.id_counter++,
@@ -2112,6 +2313,7 @@ export class Parser {
       value: negative ? -value : value,
       text: this.expression.substring(start_index, this.index) || '',
     };
+    */
 
   }
 

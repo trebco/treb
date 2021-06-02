@@ -1,5 +1,5 @@
 
-import { ValueType, Localization } from 'treb-base-types';
+import { ValueType, Localization, Complex } from 'treb-base-types';
 import { UnlotusDate } from './format';
 
 /**
@@ -32,7 +32,7 @@ export enum Hints {
  */
 export interface ParseResult {
 
-  value: number|string|boolean|undefined;
+  value: number|string|boolean|undefined|Complex;
   hints?: Hints;
   type: ValueType;
 }

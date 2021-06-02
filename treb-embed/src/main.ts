@@ -5,7 +5,7 @@ import { CompositeSheet } from './composite-sheet';
 import { AutoEmbedManager } from './auto-embed';
 import { CreateSheetOptions, EmbeddedSpreadsheetOptions } from './options';
 import { NumberFormatCache, ValueParser } from 'treb-format';
-
+import { Complex } from 'treb-base-types';
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 
 interface TREBNamespace {
@@ -14,7 +14,7 @@ interface TREBNamespace {
   version?: string,
   Format?: {
     format: (value: number, format: string) => string,
-    parse: (value: string) => string|number|boolean|undefined,
+    parse: (value: string) => string|number|boolean|undefined|Complex,
   },
 }
 

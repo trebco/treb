@@ -21,11 +21,11 @@ import {
 
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
-  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress
+  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress, ParseResult, UnitComplex
 } from 'treb-parser';
 
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
-import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat } from 'treb-format';
+import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat, ParseResult as ParseResult2 } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
 import { TabBar } from './tab_bar';
@@ -5329,7 +5329,34 @@ export class Grid {
 
     // next try to infer the number format, with hints as to format
 
-    const parse_result = ValueParser.TryParse(value);
+    let expression = this.parser.Parse(value || '').expression;
+
+    if (expression?.type === 'group' && expression.elements.length === 1
+        && expression.elements[0].type === 'complex') {
+      
+      // invert, following spreadsheet convention?. I don't like this 
+      // and we should not do it, but I'm not sure what the alternative
+      // would be -- remove the parens? 
+
+      /*
+      expression = expression.elements[0] as UnitComplex;
+      expression.real = -expression.real;
+      expression.imaginary = -expression.imaginary;
+      */
+
+      expression = expression.elements[0];
+
+    }
+
+    const parse_result: ParseResult2 = (expression && expression.type === 'complex') ?
+      {
+        type: ValueType.complex,
+        value: { 
+          real: expression.real, 
+          imaginary: expression.imaginary 
+        },
+      } :    
+      ValueParser.TryParse(value);
 
     if (!is_function && parse_result.type === ValueType.number) {
 
@@ -5618,6 +5645,24 @@ export class Grid {
       if (cell_value && Localization.decimal_separator === ',') {
         cell_value = cell.value.toString().replace(/\./, ',');
       }
+    }
+    else if (cell.ValueIsComplex()) {
+
+      const formatted = { 
+        real: cell.value.real.toString(),
+        imaginary: Math.abs(cell.value.imaginary).toString(),
+      };
+
+      if (Localization.decimal_separator === ',') {
+        formatted.real = formatted.real.replace(/\./, ',');
+        formatted.imaginary = formatted.imaginary.replace(/\./, ',');
+      }
+      
+      // formatting complex value (note for searching)
+      // NOTE that this format uses an ASCII "i"; intended to simplify editing.
+
+      cell_value = `${formatted.real}${cell.value.imaginary < 0 ? ' - ' : ' + '}${formatted.imaginary}i`;
+
     }
 
     return cell_value;

@@ -1,7 +1,7 @@
 
-import { ValueType, GetValueType } from './value-type';
+import { ValueType, Complex, GetValueType } from './value-type';
 
-export type CellValue = undefined | string | number | boolean;
+export type CellValue = undefined | string | number | boolean | Complex;
 
 /** utility method */
 export const Is2DArray = <T>(obj: undefined|T|T[]|T[][]): obj is T[][] => {
@@ -15,6 +15,11 @@ export const Is2DArray = <T>(obj: undefined|T|T[]|T[][]): obj is T[][] => {
 export interface UnionValue {
   type: ValueType;
   value: CellValue | any;
+}
+
+export interface ComplexUnion {
+  type: ValueType.complex;
+  value: Complex;
 }
 
 /*
@@ -66,6 +71,10 @@ export const UnionIs = {
     return test.type === ValueType.formula;
   },
 
+  Complex: (test: UnionValue): test is { type: ValueType.complex, value: Complex } => {
+    return test.type === ValueType.complex;
+  },
+
   String: (test: UnionValue): test is { type: ValueType.string, value: string } => {
     return test.type === ValueType.formula;
   },
@@ -104,5 +113,16 @@ export const Box = (value: unknown, type?: ValueType): UnionValue => {
 };
 
 export type UnionOrArray = UnionValue|UnionValue[][];
+
+export const ComplexOrReal = (value: Complex): UnionValue => {
+  if (value.imaginary) {
+    return {
+      type: ValueType.complex,
+      value,
+    };
+  }
+  return { type: ValueType.number, value: value.real };
+}
+
 
 

@@ -13,6 +13,9 @@ export class NumberFormatCache {
   /** cache instance */
   private static cache: {[index: string]: NumberFormat} = {};
 
+  /** special case for the "general" formatter for complex numbers only */
+  private static complex_general: NumberFormat;
+
   /** 
    * this map is for case-insensitive mapping symbolic names to formats. we
    * want symbolic names with casing, primarily for interop, but we also want
@@ -30,7 +33,7 @@ export class NumberFormatCache {
     Number: '0.00',
     Integer: '0',
     Percent: '0.00%',
-    General: '0.######',
+    General: '0.######', // for complex we will reduce the number of optional digits
     Fraction: '# ?/?',
     Dollar: '$* _(#,##0.00_);$* (#,##0.00);$* -???',
     Exponential: '0.000e',
@@ -68,7 +71,18 @@ export class NumberFormatCache {
 
   };
 
-  public static Get(format: string): NumberFormat {
+  /**
+   * we now have (some) overlay styles for complex. if the flag is set
+   * we will check the complex cache first, and 
+   * @param format 
+   * @param complex 
+   * @returns 
+   */
+  public static Get(format: string, complex = false): NumberFormat {
+
+    if (complex && format === 'General') {
+      return this.complex_general;
+    }
 
     // FIXME: we should use icase for symbolc formats, although not
     // for format strings. there should (hopefully) be no case where
@@ -136,6 +150,11 @@ export class NumberFormatCache {
     // since js interfaces will find it regardless
 
     this.cache['General'].magic_decimal = true;
+
+    // special general type for complex has fewer digits by default
+
+    this.complex_general = new NumberFormat('0.###');
+    this.complex_general.magic_decimal = true;
 
     for (const key of Object.keys(this.aliases)) {
       this.cache[key] = this.cache[this.aliases[key]];
