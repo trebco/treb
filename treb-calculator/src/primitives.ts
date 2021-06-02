@@ -140,7 +140,11 @@ export const Power = (a: UnionValue, b: UnionValue): UnionValue => {
     return BoxComplex(ComplexLib.Power(c1.value, c2.value));
   }
 
-  return { value: Math.pow(x, y), type: ValueType.number };
+  const value = Math.pow(x, y);
+  if (isNaN(value)) { return ValueError(); }
+
+  return { type: ValueType.number, value };
+  
 };
 
 export const Multiply = (a: UnionValue, b: UnionValue): UnionValue => {
@@ -161,6 +165,9 @@ export const Divide = (a: UnionValue, b: UnionValue): UnionValue => {
   if (z) { return z; }
 
   if (c1 && c2) {
+    if (c2.value.real === 0 && c2.value.imaginary === 0) {
+      return DivideByZeroError();
+    }
     return BoxComplex(ComplexLib.Divide(c1.value, c2.value));
   }
 

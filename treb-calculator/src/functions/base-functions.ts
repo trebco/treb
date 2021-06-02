@@ -381,7 +381,12 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         }
         else {
-          return Box(Math.pow(base.value, exponent.value))
+          const value = Math.pow(base.value, exponent.value);
+          if (isNaN(value)) {
+            return ValueError();
+          }
+          return { type: ValueType.number, value };
+          // return Box(Math.pow(base.value, exponent.value))
         }
 
       }),
@@ -771,10 +776,11 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
         */
         else {
-          return {
-            type: ValueType.number,
-            value: Math.sqrt(ref.value),
+          const value = Math.sqrt(ref.value);
+          if (isNaN(value)) {
+            return ValueError();
           }
+          return { type: ValueType.number, value };
         }
       }),
     },
