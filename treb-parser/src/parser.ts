@@ -123,10 +123,7 @@ const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
  * FIXME: split rendering into a separate class? would be a little cleaner.
  */
 export class Parser {
-
-  /** flag to enable/disable */
-  public static support_complex_numbers = true;
-  
+ 
   /**
    * argument separator. this can be changed prior to parsing/rendering.
    * FIXME: use an accessor to ensure type, outside of ts?
@@ -749,23 +746,21 @@ export class Parser {
       // else. the previous routine will have pulled out column ranges like
       // I:I so we don't have to worry about that anymore.
 
-      if (Parser.support_complex_numbers) {
-        stream = stream.map(test => {
-          if (test.type === 'identifier' && test.name === this.imaginary_number) {
+      stream = stream.map(test => {
+        if (test.type === 'identifier' && test.name === this.imaginary_number) {
 
-            return {
-              type: 'complex',
-              real: 0,
-              imaginary: 1,
-              position: test.position,
-              text: test.name,
-              id: this.id_counter++,
-            };
-            
-          }
-          return test;
-        });
-      }
+          return {
+            type: 'complex',
+            real: 0,
+            imaginary: 1,
+            position: test.position,
+            text: test.name,
+            id: this.id_counter++,
+          };
+          
+        }
+        return test;
+      });
 
       // ...
 
@@ -2250,7 +2245,7 @@ export class Parser {
         }
         else break; // not sure what this is, then
       }
-      else if (char === this.imaginary_char && Parser.support_complex_numbers) {
+      else if (char === this.imaginary_char) {
         if (state === 'integer' || state === 'fraction') {
           this.index++; // consume
           imaginary = true;
