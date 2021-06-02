@@ -395,7 +395,7 @@ export class NumberFormat {
 
     const parts: TextPart[] = [];
 
-    if (has_real_value || (!value.real && !has_imaginary_value)) {
+    if (has_real_value || (!has_real_value && !has_imaginary_value)) {
       
       // has real part, or is === 0 
       parts.push(...this.FormatParts(value.real));
