@@ -2274,7 +2274,12 @@ export class Parser {
       else break;
     }
 
-    let value = integer + fraction * Math.pow(10, -decimal);
+    // NOTE: multiplying returns fp noise, but dividing does not? need
+    // to check more browsers... maybe we should store the value in some
+    // other form? (that's a larger TODO)
+
+    // let value = integer + fraction * Math.pow(10, -decimal);
+    let value = integer + fraction / (Math.pow(10, decimal)); // <- this is cleaner? 
 
     if (state === 'exponent') {
       value = value * Math.pow(10, (negative_exponent ? -1 : 1) * exponent);

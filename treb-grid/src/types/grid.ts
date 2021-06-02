@@ -5351,7 +5351,10 @@ export class Grid {
     const parse_result: ParseResult2 = (expression && expression.type === 'complex') ?
       {
         type: ValueType.complex,
-        value: { real: expression.real, imaginary: expression.imaginary },
+        value: { 
+          real: expression.real, 
+          imaginary: expression.imaginary 
+        },
       } :    
       ValueParser.TryParse(value);
 
