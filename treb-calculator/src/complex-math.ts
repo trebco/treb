@@ -493,8 +493,6 @@ export const Power = (a: Complex, b: Complex): Complex => {
 
   if (!b.imaginary) {
 
-    // b is real
-
     const polar = RectangularToPolar(a);
     const value = PolarToRectangular({
       r: Math.pow(polar.r, b.real),

@@ -41,7 +41,6 @@ const BoxComplex = (value: Complex): UnionValue => {
     { type: ValueType.number, value: value.real };
 }
 
-
 const NumericTypes = (a: UnionValue, b: UnionValue): NumericTuple => {
 
   if (a.type === ValueType.error) { return [0, 0, a]; }
@@ -195,32 +194,55 @@ export const Equals = (a: UnionValue, b: UnionValue): UnionValue => {
   if (a.type === ValueType.error) { return a; }
   if (b.type === ValueType.error) { return b; }
   
-  // empty cells equal 0 and ""
-  // FIXME: should also equal a complex with 0+0i
+  // empty cells equal 0 (real or complex) and ""
 
-  if ((a.type === ValueType.undefined && (b.value === '' || b.value === 0))
-      || (b.type === ValueType.undefined && (a.value === '' || a.value === 0))) {
-
+  if ((a.type === ValueType.undefined && (b.value === '' || b.value === 0 || (b.type === ValueType.complex && b.value.real === 0 && b.value.complex === 0)))
+      || (b.type === ValueType.undefined && (a.value === '' || a.value === 0 || (a.type === ValueType.complex && a.value.real === 0 && a.value.complex === 0)))) {
     return { type: ValueType.boolean, value: true, };
   }
 
   if (a.type === ValueType.complex || b.type === ValueType.complex) {
-    return { 
-      type: ValueType.boolean, 
-      value: (a.type === b.type) &&
-        a.value.real == b.value.real &&         // ==
-        a.value.imaginary == b.value.imaginary  // ==
-    };
+
+    // complex can equal real or complex
+    
+    let equals = false;
+
+    if (a.type === b.type) {
+      equals = 
+        a.value.real == b.value.real &&         // == ?
+        a.value.imaginary == b.value.imaginary  // == ?
+        ;
+    }
+    else if (a.type === ValueType.number) {
+      equals = 
+        b.value.real == a.value  &&
+        !b.value.imaginary;
+    }
+    else if (b.type === ValueType.number) {
+      equals = 
+        a.value.real == b.value  &&
+        !a.value.imaginary;
+    }
+
+    return { type: ValueType.boolean, value: equals };
 
   }
 
   return { type: ValueType.boolean, value: a.value == b.value }; // note ==
 };
 
-/**
+export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
+  const result = Equals(a, b);
+  return {
+    type: ValueType.boolean,
+    value: !result.value,
+  };
+}
+
+/* *
  * this is duplicative, but it seems better than another function call.
  * not sure if that is over-optimization (it is).
- */
+ * /
 export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
   if (a.type === ValueType.error) { return a; }
   if (b.type === ValueType.error) { return b; }
@@ -246,6 +268,7 @@ export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
 
   return { type: ValueType.boolean, value: a.value != b.value }; // note ==
 };
+*/
 
 // NOTE: our comparisons don't match Excel with different types -- we could
 // probably figure out what Excel is doing, but I'm not sure it's useful or
