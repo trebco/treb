@@ -493,6 +493,25 @@ export const Power = (a: Complex, b: Complex): Complex => {
 
   if (!b.imaginary) {
 
+    // we could potentially clean up some simple cases, to help
+    // with numerical stability. in particular, I'm thinking about
+    // square roots of reals (possibly negative).
+
+    /*
+    if (b.real === .5 && !a.imaginary) {
+      if (a.real < 0) {
+        return {
+          real: 0,
+          imaginary: Math.sqrt(-a.real),
+        };
+      }
+      return {
+        real: Math.sqrt(a.real),
+        imaginary: 0,
+      };
+    }
+    */
+
     const polar = RectangularToPolar(a);
     const value = PolarToRectangular({
       r: Math.pow(polar.r, b.real),

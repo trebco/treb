@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "10.13.6",
+  "version": "11.0.0",
   "main": "dist/index.js",
   "devDependencies": {
     "@types/base64-js": "^1.3.0",
