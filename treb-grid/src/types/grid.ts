@@ -1695,6 +1695,9 @@ export class Grid {
     if (UA.is_windows) {
       grid_container.classList.add('treb-ua-windows');
     }
+    else if (UA.is_mac) {
+      grid_container.classList.add('treb-ua-osx');
+    }
 
     grid_container.classList.add('treb-theme');
 

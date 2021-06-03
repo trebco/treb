@@ -577,7 +577,7 @@ export abstract class Graph implements GraphCallbacks {
           }
         }
       }
-      console.groupEnd();
+      // console.groupEnd();
     }
     else if (u.entire_column) {
       // console.group('entire column(s)');
@@ -591,7 +591,7 @@ export abstract class Graph implements GraphCallbacks {
           }
         }
       }
-      console.groupEnd();
+      // console.groupEnd();
     }
     else {
       for (let row = u.start.row; row <= u.end.row; row++) {

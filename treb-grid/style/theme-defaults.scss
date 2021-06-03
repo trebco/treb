@@ -341,5 +341,9 @@ $text-reference-color-5: rgb(254, 47, 1);
  */
  .treb-ua-windows .grid-cells {
   font-size: 12pt; 
-  font-family: "Calibri", $font-stack;
+  font-family: "Calibri", $font-stack; // does this actually work? is this included? (...)
+}
+
+.treb-ua-osx .grid-cells {
+  font-size: 10pt; // slightly smaller default
 }

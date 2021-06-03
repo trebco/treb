@@ -98,7 +98,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
   },
 
   Arg: {
-    description: 'Returns the principal argument of a complex number',
+    description: 'Returns the principal argument of a complex number (in radians)',
     arguments: [
       { boxed: true },
     ],

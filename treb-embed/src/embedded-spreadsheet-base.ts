@@ -2158,10 +2158,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * UPDATE: will no longer recalculate on load if the "rendered_values"
    * flag is set in the document (assuming it's correct), because we can
    * display those values.
+   * 
+   * UPDATE: default scroll to A1 in open sheet
+   * 
    */
   public LoadDocument(
       data: TREBDocument,
-      scroll?: string|ICellAddress,
+      scroll: string|ICellAddress = {row: 0, column: 0},
       flush = true,
       recalculate = false,
       override_sheet?: string,
