@@ -63,14 +63,17 @@
           padding: 0;
           margin: 0;
           top: -6px;
+          transition: transform .15s ease;
         }
       }
 
       &.expanded {
         .expand-button::after {
-          border-top-color: transparent;
-          border-bottom-color: #999;
-          top: -12px;
+          // border-top-color: transparent;
+          // border-bottom-color: #999;
+          // top: -12px;
+          transform: rotate(180deg) translateY(6px);
+          // top: -12px;
         }
       }
 

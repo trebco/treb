@@ -1,6 +1,6 @@
 
 import { SpreadsheetVertexBase, GraphCallbacks } from './spreadsheet_vertex_base';
-import { Cell, Box, ICellAddress, UnionOrArray, UndefinedUnion, ValueType } from 'treb-base-types';
+import { Cell, Box, ICellAddress, UnionOrArray, UndefinedUnion, ValueType, UnionValue } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 
@@ -198,10 +198,44 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
       }
       else if (this.reference.type === ValueType.formula) {
 
+        // because we let sloppy data filter through, it's possible
+        // that we get some random stuff at this point. generally this
+        // shoudl not happen but if you use (e.g.) one of the chart
+        // functions in a spreadsheet cell, you'll get a 1d array.
+
+        // so we need to validate that what we have is either a UnionValue
+        // or a 2d UnionValue[][] array.
+
+        // don't know the performance cost of this.
+
+        // FIXME: don't let sloppy data through.
+
+        let test: any = this.result;
+
+        if (Array.isArray(test)) {
+          if (test[0] && Array.isArray(test[0])) {
+            test = test[0][0];
+          }
+          else {
+            // console.warn('error 1');
+            test = undefined;
+          }
+        }
+
+        if (!test || typeof (test as any).type === undefined) {
+          // console.warn('error 2/3');
+          this.reference.SetCalculationError('UNK');
+        }
+        else {
+          this.reference.SetCalculatedValue((test as UnionValue).value, (test as UnionValue).type);
+        }
+
+        /*
         const single = Array.isArray(this.result) ? this.result[0][0] : this.result;
 
         // error is implicit
         this.reference.SetCalculatedValue(single.value, single.type);
+        */
 
         /*
         if (typeof this.result === 'object' && this.result.error) {
