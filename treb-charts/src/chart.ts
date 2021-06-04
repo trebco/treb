@@ -241,8 +241,25 @@ export class Chart {
 
     // series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
 
-    series.y.data = flat.map(item => {
+    series.y.data = flat.map((item, index) => {
+
+      // if the data is passed in from the output of a function, it will not
+      // be inside a metadata structure
+
+      if (typeof item.value === 'number') { return item.value; }
+
+      // ... ok, it's metadata (why not just test?) ...
+
+      // experimenting with complex... put real in X axis and imaginary in Y axis
+      // note should also function w/ complex not in a metadata structure
+
+      if (typeof item.value.value.real === 'number') {
+        series.x.data[index] = item.value.value.real;
+        return item.value.value.imaginary;
+      }
+
       return typeof item.value.value === 'number' ? item.value.value : undefined;
+
     });
 
     if (flat[0].value.format) {
@@ -256,6 +273,25 @@ export class Chart {
       min: Math.min.apply(0, values), 
       max: Math.max.apply(0, values), 
     };
+
+    // experimenting with complex... this should only be set if we populated
+    // it from complex values
+
+    if (series.x.data.length) {
+
+      const filtered: number[] = series.x.data.filter(test => typeof test === 'number') as number[];
+      series.x.range = {
+        min: Math.min.apply(0, filtered),
+        max: Math.max.apply(0, filtered),
+      }
+
+      if (flat[0].value.format) {
+        series.x.format = flat[0].value.format || '';
+        const format = NumberFormatCache.Get(series.x.format || '');
+        series.x.labels = series.x.data.map(value => (value === undefined) ? undefined : format.Format(value));
+      }
+
+    }
 
     /*
     // no default (not yet)
@@ -278,6 +314,8 @@ export class Chart {
    * (3) GROUP(a, b, ...), where entries are either arrays as (1) or SERIES as (2)
    * 
    * FIXME: consider supporting GROUP(SERIES, [y], ...)
+   * 
+   * NOTE: (1) could be an array of boxed (union) values...
    * 
    */
   public TransformSeriesData(raw_data: any, default_x?: UnionValue[]): SeriesType[] {
@@ -487,7 +525,8 @@ export class Chart {
       y_scale: common.y.scale,
       y_labels: common.y.labels,
 
-      lines: true,
+      lines: style === 'line', // true,
+      points: style === 'plot',
 
     };
 
@@ -1151,6 +1190,7 @@ export class Chart {
             this.chart_data.x_scale, 
             this.chart_data.y_scale, 
               !!this.chart_data.lines,
+              !!this.chart_data.points,
               !!this.chart_data.filled,
               !!this.chart_data.markers,
               !!this.chart_data.smooth,

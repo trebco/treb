@@ -42,16 +42,6 @@ export const ChartFunctions: FunctionMap = {
 
   },
 
-  /*
-  'Scatter.Plot': {
-    arguments: [
-      { name: 'data', metadata: true, },
-      { name: 'Title' },
-    ],
-    fn: Identity,
-  },
-  */
-
   'Bar.Chart': {
     arguments: [
       { name: 'Data', metadata: true, },
@@ -119,6 +109,14 @@ export const ChartFunctions: FunctionMap = {
   },
 
  'Scatter.Line': {
+    arguments: [
+      { name: 'Data', metadata: true, },
+      { name: 'ChartTitle' },
+    ],
+    fn: Identity,
+  },
+
+  'Scatter.Plot': {
     arguments: [
       { name: 'Data', metadata: true, },
       { name: 'ChartTitle' },

@@ -59,6 +59,9 @@ export interface ChartDataBaseType {
   smooth?: boolean;
   data_labels?: boolean;
 
+  /** different marker type for scatter plot */
+  points?: boolean;
+
 }
 
 /** default, empty chart (you can still add a title, I suppose) */
