@@ -1,6 +1,6 @@
 
 import { FunctionMap } from '../descriptors';
-import { IsComplex, UnionOrArray, UnionValue, ValueType } from 'treb-base-types';
+import { IsComplex, UnionValue, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
 import { ArgumentError, ValueError } from '../function-error';
 import { RectangularToPolar } from '../complex-math';

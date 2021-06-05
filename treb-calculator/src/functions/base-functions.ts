@@ -64,8 +64,11 @@ const inverse_normal = (q: number): number => {
 
 };
 
-const UnionTrue = { type: ValueType.boolean, value: true };
-const UnionFalse = { type: ValueType.boolean, value: false };
+// const UnionTrue = { type: ValueType.boolean, value: true };
+// const UnionFalse = { type: ValueType.boolean, value: false };
+
+const UnionTrue = () => { return { type: ValueType.boolean, value: true }};
+const UnionFalse = () => { return { type: ValueType.boolean, value: false }};
 
 // use a single, static object for base functions
 
@@ -314,7 +317,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         { name: 'value if true', boxed: true, allow_error: true },
         { name: 'value if false', boxed: true, allow_error: true },
       ],
-      fn: (a: UnionOrArray, b: UnionOrArray = UnionTrue, c: UnionOrArray = UnionFalse): UnionOrArray => {
+      fn: (a: UnionOrArray, b: UnionOrArray = UnionTrue(), c: UnionOrArray = UnionFalse()): UnionOrArray => {
 
         if (Array.isArray(a)) {
           return a.map((row, x) => row.map((cell, y) => {

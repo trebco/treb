@@ -67,16 +67,19 @@ export const UnionIs = {
     return test.type === ValueType.formula;
   },
 
+  /*
   Boolean: (test: UnionValue): test is { type: ValueType.boolean, value: boolean } => {
     return test.type === ValueType.formula;
   },
+  */
 
   Complex: (test: UnionValue): test is { type: ValueType.complex, value: Complex } => {
     return test.type === ValueType.complex;
   },
 
   String: (test: UnionValue): test is { type: ValueType.string, value: string } => {
-    return test.type === ValueType.formula;
+    // return test.type === ValueType.formula;
+    return test.type === ValueType.string;
   },
 
   Error: (test: UnionValue): test is { type: ValueType.error, value: string } => {
