@@ -1,6 +1,6 @@
 /* eslint-disable no-unexpected-multiline */
 
-import { UnionOrArray, ICellAddress, Cell, Area, UnionValue, ValueType, GetValueType, Is2DArray } from 'treb-base-types';
+import { UnionOrArray, ICellAddress, Cell, UnionValue, ValueType, GetValueType } from 'treb-base-types';
 import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats, Random } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';

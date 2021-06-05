@@ -1,7 +1,7 @@
 
 
 import { FunctionMap } from '../descriptors';
-import { CellValue, Is2DArray, UnionIs, UnionOrArray, UnionValue, ValueType } from 'treb-base-types';
+import { CellValue, UnionValue, ValueType } from 'treb-base-types';
 import { Flatten } from '../utilities';
 
 // use a single, static object for base functions

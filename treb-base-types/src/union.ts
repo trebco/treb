@@ -17,42 +17,20 @@ export interface UnionValue {
   value: CellValue | any;
 }
 
+/** we should have these for other types as well */
 export interface ComplexUnion {
   type: ValueType.complex;
   value: Complex;
 }
 
-/*
-export const UnionIsUndef = (test: UnionValue): test is { type: ValueType.undefined, value: undefined } => {
-  return test.type === ValueType.undefined;
-}
-
-export const UnionIsNumber = (test: UnionValue): test is { type: ValueType.number, value: number } => {
-  return test.type === ValueType.number;
-}
-
-export const UnionIsFormula = (test: UnionValue): test is { type: ValueType.formula, value: string } => {
-  return test.type === ValueType.formula;
-}
-
-export const UnionIsBoolean = (test: UnionValue): test is { type: ValueType.boolean, value: boolean } => {
-  return test.type === ValueType.formula;
-}
-
-export const UnionIsString = (test: UnionValue): test is { type: ValueType.string, value: string } => {
-  return test.type === ValueType.formula;
-}
-
-export const UnionIsError = (test: UnionValue): test is { type: ValueType.error, value: string } => {
-  return test.type === ValueType.error;
-}
-
-export const UnionIsExtended = (test: UnionValue): test is { type: ValueType.object, value: any } => {
-  return test.type === ValueType.object;
-}
+/* * recursive structure * /
+export interface ArrayUnion {
+  type: ValueType.object,
+  value: UnionValue[][],
+};
 */
 
-/** composite type guard (why do all these test for type formula? is that a bug?) */
+/** composite type guard */
 export const UnionIs = {
 
   Undefined: (test: UnionValue): test is { type: ValueType.undefined, value: undefined } => {
@@ -67,24 +45,29 @@ export const UnionIs = {
     return test.type === ValueType.formula;
   },
 
-  /*
   Boolean: (test: UnionValue): test is { type: ValueType.boolean, value: boolean } => {
-    return test.type === ValueType.formula;
+    return test.type === ValueType.boolean;
   },
-  */
 
-  Complex: (test: UnionValue): test is { type: ValueType.complex, value: Complex } => {
+  Complex: (test: UnionValue): test is ComplexUnion => {
     return test.type === ValueType.complex;
   },
 
   String: (test: UnionValue): test is { type: ValueType.string, value: string } => {
-    // return test.type === ValueType.formula;
     return test.type === ValueType.string;
   },
 
   Error: (test: UnionValue): test is { type: ValueType.error, value: string } => {
     return test.type === ValueType.error;
   },
+
+  /*
+  Array: (test: UnionValue): test is ArrayUnion => {
+    return test.type === ValueType.object
+      && !!test
+      && Array.isArray(test);
+  },
+  */
 
   Extended: (test: UnionValue): test is { type: ValueType.object, value: any } => {
     return test.type === ValueType.object;
