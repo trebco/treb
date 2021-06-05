@@ -1,6 +1,6 @@
 
 import { SpreadsheetVertexBase, GraphCallbacks } from './spreadsheet_vertex_base';
-import { Cell, Box, ICellAddress, UnionOrArray, UndefinedUnion, ValueType, UnionValue } from 'treb-base-types';
+import { Cell, Box, ICellAddress, /*UnionOrArray,*/ CreateUndefinedUnion, ValueType, UnionValue } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 
@@ -26,7 +26,8 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
   // why is this (?)? can't we use a default junk address?
   public address?: ICellAddress;
 
-  public result: UnionOrArray = UndefinedUnion();
+  //public result: UnionOrArray = UndefinedUnion();
+  public result: UnionValue = CreateUndefinedUnion();
 
   public expression: ExpressionUnit = { type: 'missing', id: -1 };
   public expression_error = false;
@@ -198,6 +199,26 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
       }
       else if (this.reference.type === ValueType.formula) {
 
+        // data should now be clean when it gets here (famous last words)
+
+        const single = (this.result.type === ValueType.array) ? this.result.value[0][0] : this.result;
+        /*
+        if (single.type === ValueType.object) {
+          this.reference.SetCalculationError('OBJECT');
+        }
+        else */
+
+        // we are using object type in the returned value for sparklines...
+        // so we can't drop it here. we could change rendering though. or
+        // whitelist types. or blacklist types. or something.
+
+        {
+          this.reference.SetCalculatedValue(single.value as any, single.type);
+        }
+
+        /*
+        console.info("T2", t2);
+
         // because we let sloppy data filter through, it's possible
         // that we get some random stuff at this point. generally this
         // shoudl not happen but if you use (e.g.) one of the chart
@@ -229,6 +250,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
         else {
           this.reference.SetCalculatedValue((test as UnionValue).value, (test as UnionValue).type);
         }
+        */
 
         /*
         const single = Array.isArray(this.result) ? this.result[0][0] : this.result;

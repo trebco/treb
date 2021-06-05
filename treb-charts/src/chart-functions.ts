@@ -1,13 +1,30 @@
 
+import { UnionValue, ValueType } from 'treb-base-types';
+
 // TYPE ONLY
 type FunctionMap = import('../../treb-calculator/src/descriptors').FunctionMap;
 
-/** function returns its arguments */
-const Identity = (...args: any[]) => args;
+/** 
+ * we might as well do this properly, since we're in the 
+ * middle of an overhaul anyway 
+ */
 
-export interface DecoratedArray<T> extends Array<T> {
-  _type: string;
-}
+/* * function returns its arguments * /
+// const Identity = (...args: any[]) => (args as any) as UnionValue; // it's not
+*/
+
+/** box this properly as "extended" type */
+const Identity = (...args: any[]): UnionValue => {
+  return {
+    type: ValueType.object,
+    value: args,
+    key: 'arguments',
+  };
+};
+
+// export interface DecoratedArray<T> extends Array<T> {
+//  _type: string;
+// }
 
 /**
  * chart functions for registration
@@ -20,14 +37,23 @@ export const ChartFunctions: FunctionMap = {
       { name: 'Array...', metadata: true, },
     ],
     fn: (...args: any) => {
-      (args as DecoratedArray<unknown>)._type = 'group';
-      return args;
+      // (args as DecoratedArray<unknown>)._type = 'group';
+      // return args;
+
+      return {
+        type: ValueType.object,
+        value: args,
+        key: 'group',
+      };
+
     }
   },
 
   /**
    * UPDATE: adding explicit names to Series, for convention. Use the 
    * more general "group" if you just want to group things.
+   * 
+   * boxing properly as "extended" type
    */
   'Series': {
     arguments: [
@@ -36,8 +62,15 @@ export const ChartFunctions: FunctionMap = {
       { name: 'Y', metadata: true, },
     ],
     fn: (...args: any) => {
-      (args as DecoratedArray<unknown>)._type = 'series';
-      return args;
+      // (args as DecoratedArray<unknown>)._type = 'series';
+      // return args;
+
+      return {
+        type: ValueType.object,
+        value: args,
+        key: 'series',
+      };
+
     }
 
   },

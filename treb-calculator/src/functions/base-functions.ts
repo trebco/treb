@@ -2,7 +2,7 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
-import { Box, UnionOrArray, UnionIs, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex } from 'treb-base-types';
+import { Box, /*UnionOrArray,*/ ArrayUnion, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex, BooleanUnion } from 'treb-base-types';
 import { Sparkline, SparklineRenderOptions } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -67,8 +67,8 @@ const inverse_normal = (q: number): number => {
 // const UnionTrue = { type: ValueType.boolean, value: true };
 // const UnionFalse = { type: ValueType.boolean, value: false };
 
-const UnionTrue = () => { return { type: ValueType.boolean, value: true }};
-const UnionFalse = () => { return { type: ValueType.boolean, value: false }};
+const UnionTrue = (): BooleanUnion => { return { type: ValueType.boolean, value: true }};
+const UnionFalse = (): BooleanUnion => { return { type: ValueType.boolean, value: false }};
 
 // use a single, static object for base functions
 
@@ -77,13 +77,13 @@ export const BaseFunctionLibrary: FunctionMap = {
 
   Rand: {
     volatile: true,
-    fn: (): UnionOrArray => { return { type: ValueType.number, value: Math.random() }},
+    fn: () => { return { type: ValueType.number, value: Math.random() }},
   },
 
   RandBetween: {
     arguments: [{name: 'min'}, {name: 'max'}],
     volatile: true,
-    fn: (min = 0, max = 1): UnionOrArray => { 
+    fn: (min = 0, max = 1) => { 
       if (min > max) { 
         const tmp = min;
         min = max;
@@ -96,11 +96,11 @@ export const BaseFunctionLibrary: FunctionMap = {
   Sum: {
     description: 'Adds arguments and ranges',
     arguments: [{ boxed: true, name: 'values or ranges' }],
-    fn: (...args: UnionValue[]): UnionOrArray => {
+    fn: (...args: UnionValue[]) => {
 
       let sum = { real: 0, imaginary: 0 };
 
-      const values = Utils.Flatten(args) as UnionValue[];
+      const values = Utils.FlattenBoxed(args); // as UnionValue[];
 
       for (const value of values) {
 
@@ -123,7 +123,7 @@ export const BaseFunctionLibrary: FunctionMap = {
   Now: {
     description: 'Returns current time',
     volatile: true,
-    fn: (): UnionOrArray => {
+    fn: () => {
       return { type: ValueType.number, value: UnlotusDate(new Date().getTime()) };
     },
   },
@@ -131,7 +131,7 @@ export const BaseFunctionLibrary: FunctionMap = {
   Today: {
     description: 'Returns current day',
     volatile: true,
-    fn: (): UnionOrArray => {
+    fn: () => {
       const date = new Date();
       date.setMilliseconds(0);
       date.setSeconds(0);
@@ -146,7 +146,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     arguments: [{ name: 'original value', allow_error: true, boxed: true }, { name: 'alternate value' }],
     fn: (ref: UnionValue, value_if_error: unknown = 0): UnionValue => {
       if (ref && ref.type === ValueType.error) {
-        return { value: value_if_error, type: GetValueType(value_if_error) };
+        return { value: value_if_error, type: GetValueType(value_if_error) } as UnionValue;
       }
       return ref;
     },
@@ -155,8 +155,16 @@ export const BaseFunctionLibrary: FunctionMap = {
   IsError: {
     description: 'Checks if another cell contains an error',
     arguments: [{ name: 'reference', allow_error: true, boxed: true }],
-    fn: (ref: UnionOrArray): UnionOrArray => {
+    fn: (...args: UnionValue[]): UnionValue => {
 
+      const values = Utils.FlattenBoxed(args);
+      for (const value of values) {
+        if (value.type === ValueType.error) {
+          return { type: ValueType.boolean, value: true };
+        }
+      }
+
+      /*
       if (Array.isArray(ref)) {
         const values = Utils.Flatten(ref) as UnionValue[];
         for (const value of values) {
@@ -168,6 +176,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       else if (ref) {
         return { type: ValueType.boolean, value: ref.type === ValueType.error };
       }
+      */
 
       return { type: ValueType.boolean, value: false };
 
@@ -189,6 +198,8 @@ export const BaseFunctionLibrary: FunctionMap = {
       // volatile: true, 
 
       fn: (type: string, reference: UnionValue): UnionValue => {
+
+        // FIXME: array application? 
 
         if (!UnionIsMetadata(reference)) {
           return ReferenceError();
@@ -260,7 +271,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     CountA: {
       description: 'Counts cells that are not empty',
       fn: (...args: unknown[]): UnionValue => {
-        return Box(Utils.Flatten(args).reduce((a: number, b: unknown) => {
+        return Box(Utils.FlattenUnboxed(args).reduce((a: number, b: unknown) => {
           if (typeof b === 'undefined') return a;
           return a + 1;
         }, 0));
@@ -270,7 +281,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     Count: {
       description: 'Counts cells that contain numbers',
       fn: (...args: unknown[]): UnionValue => {
-        return Box(Utils.Flatten(args).reduce((a: number, b: unknown) => {
+        return Box(Utils.FlattenUnboxed(args).reduce((a: number, b: unknown) => {
           if (typeof b === 'number') return a + 1;
           return a;
         }, 0));
@@ -280,7 +291,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     Or: {
       fn: (...args: unknown[]): UnionValue => {
         let result = false;
-        args = Utils.Flatten(args);
+        args = Utils.FlattenUnboxed(args);
         for (const arg of args) {
           result = result || !!arg;
         }
@@ -291,7 +302,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     And: {
       fn: (...args: unknown[]): UnionValue => {
         let result = true;
-        args = Utils.Flatten(args);
+        args = Utils.FlattenUnboxed(args);
         for (const arg of args) {
           result = result && !!arg;
         }
@@ -317,17 +328,23 @@ export const BaseFunctionLibrary: FunctionMap = {
         { name: 'value if true', boxed: true, allow_error: true },
         { name: 'value if false', boxed: true, allow_error: true },
       ],
-      fn: (a: UnionOrArray, b: UnionOrArray = UnionTrue(), c: UnionOrArray = UnionFalse()): UnionOrArray => {
+      fn: (a: UnionValue, b: UnionValue = UnionTrue(), c: UnionValue = UnionFalse()): UnionValue => {
 
-        if (Array.isArray(a)) {
-          return a.map((row, x) => row.map((cell, y) => {
-            const value = UnionIs.String(cell) ? 
-              (cell.value.toLowerCase() !== 'false' && cell.value.toLowerCase() !== 'f') : !!cell.value;
-            return value ? (Array.isArray(b) ? b[x][y] : b) : (Array.isArray(c) ? c[x][y]: c);
-          }));
+        const b_array = b.type === ValueType.array;
+        const c_array = c.type === ValueType.array;
+
+        if (a.type === ValueType.array) {
+          return {
+            type: ValueType.array,
+            value: a.value.map((row, x) => row.map((cell, y) => {
+              const value = (cell.type === ValueType.string) ?
+                (cell.value.toLowerCase() !== 'false' && cell.value.toLowerCase() !== 'f') : !!cell.value;
+              return value ? (b_array ? b.value[x][y] : b) : (c_array ? c.value[x][y] : c);
+            })) as UnionValue[][],
+          };
         }
 
-        const value = UnionIs.String(a) ? 
+        const value = a.type === ValueType.string ? //  UnionIs.String(a) ? 
           (a.value.toLowerCase() !== 'false' && a.value.toLowerCase() !== 'f') : !!a.value;
 
         return value ? b : c;
@@ -407,14 +424,17 @@ export const BaseFunctionLibrary: FunctionMap = {
     /**
      * sort arguments, but ensure we return empty strings to
      * fill up the result array
+     * 
+     * FIXME: instead of boxing all the values, why not pass them in boxed?
+     * was this function just written at the wrong time?
      */
     Sort: {
       arguments: [
         { name: 'values' }
       ],
-      fn: (...args: any[]): UnionValue[][] => {
+      fn: (...args: any[]): UnionValue => {
 
-        args = Utils.Flatten(args);
+        args = Utils.FlattenUnboxed(args);
 
         if(args.every(test => typeof test === 'number')) {
           args.sort((a, b) => a - b);
@@ -423,7 +443,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           args.sort(); // lexical
         }
 
-        return [args.map(value => Box(value))];
+        return { type: ValueType.array, value: [args.map(value => Box(value))] };
 
       },
     },
@@ -431,10 +451,21 @@ export const BaseFunctionLibrary: FunctionMap = {
     Transpose: {
       description: 'Returns transpose of input matrix',
       arguments: [{name: 'matrix', boxed: true}],
-      fn: (mat: UnionOrArray): UnionOrArray => {
+      fn: (mat: UnionValue): UnionValue => {
+
+        if (mat.type === ValueType.array) {
+          return {
+            type: ValueType.array,
+            value: Utils.Transpose2(mat.value),
+          };
+        }
+
+        /*
         if (Array.isArray(mat)) {
           return Utils.Transpose2(mat);
         }
+        */
+
         return mat;
       } 
     },
@@ -443,7 +474,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: (...args: any[]): UnionValue => {
         return { 
           type: ValueType.number, 
-          value: Math.max.apply(0, Utils.Flatten(args).filter(x => typeof x === 'number')),
+          value: Math.max.apply(0, Utils.FlattenUnboxed(args).filter(x => typeof x === 'number')),
         };
       },
     },
@@ -452,7 +483,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: (...args: any[]): UnionValue => {
         return { 
           type: ValueType.number, 
-          value: Math.min.apply(0, Utils.Flatten(args).filter(x => typeof x === 'number')),
+          value: Math.min.apply(0, Utils.FlattenUnboxed(args).filter(x => typeof x === 'number')),
         };
       },
     },
@@ -497,7 +528,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       description: 'Returns the sum of pairwise products of two or more ranges',
       fn: (...args: any[]): UnionValue  => {
 
-        const flattened = args.map(arg => Utils.Flatten(arg));
+        const flattened = args.map(arg => Utils.FlattenUnboxed(arg));
         const len = Math.max.apply(0, flattened.map(x => x.length));
 
         let sum = 0;
@@ -557,7 +588,8 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         let product: Complex = { real: 1, imaginary: 0 };
 
-        args = Utils.Flatten(args);
+        args = Utils.FlattenBoxed(args);
+
         for (const arg of args as UnionValue[]) {
           if (arg.type === ValueType.complex) {
             product = ComplexMultply(product, arg.value);
@@ -649,11 +681,29 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [
         { boxed: true },
       ],
-      fn: (a: UnionOrArray): UnionOrArray => {
+      fn: (a: UnionValue): UnionValue => {
+
+        /*
+
+        what is this? this would do anything useful
+        ...oh I see, it reverses along one axis or the other
+
         if ( Array.isArray(a)) {
           if (a.length === 1 ) return [a[0].reverse()];
           return a.reverse();
         }
+        */
+
+        if (a.type === ValueType.array) {
+          if (a.value.length === 1) {
+            a.value[0].reverse();
+          }
+          else {
+            a.value.reverse();
+          }
+          return a;
+        }
+
         return { 
           type: ValueType.string, 
           value: a.value.toString().split('').reverse().join(''),
@@ -843,7 +893,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
-        return { type: ValueType.object, value: args };
+        return { type: ValueType.object, value: args, key: "sparkline-data" };
       },
     },
 
@@ -858,7 +908,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
-        return { type: ValueType.object, value: args };
+        return { type: ValueType.object, value: args, key: "sparkline-data" };
       },
     }
 

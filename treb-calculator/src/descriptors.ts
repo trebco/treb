@@ -1,5 +1,5 @@
 
-import { UnionOrArray, RenderFunction, ClickFunction } from 'treb-base-types';
+import { /*UnionOrArray,*/ RenderFunction, ClickFunction, UnionValue } from 'treb-base-types';
 
 // FIXME: at least some of this could move to base types
 
@@ -106,7 +106,7 @@ export interface CompositeFunctionDescriptor {
    * the actual function. if this is an object member and needs access
    * to the containing instance, make sure to bind it to that instance.
    */
-  fn: (...args: any[]) => UnionOrArray; // |UnitAddress|UnitRange;
+  fn: (...args: any[]) => UnionValue; // UnionOrArray; // |UnitAddress|UnitRange;
 
   /**
    * for the future. some functions should not be available in

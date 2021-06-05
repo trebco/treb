@@ -1,5 +1,6 @@
 
-import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue, UnionOrArray } from 'treb-base-types';
+import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue,/*, UnionOrArray*/ 
+ArrayUnion} from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing } from 'treb-parser';
 
@@ -113,7 +114,7 @@ export class Calculator extends Graph {
         ],
         fn: (range, criteria): UnionValue => {
 
-          const data = Utilities.Flatten(range);
+          const data = Utilities.FlattenUnboxed(range);
 
           if (typeof criteria !== 'string') {
             criteria = '=' + (criteria || 0).toString();
@@ -182,7 +183,7 @@ export class Calculator extends Graph {
           //}
 
           // we need a proper type for this... also it might be a range
-
+         
           if (!UnionIsMetadata(reference)) {
             return ReferenceError(); 
           }
@@ -328,7 +329,7 @@ export class Calculator extends Graph {
         description: 'Returns true if the reference is a formula',
         arguments: [{
           name: 'Reference',
-          metadata: true,
+          metadata: true, /* OK with array metadata */
         }],
         fn: Utilities.ApplyAsArray((ref: UnionValue): UnionValue => {
 
@@ -362,7 +363,7 @@ export class Calculator extends Graph {
   /**
    * this is a mess [not as bad as it used to be]
    */
-  public SpreadCallback(vertex: SpreadsheetVertex, value: UnionOrArray): void {
+  public SpreadCallback(vertex: SpreadsheetVertex, value: UnionValue): void {
 
     if (!vertex.address || !vertex.address.sheet_id) {
       throw new Error('spread callback called without sheet id');
@@ -380,17 +381,19 @@ export class Calculator extends Graph {
       const rows = area.rows;
       const columns = area.columns;
 
-      if (Array.isArray(value)) {
+      // if (Array.isArray(value)) {
+      if (value.type === ValueType.array) {
 
-        value = Utilities.Transpose2(value);
+        // value = Utilities.Transpose2(value);
+        const values = Utilities.Transpose2((value as ArrayUnion).value);
 
         // FIXME: recycle [?]
 
         for (let row = 0; row < rows; row++) {
-          if (value[row]) {
+          if (values[row]) {
             let column = 0;
-            for (; column < columns && column < value[row].length; column++) {
-              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(value[row][column].value, value[row][column].type);
+            for (; column < columns && column < values[row].length; column++) {
+              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(values[row][column].value, values[row][column].type);
             }
             for (; column < columns; column++) {
               cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined, ValueType.undefined);
@@ -712,7 +715,7 @@ export class Calculator extends Graph {
   public CalculateExpression(
       expression: ExpressionUnit,
       address: ICellAddress = {row: -1, column: -1},
-      preserve_flags = false): UnionOrArray {
+      preserve_flags = false): UnionValue {
 
     return this.expression_calculator.Calculate(expression, address, preserve_flags).value; // dropping volatile flag
   }

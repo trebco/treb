@@ -1,6 +1,6 @@
 /* eslint-disable no-unexpected-multiline */
 
-import { UnionOrArray, ICellAddress, Cell, UnionValue, ValueType, GetValueType } from 'treb-base-types';
+import { /*UnionOrArray,*/ ICellAddress, Cell, UnionValue, ValueType, GetValueType, ArrayUnion } from 'treb-base-types';
 import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats, Random } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
@@ -592,7 +592,7 @@ export class SimulationModel {
       IsPosDef: {
         description: 'Checks that a matrix is positive-definite',
         arguments: [{ name: 'matrix' }],
-        fn: (mat: number[][]): UnionOrArray => {
+        fn: (mat: number[][]): UnionValue => {
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
           })) return ValueError();
@@ -605,18 +605,24 @@ export class SimulationModel {
       MakePosDef: {
         description: 'Returns a matrix that is positive-definite',
         arguments: [{ name: 'matrix' }],
-        fn: (mat: number[][]): UnionOrArray => {
+        fn: (mat: number[][]): UnionValue => {
+          
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
           })) return ValueError();
+          
           const m = Matrix.FromArray(mat).MakePosDef().ToArray();
 
-          return m.map(row => row.map(value => {
-            return {
-              type: ValueType.number,
-              value,
-            };
-          }));
+          return {
+            type: ValueType.array,
+            value: m.map(row => row.map(value => {
+              return {
+                type: ValueType.number,
+                value,
+              };
+            })),
+          };
+
         },
         extension: true,
       },
@@ -625,12 +631,25 @@ export class SimulationModel {
         arguments: [{ name: 'matrix' }, { name: 'transpose', default: false }],
         fn: (mat: number[][], transpose = false) => {
           const m = Matrix.FromArray(mat).Cholesky(transpose).ToArray();
+
+          return {
+            type: ValueType.array,
+            value: m.map(row => row.map(value => {
+              return {
+                type: ValueType.number,
+                value,
+              };
+            })),
+          };
+
+          /*
           return m.map(row => row.map(value => {
             return {
               type: ValueType.number,
               value,
             };
           }));
+          */
         },
         extension: true,
       },
@@ -638,7 +657,7 @@ export class SimulationModel {
       EigenValues: {
         description: 'Returns the eigenvalues of the matrix (as column vector)',
         arguments: [{ name: 'matrix' }],
-        fn: (mat: number[][]): UnionOrArray => {
+        fn: (mat: number[][]): UnionValue => {
 
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
@@ -646,12 +665,25 @@ export class SimulationModel {
 
           const m = Matrix.FromArray(mat);
           const e = m.EigenSystem();
+
+          return {
+            type: ValueType.array,
+            value: [e.realvalues.map(value => {
+              return {
+                type: ValueType.number,
+                value,
+              };
+            })],
+          };
+
+          /*
           return [e.realvalues.map(value => {
             return {
               type: ValueType.number,
               value,
             };
           })];
+          */
         },
         extension: true,
       },
@@ -659,7 +691,7 @@ export class SimulationModel {
       EigenVectors: {
         description: 'Returns the eigenvectors of the matrix (as matrix)',
         arguments: [{ name: 'matrix' }],
-        fn: (mat: number[][]): UnionOrArray => {
+        fn: (mat: number[][]): UnionValue => {
 
           if (mat.some((arr) => {
             return arr.some((v) => typeof v !== 'number');
@@ -668,6 +700,19 @@ export class SimulationModel {
           const m = Matrix.FromArray(mat);
           const e = m.EigenSystem();
 
+          return {
+            type: ValueType.array,
+            value: e.vectors.map(vector => {
+              return Array.from(vector).map(value => {
+                return {
+                  type: ValueType.number,
+                  value,
+                }
+              });
+            }),
+          };
+
+          /*
           return e.vectors.map(vector => {
             return Array.from(vector).map(value => {
               return {
@@ -676,7 +721,7 @@ export class SimulationModel {
               }
             });
           });
-
+          */
         },
         extension: true,
       },
@@ -1294,7 +1339,7 @@ export class SimulationModel {
       // FIXME: cache! [see above]
 
       const sum = // SpreadsheetFunctions.sum(weights);
-        Utils.Flatten(weights).reduce((a: number, b: any) => {
+        Utils.FlattenUnboxed(weights).reduce((a: number, b: any) => {
           if (typeof b === 'undefined') return a;
           return a + Number(b);
         }, 0);
@@ -1374,7 +1419,7 @@ export class SimulationModel {
     return { type:ValueType.number, value: this.elapsed / 1000 };
   }
 
-  public simulationvaluesarray(data?: number[]): UnionOrArray {
+  public simulationvaluesarray(data?: number[]): UnionValue {
     
     if (this.state !== SimulationState.Null) {
       return { type: ValueType.number, value: 0 };
@@ -1388,7 +1433,7 @@ export class SimulationModel {
       result[i] = {type: ValueType.number, value: data[i] };
     }
 
-    return [result];
+    return { type: ValueType.array, value: [result]};
 
   }
 
@@ -1397,7 +1442,7 @@ export class SimulationModel {
    * UPDATE: now does that properly. if there's no sort argument, use the 
    * source cell. if there's a source cell but no data, return an error.
    */
-  public simulationvaluesarray_ordered(data?: number[], order_by?: number[]): UnionOrArray {
+  public simulationvaluesarray_ordered(data?: number[], order_by?: number[]): UnionValue {
 
     if (this.state !== SimulationState.Null) {
       return { type: ValueType.number, value: 0 };
@@ -1412,23 +1457,30 @@ export class SimulationModel {
       // can use a simpler sort method in this case
       // be sure to copy so we don't munge the original data
 
-      return [Array.prototype.slice.call(data, 0).sort((a, b) => a - b).map(value => {
-        return {
-          type: ValueType.number,
-          value,
-        };
-      })];
+      return {
+        type: ValueType.array,
+        value: [Array.prototype.slice.call(data, 0).sort((a, b) => a - b).map(value => {
+          return {
+            type: ValueType.number,
+            value,
+          };
+        })],
+      };
+
     }
 
     const tuples = Array.from(data).map((x, i) => [x, order_by[i]]);
     tuples.sort((a, b) => a[1] - b[1]);
 
-    return [tuples.map((tuple) => {
-      return {
-        type: ValueType.number,
-        value: tuple[0]
-      }
-    })];
+    return {
+      type: ValueType.array,
+      value: [tuples.map((tuple) => {
+        return {
+          type: ValueType.number,
+          value: tuple[0]
+        }
+      })],
+    };
 
   }
 
@@ -1653,7 +1705,7 @@ export class SimulationModel {
 
   }
 
-  public Permutation(range: UnionOrArray): UnionOrArray {
+  public Permutation(range?: UnionValue): UnionValue {
 
     if (!range) {
 
@@ -1675,20 +1727,21 @@ export class SimulationModel {
         result.push(column);
       }
 
-      return result;
+      return { type: ValueType.array, value: result };
       
     }
 
-    if (Array.isArray(range)) {
-      
-      const rows = range.length;
-      const cols = range[0].length;
+    // if (Array.isArray(range)) {
+    if (range.type === ValueType.array) {
+
+      const rows = (range as ArrayUnion).value.length;
+      const cols = (range as ArrayUnion).value[0].length;
 
       if (!rows || !cols) {
         return ArgumentError();
       }
 
-      const flat = range.reduce((a, arr) => arr.concat(a), []);
+      const flat = (range as ArrayUnion).value.reduce((a, arr) => arr.concat(a), []);
       const count = rows * cols;
 
       if (flat.length !== count) {
@@ -1712,7 +1765,7 @@ export class SimulationModel {
         result.push(row);
       }
 
-      return result;
+      return { type: ValueType.array, value: result };
 
     }
     else {
@@ -1721,7 +1774,7 @@ export class SimulationModel {
 
   }
 
-  public Scale(min: number, max: number): UnionOrArray {
+  public Scale(min: number, max: number): UnionValue {
 
     /*
     let rows = 1, columns = 1;
@@ -1777,11 +1830,16 @@ export class SimulationModel {
       }
     }
 
-    return rows < columns ? Utils.Transpose2(result) : result;
+    return {
+      type: ValueType.array,
+      value: rows < columns ? Utils.Transpose2(result) : result,
+    };
+
+    // return rows < columns ? Utils.Transpose2(result) : result;
 
   }
 
-  public HistogramTable(reference: any): UnionOrArray {
+  public HistogramTable(reference: any): UnionValue {
 
     // this function used to rely on the Cell structure being passed
     // as the address. we used to do that, in error. while we might want
@@ -1853,7 +1911,11 @@ export class SimulationModel {
         result = [result[1]];
       }
 
-      return (columns > rows) ? Utils.Transpose2(result) : result;
+      // return (columns > rows) ? Utils.Transpose2(result) : result;
+      return {
+        type: ValueType.array,
+        value: (columns > rows) ? Utils.Transpose2(result) : result,
+      }
 
     }
 

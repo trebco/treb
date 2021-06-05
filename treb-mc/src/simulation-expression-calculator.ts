@@ -9,7 +9,7 @@ import { NameError, ReferenceError } from '../../treb-calculator/src/function-er
 import { SimulationModel, SimulationState } from './simulation-model';
 import { MCCompositeFunctionDescriptor } from './descriptors';
 
-import { Cell, ICellAddress, UndefinedUnion, ValueType, UnionValue, UnionOrArray } from 'treb-base-types';
+import { Cell, ICellAddress, CreateUndefinedUnion, ValueType, UnionValue /*, UnionOrArray*/ } from 'treb-base-types';
 import { Parser, UnitCall } from 'treb-parser';
 
 
@@ -23,7 +23,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
   }
 
   /** excutes a function call */
-  protected CallExpression(outer: UnitCall, return_reference = false): (expr: UnitCall) => UnionOrArray { // TEMP DISABLING
+  protected CallExpression(outer: UnitCall, return_reference = false): (expr: UnitCall) => UnionValue { // TEMP DISABLING
 
     // get the function descriptor, which won't change.
     // we can bind in closure (also short-circuit check for
@@ -158,12 +158,12 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         // // if function, wrong branch
         if (arg_index === skip_argument_index) { 
           // console.info('skipped');
-          return descriptor.boxed ? UndefinedUnion() : undefined;
+          return descriptor.boxed ? CreateUndefinedUnion() : undefined;
         }
 
         if (typeof arg === 'undefined') { 
           if (if_function && arg_index === 0) { skip_argument_index = 1; }
-          return descriptor.boxed ? UndefinedUnion() : undefined;
+          return descriptor.boxed ? CreateUndefinedUnion() : undefined;
         }
         
         // FIXME (address): what about named ranges (actually those will work),
@@ -241,7 +241,8 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
           const result = this.CalculateExpression(arg as ExtendedExpressionUnit);
 
-          if (!Array.isArray(result) && result.type === ValueType.error) {
+          // if (!Array.isArray(result) && result.type === ValueType.error) {
+          if (result.type === ValueType.error) { // array test is implicit
             if (descriptor.allow_error) {
               return result; // always boxed
             }
@@ -251,7 +252,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
           // can't shortcut if you have an array (or we need to test all the values)
 
-          if (if_function && arg_index === 0 && !Array.isArray(result)) {
+          if (if_function && arg_index === 0 && result.type !== ValueType.array) { // !Array.isArray(result)) {
             let result_truthy = false; 
 
             // if (Array.isArray(result)) { result_truthy = true; }
@@ -274,7 +275,11 @@ export class MCExpressionCalculator extends ExpressionCalculator {
           }
           
           if (Array.isArray(result)) {
-            return result.map(row => row.map(value => value.value));
+            console.warn( "AAA 82394");
+            return result.map(row => row.map((value: UnionValue) => value.value));
+          }
+          else if (result.type === ValueType.array) {
+            return result.value.map(row => row.map(value => value.value));
           }
           else {
             return result.value; // unboxing

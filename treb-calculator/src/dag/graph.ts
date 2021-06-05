@@ -4,7 +4,7 @@ import { SpreadsheetVertex  } from './spreadsheet_vertex';
 import { ArrayVertex  } from './array-vertex';
 import { SpreadsheetVertexBase, CalculationResult, GraphCallbacks } from './spreadsheet_vertex_base';
 import { LeafVertex } from './leaf_vertex';
-import { Cells, ICellAddress, ICellAddress2, Area, IArea, UnionOrArray } from 'treb-base-types';
+import { Cells, ICellAddress, ICellAddress2, Area, IArea, UnionValue } from 'treb-base-types';
 import { DataModel } from 'treb-grid';
 
 // FIXME: this is a bad habit if you're testing on falsy for OK.
@@ -855,7 +855,7 @@ export abstract class Graph implements GraphCallbacks {
 
   public abstract CalculationCallback(vertex: SpreadsheetVertexBase): CalculationResult;
 
-  public abstract SpreadCallback(vertex: SpreadsheetVertexBase, value: UnionOrArray): void;
+  public abstract SpreadCallback(vertex: SpreadsheetVertexBase, value: UnionValue): void;
 
   protected abstract CheckVolatile(vertex: SpreadsheetVertex): boolean;
 

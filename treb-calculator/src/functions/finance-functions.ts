@@ -2,7 +2,7 @@
 
 import { FunctionMap } from '../descriptors';
 import { CellValue, UnionValue, ValueType } from 'treb-base-types';
-import { Flatten } from '../utilities';
+import { FlattenBoxed, FlattenUnboxed } from '../utilities';
 
 // use a single, static object for base functions
 
@@ -81,7 +81,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
 
       let result = 0;
 
-      const flat = Flatten(args);
+      const flat = FlattenUnboxed(args);
       for (let i = 0; i < flat.length; i++) {
         const arg = flat[i];
         if (typeof arg === 'number') {
@@ -103,7 +103,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
     ],
     fn: (args: CellValue[], guess = .1): UnionValue => {
 
-      const flat = Flatten(args).map(value => typeof value === 'number' ? value : 0);
+      const flat = FlattenUnboxed(args).map(value => typeof value === 'number' ? value : 0);
 
       const step = .1; // initial step
 

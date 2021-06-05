@@ -42,8 +42,13 @@ export enum ValueType {
   // correct? (...) it sort of makes sense... since we have separate typing
   error = 6,
 
-  // this is new and in testing
+  // complex is pretty stable by now
   complex = 7,
+
+  // this is new though. this is not a cell value, it's 
+  // only for union types. perhaps we should move or rename 
+  // this array, and then cells could have a subset?
+    array = 8,
 
 }
 

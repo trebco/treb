@@ -8,13 +8,39 @@ export const Is2DArray = <T>(obj: undefined|T|T[]|T[][]): obj is T[][] => {
   return !!obj && Array.isArray(obj) && Array.isArray(obj[0]);
 }
 
-/**
+/* *
  * to simplify treatment of values and errors, use a composite return
  * type that can support both without a lot of sloppy type testing
- */
+ * /
 export interface UnionValue {
   type: ValueType;
-  value: CellValue | any;
+  value: CellValue | any; // <-- nice (FIXME)
+}
+*/
+
+export interface NumberUnion {
+  type: ValueType.number;
+  value: number;
+}
+
+export interface StringUnion {
+  type: ValueType.string;
+  value: string;
+}
+
+export interface ErrorUnion {
+  type: ValueType.error;
+  value: string;
+}
+
+export interface FormulaUnion {
+  type: ValueType.formula;
+  value: string;
+}
+
+export interface BooleanUnion {
+  type: ValueType.boolean;
+  value: boolean;
 }
 
 /** we should have these for other types as well */
@@ -23,82 +49,67 @@ export interface ComplexUnion {
   value: Complex;
 }
 
-/* * recursive structure * /
+export interface UndefinedUnion {
+  type: ValueType.undefined;
+  value: undefined;
+}
+
+export interface ExtendedUnion {
+  type: ValueType.object;
+  value: any;
+  key?: string;
+}
+
+/** recursive structure */
 export interface ArrayUnion {
-  type: ValueType.object,
-  value: UnionValue[][],
+  type: ValueType.array;
+
+  // what is the case for supporting [], in this context?
+  // value: UnionValue[]|UnionValue[][];
+
+  value: UnionValue[][];
 };
-*/
 
-/** composite type guard */
-export const UnionIs = {
-
-  Undefined: (test: UnionValue): test is { type: ValueType.undefined, value: undefined } => {
-    return test.type === ValueType.undefined;
-  },
-
-  Number: (test: UnionValue): test is { type: ValueType.number, value: number } => {
-    return test.type === ValueType.number;
-  },
-
-  Formula: (test: UnionValue): test is { type: ValueType.formula, value: string } => {
-    return test.type === ValueType.formula;
-  },
-
-  Boolean: (test: UnionValue): test is { type: ValueType.boolean, value: boolean } => {
-    return test.type === ValueType.boolean;
-  },
-
-  Complex: (test: UnionValue): test is ComplexUnion => {
-    return test.type === ValueType.complex;
-  },
-
-  String: (test: UnionValue): test is { type: ValueType.string, value: string } => {
-    return test.type === ValueType.string;
-  },
-
-  Error: (test: UnionValue): test is { type: ValueType.error, value: string } => {
-    return test.type === ValueType.error;
-  },
-
-  /*
-  Array: (test: UnionValue): test is ArrayUnion => {
-    return test.type === ValueType.object
-      && !!test
-      && Array.isArray(test);
-  },
-  */
-
-  Extended: (test: UnionValue): test is { type: ValueType.object, value: any } => {
-    return test.type === ValueType.object;
-  },
-
-};
+export type UnionValue 
+    = NumberUnion 
+    | ArrayUnion 
+    | ComplexUnion 
+    | ExtendedUnion
+    | StringUnion 
+    | FormulaUnion
+    | UndefinedUnion
+    | BooleanUnion
+    | ErrorUnion
+    ;
 
 // common types
 
 /** 
  * this is a factory instead of a constant value to prevent any accidental pollution
  */
-export const UndefinedUnion = (): UnionValue => { 
+export const CreateUndefinedUnion = (): UnionValue => { 
   return { type: ValueType.undefined, value: undefined };
 };
 
 /** shortcut, although this is wasteful */
 export const Box = (value: unknown, type?: ValueType): UnionValue => { 
   
+  // FIXME: type properly... instead of the GetValueType call
+
   if (typeof type === 'undefined') {
     type = GetValueType(value);
   }
 
+  // assert? 
+
   return {
     value, 
     type,
-  }
+  } as UnionValue;
   
 };
 
-export type UnionOrArray = UnionValue|UnionValue[][];
+// export type UnionOrArray = UnionValue|UnionValue[][];
 
 export const ComplexOrReal = (value: Complex): UnionValue => {
   if (value.imaginary) {

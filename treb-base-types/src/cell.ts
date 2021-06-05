@@ -515,7 +515,7 @@ export class Cell {
       return {
         type: this.calculated_type,
         value: this.calculated,
-      };
+      } as UnionValue;
     }
 
     if (this.type === ValueType.formula) {
@@ -528,7 +528,7 @@ export class Cell {
     return { 
       type: this.type, 
       value: (typeof this.value === 'string' && this.value[0] === '\'') ? this.value.slice(1) : this.value, // @see GetValue 
-    };
+    }  as UnionValue;
 
   }
 

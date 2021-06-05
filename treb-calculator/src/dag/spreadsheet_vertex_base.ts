@@ -1,10 +1,10 @@
 
 import { Vertex } from './vertex';
-import type { UnionOrArray } from 'treb-base-types';
+import type { UnionValue } from 'treb-base-types';
 
 export interface CalculationResult {
   // value: any;
-  value: UnionOrArray;
+  value: UnionValue;
   volatile?: boolean;
 }
 
@@ -13,7 +13,7 @@ export interface CalculationResult {
  */
 export interface GraphCallbacks {
   CalculationCallback: (vertex: SpreadsheetVertexBase) => CalculationResult;
-  SpreadCallback: (vertex: SpreadsheetVertexBase, value: UnionOrArray) => void;
+  SpreadCallback: (vertex: SpreadsheetVertexBase, value: UnionValue) => void;
   volatile_list: SpreadsheetVertexBase[];
   calculation_list: SpreadsheetVertexBase[];
 }

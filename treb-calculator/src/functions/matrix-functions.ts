@@ -1,6 +1,6 @@
 
 import { FunctionMap } from '../descriptors';
-import { Complex, IsComplex, ComplexUnion, UnionOrArray, UnionValue, ValueType, ComplexOrReal } from 'treb-base-types';
+import { Complex, IsComplex, ComplexUnion, /*UnionOrArray,*/ UnionValue, ValueType, ComplexOrReal } from 'treb-base-types';
 import * as Utils from '../utilities';
 import { ArgumentError, ValueError } from '../function-error';
 import * as ComplexMath from '../complex-math';
@@ -11,10 +11,20 @@ import { ComplexMatrixType } from '../complex-math';
  * given a range of data, ensure it's an array, check dimensions, and 
  * convert all real entries to complex (if possible).
  */
-const ComplexMatrix = (a: UnionOrArray): ComplexMatrixType => {
+const ComplexMatrix = (input: UnionValue): ComplexMatrixType => {
+
+  let a: UnionValue[][] = [];
 
   // ensure array
-  if (!Array.isArray(a)) { a = [[a]]; }
+
+  if (input.type === ValueType.array) {
+    a = input.value;
+  }
+  else {
+    a = [[input.value]];
+  }
+
+  // if (!Array.isArray(a)) { a = [[a]]; }
 
   const m = a.length;
   const n = m ? a[0].length : 0;
@@ -56,7 +66,7 @@ export const MatrixFunctionLibrary: FunctionMap = {
     arguments: [
       { name: 'matrix', boxed: true },
     ],
-    fn: (a: UnionOrArray): UnionValue => {
+    fn: (a: UnionValue): UnionValue => {
 
       const matrix = ComplexMatrix(a);
 
@@ -80,7 +90,7 @@ export const MatrixFunctionLibrary: FunctionMap = {
     arguments: [
       { name: 'matrix', boxed: true },
     ],
-    fn: (a: UnionOrArray): UnionOrArray => {
+    fn: (a: UnionValue): UnionValue => {
       const matrix = ComplexMatrix(a);
 
       if (!matrix.array || !matrix.m || !matrix.n || matrix.m !== matrix.n || matrix.error) {
@@ -99,7 +109,12 @@ export const MatrixFunctionLibrary: FunctionMap = {
         return ValueError();
       }
       
-      return inverse.map(row => row.map(value => ComplexOrReal(value)));
+      return {
+        type: ValueType.array,
+        value: inverse.map(row => row.map(value => ComplexOrReal(value))),
+      }
+
+      // return inverse.map(row => row.map(value => ComplexOrReal(value)));
       
     },
   },
@@ -110,7 +125,7 @@ export const MatrixFunctionLibrary: FunctionMap = {
       { name: 'A', boxed: true }, 
       { name: 'B', boxed: true }, 
     ],
-    fn: (a: UnionOrArray, b: UnionOrArray): UnionOrArray => {
+    fn: (a: UnionValue, b: UnionValue): UnionValue => {
 
       const A = ComplexMatrix(a);
       const B = ComplexMatrix(b);
@@ -133,7 +148,12 @@ export const MatrixFunctionLibrary: FunctionMap = {
 
       // convert to reals where possible
 
-      return product.map(row => row.map(value => ComplexOrReal(value)));
+      return {
+        type: ValueType.array,
+        value: product.map(row => row.map(value => ComplexOrReal(value))),
+      };
+
+      // return product.map(row => row.map(value => ComplexOrReal(value)));
 
     },
   }

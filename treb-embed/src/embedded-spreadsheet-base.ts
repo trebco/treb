@@ -6,7 +6,7 @@ import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } 
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue,
-  IsFlatData, IsFlatDataArray, Rectangle, Theme } from 'treb-base-types';
+  IsFlatData, IsFlatDataArray, Rectangle, Theme, ValueType } from 'treb-base-types';
 import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
@@ -1026,8 +1026,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       const result = this.calculator.CalculateExpression(parse_result.expression);
 
+      /*
       if (Array.isArray(result)) {
         return result.map(row => row.map(value => value.value));
+      }
+      */
+      if (result.type === ValueType.array) {
+        return result.value.map(row => row.map(value => value.value));
       }
       else {
         return result.value;

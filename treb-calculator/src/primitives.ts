@@ -203,8 +203,8 @@ export const Equals = (a: UnionValue, b: UnionValue): UnionValue => {
   
   // empty cells equal 0 (real or complex) and ""
 
-  if ((a.type === ValueType.undefined && (b.value === '' || b.value === 0 || (b.type === ValueType.complex && b.value.real === 0 && b.value.complex === 0)))
-      || (b.type === ValueType.undefined && (a.value === '' || a.value === 0 || (a.type === ValueType.complex && a.value.real === 0 && a.value.complex === 0)))) {
+  if ((a.type === ValueType.undefined && (b.value === '' || b.value === 0 || (b.type === ValueType.complex && b.value.real === 0 && b.value.imaginary === 0)))
+      || (b.type === ValueType.undefined && (a.value === '' || a.value === 0 || (a.type === ValueType.complex && a.value.real === 0 && a.value.imaginary === 0)))) {
     return { type: ValueType.boolean, value: true, };
   }
 

@@ -77,7 +77,7 @@ export const TextFunctionLibrary: FunctionMap = {
       name: 'string',
     }],
     fn: (str: string): UnionValue => {
-      return { type: ValueType.number, value: str.codePointAt(0) };
+      return { type: ValueType.number, value: str.codePointAt(0) || 0 }; // FIXME: default?
     },
     category: ['text'],
   },
@@ -234,7 +234,7 @@ export const TextFunctionLibrary: FunctionMap = {
   description: 'Pastes strings together',
   fn: (...args: unknown[]): UnionValue => {
 
-    const values = Utils.Flatten(args) as unknown[];
+    const values = Utils.FlattenUnboxed(args) as unknown[];
     const value = values.map((arg) => {
 
       // this is used when concatenating cells that contain numbers

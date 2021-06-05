@@ -1,6 +1,6 @@
 
 import { FunctionMap } from '../descriptors';
-import { IsComplex, UnionValue, ValueType } from 'treb-base-types';
+import { IsComplex, NumberUnion, UnionValue, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
 import { ArgumentError, ValueError } from '../function-error';
 import { RectangularToPolar } from '../complex-math';
@@ -11,7 +11,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
     description: 'Returns true if the reference is a complex number',
     arguments: [{
       name: 'Reference',
-      metadata: true,
+      metadata: true, /* OK with array metadata */
     }],
     fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
       return { 
@@ -116,7 +116,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
           (ref.type === ValueType.string && ref.value === '')) {
         return {
           type: ValueType.number,
-          value: Math.atan2(0, ref.value || 0),
+          value: Math.atan2(0, (ref as NumberUnion).value || 0), // this is clumsy now because typing has _improved_
         }
       }
 

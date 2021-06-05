@@ -39,7 +39,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the standard deviation of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
     fn: (...args: any[]): UnionValue => {
-      return { type: ValueType.number, value: Math.sqrt(Variance(Utils.Flatten(args), false)) };
+      return { type: ValueType.number, value: Math.sqrt(Variance(Utils.FlattenUnboxed(args), false)) };
     },
   },
 
@@ -47,7 +47,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the standard deviation of a set of values, corresponding to a sample of a population',
     arguments: [{ name: 'data', }],
     fn: (...args: any[]): UnionValue => {
-      return { type: ValueType.number, value: Math.sqrt(Variance(Utils.Flatten(args), true)) };
+      return { type: ValueType.number, value: Math.sqrt(Variance(Utils.FlattenUnboxed(args), true)) };
     },
   },
 
@@ -55,7 +55,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the variance of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
     fn: (...args: any[]): UnionValue => {
-      return { type: ValueType.number, value: Variance(Utils.Flatten(args), false) };
+      return { type: ValueType.number, value: Variance(Utils.FlattenUnboxed(args), false) };
     },
   },
 
@@ -63,7 +63,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the variance of a set of values, corresponding to a sample of a population',
     arguments: [{ name: 'data', }],
     fn: (...args: any[]): UnionValue => {
-      return { type: ValueType.number, value: Variance(Utils.Flatten(args), true) };
+      return { type: ValueType.number, value: Variance(Utils.FlattenUnboxed(args), true) };
     },
   },
 
@@ -124,7 +124,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
 
     fn: (...args: any[]): UnionValue => {
 
-      args = Utils.Flatten(args); 
+      args = Utils.FlattenBoxed(args); 
 
       let count = 0;
       let product: Complex = {real: 1, imaginary: 0};
@@ -187,7 +187,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     arguments: [{ boxed: true }],
 
     fn: (...args: any[]): UnionValue => {
-      args = Utils.Flatten(args);
+      args = Utils.FlattenBoxed(args);
 
       const result = { real: 0, imaginary: 0 };
       let count = 0;
@@ -226,7 +226,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     ],
     fn: (range: number[][], percentile: number): UnionValue => {
 
-      const flat = Utils.Flatten(range).filter((test) => typeof test === 'number');
+      const flat = Utils.FlattenUnboxed(range).filter((test) => typeof test === 'number');
       flat.sort((a, b) => a - b);
       const n = flat.length;
 
@@ -249,7 +249,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     ],
     fn: (...args: any[]): UnionValue => {
 
-      const flat = Utils.Flatten(args).filter((test) => typeof test === 'number');
+      const flat = Utils.FlattenUnboxed(args).filter((test) => typeof test === 'number');
       flat.sort((a, b) => a - b);
       const n = flat.length;
 

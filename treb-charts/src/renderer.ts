@@ -1668,8 +1668,10 @@ export class ChartRenderer {
           }
         }
 
+        // this breaks numbers, bad!
 
-        const break_regex = /[\s-\W]/;
+        // const break_regex = /[\s-\W]/;
+        const break_regex = /[\s-]/;
 
         if (try_break && break_regex.test(text)) {
           let break_index = -1;

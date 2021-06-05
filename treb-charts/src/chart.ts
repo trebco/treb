@@ -4,10 +4,10 @@ import { ChartRenderer, Metrics } from './renderer';
 import { Area } from './rectangle';
 import { Util } from './util';
 import { BarData, CellData, ChartData, DonutSlice, LegendLayout, LegendPosition, LegendStyle, NumberOrUndefinedArray, SeriesType, SubSeries } from './chart-types';
-import { DecoratedArray } from './chart-functions';
+// import { DecoratedArray } from './chart-functions';
 
 import { RangeScale } from 'treb-utils';
-import { UnionIs, UnionValue, ValueType } from 'treb-base-types/src';
+import { ArrayUnion, ExtendedUnion, UnionValue, ValueType } from 'treb-base-types';
 
 // require('../style/charts.scss');
 require('../style/charts.pcss');
@@ -42,8 +42,10 @@ export class Chart {
     this.renderer.Initialize(node);
   }
 
-  public Exec(func: string, args: any[] = []) {
+  public Exec(func: string, union: ExtendedUnion) {
 
+    const args: any[] = union?.value || [];
+    
     switch (func.toLowerCase()) {
       case 'mc.histogram':
         this.CreateHistogram(args);
@@ -54,11 +56,11 @@ export class Chart {
         break;
 
       case 'column.chart':
-        this.CreateColumnChart(args, 'column');
+        this.CreateColumnChart(args as [UnionValue?, UnionValue?, string?, string?], 'column');
         break;
 
       case 'bar.chart':
-        this.CreateColumnChart(args, 'bar');
+        this.CreateColumnChart(args as [UnionValue?, UnionValue?, string?, string?], 'bar');
         break;
               
       case 'line.chart':
@@ -71,7 +73,7 @@ export class Chart {
 
       case 'donut.chart':
       case 'pie.chart':
-        this.CreateDonut(args, func.toLowerCase() === 'pie.chart');
+        this.CreateDonut(args as [UnionValue?, UnionValue?, string?, string?, string?], func.toLowerCase() === 'pie.chart');
         break;
 
       case 'scatter.plot':
@@ -99,15 +101,17 @@ export class Chart {
    * @param args arguments: data, categories, title, options
    * @param type 
    */
-  public CreateColumnChart(args: any[], type: 'bar'|'column'): void {
+  public CreateColumnChart(args: [UnionValue?, UnionValue?, string?, string?], type: 'bar'|'column'): void {
 
-    const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
+    const series: SeriesType[] = this.TransformSeriesData(args[0]);
+
     const common = this.CommonData(series);
 
     let category_labels: string[] | undefined;
 
     if (args[1]) {
-      const values = Util.Flatten(args[1]);
+
+      const values = args[1].type === ValueType.array ? Util.Flatten(args[1].value) : Util.Flatten(args[1]);
       category_labels = values.map((cell) => {
         if (!cell) { return ''; }
 
@@ -164,8 +168,10 @@ export class Chart {
 
   }
 
-  public ReadSeries(data: DecoratedArray<any>): SeriesType {
+  public ReadSeries(data: Array<any>): SeriesType {
     
+    // console.info("RSD", data);
+
     // in this case it's (label, X, Y)
     const series: SeriesType = {
       x: { data: [] },
@@ -191,8 +197,9 @@ export class Chart {
 
     // read [2] first, so we can default for [1] if necessary
 
-    if (data[2] && Array.isArray(data[2])) {
-      const flat = Util.Flatten(data[2]);
+    // if (data[2] && Array.isArray(data[2])) {
+    if (!!data[2] && (typeof data[2] === 'object') && data[2].type === ValueType.array) {
+      const flat = Util.Flatten(data[2].value);
       series.y.data = flat.map(item => typeof item.value.value === 'number' ? item.value.value : undefined);
       if (flat[0].value?.format) {
         series.y.format = flat[0].value?.format as string;
@@ -201,7 +208,8 @@ export class Chart {
       }
     }
 
-    if (data[1] && Array.isArray(data[1])) {
+    // if (data[1] && Array.isArray(data[1])) {
+    if (!!data[1] && (typeof data[1] === 'object') && data[1].type === ValueType.array) {
       const flat = Util.Flatten(data[1]);
       series.x.data = flat.map(item => typeof item.value.value === 'number' ? item.value.value : undefined);
       if (flat[0].value.format) {
@@ -232,12 +240,12 @@ export class Chart {
           
   }
 
-  public ArrayToSeries(data: any): SeriesType {
+  public ArrayToSeries(array_data: ArrayUnion): SeriesType {
 
     // this is an array of Y, X not provided
 
     const series: SeriesType = { x: { data: [] }, y: { data: [] }, };
-    const flat = Util.Flatten(data);
+    const flat = Util.Flatten(array_data.value);
 
     // series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
 
@@ -318,10 +326,39 @@ export class Chart {
    * NOTE: (1) could be an array of boxed (union) values...
    * 
    */
-  public TransformSeriesData(raw_data: any, default_x?: UnionValue[]): SeriesType[] {
+  //public TransformSeriesData(raw_data: any, default_x?: UnionValue[]): SeriesType[] {
+  public TransformSeriesData(raw_data?: UnionValue, default_x?: UnionValue): SeriesType[] {
+
+    if (!raw_data) { return []; }
 
     const list: SeriesType[] = [];
-    
+
+    if (raw_data.type === ValueType.object) {
+      if (raw_data.key === 'group') {
+        if (Array.isArray(raw_data.value)) {
+          for (const entry of raw_data.value) {
+            if (!!entry && (typeof entry === 'object')) {
+              if (entry.key === 'series') {
+                const series = this.ReadSeries(entry.value);
+                list.push(series);
+              }
+              else if (entry.type === ValueType.array) {
+                list.push(this.ArrayToSeries(entry));
+              }
+            }
+          }
+        }
+      }
+      else if (raw_data.key === 'series') {
+        const series = this.ReadSeries(raw_data.value);
+        list.push(series);
+      }
+    }
+    else if (raw_data.type === ValueType.array) {
+      list.push(this.ArrayToSeries(raw_data));
+    }
+
+    /*
     if (Array.isArray(raw_data)) {
       const decorated = raw_data as DecoratedArray<any>;
       if (decorated._type === 'group') {
@@ -346,7 +383,8 @@ export class Chart {
         list.push(this.ArrayToSeries(decorated));
       }
     }
-    
+    */
+
     // now we may or may not have X for each series, so we need
     // to patch. it's also possible (as with older chart functions)
     // that there's a common X -- not sure if we want to continue
@@ -357,22 +395,25 @@ export class Chart {
 
     // if we have a default, use that (and range it)
 
-    if (default_x && Array.isArray(default_x)) {
+    if (default_x?.type === ValueType.array) {
 
-      default_x = Util.Flatten(default_x);
+      const values = Util.Flatten(default_x.value);
+
+      // default_x = Util.Flatten(default_x);
       let format = '0.00###';
 
-      if (default_x[0] && UnionIs.Extended(default_x[0])) {
-        format = default_x[0].value.format;
+      if (values[0] && values[0].type === ValueType.object) { // UnionIs.Extended(values[0])) {
+        format = values[0].value.format;
       }
 
-      const data = default_x.map(x => {
-          if (UnionIs.Number(x)) { return x.value; }
-          if (UnionIs.Extended(x)) {
+      const data = values.map(x => {
+        if (x.type === ValueType.number) { return x.value; }
+        if (x.type === ValueType.object) { // ??
+          // if (UnionIs.Extended(x)) { // ?
             return x.value.value;
-          }
-          return undefined;
-        }) as Array<number|undefined>;
+        }
+        return undefined;
+      }) as Array<number|undefined>;
   
       const filtered = data.filter(x => typeof x === 'number') as number[];
 
@@ -501,12 +542,16 @@ export class Chart {
    */
   public CreateScatterChart(args: any[], style: 'plot'|'line' = 'plot'): void {
 
+    // console.info("CSC", args);
+    
     // FIXME: transform the data, then have this function
     // operate on clean data. that way the transform can
     // be reused (and the function can be reused without the
     // transform).
 
-    const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
+    // const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
+    const series: SeriesType[] = this.TransformSeriesData(args[0]);
+
     const common = this.CommonData(series);
 
     const title = args[1]?.toString() || undefined;
@@ -575,7 +620,11 @@ export class Chart {
    */
   public CreateLineChart(args: any[], type: 'line'|'area') { // |'bar'|'column') {
 
-    const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0], args[1]) : [];
+    
+
+    // const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0], args[1]) : [];
+    const series: SeriesType[] = this.TransformSeriesData(args[0], args[1]);
+
     const common = this.CommonData(series, 0, 0);
 
     const title = args[2]?.toString() || undefined;
@@ -610,7 +659,7 @@ export class Chart {
   /**
    * arguments are values, labels, title, sort, label option, ...
    */
-  public CreateDonut(args: any[], pie_chart = false) {
+  public CreateDonut(args: [UnionValue?, UnionValue?, string?, string?, string?], pie_chart = false) {
 
     /*
 
@@ -623,7 +672,7 @@ export class Chart {
 
     //////////
 
-    const raw_data = args[0];
+    const raw_data = args[0]?.type === ValueType.array ? args[0].value : args[0];
 
     // we're now expecting this to be metadata (including value).
     // so we need to unpack. could be an array... could be deep...
@@ -651,7 +700,9 @@ export class Chart {
     // if labels are strings, just pass them in. if they're numbers then
     // use the format (we're collecting metadata for this field now)
 
-    const labels = Util.Flatten(args[1]).map((label) => {
+    const raw_labels = args[1]?.type === ValueType.array ? args[1].value : args[1];
+
+    const labels = Util.Flatten(raw_labels).map((label) => {
       if (label && typeof label === 'object') {
         const value = label.value?.value;
         if (typeof value === 'number' && label.value?.format) {
