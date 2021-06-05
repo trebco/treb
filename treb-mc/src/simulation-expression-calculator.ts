@@ -9,7 +9,7 @@ import { NameError, ReferenceError } from '../../treb-calculator/src/function-er
 import { SimulationModel, SimulationState } from './simulation-model';
 import { MCCompositeFunctionDescriptor } from './descriptors';
 
-import { Cell, ICellAddress, CreateUndefinedUnion, ValueType, UnionValue /*, UnionOrArray*/ } from 'treb-base-types';
+import { Cell, ICellAddress, ValueType, UnionValue /*, UnionOrArray*/ } from 'treb-base-types';
 import { Parser, UnitCall } from 'treb-parser';
 
 
@@ -158,12 +158,12 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         // // if function, wrong branch
         if (arg_index === skip_argument_index) { 
           // console.info('skipped');
-          return descriptor.boxed ? CreateUndefinedUnion() : undefined;
+          return descriptor.boxed ? { type: ValueType.undefined } : undefined;
         }
 
         if (typeof arg === 'undefined') { 
           if (if_function && arg_index === 0) { skip_argument_index = 1; }
-          return descriptor.boxed ? CreateUndefinedUnion() : undefined;
+          return descriptor.boxed ? { type: ValueType.undefined } : undefined;
         }
         
         // FIXME (address): what about named ranges (actually those will work),

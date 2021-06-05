@@ -64,12 +64,6 @@ const inverse_normal = (q: number): number => {
 
 };
 
-// const UnionTrue = { type: ValueType.boolean, value: true };
-// const UnionFalse = { type: ValueType.boolean, value: false };
-
-const UnionTrue = (): BooleanUnion => { return { type: ValueType.boolean, value: true }};
-const UnionFalse = (): BooleanUnion => { return { type: ValueType.boolean, value: false }};
-
 // use a single, static object for base functions
 
 export const BaseFunctionLibrary: FunctionMap = {
@@ -328,7 +322,14 @@ export const BaseFunctionLibrary: FunctionMap = {
         { name: 'value if true', boxed: true, allow_error: true },
         { name: 'value if false', boxed: true, allow_error: true },
       ],
-      fn: (a: UnionValue, b: UnionValue = UnionTrue(), c: UnionValue = UnionFalse()): UnionValue => {
+
+      /**
+       * should we really have defaults for the t/f paths? not sure what X does
+       * @returns 
+       */
+      fn: (a: UnionValue, 
+           b: UnionValue = {type: ValueType.boolean, value: true}, 
+           c: UnionValue = {type: ValueType.boolean, value: false}): UnionValue => {
 
         const b_array = b.type === ValueType.array;
         const c_array = c.type === ValueType.array;

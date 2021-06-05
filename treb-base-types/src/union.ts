@@ -8,16 +8,6 @@ export const Is2DArray = <T>(obj: undefined|T|T[]|T[][]): obj is T[][] => {
   return !!obj && Array.isArray(obj) && Array.isArray(obj[0]);
 }
 
-/* *
- * to simplify treatment of values and errors, use a composite return
- * type that can support both without a lot of sloppy type testing
- * /
-export interface UnionValue {
-  type: ValueType;
-  value: CellValue | any; // <-- nice (FIXME)
-}
-*/
-
 export interface NumberUnion {
   type: ValueType.number;
   value: number;
@@ -51,7 +41,7 @@ export interface ComplexUnion {
 
 export interface UndefinedUnion {
   type: ValueType.undefined;
-  value: undefined;
+  value?: undefined;
 }
 
 export interface ExtendedUnion {
@@ -60,16 +50,13 @@ export interface ExtendedUnion {
   key?: string;
 }
 
-/** recursive structure */
+/** potentially recursive structure */
 export interface ArrayUnion {
   type: ValueType.array;
-
-  // what is the case for supporting [], in this context?
-  // value: UnionValue[]|UnionValue[][];
-
-  value: UnionValue[][];
+  value: UnionValue[][]; // 2d
 };
 
+/** switch to a discriminated union. implicit type guards! */
 export type UnionValue 
     = NumberUnion 
     | ArrayUnion 
@@ -87,9 +74,9 @@ export type UnionValue
 /** 
  * this is a factory instead of a constant value to prevent any accidental pollution
  */
-export const CreateUndefinedUnion = (): UnionValue => { 
-  return { type: ValueType.undefined, value: undefined };
-};
+// export const CreateUndefinedUnion = (): UnionValue => { 
+//  return { type: ValueType.undefined, value: undefined };
+//};
 
 /** shortcut, although this is wasteful */
 export const Box = (value: unknown, type?: ValueType): UnionValue => { 
@@ -111,7 +98,11 @@ export const Box = (value: unknown, type?: ValueType): UnionValue => {
 
 // export type UnionOrArray = UnionValue|UnionValue[][];
 
-export const ComplexOrReal = (value: Complex): UnionValue => {
+/**
+ * box a complex value in a union, potentially switching to a real if
+ * there's no imaginary component.
+ */
+export const ComplexOrReal = (value: Complex): ComplexUnion|NumberUnion => {
   if (value.imaginary) {
     return {
       type: ValueType.complex,

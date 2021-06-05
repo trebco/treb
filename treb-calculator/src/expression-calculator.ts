@@ -1,7 +1,7 @@
 
 import { FunctionLibrary } from './function-library';
 import { Cell, Cells, ICellAddress, ValueType, GetValueType,
-         Area, UnionValue, CellValue, CreateUndefinedUnion, /*, UnionOrArray*/ 
+         Area, UnionValue, CellValue,
          ArrayUnion,
          NumberUnion,
          UndefinedUnion,
@@ -487,7 +487,7 @@ export class ExpressionCalculator {
         
         // if function, wrong branch
         if (arg_index === skip_argument_index) { 
-          return descriptor.boxed ? CreateUndefinedUnion() : undefined;
+          return descriptor.boxed ? { type: ValueType.undefined } : undefined;
         }
 
         // note on type here: we're iterating over the arguments 
@@ -495,7 +495,7 @@ export class ExpressionCalculator {
         // in this case, wouldn't this be a missing type? (...)
         if (typeof arg === 'undefined') { 
           if (if_function && arg_index === 0) { skip_argument_index = 1; }
-          return descriptor.boxed ? CreateUndefinedUnion() : undefined;
+          return descriptor.boxed ? { type: ValueType.undefined } : undefined;
         }
 
         // FIXME (address): what about named ranges (actually those will work),

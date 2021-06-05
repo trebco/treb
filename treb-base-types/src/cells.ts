@@ -6,7 +6,7 @@
 import { Area, IArea, ICellAddress, ICellAddress2, IsCellAddress } from './area';
 import { Cell, DataValidation } from './cell';
 import { ValueType, GetValueType } from './value-type';
-import { CellValue, UnionValue, CreateUndefinedUnion } from './union';
+import { CellValue, UnionValue } from './union';
 import { Style } from './style';
 
 export interface CellSerializationOptions {
@@ -819,7 +819,7 @@ export class Cells {
         const column: UnionValue[] = [];
         for ( let r = from.row; r <= to.row; r++ ){
           if (this.data[r] && this.data[r][c]) column.push(this.data[r][c].GetValue4());
-          else column.push(CreateUndefinedUnion());
+          else column.push({type: ValueType.undefined});
         }
         value.push(column);
       }
@@ -829,7 +829,7 @@ export class Cells {
         const row: UnionValue[] = [];
         for ( let c = from.column; c <= to.column; c++ ){
           if (this.data[r] && this.data[r][c]) row.push(this.data[r][c].GetValue4());
-          else row.push(CreateUndefinedUnion());
+          else row.push({type: ValueType.undefined});
         }
         value.push(row);
       }

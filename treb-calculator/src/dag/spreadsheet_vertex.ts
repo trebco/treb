@@ -1,6 +1,6 @@
 
 import { SpreadsheetVertexBase, GraphCallbacks } from './spreadsheet_vertex_base';
-import { Cell, Box, ICellAddress, /*UnionOrArray,*/ CreateUndefinedUnion, ValueType, UnionValue } from 'treb-base-types';
+import { Cell, Box, ICellAddress, ValueType, UnionValue } from 'treb-base-types';
 import { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 
@@ -27,7 +27,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
   public address?: ICellAddress;
 
   //public result: UnionOrArray = UndefinedUnion();
-  public result: UnionValue = CreateUndefinedUnion();
+  public result: UnionValue = {type: ValueType.undefined};
 
   public expression: ExpressionUnit = { type: 'missing', id: -1 };
   public expression_error = false;
