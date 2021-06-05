@@ -239,19 +239,41 @@ export class NumberFormat {
 
   }
 
-  /** mutate */
+  /** 
+   * mutate 
+   * UPDATE: for fractional formats, increase the denominator digits
+   *         (doing something weird with fixed denominators...)
+   */
   public IncreaseDecimal(): void {
     this.sections.forEach((section) => {
-      section.decimal_min_digits++;
-      section.decimal_max_digits = section.decimal_min_digits;
+      if (section.fraction_format) {
+        if (!section.fraction_denominator) {
+          section.fraction_denominator_digits = Math.min(section.fraction_denominator_digits + 1, 4);
+        }
+      }
+      else {
+        section.decimal_min_digits++;
+        section.decimal_max_digits = section.decimal_min_digits;
+      }
     });
   }
 
-  /** mutate */
+  /** 
+   * mutate 
+   * UPDATE: for fractional formats, decrease the denominator digits
+   *         (doing something weird with fixed denominators...)
+   */
   public DecreaseDecimal(): void {
     this.sections.forEach((section) => {
-      section.decimal_min_digits = Math.max(0, section.decimal_min_digits - 1);
-      section.decimal_max_digits = section.decimal_min_digits;
+      if (section.fraction_format) {
+        if (!section.fraction_denominator) {
+          section.fraction_denominator_digits = Math.max(section.fraction_denominator_digits - 1, 1);
+        }
+      }
+      else {
+        section.decimal_min_digits = Math.max(0, section.decimal_min_digits - 1);
+        section.decimal_max_digits = section.decimal_min_digits;
+      }
     });
   }
 
