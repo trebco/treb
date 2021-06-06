@@ -59,9 +59,10 @@ export const RenderCheckbox = (options: RenderFunctionOptions): RenderFunctionRe
   context.lineCap = 'round';
 
   const offset = 3 * scale;
+  const scaled = 16 * scale;
 
-  let x = offset; // Math.round(width / 2 - 8);
-  let y = height - offset - 16 * scale; //  Math.round(height / 2 - 8);
+  let x = offset; 
+  let y = height - offset - scaled; 
 
   if (cell.style) {
     switch (cell.style.vertical_align) {
@@ -70,22 +71,31 @@ export const RenderCheckbox = (options: RenderFunctionOptions): RenderFunctionRe
         break;
 
       case Style.VerticalAlign.Middle:
-        y = Math.round(height / 2 - 8 * scale);
+        y = // Math.round
+          ((height - scaled) / 2);
         break;
   
     }
 
     switch (cell.style.horizontal_align) {
       case Style.HorizontalAlign.Right:
-        x = Math.round(width - offset - 16 * scale);
+        x = // Math.round
+          (width - offset - scaled);
         break;
 
       case Style.HorizontalAlign.Center:
-        x = Math.round(width / 2 - 8 * scale);
+        x = // Math.round
+          ((width - scaled) / 2);
         break;
 
     }    
   }
+
+  x = Math.floor(x) + .5;
+  y = Math.floor(y) + .5;
+
+  const x2 = Math.floor(x + scaled) + .5;
+  const y2 = Math.floor(y + scaled) + .5;
 
   if (cell && cell.calculated) {
     context.lineWidth = .5;
@@ -114,15 +124,16 @@ export const RenderCheckbox = (options: RenderFunctionOptions): RenderFunctionRe
   }
   else {
 
-    const scaled = Math.round(16 * scale);
+    context.lineWidth = 1;
+    context.lineJoin = 'round';
 
-    const fill = context.fillStyle;
-    context.fillStyle = context.strokeStyle;
-    context.fillRect(x, y, scaled, scaled);
-
-    context.fillStyle = '#fff';
-    context.fillRect(x + 1, y + 1, scaled - 2, scaled - 2);
-
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x2, y);
+    context.lineTo(x2, y2);
+    context.lineTo(x, y2);
+    context.closePath();
+    context.stroke();
 
     // context.lineWidth = Math.max(2, 2 * scale);
     // context.strokeRect(x, y, 16 * scale, 16 * scale);
