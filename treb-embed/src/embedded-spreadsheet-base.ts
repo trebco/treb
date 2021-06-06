@@ -2842,6 +2842,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           case 'bar-chart': insert_annotation('Bar.Chart'); break;
           case 'line-chart': insert_annotation('Line.Chart'); break;
 
+          /*
+          case 'increase-font-size':
+          case 'decrease-font-size':
+            if (this.active_selection_style) {
+              const size_value = (this.active_selection_style.font_size_value || 16) * // default?
+                ((event.command === 'increase-font-size') ? 1.05 : .95);
+              updated_style.font_size_value = size_value;
+              console.info("updated", updated_style.font_size_unit, this.active_selection_style.font_size_value)
+            }
+            break;
+          */
+
           case 'increase-decimal':
           case 'decrease-decimal':
             if (this.active_selection_style) {

@@ -184,6 +184,17 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           <div class='drop-menu color-chooser' data-target='foreground' tabindex='-1'></div>
         </div>
 
+        ${ /* 
+        <div class='split-button'>
+          <button data-command='increase-font-size' title='Larger font'>
+            <div>T + </div>
+          </button>
+          <button data-command='decrease-font-size' title='Smaller font'>
+            <div>T - </div>
+          </button>
+        </div>
+        */ '' }
+
         <div class='group'>
           ${this.IconButton('fa/light/border-bottom', 'update-border', 'border-bottom', 'Bottom border')}
           <button class='drop'>

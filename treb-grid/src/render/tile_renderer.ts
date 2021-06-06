@@ -1642,8 +1642,12 @@ export class TileRenderer {
     baseline += metrics.ascent + 3;
 
     // FIX: FIXME (vertical align)
+
     */
 
+    // baseline looks OK, if you account for descenders. 
+    // underline is off though.
+    
     let original_baseline = Math.round(height - 2 - (m2.block * line_height * (line_count - 1)) + WK); // switched baseline to "bottom"
 
     switch (style.vertical_align) {
@@ -1697,8 +1701,12 @@ export class TileRenderer {
         left = width - this.cell_edge_buffer - text_data.width;
       }
 
-      const underline_y = original_baseline - 0.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
-      const strike_y = Math.round(original_baseline - m2.ascender / 2) + 0.5; 
+      // const underline_y = original_baseline - 0.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
+      // const underline_y = original_baseline + 1.5 - m2.descender - WK; // metrics.block - 3.5 - metrics.ascent - 3;
+      const underline_y = Math.floor(original_baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
+
+      // const strike_y = Math.round(original_baseline - m2.ascender / 2) + 0.5; 
+      const strike_y = Math.floor(original_baseline - m2.descender - m2.ascender / 2) + .5;
 
       // we want a single underline, possibly spanning hidden elements,
       // but not starting or stopping on a hidden element (usually invisible
@@ -1759,13 +1767,15 @@ export class TileRenderer {
         }
 
         if (style.font_underline) {
-          const underline_y = baseline - 0.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
+          // const underline_y = baseline - 0.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
+          const underline_y = Math.floor(baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
           context.moveTo(left, underline_y);
           context.lineTo(left + part.width, underline_y);
         }
         
         if (style.font_strike) {
-          const strike_y = Math.round(baseline - m2.ascender / 2) + 0.5; 
+          // const strike_y = Math.round(baseline - m2.ascender / 2) + 0.5; 
+          const strike_y = Math.floor(baseline - m2.descender - m2.ascender / 2) + .5;
           context.moveTo(left, strike_y);
           context.lineTo(left + part.width, strike_y);
         }
