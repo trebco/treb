@@ -38,6 +38,7 @@ export interface ClickFunctionOptions {
   y?: number;
   width?: number;
   height?: number;
+  scale?: number;
 }
 
 // I believe this was intended for hyperlinks, but they don't work that

@@ -4239,6 +4239,7 @@ export class Grid {
           y: offset_point.y - rectangle.top,
           width: rectangle.width,
           height: rectangle.height,
+          scale: this.layout.scale,
         });
 
         if (result.value) {

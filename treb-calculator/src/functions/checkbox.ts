@@ -6,12 +6,15 @@ export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResul
   const result: ClickFunctionResult = {};
 
   const offset = 3;
+  const scaled = Math.round(16 * (options.scale || 1));
+
+  // console.info('options', options);
 
   if (cell && width && height && x && y) {
 
     const box = {
-      x: offset, // Math.round(width / 2 - 8);
-      y: height - offset - 16, //  Math.round(height / 2 - 8);
+      x: offset,
+      y: height - offset - scaled,
     }
   
     if (cell.style) {
@@ -21,31 +24,24 @@ export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResul
           break;
   
         case Style.VerticalAlign.Middle:
-          box.y = Math.round(height / 2 - 8);
+          box.y = Math.round((height - scaled) / 2);
           break;
     
       }
   
       switch (cell.style.horizontal_align) {
         case Style.HorizontalAlign.Right:
-          box.x = Math.round(width - offset - 16);
+          box.x = Math.round(width - offset - scaled);
           break;
   
         case Style.HorizontalAlign.Center:
-          box.x = Math.round(width / 2 - 8);
+          box.x = Math.round((width - scaled) / 2);
           break;
   
       }    
     }
 
-    /*
-    const box = {
-      x: Math.round(width / 2 - 8),
-      y: Math.round(height / 2 - 8),
-    };
-    */
-
-    if (x >= box.x && x <= box.x + 16 && y >= box.y && y <= box.y + 16) {
+    if (x >= box.x && x <= box.x + scaled && y >= box.y && y <= box.y + scaled) {
       result.value = `=Checkbox(${cell.calculated ? 'FALSE' : 'TRUE'})`;
       result.block_selection = true;
     }
@@ -117,8 +113,19 @@ export const RenderCheckbox = (options: RenderFunctionOptions): RenderFunctionRe
 
   }
   else {
-    context.lineWidth = Math.max(2, 2 * scale);
-    context.strokeRect(x, y, 16 * scale, 16 * scale);
+
+    const scaled = Math.round(16 * scale);
+
+    const fill = context.fillStyle;
+    context.fillStyle = context.strokeStyle;
+    context.fillRect(x, y, scaled, scaled);
+
+    context.fillStyle = '#fff';
+    context.fillRect(x + 1, y + 1, scaled - 2, scaled - 2);
+
+
+    // context.lineWidth = Math.max(2, 2 * scale);
+    // context.strokeRect(x, y, 16 * scale, 16 * scale);
   }
 
   return { handled: true }; // painted
