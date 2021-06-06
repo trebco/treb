@@ -210,7 +210,7 @@ export class Chart {
 
     // if (data[1] && Array.isArray(data[1])) {
     if (!!data[1] && (typeof data[1] === 'object') && data[1].type === ValueType.array) {
-      const flat = Util.Flatten(data[1]);
+      const flat = Util.Flatten(data[1].value);
       series.x.data = flat.map(item => typeof item.value.value === 'number' ? item.value.value : undefined);
       if (flat[0].value.format) {
         series.x.format = flat[0].value.format;
