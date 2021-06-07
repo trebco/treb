@@ -181,33 +181,29 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.container_node = DOMUtilities.CreateDiv('editor-container', inner_node);
     this.editor_node = DOMUtilities.CreateDiv('formula-editor', this.container_node);
     this.editor_node.setAttribute('contenteditable', 'true');
-    // this.editor_node.setAttribute('spellcheck', 'false');
-    this.editor_node.spellcheck = true; // change the default
+
+    // 
+    // change the default back. this was changed when we were trying to figure
+    // out what was happening with IME, but it had nothing to do with spellcheck.
+    //
+    this.editor_node.spellcheck = false; // change the default back
 
     this.editor_node.addEventListener('focusin', () => {
 
       // can't happen
       if (!this.editor_node) { return; }
 
-      /*
-      if (this.editor_node) {
-        this.editor_node.setAttribute('spellcheck', 'false');
-      }
-      */
-
       // console.info('focus in');
 
-      // let text = this.editor_node ? this.editor_node.textContent || '' : '';
       let text = this.editor_node.textContent || '';
 
-      // if (text.startsWith('{') && text.endsWith('}')){
       if (text[0] === '{' && text[text.length - 1] === '}') {
         text = text.substr(1, text.length - 2);
         this.editor_node.textContent = text;
         this.last_reconstructed_text = '';
       }
 
-      this.editor_node.spellcheck = text[0] !== '='; // true except for functions
+      this.editor_node.spellcheck = (text[0] !== '='); // true except for functions
 
       this.autocomplete.ResetBlock();
 
@@ -245,6 +241,11 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
         { type: 'retain-focus', focus: false },
       ]);
       this.focused_ = false;
+
+      if (this.editor_node) {
+        this.editor_node.spellcheck = false; // for firefox
+      }
+
     });
 
     this.editor_node.addEventListener('keydown', (event) => this.FormulaKeyDown(event));
