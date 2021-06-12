@@ -1217,6 +1217,8 @@ export class Calculator extends Graph {
    */
   protected RebuildGraphCell(cell: Cell, address: ICellAddress2): void {
 
+    // console.info("RGC", cell, address);
+
     // array head
     if (cell.area && cell.area.start.column === address.column && cell.area.start.row === address.row) {
 

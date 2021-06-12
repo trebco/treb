@@ -244,9 +244,9 @@ export abstract class Graph implements GraphCallbacks {
    */
   public ResetInbound(address: ICellAddress, set_dirty = false, create = true, remove = false): void {
 
-    // console.info("RIB", address.row, address.column, 'd?', set_dirty);
-
     const vertex = this.GetVertex(address, create);
+
+    // console.info("RIB", address.row, address.column, 'd?', set_dirty, vertex, 'R?', remove);
 
     if (!vertex) {
       if (set_dirty) {
@@ -257,6 +257,12 @@ export abstract class Graph implements GraphCallbacks {
       }
       return;
     }
+
+    // this vertexes' dependencies might only have one outbound edge 
+    // (to this); in that case, we could remove the dependency vertex, 
+    // since it is essentially orphaned
+
+    const dependencies = vertex.edges_in.slice(0);
 
     vertex.ClearDependencies();
 
@@ -269,8 +275,34 @@ export abstract class Graph implements GraphCallbacks {
     // vertex.expression = { type: 'missing', id: -1 };
     // vertex.expression_error = false;
     
+    // this probably should not happen unless there are no dependents/outbound edges? (...)
+
     if (remove) {
-      this.RemoveVertex(address);
+
+      if (!vertex.has_outbound_edges) {
+        this.RemoveVertex(address);
+      }
+
+      for (const dependency of dependencies) {
+        if (!dependency.has_inbound_edges && !dependency.has_outbound_edges) {
+          const target = (dependency as SpreadsheetVertex);
+          if (target.address) {
+            console.info("orphaned dep", target.address, dependency);
+            this.RemoveVertex(target.address);
+          }
+        }
+      }
+
+      /*
+      if (vertex?.has_outbound_edges) {
+        console.info('(NOT) removing a vertex with outbound edges...')
+      }
+      else {
+        console.info('removing a vertex')
+        this.RemoveVertex(address);
+      }
+      */
+
     }
 
   }
@@ -607,7 +639,7 @@ export abstract class Graph implements GraphCallbacks {
   }
 
   /** adds an edge from u -> v */
-  public AddEdge(u: ICellAddress, v: ICellAddress): void {
+  public AddEdge(u: ICellAddress, v: ICellAddress, tag?: string): void {
 
     const v_u = this.GetVertex(u, true);
     const v_v = this.GetVertex(v, true);
@@ -615,7 +647,8 @@ export abstract class Graph implements GraphCallbacks {
     // seems pretty uncommon, not sure it's a useful optimization
     // const already_connected = v_u.edges_out.includes(v_v);
     // if (already_connected) 
-    //  console.info('add edge', u.sheet_id, u.row, u.column, '->', v.sheet_id, v.row, v.column, already_connected ? '***' : '')
+    
+    // console.info('add edge', u.sheet_id, u.row, u.column, '<-', v.sheet_id, v.row, v.column, tag||'')
 
     // const status = this.LoopCheck(v_v, v_u);
     // if (status === GraphStatus.Loop) { return status; }
@@ -642,7 +675,7 @@ export abstract class Graph implements GraphCallbacks {
         ...u,
         row: v_u.reference.area.start.row,
         column: v_u.reference.area.start.column,
-      }, v);
+      }, v, "implicit");
     }
 
     this.loop_check_required = true; // because new edges
@@ -667,6 +700,8 @@ export abstract class Graph implements GraphCallbacks {
    * @deprecated
    */
   public SetAreaDirty(area: IArea): void {
+
+    // console.info("SAD");
 
     if (area.start.column === Infinity
       || area.end.column === Infinity
@@ -693,6 +728,8 @@ export abstract class Graph implements GraphCallbacks {
 
   public SetVertexDirty(vertex: SpreadsheetVertexBase): void {
 
+    // console.info("SvD", vertex);
+
     // see below re: concern about relying on this
 
     if (vertex.dirty) { return; }
@@ -708,6 +745,8 @@ export abstract class Graph implements GraphCallbacks {
 
   /** sets dirty */
   public SetDirty(address: ICellAddress): void {
+
+    // console.info("SD", address);
 
     const vertex = this.GetVertex(address, true);
     this.SetVertexDirty(vertex);
