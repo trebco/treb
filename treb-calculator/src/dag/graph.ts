@@ -287,7 +287,6 @@ export abstract class Graph implements GraphCallbacks {
         if (!dependency.has_inbound_edges && !dependency.has_outbound_edges) {
           const target = (dependency as SpreadsheetVertex);
           if (target.address) {
-            console.info("orphaned dep", target.address, dependency);
             this.RemoveVertex(target.address);
           }
         }
