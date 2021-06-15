@@ -7,6 +7,7 @@ import { Tile } from '../types/tile';
 // import { FontMetricsCache } from '../util/font_metrics_cache';
 import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
 
+import { MDFormatter } from './md-format';
 
 import { BaseLayout, TileRange } from '../layout/base_layout';
 import { DataModel } from '../types/data_model';
@@ -23,6 +24,16 @@ interface OverflowCellInfo {
   grid: Rectangle;
 }
 
+/**
+ * information about a rendered substring. FIXME: move this somewhere else
+ * 
+ * FIXME: there's a lot of overlap between this and "TextPartFlag", which
+ * comes from base types and is used by formatter. can we consolidate these?
+ * 
+ * testing some inline markdown...
+ * FIXME: gate on option? sheet option? (...)
+ * 
+ */
 interface RenderTextPart {
   text: string;
   hidden: boolean;
@@ -35,6 +46,12 @@ interface RenderTextPart {
   top?: number;
   left?: number;
   height?: number;
+
+  // testing, md
+  bold?: boolean;
+  italic?: boolean;
+  // strike?: boolean;
+
 }
 
 interface PreparedText {
@@ -679,12 +696,6 @@ export class TileRenderer {
     let override_formatting: string | undefined;
     let formatted = cell.editing ? '' : cell.formatted; // <-- empty on editing, to remove overflows
 
-    /*
-    if (typeof override_text === 'string') {
-      formatted = override_text;
-    }
-    */
-
     if (Array.isArray(formatted)) {
 
       // type 1 is a multi-part formatted string; used for number formats.
@@ -770,6 +781,9 @@ export class TileRenderer {
         formatted = formatted.slice(1);
       }
 
+      // const md = MDFormatter.instance.Parse(formatted);
+      // console.info("MD", md);
+      
       let lines = formatted.split(/\n/); // cell.formatted.split(/\n/);
       if (style.wrap) {
 
