@@ -7,7 +7,7 @@ import { Tile } from '../types/tile';
 // import { FontMetricsCache } from '../util/font_metrics_cache';
 import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
 
-import { FormattedString, MDFormatter } from './md-format';
+import { FormattedString, MDParser } from 'treb-parser';
 
 import { BaseLayout, TileRange } from '../layout/base_layout';
 import { DataModel } from '../types/data_model';
@@ -791,10 +791,10 @@ export class TileRenderer {
       let md: FormattedString[][];
 
       if (this.options.markdown) {
-        md = MDFormatter.instance.Parse(formatted);
+        md = MDParser.instance.Parse(formatted);
       }
       else {
-        md = MDFormatter.instance.Dummy(formatted);
+        md = MDParser.instance.Dummy(formatted);
         context.font = fonts.base; // never changes
       }
 

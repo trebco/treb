@@ -42,13 +42,12 @@ export interface FormattedString extends StringFormat {
  * utility for formatting markdown strings. we split text into tokens 
  * by format. implemented as a factory/singleton, stateless.
  * 
- * TODO: preserve whitespace, or contract?
- * TODO: lines?
- * 
+ * UPDATE: moving into the parser lib, since it's a parser. even though
+ * it's totally independent. (has no deps, though, nice).
  */
-export class MDFormatter {
+export class MDParser {
 
-  private static _instance: MDFormatter = new MDFormatter();
+  private static _instance: MDParser = new MDParser();
 
   public static get instance() {
     return this._instance;
