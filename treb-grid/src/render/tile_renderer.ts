@@ -123,8 +123,6 @@ export class TileRenderer {
     protected model: DataModel,
     protected options: GridOptions, ) {
 
-      console.info("GO", options);
-
     this.buffer_canvas = document.createElement('canvas');
     this.buffer_canvas.width = this.buffer_canvas_size.width;
     this.buffer_canvas.height = this.buffer_canvas_size.height;
