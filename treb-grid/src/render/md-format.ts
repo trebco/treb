@@ -69,6 +69,15 @@ export class MDFormatter {
   }
 
   /**
+   * this is a replacement for the Parse() method, if you don't actually
+   * want to parse markdown. the aim is to have a unified result format,
+   * even if we're not handling md. 
+   */
+  public Dummy(text = ''): FormattedString[][] {
+    return text.split(/\n/).map(text => [{ text }]);
+  }
+
+  /**
    * given some input text, creates a set of text tokens with 
    * emphasis/strong emphasis applied. splits into lines (the 
    * outer array). whitespace (other than newlines) is preserved.

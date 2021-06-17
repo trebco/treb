@@ -325,6 +325,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       repaint_on_cell_change: false,
       // scrollbars: this.options.scrollbars,
       // tab_bar: this.options.tab_bar,
+      markdown: !!this.options.markdown,
     };
 
     if (this.options.scale) {

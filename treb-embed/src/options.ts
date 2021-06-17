@@ -158,6 +158,9 @@ export interface BaseOptions {
    */
   imaginary_value?: string;
 
+  /** support MD formatting for text */
+  markdown?: boolean;
+
 }
 
 /**

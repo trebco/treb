@@ -50,6 +50,9 @@ export interface GridOptions {
   /** initial scale for layout */
   initial_scale?: number;
 
+  /** support MD formatting in text */
+  markdown?: boolean;
+
 }
 
 export const DefaultGridOptions: GridOptions = {

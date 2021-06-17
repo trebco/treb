@@ -7,7 +7,7 @@ import { Tile } from '../types/tile';
 // import { FontMetricsCache } from '../util/font_metrics_cache';
 import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
 
-import { MDFormatter } from './md-format';
+import { FormattedString, MDFormatter } from './md-format';
 
 import { BaseLayout, TileRange } from '../layout/base_layout';
 import { DataModel } from '../types/data_model';
@@ -15,6 +15,13 @@ import { GridOptions } from '../types/grid_options';
 
 const BASELINE = 'bottom';
 const WK = /webkit/i.test(navigator?.userAgent || '') ? 1 : 0;
+
+interface FontSet {
+  base: string,
+  strong: string,
+  emphasis: string,
+  strong_emphasis: string,
+}
 
 interface OverflowCellInfo {
   address: ICellAddress;
@@ -48,17 +55,27 @@ interface RenderTextPart {
   height?: number;
 
   // testing, md
-  bold?: boolean;
-  italic?: boolean;
+  strong?: boolean;
+  emphasis?: boolean;
   // strike?: boolean;
 
 }
 
 interface PreparedText {
-  strings: RenderTextPart[];
-  single: boolean;
+
+  /**
+   * strings now represents parts of individual lines; this both supports
+   * MD and unifies the old system where it meant _either_ parts _or_ lines,
+   * which was super confusing.
+   */
+  strings: RenderTextPart[][];
+
+  /** this is the max rendered width. individual components have their own width */
   width: number;
+
+  /** possibly override format; this is used for number formats that have [color] */
   format?: string;
+
 }
 
 interface RenderCellResult {
@@ -83,7 +100,10 @@ interface OverflowRecord {
 
 export class TileRenderer {
 
-  protected last_font?: string;
+  // removing last_font because we are doing more complex
+  // font manipulation for MD text
+  // protected last_font?: string;
+
   protected readonly cell_edge_buffer = 4;
 
   /**
@@ -102,6 +122,8 @@ export class TileRenderer {
     protected layout: BaseLayout,
     protected model: DataModel,
     protected options: GridOptions, ) {
+
+      console.info("GO", options);
 
     this.buffer_canvas = document.createElement('canvas');
     this.buffer_canvas.width = this.buffer_canvas_size.width;
@@ -562,7 +584,7 @@ export class TileRenderer {
 
     // const render_list: Array<{row: number, column: number, cell: Cell}> = [];
 
-    this.last_font = undefined;
+    // this.last_font = undefined;
     context.setTransform(scale, 0, 0, scale, 0, 0);
 
     let left = 0;
@@ -681,17 +703,19 @@ export class TileRenderer {
    * separate operations here, which we're consolidating for convenience (and
    * because they never overlap).
    *
-   * NOTE: style font must already be set in context
+   * UPDATED returning a 2d array, where the first dimension represents lines
+   * and the second dimension represents components is lines and the second
    */
-  protected PrepText(context: CanvasRenderingContext2D, cell: Cell, cell_width: number /*, override_text?: string*/ ): PreparedText {
+  protected PrepText(context: CanvasRenderingContext2D, 
+                     fonts: FontSet, 
+                     cell: Cell, 
+                     cell_width: number /*, override_text?: string*/ ): PreparedText {
 
     const strings: RenderTextPart[] = [];
     const style: Style.Properties = cell.style || {};
 
     let pad_entry: RenderTextPart | undefined;
-    let max_width = 0;
     let composite_width = 0;
-    let single = false;
 
     let override_formatting: string | undefined;
     let formatted = cell.editing ? '' : cell.formatted; // <-- empty on editing, to remove overflows
@@ -700,6 +724,9 @@ export class TileRenderer {
 
       // type 1 is a multi-part formatted string; used for number formats.
       // we support invisible characters and padded (expanded) characters
+
+      // FIXME: is there any case where this would include md? ...
+      // (potentially yes? what happens if you have a string in a number-formatted cell?)
 
       // this is a single line, with number formatting
 
@@ -715,18 +742,6 @@ export class TileRenderer {
           text: part.text, 
           hidden: part.flag === TextPartFlag.hidden 
         };
-
-        /*
-        if (part.flag === TextPartFlag.italic) {
-          render_part.italic = true;
-          const cached_font = context.font;
-          if (!/italic/i.test(cached_font)) { 
-            context.font = 'italic ' + cached_font;
-            render_part.width = context.measureText(part.text).width;
-          }
-          context.font = cached_font;
-        }
-        */
 
         strings.push(render_part);
 
@@ -759,15 +774,7 @@ export class TileRenderer {
 
       }
 
-      max_width = composite_width;
-      single = true;
-
-    }
-    else if (formatted === '') {
-
-      // undefined cells return this value; we don't need to do any calculation
-
-      strings.push({ text: '', hidden: false, width: 0 });
+      return { strings: [strings], format: override_formatting, width: composite_width };
 
     }
     else if (formatted) {
@@ -781,72 +788,198 @@ export class TileRenderer {
         formatted = formatted.slice(1);
       }
 
-      // const md = MDFormatter.instance.Parse(formatted);
-      // console.info("MD", md);
+      let md: FormattedString[][];
+
+      if (this.options.markdown) {
+        md = MDFormatter.instance.Parse(formatted);
+      }
+      else {
+        md = MDFormatter.instance.Dummy(formatted);
+        context.font = fonts.base; // never changes
+      }
+
+      // if we are not wrapping, we don't have to do any trimming. if we
+      // are wrapping, leave whitespace attached to the front; possibly trim 
+      // whitespace in between tokens (this should be attached to tokens, but
+      // possibly not...)
       
-      let lines = formatted.split(/\n/); // cell.formatted.split(/\n/);
+      let max_width = 0;
+
+      // for wrapping
+
+      const bound = cell_width - (2 * this.cell_edge_buffer);
+      const strings: RenderTextPart[][] = [];
+
       if (style.wrap) {
 
-        const bounded_width = cell_width - (2 * this.cell_edge_buffer);
+        for (const line of md) {
 
-        const wrapped: string[] = [];
-        lines.forEach((base_line) => {
+          // we should probably normalize whitespace -- because formatting
+          // may put some whitespace before tokens, other whitespace after
+          // tokens, and so on. it's confusing. 
 
-          // temp: word split
-          const words = base_line.match(/\S+\s*/g); // preserve extra whitespace on the same line...
-          if (words && words.length) {
-            let line = '';
-            do {
-              // add word
-              const test = (line + words[0]).trim();
+          for (let i = 1; i < line.length; i++) {
+            const test = line[i].text.match(/^(\s+)/);
+            if (test) {
+              line[i - 1].text += test[1];
+              line[i].text = line[i].text.replace(/^\s+/, '');
+            }
+          }
 
-              // measure
-              const width = context.measureText(test).width;
+          // that leads leading whitespace on the first token, which we
+          // probably can't resolve (we could just drop it, I guess)
 
-              if (width < bounded_width) {
-                // fits? consume, continue
-                line = line + words[0]; // add trailing whitespace for now
-                words.shift();
+
+          // next we need to measure each word:
+
+          interface WordMetric {
+            part: FormattedString,
+            text: string, // UNTRIMMED
+            trimmed: number,
+            width: number,
+          }
+
+          let words: WordMetric[] = [];
+
+          for (const element of line) {
+
+            if (this.options.markdown) {
+              if (element.strong && element.emphasis) {
+                context.font = fonts.strong_emphasis;
               }
-              else if (!line) {
-                // doesn't fit, but first word: consume, push
-                wrapped.push(test.trim());
-                words.shift();
-                line = '';
+              else if (element.strong) {
+                context.font = fonts.strong;
+              }
+              else if (element.emphasis) {
+                context.font = fonts.emphasis;
               }
               else {
-                // doesn't fit: push existing line, loop
-                wrapped.push(line.trim()); // remove trailing whitespace in this case
-                line = '';
+                context.font = fonts.base;
+              }
+            }
+
+            const split = element.text.match(/\S+\s*/g); // preserve extra whitespace on the same line...
+            if (split && split.length) {
+              for (const word of split) {
+
+                // FIXME: maybe overoptimizing, but this is measuring the same
+                // text twice; could reduce...
+
+                const trimmed = context.measureText(word.trim()).width;
+                const width = context.measureText(word).width; // including trailing whitespace
+                words.push({part: element, text: word, trimmed, width});
+
+              }
+            }
+          }
+
+          // now we can construct wrapped lines. we don't split words, so 
+          // we always have at least one word on a line.
+
+          while (words.length) {
+
+            // add first word. line length is _trimmed_ length.
+
+            let last = words.shift() as WordMetric; // NOT undefined
+
+            const line2 = [last];
+            let line_width = last.trimmed;
+
+            // add more words? check bounds first
+
+            while (line_width < bound && words.length) {
+
+              // we're holding the trim width on the last word, but to
+              // test we need the untrimmed width
+
+              const word = words[0];
+              const test = line_width - last.trimmed + last.width + word.trimmed;
+
+              if (test >= bound) {
+                break; // line finished
               }
 
+              // add this word to the line, remove it from the stack
+
+              last = word;
+              line2.push(word);
+              line_width = test;
+              words.shift();
+
             }
-            while (words.length);
-            if (line) {
-              wrapped.push(line.trim()); // remove trailing whitespace in this case
+
+            // trim the last word, then insert a row (we're relying on the 
+            // fact that this points at the last entry in the array)
+
+            last.text = last.text.trim();
+            last.width = last.trimmed;
+
+            strings.push(line2.map((metric) => {
+              return {
+                ...metric.part,
+                hidden: false, 
+                width: metric.width, 
+                text: metric.text, 
+              };
+            }));
+            
+          }
+
+        }
+
+      }
+      else {
+
+        // simple case
+
+        for (const line of md) {
+          const parts: RenderTextPart[] = [];
+
+          let line_width = 0;
+
+          for (const element of line) {
+
+            if (this.options.markdown) {
+              if (element.strong && element.emphasis) {
+                context.font = fonts.strong_emphasis;
+              }
+              else if (element.strong) {
+                context.font = fonts.strong;
+              }
+              else if (element.emphasis) {
+                context.font = fonts.emphasis;
+              }
+              else {
+                context.font = fonts.base;
+              }
             }
-          }
-          else {
-            // blank line?
-            wrapped.push('');
-          }
-        });
-        lines = wrapped;
+
+            const width =  context.measureText(element.text).width;
+            line_width += width;
+
+            parts.push({
+              ...element,
+              hidden: false,
+              width,
+            });
+
+          };
+
+          max_width = Math.max(max_width, line_width);
+
+          strings.push(parts);
+          
+        };
       }
 
-      for (const line of lines) {
-        const width = context.measureText(line).width;
-        max_width = Math.max(max_width, width);
-        strings.push({ text: line, hidden: false, width });
-      }
+      return { strings, width: max_width };
 
     }
 
-    if (override_formatting) {
-      return { strings, width: max_width, single, format: override_formatting };
-    }
-
-    return { strings, width: max_width, single };
+    return {
+      strings: [[{ text: '', hidden: false, width: 0 }]],
+      width: 0,
+    };
 
   }
 
@@ -1346,15 +1479,22 @@ export class TileRenderer {
     // (eventually) painting to the buffer context. just remember to set
     // font in the buffer context.
 
-    const font = Style.Font(style, this.layout.scale);
+    const fonts: FontSet = {
+      base: Style.Font(style, this.layout.scale),
+      strong: Style.Font({...style, font_bold: true}, this.layout.scale),
+      emphasis: Style.Font({...style, font_italic: true}, this.layout.scale),
+      strong_emphasis: Style.Font({...style, font_bold: true, font_italic: true}, this.layout.scale),
+    };
 
-    if (font !== this.last_font) {
-      context.font = this.last_font = font; // set in context so we can measure
-    }
+    //if (font !== this.last_font) {
+    //  context.font = this.last_font = font; // set in context so we can measure
+    //}
+
+    context.font = fonts.base; 
 
     if (dirty || !cell.renderer_data || cell.renderer_data.width !== width || cell.renderer_data.height !== height) {
       cell.renderer_data = { 
-        text_data: this.PrepText(context, cell, width), // , override_text), 
+        text_data: this.PrepText(context, fonts, cell, width), // , override_text), 
         width, 
         height,
       };
@@ -1550,7 +1690,7 @@ export class TileRenderer {
       this.EnsureBuffer(result.width + 1, height + 1, -paint_left);
 
       context = this.buffer_context;
-      context.font = font;
+      context.font = fonts.base;
 
     }
 
@@ -1569,15 +1709,6 @@ export class TileRenderer {
         context.fillStyle = this.theme.grid_color || '';
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
 
-        // how could this ever be true, given the test above? (...)
-
-        // if (element.cell.style && element.cell.style.background && element.cell.style.background !== 'none') {
-        //  context.fillStyle = element.cell.style.background;
-        // }
-        // else {
-        //  context.fillStyle = this.theme.grid_cell?.background || '';
-        //}
-
         context.fillStyle = this.theme.grid_cell?.fill ? ThemeColor(this.theme, this.theme.grid_cell.fill) : '';
 
         context.fillRect(element.background.left, element.background.top,
@@ -1592,8 +1723,11 @@ export class TileRenderer {
 
     }
 
-    //const m1 = FontMetricsCache.get(style, this.layout.scale);
-    const m2 = FontMetricsCache2.Get(font);
+    // NOTE: we are getting fontmetrics based on the base font (so ignoring italic 
+    // and bold variants). this should be OK because we use it for height, mostly.
+    // not sure about invisible text (FIXME)
+
+    const m2 = FontMetricsCache2.Get(fonts.base);
 
     // set stroke for underline
 
@@ -1612,7 +1746,8 @@ export class TileRenderer {
 
     const line_height = 1.3;
 
-    const line_count = text_data.single ? 1 : text_data.strings.length;
+    //const line_count = text_data.single ? 1 : text_data.strings.length;
+    const line_count = text_data.strings.length;
     const text_height = (line_count * m2.block * line_height);
 
     // we stopped clipping initially because it was expensive -- but then
@@ -1638,29 +1773,7 @@ export class TileRenderer {
 
     context.beginPath();
 
-    // is this actually top, or is it bottom? it may have been top at some 
-    // point but I'm pretty sure it's baseline, now (alphabetic). FIXME
-
-    /*
-    let baseline = Math.round(height - text_height);
-
-    switch (style.vertical_align) {
-      case Style.VerticalAlign.Top:
-        baseline = 2;
-        break;
-      case Style.VerticalAlign.Middle:
-        baseline = Math.round((height - text_height) / 2 + 2);
-        break;
-    }
-
-    baseline += metrics.ascent + 3;
-
-    // FIX: FIXME (vertical align)
-
-    */
-
     // baseline looks OK, if you account for descenders. 
-    // underline is off though.
     
     let original_baseline = Math.round(height - 2 - (m2.block * line_height * (line_count - 1)) + WK); // switched baseline to "bottom"
 
@@ -1672,8 +1785,6 @@ export class TileRenderer {
         original_baseline = Math.round((height - text_height) / 2 + m2.block * line_height);
         break;
     }
-
-    // console.info("baseline", original_baseline, 's?', text_data.single);
 
     if ((cell.type === ValueType.number || 
          cell.calculated_type === ValueType.number || 
@@ -1698,6 +1809,78 @@ export class TileRenderer {
       context.fillText(text, left, original_baseline);
       
     }
+    else {
+
+      // unifying the old "single" and "!single" branches. now the data is
+      // an array of rows, each of which is an array of elements. elements
+      // may have different formatting.
+
+      let baseline = original_baseline;
+      let index = 0;
+
+      for (const line of text_data.strings) {
+
+        // FIXME: cache line width
+
+        let line_width = 0;
+        for (const part of line) { line_width += part.width; }
+
+        if (horizontal_align === Style.HorizontalAlign.Center) {
+          left = Math.round((width - line_width) / 2);
+        }
+        else if (horizontal_align === Style.HorizontalAlign.Right) {
+          left = width - this.cell_edge_buffer - line_width;
+        }
+
+        if (style.font_underline) {
+          const underline_y = Math.floor(baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
+          context.moveTo(left, underline_y);
+          context.lineTo(left + line_width, underline_y);
+        }
+        
+        if (style.font_strike) {
+          const strike_y = Math.floor(baseline - m2.descender - m2.ascender / 2) + .5;
+          context.moveTo(left, strike_y);
+          context.lineTo(left + line_width, strike_y);
+        }
+
+        let x = left;
+        for (const part of line) {
+
+          if (part.strong && part.emphasis) {
+            context.font = fonts.strong_emphasis;
+          }
+          else if (part.strong) {
+            context.font = fonts.strong;
+          }
+          else if (part.emphasis) {
+            context.font = fonts.emphasis;
+          }
+          else {
+            context.font = fonts.base;
+          }
+
+          context.fillText(part.text, x, baseline);
+
+          if (preserve_layout_info) {
+            part.left = x;
+            part.top = baseline - m2.block;
+            part.height = m2.block;
+          }
+
+          x += part.width;
+
+        }
+
+        index++;
+        baseline = Math.round(original_baseline + index * m2.block * line_height);
+
+      }
+
+
+    }
+
+    /*
     else if (text_data.single) {
 
       // const cached_font = context.font;
@@ -1715,11 +1898,7 @@ export class TileRenderer {
         left = width - this.cell_edge_buffer - text_data.width;
       }
 
-      // const underline_y = original_baseline - 0.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
-      // const underline_y = original_baseline + 1.5 - m2.descender - WK; // metrics.block - 3.5 - metrics.ascent - 3;
       const underline_y = Math.floor(original_baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
-
-      // const strike_y = Math.round(original_baseline - m2.ascender / 2) + 0.5; 
       const strike_y = Math.floor(original_baseline - m2.descender - m2.ascender / 2) + .5;
 
       // we want a single underline, possibly spanning hidden elements,
@@ -1729,16 +1908,6 @@ export class TileRenderer {
       for (const part of text_data.strings) {
         if (!part.hidden) {
 
-          /*
-          if (part.italic) {
-            context.font = italic_font;
-            context.fillText(part.text, left, original_baseline);
-            context.font = cached_font;
-          }
-          else {
-            context.fillText(part.text, left, original_baseline);
-          }
-          */
           context.fillText(part.text, left, original_baseline);
 
           if (style.font_underline) {
@@ -1766,9 +1935,6 @@ export class TileRenderer {
       let baseline = original_baseline;
       let index = 0;
 
-      const cached_font = context.font;
-      const italic_font = /italic/i.test(cached_font) ? cached_font : 'italic ' + cached_font;
-
       for (const part of text_data.strings) {
 
         // here we justify based on part, each line might have different width
@@ -1781,29 +1947,17 @@ export class TileRenderer {
         }
 
         if (style.font_underline) {
-          // const underline_y = baseline - 0.5 - WK; // metrics.block - 3.5 - metrics.ascent - 3;
           const underline_y = Math.floor(baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
           context.moveTo(left, underline_y);
           context.lineTo(left + part.width, underline_y);
         }
         
         if (style.font_strike) {
-          // const strike_y = Math.round(baseline - m2.ascender / 2) + 0.5; 
           const strike_y = Math.floor(baseline - m2.descender - m2.ascender / 2) + .5;
           context.moveTo(left, strike_y);
           context.lineTo(left + part.width, strike_y);
         }
 
-        /*
-        if (part.italic) {
-          context.font = italic_font;
-          context.fillText(part.text, left, baseline);
-          context.font = cached_font;
-        }
-        else {
-          context.fillText(part.text, left, baseline);
-        }
-        */
         context.fillText(part.text, left, baseline);
 
         if (preserve_layout_info) {
@@ -1812,12 +1966,12 @@ export class TileRenderer {
           part.height = m2.block;
         }
 
-        // baseline += m2.block * line_height;
         index++;
         baseline = Math.round(original_baseline + index * m2.block * line_height);
       }
 
     }
+    */
 
     context.stroke();
 
