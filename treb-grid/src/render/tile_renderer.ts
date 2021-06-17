@@ -1830,6 +1830,7 @@ export class TileRenderer {
           left = width - this.cell_edge_buffer - line_width;
         }
 
+        /*
         if (style.font_underline) {
           const underline_y = Math.floor(baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
           context.moveTo(left, underline_y);
@@ -1841,6 +1842,10 @@ export class TileRenderer {
           context.moveTo(left, strike_y);
           context.lineTo(left + line_width, strike_y);
         }
+        */
+
+        const underline_y = Math.floor(baseline + 1.5 - m2.descender - WK) + .5; // metrics.block - 3.5 - metrics.ascent - 3;
+        const strike_y = Math.floor(baseline - m2.descender - m2.ascender / 2) + .5;
 
         let x = left;
         for (const part of line) {
@@ -1858,14 +1863,32 @@ export class TileRenderer {
             context.font = fonts.base;
           }
 
-          context.fillText(part.text, x, baseline);
+          if (!part.hidden) {
 
-          if (preserve_layout_info) {
-            part.left = x;
-            part.top = baseline - m2.block;
-            part.height = m2.block;
+            context.fillText(part.text, x, baseline);
+
+            if (style.font_underline) {
+              context.moveTo(x, underline_y);
+              context.lineTo(x + part.width, underline_y);
+            }
+            
+            if (style.font_strike) {
+              context.moveTo(x, strike_y);
+              context.lineTo(x + part.width, strike_y);
+            }
+
+            // we're putting this inside the test block so
+            // that you can't click on hidden text. not sure
+            // if it works, though.
+
+            if (preserve_layout_info) {
+              part.left = x;
+              part.top = baseline - m2.block;
+              part.height = m2.block;
+            }
+  
           }
-
+          
           x += part.width;
 
         }
