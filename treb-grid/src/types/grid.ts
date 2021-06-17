@@ -4075,19 +4075,22 @@ export class Grid {
     const y = offset_point.y - rectangle.top;
 
     const parts = cell.renderer_data?.text_data?.strings || [];
-    for (const part of parts) {
-      // validate?
-      if (typeof part.left === 'number' 
-          && typeof part.top === 'number' 
-          && typeof part.width === 'number' 
-          && typeof part.height === 'number' ) {
 
-        if (x >= part.left 
-            && y >= part.top
-            && x <= (part.left + part.width)
-            && y <= (part.top + part.height)) {
-          
-          return true;
+    for (const line of parts) {
+      for (const part of line) {
+        // validate?
+        if (typeof part.left === 'number' 
+            && typeof part.top === 'number' 
+            && typeof part.width === 'number' 
+            && typeof part.height === 'number' ) {
+
+          if (x >= part.left 
+              && y >= part.top
+              && x <= (part.left + part.width)
+              && y <= (part.top + part.height)) {
+            
+            return true;
+          }
         }
       }
     }
