@@ -42,6 +42,9 @@ export interface FormattedString extends StringFormat {
  * utility for formatting markdown strings. we split text into tokens 
  * by format. implemented as a factory/singleton, stateless.
  * 
+ * note: in case it's not clear, where I reference MD rules, I mean 
+ * CommonMark. we may add some GFM as well (strike?).
+ * 
  * UPDATE: moving into the parser lib, since it's a parser. even though
  * it's totally independent. (has no deps, though, nice).
  */
@@ -55,14 +58,17 @@ export class MDParser {
 
   protected constructor() {}
 
+  /** is this worth a function call? will it get inlined? */
   protected IsWhitespace(char: string) {
     return char === ' ' || char === '\t';
   }
 
+  /** is this worth a function call? will it get inlined? */
   protected IsNewline(char: string) {
     return char === '\r' || char === '\n';
   }
 
+  /** is this worth a function call? will it get inlined? */
   protected IsDelimeter(char: string) {
     return char === '*' || char === '_';
   }
