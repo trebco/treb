@@ -1,8 +1,25 @@
 
+// support for entities removed, as it adds a lot of bloat. we 
+// could easily support numbers (+hex), but html entities require
+// a table. see
+//
+// https://html.spec.whatwg.org/entities.json
+//
+// I don't think we need this, since we're not html -- you can just
+// enter utf8 characters. we might think about emoji entities, though,
+// along the lines of
+//
+// https://github.com/markdown-it/markdown-it-emoji
+//
+
+// import * as he from 'he';
+
 export interface StringFormat {
   strong?: boolean;
   emphasis?: boolean;
-  strike?: boolean;
+
+  strike?: boolean; // TODO
+  pre?: boolean;    // TODO
 }
 
 interface NewlineToken extends StringFormat {
@@ -145,8 +162,20 @@ export class MDParser {
     // last pass consolidates text with like formats, scrubs used tokens
     // (actually changes _unused_ tokens -> text), and splits into lines. 
 
-    return this.Consolidate(tokens) as FormattedString[][];
-    
+    /*
+    const formatted: FormattedString[][] = this.Consolidate(tokens);
+
+    for (const line of formatted) {
+      for (const token of line) {
+        token.text = he.decode(token.text);
+      }
+    }
+
+    return formatted ; // this.Consolidate(tokens) as FormattedString[][];
+    */
+
+   return this.Consolidate(tokens) as FormattedString[][];
+
   }
 
   /**
@@ -168,6 +197,12 @@ export class MDParser {
         line = [];
       }
       else {
+
+        // yuck
+        
+        // can we have a method? or maybe this should be a bitmask, 
+        // so we can use === and only have to worry about 0
+
         if ((!!format.strong !== !!token.strong) || (!!format.emphasis !== !!token.emphasis)) {
           format.strong = !!token.strong;
           format.emphasis = !!token.emphasis;
