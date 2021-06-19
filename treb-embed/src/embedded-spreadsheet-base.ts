@@ -2847,13 +2847,33 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           case 'increase-font-size':
           case 'decrease-font-size':
             if (this.active_selection_style) {
-              const size_value = (this.active_selection_style.font_size_value || 16) * // default?
-                ((event.command === 'increase-font-size') ? 1.05 : .95);
-              updated_style.font_size_value = size_value;
-              console.info("updated", updated_style.font_size_unit, this.active_selection_style.font_size_value)
+              switch (this.active_selection_style.font_size_unit) {
+                case 'px':
+                  // increase by 1 point = 4/3 px
+                  updated_style.font_size_value = (this.active_selection_style.font_size_value || 16) + ((event.command === 'increase-font-size') ? (4/3) : (-4/3));
+                  break;
+
+                  break;
+                case 'pt':
+                  // increase by 1 point
+                  updated_style.font_size_value = (this.active_selection_style.font_size_value || 12) + ((event.command === 'increase-font-size') ? 1 : -1);
+                  break;
+
+                case 'em':
+                  // increase by .05 em
+                  updated_style.font_size_value = (this.active_selection_style.font_size_value || 1) + ((event.command === 'increase-font-size') ? .05 : -.05);
+                  break;
+
+                case '%':
+                  // increase by 5 %
+                  updated_style.font_size_value = (this.active_selection_style.font_size_value || 100) + ((event.command === 'increase-font-size') ? 5 : -5);
+                  break;
+  
+              }
+              updated_style.font_size_value = Math.round((updated_style.font_size_value||1) * 100) / 100;
             }
             break;
-          */
+            */
 
           case 'increase-decimal':
           case 'decrease-decimal':
