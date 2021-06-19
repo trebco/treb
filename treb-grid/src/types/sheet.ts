@@ -1166,7 +1166,7 @@ export class Sheet {
    * UPDATE: since the only caller calls with inline = true, removing 
    * parameter, test, and extra behavior.
    */
-  public AutoSizeRow(row: number, default_properties: Style.Properties = {}): void {
+  public AutoSizeRow(row: number, default_properties: Style.Properties = {}, allow_shrink = true): void {
 
     let height = this.default_row_height;
     const padding = 9;
@@ -1186,6 +1186,11 @@ export class Sheet {
         const font_height = this.StyleFontSize(style, default_properties);
         height = Math.max(height, ((font_height || 10) + padding) * lines.length);
       }
+    }
+
+    if (!allow_shrink) {
+      const test = this.GetRowHeight(row);
+      if (test >= height) { return; }
     }
 
     this.SetRowHeight(row, height);

@@ -226,6 +226,52 @@ export namespace Style {
   };
   */
 
+  export const ParseFontSize = (text = ''): Properties => {
+    const match = text.match(/(-*[\d.]+)\s*(\S*)/);
+
+    if (match) {
+      const value = Number(match[1]);
+      if (!value || isNaN(value) || value < 0) {
+        return {}; // invalid
+      }
+      let unit = match[2].toLowerCase();
+      if (!unit) {
+        unit = 'pt';
+      }
+      if (unit === 'pt' || unit === 'em' || unit === '%' || unit === 'px') {
+        return { font_size_unit: unit, font_size_value: value };
+      }
+    }
+
+    return {};
+  };
+
+  export const FontSize = (properties: Properties, prefer_points = true): string => {
+
+    let value = properties.font_size_value;
+
+    switch (properties.font_size_unit) {
+      case 'pt':
+        return (value||12) + 'pt';
+
+      case 'px':
+        if (prefer_points) {
+          let points = Math.round((value||16) * 300 / 4) / 100;
+          return (points) + 'pt';
+        }
+        return (value||16) + 'px';
+
+      case 'em':
+        return (value||1) + 'em';
+
+      case '%':
+        return (value||100) + '%';
+
+    }
+
+    return '';
+  };
+
   /**
    * returns a string representation suitable for canvas (or style)
    */

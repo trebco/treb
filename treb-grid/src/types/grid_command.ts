@@ -82,11 +82,15 @@ export interface CommandBase {
 /**
  * resize row(s). undefined means "all rows". undefined height
  * means "auto size".
+ * 
+ * UPDATE: shrink is a flag you can set to prevent shrinking rows
+ * when (and only when) auto-sizing, i.e. height is undefined
  */
 export interface ResizeRowsCommand {
   key: CommandKey.ResizeRows;
   row?: number|number[];
   height?: number;
+  shrink?: boolean;
 }
 
 /**

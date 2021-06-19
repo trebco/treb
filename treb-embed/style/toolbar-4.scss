@@ -376,6 +376,11 @@ $swatch-width: 1.1em;
     outline: none;
   }
 
+  .container.font-size {
+    width: 3.5em;
+    // & > input { font-size: .8em; }
+  }
+
   button.drop {
     width: auto;
     min-width: 13px;

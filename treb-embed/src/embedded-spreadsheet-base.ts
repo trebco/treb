@@ -2745,7 +2745,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.toolbar.Subscribe((event) => {
 
       let updated_style: Style.Properties= {};
-      
+
       const insert_annotation = (func: string) => {
         const selection = this.grid.GetSelection();
         if (selection && !selection.empty) {
@@ -2756,6 +2756,23 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       if (event.type === 'format') {
         updated_style.number_format = event.format || 'General';
+      }
+      else if (event.type === 'font-size') {
+
+        // NOTE we're doing this a little differently; not using
+        // updated style because we also want to resize rows, and
+        // we want those things to be a single transaction.
+        
+        const selection = this.grid.GetSelection();
+        const area = this.grid.RealArea(selection.area);
+
+        this.grid.ApplyStyle(undefined, event.style, true);
+        const rows: number[] = [];
+        for (let row = area.start.row; row <= area.end.row; row++) {
+          rows.push(row);
+        }
+        this.grid.SetRowHeight(rows, undefined, false);
+
       }
       else if (event.type === 'button') {
         switch (event.command) {

@@ -32,6 +32,11 @@ export interface ToolbarClickEvent {
   data?: any;
 }
 
+export interface ToolbarFontSizeEvent {
+  type: 'font-size';
+  style: Style.Properties;
+}
+
 export interface ToolbarNumberFormatEvent {
   type: 'format';
   format: string;
@@ -39,6 +44,7 @@ export interface ToolbarNumberFormatEvent {
 
 export type ToolbarEvent = ToolbarClickEvent 
   | ToolbarCancelEvent
+  | ToolbarFontSizeEvent
   | ToolbarNumberFormatEvent;
 
 /**
@@ -183,6 +189,14 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           <button class='drop'></button>
           <div class='drop-menu color-chooser' data-target='foreground' tabindex='-1'></div>
         </div>
+
+        ${options.font_size ? `
+        <div class='group wide'>
+          <div class='container font-size'>
+            <input value='' id='font-size-input'>
+          </div>
+        </div>
+        ` : ''}
 
         ${ /* 
         <div class='split-button'>
@@ -355,6 +369,40 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         return;
       }
     });
+
+    let cached_size = '';
+    const size_input = this.model['font-size-input'] as HTMLInputElement;
+    
+    // this is gated on an option, so it may not exist
+    
+    if (size_input) {
+      size_input.addEventListener('focus', () => cached_size = size_input.value || '');
+      size_input.addEventListener('keydown', (event: KeyboardEvent) => {
+        switch (event.key) {
+          case 'Enter':
+            if (size_input.value) {
+              this.Publish({ type: 'font-size', style: Style.ParseFontSize(size_input.value || '')});
+            }
+            else {
+              this.Publish({ type: 'font-size', style: {
+                font_size_unit: undefined,
+                font_size_value: undefined,
+              }});
+            }
+            break;
+
+          case 'Escape':
+            format_input.value = cached_format;
+            this.Publish({ type: 'cancel' });
+            break;
+
+          default:
+            return;
+        }
+        event.stopPropagation();
+        event.preventDefault();
+      });
+    }
 
     let cached_format = '';
     const format_input = this.model['number-format-input'] as HTMLInputElement;
@@ -667,6 +715,12 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       merge.classList.remove('active');
       merge.dataset.command = 'merge';
       merge.setAttribute('title', 'Merge cells');
+    }
+    
+    // this is gated on an option, so it may not exist
+    const font_size = this.model['font-size-input'] as HTMLInputElement;
+    if (font_size) {
+      font_size.value = Style.FontSize(state.style || {});
     }
     
     const format = state.style?.number_format || '';

@@ -2102,11 +2102,12 @@ export class Grid {
   /**
    * API method
    */
-  public SetRowHeight(row?: number | number[], height?: number): void {
+  public SetRowHeight(row?: number | number[], height?: number, shrink = true): void {
     this.ExecCommand({
       key: CommandKey.ResizeRows,
       row,
       height,
+      shrink,
     });
   }
 
@@ -8271,8 +8272,11 @@ export class Grid {
               }
             }
             else {
+
+              // this is default true, but optional
+              const allow_shrink = (typeof command.shrink === 'boolean' ? command.shrink : true);
               for (const entry of row) {
-                this.active_sheet.AutoSizeRow(entry, this.theme.grid_cell);
+                this.active_sheet.AutoSizeRow(entry, this.theme.grid_cell, allow_shrink);
               }
             }
 
