@@ -136,6 +136,10 @@ export class MDParser {
 
     */
 
+    // FIXME: could this not be consolidated with "apply formatting", below? or
+    // is the concern that if we do that, we might calculate more than once for
+    // any given token? it might still be more efficient...
+
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
       if (token.type === 'delimeter') {
