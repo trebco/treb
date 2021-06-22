@@ -343,6 +343,9 @@ export class StyleCache {
       else {
         border.right.color = 64;
       }
+
+      // console.info("BXX", JSON.stringify(composite, undefined, 2), JSON.stringify(border, undefined, 2));
+
     }
 
     // leave blank for bottom, default

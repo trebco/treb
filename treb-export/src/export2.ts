@@ -44,6 +44,15 @@ export class Exporter {
     ignoreAttributes: false,
     supressEmptyNode: true,
     tagValueProcessor: a => (typeof a === 'string') ? he.encode(a, { useNamedReferences: true}) : a,
+
+    // there's a "isAttributeValue" for decode, but no option for encode?
+    // we only want to encode ' and "
+
+    // attrValueProcessor: a => (typeof a === 'string') ? he.encode(a, { useNamedReferences: true }) : a,
+
+    attrValueProcessor: a => (typeof a === 'string') ? 
+      a.replace(/"/g, '&quot;').replace(/'/g, '&apos;') : a,
+
   };
 
   public xmlparser = new xmlparser.j2xParser(this.xmloptions);
@@ -311,6 +320,7 @@ export class Exporter {
           };
         }),
       };
+
     }
 
     if (fonts.length) {
@@ -333,6 +343,8 @@ export class Exporter {
         border: borders,
       };
     }
+
+    // console.info("B", borders, JSON.stringify(dom.styleSheet.borders, undefined, 2))
 
     if (xfs.length) {
       dom.styleSheet.cellXfs = {
@@ -413,6 +425,8 @@ export class Exporter {
 
   public StyleFromCell(sheet: SerializedSheet, style_cache: StyleCache, row: number, column: number, style: Style.Properties = {}) {
 
+    // console.info("SFC", JSON.stringify(style, undefined, 2));
+
     const list: Style.Properties[] = [sheet.sheet_style];
 
     if (sheet.row_pattern && sheet.row_pattern.length) {
@@ -444,6 +458,7 @@ export class Exporter {
     list.push(style);
 
     const options = style_cache.StyleOptionsFromProperties(Style.Composite(list));
+
     return style_cache.EnsureStyle(options);
 
   };

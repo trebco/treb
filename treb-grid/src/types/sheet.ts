@@ -1859,10 +1859,27 @@ export class Sheet {
       }
       for (const style of style_list as Style.Properties[]) {
 
+        // don't set "undefined" overrides. also, was this broken 
+        // wrt all the defaults from top? probably
+
+        let fill = translate_border_fill(style.border_top_fill, Style.DefaultProperties.border_top_fill);
+        if (fill !== undefined) { style.border_top_fill = fill; } 
+
+        fill = translate_border_fill(style.border_left_fill, Style.DefaultProperties.border_left_fill);
+        if (fill !== undefined) { style.border_left_fill = fill; } 
+
+        fill = translate_border_fill(style.border_right_fill, Style.DefaultProperties.border_right_fill);
+        if (fill !== undefined) { style.border_right_fill = fill; } 
+
+        fill = translate_border_fill(style.border_bottom_fill, Style.DefaultProperties.border_bottom_fill);
+        if (fill !== undefined) { style.border_bottom_fill = fill; } 
+
+        /*
         style.border_top_fill = translate_border_fill(style.border_top_fill, Style.DefaultProperties.border_top_fill);
         style.border_left_fill = translate_border_fill(style.border_left_fill, Style.DefaultProperties.border_top_fill);
         style.border_right_fill = translate_border_fill(style.border_right_fill, Style.DefaultProperties.border_top_fill);
         style.border_bottom_fill = translate_border_fill(style.border_bottom_fill, Style.DefaultProperties.border_top_fill);
+        */
 
         //style.border_top_color = translate_border_color(style.border_top_color, Style.DefaultProperties.border_top_color);
         //style.border_left_color = translate_border_color(style.border_left_color, Style.DefaultProperties.border_left_color);
