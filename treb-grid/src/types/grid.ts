@@ -1654,6 +1654,8 @@ export class Grid {
 
     this.layout.ApplyTheme(this.theme);
 
+    this.tile_renderer.UpdateTheme(); // has reference
+
     if (!initial) {
 
       this.UpdateLayout(); // in case we have changed font size

@@ -5,7 +5,7 @@ import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectang
 import { Tile } from '../types/tile';
 
 // import { FontMetricsCache } from '../util/font_metrics_cache';
-import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
+import { FontMetricsCache, FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
 
 import { FormattedString, MDParser } from 'treb-parser';
 
@@ -136,6 +136,30 @@ export class TileRenderer {
       this.buffer_context.textAlign = 'left';
       this.buffer_context.textBaseline = BASELINE; // 'alphabetic';
     }
+
+    if (this.theme.grid_cell?.font_size_value){
+      if (this.theme.grid_cell.font_size_unit === 'px') {
+        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size_value;
+      }
+      else if (this.theme.grid_cell.font_size_unit === 'pt') {
+        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size_value * 4 / 3;
+      }
+    }
+
+  }
+
+  public UpdateTheme() {
+    
+    if (this.theme.grid_cell?.font_size_value){
+      if (this.theme.grid_cell.font_size_unit === 'px') {
+        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size_value;
+      }
+      else if (this.theme.grid_cell.font_size_unit === 'pt') {
+        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size_value * 4 / 3;
+      }
+    }
+
+    FontMetricsCache.Flush();
 
   }
 

@@ -1,3 +1,4 @@
+import { worker } from "cluster";
 
 export interface FontMetrics2 {
   ascender: number;
@@ -13,8 +14,34 @@ export class FontMetricsFactory {
 
   private cache: Record<string, FontMetrics2> = {};
 
+  public base_size_px = 10;
+
   constructor() {
+
+    // you don't have to attach this canvas to the document
+    // in order to use it to measure. however, if the font size
+    // is relative it needs to be relative to the canvas size;
+    // and if the canvas is not attached to the document, size
+    // doesn't work.
+
+    // FIXME: test with a containing node? 
+    //        (NOTE: that doesn't help)
+
     this.canvas = document.createElement('canvas');
+
+    // FIXME: since this is prelude to drawing, couldn't we use
+    // our drawing canvas to render? then we don't need to attach
+    // garbage to the DOM
+
+    // alternatively, we could munge the font description...
+
+    // this.canvas.style.position = 'absolute';
+    // this.canvas.style.top = '-1000px';
+    // document.body.appendChild(this.canvas);
+
+    // what we're doing now is calculating -- we get the base size
+    // from theme and if we see em or % we scale manually.
+
   }
 
   private GetFirstIndex(pixels: Uint8ClampedArray) {
@@ -31,6 +58,23 @@ export class FontMetricsFactory {
     return 0;
   }
 
+  /* *
+   * set base font size. the idea here is to have a base in case font sizes 
+   * are relative (% or em), they need to be relative to something. HOWEVER,
+   * canvas doesn't inherit -- 
+   * 
+   * (moved to base_size_points)
+   * 
+   * /
+  public BaseSize(size: string): void {
+    this.canvas.style.fontSize = size || '';
+  }
+  */
+
+  public Flush() {
+    this.cache = {};
+  }
+
   public Get(font: string): FontMetrics2 {
     let metrics = this.cache[font];
     if (metrics) {
@@ -43,7 +87,14 @@ export class FontMetricsFactory {
 
   public Measure(font: string): FontMetrics2 {
 
-    // console.info("measure", font);
+    const match = font.match(/([\d.]+)((?:%|em))/);
+
+    if (match) {
+      const target = match[1] + match[2];
+      let value = Number(match[1]) * this.base_size_px;
+      if (match[2] === '%') { value /= 100; }
+      font = font.replace(target, value + 'px');
+    }
 
     let context = this.canvas.getContext('2d');
 

@@ -193,7 +193,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         ${options.font_size ? `
         <div class='group wide'>
           <div class='container font-size'>
-            <input value='' id='font-size-input'>
+            <input value='' id='font-size-input' title='Font size'>
           </div>
         </div>
         ` : ''}
@@ -266,7 +266,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         <div class='group'>
           <div class='container'>
-            <input value='General' id='number-format-input'>
+            <input value='General' id='number-format-input' title='Number format'>
           </div>
           <button class='drop'></button>
           <div class='drop-menu scroll' tabindex='-1' data-number-formats></div>

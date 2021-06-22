@@ -568,6 +568,10 @@ export class Sheet {
 
   /**
    * FIXME: measure the font.
+   * 
+   * Can we use the same metrics as renderer? That uses a canvas. Obviously
+   * canvas won't work if there's no DOM but it's OK if this method fails in
+   * that case; the only question is will it break if it's running headless?
    */
   public StyleFontSize(style: Style.Properties, default_properties: Style.Properties = {}): number {
 
@@ -1169,7 +1173,7 @@ export class Sheet {
   public AutoSizeRow(row: number, default_properties: Style.Properties = {}, allow_shrink = true): void {
 
     let height = this.default_row_height;
-    const padding = 9;
+    const padding = 9; // 9?
 
     for (let column = 0; column < this.cells.columns; column++) {
 
@@ -1183,7 +1187,7 @@ export class Sheet {
 
       if (style && text && text.length) {
         const lines = text.split(/\n/);
-        const font_height = this.StyleFontSize(style, default_properties);
+        const font_height = Math.round(this.StyleFontSize(style, default_properties) * 1.5); // it's a start, we still need to measure properly
         height = Math.max(height, ((font_height || 10) + padding) * lines.length);
       }
     }
