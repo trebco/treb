@@ -824,6 +824,8 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         html.push('<hr/>');
         for (const tint of [.5, .25, 0, -.25, -.5]) {
+        // for (const tint of [.33, 0, -.33]) {
+
           html.push(`<div class='color-list-row'>`);
           for (i = 0; i < 10; i++) {
             let color = theme.theme_colors[i] || '#000';
