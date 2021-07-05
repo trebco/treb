@@ -194,7 +194,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           <div class='drop-menu color-chooser' data-target='foreground' tabindex='-1'></div>
         </div>
 
-        ${options.font_size ? `
+        ${options.font_scale ? `
         <div class='group wide'>
           <div class='container font-size'>
             <input value='' id='font-size-input' title='Font scale'>

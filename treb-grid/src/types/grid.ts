@@ -1847,6 +1847,17 @@ export class Grid {
     // don't delay this, it looks terrible
 
     if (!toll_initial_render) {
+
+      // tab bar was disappearing on initial load without a document; that's
+      // because it was only getting called on load/update. if we're not tolling,
+      // then we need to update here.
+
+      // if (this.tab_bar) {
+      //  this.tab_bar.Update(); 
+      //}
+
+      this.tab_bar?.Update();
+
       this.Repaint(true);
     }
 

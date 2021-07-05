@@ -400,6 +400,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       grid_options.expand = true;
     }
 
+    // console.info("GOO", JSON.stringify(grid_options, undefined, 2));
+
     this.grid = new Grid(grid_options);
 
     if (options.headless) {

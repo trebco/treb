@@ -110,7 +110,7 @@ export interface BaseOptions {
   file_menu?: boolean;
 
   /** font size in the toolbar */
-  font_size?: boolean;
+  font_scale?: boolean;
 
   /** chart menu in the toolbar */
   chart_menu?: boolean;
