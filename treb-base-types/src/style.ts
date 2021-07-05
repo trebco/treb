@@ -226,7 +226,7 @@ export namespace Style {
   };
   */
 
-  export const ParseFontSize = (text = ''): Properties => {
+  export const ParseFontSize = (text = '', default_unit = 'em'): Properties => {
     const match = text.match(/(-*[\d.]+)\s*(\S*)/);
 
     if (match) {
@@ -234,16 +234,78 @@ export namespace Style {
       if (!value || isNaN(value) || value < 0) {
         return {}; // invalid
       }
-      let unit = match[2].toLowerCase();
-      if (!unit) {
-        unit = 'pt';
-      }
+      let unit = match[2].toLowerCase() || default_unit;
       if (unit === 'pt' || unit === 'em' || unit === '%' || unit === 'px') {
         return { font_size_unit: unit, font_size_value: value };
       }
     }
 
     return {};
+  };
+
+  /**
+   * returns the font size of the properties argument as a ratio of the 
+   * base argument. this is intended to show the relative font size of 
+   * a spreadsheet cell; so anything with no value should be "1", and
+   * everything else is relative to that.
+   * 
+   * we prefer relative sizes (em, essentially) to fixed sizes because
+   * we may have different base font sizes on different platforms (we do,
+   * in fact, on windows because calibri is too small).
+   * 
+   * using relative sizes helps ensure that it looks similar, if not 
+   * identical, on different platforms.
+   */
+  export const RelativeFontSize = (properties: Properties, base: Properties): number => {
+
+    // we can assume (I think) that base will be either points or px; 
+    // there's no case where it should be relative. in fact, let's treat
+    // that as an error and return 1.
+
+    // note that if properties is relative (em or %) we don't have to 
+    // calculate, it's implicit
+
+    let base_pt = 12;
+    let props_pt = 12;
+
+    switch (properties.font_size_unit) {
+      case 'pt':
+        if (!properties.font_size_value) { return 1; } // also error
+        props_pt = properties.font_size_value;
+        break;
+
+      case 'px':
+        if (!properties.font_size_value) { return 1; } // also error
+        props_pt = Math.round(properties.font_size_value * 300 / 4) / 100;
+        break;
+
+      case 'em':
+        return (properties.font_size_value || 1); // short circuit
+
+      case '%':
+        return (properties.font_size_value || 100) / 100; // short circuit
+        
+      default:
+        return 1; // error
+    }
+
+    switch (base.font_size_unit) {
+      case 'pt':
+        if (!base.font_size_value) { return 1; } // also error
+        base_pt = base.font_size_value;
+        break;
+
+      case 'px':
+        if (!base.font_size_value) { return 1; } // also error
+        base_pt = Math.round(base.font_size_value * 300 / 4) / 100;
+        break;
+
+      default:
+        return 1; // error
+    }
+
+    return props_pt / base_pt;
+    
   };
 
   export const FontSize = (properties: Properties, prefer_points = true): string => {

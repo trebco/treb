@@ -74,7 +74,8 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
   public theme_color_map: string[] = [];
 
-  constructor(container: HTMLElement, options: EmbeddedSpreadsheetOptions, theme: Theme) {
+  constructor(public container: HTMLElement, public options: EmbeddedSpreadsheetOptions, public theme: Theme) {
+
     super();
 
     for (const value of [0, 128, 192, 212, 256]) {
@@ -194,7 +195,20 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         ${options.font_size ? `
         <div class='group wide'>
           <div class='container font-size'>
-            <input value='' id='font-size-input' title='Font size'>
+            <input value='' id='font-size-input' title='Font scale'>
+          </div>
+          <button class='drop'>
+          </button>
+          <div class='drop-menu' tabindex='-1'>
+            <ul>
+              <li><button class='text' data-command='font-scale' data-scale='0.80'>0.80</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='0.90'>0.90</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='1.00'>1.00</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='1.10'>1.10</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='1.20'>1.20</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='1.50'>1.50</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='2.00'>2.00</button></li>
+            </ul>
           </div>
         </div>
         ` : ''}
@@ -440,6 +454,10 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         }
         else {
           switch (command) {
+            case 'font-scale':
+              data.scale = element?.dataset?.scale || 1;
+              break;
+
             case 'clear-comment':
             case 'update-comment':
               if (this.state?.selection && !this.state.selection.empty) {
@@ -721,7 +739,8 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     // this is gated on an option, so it may not exist
     const font_size = this.model['font-size-input'] as HTMLInputElement;
     if (font_size) {
-      font_size.value = Style.FontSize(state.style || {});
+      // font_size.value = Style.FontSize(state.style || {});
+      font_size.value = Style.RelativeFontSize(state.style || {}, this.theme.grid_cell || {}).toFixed(2);
     }
     
     const format = state.style?.number_format || '';

@@ -2777,6 +2777,28 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       else if (event.type === 'button') {
         switch (event.command) {
 
+          case 'font-scale':
+
+            // above we handle 'font-size' events; this comes from a dropdown,
+            // so we're handling it inline, but we want the same behavior.
+            // FIXME: break out
+
+            {
+              const selection = this.grid.GetSelection();
+              const area = this.grid.RealArea(selection.area);
+              const scale = Number(event.data?.scale || 1);
+
+              if (scale && !isNaN(scale)) {
+                this.grid.ApplyStyle(undefined, { font_size_unit: 'em', font_size_value: scale }, true);
+                const rows: number[] = [];
+                for (let row = area.start.row; row <= area.end.row; row++) {
+                  rows.push(row);
+                }
+                this.grid.SetRowHeight(rows, undefined, false);
+              }
+            }
+            break;
+
           case 'update-comment':
             this.SetNote(event.data?.comment || '');
             break;
