@@ -8,6 +8,7 @@ import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';
 import { EmbeddedSpreadsheetOptions } from './options';
 import { GridSelection } from 'treb-grid';
+import { ThemeColor2 } from 'treb-base-types';
 
 import '../style/toolbar-4.scss';
 
@@ -72,7 +73,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
   /** the current color, if you click the button (not the dropdown) */
   public border_color?: Style.Color = undefined; // { theme: 0 };
 
-  public theme_color_map: string[] = [];
+  // public theme_color_map: string[] = [];
 
   constructor(public container: HTMLElement, public options: EmbeddedSpreadsheetOptions, public theme: Theme) {
 
@@ -570,19 +571,32 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
   public ResolveColor(color: Style.Color|undefined, default_color: Style.Color): string {
 
-    if (!color) {
-      color = default_color;
-    }
+    // if (!color) {
+    //  color = default_color;
+    // }
 
+    return ThemeColor2(this.theme, color || default_color) || '';
+
+    /*
     if (color.text) {
       return color.text;
     }
 
     if (typeof color.theme === 'number') {
-      return this.theme_color_map[color.theme] || '';
+
+
+      if (this.theme.theme_colors) {
+        return this.theme.theme_colors[color.theme] || '';
+      }
+      return '';
+
+      // return this.theme.theme_colors
+      // return this.theme_color_map[color.theme] || '';
+
     }
 
     return '';
+    */
 
   }
 
@@ -660,7 +674,17 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         if (typeof target?.dataset?.theme !== 'undefined') {
           let index = Number(target?.dataset?.theme);
           if (isNaN(index)) { index = 0; }
-          this.CommitColor({ theme: index || 0 });
+
+          const props: Style.Color = { theme: index || 0 };
+          if (target?.dataset?.tint) {
+            const tint = Number(target.dataset.tint);
+            if (tint && !isNaN(tint)) {
+              props.tint = tint;
+            }
+          }
+          console.info("P", JSON.stringify(props, undefined, 2));
+          this.CommitColor(props);
+
         }
         else {
           const color = target?.dataset?.color || '';
@@ -788,29 +812,39 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     let i = 0;
 
-    this.theme_color_map = [];
-
     if (theme.theme_colors) {
+
       html.push(`<div class='color-list-row'>`);
       for (i = 0; i < 10; i++) {
         const color = theme.theme_colors[i] || '#000';
-        //html.push(`<button class='color-swatch' data-theme=${i} title='${labels[i]}: ${color}' style='background: ${color};'></button>`);
-        html.push(`<button class='color-swatch' data-theme=${i} title='${labels[i]}: ${color}' ></button>`);
-        this.theme_color_map[i] = color;
+        html.push(`<button style='background-color: ${color}' class='color-swatch' data-theme=${i} title='${labels[i]}: ${color}' ></button>`);
       }
       html.push(`</div>`);
 
-    }
+      if (this.options.tint_theme_colors) {
 
-    // html.push(`</div>`);
-    target.innerHTML = html.join('');
+        html.push('<hr/>');
+        for (const tint of [.5, .25, 0, -.25, -.5]) {
+          html.push(`<div class='color-list-row'>`);
+          for (i = 0; i < 10; i++) {
+            let color = theme.theme_colors[i] || '#000';
+            if (tint) {
+              const scale = Math.round(Math.abs(tint) * 100);
+              const direction = tint > 0 ? 'lighter' : 'darker';
+              color += ` (${scale}% ${direction})`
+            }
+            const bg = this.ResolveColor({ theme: i, tint }, {});
+            html.push(`<button style='background-color: ${bg}' class='color-swatch' data-tint=${tint} data-theme=${i} title='${labels[i]}: ${color}' ></button>`);
+          }
+          html.push(`</div>`);
+    
+        }
 
-    if (theme.theme_colors) {
-      const buttons = target.querySelectorAll('button.color-swatch');
-      for (let i = 0; i < buttons.length; i++) {
-        (buttons[i] as HTMLElement).style.background = theme.theme_colors[i];
       }
+
     }
+
+    target.innerHTML = html.join('');
 
   }
 

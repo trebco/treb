@@ -164,6 +164,9 @@ export interface BaseOptions {
   /** support MD formatting for text */
   markdown?: boolean;
 
+  /** show tinted colors in toolbar color dropdowns */
+  tint_theme_colors?: boolean;
+
 }
 
 /**
