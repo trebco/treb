@@ -682,7 +682,6 @@ export class Toolbar extends EventSource<ToolbarEvent> {
               props.tint = tint;
             }
           }
-          console.info("P", JSON.stringify(props, undefined, 2));
           this.CommitColor(props);
 
         }
