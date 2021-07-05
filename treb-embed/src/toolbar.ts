@@ -78,6 +78,8 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     super();
 
+    const ds = Localization.decimal_separator;
+
     for (const value of [0, 128, 192, 212, 256]) {
       this.colors.push(`rgb(${value}, ${value}, ${value})`);
     }
@@ -201,13 +203,13 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           </button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
-              <li><button class='text' data-command='font-scale' data-scale='0.80'>0.80</button></li>
-              <li><button class='text' data-command='font-scale' data-scale='0.90'>0.90</button></li>
-              <li><button class='text' data-command='font-scale' data-scale='1.00'>1.00</button></li>
-              <li><button class='text' data-command='font-scale' data-scale='1.10'>1.10</button></li>
-              <li><button class='text' data-command='font-scale' data-scale='1.20'>1.20</button></li>
-              <li><button class='text' data-command='font-scale' data-scale='1.50'>1.50</button></li>
-              <li><button class='text' data-command='font-scale' data-scale='2.00'>2.00</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='0.80'>0${ds}80</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='0.90'>0${ds}90</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='1.00'>1${ds}00</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='1.10'>1${ds}10</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='1.20'>1${ds}20</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='1.50'>1${ds}50</button></li>
+              <li><button class='text' data-command='font-scale' data-scale='2.00'>2${ds}00</button></li>
             </ul>
           </div>
         </div>
@@ -289,10 +291,10 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         <div class='split-button'>
           <button data-command='decrease-decimal' title='Decrease precision'>
-            <div>0${Localization.decimal_separator}0</div>
+            <div>0${ds}0</div>
           </button>
           <button data-command='increase-decimal' title='Increase precision'>
-            <div>0${Localization.decimal_separator}00</div>
+            <div>0${ds}00</div>
           </button>
         </div>
 
@@ -396,7 +398,15 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         switch (event.key) {
           case 'Enter':
             if (size_input.value) {
-              this.Publish({ type: 'font-size', style: Style.ParseFontSize(size_input.value || '')});
+
+              let text = size_input.value;
+
+              // lock this down to reasonable values only?
+              if (Localization.decimal_separator !== '.') {
+                text = text.replace(new RegExp(Localization.decimal_separator, 'g'), '.');
+              }
+              this.Publish({ type: 'font-size', style: Style.ParseFontSize(text)});
+
             }
             else {
               this.Publish({ type: 'font-size', style: {
@@ -739,8 +749,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     // this is gated on an option, so it may not exist
     const font_size = this.model['font-size-input'] as HTMLInputElement;
     if (font_size) {
-      // font_size.value = Style.FontSize(state.style || {});
-      font_size.value = Style.RelativeFontSize(state.style || {}, this.theme.grid_cell || {}).toFixed(2);
+      let text = Style.RelativeFontSize(state.style || {}, this.theme.grid_cell || {}).toFixed(2);
+      text = text.replace(/\./g, Localization.decimal_separator);
+      font_size.value = text;
     }
     
     const format = state.style?.number_format || '';
