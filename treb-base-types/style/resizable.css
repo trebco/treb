@@ -14,7 +14,8 @@
 .treb-embed-resize-rect {
   box-sizing: border-box;
   position: absolute;
-  border: 1px dotted #339966;
+  /* border: 1px dotted #339966; */
+  border: 1px dotted #2e8dd6;
   border-radius: 2px;
   pointer-events: none;
 }
@@ -26,7 +27,9 @@
   width: 16px;
   min-height: 16px;
   min-width: 16px;
-  border: 8px solid #339966;
+  /* border: 8px solid #339966; */
+  border: 8px solid #2e8dd6;
+
   border-top-color: transparent;
   border-left-color: transparent;
   cursor: nwse-resize;
