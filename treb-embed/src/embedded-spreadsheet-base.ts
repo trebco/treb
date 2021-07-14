@@ -1342,8 +1342,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     return result;
   }
 
-  public ScrollTo(address: string | ICellAddress, x = true, y = true): void {
-    this.grid.ScrollTo(this.EnsureAddress(address), x, y);
+  public ScrollTo(address: string | ICellAddress, x = true, y = true, smooth = false): void {
+    this.grid.ScrollTo(this.EnsureAddress(address), x, y, smooth);
   }
 
   /**

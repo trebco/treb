@@ -1299,13 +1299,32 @@ export abstract class BaseLayout {
     };
   }
 
-  public ScrollTo(address: ICellAddress, x = true, y = true): void {
+  public ScrollTo(address: ICellAddress, x = true, y = true, smooth = false): void {
     const target_rect = this.CellAddressToRectangle(address);
-    if (y) {
-      this.scroll_reference_node.scrollTop = target_rect.top;
+
+    if (smooth && !!this.scroll_reference_node.scrollTo) {
+      
+      const current = {
+        left: this.scroll_reference_node.scrollLeft,
+        top: this.scroll_reference_node.scrollTop,
+      };
+
+      const options: ScrollToOptions = {
+        left: x ? target_rect.left : current.left,
+        top: y ? target_rect.top : current.top,
+        behavior: 'smooth',
+      }
+
+      this.scroll_reference_node.scrollTo(options);
+
     }
-    if (x) {
-      this.scroll_reference_node.scrollLeft = target_rect.left;
+    else {
+      if (y) {
+        this.scroll_reference_node.scrollTop = target_rect.top;
+      }
+      if (x) {
+        this.scroll_reference_node.scrollLeft = target_rect.left;
+      }
     }
   }
 

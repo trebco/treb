@@ -2393,8 +2393,8 @@ export class Grid {
    * scrolls so that the given cell is in the top-left (assuming that is
    * possible)
    */
-  public ScrollTo(address: ICellAddress, x = true, y = true): void {
-    this.layout.ScrollTo(address, x, y);
+  public ScrollTo(address: ICellAddress, x = true, y = true, smooth = false): void {
+    this.layout.ScrollTo(address, x, y, smooth);
   }
 
   /**
