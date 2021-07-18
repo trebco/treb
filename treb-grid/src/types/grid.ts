@@ -1038,10 +1038,35 @@ export class Grid {
    */
   public FromCSV(text: string): void {
 
+    // CSV assumes dot-decimal, correct? if we want to use the
+    // parser we will have to check (and set/reset) the separator
+
+    const toggle_separator = this.parser.decimal_mark === DecimalMarkType.Comma;
+
+    if (toggle_separator) {
+      // swap
+      this.parser.argument_separator = ArgumentSeparatorType.Comma;
+      this.parser.decimal_mark = DecimalMarkType.Period;
+    }
+
     const records = ParseCSV(text);
     const arr = records.map((record) =>
-      record.map((field) => ValueParser.TryParse(field).value));
+      record.map((field) => {
+        if (field) {
+          const tmp = this.parser.Parse(field);
+          if (tmp.expression?.type === 'complex') {
+            return tmp.expression as Complex;
+          }
+        }
+        return ValueParser.TryParse(field).value;
+      }));
 
+    if (toggle_separator) {
+      // reset
+      this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+      this.parser.decimal_mark = DecimalMarkType.Comma;
+    }
+  
     const end = {
       row: Math.max(0, arr.length - 1),
       column: arr.reduce((max, row) => Math.max(max, Math.max(0, row.length - 1)), 0),
@@ -6580,6 +6605,9 @@ export class Grid {
   private OnDropdownSelect(value: CellValue) {
 
     if (typeof value !== 'undefined') {
+
+      // FIXME: complex? (...)
+
       const result = ValueParser.TryParse(value.toString());
       if (result.type === ValueType.number) {
         value = result.value;

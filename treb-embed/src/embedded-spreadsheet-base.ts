@@ -966,6 +966,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public ParseNumber(text: string) {
 
     /*
+
+    ...why not?
+
     const expr = this.parser.Parse(text);
     if (expr.expression?.type === 'complex') {
       return {
