@@ -182,21 +182,31 @@ export const DefaultOptions: BaseOptions = {
   undo: true,
   scrollbars: true,
   headers: true,
-  dnd: false,       // I don't think false options need to be in default?
   export: true,
-  fork: false,      // I don't think false options need to be in default?
   popout: true,
   tab_bar: 'auto',
-  add_tab: false,   // I don't think false options need to be in default?
   max_workers: 1,
   resizable: true,
   default_trials: 5000,
-  screen_updates: false, // I don't think false options need to be in default?
   lhs: true,
   hyperlinks: '_blank',
   max_file_size: 1024 * 92,
   complex: true,
+
   // imaginary_value: 'i',
+
+  // I don't think false options need to be in default?
+  // although it's nice to have a clear reference about defaults...
+  
+  dnd: false,
+  fork: false,
+  add_tab: false,
+  screen_updates: false,
+  expand_formula_button: false,
+  delete_tab: false,
+  expand: false,
+  markdown: false,
+
 };
 
 export interface RunSimulationOptions {

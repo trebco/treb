@@ -274,9 +274,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // set these options ASAP, they are static to the relevant classes
 
+    /* option is deprecated
     if (this.options.complex) {
       // Parser.support_complex_numbers = true;
     }
+    */
+
     if (typeof this.options.imaginary_value === 'string') {
       NumberFormat.imaginary_character = this.options.imaginary_value;
     }
@@ -318,14 +321,21 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // create + init grid
 
     const grid_options: GridOptions = {
-      expand: false,
-      insert_function_button: false,
-      in_cell_editor: true,
-      // formula_bar: this.options.formula_bar,
+      // expand: false,
+
+      insert_function_button: false, // do we have this?
+      in_cell_editor: true, // if this is always true, why is it an option?
       repaint_on_cell_change: false,
       scrollbars: this.options.scrollbars,
-      // tab_bar: this.options.tab_bar,
       markdown: !!this.options.markdown,
+
+      formula_bar: this.options.formula_bar,
+      expand_formula_button: this.options.expand_formula_button,
+      tab_bar: this.options.tab_bar,
+      add_tab: this.options.add_tab,
+      delete_tab: this.options.delete_tab,
+      expand: this.options.expand,
+
     };
 
     if (this.options.scale) {
@@ -334,13 +344,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // what is happening here? this is dumb
 
-    if (typeof this.options.formula_bar !== 'undefined') {
-      grid_options.formula_bar = this.options.formula_bar;
-    }
+//    if (typeof this.options.formula_bar !== 'undefined') {
+//      grid_options.formula_bar = this.options.formula_bar;
+//    }
 
-    if (this.options.expand_formula_button) {
-      grid_options.expand_formula_button = this.options.expand_formula_button;
-    }
+//    if (this.options.expand_formula_button) {
+//      grid_options.expand_formula_button = this.options.expand_formula_button;
+//    }
 
     // if (this.options.scrollbars) 
     // {
@@ -348,9 +358,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     //  grid_options.scrollbars = !!this.options.scrollbars;
     // }
 
-    if (typeof this.options.tab_bar !== 'undefined') {
-      grid_options.tab_bar = this.options.tab_bar;
-    }
+//    if (typeof this.options.tab_bar !== 'undefined') {
+//      grid_options.tab_bar = this.options.tab_bar;
+//    }
 
     if (this.options.scale_control) {
 
@@ -390,6 +400,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     }
 
+    /*
     if (this.options.add_tab) {
       grid_options.add_tab = this.options.add_tab;
     }
@@ -401,6 +412,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (this.options.expand) {
       grid_options.expand = true;
     }
+    */
 
     // console.info("GOO", JSON.stringify(grid_options, undefined, 2));
 
