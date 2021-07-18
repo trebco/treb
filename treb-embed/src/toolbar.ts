@@ -813,18 +813,12 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     if (theme.theme_colors) {
 
-      html.push(`<div class='color-list-row'>`);
-      for (i = 0; i < 10; i++) {
-        const color = theme.theme_colors[i] || '#000';
-        html.push(`<button style='background-color: ${color}' class='color-swatch' data-theme=${i} title='${labels[i]}: ${color}' ></button>`);
-      }
-      html.push(`</div>`);
+      // UPDATE: one or the other, don't need both
 
       if (this.options.tint_theme_colors) {
 
-        html.push('<hr/>');
+        // html.push('<hr/>');
         for (const tint of [.5, .25, 0, -.25, -.5]) {
-        // for (const tint of [.33, 0, -.33]) {
 
           html.push(`<div class='color-list-row'>`);
           for (i = 0; i < 10; i++) {
@@ -835,17 +829,32 @@ export class Toolbar extends EventSource<ToolbarEvent> {
               color += ` (${scale}% ${direction})`
             }
             const bg = this.ResolveColor({ theme: i, tint }, {});
-            html.push(`<button style='background-color: ${bg}' class='color-swatch' data-tint=${tint} data-theme=${i} title='${labels[i]}: ${color}' ></button>`);
+            html.push(`<button data-color='${bg}' class='color-swatch' data-tint=${tint} data-theme=${i} title='${labels[i]}: ${color}' ></button>`);
           }
           html.push(`</div>`);
     
         }
 
       }
+      else {
+        html.push(`<div class='color-list-row'>`);
+        for (i = 0; i < 10; i++) {
+          const color = theme.theme_colors[i] || '#000';
+          // html.push(`<button style='background-color: ${color}' class='color-swatch' data-theme=${i} title='${labels[i]}: ${color}' ></button>`);
+          html.push(`<button data-color='${color}' class='color-swatch' data-theme=${i} title='${labels[i]}: ${color}' ></button>`);
+        }
+        html.push(`</div>`);
+  
+      }
 
     }
 
     target.innerHTML = html.join('');
+
+    const buttons = target.querySelectorAll('button[data-color]') as NodeListOf<HTMLButtonElement>;
+    for (let i = 0; i < buttons.length; i++) {
+      buttons[i].style.backgroundColor = buttons[i].dataset.color || '';
+    }
 
   }
 
