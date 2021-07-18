@@ -71,7 +71,7 @@ export interface BaseOptions {
   freeze_columns?: number;
 
   /** row/column headers */
-  show_headers?: boolean;
+  headers?: boolean;
 
   /** recalculate on load */
   recalculate?: boolean;
@@ -149,9 +149,12 @@ export interface BaseOptions {
   hyperlinks?: string|false;
 
   /** 
-   * support complex numbers. the meaning of this flag is changing -- the parser
-   * is going to always support complex numbers, but we might load a different 
-   * set of functions if they're not expected to be used.
+   * support complex numbers. the meaning of this flag is changing -- the 
+   * parser is going to always support complex numbers, but we might load 
+   * a different set of functions if they're not expected to be used.
+   * ...
+   * no, we're not doing that. atm complex support is always baked in.
+   * @deprecated
    */
   complex?: boolean;
 
@@ -178,20 +181,21 @@ export const DefaultOptions: BaseOptions = {
   in_cell_editor: true,
   undo: true,
   scrollbars: true,
-  dnd: false,
+  headers: true,
+  dnd: false,       // I don't think false options need to be in default?
   export: true,
-  fork: false,
+  fork: false,      // I don't think false options need to be in default?
   popout: true,
   tab_bar: 'auto',
-  add_tab: false,
+  add_tab: false,   // I don't think false options need to be in default?
   max_workers: 1,
   resizable: true,
   default_trials: 5000,
-  screen_updates: false,
+  screen_updates: false, // I don't think false options need to be in default?
   lhs: true,
   hyperlinks: '_blank',
   max_file_size: 1024 * 92,
-  complex: false,
+  complex: true,
   // imaginary_value: 'i',
 };
 

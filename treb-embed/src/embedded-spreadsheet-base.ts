@@ -308,11 +308,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     let container: HTMLElement|undefined;
 
-    if (typeof options.container === 'string') {
-      container = document.getElementById(options.container) as HTMLElement;
+    if (typeof this.options.container === 'string') {
+      container = document.getElementById(this.options.container) as HTMLElement;
     }
-    else if (options.container) {
-      container = options.container;
+    else if (this.options.container) {
+      container = this.options.container;
     }
 
     // create + init grid
@@ -323,7 +323,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       in_cell_editor: true,
       // formula_bar: this.options.formula_bar,
       repaint_on_cell_change: false,
-      // scrollbars: this.options.scrollbars,
+      scrollbars: this.options.scrollbars,
       // tab_bar: this.options.tab_bar,
       markdown: !!this.options.markdown,
     };
@@ -342,9 +342,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       grid_options.expand_formula_button = this.options.expand_formula_button;
     }
 
-    if (this.options.scrollbars) {
-      grid_options.scrollbars = this.options.scrollbars;
-    }
+    // if (this.options.scrollbars) 
+    // {
+    //  console.info("TOS?", this.options.scrollbars, typeof this.options.scrollbars);
+    //  grid_options.scrollbars = !!this.options.scrollbars;
+    // }
 
     if (typeof this.options.tab_bar !== 'undefined') {
       grid_options.tab_bar = this.options.tab_bar;
@@ -404,7 +406,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     this.grid = new Grid(grid_options);
 
-    if (options.headless) {
+    if (this.options.headless) {
       this.grid.headless = true; // FIXME: move into grid options
     }
 
@@ -423,7 +425,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       container.addEventListener('keydown', this.HandleKeyDown.bind(this));
 
-      const toll_initial_render = !!(data || options.network_document);
+      const toll_initial_render = !!(data || this.options.network_document);
 
       this.grid.Initialize(this.node, toll_initial_render);
 
@@ -575,7 +577,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // FIXME: this should yield so we can subscribe to events before the initial load
 
     if (data) {
-      this.LoadDocument(JSON.parse(data), undefined, undefined, !!options.recalculate, undefined, undefined, source);
+      this.LoadDocument(JSON.parse(data), undefined, undefined, !!this.options.recalculate, undefined, undefined, source);
     }
     else if (!network_document) {
 
@@ -595,9 +597,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     //  this.grid.Freeze(options.freeze_rows || 0, options.freeze_columns || 0);
     // }
 
-    if (typeof options.show_headers !== 'undefined') {
-      this.grid.ShowHeaders(options.show_headers);
-    }
+    // if (typeof options.show_headers !== 'undefined') {
+    this.grid.ShowHeaders(this.options.headers);
+    // }
 
     // optionally scroll grid on create (async -- why?)
 
