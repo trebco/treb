@@ -14,6 +14,28 @@ export const IsComplex = (value: any): value is Complex => {
           && (typeof value.imaginary === 'number');
 };
 
+export const ComplexToString = (value: Complex): string => {
+  if (value.real) {
+    if (value.imaginary) {
+      if (value.imaginary > 0) {
+        return `${value.real} + ${value.imaginary}i`;
+      }
+      else {
+        return `${value.real} - ${Math.abs(value.imaginary)}i`;
+      }
+    }
+    else {
+      return value.real.toString();
+    }
+  }
+  else if (value.imaginary) {
+    return value.imaginary + 'i';
+  }
+  else {
+    return '0';
+  }
+};
+
 /**
  * I _think_ using enums is faster. I'm not actually sure about that, though.
  * it stands to reason that a single int compare is faster than a string

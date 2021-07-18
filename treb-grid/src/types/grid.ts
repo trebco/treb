@@ -17,6 +17,8 @@ import {
   ImportedSheetData, 
   LoadThemeProperties,
   DefaultTheme,
+  ComplexToString,
+  Complex,
 } from 'treb-base-types';
 
 import {
@@ -6714,8 +6716,28 @@ export class Grid {
           // here instead of the calculated value? should use the latter...
 
           // tsv_row.push(cell.formatted);
-          tsv_row.push(typeof cell.calculated === 'undefined' ? cell.value : cell.calculated);
-          
+
+          let text_value = '';
+          if (cell.calculated) {
+            if (cell.calculated_type === ValueType.complex) {
+              text_value = ComplexToString(cell.calculated as Complex);
+            }
+            else {
+              text_value = cell.calculated.toString();
+            }
+          }
+          else {
+            if (cell.type === ValueType.complex) {
+              text_value = ComplexToString(cell.value as Complex);
+            }
+            else {
+              text_value = cell.value?.toString() || '';
+            }
+          }
+
+          // tsv_row.push(typeof cell.calculated === 'undefined' ? cell.value : cell.calculated);
+          tsv_row.push(text_value);
+
           const data_entry: ClipboardCellData = {
             address,
             data: cell.value,

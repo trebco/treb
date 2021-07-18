@@ -6,7 +6,7 @@ import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } 
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue,
-  IsFlatData, IsFlatDataArray, Rectangle, Theme, ValueType } from 'treb-base-types';
+  IsFlatData, IsFlatDataArray, Rectangle, Theme, ValueType, IsComplex, ComplexToString } from 'treb-base-types';
 import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
@@ -2053,13 +2053,17 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       for (const element of serialized_data.data){
         let value = '';
         if ((!options.formulas) && typeof element.calculated !== 'undefined') {
-          value = element.calculated.toString();
+          value = IsComplex(element.calculated) ? 
+            ComplexToString(element.calculated) :
+            element.calculated.toString();
         }
         else if (typeof element.value === 'string' && element.value[0] === '\'') {
           value = element.value.substr(1);
         }
         else if (typeof element.value !== 'undefined') {
-          value = element.value.toString();
+          value = IsComplex(element.value) ?
+            ComplexToString(element.value) :
+            element.value.toString();
         }
 
         if (delim_regex.test(value)) {
