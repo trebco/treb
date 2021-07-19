@@ -81,7 +81,12 @@
   &.dialog-type-about {
     border-top-width: 3px;
     // border-top-color: #52880b;
-    border-top-color: #036ec1;
+    // border-top-color: #036ec1;
+    
+    // our leaf gradient is currently #AD4500 - #D4D400
+    // half-way is #C18D00 (not bad)
+
+    border-top-color: #B76900; // this is not half-way; it's 4/5 of the way.
   }
 
   &.dialog-type-error {
