@@ -1488,6 +1488,18 @@ export class TileRenderer {
     // if there's no context, we just need to render the background
     // and border; but it still might be overflowed (via merge)
 
+    /*
+
+    this is breaking rendering. not sure if it is because of buffering
+    (that doesn't work, below) or because of overflow, but in any event
+    it doesn't work. we should fix, or at least jump over any font stuff
+    below.
+
+    I suspect it was written at an earlier iteration of the overall render
+    routine, and then got out of sync.
+
+    TODO/FIXME
+
     if (!cell.formatted) {
       this.RenderCellBackground(
         !!cell.note,
@@ -1496,6 +1508,8 @@ export class TileRenderer {
           this.buffer_context : context, style, width, height);
       return result;
     }
+
+    */
 
     // NOTE: this is OK to do in the original context, even if we're
     // (eventually) painting to the buffer context. just remember to set
