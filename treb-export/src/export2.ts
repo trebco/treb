@@ -427,6 +427,8 @@ export class Exporter {
 
     // console.info("SFC", JSON.stringify(style, undefined, 2));
 
+    const cell_style_refs = sheet.styles || sheet.cell_style_refs || [];
+
     const list: Style.Properties[] = [sheet.sheet_style];
 
     if (sheet.row_pattern && sheet.row_pattern.length) {
@@ -436,13 +438,44 @@ export class Exporter {
     // is this backwards, vis a vis our rendering? I think it might be...
     // YES: should be row pattern -> row -> column -> cell [corrected]
 
-    if (sheet.row_style && sheet.row_style[row]) {
-      list.push(sheet.row_style[row]);
+    // if (sheet.row_style && sheet.row_style[row]) {
+    //  list.push(sheet.row_style[row]);
+    // }
+
+    if (sheet.row_style) {
+      let style = sheet.row_style[row];
+      if (typeof style === 'number') {
+        style = cell_style_refs[style];
+        if (style) {
+          list.push(style); 
+        }
+      }
+      else if (style) {
+        list.push(style);
+      }
     }
 
-    if (sheet.column_style && sheet.column_style[column]) {
-      list.push(sheet.column_style[column]);
+    // this can now be a number, and possibly 0 (?)
+    
+    // actually 0 is by default a null style, although that's more of 
+    // a convention than a hard rule, not sure we should rely on it
+
+    if (sheet.column_style) {
+      let style = sheet.column_style[column];
+      if (typeof style === 'number') {
+        style = cell_style_refs[style];
+        if (style) {
+          list.push(style); 
+        }
+      }
+      else if (style) {
+        list.push(style); 
+      }
     }
+
+    //if (sheet.column_style && sheet.column_style[column]) {
+    //  list.push(sheet.column_style[column]);
+    //}
 
     /*
     if (cell.ref) {
@@ -931,15 +964,17 @@ export class Exporter {
       // but we don't do that at the moment, so let's just unwind it using the 
       // standard class (adding support for cell styles)
 
+      const cell_style_refs = sheet.styles || sheet.cell_style_refs || [];
+
       const cells = new Cells();
-      cells.FromJSON(sheet.data, sheet.cell_style_refs);
+      cells.FromJSON(sheet.data, cell_style_refs);
 
       // these are cells with style but no contents
 
       for (const entry of sheet.cell_styles) {
         const cell = cells.EnsureCell(entry); // cheating
         if (!cell.style) {
-          cell.style = sheet.cell_style_refs[entry.ref];
+          cell.style = cell_style_refs[entry.ref];
         }
       }
 
@@ -1179,9 +1214,22 @@ export class Exporter {
           // console.info("COLUMN", c, 'width', sheet.column_width[c], 'calc?', entry.width, '100p', one_hundred_pixels);
 
         }
-        if (sheet.column_style[c]) {
-          entry.style = style_cache.EnsureStyle(style_cache.StyleOptionsFromProperties(sheet.column_style[c]));
+
+        let style = sheet.column_style[c];
+        if (typeof style === 'number') {
+          style = cell_style_refs[style];
+          if (style) {
+            entry.style = style_cache.EnsureStyle(style_cache.StyleOptionsFromProperties(style));
+          }
         }
+        else if (style) {
+          entry.style = style_cache.EnsureStyle(style_cache.StyleOptionsFromProperties(style));
+        }
+
+        //if (sheet.column_style[c]) {
+        //  entry.style = style_cache.EnsureStyle(style_cache.StyleOptionsFromProperties(sheet.column_style[c]));
+        //}
+
         if (entry.style !== undefined || entry.width !== undefined) {
           column_entries[c] = entry;
         }

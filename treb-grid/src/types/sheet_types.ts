@@ -33,9 +33,17 @@ export interface SerializedSheet {
   columns: number;
   cell_styles: Array<{row: number; column: number; ref: number}>;
 
-  cell_style_refs: Style.Properties[];
-  row_style: Style.Properties[];
-  column_style: Style.Properties[];
+  /** @deprecated */
+  cell_style_refs?: Style.Properties[]; // old 
+  styles?: Style.Properties[];          // new
+
+  // row_style: Style.Properties[];
+  // column_style: Style.Properties[];
+  // row_style: Array<Style.Properties|number>;
+  // column_style: Array<Style.Properties|number>;
+  row_style: Record<number, Style.Properties|number>;
+  column_style: Record<number, Style.Properties|number>;
+
   row_pattern?: Style.Properties[];
 
   default_row_height?: number;

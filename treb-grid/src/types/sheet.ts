@@ -74,9 +74,8 @@ export class Sheet {
    */
   public static FromJSON(json: string | Partial<SerializedSheet>, style_defaults: Style.Properties, sheet?: Sheet): Sheet {
 
-    let obj: SerializedSheet;
-    if (typeof json === 'string') obj = JSON.parse(json);
-    else obj = json as SerializedSheet;
+    const source: SerializedSheet = (typeof json === 'string') ?
+      JSON.parse(json) : json as SerializedSheet;
 
     const unflatten_numeric_array = (target: number[], data: Record<string, number>) => { // , default_value: number) => {
       Object.keys(data).forEach((key) => {
@@ -89,20 +88,20 @@ export class Sheet {
       sheet = new Sheet(style_defaults);
     }
 
-    if (obj.default_column_width) {
-      sheet.default_column_width = obj.default_column_width;
+    if (source.default_column_width) {
+      sheet.default_column_width = source.default_column_width;
     }
-    if (obj.default_row_height) {
-      sheet.default_row_height = obj.default_row_height;
+    if (source.default_row_height) {
+      sheet.default_row_height = source.default_row_height;
     }
 
     // persist ID, name
 
-    if (obj.id) {
-      sheet.id = obj.id;
+    if (source.id) {
+      sheet.id = source.id;
     }
-    if (obj.name) {
-      sheet.name = obj.name;
+    if (source.name) {
+      sheet.name = source.name;
     }
 
     const patch_style = (style: Style.Properties) => {
@@ -163,17 +162,24 @@ export class Sheet {
 
     };
 
-    const cell_style_refs = obj.cell_style_refs;
+    // use the new name, if available; fall back to the old name, and because
+    // that's now optional, add a default.
+
+    const cell_style_refs = source.styles || source.cell_style_refs || [];
+
+    /*
+    const cell_style_refs = source.cell_style_refs;
     for (const entry of cell_style_refs) {
       patch_style(entry);
     }
+    */
 
     // styles (part 1) -- moved up in case we use inlined style refs
 
     sheet.cell_style = [];
 
     if (cell_style_refs) {
-      (obj.cell_styles || []).forEach((cell_style: CellStyleRef) => {
+      (source.cell_styles || []).forEach((cell_style: CellStyleRef) => {
           if (typeof cell_style.ref === 'number') {
           cell_style.style =
             JSON.parse(JSON.stringify(cell_style_refs[cell_style.ref])); // clone
@@ -183,18 +189,18 @@ export class Sheet {
 
     // data: cells (moved after style)
 
-    sheet.cells.FromJSON(obj.data);
-    if (obj.rows) sheet.cells.EnsureRow(obj.rows - 1);
-    if (obj.columns) sheet.cells.EnsureColumn(obj.columns - 1);
+    sheet.cells.FromJSON(source.data);
+    if (source.rows) sheet.cells.EnsureRow(source.rows - 1);
+    if (source.columns) sheet.cells.EnsureColumn(source.columns - 1);
 
     // new style stuff
 
       // different handling for nested, flat, but we only have to
       // check once because data is either nested or it isn't.
 
-      if (obj.data) {
-        if (IsFlatDataArray(obj.data)) {
-          for (const entry of obj.data) {
+      if (source.data) {
+        if (IsFlatDataArray(source.data)) {
+          for (const entry of source.data) {
             if (entry.style_ref) {
               if (!sheet.cell_style[entry.column]) sheet.cell_style[entry.column] = [];
               sheet.cell_style[entry.column][entry.row] = // entry.style;
@@ -203,8 +209,8 @@ export class Sheet {
           }
         }
         else {
-          if (IsNestedRowArray(obj.data)) {
-            for (const block of obj.data) {
+          if (IsNestedRowArray(source.data)) {
+            for (const block of source.data) {
               const row = block.row;
               for (const entry of block.cells) {
                 const column = entry.column;
@@ -217,7 +223,7 @@ export class Sheet {
             }
           }
           else {
-            for (const block of obj.data) {
+            for (const block of source.data) {
               const column = block.column;
               for (const entry of block.cells) {
                 const row = entry.row;
@@ -238,28 +244,78 @@ export class Sheet {
     sheet.freeze.rows = 0;
     sheet.freeze.columns = 0;
 
-    if (obj.freeze) {
-      sheet.freeze.rows = obj.freeze.rows || 0;
-      sheet.freeze.columns = obj.freeze.columns || 0;
+    if (source.freeze) {
+      sheet.freeze.rows = source.freeze.rows || 0;
+      sheet.freeze.columns = source.freeze.columns || 0;
     }
 
     // scroll, optionally
 
-    sheet.scroll_offset = obj.scroll ? { ...obj.scroll } : { x: 0, y: 0 };
+    sheet.scroll_offset = source.scroll ? { ...source.scroll } : { x: 0, y: 0 };
 
     // wrap up styles
 
-    for (const cell_style of ((obj.cell_styles || []) as CellStyleRef[])) {
+    for (const cell_style of ((source.cell_styles || []) as CellStyleRef[])) {
       if (cell_style.style) {
         if (!sheet.cell_style[cell_style.column]) sheet.cell_style[cell_style.column] = [];
         sheet.cell_style[cell_style.column][cell_style.row] = cell_style.style;
       }
     }
 
-    sheet.sheet_style = obj.sheet_style || {};
-    sheet.row_styles = obj.row_style;
-    sheet.column_styles = obj.column_style;
-    sheet.row_pattern = obj.row_pattern || [];
+    sheet.sheet_style = source.sheet_style || {};
+    // sheet.row_styles = source.row_style;
+    // sheet.column_styles = source.column_style;
+    
+    // these are NOT arrays atm. that might be a problem (might not). I think
+    // this was accidental. when running, we don't care, because empty array
+    // indexes don't consume memory (AFAIK). when serializing, we do care, but
+    // how we serialize shouldn't impact how we operate at runtime.
+
+    // it breaks when we do patching (below), although we could just fix 
+    // patching. also TODO: merge patching with the map routine.
+
+    sheet.column_styles = {};
+    sheet.row_styles = {};
+
+    const MapStyles = (source_list: Record<number, number|Style.Properties>, target_list: Record<number, Style.Properties>) => {
+
+      for (const key of Object.keys(source_list)) {
+        const index = Number(key);
+        const value = source_list[index];
+        if (typeof value === 'number') {
+          const properties = cell_style_refs[value];
+          if (properties) {
+            target_list[index] = JSON.parse(JSON.stringify(properties)); // clone jic
+            patch_style(target_list[index]);
+          }
+        }
+        else if (value) {
+          target_list[index] = value;
+          patch_style(target_list[index]);
+        }
+      }
+    };
+
+    MapStyles(source.row_style, sheet.row_styles);
+    MapStyles(source.column_style, sheet.column_styles);
+
+    /*
+    for (const key of Object.keys(source.column_style)) {
+      const index = Number(key);
+      const value = source.column_style[index];
+      if (typeof value === 'number') {
+        const properties = cell_style_refs[value];
+        if (properties) {
+          sheet.column_styles[index] = JSON.parse(JSON.stringify(properties)); // clone jic
+        }
+      }
+      else {
+        sheet.column_styles[index] = value;
+      }
+    }
+    */
+
+    sheet.row_pattern = source.row_pattern || [];
 
     // patch other styles
 
@@ -268,6 +324,7 @@ export class Sheet {
       patch_style(entry);
     }
 
+    /*
     for (const key of Object.keys(sheet.column_styles)) {
       patch_style(sheet.column_styles[key as any]);
     }
@@ -275,6 +332,7 @@ export class Sheet {
     for (const key of Object.keys(sheet.row_styles)) {
       patch_style(sheet.row_styles[key as any]);
     }
+    */
 
     // ok
 
@@ -285,7 +343,7 @@ export class Sheet {
     // sheet.default_column_width = obj.default_column_width;
 
     sheet.row_height_ = [];
-    unflatten_numeric_array(sheet.row_height_, obj.row_height || {},
+    unflatten_numeric_array(sheet.row_height_, source.row_height || {},
       ); // sheet.default_row_height);
       // obj.default_row_height);
 
@@ -294,7 +352,7 @@ export class Sheet {
     }
 
     sheet.column_width_ = [];
-    unflatten_numeric_array(sheet.column_width_, obj.column_width || {},
+    unflatten_numeric_array(sheet.column_width_, source.column_width || {},
       ); // sheet.default_column_width);
       // obj.default_column_width);
 
@@ -309,18 +367,18 @@ export class Sheet {
 
     // FIXME
 
-    sheet.annotations = (obj.annotations || []).map((entry) => new Annotation(entry));
+    sheet.annotations = (source.annotations || []).map((entry) => new Annotation(entry));
 
-    if (obj.selection) {
+    if (source.selection) {
 
       // copy to ensure there's no link to random object
-      sheet.selection = JSON.parse(JSON.stringify(obj.selection));
+      sheet.selection = JSON.parse(JSON.stringify(source.selection));
 
     }
 
     sheet.visible = true; // default
-    if (typeof obj.visible !== 'undefined') {
-      sheet.visible = !!obj.visible;
+    if (typeof source.visible !== 'undefined') {
+      sheet.visible = !!source.visible;
     }
 
     
@@ -1810,14 +1868,67 @@ export class Sheet {
       }
     }
 
+    /**
+     * this assumes that "empty" style is at index 0
+     */
+    const StyleToRef = (style: Style.Properties) => {
+
+      const style_as_json = JSON.stringify(style);
+      if (style_as_json === empty_json) {
+        return 0;
+      }
+
+      let reference_index = cell_style_map[style_as_json];
+      if (typeof reference_index !== 'number') {
+        cell_style_map[style_as_json] = reference_index = cell_style_refs.length;
+        cell_style_refs.push(style);
+      }
+
+      return reference_index;
+
+    };
+
     // ensure we're not linked
     cell_style_refs = JSON.parse(JSON.stringify(cell_style_refs));
 
     // same here (note broken naming)
     const sheet_style = JSON.parse(JSON.stringify(this.sheet_style));
-    const row_style = JSON.parse(JSON.stringify(this.row_styles));
-    const column_style = JSON.parse(JSON.stringify(this.column_styles));
+    // const row_style = JSON.parse(JSON.stringify(this.row_styles));
+    // const column_style = JSON.parse(JSON.stringify(this.column_styles));
     const row_pattern = JSON.parse(JSON.stringify(this.row_pattern));
+
+    // row and column styles are Record<number, props> and not arrays.
+    // I think they should probably be arrays. it's not critical but
+    // using records (objects) converts keys to strings, which is sloppy.
+
+    
+    // const column_style: Array<number|Style.Properties> = [];
+    // const row_style: Array<number|Style.Properties> = [];
+    
+    const column_style: Record<number, Style.Properties|number> = {};
+    const row_style: Record<number, Style.Properties|number> = {};
+
+    for (const key of Object.keys(this.column_styles)) {
+      const index = Number(key);
+      const style = this.column_styles[index];
+      if (style) {
+        const reference = StyleToRef(style);
+        if (reference) {
+          column_style[index] = reference;
+        }
+      }
+    }
+
+    for (const key of Object.keys(this.row_styles)) {
+      const index = Number(key);
+      const style = this.row_styles[index];
+      if (style) {
+        const reference = StyleToRef(style);
+        if (reference) {
+          row_style[index] = reference;
+        }
+      }
+    }
 
     const translate_border_color = (color: string|undefined, default_color: string|undefined): string|undefined => {
       if (typeof color !== 'undefined' && color !== 'none') {
@@ -1849,7 +1960,9 @@ export class Sheet {
     // translate, if necessary
     if (options.export_colors) {
       const style_list: Style.Properties[] = [];
-      for (const group of [row_style, column_style, cell_style_refs, [sheet_style], row_pattern]) {
+      for (const group of [
+          //row_style, column_style, // these are moved -> csr (which should be renamed)
+          cell_style_refs, [sheet_style], row_pattern]) {
         if (Array.isArray(group)) {
           for (const entry of group) style_list.push(entry);
         }
@@ -1857,6 +1970,7 @@ export class Sheet {
           for (const key of Object.keys(group)) style_list.push(group[key]);
         }
       }
+
       for (const style of style_list as Style.Properties[]) {
 
         // don't set "undefined" overrides. also, was this broken 
@@ -1984,7 +2098,7 @@ export class Sheet {
       rows,
       columns,
       cell_styles,
-      cell_style_refs,
+      styles: cell_style_refs,
       row_style,
       column_style,
 

@@ -2541,6 +2541,14 @@ export class Grid {
 
   }
 
+  /**
+   * this breaks (or doesn't work) if the add_tab option is false; that's 
+   * fine, although we might want to make a distinction between UI add-tab 
+   * and API add-tab. And allow it from the API.
+   * 
+   * @param command 
+   * @returns 
+   */
   private DuplicateSheetInternal(command: DuplicateSheetCommand) {
 
     if (!this.options.add_tab) {
