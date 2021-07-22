@@ -1976,7 +1976,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           finalize();
         }
         catch (err) {
-          finalize(err);
+          finalize((err as any)?.toString());
         }
       };
 
