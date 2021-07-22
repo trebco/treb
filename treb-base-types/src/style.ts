@@ -25,11 +25,28 @@ export namespace Style {
     Middle = 3,
   }
 
+  export interface FontSize {
+    unit: 'pt'|'px'|'em'|'%';
+    value: number;
+  }
+
   export interface Color {
     theme?: number;
     tint?: number;
     text?: string;
     none?: boolean;
+  }
+
+  export interface CompositeBorderEdge {
+    width: number;
+    color: Color;
+  }
+
+  export interface CompositeBorder {
+    top: CompositeBorderEdge,
+    left: CompositeBorderEdge,
+    right: CompositeBorderEdge,
+    bottom: CompositeBorderEdge,
   }
 
   export interface Properties {
@@ -50,14 +67,16 @@ export namespace Style {
     // font_size?: number|string;
 
     // new-style
-    font_size_unit?: string;
-    font_size_value?: number;
+    // font_size_unit?: string;
+    // font_size_value?: number;
+
+    font_size?: FontSize;
 
     font_face?: string;
-    font_bold?: boolean; // FIXME: switch to weight
-    font_italic?: boolean;
-    font_underline?: boolean;
-    font_strike?: boolean;
+    bold?: boolean; // FIXME: switch to weight
+    italic?: boolean;
+    underline?: boolean;
+    strike?: boolean;
 
     font_weight?: number;
 
@@ -116,14 +135,17 @@ export namespace Style {
     nan: 'NaN',
     // font_size: 10,              // should have units
 
-    font_size_value: 10,
-    font_size_unit: 'pt',
+    // font_size_value: 10,
+    // font_size_unit: 'pt',
+    font_size: {
+      unit: 'pt', value: 10,
+    },
 
     font_face: 'calibri',       // switch to something generic "sans serif"
-    font_bold: false,           // drop "font_"
-    font_italic: false,         // ...
-    font_underline: false,      // ...
-    font_strike: false,         // 
+    bold: false,           // drop "font_"
+    italic: false,         // ...
+    underline: false,      // ...
+    strike: false,         // 
     // background: 'none',
 
     // text_color: 'none',
@@ -140,6 +162,31 @@ export namespace Style {
     border_left: 0,
     border_right: 0,
     border_bottom: 0,
+  };
+
+  /**
+   * this is a utility function for callers that use borders, to
+   * reduce testing and facilitate reusable methods
+   */
+  export const CompositeBorders = (style: Properties): CompositeBorder => {
+    return {
+      top: {
+        width: style.border_top || 0,
+        color: style.border_top_fill || {},
+      },
+      left: {
+        width: style.border_left || 0,
+        color: style.border_left_fill || {},
+      },
+      right: {
+        width: style.border_right || 0,
+        color: style.border_right_fill || {},
+      },
+      bottom: {
+        width: style.border_bottom || 0,
+        color: style.border_bottom_fill || {},
+      },
+    };
   };
 
   /* *
@@ -236,7 +283,10 @@ export namespace Style {
       }
       let unit = match[2].toLowerCase() || default_unit;
       if (unit === 'pt' || unit === 'em' || unit === '%' || unit === 'px') {
-        return { font_size_unit: unit, font_size_value: value };
+        // return { font_size_unit: unit, font_size_value: value };
+        return {
+          font_size: { unit, value },
+        };
       }
     }
 
@@ -268,36 +318,36 @@ export namespace Style {
     let base_pt = 12;
     let props_pt = 12;
 
-    switch (properties.font_size_unit) {
+    switch (properties.font_size?.unit) {
       case 'pt':
-        if (!properties.font_size_value) { return 1; } // also error
-        props_pt = properties.font_size_value;
+        if (!properties.font_size.value) { return 1; } // also error
+        props_pt = properties.font_size.value;
         break;
 
       case 'px':
-        if (!properties.font_size_value) { return 1; } // also error
-        props_pt = Math.round(properties.font_size_value * 300 / 4) / 100;
+        if (!properties.font_size.value) { return 1; } // also error
+        props_pt = Math.round(properties.font_size.value * 300 / 4) / 100;
         break;
 
       case 'em':
-        return (properties.font_size_value || 1); // short circuit
+        return (properties.font_size.value || 1); // short circuit
 
       case '%':
-        return (properties.font_size_value || 100) / 100; // short circuit
+        return (properties.font_size.value || 100) / 100; // short circuit
         
       default:
         return 1; // error
     }
 
-    switch (base.font_size_unit) {
+    switch (base.font_size?.unit) {
       case 'pt':
-        if (!base.font_size_value) { return 1; } // also error
-        base_pt = base.font_size_value;
+        if (!base.font_size.value) { return 1; } // also error
+        base_pt = base.font_size.value;
         break;
 
       case 'px':
-        if (!base.font_size_value) { return 1; } // also error
-        base_pt = Math.round(base.font_size_value * 300 / 4) / 100;
+        if (!base.font_size.value) { return 1; } // also error
+        base_pt = Math.round(base.font_size.value * 300 / 4) / 100;
         break;
 
       default:
@@ -310,9 +360,9 @@ export namespace Style {
 
   export const FontSize = (properties: Properties, prefer_points = true): string => {
 
-    let value = properties.font_size_value;
+    let value = properties.font_size?.value;
 
-    switch (properties.font_size_unit) {
+    switch (properties.font_size?.unit) {
       case 'pt':
         return (value||12) + 'pt';
 
@@ -357,16 +407,16 @@ export namespace Style {
     if (properties.font_weight) {
       parts.push(properties.font_weight.toString());
     }
-    else if (properties.font_bold) {
+    else if (properties.bold) {
       parts.push('bold');
     }
 
-    if (properties.font_italic) {
+    if (properties.italic) {
       parts.push('italic');
     }
 
-    parts.push(((properties.font_size_value || 0) * scale).toFixed(2) + 
-      (properties.font_size_unit || 'pt'));
+    parts.push(((properties.font_size?.value || 0) * scale).toFixed(2) + 
+      (properties.font_size?.unit || 'pt'));
 
     parts.push(properties.font_face || '');
 

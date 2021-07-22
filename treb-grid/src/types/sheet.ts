@@ -104,10 +104,16 @@ export class Sheet {
       sheet.name = source.name;
     }
 
+    // FIXME: this should only be done on load (and possibly paste).
+    // we don't need to do it on every parse, which also happens on 
+    // undo and some other things.
+
     const patch_style = (style: Style.Properties) => {
 
       // this part is for back compat with older color schemes, it 
       // could theoretically come out if we don't care (or maybe have a tool)
+
+      // UPDATE for updated font properties
 
       const ref = (style as Style.Properties & { 
         text_color?: string; 
@@ -116,7 +122,47 @@ export class Sheet {
         border_left_color?: string;
         border_bottom_color?: string;
         border_right_color?: string;
+
+        font_bold?: boolean;
+        font_italic?: boolean;
+        font_underline?: boolean;
+        font_strike?: boolean;
+
+        font_size_value?: number;
+        font_size_unit?: 'pt'|'px'|'em'|'%';
+
       });
+
+      if (ref.font_size_value || ref.font_size_unit) {
+
+        ref.font_size = {
+          unit: ref.font_size_unit || 'pt',
+          value: ref.font_size_value || 10,
+        };
+
+        ref.font_size_unit = undefined;
+        ref.font_size_value = undefined;
+      }
+
+      if (ref.font_bold) {
+        ref.bold = true;
+        ref.font_bold = undefined;
+      }
+
+      if (ref.font_italic) {
+        ref.italic = true;
+        ref.font_italic = undefined;
+      }
+
+      if (ref.font_underline) {
+        ref.underline = true;
+        ref.font_underline = undefined;
+      }
+
+      if (ref.font_strike) {
+        ref.strike = true;
+        ref.font_strike = undefined;
+      }
 
       if (ref.text_color) {
         if (ref.text_color !== 'none') {
@@ -169,10 +215,10 @@ export class Sheet {
 
     /*
     const cell_style_refs = source.cell_style_refs;
+    */
     for (const entry of cell_style_refs) {
       patch_style(entry);
     }
-    */
 
     // styles (part 1) -- moved up in case we use inlined style refs
 
@@ -633,27 +679,27 @@ export class Sheet {
    */
   public StyleFontSize(style: Style.Properties, default_properties: Style.Properties = {}): number {
 
-    let font_height = (style.font_size_value || 0);
+    let font_height = (style.font_size?.value || 0);
 
     let scale = 0;
     
-    switch (style.font_size_unit) {
+    switch (style.font_size?.unit) {
       case 'px': 
         font_height *= (75 / 100);
         break;
 
       case 'em':
-        scale = style.font_size_value || 1;
+        scale = style.font_size.value || 1;
         break;
 
       case '%':
-        scale = (style.font_size_value || 100) / 100;
+        scale = (style.font_size.value || 100) / 100;
         break;
     }
 
     if (scale) {
-      font_height = scale * (default_properties.font_size_value || 10);
-      if (default_properties.font_size_unit === 'px') {
+      font_height = scale * (default_properties.font_size?.value || 10);
+      if (default_properties.font_size?.unit === 'px') {
         font_height *= (75 / 100);
       }
     }

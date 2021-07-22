@@ -411,8 +411,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
             }
             else {
               this.Publish({ type: 'font-size', style: {
-                font_size_unit: undefined,
-                font_size_value: undefined,
+                // font_size_unit: undefined,
+                // font_size_value: undefined,
+                font_size: undefined,
               }});
             }
             break;

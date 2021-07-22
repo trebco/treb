@@ -2812,7 +2812,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               const scale = Number(event.data?.scale || 1);
 
               if (scale && !isNaN(scale)) {
-                this.grid.ApplyStyle(undefined, { font_size_unit: 'em', font_size_value: scale }, true);
+                this.grid.ApplyStyle(undefined, { 
+                  //font_size_unit: 'em', font_size_value: scale 
+                  font_size: {
+                    unit: 'em', value: scale,
+                  },
+                }, true);
                 const rows: number[] = [];
                 for (let row = area.start.row; row <= area.end.row; row++) {
                   rows.push(row);

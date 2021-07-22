@@ -137,12 +137,12 @@ export class TileRenderer {
       this.buffer_context.textBaseline = BASELINE; // 'alphabetic';
     }
 
-    if (this.theme.grid_cell?.font_size_value){
-      if (this.theme.grid_cell.font_size_unit === 'px') {
-        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size_value;
+    if (this.theme.grid_cell?.font_size?.value){
+      if (this.theme.grid_cell.font_size.unit === 'px') {
+        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size.value;
       }
-      else if (this.theme.grid_cell.font_size_unit === 'pt') {
-        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size_value * 4 / 3;
+      else if (this.theme.grid_cell.font_size.unit === 'pt') {
+        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size.value * 4 / 3;
       }
     }
 
@@ -150,12 +150,12 @@ export class TileRenderer {
 
   public UpdateTheme() {
     
-    if (this.theme.grid_cell?.font_size_value){
-      if (this.theme.grid_cell.font_size_unit === 'px') {
-        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size_value;
+    if (this.theme.grid_cell?.font_size?.value){
+      if (this.theme.grid_cell.font_size.unit === 'px') {
+        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size.value;
       }
-      else if (this.theme.grid_cell.font_size_unit === 'pt') {
-        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size_value * 4 / 3;
+      else if (this.theme.grid_cell.font_size.unit === 'pt') {
+        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size.value * 4 / 3;
       }
     }
 
@@ -1517,9 +1517,9 @@ export class TileRenderer {
 
     const fonts: FontSet = {
       base: Style.Font(style, this.layout.scale),
-      strong: Style.Font({...style, font_bold: true}, this.layout.scale),
-      emphasis: Style.Font({...style, font_italic: true}, this.layout.scale),
-      strong_emphasis: Style.Font({...style, font_bold: true, font_italic: true}, this.layout.scale),
+      strong: Style.Font({...style, bold: true}, this.layout.scale),
+      emphasis: Style.Font({...style, italic: true}, this.layout.scale),
+      strong_emphasis: Style.Font({...style, bold: true, italic: true}, this.layout.scale),
     };
 
     //if (font !== this.last_font) {
@@ -1905,12 +1905,12 @@ export class TileRenderer {
 
             context.fillText(part.text, x, baseline);
 
-            if (style.font_underline) {
+            if (style.underline) {
               context.moveTo(x, underline_y);
               context.lineTo(x + part.width, underline_y);
             }
             
-            if (style.font_strike) {
+            if (style.strike) {
               context.moveTo(x, strike_y);
               context.lineTo(x + part.width, strike_y);
             }

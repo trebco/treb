@@ -2784,8 +2784,12 @@ export class Grid {
   private StyleDefaultFromTheme() {
 
     this.theme_style_properties.font_face = this.theme.grid_cell?.font_face || '';
-    this.theme_style_properties.font_size_unit = this.theme.grid_cell?.font_size_unit || 'pt';
-    this.theme_style_properties.font_size_value = this.theme.grid_cell?.font_size_value || 10;
+
+    this.theme_style_properties.font_size = 
+      this.theme.grid_cell?.font_size || { unit: 'pt', value: 10 };
+   
+    // this.theme_style_properties.font_size_unit = this.theme.grid_cell?.font_size_unit || 'pt';
+    // this.theme_style_properties.font_size_value = this.theme.grid_cell?.font_size_value || 10;
 
     // this.theme_style_properties.text = this.theme.grid_cell?.text || 'none';
     // this.theme_style_properties.text_theme = this.theme.grid_cell?.text_theme || 0;
@@ -4912,15 +4916,15 @@ export class Grid {
           */
 
           case 'b':
-            applied_style.font_bold = !selected_style.font_bold;
+            applied_style.bold = !selected_style.bold;
             break;
 
           case 'i':
-            applied_style.font_italic = !selected_style.font_italic;
+            applied_style.italic = !selected_style.italic;
             break;
 
           case 'u':
-            applied_style.font_underline = !selected_style.font_underline;
+            applied_style.underline = !selected_style.underline;
             break;
 
           case 'a':

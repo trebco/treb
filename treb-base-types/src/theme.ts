@@ -149,15 +149,15 @@ export const ThemeColor2 = (theme: Theme, color?: Style.Color, default_index?: n
 
 };
 
-const ParseFontSize = (size: string) => {
+const ParseFontSize = (size: string): { value: number, unit: 'pt'|'px'|'em'|'%' } => {
 
   let value = 10;
-  let unit = 'pt';
+  let unit:'pt'|'px'|'em'|'%' = 'pt';
 
   const match = size.match(/^([\d.]+)(\D.*)$/); // pt, px, em, rem, %
   if (match) {
     value = Number(match[1]);
-    unit = match[2];
+    unit = match[2] as 'pt'|'px'|'em'|'%';
   }
 
   return { value, unit };
@@ -171,8 +171,11 @@ const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
   const style: Style.Properties = {
     fill: { text: css.backgroundColor }, // || 'none',
     text: { text: css.color },
-    font_size_unit: unit,
-    font_size_value: value,
+    font_size: {
+      unit, value,
+    },
+    // font_size_unit: unit,
+    // font_size_value: value,
     font_face: css.fontFamily,
   };
 
@@ -186,7 +189,7 @@ const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
   //style.border_right_color = css.borderRightColor || ''; // 'none';
 
   if (/italic/i.test(css.font)) {
-    style.font_italic = true;
+    style.italic = true;
   }
 
   const weight = Number(css.fontWeight);

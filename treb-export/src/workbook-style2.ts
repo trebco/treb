@@ -246,18 +246,18 @@ export class StyleCache {
 
     }
 
-    if (composite.font_size_unit && composite.font_size_value) {
-      if (composite.font_size_unit !== 'pt') {
+    if (composite.font_size?.unit && composite.font_size.value) {
+      if (composite.font_size.unit !== 'pt') {
         console.warn(`can't handle non-point font (FIXME)`);
       }
       else {
-        font.size = composite.font_size_value;
+        font.size = composite.font_size.value;
       }
     }
 
-    if (composite.font_bold) font.bold = true;
-    if (composite.font_italic) font.italic = true;
-    if (composite.font_underline) font.underline = true;
+    if (composite.bold) font.bold = true;
+    if (composite.italic) font.italic = true;
+    if (composite.underline) font.underline = true;
 
     //if (composite.text_color && composite.text_color !== Style.DefaultProperties.text_color) {
     //  font.color_argb = composite.text_color;
@@ -275,6 +275,31 @@ export class StyleCache {
       }
     }
 
+    const TranslateBorder = (src: Style.CompositeBorderEdge, dest: BorderEdge) => {
+      if (src.width) {
+        dest.style = 'thin';
+        if (src.color.text) {
+          dest.rgba =src.color.text;
+        }
+        else if (typeof src.color.theme === 'number') {
+          dest.theme = src.color.theme;
+          if (src.color.tint) {
+            dest.tint = src.color.tint;
+          }
+        }
+        else {
+          dest.color = 64;
+        }
+      }
+    };
+
+    const composite_borders = Style.CompositeBorders(composite);
+    TranslateBorder(composite_borders.top, border.top);
+    TranslateBorder(composite_borders.left, border.left);
+    TranslateBorder(composite_borders.right, border.right);
+    TranslateBorder(composite_borders.bottom, border.bottom);
+
+    /*
     if (composite.border_top) { // && composite.border_top_fill) {
 
       border.top.style = 'thin';
@@ -347,6 +372,7 @@ export class StyleCache {
       // console.info("BXX", JSON.stringify(composite, undefined, 2), JSON.stringify(border, undefined, 2));
 
     }
+    */
 
     // leave blank for bottom, default
 
@@ -457,10 +483,10 @@ export class StyleCache {
 
     const font = this.fonts[xf.font || 0];
     if (font) {
-      if (font.bold) props.font_bold = true;
-      if (font.italic) props.font_italic = true;
-      if (font.underline) props.font_underline = true;
-      if (font.strike) props.font_strike = true;
+      if (font.bold) props.bold = true;
+      if (font.italic) props.italic = true;
+      if (font.underline) props.underline = true;
+      if (font.strike) props.strike = true;
 
       if (font.color_argb) {
         props.text = { 
