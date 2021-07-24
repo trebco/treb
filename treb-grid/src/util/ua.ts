@@ -1,4 +1,10 @@
 
+
+const app_version = navigator.appVersion;
+const user_agent = navigator.userAgent;
+
+// console.warn('using fake UA: ' + user_agent);
+
 /**
  * some basic user-agent sniffing. we use less than we used to, except
  * for making the determination of modern (grid)/legacy layout.
@@ -9,35 +15,35 @@
 class UAType {
 
   /** we need this for some edge-specific weirdness */
-  public readonly is_edge = /Edge/.test(navigator.appVersion);
+  public readonly is_edge = /Edge/.test(app_version);
 
   /** more testing. ios safari doesn't support grid+sticky (apparently) */
-  public readonly is_ipad = /iPad|iPhone/.test(navigator.userAgent);
+  public readonly is_ipad = /iPad|iPhone/.test(user_agent);
 
   /** more testing. firefox android doesn't support grid+sticky (apparently) */
-  public readonly is_android = /android|samsung/i.test(navigator.userAgent);
+  public readonly is_android = /android|samsung/i.test(user_agent);
 
   /** mobile we want slightly different keyboard behavior */
   public readonly is_mobile = this.is_ipad || this.is_android;
  
   /** more testing. firefox android doesn't support grid+sticky (apparently) */
-  public readonly is_firefox = /firefox/i.test(navigator.userAgent);
+  public readonly is_firefox = /firefox/i.test(user_agent);
 
   /** ... */
-  public readonly is_safari = /safari/i.test(navigator.userAgent);
+  public readonly is_safari = /safari/i.test(user_agent);
 
   /** ... */
-  public readonly is_mac = /macintosh/i.test(navigator.userAgent);
+  public readonly is_mac = /macintosh/i.test(user_agent);
 
   /** ... */
-  public readonly is_chrome = /Chrome/i.test(navigator.userAgent);
+  public readonly is_chrome = /Chrome/i.test(user_agent);
 
   /** this is for events (IE11 does't support event constructor) */
   public trident = ((typeof navigator !== 'undefined') &&
-    navigator.userAgent && /trident/i.test(navigator.userAgent));
+    user_agent && /trident/i.test(user_agent));
 
   /** ... */
-  public is_windows = /win64|win32|windows\s+nt/i.test(navigator.userAgent);
+  public is_windows = /win64|win32|windows\s+nt/i.test(user_agent);
 
   // safari doesn't seem to hold the sticky elements in place. not
   // sure why not, though, need to do some more testing. legacy
@@ -55,7 +61,7 @@ class UAType {
     // (!this.is_ipad) &&
     // (!this.is_mac || (this.is_chrome || this.is_firefox)) &&
     (!(this.is_firefox && this.is_android)) &&
-    /webkit|firefox/i.test(navigator.userAgent);
+    /webkit|firefox/i.test(user_agent);
 }
 
 const null_ua = {
