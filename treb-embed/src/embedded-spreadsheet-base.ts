@@ -6,7 +6,7 @@ import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } 
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue,
-  IsFlatData, IsFlatDataArray, Rectangle, Theme, ValueType, IsComplex, ComplexToString } from 'treb-base-types';
+  IsFlatData, IsFlatDataArray, Rectangle, Theme, IsComplex, ComplexToString, Complex } from 'treb-base-types';
 import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
@@ -16,6 +16,11 @@ import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions, DefaultExpor
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType, LoadSource } from './types';
 
 import { SelectionState, Toolbar } from './toolbar';
+
+// this is a circular reference. this seems like a bad idea, 
+// but it's legal in typescript. not sure how I feel about this.
+
+import { APIv1 } from './API/api-v1';
 
 // TYPE ONLY
 // type Chart = import('../../treb-charts/src/index').Chart;
@@ -45,6 +50,15 @@ enum CalculationOptions {
 
 export interface ToolbarCtl {
   Show: (show: boolean) => void;
+}
+
+export enum SemanticVersionElement {
+  major, minor, patch,
+}
+
+export interface SemanticVersionComparison {
+  match: number;
+  level?: SemanticVersionElement;
 }
 
 /**
@@ -113,6 +127,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     
   }
 
+  public v1: APIv1;
+
   /**
    * this flag will be set on LoadDocument. the intent is to be able to
    * know if you have loaded a network document, which may happen before you
@@ -171,22 +187,25 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   protected last_save_version = 0;
 
   /**
-   * this is not assigned here (it's assigned in a method) so we can
-   * overload it. this is not a good pattern, though. is there a better
-   * alternative?
-   *
-   * the answer is probably to pass an instance to the constructor, have
-   * the caller determine which type to use (as long as there's a common
-   * base class).
+   * calculator may be overloaded. the pattern we settled on is 
+   * the constructor affirmatively assigns it via a method. use that
+   * method to do the override.
    * 
-   * What? why not just assign it in the constructor, which can be 
-   * overloaded in the subclass constructor? 
+   * this was protected, in an effort to shield it from the public
+   * API. that's always been a bit of a hack. we will make this public
+   * here so we can use it more easily in the new API structure.
    * 
-   * [A: see pattern, which is the sensible way to do this given ts limitation]
+   * @internal
    */
-  protected calculator: Calculator;
+  public calculator: Calculator;
 
-  protected grid: Grid;
+  /**
+   * like calculator we're now making this public so we can use it
+   * in the API class.
+   * 
+   * @internal
+   */
+  public grid: Grid;
 
   protected options: EmbeddedSpreadsheetOptions;
 
@@ -266,6 +285,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   constructor(options: EmbeddedSpreadsheetOptions) {
 
     super();
+
+    this.v1 = new APIv1(this);
 
     // consolidate options w/ defaults. note that this does not
     // support nested options, for that you need a proper merge
@@ -392,29 +413,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               const obj = JSON.parse(json);
               grid_options.initial_scale = obj.scale || 1;
             }
-            catch (e) {}
+            catch (e) {
+              console.warn('parsing persisted scale failed');
+            }
           }
-        // }
 
       }
 
     }
-
-    /*
-    if (this.options.add_tab) {
-      grid_options.add_tab = this.options.add_tab;
-    }
-
-    if (this.options.delete_tab) {
-      grid_options.delete_tab = this.options.add_tab;
-    }
-
-    if (this.options.expand) {
-      grid_options.expand = true;
-    }
-    */
-
-    // console.info("GOO", JSON.stringify(grid_options, undefined, 2));
 
     this.grid = new Grid(grid_options);
 
@@ -977,7 +983,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    * FIXME: should this support complex numbers? not sure...
    */
-  public ParseNumber(text: string) {
+  public ParseNumber(text: string): number|Complex|boolean|string|undefined {
 
     /*
 
@@ -1000,12 +1006,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    *
    * FIXME: should this support complex numbers? not sure...
    */
-  public FormatNumber(value: number, format: string) {
+  public FormatNumber(value: number, format: string): string {
     return NumberFormatCache.Get(format).Format(value);
   }
 
   /** public API for scale */
-  public SetScale(scale = 1) {
+  public SetScale(scale = 1): void {
     this.grid.UpdateScale(scale);
   }
 
@@ -1030,6 +1036,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   public Evaluate(expression: string) {
 
+    // does calculator have a parser? if so, can we push this into 
+    // calculator? seems like it would make more sense in there.
+
+    /*
     const parse_result = this.parser.Parse(expression);
     if (parse_result &&
         parse_result.expression ){ // &&
@@ -1046,11 +1056,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       const result = this.calculator.CalculateExpression(parse_result.expression);
 
-      /*
+      / *
       if (Array.isArray(result)) {
         return result.map(row => row.map(value => value.value));
       }
-      */
+      * /
       if (result.type === ValueType.array) {
         return result.value.map(row => row.map(value => value.value));
       }
@@ -1059,6 +1069,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
 
     }
+    */
+    return this.calculator.Evaluate(expression);
 
   }
 
@@ -1328,8 +1340,27 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   /**
    * convert A1 address to CellAddress type
+   * 
+   * FIXME: move to calculator. why? (1) it needs to go somewhere other than
+   * here; (2) calculator has the requisite data (the model); and (3) we're
+   * already calling calculator's resolve sheet ID method.
+   * 
+   * Q: why does this not go in grid? or model? (...)
+   * 
    */
   public EnsureAddress(address: string | ICellAddress): ICellAddress {
+
+    const result = this.calculator.ResolveAddress(address);
+
+    if (IsCellAddress(result)) {
+      return result;
+    }
+
+    // to mimic the old behavior, return only the start
+
+    return result.start;
+
+    /*
     const result: ICellAddress = { row: 0, column: 0 };
     if (typeof address === 'string') {
       const parse_result = this.parser.Parse(address);
@@ -1357,6 +1388,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       result.column = address.column || 0;
     }
     return result;
+    */
+
   }
 
   public ScrollTo(address: string | ICellAddress, x = true, y = true, smooth = false): void {
@@ -1431,7 +1464,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * more importantly, why is this async and returns a promise explicitly?
    * won't that return a Promise<Promise>? (...)
    */
-  public async ImportXLSX(data: string, source: LoadSource) {
+  public async ImportXLSX(data: string, source: LoadSource): Promise<Blob|void> {
 
     if (!this.export_worker) {
       const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
@@ -1600,21 +1633,21 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** return "live" reference to selection */
-  public GetSelectionReference() {
+  public GetSelectionReference(): GridSelection {
     return this.grid.GetSelection();
   }
 
   /**
    * focus on the grid
    */
-  public Focus() {
+  public Focus(): void {
     this.grid.Focus();
   }
 
   /**
    * client calls when the container is resized; handle any required layout
    */
-  public Resize() {
+  public Resize(): void {
     this.grid.UpdateLayout();
     this.Publish({ type: 'resize' });
   }
@@ -1640,7 +1673,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.Publish({ type: 'reset' });
   }
 
-  public Select(range: IArea|ICellAddress|string) {
+  public Select(range: IArea|ICellAddress|string): void {
     let area: Area|undefined;
 
     if (range) {
@@ -1673,7 +1706,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public ApplyStyle(range?: IArea|ICellAddress|string, style: Style.Properties = {}, delta = true) {
+  public ApplyStyle(range?: IArea|ICellAddress|string, style: Style.Properties = {}, delta = true): void {
 
     let area: Area|undefined;
 
@@ -1712,7 +1745,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * FIXME: we don't need to do this for ES6, presumably...
    * can this move into the legacy/modern code? or is there a polyfill? (...)
    */
-  public async Fetch(uri: string) {
+  public async Fetch(uri: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.onload = () => resolve(xhr.response);
@@ -2004,7 +2037,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public ExportDelimited(options: ExportOptions = {}) {
+  public ExportDelimited(options: ExportOptions = {}): string {
 
     options = {
       ...DefaultExportOptions, 
@@ -2172,7 +2205,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public LoadCSV(csv: string, source: LoadSource) {
+  public LoadCSV(csv: string, source: LoadSource): void {
     this.grid.FromCSV(csv);
     this.ResetInternal();
     this.grid.Update(true);
@@ -2285,7 +2318,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * set note for current selection. set as undefined or empty
    * string to clear existing note.
    */
-  public SetNote(note?: string) {
+  public SetNote(note?: string): void {
     this.grid.SetNote(undefined, note);
 
     // set note does not publish, so we need to directly trigger undo/autosave
@@ -2298,14 +2331,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * clear name
    */
-  public ClearName(name: string) {
+  public ClearName(name: string): void {
     this.grid.SetName(name);
   }
 
   /**
    * set name at selection
    */
-  public DefineName(name: string, area?: IArea) {
+  public DefineName(name: string, area?: IArea): void {
     if (area) {
       this.grid.SetName(name, new Area(area.start, area.end));
     }
@@ -2318,7 +2351,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** delete macro function */
-  public RemoveFunction(name: string) {
+  public RemoveFunction(name: string): void {
 
     const uppercase = name.toUpperCase();
     const keys = Object.keys(this.grid.model.macro_functions);
@@ -2391,7 +2424,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
-  public SetHeadless(headless = true) {
+  public SetHeadless(headless = true): void {
     if (this.grid.headless === headless) {
       return;
     }
@@ -2422,14 +2455,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * inflate all annotations. intended to be called after a document
    * load (including undo), which does not send `create` events.
+   * 
+   * FIXME: why is this public?
    */
-  public InflateAnnotations(): void {
+  protected InflateAnnotations(): void {
      for (const annotation of this.grid.model.active_sheet.annotations) {
       this.InflateAnnotation(annotation);
     }
   }
 
-  public InflateAnnotation(annotation: Annotation): void {
+  protected InflateAnnotation(annotation: Annotation): void {
 
     if (this.grid.headless) { return; }
 
@@ -3038,7 +3073,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     });
 
     this.UpdateDocumentStyles(false);
-    this.UpdateSelectionStyle(undefined, false);
+    this.UpdateSelectionStyle(undefined);
 
     return this.toolbar;
   }
@@ -3176,9 +3211,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   */
 
   /** update selection style for the toolbar */
-  public UpdateSelectionStyle(selection?: GridSelection, update = true): void {
-
-
+  public UpdateSelectionStyle(selection?: GridSelection): void {
 
     const freeze = this.grid.GetFreeze();
 
@@ -3377,25 +3410,25 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+
   /**
    * compare two semantic versions. returns an object indicating 
    * the greater version (or equal), plus individual component comparisons.
    */
-  protected CompareVersions(a = '', b = '') {
+  protected CompareVersions(a = '', b = ''): SemanticVersionComparison {
 
     const av = a.split('.').map(value => Number(value) || 0).concat([0, 0, 0]);
     const bv = b.split('.').map(value => Number(value) || 0).concat([0, 0, 0]);
 
-    const levels = ['major', 'minor', 'patch'];
-    const result: {
-      match: number,
-      level?: 'major'|'minor'|'patch'
-    } = { match: 0 };
+    const levels: SemanticVersionElement[] = [
+      SemanticVersionElement.major, SemanticVersionElement.minor, SemanticVersionElement.patch
+    ];
+    const result: SemanticVersionComparison = { match: 0 };
 
     for (let i = 0; i < 3; i++) {
       if (av[i] !== bv[i]) {
         result.match = av[i] > bv[i] ? 1 : -1;
-        result.level = levels[i] as 'major'|'minor'|'patch';
+        result.level = levels[i];
         break;
       }
     }
@@ -3425,7 +3458,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     const compare = this.CompareVersions(data.version, process.env.BUILD_VERSION);
     if (compare.match > 0) {
-      if (compare.level === 'major' || compare.level === 'minor') {
+      if (compare.level === SemanticVersionElement.major || compare.level === SemanticVersionElement.minor) {
         console.warn(`The file you are opening was created with a newer version of TREB (${data.version} vs ${process.env.BUILD_VERSION}).\nYou may encounter compatibility errors.`);
       }
     }
@@ -3490,7 +3523,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * load worker. optionally uses an ambient path as prefix; intended for
    * loading in different directories (or different hosts?)
    */
-  protected async LoadWorker(name: string) {
+  protected async LoadWorker(name: string): Promise<Worker> {
 
     if (EmbeddedSpreadsheetBase.treb_language) {
       name += '-' + EmbeddedSpreadsheetBase.treb_language;

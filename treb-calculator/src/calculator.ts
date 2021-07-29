@@ -1,6 +1,7 @@
 
 import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue,/*, UnionOrArray*/ 
-ArrayUnion} from 'treb-base-types';
+ArrayUnion,
+IArea} from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing } from 'treb-parser';
 
@@ -705,6 +706,92 @@ export class Calculator extends Graph {
       this.AttachModel(this.model);
     }
     this.full_rebuild_required = true;
+
+  }
+
+  /** 
+   * moved from embedded sheet. also modified to preserve ranges, so it
+   * might return a range (area). if you are expecting the old behavior
+   * you need to check (perhaps we could have a wrapper, or make it optional?)
+   * 
+   * Q: why does this not go in grid? or model? (...)
+   */
+   public ResolveAddress(address: string|ICellAddress|IArea): ICellAddress|IArea {
+    
+    if (typeof address === 'string') {
+      const parse_result = this.parser.Parse(address);
+      if (parse_result.expression && parse_result.expression.type === 'address') {
+        this.ResolveSheetID(parse_result.expression);
+        return {
+          row: parse_result.expression.row,
+          column: parse_result.expression.column,
+          sheet_id: parse_result.expression.sheet_id,
+        };
+      }
+      else if (parse_result.expression && parse_result.expression.type === 'range') {
+        this.ResolveSheetID(parse_result.expression);
+        return {
+          start: {
+            row: parse_result.expression.start.row,
+            column: parse_result.expression.start.column,
+            sheet_id: parse_result.expression.start.sheet_id,
+          },
+          end: {
+            row: parse_result.expression.end.row,
+            column: parse_result.expression.end.column,
+          }
+        };
+      }
+      else if (parse_result.expression && parse_result.expression.type === 'identifier') {
+
+        // is named range guaranteed to have a sheet ID? (I think yes...)
+
+        const named_range = this.model?.named_ranges.Get(parse_result.expression.name);
+        if (named_range) {
+          return named_range;
+        }
+      }
+
+      return { row: 0, column: 0 }; // default for string types -- broken
+
+    }
+
+    return address; // already range or address
+
+  }
+
+  /** moved from embedded sheet */
+  public Evaluate(expression: string) {
+    
+    const parse_result = this.parser.Parse(expression);
+
+    if (parse_result && parse_result.expression ){ 
+
+      this.parser.Walk(parse_result.expression, (unit) => {
+        if (unit.type === 'address' || unit.type === 'range') {
+          this.ResolveSheetID(unit);
+        }
+        return true;
+      });
+
+      const result = this.CalculateExpression(parse_result.expression);
+
+      if (result.type === ValueType.array) {
+        return result.value.map(row => row.map(value => value.value));
+      }
+      else {
+        return result.value;
+      }
+
+    }
+
+    // or? (...)
+
+    if (parse_result.error) {
+      throw new Error(parse_result.error);
+    }
+
+    throw new Error('invalid expression');
 
   }
 

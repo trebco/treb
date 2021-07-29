@@ -2031,7 +2031,7 @@ export class Grid {
    * get data in a given range, optionally formulas
    * API method
    */
-  public GetRange(range: ICellAddress | Area, formula = false, formatted = false): CellValue|CellValue[][]|undefined {
+  public GetRange(range: ICellAddress | IArea, formula = false, formatted = false): CellValue|CellValue[][]|undefined {
 
     let sheet_id = 0;
 

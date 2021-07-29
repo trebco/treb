@@ -29,7 +29,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   /* for storing; also inefficient. pack, zip, do something. */
   protected last_simulation_data?: ResultContainer;
 
-  protected calculator!: MCCalculator;
+  public calculator!: MCCalculator;
 
   /** seed state for "replay simulation" */
   protected replay_buffer: number[] = [];

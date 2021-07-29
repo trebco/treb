@@ -1,5 +1,5 @@
 
-import { Complex, IsComplex, UnionValue, ValueType } from 'treb-base-types/src';
+import { Complex } from 'treb-base-types/src';
 
 export interface ComplexMatrixType {
   array: Complex[][];
@@ -45,7 +45,9 @@ const RealMatrix = (n: number): RealMatrixType => {
   return mat;
 }
 
-/** returns the identity matrix of size n, as complex */
+// not used? (...)
+
+/* * returns the identity matrix of size n, as complex * /
 const ComplexIdentity = (n: number): ComplexMatrixType => {
   const mat = ComplexMatrix(n);
   for (let i = 0; i < n; i++) {
@@ -53,6 +55,7 @@ const ComplexIdentity = (n: number): ComplexMatrixType => {
   }
   return mat;
 };
+*/
 
 export const PolarToRectangular = (a: { r: number, theta: number }): Complex => {
 
@@ -238,7 +241,7 @@ export const RealDeterminant = (matrix: RealMatrixType): number => {
     det = det + (Math.pow(-1, x) * matrix.array[0][x] * RealDeterminant(submatrix));
  }
 
- console.info("N", n, "det", det);
+ // console.info("N", n, "det", det);
 
  return det;
 
@@ -318,13 +321,17 @@ export const RealInverse = (matrix: RealMatrixType): RealMatrixType|undefined =>
 
   const M = result.array;
 
-  var sum, i, j, k, order = matrix.m;
+  let sum = 0;
+  let i = 0;
+  let j = 0;
+  let k = 0;
+
+  const order = matrix.m;
 
   for (i = 1; i < order; i++) M[0][i] /= M[0][0]; // normalize row 0
 
   for (i = 1; i < order; i++) {
-    for (j = i; j < order; j++) // do a column of L
-    {
+    for (j = i; j < order; j++) { // do a column of L
       sum = 0;
       for (k = 0; k < i; k++) {
         sum += M[j][k] * M[k][i];
@@ -332,8 +339,7 @@ export const RealInverse = (matrix: RealMatrixType): RealMatrixType|undefined =>
       M[j][i] -= sum;
     }
     if (i == order - 1) continue;
-    for (j = i + 1; j < order; j++) // do a row of U
-    {
+    for (j = i + 1; j < order; j++) { // do a row of U
       sum = 0;
       for (k = 0; k < i; k++) {
         sum += M[i][k] * M[k][j];
@@ -342,10 +348,9 @@ export const RealInverse = (matrix: RealMatrixType): RealMatrixType|undefined =>
     }
   }
 
-  for (i = 0; i < order; i++)  // invert L
-  {
+  for (i = 0; i < order; i++) { // invert L
     for (j = i; j < order; j++) {
-      var x = 1;
+      let x = 1;
       if (i != j) {
         x = 0;
         for (k = i; k < j; k++) {
@@ -355,8 +360,7 @@ export const RealInverse = (matrix: RealMatrixType): RealMatrixType|undefined =>
       M[j][i] = x / M[j][j];
     }
   }
-  for (i = 0; i < order; i++)   // invert U
-  {
+  for (i = 0; i < order; i++) {  // invert U
     for (j = i; j < order; j++) {
       if (i == j) continue;
       sum = 0;
@@ -366,8 +370,7 @@ export const RealInverse = (matrix: RealMatrixType): RealMatrixType|undefined =>
       M[i][j] = -sum;
     }
   }
-  for (i = 0; i < order; i++)   // final inversion
-  {
+  for (i = 0; i < order; i++) {   // final inversion
     for (j = 0; j < order; j++) {
       sum = 0;
       for (k = ((i > j) ? i : j); k < order; k++) {
