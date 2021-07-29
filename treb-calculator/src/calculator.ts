@@ -1,7 +1,8 @@
 
 import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue,/*, UnionOrArray*/ 
 ArrayUnion,
-IArea} from 'treb-base-types';
+IArea,
+IsCellAddress} from 'treb-base-types';
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing } from 'treb-parser';
 
@@ -709,12 +710,19 @@ export class Calculator extends Graph {
 
   }
 
+  /** wrapper method ensures it always returns an Area (instance, not interface) */
+  public ResolveArea(address: string|ICellAddress|IArea): Area {
+    const resolved = this.ResolveAddress(address);
+    return IsCellAddress(resolved) ? new Area(resolved) : new Area(resolved.start, resolved.end);
+  }
+
   /** 
    * moved from embedded sheet. also modified to preserve ranges, so it
    * might return a range (area). if you are expecting the old behavior
    * you need to check (perhaps we could have a wrapper, or make it optional?)
    * 
    * Q: why does this not go in grid? or model? (...)
+   * 
    */
    public ResolveAddress(address: string|ICellAddress|IArea): ICellAddress|IArea {
     

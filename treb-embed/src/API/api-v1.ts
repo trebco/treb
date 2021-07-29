@@ -63,7 +63,7 @@ export interface ScrollToOptions {
 export class APIv1 {
 
   constructor(
-    /* @internal */ protected base: EmbeddedSpreadsheetBase) { }
+    protected base: EmbeddedSpreadsheetBase) { }
 
   public get loaded(): boolean { 
     return this.base.loaded;

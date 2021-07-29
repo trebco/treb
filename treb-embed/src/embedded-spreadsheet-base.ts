@@ -56,14 +56,69 @@ export interface ToolbarCtl {
   Show: (show: boolean) => void;
 }
 
-export enum SemanticVersionElement {
+enum SemanticVersionElement {
   major, minor, patch,
 }
 
-export interface SemanticVersionComparison {
+interface SemanticVersionComparison {
   match: number;
   level?: SemanticVersionElement;
 }
+
+// for updated API functions
+
+/**
+ * type represents a reference passed in to API functions. it can be an
+ * address object, an area (range) object, or a string. 
+ */
+export type RangeReference = string | ICellAddress | IArea;
+
+export interface GetRangeOptions {
+
+  /** 
+   * return formatted values (apply number formats and return strings)
+   */
+  formatted?: boolean;
+
+  /** 
+   * return formulas instead of values. formula takes precedence over
+   * "formatted"; if you pass both, returned values will *not* be formatted.
+   * 
+   * FIXME: that should throw?
+   */
+  formula?: boolean;
+
+}
+
+export interface SetRangeOptions {
+
+  /** transpose rectangular array before inserting */
+  transpose?: boolean;
+
+  /** recycle values (R-style) */
+  recycle?: boolean;
+
+  /** apply as an array (as if you pressed ctrl+shift+enter) */
+  array?: boolean;
+
+}
+
+export interface ScrollToOptions {
+
+  /** scroll in x-direction. defaults to true. */
+  x?: boolean;
+
+  /** scroll in y-direction. defaults to true. */
+  y?: boolean;
+
+  /** 
+   * smooth scrolling, if supported. we use scrollTo so support is as here:
+   * https://www.google.com/search?q=mdn+scrollto
+   */
+  smooth?: boolean;
+}
+
+///
 
 /**
  * embedded spreadsheet, suitable for one-line embedding in a web page
@@ -174,6 +229,29 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.DocumentChange();
   }
 
+  public set scale(value: number) {
+    this.grid.scale = value;
+  }
+
+  public get scale(): number {
+    return this.grid.scale;
+  }
+
+  public get headless(): boolean {
+    return this.grid.headless;
+  }
+  
+  public set headless(value: boolean) {
+    if (this.grid.headless !== value) {
+      this.grid.headless = value;
+      if (!value) {
+        this.grid.Update(true);
+        this.RebuildAllAnnotations();
+      }
+  
+    }
+  }
+
   /** 
    * automatic/manual 
    * why is this protected? is there some reason we don't want people to use it?
@@ -204,7 +282,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    * @internal
    */
-  public calculator: Calculator;
+  protected calculator: Calculator;
 
   /**
    * like calculator we're now making this public so we can use it
@@ -212,7 +290,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    * @internal
    */
-  public grid: Grid;
+  protected grid: Grid;
 
   protected options: EmbeddedSpreadsheetOptions;
 
@@ -678,7 +756,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public HandleCellEvent(event: CellEvent): void {
+  protected HandleCellEvent(event: CellEvent): void {
 
     const type = event.data?.type;
     if (type === 'hyperlink') {
@@ -881,10 +959,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public GetFreeze(): FreezePane { return this.grid.GetFreeze(); }
 
   /**
-   * update theme if any css properties have changed. this calls
-   * the grid method but we also have to update our dialog.
-   * 
-   * FIXME: toolbar? (...)
+   * notify us that external style (CSS) properties have changed. 
+   * we will update and repaint.
    */
   public UpdateTheme(override?: Partial<Theme>): void {
     this.grid.UpdateTheme(undefined, override);
@@ -935,7 +1011,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  /**
+  /* *
    * set data in given range
    *
    * @param range target range. if range is smaller than data, range controls.
@@ -943,7 +1019,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param data single value, array (column), or 2d array
    * @param recycle recycle values. we only recycle single values or vectors -- we will not recycle a matrix.
    * @param transpose transpose before inserting (data is row-major)
-   */
+   * /
   public SetRange(range: ICellAddress | IArea | string, data: CellValue | CellValue[][], recycle = false, transpose = false, array = false): void {
 
     let area: Area;
@@ -975,43 +1051,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.grid.SetRange(area, data, recycle, transpose, array);
 
   }
-
-  /**
-   * format a number with an arbitrary formatter
-   * 
-   * FIXME: should this support complex numbers? not sure...
-   */
-  public ParseNumber(text: string): number | Complex | boolean | string | undefined {
-
-    /*
-
-    ...why not?
-
-    const expr = this.parser.Parse(text);
-    if (expr.expression?.type === 'complex') {
-      return {
-        real: expr.expression.real,
-        imaginary: expr.expression.imaginary,
-      };
-    }
-    */
-
-    return ValueParser.TryParse(text).value;
-  }
-
-  /**
-   * format a number with an arbitrary formatter
-   *
-   * FIXME: should this support complex numbers? not sure...
-   */
-  public FormatNumber(value: number, format: string): string {
-    return NumberFormatCache.Get(format).Format(value);
-  }
-
-  /** public API for scale */
-  public SetScale(scale = 1): void {
-    this.grid.scale = scale;
-  }
+  */
 
   /** API FIXME: only for riskamp embedded... */
   public CreateChart(): Chart {
@@ -1025,15 +1065,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     return new Chart();
-  }
-
-  /**
-   * evaluate an arbitrary expression in the spreadsheet. you should generally
-   * use sheet names when referring to cells, to avoid ambiguity, but relative
-   * cells will always be the active, or front, sheet.
-   */
-  public Evaluate(expression: string): CellValue|CellValue[][]|undefined {
-    return this.calculator.Evaluate(expression);
   }
 
   public GetSheetID(sheet: string | number): number | undefined {
@@ -1054,13 +1085,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     return undefined;
   }
 
-  /**
+  /* *
    * returns range as array (column-major). optionally return raw values (formulae)
    *
    * @param formula set to true to return underlying formula, instead of calculated value
    * @param formatted set to true to return formatted strings instead of numbers
-   */
-  public GetRange(range: ICellAddress | IArea | string, formula = false, formatted = false): CellValue|CellValue[][]|undefined {
+   * /
+  public GetRange(range: ICellAddress | IArea | string, formula = false, formatted = false): CellValue | CellValue[][] | undefined {
 
     if (typeof range === 'string') {
       const named_range = this.grid.model.named_ranges.Get(range);
@@ -1087,6 +1118,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
   }
+  */
 
   public DeleteSheet(name?: string): void {
     if (name) {
@@ -1354,9 +1386,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  /* moved to new API section 
   public ScrollTo(address: string | ICellAddress, x = true, y = true, smooth = false): void {
     this.grid.ScrollTo(this.EnsureAddress(address), x, y, smooth);
   }
+  */
 
   /**
    * API function: insert at current cursor
@@ -1575,9 +1609,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     });
   }
 
-  /**
+  /* *
    * get selection
-   */
+   * /
   public GetSelection(qualified = false): string {
     const selection = this.grid.GetSelection();
     if (selection.empty) return '';
@@ -1593,6 +1627,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       return address;
     }
   }
+  */
 
   /** return "live" reference to selection */
   public GetSelectionReference(): GridSelection {
@@ -1668,6 +1703,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  /*
   public ApplyStyle(range?: IArea | ICellAddress | string, style: Style.Properties = {}, delta = true): void {
 
     let area: Area | undefined;
@@ -1700,6 +1736,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     this.grid.ApplyStyle(area, style, delta);
   }
+  */
 
   /**
    * replacement for fetch
@@ -2290,16 +2327,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  /**
+  /* *
    * clear name
-   */
+   * /
   public ClearName(name: string): void {
     this.grid.SetName(name);
   }
 
-  /**
+  / * *
    * set name at selection
-   */
+   * /
   public DefineName(name: string, area?: IArea): void {
     if (area) {
       this.grid.SetName(name, new Area(area.start, area.end));
@@ -2311,6 +2348,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
     }
   }
+  */
 
   /** delete macro function */
   public RemoveFunction(name: string): void {
@@ -2386,6 +2424,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
+  /*
   public SetHeadless(headless = true): void {
     if (this.grid.headless === headless) {
       return;
@@ -2398,11 +2437,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       // this.InflateAnnotations();
     }
   }
+  */
 
   /**
    * this method should be called after changing the headless flag
    */
-  public RebuildAllAnnotations(): void {
+  protected RebuildAllAnnotations(): void {
     for (const annotation of this.grid.model.active_sheet.annotations) {
       this.InflateAnnotation(annotation);
       if (annotation.resize_callback) {
@@ -2638,7 +2678,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * we need to manage this explicitly: hence the parameter.
    * 
    */
-  public DocumentChange(undo_selection?: string): void {
+  protected DocumentChange(undo_selection?: string): void {
 
     Yield().then(() => {
 
@@ -2658,7 +2698,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     });
   }
 
-  public PushUndo(json?: string, last_selection?: string): void {
+  protected PushUndo(json?: string, last_selection?: string): void {
 
     const selection = last_selection || this.last_selection;
 
@@ -2698,7 +2738,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public FlushUndo(push = true): void {
+  protected FlushUndo(push = true): void {
 
     // console.info('flush undo');
 
@@ -3176,7 +3216,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   */
 
   /** update selection style for the toolbar */
-  public UpdateSelectionStyle(selection?: GridSelection): void {
+  protected UpdateSelectionStyle(selection?: GridSelection): void {
 
     const freeze = this.grid.GetFreeze();
 
@@ -3248,7 +3288,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public UpdateDocumentStyles(update = true): void {
+  protected UpdateDocumentStyles(update = true): void {
 
     if (!this.toolbar) {
       return;
@@ -3544,5 +3584,226 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.Undo();
     }
   }
+
+  protected ResolveSheetName(id: number, quote = false): string|undefined {
+    for (const sheet of this.grid.model.sheets) {
+      if (sheet.id === id) { 
+        if (quote && QuotedSheetNameRegex.test(sheet.name)) {
+          return `'${sheet.name}'`;
+        }
+        return sheet.name; 
+      }
+    }
+    return undefined;
+  }
+
+  // --- new or rewritten API functions ----------------------------------------
+
+  /** scroll to the given address */
+  public ScrollTo(reference: RangeReference, options: ScrollToOptions = {}): void {
+
+    if (typeof reference === 'string') {
+      reference = this.calculator.ResolveAddress(reference);
+    }
+
+    // the grid method has defaults, but it's not obvious what 
+    // they are and they're not visible through interfaces (?)
+
+    // in any case we can set them here explicitly
+
+    options = {
+      x: true,
+      y: true,
+      smooth: false,
+      ...options,
+    };
+
+    this.grid.ScrollTo(
+      IsCellAddress(reference) ? reference : reference.start,
+      options.x, options.y, options.smooth);
+
+  }
+
+  /** 
+   * resolve a string address/range to a range or address object. reference
+   * is a string "A1", "Sheet1!B2:C3". if a sheet name is not passed, the 
+   * current active sheet is used. you can also pass a named range as reference.
+   * 
+   * FIXME: name?
+   */
+  public Resolve(reference: string): ICellAddress | IArea | undefined {
+
+    // is : a legal character in sheet names? even quoted? [A: no]
+
+    // FIXME: we're using the sheet EnsureAddress method, but that should
+    // move either in here or into some sort of helper class
+
+    const result = this.calculator.ResolveAddress(reference);
+
+    if (IsCellAddress(result)) {
+      return result.sheet_id ? result : undefined;
+    }
+
+    return result.start.sheet_id ? result : undefined;
+
+  }
+
+  /**
+   * evaluate an arbitrary expression in the spreadsheet. you should generally
+   * use sheet names when referring to cells, to avoid ambiguity, but relative
+   * cells will always be the active, or front, sheet.
+   */
+  public Evaluate(expression: string): CellValue | CellValue[][] | undefined {
+    return this.calculator.Evaluate(expression);
+  }
+
+  /**
+   * returns the current selection, as a string reference. returns empty
+   * string if there's no selection (you can test falsy on that).
+   */
+  public GetSelection(qualified = true): string {
+
+    const ref = this.grid.GetSelection();
+
+    if (ref.empty) {
+      return '';
+    }
+
+    let range = '';
+
+    if (ref.area.count > 1) {
+      range = Area.CellAddressToLabel(ref.area.start) + ':' +
+        Area.CellAddressToLabel(ref.area.end);
+    }
+    else {
+      range = Area.CellAddressToLabel(ref.area.start);
+    }
+
+    if (!qualified) {
+      return range;
+    }
+
+    // is there a function to resolve sheet? actually, don't we know that
+    // the active selection must be on the active sheet? (...)
+
+    const sheet_id = ref.area.start.sheet_id || this.grid.active_sheet.id;
+    const sheet_name = this.ResolveSheetName(sheet_id, true);
+
+    return sheet_name ? sheet_name + '!' + range : range;
+
+  }
+
+
+  /**
+   * format a number with an arbitrary formatter
+   * FIXME: should this support complex numbers? not sure...
+   */
+   public ParseNumber(text: string): number | Complex | boolean | string | undefined {
+
+    /*
+
+    ...why not?
+
+    const expr = this.parser.Parse(text);
+    if (expr.expression?.type === 'complex') {
+      return {
+        real: expr.expression.real,
+        imaginary: expr.expression.imaginary,
+      };
+    }
+    */
+
+    return ValueParser.TryParse(text).value;
+
+  }
+
+  /**
+   * format a number with an arbitrary formatter
+   *
+   * FIXME: should this support complex numbers? not sure...
+   */
+  public FormatNumber(value: number, format = 'General'): string {
+    return NumberFormatCache.Get(format).Format(value);
+  }  
+  
+  /**
+   * apply style to range. pass `undefined` as range to apply to 
+   * current selection. 
+   * 
+   * @param delta optionally apply delta (only overwrite explicit properties). default TRUE.
+   */
+  public ApplyStyle(range?: RangeReference, style: Style.Properties = {}, delta = true): void {
+    this.grid.ApplyStyle(
+      range ? this.calculator.ResolveArea(range) : undefined, style, delta);
+  }
+
+  /**
+   * clear name
+   */
+   public ClearName(name: string): void {
+
+    // NOTE: AC is handled internally
+    this.grid.SetName(name);
+
+  }
+
+  /**
+   * set name at selection
+   */
+  public DefineName(name: string, reference?: RangeReference): void {
+
+    if (!reference) {
+      const selection = this.GetSelectionReference();
+      if (!selection.empty) {
+        reference = selection.area;
+      }
+    }
+
+    if (!reference) {
+      throw new Error('invalid reference');
+    }
+
+    // NOTE: AC is handled internally
+
+    this.grid.SetName(name, this.calculator.ResolveArea(reference));
+
+  }
+
+  /** 
+   * 
+   */
+  public GetRange(range?: RangeReference, options: GetRangeOptions = {}): CellValue | CellValue[][] {
+
+    if (!range) {
+      const selection = this.GetSelectionReference();
+      if (!selection.empty) {
+        range = selection.area;
+      }
+    }
+
+    return range ? 
+      this.grid.GetRange(this.calculator.ResolveAddress(range), options.formula, options.formatted) : undefined;
+
+  }
+
+  /**
+   * set data in range
+   */
+  public SetRange(range: RangeReference|undefined, data: CellValue|CellValue[][], options: SetRangeOptions = {}): void {
+
+    if (!range) {
+      const selection = this.GetSelectionReference();
+      if (!selection.empty) {
+        range = selection.area;
+      }
+    }
+
+    if (range) {
+      return this.grid.SetRange(
+        this.calculator.ResolveArea(range),
+        data, options.recycle, options.transpose, options.array);
+    }
+
+  }  
 
 }
