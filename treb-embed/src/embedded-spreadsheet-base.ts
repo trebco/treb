@@ -276,19 +276,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * the constructor affirmatively assigns it via a method. use that
    * method to do the override.
    * 
-   * this was protected, in an effort to shield it from the public
-   * API. that's always been a bit of a hack. we will make this public
-   * here so we can use it more easily in the new API structure.
-   * 
    * @internal
    */
   protected calculator: Calculator;
 
   /**
-   * like calculator we're now making this public so we can use it
-   * in the API class.
-   * 
-   * @internal
    */
   protected grid: Grid;
 
