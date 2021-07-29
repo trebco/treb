@@ -137,6 +137,33 @@ export class Grid {
   // new...
   public headless = false;
 
+  public get scale(): number {
+    return this.layout.scale;
+  }
+
+  public set scale(value: number) {
+
+      this.layout.scale = value;
+      this.UpdateLayout();
+      this.UpdateAnnotationLayout();
+      this.layout.UpdateAnnotation(this.active_sheet.annotations);
+      this.layout.ApplyTheme(this.theme);
+      this.overlay_editor?.UpdateTheme(value);
+      this.tab_bar?.UpdateScale(value);
+  
+      this.grid_events.Publish({
+        type: 'scale', 
+        scale: value,
+      });
+  
+      for (const sheet of this.model.sheets) {
+        for (const annotation of sheet.annotations) {
+          annotation.dirty = true;
+        }
+      }
+
+  }
+
   // --- private members -------------------------------------------------------
 
   // testing
@@ -515,6 +542,7 @@ export class Grid {
     return annotation;
   }
 
+  /*
   public UpdateScale(scale = 1): void {
     
     this.layout.scale = scale;
@@ -537,6 +565,7 @@ export class Grid {
     }
 
   }
+  */
 
   /** placeholder */
   public UpdateAnnotationLayout(): void {
@@ -1784,7 +1813,9 @@ export class Grid {
                 localStorage.setItem(this.options.persist_scale_key, JSON.stringify({scale}));
               }
 
-              this.UpdateScale(scale);
+              // this.UpdateScale(scale);
+              this.scale = scale;
+
             }
             break;
 

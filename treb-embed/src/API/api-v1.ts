@@ -65,6 +65,18 @@ export class APIv1 {
   constructor(
     /* @internal */ protected base: EmbeddedSpreadsheetBase) { }
 
+  public get loaded(): boolean { 
+    return this.base.loaded;
+  }
+
+  public get scale(): number {
+    return this.base.grid.scale;
+  }
+
+  public set scale(value: number) {
+    this.base.grid.scale = value;
+  }
+
   /** scroll to the given address */
   public ScrollTo(reference: RangeReference, options: ScrollToOptions = {}): void {
 
@@ -158,7 +170,7 @@ export class APIv1 {
 
   }
 
-  public GetRange(range?: RangeReference, options: GetRangeOptions = {}): CellValue | CellValue[][] | undefined {
+  public GetRange(range?: RangeReference, options: GetRangeOptions = {}): CellValue | CellValue[][] {
 
     if (!range) {
       range = this.GetSelection();
@@ -227,8 +239,8 @@ export class APIv1 {
   public ClearName(name: string): void {
 
     // NOTE: AC is handled internally
-
     this.base.grid.SetName(name);
+
   }
 
   /**
@@ -256,6 +268,44 @@ export class APIv1 {
 
     this.base.grid.SetName(name, new Area(area.start, area.end));
 
+  }
+
+  /**
+   * get the internal sheet ID for a sheet, by name or by number (in order).
+   * this is useful if you are manually creating range references.
+   * 
+   * returns 0 on error (not found). 0 is not a valid sheet ID.
+   */
+  public GetSheetID(index: number|string): number {
+
+    if (typeof index === 'number') {
+      const sheet = this.base.grid.model.sheets[index];
+      return sheet?.id || 0;
+    }
+    
+    const lc = index.toLowerCase();
+    for (const sheet of this.base.grid.model.sheets) {
+      if (sheet.name.toLowerCase() === lc) {
+        return sheet.id;
+      }
+    }
+    
+    return 0;
+
+  }
+
+  /**
+   * show or hide sheet, by name or index
+   */
+  public ShowSheet(index: number | string = 0, show = true): void {
+    this.base.grid.ShowSheet(index, show);
+  }
+
+  /**
+   * activate sheet, by name or index
+   */
+  public ActivateSheet(index: number | string): void {
+    this.base.grid.ActivateSheet(index);
   }
 
 }

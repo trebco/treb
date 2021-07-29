@@ -1,12 +1,16 @@
 
 // treb imports
-import { Grid, GridEvent, SerializeOptions, Annotation,
-         BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection, CellEvent } from 'treb-grid';
+import {
+  Grid, GridEvent, SerializeOptions, Annotation,
+  BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection, CellEvent
+} from 'treb-grid';
 import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
-import { IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue,
-  IsFlatData, IsFlatDataArray, Rectangle, Theme, IsComplex, ComplexToString, Complex } from 'treb-base-types';
+import {
+  IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue,
+  IsFlatData, IsFlatDataArray, Rectangle, Theme, IsComplex, ComplexToString, Complex
+} from 'treb-base-types';
 import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
@@ -20,7 +24,7 @@ import { SelectionState, Toolbar } from './toolbar';
 // this is a circular reference. this seems like a bad idea, 
 // but it's legal in typescript. not sure how I feel about this.
 
-import { APIv1 } from './API/api-v1';
+// import { APIv1 } from './API/api-v1';
 
 // TYPE ONLY
 // type Chart = import('../../treb-charts/src/index').Chart;
@@ -93,7 +97,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     const rex = new RegExp(default_script_name);
 
     // tslint:disable-next-line:prefer-for-of
-    for (let i = 0; i < tags.length; i++ ){
+    for (let i = 0; i < tags.length; i++) {
 
       const tag = tags[i];
       const src = tag.src; // fully-qualified here [FIXME: IE11?]
@@ -124,10 +128,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     // console.warn('treb: base path not found');
-    
+
   }
 
-  public v1: APIv1;
+  // public v1: APIv1;
 
   /**
    * this flag will be set on LoadDocument. the intent is to be able to
@@ -149,28 +153,31 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /** name moved to model */
-  public get document_name(): string|undefined {
+  public get document_name(): string | undefined {
     return this.grid.model.document_name;
   }
 
   /** name moved to model */
-  public set document_name(name: string|undefined) {
+  public set document_name(name: string | undefined) {
     this.grid.model.document_name = name;
     this.DocumentChange();
   }
 
   /** user data moved to model */
-  public get user_data(): any|undefined {
+  public get user_data(): any | undefined {
     return this.grid.model.user_data;
   }
 
   /** user data moved to model */
-  public set user_data(data: any|undefined) {
+  public set user_data(data: any | undefined) {
     this.grid.model.user_data = data;
     this.DocumentChange();
   }
 
-  /** automatic/manual */
+  /** 
+   * automatic/manual 
+   * why is this protected? is there some reason we don't want people to use it?
+   */
   protected calculation = CalculationOptions.automatic;
 
   /**
@@ -219,26 +226,26 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   protected active_selection_style?: Style.Properties;
 
-  public toolbar_ctl?: ToolbarCtl;
+  public toolbar_ctl?: ToolbarCtl; /* public? */
 
   /** localized parser instance. we're sharing. */
-  private get parser() { 
+  protected get parser(): Parser {
     return this.calculator.parser;
   }
 
-  private node?: HTMLElement;
+  protected node?: HTMLElement;
 
   /**
    * export worker (no longer using worker-loader).
    * export worker is loaded on demand, not by default.
    */
-  private export_worker?: Worker;
+  protected export_worker?: Worker;
 
   /**
    * keep track of what we've registered, for external libraries
    * (currently charts), which is per sheet instance.
    */
-  private registered_libraries: {[index: string]: any} = {};
+  protected registered_libraries: { [index: string]: any } = {};
 
   /**
    * undo pointer points to the next insert spot. that means that when
@@ -276,7 +283,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (treb_path) {
       if (!/\/$/.test(treb_path)) treb_path += '/';
       name = treb_path + name;
-    }    
+    }
 
     return name;
 
@@ -286,7 +293,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     super();
 
-    this.v1 = new APIv1(this);
+    // this.v1 = new APIv1(this);
 
     // consolidate options w/ defaults. note that this does not
     // support nested options, for that you need a proper merge
@@ -309,8 +316,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // optionally data from storage, with fallback
 
-    let data: string|undefined;
-    let source: LoadSource|undefined;
+    let data: string | undefined;
+    let source: LoadSource | undefined;
 
     if (this.options.storage_key && !this.options.toll_initial_load) {
       data = localStorage.getItem(this.options.storage_key) || undefined;
@@ -321,7 +328,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       if (!data && this.options.alternate_document) {
         network_document = this.options.alternate_document;
       }
-      
+
       window.addEventListener('beforeunload', () => {
         if (this.options.storage_key) {
           this.SaveLocalStorage(this.options.storage_key);
@@ -330,7 +337,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     }
 
-    let container: HTMLElement|undefined;
+    let container: HTMLElement | undefined;
 
     if (typeof this.options.container === 'string') {
       container = document.getElementById(this.options.container) as HTMLElement;
@@ -365,13 +372,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // what is happening here? this is dumb
 
-//    if (typeof this.options.formula_bar !== 'undefined') {
-//      grid_options.formula_bar = this.options.formula_bar;
-//    }
+    //    if (typeof this.options.formula_bar !== 'undefined') {
+    //      grid_options.formula_bar = this.options.formula_bar;
+    //    }
 
-//    if (this.options.expand_formula_button) {
-//      grid_options.expand_formula_button = this.options.expand_formula_button;
-//    }
+    //    if (this.options.expand_formula_button) {
+    //      grid_options.expand_formula_button = this.options.expand_formula_button;
+    //    }
 
     // if (this.options.scrollbars) 
     // {
@@ -379,9 +386,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     //  grid_options.scrollbars = !!this.options.scrollbars;
     // }
 
-//    if (typeof this.options.tab_bar !== 'undefined') {
-//      grid_options.tab_bar = this.options.tab_bar;
-//    }
+    //    if (typeof this.options.tab_bar !== 'undefined') {
+    //      grid_options.tab_bar = this.options.tab_bar;
+    //    }
 
     if (this.options.scale_control) {
 
@@ -407,16 +414,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         // (3) initial scale but persist and use persisted value if available
 
         // if (!this.options.scale_control) {
-          const json = localStorage.getItem(grid_options.persist_scale_key);
-          if (json) {
-            try {
-              const obj = JSON.parse(json);
-              grid_options.initial_scale = obj.scale || 1;
-            }
-            catch (e) {
-              console.warn('parsing persisted scale failed');
-            }
+        const json = localStorage.getItem(grid_options.persist_scale_key);
+        if (json) {
+          try {
+            const obj = JSON.parse(json);
+            grid_options.initial_scale = obj.scale || 1;
           }
+          catch (e) {
+            console.warn('parsing persisted scale failed');
+          }
+        }
 
       }
 
@@ -494,7 +501,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               ((this.calculation === CalculationOptions.automatic) ?
                 this.Recalculate(event) : Promise.resolve()).then(() => {
                   this.DocumentChange(cached_selection);
-              });
+                });
 
               /*
               if (this.calculation === CalculationOptions.automatic) {
@@ -603,7 +610,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       // and the calculator, which would otherwise happen on document load
 
       this.calculator.RebuildClean(this.grid.model, true);
-        
+
     }
 
     this.FlushUndo();
@@ -694,9 +701,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           a.setAttribute('noreferrer', 'true');
           a.setAttribute('nofollow', 'true');
           a.click();
-          
+
           return;
-              
+
         }
         else {
 
@@ -707,14 +714,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
             if (parse_result.expression.type === 'address') {
               if (parse_result.expression.sheet || parse_result.expression.sheet_id) {
-                this.ActivateSheet((parse_result.expression.sheet || parse_result.expression.sheet_id) as string|number);
+                this.ActivateSheet((parse_result.expression.sheet || parse_result.expression.sheet_id) as string | number);
               }
               this.Select(data);
               return;
             }
             else if (parse_result.expression.type === 'range') {
               if (parse_result.expression.start.sheet || parse_result.expression.start.sheet_id) {
-                this.ActivateSheet((parse_result.expression.start.sheet || parse_result.expression.start.sheet_id) as string|number);
+                this.ActivateSheet((parse_result.expression.start.sheet || parse_result.expression.start.sheet_id) as string | number);
               }
               this.Select(data);
               return;
@@ -760,7 +767,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
     }
 
-    if (reset) { 
+    if (reset) {
       this.calculator.Reset();
     }
 
@@ -771,7 +778,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public OnSheetChange(event: SheetChangeEvent): void {
+  protected OnSheetChange(event: SheetChangeEvent): void {
 
     // call annotation method(s) on any annotations in active sheet
 
@@ -795,8 +802,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public HandleDrag(event: DragEvent): void {
-    if (event.dataTransfer && event.dataTransfer.types){
+  protected HandleDrag(event: DragEvent): void {
+    if (event.dataTransfer && event.dataTransfer.types) {
 
       // this is for IE11, types is not an array
 
@@ -814,7 +821,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
-  public HandleDrop(event: DragEvent): void {
+  protected HandleDrop(event: DragEvent): void {
 
     if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
       event.preventDefault();
@@ -832,7 +839,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             close_box: true,
             message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
             type: DialogType.error,
-            timeout: 3000, 
+            timeout: 3000,
           });
           console.error(err);
         });
@@ -884,20 +891,11 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (this.toolbar) {
       this.toolbar.UpdateTheme(this.grid.theme);
     }
-    /*
-    this.dialog?.UpdateTheme({
-      mask: this.grid.theme.interface_dialog_mask,
-      border: this.grid.theme.interface_dialog_border,
-      background: this.grid.theme.interface_dialog_background,
-      text: this.grid.theme.interface_dialog_color,
-      fontSize: `${this.grid.theme.interface_font_size_value}${this.grid.theme.interface_font_size_unit}`,
-      fontFamily: `${this.grid.theme.interface_font_face}`,
-    });
-    */
   }
 
   /**
    * sends data to a new window. used for popout and fork.
+   * why is this public? (...)
    * 
    * DEPRECATED [?]
    */
@@ -946,7 +944,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param recycle recycle values. we only recycle single values or vectors -- we will not recycle a matrix.
    * @param transpose transpose before inserting (data is row-major)
    */
-  public SetRange(range: ICellAddress|IArea|string, data: CellValue|CellValue[][], recycle = false, transpose = false, array = false): void {
+  public SetRange(range: ICellAddress | IArea | string, data: CellValue | CellValue[][], recycle = false, transpose = false, array = false): void {
 
     let area: Area;
 
@@ -983,7 +981,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    * FIXME: should this support complex numbers? not sure...
    */
-  public ParseNumber(text: string): number|Complex|boolean|string|undefined {
+  public ParseNumber(text: string): number | Complex | boolean | string | undefined {
 
     /*
 
@@ -997,7 +995,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       };
     }
     */
-   
+
     return ValueParser.TryParse(text).value;
   }
 
@@ -1012,7 +1010,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   /** public API for scale */
   public SetScale(scale = 1): void {
-    this.grid.UpdateScale(scale);
+    this.grid.scale = scale;
   }
 
   /** API FIXME: only for riskamp embedded... */
@@ -1034,48 +1032,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * use sheet names when referring to cells, to avoid ambiguity, but relative
    * cells will always be the active, or front, sheet.
    */
-  public Evaluate(expression: string) {
-
-    // does calculator have a parser? if so, can we push this into 
-    // calculator? seems like it would make more sense in there.
-
-    /*
-    const parse_result = this.parser.Parse(expression);
-    if (parse_result &&
-        parse_result.expression ){ // &&
-        // parse_result.expression.type === 'call' ){
-
-      // FIXME: make a method for doing this
-
-      this.parser.Walk(parse_result.expression, (unit) => {
-        if (unit.type === 'address' || unit.type === 'range') {
-          this.calculator.ResolveSheetID(unit);
-        }
-        return true;
-      });
-
-      const result = this.calculator.CalculateExpression(parse_result.expression);
-
-      / *
-      if (Array.isArray(result)) {
-        return result.map(row => row.map(value => value.value));
-      }
-      * /
-      if (result.type === ValueType.array) {
-        return result.value.map(row => row.map(value => value.value));
-      }
-      else {
-        return result.value;
-      }
-
-    }
-    */
+  public Evaluate(expression: string): CellValue|CellValue[][]|undefined {
     return this.calculator.Evaluate(expression);
-
   }
 
-  public GetSheetID(sheet: string|number): number|undefined {
-    
+  public GetSheetID(sheet: string | number): number | undefined {
+
     if (typeof sheet === 'number') {
       const model_sheet = this.grid.model.sheets[sheet];
       if (model_sheet) { return model_sheet.id; }
@@ -1098,7 +1060,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param formula set to true to return underlying formula, instead of calculated value
    * @param formatted set to true to return formatted strings instead of numbers
    */
-  public GetRange(range: ICellAddress|IArea|string, formula = false, formatted = false) {
+  public GetRange(range: ICellAddress | IArea | string, formula = false, formatted = false): CellValue|CellValue[][]|undefined {
 
     if (typeof range === 'string') {
       const named_range = this.grid.model.named_ranges.Get(range);
@@ -1147,7 +1109,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * add a sheet, optionally named. name will be rewritten if there's overlap
    * (FIXME: should throw instead? ...)
    */
-  public AddSheet(name?: string): void{
+  public AddSheet(name?: string): void {
     this.grid.AddSheet(name);
 
     // before you do anything else you probably need to reset the calculator.
@@ -1161,16 +1123,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.calculator.Reset();
   }
 
-  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: Partial<Rectangle>|string): void {
+  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: Partial<Rectangle> | string): void {
 
-    let target: Partial<Rectangle>|Partial<Area>|undefined;
+    let target: Partial<Rectangle> | Partial<Area> | undefined;
 
     if (rect) {
       if (Rectangle.IsRectangle(rect)) {
         target = rect;
       }
       else if (typeof rect === 'string') {
-        let area: IArea|undefined
+        let area: IArea | undefined
 
         area = this.grid.model.named_ranges.Get(rect);
         if (!area) {
@@ -1184,21 +1146,21 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               this.EnsureAddress(addresses[1]));
           }
         }
-  
-        if (area) { 
-          target = area; 
+
+        if (area) {
+          target = area;
         }
 
       }
     }
 
-    const {x, y} = this.grid.GetScrollOffset();
+    const { x, y } = this.grid.GetScrollOffset();
     const scale = (this.grid as any).layout.scale || 1;
 
     this.grid.CreateAnnotation({
       type,
       formula,
-    }, undefined, undefined, target || {top: y/scale + 30, left: x/scale + 30, width: 300, height: 300});
+    }, undefined, undefined, target || { top: y / scale + 30, left: x / scale + 30, width: 300, height: 300 });
 
   }
 
@@ -1238,14 +1200,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             else {
               contents = '';
               const bytes = new Uint8Array(reader.result);
-              for (let i = 0; i < bytes.byteLength; i++ ){
+              for (let i = 0; i < bytes.byteLength; i++) {
                 contents += String.fromCharCode(bytes[i]);
               }
             }
 
             const img = document.createElement('img');
             img.src = contents;
-            
+
             /*
             const img = document.createElement('img');
             img.setAttribute('style', 'position: absolute; display: block');
@@ -1260,14 +1222,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             // src attribute is set before it's inflated. 
 
             const annotation = this.grid.CreateAnnotation({
-                type: 'image',
-                formula: '',
-              }, undefined, undefined, {
-                top: 30, 
-                left: 30, 
-                width: img.width || 300, 
-                height: img.height || 300
-              });
+              type: 'image',
+              formula: '',
+            }, undefined, undefined, {
+              top: 30,
+              left: 30,
+              width: img.width || 300,
+              height: img.height || 300
+            });
 
             annotation.data.src = contents;
             annotation.data.original_size = { width: img.width || 300, height: img.height || 300 };
@@ -1301,7 +1263,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * set link in cell. set value to '' to remove link. link can be an 
    * http/https URL or a spreadsheet reference (as text).
    */
-  public SetLink(address: string|ICellAddress, reference = ''): void {
+  public SetLink(address: string | ICellAddress, reference = ''): void {
     address = this.EnsureAddress(address);
     this.grid.SetLink(address, reference);
   }
@@ -1309,14 +1271,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * show or hide sheet, by name or index
    */
-  public ShowSheet(index: number|string = 0, show = true): void {
+  public ShowSheet(index: number | string = 0, show = true): void {
     this.grid.ShowSheet(index, show);
   }
 
   /**
    * activate sheet, by name or index
    */
-  public ActivateSheet(index: number|string): void {
+  public ActivateSheet(index: number | string): void {
     this.grid.ActivateSheet(index);
   }
 
@@ -1325,7 +1287,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param column column, or columns (array), or undefined means all columns
    * @param width desired width (can be 0) or undefined means 'auto-size'
    */
-  public SetColumnWidth(column?: number|number[], width?: number): void {
+  public SetColumnWidth(column?: number | number[], width?: number): void {
     this.grid.SetColumnWidth(column, width);
   }
 
@@ -1334,7 +1296,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param row row, or rows (array), or undefined means all rows
    * @param height desired height (can be 0) or undefined means 'auto-size'
    */
-  public SetRowHeight(row?: number|number[], height?: number): void {
+  public SetRowHeight(row?: number | number[], height?: number): void {
     this.grid.SetRowHeight(row, height);
   }
 
@@ -1464,7 +1426,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * more importantly, why is this async and returns a promise explicitly?
    * won't that return a Promise<Promise>? (...)
    */
-  public async ImportXLSX(data: string, source: LoadSource): Promise<Blob|void> {
+  public async ImportXLSX(data: string, source: LoadSource): Promise<Blob | void> {
 
     if (!this.export_worker) {
       const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
@@ -1476,7 +1438,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // Promise<void>. for the time I'm punting but this should be 
     // cleaned up. FIXME
 
-    return new Promise<Blob|void>((resolve, reject) => {
+    return new Promise<Blob | void>((resolve, reject) => {
       if (this.export_worker) {
 
         this.dialog?.ShowDialog({
@@ -1504,12 +1466,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             // add to support import charts
 
             this.InflateAnnotations();
-            
+
           }
           else {
             return reject('unknown error (missing data)');
           }
-          
+
           this.dialog?.HideDialog();
           resolve();
         };
@@ -1536,7 +1498,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (!this.export_worker) {
       const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
       this.export_worker = await this.LoadWorker(worker_name);
-  }
+    }
 
     return new Promise<Blob>((resolve, reject) => {
 
@@ -1590,9 +1552,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       if (this.grid.model.document_name) {
         filename = this.grid.model.document_name.toLowerCase().replace(/\s+/g, '-');
       }
-      
+
       if (blob) {
-        FileSaver.saveAs(blob, filename + '.xlsx', {autoBom: false});
+        FileSaver.saveAs(blob, filename + '.xlsx', { autoBom: false });
         this.last_save_version = this.file_version; // even though it's an export, consider it clean
       }
 
@@ -1609,7 +1571,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       }
 
       // rethrow
-      throw(err);
+      throw (err);
     });
   }
 
@@ -1673,8 +1635,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.Publish({ type: 'reset' });
   }
 
-  public Select(range: IArea|ICellAddress|string): void {
-    let area: Area|undefined;
+  public Select(range: IArea | ICellAddress | string): void {
+    let area: Area | undefined;
 
     if (range) {
       if (typeof range === 'string') {
@@ -1706,9 +1668,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public ApplyStyle(range?: IArea|ICellAddress|string, style: Style.Properties = {}, delta = true): void {
+  public ApplyStyle(range?: IArea | ICellAddress | string, style: Style.Properties = {}, delta = true): void {
 
-    let area: Area|undefined;
+    let area: Area | undefined;
 
     if (range) {
       if (typeof range === 'string') {
@@ -1768,7 +1730,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         this.LoadDocument(data, undefined, undefined, undefined, undefined, undefined, LoadSource.LOCAL_STORAGE);
         return true;
       }
-      catch(err) {
+      catch (err) {
         console.error(err);
       }
     }
@@ -1845,13 +1807,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * show file chooser and resolve with the selected file, or undefined
    */
-  public SelectFile(accept?: string): Promise<File|undefined> {
+  public SelectFile(accept?: string): Promise<File | undefined> {
 
     return new Promise((resolve) => {
 
       const file_chooser = document.createElement('input');
       file_chooser.type = 'file';
-      
+
       if (accept) {
         file_chooser.accept = accept;
       }
@@ -1859,7 +1821,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       // so the thing here is there is no way to trap a "cancel" event
       // from the file chooser. if you are waiting on a promise, that will
       // just get orphaned forever. 
-      
+
       // it's not the end of the world, really, to leave a few of these 
       // dangling, but this should allow it to clean up.
 
@@ -1920,16 +1882,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   public async LoadLocalFile(): Promise<boolean> {
 
-    const file = await(this.SelectFile(
+    const file = await (this.SelectFile(
       '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json'));
 
-    if (file) { 
-    
+    if (file) {
+
       try {
         await this.LoadFileInternal(file, LoadSource.LOCAL_FILE);
         return true;
       }
-      catch(err) {
+      catch (err) {
         this.dialog?.ShowDialog({
           title: 'Error reading file',
           close_box: true,
@@ -1991,7 +1953,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
                 contents = '';
                 const bytes = new Uint8Array(reader.result);
-                for (let i = 0; i < bytes.byteLength; i++ ){
+                for (let i = 0; i < bytes.byteLength; i++) {
                   contents += String.fromCharCode(bytes[i]);
                 }
 
@@ -2021,7 +1983,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       setTimeout(() => {
         if (/\.xlsx$/i.test(file.name)) {
-          if (reader.readAsBinaryString ){
+          if (reader.readAsBinaryString) {
             reader.readAsBinaryString(file);
           }
           else {
@@ -2040,7 +2002,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public ExportDelimited(options: ExportOptions = {}): string {
 
     options = {
-      ...DefaultExportOptions, 
+      ...DefaultExportOptions,
       ...options,
     };
 
@@ -2048,7 +2010,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       throw new Error('invalid delimiter');
     }
 
-    let sheet: Sheet|undefined = this.grid.model.active_sheet;
+    let sheet: Sheet | undefined = this.grid.model.active_sheet;
 
     switch (typeof options.sheet) {
 
@@ -2075,7 +2037,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     if (!sheet) {
-      throw new Error('invalid sheet identifier');        
+      throw new Error('invalid sheet identifier');
     }
 
     const serialized_data = sheet.cells.toJSON({
@@ -2083,12 +2045,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       expand_arrays: true,
       calculated_value: true,
     });
-    
+
     const columns: string[] = [];
     for (let i = 0; i < serialized_data.columns; i++) { columns.push(''); }
 
     const rows: string[][] = [];
-    for (let i = 0; i < serialized_data.rows; i++){
+    for (let i = 0; i < serialized_data.rows; i++) {
       rows.push(columns.slice(0));
     }
 
@@ -2100,10 +2062,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     if (IsFlatDataArray(serialized_data.data)) {
 
-      for (const element of serialized_data.data){
+      for (const element of serialized_data.data) {
         let value = '';
         if ((!options.formulas) && typeof element.calculated !== 'undefined') {
-          value = IsComplex(element.calculated) ? 
+          value = IsComplex(element.calculated) ?
             ComplexToString(element.calculated) :
             element.calculated.toString();
         }
@@ -2139,8 +2101,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public SaveLocalFile(
     /* type: SaveFileType = SaveFileType.treb,*/
     filename: string = SaveFileType.treb,
-    preserve_simulation_data = true, 
-    pretty = false, 
+    preserve_simulation_data = true,
+    pretty = false,
     additional_options?: SerializeOptions): void {
 
     const document_name = this.grid.model.document_name || 'document'; // FIXME: options
@@ -2162,7 +2124,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     switch (type) {
- 
+
       case SaveFileType.csv:
         text = this.ExportDelimited({ delimiter: ',' });
         break;
@@ -2200,7 +2162,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     if (text && filename) {
       const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      FileSaver.saveAs(blob, filename, {autoBom: false});
+      FileSaver.saveAs(blob, filename, { autoBom: false });
     }
 
   }
@@ -2225,14 +2187,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    */
   public LoadDocument(
-      data: TREBDocument,
-      scroll: string|ICellAddress = {row: 0, column: 0},
-      flush = true,
-      recalculate = false,
-      override_sheet?: string,
-      override_selection?: GridSelection,
-      source?: LoadSource,
-      ): void {
+    data: TREBDocument,
+    scroll: string | ICellAddress = { row: 0, column: 0 },
+    flush = true,
+    recalculate = false,
+    override_sheet?: string,
+    override_selection?: GridSelection,
+    source?: LoadSource,
+  ): void {
 
     if (override_selection) {
       if (data.sheet_data) {
@@ -2299,7 +2261,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.Publish({ type: 'load', source }); // FIXME: should not happen on undo...
     this.UpdateDocumentStyles();
     this.loaded = true;
-    
+
     if (scroll) {
       // let ds = document.body.scrollTop;
       Yield().then(() => {
@@ -2368,7 +2330,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * create macro function. name must not already exist (TODO: functions)
    */
-  public DefineFunction(name: string, argument_names: string|string[] = '', function_def = '0') {
+  public DefineFunction(name: string, argument_names: string | string[] = '', function_def = '0') {
 
     // name must start with a letter, use letters numbers underscore dot
 
@@ -2380,7 +2342,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // ...
 
     if (typeof argument_names === 'string') {
-      argument_names = argument_names ? 
+      argument_names = argument_names ?
         argument_names.split(this.parser.argument_separator).map(arg => arg.trim()) : [];
     }
 
@@ -2459,7 +2421,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * FIXME: why is this public?
    */
   protected InflateAnnotations(): void {
-     for (const annotation of this.grid.model.active_sheet.annotations) {
+    for (const annotation of this.grid.model.active_sheet.annotations) {
       this.InflateAnnotation(annotation);
     }
   }
@@ -2538,8 +2500,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             if (annotation.formula) {
               const parse_result = this.parser.Parse(annotation.formula);
               if (parse_result &&
-                  parse_result.expression &&
-                  parse_result.expression.type === 'call' ){
+                parse_result.expression &&
+                parse_result.expression.type === 'call') {
 
                 // FIXME: make a method for doing this
 
@@ -2606,9 +2568,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * UPDATE: default rendered values -> true
    */
   public SerializeDocument(
-      preserve_simulation_data = true, 
-      rendered_values = true,
-      additional_options: SerializeOptions = {}): TREBDocument {
+    preserve_simulation_data = true,
+    rendered_values = true,
+    additional_options: SerializeOptions = {}): TREBDocument {
 
     const serialize_options: SerializeOptions = {
       shrink: true,
@@ -2632,7 +2594,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     return serialized;
-    
+
   }
 
   /** recalc sheet */
@@ -2663,7 +2625,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     const json = JSON.stringify(this.SerializeDocument(true, true, {
-      rendered_values: true, expand_arrays: true}));
+      rendered_values: true, expand_arrays: true
+    }));
 
     localStorage.setItem(key, json);
 
@@ -2680,7 +2643,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     Yield().then(() => {
 
       const json = JSON.stringify(this.SerializeDocument(false, true, {
-        rendered_values: true, expand_arrays: true}));
+        rendered_values: true, expand_arrays: true
+      }));
 
       if (this.options.storage_key) {
         localStorage.setItem(this.options.storage_key, json);
@@ -2689,7 +2653,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         this.PushUndo(json, undo_selection);
       }
 
-      this.Publish({type: 'document-change'});
+      this.Publish({ type: 'document-change' });
 
     });
   }
@@ -2702,12 +2666,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     if (this.undo_stack[this.undo_pointer - 1]) {
       this.undo_stack[this.undo_pointer - 1].selection = selection;
-       // console.info('set at pointer', this.undo_pointer-1, this.last_selection);
+      // console.info('set at pointer', this.undo_pointer-1, this.last_selection);
     }
-    
+
     if (!json) {
       json = JSON.stringify(this.SerializeDocument(false, true, {
-        rendered_values: true, expand_arrays: true}));
+        rendered_values: true, expand_arrays: true
+      }));
     }
 
     // insert at [undo_pointer], then increment the pointer
@@ -2764,7 +2729,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // in the undo stack. so we don't need to recalculate; paint immediately.
     // prevents flickering.
 
-    const selection: GridSelection|undefined = 
+    const selection: GridSelection | undefined =
       undo_entry.selection ? JSON.parse(undo_entry.selection) : undefined
 
     // console.info('selection?', undo_entry.selection);
@@ -2787,9 +2752,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // console.info("US", JSON.stringify(selection));
 
     // cache for undo
-    this.last_selection = JSON.stringify(selection);    
+    this.last_selection = JSON.stringify(selection);
 
-    this.Publish({type: 'selection'});
+    this.Publish({ type: 'selection' });
   }
 
   public About(): void {
@@ -2802,7 +2767,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.toolbar = new Toolbar(container, this.options, this.grid.theme);
     this.toolbar.Subscribe((event) => {
 
-      let updated_style: Style.Properties= {};
+      let updated_style: Style.Properties = {};
 
       const insert_annotation = (func: string) => {
         const selection = this.grid.GetSelection();
@@ -2820,7 +2785,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         // NOTE we're doing this a little differently; not using
         // updated style because we also want to resize rows, and
         // we want those things to be a single transaction.
-        
+
         const selection = this.grid.GetSelection();
         const area = this.grid.RealArea(selection.area);
 
@@ -2847,7 +2812,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
               const scale = Number(event.data?.scale || 1);
 
               if (scale && !isNaN(scale)) {
-                this.grid.ApplyStyle(undefined, { 
+                this.grid.ApplyStyle(undefined, {
                   //font_size_unit: 'em', font_size_value: scale 
                   font_size: {
                     unit: 'em', value: scale,
@@ -2882,9 +2847,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
               if (border) {
                 this.grid.ApplyBorders2(
-                  undefined, 
-                  border, 
-                  event.data?.color || undefined, 
+                  undefined,
+                  border,
+                  event.data?.color || undefined,
                   width,
                 );
               }
@@ -2900,8 +2865,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             switch (event.data?.target) {
               case 'border':
                 updated_style.border_top_fill =
-                  updated_style.border_bottom_fill = 
-                  updated_style.border_left_fill = 
+                  updated_style.border_bottom_fill =
+                  updated_style.border_left_fill =
                   updated_style.border_right_fill = event.data?.color || {};
                 break;
               case 'foreground':
@@ -2980,7 +2945,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           case 'increase-decimal':
           case 'decrease-decimal':
             if (this.active_selection_style) {
-              const format = NumberFormatCache.Get(this.active_selection_style.number_format||'General');
+              const format = NumberFormatCache.Get(this.active_selection_style.number_format || 'General');
               if (format.date_format) { break; }
               const clone = new NumberFormat(format.pattern);
               if (event.command === 'increase-decimal') {
@@ -3001,17 +2966,17 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
             break;
 
           case 'lock':
-            updated_style = { 
-              locked: 
+            updated_style = {
+              locked:
                 this.active_selection_style ?
                   !this.active_selection_style.locked : true,
-              };
+            };
             break;
 
           case 'wrap':
-            updated_style = { 
-              wrap: this.active_selection_style ? 
-                    !this.active_selection_style.wrap : true,
+            updated_style = {
+              wrap: this.active_selection_style ?
+                !this.active_selection_style.wrap : true,
             };
             break;
 
@@ -3024,7 +2989,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           case 'align-right':
             updated_style = { horizontal_align: Style.HorizontalAlign.Right };
             break;
-      
+
           case 'align-top':
             updated_style = { vertical_align: Style.VerticalAlign.Top };
             break;
@@ -3034,7 +2999,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           case 'align-bottom':
             updated_style = { vertical_align: Style.VerticalAlign.Bottom };
             break;
-      
+
           case 'reset':
             this.Reset();
             break;
@@ -3064,7 +3029,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         }
       }
 
-      if (Object.keys(updated_style).length){ 
+      if (Object.keys(updated_style).length) {
         this.grid.ApplyStyle(undefined, updated_style, true);
       }
 
@@ -3219,8 +3184,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       frozen: !!freeze.rows || !!freeze.columns,
     };
 
-    if (!selection) { 
-      selection = this.grid.GetSelection(); 
+    if (!selection) {
+      selection = this.grid.GetSelection();
     }
 
     if (selection && !selection.empty) {
@@ -3231,14 +3196,14 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       state.merge = !!data.merge_area;
       if (state.merge && data.merge_area && (
-          data.merge_area.start.row !== selection.target.row ||
-          data.merge_area.start.column !== selection.target.column)) {
+        data.merge_area.start.row !== selection.target.row ||
+        data.merge_area.start.column !== selection.target.column)) {
         data = this.grid.model.active_sheet.CellData(data.merge_area.start);
       }
 
       this.active_selection_style = data.style;
       state.comment = data.note;
-      state.style = data.style ? {...data.style} : undefined;
+      state.style = data.style ? { ...data.style } : undefined;
 
     }
     else {
@@ -3285,20 +3250,20 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   public UpdateDocumentStyles(update = true): void {
 
-    if (!this.toolbar) { 
-      return; 
+    if (!this.toolbar) {
+      return;
     }
 
     /*
     if (!this.toolbar_manager) { return; }
     */
 
-    const number_format_map: {[index: string]: number} = {};
-    const color_map: {[index: string]: number} = {};
+    const number_format_map: { [index: string]: number } = {};
+    const color_map: { [index: string]: number } = {};
 
     for (const sheet of this.grid.model.sheets) {
       sheet.NumberFormatsAndColors(color_map, number_format_map);
-    }    
+    }
 
     this.toolbar.UpdateDocumentStyles(
       Object.keys(number_format_map),
@@ -3339,7 +3304,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     // FIXME: also we should unify on types for decimal, argument separator
 
-    if (data.decimal_mark === '.'){
+    if (data.decimal_mark === '.') {
       parser.decimal_mark = DecimalMarkType.Period;
       parser.argument_separator = ArgumentSeparatorType.Comma;
       target_decimal_mark = DecimalMarkType.Comma;
@@ -3352,21 +3317,21 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       target_argument_separator = ArgumentSeparatorType.Comma;
     }
 
-    const translate = (formula: string): string|undefined => {
+    const translate = (formula: string): string | undefined => {
       const parse_result = parser.Parse(formula);
       if (!parse_result.expression) { return undefined; }
       return '=' + parser.Render(
-          parse_result.expression, 
-          undefined, 
-          '',
-          target_decimal_mark, 
-          target_argument_separator);
+        parse_result.expression,
+        undefined,
+        '',
+        target_decimal_mark,
+        target_argument_separator);
     };
 
     if (data.macro_functions) {
       for (const macro_function of data.macro_functions) {
         const translated = translate(macro_function.function_def);
-        if (translated) { 
+        if (translated) {
           macro_function.function_def = translated;
         }
       }
@@ -3382,7 +3347,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           for (const annotation of (sheet_data.annotations as Annotation[])) {
             if (annotation.formula) {
               const translated = translate(annotation.formula);
-              if (translated) { 
+              if (translated) {
                 annotation.formula = translated;
               }
             }
@@ -3434,7 +3399,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     return result;
-    
+
   }
 
   /**
@@ -3479,8 +3444,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     if (data.decimal_mark && data.decimal_mark !== Localization.decimal_separator) {
       this.ConvertLocale(data);
-    } 
-    
+    }
+
     // why is it not complaining about this? (...)
 
     this.grid.UpdateSheets(sheets, undefined, override_sheet || data.active_sheet);
@@ -3512,7 +3477,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
         model.macro_functions[macro_function.name.toUpperCase()] = {
           ...macro_function,
           expression: this.parser.Parse(macro_function.function_def || '').expression,
-        };       
+        };
 
       }
     }
@@ -3549,7 +3514,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     if (/^(http:|https:|\/\/)/.test(name)) {
       const script = await this.Fetch(name);
-      worker = new Worker(URL.createObjectURL(new Blob([script], {type: 'application/javascript'})));
+      worker = new Worker(URL.createObjectURL(new Blob([script], { type: 'application/javascript' })));
     }
     else if (/^file:/.test(name)) {
       throw new Error('invalid URI');
