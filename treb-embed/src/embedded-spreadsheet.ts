@@ -1,10 +1,10 @@
 
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
-import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage } from 'treb-mc';
+import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage, ExtendedSerializeOptions } from 'treb-mc';
 import { Random } from 'riskampjs-mc';
 
 import { Localization, ICellAddress } from 'treb-base-types';
-import { SerializeOptions, MacroFunction } from 'treb-grid';
+import { MacroFunction } from 'treb-grid';
 import { TREBDocument } from './types';
 
 // we are stuck on an old version of this, and I can't remember 
@@ -91,20 +91,23 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     return undefined;
   }
 
-  public FlushSimulationResults(): void {
+  protected FlushSimulationResults(): void {
     this.calculator.FlushSimulationResults();
     this.last_simulation_data = undefined;
   }
 
-  public SerializeDocument(
-      preserve_simulation_data = true, 
-      rendered_values = true,
-      additional_options: SerializeOptions = {}
-      ): TREBDocument {
+  /**
+   * override SerializeDocument. takes additional options for serializing
+   * simulation data, compression and type
+   * 
+   * @param options 
+   * @returns 
+   */
+  public SerializeDocument(options: ExtendedSerializeOptions = {}): TREBDocument {
 
-    const serialized = super.SerializeDocument(preserve_simulation_data, rendered_values, additional_options);
+    const serialized = super.SerializeDocument(options);
 
-    if (preserve_simulation_data && this.last_simulation_data) {
+    if (options.preserve_simulation_data && this.last_simulation_data) {
 
       // it might be useful to prune this a bit, specifically to prune
       // results that are not referenced. can we use the graph to do that?
@@ -117,26 +120,26 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
       // testing 32-bit data...
 
-      if (additional_options.use_float32) {
+      if (options.use_float32) {
         serialized.simulation_data.bitness = 32;
         serialized.simulation_data.results = (this.last_simulation_data.results || []).map(result => {
 
           // 64 -> 32
           const array32 = Float32Array.from(new Float64Array(result)); 
-          return additional_options.use_z85 ? 
+          return options.use_z85 ? 
               z85.encode(new Uint8Array(array32.buffer)) : 
               Base64JS.fromByteArray(new Uint8Array(array32.buffer));
         });
       }
       else {
         serialized.simulation_data.results = (this.last_simulation_data.results || []).map(result => {
-          return additional_options.use_z85 ? 
+          return options.use_z85 ? 
               z85.encode(new Uint8Array(result)) : 
               Base64JS.fromByteArray(new Uint8Array(result));
         });
       }
 
-      if (additional_options.use_z85) { 
+      if (options.use_z85) { 
         serialized.simulation_data.encoding = 'z85'; 
       }
 

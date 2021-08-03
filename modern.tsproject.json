@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "declaration": true,
+    "declarationDir": "declaration",
     "target": "es6",
     "module": "es2020",
     "strict": true,

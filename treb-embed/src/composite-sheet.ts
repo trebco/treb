@@ -357,7 +357,10 @@ export class CompositeSheet {
     }
     */
 
-    const document_data = JSON.stringify(this.sheet.SerializeDocument(true, true));
+    const document_data = JSON.stringify(this.sheet.SerializeDocument({
+      preserve_simulation_data: true, 
+      rendered_values: true,
+    }));
 
     const style = new_window.document.createElement('style');
     style.setAttribute('type', 'text/css');
