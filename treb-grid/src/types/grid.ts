@@ -23,7 +23,7 @@ import {
 
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
-  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress, ParseResult, UnitComplex
+  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress, ParseResult, UnitComplex, MDParser
 } from 'treb-parser';
 
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
@@ -1922,11 +1922,11 @@ export class Grid {
   }
 
   /**
-   * merges selected cells
+   * merge target area or selection
    */
-  public MergeSelection(): void {
+  public MergeCells(area?: Area): void {
 
-    if (this.primary_selection.empty) {
+    if (!area && this.primary_selection.empty) {
       return; // FIXME: warn?
     }
 
@@ -1934,16 +1934,16 @@ export class Grid {
 
     this.ExecCommand({
       key: CommandKey.MergeCells,
-      area: this.primary_selection.area,
+      area: area || this.primary_selection.area,
     });
   }
 
   /**
-   * unmerges selected cells
+   * unmerge cells
    */
-  public UnmergeSelection(): void {
+  public UnmergeCells(area?: Area): void {
 
-    if (this.primary_selection.empty) {
+    if (!area && this.primary_selection.empty) {
       return; // FIXME: warn?
     }
 
@@ -1951,7 +1951,7 @@ export class Grid {
 
     this.ExecCommand({
       key: CommandKey.UnmergeCells,
-      area: this.primary_selection.area,
+      area: area || this.primary_selection.area,
     });
 
   }
@@ -3978,7 +3978,11 @@ export class Grid {
     // "mask" the one by using the other (whichever one was dominant).
 
     if (cell?.note) {
-      this.layout.ShowNote(cell.note, address, event);
+
+      // optional MD formatting
+      const md = this.options.markdown ? MDParser.instance.HTML(MDParser.instance.Parse(cell.note)) : undefined;
+      this.layout.ShowNote(cell.note, address, event, md);
+
       this.hover_data.note = true;
     }
     else if (this.hover_data.note) {

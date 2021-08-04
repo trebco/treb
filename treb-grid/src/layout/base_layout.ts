@@ -405,9 +405,21 @@ export abstract class BaseLayout {
     this.note_node.style.pointerEvents = 'none';
   }
 
-  public ShowNote(note: string, address: ICellAddress, event?: MouseEvent): void {
-    this.note_node.textContent = note;
+  /**
+   * adding html parameter at the end, so we can keep the function 
+   * signature otherwise the same. this is for markdown formatting.
+   */
+  public ShowNote(note: string, address: ICellAddress, event?: MouseEvent, markdown?: string): void {
 
+    // UPDATE for MD (optional)
+
+    if (markdown) {
+      this.note_node.innerHTML = markdown;
+    }
+    else {
+      this.note_node.textContent = note;
+    }
+    
     if (!this.note_node.parentElement) return;
 
     const note_size = this.note_node.getBoundingClientRect();
