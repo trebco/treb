@@ -1,3 +1,4 @@
 {
+  "name": "treb-mc",
   "main": "src/index.ts"
 }

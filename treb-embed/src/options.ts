@@ -9,10 +9,6 @@ export interface ExportOptions {
   formatted?: boolean;  // use number formats
 }
 
-export const DefaultExportOptions: ExportOptions = {
-  delimiter: ',',
-};
-
 /** base options excludes node, so we can create a default */
 export interface BaseOptions {
 
@@ -55,8 +51,8 @@ export interface BaseOptions {
   /** popout icon */
   popout?: boolean;
 
-  /** the old "fork and edit" button */
-  fork?: boolean;
+  /* * the old "fork and edit" button */
+  // fork?: boolean;
 
   /** fetch network document (URI) */
   network_document?: string;
@@ -199,7 +195,7 @@ export const DefaultOptions: BaseOptions = {
   // although it's nice to have a clear reference about defaults...
   
   dnd: false,
-  fork: false,
+  // fork: false,
   add_tab: false,
   screen_updates: false,
   expand_formula_button: false,

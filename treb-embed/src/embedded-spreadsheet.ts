@@ -3,7 +3,7 @@ import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage, ExtendedSerializeOptions } from 'treb-mc';
 import { Random } from 'riskampjs-mc';
 
-import { Localization, ICellAddress } from 'treb-base-types';
+import { Localization, ICellAddress, IsCellAddress } from 'treb-base-types';
 import { MacroFunction } from 'treb-grid';
 import { TREBDocument } from './types';
 
@@ -26,10 +26,10 @@ import { RunSimulationOptions } from './options';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
+  public calculator!: MCCalculator;
+
   /* for storing; also inefficient. pack, zip, do something. */
   protected last_simulation_data?: ResultContainer;
-
-  public calculator!: MCCalculator;
 
   /** seed state for "replay simulation" */
   protected replay_buffer: number[] = [];
@@ -70,30 +70,26 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   /**
    * returns simulation data for a cell (if any)
    * 
-   * this is an API method? (...)
+   * this is an API method? (...) probably for RAW?
    */
   public SimulationData(address: string | ICellAddress): number[]|Float64Array|undefined {
-    address = this.EnsureAddress(address);
-    if (!address.sheet_id) {
-      address.sheet_id = this.grid.model.active_sheet.id;
-    }
+
+    const area = this.calculator.ResolveAddress(address);
+    address = IsCellAddress(area) ? area : area.start;
+
+    const sheet_id = address.sheet_id || this.grid.model.active_sheet.id;
 
     const data = this.calculator.GetResults();
     if (!data) return undefined;
-    if (!data[address.sheet_id]) return undefined;
-    if (!data[address.sheet_id][address.column]) return undefined;
-    const cell = data[address.sheet_id][address.column][address.row];
+    if (!data[sheet_id]) return undefined;
+    if (!data[sheet_id][address.column]) return undefined;
+    const cell = data[sheet_id][address.column][address.row];
     if (cell) {
 
       // legacy support. will need a polyfill regardless for Array.from
       return Array.isArray(cell) ? cell.slice(0) : Array.from(cell);
     }
     return undefined;
-  }
-
-  protected FlushSimulationResults(): void {
-    this.calculator.FlushSimulationResults();
-    this.last_simulation_data = undefined;
   }
 
   /**
@@ -146,95 +142,6 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     }
 
     return serialized;
-
-  }
-
-  /* * mc-specific dialog; has constant string * /
-  public UpdateMCDialog(progress = 0, text?: string, show = false) {
-    if (typeof text === 'undefined') {
-      text = `${progress}%`;
-    }
-    if (show) {
-      this.dialog?.ShowProgressDialog(`Running Monte Carlo Simulation...`, progress);
-    }
-    else {
-      this.dialog?.Update(`Running Monte Carlo Simulation...`, progress);
-    }
-  }
-  */
-
-  /**
-   * init workers. we have a separate method so we can warm start
-   * on load, if desired. also you can re-init... 
-   * 
-   * FIXME: should globalize these? if we do that, the "running" flag
-   * needs to be similarly global...
-   */
-  public async InitWorkers(max = this.options.max_workers): Promise<void> {
-
-    max = max || 1; // could be undefined? (...)
-
-    if (this.workers.length) {
-      for (const worker of this.workers) {
-        worker.terminate();
-      }
-      this.workers = [];
-    }
-
-    const worker_name = process.env.BUILD_ENTRY_CALCULATION_WORKER || '';
-
-    // we were hard-limiting workers to the hardware consistency value, but
-    // that (apparently) is not available in Safari, so... just allow the 
-    // user to do what they want.
-
-    // FIXME: should warn about this? (...)
-
-    let thread_count = Math.max(1, max);
-    if (typeof navigator.hardwareConcurrency === 'number') {
-      thread_count = Math.min(thread_count, navigator.hardwareConcurrency);
-    }
-
-    // const thread_count = Math.min(navigator.hardwareConcurrency || 1, max);
-
-    console.info(`creating ${thread_count} thread${thread_count === 1 ? '' : 's'}`);
-
-    for (let i = 0; i < thread_count; i++) {
-
-      this.workers[i] = await this.LoadWorker(worker_name);
-
-      this.workers[i].onmessage = (event) => {
-        const message = event.data as WorkerMessage;
-        this.HandleWorkerMessage(message, i);
-      };
-
-      this.workers[i].onerror = (event) => {
-        console.error(`worker error (worker #${i})`);
-        console.info(event);
-
-        const message = event.message || 'Worker error.';
-
-        this.dialog?.ShowDialog({
-          title: 'Calculation failed',
-          message,
-          close_box: true,
-          type: DialogType.error,
-          timeout: 3000,
-        });
-
-        // flush
-        for (const entry of this.simulation_resolution) {
-          entry.call(this);
-        }
-        this.simulation_resolution = [];
-        this.simulation_status.running = false;
-        for (const worker of this.workers) {
-          worker.terminate();
-        }
-        this.workers = [];
-
-      };
-
-    }
 
   }
 
@@ -437,6 +344,86 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
   }
 
+  protected FlushSimulationResults(): void {
+    this.calculator.FlushSimulationResults();
+    this.last_simulation_data = undefined;
+  }
+
+  /**
+   * init workers. we have a separate method so we can warm start
+   * on load, if desired. also you can re-init... 
+   * 
+   * FIXME: should globalize these? if we do that, the "running" flag
+   * needs to be similarly global...
+   */
+  protected async InitWorkers(max = this.options.max_workers): Promise<void> {
+
+    max = max || 1; // could be undefined? (...)
+
+    if (this.workers.length) {
+      for (const worker of this.workers) {
+        worker.terminate();
+      }
+      this.workers = [];
+    }
+
+    const worker_name = process.env.BUILD_ENTRY_CALCULATION_WORKER || '';
+
+    // we were hard-limiting workers to the hardware consistency value, but
+    // that (apparently) is not available in Safari, so... just allow the 
+    // user to do what they want.
+
+    // FIXME: should warn about this? (...)
+
+    let thread_count = Math.max(1, max);
+    if (typeof navigator.hardwareConcurrency === 'number') {
+      thread_count = Math.min(thread_count, navigator.hardwareConcurrency);
+    }
+
+    // const thread_count = Math.min(navigator.hardwareConcurrency || 1, max);
+
+    console.info(`creating ${thread_count} thread${thread_count === 1 ? '' : 's'}`);
+
+    for (let i = 0; i < thread_count; i++) {
+
+      this.workers[i] = await this.LoadWorker(worker_name);
+
+      this.workers[i].onmessage = (event) => {
+        const message = event.data as WorkerMessage;
+        this.HandleWorkerMessage(message, i);
+      };
+
+      this.workers[i].onerror = (event) => {
+        console.error(`worker error (worker #${i})`);
+        console.info(event);
+
+        const message = event.message || 'Worker error.';
+
+        this.dialog?.ShowDialog({
+          title: 'Calculation failed',
+          message,
+          close_box: true,
+          type: DialogType.error,
+          timeout: 3000,
+        });
+
+        // flush
+        for (const entry of this.simulation_resolution) {
+          entry.call(this);
+        }
+        this.simulation_resolution = [];
+        this.simulation_status.running = false;
+        for (const worker of this.workers) {
+          worker.terminate();
+        }
+        this.workers = [];
+
+      };
+
+    }
+
+  }
+
   /**
    * overload for MC calculator replaces base calculator
    */
@@ -489,7 +476,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   /**
    * splitting into a separate method to remove code duplication
    */
-  private UpdateProgress(value: number, index: number) {
+   protected UpdateProgress(value: number, index: number): void {
 
     this.simulation_status.progress[index] = value || 0;
 
@@ -513,7 +500,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
   /**
    * rx handler for worker messages
    */
-  private HandleWorkerMessage(message: WorkerMessage, index: number) {
+  protected HandleWorkerMessage(message: WorkerMessage, index: number): void {
 
     switch (message.type) {
       case 'update':

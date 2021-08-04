@@ -10,6 +10,7 @@ import { Toolbar } from './toolbar';
 
 import '../style/composite-sheet.scss';
 import 'treb-base-types/style/resizable.css';
+import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 
 const sidebar_open_class = 'sidebar-open';
 const toolbar_open_class = 'toolbar-open';
@@ -62,56 +63,6 @@ export class CompositeSheet {
   /** toolbar instance, moved from embedded sheet */
   // public toolbar?: FormattingToolbar;
   public toolbar?: Toolbar;
-
-  /** 
-   * inject svg symbol defs (once)
-   *
-   * NOTE: we stopped using <use/> for the toolbar, because it (apparently)
-   * only supports single-color rendering. should we stop using it for the 
-   * sidebar as well? something to think about.
-   */
-  public static EnsureSymbols() {
-
-    if (this.symbols_injected) { return; }
-    this.symbols_injected = true;
-
-    const svg = document.createElementNS(SVGNS, 'svg');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.style.position = 'absolute';
-    svg.style.width = '0';
-    svg.style.height = '0';
-    svg.style.overflow = 'hidden';
-
-    const defs = document.createElementNS(SVGNS, 'defs');
-    svg.appendChild(defs);
-
-    for (const id of Object.keys(symbols)) {
-      const symbol = symbols[id];
-      const node = document.createElementNS(SVGNS, 'symbol');
-      node.setAttribute('id', id);
-      if (symbol.viewbox) {
-        node.setAttribute('viewBox', symbol.viewbox);
-      }
-      for (const path of symbol.paths || []) {
-        const path_node = document.createElementNS(SVGNS, 'path');
-        path_node.setAttribute('d', path);
-        node.appendChild(path_node);
-      }
-      defs.appendChild(node);
-    }
-
-    document.body.insertBefore(svg, document.body.firstChild || null);
-
-  }
-
-  /**
-   * factory method. we don't necessarily need the class instance, although
-   * (in this version) the class has some properties; use the factory method
-   * to just get back the embedded sheet.
-   */
-  public static Create(options: CreateSheetOptions) {
-    return new CompositeSheet(options).sheet;
-  }
 
   constructor(options: CreateSheetOptions) { // container: HTMLElement) {
 
@@ -217,6 +168,7 @@ export class CompositeSheet {
       });
     }
 
+    /*
     if (this.options.fork) {
       this.AddSidebarButton({
         icon: 'treb-fork-icon',
@@ -228,6 +180,7 @@ export class CompositeSheet {
         }
       });
     }
+    */
 
     this.AddSidebarButton({
       icon: 'treb-about-icon',
@@ -277,6 +230,56 @@ export class CompositeSheet {
 
     (options.container as DecoratedHTMLElement)._spreadsheet = this.sheet; // ?
 
+  }
+
+  /** 
+   * inject svg symbol defs (once)
+   *
+   * NOTE: we stopped using <use/> for the toolbar, because it (apparently)
+   * only supports single-color rendering. should we stop using it for the 
+   * sidebar as well? something to think about.
+   */
+   public static EnsureSymbols(): void {
+
+    if (this.symbols_injected) { return; }
+    this.symbols_injected = true;
+
+    const svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.style.position = 'absolute';
+    svg.style.width = '0';
+    svg.style.height = '0';
+    svg.style.overflow = 'hidden';
+
+    const defs = document.createElementNS(SVGNS, 'defs');
+    svg.appendChild(defs);
+
+    for (const id of Object.keys(symbols)) {
+      const symbol = symbols[id];
+      const node = document.createElementNS(SVGNS, 'symbol');
+      node.setAttribute('id', id);
+      if (symbol.viewbox) {
+        node.setAttribute('viewBox', symbol.viewbox);
+      }
+      for (const path of symbol.paths || []) {
+        const path_node = document.createElementNS(SVGNS, 'path');
+        path_node.setAttribute('d', path);
+        node.appendChild(path_node);
+      }
+      defs.appendChild(node);
+    }
+
+    document.body.insertBefore(svg, document.body.firstChild || null);
+
+  }
+
+  /**
+   * factory method. we don't necessarily need the class instance, although
+   * (in this version) the class has some properties; use the factory method
+   * to just get back the embedded sheet.
+   */
+  public static Create(options: CreateSheetOptions): EmbeddedSpreadsheet {
+    return new CompositeSheet(options).sheet;
   }
 
   /**
@@ -334,8 +337,22 @@ export class CompositeSheet {
     new_window.document.head.appendChild(link);
     */
 
+    let script_path = process.env.BUILD_ENTRY_MAIN || '';
+
+    if (EmbeddedSpreadsheetBase.treb_language) {
+      script_path += '-' + EmbeddedSpreadsheetBase.treb_language;
+    }
+
+    if (!/\.js$/.test(script_path)) script_path += '.js';
+    let treb_path = EmbeddedSpreadsheetBase.treb_base_path;
+
+    if (treb_path) {
+      if (!/\/$/.test(treb_path)) treb_path += '/';
+      script_path = treb_path + script_path;
+    }
+
     const treb_script = new_window.document.createElement('script');
-    treb_script.src = this.sheet.script_path;
+    treb_script.src = script_path;
     treb_script.setAttribute('type', 'text/javascript');
     new_window.document.body.appendChild(treb_script);
 

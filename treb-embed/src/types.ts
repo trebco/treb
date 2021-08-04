@@ -37,7 +37,7 @@ export interface TREBDocument {
   sheet_data?: SerializedSheet|SerializedSheet[]; // NOTE: support old version, but it would be nice to drop
   decimal_mark?: '.' | ',';
   active_sheet?: number;
-  simulation_data?: TREBSimulationData;
+  simulation_data?: TREBSimulationData; // MC specific
   rendered_values?: boolean;
   named_ranges?: {[index: string]: IArea};
   macro_functions?: MacroFunction[];

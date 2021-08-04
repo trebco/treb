@@ -2,21 +2,24 @@
 // treb imports
 import {
   Grid, GridEvent, SerializeOptions, Annotation,
-  BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection, CellEvent
+  BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection, CellEvent,
 } from 'treb-grid';
+
 import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
+
 import {
   IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue,
   IsFlatData, IsFlatDataArray, Rectangle, Theme, IsComplex, ComplexToString, Complex, ExtendedUnion
 } from 'treb-base-types';
+
 import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
 // local
 import { ProgressDialog, DialogType } from './progress-dialog';
-import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions, DefaultExportOptions } from './options';
+import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './options';
 import { EmbeddedSheetEvent, TREBDocument, SaveFileType, LoadSource } from './types';
 
 import { SelectionState, Toolbar } from './toolbar';
@@ -41,6 +44,14 @@ import '../style/embed.scss';
 // what is this? if these are being used outside of grid they should be exported
 import { SerializedModel } from 'treb-grid/src/types/data_model';
 import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
+
+
+export interface SaveOptions extends SerializeOptions {
+
+  /** pretty json formatting */
+  pretty?: boolean;
+  
+}
 
 interface UndoEntry {
   data: string;
@@ -69,10 +80,31 @@ interface SemanticVersionComparison {
 
 /**
  * type represents a reference passed in to API functions. it can be an
+ * address object, or a string. 
+ */
+export type AddressReference = string | ICellAddress;
+
+/**
+ * type represents a reference passed in to API functions. it can be an
  * address object, an area (range) object, or a string. 
  */
 export type RangeReference = string | ICellAddress | IArea;
 
+/**
+ * options for the LoadDocument method
+ */
+export interface LoadDocumentOptions {
+  scroll?: string|ICellAddress,
+  flush?: boolean,
+  recalculate?: boolean,
+  override_sheet?: string,
+  override_selection?: GridSelection,
+  source?: LoadSource,
+}
+
+/**
+ * options for the GetRange method
+ */
 export interface GetRangeOptions {
 
   /** 
@@ -90,6 +122,9 @@ export interface GetRangeOptions {
 
 }
 
+/**
+ * options for the SetRange method
+ */
 export interface SetRangeOptions {
 
   /** transpose rectangular array before inserting */
@@ -103,6 +138,9 @@ export interface SetRangeOptions {
 
 }
 
+/**
+ * options for the ScrollTo method
+ */
 export interface ScrollToOptions {
 
   /** scroll in x-direction. defaults to true. */
@@ -136,59 +174,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public static enable_formatter = false;
 
   /**
-   * we need to load relative resources. we can't access the path of this
-   * script, but because it has to be added via a script tag -- either
-   * statically or dynamically -- we should be able to get it.
-   *
-   * it is possible that the script tag goes away, but if we sniff on first
-   * script execution, we can probably assume it's still there -- because the
-   * client won't have had a chance to remove it yet.
-   */
-  public static SniffPath(): void {
-    const tags = document.querySelectorAll('script');
-
-    // FIXME: fragile!
-    const default_script_name = process.env.BUILD_ENTRY_MAIN || '';
-    const rex = new RegExp(default_script_name);
-
-    // tslint:disable-next-line:prefer-for-of
-    for (let i = 0; i < tags.length; i++) {
-
-      const tag = tags[i];
-      const src = tag.src; // fully-qualified here [FIXME: IE11?]
-
-      /*
-      if (src && /\?.*?engine/i.test(src)) {
-        console.info('s', src);
-        this.enable_engine = true;
-      }
-      */
-
-      if (src && rex.test(src)) {
-
-        if (src && /\?.*?engine/i.test(src)) {
-          this.enable_engine = true;
-        }
-
-        if (src && /\?.*?format/i.test(src)) {
-          this.enable_formatter = true;
-        }
-
-        this.treb_embedded_script_path = src;
-        this.treb_base_path = src.replace(new RegExp(default_script_name + '.*$'), '');
-
-        return;
-      }
-
-    }
-
-    // console.warn('treb: base path not found');
-
-  }
-
-  // public v1: APIv1;
-
-  /**
    * this flag will be set on LoadDocument. the intent is to be able to
    * know if you have loaded a network document, which may happen before you
    * have the chance to subscribe to events
@@ -198,59 +183,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   public loaded = false;
 
-  /** 
-   * this was added for riskamp.com; it doesn't track modified, really, because
-   * it doesn't reflect saves. we need to do that but leave this one as-is for
-   * backwards compatibility.
-   */
-  public get modified(): boolean {
-    return this.undo_stack.length !== 1;
-  }
-
-  /** name moved to model */
-  public get document_name(): string | undefined {
-    return this.grid.model.document_name;
-  }
-
-  /** name moved to model */
-  public set document_name(name: string | undefined) {
-    this.grid.model.document_name = name;
-    this.DocumentChange();
-  }
-
-  /** user data moved to model */
-  public get user_data(): unknown {
-    return this.grid.model.user_data;
-  }
-
-  /** user data moved to model */
-  public set user_data(data: unknown) {
-    this.grid.model.user_data = data;
-    this.DocumentChange();
-  }
-
-  public set scale(value: number) {
-    this.grid.scale = value;
-  }
-
-  public get scale(): number {
-    return this.grid.scale;
-  }
-
-  public get headless(): boolean {
-    return this.grid.headless;
-  }
-  
-  public set headless(value: boolean) {
-    if (this.grid.headless !== value) {
-      this.grid.headless = value;
-      if (!value) {
-        this.grid.Update(true);
-        this.RebuildAllAnnotations();
-      }
-  
-    }
-  }
+  public toolbar_ctl?: ToolbarCtl; /* public? */
 
   /** 
    * automatic/manual 
@@ -301,8 +234,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   protected active_selection_style?: Style.Properties;
 
-  public toolbar_ctl?: ToolbarCtl; /* public? */
-
   /** localized parser instance. we're sharing. */
   protected get parser(): Parser {
     return this.calculator.parser;
@@ -341,35 +272,63 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   private last_selection?: string;
 
-  /**
-   * this is used in exactly one place: the popout code.
+
+  /** 
+   * this was added for riskamp.com; it doesn't track modified, really, because
+   * it doesn't reflect saves. we need to do that but leave this one as-is for
+   * backwards compatibility.
    */
-  public get script_path(): string {
+  public get modified(): boolean {
+    return this.undo_stack.length !== 1;
+  }
 
-    let name = process.env.BUILD_ENTRY_MAIN || '';
+  /** name moved to model */
+  public get document_name(): string | undefined {
+    return this.grid.model.document_name;
+  }
 
-    if (EmbeddedSpreadsheetBase.treb_language) {
-      name += '-' + EmbeddedSpreadsheetBase.treb_language;
+  /** name moved to model */
+  public set document_name(name: string | undefined) {
+    this.grid.model.document_name = name;
+    this.DocumentChange();
+  }
+
+  /** user data moved to model */
+  public get user_data(): unknown {
+    return this.grid.model.user_data;
+  }
+
+  /** user data moved to model */
+  public set user_data(data: unknown) {
+    this.grid.model.user_data = data;
+    this.DocumentChange();
+  }
+
+  public set scale(value: number) {
+    this.grid.scale = value;
+  }
+
+  public get scale(): number {
+    return this.grid.scale;
+  }
+
+  public get headless(): boolean {
+    return this.grid.headless;
+  }
+
+  public set headless(value: boolean) {
+    if (this.grid.headless !== value) {
+      this.grid.headless = value;
+      if (!value) {
+        this.grid.Update(true);
+        this.RebuildAllAnnotations();
+      }
     }
-
-    if (!/\.js$/.test(name)) name += '.js';
-
-    let treb_path = EmbeddedSpreadsheetBase.treb_base_path;
-
-    if (treb_path) {
-      if (!/\/$/.test(treb_path)) treb_path += '/';
-      name = treb_path + name;
-    }
-
-    return name;
-
   }
 
   constructor(options: EmbeddedSpreadsheetOptions) {
 
     super();
-
-    // this.v1 = new APIv1(this);
 
     // consolidate options w/ defaults. note that this does not
     // support nested options, for that you need a proper merge
@@ -678,7 +637,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // FIXME: this should yield so we can subscribe to events before the initial load
 
     if (data) {
-      this.LoadDocument(JSON.parse(data), undefined, undefined, !!this.options.recalculate, undefined, undefined, source);
+      this.LoadDocument(JSON.parse(data), 
+        { recalculate: !!this.options.recalculate, source});
     }
     else if (!network_document) {
 
@@ -732,18 +692,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // create mask dialog
 
     if (container) {
-      this.dialog = new ProgressDialog(container); /* , {
-        / *
-        mask: this.grid.theme.interface_dialog_mask,
-        border: this.grid.theme.interface_dialog_border,
-        background: this.grid.theme.interface_dialog_background,
-        text: this.grid.theme.interface_dialog_color,
-        fontFamily: this.grid.theme.interface_dialog_font_face,
-        fontSize: this.grid.theme.interface_dialog_font_size,
-        * /
-      });
-      */
-      // requestAnimationFrame(() => this.About());
+      this.dialog = new ProgressDialog(container);
     }
 
     /*
@@ -759,73 +708,353 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  protected HandleCellEvent(event: CellEvent): void {
+  /**
+   * we need to load relative resources. we can't access the path of this
+   * script, but because it has to be added via a script tag -- either
+   * statically or dynamically -- we should be able to get it.
+   *
+   * it is possible that the script tag goes away, but if we sniff on first
+   * script execution, we can probably assume it's still there -- because the
+   * client won't have had a chance to remove it yet.
+   */
+  public static BuildPath(): void {
+    const tags = document.querySelectorAll('script');
 
-    const type = event.data?.type;
-    if (type === 'hyperlink') {
+    // FIXME: fragile!
+    const default_script_name = process.env.BUILD_ENTRY_MAIN || '';
+    const rex = new RegExp(default_script_name);
 
-      const hyperlink_error = 'hyperlink invalid target';
-      const data = event.data.data || '';
+    // tslint:disable-next-line:prefer-for-of
+    for (let i = 0; i < tags.length; i++) {
 
-      if (typeof data === 'string') {
+      const tag = tags[i];
+      const src = tag.src; // fully-qualified here [FIXME: IE11?]
 
-        if (/^https{0,1}:\/\//i.test(data)) {
-
-          if (!this.options.hyperlinks) {
-            console.warn('hyperlinks are disabled');
-            return;
-          }
-
-          const a = document.createElement('a');
-          a.setAttribute('target', this.options.hyperlinks);
-          a.setAttribute('href', data);
-          a.setAttribute('noreferrer', 'true');
-          a.setAttribute('nofollow', 'true');
-          a.click();
-
-          return;
-
-        }
-        else {
-
-          const parse_result = this.parser.Parse(data);
-          if (parse_result.expression) {
-
-            // probably can always allow reference links
-
-            if (parse_result.expression.type === 'address') {
-              if (parse_result.expression.sheet || parse_result.expression.sheet_id) {
-                this.ActivateSheet((parse_result.expression.sheet || parse_result.expression.sheet_id) as string | number);
-              }
-              this.Select(data);
-              return;
-            }
-            else if (parse_result.expression.type === 'range') {
-              if (parse_result.expression.start.sheet || parse_result.expression.start.sheet_id) {
-                this.ActivateSheet((parse_result.expression.start.sheet || parse_result.expression.start.sheet_id) as string | number);
-              }
-              this.Select(data);
-              return;
-            }
-
-          }
-        }
-
-        console.warn(hyperlink_error, 2);
-        return;
-
+      /*
+      if (src && /\?.*?engine/i.test(src)) {
+        console.info('s', src);
+        this.enable_engine = true;
       }
+      */
+
+      if (src && rex.test(src)) {
+
+        if (src && /\?.*?engine/i.test(src)) {
+          this.enable_engine = true;
+        }
+
+        if (src && /\?.*?format/i.test(src)) {
+          this.enable_formatter = true;
+        }
+
+        this.treb_embedded_script_path = src;
+        this.treb_base_path = src.replace(new RegExp(default_script_name + '.*$'), '');
+
+        return;
+      }
+
     }
+
   }
 
-  /**
-   * batch multiple document changes. essentially the grid stops broadcasting
-   * events, and collects them for the duration. once that's done it returns
-   * the list of events, so you can deal with them as you see fit.
+  // --- public internal methods -----------------------------------------------
+
+  // these are methods that are public for whatever reason, but we don't want
+  // them published to any public API. if we ever get around to encapsulating
+  // the API, leave these out.
+  
+
+  /** 
+   * this is public because it's created by the composite sheet. 
+   * FIXME: perhaps there's a better way to do that? via message passing? (...) 
    * 
-   * @param func 
+   * @internal
+   */
+   public CreateToolbar(container: HTMLElement): Toolbar {
+    this.toolbar = new Toolbar(container, this.options, this.grid.theme);
+    this.toolbar.Subscribe((event) => {
+
+      let updated_style: Style.Properties = {};
+
+      const insert_annotation = (func: string) => {
+        const selection = this.grid.GetSelection();
+        if (selection && !selection.empty) {
+          const label = selection.area.spreadsheet_label;
+          this.InsertAnnotation(`=${func}(${label},,"${label}")`);
+        }
+      };
+
+      if (event.type === 'format') {
+        updated_style.number_format = event.format || 'General';
+      }
+      else if (event.type === 'font-size') {
+
+        // NOTE we're doing this a little differently; not using
+        // updated style because we also want to resize rows, and
+        // we want those things to be a single transaction.
+
+        const selection = this.grid.GetSelection();
+        const area = this.grid.RealArea(selection.area);
+
+        this.grid.ApplyStyle(undefined, event.style, true);
+        const rows: number[] = [];
+        for (let row = area.start.row; row <= area.end.row; row++) {
+          rows.push(row);
+        }
+        this.grid.SetRowHeight(rows, undefined, false);
+
+      }
+      else if (event.type === 'button') {
+        switch (event.command) {
+
+          case 'font-scale':
+
+            // above we handle 'font-size' events; this comes from a dropdown,
+            // so we're handling it inline, but we want the same behavior.
+            // FIXME: break out
+
+            {
+              const selection = this.grid.GetSelection();
+              const area = this.grid.RealArea(selection.area);
+              const scale = Number(event.data?.scale || 1);
+
+              if (scale && !isNaN(scale)) {
+                this.grid.ApplyStyle(undefined, {
+                  //font_size_unit: 'em', font_size_value: scale 
+                  font_size: {
+                    unit: 'em', value: scale,
+                  },
+                }, true);
+                const rows: number[] = [];
+                for (let row = area.start.row; row <= area.end.row; row++) {
+                  rows.push(row);
+                }
+                this.grid.SetRowHeight(rows, undefined, false);
+              }
+            }
+            break;
+
+          case 'update-comment':
+            this.SetNote(undefined, event.data?.comment || '');
+            break;
+
+          case 'clear-comment':
+            this.SetNote(undefined, '');
+            break;
+
+          case 'border':
+            {
+              let width = 1;
+              let border = (event.data?.border || '').replace(/^border-/, '');
+
+              if (border === 'double-bottom') {
+                border = 'bottom';
+                width = 2;
+              }
+
+              if (border) {
+                this.grid.ApplyBorders2(
+                  undefined,
+                  border,
+                  event.data?.color || undefined,
+                  width,
+                );
+              }
+
+            }
+            break;
+
+          case 'color':
+          case 'background-color':
+          case 'foreground-color':
+          case 'border-color':
+
+            switch (event.data?.target) {
+              case 'border':
+                updated_style.border_top_fill =
+                  updated_style.border_bottom_fill =
+                  updated_style.border_left_fill =
+                  updated_style.border_right_fill = event.data?.color || {};
+                break;
+              case 'foreground':
+
+                // empty would work here because it means "use default"; but
+                // if we set it explicitly, it can be removed on composite delta
+                updated_style.text = event.data?.color || { theme: 1 };
+
+                break;
+              case 'background':
+
+                // FIXME: theme colors
+                updated_style.fill = event.data?.color || {};
+                break;
+            }
+            break;
+
+          // why are these calling grid methods? should we contain this in some way? (...)
+
+          case 'insert-row': this.grid.InsertRow(); break;
+          case 'insert-column': this.grid.InsertColumn(); break;
+          case 'delete-row': this.grid.DeleteRows(); break;
+          case 'delete-column': this.grid.DeleteColumns(); break;
+          case 'insert-sheet': this.grid.InsertSheet(); break;
+          case 'delete-sheet': this.grid.DeleteSheet(); break;
+
+          case 'freeze':
+            {
+              const freeze = this.grid.GetFreeze();
+              if (freeze.rows || freeze.columns) {
+                this.Freeze(0, 0);
+              }
+              else {
+                this.FreezeSelection();
+              }
+            }
+            break;
+
+          case 'insert-image': this.InsertImage(); break;
+
+          case 'donut-chart': insert_annotation('Donut.Chart'); break;
+          case 'column-chart': insert_annotation('Column.Chart'); break;
+          case 'bar-chart': insert_annotation('Bar.Chart'); break;
+          case 'line-chart': insert_annotation('Line.Chart'); break;
+
+          case 'increase-decimal':
+          case 'decrease-decimal':
+            if (this.active_selection_style) {
+              const format = NumberFormatCache.Get(this.active_selection_style.number_format || 'General');
+              if (format.date_format) { break; }
+              const clone = new NumberFormat(format.pattern);
+              if (event.command === 'increase-decimal') {
+                clone.IncreaseDecimal();
+              }
+              else {
+                clone.DecreaseDecimal();
+              }
+              updated_style.number_format = clone.toString();
+            }
+            break;
+
+          case 'merge':
+            this.grid.MergeCells();
+            break
+          case 'unmerge':
+            this.grid.UnmergeCells();
+            break;
+
+          case 'lock':
+            updated_style = {
+              locked:
+                this.active_selection_style ?
+                  !this.active_selection_style.locked : true,
+            };
+            break;
+
+          case 'wrap':
+            updated_style = {
+              wrap: this.active_selection_style ?
+                !this.active_selection_style.wrap : true,
+            };
+            break;
+
+          case 'align-left':
+            updated_style = { horizontal_align: Style.HorizontalAlign.Left };
+            break;
+          case 'align-center':
+            updated_style = { horizontal_align: Style.HorizontalAlign.Center };
+            break;
+          case 'align-right':
+            updated_style = { horizontal_align: Style.HorizontalAlign.Right };
+            break;
+
+          case 'align-top':
+            updated_style = { vertical_align: Style.VerticalAlign.Top };
+            break;
+          case 'align-middle':
+            updated_style = { vertical_align: Style.VerticalAlign.Middle };
+            break;
+          case 'align-bottom':
+            updated_style = { vertical_align: Style.VerticalAlign.Bottom };
+            break;
+
+          case 'reset':
+            this.Reset();
+            break;
+          case 'import-desktop':
+            this.LoadLocalFile();
+            break;
+          //case 'import-url':
+          //  this.ImportURL();
+          //  break;
+          case 'save-json':
+            this.SaveLocalFile();
+            break;
+          case 'save-csv':
+            this.SaveLocalFile(SaveFileType.csv);
+            break;
+          case 'export-xlsx':
+            this.Export();
+            break;
+
+          case 'recalculate':
+            this.Recalculate();
+            break;
+
+          default:
+            console.info('unhandled', event.command);
+            break;
+        }
+      }
+
+      if (Object.keys(updated_style).length) {
+        this.grid.ApplyStyle(undefined, updated_style, true);
+      }
+
+      this.Focus();
+
+    });
+
+    this.UpdateDocumentStyles(false);
+    this.UpdateSelectionStyle(undefined);
+
+    return this.toolbar;
+  }
+
+  /** 
+   * Create (and return) a Chart object.
+   * 
+   * @privateRemarks
+   * 
+   * This method was created for RAW, no one else should need it. But it's
+   * not really an internal method, because it's used by outside clients.
+   * 
+   * @internal
+   */
+   public CreateChart(): Chart {
+
+    // FIXME: we should just always do this
+
+    if (!this.registered_libraries['treb-charts']) {
+      this.calculator.RegisterFunction(ChartFunctions);
+      this.registered_libraries['treb-charts'] = true;
+      this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+    }
+
+    return new Chart();
+  }
+
+  // --- public API methods ----------------------------------------------------
+
+  /**
+   * Use this function to batch multiple document changes. Essentially the 
+   * grid stops broadcasting events for the duration of the function call, 
+   * and collects them instead. After the function call we update as necessary.
+   * 
+   * @public
    */
   public async Batch(func: () => void, paint = false): Promise<void> {
+
+    // API v1 OK
 
     const cached_selection = this.last_selection;
     const events = this.grid.Batch(func, paint);
@@ -857,75 +1086,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       this.DocumentChange(cached_selection);
     }
 
-  }
-
-  protected OnSheetChange(event: SheetChangeEvent): void {
-
-    // call annotation method(s) on any annotations in active sheet
-
-    // we stopped sending the 'create' event on sheet change, so
-    // now we have to inflate them on sheet change
-
-    for (const annotation of event.activate.annotations) {
-      // if (annotation.update_callback) {
-      //   annotation.update_callback();
-      // }
-
-      this.InflateAnnotation(annotation);
-      this.calculator.UpdateAnnotations(annotation);
-
-    }
-
-    // we also need to update annotations that are already inflated
-    // [FIXME: merge this code]
-
-    this.UpdateAnnotations();
-
-  }
-
-  protected HandleDrag(event: DragEvent): void {
-    if (event.dataTransfer && event.dataTransfer.types) {
-
-      // this is for IE11, types is not an array
-
-      if (event.dataTransfer.types.some && event.dataTransfer.types.some((check) => check === 'Files')) {
-        event.preventDefault();
-      }
-      else {
-        for (let i = 0; i < event.dataTransfer.types.length; i++) {
-          if (event.dataTransfer.types[i] === 'files') {
-            event.preventDefault();
-            return;
-          }
-        }
-      }
-    }
-  }
-
-  protected HandleDrop(event: DragEvent): void {
-
-    if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
-      event.preventDefault();
-      const file = event.dataTransfer.files[0];
-
-      if (/^image/.test(file.type)) {
-        this.InsertImage(file);
-      }
-      else {
-        this.LoadFileInternal(file, LoadSource.DRAG_AND_DROP).then(() => {
-          // ...
-        }).catch((err) => {
-          this.dialog?.ShowDialog({
-            title: 'Error reading file',
-            close_box: true,
-            message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
-            type: DialogType.error,
-            timeout: 3000,
-          });
-          console.error(err);
-        });
-      }
-    }
   }
 
   /** set freeze area */
@@ -962,118 +1122,44 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   public GetFreeze(): FreezePane { return this.grid.GetFreeze(); }
 
   /**
-   * notify us that external style (CSS) properties have changed. 
-   * we will update and repaint.
+   * Update theme from CSS. Because the spreadsheet is painted, not
+   * rendered, you need to notifiy us if external style (CSS) properties
+   * have changed. We will update and repaint.
    */
-  public UpdateTheme(override?: Partial<Theme>): void {
-    this.grid.UpdateTheme(undefined, override);
+  public UpdateTheme(): void {
+
+    // API v1 OK
+
+    // not sure about the override thing, since we now do CSS theme
+    // UPDATE: dropping override parameter (extra theme properties)
+
+    this.grid.UpdateTheme(undefined);
     if (this.toolbar) {
       this.toolbar.UpdateTheme(this.grid.theme);
     }
+
   }
 
   /**
-   * sends data to a new window. used for popout and fork.
-   * why is this public? (...)
+   * Get sheet ID, by name (sheet name) or index. This may be useful for
+   * constructing references programatically. 
    * 
-   * DEPRECATED [?]
+   * @remarks
+   * 
+   * Sheet IDs are positive integers. IDs are ephemeral, they should not be 
+   * retained after a document is closed or reloaded. They will likely (almost)
+   * always be the same, but that's not guaranteed, so don't rely on them. 
+   * 
+   * @param sheet sheet name or index. sheet names are matched case-insensitively.
+   * 
+   * @returns ID, or undefined if the index is not found (0 is not a valid 
+   * sheet ID, so you can test for falsy).
+   * 
+   * @public
    */
-  public PostDocument(target: Window, host: string): void {
+  public GetSheetID(sheet: string|number): number|undefined {
 
-    let ack = false;
-    let counter = 0;
-    const data = JSON.stringify(this.SerializeDocument({
-      preserve_simulation_values: false, // this could probably be true as we are just passing in the browser
-      rendered_values: true,
-    } as SerializeOptions));
-
-    const listener = (event: MessageEvent) => {
-      if (event.data === 'ack') {
-        ack = true;
-        window.removeEventListener('message', listener);
-      }
-    };
-
-    window.addEventListener('message', listener);
-
-    const try_post = (delay = 100) => {
-      if (counter++ > 30) {
-        console.warn('timeout');
-        return;
-      }
-      try {
-        target.postMessage(data, host);
-      }
-      catch (e) {
-        console.error(e);
-      }
-      setTimeout(() => {
-        if (!ack) try_post(delay);
-      }, delay);
-    };
-
-    target.focus();
-    try_post();
-
-  }
-
-  /* *
-   * set data in given range
-   *
-   * @param range target range. if range is smaller than data, range controls.
-   * if range is larger, behavior depends on the recycle parameter.
-   * @param data single value, array (column), or 2d array
-   * @param recycle recycle values. we only recycle single values or vectors -- we will not recycle a matrix.
-   * @param transpose transpose before inserting (data is row-major)
-   * /
-  public SetRange(range: ICellAddress | IArea | string, data: CellValue | CellValue[][], recycle = false, transpose = false, array = false): void {
-
-    let area: Area;
-
-    if (typeof range === 'string') {
-      const named_range = this.grid.model.named_ranges.Get(range);
-      if (named_range) {
-        area = named_range.Clone();
-      }
-      else {
-        const addresses = range.split(':');
-        if (addresses.length < 2) {
-          area = new Area(this.EnsureAddress(addresses[0]));
-        }
-        else {
-          area = new Area(
-            this.EnsureAddress(addresses[0]),
-            this.EnsureAddress(addresses[1]));
-        }
-      }
-    }
-    else if (IsCellAddress(range)) {
-      area = new Area(range);
-    }
-    else {
-      area = new Area(range.start, range.end);
-    }
-
-    this.grid.SetRange(area, data, recycle, transpose, array);
-
-  }
-  */
-
-  /** API FIXME: only for riskamp embedded... */
-  public CreateChart(): Chart {
-
-    // FIXME: we should just always do this
-
-    if (!this.registered_libraries['treb-charts']) {
-      this.calculator.RegisterFunction(ChartFunctions);
-      this.registered_libraries['treb-charts'] = true;
-      this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
-    }
-
-    return new Chart();
-  }
-
-  public GetSheetID(sheet: string | number): number | undefined {
+    // API v1 OK
 
     if (typeof sheet === 'number') {
       const model_sheet = this.grid.model.sheets[sheet];
@@ -1089,58 +1175,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
     return undefined;
-  }
-
-  /* *
-   * returns range as array (column-major). optionally return raw values (formulae)
-   *
-   * @param formula set to true to return underlying formula, instead of calculated value
-   * @param formatted set to true to return formatted strings instead of numbers
-   * /
-  public GetRange(range: ICellAddress | IArea | string, formula = false, formatted = false): CellValue | CellValue[][] | undefined {
-
-    if (typeof range === 'string') {
-      const named_range = this.grid.model.named_ranges.Get(range);
-      if (named_range) {
-        return this.grid.GetRange(named_range, formula, formatted);
-      }
-      else {
-        const addresses = range.split(':');
-        if (addresses.length < 2) {
-          return this.grid.GetRange(new Area(this.EnsureAddress(addresses[0])), formula, formatted);
-        }
-        else {
-          return this.grid.GetRange(new Area(
-            this.EnsureAddress(addresses[0]),
-            this.EnsureAddress(addresses[1])), formula, formatted);
-        }
-      }
-    }
-    else if (IsCellAddress(range)) {
-      return this.grid.GetRange(range, formula, formatted);
-    }
-    else {
-      return this.grid.GetRange(new Area(range.start, range.end), formula, formatted);
-    }
-
-  }
-  */
-
-  public DeleteSheet(name?: string): void {
-    if (name) {
-      name = name.toLowerCase();
-      for (let i = 0; i < this.grid.model.sheets.length; i++) {
-        const sheet = this.grid.model.sheets[i];
-        if (sheet.name.toLowerCase() === name) {
-          this.grid.DeleteSheet(i);
-          break;
-        }
-      }
-    }
-    else {
-      this.grid.DeleteSheet();
-    }
-    this.calculator.Reset();
   }
 
   /**
@@ -1161,35 +1195,19 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.calculator.Reset();
   }
 
-  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: Partial<Rectangle> | string): void {
+  /**
+   * Insert an annotation node. Usually this means inserting a chart.
+   * 
+   * @param formula Annotation formula. For charts, the chart formula.
+   * @param type Annotation type. Defaults to `treb-chart`.
+   * @param rect Coordinates, or a range reference for layout.
+   */
+  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: Partial<Rectangle>|RangeReference): void {
 
     let target: Partial<Rectangle> | Partial<Area> | undefined;
 
     if (rect) {
-      if (Rectangle.IsRectangle(rect)) {
-        target = rect;
-      }
-      else if (typeof rect === 'string') {
-        let area: IArea | undefined
-
-        area = this.grid.model.named_ranges.Get(rect);
-        if (!area) {
-          const addresses = rect.split(':');
-          if (addresses.length < 2) {
-            area = new Area(this.EnsureAddress(addresses[0]));
-          }
-          else {
-            area = new Area(
-              this.EnsureAddress(addresses[0]),
-              this.EnsureAddress(addresses[1]));
-          }
-        }
-
-        if (area) {
-          target = area;
-        }
-
-      }
+      target = Rectangle.IsRectangle(rect) ? rect : this.calculator.ResolveArea(rect);
     }
 
     const { x, y } = this.grid.GetScrollOffset();
@@ -1202,6 +1220,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  /**
+   * Insert an image. This method will open a file chooser and (if an image
+   * is selected) insert the image into the document.
+   * 
+   * @privateRemarks
+   * 
+   * Should we have a separate method that takes either an Image (node) or 
+   * a data URI? 
+   */
   public async InsertImage(file?: File): Promise<void> {
 
     if (!file) {
@@ -1296,96 +1323,112 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /**
-   * show or hide sheet, by name or index
-   */
-  public ShowSheet(index: number | string = 0, show = true): void {
-    this.grid.ShowSheet(index, show);
-  }
-
-  /**
-   * activate sheet, by name or index
-   */
-  public ActivateSheet(index: number | string): void {
-    this.grid.ActivateSheet(index);
-  }
-
-  /**
-   *
-   * @param column column, or columns (array), or undefined means all columns
-   * @param width desired width (can be 0) or undefined means 'auto-size'
-   */
-  public SetColumnWidth(column?: number | number[], width?: number): void {
-    this.grid.SetColumnWidth(column, width);
-  }
-
-  /**
-   *
-   * @param row row, or rows (array), or undefined means all rows
-   * @param height desired height (can be 0) or undefined means 'auto-size'
-   */
-  public SetRowHeight(row?: number | number[], height?: number): void {
-    this.grid.SetRowHeight(row, height);
-  }
-
-  /**
-   * convert A1 address to CellAddress type
+   * Delete a sheet. 
    * 
-   * FIXME: move to calculator. why? (1) it needs to go somewhere other than
-   * here; (2) calculator has the requisite data (the model); and (3) we're
-   * already calling calculator's resolve sheet ID method.
+   * @param index Sheet name or index. Leave undefined to delete the active sheet.
    * 
-   * Q: why does this not go in grid? or model? (...)
-   * 
+   * @public
    */
-  public EnsureAddress(address: string | ICellAddress): ICellAddress {
+  public DeleteSheet(index?: string|number): void {
 
-    const result = this.calculator.ResolveAddress(address);
+    // API v1 OK
 
-    if (IsCellAddress(result)) {
-      return result;
-    }
-
-    // to mimic the old behavior, return only the start
-
-    return result.start;
-
-    /*
-    const result: ICellAddress = { row: 0, column: 0 };
-    if (typeof address === 'string') {
-      const parse_result = this.parser.Parse(address);
-      if (parse_result.expression && parse_result.expression.type === 'address') {
-        this.calculator.ResolveSheetID(parse_result.expression);
-        result.row = parse_result.expression.row;
-        result.column = parse_result.expression.column;
-        result.sheet_id = parse_result.expression.sheet_id;
-      }
-      else if (parse_result.expression && parse_result.expression.type === 'range') {
-        this.calculator.ResolveSheetID(parse_result.expression);
-        result.row = parse_result.expression.start.row;
-        result.column = parse_result.expression.start.column;
-        result.sheet_id = parse_result.expression.start.sheet_id;
-      }
-      else if (parse_result.expression && parse_result.expression.type === 'identifier') {
-        const named_range = this.grid.model.named_ranges.Get(parse_result.expression.name);
-        if (named_range) {
-          return named_range.start;
+    if (typeof index === 'string') {
+      index = index.toLowerCase();
+      for (let i = 0; i < this.grid.model.sheets.length; i++) {
+        const sheet = this.grid.model.sheets[i];
+        if (sheet.name.toLowerCase() === index) {
+          this.grid.DeleteSheet(i);
+          break;
         }
       }
     }
     else {
-      result.row = address.row || 0;
-      result.column = address.column || 0;
+      this.grid.DeleteSheet(index); // index or undefined
     }
-    return result;
-    */
 
+    this.calculator.Reset();
   }
 
-  /* moved to new API section 
-  public ScrollTo(address: string | ICellAddress, x = true, y = true, smooth = false): void {
-    this.grid.ScrollTo(this.EnsureAddress(address), x, y, smooth);
+  /** 
+   * Show or hide sheet. This is a replacement for the `ShowSheet` method, 
+   * because that name is somewhat ambiguous.
+   * 
+   * @param index Sheet name or index.
+   * 
+   * @public
+   */
+  public HideSheet(index: number | string = 0, hide = true): void {
+
+    // API v1 OK
+
+    this.grid.ShowSheet(index, !hide);
   }
-  */
+
+  /**
+   * Show or hide sheet.
+   * 
+   * @param index Sheet name or index.
+   * 
+   * @see HideSheet
+   * @deprecated Use `HideSheet` instead.
+   */
+  public ShowSheet(index: number | string = 0, show = true): void {
+
+    // API v1 OK
+
+    this.grid.ShowSheet(index, show);
+  }
+
+  /**
+   * Activate sheet.
+   * 
+   * @param index Sheet name or index.
+   * 
+   * @public
+   */
+  public ActivateSheet(index: number | string): void {
+
+    // API v1 OK
+
+    this.grid.ActivateSheet(index);
+  }
+
+  /**
+   * Set width of column(s).
+   * 
+   * @param column column, or columns (array), or undefined means all columns
+   * @param width desired width (can be 0) or undefined means 'auto-size'
+   * 
+   * TODO: this method assumes the current sheet. we need a method that can
+   * (optionally) specify a sheet.
+   * 
+   * @public
+   */
+  public SetColumnWidth(column?: number | number[], width?: number): void {
+
+    // API v1 OK
+
+    this.grid.SetColumnWidth(column, width);
+  }
+
+  /**
+   * Set height of row(s).
+   * 
+   * @param row row, or rows (array), or undefined means all rows
+   * @param height desired height (can be 0) or undefined means 'auto-size'
+   * 
+   * TODO: this method assumes the current sheet. we need a method that can
+   * (optionally) specify a sheet.
+   * 
+   * @public
+   */
+  public SetRowHeight(row?: number | number[], height?: number): void {
+
+    // API v1 OK
+
+    this.grid.SetRowHeight(row, height);
+  }
 
   /**
    * API function: insert at current cursor
@@ -1430,98 +1473,40 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /**
-   * API function: apply borders to current selection
+   * Merge cells in range.
+   * 
+   * @range target range. leave undefined to use current selection.
+   * 
+   * @public
    */
-  public ApplyBorders(borders: BorderConstants, width = 1): void {
-    this.grid.ApplyBorders(undefined, borders, undefined, width);
+  public MergeCells(range?: RangeReference): void {
+
+    // API v1 OK
+
+    this.grid.MergeCells(range ? this.calculator.ResolveArea(range) : undefined);
   }
 
   /**
-   * API function: merge current selection
+   * Unmerge cells in range.
+   * 
+   * @range target range. leave undefined to use current selection.
+   * 
+   * @public
    */
-  public MergeCells(): void {
-    this.grid.MergeSelection();
+   public UnmergeCells(range?: RangeReference): void {
+
+    // API v1 OK
+
+    this.grid.UnmergeCells(range ? this.calculator.ResolveArea(range) : undefined);
   }
 
-  /**
-   * API function: unmerge current selection
+  /** 
+   * Export XLSX as a blob. This is intended for electron clients, who may
+   * implement their own file save routines (because they have access to the
+   * filesystem).
+   * 
+   * @internal
    */
-  public UnmergeCells(): void {
-    this.grid.UnmergeSelection();
-  }
-
-  /**
-   * why is this public?
-   * more importantly, why is this async and returns a promise explicitly?
-   * won't that return a Promise<Promise>? (...)
-   */
-  public async ImportXLSX(data: string, source: LoadSource): Promise<Blob | void> {
-
-    if (!this.export_worker) {
-      const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
-      this.export_worker = await this.LoadWorker(worker_name);
-    }
-
-    // this originally returned a Promise<Blob> but the actual
-    // code path always calls resolve(), so it should probably be
-    // Promise<void>. for the time I'm punting but this should be 
-    // cleaned up. FIXME
-
-    return new Promise<Blob | void>((resolve, reject) => {
-      if (this.export_worker) {
-
-        this.dialog?.ShowDialog({
-          message: 'Importing XLSX...'
-        });
-
-        this.export_worker.onmessage = (event) => {
-          if (event.data) {
-
-            if (event.data.status === 'error') {
-              return reject(event.data.error || 'unknown error');
-            }
-
-            this.grid.FromImportData(event.data.results);
-
-            this.ResetInternal();
-            this.grid.Update();
-
-            // this one _is_ the grid cells
-
-            this.calculator.AttachModel(this.grid.model);
-            this.Publish({ type: 'load', source, });
-            this.UpdateDocumentStyles();
-
-            // add to support import charts
-
-            this.InflateAnnotations();
-
-          }
-          else {
-            return reject('unknown error (missing data)');
-          }
-
-          this.dialog?.HideDialog();
-          resolve();
-        };
-        this.export_worker.onerror = (event) => {
-          console.error('import worker error');
-          console.info(event);
-          reject(event);
-        };
-        this.export_worker.postMessage({
-          command: 'import', data,
-        });
-      }
-      else {
-        reject('worker failed');
-      }
-
-    });
-
-  }
-
-  /** export method returns a blob, for electron client */
   public async ExportBlob(): Promise<Blob> {
 
     if (!this.export_worker) {
@@ -1566,15 +1551,21 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /**
-   * export to xlsx. this requires a bunch of processing -- one, we do this in
-   * a worker, and two, it's demand loaded so we don't bloat up this embed
-   * script.
-   *
-   * it might be nice to merge the workers, but since export is (presumably)
-   * rare the separation is better. might be able to do some common-chunking
-   * with webpack (although I'm not sure how well that plays w/ ts).
+   * Export to XLSX file. 
+   * 
+   * @remarks 
+   * 
+   * this requires a bunch of processing -- one, we do this in a worker, and 
+   * two, it's demand loaded so we don't bloat up this embed script.
    */
   public Export(): void {
+
+    // API v1 OK
+
+    // it might be nice to merge the workers, but since export is (presumably)
+    // rare the separation is better. might be able to do some common-chunking
+    // with webpack (although I'm not sure how well that plays w/ ts).
+
     this.ExportBlob().then((blob) => {
 
       let filename = 'export';
@@ -1604,156 +1595,76 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     });
   }
 
-  /* *
-   * get selection
-   * /
-  public GetSelection(qualified = false): string {
-    const selection = this.grid.GetSelection();
-    if (selection.empty) return '';
-
-    const address = selection.area.spreadsheet_label;
-
-    if (qualified) {
-      const active = this.grid.active_sheet.name;
-      return QuotedSheetNameRegex.test(active) ?
-        `'${active}'!${address}` : `${active}!${address}`;
-    }
-    else {
-      return address;
-    }
-  }
-  */
-
-  /** return "live" reference to selection */
+  /** 
+   * Return "live" reference to selection.
+   * 
+   * @internal
+   */
   public GetSelectionReference(): GridSelection {
+
+    // API v1 OK
+
     return this.grid.GetSelection();
   }
 
   /**
-   * focus on the grid
+   * Focus the grid.
+   * 
+   * @public
    */
   public Focus(): void {
+
+    // API v1 OK
+
     this.grid.Focus();
   }
 
   /**
-   * client calls when the container is resized; handle any required layout
+   * Update layout and repaint if necessary.
+   * 
+   * @remarks 
+   * 
+   * Call this method when the container is resized. It's not necessary
+   * if the resize is triggered by our resize handle, only if the container
+   * is resized externally.
+   * 
+   * @public
    */
   public Resize(): void {
+
+    // API v1 OK
+
     this.grid.UpdateLayout();
     this.Publish({ type: 'resize' });
   }
 
-  /**
-   * some local cleanup, gets called in various import/load/reset functions
-   * this is shrinking to the point of being unecessary... although we are
-   * possibly overloading it.
+  /** 
+   * Clear/reset sheet. This will reset the undo stack as well, 
+   * so it cannot be undone.
    * 
-   * FIXME: public?
+   * @public
    */
-  public ResetInternal(): void {
-    // this.additional_cells = [];
-    this.calculator.Reset();
-    this.FlushUndo();
-
-    this.file_version = this.last_save_version = 0;
-  }
-
-  /** clear/reset sheet, back to initial state */
   public Reset(): void {
+
+    // API v1 OK
+
     this.grid.Clear();
     this.ResetInternal();
     this.calculator.AttachModel(this.grid.model); // for leaf nodes
     this.Publish({ type: 'reset' });
   }
 
-  public Select(range: IArea | ICellAddress | string): void {
-    let area: Area | undefined;
-
-    if (range) {
-      if (typeof range === 'string') {
-        const named_range = this.grid.model.named_ranges.Get(range);
-        if (named_range) {
-          area = named_range.Clone();
-        }
-        else {
-          const addresses = range.split(':');
-          if (addresses.length < 2) {
-            area = new Area(this.EnsureAddress(addresses[0]));
-          }
-          else {
-            area = new Area(
-              this.EnsureAddress(addresses[0]),
-              this.EnsureAddress(addresses[1]));
-          }
-        }
-      }
-      else if (IsCellAddress(range)) {
-        area = new Area(range);
-      }
-      else {
-        area = new Area(range.start, range.end);
-      }
-    }
-
-    this.grid.SelectRange(area);
-
-  }
-
-  /*
-  public ApplyStyle(range?: IArea | ICellAddress | string, style: Style.Properties = {}, delta = true): void {
-
-    let area: Area | undefined;
-
-    if (range) {
-      if (typeof range === 'string') {
-        const named_range = this.grid.model.named_ranges.Get(range);
-        if (named_range) {
-          area = named_range.Clone();
-        }
-        else {
-          const addresses = range.split(':');
-          if (addresses.length < 2) {
-            area = new Area(this.EnsureAddress(addresses[0]));
-          }
-          else {
-            area = new Area(
-              this.EnsureAddress(addresses[0]),
-              this.EnsureAddress(addresses[1]));
-          }
-        }
-      }
-      else if (IsCellAddress(range)) {
-        area = new Area(range);
-      }
-      else {
-        area = new Area(range.start, range.end);
-      }
-    }
-
-    this.grid.ApplyStyle(area, style, delta);
-  }
-  */
-
-  /**
-   * replacement for fetch
-   * FIXME: move to utils or other lib
-   * FIXME: we don't need to do this for ES6, presumably...
-   * can this move into the legacy/modern code? or is there a polyfill? (...)
+  /** 
+   * load a document from from local storage, using the given key.
+   * this method will also set the local option for the storage key, so the 
+   * document will potentially be saved on modification.
    */
-  protected async Fetch(uri: string): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = () => resolve(xhr.response);
-      xhr.onerror = () => reject('load error');
-      xhr.ontimeout = () => reject('timeout');
-      xhr.open('GET', uri);
-      xhr.send();
-    });
-  }
-
-  /** load from local storage, and change stored key */
   public LoadFromLocalStorage(key: string): boolean {
+
+    // API v1 OK
+
+    // FIXME: this is weird, why do we have a method for this, why
+    // does it modify the key, and so on
 
     this.options.storage_key = key;
     const json = localStorage.getItem(key);
@@ -1761,7 +1672,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (json) {
       try {
         const data = JSON.parse(json);
-        this.LoadDocument(data, undefined, undefined, undefined, undefined, undefined, LoadSource.LOCAL_STORAGE);
+        this.LoadDocument(data, { source: LoadSource.LOCAL_STORAGE });
         return true;
       }
       catch (err) {
@@ -1774,8 +1685,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /**
-   * load a network document. using xhr/fetch, this will be
-   * limited to local or CORS.
+   * load a network document by URI. CORS headers must be set appropriately
+   * on documents originating from different hosts.
    */
   public async LoadNetworkDocument(uri: string, options?: EmbeddedSpreadsheetOptions): Promise<void> {
 
@@ -1817,7 +1728,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
           }
 
           const json = JSON.parse(response);
-          this.LoadDocument(json, scroll, undefined, recalculate, override_sheet, undefined, LoadSource.NETWORK_FILE);
+          this.LoadDocument(json, { scroll, recalculate, override_sheet, source: LoadSource.NETWORK_FILE });
 
         }
       }
@@ -1838,86 +1749,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  /**
-   * show file chooser and resolve with the selected file, or undefined
-   */
-  public SelectFile(accept?: string): Promise<File | undefined> {
-
-    return new Promise((resolve) => {
-
-      const file_chooser = document.createElement('input');
-      file_chooser.type = 'file';
-
-      if (accept) {
-        file_chooser.accept = accept;
-      }
-
-      // so the thing here is there is no way to trap a "cancel" event
-      // from the file chooser. if you are waiting on a promise, that will
-      // just get orphaned forever. 
-
-      // it's not the end of the world, really, to leave a few of these 
-      // dangling, but this should allow it to clean up.
-
-      // the concept is that since file chooser is modal, there will never
-      // be a focus event until the modal is closed. unfortunately the focus
-      // event comes _before_ any input or change event from the file input,
-      // so we have to wait.
-
-      // tested Cr, FF, IE11
-      // update: works in Safari, although oddly not if you call the API
-      // function from the console. not sure if that's a browserstack thing.
-
-      // eslint-disable-next-line prefer-const
-      let finalize: (file?: File) => void;
-      let timeout: number;
-
-      // if you get a focus event, allow some reasonable time for the 
-      // corresponding change event. realistically this should be immediate,
-      // but as long as there's not a lot of logic waiting on a cancel, it 
-      // doesn't really matter.
-
-      const window_focus = () => {
-
-        // prevent this from accidentally being called more than once
-        window.removeEventListener('focus', window_focus);
-        timeout = setTimeout(finalize, 250);
-      }
-
-      const change_handler = () => {
-        if (timeout) { 
-          clearTimeout(timeout); 
-          timeout = 0; // necessary?
-        }
-        finalize(file_chooser.files ? file_chooser.files[0] : undefined);
-      }
-
-      // our finalize method cleans up and resolves
-
-      finalize = (file?: File) => {
-        file_chooser.removeEventListener('change', change_handler);
-        window.removeEventListener('focus', window_focus);
-        resolve(file);
-      };
-
-      file_chooser.addEventListener('change', change_handler);
-      window.addEventListener('focus', window_focus);
-
-      file_chooser.click();
-
-
-    });
-
-  }
-
   /** 
-   * load a file (desktop) 
-   *
-   * UPDATE: returns success/failure, where success indicates we have
-   * successfully loaded a file. failure could be canceling out of the 
-   * dialog, or a load error.
+   * Load a desktop file. This method will show a file chooser and open 
+   * the selected file (if any). 
+   * 
+   * @returns boolean, where true indicates we have successfully loaded a file.
+   * false could be a load error or user cancel from the dialog.
+   * 
+   * @public
    */
   public async LoadLocalFile(): Promise<boolean> {
+
+    // API v1 OK
 
     const file = await (this.SelectFile(
       '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json'));
@@ -1945,103 +1788,23 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  /** called when we have a file to write to */
-  public LoadFileInternal(file: File, source: LoadSource): Promise<void> {
-
-    if (!file) { return Promise.resolve(); }
-
-    const reader = new FileReader();
-
-    return new Promise<void>((resolve, reject) => {
-
-      // FIXME: worker?
-      // FIXME: is this not getting called for CSVs? (...)
-
-      const finalize = (err?: string) => {
-        reader.onload = null;
-        reader.onabort = null;
-        reader.onerror = null;
-        // this.busy = false;
-        if (err) reject(err);
-        else resolve();
-      };
-
-      reader.onload = () => {
-
-        try {
-          if (reader.result) {
-            if (/\.csv$/i.test(file.name)) {
-              this.LoadCSV(reader.result as string, source);
-            }
-            else if (/\.xls[xm]$/i.test(file.name)) {
-              let contents: string;
-
-              if (typeof reader.result === 'string') {
-                contents = reader.result;
-              }
-              else {  // IE11
-
-                /* can break on large blob
-                contents = String.fromCharCode.apply(null,
-                  (new Uint8Array(reader.result as ArrayBuffer) as any));
-                */
-
-                // FIXME: chunk
-
-                contents = '';
-                const bytes = new Uint8Array(reader.result);
-                for (let i = 0; i < bytes.byteLength; i++) {
-                  contents += String.fromCharCode(bytes[i]);
-                }
-
-              }
-
-              this.ImportXLSX(contents, source).then(() => finalize()).catch(err => finalize(err));
-
-              return;
-            }
-            else {
-              const data = JSON.parse(reader.result as string);
-              this.LoadDocument(data, undefined, undefined, undefined, undefined, undefined, source);
-            }
-          }
-          finalize();
-        }
-        catch (err) {
-          finalize((err as {toString: () => string})?.toString());
-        }
-      };
-
-      reader.onabort = () => { finalize('Aborted'); };
-      reader.onerror = () => { finalize('File error'); };
-
-      // need a nontrivial delay to allow IE to re-render.
-      // FIXME: this should be done async, possibly in a worker
-
-      setTimeout(() => {
-        if (/\.xlsx$/i.test(file.name)) {
-          if (reader.readAsBinaryString) {
-            reader.readAsBinaryString(file);
-          }
-          else {
-            reader.readAsArrayBuffer(file); // IE11
-          }
-        }
-        else {
-          reader.readAsText(file);
-        }
-      }, 100);
-
-    });
-
-  }
-
+  /**
+   * Export sheet as CSV/TSV. This is an internal method called by the save 
+   * document methods, but you can call it directly if you want the text as 
+   * a string.
+   * 
+   * @returns string
+   * 
+   * @public
+   */
   public ExportDelimited(options: ExportOptions = {}): string {
 
-    options = {
-      ...DefaultExportOptions,
-      ...options,
-    };
+    // API v1 OK
+
+    // set default delimiter (we used to have an object for this,
+    // that seems unecessary)
+
+    options = { delimiter: ',', ...options, };
 
     if (!options.delimiter || (options.delimiter !== ',' && options.delimiter !== '\t')) {
       throw new Error('invalid delimiter');
@@ -2134,13 +1897,18 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  /** save a file to desktop */
+  /** 
+   * Save the current document to a desktop file. 
+   * 
+   * @param filename Filename or extension to use the document name.
+   * 
+   * @public
+   */
   public SaveLocalFile(
-    /* type: SaveFileType = SaveFileType.treb,*/
     filename: string = SaveFileType.treb,
-    preserve_simulation_data = true,
-    pretty = false,
-    additional_options: SerializeOptions = {}): void {
+    additional_options: SaveOptions = {}): void {
+
+    // API v1 OK
 
     const document_name = this.grid.model.document_name || 'document'; // FIXME: options
 
@@ -2173,10 +1941,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       case SaveFileType.treb:
       case SaveFileType.json:
         data = this.SerializeDocument({
-          preserve_simulation_data, 
+          // preserve_simulation_data,
           ...additional_options,
         } as SerializeOptions);
-        text = JSON.stringify(data, undefined, pretty ? 2 : undefined);
+        text = JSON.stringify(data, undefined, additional_options.pretty ? 2 : undefined);
         this.last_save_version = this.file_version; // clean
 
         break;
@@ -2207,7 +1975,20 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  public LoadCSV(csv: string, source: LoadSource): void {
+  /** 
+   * Load CSV from string. This is used internally when loading network 
+   * documents and local files, but you can call it directly if you have 
+   * a CSV file as text.
+   * 
+   * @public
+   */
+  public LoadCSV(csv: string, source?: LoadSource): void {
+
+    // API v1 OK
+
+    // TODO: add a 'user' or 'API' load source, and set that 
+    // as default so it's used when called directly
+
     this.grid.FromCSV(csv);
     this.ResetInternal();
     this.grid.Update(true);
@@ -2226,31 +2007,50 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * UPDATE: default scroll to A1 in open sheet
    * 
    */
-  public LoadDocument(
-    data: TREBDocument,
-    scroll: string | ICellAddress = { row: 0, column: 0 },
-    flush = true,
-    recalculate = false,
-    override_sheet?: string,
-    override_selection?: GridSelection,
-    source?: LoadSource,
-  ): void {
+  public LoadDocument(data: TREBDocument, options: LoadDocumentOptions = {}): void {
 
-    if (override_selection) {
+    // API v1 OK
+
+    /*
+    the old parameters, for reference:
+
+    data: TREBDocument,
+    // scroll: string | ICellAddress = { row: 0, column: 0 },
+    // flush = true,
+    // recalculate = false,
+    // override_sheet?: string,
+    // override_selection?: GridSelection,
+    // source?: LoadSource,
+
+    */
+
+    // set default options (matching old method parameters)
+
+    // Q: why was there a default scroll parameter? shouldn't we just
+    // leave what was in the model? (...)
+
+    options = {
+      scroll: {row: 0, column: 0},
+      flush: true,
+      recalculate: false,
+      ...options,
+    };
+
+    if (options.override_selection) {
       if (data.sheet_data) {
         const sheets = Array.isArray(data.sheet_data) ?
           data.sheet_data : [data.sheet_data];
 
         for (const sheet of sheets) {
-          if (sheet.id === override_selection.target.sheet_id) {
-            sheet.selection = override_selection;
+          if (sheet.id === options.override_selection.target.sheet_id) {
+            sheet.selection = options.override_selection;
             break;
           }
         }
       }
     }
 
-    this.ImportDocumentData(data, override_sheet);
+    this.ImportDocumentData(data, options.override_sheet);
 
     // this.additional_cells = [];
     this.calculator.Reset();
@@ -2277,7 +2077,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     // UPDATE: recalculate if there are volatile cells in the model.
     // FIXME: optional? parameter? (...)
 
-    if (data.rendered_values && !recalculate) {
+    if (data.rendered_values && !options.recalculate) {
       this.grid.Update();
       this.calculator.RebuildClean(this.grid.model, true);
     }
@@ -2291,70 +2091,51 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
     this.InflateAnnotations();
 
-    if (flush) {
+    if (options.flush) {
       this.FlushUndo();
 
       // this.file_version = this.last_save_version = 0; // reset
 
     }
 
-    this.Publish({ type: 'load', source }); // FIXME: should not happen on undo...
+    this.Publish({ type: 'load', source: options.source }); // FIXME: should not happen on undo...
     this.UpdateDocumentStyles();
     this.loaded = true;
 
-    if (scroll) {
-      // let ds = document.body.scrollTop;
-      Yield().then(() => {
-        this.ScrollTo(scroll);
-        // ds = document.body.scrollTop;
-      });
+    if (options.scroll) {
+      const scroll = options.scroll;
+      Yield().then(() => this.ScrollTo(scroll));
     }
-
-    // if (data.active_sheet) {
-    //  this.grid.ActivateSheetID({ key: CommandKey.ActivateSheet, id: data.active_sheet });
-    // }
 
   }
 
   /**
-   * set note for current selection. set as undefined or empty
-   * string to clear existing note.
+   * Set note (comment) in cell.
+   * 
+   * @param address target address, or leave undefined to use current selection.
+   * @param note note text, or leave undefined to clear existing note.
    */
-  public SetNote(note?: string): void {
-    this.grid.SetNote(undefined, note);
+  public SetNote(address: AddressReference|undefined, note?: string): void {
 
-    // set note does not publish, so we need to directly trigger undo/autosave
-    // not true anymore?
+    // API v1 OK
 
-    // this.DocumentChange();
-
-  }
-
-  /* *
-   * clear name
-   * /
-  public ClearName(name: string): void {
-    this.grid.SetName(name);
-  }
-
-  / * *
-   * set name at selection
-   * /
-  public DefineName(name: string, area?: IArea): void {
-    if (area) {
-      this.grid.SetName(name, new Area(area.start, area.end));
+    if (typeof address === 'string') {
+      const reference = this.calculator.ResolveAddress(address);
+      address = IsCellAddress(reference) ? reference : reference.start;
     }
-    else {
-      const selection = this.grid.GetSelection();
-      if (!selection.empty) {
-        this.grid.SetName(name, selection.area);
-      }
-    }
-  }
-  */
 
-  /** delete macro function */
+    this.grid.SetNote(address, note);
+
+  }
+
+  /** 
+   * Delete a macro function.
+   * 
+   * @public
+   */
   public RemoveFunction(name: string): void {
+
+    // API v1 OK
 
     const uppercase = name.toUpperCase();
     const keys = Object.keys(this.grid.model.macro_functions);
@@ -2369,9 +2150,13 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /**
-   * create macro function. name must not already exist (TODO: functions)
+   * Create a macro function.
+   * 
+   * @public
    */
   public DefineFunction(name: string, argument_names: string | string[] = '', function_def = '0'): void {
+
+    // API v1 OK
 
     // name must start with a letter, use letters numbers underscore dot
 
@@ -2407,12 +2192,915 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+
+  /**
+   * Serialize document -> json.
+   * 
+   * @privateRemarks
+   * 
+   * serialize document; optionally include any MC data
+   * optionally preserve rendered values
+   * UPDATE: default rendered values -> true
+   * 
+   * @internal
+   */
+  public SerializeDocument(options: SerializeOptions = {}): TREBDocument {
+
+    // API v1 OK
+
+    // add default for shrink, which can be overridden w/ explicit false
+
+    const grid_data = this.grid.Serialize({
+      shrink: true, ...options,
+    });
+
+    // NOTE: these are not really env vars. we replace them at build time
+    // via a webpack plugin. using the env syntax lets them look "real" at
+    // analysis time. got that trick from svelte.
+
+    const serialized: TREBDocument = {
+      app: process.env.BUILD_NAME || '',
+      version: process.env.BUILD_VERSION || '',
+      name: this.grid.model.document_name, // may be undefined
+      user_data: this.grid.model.user_data, // may be undefined
+      decimal_mark: Localization.decimal_separator,
+      ...grid_data,
+    };
+
+    if (options.rendered_values) {
+      serialized.rendered_values = true;
+    }
+
+    return serialized;
+
+  }
+
+  /** 
+   * Recalculate sheet.
+   * 
+   * @privateRemarks
+   * 
+   * the event parameter should not be used if this is called
+   * as an API function, remove it from typings
+   * 
+   * @public
+   */
+  public async Recalculate(event?: GridEvent): Promise<void> {
+
+    // API v1 OK
+
+    let area: Area | undefined;
+    if (event && event.type === 'data' && event.area) {
+      area = event.area;
+    }
+
+    this.calculator.Calculate(this.grid.model, area);
+
+    this.grid.Update(true); // , area);
+    this.UpdateAnnotations();
+    this.Publish({ type: 'data' });
+
+  }
+
+  /**
+   * Save document to local storage. 
+   * 
+   * @param key optional storage key. if omitted, the method will use
+   * the key from local options (set at create time).
+   */
+  public SaveLocalStorage(key = this.options.storage_key): void {
+
+    // API v1 OK
+
+    // the signature is OK for the API, but I'm not sure the 
+    // semantics are correct. this is not symmetrical with the
+    // load method, because that one sets local option and this 
+    // one does not.
+
+    if (!key) {
+      console.warn('not saving, no key'); // FIXME: throw?
+      return;
+    }
+
+    const json = JSON.stringify(this.SerializeDocument({
+      preserve_simulation_data: true,
+      rendered_values: true,
+      expand_arrays: true,
+    } as SerializeOptions));
+
+    localStorage.setItem(key, json);
+
+  }
+
+  /**
+   * Revert state one level from the undo stack.
+   * 
+   * @public
+   */
+  public Undo(): void {
+
+    // API v1 OK
+
+    if (this.undo_pointer <= 1) {
+      console.warn('nothing to undo');
+      return;
+    }
+
+    const undo_entry = this.undo_stack[(--this.undo_pointer) - 1];
+
+    // const undo_selection_set = this.undo_selection_stack[this.undo_pointer]; // <-- pointer already decremented
+    // const undo_selection = undo_selection_set ? undo_selection_set[1] : undefined;
+    // console.info("* undo selection", undo_selection);
+
+    // UPDATE: we are storing calculated values in serialized data
+    // in the undo stack. so we don't need to recalculate; paint immediately.
+    // prevents flickering.
+
+    const selection: GridSelection | undefined =
+      undo_entry.selection ? JSON.parse(undo_entry.selection) : undefined
+
+    // console.info('selection?', undo_entry.selection);
+
+    this.LoadDocument(JSON.parse(undo_entry.data), {
+      flush: false,
+      override_selection: selection,
+      source: LoadSource.UNDO,
+    }); 
+    // undefined, false, undefined, undefined, selection, LoadSource.UNDO);
+
+    this.file_version--; // decrement
+
+  }
+
+
+  /** 
+   * Show the about dialog.
+   * 
+   * @public
+   */
+  public About(): void {
+
+    // API v1 OK
+
+    this.dialog?.ShowDialog({
+      type: DialogType.about,
+    });
+  }
+
+  /** 
+   * Scroll to the given address. In the current implementation this method
+   * will not change sheets, although it probably should if the reference
+   * is to a different sheet.
+   * 
+   * @public
+   */
+  public ScrollTo(address: AddressReference, options: ScrollToOptions = {}): void {
+
+    // API v1 OK
+
+    if (typeof address === 'string') {
+      const reference = this.calculator.ResolveAddress(address);
+      address = IsCellAddress(reference) ? reference : reference.start;
+    }
+
+    // the grid method has defaults, but it's not obvious what 
+    // they are and they're not visible through interfaces (?)
+
+    // in any case we can set them here explicitly
+
+    options = {
+      x: true,
+      y: true,
+      smooth: false,
+      ...options,
+    };
+
+    this.grid.ScrollTo(address, options.x, options.y, options.smooth);
+
+  }
+
+  /** 
+   * Resolve a string address/range to an address or area (range) object. 
+   * 
+   * @param reference A string like "A1" or "Sheet1!B2:C3". If a sheet name 
+   * is not included, the current active sheet is used. You can also pass a 
+   * named range as reference.
+   * 
+   * @public
+   */
+  public Resolve(reference: string): ICellAddress | IArea | undefined {
+
+    // API v1 OK
+
+    // FIXME: although we might change the name...
+
+    // is : a legal character in sheet names? even quoted? [A: no]
+
+    // FIXME: we're using the sheet EnsureAddress method, but that should
+    // move either in here or into some sort of helper class
+
+    const result = this.calculator.ResolveAddress(reference);
+
+    if (IsCellAddress(result)) {
+      return result.sheet_id ? result : undefined;
+    }
+
+    return result.start.sheet_id ? result : undefined;
+
+  }
+
+  /**
+   * Evaluate an arbitrary expression in the spreadsheet. You should generally
+   * use sheet names when referring to cells, to avoid ambiguity. Otherwise
+   * cell references will resolve to the active sheet.
+   * 
+   * @public
+   */
+  public Evaluate(expression: string): CellValue | CellValue[][] {
+
+    // API v1 OK
+
+    return this.calculator.Evaluate(expression);
+  }
+
+  /**
+   * Returns the current selection, as a string address or range. 
+   * 
+   * @param qualified include sheet name in result. default true.
+   * 
+   * @returns selection as a string, or empty string if there's no selection.
+   * 
+   * @public
+   */
+  public GetSelection(qualified = true): string {
+
+    // API v1 OK
+
+    const ref = this.grid.GetSelection();
+
+    if (ref.empty) {
+      return '';
+    }
+
+    let range = '';
+
+    if (ref.area.count > 1) {
+      range = Area.CellAddressToLabel(ref.area.start) + ':' +
+        Area.CellAddressToLabel(ref.area.end);
+    }
+    else {
+      range = Area.CellAddressToLabel(ref.area.start);
+    }
+
+    if (!qualified) {
+      return range;
+    }
+
+    // is there a function to resolve sheet? actually, don't we know that
+    // the active selection must be on the active sheet? (...)
+
+    const sheet_id = ref.area.start.sheet_id || this.grid.active_sheet.id;
+    const sheet_name = this.ResolveSheetName(sheet_id, true);
+
+    return sheet_name ? sheet_name + '!' + range : range;
+
+  }
+
+
+  /**
+   * Parse a string and return a number (if possible).
+   * 
+   * @privateRemarks
+   *
+   * We're using ValueParser, which the one used when you type into a grid
+   * (not the Parser parser). It's intended to handle things that would look
+   * wrong in functions, like currency symbols.
+   * 
+   * @public
+   */
+  public ParseNumber(text: string): number | Complex | boolean | string | undefined {
+
+    // API v1 OK
+
+    /*
+
+    ...why not?
+
+    const expr = this.parser.Parse(text);
+    if (expr.expression?.type === 'complex') {
+      return {
+        real: expr.expression.real,
+        imaginary: expr.expression.imaginary,
+      };
+    }
+    */
+
+    return ValueParser.TryParse(text).value;
+
+  }
+
+  /**
+   * Format a number with an arbitrary formatter.
+   *
+   * @privateRemarks
+   * 
+   * FIXME: should this support complex numbers? not sure...
+   * 
+   * @public
+   */
+  public FormatNumber(value: number, format = 'General'): string {
+
+    // API v1 OK
+
+    return NumberFormatCache.Get(format).Format(value);
+  }
+
+  /**
+   * Apply borders to range. 
+   * 
+   * @param range pass `undefined` as range to apply to current selection.
+   * 
+   * @remarks 
+   * 
+   * Borders are part of style, but setting/removing borders is more 
+   * complicated than setting other style properties. usually you want
+   * things to apply to ranges, rather than individual cells. removing
+   * borders needs to consider neighbor borders. and so on.
+   * 
+   * @public
+   */
+  public ApplyBorders(range: RangeReference|undefined, borders: BorderConstants, width = 1): void {
+
+    // API v1 OK
+
+    // the grid method can take an empty area, although it probably
+    // should not, since we're wrapping up all the grid API methods.
+
+    // still for now we can take advantage of that and skip the check.
+
+    this.grid.ApplyBorders(range ? this.calculator.ResolveArea(range) : undefined, borders, undefined, width);
+
+  }
+
+  /**
+   * Apply style to range. 
+   * 
+   * @param range pass `undefined` as range to apply to current selection.
+   * @param delta apply over existing properties. default true.
+   * 
+   * @remarks
+   * 
+   * Don't use this method to set borders, use `ApplyBorders`.
+   * 
+   * @public
+   */
+  public ApplyStyle(range?: RangeReference, style: Style.Properties = {}, delta = true): void {
+
+    // ditto re: grid method taking undefined target
+
+    this.grid.ApplyStyle(
+      range ? this.calculator.ResolveArea(range) : undefined, style, delta);
+  }
+
+  /**
+   * Remove a named range (removes the name, not the range).
+   * 
+   * @public
+   */
+  public ClearName(name: string): void {
+
+    // API v1 OK
+
+    // FIXME: why do we have DefineName and ClearName, instead of 
+    // just passing undefined for the target range? (...)
+
+    // A: because that means "use selection". although that's not necessarily
+    // a good idea...
+
+    // NOTE: AC is handled internally
+    this.grid.SetName(name);
+
+  }
+
+  /**
+   * Create a named range. 
+   * 
+   * @param range leave undefined to use current selection
+   * 
+   * @public
+   */
+  public DefineName(name: string, range?: RangeReference): void {
+
+    // API v1 OK
+
+    if (!range) {
+      const selection = this.GetSelectionReference();
+      if (!selection.empty) {
+        range = selection.area;
+      }
+      else {
+        throw new Error('invalid reference');
+      }
+    }
+
+    // NOTE: AC is handled internally
+
+    this.grid.SetName(name, this.calculator.ResolveArea(range));
+
+  }
+
+  /**
+   * Set or remove a link in a cell. 
+   * 
+   * @param target http/https URL or a spreadsheet reference (as text). set blank to remove link.
+   * 
+   * @public
+   */
+  public SetLink(address?: AddressReference, target = ''): void {
+
+    // API v1 OK
+
+    if (typeof address === 'string') {
+      const reference = this.calculator.ResolveAddress(address);
+      address = IsCellAddress(reference) ? reference : reference.start;
+    }
+
+    if (!address) {
+      const selection = this.GetSelectionReference();
+      if (selection.empty) {
+        return;
+      }
+      address = selection.target;
+    }
+
+    this.grid.SetLink(address, target);
+
+  }
+
+  /**
+   * Select a range.
+   * 
+   * @public
+   */
+  public Select(range: RangeReference): void {
+
+    // API v1 OK
+
+    // FIXME: what if the range is on another sheet? (...)
+
+    this.grid.SelectRange(this.calculator.ResolveArea(range));
+  }
+
+
+  /** 
+   * 
+   * @param range target range. leave undefined to use current selection.
+   * 
+   * @public
+   */
+  public GetRange(range?: RangeReference, options: GetRangeOptions = {}): CellValue|CellValue[][] {
+
+    // API v1 OK
+
+    if (!range) {
+      const selection = this.GetSelectionReference();
+      if (!selection.empty) {
+        range = selection.area;
+      }
+    }
+
+    return range ?
+      this.grid.GetRange(this.calculator.ResolveAddress(range), options.formula, options.formatted) : undefined;
+
+  }
+
+  /**
+   * Set data in range.
+   * 
+   * @param range target range. leave undefined to use current selection.
+   * 
+   * @public
+   */
+  public SetRange(range?: RangeReference, data: CellValue|CellValue[][] = undefined, options: SetRangeOptions = {}): void {
+
+    // API v1 OK
+
+    if (!range) {
+      const selection = this.GetSelectionReference();
+      if (!selection.empty) {
+        range = selection.area;
+      }
+    }
+
+    if (range) {
+      return this.grid.SetRange(
+        this.calculator.ResolveArea(range),
+        data, options.recycle, options.transpose, options.array);
+    }
+
+  }
+
+  // --- internal (protected) methods ------------------------------------------
+
+  /**
+   *
+   */
+   protected async ImportXLSX(data: string, source: LoadSource): Promise<Blob | void> {
+
+    if (!this.export_worker) {
+      const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
+      this.export_worker = await this.LoadWorker(worker_name);
+    }
+
+    // this originally returned a Promise<Blob> but the actual
+    // code path always calls resolve(), so it should probably be
+    // Promise<void>. for the time I'm punting but this should be 
+    // cleaned up. FIXME
+
+    return new Promise<Blob | void>((resolve, reject) => {
+      if (this.export_worker) {
+
+        this.dialog?.ShowDialog({
+          message: 'Importing XLSX...'
+        });
+
+        this.export_worker.onmessage = (event) => {
+          if (event.data) {
+
+            if (event.data.status === 'error') {
+              return reject(event.data.error || 'unknown error');
+            }
+
+            this.grid.FromImportData(event.data.results);
+
+            this.ResetInternal();
+            this.grid.Update();
+
+            // this one _is_ the grid cells
+
+            this.calculator.AttachModel(this.grid.model);
+            this.Publish({ type: 'load', source, });
+            this.UpdateDocumentStyles();
+
+            // add to support import charts
+
+            this.InflateAnnotations();
+
+          }
+          else {
+            return reject('unknown error (missing data)');
+          }
+
+          this.dialog?.HideDialog();
+          resolve();
+        };
+        this.export_worker.onerror = (event) => {
+          console.error('import worker error');
+          console.info(event);
+          reject(event);
+        };
+        this.export_worker.postMessage({
+          command: 'import', data,
+        });
+      }
+      else {
+        reject('worker failed');
+      }
+
+    });
+
+  }
+
+  /**
+   * some local cleanup, gets called in various import/load/reset functions
+   * this is shrinking to the point of being unecessary... although we are
+   * possibly overloading it.
+   */
+  protected ResetInternal(): void {
+    // this.additional_cells = [];
+    this.calculator.Reset();
+    this.FlushUndo();
+
+    this.file_version = this.last_save_version = 0;
+  }
+
+  protected HandleCellEvent(event: CellEvent): void {
+
+    const type = event.data?.type;
+    if (type === 'hyperlink') {
+
+      const hyperlink_error = 'hyperlink invalid target';
+      const data = event.data.data || '';
+
+      if (typeof data === 'string') {
+
+        if (/^https{0,1}:\/\//i.test(data)) {
+
+          if (!this.options.hyperlinks) {
+            console.warn('hyperlinks are disabled');
+            return;
+          }
+
+          const a = document.createElement('a');
+          a.setAttribute('target', this.options.hyperlinks);
+          a.setAttribute('href', data);
+          a.setAttribute('noreferrer', 'true');
+          a.setAttribute('nofollow', 'true');
+          a.click();
+
+          return;
+
+        }
+        else {
+
+          const parse_result = this.parser.Parse(data);
+          if (parse_result.expression) {
+
+            // probably can always allow reference links
+
+            if (parse_result.expression.type === 'address') {
+              if (parse_result.expression.sheet || parse_result.expression.sheet_id) {
+                this.ActivateSheet((parse_result.expression.sheet || parse_result.expression.sheet_id) as string | number);
+              }
+              this.Select(data);
+              return;
+            }
+            else if (parse_result.expression.type === 'range') {
+              if (parse_result.expression.start.sheet || parse_result.expression.start.sheet_id) {
+                this.ActivateSheet((parse_result.expression.start.sheet || parse_result.expression.start.sheet_id) as string | number);
+              }
+              this.Select(data);
+              return;
+            }
+
+          }
+        }
+
+        console.warn(hyperlink_error, 2);
+        return;
+
+      }
+    }
+  }
+
+
+  protected OnSheetChange(event: SheetChangeEvent): void {
+
+    // call annotation method(s) on any annotations in active sheet
+
+    // we stopped sending the 'create' event on sheet change, so
+    // now we have to inflate them on sheet change
+
+    for (const annotation of event.activate.annotations) {
+      // if (annotation.update_callback) {
+      //   annotation.update_callback();
+      // }
+
+      this.InflateAnnotation(annotation);
+      this.calculator.UpdateAnnotations(annotation);
+
+    }
+
+    // we also need to update annotations that are already inflated
+    // [FIXME: merge this code]
+
+    this.UpdateAnnotations();
+
+  }
+
+  protected HandleDrag(event: DragEvent): void {
+    if (event.dataTransfer && event.dataTransfer.types) {
+
+      // this is for IE11, types is not an array
+
+      if (event.dataTransfer.types.some && event.dataTransfer.types.some((check) => check === 'Files')) {
+        event.preventDefault();
+      }
+      else {
+        for (let i = 0; i < event.dataTransfer.types.length; i++) {
+          if (event.dataTransfer.types[i] === 'files') {
+            event.preventDefault();
+            return;
+          }
+        }
+      }
+    }
+  }
+
+  protected HandleDrop(event: DragEvent): void {
+
+    if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
+      event.preventDefault();
+      const file = event.dataTransfer.files[0];
+
+      if (/^image/.test(file.type)) {
+        this.InsertImage(file);
+      }
+      else {
+        this.LoadFileInternal(file, LoadSource.DRAG_AND_DROP).then(() => {
+          // ...
+        }).catch((err) => {
+          this.dialog?.ShowDialog({
+            title: 'Error reading file',
+            close_box: true,
+            message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
+            type: DialogType.error,
+            timeout: 3000,
+          });
+          console.error(err);
+        });
+      }
+    }
+  }
+
+  /**
+   * replacement for fetch
+   * FIXME: move to utils or other lib
+   * FIXME: we don't need to do this for ES6, presumably...
+   * can this move into the legacy/modern code? or is there a polyfill? (...)
+   */
+  protected async Fetch(uri: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.onload = () => resolve(xhr.response);
+      xhr.onerror = () => reject('load error');
+      xhr.ontimeout = () => reject('timeout');
+      xhr.open('GET', uri);
+      xhr.send();
+    });
+  }
+
+
+  /**
+   * show file chooser and resolve with the selected file, or undefined
+   */
+  protected SelectFile(accept?: string): Promise<File | undefined> {
+
+    return new Promise((resolve) => {
+
+      const file_chooser = document.createElement('input');
+      file_chooser.type = 'file';
+
+      if (accept) {
+        file_chooser.accept = accept;
+      }
+
+      // so the thing here is there is no way to trap a "cancel" event
+      // from the file chooser. if you are waiting on a promise, that will
+      // just get orphaned forever. 
+
+      // it's not the end of the world, really, to leave a few of these 
+      // dangling, but this should allow it to clean up.
+
+      // the concept is that since file chooser is modal, there will never
+      // be a focus event until the modal is closed. unfortunately the focus
+      // event comes _before_ any input or change event from the file input,
+      // so we have to wait.
+
+      // tested Cr, FF, IE11
+      // update: works in Safari, although oddly not if you call the API
+      // function from the console. not sure if that's a browserstack thing.
+
+      // eslint-disable-next-line prefer-const
+      let finalize: (file?: File) => void;
+      let timeout: number;
+
+      // if you get a focus event, allow some reasonable time for the 
+      // corresponding change event. realistically this should be immediate,
+      // but as long as there's not a lot of logic waiting on a cancel, it 
+      // doesn't really matter.
+
+      const window_focus = () => {
+
+        // prevent this from accidentally being called more than once
+        window.removeEventListener('focus', window_focus);
+        timeout = setTimeout(finalize, 250);
+      }
+
+      const change_handler = () => {
+        if (timeout) {
+          clearTimeout(timeout);
+          timeout = 0; // necessary?
+        }
+        finalize(file_chooser.files ? file_chooser.files[0] : undefined);
+      }
+
+      // our finalize method cleans up and resolves
+
+      finalize = (file?: File) => {
+        file_chooser.removeEventListener('change', change_handler);
+        window.removeEventListener('focus', window_focus);
+        resolve(file);
+      };
+
+      file_chooser.addEventListener('change', change_handler);
+      window.addEventListener('focus', window_focus);
+
+      file_chooser.click();
+
+
+    });
+
+  }
+
+  /** called when we have a file to write to */
+  protected LoadFileInternal(file: File, source: LoadSource): Promise<void> {
+
+    if (!file) { return Promise.resolve(); }
+
+    const reader = new FileReader();
+
+    return new Promise<void>((resolve, reject) => {
+
+      // FIXME: worker?
+      // FIXME: is this not getting called for CSVs? (...)
+
+      const finalize = (err?: string) => {
+        reader.onload = null;
+        reader.onabort = null;
+        reader.onerror = null;
+        // this.busy = false;
+        if (err) reject(err);
+        else resolve();
+      };
+
+      reader.onload = () => {
+
+        try {
+          if (reader.result) {
+            if (/\.csv$/i.test(file.name)) {
+              this.LoadCSV(reader.result as string, source);
+            }
+            else if (/\.xls[xm]$/i.test(file.name)) {
+              let contents: string;
+
+              if (typeof reader.result === 'string') {
+                contents = reader.result;
+              }
+              else {  // IE11
+
+                /* can break on large blob
+                contents = String.fromCharCode.apply(null,
+                  (new Uint8Array(reader.result as ArrayBuffer) as any));
+                */
+
+                // FIXME: chunk
+
+                contents = '';
+                const bytes = new Uint8Array(reader.result);
+                for (let i = 0; i < bytes.byteLength; i++) {
+                  contents += String.fromCharCode(bytes[i]);
+                }
+
+              }
+
+              this.ImportXLSX(contents, source).then(() => finalize()).catch(err => finalize(err));
+
+              return;
+            }
+            else {
+              const data = JSON.parse(reader.result as string);
+              this.LoadDocument(data, { source });
+            }
+          }
+          finalize();
+        }
+        catch (err) {
+          finalize((err as { toString: () => string })?.toString());
+        }
+      };
+
+      reader.onabort = () => { finalize('Aborted'); };
+      reader.onerror = () => { finalize('File error'); };
+
+      // need a nontrivial delay to allow IE to re-render.
+      // FIXME: this should be done async, possibly in a worker
+
+      setTimeout(() => {
+        if (/\.xlsx$/i.test(file.name)) {
+          if (reader.readAsBinaryString) {
+            reader.readAsBinaryString(file);
+          }
+          else {
+            reader.readAsArrayBuffer(file); // IE11
+          }
+        }
+        else {
+          reader.readAsText(file);
+        }
+      }, 100);
+
+    });
+
+  }
+
+
   /** testing
    *
    * this is called after recalc, check any annotations
    * (just sparklines atm) and update if necessary.
    */
-  public UpdateAnnotations(): void {
+  protected UpdateAnnotations(): void {
     for (const annotation of this.grid.model.active_sheet.annotations) {
       if (annotation.temp.vertex) {
         const vertex = annotation.temp.vertex as LeafVertex;
@@ -2605,78 +3293,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
-  /**
-   * serialize document; optionally include any MC data
-   * optionally preserve rendered values
-   * UPDATE: default rendered values -> true
-   */
-  public SerializeDocument(options: SerializeOptions = {}): TREBDocument {
-
-    // add default for shrink, which can be overridden w/ explicit false
-
-    const grid_data = this.grid.Serialize({
-      shrink: true, ...options,
-    });
-
-    // NOTE: these are not really env vars. we replace them at build time
-    // via a webpack plugin. using the env syntax lets them look "real" at
-    // analysis time. got that trick from svelte.
-
-    const serialized: TREBDocument = {
-      app: process.env.BUILD_NAME || '',
-      version: process.env.BUILD_VERSION || '',
-      name: this.grid.model.document_name, // may be undefined
-      user_data: this.grid.model.user_data, // may be undefined
-      decimal_mark: Localization.decimal_separator,
-      ...grid_data,
-    };
-
-    if (options.rendered_values) {
-      serialized.rendered_values = true;
-    }
-
-    return serialized;
-
-  }
-
-  /** recalc sheet */
-  public async Recalculate(event?: GridEvent): Promise<void> {
-
-    let area: Area | undefined;
-    if (event && event.type === 'data' && event.area) {
-      area = event.area;
-    }
-
-    // const result = 
-    await this.calculator.Calculate(this.grid.model, area);
-
-    this.grid.Update(true); // , area);
-    this.UpdateAnnotations();
-    this.Publish({ type: 'data' });
-
-  }
-
-  /**
-   * save document to local storage, using the given key or the key 
-   * from options
-   */
-  public SaveLocalStorage(key = this.options.storage_key): void {
-
-    if (!key) {
-      console.warn('not saving, no key'); // FIXME: throw?
-      return;
-    }
-
-    const json = JSON.stringify(this.SerializeDocument({
-      preserve_simulation_data: true,
-      rendered_values: true, 
-      expand_arrays: true,
-    } as SerializeOptions));
-
-    localStorage.setItem(key, json);
-
-  }
-
   /** 
    * save sheet to local storage and trigger (push) undo. our undo system
    * relies on tracking selection after storing the main data, and sometimes
@@ -2689,7 +3305,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       const json = JSON.stringify(this.SerializeDocument({
         preserve_simulation_data: false,
-        rendered_values: true, 
+        rendered_values: true,
         expand_arrays: true,
       } as SerializeOptions));
 
@@ -2719,7 +3335,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (!json) {
       json = JSON.stringify(this.SerializeDocument({
         preserve_simulation_data: false,
-        rendered_values: true, 
+        rendered_values: true,
         expand_arrays: true,
       } as SerializeOptions));
     }
@@ -2764,37 +3380,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
-  /**
-   * revert state one level from the undo stack
-   */
-  public Undo(): void {
-
-    if (this.undo_pointer <= 1) {
-      console.warn('nothing to undo');
-      return;
-    }
-
-    const undo_entry = this.undo_stack[(--this.undo_pointer) - 1];
-
-    // const undo_selection_set = this.undo_selection_stack[this.undo_pointer]; // <-- pointer already decremented
-    // const undo_selection = undo_selection_set ? undo_selection_set[1] : undefined;
-    // console.info("* undo selection", undo_selection);
-
-    // UPDATE: we are storing calculated values in serialized data
-    // in the undo stack. so we don't need to recalculate; paint immediately.
-    // prevents flickering.
-
-    const selection: GridSelection | undefined =
-      undo_entry.selection ? JSON.parse(undo_entry.selection) : undefined
-
-    // console.info('selection?', undo_entry.selection);
-
-    this.LoadDocument(JSON.parse(undo_entry.data), undefined, false, undefined, undefined, selection, LoadSource.UNDO);
-
-    this.file_version--; // decrement
-
-
-  }
 
   /** 
    * update selection: used for updating toolbar (i.e. highlight bold button) 
@@ -2812,296 +3397,6 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     this.Publish({ type: 'selection' });
   }
 
-  /** show the about dialog */
-  public About(): void {
-    this.dialog?.ShowDialog({
-      type: DialogType.about,
-    });
-  }
-
-  /** 
-   * this is public because it's created by the composite sheet. 
-   * FIXME: perhaps there's a better way to do that? via message passing? (...) 
-   */
-  public CreateToolbar(container: HTMLElement): Toolbar {
-    this.toolbar = new Toolbar(container, this.options, this.grid.theme);
-    this.toolbar.Subscribe((event) => {
-
-      let updated_style: Style.Properties = {};
-
-      const insert_annotation = (func: string) => {
-        const selection = this.grid.GetSelection();
-        if (selection && !selection.empty) {
-          const label = selection.area.spreadsheet_label;
-          this.InsertAnnotation(`=${func}(${label},,"${label}")`);
-        }
-      };
-
-      if (event.type === 'format') {
-        updated_style.number_format = event.format || 'General';
-      }
-      else if (event.type === 'font-size') {
-
-        // NOTE we're doing this a little differently; not using
-        // updated style because we also want to resize rows, and
-        // we want those things to be a single transaction.
-
-        const selection = this.grid.GetSelection();
-        const area = this.grid.RealArea(selection.area);
-
-        this.grid.ApplyStyle(undefined, event.style, true);
-        const rows: number[] = [];
-        for (let row = area.start.row; row <= area.end.row; row++) {
-          rows.push(row);
-        }
-        this.grid.SetRowHeight(rows, undefined, false);
-
-      }
-      else if (event.type === 'button') {
-        switch (event.command) {
-
-          case 'font-scale':
-
-            // above we handle 'font-size' events; this comes from a dropdown,
-            // so we're handling it inline, but we want the same behavior.
-            // FIXME: break out
-
-            {
-              const selection = this.grid.GetSelection();
-              const area = this.grid.RealArea(selection.area);
-              const scale = Number(event.data?.scale || 1);
-
-              if (scale && !isNaN(scale)) {
-                this.grid.ApplyStyle(undefined, {
-                  //font_size_unit: 'em', font_size_value: scale 
-                  font_size: {
-                    unit: 'em', value: scale,
-                  },
-                }, true);
-                const rows: number[] = [];
-                for (let row = area.start.row; row <= area.end.row; row++) {
-                  rows.push(row);
-                }
-                this.grid.SetRowHeight(rows, undefined, false);
-              }
-            }
-            break;
-
-          case 'update-comment':
-            this.SetNote(event.data?.comment || '');
-            break;
-
-          case 'clear-comment':
-            this.SetNote('');
-            break;
-
-          case 'border':
-            {
-              let width = 1;
-              let border = (event.data?.border || '').replace(/^border-/, '');
-
-              if (border === 'double-bottom') {
-                border = 'bottom';
-                width = 2;
-              }
-
-              if (border) {
-                this.grid.ApplyBorders2(
-                  undefined,
-                  border,
-                  event.data?.color || undefined,
-                  width,
-                );
-              }
-
-            }
-            break;
-
-          case 'color':
-          case 'background-color':
-          case 'foreground-color':
-          case 'border-color':
-
-            switch (event.data?.target) {
-              case 'border':
-                updated_style.border_top_fill =
-                  updated_style.border_bottom_fill =
-                  updated_style.border_left_fill =
-                  updated_style.border_right_fill = event.data?.color || {};
-                break;
-              case 'foreground':
-
-                // empty would work here because it means "use default"; but
-                // if we set it explicitly, it can be removed on composite delta
-                updated_style.text = event.data?.color || { theme: 1 };
-
-                break;
-              case 'background':
-
-                // FIXME: theme colors
-                updated_style.fill = event.data?.color || {};
-                break;
-            }
-            break;
-
-          case 'insert-row': this.grid.InsertRow(); break;
-          case 'insert-column': this.grid.InsertColumn(); break;
-          case 'delete-row': this.grid.DeleteRows(); break;
-          case 'delete-column': this.grid.DeleteColumns(); break;
-          case 'insert-sheet': this.grid.InsertSheet(); break;
-          case 'delete-sheet': this.grid.DeleteSheet(); break;
-
-          case 'freeze':
-            {
-              const freeze = this.grid.GetFreeze();
-              if (freeze.rows || freeze.columns) {
-                this.Freeze(0, 0);
-              }
-              else {
-                this.FreezeSelection();
-              }
-            }
-            break;
-
-          case 'insert-image': this.InsertImage(); break;
-
-          case 'donut-chart': insert_annotation('Donut.Chart'); break;
-          case 'column-chart': insert_annotation('Column.Chart'); break;
-          case 'bar-chart': insert_annotation('Bar.Chart'); break;
-          case 'line-chart': insert_annotation('Line.Chart'); break;
-
-          /*
-          case 'increase-font-size':
-          case 'decrease-font-size':
-            if (this.active_selection_style) {
-              switch (this.active_selection_style.font_size_unit) {
-                case 'px':
-                  // increase by 1 point = 4/3 px
-                  updated_style.font_size_value = (this.active_selection_style.font_size_value || 16) + ((event.command === 'increase-font-size') ? (4/3) : (-4/3));
-                  break;
-
-                  break;
-                case 'pt':
-                  // increase by 1 point
-                  updated_style.font_size_value = (this.active_selection_style.font_size_value || 12) + ((event.command === 'increase-font-size') ? 1 : -1);
-                  break;
-
-                case 'em':
-                  // increase by .05 em
-                  updated_style.font_size_value = (this.active_selection_style.font_size_value || 1) + ((event.command === 'increase-font-size') ? .05 : -.05);
-                  break;
-
-                case '%':
-                  // increase by 5 %
-                  updated_style.font_size_value = (this.active_selection_style.font_size_value || 100) + ((event.command === 'increase-font-size') ? 5 : -5);
-                  break;
-  
-              }
-              updated_style.font_size_value = Math.round((updated_style.font_size_value||1) * 100) / 100;
-            }
-            break;
-            */
-
-          case 'increase-decimal':
-          case 'decrease-decimal':
-            if (this.active_selection_style) {
-              const format = NumberFormatCache.Get(this.active_selection_style.number_format || 'General');
-              if (format.date_format) { break; }
-              const clone = new NumberFormat(format.pattern);
-              if (event.command === 'increase-decimal') {
-                clone.IncreaseDecimal();
-              }
-              else {
-                clone.DecreaseDecimal();
-              }
-              updated_style.number_format = clone.toString();
-            }
-            break;
-
-          case 'merge':
-            this.grid.MergeSelection();
-            break
-          case 'unmerge':
-            this.grid.UnmergeSelection();
-            break;
-
-          case 'lock':
-            updated_style = {
-              locked:
-                this.active_selection_style ?
-                  !this.active_selection_style.locked : true,
-            };
-            break;
-
-          case 'wrap':
-            updated_style = {
-              wrap: this.active_selection_style ?
-                !this.active_selection_style.wrap : true,
-            };
-            break;
-
-          case 'align-left':
-            updated_style = { horizontal_align: Style.HorizontalAlign.Left };
-            break;
-          case 'align-center':
-            updated_style = { horizontal_align: Style.HorizontalAlign.Center };
-            break;
-          case 'align-right':
-            updated_style = { horizontal_align: Style.HorizontalAlign.Right };
-            break;
-
-          case 'align-top':
-            updated_style = { vertical_align: Style.VerticalAlign.Top };
-            break;
-          case 'align-middle':
-            updated_style = { vertical_align: Style.VerticalAlign.Middle };
-            break;
-          case 'align-bottom':
-            updated_style = { vertical_align: Style.VerticalAlign.Bottom };
-            break;
-
-          case 'reset':
-            this.Reset();
-            break;
-          case 'import-desktop':
-            this.LoadLocalFile();
-            break;
-          //case 'import-url':
-          //  this.ImportURL();
-          //  break;
-          case 'save-json':
-            this.SaveLocalFile();
-            break;
-          case 'save-csv':
-            this.SaveLocalFile(SaveFileType.csv);
-            break;
-          case 'export-xlsx':
-            this.Export();
-            break;
-
-          case 'recalculate':
-            this.Recalculate();
-            break;
-
-          default:
-            console.info('unhandled', event.command);
-            break;
-        }
-      }
-
-      if (Object.keys(updated_style).length) {
-        this.grid.ApplyStyle(undefined, updated_style, true);
-      }
-
-      this.Focus();
-
-    });
-
-    this.UpdateDocumentStyles(false);
-    this.UpdateSelectionStyle(undefined);
-
-    return this.toolbar;
-  }
 
   /** update selection style for the toolbar */
   protected UpdateSelectionStyle(selection?: GridSelection): void {
@@ -3147,7 +3442,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     if (!this.toolbar) {
       return;
     }
- 
+
     const number_format_map: { [index: string]: number } = {};
     const color_map: { [index: string]: number } = {};
 
@@ -3422,7 +3717,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    *
    * FIXME: redo (ctrl+y or ctrl+shift+z)
    */
-  private HandleKeyDown(event: KeyboardEvent) {
+  protected HandleKeyDown(event: KeyboardEvent): void {
     if (event.ctrlKey && (event.code === 'KeyZ' || event.key === 'z')) {
       event.stopPropagation();
       event.preventDefault();
@@ -3430,248 +3725,16 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
-  protected ResolveSheetName(id: number, quote = false): string|undefined {
+  protected ResolveSheetName(id: number, quote = false): string | undefined {
     for (const sheet of this.grid.model.sheets) {
-      if (sheet.id === id) { 
+      if (sheet.id === id) {
         if (quote && QuotedSheetNameRegex.test(sheet.name)) {
           return `'${sheet.name}'`;
         }
-        return sheet.name; 
+        return sheet.name;
       }
     }
     return undefined;
   }
-
-  // --- new or rewritten API functions ----------------------------------------
-
-  /** scroll to the given address */
-  public ScrollTo(reference: RangeReference, options: ScrollToOptions = {}): void {
-
-    if (typeof reference === 'string') {
-      reference = this.calculator.ResolveAddress(reference);
-    }
-
-    // the grid method has defaults, but it's not obvious what 
-    // they are and they're not visible through interfaces (?)
-
-    // in any case we can set them here explicitly
-
-    options = {
-      x: true,
-      y: true,
-      smooth: false,
-      ...options,
-    };
-
-    this.grid.ScrollTo(
-      IsCellAddress(reference) ? reference : reference.start,
-      options.x, options.y, options.smooth);
-
-  }
-
-  /** 
-   * resolve a string address/range to a range or address object. reference
-   * is a string "A1", "Sheet1!B2:C3". if a sheet name is not passed, the 
-   * current active sheet is used. you can also pass a named range as reference.
-   * 
-   * FIXME: name?
-   */
-  public Resolve(reference: string): ICellAddress | IArea | undefined {
-
-    // is : a legal character in sheet names? even quoted? [A: no]
-
-    // FIXME: we're using the sheet EnsureAddress method, but that should
-    // move either in here or into some sort of helper class
-
-    const result = this.calculator.ResolveAddress(reference);
-
-    if (IsCellAddress(result)) {
-      return result.sheet_id ? result : undefined;
-    }
-
-    return result.start.sheet_id ? result : undefined;
-
-  }
-
-  /**
-   * evaluate an arbitrary expression in the spreadsheet. you should generally
-   * use sheet names when referring to cells, to avoid ambiguity, but relative
-   * cells will always be the active, or front, sheet.
-   */
-  public Evaluate(expression: string): CellValue | CellValue[][] | undefined {
-    return this.calculator.Evaluate(expression);
-  }
-
-  /**
-   * returns the current selection, as a string reference. returns empty
-   * string if there's no selection (you can test falsy on that).
-   */
-  public GetSelection(qualified = true): string {
-
-    const ref = this.grid.GetSelection();
-
-    if (ref.empty) {
-      return '';
-    }
-
-    let range = '';
-
-    if (ref.area.count > 1) {
-      range = Area.CellAddressToLabel(ref.area.start) + ':' +
-        Area.CellAddressToLabel(ref.area.end);
-    }
-    else {
-      range = Area.CellAddressToLabel(ref.area.start);
-    }
-
-    if (!qualified) {
-      return range;
-    }
-
-    // is there a function to resolve sheet? actually, don't we know that
-    // the active selection must be on the active sheet? (...)
-
-    const sheet_id = ref.area.start.sheet_id || this.grid.active_sheet.id;
-    const sheet_name = this.ResolveSheetName(sheet_id, true);
-
-    return sheet_name ? sheet_name + '!' + range : range;
-
-  }
-
-
-  /**
-   * format a number with an arbitrary formatter
-   * FIXME: should this support complex numbers? not sure...
-   */
-   public ParseNumber(text: string): number | Complex | boolean | string | undefined {
-
-    /*
-
-    ...why not?
-
-    const expr = this.parser.Parse(text);
-    if (expr.expression?.type === 'complex') {
-      return {
-        real: expr.expression.real,
-        imaginary: expr.expression.imaginary,
-      };
-    }
-    */
-
-    return ValueParser.TryParse(text).value;
-
-  }
-
-  /**
-   * format a number with an arbitrary formatter
-   *
-   * FIXME: should this support complex numbers? not sure...
-   */
-  public FormatNumber(value: number, format = 'General'): string {
-    return NumberFormatCache.Get(format).Format(value);
-  }  
-  
-  /**
-   * apply style to range. pass `undefined` as range to apply to 
-   * current selection. 
-   * 
-   * @param delta optionally apply delta (only overwrite explicit properties). default TRUE.
-   */
-  public ApplyStyle(range?: RangeReference, style: Style.Properties = {}, delta = true): void {
-    this.grid.ApplyStyle(
-      range ? this.calculator.ResolveArea(range) : undefined, style, delta);
-  }
-
-  /**
-   * clear name
-   */
-   public ClearName(name: string): void {
-
-    // NOTE: AC is handled internally
-    this.grid.SetName(name);
-
-  }
-
-  /**
-   * set name at selection
-   */
-  public DefineName(name: string, reference?: RangeReference): void {
-
-    if (!reference) {
-      const selection = this.GetSelectionReference();
-      if (!selection.empty) {
-        reference = selection.area;
-      }
-    }
-
-    if (!reference) {
-      throw new Error('invalid reference');
-    }
-
-    // NOTE: AC is handled internally
-
-    this.grid.SetName(name, this.calculator.ResolveArea(reference));
-
-  }
-
-  /**
-   * set link in cell. set value to '' to remove link. target can be an 
-   * http/https URL or a spreadsheet reference (as text).
-   */
-  public SetLink(address?: RangeReference, target = ''): void {
-
-    if (!address) {
-      const selection = this.GetSelectionReference();
-      if (!selection.empty) {
-        address = selection.area;
-      }
-    }
-
-    if (typeof address === 'string') {
-      address = this.Resolve(address);
-    }
-
-    if (address) {
-      this.grid.SetLink(IsCellAddress(address) ? address : address.start, target);
-    }
-
-  }
-
-  /** 
-   * 
-   */
-  public GetRange(range?: RangeReference, options: GetRangeOptions = {}): CellValue | CellValue[][] {
-
-    if (!range) {
-      const selection = this.GetSelectionReference();
-      if (!selection.empty) {
-        range = selection.area;
-      }
-    }
-
-    return range ? 
-      this.grid.GetRange(this.calculator.ResolveAddress(range), options.formula, options.formatted) : undefined;
-
-  }
-
-  /**
-   * set data in range
-   */
-  public SetRange(range: RangeReference|undefined, data: CellValue|CellValue[][], options: SetRangeOptions = {}): void {
-
-    if (!range) {
-      const selection = this.GetSelectionReference();
-      if (!selection.empty) {
-        range = selection.area;
-      }
-    }
-
-    if (range) {
-      return this.grid.SetRange(
-        this.calculator.ResolveArea(range),
-        data, options.recycle, options.transpose, options.array);
-    }
-
-  }  
 
 }

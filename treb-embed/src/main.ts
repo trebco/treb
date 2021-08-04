@@ -1,6 +1,5 @@
 
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
-// import { AutoEmbed } from './auto-embed';
 import { CompositeSheet } from './composite-sheet';
 import { AutoEmbedManager } from './auto-embed';
 import { CreateSheetOptions, EmbeddedSpreadsheetOptions } from './options';
@@ -18,9 +17,12 @@ interface TREBNamespace {
   },
 }
 
+// convenience type
+type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
+
 (() => {
 
-  const TREB: TREBNamespace = ((self as any).TREB) || {};
+  const TREB: TREBNamespace = (self as DecoratedGlobal).TREB || {};
 
   // gate on existing: intended to prevent running this multiple times.
 
@@ -28,7 +30,7 @@ interface TREBNamespace {
 
     // find path for worker loaders
 
-    EmbeddedSpreadsheetBase.SniffPath();
+    EmbeddedSpreadsheetBase.BuildPath();
 
     TREB.version = process.env.BUILD_VERSION; // this is fake, it will get replaced
 
@@ -41,6 +43,10 @@ interface TREBNamespace {
       return CompositeSheet.Create(options);
     }
 
+    // does anyone use this anymore? we have methods on the sheet 
+    // instances, although I suppose this is helpful in that it doesn't 
+    // require an instance
+
     if (EmbeddedSpreadsheetBase.enable_formatter) {
       TREB.Format = {
         format: (value: number, format: string) => NumberFormatCache.Get(format).Format(value),
@@ -48,7 +54,7 @@ interface TREBNamespace {
       };
     }
 
-    (self as any).TREB = TREB;
+    (self as DecoratedGlobal).TREB = TREB;
 
     // FIXME: what if it's already loaded? (...)
 
@@ -56,7 +62,7 @@ interface TREBNamespace {
     document.addEventListener('DOMContentLoaded', () => AutoEmbedManager.Run());
     document.addEventListener('readystatechange', () => {
       if (document.readyState === 'complete') {
-        AutoEmbedManager.Run()
+        AutoEmbedManager.Run();
       }
     });
 
