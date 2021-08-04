@@ -91,6 +91,37 @@ export class MDParser {
   }
 
   /**
+   * given some formatted text (output of the `Parse` method), return HTML.
+   */
+  public HTML(formatted: FormattedString[][]): string {
+
+    const lines: string[] = [];
+
+    for (const line of formatted) {
+      const text: string[] = [];
+
+      for (const element of line) {
+        if (element.pre) { text.push('<pre>'); }
+        if (element.emphasis) { text.push('<em>'); }
+        if (element.strong) { text.push('<strong>'); }
+        if (element.strike) { text.push('<strike>'); }
+
+        text.push(element.text);
+
+        if (element.strike) { text.push('</strike>'); }
+        if (element.strong) { text.push('</strong>'); }
+        if (element.emphasis) { text.push('</em>'); }
+        if (element.pre) { text.push('</pre>'); }
+      }
+
+      lines.push(text.join(''));
+    }
+
+    return lines.join('<br/>\n');
+    
+  }
+
+  /**
    * this is a replacement for the Parse() method, if you don't actually
    * want to parse markdown. the aim is to have a unified result format,
    * even if we're not handling md. 
