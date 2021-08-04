@@ -15,6 +15,7 @@ module.exports = {
   ],
 
   rules: {
+    'no-irregular-whitespace': 'skipComments',
     'camelcase': 'off',
     '@typescript-eslint/camelcase': 'off',     
     '@typescript-eslint/explicit-function-return-type': 'off',     
@@ -30,7 +31,9 @@ module.exports = {
       { 'allowSingleLine': true },
     ],
     '@typescript-eslint/interface-name-prefix': 'off',
-
+    '@typescript-eslint/member-ordering': [
+      'error',
+    ],
   }
 
   /*
