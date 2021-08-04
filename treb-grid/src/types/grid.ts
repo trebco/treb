@@ -2328,9 +2328,9 @@ export class Grid {
     return events;
   }
 
-  /**
+  /* *
    * delete columns in current selection
-   */
+   * /
   public DeleteColumns(): void {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
@@ -2349,9 +2349,9 @@ export class Grid {
     }
   }
 
-  /**
+  / * *
    * delete rows in current selection
-   */
+   * /
   public DeleteRows(): void {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
@@ -2368,16 +2368,18 @@ export class Grid {
       });
     }
   }
+  */
 
-  /**
+  /* *
    * insert column at cursor
-   */
+   * /
   public InsertColumn(): void {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
     const before_column = area.entire_row ? 0 : area.start.column;
     this.InsertColumns(before_column, 1);
   }
+  */
 
   /**
    * insert column(s) at some specific point
@@ -2410,15 +2412,16 @@ export class Grid {
     });
   }
 
-  /**
+  /* *
    * insert row at cursor
-   */
+   * /
   public InsertRow(): void {
     if (this.primary_selection.empty) { return; }
     const area = this.primary_selection.area;
     const before_row = area.entire_column ? 0 : area.start.row;
     this.InsertRows(before_row, 1);
   }
+  */
 
   /**
    * insert rows(s) at some specific point

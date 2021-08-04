@@ -893,10 +893,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
           // why are these calling grid methods? should we contain this in some way? (...)
 
-          case 'insert-row': this.grid.InsertRow(); break;
-          case 'insert-column': this.grid.InsertColumn(); break;
-          case 'delete-row': this.grid.DeleteRows(); break;
-          case 'delete-column': this.grid.DeleteColumns(); break;
+          case 'insert-row': this.InsertRow(); break;
+          case 'insert-column': this.InsertColumn(); break;
+          case 'delete-row': this.DeleteRows(); break;
+          case 'delete-column': this.DeleteColumns(); break;
           case 'insert-sheet': this.grid.InsertSheet(); break;
           case 'delete-sheet': this.grid.DeleteSheet(); break;
 
@@ -1431,45 +1431,81 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /**
-   * API function: insert at current cursor
+   * Insert row(s).
+   * 
+   * @param before_row leave undefined to use current selection.
+   * 
+   * @public
    */
-  public InsertRow(): void {
-    /*
-    const selection = this.grid.GetSelection();
-    const area = selection.area;
-    const before_row = area.entire_column ? 0 : area.start.row;
-    */
+  public InsertRow(before_row?: number, count = 1): void {
 
-    this.grid.InsertRow();
-    // this.calculator.ShiftSimulationResults(before_row, 0, 1, 0);
+    if (typeof before_row === 'undefined') {
+      const selection = this.grid.GetSelection();
+      if (selection.empty) { return; }
+      const area = selection.area;
+      before_row = area.entire_column ? 0 : area.start.row;
+    }
+
+    this.grid.InsertRows(before_row, count);
   }
 
   /**
-   * API function: insert at current cursor
+   * Insert column(s).
+   * 
+   * @param before_column leave undefined to use current selection.
+   * 
+   * @public
    */
-  public InsertColumn(): void {
-    /*
-    const selection = this.grid.GetSelection();
-    const area = selection.area;
-    const before_column = area.entire_row ? 0 : area.start.column;
-    */
+  public InsertColumn(before_column?: number, count = 1): void {
 
-    this.grid.InsertColumn();
-    // this.calculator.ShiftSimulationResults(0, before_column, 0, 1);
+    if (typeof before_column === 'undefined') {
+      const selection = this.grid.GetSelection();
+      if (selection.empty) { return; }
+      const area = selection.area;
+      before_column = area.entire_row ? 0 : area.start.column;    
+    }
+
+    this.grid.InsertColumns(before_column, count);
   }
 
   /**
-   * API function: delete selection
+   * Delete row(s).
+   * 
+   * @param start_row leave undefined to use current selection. in this
+   * case the `count` parameter will be ignored and all rows in the selection
+   * will be deleted.
    */
-  public DeleteRows(): void {
-    this.grid.DeleteRows();
+  public DeleteRows(start_row?: number, count = 1): void {
+
+    if (typeof start_row === 'undefined') {
+      const selection = this.grid.GetSelection();
+      if (selection.empty) { return; }
+      const area = selection.area;
+      start_row = area.entire_column ? 0 : area.start.row;
+      count = area.rows;
+    }
+
+    this.grid.InsertRows(start_row, -count);
   }
 
   /**
-   * API function: delete selection
+   * Delete columns(s).
+   * 
+   * @param start_column leave undefined to use current selection. in this
+   * case the `count` parameter will be ignored and all columns in the 
+   * selection will be deleted.
    */
-  public DeleteColumns(): void {
-    this.grid.DeleteColumns();
+  public DeleteColumns(start_column?: number, count = 1): void {
+
+    if (typeof start_column === 'undefined') {
+      const selection = this.grid.GetSelection();
+      if (selection.empty) { return; }
+      const area = selection.area;
+      start_column = area.entire_row ? 0 : area.start.column;    
+      count = area.columns;
+    }
+
+    this.grid.InsertColumns(start_column, -count);    
   }
 
   /**
