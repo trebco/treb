@@ -63,6 +63,9 @@ enum CalculationOptions {
   manual,
 }
 
+/**
+ * @internal
+ */
 export interface ToolbarCtl {
   Show: (show: boolean) => void;
 }
@@ -98,7 +101,11 @@ export interface LoadDocumentOptions {
   flush?: boolean,
   recalculate?: boolean,
   override_sheet?: string,
+
+  /** @internal */
   override_selection?: GridSelection,
+
+  /** @internal */
   source?: LoadSource,
 }
 
@@ -180,10 +187,15 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    * FIXME: we need to nail down the semantics of this. what does it mean if
    * you call reset? 
+   * 
+   * @internal
    */
   public loaded = false;
 
-  public toolbar_ctl?: ToolbarCtl; /* public? */
+  /**
+   * @internal
+   */
+  public toolbar_ctl?: ToolbarCtl;
 
   /** 
    * automatic/manual 
@@ -277,45 +289,51 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * this was added for riskamp.com; it doesn't track modified, really, because
    * it doesn't reflect saves. we need to do that but leave this one as-is for
    * backwards compatibility.
+   * 
+   * @internal
    */
   public get modified(): boolean {
     return this.undo_stack.length !== 1;
   }
 
-  /** name moved to model */
+  /** document name (metadata) */
   public get document_name(): string | undefined {
     return this.grid.model.document_name;
   }
 
-  /** name moved to model */
+  /** document name (metadata) */
   public set document_name(name: string | undefined) {
     this.grid.model.document_name = name;
     this.DocumentChange();
   }
 
-  /** user data moved to model */
+  /** opaque user data (metadata) */
   public get user_data(): unknown {
     return this.grid.model.user_data;
   }
 
-  /** user data moved to model */
+  /** opaque user data (metadata) */
   public set user_data(data: unknown) {
     this.grid.model.user_data = data;
     this.DocumentChange();
   }
 
+  /** current grid scale */
   public set scale(value: number) {
     this.grid.scale = value;
   }
 
+  /** current grid scale */
   public get scale(): number {
     return this.grid.scale;
   }
 
+  /** headless state */
   public get headless(): boolean {
     return this.grid.headless;
   }
 
+  /** headless state */
   public set headless(value: boolean) {
     if (this.grid.headless !== value) {
       this.grid.headless = value;
