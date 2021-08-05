@@ -1,4 +1,3 @@
-import { worker } from "cluster";
 
 export interface FontMetrics2 {
   ascender: number;
@@ -14,7 +13,7 @@ export class FontMetricsFactory {
 
   private cache: Record<string, FontMetrics2> = {};
 
-  public base_size_px = 10;
+  // public base_size_px = 10;
 
   constructor() {
 
@@ -75,23 +74,24 @@ export class FontMetricsFactory {
     this.cache = {};
   }
 
-  public Get(font: string): FontMetrics2 {
-    let metrics = this.cache[font];
+  public Get(font: string, base = 10): FontMetrics2 {
+    const key = font + ';' + base;
+    let metrics = this.cache[key];
     if (metrics) {
       return metrics;
     }
-    metrics = this.Measure(font);
-    this.cache[font] = metrics;
+    metrics = this.Measure(font, base);
+    this.cache[key] = metrics;
     return metrics;
   }
 
-  public Measure(font: string): FontMetrics2 {
+  public Measure(font: string, base: number): FontMetrics2 {
 
     const match = font.match(/([\d.]+)((?:%|em))/);
 
     if (match) {
       const target = match[1] + match[2];
-      let value = Number(match[1]) * this.base_size_px;
+      let value = Number(match[1]) * base;
       if (match[2] === '%') { value /= 100; }
       font = font.replace(target, value + 'px');
     }

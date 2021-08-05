@@ -5,7 +5,8 @@ import { TextPartFlag, ICellAddress, Style, ValueType, Cell, Area, Size, Rectang
 import { Tile } from '../types/tile';
 
 // import { FontMetricsCache } from '../util/font_metrics_cache';
-import { FontMetricsCache, FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
+// import { FontMetricsCache, FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
+import { FontMetrics2, FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
 
 import { FormattedString, MDParser } from 'treb-parser';
 
@@ -137,6 +138,9 @@ export class TileRenderer {
       this.buffer_context.textBaseline = BASELINE; // 'alphabetic';
     }
 
+    // this.UpdateTheme();
+
+    /*
     if (this.theme.grid_cell?.font_size?.value){
       if (this.theme.grid_cell.font_size.unit === 'px') {
         FontMetricsCache.base_size_px = this.theme.grid_cell.font_size.value;
@@ -145,11 +149,15 @@ export class TileRenderer {
         FontMetricsCache.base_size_px = this.theme.grid_cell.font_size.value * 4 / 3;
       }
     }
+    */
 
   }
 
   public UpdateTheme() {
-    
+
+    //  console.info("UT", this.theme.grid_cell?.font_size);
+
+    /*
     if (this.theme.grid_cell?.font_size?.value){
       if (this.theme.grid_cell.font_size.unit === 'px') {
         FontMetricsCache.base_size_px = this.theme.grid_cell.font_size.value;
@@ -160,6 +168,7 @@ export class TileRenderer {
     }
 
     FontMetricsCache.Flush();
+    */
 
   }
 
@@ -245,9 +254,11 @@ export class TileRenderer {
 
     const corner = this.layout.corner_canvas;
     const context = (corner as HTMLCanvasElement).getContext('2d', { alpha: false });
-    if (!context) throw new Error('invalid context');
 
-    // const font_metrics = FontMetricsCache.get(this.theme.headers || {}, this.layout.scale);
+    if (!context) {
+      throw new Error('invalid context');
+    }
+
     const m2 = FontMetricsCache2.Get(Style.Font(this.theme.headers || {}, this.layout.scale));
 
     const scale = this.layout.dpr;
@@ -264,8 +275,7 @@ export class TileRenderer {
     }
 
     context.setTransform(scale, 0, 0, scale, 0, 0);
-    context.fillStyle = // this.theme.headers?.background || '';
-      this.theme.headers?.fill ? ThemeColor(this.theme, this.theme.headers.fill) : '';
+    context.fillStyle = this.theme.headers?.fill ? ThemeColor2(this.theme, this.theme.headers.fill) : '';
 
     context.fillRect(0, 0, x, header_size.y);
     context.fillRect(0, 0, header_size.x, y);
@@ -283,17 +293,11 @@ export class TileRenderer {
     // NOTE: if headers are hidden (which is done by setting width/height to
     // 0 or 1 pixel) we don't want to render them here.
 
-    // copying from RenderHeaders method. FIXME: unify
-
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-
-    // const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
-    // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
     context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
 
-    // context.fillStyle = this.theme.headers?.text_color || '';
-    context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
+    context.fillStyle = ThemeColor2(this.theme, this.theme.headers?.text);
 
     if (this.model.active_sheet.freeze.rows && this.layout.header_offset.x > 1) {
 
@@ -302,106 +306,86 @@ export class TileRenderer {
       context.beginPath();
       context.moveTo(0, 0 - 0.5);
       context.lineTo(header_size.x, 0 - 0.5);
-
-      let row_index = 0;
-      for (; row_index < this.model.active_sheet.freeze.rows; row_index++) {
-        const height = this.layout.RowHeight(row_index);
-
-        //context.fillStyle = this.theme.headers?.text_color || '';
-        context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
-
-        if (height >= m2.block * 1.2) {
-          context.fillText(`${row_index + 1}`,
-            header_size.x / 2, height / 2);
-        }
-        /*
-        if (!selection.empty && selection.area.ContainsRow(row_index)) {
-          context.fillStyle = this.theme.selected_header_highlight_color || '';
-          context.fillRect(0, 0, header_size.x, height);
-          context.fillStyle = this.theme.primary_selection_color || '';
-          context.fillRect(header_size.x - 2.5, -0.5, 2, height + 1);
-          context.moveTo(0, height - 0.5);
-          context.lineTo(header_size.x - 2.5, height - 0.5);
-        }
-        else */
-        {
-          // if (row_index < this.model.sheet.freeze.rows - 1) {
-          context.moveTo(0, height - 0.5);
-          context.lineTo(header_size.x, height - 0.5);
-          // }
-        }
-        context.translate(0, height);
-      }
-
-      context.strokeStyle = this.theme.grid_color || '';
       context.stroke();
 
-      /*
-      context.setLineDash([3, 2]);
-      context.beginPath();
-      context.moveTo(0, -0.5);
-      context.lineTo(header_size.x, -0.5);
-      context.stroke();
-      context.setLineDash([]);
-      */
+      this.RenderRowLabels(context, 0, this.model.active_sheet.freeze.rows - 1, m2.block);
 
     }
 
     if (this.model.active_sheet.freeze.columns && this.layout.header_offset.y > 1) {
 
-      context.strokeStyle = this.theme.grid_color || '';
       context.setTransform(scale, 0, 0, scale, 0, 0);
       context.translate(header_size.x, 0);
+
+      // what is this doing? it's not consistent with the column paint routine... 
+
+      // A: it's different. it's drawing the line at the left of the header,
+      // which otherwise wouldn't render [really?]. we already have the line 
+      // at the bottom rendered above.
+
       context.beginPath();
       context.moveTo(0 - 0.5, 0);
       context.lineTo(0 - 0.5, header_size.y);
-
-      let column_index = 0;
-      for (; column_index < this.model.active_sheet.freeze.columns; column_index++) {
-        const width = this.layout.ColumnWidth(column_index);
-        const text = Area.ColumnToLabel(column_index);
-        const metrics = context.measureText(text);
-        if (width > metrics.width) {
-
-          // context.fillStyle = this.theme.headers?.text_color || '';
-          context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
-
-          context.fillText(text, width / 2, header_size.y / 2);
-        }
-        /*
-        if (!selection.empty && selection.area.ContainsColumn(column_index)) {
-          context.fillStyle = this.theme.selected_header_highlight_color || '';
-          context.fillRect(0, 0, width, header_size.y);
-          context.fillStyle = this.theme.primary_selection_color || '';
-          context.fillRect(-0.5, header_size.y - 2.5, width + 1, 2);
-          context.moveTo(width - 0.5, 0);
-          context.lineTo(width - 0.5, header_size.y - 2.5);
-        }
-        else */
-        {
-          // if (column_index < this.model.sheet.freeze.columns - 1) {
-          context.moveTo(width - 0.5, 0);
-          context.lineTo(width - 0.5, header_size.y);
-          // }
-        }
-        context.translate(width, 0);
-      }
-
       context.stroke();
 
-      /*
-      context.setLineDash([3, 2]);
-      context.beginPath();
-      context.moveTo(-0.5, 0);
-      context.lineTo(-0.5, header_size.y);
-      context.stroke();
-      context.setLineDash([]);
-      */
+      this.RenderColumnLabels(context, 0, this.model.active_sheet.freeze.columns - 1);
 
     }
 
     /////
 
+  }
+
+  /**
+   * unifying because headers and corner both render labels.
+   * 
+   * @param context 
+   * @param column 
+   * @param end 
+   */
+  public RenderColumnLabels(context: CanvasRenderingContext2D, column: number, end: number) {
+
+    const header_y = this.layout.header_offset.y;
+
+    context.fillStyle = ThemeColor2(this.theme, this.theme.headers?.text, 0);
+
+    context.beginPath();
+
+    for (; column <= end; column++) {
+      const width = this.layout.ColumnWidth(column);
+      const text = Area.ColumnToLabel(column);
+      const metrics = context.measureText(text);
+      if (width > metrics.width) {
+        context.fillText(text, width / 2, header_y / 2 + 1);
+      }
+      context.moveTo(width - 0.5, 0);
+      context.lineTo(width - 0.5, header_y);
+      context.translate(width, 0);
+    }
+
+    context.stroke();
+
+  }
+
+  public RenderRowLabels(context: CanvasRenderingContext2D, row: number, end: number, block: number) {
+
+    const header_x = this.layout.header_offset.x;
+
+    context.fillStyle = ThemeColor2(this.theme, this.theme.headers?.text, 0);
+    
+    context.beginPath();
+
+    for (; row <= end; row++) {
+      const height = this.layout.RowHeight(row);
+      if (height >= block * 1.2) {
+        context.fillText(`${row + 1}`, header_x / 2, height / 2 + 1);
+      }
+      context.moveTo(0, height - 0.5);
+      context.lineTo(header_x, height - 0.5);
+      context.translate(0, height);
+    }
+
+    context.stroke();
 
   }
 
@@ -410,71 +394,35 @@ export class TileRenderer {
   public RenderHeaders(tiles: TileRange /*, selection: GridSelection*/, force = false): void {
 
     const scale = this.layout.dpr;
-
     const header_size = this.layout.header_offset;
-
-    // const font_metrics = FontMetricsCache.get(this.theme.headers || {}, this.layout.scale);
     const m2 = FontMetricsCache2.Get(Style.Font(this.theme.headers || {}, this.layout.scale));
 
     for (let column = tiles.start.column; column <= tiles.end.column; column++) {
 
       const tile = this.layout.column_header_tiles[column];
-
-      const context = tile.getContext('2d', { alpha: false });
-      if (!context) continue;
-      context.setTransform(scale, 0, 0, scale, 0, 0);
-
       if (tile.dirty || force) {
 
-        context.fillStyle = // this.theme.headers?.background || '';
-          this.theme.headers?.fill ? ThemeColor(this.theme, this.theme.headers.fill) : '';
-
-        context.fillRect(0, 0, tile.logical_size.width, this.layout.header_offset.y);
+        const context = tile.getContext('2d', { alpha: false });
+        if (!context) continue;
+        context.setTransform(scale, 0, 0, scale, 0, 0);
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-
-        // const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
-        // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
         context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
 
-        // context.fillStyle = this.theme.headers?.text_color || '';
-        context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
+        context.fillStyle = this.theme.headers?.fill ? ThemeColor2(this.theme, this.theme.headers.fill) : '';
+        context.fillRect(0, 0, tile.logical_size.width, this.layout.header_offset.y);
         context.strokeStyle = this.theme.grid_color || '';
+
+        // this draws a line at the bottom of the header...
 
         context.beginPath();
         context.moveTo(0, header_size.y - 0.5);
         context.lineTo(tile.logical_size.width, header_size.y - 0.5);
-
-        let column_index = tile.first_cell.column;
-        for (; column_index <= tile.last_cell.column; column_index++) {
-          const width = this.layout.ColumnWidth(column_index);
-          const text = Area.ColumnToLabel(column_index);
-          const metrics = context.measureText(text);
-          if (width > metrics.width) {
-            // context.fillStyle = this.theme.headers?.text_color || '';
-            context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
-            context.fillText(text, width / 2, header_size.y / 2);
-          }
-          /*
-          if (!selection.empty && selection.area.ContainsColumn(column_index)) {
-            context.fillStyle = this.theme.selected_header_highlight_color || '';
-            context.fillRect(0, 0, width, header_size.y);
-            context.fillStyle = this.theme.primary_selection_color || '';
-            context.fillRect(-0.5, header_size.y - 2.5, width + 1, 2);
-            context.moveTo(width - 0.5, 0);
-            context.lineTo(width - 0.5, header_size.y - 2.5);
-          }
-          else
-          */
-          {
-            context.moveTo(width - 0.5, 0);
-            context.lineTo(width - 0.5, header_size.y);
-          }
-          context.translate(width, 0);
-        }
-
         context.stroke();
+
+        this.RenderColumnLabels(context, tile.first_cell.column, tile.last_cell.column);
+
         tile.dirty = false;
       }
 
@@ -487,58 +435,25 @@ export class TileRenderer {
 
         const context = tile.getContext('2d', { alpha: false });
         if (!context) continue;
-        context.fillStyle = // this.theme.headers?.background || '';
-          this.theme.headers?.fill ? ThemeColor(this.theme, this.theme.headers.fill) : '';
+        context.fillStyle = this.theme.headers?.fill ? ThemeColor2(this.theme, this.theme.headers.fill) : '';
 
         context.setTransform(scale, 0, 0, scale, 0, 0);
-        // context.fillRect(0, 0, tile.logical_size.width, tile.logical_size.height);
-        context.fillRect(0, 0, this.layout.header_offset.x, tile.logical_size.height);
 
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        
-        // const size = this.theme.interface_font_size_value ? this.theme.interface_font_size_value * this.layout.scale : '';
-        // context.font = `${size}${this.theme.interface_font_size_unit} ${this.theme.interface_font_face}`;
         context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
-
-        // context.fillStyle = this.theme.headers?.text_color || '';
-        context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
+  
+        context.fillRect(0, 0, this.layout.header_offset.x, tile.logical_size.height);
 
         context.strokeStyle = this.theme.grid_color || '';
 
         context.beginPath();
         context.moveTo(header_size.x - 0.5, 0);
         context.lineTo(header_size.x - 0.5, tile.logical_size.height);
-
-        let row_index = tile.first_cell.row;
-        for (; row_index <= tile.last_cell.row; row_index++) {
-          const height = this.layout.RowHeight(row_index);
-          //context.fillStyle = this.theme.headers?.text_color || '';
-          context.fillStyle = ThemeColor(this.theme, this.theme.headers?.text);
-
-          if (height >= m2.block * 1.2) {
-            context.fillText(`${row_index + 1}`,
-              header_size.x / 2, height / 2);
-          }
-          /*
-          if (!selection.empty && selection.area.ContainsRow(row_index)) {
-            context.fillStyle = this.theme.selected_header_highlight_color || '';
-            context.fillRect(0, 0, header_size.x, height);
-            context.fillStyle = this.theme.primary_selection_color || '';
-            context.fillRect(header_size.x - 2.5, -0.5, 2, height + 1);
-            context.moveTo(0, height - 0.5);
-            context.lineTo(header_size.x - 2.5, height - 0.5);
-          }
-          else */
-          {
-            context.moveTo(0, height - 0.5);
-            context.lineTo(header_size.x, height - 0.5);
-          }
-          context.translate(0, height);
-        }
-
-        context.strokeStyle = this.theme.grid_color || '';
         context.stroke();
+
+        this.RenderRowLabels(context, tile.first_cell.row, tile.last_cell.row, m2.block);
+
         tile.dirty = false;
       }
     }
@@ -1763,7 +1678,8 @@ export class TileRenderer {
     // and bold variants). this should be OK because we use it for height, mostly.
     // not sure about invisible text (FIXME)
 
-    const m2 = FontMetricsCache2.Get(fonts.base);
+    const m2 = FontMetricsCache2.Get(fonts.base, this.theme.grid_cell?.font_size?.value);
+    // console.info("FB", fonts.base, m2);
 
     // set stroke for underline
 
@@ -1780,7 +1696,7 @@ export class TileRenderer {
 
     let left = this.cell_edge_buffer;
 
-    const line_height = 1.3;
+    const line_height = 1.25;
 
     //const line_count = text_data.single ? 1 : text_data.strings.length;
     const line_count = text_data.strings.length;
