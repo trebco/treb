@@ -893,8 +893,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
           // why are these calling grid methods? should we contain this in some way? (...)
 
-          case 'insert-row': this.InsertRow(); break;
-          case 'insert-column': this.InsertColumn(); break;
+          case 'insert-row': this.InsertRows(); break;
+          case 'insert-column': this.InsertColumns(); break;
           case 'delete-row': this.DeleteRows(); break;
           case 'delete-column': this.DeleteColumns(); break;
           case 'insert-sheet': this.grid.InsertSheet(); break;
@@ -1178,8 +1178,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   }
 
   /**
-   * add a sheet, optionally named. name will be rewritten if there's overlap
-   * (FIXME: should throw instead? ...)
+   * Add a sheet, optionally named. 
    */
   public AddSheet(name?: string): void {
     this.grid.AddSheet(name);
@@ -1322,6 +1321,39 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  /** 
+   * Rename a sheet. 
+   * 
+   * @param index old name or index of sheet. leave undefined to use 
+   * current active sheet.
+   * 
+   * @public
+   */
+  public RenameSheet(index: string|number|undefined, new_name: string) {
+
+    // API v1 OK
+
+    let sheet: Sheet|undefined;
+
+    if (typeof index === 'number') {
+      sheet = this.grid.model.sheets[index];
+      if (!sheet) { return; }
+    }
+    else if (typeof index === 'string') {
+      const uc = index.toUpperCase();
+      for (const test of this.grid.model.sheets) {
+        if (test.name.toUpperCase() === uc) {
+          sheet = test;
+          break;
+        }
+      }
+      if (!sheet) { return; }
+    }
+
+    this.grid.RenameSheet(sheet, new_name);
+
+  }
+
   /**
    * Delete a sheet. 
    * 
@@ -1437,7 +1469,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    * @public
    */
-  public InsertRow(before_row?: number, count = 1): void {
+  public InsertRows(before_row?: number, count = 1): void {
 
     if (typeof before_row === 'undefined') {
       const selection = this.grid.GetSelection();
@@ -1456,7 +1488,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * 
    * @public
    */
-  public InsertColumn(before_column?: number, count = 1): void {
+  public InsertColumns(before_column?: number, count = 1): void {
 
     if (typeof before_column === 'undefined') {
       const selection = this.grid.GetSelection();
@@ -2999,7 +3031,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
       // eslint-disable-next-line prefer-const
       let finalize: (file?: File) => void;
-      let timeout: number;
+      let timeout: NodeJS.Timeout|undefined;
 
       // if you get a focus event, allow some reasonable time for the 
       // corresponding change event. realistically this should be immediate,
@@ -3016,7 +3048,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
       const change_handler = () => {
         if (timeout) {
           clearTimeout(timeout);
-          timeout = 0; // necessary?
+          timeout = undefined; // necessary?
         }
         finalize(file_chooser.files ? file_chooser.files[0] : undefined);
       }
