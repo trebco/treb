@@ -16,6 +16,7 @@ import * as fs from 'fs';
 
 let base: string;
 let output_file: string;
+const cats: string[] = [];
 
 for (let i = 0; i < process.argv.length; i++) {
   if (process.argv[i] === '--base') {
@@ -23,6 +24,9 @@ for (let i = 0; i < process.argv.length; i++) {
   }
   else if (process.argv[i] === '--output') {
     output_file = process.argv[++i];
+  }
+  else if (process.argv[i] === '--cat') {
+    cats.push(process.argv[++i]);
   }
 }
 
@@ -208,6 +212,11 @@ const Run = async (): Promise<void> => {
     // console.info('');
 
   });
+
+  for (const cat of cats) {
+    const text = await fs.promises.readFile(cat, {encoding: 'utf8'});
+    output.unshift(text + '\n');
+  }
 
   if (output_file) {
     console.info('writing to', output_file)
