@@ -1,4 +1,6 @@
 
+/*! API v12.0. Copyright 2018-2021 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+
 /** ambient global object */
 declare const TREB: {
   CreateSpreadsheet: (options: EmbeddedSpreadsheetOptions) => EmbeddedSpreadsheet;
@@ -30,19 +32,8 @@ export interface Rectangle {
 
 export interface SerializeOptions {
 
-  /** include the rendered/calculated value in export, a la excel */
+  /** include rendered/calculated values in export */
   rendered_values?: boolean;
-
-  /** for simulation */
-  preserve_type?: boolean;
-
-  expand_arrays?: boolean;
-
-  /** translate colors to excel-friendly values */
-  export_colors?: boolean;
-
-  /** export cells that have no value, but have a border or background color */
-  decorated_cells?: boolean;
 
   /** prune unused rows/columns */
   shrink?: boolean;
@@ -171,9 +162,6 @@ export declare interface EmbeddedSpreadsheetOptions {
 
   /** popout icon */
   popout?: boolean;
-
-  /** the old "fork and edit" button */
-  fork?: boolean;
 
   /** fetch network document (URI) */
   network_document?: string;

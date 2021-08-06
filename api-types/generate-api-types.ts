@@ -14,6 +14,7 @@
 import * as ts from 'typescript';
 import * as fs from 'fs';
 
+let pkg: string;
 let base: string;
 let output_file: string;
 const cats: string[] = [];
@@ -28,11 +29,28 @@ for (let i = 0; i < process.argv.length; i++) {
   else if (process.argv[i] === '--cat') {
     cats.push(process.argv[++i]);
   }
+  else if (process.argv[i] === '--package') {
+    pkg = process.argv[++i];
+  }
 }
 
 const Banner = async () => {
 
-  // TODO
+  const text = await fs.promises.readFile(pkg, {encoding: 'utf8'});
+  const obj = JSON.parse(text);
+
+  // version is semantic so major.minor.patch. for the API we want
+  // to drop patch.
+
+  const version = obj.version.replace(/\.\d+$/, '');
+
+  console.info("API version", version);
+
+  // TODO: generate banner, return it
+
+  // from compile2:
+  const banner = `/*! API v${version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */`;
+  return banner;
 
 }
 
@@ -222,6 +240,11 @@ const Run = async (): Promise<void> => {
   for (const cat of cats) {
     const text = await fs.promises.readFile(cat, {encoding: 'utf8'});
     output.unshift(text + '\n');
+  }
+
+  if (pkg) {
+    const banner = await Banner();
+    output.unshift('\n' + banner);
   }
 
   if (output_file) {

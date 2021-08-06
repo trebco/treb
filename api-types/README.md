@@ -16,6 +16,7 @@ Arguments to `generate-api-types`:
  * base - the source declaration file
  * cat - files that will be concatenated with the generated output (multiple)
  * output - output file (omit to output to shell)
+ * package - path to package.json (for TREB). we use this for version info
 
 ### Example
 
@@ -23,6 +24,7 @@ Arguments to `generate-api-types`:
 npx ts-node-dev generate-api-types.ts \
     --base ../declaration/treb-embed/src/embedded-spreadsheet-base.d.ts \
     --cat manual-types.d.ts \
+    --package ../package.json \
     --output generated.d.ts
 ```
 
