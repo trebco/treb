@@ -30,6 +30,12 @@ for (let i = 0; i < process.argv.length; i++) {
   }
 }
 
+const Banner = async () => {
+
+  // TODO
+
+}
+
 const GetDocTags = (node: ts.Node): string[] => {
   const tags = ts.getAllJSDocTags(node, (tag: ts.JSDocTag): tag is ts.JSDocTag => true);
   return tags.map(tag => {

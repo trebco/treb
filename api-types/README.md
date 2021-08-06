@@ -28,6 +28,7 @@ npx ts-node-dev generate-api-types.ts \
 
 ### Manual Editing
 
+- rename `EmbeddedSpreadsheetBase` -> `EmbeddedSpreadsheet`
 - drop the `TREBDocument` type, for now
 - drop the event argument to `Recalculate`
 - drop the `LoadSource` argument to (?)
