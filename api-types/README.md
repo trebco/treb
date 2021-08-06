@@ -18,14 +18,14 @@ Arguments to `generate-api-types`:
  * output - output file (omit to output to shell)
  * package - path to package.json (for TREB). we use this for version info
 
+---
+
+UPDATE: Switching to config file. Use config file.
+
 ### Example
 
 ```bash
-npx ts-node-dev generate-api-types.ts \
-    --base ../declaration/treb-embed/src/embedded-spreadsheet-base.d.ts \
-    --cat manual-types.d.ts \
-    --package ../package.json \
-    --output generated.d.ts
+npx ts-node-dev generate-api-types.ts 
 ```
 
 ### Manual Editing

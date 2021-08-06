@@ -1561,7 +1561,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * Merge cells in range.
    * 
-   * @range target range. leave undefined to use current selection.
+   * @param range - target range. leave undefined to use current selection.
    * 
    * @public
    */
@@ -1575,7 +1575,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
   /**
    * Unmerge cells in range.
    * 
-   * @range target range. leave undefined to use current selection.
+   * @param range - target range. leave undefined to use current selection.
    * 
    * @public
    */

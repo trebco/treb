@@ -13,11 +13,14 @@
 
 import * as ts from 'typescript';
 import * as fs from 'fs';
+import { config } from './api-config';
 
-let pkg: string;
-let base: string;
-let output_file: string;
-const cats: string[] = [];
+console.info("CFG", config);
+
+let pkg: string = config.package;
+let base: string = config.base;
+let output_file: string = config.output;
+const cats: string[] = config.cat;
 
 for (let i = 0; i < process.argv.length; i++) {
   if (process.argv[i] === '--base') {
@@ -73,6 +76,7 @@ const InterfaceMembers = (node: ts.InterfaceDeclaration) => {
 
 const ClassMembers = (node: ts.ClassDeclaration) => {
 
+  /*
   return node.members.filter(member => {
 
     const modifiers = (member.modifiers || []).map(member => {
@@ -98,6 +102,8 @@ const ClassMembers = (node: ts.ClassDeclaration) => {
     return true;
 
   });
+  */
+ return node.members;
 
 };
 
@@ -136,12 +142,175 @@ const Scrub = (text: string) => {
 
 }
 
+const referened_type_list: Record<string, number> = {};
+const declared_type_list: Record<string, number> = {};
+
+function transformer<T extends ts.Node>(): ts.TransformerFactory<T> {
+
+  let verbose = false;
+
+  return context => {
+    const visit: ts.Visitor = node => {
+
+      const modifiers = (node.modifiers || []).map(member => {
+        return ts.SyntaxKind[member.kind];
+      });
+
+      // drop private, protected, static
+
+      if (modifiers.includes('PrivateKeyword')
+          || modifiers.includes('ProtectedKeyword')
+          || modifiers.includes('StaticKeyword')) {
+        return undefined;
+      }
+
+      // drop @internal
+
+      const tags = GetDocTags(node);
+      if (tags.includes('internal')) {
+        return undefined;
+      }
+
+      // drop enum/class/interface that is not exported
+      // FIXME: type?
+
+      if (ts.isInterfaceDeclaration(node) || ts.isEnumDeclaration(node) || ts.isClassDeclaration(node)) {
+        if (!modifiers.includes('ExportKeyword')) {
+          return undefined;
+        }        
+      }
+
+      if (ts.isTypeReferenceNode(node)) {
+        if (ts.isIdentifier(node.typeName)) {
+          const key = node.typeName.escapedText.toString();
+          referened_type_list[key] = (referened_type_list[key] || 0) + 1;
+        }
+      }
+
+      if (ts.isClassDeclaration(node)) {
+        if (ts.isIdentifier(node.name)) {
+          const match = config.rename_classes[node.name.escapedText.toString()];
+          if (match) {
+            const tmp = ts.factory.createClassDeclaration(
+              node.decorators,
+              node.modifiers,
+              ts.factory.createIdentifier(match),
+              node.typeParameters,
+              node.heritageClauses,
+              node.members,
+            );
+            return ts.visitEachChild(tmp, child => visit(child), context);
+          }
+        }
+      }
+
+      if (ts.isMethodDeclaration(node)) {
+
+        const tmp = ts.factory.updateMethodDeclaration(node,
+          node.decorators, 
+          node.modifiers,
+          node.asteriskToken,
+          node.name,
+          node.questionToken,
+          node.typeParameters,
+          node.parameters.filter((test, index) => {
+            if (ts.isTypeReferenceNode(test.type)) {
+              if (ts.isIdentifier(test.type.typeName)) {
+                const name = test.type.typeName.escapedText.toString();
+                if (config.drop_types.includes(name)) {
+
+                  // we want to drop it. it must be optional and
+                  // at the end... (of course that won't work if 
+                  // there are 2, but we don't have that problem atm).
+                  
+                  // you could solve that by reversing the array, then
+                  // you would only ever drop from the end. remember
+                  // to reverse it again before returning.
+
+                  if (test.questionToken && index === node.parameters.length - 1) {
+                    return false;                    
+                  }
+
+                }
+              }
+            }
+            return true;
+          }).map(test => {
+            if (ts.isTypeReferenceNode(test.type)) {
+              if (ts.isIdentifier(test.type.typeName)) {
+                const name = test.type.typeName.escapedText.toString();
+                if (config.convert_to_any.includes(name)) {
+
+                  // convert this type to any
+
+                  return ts.factory.createParameterDeclaration(
+                    test.decorators, 
+                    test.modifiers, 
+                    test.dotDotDotToken,
+                    test.name, 
+                    test.questionToken,
+                    ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
+                    // test.type, 
+                    test.initializer
+                  );
+
+                }
+              }
+            }
+            return test;
+          }),
+          node.type,
+          node.body);
+
+        return ts.visitEachChild(tmp, child => visit(child), context);
+
+        /*
+        verbose = true;
+        if (ts.isIdentifier(node.name)) {
+          console.info('func:', node.name.escapedText);
+        }
+        else {
+          console.info('func: (unnamed)');
+        }
+        const result = ts.visitEachChild(node, child => visit(child), context);
+        verbose = false;
+        console.info('');
+        return result;
+        */
+      }
+
+      return ts.visitEachChild(node, child => visit(child), context);
+
+      // return ts.visitEachChild(node, child => visit(child), context);
+      
+      /*
+      if (ts.isNumericLiteral(node)) {
+        return ts.createStringLiteral(node.text);
+      }
+      */
+    };
+
+    return node => ts.visitNode(node, visit);
+  };
+}
+
 const Run = async (): Promise<void> => {
 
   const output: string[] = [];
 
-  const text = await fs.promises.readFile(base, {encoding: 'utf8'});
+  let text = await fs.promises.readFile(base, {encoding: 'utf8'});
+  const original = ts.createSourceFile(base, text, ts.ScriptTarget.Latest, true);
+  const result = ts.transform(original, [transformer()]);
+
+  console.info(referened_type_list);
+
+  // const node = result.transformed[0];
+
+  const printer = ts.createPrinter();
+  text = printer.printFile(result.transformed[0]); // FIXME: options
+
   const node = ts.createSourceFile(base, text, ts.ScriptTarget.Latest, true);
+
   // console.info(node);
 
   // simple: dump node
@@ -155,16 +324,18 @@ const Run = async (): Promise<void> => {
 
     // only look at exported class/interface/enum/type
 
-    if (!modifiers.includes('ExportKeyword')) {
-      return;
-    }
+    //if (!modifiers.includes('ExportKeyword')) {
+    //  return;
+    //}
 
     // check for @internal
 
+    /*
     const tags = GetDocTags(child);
     if (tags.includes('internal')) {
       return;
     }
+    */
 
     switch (child.kind) {
       case ts.SyntaxKind.InterfaceDeclaration:
@@ -207,9 +378,15 @@ const Run = async (): Promise<void> => {
 
           for (const member of ClassMembers(child as ts.ClassDeclaration)) {
 
-            if (ts.isPropertyDeclaration(member) 
-                || ts.isConstructorDeclaration(member)
-                || ts.isMethodDeclaration(member)) {
+            if (ts.isMethodDeclaration(member)) {
+
+              let text = NodeText(member);
+
+              output.push(text + '\n');
+
+            }
+            else if (ts.isPropertyDeclaration(member) 
+                || ts.isConstructorDeclaration(member)) {
               output.push(NodeText(member) + '\n');
               // console.info('');
             }

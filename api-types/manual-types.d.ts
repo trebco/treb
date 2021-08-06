@@ -1,7 +1,12 @@
 
-/** ambient global object */
+/** 
+ * Ambient global object. Use the TREB global to create 
+ * spreadsheets in documents.
+ */
 declare const TREB: {
   CreateSpreadsheet: (options: EmbeddedSpreadsheetOptions) => EmbeddedSpreadsheet;
+
+  /** TREB version */
   version: string;
 } 
 
