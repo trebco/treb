@@ -6,6 +6,16 @@ dist2
 .vscode
 coverage
 
+temp
+etc
+
+#
+# we might want to check this in once it stabilizes, 
+# although since it's generated it's not strictly
+# necessary
+#
+doc 
+
 treb-export/test
 treb-parser/test
 
