@@ -6,12 +6,12 @@ export const config = {
   base: '../declaration/treb-embed/src/embedded-spreadsheet-base.d.ts',
 
   cat: [
-    'manual-types.d.ts',
+    // 'manual-types.d.ts',
   ],
 
   /** omit these types if they show up in parameters or interfaces */
   drop_types: [
-    'LoadSource',
+    // 'LoadSource',
     'GridEvent',
   ],
 

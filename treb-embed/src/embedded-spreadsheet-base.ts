@@ -11,7 +11,7 @@ import { Calculator } from 'treb-calculator';
 
 import {
   IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue,
-  IsFlatData, IsFlatDataArray, Rectangle, Theme, IsComplex, ComplexToString, Complex, ExtendedUnion
+  IsFlatData, IsFlatDataArray, Rectangle, Theme, IsComplex, ComplexToString, Complex, ExtendedUnion, IRectangle
 } from 'treb-base-types';
 
 import { EventSource, Yield } from 'treb-utils';
@@ -1219,9 +1219,9 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @param type Annotation type. Defaults to `treb-chart`.
    * @param rect Coordinates, or a range reference for layout.
    */
-  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: Partial<Rectangle>|RangeReference): void {
+  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: IRectangle|RangeReference): void {
 
-    let target: Partial<Rectangle> | Partial<Area> | undefined;
+    let target: IRectangle | Partial<Area> | undefined;
 
     if (rect) {
       target = Rectangle.IsRectangle(rect) ? rect : this.calculator.ResolveArea(rect);

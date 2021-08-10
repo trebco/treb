@@ -37,11 +37,13 @@ export namespace Style {
     none?: boolean;
   }
 
+  /** @internal */
   export interface CompositeBorderEdge {
     width: number;
     color: Color;
   }
 
+  /** @internal */
   export interface CompositeBorder {
     top: CompositeBorderEdge,
     left: CompositeBorderEdge,
@@ -119,14 +121,16 @@ export namespace Style {
 
   }
 
+  /** @internal */
   export type PropertyKeys = keyof Style.Properties;
-
 
   /**
    * note that there are no default colors; those should be set
    * in grid when style is applied. that way the default colors for
    * border, text and background colors will be theme-dependent and
    * can change.
+   * 
+   * @internal
    */
   export const DefaultProperties: Properties = {
     horizontal_align: HorizontalAlign.None,
@@ -167,6 +171,8 @@ export namespace Style {
   /**
    * this is a utility function for callers that use borders, to
    * reduce testing and facilitate reusable methods
+   * 
+   * @internal
    */
   export const CompositeBorders = (style: Properties): CompositeBorder => {
     return {
@@ -203,20 +209,25 @@ export namespace Style {
    * merge. returns a new object, does not update dest in place.
    * NOTE: if it does not update dest in place, then what would be
    * the use case for a non-delta merge? (...)
+   * 
+   * @internal
    */
   export const Merge = (dest: Properties, src: Properties, delta = true): Properties => {
     const properties: Properties = delta ? {...dest, ...src} : {...src};
     return JSON.parse(JSON.stringify(properties));
   };
 
+  /** @internal */
   export const Composite = (list: Properties[]): Properties => {
     return JSON.parse(JSON.stringify(list.reduce((composite, item) => ({...composite, ...item}), {})));
   };
 
+  /** @internal */
   export const Empty = (style: Properties): boolean => {
     return JSON.stringify(style) === empty_json;
   };
 
+  /** @internal */
   export const ValidColor = (color?: Color): boolean => {
     return !!(color && (!color.none) && (color.text || color.theme || color.theme === 0));
   };
@@ -273,6 +284,7 @@ export namespace Style {
   };
   */
 
+  /** @internal */
   export const ParseFontSize = (text = '', default_unit = 'em'): Properties => {
     const match = text.match(/(-*[\d.]+)\s*(\S*)/);
 
@@ -305,6 +317,8 @@ export namespace Style {
    * 
    * using relative sizes helps ensure that it looks similar, if not 
    * identical, on different platforms.
+   * 
+   * @internal
    */
   export const RelativeFontSize = (properties: Properties, base: Properties): number => {
 
@@ -358,6 +372,7 @@ export namespace Style {
     
   };
 
+  /** @internal */
   export const FontSize = (properties: Properties, prefer_points = true): string => {
 
     let value = properties.font_size?.value;
@@ -386,6 +401,8 @@ export namespace Style {
 
   /**
    * returns a string representation suitable for canvas (or style)
+   * 
+   * @internal
    */
   export const Font = (properties: Properties, scale = 1) => {
 

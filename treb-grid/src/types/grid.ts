@@ -19,6 +19,7 @@ import {
   DefaultTheme,
   ComplexToString,
   Complex,
+  IRectangle,
 } from 'treb-base-types';
 
 import {
@@ -487,7 +488,7 @@ export class Grid {
    * @param target new parameter allows setting annotation as rect or as
    * cell range
    */
-  public CreateAnnotation(properties: unknown = {}, add_to_sheet = true, offset = false, target?: Partial<Area>|Partial<Rectangle>): Annotation {
+  public CreateAnnotation(properties: unknown = {}, add_to_sheet = true, offset = false, target?: Partial<Area>|IRectangle): Annotation {
     const annotation = new Annotation(properties as Partial<Annotation>);
 
     if (offset) {

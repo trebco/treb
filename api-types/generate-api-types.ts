@@ -13,9 +13,10 @@
 
 import * as ts from 'typescript';
 import * as fs from 'fs';
+import * as path from 'path';
 import { config } from './api-config';
 
-console.info("CFG", config);
+// console.info("CFG", config);
 
 let pkg: string = config.package;
 let base: string = config.base;
@@ -144,6 +145,146 @@ const Scrub = (text: string) => {
 
 const referened_type_list: Record<string, number> = {};
 const declared_type_list: Record<string, number> = {};
+const import_target_list: Record<string, string> = {};
+
+const AddReferencedType = (name: string) => {
+
+  // check ambient
+
+  if (!!(global as any)[name]) {
+    // console.info(' (ambient)');
+  }
+  else {
+    referened_type_list[name] = (referened_type_list[name] || 0) + 1;
+  }
+}
+
+function CollectDependencyTransformer<T extends ts.Node>(
+      target: string, 
+      types: string[],
+      followup: Record<string, string[]>,
+      found_types: Record<string, string>,
+      ): ts.TransformerFactory<T> {
+
+  return context => {
+
+    const visit: ts.Visitor = node => {
+
+      const modifiers = (node.modifiers || []).map(member => {
+        return ts.SyntaxKind[member.kind];
+      });
+
+      const exported = modifiers.includes('ExportKeyword');
+
+      /*
+      if (/style/i.test(target)) {
+        console.info("N", ts.SyntaxKind[node.kind]);
+      }
+      */
+
+      if (ts.isModuleDeclaration(node)) {
+        if (exported) {
+          if (ts.isIdentifier(node.name)) {
+            const name = node.name.escapedText.toString();
+            if (types.includes(name)) {
+              found_types[name] = node.getFullText();
+              types = types.filter(test => test !== name);
+            }
+          }
+        }
+
+        // FIXME: we need to scrub inside the module, and rewrite (print)
+
+        return undefined;
+      }
+
+      if ((ts.isInterfaceDeclaration(node) 
+           || ts.isTypeAliasDeclaration(node)
+           || ts.isEnumDeclaration(node))) {
+        if (exported) {
+          const name = node.name.escapedText.toString();
+          if (types.includes(name)) {
+            found_types[name] = node.getFullText();
+            types = types.filter(test => test !== name);
+          }        
+        }
+        return undefined; // short-circuit
+      }
+
+      if (ts.isExportDeclaration(node)) {
+
+        if (node.moduleSpecifier) {
+          let target = node.moduleSpecifier.getText();
+          if (/^['"][\s\S]*?['"]$/.test(target)) {
+            target = target.substr(1, target.length - 2);
+          }
+
+          if (node.exportClause && ts.isNamedExports(node.exportClause)) {
+            for (const element of node.exportClause.elements) {
+              const name = element.name.escapedText.toString();
+              if (types.includes(name)) {
+                if (!followup[target]) { followup[target] = []; }
+                followup[target].push(element.name.escapedText.toString());
+              }
+            }
+          }
+          else {
+            // this is 'export * from SRC' type
+            if (!followup[target]) { followup[target] = []; }
+            followup[target].push(...types);
+          }
+        }
+      }
+
+      return ts.visitEachChild(node, child => visit(child), context);
+    }
+    return node => ts.visitNode(node, visit);
+  }
+};
+
+/**
+ * look for the named types in the target file (we may have to do some
+ * digging), collect them along with any dependencies. this may recurse
+ * so it's not necessarily a problem if we don't find them all... ?
+ * 
+ * @param types 
+ * @param target 
+ */
+ const CollectTypes = async (target: string, types: string[]): Promise<Record<string, string>> => {
+
+  // console.info("\nCT", target);
+  const results: Record<string, string> = {};
+
+  const text = await fs.promises.readFile(target, {encoding: 'utf8'});
+  const node = ts.createSourceFile(base, text, ts.ScriptTarget.Latest, true);
+
+  const followup: Record <string, string[]> = {};
+  const found_types: Record <string, string> = {};
+
+  const result = ts.transform(node, [CollectDependencyTransformer(target, types, followup, found_types)]);
+  
+  for (const key of Object.keys(found_types)) {
+    results[key] = found_types[key];
+  }
+
+  for (const key of Object.keys(followup)) {
+    const list = followup[key];
+    // console.info("FU", key, list.join(', '));
+    
+    let fu = path.resolve(path.dirname(target), key);
+    fu = path.dirname(fu) + path.sep + path.basename(key) + '.d.ts';
+    // console.info("?", fu);
+    const subset = await CollectTypes(fu, list);
+    for (const key of Object.keys(subset)) {
+      results[key] = subset[key];
+    }
+    // console.info('\n');
+  }
+
+  return results;
+
+};
+
 
 function transformer<T extends ts.Node>(): ts.TransformerFactory<T> {
 
@@ -151,6 +292,31 @@ function transformer<T extends ts.Node>(): ts.TransformerFactory<T> {
 
   return context => {
     const visit: ts.Visitor = node => {
+
+      if (ts.isImportDeclaration(node)) {
+        
+        let target = node.moduleSpecifier.getText();
+        if (/^['"][\s\S]*?['"]$/.test(target)) {
+          target = target.substr(1, target.length - 2);
+        }
+
+        // const list: string[] = [];
+
+        if (node.importClause && ts.isImportClause(node.importClause)) {
+          if (ts.isNamedImports(node.importClause.namedBindings)) {
+            for (const element of node.importClause.namedBindings.elements) {
+              // list.push(element.name.escapedText.toString());
+              const name = element.name.escapedText.toString();
+              import_target_list[name] = target;
+            }
+          }
+        }
+
+        // console.info("L", list.join(', '));
+        // console.info("MS", node.moduleSpecifier.getText());
+        // console.info(node.getText(node.getSourceFile()), '\n');
+        // throw new Error('1');
+      }
 
       const modifiers = (node.modifiers || []).map(member => {
         return ts.SyntaxKind[member.kind];
@@ -174,22 +340,68 @@ function transformer<T extends ts.Node>(): ts.TransformerFactory<T> {
       // drop enum/class/interface that is not exported
       // FIXME: type?
 
-      if (ts.isInterfaceDeclaration(node) || ts.isEnumDeclaration(node) || ts.isClassDeclaration(node)) {
-        if (!modifiers.includes('ExportKeyword')) {
-          return undefined;
-        }        
+      if (verbose) {
+        console.info("T", ts.SyntaxKind[node.kind]);
       }
 
-      if (ts.isTypeReferenceNode(node)) {
-        if (ts.isIdentifier(node.typeName)) {
-          const key = node.typeName.escapedText.toString();
-          referened_type_list[key] = (referened_type_list[key] || 0) + 1;
+      if (ts.isInterfaceDeclaration(node) 
+          || ts.isEnumDeclaration(node) 
+          || ts.isClassDeclaration(node)
+          || ts.isTypeAliasDeclaration(node)) {
+
+        if (!modifiers.includes('ExportKeyword')) {
+          return undefined;
+        }
+        if (ts.isIdentifier(node.name)) {
+          const name = node.name.escapedText.toString();
+          declared_type_list[name] = (declared_type_list[name] || 0) + 1;
         }
       }
 
+      if (ts.isTypeReferenceNode(node)) {
+        
+        if (ts.isIdentifier(node.typeName)) {
+          const key = node.typeName.escapedText.toString();
+          AddReferencedType(key);
+        }
+        else if (ts.isQualifiedName(node.typeName)) {
+          if (ts.isIdentifier(node.typeName.left)) {
+            AddReferencedType(node.typeName.left.escapedText.toString());
+          }
+          else {
+            console.info(" * [missing branch, 1]");
+          }
+        }
+        else {
+          console.info(" * [missing branch, 2]");
+        }
+      }
+
+      
+      if (ts.isExpressionWithTypeArguments(node)) {
+
+        // console.info("EWTA", node.getText());
+        // console.info("NE type", ts.SyntaxKind[node.expression.kind]);
+
+        if (ts.isIdentifier(node.expression)) {
+          const key = node.expression.escapedText.toString();
+          AddReferencedType(key);
+        }
+
+        /*
+        // console.info(node, '\n');
+        verbose = true;
+        const result = ts.visitEachChild(node, child => visit(child), context);
+        verbose = false;
+        return result;
+        */
+      }
+      
+
       if (ts.isClassDeclaration(node)) {
         if (ts.isIdentifier(node.name)) {
-          const match = config.rename_classes[node.name.escapedText.toString()];
+          const name = node.name.escapedText.toString();
+          const match = config.rename_classes[name];
           if (match) {
             const tmp = ts.factory.createClassDeclaration(
               node.decorators,
@@ -199,9 +411,24 @@ function transformer<T extends ts.Node>(): ts.TransformerFactory<T> {
               node.heritageClauses,
               node.members,
             );
-            return ts.visitEachChild(tmp, child => visit(child), context);
+            declared_type_list[match] = (declared_type_list[match] || 0) + 1;
+            // verbose = true;
+            const result = ts.visitEachChild(tmp, child => visit(child), context);
+            // verbose = false;
+            return result;
+          }
+          else {
+            declared_type_list[name] = (declared_type_list[name] || 0) + 1;
           }
         }
+
+        /*
+        verbose = true;
+        const result = ts.visitEachChild(node, child => visit(child), context);
+        verbose = false;
+        return result;
+        */
+
       }
 
       if (ts.isMethodDeclaration(node)) {
@@ -302,8 +529,6 @@ const Run = async (): Promise<void> => {
   const original = ts.createSourceFile(base, text, ts.ScriptTarget.Latest, true);
   const result = ts.transform(original, [transformer()]);
 
-  console.info(referened_type_list);
-
   // const node = result.transformed[0];
 
   const printer = ts.createPrinter();
@@ -362,6 +587,7 @@ const Run = async (): Promise<void> => {
 
         if (ts.isClassDeclaration(child)) {
 
+
           let name = '';
 
           if (child.name && ts.isIdentifier(child.name)) {
@@ -370,11 +596,19 @@ const Run = async (): Promise<void> => {
           else {
             throw new Error('invalid class identifier');
           }
- 
-          // jsdoc for class? (...)
 
-          // this is a hack
-          output.push(`export declare class ${name} {\n`);
+          // is this always going to work? (...)
+          // console.info(child.getText().split(/\n/)[0]);
+          const def = child.getText().match(/^([\s\S]*?{)/);
+          if (def) {
+            // console.info(def[1]);
+            output.push(def[1] + '\n');
+          }
+          else {
+            // this is a hack
+            
+            output.push(`export declare class ${name} {\n`);
+          }
 
           for (const member of ClassMembers(child as ts.ClassDeclaration)) {
 
@@ -403,6 +637,11 @@ const Run = async (): Promise<void> => {
         }
 
         break;
+      
+      case ts.SyntaxKind.ImportDeclaration:
+      case ts.SyntaxKind.ExportDeclaration:
+      case ts.SyntaxKind.EndOfFileToken:
+        break;
 
       default:
         console.info('??', ts.SyntaxKind[child.kind]);
@@ -410,9 +649,100 @@ const Run = async (): Promise<void> => {
 
     }
 
-    // console.info('');
-
   });
+
+  // console.info('');
+
+  const DumpList = (list: Record<string, number>) => {
+    const keys = Object.keys(list);
+    keys.sort();
+    for (const key of keys) { console.info('\t' + key); }
+  }
+
+  /*
+  console.info('Referenced');
+  DumpList(referened_type_list);
+
+  console.info('Declared');
+  DumpList(declared_type_list);
+  */
+
+  // remove any referenced + declared
+
+  const declared_keys = Object.keys(declared_type_list);
+  const remaining: string[] = [];
+
+  for (const key of Object.keys(referened_type_list)) {
+    if (!declared_keys.includes(key)){
+      remaining.push(key);
+    }
+  }
+
+  // console.info("BALANCE");
+  // for (const key of remaining) { console.info('\t' + key + ': ' + (import_target_list[key] || '(unknown)')); }
+
+  // group by target...
+
+  const grouped: Record<string, string[]> = {};
+  for (const key of remaining) {
+    const target = import_target_list[key];
+    if (target) {
+      if (!grouped[target]) { grouped[target] = []; }
+      grouped[target].push(key);
+    }
+  }
+
+  // console.info(grouped);
+
+  const composite: Record<string, string> = {};
+
+  for (const key of Object.keys(grouped)) {
+    // console.info("K", key);
+    if (key.startsWith('.')) {
+      let target = path.resolve(path.dirname(base), key);
+      target = path.dirname(target) + path.sep + path.basename(key) + '.d.ts';
+      const collected = await CollectTypes(target, grouped[key]);
+      // console.info("COLLECTED", collected);
+      for (const type of Object.keys(collected)) { composite[type] = collected[type]; }
+    }
+    else {
+      let target = path.resolve('../declaration', key);
+      if (!/\//.test(key)) {
+        target = path.resolve(target, 'src', 'index');
+      }
+      target = path.dirname(target) + path.sep + path.basename(target) + '.d.ts';
+      // console.info("J", target);
+      const collected = await CollectTypes(target, grouped[key]);
+      // console.info("COLLECTED", collected);
+      for (const type of Object.keys(collected)) { composite[type] = collected[type]; }
+    }
+  }
+
+  const composite_keys = Object.keys(composite);
+
+  remaining.sort();
+
+  for (const key of remaining) {
+    if (composite_keys.includes(key)) {
+      console.info(key, 'found');
+    }
+    else {
+      console.info(key, 'NOT found');
+    }
+  }
+
+  /*
+  const test = grouped['treb-base-types'];
+  console.info("T", test);
+  const collected = await CollectTypes('../declaration/treb-base-types/src/index.d.ts', test);
+  console.info("COLLECTED", collected);
+  */
+
+  // console.info("COMPOSITE", composite);
+
+  if (2>1) return;
+
+
 
   for (const cat of cats) {
     const text = await fs.promises.readFile(cat, {encoding: 'utf8'});

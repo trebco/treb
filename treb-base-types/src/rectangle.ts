@@ -1,5 +1,12 @@
 
-export class Rectangle {
+export interface IRectangle {
+  top: number;
+  left: number;
+  width: number;
+  height: number;  
+}
+
+export class Rectangle implements IRectangle {
 
   public get right(): number { return this.left + this.width; }
   public get bottom(): number { return this.top + this.height; }
@@ -16,7 +23,7 @@ export class Rectangle {
       obj.height || 0);
   }
 
-  public static IsRectangle(obj: unknown): obj is Partial<Rectangle> {
+  public static IsRectangle(obj: unknown): obj is IRectangle {
     return (typeof obj === 'object') &&
       (typeof (obj as any)?.left === 'number') && 
       (typeof (obj as any)?.top === 'number') && 

@@ -1,6 +1,6 @@
 
 import { Yield } from './dispatch';
-import { IEventSource } from './ievent_source';
+// import { IEventSource } from './ievent_source';
 
 let subscription_token_generator = 1000;
 
@@ -12,8 +12,11 @@ interface EventSubscription<T> {
 /**
  * relatively simple event publish/subscribe mechanism.
  * not as simple as it used to be.
+ * 
+ * UPDATE removing unecessary interface (not sure what that
+ * was for, but no one else is using it).
  */
-export class EventSource<T> implements IEventSource<T> {
+export class EventSource<T> { // implements IEventSource<T> {
 
   /** pending events */
   private queue: T[] = [];
@@ -24,10 +27,11 @@ export class EventSource<T> implements IEventSource<T> {
   /** regular subscriptions */
   private subscribers: Array<EventSubscription<T>> = [];
 
-  /** pass-through modules: these are peers */
+  /* * pass-through modules: these are peers * /
   private pass_through: Array<EventSource<T>> = [];
+  */
 
-  constructor(private verbose = false, private log_id = 'undefined') {
+  constructor(private verbose = false, private log_id?: string) {
 
   }
 
@@ -44,7 +48,7 @@ export class EventSource<T> implements IEventSource<T> {
     // here's our updated synchronous mechanism, passing through
     // FIXME: no one uses this (I think). drop it.
 
-    this.pass_through.forEach((source) => source.Publish(event));
+    // this.pass_through.forEach((source) => source.Publish(event));
 
     // don't bother if there are no subscribers (implies you must
     // subscribe before first event... not sure if that's reasonable)
@@ -106,16 +110,17 @@ export class EventSource<T> implements IEventSource<T> {
    */
   public CancelAll() {
     this.subscribers = [];
-    this.pass_through = [];
+    // this.pass_through = [];
   }
 
-  /**
+  /* *
    * pass-through (redirected) subscription, synchronous on this end. does
    * not support unsubscribe atm (FIXME)
-   */
+   * /
   public PassThrough(source: EventSource<T>) {
     this.pass_through.push(source);
   }
+  */
 
 }
 
