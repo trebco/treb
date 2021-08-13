@@ -5,7 +5,7 @@
 
 import { Area, IArea, ICellAddress, ICellAddress2, IsCellAddress } from './area';
 import { Cell, DataValidation } from './cell';
-import { ValueType, GetValueType } from './value-type';
+import { ValueType, GetValueType, Complex } from './value-type';
 import { CellValue, UnionValue } from './union';
 import { Style } from './style';
 

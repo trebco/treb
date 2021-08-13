@@ -12,7 +12,7 @@ import type { TextPart } from 'treb-base-types';
 
 import { FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
 import { SerializeOptions } from './serialize_options';
-import { CreateSelection } from './grid_selection';
+import { CreateSelection, GridSelection } from './grid_selection';
 import { Annotation } from './annotation';
 
 // --- constants --------------------------------------------------------------
@@ -496,7 +496,7 @@ export class Sheet {
    * this instance should just be used to populate the actual selection,
    * not used as a reference.
    */
-  public selection = CreateSelection();
+  public selection: GridSelection = CreateSelection();
 
   /**
    * cache scroll offset for flipping between sheets. should this be
