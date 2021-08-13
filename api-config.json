@@ -1,0 +1,27 @@
+{
+
+  "package": "./package.json",
+
+  "output": "./treb.d.ts",
+
+  "root": "./declaration",
+
+  "index": "treb-embed/src/embedded-spreadsheet-base.d.ts",
+
+  "drop_types": [
+    "GridEvent"
+  ],
+
+  "convert_to_any": [
+    "TREBDocument"
+  ],
+
+  "rename_classes": {
+    "EmbeddedSpreadsheetBase": "EmbeddedSpreadsheet"
+  },
+
+  "exclude_tags": [
+    "internal", "mc"
+  ]
+
+}

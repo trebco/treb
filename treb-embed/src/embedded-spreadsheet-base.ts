@@ -173,11 +173,22 @@ export interface ScrollToOptions {
  */
 export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
+  /** @internal */
   public static treb_base_path = '';
+
+  /** @internal */
   public static treb_language = '';
+
+  /** @internal */
   public static treb_script_host = '';
+
+  /** @internal */
   public static treb_embedded_script_path = '';
+
+  /** @internal */
   public static enable_engine = false;
+
+  /** @internal */
   public static enable_formatter = false;
 
   /**
@@ -344,6 +355,10 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
   }
 
+  /**
+   * constructor takes spreadsheet options
+   * @internal
+   */
   constructor(options: EmbeddedSpreadsheetOptions) {
 
     super();
@@ -734,6 +749,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * it is possible that the script tag goes away, but if we sniff on first
    * script execution, we can probably assume it's still there -- because the
    * client won't have had a chance to remove it yet.
+   * 
+   * @internal
    */
   public static BuildPath(): void {
     const tags = document.querySelectorAll('script');

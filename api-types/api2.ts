@@ -2,38 +2,73 @@
 import * as ts from 'typescript';
 import * as fs from 'fs';
 import * as path from 'path';
-import { config as config_data } from './api-config';
+// import { config as config_data } from './api-config';
 
 interface Config {
 
-  // root of declaration dir
+  /** root of declaration dir, relative to config file */
   root: string;
 
-  // starting point for docs
+  /** starting point for docs, relative to root */
   index: string;
 
-  // output file
-  output: string;
+  /** output file relative to config file (or stdout) */
+  output?: string;
 
-  // package.json
+  /** package.json for version information */
   package: string;
 
+  /** drop these types, even if they're exported */
   drop_types: string[];
 
+  /** keep variables of this type but change to any */
   convert_to_any: string[];
 
-  // exclude via doc tags
+  /** exclude via jsdoc tags. typically "internal", we also use "mc" */
   exclude_tags: string[];
 
 }
 
-const config: Config = {
+let config_file = './api-config.json';
+for (let i = 0; i < process.argv.length; i++) {
+  if (process.argv[i] === '-c' || process.argv[i] === '--config') {
+    config_file = process.argv[++i];
+  }
+}
+
+// all files should be relative to the config file.
+const config_dir = path.dirname(config_file);
+
+let config: Config = {
   root: '',
   index: '',
   package: '',
   drop_types: [],
-  ...config_data,
+  convert_to_any: [],
+  exclude_tags: [],
 };
+
+let api_version = '';
+
+const ReadConfigData = async (file: string) => {
+
+  const text = await fs.promises.readFile(file, {encoding: 'utf8'});
+  const obj = JSON.parse(text);
+  config = {
+    ...config,
+    ...obj,
+  };
+
+  if (config.package) {
+    const pkg = await fs.promises.readFile(path.join(config_dir, config.package), {encoding: 'utf8'});
+    const data = JSON.parse(pkg);
+    api_version = data.version.replace(/\.\d+$/, '');
+    console.info('v', api_version);
+  }
+
+};
+
+///
 
 const FlattenQualifiedName = (node: ts.QualifiedName): string[] => {
 
@@ -195,12 +230,15 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
       }
       
       if (ts.isMethodDeclaration(node)
+          || ts.isConstructorDeclaration(node)
           || ts.isPropertyDeclaration(node)
           || ts.isAccessor(node)) {
 
         if (internal || !is_public) {
           return undefined;
         }
+
+        // FIXME: fix ctor parameters like method parameters
 
         if (ts.isMethodDeclaration(node)) {
 
@@ -565,13 +603,13 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
 
   const RelativeFilePath = (key: string): string => {
     if (key.startsWith('.')) {
-      return path.join(config.root, path.dirname(file), key + '.d.ts');
+      return path.join(path.dirname(file), key + '.d.ts');
     }
     else if (/\//.test(key)) {
-      return path.join(config.root, key + '.d.ts');
+      return path.join(config_dir, config.root, key + '.d.ts');
     }
     else {
-      return path.join(config.root, key, 'src', 'index.d.ts');
+      return path.join(config_dir, config.root, key, 'src', 'index.d.ts');
     }
   };
 
@@ -784,19 +822,19 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
 
 const Run = async () => {
 
-  // read index file
+  await ReadConfigData(config_file);
+  console.info(config);
 
-  const index = path.join(config.root, config.index);
+  // read index file
+  const index = path.join(config_dir, config.root, config.index);
 
   await ReadTypes(index);
 
-  console.info(`(done, ${invoke})`);
+  // console.info(`(done, ${invoke})`);
 
   const text: string[] = [];
   for (const key of Object.keys(master)) {
-    // if (!config.drop_types.includes(key)) {
-      text.push(master[key]);
-    //}
+    text.push(master[key]);
   }
 
   const composite = text.join('\n');
@@ -808,6 +846,11 @@ const Run = async () => {
 
   // TS doesn't really like spaces
   printed = printed.replace(/(\s+?\/\*)/g, '\n$1');
+
+  if (api_version) {
+    const banner = `/*! API v${api_version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */`;
+    printed = banner + '\n\n' + printed;
+  }
 
   if (config.output) {
     await fs.promises.writeFile(config.output, printed, {encoding: 'utf8'});

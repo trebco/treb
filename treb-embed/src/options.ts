@@ -9,17 +9,19 @@ export interface ExportOptions {
   formatted?: boolean;  // use number formats
 }
 
-/** base options excludes node, so we can create a default */
-export interface BaseOptions {
+/** 
+ * options for creating spreadsheet 
+ */
+export interface EmbeddedSpreadsheetOptions {
 
-  /** */
+  /** containing HTML element */
+  container?: string|HTMLElement;
+
+  /** allow drag-and-drop files */
   dnd?: boolean;
 
   /** expandable grid */
   expand?: boolean;
-
-  /** */
-  // await_fonts?: string|string[];
 
   /** key in localStorage for persisting document */
   storage_key?: string;
@@ -117,16 +119,28 @@ export interface BaseOptions {
   /** new option, better support for headless operations (default false) */
   headless?: boolean;
 
-  /** max workers. workers is bounded by available cores, but you can request max < cores */
+  /** 
+   * max workers. workers is bounded by available cores, but you can request max < cores 
+   * @mc
+   */
   max_workers?: number;
 
-  /** default trials if you call RunSimulation without an explicit parameter */
+  /** 
+   * default trials if you call RunSimulation without an explicit parameter 
+   * @mc
+   */
   default_trials?: number;
 
-  /** default screen updates, if you call RunSimulation without an explicit parameter */
+  /** 
+   * default screen updates, if you call RunSimulation without an explicit parameter 
+   * @mc
+   */
   screen_updates?: boolean;
 
-  /** default LHS, if you call RunSimulation without an explicit parameter */
+  /** 
+   * default LHS, if you call RunSimulation without an explicit parameter 
+   * @mc
+   */
   lhs?: boolean;
 
   /** max size for image, in bytes */
@@ -172,7 +186,7 @@ export interface BaseOptions {
  * default options. some of these are unecessary but we're being
  * explicit here just to be clear that these are intentional.
  */
-export const DefaultOptions: BaseOptions = {
+export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   formula_bar: true,
   in_cell_editor: true,
   undo: true,
@@ -220,12 +234,13 @@ export interface RunSimulationOptions {
   abort_on_dialog_close: boolean;
 }
 
-/**
+/* *
  * actual options requires the container node
- */
+ * /
 export interface EmbeddedSpreadsheetOptions extends BaseOptions {
   container?: string|HTMLElement;
 }
+*/
 
 /**
  * embed creation adds option for icons

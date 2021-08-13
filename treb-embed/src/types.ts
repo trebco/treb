@@ -105,14 +105,17 @@ export interface SelectionEvent {
 }
 
 export type EmbeddedSheetEvent
-  = SimulationCompleteEvent
-  | SimulationProgressEvent
-  | RunningSimulationEvent
-  | SimulationAbortedEvent
-  | DocumentChangeEvent
+  = DocumentChangeEvent
   | DocumentResetEvent
   | DocumentLoadEvent
   | DataChangeEvent
   | SelectionEvent
   | ResizeEvent
+
+  // ...
+
+  | SimulationCompleteEvent
+  | SimulationProgressEvent
+  | RunningSimulationEvent
+  | SimulationAbortedEvent
   ;
