@@ -20,7 +20,7 @@ import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 // local
 import { ProgressDialog, DialogType } from './progress-dialog';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './options';
-import { EmbeddedSheetEvent, TREBDocument, SaveFileType, LoadSource } from './types';
+import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent } from './types';
 
 import { SelectionState, Toolbar } from './toolbar';
 
@@ -44,7 +44,6 @@ import '../style/embed.scss';
 // what is this? if these are being used outside of grid they should be exported
 import { SerializedModel } from 'treb-grid/src/types/data_model';
 import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
-
 
 export interface SaveOptions extends SerializeOptions {
 
@@ -171,7 +170,7 @@ export interface ScrollToOptions {
  * FIXME: let's encapsulate the event source and just expose
  * subscribe/cancel methods
  */
-export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
+export class EmbeddedSpreadsheetBase { // extends EventSource<EmbeddedSheetEvent> {
 
   /** @internal */
   public static treb_base_path = '';
@@ -207,6 +206,8 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    * @internal
    */
   public toolbar_ctl?: ToolbarCtl;
+
+  protected events = new EventSource<{type: string}>();
 
   /** 
    * automatic/manual 
@@ -361,7 +362,7 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
    */
   constructor(options: EmbeddedSpreadsheetOptions) {
 
-    super();
+    // super();
 
     // consolidate options w/ defaults. note that this does not
     // support nested options, for that you need a proper merge
@@ -791,13 +792,12 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
     }
 
   }
-
+  
   // --- public internal methods -----------------------------------------------
 
   // these are methods that are public for whatever reason, but we don't want
   // them published to any public API. if we ever get around to encapsulating
   // the API, leave these out.
-  
 
   /** 
    * this is public because it's created by the composite sheet. 
@@ -2803,7 +2803,28 @@ export class EmbeddedSpreadsheetBase extends EventSource<EmbeddedSheetEvent> {
 
   }
 
+  /**
+   * Subscribe to spreadsheet events
+   * @param subscriber - callback function
+   * @returns a token used to cancel the subscription
+   */
+  public Subscribe(subscriber: (event: EmbeddedSheetEvent) => void): number {
+    return this.events.Subscribe(subscriber as (event: {type: string}) => void);
+  }
+
+  /**
+   * Cancel subscription
+   * @param token - the token returned from `Subscribe`
+   */
+  public Cancel(token: number) {
+    this.events.Cancel(token);
+  }
+
   // --- internal (protected) methods ------------------------------------------
+
+  protected Publish(event: EmbeddedSheetEvent) {
+    this.events.Publish(event);
+  }
 
   /**
    *

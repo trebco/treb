@@ -5,7 +5,7 @@ import { Random } from 'riskampjs-mc';
 
 import { Localization, ICellAddress, IsCellAddress } from 'treb-base-types';
 import { MacroFunction } from 'treb-grid';
-import { TREBDocument } from './types';
+import { EmbeddedSheetEvent, CompositeEmbeddedSheetEvent, TREBDocument } from './types';
 
 // we are stuck on an old version of this, and I can't remember 
 // why; nor can I remember why this is better than any other solution 
@@ -22,7 +22,7 @@ import * as PackResults from 'treb-mc/src/pack-results';
 // config
 import { DialogType } from './progress-dialog';
 import { Calculator } from 'treb-calculator/src'; // <-- why direct?
-import { RunSimulationOptions } from './options';
+import { EmbeddedSpreadsheetOptions, RunSimulationOptions } from './options';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
 
@@ -342,6 +342,16 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
       this.simulation_resolution.push(resolve);
     });
 
+  }
+
+  /** override event type */
+  public Subscribe(subscriber: ((event: CompositeEmbeddedSheetEvent) => void) | ((event: EmbeddedSheetEvent) => void)): number {
+    return this.events.Subscribe(subscriber as (event: {type: string}) => void);
+  }
+
+  /** override event type */
+  protected Publish(event: CompositeEmbeddedSheetEvent) {
+    this.events.Publish(event);
   }
 
   protected FlushSimulationResults(): void {

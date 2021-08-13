@@ -104,6 +104,7 @@ export interface SelectionEvent {
   type: 'selection';
 }
 
+/*
 export type EmbeddedSheetEvent
   = DocumentChangeEvent
   | DocumentResetEvent
@@ -119,3 +120,23 @@ export type EmbeddedSheetEvent
   | RunningSimulationEvent
   | SimulationAbortedEvent
   ;
+*/
+
+export type EmbeddedSheetEvent 
+  = DocumentChangeEvent
+  | DocumentResetEvent
+  | DocumentLoadEvent
+  | DataChangeEvent
+  | SelectionEvent
+  | ResizeEvent
+  ;
+
+export type MCEmbeddedSheetEvent
+ = SimulationCompleteEvent
+ | SimulationProgressEvent
+ | RunningSimulationEvent
+ | SimulationAbortedEvent
+ ;
+
+export type CompositeEmbeddedSheetEvent = EmbeddedSheetEvent|MCEmbeddedSheetEvent;
+
