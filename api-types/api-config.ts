@@ -2,8 +2,9 @@
 export const config = {
 
   package: '../package.json',
-  output: 'generated.d.ts',
-  base: '../declaration/treb-embed/src/embedded-spreadsheet-base.d.ts',
+  output: 'generated2.d.ts',
+  root: '../declaration',
+  index: 'treb-embed/src/embedded-spreadsheet-base.d.ts',
 
   cat: [
     // 'manual-types.d.ts',
@@ -24,5 +25,10 @@ export const config = {
   rename_classes: {
     'EmbeddedSpreadsheetBase': 'EmbeddedSpreadsheet',
   },
+
+  /** exclude via jsdoc tags */
+  exclude_tags: [
+    'internal', 'mc',
+  ],
 
 };
