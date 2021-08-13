@@ -804,7 +804,10 @@ const Run = async () => {
   const result = ts.transform(node, [CleanTransformer()])
 
   const printer = ts.createPrinter();
-  const printed = printer.printFile(result.transformed[0]); // FIXME: options
+  let printed = printer.printFile(result.transformed[0]); // FIXME: options
+
+  // TS doesn't really like spaces
+  printed = printed.replace(/(\s+?\/\*)/g, '\n$1');
 
   if (config.output) {
     await fs.promises.writeFile(config.output, printed, {encoding: 'utf8'});
