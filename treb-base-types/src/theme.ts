@@ -192,10 +192,12 @@ const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
     style.italic = true;
   }
 
+  /*
   const weight = Number(css.fontWeight);
   if (!isNaN(weight) && weight) {
     style.font_weight = weight;
   }
+  */
 
   return style;
 }

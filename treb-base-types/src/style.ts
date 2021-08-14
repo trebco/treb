@@ -25,15 +25,23 @@ export namespace Style {
     Middle = 3,
   }
 
+  /** composite font size */
   export interface FontSize {
     unit: 'pt'|'px'|'em'|'%';
     value: number;
   }
 
+  /** 
+   * color is either a theme color (theme index plus tint), or CSS text 
+   * FIXME: this should be a union type
+   */
   export interface Color {
+
     theme?: number;
     tint?: number;
     text?: string;
+
+    /** @deprecated */
     none?: boolean;
   }
 
@@ -51,40 +59,59 @@ export namespace Style {
     bottom: CompositeBorderEdge,
   }
 
+  /**
+   * style properties applied to a cell.
+   */
   export interface Properties {
 
+    /** horizontal align defaults to left */
     horizontal_align?: HorizontalAlign;
+
+    /** vertical align defaults to bottom */
     vertical_align?: VerticalAlign;
 
+    /** representation for NaN */
     nan?: string;
 
+    /** number format, either a symbolic name like "General" or a format string */
     number_format?: string;
 
+    /** wrap text */
     wrap?: boolean;
 
-    // FIXME: we should use CSS font styling, parse as necessary
-    // (in the alternative, maybe have a method to set from a CSS def)
-
-    // deprecated
-    // font_size?: number|string;
-
-    // new-style
-    // font_size_unit?: string;
-    // font_size_value?: number;
-
+    /** 
+     * font size. we recommend using relative font sizes (either % or em)
+     * which will be relative to the theme font size.
+     */
     font_size?: FontSize;
 
+    /** font face. this can be a comma-delimited list, like CSS */
     font_face?: string;
+
+    /** flag */
     bold?: boolean; // FIXME: switch to weight
+
+    /** flag */
     italic?: boolean;
+
+    /** flag */
     underline?: boolean;
+
+    /** flag */
     strike?: boolean;
 
-    font_weight?: number;
-
+    // font_weight?: number;
+    
+    /** border weight */
     border_top?: number;
+
+    /** border weight */
     border_right?: number;
+
+    /** border weight */
     border_left?: number;
+
+    /** border weight */
     border_bottom?: number;
 
     // COLORS. there's a new thing with colors where we need to
@@ -101,12 +128,23 @@ export namespace Style {
     //border_bottom_color?: string;
 
     // changing colors to support styles... starting with text
+
+    /** text color */
     text?: Color;
+
+    /** background color */
     fill?: Color;
 
+    /** border color */
     border_top_fill?: Color;
+
+    /** border color */
     border_left_fill?: Color;
+
+    /** border color */
     border_right_fill?: Color;
+
+    /** border color */
     border_bottom_fill?: Color;
 
     // NEW
@@ -117,6 +155,9 @@ export namespace Style {
     // UPDATE: whether it's appropriate or not, style is a better place
     // because it can cascade
 
+    /**
+     * cell is locked for editing
+     */
     locked?: boolean;
 
   }
@@ -421,10 +462,11 @@ export namespace Style {
 
     const parts: string[] = [];
 
-    if (properties.font_weight) {
-      parts.push(properties.font_weight.toString());
-    }
-    else if (properties.bold) {
+    //if (properties.font_weight) {
+    //  parts.push(properties.font_weight.toString());
+    //}
+    //else 
+    if (properties.bold) {
       parts.push('bold');
     }
 

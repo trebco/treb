@@ -45,6 +45,9 @@ import '../style/embed.scss';
 import { SerializedModel } from 'treb-grid/src/types/data_model';
 import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
 
+/**
+ * options for saving files. we add the option for JSON formatting.
+ */
 export interface SaveOptions extends SerializeOptions {
 
   /** pretty json formatting */
@@ -166,11 +169,8 @@ export interface ScrollToOptions {
 
 /**
  * embedded spreadsheet, suitable for one-line embedding in a web page
- *
- * FIXME: let's encapsulate the event source and just expose
- * subscribe/cancel methods
  */
-export class EmbeddedSpreadsheetBase { // extends EventSource<EmbeddedSheetEvent> {
+export class EmbeddedSpreadsheetBase { 
 
   /** @internal */
   public static treb_base_path = '';

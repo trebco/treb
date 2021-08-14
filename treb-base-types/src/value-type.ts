@@ -2,6 +2,9 @@
 // split from cell for separate import, 
 // @see format-index.ts
 
+/**
+ * Complex number type
+ */
 export interface Complex {
   real: number,
   imaginary: number,
