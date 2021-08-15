@@ -27,6 +27,8 @@ interface Config {
   /** exclude via jsdoc tags. typically "internal", we also use "mc" */
   exclude_tags: string[];
 
+  rename_types: Record<string, string>;
+
 }
 
 let config_file = './api-config.json';
@@ -46,6 +48,7 @@ let config: Config = {
   drop_types: [],
   convert_to_any: [],
   exclude_tags: [],
+  rename_types: {},
 };
 
 let api_version = '';
@@ -148,6 +151,8 @@ const GetDocTags = (node: ts.Node): string[] => {
  */
 function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
 
+  const rename_keys = Object.keys(config.rename_types);
+
   /** 
    * flag indicates we're in an exported module. in this case, export is 
    * implicit so don't gate on that (otherwise we drop types that should be
@@ -228,7 +233,15 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
         }
 
       }
-      
+
+      if (ts.isIdentifier(node)) {
+        const name = node.escapedText.toString();
+        if (rename_keys.includes(name)) {
+          // console.info( ' ** ', name);
+          return ts.factory.createIdentifier(config.rename_types[name]);
+        }
+      }
+
       if (ts.isMethodDeclaration(node)
           || ts.isConstructorDeclaration(node)
           || ts.isPropertyDeclaration(node)
@@ -851,6 +864,14 @@ const Run = async () => {
     const banner = `/*! API v${api_version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */`;
     printed = banner + '\n\n' + printed;
   }
+
+  // can't figure out how to transform jsdoc nodes using transformers.
+  // so, back to hacks. the aim here is to remove @privateRemarks, up
+  // to the next tag (@) or close comment (*/). this often results in 
+  // an extra empty line in the comment, which is unfortunate but not
+  // the end of the world.
+
+  printed = printed.replace(/(\s*\*)\s*@privateRemarks[\s\S]*?((?: @|\/))/g, '$1$2');
 
   if (config.output) {
     await fs.promises.writeFile(config.output, printed, {encoding: 'utf8'});

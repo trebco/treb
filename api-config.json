@@ -16,7 +16,7 @@
     "TREBDocument"
   ],
 
-  "rename_classes": {
+  "rename_types": {
     "EmbeddedSpreadsheetBase": "EmbeddedSpreadsheet"
   },
 
