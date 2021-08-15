@@ -27,6 +27,7 @@ interface Config {
   /** exclude via jsdoc tags. typically "internal", we also use "mc" */
   exclude_tags: string[];
 
+  /** rename types */
   rename_types: Record<string, string>;
 
 }
