@@ -31,7 +31,7 @@ canonical/english, not cross-language collitions).
 
  d. Autocomplete/tooltips
 
- e. Messages/dialogs
+ e. Messages (dialogs/toolbar/&c)
 
 Except for (d) and (e), these are pretty simple -- two-way maps should make
 this trivial. Write some functions `ToCanonical`, `FromCanonical` that take 
@@ -44,4 +44,10 @@ Messages are not organized, so that's the most difficult one. Messages are
 probably (mostly) contained in grid/embed, but we need to look at other libs
 to see if they include any messages.
 
+ [adding]
+
+ f. Error codes
+
+(f) has some additional implications when it comes to rendering, because
+(unlike formulas) errors are displayed as function results.
 

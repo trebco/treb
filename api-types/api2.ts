@@ -30,6 +30,9 @@ interface Config {
   /** rename types */
   rename_types: Record<string, string>;
 
+  /** additional files to include. these will be concatenated to the generated output. */
+  include: string[];
+
 }
 
 let config_file = './api-config.json';
@@ -50,6 +53,7 @@ let config: Config = {
   convert_to_any: [],
   exclude_tags: [],
   rename_types: {},
+  include: [],
 };
 
 let api_version = '';
@@ -860,6 +864,13 @@ const Run = async () => {
 
   // TS doesn't really like spaces
   printed = printed.replace(/(\s+?\/\*)/g, '\n$1');
+
+  // prepend any include files
+  for (let include of config.include) {
+    include = path.join(config_dir, include);
+    const text = await fs.promises.readFile(include, {encoding: 'utf8'});
+    printed = text + printed;
+  }
 
   if (api_version) {
     const banner = `/*! API v${api_version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */`;

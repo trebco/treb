@@ -8,6 +8,10 @@
 
   "index": "treb-embed/src/embedded-spreadsheet-base.d.ts",
 
+  "include": [
+    "api-types/treb-global.d.ts"
+  ],
+  
   "drop_types": [
     "GridEvent"
   ],

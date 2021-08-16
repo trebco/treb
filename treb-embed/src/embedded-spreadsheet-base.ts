@@ -148,9 +148,12 @@ export interface SetRangeOptions {
 }
 
 /**
- * options for the ScrollTo method
+ * options for the ScrollTo method.
+ * 
+ * @note this method was renamed because of a conflict with a DOM type,
+ * which was causing problems with the documentation generator.
  */
-export interface ScrollToOptions {
+export interface SheetScrollOptions {
 
   /** scroll in x-direction. defaults to true. */
   x?: boolean;
@@ -2457,7 +2460,7 @@ export class EmbeddedSpreadsheetBase {
    * 
    * @public
    */
-  public ScrollTo(address: AddressReference, options: ScrollToOptions = {}): void {
+  public ScrollTo(address: AddressReference, options: SheetScrollOptions = {}): void {
 
     // API v1 OK
 
