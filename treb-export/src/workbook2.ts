@@ -1,20 +1,21 @@
 
 import * as JSZip from 'jszip';
 import * as xmlparser from 'fast-xml-parser';
-import * as he from 'he';
+// import * as he from 'he';
 
 //import { Drawing, TwoCellAnchor, CellAnchor } from './drawing/drawing';
-import { Drawing, TwoCellAnchor, CellAnchor } from './drawing2/drawing2';
+import { TwoCellAnchor, CellAnchor } from './drawing2/drawing2';
 
 // import { ImportedSheetData, IArea } from 'treb-base-types/src';
 import { SharedStrings } from './shared-strings2';
 import { StyleCache } from './workbook-style2';
 import { Theme } from './workbook-theme2';
 import { Sheet, VisibleState } from './workbook-sheet2';
-import { RelationshipMap, Relationship } from './relationship';
+import { RelationshipMap } from './relationship';
 
 import { XMLUtils, XMLOptions, XMLOptions2 } from './xml-utils';
 
+/*
 const XMLTypeMap = {
   'sheet':          'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
   'theme':          'application/vnd.openxmlformats-officedocument.theme+xml',
@@ -25,6 +26,7 @@ const XMLTypeMap = {
   'style':          'application/vnd.ms-office.chartstyle+xml',
   'colors':         'application/vnd.ms-office.chartcolorstyle+xml',
 };
+*/
 
 export enum ChartType {
   Unknown = 0, Column, Bar, Line, Scatter, Donut, Pie
@@ -106,7 +108,7 @@ export class Workbook {
 
   }
 
-  public async Init() {
+  public async Init(): Promise<void> {
 
     // read workbook rels
     this.rels = await this.ReadRels( 'xl/_rels/workbook.xml.rels');
@@ -255,7 +257,7 @@ export class Workbook {
     if (title_node) {
 
       // FIXME: other types of title? (...)
-      let node = XMLUtils.FindChild(title_node, 'c:tx/c:strRef/c:f');
+      const node = XMLUtils.FindChild(title_node, 'c:tx/c:strRef/c:f');
       if (node) {
         if (typeof node === 'string') {
           result.title = node;
@@ -391,11 +393,10 @@ export class Workbook {
 
   }
 
-
-  /** FIXME: accessor */
+  /* * FIXME: accessor * /
   public GetNamedRanges(): void {
     
   }
-
+  */
 
 }

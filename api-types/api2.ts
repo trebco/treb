@@ -883,7 +883,7 @@ const Run = async () => {
   // an extra empty line in the comment, which is unfortunate but not
   // the end of the world.
 
-  printed = printed.replace(/(\s*\*)\s*@privateRemarks[\s\S]*?((?: @|\/))/g, '$1$2');
+  printed = printed.replace(/(\s*\*)\s*@privateRemarks[\s\S]*?((?: @|\*\/))/g, '$1$2');
 
   if (config.output) {
     await fs.promises.writeFile(config.output, printed, {encoding: 'utf8'});

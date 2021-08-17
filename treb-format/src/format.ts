@@ -99,6 +99,108 @@ export class NumberFormat {
   public static minus_character = '-'; // hyphen
   // public static minus_character = '−'; // minus
 
+  /** for the "General" format, a magic decimal point */
+  public magic_decimal = false;
+
+  // tslint:disable-next-line:variable-name
+  protected _pattern = '';
+  protected sections: NumberFormatSection[];
+  protected decimal_zero_regexp: Array<RegExp | undefined> = [];
+
+  // this is a flag for string representation
+  protected cloned: boolean[] = [];
+
+  //  NumberFormat.decimal_mark = Localization.decimal_separator;
+  //  if (NumberFormat.decimal_mark === ',') NumberFormat.grouping_separator = ' ';
+
+  //  public static decimal_mark: '.'|',' = Localization.decimal_separator;
+  //  public static grouping_separator = (Localization.decimal_separator === '.') ? ',' : ' ';
+
+  public get pattern(): string {
+    return this._pattern;
+  }
+
+  /** flag indicates if this is a date format */
+  public get date_format(): boolean {
+    return this.sections[0] && this.sections[0].date_format;
+  }
+
+  constructor(pattern: string) {
+    this._pattern = pattern;
+    this.sections = FormatParser.Parse(pattern);
+
+    // nothing?
+
+    if (!this.sections.length) this.sections = [];
+
+    // check zero. we were previously assuming this stepped, but we
+    // now support gaps in format sections (although not at 0?)
+
+    if (!this.sections[0]) {
+      this.sections[0] = new NumberFormatSection(); // pretty sure this cannot happen atm
+    }
+
+    // do we have a negative section? if not, use the positive
+    // section and prepend a - sign.
+
+    if (!this.sections[1]) {
+      this.sections[1] = { ...this.sections[0] };
+      this.sections[1].prefix = JSON.parse(JSON.stringify(this.sections[1].prefix));
+      this.sections[1].suffix = JSON.parse(JSON.stringify(this.sections[1].suffix));
+      this.sections[1].prefix.push({ text: '-' }); // at end of prefix, before number
+      this.cloned[1] = true;
+    }
+
+    // do we have a zero section? if not, clone the positive section.
+
+    if (!this.sections[2]) {
+      this.sections[2] = { ...this.sections[0] };
+      this.cloned[2] = true;
+    }
+
+    // string section, default just reflects the string. we could perhaps
+    // skip this and just have default behavior if there's no section, which
+    // might simplify rendering
+
+    // UPDATE, special case: unless a string section is explicitly
+    // provided, we use a default '@' section (it's implicit). however,
+    // if there's a literatal '@' in the first section, we want to
+    // propogate that to all empty sections, including the string section.
+
+    // note that we should not support literal AND numeric sections in
+    // the same block... it will fail silently here... [FIXME: at least warn]
+
+    if (!this.sections[3]) {
+      for (const part of this.sections[0].prefix) {
+        if (part.flag === TextPartFlag.literal) {
+          this.sections[3] = { ...this.sections[0] };
+          this.sections[3].string_format = true;
+          this.cloned[3] = true;
+          break;
+        }
+      }
+    }
+
+    /*
+    if (!this.sections[3]) {
+      this.sections[3] = new NumberFormatSection();
+      this.sections[3].string_format = true;
+      this.sections[3].prefix = [{ text: '@', flag: TextPartFlag.literal }];
+
+      // obviously not cloned, but we want the behavior. FIXME: change flag name
+      this.cloned[3] = true;
+    }
+    */
+
+    this.decimal_zero_regexp = this.sections.map((section) => {
+      if (section.decimal_max_digits > section.decimal_min_digits) {
+        return new RegExp(`0{1,${section.decimal_max_digits - section.decimal_min_digits}}(?:$|e)`);
+      }
+      return undefined;
+    });
+
+  }
+
   /**
    * render text parts to string
    * FIXME: move
@@ -127,115 +229,13 @@ export class NumberFormat {
     if (padded >= 0 && text_width) {
       const total_length = formatted.reduce((a, str, index) => (index === padded) ? a : a + str.length, 0);
       let tmp = '';
-      for (let i = 0; i < text_width - total_length; i++){
+      for (let i = 0; i < text_width - total_length; i++) {
         tmp += formatted[padded];
       }
       formatted[padded] = tmp;
     }
 
     return formatted.join('');
-
-  }
-
-//  NumberFormat.decimal_mark = Localization.decimal_separator;
-//  if (NumberFormat.decimal_mark === ',') NumberFormat.grouping_separator = ' ';
-
-//  public static decimal_mark: '.'|',' = Localization.decimal_separator;
-//  public static grouping_separator = (Localization.decimal_separator === '.') ? ',' : ' ';
-
-  public get pattern(): string {
-    return this._pattern;
-  }
-
-  /** flag indicates if this is a date format */
-  public get date_format(): boolean {
-    return this.sections[0] && this.sections[0].date_format;
-  }
-
-  // tslint:disable-next-line:variable-name
-  protected _pattern = '';
-  protected sections: NumberFormatSection[];
-  protected decimal_zero_regexp: Array<RegExp|undefined> = [];
-
-  // this is a flag for string representation
-  protected cloned: boolean[] = [];
-
-  /** for the "General" field, a magic decimal point */
-  public magic_decimal = false;
- 
-  constructor(pattern: string){
-    this._pattern = pattern;
-    this.sections = FormatParser.Parse(pattern);
-  
-    // nothing?
-
-    if (!this.sections.length) this.sections = [];
-
-    // check zero. we were previously assuming this stepped, but we
-    // now support gaps in format sections (although not at 0?)
-
-    if (!this.sections[0]) {
-      this.sections[0] = new NumberFormatSection(); // pretty sure this cannot happen atm
-    }
-
-    // do we have a negative section? if not, use the positive
-    // section and prepend a - sign.
-
-    if (!this.sections[1]) {
-      this.sections[1] = { ...this.sections[0] };
-      this.sections[1].prefix = JSON.parse(JSON.stringify(this.sections[1].prefix));
-      this.sections[1].suffix = JSON.parse(JSON.stringify(this.sections[1].suffix));
-      this.sections[1].prefix.push({text: '-'}); // at end of prefix, before number
-      this.cloned[1] = true;
-    }
-
-    // do we have a zero section? if not, clone the positive section.
-
-    if (!this.sections[2]) {
-      this.sections[2] = { ...this.sections[0] };
-      this.cloned[2] = true;
-    }
-
-    // string section, default just reflects the string. we could perhaps
-    // skip this and just have default behavior if there's no section, which
-    // might simplify rendering
-
-    // UPDATE, special case: unless a string section is explicitly
-    // provided, we use a default '@' section (it's implicit). however,
-    // if there's a literatal '@' in the first section, we want to
-    // propogate that to all empty sections, including the string section.
-
-    // note that we should not support literal AND numeric sections in
-    // the same block... it will fail silently here... [FIXME: at least warn]
-
-    if (!this.sections[3]) {
-      for (const part of this.sections[0].prefix) {
-        if (part.flag === TextPartFlag.literal) {
-          this.sections[3] = {...this.sections[0]};
-          this.sections[3].string_format = true;
-          this.cloned[3] = true;
-          break;
-        }
-      }
-    }
-
-    /*
-    if (!this.sections[3]) {
-      this.sections[3] = new NumberFormatSection();
-      this.sections[3].string_format = true;
-      this.sections[3].prefix = [{ text: '@', flag: TextPartFlag.literal }];
-
-      // obviously not cloned, but we want the behavior. FIXME: change flag name
-      this.cloned[3] = true;
-    }
-    */
-
-    this.decimal_zero_regexp = this.sections.map((section) => {
-      if (section.decimal_max_digits > section.decimal_min_digits) {
-        return new RegExp(`0{1,${section.decimal_max_digits - section.decimal_min_digits}}(?:$|e)`);
-      }
-      return undefined;
-    });
 
   }
 
@@ -339,16 +339,16 @@ export class NumberFormat {
         for (i = 0; i < section.integer_min_digits; i++) {
           nf += '0';
         }
-        if (section.grouping){
+        if (section.grouping) {
           if (nf.length < 4) nf = ('####' + nf).slice(-4);
           nf = nf.replace(/[\d#]{1,3}(?=([\d#]{3})+(?![\d#]))/g, '$&' + ','); // Localization.grouping_separator);
         }
-        if (section.decimal_max_digits || section.decimal_min_digits){
+        if (section.decimal_max_digits || section.decimal_min_digits) {
           nf += '.'; // Localization.decimal_separator;
           for (i = 0; i < section.decimal_min_digits; i++) { nf += '0'; }
           for (; i < section.decimal_max_digits; i++) { nf += '#'; }
         }
-        if (section.scaling){
+        if (section.scaling) {
           const count = Math.log10(section.scaling) / 3;
           for (i = 0; i < count; i++) { nf += ','; }
         }
@@ -369,13 +369,13 @@ export class NumberFormat {
         }
         return part.text;
       }).join('') + nf +
-      section.suffix.map((part) => {
-        if (part.flag === TextPartFlag.hidden) {
-          return part.text === '0' ? '?' : '_' + part.text;
-        }
-        else if (part.flag === TextPartFlag.padded) { return '*' + part.text; }
-        return part.text;
-      }).join('') ;
+        section.suffix.map((part) => {
+          if (part.flag === TextPartFlag.hidden) {
+            return part.text === '0' ? '?' : '_' + part.text;
+          }
+          else if (part.flag === TextPartFlag.padded) { return '*' + part.text; }
+          return part.text;
+        }).join('');
 
     }).join(';');
 
@@ -418,7 +418,7 @@ export class NumberFormat {
     const parts: TextPart[] = [];
 
     if (has_real_value || (!has_real_value && !has_imaginary_value)) {
-      
+
       // has real part, or is === 0 
       parts.push(...this.FormatParts(value.real));
 
@@ -426,16 +426,16 @@ export class NumberFormat {
 
         // also has imaginary part
         const i = Math.abs(value.imaginary);
-        parts.push({text: value.imaginary < 0 ? ` ${NumberFormat.minus_character} ` : ' + '});
-        parts.push(...this.FormatParts(Math.abs(value.imaginary)), {text: NumberFormat.imaginary_character});
+        parts.push({ text: value.imaginary < 0 ? ` ${NumberFormat.minus_character} ` : ' + ' });
+        parts.push(...this.FormatParts(Math.abs(value.imaginary)), { text: NumberFormat.imaginary_character });
 
       }
     }
     else if (has_imaginary_value) {
 
       // only imaginary part
-      parts.push(...this.FormatParts(value.imaginary), {text: NumberFormat.imaginary_character});
-    
+      parts.push(...this.FormatParts(value.imaginary), { text: NumberFormat.imaginary_character });
+
     }
 
     return parts;
@@ -458,7 +458,7 @@ export class NumberFormat {
 
     if (section.date_format || section.string_format) {
       for (const part of parts) {
-        if (typeof part === 'string') text_parts.push({text: part});
+        if (typeof part === 'string') text_parts.push({ text: part });
         else text_parts.push(part);
       }
     }
@@ -472,16 +472,16 @@ export class NumberFormat {
 
       text_parts = [
         ...(section.prefix.map((text_part) => {
-          return {...text_part};
+          return { ...text_part };
         })),
-        {text: section.has_number_format ? parts.join(Localization.decimal_separator) : ''},
+        { text: section.has_number_format ? parts.join(Localization.decimal_separator) : '' },
         ...(section.suffix.map((text_part) => {
-          return {...text_part};
+          return { ...text_part };
         })),
       ];
     }
 
-    for (let i = 1; i < text_parts.length; i++){
+    for (let i = 1; i < text_parts.length; i++) {
       if (text_parts[i].flag === text_parts[i - 1].flag) {
         text_parts[i].text = text_parts[i - 1].text + text_parts[i].text;
         text_parts[i - 1].text = '';
@@ -566,62 +566,62 @@ export class NumberFormat {
       }
       else if (part.flag === TextPartFlag.date_component) {
         switch (part.text.toLowerCase()) {
-        case 'am/pm':
-        case 'a/p':
-          {
-            const elements = part.text.split('/');
-            return {text: date.getUTCHours() > 12 ? elements[1] : elements[0]};
-          }
-        case 'mmmmm':
-          return { text: Localization.date_components.long_months[date.getUTCMonth()][0] };
-        case 'mmmm':
-          if (part.text === 'MMMM') {
-            return { text: Localization.date_components.long_months[date.getUTCMonth()].toUpperCase() };
-          }
-          return { text: Localization.date_components.long_months[date.getUTCMonth()] };
-        case 'mmm':
-          if (part.text === 'MMM') {
-            return { text: Localization.date_components.short_months[date.getUTCMonth()].toUpperCase() };
-          }
-          return { text: Localization.date_components.short_months[date.getUTCMonth()] };
-        case 'mm':
-          return { text: this.ZeroPad((date.getUTCMonth() + 1).toString(), 2) };
-        case 'm':
-          return { text: this.ZeroPad((date.getUTCMonth() + 1).toString(), 1) };
+          case 'am/pm':
+          case 'a/p':
+            {
+              const elements = part.text.split('/');
+              return { text: date.getUTCHours() > 12 ? elements[1] : elements[0] };
+            }
+          case 'mmmmm':
+            return { text: Localization.date_components.long_months[date.getUTCMonth()][0] };
+          case 'mmmm':
+            if (part.text === 'MMMM') {
+              return { text: Localization.date_components.long_months[date.getUTCMonth()].toUpperCase() };
+            }
+            return { text: Localization.date_components.long_months[date.getUTCMonth()] };
+          case 'mmm':
+            if (part.text === 'MMM') {
+              return { text: Localization.date_components.short_months[date.getUTCMonth()].toUpperCase() };
+            }
+            return { text: Localization.date_components.short_months[date.getUTCMonth()] };
+          case 'mm':
+            return { text: this.ZeroPad((date.getUTCMonth() + 1).toString(), 2) };
+          case 'm':
+            return { text: this.ZeroPad((date.getUTCMonth() + 1).toString(), 1) };
 
-        case 'ddddd':
-        case 'dddd':
-          if (part.text === 'DDDDD' || part.text === 'DDDD') {
-            return { text: Localization.date_components.long_days[date.getUTCDay()].toUpperCase() };
-          }
-          return { text: Localization.date_components.long_days[date.getUTCDay()] };
-        case 'ddd':
-          if (part.text === 'DDD') {
-            return { text: Localization.date_components.short_days[date.getUTCDay()].toUpperCase() };
-          }
-          return { text: Localization.date_components.short_days[date.getUTCDay()] };
-        case 'dd':
-          return { text: this.ZeroPad((date.getUTCDate()).toString(), 2) };
-        case 'd':
-          return { text: this.ZeroPad((date.getUTCDate()).toString(), 1) };
+          case 'ddddd':
+          case 'dddd':
+            if (part.text === 'DDDDD' || part.text === 'DDDD') {
+              return { text: Localization.date_components.long_days[date.getUTCDay()].toUpperCase() };
+            }
+            return { text: Localization.date_components.long_days[date.getUTCDay()] };
+          case 'ddd':
+            if (part.text === 'DDD') {
+              return { text: Localization.date_components.short_days[date.getUTCDay()].toUpperCase() };
+            }
+            return { text: Localization.date_components.short_days[date.getUTCDay()] };
+          case 'dd':
+            return { text: this.ZeroPad((date.getUTCDate()).toString(), 2) };
+          case 'd':
+            return { text: this.ZeroPad((date.getUTCDate()).toString(), 1) };
 
-        case 'yyyy':
-        case 'yyy':
-          return { text: date.getUTCFullYear().toString() };
-        case 'yy':
-        case 'y':
-          // return { text: (date.getUTCFullYear() % 100).toString() };
-          return { text: this.ZeroPad((date.getUTCFullYear() % 100).toString(), 2) };
+          case 'yyyy':
+          case 'yyy':
+            return { text: date.getUTCFullYear().toString() };
+          case 'yy':
+          case 'y':
+            // return { text: (date.getUTCFullYear() % 100).toString() };
+            return { text: this.ZeroPad((date.getUTCFullYear() % 100).toString(), 2) };
 
-        case 'hh':
-          return { text: this.ZeroPad(hours.toString(), 2) };
-        case 'h':
-          return { text: this.ZeroPad(hours.toString(), 1) };
+          case 'hh':
+            return { text: this.ZeroPad(hours.toString(), 2) };
+          case 'h':
+            return { text: this.ZeroPad(hours.toString(), 1) };
 
-        case 'ss':
-          return { text: this.ZeroPad((date.getUTCSeconds()).toString(), 2) };
-        case 's':
-          return { text: this.ZeroPad((date.getUTCSeconds()).toString(), 1) };
+          case 'ss':
+            return { text: this.ZeroPad((date.getUTCSeconds()).toString(), 2) };
+          case 's':
+            return { text: this.ZeroPad((date.getUTCSeconds()).toString(), 1) };
 
         }
 
@@ -635,7 +635,7 @@ export class NumberFormat {
         }
 
       }
-      return {...part}; // text: part.text, state: part.state};
+      return { ...part }; // text: part.text, state: part.state};
     });
 
     return { parts, section };
@@ -645,9 +645,9 @@ export class NumberFormat {
     const parts: TextPart[] = [];
     for (const part of section.prefix) {
       if (part.flag === TextPartFlag.literal) {
-        parts.push({text: value});
+        parts.push({ text: value });
       }
-      else parts.push({...part});
+      else parts.push({ ...part });
     }
     return {
       parts, section,
@@ -695,12 +695,12 @@ export class NumberFormat {
       candidate.numerator = Math.round(value * candidate.denominator);
     }
     else {
-    
+
       if (candidate.error) {
         const limit = NumberFormat.fraction_limits[section.fraction_denominator_digits - 1] || NumberFormat.fraction_limits[0];
         for (let denominator = 2; denominator <= limit; denominator++) {
           const numerator = Math.round(value * denominator);
-          const error = Math.abs(numerator/denominator - value);
+          const error = Math.abs(numerator / denominator - value);
           if (error < candidate.error) {
             candidate = {
               numerator, denominator, error,
@@ -738,7 +738,7 @@ export class NumberFormat {
 
   }
 
-  public BaseFormat(value: any){
+  public BaseFormat(value: any) {
 
     if (this.sections[0].date_format) {
       return this.DateFormat(Number(value));
@@ -788,7 +788,7 @@ export class NumberFormat {
     if (section.fraction_format) {
       return { parts: [this.FormatFraction(abs_value, section)], section };
     }
-    
+
     if (section.exponential) {
       representation = abs_value.toExponential(section.decimal_max_digits);
     }

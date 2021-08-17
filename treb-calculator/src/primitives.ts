@@ -16,7 +16,7 @@ type NumericTuple = [number, number, UnionValue?, UnionValue?, UnionValue?];
  * return it. if it's undefined, return a complex number with the given 
  * real value. 
  */
-const EnsureComplex = (a?: UnionValue, real: number = 0): { type: ValueType.complex, value: {real: number, imaginary: number}} => {
+const EnsureComplex = (a?: UnionValue, real = 0): { type: ValueType.complex, value: {real: number, imaginary: number}} => {
 
   if (a && a.type === ValueType.complex) {
     return a as {type: ValueType.complex, value: {real: number, imaginary: number}};
@@ -102,7 +102,7 @@ const NumericTypes = (a: UnionValue, b: UnionValue): NumericTuple => {
 }
 
 export const Add = (a: UnionValue, b: UnionValue): UnionValue => {
-  let [x, y, z, c1, c2] = NumericTypes(a, b);
+  const [x, y, z, c1, c2] = NumericTypes(a, b);
 
   if (z) { return z; }
 
@@ -118,7 +118,7 @@ export const Add = (a: UnionValue, b: UnionValue): UnionValue => {
 
 export const Subtract = (a: UnionValue, b: UnionValue): UnionValue => {
 
-  let [x, y, z, c1, c2] = NumericTypes(a, b);
+  const [x, y, z, c1, c2] = NumericTypes(a, b);
 
   if (z) { return z; }
 
@@ -133,7 +133,7 @@ export const Subtract = (a: UnionValue, b: UnionValue): UnionValue => {
 };
 
 export const Power = (a: UnionValue, b: UnionValue): UnionValue => {
-  let [x, y, z, c1, c2] = NumericTypes(a, b);
+  const [x, y, z, c1, c2] = NumericTypes(a, b);
   if (z) { return z; }
 
   if (c1 && c2) {
@@ -149,7 +149,7 @@ export const Power = (a: UnionValue, b: UnionValue): UnionValue => {
 
 export const Multiply = (a: UnionValue, b: UnionValue): UnionValue => {
 
-  let [x, y, z, c1, c2] = NumericTypes(a, b);
+  const [x, y, z, c1, c2] = NumericTypes(a, b);
 
   if (z) { return z; }
 
@@ -161,7 +161,7 @@ export const Multiply = (a: UnionValue, b: UnionValue): UnionValue => {
 };
 
 export const Divide = (a: UnionValue, b: UnionValue): UnionValue => {
-  let [x, y, z, c1, c2] = NumericTypes(a, b);
+  const [x, y, z, c1, c2] = NumericTypes(a, b);
   if (z) { return z; }
 
   if (c1 && c2) {

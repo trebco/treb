@@ -69,25 +69,12 @@ export class MDParser {
 
   private static _instance: MDParser = new MDParser();
 
-  public static get instance() {
+  protected constructor() {
+    // ...
+  }
+
+  public static get instance(): MDParser {
     return this._instance;
-  }
-
-  protected constructor() {}
-
-  /** is this worth a function call? will it get inlined? */
-  protected IsWhitespace(char: string) {
-    return char === ' ' || char === '\t';
-  }
-
-  /** is this worth a function call? will it get inlined? */
-  protected IsNewline(char: string) {
-    return char === '\r' || char === '\n';
-  }
-
-  /** is this worth a function call? will it get inlined? */
-  protected IsDelimeter(char: string) {
-    return char === '*' || char === '_';
   }
 
   /**
@@ -211,6 +198,21 @@ export class MDParser {
 
    return this.Consolidate(tokens) as FormattedString[][];
 
+  }
+
+  /** is this worth a function call? will it get inlined? */
+  protected IsWhitespace(char: string): boolean {
+    return char === ' ' || char === '\t';
+  }
+
+  /** is this worth a function call? will it get inlined? */
+  protected IsNewline(char: string): boolean {
+    return char === '\r' || char === '\n';
+  }
+
+  /** is this worth a function call? will it get inlined? */
+  protected IsDelimeter(char: string): boolean {
+    return char === '*' || char === '_';
   }
 
   /**
@@ -400,7 +402,7 @@ export class MDParser {
         }
 
         let tmp = char;
-        while (true) {
+        for (;;) { // while (true) {
           const next_char = text[index+1];
           if (this.IsWhitespace(next_char)) {
             tmp += next_char;
@@ -425,7 +427,7 @@ export class MDParser {
         }
 
         let tmp = char;
-        while (true) {
+        for (;;) { // while (true) {
           const next_char = text[index+1];
           if (this.IsNewline(next_char)) {
             tmp += next_char;
@@ -454,7 +456,7 @@ export class MDParser {
         }
 
         let tmp = char;
-        while (true) {
+        for (;;) { // while (true) {
           const next_char = text[index+1];
           if (next_char === char) { // delimeters do not mix
             tmp += next_char;

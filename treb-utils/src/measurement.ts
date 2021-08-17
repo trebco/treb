@@ -7,7 +7,19 @@ export interface Metrics {
 
 export class Measurement {
 
-  public static MeasureColorARGB(color: string){
+  /** canvas used for color measurement */
+  private static color_measurement_canvas: HTMLCanvasElement;
+
+  /**
+   * node used for text metrics. this has to be added to
+   * the DOM, so it's fixed and shifted off screen.
+   */
+  private static text_measurement_node: HTMLElement;
+
+  /** cache for color lookups */
+  private static color_cache: {[index: string]: Uint8ClampedArray} = {};
+
+  public static MeasureColorARGB(color: string): string {
     const bytes = this.MeasureColor(color);
     let argb = 'FF'; // always 100%
     for (let i = 0; i < 3; i++) {
@@ -25,7 +37,7 @@ export class Measurement {
    * UPDATE: prefill with #fff. that prevents it from randomly returning
    * the last value, if the color doesn't work for some reason.
    */
-  public static MeasureColor(color: string){
+  public static MeasureColor(color: string): Uint8ClampedArray {
 
     let cached = this.color_cache[color];
     if (cached) {
@@ -54,7 +66,7 @@ export class Measurement {
 
   }
 
-  public static EnsureMeasurementNode(){
+  public static EnsureMeasurementNode(): void {
 
     if (!this.text_measurement_node) {
       const node = document.querySelector('.treb-chart-measurement-node');
@@ -91,7 +103,7 @@ export class Measurement {
    * @param italic
    * @param bold
    */
-  public static FontLoaded(font_face: string, italic = false, weight = 400) {
+  public static FontLoaded(font_face: string, italic = false, weight = 400): boolean {
     const face = `${italic ? 'italic' : ''} ${weight} 20pt ${font_face}`;
     const m1 = this.MeasureText(`${face}, sans-serif`, `check font`);
     const m2 = this.MeasureText(`${face}, serif`, `check font`);
@@ -128,17 +140,6 @@ export class Measurement {
     
   }
 
-  /** canvas used for color measurement */
-  private static color_measurement_canvas: HTMLCanvasElement;
-
-  /**
-   * node used for text metrics. this has to be added to
-   * the DOM, so it's fixed and shifted off screen.
-   */
-  private static text_measurement_node: HTMLElement;
-
-  /** cache for color lookups */
-  private static color_cache: {[index: string]: Uint8ClampedArray} = {};
 
 }
 

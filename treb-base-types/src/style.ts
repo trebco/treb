@@ -33,6 +33,9 @@ export namespace Style {
 
   /** 
    * color is either a theme color (theme index plus tint), or CSS text 
+   * 
+   * @privateRemarks
+   * 
    * FIXME: this should be a union type
    */
   export interface Color {

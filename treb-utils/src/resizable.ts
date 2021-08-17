@@ -9,12 +9,32 @@ export class Resizable {
   private static resize_mask: HTMLElement;
   private static resize_rect: HTMLElement;
 
+  /**
+   * adding layout_reference to move the handle. to keep this backwards
+   * compatible, we add it as a last, optional parameter. at some point
+   * we can create a replacement class and migrate.
+   * 
+   * this is a weird pattern, we don't need an instance of this class...
+   * goint to refactor
+   * 
+   */
+  constructor(container: HTMLElement, node: HTMLElement, resize_callback: () => void,
+      layout_reference: HTMLElement = container) {
+
+    Resizable.Create({
+      container, 
+      node, 
+      resize_callback, 
+      layout_reference});
+
+  }
+
   public static Create(options: {
       container: HTMLElement; 
       node: HTMLElement;
       resize_callback?: () => void;
       layout_reference?: HTMLElement;
-   }) {
+   }): void {
 
     const resize_handle = document.createElement('div');
     resize_handle.classList.add('treb-embed-resize-handle');
@@ -114,26 +134,6 @@ export class Resizable {
       Resizable.resize_mask.addEventListener('mouseup', mouseup);
 
     });
-
-  }
-
-  /**
-   * adding layout_reference to move the handle. to keep this backwards
-   * compatible, we add it as a last, optional parameter. at some point
-   * we can create a replacement class and migrate.
-   * 
-   * this is a weird pattern, we don't need an instance of this class...
-   * goint to refactor
-   * 
-   */
-  constructor(container: HTMLElement, node: HTMLElement, resize_callback: () => void,
-      layout_reference: HTMLElement = container) {
-
-    Resizable.Create({
-      container, 
-      node, 
-      resize_callback, 
-      layout_reference});
 
   }
 

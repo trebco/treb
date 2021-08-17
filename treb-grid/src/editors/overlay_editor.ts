@@ -40,10 +40,10 @@ export class OverlayEditor extends FormulaEditorBase {
   public edit_container: HTMLElement;
 
   public edit_inset: HTMLElement;
+  
+  public scale = 1; // this should go into theme, since it tends to follow it
 
   private _editing = false;
-
-  public scale = 1; // this should go into theme, since it tends to follow it
   
   public get editing(): boolean {
     return this._editing;

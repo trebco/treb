@@ -11,7 +11,7 @@ import { Calculator } from 'treb-calculator';
 
 import {
   IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue,
-  IsFlatData, IsFlatDataArray, Rectangle, Theme, IsComplex, ComplexToString, Complex, ExtendedUnion, IRectangle
+  IsFlatData, IsFlatDataArray, Rectangle, IsComplex, ComplexToString, Complex, ExtendedUnion, IRectangle
 } from 'treb-base-types';
 
 import { EventSource, Yield } from 'treb-utils';
@@ -1188,7 +1188,7 @@ export class EmbeddedSpreadsheetBase {
    * retained after a document is closed or reloaded. They will likely (almost)
    * always be the same, but that's not guaranteed, so don't rely on them. 
    * 
-   * @param sheet sheet name or index. sheet names are matched case-insensitively.
+   * @param sheet - sheet name or index. sheet names are matched case-insensitively.
    * 
    * @returns ID, or undefined if the index is not found (0 is not a valid 
    * sheet ID, so you can test for falsy).
@@ -1235,9 +1235,9 @@ export class EmbeddedSpreadsheetBase {
   /**
    * Insert an annotation node. Usually this means inserting a chart.
    * 
-   * @param formula Annotation formula. For charts, the chart formula.
-   * @param type Annotation type. Defaults to `treb-chart`.
-   * @param rect Coordinates, or a range reference for layout.
+   * @param formula - annotation formula. For charts, the chart formula.
+   * @param type - annotation type. Defaults to `treb-chart`.
+   * @param rect - coordinates, or a range reference for layout.
    */
   public InsertAnnotation(formula: string, type = 'treb-chart', rect?: IRectangle|RangeReference): void {
 
@@ -1362,12 +1362,12 @@ export class EmbeddedSpreadsheetBase {
   /** 
    * Rename a sheet. 
    * 
-   * @param index old name or index of sheet. leave undefined to use 
+   * @param index - old name or index of sheet. leave undefined to use 
    * current active sheet.
    * 
    * @public
    */
-  public RenameSheet(index: string|number|undefined, new_name: string) {
+  public RenameSheet(index: string|number|undefined, new_name: string): void {
 
     // API v1 OK
 
@@ -1395,7 +1395,7 @@ export class EmbeddedSpreadsheetBase {
   /**
    * Delete a sheet. 
    * 
-   * @param index Sheet name or index. Leave undefined to delete the active sheet.
+   * @param index - sheet name or index. Leave undefined to delete the active sheet.
    * 
    * @public
    */
@@ -1424,7 +1424,7 @@ export class EmbeddedSpreadsheetBase {
    * Show or hide sheet. This is a replacement for the `ShowSheet` method, 
    * because that name is somewhat ambiguous.
    * 
-   * @param index Sheet name or index.
+   * @param index - sheet name or index.
    * 
    * @public
    */
@@ -1438,7 +1438,7 @@ export class EmbeddedSpreadsheetBase {
   /**
    * Show or hide sheet.
    * 
-   * @param index Sheet name or index.
+   * @param index - sheet name or index.
    * 
    * @see HideSheet
    * @deprecated Use `HideSheet` instead.
@@ -1453,7 +1453,7 @@ export class EmbeddedSpreadsheetBase {
   /**
    * Activate sheet.
    * 
-   * @param index Sheet name or index.
+   * @param index - sheet name or index.
    * 
    * @public
    */
@@ -1467,8 +1467,8 @@ export class EmbeddedSpreadsheetBase {
   /**
    * Set width of column(s).
    * 
-   * @param column column, or columns (array), or undefined means all columns
-   * @param width desired width (can be 0) or undefined means 'auto-size'
+   * @param column - column, or columns (array), or undefined means all columns
+   * @param width - desired width (can be 0) or undefined means 'auto-size'
    * 
    * TODO: this method assumes the current sheet. we need a method that can
    * (optionally) specify a sheet.
@@ -1485,8 +1485,8 @@ export class EmbeddedSpreadsheetBase {
   /**
    * Set height of row(s).
    * 
-   * @param row row, or rows (array), or undefined means all rows
-   * @param height desired height (can be 0) or undefined means 'auto-size'
+   * @param row - row, or rows (array), or undefined means all rows
+   * @param height - desired height (can be 0) or undefined means 'auto-size'
    * 
    * TODO: this method assumes the current sheet. we need a method that can
    * (optionally) specify a sheet.
@@ -1503,7 +1503,7 @@ export class EmbeddedSpreadsheetBase {
   /**
    * Insert row(s).
    * 
-   * @param before_row leave undefined to use current selection.
+   * @param before_row - leave undefined to use current selection.
    * 
    * @public
    */
@@ -1522,7 +1522,7 @@ export class EmbeddedSpreadsheetBase {
   /**
    * Insert column(s).
    * 
-   * @param before_column leave undefined to use current selection.
+   * @param before_column - leave undefined to use current selection.
    * 
    * @public
    */
@@ -1541,7 +1541,7 @@ export class EmbeddedSpreadsheetBase {
   /**
    * Delete row(s).
    * 
-   * @param start_row leave undefined to use current selection. in this
+   * @param start_row - leave undefined to use current selection. in this
    * case the `count` parameter will be ignored and all rows in the selection
    * will be deleted.
    */
@@ -1561,7 +1561,7 @@ export class EmbeddedSpreadsheetBase {
   /**
    * Delete columns(s).
    * 
-   * @param start_column leave undefined to use current selection. in this
+   * @param start_column - leave undefined to use current selection. in this
    * case the `count` parameter will be ignored and all columns in the 
    * selection will be deleted.
    */
@@ -2819,13 +2819,13 @@ export class EmbeddedSpreadsheetBase {
    * Cancel subscription
    * @param token - the token returned from `Subscribe`
    */
-  public Cancel(token: number) {
+  public Cancel(token: number): void {
     this.events.Cancel(token);
   }
 
   // --- internal (protected) methods ------------------------------------------
 
-  protected Publish(event: EmbeddedSheetEvent) {
+  protected Publish(event: EmbeddedSheetEvent): void {
     this.events.Publish(event);
   }
 

@@ -1,255 +1,31 @@
-
 /*! API v12.0. Copyright 2018-2021 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
-/** ambient global object */
-declare const TREB: {
-  CreateSpreadsheet: (options: EmbeddedSpreadsheetOptions) => EmbeddedSpreadsheet;
-  version: string;
-} 
 
-export interface ExportOptions {
-  delimiter?: ',' | '\t';
-  sheet?: string|number;
+/**
+ * global object used to create spreadsheets
+ */
+export declare class TREBGlobal {
 
-  /** export formulas not values */
-  formulas?: boolean;
+  /** create a spreadsheet */
+  static CreateSpreadsheet: (options: EmbeddedSpreadsheetOptions) => EmbeddedSpreadsheet;
 
-  /** use number formats */
-  formatted?: boolean;
-}
-
-export interface FreezePane {
-  rows: number;
-  columns: number;
-}
-
-export interface Rectangle {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-export interface SerializeOptions {
-
-  /** include rendered/calculated values in export */
-  rendered_values?: boolean;
-
-  /** prune unused rows/columns */
-  shrink?: boolean;
+  /** TREB version */
+  static version: string;
 
 }
 
-export enum BorderConstants {
-  None = 'none',
-  All = 'all',
-  Outside = 'outside',
-  Top = 'top',
-  Bottom = 'bottom',
-  Left = 'left',
-  Right = 'right',
-  DoubleTop = 'double-top',
-  DoubleBottom = 'double-bottom',
-}
+/** 
+ * ambient global instance
+ */
+declare const TREB: TREBGlobal;
 
-export declare namespace Style {
-  /** horizontal align constants */
-  enum HorizontalAlign {
-      None = 0,
-      Left = 1,
-      Center = 2,
-      Right = 3
-  }
-  /** vertical align constants */
-  enum VerticalAlign {
-      None = 0,
-      Top = 1,
-      Bottom = 2,
-      Middle = 3
-  }
-  interface FontSize {
-      unit: 'pt' | 'px' | 'em' | '%';
-      value: number;
-  }
-  interface Color {
-      theme?: number;
-      tint?: number;
-      text?: string;
-      none?: boolean;
-  }
-  interface Properties {
-      horizontal_align?: HorizontalAlign;
-      vertical_align?: VerticalAlign;
-      nan?: string;
-      number_format?: string;
-      wrap?: boolean;
-      font_size?: FontSize;
-      font_face?: string;
-      bold?: boolean;
-      italic?: boolean;
-      underline?: boolean;
-      strike?: boolean;
-      font_weight?: number;
-      border_top?: number;
-      border_right?: number;
-      border_left?: number;
-      border_bottom?: number;
-      text?: Color;
-      fill?: Color;
-      border_top_fill?: Color;
-      border_left_fill?: Color;
-      border_right_fill?: Color;
-      border_bottom_fill?: Color;
-      locked?: boolean;
-  }
-}
-
-export interface Complex {
-  real: number;
-  imaginary: number;
-}
-
-export declare type CellValue = undefined | string | number | boolean | Complex;
-
-export interface ICellAddress {
-  row: number;
-  column: number;
-  absolute_row?: boolean;
-  absolute_column?: boolean;
-  sheet_id?: number;
-}
-
-export interface IArea {
-  start: ICellAddress;
-  end: ICellAddress;
-}
-
-/** construction options */
-export declare interface EmbeddedSpreadsheetOptions {
-
-  /** containing element */
-  container?: string | HTMLElement;
-
-  /** allow drag and drop */
-  dnd?: boolean;
-
-  /** expandable grid */
-  expand?: boolean;
-
-  /** key in localStorage for persisting document */
-  storage_key?: string;
-
-  /** don't load immediately (?) */
-  toll_initial_load?: boolean;
-
-  /** show formula bar */
-  formula_bar?: boolean;
-
-  /** expand formula bar */
-  expand_formula_button?: boolean;
-
-  /** scroll to cell on load */
-  scroll?: string;
-
-  /** sheet to show on load, overrides anything in the model */
-  sheet?: string;
-
-  /** add resizable wrapper */
-  resizable?: boolean;
-
-  /** export to xlsx, now optional */
-  export?: boolean;
-
-  /** popout icon */
-  popout?: boolean;
-
-  /** fetch network document (URI) */
-  network_document?: string;
-
-  /** load this document if the storage document isn't found (fallback) */
-  alternate_document?: string;
-  
-  /** row/column headers */
-  headers?: boolean;
-  
-  /** recalculate on load */
-  recalculate?: boolean;
-  
-  /** show scrollbars */
-  scrollbars?: boolean;
-  
-  /** show tab bar (multi sheet) */
-  tab_bar?: boolean | 'auto';
-  
-  /** allow add tab */
-  add_tab?: boolean;
-  
-  /** show delete tab */
-  delete_tab?: boolean;
-
-  /** set a reference in global (self) */
-  global_name?: string;
-
-  /** support undo */
-  undo?: boolean;
-
-  /** support in-cell editor */
-  in_cell_editor?: boolean;
-
-  /** prompt "you have unsaved changes" */
-  prompt_save?: boolean;
-  
-  /** toolbar visibility/size */
-  toolbar?: boolean | 'show' | 'narrow' | 'show-narrow';
-
-  /** file options in the toolbar */
-  file_menu?: boolean;
-
-  /** font size in the toolbar */
-  font_scale?: boolean;
-
-  /** chart menu in the toolbar */
-  chart_menu?: boolean;
-
-  /** recalculate button in the toolbar */
-  toolbar_recalculate_button?: boolean;
-
-  /** headless operation*/
-  headless?: boolean;
-
-  /** max size for image, in bytes */
-  max_file_size?: number;
-
-  /** initial scale */
-  scale?: number;
-
-  /** show scale buttons */
-  scale_control?: boolean;
-
-  /** save/load scale. this can optionally have a string key to disambiguate */
-  persist_scale?: boolean | string;
-
-  /** target window for hyperlinks (default _blank); set false to disable hyperlinks altogether */
-  hyperlinks?: string | false;
-  
-  /** support MD formatting for text */
-  markdown?: boolean;
-
-  /** show tinted colors in toolbar color dropdowns */
-  tint_theme_colors?: boolean;
-
-  /** collapsed: start sidebar closed */
-  collapsed?: boolean;
- 
-}
-
-
-
+/**
+ * options for saving files. we add the option for JSON formatting.
+ */
 export interface SaveOptions extends SerializeOptions {
 
     /** pretty json formatting */
     pretty?: boolean;
-
 }
 
 /**
@@ -268,15 +44,10 @@ export declare type RangeReference = string | ICellAddress | IArea;
  * options for the LoadDocument method
  */
 export interface LoadDocumentOptions {
-
     scroll?: string | ICellAddress;
-
     flush?: boolean;
-
     recalculate?: boolean;
-
     override_sheet?: string;
-
 }
 
 /**
@@ -296,7 +67,6 @@ export interface GetRangeOptions {
      * FIXME: that should throw?
      */
     formula?: boolean;
-
 }
 
 /**
@@ -312,13 +82,15 @@ export interface SetRangeOptions {
 
     /** apply as an array (as if you pressed ctrl+shift+enter) */
     array?: boolean;
-
 }
 
 /**
- * options for the ScrollTo method
+ * options for the ScrollTo method.
+ *
+ * @note this method was renamed because of a conflict with a DOM type,
+ * which was causing problems with the documentation generator.
  */
-export interface ScrollToOptions {
+export interface SheetScrollOptions {
 
     /** scroll in x-direction. defaults to true. */
     x?: boolean;
@@ -331,9 +103,11 @@ export interface ScrollToOptions {
      * https://www.google.com/search?q=mdn+scrollto
      */
     smooth?: boolean;
-
 }
 
+/**
+ * embedded spreadsheet, suitable for one-line embedding in a web page
+ */
 export declare class EmbeddedSpreadsheet {
 
     /** document name (metadata) */
@@ -359,8 +133,6 @@ export declare class EmbeddedSpreadsheet {
 
     /** headless state */
     set headless(value: boolean);
-
-    constructor(options: EmbeddedSpreadsheetOptions);
 
     /**
      * Use this function to batch multiple document changes. Essentially the
@@ -397,7 +169,7 @@ export declare class EmbeddedSpreadsheet {
      * retained after a document is closed or reloaded. They will likely (almost)
      * always be the same, but that's not guaranteed, so don't rely on them.
      *
-     * @param sheet sheet name or index. sheet names are matched case-insensitively.
+     * @param sheet - sheet name or index. sheet names are matched case-insensitively.
      *
      * @returns ID, or undefined if the index is not found (0 is not a valid
      * sheet ID, so you can test for falsy).
@@ -414,11 +186,11 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Insert an annotation node. Usually this means inserting a chart.
      *
-     * @param formula Annotation formula. For charts, the chart formula.
-     * @param type Annotation type. Defaults to `treb-chart`.
-     * @param rect Coordinates, or a range reference for layout.
+     * @param formula - annotation formula. For charts, the chart formula.
+     * @param type - annotation type. Defaults to `treb-chart`.
+     * @param rect - coordinates, or a range reference for layout.
      */
-    InsertAnnotation(formula: string, type?: string, rect?: Partial<Rectangle> | RangeReference): void;
+    InsertAnnotation(formula: string, type?: string, rect?: IRectangle | RangeReference): void;
 
     /**
      * Insert an image. This method will open a file chooser and (if an image
@@ -430,7 +202,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Rename a sheet.
      *
-     * @param index old name or index of sheet. leave undefined to use
+     * @param index - old name or index of sheet. leave undefined to use
      * current active sheet.
      *
      * @public
@@ -440,7 +212,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Delete a sheet.
      *
-     * @param index Sheet name or index. Leave undefined to delete the active sheet.
+     * @param index - sheet name or index. Leave undefined to delete the active sheet.
      *
      * @public
      */
@@ -450,7 +222,7 @@ export declare class EmbeddedSpreadsheet {
      * Show or hide sheet. This is a replacement for the `ShowSheet` method,
      * because that name is somewhat ambiguous.
      *
-     * @param index Sheet name or index.
+     * @param index - sheet name or index.
      *
      * @public
      */
@@ -459,7 +231,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Show or hide sheet.
      *
-     * @param index Sheet name or index.
+     * @param index - sheet name or index.
      *
      * @see HideSheet
      * @deprecated Use `HideSheet` instead.
@@ -469,7 +241,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Activate sheet.
      *
-     * @param index Sheet name or index.
+     * @param index - sheet name or index.
      *
      * @public
      */
@@ -478,8 +250,8 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Set width of column(s).
      *
-     * @param column column, or columns (array), or undefined means all columns
-     * @param width desired width (can be 0) or undefined means 'auto-size'
+     * @param column - column, or columns (array), or undefined means all columns
+     * @param width - desired width (can be 0) or undefined means 'auto-size'
      *
      * TODO: this method assumes the current sheet. we need a method that can
      * (optionally) specify a sheet.
@@ -491,8 +263,8 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Set height of row(s).
      *
-     * @param row row, or rows (array), or undefined means all rows
-     * @param height desired height (can be 0) or undefined means 'auto-size'
+     * @param row - row, or rows (array), or undefined means all rows
+     * @param height - desired height (can be 0) or undefined means 'auto-size'
      *
      * TODO: this method assumes the current sheet. we need a method that can
      * (optionally) specify a sheet.
@@ -504,7 +276,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Insert row(s).
      *
-     * @param before_row leave undefined to use current selection.
+     * @param before_row - leave undefined to use current selection.
      *
      * @public
      */
@@ -513,7 +285,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Insert column(s).
      *
-     * @param before_column leave undefined to use current selection.
+     * @param before_column - leave undefined to use current selection.
      *
      * @public
      */
@@ -522,7 +294,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Delete row(s).
      *
-     * @param start_row leave undefined to use current selection. in this
+     * @param start_row - leave undefined to use current selection. in this
      * case the `count` parameter will be ignored and all rows in the selection
      * will be deleted.
      */
@@ -531,7 +303,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Delete columns(s).
      *
-     * @param start_column leave undefined to use current selection. in this
+     * @param start_column - leave undefined to use current selection. in this
      * case the `count` parameter will be ignored and all columns in the
      * selection will be deleted.
      */
@@ -540,7 +312,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Merge cells in range.
      *
-     * @range target range. leave undefined to use current selection.
+     * @param range - target range. leave undefined to use current selection.
      *
      * @public
      */
@@ -549,7 +321,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Unmerge cells in range.
      *
-     * @range target range. leave undefined to use current selection.
+     * @param range - target range. leave undefined to use current selection.
      *
      * @public
      */
@@ -644,7 +416,7 @@ export declare class EmbeddedSpreadsheet {
      *
      * @public
      */
-    LoadCSV(csv: string): void;
+    LoadCSV(csv: string, source?: LoadSource): void;
 
     /**
      * unserialize document from data
@@ -716,7 +488,7 @@ export declare class EmbeddedSpreadsheet {
      *
      * @public
      */
-    ScrollTo(address: AddressReference, options?: ScrollToOptions): void;
+    ScrollTo(address: AddressReference, options?: SheetScrollOptions): void;
 
     /**
      * Resolve a string address/range to an address or area (range) object.
@@ -842,4 +614,402 @@ export declare class EmbeddedSpreadsheet {
      */
     SetRange(range?: RangeReference, data?: CellValue | CellValue[][], options?: SetRangeOptions): void;
 
+    /**
+     * Subscribe to spreadsheet events
+     * @param subscriber - callback function
+     * @returns a token used to cancel the subscription
+     */
+    Subscribe(subscriber: (event: EmbeddedSheetEvent) => void): number;
+
+    /**
+     * Cancel subscription
+     * @param token - the token returned from `Subscribe`
+     */
+    Cancel(token: number): void;
+}
+export declare enum BorderConstants {
+    None = "none",
+    All = "all",
+    Outside = "outside",
+    Top = "top",
+    Bottom = "bottom",
+    Left = "left",
+    Right = "right",
+    DoubleTop = "double-top",
+    DoubleBottom = "double-bottom"
+}
+
+/**
+ * options for serializing data
+ *
+ */TODO].
+ */
+export interface SerializeOptions {
+
+    /** include the rendered/calculated value in export */
+    rendered_values?: boolean;
+
+    /** for simulation */
+    preserve_type?: boolean;
+    expand_arrays?: boolean;
+
+    /** translate colors to excel-friendly values */
+    export_colors?: boolean;
+
+    /** export cells that have no value, but have a border or background color */
+    decorated_cells?: boolean;
+
+    /** prune unused rows/columns */
+    shrink?: boolean;
+}
+
+/**
+ * structure represents a cell address
+ */
+export interface ICellAddress {
+    row: number;
+    column: number;
+    absolute_row?: boolean;
+    absolute_column?: boolean;
+    sheet_id?: number;
+}
+
+/**
+ * structure represents a 2d range of cells
+ *
+ */
+export interface IArea {
+    start: ICellAddress;
+    end: ICellAddress;
+}
+
+/** structure represents rectangle coordinates */
+export interface IRectangle {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+}
+export declare namespace Style {
+
+    /** horizontal align constants */
+    enum HorizontalAlign {
+        None = 0,
+        Left = 1,
+        Center = 2,
+        Right = 3
+    }
+
+    /** vertical align constants */
+    enum VerticalAlign {
+        None = 0,
+        Top = 1,
+        Bottom = 2,
+        Middle = 3
+    }
+
+    /** composite font size */
+    interface FontSize {
+        unit: 'pt' | 'px' | 'em' | '%';
+        value: number;
+    }
+
+    /**
+     * color is either a theme color (theme index plus tint), or CSS text
+     *
+     */
+    interface Color {
+        theme?: number;
+        tint?: number;
+        text?: string;
+
+        /** @deprecated */
+        none?: boolean;
+    }
+
+    /**
+     * style properties applied to a cell.
+     */
+    interface Properties {
+
+        /** horizontal align defaults to left */
+        horizontal_align?: HorizontalAlign;
+
+        /** vertical align defaults to bottom */
+        vertical_align?: VerticalAlign;
+
+        /** representation for NaN */
+        nan?: string;
+
+        /** number format, either a symbolic name like "General" or a format string */
+        number_format?: string;
+
+        /** wrap text */
+        wrap?: boolean;
+
+        /**
+         * font size. we recommend using relative font sizes (either % or em)
+         * which will be relative to the theme font size.
+         */
+        font_size?: FontSize;
+
+        /** font face. this can be a comma-delimited list, like CSS */
+        font_face?: string;
+
+        /** flag */
+        bold?: boolean;
+
+        /** flag */
+        italic?: boolean;
+
+        /** flag */
+        underline?: boolean;
+
+        /** flag */
+        strike?: boolean;
+
+        /** border weight */
+        border_top?: number;
+
+        /** border weight */
+        border_right?: number;
+
+        /** border weight */
+        border_left?: number;
+
+        /** border weight */
+        border_bottom?: number;
+
+        /** text color */
+        text?: Color;
+
+        /** background color */
+        fill?: Color;
+
+        /** border color */
+        border_top_fill?: Color;
+
+        /** border color */
+        border_left_fill?: Color;
+
+        /** border color */
+        border_right_fill?: Color;
+
+        /** border color */
+        border_bottom_fill?: Color;
+
+        /**
+         * cell is locked for editing
+         */
+        locked?: boolean;
+    }
+}
+export declare type CellValue = undefined | string | number | boolean | Complex;
+
+/**
+ * Complex number type
+ */
+export interface Complex {
+    real: number;
+    imaginary: number;
+}
+
+/**
+ * options for exporting CSV/TSV
+ */
+export interface ExportOptions {
+
+    /** comma or tab */
+    delimiter?: ',' | '\t';
+
+    /** optionally choose a sheet to export (defaults to active sheet) */
+    sheet?: string | number;
+
+    /** export formulas not values */
+    formulas?: boolean;
+
+    /** use number formats when exporting numbers */
+    formatted?: boolean;
+}
+
+/**
+ * options for creating spreadsheet
+ */
+export interface EmbeddedSpreadsheetOptions {
+
+    /** containing HTML element */
+    container?: string | HTMLElement;
+
+    /** allow drag-and-drop files */
+    dnd?: boolean;
+
+    /** expandable grid */
+    expand?: boolean;
+
+    /** key in localStorage for persisting document */
+    storage_key?: string;
+
+    /** don't load immediately (?) */
+    toll_initial_load?: boolean;
+
+    /** show formula bar */
+    formula_bar?: boolean;
+
+    /** expand formula bar */
+    expand_formula_button?: boolean;
+
+    /** scroll to cell on load */
+    scroll?: string | ICellAddress;
+
+    /** sheet to show on load, overrides anything in the model */
+    sheet?: string;
+
+    /** add resizable wrapper */
+    resizable?: boolean;
+
+    /** export to xlsx, now optional */
+    export?: boolean;
+
+    /** fill container */
+    auto_size?: boolean;
+
+    /** popout icon */
+    popout?: boolean;
+
+    /** fetch network document (URI) */
+    network_document?: string;
+
+    /** load this document if the storage document isn't found (fallback) */
+    alternate_document?: string;
+
+    /** freeze rows */
+    freeze_rows?: number;
+
+    /** freeze columns */
+    freeze_columns?: number;
+
+    /** row/column headers */
+    headers?: boolean;
+
+    /** recalculate on load */
+    recalculate?: boolean;
+
+    /** show scrollbars */
+    scrollbars?: boolean;
+
+    /** show tab bar (multi sheet) */
+    tab_bar?: boolean | 'auto';
+
+    /** allow add tab */
+    add_tab?: boolean;
+
+    /** show delete tab */
+    delete_tab?: boolean;
+
+    /** set a reference in global (self) */
+    global_name?: string;
+
+    /** support undo */
+    undo?: boolean;
+
+    /** support in-cell editor */
+    in_cell_editor?: boolean;
+
+    /** prompt "you have unsaved changes" */
+    prompt_save?: boolean;
+
+    /**
+     * toolbar
+     * FIXME: fix options
+     */
+    toolbar?: boolean | 'show' | 'narrow' | 'show-narrow';
+
+    /** file options in the toolbar */
+    file_menu?: boolean;
+
+    /** font size in the toolbar */
+    font_scale?: boolean;
+
+    /** chart menu in the toolbar */
+    chart_menu?: boolean;
+
+    /** recalculate button in the toolbar */
+    toolbar_recalculate_button?: boolean;
+
+    /** new option, better support for headless operations (default false) */
+    headless?: boolean;
+
+    /** max size for image, in bytes */
+    max_file_size?: number;
+
+    /** initial scale */
+    scale?: number;
+
+    /** show scale buttons */
+    scale_control?: boolean;
+
+    /** save/load scale. this can optionally have a string key to disambiguate */
+    persist_scale?: boolean | string;
+
+    /** target window for hyperlinks (default _blank); set false to disable hyperlinks altogether */
+    hyperlinks?: string | false;
+
+    /**
+     * support complex numbers. the meaning of this flag is changing -- the
+     * parser is going to always support complex numbers, but we might load
+     * a different set of functions if they're not expected to be used.
+     * ...
+     * no, we're not doing that. atm complex support is always baked in.
+     * @deprecated
+     */
+    complex?: boolean;
+
+    /**
+     * FOR RENDERING ONLY, the imaginary number. this is intended to support
+     * switching to "𝑖" for rendering, or " 𝑖" (same with a leading hair-space).
+     */
+    imaginary_value?: string;
+
+    /** support MD formatting for text */
+    markdown?: boolean;
+
+    /** show tinted colors in toolbar color dropdowns */
+    tint_theme_colors?: boolean;
+}
+export interface FreezePane {
+    rows: number;
+    columns: number;
+}
+export declare enum LoadSource {
+    DRAG_AND_DROP = "drag-and-drop",
+    LOCAL_FILE = "local-file",
+    NETWORK_FILE = "network-file",
+    LOCAL_STORAGE = "local-storage",
+    UNDO = "undo"
+}
+export declare type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | DataChangeEvent | SelectionEvent | ResizeEvent;
+export interface ResizeEvent {
+    type: 'resize';
+}
+export declare enum LoadType {
+    TREB = "treb",
+    CSV = "csv",
+    XLSX = "xlsx"
+}
+export interface DocumentLoadEvent {
+    type: 'load';
+    source?: LoadSource;
+    file_type?: LoadType;
+}
+export interface DocumentResetEvent {
+    type: 'reset';
+}
+export interface DataChangeEvent {
+    type: 'data';
+}
+export interface DocumentChangeEvent {
+    type: 'document-change';
+}
+export interface SelectionEvent {
+    type: 'selection';
 }

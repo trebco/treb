@@ -1,5 +1,8 @@
 
 /**
+ * options for serializing data
+ * 
+ * @privateRemarks
  * essentially a placeholder for options; we only have one at the moment.
  *
  * note that the underlying cells container has its own set of options. we
@@ -10,7 +13,7 @@
  */
 export interface SerializeOptions {
 
-  /** include the rendered/calculated value in export, a la excel */
+  /** include the rendered/calculated value in export */
   rendered_values?: boolean;
 
   /** for simulation */

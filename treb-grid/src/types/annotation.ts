@@ -31,8 +31,6 @@ let key_generator = 100;
 
 export class Annotation {
 
-  private key_ = (key_generator++);
-  
   public get key(): number { return this.key_; }
 
   /** coordinates, in sheet space */
@@ -112,6 +110,8 @@ export class Annotation {
    * as well precalculate.
    */
   public extent?: ICellAddress;
+
+  private key_ = (key_generator++);
 
   /**
    * constructor takes a property bag (from json, generally). note that

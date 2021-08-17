@@ -29,7 +29,7 @@ export interface Result {
   data: Float64Array|number[];
 }
 
-export const PackOne = (result: Result) => {
+export const PackOne = (result: Result): Float64Array => {
   const size = 4 + result.data.length;
   const data = new Float64Array(size);
   data[0] = result.column;

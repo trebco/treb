@@ -1,8 +1,10 @@
 
 // --- treb imports -----------------------------------------------------------
 
-import { Cell, ValueType, Cells, Style,
-  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData, Complex, TextPartFlag } from 'treb-base-types';
+import {
+  Cell, ValueType, Cells, Style,
+  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData, Complex, TextPartFlag
+} from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';
 
@@ -30,9 +32,14 @@ interface CellStyleRef {
 
 export class Sheet {
 
+  // --- static members -------------------------------------------------------
+
   public static base_id = 100;
 
   public static readonly default_sheet_name = 'Sheet1';
+
+  // FIXME: use the external measurement object (from utils)
+  private static measurement_canvas?: HTMLCanvasElement;
 
   /**
    * adding verbose flag so we can figure out who is publishing
@@ -40,414 +47,6 @@ export class Sheet {
    */
   // public static readonly sheet_events = new EventSource<SheetEvent>(true, 'sheet-events');
 
-  // --- class methods --------------------------------------------------------
-
-  public static Reset(): void {
-    this.base_id = 100;
-  }
-
-  /**
-   * factory method creates a new sheet
-   */
-  public static Blank(style_defaults: Style.Properties, name?: string, rows = 30, columns = 20): Sheet {
-
-    const sheet = new Sheet(style_defaults);
-
-    if (name) {
-      sheet.name = name;
-    }
-
-    rows = Math.max(rows, 1);
-    columns = Math.max(columns, 1);
-    sheet.cells.EnsureCell({row: rows - 1, column: columns - 1});
-    return sheet;
-  }
-
-  /**
-   * deserialize json representation. returns new instance or updates
-   * passed instance.
-   *
-   * FIXME: why not make this an instance method, always call on new instance?
-   *
-   * @param hints UpdateHints supports partial deserialization/replacement
-   * if we know there are only minor changes (as part of undo/redo, probably)
-   */
-  public static FromJSON(json: string | Partial<SerializedSheet>, style_defaults: Style.Properties, sheet?: Sheet): Sheet {
-
-    const source: SerializedSheet = (typeof json === 'string') ?
-      JSON.parse(json) : json as SerializedSheet;
-
-    const unflatten_numeric_array = (target: number[], data: Record<string, number>) => { // , default_value: number) => {
-      Object.keys(data).forEach((key) => {
-        const index = Number(key) || 0;
-        target[index] = data[key];
-      });
-    };
-
-    if (!sheet) {
-      sheet = new Sheet(style_defaults);
-    }
-
-    if (source.default_column_width) {
-      sheet.default_column_width = source.default_column_width;
-    }
-    if (source.default_row_height) {
-      sheet.default_row_height = source.default_row_height;
-    }
-
-    // persist ID, name
-
-    if (source.id) {
-      sheet.id = source.id;
-    }
-    if (source.name) {
-      sheet.name = source.name;
-    }
-
-    // FIXME: this should only be done on load (and possibly paste).
-    // we don't need to do it on every parse, which also happens on 
-    // undo and some other things.
-
-    const patch_style = (style: Style.Properties) => {
-
-      // this part is for back compat with older color schemes, it 
-      // could theoretically come out if we don't care (or maybe have a tool)
-
-      // UPDATE for updated font properties
-
-      const ref = (style as Style.Properties & { 
-        text_color?: string; 
-        background?: string; 
-        border_top_color?: string;
-        border_left_color?: string;
-        border_bottom_color?: string;
-        border_right_color?: string;
-
-        font_bold?: boolean;
-        font_italic?: boolean;
-        font_underline?: boolean;
-        font_strike?: boolean;
-
-        font_size_value?: number;
-        font_size_unit?: 'pt'|'px'|'em'|'%';
-
-      });
-
-      if (ref.font_size_value || ref.font_size_unit) {
-
-        ref.font_size = {
-          unit: ref.font_size_unit || 'pt',
-          value: ref.font_size_value || 10,
-        };
-
-        ref.font_size_unit = undefined;
-        ref.font_size_value = undefined;
-      }
-
-      if (ref.font_bold) {
-        ref.bold = true;
-        ref.font_bold = undefined;
-      }
-
-      if (ref.font_italic) {
-        ref.italic = true;
-        ref.font_italic = undefined;
-      }
-
-      if (ref.font_underline) {
-        ref.underline = true;
-        ref.font_underline = undefined;
-      }
-
-      if (ref.font_strike) {
-        ref.strike = true;
-        ref.font_strike = undefined;
-      }
-
-      if (ref.text_color) {
-        if (ref.text_color !== 'none') {
-          ref.text = { text: ref.text_color };
-        }
-        ref.text_color = undefined; // will get cleared, eventually
-      }
-      
-      if (ref.background) {
-        if (ref.background !== 'none') {
-          ref.fill = { text: ref.background };
-        }
-        ref.background = undefined; // ibid
-      }
-
-      if (ref.border_top_color) {
-        if (ref.border_top_color !== 'none') {
-          ref.border_top_fill = { text: ref.border_top_color };
-        }
-        ref.border_top_color = undefined;
-      }
-
-      if (ref.border_left_color) {
-        if (ref.border_left_color !== 'none') {
-          ref.border_left_fill = { text: ref.border_left_color };
-        }
-        ref.border_left_color = undefined;
-      }
-
-      if (ref.border_bottom_color) {
-        if (ref.border_bottom_color !== 'none') {
-          ref.border_bottom_fill = { text: ref.border_bottom_color };
-        }
-        ref.border_bottom_color = undefined;
-      }
-
-      if (ref.border_right_color) {
-        if (ref.border_right_color !== 'none') {
-          ref.border_right_fill = { text: ref.border_right_color };
-        }
-        ref.border_right_color = undefined;
-      }
-
-    };
-
-    // use the new name, if available; fall back to the old name, and because
-    // that's now optional, add a default.
-
-    const cell_style_refs = source.styles || source.cell_style_refs || [];
-
-    /*
-    const cell_style_refs = source.cell_style_refs;
-    */
-    for (const entry of cell_style_refs) {
-      patch_style(entry);
-    }
-
-    // styles (part 1) -- moved up in case we use inlined style refs
-
-    sheet.cell_style = [];
-
-    if (cell_style_refs) {
-      (source.cell_styles || []).forEach((cell_style: CellStyleRef) => {
-          if (typeof cell_style.ref === 'number') {
-          cell_style.style =
-            JSON.parse(JSON.stringify(cell_style_refs[cell_style.ref])); // clone
-        }
-      });
-    }
-
-    // data: cells (moved after style)
-
-    sheet.cells.FromJSON(source.data);
-    if (source.rows) sheet.cells.EnsureRow(source.rows - 1);
-    if (source.columns) sheet.cells.EnsureColumn(source.columns - 1);
-
-    // new style stuff
-
-      // different handling for nested, flat, but we only have to
-      // check once because data is either nested or it isn't.
-
-      if (source.data) {
-        if (IsFlatDataArray(source.data)) {
-          for (const entry of source.data) {
-            if (entry.style_ref) {
-              if (!sheet.cell_style[entry.column]) sheet.cell_style[entry.column] = [];
-              sheet.cell_style[entry.column][entry.row] = // entry.style;
-                JSON.parse(JSON.stringify(cell_style_refs[entry.style_ref])); // clone
-            }
-          }
-        }
-        else {
-          if (IsNestedRowArray(source.data)) {
-            for (const block of source.data) {
-              const row = block.row;
-              for (const entry of block.cells) {
-                const column = entry.column;
-                if (entry.style_ref) {
-                  if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
-                  sheet.cell_style[column][row] = // entry.style;
-                    JSON.parse(JSON.stringify(cell_style_refs[entry.style_ref])); // clone
-                }
-              }
-            }
-          }
-          else {
-            for (const block of source.data) {
-              const column = block.column;
-              for (const entry of block.cells) {
-                const row = entry.row;
-                if (entry.style_ref) {
-                  if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
-                  sheet.cell_style[column][row] = // entry.style;
-                    JSON.parse(JSON.stringify(cell_style_refs[entry.style_ref])); // clone
-                }
-              }
-            }
-          }
-        }
-      }
-
-
-    // freeze
-
-    sheet.freeze.rows = 0;
-    sheet.freeze.columns = 0;
-
-    if (source.freeze) {
-      sheet.freeze.rows = source.freeze.rows || 0;
-      sheet.freeze.columns = source.freeze.columns || 0;
-    }
-
-    // scroll, optionally
-
-    sheet.scroll_offset = source.scroll ? { ...source.scroll } : { x: 0, y: 0 };
-
-    // wrap up styles
-
-    for (const cell_style of ((source.cell_styles || []) as CellStyleRef[])) {
-      if (cell_style.style) {
-        if (!sheet.cell_style[cell_style.column]) sheet.cell_style[cell_style.column] = [];
-        sheet.cell_style[cell_style.column][cell_style.row] = cell_style.style;
-      }
-    }
-
-    sheet.sheet_style = source.sheet_style || {};
-    // sheet.row_styles = source.row_style;
-    // sheet.column_styles = source.column_style;
-    
-    // these are NOT arrays atm. that might be a problem (might not). I think
-    // this was accidental. when running, we don't care, because empty array
-    // indexes don't consume memory (AFAIK). when serializing, we do care, but
-    // how we serialize shouldn't impact how we operate at runtime.
-
-    // it breaks when we do patching (below), although we could just fix 
-    // patching. also TODO: merge patching with the map routine.
-
-    sheet.column_styles = {};
-    sheet.row_styles = {};
-
-    const MapStyles = (source_list: Record<number, number|Style.Properties>, target_list: Record<number, Style.Properties>) => {
-
-      for (const key of Object.keys(source_list)) {
-        const index = Number(key);
-        const value = source_list[index];
-        if (typeof value === 'number') {
-          const properties = cell_style_refs[value];
-          if (properties) {
-            target_list[index] = JSON.parse(JSON.stringify(properties)); // clone jic
-            patch_style(target_list[index]);
-          }
-        }
-        else if (value) {
-          target_list[index] = value;
-          patch_style(target_list[index]);
-        }
-      }
-    };
-
-    MapStyles(source.row_style, sheet.row_styles);
-    MapStyles(source.column_style, sheet.column_styles);
-
-    /*
-    for (const key of Object.keys(source.column_style)) {
-      const index = Number(key);
-      const value = source.column_style[index];
-      if (typeof value === 'number') {
-        const properties = cell_style_refs[value];
-        if (properties) {
-          sheet.column_styles[index] = JSON.parse(JSON.stringify(properties)); // clone jic
-        }
-      }
-      else {
-        sheet.column_styles[index] = value;
-      }
-    }
-    */
-
-    sheet.row_pattern = source.row_pattern || [];
-
-    // patch other styles
-
-    patch_style(sheet.sheet_style||{});
-    for (const entry of sheet.row_pattern) {
-      patch_style(entry);
-    }
-
-    /*
-    for (const key of Object.keys(sheet.column_styles)) {
-      patch_style(sheet.column_styles[key as any]);
-    }
-
-    for (const key of Object.keys(sheet.row_styles)) {
-      patch_style(sheet.row_styles[key as any]);
-    }
-    */
-
-    // ok
-
-
-    // if (hints && !hints.data) sheet.FlushCellStyles();
-
-    // sheet.default_row_height = obj.default_row_height;
-    // sheet.default_column_width = obj.default_column_width;
-
-    sheet.row_height_ = [];
-    unflatten_numeric_array(sheet.row_height_, source.row_height || {},
-      ); // sheet.default_row_height);
-      // obj.default_row_height);
-
-    if (sheet.row_height_.length) {
-      sheet.cells.EnsureRow(sheet.row_height_.length - 1);
-    }
-
-    sheet.column_width_ = [];
-    unflatten_numeric_array(sheet.column_width_, source.column_width || {},
-      ); // sheet.default_column_width);
-      // obj.default_column_width);
-
-    if (sheet.column_width_.length) {
-      sheet.cells.EnsureColumn(sheet.column_width_.length - 1);
-    }
-  
-    // NOTE: we're padding out rows/columns here to be under annotations,
-    // otherwise the pruning may have removed them. it would probably be
-    // preferable to not prune them... that shouldn't add much extra data
-    // because it would just be the number.
-
-    // FIXME
-
-    sheet.annotations = (source.annotations || []).map((entry) => new Annotation(entry));
-
-    if (source.selection) {
-
-      // copy to ensure there's no link to random object
-      sheet.selection = JSON.parse(JSON.stringify(source.selection));
-
-    }
-
-    sheet.visible = true; // default
-    if (typeof source.visible !== 'undefined') {
-      sheet.visible = !!source.visible;
-    }
-
-    
-    return sheet;
-
-  }
-
-  /* *
-   * factory method creates a sheet from a 2D array.
-   *
-   * /
-  public static FromArray(data: any[] = [], transpose = false): Sheet {
-    const sheet = new Sheet();
-    sheet.cells.FromArray(data, transpose);
-
-    return sheet;
-  }
-  */
-
-  // --- static members -------------------------------------------------------
-
-  // FIXME: use the external measurement object (from utils)
-  private static measurement_canvas?: HTMLCanvasElement;
 
   // --- instance members -----------------------------------------------------
 
@@ -572,7 +171,7 @@ export class Sheet {
   we used to have "alternate row" styles. it's clumsy, but it is a nice
   effect. we will add that back via a "pattern". not sure how the UI would
   work for this, but programatically it works.
-
+ 
   just rows atm, not columns.
   */
 
@@ -587,7 +186,7 @@ export class Sheet {
 
   // public get column_header_count() { return this.column_header_count_; }
 
-  public get header_offset(): {x: number, y: number} {
+  public get header_offset(): { x: number, y: number } {
     return { x: this.row_header_width, y: this.column_header_height };
   }
 
@@ -623,6 +222,411 @@ export class Sheet {
     this.id_ = Sheet.base_id++;
 
   }
+
+  // --- class methods --------------------------------------------------------
+
+  public static Reset(): void {
+    this.base_id = 100;
+  }
+
+  /**
+   * factory method creates a new sheet
+   */
+  public static Blank(style_defaults: Style.Properties, name?: string, rows = 30, columns = 20): Sheet {
+
+    const sheet = new Sheet(style_defaults);
+
+    if (name) {
+      sheet.name = name;
+    }
+
+    rows = Math.max(rows, 1);
+    columns = Math.max(columns, 1);
+    sheet.cells.EnsureCell({ row: rows - 1, column: columns - 1 });
+    return sheet;
+  }
+
+  /**
+   * deserialize json representation. returns new instance or updates
+   * passed instance.
+   *
+   * FIXME: why not make this an instance method, always call on new instance?
+   *
+   * @param hints UpdateHints supports partial deserialization/replacement
+   * if we know there are only minor changes (as part of undo/redo, probably)
+   */
+  public static FromJSON(json: string | Partial<SerializedSheet>, style_defaults: Style.Properties, sheet?: Sheet): Sheet {
+
+    const source: SerializedSheet = (typeof json === 'string') ?
+      JSON.parse(json) : json as SerializedSheet;
+
+    const unflatten_numeric_array = (target: number[], data: Record<string, number>) => { // , default_value: number) => {
+      Object.keys(data).forEach((key) => {
+        const index = Number(key) || 0;
+        target[index] = data[key];
+      });
+    };
+
+    if (!sheet) {
+      sheet = new Sheet(style_defaults);
+    }
+
+    if (source.default_column_width) {
+      sheet.default_column_width = source.default_column_width;
+    }
+    if (source.default_row_height) {
+      sheet.default_row_height = source.default_row_height;
+    }
+
+    // persist ID, name
+
+    if (source.id) {
+      sheet.id = source.id;
+    }
+    if (source.name) {
+      sheet.name = source.name;
+    }
+
+    // FIXME: this should only be done on load (and possibly paste).
+    // we don't need to do it on every parse, which also happens on 
+    // undo and some other things.
+
+    const patch_style = (style: Style.Properties) => {
+
+      // this part is for back compat with older color schemes, it 
+      // could theoretically come out if we don't care (or maybe have a tool)
+
+      // UPDATE for updated font properties
+
+      const ref = (style as Style.Properties & {
+        text_color?: string;
+        background?: string;
+        border_top_color?: string;
+        border_left_color?: string;
+        border_bottom_color?: string;
+        border_right_color?: string;
+
+        font_bold?: boolean;
+        font_italic?: boolean;
+        font_underline?: boolean;
+        font_strike?: boolean;
+
+        font_size_value?: number;
+        font_size_unit?: 'pt' | 'px' | 'em' | '%';
+
+      });
+
+      if (ref.font_size_value || ref.font_size_unit) {
+
+        ref.font_size = {
+          unit: ref.font_size_unit || 'pt',
+          value: ref.font_size_value || 10,
+        };
+
+        ref.font_size_unit = undefined;
+        ref.font_size_value = undefined;
+      }
+
+      if (ref.font_bold) {
+        ref.bold = true;
+        ref.font_bold = undefined;
+      }
+
+      if (ref.font_italic) {
+        ref.italic = true;
+        ref.font_italic = undefined;
+      }
+
+      if (ref.font_underline) {
+        ref.underline = true;
+        ref.font_underline = undefined;
+      }
+
+      if (ref.font_strike) {
+        ref.strike = true;
+        ref.font_strike = undefined;
+      }
+
+      if (ref.text_color) {
+        if (ref.text_color !== 'none') {
+          ref.text = { text: ref.text_color };
+        }
+        ref.text_color = undefined; // will get cleared, eventually
+      }
+
+      if (ref.background) {
+        if (ref.background !== 'none') {
+          ref.fill = { text: ref.background };
+        }
+        ref.background = undefined; // ibid
+      }
+
+      if (ref.border_top_color) {
+        if (ref.border_top_color !== 'none') {
+          ref.border_top_fill = { text: ref.border_top_color };
+        }
+        ref.border_top_color = undefined;
+      }
+
+      if (ref.border_left_color) {
+        if (ref.border_left_color !== 'none') {
+          ref.border_left_fill = { text: ref.border_left_color };
+        }
+        ref.border_left_color = undefined;
+      }
+
+      if (ref.border_bottom_color) {
+        if (ref.border_bottom_color !== 'none') {
+          ref.border_bottom_fill = { text: ref.border_bottom_color };
+        }
+        ref.border_bottom_color = undefined;
+      }
+
+      if (ref.border_right_color) {
+        if (ref.border_right_color !== 'none') {
+          ref.border_right_fill = { text: ref.border_right_color };
+        }
+        ref.border_right_color = undefined;
+      }
+
+    };
+
+    // use the new name, if available; fall back to the old name, and because
+    // that's now optional, add a default.
+
+    const cell_style_refs = source.styles || source.cell_style_refs || [];
+
+    /*
+    const cell_style_refs = source.cell_style_refs;
+    */
+    for (const entry of cell_style_refs) {
+      patch_style(entry);
+    }
+
+    // styles (part 1) -- moved up in case we use inlined style refs
+
+    sheet.cell_style = [];
+
+    if (cell_style_refs) {
+      (source.cell_styles || []).forEach((cell_style: CellStyleRef) => {
+        if (typeof cell_style.ref === 'number') {
+          cell_style.style =
+            JSON.parse(JSON.stringify(cell_style_refs[cell_style.ref])); // clone
+        }
+      });
+    }
+
+    // data: cells (moved after style)
+
+    sheet.cells.FromJSON(source.data);
+    if (source.rows) sheet.cells.EnsureRow(source.rows - 1);
+    if (source.columns) sheet.cells.EnsureColumn(source.columns - 1);
+
+    // new style stuff
+
+    // different handling for nested, flat, but we only have to
+    // check once because data is either nested or it isn't.
+
+    if (source.data) {
+      if (IsFlatDataArray(source.data)) {
+        for (const entry of source.data) {
+          if (entry.style_ref) {
+            if (!sheet.cell_style[entry.column]) sheet.cell_style[entry.column] = [];
+            sheet.cell_style[entry.column][entry.row] = // entry.style;
+              JSON.parse(JSON.stringify(cell_style_refs[entry.style_ref])); // clone
+          }
+        }
+      }
+      else {
+        if (IsNestedRowArray(source.data)) {
+          for (const block of source.data) {
+            const row = block.row;
+            for (const entry of block.cells) {
+              const column = entry.column;
+              if (entry.style_ref) {
+                if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
+                sheet.cell_style[column][row] = // entry.style;
+                  JSON.parse(JSON.stringify(cell_style_refs[entry.style_ref])); // clone
+              }
+            }
+          }
+        }
+        else {
+          for (const block of source.data) {
+            const column = block.column;
+            for (const entry of block.cells) {
+              const row = entry.row;
+              if (entry.style_ref) {
+                if (!sheet.cell_style[column]) sheet.cell_style[column] = [];
+                sheet.cell_style[column][row] = // entry.style;
+                  JSON.parse(JSON.stringify(cell_style_refs[entry.style_ref])); // clone
+              }
+            }
+          }
+        }
+      }
+    }
+
+
+    // freeze
+
+    sheet.freeze.rows = 0;
+    sheet.freeze.columns = 0;
+
+    if (source.freeze) {
+      sheet.freeze.rows = source.freeze.rows || 0;
+      sheet.freeze.columns = source.freeze.columns || 0;
+    }
+
+    // scroll, optionally
+
+    sheet.scroll_offset = source.scroll ? { ...source.scroll } : { x: 0, y: 0 };
+
+    // wrap up styles
+
+    for (const cell_style of ((source.cell_styles || []) as CellStyleRef[])) {
+      if (cell_style.style) {
+        if (!sheet.cell_style[cell_style.column]) sheet.cell_style[cell_style.column] = [];
+        sheet.cell_style[cell_style.column][cell_style.row] = cell_style.style;
+      }
+    }
+
+    sheet.sheet_style = source.sheet_style || {};
+    // sheet.row_styles = source.row_style;
+    // sheet.column_styles = source.column_style;
+
+    // these are NOT arrays atm. that might be a problem (might not). I think
+    // this was accidental. when running, we don't care, because empty array
+    // indexes don't consume memory (AFAIK). when serializing, we do care, but
+    // how we serialize shouldn't impact how we operate at runtime.
+
+    // it breaks when we do patching (below), although we could just fix 
+    // patching. also TODO: merge patching with the map routine.
+
+    sheet.column_styles = {};
+    sheet.row_styles = {};
+
+    const MapStyles = (source_list: Record<number, number | Style.Properties>, target_list: Record<number, Style.Properties>) => {
+
+      for (const key of Object.keys(source_list)) {
+        const index = Number(key);
+        const value = source_list[index];
+        if (typeof value === 'number') {
+          const properties = cell_style_refs[value];
+          if (properties) {
+            target_list[index] = JSON.parse(JSON.stringify(properties)); // clone jic
+            patch_style(target_list[index]);
+          }
+        }
+        else if (value) {
+          target_list[index] = value;
+          patch_style(target_list[index]);
+        }
+      }
+    };
+
+    MapStyles(source.row_style, sheet.row_styles);
+    MapStyles(source.column_style, sheet.column_styles);
+
+    /*
+    for (const key of Object.keys(source.column_style)) {
+      const index = Number(key);
+      const value = source.column_style[index];
+      if (typeof value === 'number') {
+        const properties = cell_style_refs[value];
+        if (properties) {
+          sheet.column_styles[index] = JSON.parse(JSON.stringify(properties)); // clone jic
+        }
+      }
+      else {
+        sheet.column_styles[index] = value;
+      }
+    }
+    */
+
+    sheet.row_pattern = source.row_pattern || [];
+
+    // patch other styles
+
+    patch_style(sheet.sheet_style || {});
+    for (const entry of sheet.row_pattern) {
+      patch_style(entry);
+    }
+
+    /*
+    for (const key of Object.keys(sheet.column_styles)) {
+      patch_style(sheet.column_styles[key as any]);
+    }
+
+    for (const key of Object.keys(sheet.row_styles)) {
+      patch_style(sheet.row_styles[key as any]);
+    }
+    */
+
+    // ok
+
+
+    // if (hints && !hints.data) sheet.FlushCellStyles();
+
+    // sheet.default_row_height = obj.default_row_height;
+    // sheet.default_column_width = obj.default_column_width;
+
+    sheet.row_height_ = [];
+    unflatten_numeric_array(sheet.row_height_, source.row_height || {},
+    ); // sheet.default_row_height);
+    // obj.default_row_height);
+
+    if (sheet.row_height_.length) {
+      sheet.cells.EnsureRow(sheet.row_height_.length - 1);
+    }
+
+    sheet.column_width_ = [];
+    unflatten_numeric_array(sheet.column_width_, source.column_width || {},
+    ); // sheet.default_column_width);
+    // obj.default_column_width);
+
+    if (sheet.column_width_.length) {
+      sheet.cells.EnsureColumn(sheet.column_width_.length - 1);
+    }
+
+    // NOTE: we're padding out rows/columns here to be under annotations,
+    // otherwise the pruning may have removed them. it would probably be
+    // preferable to not prune them... that shouldn't add much extra data
+    // because it would just be the number.
+
+    // FIXME
+
+    sheet.annotations = (source.annotations || []).map((entry) => new Annotation(entry));
+
+    if (source.selection) {
+
+      // copy to ensure there's no link to random object
+      sheet.selection = JSON.parse(JSON.stringify(source.selection));
+
+    }
+
+    sheet.visible = true; // default
+    if (typeof source.visible !== 'undefined') {
+      sheet.visible = !!source.visible;
+    }
+
+
+    return sheet;
+
+  }
+
+  /* *
+   * factory method creates a sheet from a 2D array.
+   *
+   * /
+  public static FromArray(data: any[] = [], transpose = false): Sheet {
+    const sheet = new Sheet();
+    sheet.cells.FromArray(data, transpose);
+
+    return sheet;
+  }
+  */
+
 
   // --- public methods -------------------------------------------------------
 
@@ -682,9 +686,9 @@ export class Sheet {
     let font_height = (style.font_size?.value || 0);
 
     let scale = 0;
-    
+
     switch (style.font_size?.unit) {
-      case 'px': 
+      case 'px':
         font_height *= (75 / 100);
         break;
 
@@ -755,7 +759,7 @@ export class Sheet {
    */
   public SetColumnHeaders(headers: CellValue[]): void {
     this.column_headers = headers.map(value => value === undefined ? '' : value.toString());
-    if (headers){
+    if (headers) {
       this.cells.EnsureColumn(headers.length - 1);
     }
   }
@@ -764,7 +768,7 @@ export class Sheet {
    * deprecated
    * KEEP IT: just maintain flexibility, it has very low cost
    */
-  public RowHeader(row: number): string|number {
+  public RowHeader(row: number): string | number {
     if (this.row_headers) {
       if (this.row_headers.length > row) return this.row_headers[row];
       return '';
@@ -783,7 +787,7 @@ export class Sheet {
       if (this.column_headers.length > column) return this.column_headers[column];
       return '';
     }
-    for(;;) {
+    for (; ;) {
       const c = column % 26;
       s = String.fromCharCode(65 + c) + s;
       column = Math.floor(column / 26);
@@ -835,7 +839,7 @@ export class Sheet {
 
     // keys that are in either object. this will result in some
     // duplication, probably not too bad. could precompute array? (...)
-    
+
     // you could do that using a composite object, but would be wasteful.
     // would look good in typescript but generate extra javascript. might
     // still be faster, though? (...)
@@ -860,7 +864,7 @@ export class Sheet {
         if (JSON.stringify(a) !== JSON.stringify(b)) {
           result[key] = b;
         }
-        
+
       }
       else if (a !== b) {
         result[key] = b;
@@ -873,7 +877,7 @@ export class Sheet {
     }
 
     return result;
-  
+
   }
 
   /**
@@ -897,7 +901,7 @@ export class Sheet {
     // testing
     // const underlying = this.CompositeStyleForCell(address, false);
     const underlying = this.CompositeStyleForCell(address, false, false);
-    
+
     const merged = Style.Composite([
       this.default_style_properties,
       underlying,
@@ -981,10 +985,10 @@ export class Sheet {
    * the cell itself, or for row and column.
    */
   public HasCellStyle(address: ICellAddress): boolean {
-    return !!((this.cell_style[address.column] && this.cell_style[address.column][address.row]) 
-      || this.row_styles[address.row] 
+    return !!((this.cell_style[address.column] && this.cell_style[address.column][address.row])
+      || this.row_styles[address.row]
       || this.column_styles[address.column]
-      || this.row_pattern.length );
+      || this.row_pattern.length);
   }
 
   /**
@@ -1054,22 +1058,22 @@ export class Sheet {
     for (; row_above >= 0 && this.row_height_[row_above] === 0; row_above--) { /* */ }
 
     if (column_left >= 0 && row_above >= 0) {
-      map[7] = this.CellStyleData({row: row_above, column: column_left}) || {};
-    }
-    
-    if (column_left >= 0) {
-      map[4] = this.CellStyleData({row: address.row, column: column_left}) || {};
-      map[1] = this.CellStyleData({row: row_below, column: column_left}) || {};
-    }
-    
-    if (row_above >= 0) {
-      map[8] = this.CellStyleData({row: row_above, column: address.column}) || {};
-      map[9] = this.CellStyleData({row: row_above, column: column_right}) || {};
+      map[7] = this.CellStyleData({ row: row_above, column: column_left }) || {};
     }
 
-    map[6] = this.CellStyleData({row: address.row, column: column_right}) || {};
-    map[2] = this.CellStyleData({row: row_below, column: address.column}) || {};
-    map[3] = this.CellStyleData({row: row_below, column: column_right}) || {};
+    if (column_left >= 0) {
+      map[4] = this.CellStyleData({ row: address.row, column: column_left }) || {};
+      map[1] = this.CellStyleData({ row: row_below, column: column_left }) || {};
+    }
+
+    if (row_above >= 0) {
+      map[8] = this.CellStyleData({ row: row_above, column: address.column }) || {};
+      map[9] = this.CellStyleData({ row: row_above, column: column_right }) || {};
+    }
+
+    map[6] = this.CellStyleData({ row: address.row, column: column_right }) || {};
+    map[2] = this.CellStyleData({ row: row_below, column: address.column }) || {};
+    map[3] = this.CellStyleData({ row: row_below, column: column_right }) || {};
 
     return map;
   }
@@ -1081,7 +1085,7 @@ export class Sheet {
    * 
    * switching from null to undefined as "missing" type
    */
-  public CellStyleData(address: ICellAddress): Style.Properties|undefined {
+  public CellStyleData(address: ICellAddress): Style.Properties | undefined {
 
     // don't create if it doesn't exist
     const cell = this.cells.GetCell(address);
@@ -1206,7 +1210,7 @@ export class Sheet {
       // NOTE: all that moved to NumberFormat
 
       const complex = value as Complex;
-      if (isNaN(complex.real)|| isNaN(complex.imaginary)) {
+      if (isNaN(complex.real) || isNaN(complex.imaginary)) {
 
         // render nan for nan values
         cell.formatted = // Style.Format(cell.style, value); // formats NaN
@@ -1239,7 +1243,7 @@ export class Sheet {
    * and calls method. returns a string or array of text parts
    * (@see treb-format).
    */
-  public FormatNumber(value: CellValue, format = ''): string|TextPart[] {
+  public FormatNumber(value: CellValue, format = ''): string | TextPart[] {
     const formatted = NumberFormatCache.Get(format).FormatParts(value);
     if (!formatted.length) return '';
     if (formatted.length === 1 && !formatted[0].flag) { return formatted[0].text || ''; }
@@ -1650,7 +1654,7 @@ export class Sheet {
   // also some of this could be moved to the Cells class... if for no
   // other reason than to remove the iteration overhead
 
-  public SetAreaValues2(area: Area, values: CellValue|CellValue[][]): void {
+  public SetAreaValues2(area: Area, values: CellValue | CellValue[][]): void {
 
     // we don't want to limit this to the existing area, we only
     // want to remove infinities (if set). it's possible to expand
@@ -1748,19 +1752,19 @@ export class Sheet {
     return cell.value;
   }
 
-  public GetFormattedRange(from: ICellAddress, to: ICellAddress = from): CellValue|CellValue[][] {
+  public GetFormattedRange(from: ICellAddress, to: ICellAddress = from): CellValue | CellValue[][] {
 
     if (from.row === to.row && from.column === to.column) {
       return this.FormattedCellValue(from);
     }
 
     const result: CellValue[][] = [];
-    
+
     // grab rows
     for (let row = from.row; row <= to.row; row++) {
       const target: CellValue[] = [];
       for (let column = from.column; column <= to.column; column++) {
-        target.push(this.FormattedCellValue({row, column}));
+        target.push(this.FormattedCellValue({ row, column }));
       }
       result.push(target);
     }
@@ -1780,14 +1784,14 @@ export class Sheet {
    * just return the requested data...
    */
   public NumberFormatsAndColors(
-        color_map: Record<string, number>,
-        number_format_map: Record<string, number>,
-      ): void {
+    color_map: Record<string, number>,
+    number_format_map: Record<string, number>,
+  ): void {
 
     const parse = (style: Style.Properties) => {
 
-      if (style.number_format) { 
-        number_format_map[style.number_format] = 1; 
+      if (style.number_format) {
+        number_format_map[style.number_format] = 1;
       }
 
       if (style.text?.text && style.text.text !== 'none') {
@@ -1804,34 +1808,34 @@ export class Sheet {
       //}
 
       if (style.border_top_fill?.text) {
-        color_map[style.border_top_fill.text] = 1;        
+        color_map[style.border_top_fill.text] = 1;
       }
       if (style.border_left_fill?.text) {
-        color_map[style.border_left_fill.text] = 1;        
+        color_map[style.border_left_fill.text] = 1;
       }
       if (style.border_right_fill?.text) {
-        color_map[style.border_right_fill.text] = 1;        
+        color_map[style.border_right_fill.text] = 1;
       }
       if (style.border_bottom_fill?.text) {
-        color_map[style.border_bottom_fill.text] = 1;        
+        color_map[style.border_bottom_fill.text] = 1;
       }
 
     };
 
     parse(this.sheet_style);
 
-    for (const key in this.row_styles) { 
+    for (const key in this.row_styles) {
       parse(this.row_styles[key]);
     }
 
-    for (const key in this.column_styles) { 
+    for (const key in this.column_styles) {
       parse(this.column_styles[key]);
     }
 
-    for (const style of this.row_pattern) { 
-      parse(style); 
+    for (const style of this.row_pattern) {
+      parse(style);
     }
-    
+
     for (const row of this.cell_style) {
       if (row) {
         for (const style of row) {
@@ -1947,12 +1951,12 @@ export class Sheet {
     // I think they should probably be arrays. it's not critical but
     // using records (objects) converts keys to strings, which is sloppy.
 
-    
+
     // const column_style: Array<number|Style.Properties> = [];
     // const row_style: Array<number|Style.Properties> = [];
-    
-    const column_style: Record<number, Style.Properties|number> = {};
-    const row_style: Record<number, Style.Properties|number> = {};
+
+    const column_style: Record<number, Style.Properties | number> = {};
+    const row_style: Record<number, Style.Properties | number> = {};
 
     for (const key of Object.keys(this.column_styles)) {
       const index = Number(key);
@@ -1976,7 +1980,7 @@ export class Sheet {
       }
     }
 
-    const translate_border_color = (color: string|undefined, default_color: string|undefined): string|undefined => {
+    const translate_border_color = (color: string | undefined, default_color: string | undefined): string | undefined => {
       if (typeof color !== 'undefined' && color !== 'none') {
         if (color === default_color) {
           return undefined;
@@ -1989,7 +1993,7 @@ export class Sheet {
     }
 
     const translate_border_fill = (color: Style.Color = {}, default_color: Style.Color = {}) => {
-      const result: Style.Color = { 
+      const result: Style.Color = {
         ...default_color,
         ...color,
       };
@@ -2007,8 +2011,8 @@ export class Sheet {
     if (options.export_colors) {
       const style_list: Style.Properties[] = [];
       for (const group of [
-          //row_style, column_style, // these are moved -> csr (which should be renamed)
-          cell_style_refs, [sheet_style], row_pattern]) {
+        //row_style, column_style, // these are moved -> csr (which should be renamed)
+        cell_style_refs, [sheet_style], row_pattern]) {
         if (Array.isArray(group)) {
           for (const entry of group) style_list.push(entry);
         }
@@ -2023,16 +2027,16 @@ export class Sheet {
         // wrt all the defaults from top? probably
 
         let fill = translate_border_fill(style.border_top_fill, Style.DefaultProperties.border_top_fill);
-        if (fill !== undefined) { style.border_top_fill = fill; } 
+        if (fill !== undefined) { style.border_top_fill = fill; }
 
         fill = translate_border_fill(style.border_left_fill, Style.DefaultProperties.border_left_fill);
-        if (fill !== undefined) { style.border_left_fill = fill; } 
+        if (fill !== undefined) { style.border_left_fill = fill; }
 
         fill = translate_border_fill(style.border_right_fill, Style.DefaultProperties.border_right_fill);
-        if (fill !== undefined) { style.border_right_fill = fill; } 
+        if (fill !== undefined) { style.border_right_fill = fill; }
 
         fill = translate_border_fill(style.border_bottom_fill, Style.DefaultProperties.border_bottom_fill);
-        if (fill !== undefined) { style.border_bottom_fill = fill; } 
+        if (fill !== undefined) { style.border_bottom_fill = fill; }
 
         /*
         style.border_top_fill = translate_border_fill(style.border_top_fill, Style.DefaultProperties.border_top_fill);
@@ -2083,13 +2087,13 @@ export class Sheet {
     const serialized_data = this.cells.toJSON(serialization_options);
     const data = serialized_data.data;
 
-    let {rows, columns} = serialized_data;
+    let { rows, columns } = serialized_data;
 
     if (!options.shrink) {
       rows = this.rows;
       columns = this.columns;
     }
-    else { 
+    else {
 
       // pad by 1 (2?)
 
@@ -2109,11 +2113,11 @@ export class Sheet {
         columns = Math.max(columns, annotation.extent.column + 1);
       }
     }
-    
+
     // (3) (style) for anything that hasn't been consumed, create a
     //     cell style map. FIXME: optional [?]
 
-    const cell_styles: Array<{row: number; column: number; ref: number}> = [];
+    const cell_styles: Array<{ row: number; column: number; ref: number }> = [];
 
     for (let c = 0; c < cell_reference_map.length; c++) {
       const column = cell_reference_map[c];
@@ -2267,7 +2271,7 @@ export class Sheet {
     const sheet_style = data.sheet_style;
     if (sheet_style) {
       this.UpdateAreaStyle(
-        new Area({row: Infinity, column: Infinity}, {row: Infinity, column: Infinity}), 
+        new Area({ row: Infinity, column: Infinity }, { row: Infinity, column: Infinity }),
         styles[sheet_style]);
     }
 
@@ -2280,7 +2284,7 @@ export class Sheet {
         // 0 is implicitly just a general style
 
         if (column_styles[i]) {
-          this.UpdateAreaStyle(new Area({row: Infinity, column: i}, {row: Infinity, column: i}), styles[column_styles[i]]);
+          this.UpdateAreaStyle(new Area({ row: Infinity, column: i }, { row: Infinity, column: i }), styles[column_styles[i]]);
         }
       }
     }
@@ -2344,7 +2348,7 @@ export class Sheet {
     // is called
 
     if (annotation.layout) {
-      annotation.extent = {...annotation.layout.br.address};
+      annotation.extent = { ...annotation.layout.br.address };
       return;
     }
 
@@ -2374,7 +2378,7 @@ export class Sheet {
         }
       }
     }
-   
+
   }
 
   /* *
@@ -2634,8 +2638,8 @@ export class Sheet {
     }
 
     if (apply_cell_style
-        && this.cell_style[column]
-        && this.cell_style[column][row]) {
+      && this.cell_style[column]
+      && this.cell_style[column][row]) {
       stack.push(this.cell_style[column][row]);
     }
 

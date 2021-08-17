@@ -202,7 +202,7 @@ export class MCCalculator extends Calculator {
   /**
    * flattens results for passing to the main thread from worker
    */
-  public FlattenedResults(){
+  public FlattenedResults(): ArrayBuffer[] {
 
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 

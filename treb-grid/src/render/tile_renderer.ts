@@ -776,7 +776,7 @@ export class TileRenderer {
             width: number,
           }
 
-          let words: WordMetric[] = [];
+          const words: WordMetric[] = [];
 
           for (const element of line) {
 
@@ -900,13 +900,13 @@ export class TileRenderer {
               width,
             });
 
-          };
+          }
 
           max_width = Math.max(max_width, line_width);
 
           strings.push(parts);
           
-        };
+        }
       }
 
       return { strings, width: max_width };

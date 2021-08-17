@@ -12,6 +12,9 @@ export class SelectionRenderer {
 
   public nub_rectangle: Rectangle = new Rectangle(-1, -1, 0, 0);
 
+  // tmp
+  public cached_additional_selections = '';
+
   private grid_selections: SVGSelectionBlock[] = [];
   private row_header_selections: SVGSelectionBlock[] = [];
   private column_header_selections: SVGSelectionBlock[] = [];
@@ -21,9 +24,6 @@ export class SelectionRenderer {
   private column_overlay!: HeaderOverlay;
   private corner_row_overlay!: HeaderOverlay;
   private corner_column_overlay!: HeaderOverlay;
-
-  // tmp
-  public cached_additional_selections = '';
 
   constructor(
       private theme: Theme,

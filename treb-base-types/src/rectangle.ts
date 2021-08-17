@@ -1,4 +1,5 @@
 
+/** structure represents rectangle coordinates */
 export interface IRectangle {
   top: number;
   left: number;

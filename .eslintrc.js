@@ -15,10 +15,15 @@ module.exports = {
   ],
 
   rules: {
-    'no-irregular-whitespace': 'skipComments',
+    'no-irregular-whitespace': [
+      'error',
+      {
+        skipComments: true,
+      }
+    ],
     'camelcase': 'off',
     '@typescript-eslint/camelcase': 'off',     
-    '@typescript-eslint/explicit-function-return-type': 'off',     
+    // '@typescript-eslint/explicit-function-return-type': 'off',     
     '@typescript-eslint/quotes': [
       'error',
       'single',

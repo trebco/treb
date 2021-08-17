@@ -73,7 +73,7 @@ export abstract class BaseLayout {
   public frozen_row_tiles: Tile[] = [];
   public frozen_column_tiles: Tile[] = [];
 
-  public header_size: Size = {width: 0, height: 0};
+  public header_size: Size = { width: 0, height: 0 };
 
   /**
    * last rendered column. this is used to calculate the limits of
@@ -109,7 +109,7 @@ export abstract class BaseLayout {
    */
   public scroll_reference_node!: HTMLElement;
 
-  public get scroll_offset(): {x: number, y: number} {
+  public get scroll_offset(): { x: number, y: number } {
     if (!this.scroll_reference_node) {
       return { x: 0, y: 0 };
     }
@@ -119,13 +119,15 @@ export abstract class BaseLayout {
     };
   }
 
-  public set scroll_offset(offset: {x: number; y: number}) {
+  public set scroll_offset(offset: { x: number; y: number }) {
     if (!this.scroll_reference_node) {
       return;
     }
     this.scroll_reference_node.scrollLeft = offset.x;
     this.scroll_reference_node.scrollTop = offset.y;
   }
+
+  protected dropdown_caret: SVGSVGElement;
 
   /** we have to disable mock selection for IE or it breaks key handling */
   private trident = ((typeof navigator !== 'undefined') &&
@@ -134,11 +136,9 @@ export abstract class BaseLayout {
   // private default_tile_size: Size = { width: 600, height: 400 };
   private default_tile_size: Size = { width: 1200, height: 800 };
 
-  private tooltip_state?: 'up'|'left';
+  private tooltip_state?: 'up' | 'left';
 
   private tooltip: HTMLDivElement;
-
-  protected dropdown_caret: SVGSVGElement;
 
   private dropdown_list: HTMLDivElement;
   private dropdown_caret_visible = false;
@@ -202,7 +202,7 @@ export abstract class BaseLayout {
 
       const class_name = this.dropdown_caret.getAttribute('class') || '';
 
-      if(/active/i.test(class_name)) {
+      if (/active/i.test(class_name)) {
         this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
       }
       else {
@@ -222,14 +222,14 @@ export abstract class BaseLayout {
     });
     */
 
-   this.dropdown_list = DOMUtilities.CreateDiv('treb-dropdown-list');
-   this.dropdown_list.setAttribute('tabindex', '-1'); // focusable
+    this.dropdown_list = DOMUtilities.CreateDiv('treb-dropdown-list');
+    this.dropdown_list.setAttribute('tabindex', '-1'); // focusable
 
     // this.dropdown_caret.addEventListener('keydown', (event) => {
     this.dropdown_list.addEventListener('keydown', (event) => {
       let delta = 0;
 
-      switch(event.key) {
+      switch (event.key) {
         case 'ArrowDown':
           delta = 1;
           break;
@@ -268,7 +268,7 @@ export abstract class BaseLayout {
 
             const bottom = this.dropdown_selected.offsetTop + this.dropdown_selected.offsetHeight;
             if (bottom >
-                this.dropdown_list.offsetHeight + this.dropdown_list.scrollTop) {
+              this.dropdown_list.offsetHeight + this.dropdown_list.scrollTop) {
               this.dropdown_list.scrollTop = bottom - this.dropdown_list.offsetHeight;
             }
 
@@ -293,8 +293,8 @@ export abstract class BaseLayout {
     this.dropdown_list.addEventListener('mousedown', (event) => {
 
       const target = event.target as HTMLElement;
-      if (event.target === this.dropdown_list) { 
-        return; 
+      if (event.target === this.dropdown_list) {
+        return;
       }
 
       event.stopPropagation();
@@ -373,12 +373,12 @@ export abstract class BaseLayout {
     // this.title_node.style.pointerEvents = 'none';
   }
 
-  public ShowTitle(text: string, address: ICellAddress, event?: MouseEvent): void {
+  public ShowTitle(text: string, address: ICellAddress /*, event?: MouseEvent */): void {
     this.title_node.textContent = text;
 
     if (!this.title_node.parentElement) return;
 
-    const note_size = this.title_node.getBoundingClientRect();
+    // const note_size = this.title_node.getBoundingClientRect();
     const container = this.title_node.parentElement.getBoundingClientRect();
 
     const rect = this.OffsetCellAddressToRectangle(address).Shift(
@@ -419,7 +419,7 @@ export abstract class BaseLayout {
     else {
       this.note_node.textContent = note;
     }
-    
+
     if (!this.note_node.parentElement) return;
 
     const note_size = this.note_node.getBoundingClientRect();
@@ -457,8 +457,8 @@ export abstract class BaseLayout {
 
     // find index
     let index = -1;
-    for (let i = 0; i < this.model.active_sheet.annotations.length; i++ ){
-      if  (this.model.active_sheet.annotations[i] === annotation) {
+    for (let i = 0; i < this.model.active_sheet.annotations.length; i++) {
+      if (this.model.active_sheet.annotations[i] === annotation) {
         index = i;
         break;
       }
@@ -481,7 +481,7 @@ export abstract class BaseLayout {
 
     // update layout, use z-indexes
 
-    for (let i = 0; i < this.model.active_sheet.annotations.length; i++ ){
+    for (let i = 0; i < this.model.active_sheet.annotations.length; i++) {
 
       // updating to shift frozen annotations as well
 
@@ -530,8 +530,8 @@ export abstract class BaseLayout {
    */
   public RectToAnnotationLayout(rect: Partial<Rectangle>): AnnotationLayout {
     return {
-      tl: this.PointToAnnotationCorner({x: (rect.left||0) + 1, y: (rect.top||0) + 1}),
-      br: this.PointToAnnotationCorner({x: rect.right || rect.left || 100, y: rect.bottom || rect.top || 100}),
+      tl: this.PointToAnnotationCorner({ x: (rect.left || 0) + 1, y: (rect.top || 0) + 1 }),
+      br: this.PointToAnnotationCorner({ x: rect.right || rect.left || 100, y: rect.bottom || rect.top || 100 }),
     };
   }
 
@@ -541,8 +541,8 @@ export abstract class BaseLayout {
       br: this.CellAddressToRectangle(br),
     };
     return {
-      tl: this.PointToAnnotationCorner({x: (rects.tl.left||0), y: (rects.tl.top||0)}),
-      br: this.PointToAnnotationCorner({x: rects.br.right || rects.tl.left || 100, y: rects.br.bottom || rects.tl.left || 100}),
+      tl: this.PointToAnnotationCorner({ x: (rects.tl.left || 0), y: (rects.tl.top || 0) }),
+      br: this.PointToAnnotationCorner({ x: rects.br.right || rects.tl.left || 100, y: rects.br.bottom || rects.tl.left || 100 }),
     };
   }
 
@@ -550,7 +550,7 @@ export abstract class BaseLayout {
    * @see RectToAnnotationLayout regarding the 1 pixel shift
    */
   public AnnotationLayoutToRect(layout: AnnotationLayout): Rectangle {
-    
+
     const tl = this.CellAddressToRectangle(layout.tl.address);
     const br = this.CellAddressToRectangle(layout.br.address);
 
@@ -558,14 +558,14 @@ export abstract class BaseLayout {
     const top = tl.top + tl.height * layout.tl.offset.y - 1;
 
     return new Rectangle(
-      left, top, 
+      left, top,
       br.left + br.width * layout.br.offset.x - left,
       br.top + br.height * layout.br.offset.y - top,
     );
-    
+
   }
 
-  public UpdateAnnotation(elements: Annotation|Annotation[]): void {
+  public UpdateAnnotation(elements: Annotation | Annotation[]): void {
     if (!Array.isArray(elements)) elements = [elements];
     for (const annotation of elements) {
       if (annotation.node) {
@@ -575,7 +575,7 @@ export abstract class BaseLayout {
           console.info('scale out of sync');
         }
         */
-        
+
         annotation.node.dataset.scale = this.scale.toString();
         annotation.node.style.fontSize = `${10 * this.scale}pt`;
 
@@ -641,7 +641,7 @@ export abstract class BaseLayout {
    * remove all annotations from freeze panes
    * 
    */
-   public ClearFrozenAnnotations(): void {
+  public ClearFrozenAnnotations(): void {
     for (const container of [this.row_header_annotations, this.column_header_annotations, this.corner_annotations]) {
       const elements = container.querySelectorAll('.annotation');
       for (let i = 0; i < elements.length; i++) {
@@ -674,12 +674,12 @@ export abstract class BaseLayout {
     for (const container of [this.row_header_annotations, this.column_header_annotations, this.corner_annotations]) {
 
       // FIXME: could reuse? not sure it's worth it
-      let element: Element|Node|null|undefined = container.querySelector(`.annotation[data-key="${annotation.key}"]`);
+      let element: Element | Node | null | undefined = container.querySelector(`.annotation[data-key="${annotation.key}"]`);
       if (element) {
         element.parentElement?.removeChild(element);
       }
       element = annotation.node?.cloneNode(true);
-      
+
       if (element) {
 
         const move_target = (element as HTMLElement).querySelector('.annotation-move-target') as HTMLElement;
@@ -745,7 +745,7 @@ export abstract class BaseLayout {
   }
 
   // testing moving this here...
-  public AnnotationMouseDown(annotation: Annotation, node: HTMLElement, event: MouseEvent, move_target: HTMLElement, resize_target: HTMLElement): Promise<GridEvent|void> {
+  public AnnotationMouseDown(annotation: Annotation, node: HTMLElement, event: MouseEvent, move_target: HTMLElement, resize_target: HTMLElement): Promise<GridEvent | void> {
 
     // console.info('annotation mousedown (in layout)', annotation);
 
@@ -755,7 +755,7 @@ export abstract class BaseLayout {
       return Promise.reject(); // ?
     }
 
-    return new Promise<GridEvent|void>((resolve) => {
+    return new Promise<GridEvent | void>((resolve) => {
 
       const origin = {
         left: rect.left,
@@ -785,7 +785,7 @@ export abstract class BaseLayout {
 
         const elements = [node, ...this.GetFrozenAnnotations(annotation)];
         const scroll_delta = 25;
-        
+
         const grid_rect =
           this.CellAddressToRectangle({ row: 0, column: 0 }).Combine(
             this.CellAddressToRectangle({
@@ -800,13 +800,13 @@ export abstract class BaseLayout {
 
           if (move_event.offsetY - scroll_rect.top < this.header_offset.y) {
             const delta = Math.min(scroll_delta, scroll_node.scrollTop);
-            scroll_node.scrollTop -= delta; 
+            scroll_node.scrollTop -= delta;
             offset.y += delta;
           }
           else if (move_event.offsetY - scroll_rect.top >= scroll_rect.height) {
             if (scroll_node.scrollTop + scroll_rect.height < grid_rect.height) {
               const delta = scroll_delta;
-              scroll_node.scrollTop += delta; 
+              scroll_node.scrollTop += delta;
               offset.y -= delta;
             }
           }
@@ -867,8 +867,8 @@ export abstract class BaseLayout {
       }
       else if (event.target === resize_target) {
 
-      //if ((bounding_rect.width - event.offsetX <= 13) &&
-      //  (bounding_rect.height - event.offsetY <= 13)) {
+        //if ((bounding_rect.width - event.offsetX <= 13) &&
+        //  (bounding_rect.height - event.offsetY <= 13)) {
 
         event.stopPropagation();
         event.preventDefault();
@@ -876,10 +876,10 @@ export abstract class BaseLayout {
 
         let aspect = 0;
         if (annotation.data?.original_size
-              && annotation.data.original_size.width
-              && annotation.data.original_size.height){
-          aspect = annotation.data.original_size.width / 
-                  annotation.data.original_size.height;
+          && annotation.data.original_size.width
+          && annotation.data.original_size.height) {
+          aspect = annotation.data.original_size.width /
+            annotation.data.original_size.height;
         }
 
         const bounds = node.getBoundingClientRect();
@@ -960,8 +960,8 @@ export abstract class BaseLayout {
    * over to do some additional work post init, and renaming the subclass-specific
    * method (@see InitializeInternal).
    */
-  public Initialize(container: HTMLElement, 
-    scroll_callback: () => void, 
+  public Initialize(container: HTMLElement,
+    scroll_callback: () => void,
     dropdown_callback: (value: CellValue) => void,
     scroll = true): void {
 
@@ -986,7 +986,7 @@ export abstract class BaseLayout {
     if (!this.dropdown_list.parentElement) {
       container.appendChild(this.dropdown_list);
     }
-    
+
     if (!this.note_node.parentElement) {
       container.appendChild(this.note_node);
     }
@@ -1005,17 +1005,6 @@ export abstract class BaseLayout {
     this.initialized = true;
 
   }
-
-  /**
-   * do subclass-specific initialization
-   */
-  public abstract InitializeInternal(container: HTMLElement, scroll_callback: () => void): void;
-
-  /**
-   * set resize cursor. this is subclass-specific because it's set on
-   * different nodes depending on layout.
-   */
-  public abstract ResizeCursor(resize?: 'row'|'column'): void;
 
   /**
    * create a selection so that this node (and parents) receive
@@ -1141,10 +1130,10 @@ export abstract class BaseLayout {
     this.row_header.style.backgroundColor =
       this.column_header.style.backgroundColor =
       this.corner.style.backgroundColor =
-        theme.headers?.fill ? ThemeColor(theme, theme.headers.fill) : '';
+      theme.headers?.fill ? ThemeColor(theme, theme.headers.fill) : '';
 
-        // theme.headers?.background || '';
-        // theme.header_background_color || ''; // this.theme.header_background;
+    // theme.headers?.background || '';
+    // theme.header_background_color || ''; // this.theme.header_background;
 
     this.corner.style.borderColor =
       theme.grid_color || ''; // this.theme.header_border_color;
@@ -1240,7 +1229,7 @@ export abstract class BaseLayout {
   */
 
   /** show column/row resize tooltip */
-  public ShowTooltip(options: TooltipOptions = {}) {
+  public ShowTooltip(options: TooltipOptions = {}): void {
     if (options.up) {
       this.tooltip.classList.add('arrow-up');
       this.tooltip_state = 'up';
@@ -1256,7 +1245,7 @@ export abstract class BaseLayout {
   public ShowDropdownCaret(area: Area, list: CellValue[], current: CellValue): void {
 
     let target_rect = this.OffsetCellAddressToRectangle(area.start);
-    
+
     if (area.count > 1) {
       target_rect = target_rect.Combine(this.OffsetCellAddressToRectangle(area.end));
     }
@@ -1282,7 +1271,7 @@ export abstract class BaseLayout {
       const entry = DOMUtilities.CreateDiv(undefined, this.dropdown_list);
       if (current === value) {
         this.dropdown_selected = entry;
-        entry.classList.add('selected');    
+        entry.classList.add('selected');
       }
       (entry as any).dropdown_value = value;
       entry.textContent = value?.toString() || '';
@@ -1315,7 +1304,7 @@ export abstract class BaseLayout {
     const target_rect = this.CellAddressToRectangle(address);
 
     if (smooth && !!this.scroll_reference_node.scrollTo) {
-      
+
       const current = {
         left: this.scroll_reference_node.scrollLeft,
         top: this.scroll_reference_node.scrollTop,
@@ -1427,12 +1416,12 @@ export abstract class BaseLayout {
     const result = { column: Infinity, row: 0 };
 
     if (this.model.active_sheet.freeze.rows &&
-        this.frozen_row_tiles[0].pixel_end.y >= y - this.scroll_reference_node.scrollTop) {
+      this.frozen_row_tiles[0].pixel_end.y >= y - this.scroll_reference_node.scrollTop) {
 
       let height = 0;
       y -= this.scroll_reference_node.scrollTop;
 
-      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++ ){
+      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) {
         height += this.RowHeight(i);
         if (height >= y) {
           result.row = i;
@@ -1450,7 +1439,7 @@ export abstract class BaseLayout {
         let height = 0;
 
         result.row = tile.first_cell.row;
-        for (; result.row <= tile.last_cell.row; result.row++ , top -= height) {
+        for (; result.row <= tile.last_cell.row; result.row++, top -= height) {
           height = this.RowHeight(result.row);
           if (height > top) {
             return result;
@@ -1471,12 +1460,12 @@ export abstract class BaseLayout {
     const result = { row: Infinity, column: 0 };
 
     if (this.model.active_sheet.freeze.columns &&
-        this.frozen_column_tiles[0].pixel_end.x >= x - this.scroll_reference_node.scrollLeft) {
+      this.frozen_column_tiles[0].pixel_end.x >= x - this.scroll_reference_node.scrollLeft) {
 
       let width = 0;
       x -= this.scroll_reference_node.scrollLeft;
 
-      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++){
+      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) {
         width += this.ColumnWidth(i);
         if (width >= x) {
           result.column = i;
@@ -1495,7 +1484,7 @@ export abstract class BaseLayout {
 
         result.column = tile.first_cell.column;
 
-        for (; result.column <= tile.last_cell.column; result.column++ , left -= width) {
+        for (; result.column <= tile.last_cell.column; result.column++, left -= width) {
           width = this.ColumnWidth(result.column);
           if (width > left) return result;
         }
@@ -1552,10 +1541,10 @@ export abstract class BaseLayout {
             result.row = cell.first_cell.row;
             result.column = cell.first_cell.column;
 
-            for (; result.column <= cell.last_cell.column; result.column++ , left -= width) {
+            for (; result.column <= cell.last_cell.column; result.column++, left -= width) {
               width = this.ColumnWidth(result.column);
               if (width > left) {
-                for (; result.row <= cell.last_cell.row; result.row++ , top -= height) {
+                for (; result.row <= cell.last_cell.row; result.row++, top -= height) {
                   height = this.RowHeight(result.row);
                   if (height > top) {
                     return result;
@@ -1577,7 +1566,7 @@ export abstract class BaseLayout {
    * get an adjacent tile. this is used by the renderer when a merge or
    * overflow runs out of the painted tile, and we need to paint it.
    */
-  public AdjacentTile(tile: Tile, row_offset = 0, column_offset = 0) {
+  public AdjacentTile(tile: Tile, row_offset = 0, column_offset = 0): Tile|undefined {
 
     if (!row_offset && !column_offset) {
       return tile;
@@ -1624,18 +1613,18 @@ export abstract class BaseLayout {
 
     this.grid_tiles.forEach((arr) => {
       arr.forEach((tile) => {
-        if (tile.parentElement){
+        if (tile.parentElement) {
           tile.parentElement.removeChild(tile);
         }
       });
     });
 
     for (const tileset of [
-        this.column_header_tiles,
-        this.row_header_tiles,
-        this.frozen_row_tiles,
-        this.frozen_column_tiles,
-      ]) {
+      this.column_header_tiles,
+      this.row_header_tiles,
+      this.frozen_row_tiles,
+      this.frozen_column_tiles,
+    ]) {
       for (const tile of tileset) {
         if (tile.parentElement) {
           tile.parentElement.removeChild(tile);
@@ -1697,7 +1686,7 @@ export abstract class BaseLayout {
     }
 
     if (!total_width || !total_height) {
-      throw('unexpected missing total size');
+      throw ('unexpected missing total size');
     }
 
     // console.info('total size:', total_width, ', ', total_height);
@@ -1705,7 +1694,7 @@ export abstract class BaseLayout {
     if (!total_height) total_height = this.default_row_height * rows;
     if (!total_width) total_width = this.default_column_width * columns;
 
-    if (this.container.offsetWidth > total_width){
+    if (this.container.offsetWidth > total_width) {
 
       const add_columns = Math.ceil((this.container.offsetWidth - total_width) /
         this.default_column_width);
@@ -1716,7 +1705,7 @@ export abstract class BaseLayout {
 
     this.last_column = columns;
 
-    if (this.container.offsetHeight > total_height){
+    if (this.container.offsetHeight > total_height) {
       const add_rows = Math.ceil((this.container.offsetHeight - total_height) /
         this.default_row_height);
       total_height += add_rows * this.default_row_height;
@@ -1742,9 +1731,9 @@ export abstract class BaseLayout {
     let tile_width = 0;
     let tile_column = 0;
 
-    for (let c = 0; c < columns; c++){
+    for (let c = 0; c < columns; c++) {
       const column_width = this.ColumnWidth(c);
-      if (tile_width && tile_width + column_width > this.default_tile_size.width){
+      if (tile_width && tile_width + column_width > this.default_tile_size.width) {
 
         // push and move to the next tile, starting with this column
         tile_widths.push(tile_width);
@@ -1769,9 +1758,9 @@ export abstract class BaseLayout {
     let tile_height = 0;
     let tile_row = 0;
 
-    for (let r = 0; r < rows; r++){
+    for (let r = 0; r < rows; r++) {
       const row_height = this.RowHeight(r);
-      if (tile_height && tile_height + row_height > this.default_tile_size.height){
+      if (tile_height && tile_height + row_height > this.default_tile_size.height) {
         tile_heights.push(tile_height);
         tile_rows.push(tile_row);
 
@@ -1802,7 +1791,7 @@ export abstract class BaseLayout {
       header_width += this.ColumnWidth(i);
     }
 
-    for (let c = 0; c < column_tile_count; c++ ) {
+    for (let c = 0; c < column_tile_count; c++) {
       const column: Tile[] = [];
 
       pixel_y = 0; // reset
@@ -1813,59 +1802,59 @@ export abstract class BaseLayout {
 
       // create a column header tile for this column
       this.column_header_tiles.push(this.CreateTile('column-header-tile',
-        {height: this.header_offset.y, width: tile_widths[c]},
-        {row: 0, column: c},
-        {row: 0, column: tile_columns[c]},
-        {rows: 0, columns: column_extent},
-        {x: pixel_x, y: 0},
+        { height: this.header_offset.y, width: tile_widths[c] },
+        { row: 0, column: c },
+        { row: 0, column: tile_columns[c] },
+        { rows: 0, columns: column_extent },
+        { x: pixel_x, y: 0 },
         this.column_header));
 
       // also frozen
       if (this.model.active_sheet.freeze.rows) {
         this.frozen_row_tiles.push(this.CreateTile('frozen-row-tile',
-          {height: header_height, width: tile_widths[c]},
-          {row: 1, column: c},
-          {row: 0, column: tile_columns[c]},
-          {rows: 0, columns: column_extent},
-          {x: pixel_x, y: 0},
+          { height: header_height, width: tile_widths[c] },
+          { row: 1, column: c },
+          { row: 0, column: tile_columns[c] },
+          { rows: 0, columns: column_extent },
+          { x: pixel_x, y: 0 },
           this.column_header));
       }
-      
+
       // loop over rows
-      for (let r = 0; r < row_tile_count; r++){
+      for (let r = 0; r < row_tile_count; r++) {
 
         const row_extent = (r === row_tile_count - 1) ?
           rows - tile_rows[r] :
           tile_rows[r + 1] - tile_rows[r];
 
         // first column, create header
-        if (!c){
+        if (!c) {
           this.row_header_tiles.push(this.CreateTile('row-header-tile',
-            {height: tile_heights[r], width: this.header_offset.x},
-            {row: r, column: 0},
-            {row: tile_rows[r], column: 0}, // first cell
-            {rows: row_extent, columns: 1},
-            {x: 0, y: pixel_y},
+            { height: tile_heights[r], width: this.header_offset.x },
+            { row: r, column: 0 },
+            { row: tile_rows[r], column: 0 }, // first cell
+            { rows: row_extent, columns: 1 },
+            { x: 0, y: pixel_y },
             this.row_header));
 
           // also frozen
           if (this.model.active_sheet.freeze.columns) {
             this.frozen_column_tiles.push(this.CreateTile('frozen-column-tile',
-            {height: tile_heights[r], width: header_width},
-            {row: r, column: 1},
-            {row: tile_rows[r], column: 0},
-            {rows: row_extent, columns: 1},
-            {x: 0, y: pixel_y},
-            this.row_header));
+              { height: tile_heights[r], width: header_width },
+              { row: r, column: 1 },
+              { row: tile_rows[r], column: 0 },
+              { rows: row_extent, columns: 1 },
+              { x: 0, y: pixel_y },
+              this.row_header));
           }
         }
 
         column.push(this.CreateTile('grid-tile',
-          {height: tile_heights[r], width: tile_widths[c]}, // tile size in pixels
-          {row: r, column: c }, // grid position
-          {row: tile_rows[r], column: tile_columns[c]}, // first cell
-          {rows: row_extent, columns: column_extent}, // extent
-          {x: pixel_x, y: pixel_y},
+          { height: tile_heights[r], width: tile_widths[c] }, // tile size in pixels
+          { row: r, column: c }, // grid position
+          { row: tile_rows[r], column: tile_columns[c] }, // first cell
+          { rows: row_extent, columns: column_extent }, // extent
+          { x: pixel_x, y: pixel_y },
           this.contents));
 
         pixel_y += tile_heights[r];
@@ -1881,7 +1870,7 @@ export abstract class BaseLayout {
     this.total_width = total_width;
 
     this.ClearLayoutCaches();
-    
+
     this.UpdateGridTemplates(true, true);
 
   }
@@ -1896,7 +1885,7 @@ export abstract class BaseLayout {
    * a column to a tile in either the header or the grid.
    * FIXME: speed up w/ lookup cache
    */
-  public TileIndexForColumn(column: number): number{
+  public TileIndexForColumn(column: number): number {
     for (const tile of this.column_header_tiles) {
       if (tile.first_cell.column <= column && tile.last_cell.column >= column) {
         return tile.tile_position.column;
@@ -1910,10 +1899,10 @@ export abstract class BaseLayout {
    * a column to a tile in either the header or the grid.
    * FIXME: speed up w/ lookup cache
    */
-  public TileIndexForRow(row: number): number{
+  public TileIndexForRow(row: number): number {
     for (const tile of this.row_header_tiles) {
       if (tile.first_cell.row <= row && tile.last_cell.row >= row) {
-          return tile.tile_position.row;
+        return tile.tile_position.row;
       }
     }
     return -1;
@@ -1935,9 +1924,9 @@ export abstract class BaseLayout {
     for (const tile of this.column_header_tiles) {
       if (tile.dirty) continue;
       const test: Area = new Area(
-        {row: area.start.row, column: tile.first_cell.column},
-        {row: area.start.row, column: tile.last_cell.column},
-        );
+        { row: area.start.row, column: tile.first_cell.column },
+        { row: area.start.row, column: tile.last_cell.column },
+      );
       if (area.entire_row || test.Intersects(area)) {
         tile.dirty = true;
       }
@@ -1946,9 +1935,9 @@ export abstract class BaseLayout {
     for (const tile of this.row_header_tiles) {
       if (tile.dirty) continue;
       const test: Area = new Area(
-        {column: area.start.column, row: tile.first_cell.row},
-        {column: area.start.column, row: tile.last_cell.row},
-        );
+        { column: area.start.column, row: tile.first_cell.row },
+        { column: area.start.column, row: tile.last_cell.row },
+      );
       if (area.entire_column || test.Intersects(area)) {
         tile.dirty = true;
       }
@@ -1968,19 +1957,19 @@ export abstract class BaseLayout {
 
     if (!this.initialized) return;
 
-    const start = {row: 0, column: 0};
-    const end = {row: this.grid_tiles[0].length - 1, column: this.grid_tiles.length - 1};
+    const start = { row: 0, column: 0 };
+    const end = { row: this.grid_tiles[0].length - 1, column: this.grid_tiles.length - 1 };
 
-    if (area.start.column !== Infinity){
+    if (area.start.column !== Infinity) {
       start.column = end.column = this.TileIndexForColumn(area.start.column);
       if (area.end.column !== area.start.column) end.column = this.TileIndexForColumn(area.end.column);
     }
-    if (area.start.row !== Infinity){
+    if (area.start.row !== Infinity) {
       start.row = end.row = this.TileIndexForRow(area.start.row);
       if (area.end.row !== area.start.row) end.row = this.TileIndexForRow(area.end.row);
     }
-    for (let column = start.column; column <= end.column; column++){
-      for (let row = start.row; row <= end.row; row++){
+    for (let column = start.column; column <= end.column; column++) {
+      for (let row = start.row; row <= end.row; row++) {
         this.grid_tiles[column][row].dirty = true;
       }
     }
@@ -2032,7 +2021,7 @@ export abstract class BaseLayout {
 
     let y = 0;
 
-    for (let i = 0; i < this.row_header_tiles.length; i++ ){
+    for (let i = 0; i < this.row_header_tiles.length; i++) {
       const tile = this.row_header_tiles[i];
       // const column = this.grid_tiles[i];
 
@@ -2043,7 +2032,7 @@ export abstract class BaseLayout {
 
       let height = 0;
 
-      for (let r = tile.first_cell.row; r <= tile.last_cell.row; r++){
+      for (let r = tile.first_cell.row; r <= tile.last_cell.row; r++) {
         height += this.RowHeight(r);
       }
 
@@ -2053,7 +2042,7 @@ export abstract class BaseLayout {
       y += height;
       tile.pixel_end.y = y;
 
-      if (!height_match){
+      if (!height_match) {
 
         tile.logical_size.height = height;
         tile.style.height = `${height}px`;
@@ -2072,7 +2061,7 @@ export abstract class BaseLayout {
         }
       }
 
-      for (const column of this.grid_tiles){
+      for (const column of this.grid_tiles) {
         const grid_tile = column[i];
 
         grid_tile.pixel_start.y = tile.pixel_start.y;
@@ -2119,7 +2108,7 @@ export abstract class BaseLayout {
 
     this.ClearLayoutCaches();
 
-    
+
   }
 
   /**
@@ -2130,7 +2119,7 @@ export abstract class BaseLayout {
 
     let x = 0;
 
-    for (let i = 0; i < this.column_header_tiles.length; i++ ){
+    for (let i = 0; i < this.column_header_tiles.length; i++) {
       const tile = this.column_header_tiles[i];
       const column = this.grid_tiles[i];
 
@@ -2141,7 +2130,7 @@ export abstract class BaseLayout {
 
       let width = 0;
 
-      for (let c = tile.first_cell.column; c <= tile.last_cell.column; c++){
+      for (let c = tile.first_cell.column; c <= tile.last_cell.column; c++) {
         width += this.ColumnWidth(c);
       }
 
@@ -2151,7 +2140,7 @@ export abstract class BaseLayout {
       x += width;
       tile.pixel_end.x = x;
 
-      if (!width_match){
+      if (!width_match) {
 
         tile.logical_size.width = width;
         tile.style.width = `${width}px`;
@@ -2170,7 +2159,7 @@ export abstract class BaseLayout {
         }
       }
 
-      for (const grid_tile of column){
+      for (const grid_tile of column) {
 
         grid_tile.pixel_start.x = tile.pixel_start.x;
         grid_tile.pixel_end.x = tile.pixel_end.x;
@@ -2217,10 +2206,10 @@ export abstract class BaseLayout {
 
     this.ClearLayoutCaches();
 
-    
+
   }
 
-  public ClampToGrid(point: Point) {
+  public ClampToGrid(point: Point): Point {
     const address = this.PointToAddress_Grid(point);
     const rect = this.OffsetCellAddressToRectangle(address);
 
@@ -2324,7 +2313,7 @@ export abstract class BaseLayout {
    * this is necessary because tiles keep track of pixel position: so if a
    * tile is resized, subsequent tiles have to change.
    */
-  public ResizeTileWidth(index: number, width: number, mark_dirty = true) {
+  public ResizeTileWidth(index: number, width: number, mark_dirty = true): void {
 
     // start with headers...
 
@@ -2341,11 +2330,11 @@ export abstract class BaseLayout {
       tile.needs_full_repaint = true;
     }
 
-    for (let i = index + 1; i < this.column_header_tiles.length; i++){
+    for (let i = index + 1; i < this.column_header_tiles.length; i++) {
       this.column_header_tiles[i].pixel_start.x += delta;
       this.column_header_tiles[i].pixel_end.x += delta;
 
-      for (const cell of this.grid_tiles[i]){
+      for (const cell of this.grid_tiles[i]) {
         cell.pixel_start.x += delta;
         cell.pixel_end.x += delta;
       }
@@ -2373,7 +2362,7 @@ export abstract class BaseLayout {
   /**
    * resizes the tile at this index, rebuilds structure of subsequent tiles
    */
-  public ResizeTileHeight(index: number, height: number, mark_dirty = true) {
+  public ResizeTileHeight(index: number, height: number, mark_dirty = true): void {
 
     // start with headers...
 
@@ -2390,13 +2379,13 @@ export abstract class BaseLayout {
       tile.needs_full_repaint = true;
     }
 
-    for (let r = index + 1; r < this.row_header_tiles.length; r++){
+    for (let r = index + 1; r < this.row_header_tiles.length; r++) {
       tile = this.row_header_tiles[r];
       tile.pixel_start.y += delta;
       tile.pixel_end.y += delta;
     }
 
-    for (const column of this.grid_tiles){
+    for (const column of this.grid_tiles) {
       tile = column[index];
       tile.logical_size.height = height;
       tile.style.height = `${height}px`;
@@ -2407,7 +2396,7 @@ export abstract class BaseLayout {
         tile.needs_full_repaint = true;
       }
 
-      for (let i = index + 1; i < column.length; i++){
+      for (let i = index + 1; i < column.length; i++) {
         column[i].pixel_start.y += delta;
         column[i].pixel_end.y += delta;
       }
@@ -2418,6 +2407,17 @@ export abstract class BaseLayout {
     this.UpdateContentsSize();
 
   }
+
+  /**
+   * do subclass-specific initialization
+   */
+  public abstract InitializeInternal(container: HTMLElement, scroll_callback: () => void): void;
+
+  /**
+   * set resize cursor. this is subclass-specific because it's set on
+   * different nodes depending on layout.
+   */
+  public abstract ResizeCursor(resize?: 'row' | 'column'): void;
 
   protected abstract UpdateTileGridPosition(tile: Tile): void;
   protected abstract UpdateContainingGrid(): void;

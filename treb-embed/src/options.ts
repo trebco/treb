@@ -1,12 +1,22 @@
 
 import { ICellAddress } from 'treb-base-types';
 
+/**
+ * options for exporting CSV/TSV
+ */
 export interface ExportOptions {
+
+  /** comma or tab */
   delimiter?: ',' | '\t';
+
+  /** optionally choose a sheet to export (defaults to active sheet) */
   sheet?: string|number;
-  // filename?: string;
-  formulas?: boolean;   // export formulas not values
-  formatted?: boolean;  // use number formats
+
+  /** export formulas not values */
+  formulas?: boolean;
+  
+  /** use number formats when exporting numbers */
+  formatted?: boolean;
 }
 
 /** 
@@ -165,6 +175,7 @@ export interface EmbeddedSpreadsheetOptions {
    * ...
    * no, we're not doing that. atm complex support is always baked in.
    * @deprecated
+   * @internal
    */
   complex?: boolean;
 

@@ -24,7 +24,7 @@ import {
 
 import {
   Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
-  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress, ParseResult, UnitComplex, MDParser
+  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress, MDParser
 } from 'treb-parser';
 
 import { EventSource, Yield, SerializeHTML } from 'treb-utils';
@@ -4002,7 +4002,7 @@ export class Grid {
     // using the delete key outside of an editor).
 
     if (cell?.hyperlink) {
-      this.layout.ShowTitle('Link: ' + cell.hyperlink, address, event);
+      this.layout.ShowTitle('Link: ' + cell.hyperlink, address); //, event);
       this.hover_data.link = true;
       this.hover_data.cell = cell;
     }

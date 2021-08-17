@@ -43,20 +43,6 @@ export class FontMetricsFactory {
 
   }
 
-  private GetFirstIndex(pixels: Uint8ClampedArray) {
-    for (let i = 3, n = pixels.length; i < n; i += 4) {
-      if (pixels[i] > 0) return (i - 3) / 4;
-    }
-    return pixels.length;
-  }
-
-  private GetLastIndex(pixels: Uint8ClampedArray) {
-    for (let i = pixels.length - 1; i >= 3; i -= 4) {
-      if (pixels[i] > 0) return i / 4;
-    }
-    return 0;
-  }
-
   /* *
    * set base font size. the idea here is to have a base in case font sizes 
    * are relative (% or em), they need to be relative to something. HOWEVER,
@@ -70,7 +56,7 @@ export class FontMetricsFactory {
   }
   */
 
-  public Flush() {
+  public Flush(): void {
     this.cache = {};
   }
 
@@ -145,6 +131,19 @@ export class FontMetricsFactory {
 
   }
 
+  private GetFirstIndex(pixels: Uint8ClampedArray) {
+    for (let i = 3, n = pixels.length; i < n; i += 4) {
+      if (pixels[i] > 0) return (i - 3) / 4;
+    }
+    return pixels.length;
+  }
+
+  private GetLastIndex(pixels: Uint8ClampedArray) {
+    for (let i = pixels.length - 1; i >= 3; i -= 4) {
+      if (pixels[i] > 0) return i / 4;
+    }
+    return 0;
+  }
 
 }
 

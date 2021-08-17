@@ -27,8 +27,7 @@ const ShuffledIntegers = (count: number) => {
     shuffled[i] = i;
   }
 
-  for (let i = 0; i < count; i++)
-  {
+  for (let i = 0; i < count; i++) {
     const j = i + Math.floor(field[i] * (count - i));
     const tmp = shuffled[i];
     shuffled[i] = shuffled[j];
@@ -1245,12 +1244,15 @@ export class SimulationModel {
     };
   }
 
-  /**
+  /* *
    * unified function for distributions. it works, but all this indirection
    * seems like wasted cycles. since this is interpreted, it's probably better
    * to err on the side of extra code plus efficiency (not that any of this is
    * all that efficient to begin with; no need to make it any worse).
-   */
+   * 
+   * see triangularvalue for an example of the call
+   * 
+   * /
   public CommonDistributionFunction(fun: (...args: any[]) => any, instance: any, args: any) {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
@@ -1263,8 +1265,14 @@ export class SimulationModel {
     }
     return fun.apply(instance, [1].concat(args))[0];
   }
+  */
 
   public triangularvalue(min = 0, mode = .5, max = 1): UnionValue {
+
+    // DON'T REMOVE THIS, it's an example of how we were using the
+    // unified distribution function -- we want to keep this for a 
+    // little while to consider.
+    
     // return this.CommonDistributionFunction(MC.Triangular, MC, [{a: min, b: max, c: mode, lhs: this.lhs}]);
 
     if (this.state === SimulationState.Prep) {

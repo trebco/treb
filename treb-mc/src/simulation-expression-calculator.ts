@@ -275,7 +275,7 @@ export class MCExpressionCalculator extends ExpressionCalculator {
           }
           
           if (Array.isArray(result)) {
-            console.warn( "AAA 82394");
+            console.warn( 'AAA 82394');
             return result.map(row => row.map((value: UnionValue) => value.value));
           }
           else if (result.type === ValueType.array) {

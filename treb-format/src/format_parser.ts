@@ -1,7 +1,7 @@
 
 import { NumberFormatSection } from './number_format_section';
 import { TextPartFlag, TextPart } from 'treb-base-types';
-import { NumberFormat } from './format';
+// import { NumberFormat } from './format';
 
 const ASTERISK = 0x2A;  // TODO
 const UNDERSCORE = 0x5F;  // TODO
@@ -9,14 +9,14 @@ const UNDERSCORE = 0x5F;  // TODO
 const QUESTION_MARK = 0x3F;
 const ZERO = 0x30;
 const PERIOD = 0x2E;
-const SPACE = 0x20;
+// const SPACE = 0x20;
 const COMMA = 0x2C;
 const PERCENT = 0x25;
 const DOUBLE_QUOTE = 0x22;
 const NUMBER_SIGN = 0x23;
 const SEMICOLON = 0x3B;
 const BACKSLASH = 0x5C;
-const FORWARDSLASH = 0x2F;
+// const FORWARDSLASH = 0x2F;
 const AT = 0x40;
 const LEFT_BRACE = 0x5B;
 const RIGHT_BRACE = 0x5D;
@@ -43,6 +43,19 @@ enum NumberPart {
 }
 
 export class FormatParser {
+
+  protected static date_pattern = false;
+  protected static pattern = '';
+  protected static char_index = 0;
+  protected static characters: number[] = [];
+  protected static sections: NumberFormatSection[] = [];
+  protected static current_section: NumberFormatSection = new NumberFormatSection();
+  protected static preserve_formatting_characters = false; // true;
+
+  // FIXME: localization
+
+  protected static decimal_mark = PERIOD;
+  protected static group_separator = COMMA;
 
   /**
    * parser is static (essentially a singleton). state is ephemeral.
@@ -85,19 +98,6 @@ export class FormatParser {
     return this.sections;
 
   }
-
-  protected static date_pattern = false;
-  protected static pattern = '';
-  protected static char_index = 0;
-  protected static characters: number[] = [];
-  protected static sections: NumberFormatSection[] = [];
-  protected static current_section: NumberFormatSection = new NumberFormatSection();
-  protected static preserve_formatting_characters = false; // true;
-
-  // FIXME: localization
-
-  protected static decimal_mark = PERIOD;
-  protected static group_separator = COMMA;
 
   protected static ConsumeString(): string {
     let text = '';

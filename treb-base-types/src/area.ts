@@ -1,4 +1,8 @@
 
+
+/**
+ * structure represents a cell address
+ */
 export interface ICellAddress {
   row: number;
   column: number;
@@ -12,6 +16,10 @@ export interface ICellAddress2 extends ICellAddress {
 }
 
 /**
+ * structure represents a 2d range of cells
+ * 
+ * @privateRemarks
+ * 
  * FIXME: should be just Partial<Area>? (...) OTOH, this at least
  * enforces two addresses, which seems useful
  */
