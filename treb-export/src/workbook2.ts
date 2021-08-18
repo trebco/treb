@@ -393,10 +393,13 @@ export class Workbook {
 
   }
 
-  /* * FIXME: accessor * /
+  /** FIXME: accessor */
   public GetNamedRanges(): void {
     
+    // ... what does this do, not do, or what is it supposed to do?
+    // note that this is called by the import routine, so it probably
+    // expects to do something
+
   }
-  */
 
 }

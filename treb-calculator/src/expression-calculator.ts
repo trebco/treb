@@ -330,7 +330,7 @@ export class ExpressionCalculator {
 
     }
 
-    return this.CalculateExpression(arg as ExtendedExpressionUnit); /*UnionOrArray*/;
+    return this.CalculateExpression(arg as ExtendedExpressionUnit); /*UnionOrArray*/
 
   }
 

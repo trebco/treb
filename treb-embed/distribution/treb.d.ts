@@ -1,6 +1,11 @@
 /*! API v12.0. Copyright 2018-2021 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 
+/** 
+ * ambient global instance
+ */
+ declare const TREB: TREBGlobal;
+
 /**
  * global object used to create spreadsheets
  */
@@ -13,12 +18,6 @@ export declare class TREBGlobal {
   static version: string;
 
 }
-
-/** 
- * ambient global instance
- */
-declare const TREB: TREBGlobal;
-
 /**
  * options for saving files. we add the option for JSON formatting.
  */
@@ -196,7 +195,7 @@ export declare class EmbeddedSpreadsheet {
      * Insert an image. This method will open a file chooser and (if an image
      * is selected) insert the image into the document.
      *
-     */
+     **/
     InsertImage(file?: File): Promise<void>;
 
     /**
@@ -642,8 +641,7 @@ export declare enum BorderConstants {
 /**
  * options for serializing data
  *
- */TODO].
- */
+ **/
 export interface SerializeOptions {
 
     /** include the rendered/calculated value in export */
@@ -677,7 +675,7 @@ export interface ICellAddress {
 /**
  * structure represents a 2d range of cells
  *
- */
+ **/
 export interface IArea {
     start: ICellAddress;
     end: ICellAddress;
@@ -717,7 +715,7 @@ export declare namespace Style {
     /**
      * color is either a theme color (theme index plus tint), or CSS text
      *
-     */
+     **/
     interface Color {
         theme?: number;
         tint?: number;
@@ -953,16 +951,6 @@ export interface EmbeddedSpreadsheetOptions {
 
     /** target window for hyperlinks (default _blank); set false to disable hyperlinks altogether */
     hyperlinks?: string | false;
-
-    /**
-     * support complex numbers. the meaning of this flag is changing -- the
-     * parser is going to always support complex numbers, but we might load
-     * a different set of functions if they're not expected to be used.
-     * ...
-     * no, we're not doing that. atm complex support is always baked in.
-     * @deprecated
-     */
-    complex?: boolean;
 
     /**
      * FOR RENDERING ONLY, the imaginary number. this is intended to support

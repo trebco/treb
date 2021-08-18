@@ -45,15 +45,14 @@
     "dev": "node compile2.js -d --modern",
     "dev-legacy": "node compile2.js -d --legacy",
     "watch": "node compile2.js -w",
-    "generate-api": "ts-node-dev api-types/api2.ts --config api-config.json",
-    "generate-docs": "api-extractor run --local && api-documenter markdown -i temp -o doc && cp treb.d.ts treb-embed/distribution/",
+    "generate-api": "ts-node-dev api-types/api2.ts --config api-config.json && cp treb.d.ts treb-embed/distribution/",
     "watch-modern": "node compile2.js -w --modern -d",
     "watch-legacy": "node compile2.js -w --legacy -d",
     "build-modern": "node compile2.js --modern",
     "build-legacy": "node compile2.js --legacy",
     "update-icons": "node treb-embed/script/process-icons.js --filter unused --source treb-embed/icons/4 > treb-embed/src/generated/toolbar42.ts",
     "watch-dev": "node compile2.js -w -d",
-    "release": "node compile2.js --clean && node zip-package.js"
+    "release": "node compile2.js --clean && npm run generate-api && node zip-package.js"
   },
   "build-entry-points": {
     "main": "embedded-treb-bundle",
