@@ -1,6 +1,5 @@
 /*! API v12.0. Copyright 2018-2021 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
-
 /** 
  * ambient global instance
  */
@@ -12,7 +11,7 @@
 export declare class TREBGlobal {
 
   /** create a spreadsheet */
-  static CreateSpreadsheet: (options: EmbeddedSpreadsheetOptions) => EmbeddedSpreadsheet;
+  static CreateSpreadsheet(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet;
 
   /** TREB version */
   static version: string;
