@@ -970,20 +970,34 @@ export class SimulationModel {
     return true;
   }
 
-  public multivariate_normal(range_of_values: string, correlation_matrix: number[][], mean = 0, sd = 1): UnionValue {
+  public multivariate_normal(range_of_values: string, correlation_matrix: number[][], mean = 0, sd = 1, min?: number, max?: number): UnionValue {
 
     // this test (and all the other ones) is in the wrong order
 
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
-      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
-        MC.Normal(this.iterations, { mean, sd, lhs: this.lhs, ordered: true });
+
+      if (typeof min !== 'undefined' || typeof max !== 'undefined') {
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          MC.TruncatedNormal(this.iterations, { mean, sd, lhs: this.lhs, ordered: true, min, max });
+      }
+      else {
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          MC.Normal(this.iterations, { mean, sd, lhs: this.lhs, ordered: true });
+      }
     }
     else if (this.state === SimulationState.Simulation) {
       return { type: ValueType.number, value: this.distributions[this.address.sheet_id || 0]
         [this.address.column][this.address.row][this.call_index][this.iteration] };
     }
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
+
+    // this is expensive. we should just use normal and truncate, since these are 
+    // garbage values and never used in simulation. still, it looks better.
+
+    if (typeof min !== 'undefined' || typeof max !== 'undefined') {
+      return { type: ValueType.number, value: MC.TruncatedNormal(1, { mean, sd, min, max })[0] };
+    }
 
     return { type: ValueType.number, value: MC.Normal(1, { mean, sd })[0] };
   }
