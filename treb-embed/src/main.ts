@@ -22,6 +22,45 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
 (() => {
 
+  if (!(self as DecoratedGlobal).TREB) {
+
+    // find path for worker loaders
+    EmbeddedSpreadsheetBase.BuildPath();
+
+    const value: TREBNamespace = {
+      version: process.env.BUILD_VERSION, // this is fake, it will get replaced
+      CreateSpreadsheet: (options: CreateSheetOptions) => CompositeSheet.Create(options),
+    };
+
+    // NOTE: dropping formatter but keeping engine/headless (for now)
+    // FIXME: does RAW depend on formatter? can't remember... put it 
+    // back if necessary
+
+    if (EmbeddedSpreadsheetBase.enable_engine) {
+      value.CreateEngine = (options = {}) => new EmbeddedSpreadsheet(options);
+    }
+
+    // FIXME: writable and configurable default to false, you don't
+    // need to define them here. 
+
+    Object.defineProperty(self, 'TREB', {
+      value,
+      writable: false,
+      configurable: false,
+      enumerable: true,
+    });
+
+    document.addEventListener('DOMContentLoaded', () => AutoEmbedManager.Run());
+    document.addEventListener('readystatechange', () => {
+      if (document.readyState === 'complete') {
+        AutoEmbedManager.Run();
+      }
+    });
+
+  }
+
+  /*
+
   const TREB: TREBNamespace = (self as DecoratedGlobal).TREB || {};
 
   // gate on existing: intended to prevent running this multiple times.
@@ -67,6 +106,8 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
     });
 
   }
+
+  */
 
 })();
 
