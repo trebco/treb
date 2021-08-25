@@ -253,9 +253,6 @@ export declare class EmbeddedSpreadsheet {
      * @param column - column, or columns (array), or undefined means all columns
      * @param width - desired width (can be 0) or undefined means 'auto-size'
      *
-     * TODO: this method assumes the current sheet. we need a method that can
-     * (optionally) specify a sheet.
-     *
      * @public
      */
     SetColumnWidth(column?: number | number[], width?: number): void;
@@ -265,9 +262,6 @@ export declare class EmbeddedSpreadsheet {
      *
      * @param row - row, or rows (array), or undefined means all rows
      * @param height - desired height (can be 0) or undefined means 'auto-size'
-     *
-     * TODO: this method assumes the current sheet. we need a method that can
-     * (optionally) specify a sheet.
      *
      * @public
      */
@@ -979,20 +973,48 @@ export declare enum LoadType {
     CSV = "csv",
     XLSX = "xlsx"
 }
+
+/**
+ * This event is sent when a document is loaded, and also on undo. The
+ * source field can help determine if it was triggered by an undo operation.
+ */
 export interface DocumentLoadEvent {
     type: 'load';
     source?: LoadSource;
     file_type?: LoadType;
 }
+
+/**
+ * This event is sent when the document is reset.
+ *
+ * @deprecated we should remove this in favor of the Load event, plus a suitable load source.
+ */
 export interface DocumentResetEvent {
     type: 'reset';
 }
+
+/**
+ * This event is sent when data in the spreadsheet changes, but there are
+ * no structural or cell changes. For example, the `RAND` function returns
+ * a new value on every calculation, but the function itself does not change.
+ */
 export interface DataChangeEvent {
     type: 'data';
 }
+
+/**
+ * This event is sent when the value of a cell changes, or when the document
+ * structure chages. Structure changes might be inserting/deleting rows or
+ * columns, or adding/removing a sheet.
+ */
 export interface DocumentChangeEvent {
     type: 'document-change';
 }
+
+/**
+ * This event is sent when the spreadsheet selection changes. Use the
+ * `GetSelection` method to get the address of the current selection.
+ */
 export interface SelectionEvent {
     type: 'selection';
 }
