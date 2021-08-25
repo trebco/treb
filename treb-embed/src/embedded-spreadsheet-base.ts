@@ -150,7 +150,9 @@ export interface SetRangeOptions {
 /**
  * options for the ScrollTo method.
  * 
- * @note this method was renamed because of a conflict with a DOM type,
+ * @remarks 
+ * 
+ * this method was renamed because of a conflict with a DOM type,
  * which was causing problems with the documentation generator.
  */
 export interface SheetScrollOptions {
@@ -171,7 +173,7 @@ export interface SheetScrollOptions {
 ///
 
 /**
- * embedded spreadsheet, suitable for one-line embedding in a web page
+ * embedded spreadsheet
  */
 export class EmbeddedSpreadsheetBase { 
 

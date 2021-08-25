@@ -109,8 +109,7 @@ export interface EmbeddedSpreadsheetOptions {
   prompt_save?: boolean;
 
   /**
-   * toolbar
-   * FIXME: fix options
+   * toolbar display option
    */
   toolbar?: boolean | 'show' | 'narrow' | 'show-narrow';
 
@@ -180,8 +179,9 @@ export interface EmbeddedSpreadsheetOptions {
   complex?: boolean;
 
   /** 
-   * FOR RENDERING ONLY, the imaginary number. this is intended to support 
-   * switching to "𝑖" for rendering, or " 𝑖" (same with a leading hair-space).
+   * for rendering the imaginary number. this is intended to support 
+   * switching to a different character for rendering, or adding a leading
+   * space/half-space/hair-space.
    */
   imaginary_value?: string;
 
