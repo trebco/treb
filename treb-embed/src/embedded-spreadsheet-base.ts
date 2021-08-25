@@ -2106,8 +2106,10 @@ export class EmbeddedSpreadsheetBase {
   }
 
   /**
-   * unserialize document from data
+   * unserialize document from data.
    *
+   * @privateRemarks
+   * 
    * UPDATE: will no longer recalculate on load if the "rendered_values"
    * flag is set in the document (assuming it's correct), because we can
    * display those values.
