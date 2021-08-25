@@ -1472,6 +1472,8 @@ export class EmbeddedSpreadsheetBase {
    * @param column - column, or columns (array), or undefined means all columns
    * @param width - desired width (can be 0) or undefined means 'auto-size'
    * 
+   * @privateRemarks
+   * 
    * TODO: this method assumes the current sheet. we need a method that can
    * (optionally) specify a sheet.
    * 
@@ -1489,6 +1491,8 @@ export class EmbeddedSpreadsheetBase {
    * 
    * @param row - row, or rows (array), or undefined means all rows
    * @param height - desired height (can be 0) or undefined means 'auto-size'
+   * 
+   * @privateRemarks
    * 
    * TODO: this method assumes the current sheet. we need a method that can
    * (optionally) specify a sheet.
