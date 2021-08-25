@@ -68,6 +68,20 @@ $toolbar_height: 38px;
   opacity: 0;
   pointer-events: none;
   transition: opacity .2s ease; // $transition_options;
+
+  overflow-y: hidden;
+  overflow-x: scroll;
+  max-width: 100%;
+  max-height: 100%;
+
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+
+  &::-webkit-scrollbar { /* WebKit */
+    width: 0;
+    height: 0;
+  }
+
 }
 
 /** 
