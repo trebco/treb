@@ -165,7 +165,7 @@ export interface SheetScrollOptions {
 
   /** 
    * smooth scrolling, if supported. we use scrollTo so support is as here:
-   * https://www.google.com/search?q=mdn+scrollto
+   * https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollTo
    */
   smooth?: boolean;
 }

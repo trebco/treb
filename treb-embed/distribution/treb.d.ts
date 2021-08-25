@@ -85,7 +85,9 @@ export interface SetRangeOptions {
 /**
  * options for the ScrollTo method.
  *
- * @note this method was renamed because of a conflict with a DOM type,
+ * @remarks
+ *
+ * this method was renamed because of a conflict with a DOM type,
  * which was causing problems with the documentation generator.
  */
 export interface SheetScrollOptions {
@@ -98,13 +100,13 @@ export interface SheetScrollOptions {
 
     /**
      * smooth scrolling, if supported. we use scrollTo so support is as here:
-     * https://www.google.com/search?q=mdn+scrollto
+     * https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollTo
      */
     smooth?: boolean;
 }
 
 /**
- * embedded spreadsheet, suitable for one-line embedding in a web page
+ * embedded spreadsheet
  */
 export declare class EmbeddedSpreadsheet {
 
@@ -916,8 +918,7 @@ export interface EmbeddedSpreadsheetOptions {
     prompt_save?: boolean;
 
     /**
-     * toolbar
-     * FIXME: fix options
+     * toolbar display option
      */
     toolbar?: boolean | 'show' | 'narrow' | 'show-narrow';
 
@@ -952,8 +953,9 @@ export interface EmbeddedSpreadsheetOptions {
     hyperlinks?: string | false;
 
     /**
-     * FOR RENDERING ONLY, the imaginary number. this is intended to support
-     * switching to "𝑖" for rendering, or " 𝑖" (same with a leading hair-space).
+     * for rendering the imaginary number. this is intended to support
+     * switching to a different character for rendering, or adding a leading
+     * space/half-space/hair-space.
      */
     imaginary_value?: string;
 
