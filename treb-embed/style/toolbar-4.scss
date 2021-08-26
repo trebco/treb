@@ -1,7 +1,154 @@
 
 $swatch-width: 1.1em;
 
+// TEMP TOP LEVEL
+
+.drop-menu {
+
+  // position: absolute;
+  // top: -1000px;
+  // left: -1000px;
+
+  position: relative;
+  
+  background: #fff;
+  border-radius: 3px;
+  border: 1px solid rgb(209, 213, 219);
+  z-index: 9;
+  box-shadow: 0 2px 4px #0d131e1a;
+  outline: none;
+  margin: 0;
+
+//  opacity: 0;
+  pointer-events: none;
+  transition: opacity .125s;
+
+  width: 0px;
+
+  &.visible {
+    opacity: 1;
+    pointer-events: initial;
+
+    .comment-editor textarea {
+      resize: both;
+    }
+
+  }
+
+  &.scroll {
+    max-height: 18em;
+    overflow-y: auto;
+  }
+
+  z-index: 999;
+
+  // position:fixed takes it out of the size calc on initial render, so the 
+  // toobar doesn't get taller (which screws up scrolling). we can change the
+  // position value we move it (-> absolute).
+
+  // position: fixed;
+  top: 30px;
+
+  padding: .25em .25em;
+
+  // we _should_ use li/ with a class instead of this
+
+  hr {
+    border-top-width: 0px;
+    border-left-width: 0px;
+    border-right-width: 0px;
+
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(209, 213, 219);
+
+    margin-bottom: .5em;
+    margin-top: .5em;
+  }
+
+  ul {
+    margin: 0;
+
+    list-style-type: none;
+    padding-left: 0;
+
+    li + li {
+      margin-top: .125em;
+    }
+
+    button {
+      border-color: transparent;
+    }
+
+    button.text {
+      display: inline-flex;
+      justify-content: flex-start;
+      width: 100%;
+      white-space: nowrap;
+      font-size: .875em;
+      padding: 0 1em;
+    }
+
+  }
+}
+
 .treb-toolbar {
+
+  display: flex;
+  flex-direction: row;
+  position: relative;
+
+  // ---
+
+  overflow: scroll;
+  scrollbar-width: none; // Firefox 
+  -ms-overflow-style: none;  // Internet Explorer 10+
+
+  &::-webkit-scrollbar { // WebKit 
+    width: 0;
+    height: 0;
+  }
+
+  // ---
+
+  .staging {
+    display: none;
+  }
+
+  // wide toolbar is default (god bless sass comments)
+
+  .group.narrow {
+    display: none;
+  }
+
+  .group.wide {
+    display: flex;
+  }
+
+  & > *:not(.narrow) + *:not(.narrow) {
+    margin-left: 0.5em;
+  }
+
+  // narrow toolbar 
+
+  &.narrow {
+
+    .group.wide {
+      display: none;
+    }    
+
+    .group.narrow {
+      display: flex;
+    }
+
+    & > *:not(.wide) + *:not(.wide) {
+      margin-left: 0.5em;
+    }
+
+  }
+
+}
+
+.treb-toolbar, .treb-toolbar-drop-menu {
 
   font-family: -apple-system, 
                 BlinkMacSystemFont, 
@@ -14,109 +161,13 @@ $swatch-width: 1.1em;
                 "Helvetica Neue", 
                 sans-serif;
 
-  display: flex;
-  flex-direction: row;
-  position: relative;
-
   font-style: normal;
   font-weight: normal;
-  
   color: #333;
-
   font-size: 16px;
 
   box-sizing: border-box;
   * { box-sizing: border-box; }
-
-  .staging {
-    display: none;
-  }
-
-  .popup, .drop-menu {
-    position: absolute;
-    top: -100px;
-    left: -100px;
-
-    background: #fff;
-    border-radius: 3px;
-    border: 1px solid rgb(209, 213, 219);
-    z-index: 999;
-    box-shadow: 0 2px 4px #0d131e1a;
-    outline: none;
-    margin: 0;
-
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .125s;
-
-    &.visible {
-      opacity: 1;
-      pointer-events: initial;
-
-      .comment-editor textarea {
-        resize: both;
-      }
-
-    }
-
-  }
-
-  .drop-menu.scroll {
-    max-height: 18em;
-    overflow-y: auto;
-  }
-
-  .drop-menu {
-
-    padding: .25em .25em;
-
-    // we _should_ use li/ with a class instead of this
-
-    hr {
-      border-top-width: 0px;
-      border-left-width: 0px;
-      border-right-width: 0px;
-
-      border-bottom-width: 1px;
-      border-bottom-color: rgb(209, 213, 219);
-
-      margin-bottom: .5em;
-      margin-top: .5em;
-    }
-
-    ul {
-      margin: 0;
-
-      list-style-type: none;
-      padding-left: 0;
-
-      li + li {
-        margin-top: .125em;
-      }
-
-      /* use hr/ instead
-      li.separator {
-        height: 3px;
-        border-bottom: 1px solid rgb(209, 213, 219);
-        margin-bottom: 3px;
-      }
-      */
-
-      button {
-        border-color: transparent;
-      }
-
-      button.text {
-        display: inline-flex;
-        justify-content: flex-start;
-        width: 100%;
-        white-space: nowrap;
-        font-size: .875em;
-        padding: 0 1em;
-      }
-
-    }
-  }
 
   .comment-editor {
     display: flex;
@@ -155,38 +206,6 @@ $swatch-width: 1.1em;
         margin-left: .5em;
       }
 
-    }
-
-  }
-
-  // wide toolbar is default (god bless sass comments)
-
-  .group.narrow {
-    display: none;
-  }
-
-  .group.wide {
-    display: flex;
-  }
-
-  & > *:not(.narrow) + *:not(.narrow) {
-    margin-left: 0.5em;
-  }
-
-  // narrow toolbar 
-
-  &.narrow {
-
-    .group.wide {
-      display: none;
-    }    
-
-    .group.narrow {
-      display: flex;
-    }
-
-    & > *:not(.wide) + *:not(.wide) {
-      margin-left: 0.5em;
     }
 
   }

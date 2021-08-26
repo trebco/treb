@@ -54,7 +54,7 @@ export type ToolbarEvent = ToolbarClickEvent
  * abstract interfaces so we can swap out more easily in the future.
  */
 export class Toolbar extends EventSource<ToolbarEvent> {
- 
+
   public model: NodeModel;
 
   public number_formats: string[] = [];
@@ -75,9 +75,13 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
   // public theme_color_map: string[] = [];
 
+  private outer_container?: HTMLElement;
+
   constructor(public container: HTMLElement, public options: EmbeddedSpreadsheetOptions, public theme: Theme) {
 
     super();
+
+    this.outer_container = container.parentElement as HTMLElement;
 
     const ds = Localization.decimal_separator;
 
@@ -453,106 +457,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     });
 
     this.model.root.addEventListener('click', (event) => {
-      const element = (event.target as HTMLElement);
-      let command = element?.dataset?.command;
-
-      if (command) {
-        const data: any = {};
-
-        if (/^border-/.test(command)) {
-          data.border = command;
-          data.color = this.border_color; // || '';
-          command  = 'border';
-        }
-        else {
-          switch (command) {
-            case 'font-scale':
-              data.scale = element?.dataset?.scale || 1;
-              break;
-
-            case 'clear-comment':
-            case 'update-comment':
-              if (this.state?.selection && !this.state.selection.empty) {
-                data.address = {...this.state.selection.target};
-              }
-              data.comment = (this.model['comment-text'] as HTMLTextAreaElement).value || '';
-              break;
-
-            case 'background-color':
-              data.target = 'background';
-              data.color = this.background_color;
-              break;
-
-            case 'foreground-color':
-              data.target = 'foreground';
-              data.color = this.foreground_color;
-              break;
-
-            case 'border-color':
-              data.target = 'border';
-              data.color = this.border_color;
-              break;
-
-          }
-        }
-        this.Publish({
-          type: 'button', 
-          command,
-          data,
-        });
-        return;
-      }
-
-      if(element?.classList?.contains('drop') || element?.classList?.contains('drop-button')) {
-
-        let parent = element.parentElement;
-
-        while (parent && !parent.classList.contains('group')) {
-          if (parent === this.model.root) {
-            return;
-          }
-          parent = parent.parentElement;
-        }
-        if (parent) {
-          let focus_target: HTMLElement|undefined;
-          const sibling = element.nextSibling as HTMLElement;
-          if (sibling?.classList?.contains('drop-menu')) {
-
-            if (element === this.model.comment) {
-              this.model['comment-label'].textContent = 
-                this.state?.selection?.target ?
-                  Area.CellAddressToLabel(this.state?.selection.target) : '';
-              (this.model['comment-text'] as HTMLTextAreaElement).value = this.state?.comment || '';
-              focus_target = this.model['comment-text'];
-            }
-
-            if (sibling.dataset.numberFormats !== undefined) {
-              this.RenderNumberFormats(sibling);
-            }
-            
-            if (sibling.classList.contains('color-chooser')) {
-              this.color_target = sibling.dataset?.target || '';
-              this.RenderColors(this.model['color-list']);
-
-              // reset color
-              color_input.value = '';
-              color_button.style.backgroundColor = '';
-              color_button.style.color = '';
-              sibling.appendChild(this.model['color-chooser'])
-            }
-            if (element.dataset?.position === 'horizontal') {
-              this.Focus(sibling, element.offsetWidth + 12, element.offsetTop - 8, focus_target);
-            }
-            else {
-              this.Focus(sibling, 0, element.offsetHeight + 4, focus_target);
-            }
-          }
-        }
-        return;
-      }
-
-      // console.info(event.target);
-
+      this.HandleClick(event);
     });
 
     if (/narrow/i.test((options.toolbar || '').toString())) {
@@ -567,6 +472,200 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       (this.model.comment as HTMLElement).click();
     }, 300);
     */
+
+  }
+
+  public HandleClick(event: MouseEvent) {
+
+    const color_button = this.model['color-button'] as HTMLElement;
+    const color_input = this.model['color-input'] as HTMLInputElement;
+
+    const element = (event.target as HTMLElement);
+    let command = element?.dataset?.command;
+
+    if (command) {
+      const data: any = {};
+
+      if (/^border-/.test(command)) {
+        data.border = command;
+        data.color = this.border_color; // || '';
+        command  = 'border';
+      }
+      else {
+        switch (command) {
+          case 'font-scale':
+            data.scale = element?.dataset?.scale || 1;
+            break;
+
+          case 'clear-comment':
+          case 'update-comment':
+            if (this.state?.selection && !this.state.selection.empty) {
+              data.address = {...this.state.selection.target};
+            }
+            data.comment = (this.model['comment-text'] as HTMLTextAreaElement).value || '';
+            break;
+
+          case 'background-color':
+            data.target = 'background';
+            data.color = this.background_color;
+            break;
+
+          case 'foreground-color':
+            data.target = 'foreground';
+            data.color = this.foreground_color;
+            break;
+
+          case 'border-color':
+            data.target = 'border';
+            data.color = this.border_color;
+            break;
+
+        }
+      }
+      this.Publish({
+        type: 'button', 
+        command,
+        data,
+      });
+      return;
+    }
+
+    if(element?.classList?.contains('drop') || element?.classList?.contains('drop-button')) {
+
+      let parent = element.parentElement;
+
+      while (parent && !parent.classList.contains('group')) {
+        if (parent === this.model.root) {
+          return;
+        }
+        parent = parent.parentElement;
+      }
+      if (parent) {
+        let focus_target: HTMLElement|undefined;
+
+        // not sure this is a good place to put it... (attached to the node)
+
+        let sibling: HTMLElement = (element as any).sibling;
+        if (!sibling) {
+          sibling = element.nextSibling as HTMLElement;
+          this.outer_container?.appendChild(sibling);
+          sibling.style.position = 'absolute';
+          sibling.classList.add('treb-toolbar-drop-menu');
+          (element as any).sibling = sibling;
+        }
+
+        // const sibling = (element as any).sibling || element.nextSibling as HTMLElement;
+
+        if (sibling?.classList?.contains('drop-menu')) {
+
+          if (element === this.model.comment) {
+            this.model['comment-label'].textContent = 
+              this.state?.selection?.target ?
+                Area.CellAddressToLabel(this.state?.selection.target) : '';
+            (this.model['comment-text'] as HTMLTextAreaElement).value = this.state?.comment || '';
+            focus_target = this.model['comment-text'];
+          }
+
+          if (sibling.dataset.numberFormats !== undefined) {
+            this.RenderNumberFormats(sibling);
+          }
+          
+          if (sibling.classList.contains('color-chooser')) {
+            this.color_target = sibling.dataset?.target || '';
+            this.RenderColors(this.model['color-list']);
+
+            // reset color
+            color_input.value = '';
+            color_button.style.backgroundColor = '';
+            color_button.style.color = '';
+            sibling.appendChild(this.model['color-chooser'])
+          }
+
+          // NEW STRATEGY: we're going back to absolute positioning, but
+          // shifting the popup to the container (outside of the toolbar).
+          // 
+          // the idea is that then it can still pop out of the toolbar 
+          // container, but it will scroll with the document. if we use
+          // fixed positioning, everything works EXCEPT for when the document
+          // resizes or scrolls.
+
+          // of course this breaks the styling, because that's nested...
+
+          if (element.dataset?.position === 'horizontal') {
+            this.Focus(sibling, element.offsetWidth + 12, element.offsetTop - 8, focus_target);
+          }
+          else {
+
+            const bounding = (element.classList.contains('drop-button')) ? element : parent;
+            const bounding_rect = bounding.getBoundingClientRect() || {x: 0, y: 0, bottom: 0};
+            const spbound = this.outer_container?.getBoundingClientRect() || {x: 0, y: 0, right: 0};
+
+            let left = bounding_rect.x - spbound.x;
+            const width = sibling.offsetWidth;
+            if (width > 0 && left + width > spbound.right) {
+              left = Math.max(0, spbound.right - width - 10); // buffer
+            }
+
+            console.info("S", sibling);
+            (self as any).sibling = sibling;
+
+            this.Focus(sibling, left, element.offsetHeight + 4, focus_target);
+          }
+
+          /*
+
+          // we're switching to fixed position for the popups, so they can
+          // break out of a scroll box (and we're scrolling the toolbar, at
+          // least on mobile).
+
+          // that requires we get the fixed position of the container before
+          // we show the popup. because it disappears on focusout, generally
+          // scrolling shouldn't be an issue
+
+          // actually parent isn't necessarily what we want -- that's only
+          // for the split buttons. for the other ones we want the element
+          // itself (the button).
+
+          const bounding = (element.classList.contains('drop-button')) ? element : parent;
+          const bounding_rect = bounding.getBoundingClientRect() || {x: 0, y: 0, bottom: 0};
+
+          // NOTE: the horizontal thing is used for border color only (atm).
+          // but, in that case we don't necessarily want to position relative
+          // to the parent? why not? (because it's broken, that's why)
+
+          // FIXME: since we're positioning, we can fix overflows if we are
+          // overflowing to the right (TODO/FIXME)
+
+          if (element.dataset?.position === 'horizontal') {
+            this.Focus(sibling, element.offsetWidth + 12 + bounding_rect.x, element.offsetTop - 8 + bounding_rect.y, focus_target);
+          }
+          else {
+
+            let left = bounding_rect.x;
+
+            // not sure this is always available? maybe client-specific?
+            // let's only do it opportunistically
+
+            if (sibling.offsetWidth > 0) {
+              const containing_rect = this.container.parentElement?.getBoundingClientRect();
+              if (containing_rect) {
+                if (left + sibling.offsetWidth > containing_rect.right) {
+                  left = Math.max(0, containing_rect.right - sibling.offsetWidth);
+                }
+              }
+            }
+
+            this.Focus(sibling, left, bounding_rect.bottom + 4, focus_target);
+          }
+
+          */
+
+        }
+      }
+      return;
+    }
+
+    // console.info(event.target);
 
   }
 
@@ -635,6 +734,16 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         });
   }
 
+  /**
+   * focus a popup.
+   * 
+   * @param element - position target
+   * @param left - position
+   * @param top - position
+   * @param focus_target - alternate focus target, if we want to focus a child 
+   * instead of the element itself. this is used for the comment popup, where
+   * we want to focus on the text area.
+   */
   public Focus(element: HTMLElement, left: number, top: number, focus_target?: HTMLElement): void {
 
     element.style.left = left + 'px';
@@ -652,7 +761,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     window.addEventListener('keydown', esc);
 
     // handle click event -- see if we want to pass to parent or not
-    const click = (event: Event) => {
+    const click = (event: MouseEvent) => {
 
       const target = (event.target as HTMLElement);
       if (target.dataset?.replace) {
@@ -668,6 +777,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         this.Publish({ type: 'format', format });
       }
       else if (target.dataset?.command || target.classList?.contains('drop-button')) {
+        this.HandleClick(event);
         return;
       }
       else if (target.classList?.contains('color-swatch')) {
@@ -698,8 +808,17 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     };
     element.addEventListener('click', click);
 
+    const transitionend = () => {
+      if (!element.classList.contains('visible')) {
+        element.style.left = '';
+        element.style.top = '';
+      }
+      element.removeEventListener('transitionend', transitionend);
+    }
+
     // on focus out of the parent, close and clean up
     const focusout = (event: FocusEvent) => {
+
       const related = event.relatedTarget as HTMLElement;
       if (related && element.contains(related)) {
         return;
@@ -708,6 +827,10 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       element.removeEventListener('focusout', focusout);
       element.removeEventListener('click', click);
       window.removeEventListener('keydown', esc);
+
+      // unposition
+      element.addEventListener('transitionend', transitionend);
+
     };
     element.addEventListener('focusout', focusout);
 

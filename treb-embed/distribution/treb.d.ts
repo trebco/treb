@@ -964,6 +964,11 @@ export declare enum LoadSource {
     LOCAL_STORAGE = "local-storage",
     UNDO = "undo"
 }
+
+/**
+ * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
+ * of the event.
+ */
 export declare type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | DataChangeEvent | SelectionEvent | ResizeEvent;
 export interface ResizeEvent {
     type: 'resize';
