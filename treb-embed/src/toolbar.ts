@@ -77,6 +77,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
   private outer_container?: HTMLElement;
 
+  private menu_map: Record<string, HTMLElement> = {};
+  private menu_index = 1;
+
   constructor(public container: HTMLElement, public options: EmbeddedSpreadsheetOptions, public theme: Theme) {
 
     super();
@@ -475,7 +478,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
   }
 
-  public HandleClick(event: MouseEvent) {
+  public HandleClick(event: MouseEvent): void {
 
     const color_button = this.model['color-button'] as HTMLElement;
     const color_input = this.model['color-input'] as HTMLInputElement;
@@ -532,6 +535,11 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     if(element?.classList?.contains('drop') || element?.classList?.contains('drop-button')) {
 
+      // we're jumping through all sorts of hoops here to manage the "horizontal"
+      // drop menu, which is for border color. the other menus get attached to
+      // the outer container, but that one can stay where it is because its
+      // parent has already moved.
+      
       let parent = element.parentElement;
 
       while (parent && !parent.classList.contains('group')) {
@@ -540,18 +548,25 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         }
         parent = parent.parentElement;
       }
-      if (parent) {
+      if (parent || element.dataset.position === 'horizontal') {
+
         let focus_target: HTMLElement|undefined;
+        let sibling: HTMLElement|undefined;
 
-        // not sure this is a good place to put it... (attached to the node)
-
-        let sibling: HTMLElement = (element as any).sibling;
-        if (!sibling) {
+        if (element.dataset.menu_target) {
+          sibling = this.menu_map[element.dataset.menu_target];
+        }
+        else {
           sibling = element.nextSibling as HTMLElement;
-          this.outer_container?.appendChild(sibling);
+          const index = (this.menu_index++).toString();
+          this.menu_map[index] = sibling;
+          element.dataset.menu_target = index;
           sibling.style.position = 'absolute';
           sibling.classList.add('treb-toolbar-drop-menu');
-          (element as any).sibling = sibling;
+
+          if (element.dataset.position !== 'horizontal') {
+            this.outer_container?.appendChild(sibling);
+          }
         }
 
         // const sibling = (element as any).sibling || element.nextSibling as HTMLElement;
@@ -592,22 +607,22 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           // of course this breaks the styling, because that's nested...
 
           if (element.dataset?.position === 'horizontal') {
+
             this.Focus(sibling, element.offsetWidth + 12, element.offsetTop - 8, focus_target);
+            // this.Focus(sibling, 0, 0, focus_target);
+            
           }
           else {
 
-            const bounding = (element.classList.contains('drop-button')) ? element : parent;
-            const bounding_rect = bounding.getBoundingClientRect() || {x: 0, y: 0, bottom: 0};
-            const spbound = this.outer_container?.getBoundingClientRect() || {x: 0, y: 0, right: 0};
+            const bounding_rect = ((element.classList.contains('drop-button')) ? element : parent)?.getBoundingClientRect() || {x: 0};
+            const outer_bounds = this.outer_container?.getBoundingClientRect() || {x: 0, right: 0};
 
-            let left = bounding_rect.x - spbound.x;
+            let left = bounding_rect.x - outer_bounds.x;
+
             const width = sibling.offsetWidth;
-            if (width > 0 && left + width > spbound.right) {
-              left = Math.max(0, spbound.right - width - 10); // buffer
+            if (width > 0 && left + width > outer_bounds.right) {
+              left = Math.max(0, outer_bounds.right - width - 10); // buffer
             }
-
-            console.info("S", sibling);
-            (self as any).sibling = sibling;
 
             this.Focus(sibling, left, element.offsetHeight + 4, focus_target);
           }

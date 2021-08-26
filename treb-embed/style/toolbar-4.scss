@@ -5,12 +5,14 @@ $swatch-width: 1.1em;
 
 .drop-menu {
 
-  // position: absolute;
-  // top: -1000px;
-  // left: -1000px;
+  // position:fixed takes it out of the size calc on initial render, so the 
+  // toobar doesn't get taller (which screws up scrolling). we can change the
+  // position value we move it (-> absolute).
 
-  position: relative;
-  
+  position: fixed;
+  top: -1000px;
+  left: -1000px;
+ 
   background: #fff;
   border-radius: 3px;
   border: 1px solid rgb(209, 213, 219);
@@ -19,11 +21,9 @@ $swatch-width: 1.1em;
   outline: none;
   margin: 0;
 
-//  opacity: 0;
+  opacity: 0;
   pointer-events: none;
   transition: opacity .125s;
-
-  width: 0px;
 
   &.visible {
     opacity: 1;
@@ -42,12 +42,6 @@ $swatch-width: 1.1em;
 
   z-index: 999;
 
-  // position:fixed takes it out of the size calc on initial render, so the 
-  // toobar doesn't get taller (which screws up scrolling). we can change the
-  // position value we move it (-> absolute).
-
-  // position: fixed;
-  top: 30px;
 
   padding: .25em .25em;
 
@@ -96,6 +90,9 @@ $swatch-width: 1.1em;
   display: flex;
   flex-direction: row;
   position: relative;
+
+  height: 100%;
+  width: 100%;
 
   // ---
 
@@ -375,6 +372,7 @@ $swatch-width: 1.1em;
   .container {
     position: relative;
     width: 8em;
+    height: 32px;
   }
 
   .container > input {
