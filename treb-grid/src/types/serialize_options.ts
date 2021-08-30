@@ -16,12 +16,19 @@ export interface SerializeOptions {
   /** include the rendered/calculated value in export */
   rendered_values?: boolean;
 
-  /** for simulation */
+  /** 
+   * for simulation 
+   * @mc
+   */
   preserve_type?: boolean;
 
-  expand_arrays?: boolean;
+  /** 
+   * for simulation 
+   * @mc
+   */
+   expand_arrays?: boolean;
 
-  /** translate colors to excel-friendly values */
+  /** translate colors to xlsx-friendly values */
   export_colors?: boolean;
 
   /** export cells that have no value, but have a border or background color */
