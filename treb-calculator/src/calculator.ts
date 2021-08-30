@@ -722,6 +722,7 @@ export class Calculator extends Graph {
    * you need to check (perhaps we could have a wrapper, or make it optional?)
    * 
    * Q: why does this not go in grid? or model? (...)
+   * Q: why are we not preserving absoute/relative? (...)
    * 
    */
    public ResolveAddress(address: string|ICellAddress|IArea): ICellAddress|IArea {
