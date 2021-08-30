@@ -1,22 +1,30 @@
 
 
 /**
- * structure represents a cell address
+ * Structure represents a cell address. Note that row and column are 0-based.
  */
 export interface ICellAddress {
+
+  /** 0-based row */
   row: number;
+
+  /** 0-based column */
   column: number;
+
   absolute_row?: boolean;
   absolute_column?: boolean;
   sheet_id?: number;
 }
 
+/**
+ * this version of the interface requires a sheet ID
+ */
 export interface ICellAddress2 extends ICellAddress {
   sheet_id: number;
 }
 
 /**
- * structure represents a 2d range of cells
+ * Structure represents a 2d range of cells.
  * 
  * @privateRemarks
  * 
@@ -55,6 +63,48 @@ export interface Dimensions {
  */
 export class Area implements IArea { // }, IterableIterator<ICellAddress> {
 
+  // tslint:disable-next-line:variable-name
+  private start_: ICellAddress;
+
+  // tslint:disable-next-line:variable-name
+  private end_: ICellAddress;
+  
+  /**
+   *
+   * @param start
+   * @param end
+   * @param normalize: calls the normalize function
+   */
+   constructor(start: ICellAddress, end: ICellAddress = start, normalize = false){
+
+    /*
+    // copy
+    this.start_ = {
+      row: start.row, column: start.column,
+      absolute_column: !!start.absolute_column,
+      absolute_row: !!start.absolute_row };
+
+    this.end_ = {
+      row: end.row, column: end.column,
+      absolute_column: !!end.absolute_column,
+      absolute_row: !!end.absolute_row };
+    */
+
+    // patch nulls. this is an effect of transferring via JSON, 
+    // infinities are -> null. make sure to strict === null.
+
+    // NOTE that the patch function returns a clone, so we can store the 
+    // returned object (instead of copying, which we used to do).
+
+    this.end_ = this.PatchNull(end);
+    this.start_ = this.PatchNull(start);
+
+    if (normalize) this.Normalize();
+
+    // this.ResetIterator();
+
+  }
+
   public static FromColumn(column: number): Area {
     return new Area({row: Infinity, column});
   }
@@ -63,7 +113,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
     return new Area({row, column: Infinity});
   }
 
-  public static ColumnToLabel(c: number){
+  public static ColumnToLabel(c: number): string {
     let s = String.fromCharCode(65 + c % 26);
     while (c > 25){
       c = Math.floor(c / 26) - 1;
@@ -72,7 +122,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
     return s;
   }
 
-  public static CellAddressToLabel(address: ICellAddress, sheet_id = false){
+  public static CellAddressToLabel(address: ICellAddress, sheet_id = false): string {
 
     const prefix = sheet_id ? `${address.sheet_id || 0}!` : '';
 
@@ -81,6 +131,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
       + this.ColumnToLabel(address.column)
       + (address.absolute_row ? '$' : '')
       + (address.row + 1);
+
   }
 
   /**
@@ -112,16 +163,10 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
       });
   }
 
-  // private iterator_index: ICellAddress = { row: -1, column: -1, sheet_id: 0 };
 
-  // tslint:disable-next-line:variable-name
-  private start_: ICellAddress;
-
-  // tslint:disable-next-line:variable-name
-  private end_: ICellAddress;
 
   /** accessor returns a _copy_ of the start address */
-  public get start() {
+  public get start(): ICellAddress {
     return { ...this.start_ };
   }
 
@@ -129,7 +174,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
   public set start(value: ICellAddress){ this.start_ = value; }
 
   /** accessor returns a _copy_ of the end address */
-  public get end(){
+  public get end(): ICellAddress {
     return { ...this.end_ };
   }
 
@@ -154,54 +199,18 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
   }
 
   /** returns flag indicating this is the entire sheet, usually after "select all" */
-  public get entire_sheet(){
+  public get entire_sheet(): boolean {
     return this.entire_row && this.entire_column;
   }
 
   /** returns flag indicating this range includes infinite rows */
-  public get entire_column(){
+  public get entire_column(): boolean {
     return (this.start_.row === Infinity);
   }
 
   /** returns flag indicating this range includes infinite columns */
-  public get entire_row(){
+  public get entire_row(): boolean {
     return (this.start_.column === Infinity);
-  }
-
-  /**
-   *
-   * @param start
-   * @param end
-   * @param normalize: calls the normalize function
-   */
-  constructor(start: ICellAddress, end: ICellAddress = start, normalize = false){
-
-    /*
-    // copy
-    this.start_ = {
-      row: start.row, column: start.column,
-      absolute_column: !!start.absolute_column,
-      absolute_row: !!start.absolute_row };
-
-    this.end_ = {
-      row: end.row, column: end.column,
-      absolute_column: !!end.absolute_column,
-      absolute_row: !!end.absolute_row };
-    */
-
-    // patch nulls. this is an effect of transferring via JSON, 
-    // infinities are -> null. make sure to strict === null.
-
-    // NOTE that the patch function returns a clone, so we can store the 
-    // returned object (instead of copying, which we used to do).
-
-    this.end_ = this.PatchNull(end);
-    this.start_ = this.PatchNull(start);
-
-    if (normalize) this.Normalize();
-
-    // this.ResetIterator();
-
   }
 
   public PatchNull(address: ICellAddress): ICellAddress {
@@ -334,7 +343,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
       && area.end_.column === this.end_.column;
   }
 
-  public Clone(){
+  public Clone(): Area {
     return new Area(this.start, this.end); // ensure copies
   }
 
@@ -380,7 +389,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
   }
 
   /** shifts range in place */
-  public Shift(rows: number, columns: number){
+  public Shift(rows: number, columns: number): Area {
     this.start_.row += rows;
     this.start_.column += columns;
     this.end_.row += rows;
@@ -389,7 +398,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
   }
 
   /** Resizes range in place so that it includes the given address */
-  public ConsumeAddress(addr: ICellAddress){
+  public ConsumeAddress(addr: ICellAddress): void {
     if (!this.entire_row){
       if (addr.column < this.start_.column) this.start_.column = addr.column;
       if (addr.column > this.end_.column) this.end_.column = addr.column;
@@ -401,19 +410,19 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
   }
 
   /** Resizes range in place so that it includes the given area (merge) */
-  public ConsumeArea(area: IArea){
+  public ConsumeArea(area: IArea): void {
     this.ConsumeAddress(area.start);
     this.ConsumeAddress(area.end);
   }
 
   /** resizes range in place (updates end) */
-  public Resize(rows: number, columns: number){
+  public Resize(rows: number, columns: number): Area {
     this.end_.row = this.start_.row + rows - 1;
     this.end_.column = this.start_.column + columns - 1;
     return this; // fluent
   }
 
-  public Iterate(f: (...args: any[]) => any){
+  public Iterate(f: (...args: any[]) => any): void {
     if (this.entire_column || this.entire_row) {
       console.warn(`don't iterate infinite area`);
       return;
@@ -473,7 +482,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
    * express that in A1 notation). returns the row numbers for entire
    * columns and vice-versa for rows.
    */
-  get spreadsheet_label(){
+  get spreadsheet_label(): string {
 
     let s: string;
 
@@ -501,7 +510,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
    * FIXME: is this different than what would be returned if
    * we just used the default json serializer? (...)
    */
-  public toJSON(){
+  public toJSON(): any {
 
     return {
       start: { ...this.start_ },

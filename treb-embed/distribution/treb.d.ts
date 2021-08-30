@@ -636,7 +636,7 @@ export interface SerializeOptions {
     /** include the rendered/calculated value in export */
     rendered_values?: boolean;
 
-    /** translate colors to excel-friendly values */
+    /** translate colors to xlsx-friendly values */
     export_colors?: boolean;
 
     /** export cells that have no value, but have a border or background color */
@@ -647,10 +647,14 @@ export interface SerializeOptions {
 }
 
 /**
- * structure represents a cell address
+ * Structure represents a cell address. Note that row and column are 0-based.
  */
 export interface ICellAddress {
+
+    /** 0-based row */
     row: number;
+
+    /** 0-based column */
     column: number;
     absolute_row?: boolean;
     absolute_column?: boolean;
@@ -658,7 +662,7 @@ export interface ICellAddress {
 }
 
 /**
- * structure represents a 2d range of cells
+ * Structure represents a 2d range of cells.
  *
  **/
 export interface IArea {
