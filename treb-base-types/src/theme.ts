@@ -98,7 +98,7 @@ const TintedColor = (theme: Theme, index: number, tint: number) => {
   let color = theme.tint_cache[index][tint];
   if (!color) {
 
-    const rgb = theme.theme_colors_rgb ? theme.theme_colors_rgb[index] : [0, 0, 0];
+    const rgb = (theme.theme_colors_rgb ? theme.theme_colors_rgb[index] : [0, 0, 0]) || [0, 0, 0];
     let tinted: {r: number, g: number, b: number};
     if (tint > 0) {
       tinted = Color.Lighten(rgb[0], rgb[1], rgb[2], tint * 100, true);
