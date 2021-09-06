@@ -8,7 +8,7 @@
 import * as JSZip from 'jszip';
 import * as he from 'he';
 
-import { ColumnWidthToPixels, PixelsToColumnWidth } from './column-width';
+import { PixelsToColumnWidth } from './column-width';
 
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`;
 
@@ -26,8 +26,7 @@ import { Theme } from './workbook-theme2';
 import { RelationshipMap, AddRel } from './relationship';
 import { XMLOptions2 } from './xml-utils';
 
-import { QuotedSheetNameRegex, Parser, ArgumentSeparatorType, DecimalMarkType, 
-         UnitCall, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
+import { Parser, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
 
 // FIXME: move
 import { Chart, ChartOptions } from './drawing2/chart2';
@@ -59,16 +58,18 @@ export class Exporter {
 
   public parser = new Parser();
 
+  /*
   constructor() {
 
   }
+  */
 
-  public async Init() {
+  public async Init(): Promise<void> {
     this.zip = await new JSZip().loadAsync(template, {base64: true});
 
   }
 
-  public async WriteRels(rels: RelationshipMap, path: string, dump = false) {
+  public async WriteRels(rels: RelationshipMap, path: string, dump = false): Promise<void> {
 
     if (!this.zip) {
       throw new Error('missing zip');
@@ -817,12 +818,42 @@ export class Exporter {
 
   }
 
+  public FormulaText(text: string): string {
+  
+    if (text[0] !== '=') {
+      return text;
+    }
+
+    const parse_result = this.parser.Parse(text);
+    if (!parse_result.expression) {
+      console.warn('parsing function failed');
+      console.warn(text);
+      return text.substr(1);
+    }
+    else {
+
+      this.parser.Walk(parse_result.expression, (unit) => {
+        if (unit.type === 'call' && unit.name.toLowerCase() === 'norm.inv') {
+          unit.name = '_xlfn.' + unit.name; 
+        }
+        return true;
+      });
+
+      // const x = this.parser.Render(parse_result.expression, undefined, '');
+      // console.info("T", text, x);
+
+      return this.parser.Render(parse_result.expression, undefined, '');
+    }
+   
+  }
+
   public async Export(source: {
       sheet_data: SerializedSheet[];
       active_sheet?: number;
       named_ranges?: {[index: string]: IArea};
       decimal_mark: ','|'.';
-    }) {
+    }): Promise<void> {
+      
     // console.info('source', source);
 
     // --- create a map --------------------------------------------------------
@@ -984,7 +1015,8 @@ export class Exporter {
         start: { row: cells.rows + 1, column: cells.columns + 1, }, 
         end: { row: cells.rows + 1, column: cells.columns + 1, }};
 
-      const FormulaText = (text: string) => (text[0] === '=') ? text.substr(1) : text;
+      // const FormulaText = (text: string) => (text[0] === '=') ? TranslateFormula(text.substr(1)) : text;
+      
 
       // cells data is row-major, and sparse.
 
@@ -1078,7 +1110,7 @@ export class Exporter {
               // there are definitely column styles... 
 
               // s is style, index into the style table 
-              let s: number|undefined = this.StyleFromCell(sheet, style_cache, r, c, cell.style);
+              const s: number|undefined = this.StyleFromCell(sheet, style_cache, r, c, cell.style);
 
               // v (child element) is the value
               let v: CellValue = undefined;
@@ -1087,7 +1119,7 @@ export class Exporter {
 
               switch (cell.type) {
                 case ValueType.formula:
-                  f = FormulaText(cell.value as string);
+                  f = this.FormulaText(cell.value as string);
                   switch (cell.calculated_type) {
                     case ValueType.string:
                       v = cell.calculated;
@@ -1552,12 +1584,12 @@ export class Exporter {
           {a$: { Extension: 'xml', ContentType: 'application/xml' }}
         ],
         Override: [
-          { a$: { PartName: "/xl/workbook.xml", ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml" }},
+          { a$: { PartName: '/xl/workbook.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml' }},
 
           // sheets
           ...source.sheet_data.map((sheet, index) => {
             return { a$: {
-                ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml",
+                ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
                 PartName: `/xl/worksheets/sheet${index + 1}.xml`,
             }};
           }),
@@ -1578,11 +1610,11 @@ export class Exporter {
             ]);
           }, []),
 
-          { a$: { PartName: "/xl/theme/theme1.xml", ContentType: "application/vnd.openxmlformats-officedocument.theme+xml" }},
-          { a$: { PartName: "/xl/styles.xml", ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml" }},
-          { a$: { PartName: "/xl/sharedStrings.xml", ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml" }},
-          { a$: { PartName: "/docProps/core.xml", ContentType: "application/vnd.openxmlformats-package.core-properties+xml" }},
-          { a$: { PartName: "/docProps/app.xml", ContentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml" }},
+          { a$: { PartName: '/xl/theme/theme1.xml', ContentType: 'application/vnd.openxmlformats-officedocument.theme+xml' }},
+          { a$: { PartName: '/xl/styles.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml' }},
+          { a$: { PartName: '/xl/sharedStrings.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml' }},
+          { a$: { PartName: '/docProps/core.xml', ContentType: 'application/vnd.openxmlformats-package.core-properties+xml' }},
+          { a$: { PartName: '/docProps/app.xml', ContentType: 'application/vnd.openxmlformats-officedocument.extended-properties+xml' }},
         
         ],
       },

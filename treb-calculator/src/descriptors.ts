@@ -128,6 +128,13 @@ export interface CompositeFunctionDescriptor {
   extension?: boolean;
 
   /**
+   * there is some set of functions that need an "_xlfn." prefix on export.
+   * I'm not sure why or where the list comes from, but we want to flag
+   * those functions so we can export them properly.
+   */
+  xlfn?: boolean;
+
+  /**
    * support returning references
    */
   return_type?: ReturnType;

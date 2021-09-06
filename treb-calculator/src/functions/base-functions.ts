@@ -791,7 +791,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         {name: 'mean', default: 0},
         {name: 'standard deviation', default: 1},
       ],
-
+      xlfn: true,
       fn: (q: number, mean = 0, stdev = 1): UnionValue => {
         return {
           type: ValueType.number,
