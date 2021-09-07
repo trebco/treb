@@ -808,7 +808,12 @@ export const BaseFunctionLibrary: FunctionMap = {
         {name: 'mean', default: 0},
         {name: 'standard deviation', default: 1},
       ],
+
+      // this does need xlfn but it also requires four parameters
+      // (we have three and they are not required).
+      
       // xlfn: true,
+
       fn: (x: number, mean = 0, stdev = 1): UnionValue => {
 
         // generalized
