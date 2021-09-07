@@ -13,7 +13,7 @@ const exporter = new Exporter();
 const ExportSheets = async (data: any) => {
 
   if (data.sheet) {
-    await exporter.Init();
+    await exporter.Init(data.decorated || []);
     await exporter.Export(data.sheet);
 
     const blob = await exporter.AsBlob(1);

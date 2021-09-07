@@ -1651,7 +1651,9 @@ export class EmbeddedSpreadsheetBase {
         serialized.decimal_mark = Localization.decimal_separator;
 
         this.export_worker.postMessage({
-          command: 'export', sheet: serialized,
+          command: 'export', 
+          sheet: serialized, 
+          decorated: this.calculator.DecoratedFunctionList(),
         });
 
       }

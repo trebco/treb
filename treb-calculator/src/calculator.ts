@@ -49,9 +49,9 @@ export class Calculator extends Graph {
   // FIXME: remove from calculator class
   // protected readonly simulation_model = new SimulationModel();
 
-  protected readonly library = new FunctionLibrary();
-
   public readonly parser: Parser = new Parser();
+
+  protected readonly library = new FunctionLibrary();
 
   // protected graph: Graph = new Graph(); // |null = null;
   // protected status: GraphStatus = GraphStatus.OK;
@@ -708,6 +708,23 @@ export class Calculator extends Graph {
     }
     this.full_rebuild_required = true;
 
+  }
+
+  /**
+   * get a list of functions that require decorating with "_xlfn" on
+   * export. the embed caller will pass this to the export worker.
+   * since we manage functions, we can manage the list.
+   */
+  public DecoratedFunctionList(): string[] {
+    const list: string[] = [];
+    const lib = this.library.List();
+    for (const key of Object.keys(lib)) {
+      const def = lib[key];
+      if (def.xlfn) {
+        list.push(key);
+      }
+    }
+    return list;
   }
 
   /** wrapper method ensures it always returns an Area (instance, not interface) */

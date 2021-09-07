@@ -2,14 +2,14 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
-import { Box, /*UnionOrArray,*/ ArrayUnion, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex, BooleanUnion } from 'treb-base-types';
-import { Sparkline, SparklineRenderOptions } from './sparkline';
+import { Box, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex } from 'treb-base-types';
+import { Sparkline } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
 import { ClickCheckbox, RenderCheckbox } from './checkbox';
 import { UnionIsMetadata } from '../expression-calculator';
 
-import { Exp as ComplexExp, Power as ComplexPower, RectangularToPolar, Multiply as ComplexMultply } from '../complex-math';
+import { Exp as ComplexExp, Power as ComplexPower, Multiply as ComplexMultply } from '../complex-math';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -92,7 +92,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     arguments: [{ boxed: true, name: 'values or ranges' }],
     fn: (...args: UnionValue[]) => {
 
-      let sum = { real: 0, imaginary: 0 };
+      const sum = { real: 0, imaginary: 0 };
 
       const values = Utils.FlattenBoxed(args); // as UnionValue[];
 
@@ -808,7 +808,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         {name: 'mean', default: 0},
         {name: 'standard deviation', default: 1},
       ],
-
+      // xlfn: true,
       fn: (x: number, mean = 0, stdev = 1): UnionValue => {
 
         // generalized
@@ -894,7 +894,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
-        return { type: ValueType.object, value: args, key: "sparkline-data" };
+        return { type: ValueType.object, value: args, key: 'sparkline-data' };
       },
     },
 
@@ -909,7 +909,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         return { handled: true }; // painted
       },
       fn: (...args: unknown[]): UnionValue => {
-        return { type: ValueType.object, value: args, key: "sparkline-data" };
+        return { type: ValueType.object, value: args, key: 'sparkline-data' };
       },
     }
 

@@ -58,13 +58,24 @@ export class Exporter {
 
   public parser = new Parser();
 
+  public decorated_functions: string[] = [];
+
   /*
   constructor() {
 
   }
   */
 
-  public async Init(): Promise<void> {
+  /**
+   * init used to load the template file. we added a parameter to
+   * pass in the list of functions that need decoration (_xlfn).
+   * 
+   * @param decorated_functions 
+   */
+  public async Init(decorated_functions: string[] = []): Promise<void> {
+
+    this.decorated_functions = decorated_functions.map(name => name.toLowerCase()); // normalized
+
     this.zip = await new JSZip().loadAsync(template, {base64: true});
 
   }
@@ -825,6 +836,7 @@ export class Exporter {
     }
 
     const parse_result = this.parser.Parse(text);
+
     if (!parse_result.expression) {
       console.warn('parsing function failed');
       console.warn(text);
@@ -832,12 +844,20 @@ export class Exporter {
     }
     else {
 
-      this.parser.Walk(parse_result.expression, (unit) => {
-        if (unit.type === 'call' && unit.name.toLowerCase() === 'norm.inv') {
-          unit.name = '_xlfn.' + unit.name; 
-        }
-        return true;
-      });
+      if (this.decorated_functions.length) {
+        this.parser.Walk(parse_result.expression, (unit) => {
+          if (unit.type === 'call') {
+            const lc = unit.name.toLowerCase();
+            for (const test of this.decorated_functions) {
+              if (test === lc) {
+                unit.name = '_xlfn.' + unit.name; 
+                break;
+              }
+            }
+          }
+          return true;
+        });
+      }
 
       // const x = this.parser.Render(parse_result.expression, undefined, '');
       // console.info("T", text, x);
