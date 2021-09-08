@@ -56,6 +56,7 @@
   },
   "build-entry-points": {
     "main": "embedded-treb-bundle",
+    "module": "embedded-treb-bundle-module",
     "calculation-worker": "embedded-treb-worker",
     "export-worker": "embedded-treb-export-worker",
     "engine": "treb-engine",
