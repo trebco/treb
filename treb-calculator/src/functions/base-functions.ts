@@ -807,14 +807,24 @@ export const BaseFunctionLibrary: FunctionMap = {
         {name: 'value'},
         {name: 'mean', default: 0},
         {name: 'standard deviation', default: 1},
+        {name: 'cumulative', default: true},
       ],
 
       // this does need xlfn but it also requires four parameters
       // (we have three and they are not required).
       
-      // xlfn: true,
+      xlfn: true,
 
-      fn: (x: number, mean = 0, stdev = 1): UnionValue => {
+      fn: (x: number, mean = 0, stdev = 1, cumulative = true): UnionValue => {
+
+        if (!cumulative) {
+
+          const value = 1 / (stdev * Math.sqrt(2 * Math.PI)) * Math.exp(-1/2 * Math.pow((x - mean) / stdev, 2));
+          return {
+            type: ValueType.number,
+            value,
+          }          
+        }
 
         // generalized
         const sign = (x < mean) ? -1 : 1;
