@@ -48,6 +48,8 @@ const erf = (x: number): number => {
 
 };
 
+const sqrt2pi = Math.sqrt(2 * Math.PI);
+
 /** imprecise but reasonably fast normsinv function */
 const inverse_normal = (q: number): number => {
 
@@ -817,20 +819,19 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       fn: (x: number, mean = 0, stdev = 1, cumulative = true): UnionValue => {
 
-        if (!cumulative) {
+        let value = 0;
 
-          const value = 1 / (stdev * Math.sqrt(2 * Math.PI)) * Math.exp(-1/2 * Math.pow((x - mean) / stdev, 2));
-          return {
-            type: ValueType.number,
-            value,
-          }          
+        if (cumulative) {
+          const sign = (x < mean) ? -1 : 1;
+          value = 0.5 * (1.0 + sign * erf((Math.abs(x - mean)) / (stdev * Math.sqrt(2))));
+        }
+        else {
+          value = Math.exp(-1/2 * Math.pow((x - mean) / stdev, 2)) / (stdev * sqrt2pi);
         }
 
-        // generalized
-        const sign = (x < mean) ? -1 : 1;
         return { 
           type: ValueType.number, 
-          value: 0.5 * (1.0 + sign * erf((Math.abs(x - mean)) / (stdev * Math.sqrt(2)))),
+          value,
         };
 
       },
