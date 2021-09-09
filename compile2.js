@@ -30,13 +30,14 @@ let clean = false;
 let extract_css = false;
 
 // optionally limit build to one module
-const build = { legacy: false, modern: false };
+const build = { legacy: false, modern: false, module: false, };
 
 for (const arg of process.argv) {
   if (arg === '-d') dev = true;
   if (arg === '-w' || arg === '--watch') watch = true;
   if (arg === '--legacy') build.legacy = true;
   if (arg === '--modern') build.modern = true;
+  if (arg === '--module') build.module = true;
   if (arg === '--clean') clean = true;
   if (arg === '-e' || arg === '--extract-css') {
     extract_css = true;
@@ -44,21 +45,25 @@ for (const arg of process.argv) {
   }
 }
 
-// default is build both
-if (!build.legacy && !build.modern) {
-  build.legacy = build.modern = true;
+// default is build all
+if (!build.legacy && !build.modern && !build.module) {
+  build.legacy = build.modern = build.module = true;
 }
 
+const module_entry = {
+  [package['build-entry-points']['main']]: './treb-embed/src/index-module.ts',
+};
+
 const modern_entry = {
-  [package['build-entry-points']['main'] + '-es6']: './treb-embed/src/index-modern.ts',
-  [package['build-entry-points']['export-worker'] + '-es6' + '-' + package.version]: './treb-export/src/export-worker/index-modern.ts',
-  [package['build-entry-points']['calculation-worker'] + '-es6' + '-' + package.version]: './treb-mc/src/calculation-worker/index-modern.ts',
+  [package['build-entry-points']['main']]: './treb-embed/src/index-modern.ts',
+  [package['build-entry-points']['export-worker'] + '-' + package.version]: './treb-export/src/export-worker/index-modern.ts',
+  [package['build-entry-points']['calculation-worker'] + '-' + package.version]: './treb-mc/src/calculation-worker/index-modern.ts',
 };
 
 const legacy_entry = {
-  [package['build-entry-points']['main']]: './treb-embed/src/index-legacy.ts',
-  [package['build-entry-points']['export-worker'] + '-' + package.version]: './treb-export/src/export-worker/index-legacy.ts',
-  [package['build-entry-points']['calculation-worker'] + '-' + package.version]: './treb-mc/src/calculation-worker/index-legacy.ts',
+  [package['build-entry-points']['main'] + '-es5']: './treb-embed/src/index-legacy.ts',
+  [package['build-entry-points']['export-worker'] + '-es5-' + package.version]: './treb-export/src/export-worker/index-legacy.ts',
+  [package['build-entry-points']['calculation-worker'] + '-es5-' + package.version]: './treb-mc/src/calculation-worker/index-legacy.ts',
 };
 
 const dist_dir = 'build';
@@ -88,7 +93,7 @@ const UpdateFiles = () => {
 
   console.info('adding banners');
   for (const filename of files) {
-    if (/\.js$/.test(filename)) {
+    if (/\.m{0,1}js$/.test(filename)) {
       const fully_qualified = path.join(build_dir, filename);
       let contents = fs.readFileSync(fully_qualified, 'utf-8');
       if (/^\/\*.*?\*\//.test(contents)) {
@@ -226,7 +231,7 @@ const CreateConfig = (config, entry, options, target) => {
             { 
               loader: 'ts-loader',
               options: {
-                configFile: /modern/i.test(config) ? 'treb-embed/modern.tsconfig.json' : 'treb-embed/legacy.tsconfig.json',
+                configFile: /legacy/i.test(config) ? 'treb-embed/legacy.tsconfig.json' : 'treb-embed/modern.tsconfig.json',
               },
             },
             {
@@ -264,7 +269,7 @@ const CreateConfig = (config, entry, options, target) => {
 
                   { 
                     text: /conditional\/(?:modern|legacy)/g, 
-                    replacement: `conditional/${/modern/i.test(config) ? 'modern' : 'legacy'}`,
+                    replacement: `conditional/${/legacy/i.test(config) ? 'legacy' : 'modern'}`,
                   },
 
                 ],
@@ -339,16 +344,28 @@ const CreateConfig = (config, entry, options, target) => {
       publicPath: './',
       chunkFilename: '[name].bundle.js',
 
+      /*
       library: {
-        name: 'TREB',
-        type: 'umd',
+        // name: 'TREB',
+        type: 'module',
       },
-  
+      module: true,
+      */
+
+    },
+
+    experiments: {
+      // outputModule: true,
     },
 
     plugins: [
 
-      new LicenseCheckerWebpackPlugin({ outputFilename: '3d_party.txt' }),
+      // NOTE: LC only needs to run once, why are we running it every time?
+      // especially since it's only for distribution, we should just run it
+      // when we're running prod/modern build
+
+      // new LicenseCheckerWebpackPlugin({ outputFilename: '3d_party.txt' }),
+
       {
         apply: (compiler) => {
           compiler.hooks.beforeCompile.tap('BeforeCompilePlugin', () => {
@@ -359,6 +376,18 @@ const CreateConfig = (config, entry, options, target) => {
     ]
   };
 
+  if (options.license) {
+    config_instance.plugins.unshift(
+      new LicenseCheckerWebpackPlugin({ outputFilename: '3d_party.txt' }),
+    );
+  }
+
+  if (options.module) {
+    config_instance.experiments.outputModule = true;
+    config_instance.output.module = true;
+    config_instance.output.library = { type: 'module' };
+  }
+
   if (extract_css) {
     config_instance.plugins.unshift(new MiniCssExtractPlugin());
   }
@@ -366,7 +395,8 @@ const CreateConfig = (config, entry, options, target) => {
   return config_instance;
 };
 
-const modern_compiler = build.modern ? webpack(CreateConfig('modern', modern_entry, {}, ['web', 'es6'])) : undefined;
+const module_compiler = build.module ? webpack(CreateConfig('module', module_entry, { module: true, }, ['web', 'es2020'])) : undefined; 
+const modern_compiler = build.modern ? webpack(CreateConfig('modern', modern_entry, { license: true, }, ['web', 'es2020'])) : undefined;
 const legacy_compiler = build.legacy ? webpack(CreateConfig('legacy', legacy_entry, {}, ['web', 'es5'])) : undefined;
 
 const postbuild_report = async (config, err, stats, toll) => {
@@ -408,6 +438,14 @@ if (watch) {
       }
     });
   }
+  if (build.module) {
+    module_compiler.watch({}, (err, stats) => {
+      postbuild_report('module', err, stats);
+      if (!stats.hasErrors()) {
+        UpdateFiles();
+      }
+    });
+  }
 }
 else {
 
@@ -416,10 +454,19 @@ else {
 
   const promises = [];
 
+  if (build.module) {
+    promises.push(new Promise((resolve) => {
+      module_compiler.run((err, stats) => {
+        postbuild_report('module', err, stats);
+        resolve(stats);
+      });
+    }));
+  }
+
   if (build.modern) {
     promises.push(new Promise((resolve) => {
       modern_compiler.run((err, stats) => {
-        postbuild_report('legacy', err, stats);
+        postbuild_report('modern', err, stats);
         resolve(stats);
       });
     }));
