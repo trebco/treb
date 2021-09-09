@@ -13,7 +13,7 @@
  * 
  * for the time being:
  * ```
- * node_modules/.bin/tsc
+ * npx tsc
  * node_modules/.bin/terser embed.js > ../disttribution/embed.js
  * ```
  * 
@@ -47,13 +47,13 @@
       script = document.createElement('script');
       script.setAttribute('type', 'module');
       script.setAttribute('data-reference', 'treb');
-      script.setAttribute('src', base + 'embedded-treb-bundle-es6.js');
+      script.setAttribute('src', base + 'treb-bundle.js');
       document.head.appendChild(script);
 
       script = document.createElement('script');
       script.setAttribute('type', 'text/javascript');
       script.setAttribute('data-reference', 'treb');
-      script.setAttribute('src', base + 'embedded-treb-bundle.js');
+      script.setAttribute('src', base + 'treb-bundle-es5.js');
       script.setAttribute('nomodule', 'true');
       document.head.appendChild(script);
 
