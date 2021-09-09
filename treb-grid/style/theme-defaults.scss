@@ -328,6 +328,15 @@ $text-reference-color-5: rgb(254, 47, 1);
           width: 11px;
           height: 11px;
           opacity: .4;
+
+          /**
+           * NOTE: recent updates to webpack (v5ish) require a new option
+           * to css-loader, otherwise it rewrites this with a URL API function
+           * which breaks IE11. 
+           *
+           * (removed nasty comment about webpack)
+           */
+
           background-image: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M416 224H400V144C400 65 335 0 256 0S112 65 112 144V224H96C61 224 32 253 32 288V448C32 483 61 512 96 512H416C451 512 480 483 480 448V288C480 253 451 224 416 224ZM176 144C176 100 212 64 256 64S336 100 336 144V224H176V144Z' fill='currentColor'/%3E%3C/svg%3E");
         }
 

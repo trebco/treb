@@ -33,7 +33,7 @@ let extract_css = false;
 const build = { legacy: false, modern: false, module: false, };
 
 for (const arg of process.argv) {
-  if (arg === '-d') dev = true;
+  if (arg === '-d' || arg === '--dev') dev = true;
   if (arg === '-w' || arg === '--watch') watch = true;
   if (arg === '--legacy') build.legacy = true;
   if (arg === '--modern') build.modern = true;
@@ -203,7 +203,12 @@ const CreateConfig = (config, entry, options, target) => {
 
     [
       MiniCssExtractPlugin.loader,
-      'css-loader',
+      {
+        loader: 'css-loader',
+        options: {
+          url: false,
+        },
+      },
       'sass-loader',
     ] : [
       { 
@@ -212,7 +217,12 @@ const CreateConfig = (config, entry, options, target) => {
           injectType: 'singletonStyleTag' 
         } 
       },
-      'css-loader',
+      {
+        loader: 'css-loader',
+        options: {
+          url: false,
+        }
+      },
       'sass-loader',
     ];
 
