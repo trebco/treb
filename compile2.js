@@ -30,14 +30,13 @@ let clean = false;
 let extract_css = false;
 
 // optionally limit build to one module
-const build = { legacy: false, modern: false, module: false };
+const build = { legacy: false, modern: false };
 
 for (const arg of process.argv) {
   if (arg === '-d') dev = true;
   if (arg === '-w' || arg === '--watch') watch = true;
   if (arg === '--legacy') build.legacy = true;
   if (arg === '--modern') build.modern = true;
-  if (arg === '--module') build.module = true;
   if (arg === '--clean') clean = true;
   if (arg === '-e' || arg === '--extract-css') {
     extract_css = true;
@@ -46,7 +45,7 @@ for (const arg of process.argv) {
 }
 
 // default is build both
-if (!build.legacy && !build.modern && !build.module) {
+if (!build.legacy && !build.modern) {
   build.legacy = build.modern = true;
 }
 
@@ -338,7 +337,13 @@ const CreateConfig = (config, entry, options, target) => {
     output: {
       path: path.resolve(__dirname, dist_dir, package.version),
       publicPath: './',
-      chunkFilename: '[name].bundle.js'
+      chunkFilename: '[name].bundle.js',
+
+      library: {
+        name: 'TREB',
+        type: 'umd',
+      },
+  
     },
 
     plugins: [
@@ -353,31 +358,6 @@ const CreateConfig = (config, entry, options, target) => {
       }
     ]
   };
-
-  if (options.libraryTarget) {
-    config_instance.output.libraryTarget = options.libraryTarget;
-  }
-
-  if (options.librarytype) {
-    const library = config_instance.output.library || {};
-    library.type = options.librarytype;
-    config_instance.output.library = library;
-  }
-
-  if (options.module) {
-
-    const library = config_instance.output.library || {};
-    // library.type = 'umd';
-    // library.name = 'TREB';
-
-    library.type = 'module';
-    config_instance.output.library = library;
-    
-    const experiments = config_instance.experiments || {};
-    experiments.outputModule = true;
-    config_instance.experiments = experiments;
-
-  }
 
   if (extract_css) {
     config_instance.plugins.unshift(new MiniCssExtractPlugin());
@@ -411,26 +391,7 @@ const postbuild_report = async (config, err, stats, toll) => {
 
 }
 
-if (build.module) {
-  const config = CreateConfig('modern',   {
-    [package['build-entry-points']['module'] + '-es6']: './treb-embed/src/index-module.ts',
-  }, { 
-    // libraryTarget: 'umd' 
-    librarytype: 'module',
-    module: true,
-  }, ['web', 'es2020'])
-  const compiler = webpack(config);
-
-  fs.writeFile('temp-webpack-config.json', JSON.stringify(config, undefined, 2), {encoding: 'utf8'});
-
-  compiler.run((err, stats) => {
-    // console.info(stats);
-    postbuild_report('module', err, stats);
-  });
-
-
-}
-else if (watch) {
+if (watch) {
   if (build.legacy) {
     legacy_compiler.watch({}, (err, stats) => {
       postbuild_report('legacy', err, stats)
