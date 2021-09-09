@@ -1,6 +1,8 @@
+// import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 
-import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
-EmbeddedSpreadsheetBase.treb_language = 'es6'; // load es6 modules
+// es2020 is now default; es5 is marked.
+
+// EmbeddedSpreadsheetBase.treb_language = 'es6'; // load es6 modules
 
 // old index
 import './main';

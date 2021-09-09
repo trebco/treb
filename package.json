@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "12.3.4",
+  "version": "13.0.0",
   "main": "dist/index.js",
   "devDependencies": {
     "@microsoft/api-documenter": "^7.13.34",
@@ -55,11 +55,8 @@
     "release": "node compile2.js --clean && npm run generate-api && node zip-package.js"
   },
   "build-entry-points": {
-    "main": "embedded-treb-bundle",
-    "module": "embedded-treb-bundle-module",
-    "calculation-worker": "embedded-treb-worker",
-    "export-worker": "embedded-treb-export-worker",
-    "engine": "treb-engine",
-    "connect": "treb-connect-lib"
+    "main": "treb-bundle",
+    "calculation-worker": "treb-worker",
+    "export-worker": "treb-export-worker"
   }
 }

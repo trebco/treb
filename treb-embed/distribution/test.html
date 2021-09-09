@@ -35,11 +35,18 @@ a {
 
     <p>
       This is a test file for <a href='https://treb.app'>TREB</a>. See
-      <a href='https://treb.app/embedding-options'>this page</a> for embedding options.
+      <a href='https://treb.app/docs.html'>this page</a> for embedding options.
     </p>
 
-    <div data-treb="https://treb.app/doc/front.treb"></div>
+    <div data-treb="https://treb.app/doc/sample.treb.json"></div>
 
-    <script type='text/javascript' src='./embedded-treb-bundle.js'></script>
+    <!-- 
+      we're loading the es5 (legacy) script here for maximum compatibility.
+      see the docs page (above) for how to load the modern library which
+      is smaller and faster.
+    -->
+    
+    <script type='text/javascript' src='./treb-bundle-es5.js'></script>
+
   </body>
 </html>

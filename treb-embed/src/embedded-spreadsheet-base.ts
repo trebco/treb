@@ -183,8 +183,12 @@ export class EmbeddedSpreadsheetBase {
   /** @internal */
   public static treb_language = '';
 
-  /** @internal */
-  public static treb_script_host = '';
+  /* * 
+   * what is this? does not seem to be used anymore
+   * 
+   * @internal 
+   */
+  // public static treb_script_host = '';
 
   /** @internal */
   public static treb_embedded_script_path = '';
@@ -3806,6 +3810,13 @@ export class EmbeddedSpreadsheetBase {
    * loading in different directories (or different hosts?)
    */
   protected async LoadWorker(name: string): Promise<Worker> {
+
+    if (!EmbeddedSpreadsheetBase.treb_base_path) {
+      console.warn('worker path is not set. it you are loading TREB in an ESM module, please either '
+        + 'include the script in a document <script/> tag, or call the method TREB.SetScriptPath() to '
+        + 'set the load path for workers (this should be the path to TREB script files).');
+      throw new Error('worker path not set');
+    }
 
     if (EmbeddedSpreadsheetBase.treb_language) {
       name += '-' + EmbeddedSpreadsheetBase.treb_language;

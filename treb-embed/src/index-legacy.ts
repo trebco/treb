@@ -1,4 +1,5 @@
 
+import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 
 // polyfills for legacy support
 
@@ -16,6 +17,9 @@ require('core-js/es/typed-array');
 
 // tslint:disable-next-line:no-var-requires
 // require('core-js/es/symbol');
+
+EmbeddedSpreadsheetBase.treb_language = 'es5'; // load legacy modules
+
 
 // old index
 import './main';
