@@ -4,6 +4,7 @@
 
 const webpack = require('webpack');
 const path = require('path');
+const fs = require('fs').promises;
 const package = require('./package.json');
 
 let mode = 'production';
@@ -28,7 +29,8 @@ const config = {
     resolve: {
       extensions: ['.ts', '.js', '.json'],
       alias: {
-        'treb-base-types': path.resolve(__dirname, 'treb-base-types/src/index-standalone.ts'),
+        // 'treb-base-types': path.resolve(__dirname, 'treb-base-types/src/index-standalone.ts'),
+        'treb-base-types': path.resolve(__dirname, 'treb-base-types/src/'),
       }
     },
     module: {
@@ -48,18 +50,37 @@ const config = {
       ]
     },
 
+    /*
     plugins: [
       new webpack.BannerPlugin({
         banner: `v${package.version}. Copyright ${new Date().getFullYear()} Structured Data, LLC. All rights reserved.`,
       }),
     ],
-    
+    */
+
 };
 
-webpack(config).run((err, stats) => {
+// console.info(JSON.stringify(config, undefined, 2));
+
+const run = async() => {
+
+  const {err, stats} = await new Promise((resolve) => {
+    webpack(config).run((err, stats) => resolve({err, stats}));
+  });
+
   if (err) {
     console.error(err);
     return;
   }
+
+  const banner = `/*! v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */`;
+  const file = path.join(config.output.path, config.output.filename);
+  const contents = await fs.readFile(file, {encoding: 'utf8'});
+  await fs.writeFile(file, banner + '\n' + contents, {encoding: 'utf-8'});
+
   console.info(stats.toString());
-});
+  
+}
+
+run();
+
