@@ -1,0 +1,5 @@
+{
+  "name": "treb-format-lib",
+  "main": "treb-format-lib.js",
+  "types": "treb-format-lib.d.ts"
+}
