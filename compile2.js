@@ -206,7 +206,12 @@ const CreateConfig = (config, entry, options, target) => {
       {
         loader: 'css-loader',
         options: {
-          url: false,
+
+          // we don't actually need to disable this for this version, 
+          // since it's generally targeting modern browsers/electron
+          // anyway. 
+
+          url: false, 
         },
       },
       'sass-loader',
