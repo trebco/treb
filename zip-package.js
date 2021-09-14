@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 
 const fs = require('fs');
 const path = require('path');
-const exec = require('child_process').exec;
+//const exec = require('child_process').exec;
 const package = require('./package.json');
 const archiver = require('archiver');
 
 const dist_dir = 'build';
-const build_dir = path.resolve(__dirname, dist_dir, package.version);
+//const build_dir = path.resolve(__dirname, dist_dir, package.version);
 const current_dir = path.resolve(__dirname, dist_dir, 'current');
 
 const BuildZip = async () => {
@@ -40,7 +41,8 @@ const BuildZip = async () => {
     });
 
     archive.pipe(output);
-    archive.directory(build_dir, 'TREB');
+    // archive.directory(build_dir, 'TREB');
+    archive.directory(current_dir, 'TREB');
     archive.finalize();
 
   });

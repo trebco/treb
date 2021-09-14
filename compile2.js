@@ -13,7 +13,7 @@ const webpack = require('webpack');
 const fs = require('fs-extra');
 const path = require('path');
 const exec = require('child_process').exec;
-const execSync = require('child_process').execSync;
+// const execSync = require('child_process').execSync;
 const LicenseCheckerWebpackPlugin = require('license-checker-webpack-plugin');
 //const TerserPlugin = require('terser-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -107,11 +107,19 @@ const UpdateFiles = () => {
     }
   }
 
+  // NOTE: copying distribution files moved to archive script. we don't
+  // need them at this point, and if we copy them now we will copy the 
+  // wrong API file (because it has not been generated yet).
+
+  // ... moved to a different script, instead of into zip generator
+
+  /*
   // copy distribution files. note that we're doing this _after_ adding 
   // banners, to exclude the single-file embed script (not sure if that's
   // useful or not, but it's intentional)
 
   execSync('cp ' + path.resolve(__dirname, 'treb-embed/distribution') + '/* ' + build_dir);
+  */
 
   console.info('copying files');
   fs.mkdir(current_dir, () => {

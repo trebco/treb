@@ -3,7 +3,7 @@
 /** 
  * Global instance. In the base script, this object will be created as an
  * ambient global object (bound to the window object). If you instead use the
- * ESM module, import the TREB object from the module.
+ * ES module, import the TREB object from the module.
  */
  declare const TREB: TREBGlobal;
 
@@ -13,10 +13,10 @@
 export declare class TREBGlobal {
 
   /** TREB version */
-  static version: string;
+  version: string;
 
   /** create a spreadsheet */
-  static CreateSpreadsheet(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet;
+  CreateSpreadsheet(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet;
 
 }
 /**
