@@ -100,6 +100,10 @@ export class Localization {
       
       this.grouping_separator = ' '; 
     }
+    else {
+      this.argument_separator = ',';
+      this.grouping_separator = ',';
+    }
 
     // moved from number format lib
 
