@@ -49,7 +49,7 @@ export class Localization {
    *
    * @param locale explicitly set locale
    */
-  public static UpdateLocale(locale?: string) {
+  public static UpdateLocale(locale?: string): void {
 
     if (locale) {
       this.locale = locale; // 1

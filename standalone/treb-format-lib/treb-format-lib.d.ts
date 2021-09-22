@@ -55,3 +55,6 @@ export declare class NumberFormatCache {
   static Get(format: string, complex?: boolean): NumberFormat;
 }
 
+export declare class Localization {
+  static UpdateLocale(locale?: string): void;
+}
