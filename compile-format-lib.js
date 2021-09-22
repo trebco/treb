@@ -19,11 +19,14 @@ const config = {
 
     entry: `./treb-format/src/index-standalone.ts`,
     mode,
+    experiments: {
+      outputModule: true,
+    },
     output: {
         path: path.resolve(__dirname, 'standalone/treb-format-lib'),
-        filename: `treb-format-lib.js`,
-        library: `treb-format-lib`,
-        libraryTarget: 'umd',
+        filename: `treb-format-lib.mjs`,
+        // library: `treb-format-lib`,
+        libraryTarget: 'module', // 'umd',
         globalObject: 'this',
     },
     resolve: {
