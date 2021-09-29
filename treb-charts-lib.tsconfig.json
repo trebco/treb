@@ -12,7 +12,11 @@
     "declarationDir": "dist2/",
     "lib": [
       "dom", "es2015"
-    ]
+    ],
+    "paths": {
+      "treb-base-types": ["treb-base-types/"]
+    },
+    "baseUrl": "."
   },
   "include": [
     "treb-utils/src/**/*.ts",
@@ -21,6 +25,7 @@
     "treb-base-types/src/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "treb-format/src/**/*.test.ts"
   ]
 }

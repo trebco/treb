@@ -4,8 +4,10 @@ import { CompositeSheet } from './composite-sheet';
 import { AutoEmbedManager } from './auto-embed';
 import { CreateSheetOptions, EmbeddedSpreadsheetOptions } from './options';
 import { NumberFormatCache, ValueParser } from 'treb-format';
-import { Complex } from 'treb-base-types';
+import { Complex, Localization } from 'treb-base-types';
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
+
+import { Util as ChartUtils, Chart } from 'treb-charts';
 
 interface TREBNamespace {
   CreateEngine?: (options: EmbeddedSpreadsheetOptions) => EmbeddedSpreadsheetBase,
@@ -15,6 +17,15 @@ interface TREBNamespace {
     format: (value: number, format: string) => string,
     parse: (value: string) => string|number|boolean|undefined|Complex,
   },
+
+  // new utils stuff
+
+  Localization?: Localization,
+  NumberFormatCache?: NumberFormatCache,
+  ValueParser?: typeof ValueParser,
+  ChartUtils?: ChartUtils,
+  CreateChart?: () => Chart,
+
 }
 
 // convenience type
@@ -39,6 +50,18 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
     if (EmbeddedSpreadsheetBase.enable_engine) {
       value.CreateEngine = (options = {}) => new EmbeddedSpreadsheet(options);
     }
+
+    // testing
+
+    /*
+    if (EmbeddedSpreadsheetBase.enable_utils) {
+      value.Localization = Localization;
+      value.NumberFormatCache = NumberFormatCache;
+      value.ValueParser = ValueParser;
+      value.ChartUtils = ChartUtils;
+      value.CreateChart = () => new Chart();
+    }
+    */
 
     // FIXME: writable and configurable default to false, you don't
     // need to define them here. 

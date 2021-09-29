@@ -6,6 +6,7 @@ const webpack = require('webpack');
 const path = require('path');
 const fs = require('fs').promises;
 const package = require('./package.json');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 let mode = 'production';
 
@@ -15,16 +16,55 @@ for (let i = 0; i < process.argv.length; i++) {
   }
 }
 
+let extract_css = false;
+
+const style_loaders = extract_css ?
+
+// if the flag is set, extract css to an external file. if not, 
+// inline it. for use with CSP. not sure atm how to best integrate 
+// this.
+
+[
+  MiniCssExtractPlugin.loader,
+  {
+    loader: 'css-loader',
+    options: {
+
+      // we don't actually need to disable this for this version, 
+      // since it's generally targeting modern browsers/electron
+      // anyway. 
+
+      url: false, 
+    },
+  },
+  'sass-loader',
+] : [
+  { 
+    loader: 'style-loader', 
+    options: { 
+      injectType: 'singletonStyleTag' 
+    } 
+  },
+  {
+    loader: 'css-loader',
+    options: {
+      url: false,
+    }
+  },
+  'sass-loader',
+];
+
 const config = {
 
-    entry: `./treb-format/src/index-standalone.ts`,
+    entry: `./treb-charts/src/index-standalone.ts`,
+    // entry: `./treb-format/src/index-standalone.ts`,
     mode,
     experiments: {
       outputModule: true,
     },
     output: {
-        path: path.resolve(__dirname, 'standalone/treb-format-lib'),
-        filename: `treb-format-lib.mjs`,
+        path: path.resolve(__dirname, 'standalone/treb-charts-lib'),
+        filename: `treb-charts-lib.mjs`,
         libraryTarget: 'module',
         globalObject: 'this',
     },
@@ -32,6 +72,8 @@ const config = {
       extensions: ['.ts', '.js', '.json'],
       alias: {
         // 'treb-base-types': path.resolve(__dirname, 'treb-base-types/src/index-standalone.ts'),
+        'treb-format': path.resolve(__dirname, 'treb-format/src/'),
+        'treb-utils': path.resolve(__dirname, 'treb-utils/src/'),
         'treb-base-types': path.resolve(__dirname, 'treb-base-types/src/'),
       }
     },
@@ -44,11 +86,18 @@ const config = {
             { 
               loader: 'ts-loader',
               options: {
-                configFile: 'treb-format-lib.tsconfig.json',
+                configFile: 'treb-charts-lib.tsconfig.json',
               },
             },
           ],
-        }
+        },
+        {
+          test: /\.[sp]*css$/,
+          sideEffects: true,
+
+          use: style_loaders,
+
+        },
       ]
     },
 

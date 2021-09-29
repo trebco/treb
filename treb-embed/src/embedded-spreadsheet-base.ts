@@ -196,6 +196,9 @@ export class EmbeddedSpreadsheetBase {
   /** @internal */
   public static enable_engine = false;
 
+  // / * * @internal * /
+  // public static enable_utils = false;
+
   /** @internal */
   public static enable_formatter = false;
 
@@ -783,6 +786,12 @@ export class EmbeddedSpreadsheetBase {
       */
 
       if (src && rex.test(src)) {
+
+        /*
+        if (src && /\?.*?utils/i.test(src)) {
+          this.enable_utils = true;
+        }
+        */
 
         if (src && /\?.*?engine/i.test(src)) {
           this.enable_engine = true;
