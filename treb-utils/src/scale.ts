@@ -15,7 +15,7 @@ export interface RangeScale {
  * 
  * we have a new parameter for that, default behavior should not change.
  */
-export const Scale = (min: number, max: number, count = 6.5, limit_count = false): RangeScale => {
+export const Scale = (min: number, max: number, count = 6.5, limit_count = false, discrete = false): RangeScale => {
 
   if (max === min) { 
 
@@ -45,7 +45,9 @@ export const Scale = (min: number, max: number, count = 6.5, limit_count = false
   const log10 = Math.log(range) / Math.log(10); // just avoid the problem (problem being IE11 lack of Math.log10)
 
   const scale = Math.floor(Math.abs(log10)) * (log10 < 0 ? -1 : 1) - 1;
-  const steps = [.1, .25, .5, 1, 2.5, 5, 10, 25, 50, 100];
+  const steps = discrete ? 
+      [1, 2, 3, 5, 10, 15, 20, 25, 50, 100] : 
+      [.1, .25, .5, 1, 2.5, 5, 10, 25, 50, 100];
 
   let step = -1;
   let delta = 0;

@@ -127,6 +127,17 @@ export type UnionValue
 
 // --- 
 
+export interface RangeScale {
+  scale: number;
+  step: number;
+  count: number;
+  min: number;
+  max: number;
+}
+
+export const Scale: (min: number, max: number, count?: number) => RangeScale;
+
+// ---
 
 export type NumberOrUndefinedArray = Array<number|undefined>;
 
