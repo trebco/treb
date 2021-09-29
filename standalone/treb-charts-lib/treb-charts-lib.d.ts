@@ -135,7 +135,7 @@ export interface RangeScale {
   max: number;
 }
 
-export const Scale: (min: number, max: number, count?: number) => RangeScale;
+export const Scale: (min: number, max: number, count?: number, limit?: boolean, discrete?: boolean) => RangeScale;
 
 // ---
 

@@ -44,7 +44,15 @@ export const Scale = (min: number, max: number, count = 6.5, limit_count = false
 
   const log10 = Math.log(range) / Math.log(10); // just avoid the problem (problem being IE11 lack of Math.log10)
 
-  const scale = Math.floor(Math.abs(log10)) * (log10 < 0 ? -1 : 1) - 1;
+  let scale = Math.floor(Math.abs(log10)) * (log10 < 0 ? -1 : 1) - 1;
+
+  // so if you claim you have discrete data, we want the minimum 
+  // step to be 1. we also have slightly different acceptable steps.
+
+  if (discrete) {
+    scale = Math.max(0, scale);
+  }
+  
   const steps = discrete ? 
       [1, 2, 3, 5, 10, 15, 20, 25, 50, 100] : 
       [.1, .25, .5, 1, 2.5, 5, 10, 25, 50, 100];
