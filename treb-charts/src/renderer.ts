@@ -11,7 +11,7 @@ export interface Metrics {
   y_offset: number;
 }
 
-const trident = /trident/i.test(navigator?.userAgent || '');
+// const trident = /trident/i.test(navigator?.userAgent || '');
 
 /*
 let dom_parser: DOMParser | undefined;
@@ -191,6 +191,11 @@ export class ChartRenderer {
         const marker_y = y - 1; // Math.round(y + text_metrrics.height / 2);
 
         // NOTE: trident offset is inlined here
+
+        let trident = false;
+        if (typeof navigator !== 'undefined') {
+          trident = /trident/i.test(navigator?.userAgent || '');
+        }
 
         group.appendChild(SVGNode('text', {
           'dominant-baseline': 'middle', x: x + marker_width, y, dy: (trident ? '.3em' : undefined) }, label));

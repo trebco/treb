@@ -58,7 +58,7 @@ export class Exporter {
 
   public parser = new Parser();
 
-  public decorated_functions: string[] = [];
+  public decorated_functions: Record<string, string> = {};
 
   /*
   constructor() {
@@ -72,9 +72,13 @@ export class Exporter {
    * 
    * @param decorated_functions 
    */
-  public async Init(decorated_functions: string[] = []): Promise<void> {
+  public async Init(decorated_functions: Record<string, string> = {}): Promise<void> {
 
-    this.decorated_functions = decorated_functions.map(name => name.toLowerCase()); // normalized
+    // this.decorated_functions = decorated_functions.map(name => name.toLowerCase()); // normalized
+
+    for (const key of Object.keys(decorated_functions)) {
+      this.decorated_functions[key.toLowerCase()] = decorated_functions[key]; // normalized
+    }
 
     this.zip = await new JSZip().loadAsync(template, {base64: true});
 
@@ -831,6 +835,8 @@ export class Exporter {
 
   public FormulaText(text: string): string {
   
+    // let mared = false;
+
     if (text[0] !== '=') {
       return text;
     }
@@ -844,20 +850,36 @@ export class Exporter {
     }
     else {
 
-      if (this.decorated_functions.length) {
+      // if (this.decorated_functions.length) {
+      {
         this.parser.Walk(parse_result.expression, (unit) => {
           if (unit.type === 'call') {
+            // unit.name = unit.name.toUpperCase();
+
             const lc = unit.name.toLowerCase();
+
+            /*
             for (const test of this.decorated_functions) {
               if (test === lc) {
                 unit.name = '_xlfn.' + unit.name; 
                 break;
               }
             }
+            */
+
+            if (this.decorated_functions[lc]) {
+              // mared = true;
+              unit.name = this.decorated_functions[lc] + '.' + unit.name;
+            }
+
           }
           return true;
         });
       }
+
+      //if (mared) {
+      //  console.info("MARED", this.parser.Render(parse_result.expression, undefined, ''));
+      //}
 
       // const x = this.parser.Render(parse_result.expression, undefined, '');
       // console.info("T", text, x);

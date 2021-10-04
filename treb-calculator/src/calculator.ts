@@ -714,17 +714,28 @@ export class Calculator extends Graph {
    * get a list of functions that require decorating with "_xlfn" on
    * export. the embed caller will pass this to the export worker.
    * since we manage functions, we can manage the list.
+   * 
+   * UPDATE: to support our MC functions (which may need _xll decoration),
+   * map to type and then overload as necessary
+   * 
    */
-  public DecoratedFunctionList(): string[] {
-    const list: string[] = [];
+  public DecoratedFunctionList(): Record<string, string> {
+    // const list: string[] = [];
+    const map: Record<string, string> = {};
+
     const lib = this.library.List();
     for (const key of Object.keys(lib)) {
       const def = lib[key];
       if (def.xlfn) {
-        list.push(key);
+        // list.push(key);
+        map[key] = '_xlfn';
+      }
+      else if (def.extension) {
+        map[key] = '_xll';
       }
     }
-    return list;
+
+    return map;
   }
 
   /** wrapper method ensures it always returns an Area (instance, not interface) */

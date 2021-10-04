@@ -9,14 +9,16 @@ const package = require('./package.json');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 let mode = 'production';
+let extract_css = false;
 
 for (let i = 0; i < process.argv.length; i++) {
   if (process.argv[i] === '-d' || process.argv[i] === '--dev') {
     mode = 'development';
   }
+  else if (process.argv[i] === '-x' || process.argv[i] === '--extract-css') {
+    extract_css = true;
+  }
 }
-
-let extract_css = false;
 
 const style_loaders = extract_css ?
 
@@ -100,6 +102,8 @@ const config = {
         },
       ]
     },
+
+    plugins: extract_css ? [new MiniCssExtractPlugin()] : [],
 
     /*
     plugins: [
