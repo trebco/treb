@@ -5,7 +5,7 @@ import { Sheet } from './sheet';
 import { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import { GridOptions } from './grid_options';
-import { Theme } from 'treb-base-types';
+import { Localization, Theme } from 'treb-base-types';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';
@@ -180,13 +180,26 @@ export class TabBar extends EventSource<TabEvent> {
   public UpdateScale(scale: number): void {
     if (this.scale_label) {
       this.scale = scale;
-      console.info("TS", this.scale * 1000);
+      let text = '';
+
       if (scale < 1) {
-        this.scale_label.textContent = `${(scale * 100).toFixed(1)}%`;
+        text = `${(scale * 100).toFixed(1)}%`;
       }
       else {
-        this.scale_label.textContent = `${Math.round(scale * 1000) / 10}%`;
+
+        // FIXME: it is possible to set scale directly, so there's a
+        // possibility that there is a decimal. should we accomodate? 
+        // (...)
+
+        text = `${Math.round(scale * 1000) / 10}%`;
       }
+
+      if (Localization.decimal_separator === ',') {
+        text = text.replace(/\./, ',');
+      } 
+
+      this.scale_label.textContent = text;
+
     }
   }
 

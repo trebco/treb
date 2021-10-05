@@ -1804,7 +1804,6 @@ export class Grid {
                   else { 
                     scale += 0.025;
                   } 
-                  // scale += 0.05;
                   break;
                 case 'decrease':
                   if (scale >= 1.05) {
@@ -1813,7 +1812,6 @@ export class Grid {
                   else {
                     scale -= 0.025;
                   }
-                  // scale -= 0.05;
                   break;
                 default:
                   scale = event.action;

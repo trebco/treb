@@ -219,6 +219,16 @@ export class EmbeddedSpreadsheetBase {
    */
   public toolbar_ctl?: ToolbarCtl;
 
+  /**
+   * @internal
+   * 
+   * this is not public (in the API, at least), for the moment, but 
+   * it is accessible. not sure which way we're going to go with this.
+   */
+  public get Localization(): Localization {
+    return Localization;
+  }
+
   protected events = new EventSource<{type: string}>();
 
   /** 
@@ -2323,7 +2333,10 @@ export class EmbeddedSpreadsheetBase {
 
 
   /**
-   * Serialize document -> json.
+   * Serialize document to a plain javascript object. The result is suitable
+   * for converting to JSON. This method is used by the SaveLocalFile and 
+   * SaveLocalStorage methods, but you can call it directly if you want to 
+   * save the document some other way.
    * 
    * @privateRemarks
    * 
@@ -2331,7 +2344,7 @@ export class EmbeddedSpreadsheetBase {
    * optionally preserve rendered values
    * UPDATE: default rendered values -> true
    * 
-   * @internal
+   * @public
    */
   public SerializeDocument(options: SerializeOptions = {}): TREBDocument {
 
