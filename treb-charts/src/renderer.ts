@@ -1601,6 +1601,10 @@ export class ChartRenderer {
         d, class: (typeof index === 'undefined' ? undefined : `series-${index}`) 
       });
 
+      if (typeof index !== 'undefined') {
+        node.setAttribute('data-index', index.toString());
+      }
+
       /*
       if (title) {
         node.addEventListener('mouseenter', (event) => {
@@ -1755,6 +1759,11 @@ export class ChartRenderer {
         callout_label.setAttribute('text-anchor', text_anchor);
         callout_label.setAttribute('x', x.toString());
         callout_label.setAttribute('y', y.toString());
+
+        if (typeof index !== 'undefined') {
+          callout_label.setAttribute('data-index', index.toString());
+        }
+  
 
       }
 
