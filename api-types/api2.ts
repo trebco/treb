@@ -260,6 +260,18 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
 
         if (ts.isMethodDeclaration(node)) {
 
+          // UPDATE: convert to any -> handle return type 
+
+          let return_type = node.type;
+          if (ts.isTypeReferenceNode(return_type)) {
+            if (ts.isIdentifier(return_type.typeName)) {
+              const name = return_type.typeName.escapedText.toString();
+              if (config.convert_to_any.includes(name)) {
+                return_type = ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword);
+              }
+            }
+          }
+
           const tmp = ts.factory.updateMethodDeclaration(node,
             node.decorators, 
             node.modifiers,
@@ -313,7 +325,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
               }
               return test;
             }),
-            node.type,
+            return_type, // node.type,
             node.body);
 
           return ts.visitEachChild(tmp, child => visit(child), context);
@@ -349,7 +361,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
 function CollectDependencyTransformer<T extends ts.Node>(
   args: ReadTypeArgs): ts.TransformerFactory<T> {
 
-  let containing_type: string[] = [''];
+  const containing_type: string[] = [''];
 
   const AddFoundType = (name: string, text: string): boolean => {
 
@@ -588,7 +600,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
     }
     return node => ts.visitNode(node, visit);
   }
-};
+}
 
 let invoke = 0;
 
@@ -777,8 +789,8 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
               lookups[ours] = theirs;
             }
             else {
-              console.info("CHECK 1", ours, lookups[ours], theirs, lookups[theirs]);
-              console.info("F", file);
+              // console.info("CHECK 1", ours, lookups[ours], theirs, lookups[theirs]);
+              // console.info("F", file);
               throw new Error('??');
             }
 

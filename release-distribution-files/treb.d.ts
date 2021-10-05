@@ -1,4 +1,4 @@
-/*! API v13.0. Copyright 2018-2021 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+/*! API v13.1. Copyright 2018-2021 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -441,6 +441,16 @@ export declare class EmbeddedSpreadsheet {
      * @public
      */
     DefineFunction(name: string, argument_names?: string | string[], function_def?: string): void;
+
+    /**
+     * Serialize document to a plain javascript object. The result is suitable
+     * for converting to JSON. This method is used by the SaveLocalFile and
+     * SaveLocalStorage methods, but you can call it directly if you want to
+     * save the document some other way.
+     *
+     * @public
+     */
+    SerializeDocument(options?: SerializeOptions): any;
 
     /**
      * Recalculate sheet.
