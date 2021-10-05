@@ -177,10 +177,16 @@ export class TabBar extends EventSource<TabEvent> {
   }
 
   /** change scale if we have a scale label */
-  public UpdateScale(scale: number) {
+  public UpdateScale(scale: number): void {
     if (this.scale_label) {
       this.scale = scale;
-      this.scale_label.textContent = `${Math.round(scale * 1000) / 10}%`;
+      console.info("TS", this.scale * 1000);
+      if (scale < 1) {
+        this.scale_label.textContent = `${(scale * 100).toFixed(1)}%`;
+      }
+      else {
+        this.scale_label.textContent = `${Math.round(scale * 1000) / 10}%`;
+      }
     }
   }
 

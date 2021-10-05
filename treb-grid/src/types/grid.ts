@@ -1798,16 +1798,28 @@ export class Grid {
 
               switch (event.action) {
                 case 'increase':
-                  scale += 0.05;
+                  if (scale >= 1) { 
+                    scale += 0.05;
+                  }
+                  else { 
+                    scale += 0.025;
+                  } 
+                  // scale += 0.05;
                   break;
                 case 'decrease':
-                  scale -= 0.05;
+                  if (scale >= 1.05) {
+                    scale -= 0.05;
+                  }
+                  else {
+                    scale -= 0.025;
+                  }
+                  // scale -= 0.05;
                   break;
                 default:
                   scale = event.action;
               }
 
-              scale = Math.round(scale * 100) / 100;
+              scale = Math.round(scale * 1000) / 1000;
               scale = Math.min(2, Math.max(scale, .5));
 
               if (this.options.persist_scale_key) {
