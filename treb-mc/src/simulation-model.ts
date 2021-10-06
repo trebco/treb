@@ -1802,7 +1802,7 @@ export class SimulationModel {
 
   }
 
-  public Scale(min: number, max: number): UnionValue {
+  public Scale(min: number, max: number, discrete = false): UnionValue {
 
     /*
     let rows = 1, columns = 1;
@@ -1833,8 +1833,10 @@ export class SimulationModel {
 
     const length = Math.max(rows, columns);
     const scale = min > max ?
-      CreateScale(max, min, length - 1, true) : 
-      CreateScale(min, max, length - 1, true) ;
+      CreateScale(max, min, length - 1, true, discrete) : 
+      CreateScale(min, max, length - 1, true, discrete) ;
+
+    // console.info('(scale)', 'discrete?', discrete, 's', scale);
 
     let base = scale.min;
 
@@ -1842,7 +1844,7 @@ export class SimulationModel {
     const result: UnionValue[][] = [[]];
 
     if (scale.count < length - 1) {
-      base = scale.min - (Math.floor((length - 1 - scale.count) / 2)) * scale.step;
+      base = scale.min - (Math.ceil((length - scale.count) / 2)) * scale.step;
     }
 
     if (min > max) {
@@ -1897,6 +1899,14 @@ export class SimulationModel {
       const min = reference[0] || 0; 
       const max = reference[reference.length - 1] || 0;
 
+      let discrete = true;
+      for (const value of reference) {
+        if (value % 1 !== 0) {
+          discrete = false;
+          break;
+        }
+      }
+      
       if (max === min) {
         // ...
         return {
@@ -1907,21 +1917,34 @@ export class SimulationModel {
      
       let result: UnionValue[][] = [[], []];
 
-      const scale = CreateScale(min, max, length, true);
-  
+      const scale = CreateScale(min, max, length, true, discrete);
+
+      // console.info('(table)', 'discrete?', discrete, 's', scale);
+
       let base = scale.min;
       let index = 0;
 
+      // is it length or length - 1 ?
+
+      // ANSWER: we're using slightly different algorithms for this function
+      // vs the Scale function. here, we label each bucket with the end value,
+      // and the start value for the initial bucket is implicit.
+
+      // in the scale function, it's not necessarily clear which way you are 
+      // going, so we make sure that the scale includes the low-end as well as 
+      // the high end.
+
       if (scale.count < length) {
-        base = scale.min - (Math.ceil(length - scale.count) / 2) * scale.step;
+        base = scale.min - (Math.ceil((length - scale.count) / 2)) * scale.step;
       }
+
       for (let i = 0; i < length; i++) {
 
         // count from (last) to (next)
         const bucket = base + (i + 1) * scale.step;
         
         let count = 0;
-        for (; index < reference.length && reference[index] < bucket; index++, count++) { /* */ }
+        for (; index < reference.length && reference[index] <= bucket; index++, count++) { /* */ }
 
         result[1][i] = {
           type: ValueType.number,

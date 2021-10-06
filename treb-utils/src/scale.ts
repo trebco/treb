@@ -54,7 +54,7 @@ export const Scale = (min: number, max: number, count = 6.5, limit_count = false
   }
   
   const steps = discrete ? 
-      [1, 2, 3, 5, 10, 15, 20, 25, 50, 100] : 
+      [1, 2, 5, 10, 15, 20, 25, 50, 100] : 
       [.1, .25, .5, 1, 2.5, 5, 10, 25, 50, 100];
 
   let step = -1;
