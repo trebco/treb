@@ -1514,7 +1514,13 @@ export class SimulationModel {
       return DataError();
     }
 
-    return { type: ValueType.number, value: Stats.R2(dependent, independent)};
+    const {r2, error} = Stats.R22(dependent, independent);
+
+    if (error) {
+      return ValueError();
+    }
+
+    return { type: ValueType.number, value: r2||0 };
   }
 
   public simulationcorrelation(a?: number[], b?: number[]): UnionValue {
