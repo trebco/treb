@@ -1207,9 +1207,19 @@ export class Chart {
           area.bottom += (max_x_height + chart_margin.bottom);
         }
 
+        const offset_tick = (this.chart_data.type !== 'line' && this.chart_data.type !== 'area' && this.chart_data.type !== 'bar' && this.chart_data.type !== 'scatter2');
+        /*
+        if (this.chart_data.type === 'column' && this.chart_data.histogram_offset) {
+          offset_tick = false;
+        }
+        */
+
         // render
-        this.renderer.RenderXAxis(area, (this.chart_data.type !== 'line' && this.chart_data.type !== 'area' && this.chart_data.type !== 'bar' && this.chart_data.type !== 'scatter2'),
-          this.chart_data.x_labels, x_metrics, ['axis-label', 'x-axis-label']);
+        this.renderer.RenderXAxis(area, 
+          offset_tick,
+          this.chart_data.x_labels, 
+          x_metrics, 
+          ['axis-label', 'x-axis-label']);
 
         // update bottom (either we unwound for labels, or we need to do it the first time)
         area.bottom -= (max_x_height + chart_margin.bottom);
