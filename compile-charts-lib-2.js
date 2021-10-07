@@ -10,10 +10,14 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 let mode = 'production';
 let extract_css = false;
+let watch = false;
 
 for (let i = 0; i < process.argv.length; i++) {
   if (process.argv[i] === '-d' || process.argv[i] === '--dev') {
     mode = 'development';
+  }
+  else if (process.argv[i] === '-w' || process.argv[i] === '--watch') {
+    watch = true;
   }
   else if (process.argv[i] === '-x' || process.argv[i] === '--extract-css') {
     extract_css = true;
@@ -119,22 +123,49 @@ const config = {
 
 const run = async() => {
 
-  const {err, stats} = await new Promise((resolve) => {
-    webpack(config).run((err, stats) => resolve({err, stats}));
-  });
+  if (watch) {
 
-  if (err) {
-    console.error(err);
-    return;
+    webpack(config).watch({}, (err, stats) => {
+
+      if (err) {
+        console.info('error building');
+        console.error(err.stack || err);
+        if (err.details) {
+          console.error(err.details);
+        }
+        return;
+      }
+    
+      console.info('\n' + stats.toString({
+        all: false,
+        builtAt: true,
+        colors: true,
+        errors: true,
+      }));
+
+    });
+
+  }
+  else {
+
+    const {err, stats} = await new Promise((resolve) => {
+      webpack(config).run((err, stats) => resolve({err, stats}));
+    });
+
+    if (err) {
+      console.error(err);
+      return;
+    }
+
+    const banner = `/*! v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */`;
+    const file = path.join(config.output.path, config.output.filename);
+    const contents = await fs.readFile(file, {encoding: 'utf8'});
+    await fs.writeFile(file, banner + '\n' + contents, {encoding: 'utf-8'});
+
+    console.info(stats.toString());
+
   }
 
-  const banner = `/*! v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */`;
-  const file = path.join(config.output.path, config.output.filename);
-  const contents = await fs.readFile(file, {encoding: 'utf8'});
-  await fs.writeFile(file, banner + '\n' + contents, {encoding: 'utf-8'});
-
-  console.info(stats.toString());
-  
 }
 
 run();

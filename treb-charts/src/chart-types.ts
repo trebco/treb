@@ -119,7 +119,7 @@ export interface LineBaseData extends ChartDataBaseType {
   titles?: string[];
   x_labels?: string[];
   y_labels?: string[];
-  callouts?: {values: number[]; labels: string[]};
+  callouts?: Array<{value: number, label?: string}>;
   smooth?: boolean;
 }
 
@@ -133,6 +133,12 @@ export interface AreaData extends LineBaseData {
 
 export interface ColumnData extends LineBaseData {
   type: 'column';
+  round?: boolean;
+  space?: number;
+}
+
+export interface HistogramData2 extends LineBaseData {
+  type: 'histogram2';
   round?: boolean;
   space?: number;
 }
@@ -162,6 +168,7 @@ export type ChartData
   = NullChartData
   | DonutChartData
   | HistogramData
+  | HistogramData2
   | PieChartData
   | ScatterData
   | ScatterData2

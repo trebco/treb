@@ -618,7 +618,7 @@ export class Chart {
   /**
    * args: data, labels, title, callouts, "smooth"
    */
-  public CreateLineChart(args: any[], type: 'line'|'area') { // |'bar'|'column') {
+  public CreateLineChart(args: any[], type: 'line'|'area'): void { // |'bar'|'column') {
 
     
 
@@ -1138,6 +1138,7 @@ export class Chart {
         || this.chart_data.type === 'line'
         || this.chart_data.type === 'area'
         || this.chart_data.type === 'column'
+        || this.chart_data.type === 'histogram2'
         || this.chart_data.type === 'bar'
         || this.chart_data.type === 'scatter2'
         ) {
@@ -1202,12 +1203,28 @@ export class Chart {
 
       if (x_metrics.length && this.chart_data.x_labels && this.chart_data.x_labels.length) {
 
+        const tick = (this.chart_data.type === 'histogram2');
+        const offset_tick = (
+          this.chart_data.type !== 'line' && 
+          this.chart_data.type !== 'area' && 
+          this.chart_data.type !== 'bar' && 
+          this.chart_data.type !== 'scatter2' && 
+          this.chart_data.type !== 'histogram2' 
+          );
+
+        // do this before you fix the offset
+
+        if (tick) {
+          this.renderer.RenderXAxisTicks(area, offset_tick, this.chart_data.x_labels.length);
+        }
+
+
         if (this.chart_data.y_labels) {
           // undo, temp
           area.bottom += (max_x_height + chart_margin.bottom);
         }
 
-        const offset_tick = (this.chart_data.type !== 'line' && this.chart_data.type !== 'area' && this.chart_data.type !== 'bar' && this.chart_data.type !== 'scatter2');
+
         /*
         if (this.chart_data.type === 'column' && this.chart_data.histogram_offset) {
           offset_tick = false;
@@ -1422,6 +1439,7 @@ export class Chart {
       break;
 
     case 'column':
+    case 'histogram2':
       {
 
         // gridlines
@@ -1451,6 +1469,18 @@ export class Chart {
             zero = Util.ApplyScale(0, area.height, this.chart_data.scale);
           }
 
+          if (this.chart_data.callouts && this.chart_data.x_scale) {
+            const scale = this.chart_data.x_scale;
+            const lines = this.chart_data.callouts.map((callout, index) => {
+              const x = Math.round(area.left + Util.ApplyScale(callout.value, area.width, scale)) + .5;
+              return {
+                x1: x, y1: area.bottom - area.height, x2: x, y2: area.bottom,
+                classes: `callout-${index + 1}`,
+              }
+            });
+            this.renderer.RenderCalloutLines(lines);
+          }
+
           let corners: number[]|undefined;
 
           if (this.chart_data.round) {
@@ -1467,7 +1497,8 @@ export class Chart {
 
               if (typeof value === 'number') {
 
-                const x = Math.round(area.left + i * column_width + space) + s * width;
+                // const x = Math.round(area.left + i * column_width + space) + s * width;
+                const x = (area.left + i * column_width + space) + s * width;
                 
                 let height = 0;
                 let y = 0;

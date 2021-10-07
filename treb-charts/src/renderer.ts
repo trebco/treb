@@ -445,8 +445,25 @@ export class ChartRenderer {
 
   }
 
+  public RenderXAxisTicks(area: Area, offset: boolean, count: number): void {
+
+    const step = offset ? area.width / count : area.width / (count - 1);
+    const initial_offset = offset ? (step / 2) : 0;
+
+    const d: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const center = Math.round(area.left + initial_offset + step * i) + .5;
+      d.push(`M${center},${area.bottom + .5} v${6}`)
+    }
+
+    this.axis_group.appendChild(SVGNode('path', {d: d.join(' '), class: 'x-axis-tick axis-tick'}));
+
+  }
+
   /**
    * render x axis labels; skips over labels to prevent overlap
+   * 
+   * @param offset - move label by 1/2 step width, to center it under columns.
    */
   public RenderXAxis(
     area: Area,
@@ -462,6 +479,7 @@ export class ChartRenderer {
     const label_buffer = 4;
 
     const step = offset ? area.width / count : area.width / (count - 1);
+    // const initial_offset = shift ? (step / 2) : 0;
     const initial_offset = offset ? (step / 2) : 0;
 
     // calculate increment (skip_count)
@@ -1365,6 +1383,20 @@ export class ChartRenderer {
   public RenderPoint(cx: number, cy: number, classes?: string | string[]): void {
     this.group.appendChild(SVGNode('circle', {cx, cy, r: 1, class: classes}));
   }
+
+  public RenderCalloutLines(lines: Array<{x1: number, y1: number, x2: number, y2:number, label?: string, classes?: string }>): void {
+
+    const g = SVGNode('g', {class: 'callouts'});
+    this.label_group.appendChild(g);
+
+    for (const line of lines) {
+      g.appendChild(SVGNode('path', {
+        d: `M${line.x1},${line.y1} L${line.x2},${line.y2}`, 
+        class: 'callout ' + (line.classes || '').trim(),
+      }));
+    }
+
+  };
 
   public RenderRectangle(
     area: Area, 
