@@ -69,6 +69,7 @@ const config = {
       outputModule: true,
     },
     output: {
+        hashFunction: "xxhash64",
         path: path.resolve(__dirname, 'standalone/treb-charts-lib'),
         filename: `treb-charts-lib.mjs`,
         libraryTarget: 'module',
