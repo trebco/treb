@@ -367,6 +367,8 @@ const CreateConfig = (config, entry, options, target) => {
       publicPath: './',
       chunkFilename: '[name].bundle.js',
 
+      hashFunction: 'xxhash64',
+
       /*
       library: {
         // name: 'TREB',
