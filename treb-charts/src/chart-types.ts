@@ -17,6 +17,11 @@ export interface AxisOptions {
 
 }
 
+export interface CalloutType {
+  value: number;
+  label?: string;
+}
+
 export interface CellData {
   address: { row: number; column: number };
   value?: any;
@@ -119,7 +124,7 @@ export interface LineBaseData extends ChartDataBaseType {
   titles?: string[];
   x_labels?: string[];
   y_labels?: string[];
-  callouts?: Array<{value: number, label?: string}>;
+  callouts?: CalloutType[];
   smooth?: boolean;
 }
 

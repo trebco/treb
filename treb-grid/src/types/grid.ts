@@ -766,6 +766,11 @@ export class Grid {
             if (event) {
               this.grid_events.Publish(event);
             }
+
+            if (annotation.layout) {
+              this.EnsureAddress(annotation.layout.br.address, 1);
+            }
+
           });
         });
 
@@ -919,6 +924,9 @@ export class Grid {
 
     if (add_to_layout) {
       this.layout.AddAnnotation(annotation);
+      if (annotation.layout) {
+        this.EnsureAddress(annotation.layout.br.address, 1);
+      }
     }
     else {
       // console.info('not adding annotation node to layout...');
@@ -5976,6 +5984,44 @@ export class Grid {
     return start;
   }
 
+  /** 
+   * if the address is outside of current extent, expand 
+   */
+  private EnsureAddress(address: ICellAddress, step = 8): boolean {
+
+    let expanded = false;
+
+    if (this.options.expand) {
+
+      // what's the optimal order of doing this, given we are expanding 
+      // a 2-dimensional array? (...)
+
+      if (address.row !== Infinity && address.row >= this.active_sheet.rows) {
+        let row = this.active_sheet.rows;
+        while (address.row >= row) { row += step; }
+        this.active_sheet.cells.EnsureRow(row);
+        expanded = true;
+      }
+
+      if (address.column !== Infinity && address.column >= this.active_sheet.columns) {
+        let column = this.active_sheet.columns;
+        while (address.column >= column) { column += step; }
+        this.active_sheet.cells.EnsureColumn(column);
+        expanded = true;
+      }
+
+      if (expanded) {
+        this.layout.UpdateTiles();
+        this.layout.UpdateContentsSize();
+        this.Repaint(true, true);
+      }
+
+    }
+
+    return expanded;
+
+  }
+
   /**
    * advances selection by x rows and columns. you can also step around
    * within a selection, generally by using enter and tab when there is
@@ -5994,7 +6040,7 @@ export class Grid {
     render = true) {
 
     const selecting_argument = this.SelectingArgument();
-    let expanded = false;
+    // let expanded = false;
 
     if (selection.empty) {
 
@@ -6159,7 +6205,7 @@ export class Grid {
             }
           }
 
-
+          /*
           if (end.row !== Infinity && end.row >= this.active_sheet.rows && this.options.expand) {
             let row = this.active_sheet.rows;
             while (end.row >= row) { row += 8; }
@@ -6179,6 +6225,9 @@ export class Grid {
             this.Repaint(true, true);
             render = true;
           }
+          */
+
+          if (this.EnsureAddress(end)) { render = true; }
 
           this.ScrollIntoView(scroll_target);
           this.Select(selection, new Area(start, end), undefined, true);
@@ -6217,6 +6266,7 @@ export class Grid {
         // NOTE: this is bounding.
         // FIXME: option to expand the sheet by selecting out of bounds.
 
+        /*
         if (address.row >= this.active_sheet.rows && this.options.expand) {
           let row = this.active_sheet.rows;
           while (address.row >= row) { row += 8; }
@@ -6238,6 +6288,10 @@ export class Grid {
 
           render = true;
         }
+        */
+
+        if (this.EnsureAddress(address)) { render = true; }
+
 
         this.Select(selection, new Area({
           row: Math.min(

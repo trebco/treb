@@ -513,8 +513,6 @@ export abstract class BaseLayout {
     const address = this.PointToAddress_Grid(point, undefined, false);
     const cell_rect = this.CellAddressToRectangle(address);
 
-    // console.info('p2ac', point, address);
-
     return {
       address,
       offset: {
@@ -1496,9 +1494,10 @@ export abstract class BaseLayout {
 
   }
 
-
   /**
    * point to cell address (grid only)
+   * 
+   * FIXME: implement cap_maximum parameter (not sure where we would need it)
    */
   public PointToAddress_Grid(point: Point, cap_maximum = false, offset_freeze = true): ICellAddress {
 
@@ -1522,42 +1521,99 @@ export abstract class BaseLayout {
 
     }
 
-    const result = { row: 0, column: 0 };
+    // we used to find the containing tile and then calculate row and column.
+    // to support overflow, we now have two separate loops. 
+    
+    const result = { 
+      row: 0, 
+      column: 0, 
+    };
 
-    // find the tile
-    // FIXME: can do away with the >= test // <-- what? you mean the other one (<=)?
+    // FIXME: these could be cached when created
 
-    for (const column of this.grid_tiles) {
-      if (column[0].pixel_start.x <= point.x && column[0].pixel_end.x >= point.x) {
-        for (const cell of column) {
-          if (cell.pixel_start.y <= point.y && cell.pixel_end.y >= point.y) {
+    const last_column = this.grid_tiles[this.grid_tiles.length - 1];
+    const last_tile = last_column[last_column.length - 1];
 
-            // now map within the tile
-            let left = point.x - cell.pixel_start.x;
-            let top = point.y - cell.pixel_start.y;
-            let width = 0;
-            let height = 0;
+    // ---- find row -----------------------------------------------------------
 
-            result.row = cell.first_cell.row;
-            result.column = cell.first_cell.column;
+    if (point.y > last_tile.pixel_end.y) {
 
-            for (; result.column <= cell.last_cell.column; result.column++, left -= width) {
-              width = this.ColumnWidth(result.column);
-              if (width > left) {
-                for (; result.row <= cell.last_cell.row; result.row++, top -= height) {
-                  height = this.RowHeight(result.row);
-                  if (height > top) {
-                    return result;
-                  }
-                }
-                return result;
-              }
+      // overflow case
+
+      let top = point.y - last_tile.pixel_end.y;
+      result.row = last_tile.last_cell.row;
+
+      while (top > 0) {
+        result.row++;
+        top -= this.default_row_height;
+      }
+
+    }
+    else {
+
+      // normal behavior
+
+      for (const cell of last_column) {
+        if (cell.pixel_start.y <= point.y && cell.pixel_end.y >= point.y) {
+
+          let top = point.y - cell.pixel_start.y;
+          let height = 0;
+
+          result.row = cell.first_cell.row;
+
+          for (; result.row <= cell.last_cell.row; result.row++, top -= height) {
+            height = this.RowHeight(result.row);
+            if (height > top) {
+              break;
             }
           }
+
+          break;
         }
-        return result;
       }
     }
+
+    // ---- find column --------------------------------------------------------
+
+    if (point.x > last_tile.pixel_end.x) {
+
+      // overflow case
+
+      let left = point.x - last_tile.pixel_end.x;
+      result.column = last_tile.last_cell.column;
+
+      while (left > 0) {
+        result.column++;
+        left -= this.default_column_width;
+      }
+
+    }
+    else {
+
+      // normal behavior
+
+      for (const column of this.grid_tiles) {
+        if (column[0].pixel_start.x <= point.x && column[0].pixel_end.x >= point.x) {
+
+          const cell = column[0];
+
+          let left = point.x - cell.pixel_start.x;
+          let width = 0;
+
+          result.column = cell.first_cell.column;
+
+          for (; result.column <= cell.last_cell.column; result.column++, left -= width) {
+            width = this.ColumnWidth(result.column);
+            if (width > left) {
+              break;
+            }
+          }
+
+          break;
+        }
+      }
+    }
+
     return result;
 
   }
