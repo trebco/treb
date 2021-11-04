@@ -631,7 +631,7 @@ export class Exporter {
 
   }
 
-  public ParseCharts(sheet_source: SerializedSheet) {
+  public ParseCharts(sheet_source: SerializedSheet): Array<{ anchor: TwoCellAnchor, options: ChartOptions }> {
     
     const charts: Array<{
       anchor: TwoCellAnchor,
