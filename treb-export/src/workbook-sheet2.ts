@@ -23,9 +23,9 @@
 
 import { AddressType, RangeType, is_range } from './address-type';
 import { SharedStrings } from './shared-strings2';
-import { UnitCall } from 'treb-parser';
-import { Drawing, TwoCellAnchor } from './drawing2/drawing2';
-import { ChartOptions } from './drawing2/chart2';
+// import { UnitCall } from 'treb-parser';
+import { Drawing } from './drawing2/drawing2';
+// import { ChartOptions } from './drawing2/chart2';
 import { RelationshipMap } from './relationship';
 
 export interface SheetOptions {
@@ -141,7 +141,7 @@ export class Sheet {
     return { a, rc };
   }
 
-  public Parse() {
+  public Parse(): void {
 
     // we can read column/row sizes in here, or anything else we need to do
     // atm just extent
