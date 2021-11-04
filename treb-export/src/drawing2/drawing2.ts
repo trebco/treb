@@ -23,6 +23,13 @@ export interface AnchoredChart {
   relationship: string;
 }
 
+export interface JSONCorner {
+  'xdr:col': number,
+  'xdr:colOff': number,
+  'xdr:row': number,
+  'xdr:rowOff': number,
+}
+
 export class Drawing {
 
   public static next_drawing_index = 1;
@@ -36,7 +43,7 @@ export class Drawing {
 
   constructor(public index = Drawing.next_drawing_index++){}
 
-  public AddChart(options: ChartOptions, anchor: TwoCellAnchor) {
+  public AddChart(options: ChartOptions, anchor: TwoCellAnchor): void {
     const chart = new Chart(options);
     const relationship = AddRel(this.relationships, 
         `http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart`,
@@ -44,7 +51,7 @@ export class Drawing {
     this.charts.push({chart, anchor, relationship});
   }
 
-  public CornerToJSON(anchor: CellAnchor) {
+  public CornerToJSON(anchor: CellAnchor): JSONCorner {
     return {
       'xdr:col': anchor.column,
       'xdr:colOff': (anchor.column_offset || 0) * pixel_offset,
@@ -53,14 +60,14 @@ export class Drawing {
     };
   }
 
-  public AnchorToJSON(anchor: TwoCellAnchor) {
+  public AnchorToJSON(anchor: TwoCellAnchor): { 'xdr:from': JSONCorner, 'xdr:to': JSONCorner } {
     return {
       'xdr:from': { ...this.CornerToJSON(anchor.from), },
       'xdr:to': { ...this.CornerToJSON(anchor.to), },
     };
   }
 
-  public toJSON() {
+  public toJSON(): any {
 
     const dom: any = {
       'xdr:wsDr': {
