@@ -287,6 +287,41 @@ export class SimulationModel {
         extension: true,
       },
 
+      BinomialValue: {
+        description: 'Returns a sample from the binomial distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'n', description: 'Number of trials', },
+          { name: 'p', description: 'Probability of success in each trial', },
+        ],
+        fn: this.binomialvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+        extension: true,
+      },
+
+      NegativeBinomialValue: {
+        description: 'Returns a sample from the negative-binomial distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'n', description: 'Target number of successful trials', },
+          { name: 'p', description: 'Probability of success in each trial', },
+        ],
+        fn: this.negativebinomialvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+        extension: true,
+      },
+
+      PoisssonValue: {
+        description: 'Returns a sample from the poisson distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'm', description: 'Mean', },
+        ],
+        fn: this.poissonvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+        extension: true,
+      },
+
       TruncatedNormalValue: {
         description: 'Returns a sample from the normal distribution',
         simulation_volatile: true,
@@ -1076,6 +1111,65 @@ export class SimulationModel {
     }
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
     return { type: ValueType.number, value: MC.Triangular(1, { a: min, b: max, c: mode })[0] };
+  }
+
+  // --- discrete distributions ------------------------------------------------
+
+  public poissonvalue(m: number): UnionValue {
+    if (this.state === SimulationState.Prep) {
+      this.InitDistribution();
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+        MC.Poisson(this.iterations, { m, lhs: this.lhs });
+    }
+    else if (this.state === SimulationState.Simulation) {
+      return {
+        type: ValueType.number,
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
+    }
+    return {
+      type: ValueType.number,
+      value: MC.Poisson(1, { m })[0],
+    };
+  }
+
+  public binomialvalue(n: number, p: number): UnionValue {
+    if (this.state === SimulationState.Prep) {
+      this.InitDistribution();
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+        MC.Binomial(this.iterations, { n, p, lhs: this.lhs });
+    }
+    else if (this.state === SimulationState.Simulation) {
+      return {
+        type: ValueType.number,
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
+    }
+    return {
+      type: ValueType.number,
+      value: MC.Binomial(1, { n, p })[0],
+    };
+  }
+
+  public negativebinomialvalue(n: number, p: number): UnionValue {
+    if (this.state === SimulationState.Prep) {
+      this.InitDistribution();
+      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+        MC.NegativeBinomial(this.iterations, { n, p, lhs: this.lhs });
+    }
+    else if (this.state === SimulationState.Simulation) {
+      return {
+        type: ValueType.number,
+        value: this.distributions[this.address.sheet_id || 0]
+          [this.address.column][this.address.row][this.call_index][this.iteration]
+      };
+    }
+    return {
+      type: ValueType.number,
+      value: MC.NegativeBinomial(1, { n, p })[0],
+    };
   }
 
   // --- univariate distributions ----------------------------------------------

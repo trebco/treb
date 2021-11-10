@@ -24,9 +24,9 @@ import { DialogType } from './progress-dialog';
 import { Calculator } from 'treb-calculator/src'; // <-- why direct?
 import { EmbeddedSpreadsheetOptions, RunSimulationOptions } from './options';
 
-export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
+export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
 
-  public calculator!: MCCalculator;
+  // public calculator!: MCCalculator;
 
   /* for storing; also inefficient. pack, zip, do something. */
   protected last_simulation_data?: ResultContainer;
@@ -58,6 +58,13 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase {
     progress: [] as number[],
     aggregate_progress: 0,
   };
+
+  /**
+   * see base type constructor
+   */
+  constructor(options: EmbeddedSpreadsheetOptions) {
+    super(options, MCCalculator);
+  }
 
   /**
    * some local cleanup, gets called in various import/load/reset functions

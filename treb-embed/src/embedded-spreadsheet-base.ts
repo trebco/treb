@@ -175,7 +175,7 @@ export interface SheetScrollOptions {
 /**
  * embedded spreadsheet
  */
-export class EmbeddedSpreadsheetBase { 
+export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> { 
 
   /** @internal */
   public static treb_base_path = '';
@@ -257,7 +257,7 @@ export class EmbeddedSpreadsheetBase {
    * 
    * @internal
    */
-  protected calculator: Calculator;
+  protected calculator: CalcType;
 
   /**
    */
@@ -382,7 +382,7 @@ export class EmbeddedSpreadsheetBase {
    * constructor takes spreadsheet options
    * @internal
    */
-  constructor(options: EmbeddedSpreadsheetOptions) {
+  constructor(options: EmbeddedSpreadsheetOptions, type: (new () => CalcType)) {
 
     // super();
 
@@ -688,7 +688,8 @@ export class EmbeddedSpreadsheetBase {
       this.grid.headless = true; // ensure
     }
 
-    this.calculator = this.InitCalculator();
+    // this.calculator = this.InitCalculator();
+    this.calculator = new type();
 
     // FIXME: this should yield so we can subscribe to events before the initial load
 
@@ -3622,10 +3623,11 @@ export class EmbeddedSpreadsheetBase {
 
   }
 
-  /** overloadable for subclasses */
-  protected InitCalculator(): Calculator {
+  /* * overloadable for subclasses * /
+  protected InitCalculator(): CalcType {
     return new Calculator();
   }
+  */
 
   protected ConvertLocale(data: TREBDocument): void {
 
