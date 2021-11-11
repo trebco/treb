@@ -24,6 +24,10 @@
     "EmbeddedSpreadsheetBase": "EmbeddedSpreadsheet"
   },
 
+  "drop_generics": [
+    "EmbeddedSpreadsheetBase"
+  ],
+
   "exclude_tags": [
     "internal", "mc"
   ]

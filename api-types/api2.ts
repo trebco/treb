@@ -27,6 +27,9 @@ interface Config {
   /** exclude via jsdoc tags. typically "internal", we also use "mc" */
   exclude_tags: string[];
 
+  /** drop generics */
+  drop_generics: string[];
+
   /** rename types */
   rename_types: Record<string, string>;
 
@@ -53,6 +56,7 @@ let config: Config = {
   convert_to_any: [],
   exclude_tags: [],
   rename_types: {},
+  drop_generics: [],
   include: [],
 };
 
@@ -209,7 +213,22 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
           exported_module = false;
           return result;
         }
-        
+                
+        if (ts.isClassDeclaration(node)) {
+          if (config.drop_generics.includes(name)) {
+            const tmp = ts.factory.updateClassDeclaration(node, 
+              node.decorators,
+              node.modifiers,
+              node.name,
+              [], // node.typeParameters,
+              node.heritageClauses,
+              node.members);
+
+              return ts.visitEachChild(tmp, child => visit(child), context);
+              
+          }
+        }
+
         if (ts.isInterfaceDeclaration(node)) {
 
           // drop any internals
@@ -442,6 +461,19 @@ function CollectDependencyTransformer<T extends ts.Node>(
 
             containing_type.unshift(node.name.escapedText.toString());
 
+            if (ts.isClassDeclaration(node)) {
+              const name = node.name?.escapedText;
+              if (name && config.drop_generics.includes(name)) {
+                node = ts.factory.updateClassDeclaration(node, 
+                  node.decorators,
+                  node.modifiers,
+                  node.name,
+                  [], // node.typeParameters,
+                  node.heritageClauses,
+                  node.members);
+              }
+            }
+
             if (ts.isInterfaceDeclaration(node)) {
 
               // drop any internals, so we don't reference types
@@ -465,7 +497,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
               }));
 
             }
-
+      
             const result = ts.visitEachChild(node, child => visit(child), context);
             containing_type.shift();
             return result;
