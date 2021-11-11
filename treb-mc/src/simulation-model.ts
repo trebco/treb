@@ -900,6 +900,16 @@ export class SimulationModel {
 
       // new stuff
 
+      'RiskAMP.Task': {
+        description: 'Models a task with dependencies for project planning',
+        arguments: [],
+        fn: (sample: number, ...rest: number[]): UnionValue => {
+          const sum = sample + Math.max(...rest);
+          return { type: ValueType.number, value: sum }
+        },
+        extension: true,
+      },
+
       'RiskAMP.Scale': {
         description: 'Creates a uniform scale within a given range',
         arguments: [{ name: 'min' }, {name: 'max'}],
