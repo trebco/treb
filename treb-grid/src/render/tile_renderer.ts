@@ -6,7 +6,7 @@ import { Tile } from '../types/tile';
 
 // import { FontMetricsCache } from '../util/font_metrics_cache';
 // import { FontMetricsCache, FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
-import { FontMetrics2, FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
+import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
 
 import { FormattedString, MDParser } from 'treb-parser';
 
@@ -1444,8 +1444,10 @@ export class TileRenderer {
     context.font = fonts.base; 
 
     if (dirty || !cell.renderer_data || cell.renderer_data.width !== width || cell.renderer_data.height !== height) {
+      const text_data = this.PrepText(context, fonts, cell, width);
+
       cell.renderer_data = { 
-        text_data: this.PrepText(context, fonts, cell, width), // , override_text), 
+        text_data,
         width, 
         height,
       };
@@ -1819,7 +1821,9 @@ export class TileRenderer {
 
           if (!part.hidden) {
 
-            context.fillText(part.text, x, baseline);
+            if (part.text) {
+              context.fillText(part.text, x, baseline);
+            }
 
             if (style.underline) {
               context.moveTo(x, underline_y);

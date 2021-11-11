@@ -20,7 +20,7 @@ export class ScaleControl extends EventSource<ScaleEvent> {
 
   private input: HTMLInputElement;
   private slider: HTMLInputElement;
-  private scale = 100;
+  private scale = 0;
   private format: NumberFormat;
 
   private timeout = 0;
@@ -119,7 +119,11 @@ export class ScaleControl extends EventSource<ScaleEvent> {
       this.UpdateScale(Number(this.slider.value), true);
     });
 
-    div.addEventListener('wheel', (event: WheelEvent) => this.Tick(event.deltaY));
+    div.addEventListener('wheel', (event: WheelEvent) => {
+      event.stopPropagation();
+      event.preventDefault();
+      this.Tick(event.deltaY)
+    });
 
   }
 
@@ -142,6 +146,7 @@ export class ScaleControl extends EventSource<ScaleEvent> {
   }
 
   public UpdateScale(scale: number, notify = false, keep_focus = false): void {
+
     scale = Math.max(50, Math.min(200, scale));
     if (scale !== this.scale) { 
       this.scale = scale;

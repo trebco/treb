@@ -30,7 +30,7 @@ class UAType {
   public readonly is_firefox = /firefox/i.test(user_agent);
 
   /** ... */
-  public readonly is_safari = /safari/i.test(user_agent);
+  public readonly is_safari = /safari/i.test(user_agent) && !/edg/i.test(user_agent);
 
   /** ... */
   public readonly is_mac = /macintosh/i.test(user_agent);
