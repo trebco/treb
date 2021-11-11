@@ -1802,6 +1802,7 @@ export class Grid {
             {
               let scale = this.layout.scale;
 
+              /*
               // RiskAMP web used 5% increments above 100% and 2.5% below...
               // that worked well, but it does require the decimal point 
               // which (IMO) looks messy
@@ -1826,8 +1827,9 @@ export class Grid {
                 default:
                   scale = event.action;
               }
+              */
 
-              scale = Math.round(scale * 1000) / 1000;
+              scale = Math.round(event.value * 1000) / 1000;
               scale = Math.min(2, Math.max(scale, .5));
 
               if (this.options.persist_scale_key) {
@@ -1836,6 +1838,10 @@ export class Grid {
 
               // this.UpdateScale(scale);
               this.scale = scale;
+
+              if (event.keep_focus) { 
+                return; // prevent focus stealing (for now)
+              }
 
             }
             break;

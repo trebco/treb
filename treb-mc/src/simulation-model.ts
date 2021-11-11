@@ -18,6 +18,34 @@ interface DistributionKey extends ICellAddress {
   call_index: number;
 }
 
+/**
+ * scale parameters for discrete pert/triangular
+ */
+const Discrete3Parameters = (min: number, mode: number, max: number) => {
+
+  // start with integers (jic)
+
+  min = Math.floor(min);
+  mode = Math.floor(mode);
+  max = Math.floor(max) + 1; // before or after the range? (...)
+
+  mode = (mode + ((mode - min) / (max-min)));
+
+  return [min, mode, max];
+
+};
+
+/**
+ * floor data. note we're not using functional methods for 
+ * performance
+ */
+const Discrete = (field: number[]|Float64Array) => {
+  for (let i = 0; i < field.length; i++) {
+    field[i] = Math.floor(field[i]);
+  }
+  return field;
+};
+
 const ShuffledIntegers = (count: number) => {
   
   const field = MC.Uniform(count);
@@ -270,7 +298,19 @@ export class SimulationModel {
           { name: 'min', description: 'Minimum', default: 0 },
           { name: 'max', description: 'Maximum', default: 1 },
         ],
-        fn: this.uniformvalue.bind(this),
+        fn: this.uniformvalue.bind(this, false),
+        category: ['RiskAMP Random Distributions'],
+        extension: true,
+      },
+
+      'UniformValue.Discrete': {
+        description: 'Returns a sample from the uniform distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'min', description: 'Minimum', default: 0 },
+          { name: 'max', description: 'Maximum', default: 1 },
+        ],
+        fn: this.uniformvalue.bind(this, true),
         category: ['RiskAMP Random Distributions'],
         extension: true,
       },
@@ -357,7 +397,21 @@ export class SimulationModel {
           { name: 'max', description: 'Maximum Value', default: 1 },
           { name: 'lambda', default: 4 },
         ],
-        fn: this.pertvalue.bind(this),
+        fn: this.pertvalue.bind(this, false),
+        category: ['RiskAMP Random Distributions'],
+        extension: true,
+      },
+
+      'PERTValue.Discrete': {
+        description: 'Returns a sample from the beta-PERT distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'min', description: 'Minimum Value', default: 0 },
+          { name: 'mode', description: 'Most-Likely Value', default: 0.5 },
+          { name: 'max', description: 'Maximum Value', default: 1 },
+          { name: 'lambda', default: 4 },
+        ],
+        fn: this.pertvalue.bind(this, true),
         category: ['RiskAMP Random Distributions'],
         extension: true,
       },
@@ -419,7 +473,20 @@ export class SimulationModel {
           { name: 'mode', description: 'Most Likely Value', default: 0.5 },
           { name: 'max', description: 'Maximum Value', default: 1 },
         ],
-        fn: this.triangularvalue.bind(this),
+        fn: this.triangularvalue.bind(this, false),
+        category: ['RiskAMP Random Distributions'],
+        extension: true,
+      },
+
+      'TriangularValue.Discrete': {
+        description: 'Returns a sample from the triangular distribution',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'min', description: 'Minimum Value', default: 0 },
+          { name: 'mode', description: 'Most Likely Value', default: 0.5 },
+          { name: 'max', description: 'Maximum Value', default: 1 },
+        ],
+        fn: this.triangularvalue.bind(this, true),
         category: ['RiskAMP Random Distributions'],
         extension: true,
       },
@@ -1184,11 +1251,19 @@ export class SimulationModel {
 
   // --- univariate distributions ----------------------------------------------
 
-  public uniformvalue(min = 0, max = 1): UnionValue {
+  public uniformvalue(discrete = false, min = 0, max = 1): UnionValue {
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
-        MC.Uniform(this.iterations, { min, max, lhs: this.lhs });
+      if (discrete) {
+        min = Math.floor(min);
+        max = Math.floor(max) + 1;
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          Discrete(MC.Uniform(this.iterations, { min, max, lhs: this.lhs }));
+      }
+      else {
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          MC.Uniform(this.iterations, { min, max, lhs: this.lhs });
+      }
     }
     else if (this.state === SimulationState.Simulation) {
       return {
@@ -1199,7 +1274,7 @@ export class SimulationModel {
     }
     return {
       type: ValueType.number,
-      value: MC.Uniform(1, { min, max })[0]
+      value: discrete ? Math.floor(MC.Uniform(1, { min, max: max + 1})[0]) : MC.Uniform(1, { min, max })[0]
     };
   }
 
@@ -1321,11 +1396,20 @@ export class SimulationModel {
     return {type: ValueType.number, value: MC.Normal(1, { mean, sd })[0] };
   }
 
-  public pertvalue(min = 0, mode = .5, max = 1, lambda = 4): UnionValue {
+  public pertvalue(discrete = false, min = 0, mode = .5, max = 1, lambda = 4): UnionValue {
+
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
-        MC.PERT(this.iterations, { a: min, b: max, c: mode, lambda, lhs: this.lhs });
+
+      if (discrete) {
+        [min, mode, max] = Discrete3Parameters(min, mode, max);
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          Discrete(MC.PERT(this.iterations, { a: min, b: max, c: mode, lambda, lhs: this.lhs }));
+      }
+      else {
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          MC.PERT(this.iterations, { a: min, b: max, c: mode, lambda, lhs: this.lhs });
+      }
     }
     else if (this.state === SimulationState.Simulation) {
       return {
@@ -1334,9 +1418,15 @@ export class SimulationModel {
         [this.address.column][this.address.row][this.call_index][this.iteration]
       };
     }
+
+    if (discrete) {
+      [min, mode, max] = Discrete3Parameters(min, mode, max);
+    }
+
     return {
       type: ValueType.number, 
-      value: MC.PERT(1, { a: min, b: max, c: mode, lambda })[0]
+      value: discrete ? Math.floor(MC.PERT(1, { a: min, b: max, c: mode, lambda })[0]) :
+        MC.PERT(1, { a: min, b: max, c: mode, lambda })[0],
     };
   }
 
@@ -1385,18 +1475,27 @@ export class SimulationModel {
   }
   */
 
-  public triangularvalue(min = 0, mode = .5, max = 1): UnionValue {
+  public triangularvalue(discrete = false, min = 0, mode = .5, max = 1): UnionValue {
 
     // DON'T REMOVE THIS, it's an example of how we were using the
     // unified distribution function -- we want to keep this for a 
     // little while to consider.
-    
+
+    // (note that was before the discrete option was added)
+
     // return this.CommonDistributionFunction(MC.Triangular, MC, [{a: min, b: max, c: mode, lhs: this.lhs}]);
 
     if (this.state === SimulationState.Prep) {
       this.InitDistribution();
-      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
-        MC.Triangular(this.iterations, { a: min, b: max, c: mode, lhs: this.lhs });
+      if (discrete) {
+        [min, mode, max] = Discrete3Parameters(min, mode, max);
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          Discrete(MC.Triangular(this.iterations, { a: min, b: max, c: mode, lhs: this.lhs }));
+      }
+      else {
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          MC.Triangular(this.iterations, { a: min, b: max, c: mode, lhs: this.lhs });
+      }
     }
     else if (this.state === SimulationState.Simulation) {
       return {
@@ -1405,9 +1504,15 @@ export class SimulationModel {
           [this.address.column][this.address.row][this.call_index][this.iteration]
       };
     }
+
+    if (discrete) {
+      [min, mode, max] = Discrete3Parameters(min, mode, max);
+    }
+
     return {
       type: ValueType.number,
-      value: MC.Triangular(1, { a: min, b: max, c: mode })[0]
+      value: discrete ? Math.floor(MC.Triangular(1, { a: min, b: max, c: mode })[0]) :
+        MC.Triangular(1, { a: min, b: max, c: mode })[0]
     };
   }
 

@@ -61,6 +61,56 @@
 
     }
 
+    & .treb-scale-control-2 {
+      font-size: inherit;
+      // padding: .25em .75em;
+      padding: .25em ;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      width: 5em;
+
+      & .treb-scale-input {
+        font-size: inherit;
+        font-family: inherit;
+        width: 4em;
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 2px;
+        color: inherit;
+      }
+
+      & .treb-slider-container {
+        position: absolute;
+        border: 1px solid #ccc;
+        background: #fff;
+        width: 10em;
+        height: 4em;
+        top: 0em;
+        left: .5em;
+        transform-origin: left top;
+        transform: rotate(-90deg);
+        z-index: $z-index-scale-popup;
+        opacity: 0;
+        transition: opacity .25s ease;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+
+      & .treb-scale-input:focus + .treb-slider-container,
+      & .treb-slider-container:focus-within,
+      &:hover .treb-slider-container {
+        opacity: .85;
+        pointer-events: initial;
+      }
+
+    }
+
     & .treb-scale-control {
       font-size: inherit;
       padding: .25em .75em;

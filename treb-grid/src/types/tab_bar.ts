@@ -1,11 +1,12 @@
 
 import { DataModel } from './data_model';
-import { composite, EventSource, tmpl } from 'treb-utils';
+import { EventSource } from 'treb-utils';
 import { Sheet } from './sheet';
 import { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import { GridOptions } from './grid_options';
-import { Localization, Theme } from 'treb-base-types';
+import { Theme } from 'treb-base-types';
+import { ScaleEvent, ScaleControl } from './scale-control';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';
@@ -36,10 +37,6 @@ export interface CancelEvent {
   type: 'cancel';
 }
 
-export interface ScaleEvent {
-  type: 'scale';
-  action: 'increase'|'decrease'|number;
-}
 
 export type TabEvent
    = CancelEvent
@@ -70,8 +67,10 @@ export class TabBar extends EventSource<TabEvent> {
 
   private node?: HTMLElement;
   private container?: HTMLElement;
-  private scale_label?: HTMLElement;
-  private scale = 1;
+  // private scale_label?: HTMLElement;
+  // private scale = 1;
+
+  private scale_control?: ScaleControl;
 
   private dragging = false;
 
@@ -97,7 +96,6 @@ export class TabBar extends EventSource<TabEvent> {
 
     super();
 
-    this.scale = this.options.initial_scale || 1;
     this.Init(grid_container);
 
   }
@@ -178,29 +176,7 @@ export class TabBar extends EventSource<TabEvent> {
 
   /** change scale if we have a scale label */
   public UpdateScale(scale: number): void {
-    if (this.scale_label) {
-      this.scale = scale;
-      let text = '';
-
-      if (scale < 1) {
-        text = `${(scale * 100).toFixed(1)}%`;
-      }
-      else {
-
-        // FIXME: it is possible to set scale directly, so there's a
-        // possibility that there is a decimal. should we accomodate? 
-        // (...)
-
-        text = `${Math.round(scale * 1000) / 10}%`;
-      }
-
-      if (Localization.decimal_separator === ',') {
-        text = text.replace(/\./, ',');
-      } 
-
-      this.scale_label.textContent = text;
-
-    }
+    this.scale_control?.UpdateScale(scale * 100);
   }
 
   /**
@@ -267,6 +243,13 @@ export class TabBar extends EventSource<TabEvent> {
       div.dataset.preserve = 'true';
 
       if (this.options.scale_control) {
+        this.scale_control = new ScaleControl(div);
+        this.scale_control.Subscribe((event: ScaleEvent) => {
+          this.Publish(event);
+        });
+        this.UpdateScale(this.options.initial_scale || 1); // so we only have to write the scaling routine once
+
+        /*
         const node = document.createElement('div');
         node.classList.add('treb-scale-control');
 
@@ -297,6 +280,7 @@ export class TabBar extends EventSource<TabEvent> {
         node.appendChild(button);
 
         div.appendChild(node);
+        */
       }
  
 
