@@ -1,6 +1,6 @@
 /* eslint-disable no-unexpected-multiline */
 
-import { /*UnionOrArray,*/ ICellAddress, Cell, UnionValue, ValueType, GetValueType, ArrayUnion } from 'treb-base-types';
+import { /*UnionOrArray,*/ ICellAddress, Cell, UnionValue, ValueType, GetValueType, ArrayUnion, CellValue } from 'treb-base-types';
 import * as Utils from '../../treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats, Random } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
@@ -903,9 +903,18 @@ export class SimulationModel {
       'RiskAMP.Task': {
         description: 'Models a task with dependencies for project planning',
         arguments: [],
-        fn: (sample: number, ...rest: number[]): UnionValue => {
-          const sum = sample + Math.max(...rest);
-          return { type: ValueType.number, value: sum }
+        fn: (sample = 0, ...rest: CellValue[]): UnionValue => {
+
+          let max = 0;
+          for (let i = 0; i < rest.length; i++) {
+            const value = rest[i];
+            if (typeof value === 'number' && value > max) {
+              max = value;
+            }
+          }
+          
+          return { type: ValueType.number, value: sample + max };
+
         },
         extension: true,
       },
