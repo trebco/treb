@@ -492,6 +492,16 @@ export class SimulationModel {
         extension: true,
       },
 
+      SimulationMode: {
+        description: 'Returns the mode of the data from this cell in the simulation. Use for discrete data only.',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell', collector: true },
+        ],
+        fn: this.simulationmode.bind(this),
+        extension: true,
+        category: ['RiskAMP Simulation Functions'],
+      },
+
       SimulationMean: {
         description: 'Returns the mean (average) value of the data from this cell in the simulation',
         arguments: [
@@ -1793,6 +1803,34 @@ export class SimulationModel {
     }
 
     return { type:ValueType.number, value: Math.max.apply(0, data) };
+  }
+
+  public simulationmode(data?: number[]): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
+    // this is different than what we do in Excel. here, we're going
+    // to just treat the data as discrete via a floor function. what
+    // that means in the case of continuous data is open to interpretation.
+    
+    const list: number[] = [];
+    const pairs: Array<[number, number]> = [];
+
+    for (const value of data) {
+      const discrete = Math.floor(value);
+      list[discrete] = (list[discrete] || 0) + 1;
+    }
+
+    list.forEach((value, i) => pairs.push([value, i]));
+    pairs.sort((a, b) => b[0] - a[0]);
+
+    return { type: ValueType.number, value: pairs[0][1] };
+
   }
 
   public simulationmean(data?: number[]): UnionValue {
