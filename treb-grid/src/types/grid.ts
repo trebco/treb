@@ -135,6 +135,8 @@ export class Grid {
     this.model.active_sheet = sheet; 
   }
 
+  public hide_selection = false;
+
   // new...
   public headless = false;
 
@@ -5118,9 +5120,9 @@ export class Grid {
    */
   private RenderSelections(rerender = true) {
 
-    const show_primary_selection = (!this.editing_state) ||
-      (this.editing_cell.sheet_id === this.active_sheet.id);
-
+    const show_primary_selection = this.hide_selection ? false :
+      (!this.editing_state) || (this.editing_cell.sheet_id === this.active_sheet.id);
+  
     this.selection_renderer.RenderSelections(show_primary_selection, rerender);
   }
 

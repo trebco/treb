@@ -261,7 +261,7 @@ export class Chart {
       // experimenting with complex... put real in X axis and imaginary in Y axis
       // note should also function w/ complex not in a metadata structure
 
-      if (typeof item.value.value.real === 'number') {
+      if (typeof item.value.value?.real === 'number') {
         series.x.data[index] = item.value.value.real;
         return item.value.value.imaginary;
       }
