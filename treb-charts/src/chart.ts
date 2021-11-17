@@ -659,7 +659,7 @@ export class Chart {
   /**
    * arguments are values, labels, title, sort, label option, ...
    */
-  public CreateDonut(args: [UnionValue?, UnionValue?, string?, string?, string?], pie_chart = false) {
+  public CreateDonut(args: [UnionValue?, UnionValue?, string?, string?, string?], pie_chart = false): void {
 
     /*
 
@@ -680,7 +680,7 @@ export class Chart {
 
     // we still need the aggregate for range, scale
     let data = flat.map((x) => (typeof x.value.value === 'number') ? x.value.value : undefined) as number[];
-
+    
     /*
     // but now we're potentially splitting into series
     let series: NumberOrUndefinedArray[];
@@ -741,7 +741,7 @@ export class Chart {
     // titles? label/value/percent
     // FIXME: number format(s)
 
-    const format_pattern = (flat.length && flat[0].format) ? flat[0].format : '';
+    const format_pattern = (flat.length && flat[0].value?.format) ? flat[0].value.format : '';
     const format = NumberFormatCache.Get(format_pattern || DEFAULT_FORMAT);
     const percent_format = NumberFormatCache.Get('percent');
 
