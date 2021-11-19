@@ -43,11 +43,13 @@ export interface ParseResult {
 
 declare class ValueParserType {
   TryParse(text?: string): ParseResult;
+  toString(): string;
 }
 
 export declare const ValueParser: ValueParserType;
 
 export declare class NumberFormat {
+  constructor(pattern: string);
   Format(value: any, text_width?: number): string;
 }
   
