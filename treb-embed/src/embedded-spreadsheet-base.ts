@@ -1317,7 +1317,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
       const reader = new FileReader();
 
-      reader.onload = () => {
+      reader.onload = async () => {
 
         try {
           if (reader.result) {
@@ -1336,14 +1336,10 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
             const img = document.createElement('img');
             img.src = contents;
 
-            /*
-            const img = document.createElement('img');
-            img.setAttribute('style', 'position: absolute; display: block');
-            img.src = contents;
-            document.body.appendChild(img);
-            const { width, height } = img.getBoundingClientRect();
-            img.parentElement?.removeChild(img);
-            */
+            // this is to let the browser figure out the image size.
+            // we should maybe use requestAnimationFrame? 
+
+            await Promise.resolve();
 
             // note: this works, somewhat contrary to expectations,
             // probably because there are some async calls; hence the
@@ -1363,7 +1359,9 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
             annotation.data.original_size = { width: img.width || 300, height: img.height || 300 };
 
           }
+
           resolve();
+          
         }
         catch (err) {
           reject(err);
