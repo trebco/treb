@@ -30,6 +30,7 @@ import { Parser, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
 
 // FIXME: move
 import { Chart, ChartOptions } from './drawing2/chart2';
+import { ImageOptions, EmbeddedImage } from './drawing2/embedded-image';
 import { Drawing, TwoCellAnchor } from './drawing2/drawing2';
 
 export class Exporter {
@@ -112,7 +113,7 @@ export class Exporter {
       },
     };
 
-    let xml = XMLDeclaration + this.xmlparser.parse(dom);
+    const xml = XMLDeclaration + this.xmlparser.parse(dom);
     if (dump) {
       console.info(xml);
     }
@@ -367,7 +368,7 @@ export class Exporter {
         a$: { count: xfs.length },
         xf: xfs,
       };
-    };
+    }
 
     // not used:
     //
@@ -376,7 +377,7 @@ export class Exporter {
     //  dxfs
     //  tableStyles
     
-    let xml = XMLDeclaration + this.xmlparser.parse(dom);
+    const xml = XMLDeclaration + this.xmlparser.parse(dom);
     // console.info(xml);
     await this.zip?.file('xl/styles.xml', xml);
 
@@ -405,7 +406,7 @@ export class Exporter {
       },
     };
 
-    let xml = XMLDeclaration + this.xmlparser.parse(dom);
+    const xml = XMLDeclaration + this.xmlparser.parse(dom);
     await this.zip?.file('xl/sharedStrings.xml', xml);
 
   }
@@ -510,7 +511,7 @@ export class Exporter {
 
     return style_cache.EnsureStyle(options);
 
-  };
+  }
 
   /** overload for return type */
   public NormalizeAddress(unit: UnitAddress, sheet: SerializedSheet): UnitAddress;
@@ -628,6 +629,67 @@ export class Exporter {
     }
 
     return anchor;
+
+  }
+
+  public ParseImages(sheet_source: SerializedSheet): Array<{ anchor: TwoCellAnchor, options: ImageOptions }> {
+
+    const images: Array<{ anchor: TwoCellAnchor, options: ImageOptions }> = [];
+
+    for (const annotation of sheet_source.annotations || []) {
+      if (annotation.type === 'image' && annotation.data?.src) {
+
+        // this is (should be) a data URI in base64. at least (atm) 
+        // that's all we support for exporting.
+
+        const src = annotation.data.src;
+        const match = src.match(/^data:image\/([^;]*?);base64,/);
+        
+        if (match) {
+
+          const data = src.substr(match[0].length);
+          const mimetype = match[1];
+
+          const options: ImageOptions = {
+            data,
+            mimetype,
+            encoding: 'base64',
+          }
+
+          switch (mimetype) {
+            case 'svg+xml':
+            case 'webp':
+            case 'jpeg':
+            case 'jpg':
+            case 'image/png':
+            case 'png':
+            case 'gif':
+
+              if (annotation.rect) {
+                images.push({
+                  anchor: this.AnnotationRectToAnchor(annotation.rect, sheet_source), options});
+              }
+              else if (annotation.layout) {
+                images.push({
+                  anchor: this.AnnotationLayoutToAnchor(annotation.layout, sheet_source), options});
+              }
+              else {
+                console.warn('annotation missing layout');
+              }
+
+              break;
+
+            default:
+              console.info('unhandled image type', mimetype);
+              break;
+          }
+
+        }
+
+      }
+    }
+
+    return images;
 
   }
 
@@ -965,6 +1027,8 @@ export class Exporter {
         'xr:uid': '{D37933E2-499F-4789-8D13-194E11B743FC}',
       };
 
+      const default_row_height = sheet.default_row_height ? (sheet.default_row_height / 20 * 15) : 15;
+
       const dom: any = {
         worksheet: {
           a$: {
@@ -984,8 +1048,11 @@ export class Exporter {
             },
           },
           sheetFormatPr: {
-            a$: {
-              defaultRowHeight: 15,
+            a$: default_row_height === 15 ? {
+              'x14ac:dyDescent': 0.25,
+            } : {
+              defaultRowHeight: default_row_height,
+              customHeight: 1,
               'x14ac:dyDescent': 0.25,
             },
           },
@@ -1465,7 +1532,8 @@ export class Exporter {
       // --- charts ------------------------------------------------------------
 
       const charts = this.ParseCharts(sheet);
-
+      const images = this.ParseImages(sheet);
+      
       // if a sheet has one or more charts, it has a single drawing. for a 
       // drawing, we need
       //
@@ -1489,13 +1557,28 @@ export class Exporter {
       //
       // check: we can get away with not including colors or style, which
       // will revert to defaults -- let's do that for the time being if we can
+      //
+      // merging in images, which use the same drawing (and in a single 
+      // sheet, a single drawing holds both charts and images).
 
-      if (charts.length) {
+      if (charts.length || images.length) {
 
         const drawing = new Drawing();
 
         for (const chart of charts) {
           drawing.AddChart(chart.options, chart.anchor);
+        }
+
+        for (const image of images) {
+          drawing.AddImage(image.options, image.anchor);
+        }
+
+        for (const {image} of drawing.images) {
+          // console.info({image}, `xl/media/image${image.index}.${image.extension}`);
+          await this.zip?.file(`xl/media/image${image.index}.${image.extension}`, image.options.data||'', {
+            base64: image.options.encoding === 'base64'
+          });
+          // no media rels!
         }
 
         for (const {chart} of drawing.charts) {
@@ -1508,7 +1591,6 @@ export class Exporter {
         await this.WriteRels(drawing.relationships, `xl/drawings/_rels/drawing${drawing.index}.xml.rels`);
 
         const xml = XMLDeclaration + this.xmlparser.parse(drawing.toJSON());
-        // console.info(xml);
 
         await this.zip?.file(`xl/drawings/drawing${drawing.index}.xml`, xml);
 
@@ -1616,6 +1698,24 @@ export class Exporter {
     // console.info(workbook_xml);
     await this.zip?.file(`xl/workbook.xml`, workbook_xml);
 
+    // const extensions: Array<{ Extension: string, ContentType: string }> = [];
+    const extensions: Record<string, string> = {};
+    for (const drawing of drawings) {
+      for (const image of drawing.images) {
+        switch (image.image.extension) {
+          case 'gif':
+          case 'png':
+          case 'jpeg':
+            extensions[image.image.extension] = 'image/' + image.image.extension;
+            break;
+
+          case 'svg':
+            extensions['svg'] = 'image/svg+xml';
+            break;
+        }
+      }
+    }
+
     const content_types_dom: any = {
       Types: {
         a$: {
@@ -1623,7 +1723,10 @@ export class Exporter {
         },
         Default: [
           {a$: { Extension: 'rels', ContentType: 'application/vnd.openxmlformats-package.relationships+xml' }},
-          {a$: { Extension: 'xml', ContentType: 'application/xml' }}
+          {a$: { Extension: 'xml', ContentType: 'application/xml' }},
+          ...Object.keys(extensions).map(key => ({
+            a$: { Extension: key, ContentType: extensions[key] },
+          })),
         ],
         Override: [
           { a$: { PartName: '/xl/workbook.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml' }},
