@@ -156,9 +156,15 @@ export class MCExpressionCalculator extends ExpressionCalculator {
         const descriptor = argument_descriptors[Math.min(arg_index, argument_descriptors.length - 1)] || {}; 
 
         // // if function, wrong branch
+
+        // NOTE: this breaks simulation prep on random distribution functions,
+        // because they never get set up properly. we can skip missed if 
+        // branches, but not in the simulation prep pass.
+
         if (arg_index === skip_argument_index) { 
-          // console.info('skipped');
-          return descriptor.boxed ? { type: ValueType.undefined } : undefined;
+          if (this.simulation_model.state !== SimulationState.Prep) {
+            return descriptor.boxed ? { type: ValueType.undefined } : undefined;
+          }
         }
 
         if (typeof arg === 'undefined') { 
