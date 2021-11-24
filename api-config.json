@@ -30,6 +30,8 @@
 
   "exclude_tags": [
     "internal", "mc"
-  ]
+  ],
+
+  "flatten_enums": true
 
 }

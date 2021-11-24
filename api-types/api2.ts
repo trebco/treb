@@ -36,6 +36,9 @@ interface Config {
   /** additional files to include. these will be concatenated to the generated output. */
   include: string[];
 
+  /** turn enums into union types. this helps import. */
+  flatten_enums: boolean;
+
 }
 
 let config_file = './api-config.json';
@@ -58,6 +61,7 @@ let config: Config = {
   rename_types: {},
   drop_generics: [],
   include: [],
+  flatten_enums: false,
 };
 
 let api_version = '';
@@ -227,6 +231,40 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
               return ts.visitEachChild(tmp, child => visit(child), context);
               
           }
+        }
+
+        if (ts.isEnumDeclaration(node)) {
+
+          if (config.flatten_enums) {
+            const alias = ts.factory.createTypeAliasDeclaration(
+              node.decorators,
+              node.modifiers,
+              node.name,
+              [], 
+              ts.factory.createUnionTypeNode(
+                node.members.map((member, i) => {
+                  if (member.initializer) {
+                    if (ts.isNumericLiteral(member.initializer)
+                        || ts.isStringLiteral(member.initializer)) {
+                      return ts.factory.createLiteralTypeNode(member.initializer);
+                    }
+                  }
+
+                  // this may be wrong if there are some initializers [FIXME].
+                  // what happens if you say 
+                  // 
+                  // enum X = { A, B = 3, C }
+                  // 
+                  // it's probably something like resetting the automatic counter,
+                  // which we could do. need to investigate though.
+
+                  return ts.factory.createLiteralTypeNode(ts.factory.createNumericLiteral(i));
+
+                })
+              ));
+            return ts.visitEachChild(alias, child => visit(child), context);
+          }
+
         }
 
         if (ts.isInterfaceDeclaration(node)) {

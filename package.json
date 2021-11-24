@@ -44,6 +44,7 @@
     "dev-legacy": "node compile2.js -d --legacy",
     "watch": "node compile2.js -w",
     "generate-api": "ts-node-dev api-types/api2.ts --config api-config.json && cp treb.d.ts release-distribution-files/",
+    "watch-api": "ts-node-dev --respawn api-types/api2.ts --config api-config.json && cp treb.d.ts release-distribution-files/",
     "watch-modern": "node compile2.js -w --modern -d",
     "watch-legacy": "node compile2.js -w --legacy -d",
     "build-modern": "node compile2.js --modern",
