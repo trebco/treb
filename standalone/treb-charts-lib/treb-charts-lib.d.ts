@@ -112,7 +112,7 @@ export interface ExtendedUnion {
 export interface ArrayUnion {
   type: ValueType.array;
   value: UnionValue[][]; // 2d
-};
+}
 
 /** switch to a discriminated union. implicit type guards! */
 export type UnionValue 

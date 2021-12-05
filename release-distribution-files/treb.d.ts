@@ -627,17 +627,7 @@ export declare class EmbeddedSpreadsheet {
      */
     Cancel(token: number): void;
 }
-export declare enum BorderConstants {
-    None = "none",
-    All = "all",
-    Outside = "outside",
-    Top = "top",
-    Bottom = "bottom",
-    Left = "left",
-    Right = "right",
-    DoubleTop = "double-top",
-    DoubleBottom = "double-bottom"
-}
+export declare type BorderConstants = "none" | "all" | "outside" | "top" | "bottom" | "left" | "right" | "double-top" | "double-bottom";
 
 /**
  * options for serializing data
@@ -690,22 +680,8 @@ export interface IRectangle {
     height: number;
 }
 export declare namespace Style {
-
-    /** horizontal align constants */
-    enum HorizontalAlign {
-        None = 0,
-        Left = 1,
-        Center = 2,
-        Right = 3
-    }
-
-    /** vertical align constants */
-    enum VerticalAlign {
-        None = 0,
-        Top = 1,
-        Bottom = 2,
-        Middle = 3
-    }
+    type HorizontalAlign = 0 | 1 | 2 | 3;
+    type VerticalAlign = 0 | 1 | 2 | 3;
 
     /** composite font size */
     interface FontSize {
@@ -969,13 +945,7 @@ export interface FreezePane {
     rows: number;
     columns: number;
 }
-export declare enum LoadSource {
-    DRAG_AND_DROP = "drag-and-drop",
-    LOCAL_FILE = "local-file",
-    NETWORK_FILE = "network-file",
-    LOCAL_STORAGE = "local-storage",
-    UNDO = "undo"
-}
+export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file" | "local-storage" | "undo";
 
 /**
  * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
@@ -985,11 +955,7 @@ export declare type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEven
 export interface ResizeEvent {
     type: 'resize';
 }
-export declare enum LoadType {
-    TREB = "treb",
-    CSV = "csv",
-    XLSX = "xlsx"
-}
+export declare type LoadType = "treb" | "csv" | "xlsx";
 
 /**
  * This event is sent when a document is loaded, and also on undo. The

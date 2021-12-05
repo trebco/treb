@@ -235,6 +235,7 @@ $swatch-width: 1.1em;
       font-size: .9em;
 
       & .color-bar {
+        margin: initial;
         width: 1.2em;
         height: 3px;
         margin-top: 2px;
@@ -252,6 +253,7 @@ $swatch-width: 1.1em;
     }
 
     svg {
+      margin: initial;
       fill: currentColor;
       width: 1em;
       height: 1em;
