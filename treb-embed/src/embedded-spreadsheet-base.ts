@@ -2220,7 +2220,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       this.calculator.RebuildClean(this.grid.model, true);
     }
     else {
-      console.info('load recalc');
+      // console.info('load recalc');
       this.Recalculate();
     }
 
