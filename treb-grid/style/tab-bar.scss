@@ -115,6 +115,11 @@
       .treb-scale-input:focus {
         border-color: #ccc;        
         background: #fff;
+
+      }
+
+      .treb-slider-container > input[type=range] {
+        width: 8.5em;
       }
 
       & .treb-scale-input:focus + .treb-slider-container,
