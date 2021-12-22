@@ -1396,7 +1396,7 @@ export class ChartRenderer {
       }));
     }
 
-  };
+  }
 
   public RenderRectangle(
     area: Area, 
