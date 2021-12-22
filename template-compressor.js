@@ -150,7 +150,9 @@ const Parser = (match, tag) => {
 };
 
 module.exports = function(source) {
-  const options = utils.getOptions(this);
+  
+  // const options = utils.getOptions(this);
+  const options = this.getOptions();
 
   let tags = options ? options.tags || [] : [];
 

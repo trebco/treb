@@ -24,7 +24,8 @@
 const utils = require('loader-utils');
 
 module.exports = function(source) {
-  const options = utils.getOptions(this);
+  // const options = utils.getOptions(this);
+  const options = this.getOptions();
 
   for (const pair of options.replace || []) {
     source = source.replaceAll(pair.text, pair.replacement);
