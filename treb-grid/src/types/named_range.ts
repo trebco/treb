@@ -1,6 +1,14 @@
 
 import { IArea, Area } from 'treb-base-types';
-import { GridSelection } from './grid_selection';
+
+/**
+ * I want to repurpose named ranges (a little) to allow either values or 
+ * arbitrary expressions. this is sort of 1/2 way between named ranges and
+ * "macro functions".
+ * 
+ * not sure if we should change named ranges, or create a side path for 
+ * "named expressions".
+ */
 
 export class NamedRangeCollection {
 
@@ -13,11 +21,11 @@ export class NamedRangeCollection {
   }
 
   /** FIXME: why not just use toJSON? */
-  public Serialize() {
+  public Serialize(): string {
     return JSON.parse(JSON.stringify(this.Map()));
   }
 
-  public Deserialize(data?: {[index: string]: IArea}) {
+  public Deserialize(data?: {[index: string]: IArea}): void {
     this.Reset();
     if (data) {
       for (const key of Object.keys(data)) {
@@ -75,7 +83,7 @@ export class NamedRangeCollection {
     return true;
   }
 
-  public SetNames(list: {[index: string]: IArea}) {
+  public SetNames(list: {[index: string]: IArea}): void {
     for (const key of Object.keys(list)) {
       const area = list[key];
       this.SetName(key, new Area(area.start, area.end), false);
@@ -83,14 +91,14 @@ export class NamedRangeCollection {
     this.RebuildList();
   }
 
-  public ClearName(name: string, apply = true) {
+  public ClearName(name: string, apply = true): void {
     delete this.forward[name];
     if (apply) {
       this.RebuildList();
     }
   }
 
-  public Reset() {
+  public Reset(): void {
     this.forward = {};
     this.backward = [];
   }
@@ -118,7 +126,7 @@ export class NamedRangeCollection {
    *
    * returns a normalized name (just caps, atm)
    */
-  public ValidateNamed(name: string) {
+  public ValidateNamed(name: string): string|false {
     name = name.trim();
     if (!name.length) return false;
     if (/^[A-Za-z]{1,3}\d+$/.test(name)) return false;
@@ -304,7 +312,7 @@ export class NamedRangeCollection {
 
   }
 
-  public RebuildList() {
+  public RebuildList(): void {
     this.backward = [];
     for (const key of Object.keys(this.forward)) {
       this.backward.push({ name: key, range: this.forward[key] });

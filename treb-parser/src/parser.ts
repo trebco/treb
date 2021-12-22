@@ -137,6 +137,16 @@ export class Parser {
   public decimal_mark = DecimalMarkType.Period;
 
   /**
+   * flag: support spreadsheet addresses (e.g. "A1"). this is the default,
+   * as it's useful in spreadsheets. however if we want to use the parser
+   * non-spreadsheet things, it might be preferable to treat things that look
+   * like spreadsheet addresses as tokens instead.
+   * 
+   * this is default so it won't break existing behavior.
+   */
+  public spreadsheet_semantics = true;
+
+  /**
    * internal argument separator, as a number. this is set internally on
    * parse call, following the argument_separator value.
    */
@@ -1980,9 +1990,11 @@ export class Parser {
     // range operator, and a second address. that will be turned into a range
     // later.
 
-    const address = this.ConsumeAddress(str, position);
-    if (address) return address;
-
+    if (this.spreadsheet_semantics) {
+      const address = this.ConsumeAddress(str, position);
+      if (address) return address;
+    }
+    
     const identifier: UnitIdentifier = {
       type: 'identifier',
       id: this.id_counter++,
