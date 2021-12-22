@@ -20,6 +20,7 @@ export class WorkerImpl {
     active_sheet: Sheet.Blank({}),
     sheets: [Sheet.Blank({})],
     named_ranges: new NamedRangeCollection(),
+    named_expressions: {},
     macro_functions: {},
   };
   protected screen_updates = false;
@@ -77,6 +78,16 @@ export class WorkerImpl {
       if (message.macro_functions) {
         for (const macro_function of message.macro_functions) {
           this.data_model.macro_functions[macro_function.name.toUpperCase()] = macro_function;
+        }
+      }
+
+      this.data_model.named_expressions = {};
+      if (message.named_expressions) {
+        for (const pair of message.named_expressions) {
+          const parse_result = this.calculator.parser.Parse(pair.expression);
+          if (parse_result.valid && parse_result.expression) {
+            this.data_model.named_expressions[pair.name] = parse_result.expression;
+          }
         }
       }
 

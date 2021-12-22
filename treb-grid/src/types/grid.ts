@@ -69,6 +69,7 @@ import { NamedRangeCollection } from './named_range';
 
 import '../../style/grid.scss';
 import { DOMUtilities } from '../util/dom_utilities';
+import { SerializedNamedExpression } from '..';
 
 interface ClipboardCellData {
   address: ICellAddress;
@@ -379,6 +380,7 @@ export class Grid {
       // annotations: [],
       named_ranges: new NamedRangeCollection(),
       macro_functions: {},
+      named_expressions: {},
     };
 
     // set properties here, we will update in initialize()
@@ -1038,6 +1040,17 @@ export class Grid {
       }
     }
 
+    const named_expressions: SerializedNamedExpression[] = [];
+    if (this.model.named_expressions) {
+      for (const name of Object.keys(this.model.named_expressions)) {
+        const expr = this.model.named_expressions[name];
+        const rendered = this.parser.Render(expr, undefined, '');
+        named_expressions.push({
+          name, expression: rendered
+        });
+      }
+    }
+
     return {
       sheet_data,
       active_sheet: this.active_sheet.id,
@@ -1045,6 +1058,7 @@ export class Grid {
         this.model.named_ranges.Serialize() :
         undefined,
       macro_functions,
+      named_expressions: named_expressions.length ? named_expressions : undefined,
     };
 
   }
@@ -2039,13 +2053,22 @@ export class Grid {
   /**
    * set or clear name
    */
-  public SetName(name: string, range?: ICellAddress | Area): void {
+  public SetName(name: string, range?: ICellAddress | Area, expression?: string): void {
+
+    // validate/translate name first
+
+    const validated = this.model.named_ranges.ValidateNamed(name);
+    if (!validated) {
+      throw new Error('invalid name');
+    }
+
+    name = validated;
 
     const command: SetNameCommand = {
       key: CommandKey.SetName,
       name,
     };
-
+   
     if (range) {
 
       if (IsCellAddress(range)) {
@@ -2062,6 +2085,15 @@ export class Grid {
 
       command.area = new Area(range.start, range.end);
 
+    }
+    else if (expression) {
+      const parse_result = this.parser.Parse(expression);
+      if (parse_result.valid) {
+        command.expression = parse_result.expression;
+      }
+      else {
+        throw new Error('invalid expression');
+      }
     }
 
     this.ExecCommand(command);
@@ -8376,6 +8408,9 @@ export class Grid {
 
         case CommandKey.SetName:
           if (command.area) {
+            if (this.model.named_expressions[command.name]) {
+              delete this.model.named_expressions[command.name];
+            }
             this.model.named_ranges.SetName(command.name,
               new Area(command.area.start, command.area.end));
             this.autocomplete_matcher.AddFunctions({
@@ -8383,8 +8418,19 @@ export class Grid {
               name: command.name,
             });
           }
+          else if (command.expression) {
+            this.model.named_ranges.ClearName(command.name);
+            this.model.named_expressions[command.name] = command.expression;
+            this.autocomplete_matcher.AddFunctions({
+              type: DescriptorType.Token,
+              name: command.name,
+            });
+          }
           else {
             this.model.named_ranges.ClearName(command.name);
+            if (this.model.named_expressions[command.name]) {
+              delete this.model.named_expressions[command.name];
+            }
             this.autocomplete_matcher.RemoveFunctions({
               type: DescriptorType.Token,
               name: command.name,

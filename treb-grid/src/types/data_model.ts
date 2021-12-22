@@ -44,6 +44,16 @@ export interface DataModel {
   /** macro functions are functions written in spreadsheet language */
   macro_functions: MacroFunctionMap;
 
+  /** 
+   * new, for parametric. these might move to a different construct. 
+   */
+  named_expressions: Record<string, ExpressionUnit>;
+
+}
+
+export interface SerializedNamedExpression {
+  name: string;
+  expression: string;
 }
 
 export interface SerializedModel {
@@ -51,5 +61,6 @@ export interface SerializedModel {
   active_sheet: number;
   named_ranges?: any;
   macro_functions?: MacroFunction[];
+  named_expressions?: SerializedNamedExpression[];
   decimal_mark?: ','|'.';
 }

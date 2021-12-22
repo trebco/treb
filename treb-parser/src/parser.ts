@@ -147,6 +147,12 @@ export class Parser {
   public spreadsheet_semantics = true;
 
   /**
+   * flag: support expressions with units, like `3mm` or `=3mm + 2in`.
+   * this is for parametric modeling. testing/dev atm.
+   */
+  public support_dimensioned_quantities = false;
+
+  /**
    * internal argument separator, as a number. this is set internally on
    * parse call, following the argument_separator value.
    */
@@ -720,7 +726,9 @@ export class Parser {
           // on looking for a binary operator? (...)
 
           const operator = this.ConsumeOperator();
-          if (operator) stream.push(operator);
+          if (operator) {
+            stream.push(operator);
+          }
           else {
             this.error = `unexpected character [1]: ${String.fromCharCode(unit)}, ${unit}`;
             this.valid = false;
@@ -772,29 +780,50 @@ export class Parser {
         return test;
       });
 
-      // ...
+      if (this.support_dimensioned_quantities) {
 
-      // now complex. since this is no longer gated, we could merge
-      // with the range parsing above
+        // support dimensioned quantities. we need to think a little about what 
+        // should and should not be supported here -- definitely a literal 
+        // followed by an identifier; definitely not two identifiers in a row; 
+        // (really?) definitely not expressions followed by identifiers...
+        //
+        // what about
+        // group: (3+2)mm [yes]
+        // call: sin(3)mm [yes]
+        // name?: Xmm [...]
 
-      // I'm not sure about this anymore. I think perhaps we should not
-      // do this. consider this example:
-      //
-      // =B3 * 2 + 1i
-      // 
-      // shouldn't normal precedence rules apply? if you want 2 + 1i to be
-      // complex, it should be in parens. 
+        const rebuilt: ExpressionUnit[] = [];
+        let unit: ExpressionUnit | undefined;
 
-      // HOWEVER, we should still compose composite numbers if they're not
-      // functions, so they don't get converted to strings. do we have a 
-      // flag for that? 
+        for (const entry of stream) {
+          if (!unit) {
+            unit = entry;
+          }
+          else if (entry.type === 'identifier' && (unit.type === 'literal' || unit.type === 'group' || unit.type === 'call')) {
+              rebuilt.push({
+                type: 'dimensioned',
+                expression: unit,
+                unit: entry as UnitIdentifier,
+                id: this.id_counter++,
+              });
+              unit = undefined; // consume
+          }
+          else {
+            rebuilt.push(unit);
+            unit = entry;
+          }
+        }
 
-      // OR, perhaps we could construct a complex number if the stream
-      // length === 3, in which case there's no other alternative? what happens
-      // with precedence then? should this operate on binaries? ...
+        // trailer
 
-      // stream = this.CompositeComplexNumbers(stream);
+        if (unit) {
+          rebuilt.push(unit);
+        }
 
+        stream = rebuilt;
+
+      }
+      
     }
 
     // console.info("STREAM\n", stream, "\n\n");
@@ -2258,6 +2287,25 @@ export class Parser {
         else break; // not sure what this is, then
       }
       else if (char === this.imaginary_char) {
+
+        // FIXME: this should only be set if it's exactly '8i' and not '8in',
+        // since we want to use that for dimensioned quantities. what's legit
+        // after the i and what is not? let's exclude anything in the "word" 
+        // range...
+
+        // peek
+        const peek = this.data[this.index + 1];
+        if ((peek >= UC_A && peek <= UC_Z) ||
+            (peek >= LC_A && peek <= LC_Z) ||
+            (peek >= ACCENTED_RANGE_START && peek <= ACCENTED_RANGE_END) ||
+             peek === UNDERSCORE) {
+
+          break; // start of an identifier
+        }
+
+        // actually we could use our dimension logic instead of this... turn
+        // this off when using dimensioned quantities and move it in there?
+
         if (state === 'integer' || state === 'fraction') {
           this.index++; // consume
           imaginary = true;

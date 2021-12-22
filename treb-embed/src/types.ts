@@ -1,5 +1,5 @@
 import { IArea } from 'treb-base-types';
-import { MacroFunction, SerializedSheet } from 'treb-grid';
+import { MacroFunction, SerializedNamedExpression, SerializedSheet } from 'treb-grid';
 
 export enum SaveFileType {
   json = 'json',
@@ -41,6 +41,7 @@ export interface TREBDocument {
   rendered_values?: boolean;
   named_ranges?: {[index: string]: IArea};
   macro_functions?: MacroFunction[];
+  named_expressions?: SerializedNamedExpression[];
 }
 
 export interface ResizeEvent {

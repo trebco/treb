@@ -1,6 +1,7 @@
 
 import { ICellAddress, IArea } from 'treb-base-types';
 import { MacroFunction } from 'treb-grid';
+import { SerializedNamedExpression } from 'treb-grid';
 
 import { ResultContainer } from './pack-results';
 
@@ -27,6 +28,7 @@ export interface ConfigMessage {
   sheets: any[];
   additional_cells?: ICellAddress[];
   named_ranges?: {[index: string]: IArea};
+  named_expressions?: SerializedNamedExpression[];
   macro_functions?: MacroFunction[];
 }
 

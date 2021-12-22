@@ -4,7 +4,7 @@ import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage, Extend
 import { Random } from 'riskampjs-mc';
 
 import { Localization, ICellAddress, IsCellAddress } from 'treb-base-types';
-import { MacroFunction } from 'treb-grid';
+import { MacroFunction, SerializedNamedExpression } from 'treb-grid';
 import { EmbeddedSheetEvent, CompositeEmbeddedSheetEvent, TREBDocument } from './types';
 
 // we are stuck on an old version of this, and I can't remember 
@@ -284,6 +284,19 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
       }
     }
 
+    let named_expressions: SerializedNamedExpression[] | undefined;
+    if (this.grid.model.named_expressions) {
+      const expresssions: SerializedNamedExpression[] = [];
+      for (const name of Object.keys(this.grid.model.named_expressions)) {
+        const expr = this.grid.model.named_expressions[name];
+        const rendered = this.parser.Render(expr, undefined, '');
+        expresssions.push({ name, expression: rendered });
+      }
+      if (expresssions.length) {
+        named_expressions = expresssions;
+      }
+    }
+
     // hold state for replay, but watch out if it's not the same size
 
     const seed_buffer: number[] = this.workers.map(() => Random.Next() * 1e14);
@@ -304,6 +317,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
         }),
         named_ranges: this.grid.model.named_ranges.Serialize(),
         macro_functions,
+        named_expressions,
         additional_cells,
       });
     }

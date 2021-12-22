@@ -2751,6 +2751,15 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   }
 
   /**
+   * define a named expression
+   * 
+   * @internal
+   */
+  public DefineNamedExpression(name: string, expression: string): void {
+    this.grid.SetName(name, undefined, expression);
+  }
+
+  /**
    * Set or remove a link in a cell. 
    * 
    * @param target http/https URL or a spreadsheet reference (as text). set blank to remove link.
@@ -3808,6 +3817,16 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     if (named_range_data) {
       model.named_ranges.Deserialize(named_range_data);
+    }
+
+    model.named_expressions = {};
+    if (data.named_expressions) {
+      for (const pair of data.named_expressions) {
+        const parse_result = this.parser.Parse('' || pair.expression);
+        if (parse_result.valid && parse_result.expression) {
+          model.named_expressions[pair.name.toUpperCase()] = parse_result.expression;
+        }
+      }
     }
 
     model.macro_functions = {};

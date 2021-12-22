@@ -1,5 +1,6 @@
 
 import { ICellAddress, IArea, Style, CellValue } from 'treb-base-types';
+import { ExpressionUnit } from 'treb-parser';
 import { BorderConstants } from './border_constants';
 
 /**
@@ -123,11 +124,24 @@ export interface ShowHeadersCommand {
   show: boolean;
 }
 
-/** set or clear name (omit range to clear) */
+/** 
+ * set or clear name (omit range to clear)
+ *  
+ * adding support for named expressions. you can pass either a range or
+ * and expression. 
+ * 
+ * if you use the same name more than once, it will overwrite the old name,
+ * even if you change types range/expression.
+ * 
+ * passing neither will cause it to erase any existing named range OR named 
+ * expression. 
+ * 
+ */
 export interface SetNameCommand {
   key: CommandKey.SetName;
   name: string;
   area?: IArea;
+  expression?: ExpressionUnit;
 }
 
 export interface DataValidationCommand {

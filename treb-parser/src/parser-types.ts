@@ -160,11 +160,18 @@ export interface UnitRange extends BaseUnit {
   position: number;
 }
 
+export interface UnitDimensionedQuantity extends BaseUnit {
+  type: 'dimensioned';
+  expression: ExpressionUnit;
+  unit: UnitIdentifier;
+}
+
 /** discriminated union for type guards */
 export type ExpressionUnit =
   | UnitLiteral
   | UnitComplex
 //  | UnitImaginary
+  | UnitDimensionedQuantity
   | UnitArray
   | UnitIdentifier
   | UnitCall

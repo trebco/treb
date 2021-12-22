@@ -1,7 +1,7 @@
 
 export { Grid } from './types/grid';
 export { Sheet } from './types/sheet';
-export { DataModel, MacroFunction } from './types/data_model';
+export { DataModel, MacroFunction, SerializedNamedExpression } from './types/data_model';
 export * from './types/grid_events';
 export { SerializedSheet } from './types/sheet_types';
 export { Annotation } from './types/annotation';

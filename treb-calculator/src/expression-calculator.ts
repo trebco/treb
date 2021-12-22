@@ -829,6 +829,11 @@ export class ExpressionCalculator {
         }
       }
 
+      const named_expression = this.data_model.named_expressions[upper_case]; 
+      if (named_expression) {
+        return this.CalculateExpression(named_expression as ExtendedExpressionUnit);
+      }
+
       /*
       const bound_names = this.context.name_stack[0];
 

@@ -64,6 +64,9 @@ Because option (3) is the easiest, that's probably the best way to start.
 There's nothing that would prevent us from switching later to option (2) or
 something else, if we wanted to do the work.
 
+(edit, later): done, seems to work reasonably well although I have not done
+any performance testing. 
+
 ## Parser support
 
 As part of this we want to make a small change to the parser to _remove_ 
@@ -86,4 +89,28 @@ only supports ascii-letter characters (I think).
 
 Clients can do actual management and conversion of data with units. 
 
+...
 
+So we have this in the parser now (behind a flag, and pending rendering still 
+TBD). But you can't actually calculate with dimensioned quantities because the 
+math routines don't know what to do with them.
+
+What we would need to do to use them would be to have a precalculator that
+removed units, converting as necessary. So if you have an expression 
+
+`=3mm * 2`
+
+the parser will return 
+
+`
+(Binary (DimensionedQuantity 3, mm) * (2))
+`
+
+some additional step would have to swap out the dimensioned quantity unit for
+a literal, preserving the unit information. If you have different units you'd
+need to pick one as a baseline and convert others to that unit; this step could 
+also validate that you're not mixing invalid units like inches and kg.
+
+Note that we can't support " (inches) atm because we are looking for quoted 
+strings. If we really need that at some point we can switch off quoted strings
+(flag) and support " as a token.
