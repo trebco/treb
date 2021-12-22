@@ -21,7 +21,7 @@ export class NamedRangeCollection {
   }
 
   /** FIXME: why not just use toJSON? */
-  public Serialize(): string {
+  public Serialize(): {[index: string]: Area} {
     return JSON.parse(JSON.stringify(this.Map()));
   }
 
