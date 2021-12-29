@@ -866,7 +866,6 @@ export class ExpressionCalculator {
     return (expr: UnitGroup) => this.CalculateExpression(expr.elements[0] as ExtendedExpressionUnit);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected CalculateExpression(expr: ExtendedExpressionUnit, return_reference = false): UnionValue /*UnionOrArray*/ {
 
     // user data is a generated function for the expression, at least

@@ -36,9 +36,23 @@ module.exports = {
       { 'allowSingleLine': true },
     ],
     '@typescript-eslint/interface-name-prefix': 'off',
+
+    /*
+
+    FIXME: needs configuration. I'm ok with it generally but why split 
+    accessors for the same field?
+
+    UPDATE: see also https://eslint.org/docs/rules/grouped-accessor-pairs
+
+    not sure how these work together
+
     '@typescript-eslint/member-ordering': [
       'error',
     ],
+    */
+
+    'grouped-accessor-pairs': ['error', 'getBeforeSet'],
+    
   }
 
   /*
