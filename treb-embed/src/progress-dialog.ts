@@ -169,6 +169,10 @@ export class ProgressDialog {
     }
   }
 
+  private get visible(){
+    return this.visible_;
+  }
+
   private set visible(value: boolean){
 
     if (value === this.visible_) { return; }
@@ -204,18 +208,14 @@ export class ProgressDialog {
 
   }
 
-  private get visible(){
-    return this.visible_;
-  }
-
   constructor(private parent_node: HTMLElement) { // }, options: MaskDialogOptions = {}) {
 
     // const color = '#8CC63F';
-    const color = '#036ec1';
+    // const color = '#036ec1';
 
     // check if we have attached our gradient
     const gradient_id = 'treb-leaf-gradient-' + ProgressDialog.unique_id;
-    let test = document.querySelector('#' + gradient_id);
+    const test = document.querySelector('#' + gradient_id);
     if (!test) {
       
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg') as SVGSVGElement;
