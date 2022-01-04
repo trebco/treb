@@ -36,8 +36,7 @@ const Discrete3Parameters = (min: number, mode: number, max: number) => {
 };
 
 /**
- * floor data. note we're not using functional methods for 
- * performance
+ * floor data. note we're not using functional methods for performance.
  */
 const Discrete = (field: number[]|Float64Array) => {
   for (let i = 0; i < field.length; i++) {
@@ -182,6 +181,7 @@ export class SimulationModel {
           { name: 'correlation', description: 'Correlation Matrix (NxN)' },
           { name: 'min', description: 'Minimum Value', default: 0 },
           { name: 'max', description: 'Maximum Value', default: 1 },
+          // { name: 'discrete', description: 'Discrete', default: false },
         ],
         fn: this.multivariate_uniform.bind(this),
         category: ['RiskAMP Random Distributions'],
@@ -212,6 +212,7 @@ export class SimulationModel {
           { name: 'mode', description: 'Most-Likely Value' },
           { name: 'max', description: 'Maximum Value' },
           { name: 'lambda', default: 4 },
+          // { name: 'discrete', description: 'Discrete', default: false },
         ],
         fn: this.multivariate_pert.bind(this),
         category: ['RiskAMP Random Distributions'],
@@ -227,6 +228,7 @@ export class SimulationModel {
           { name: 'min', description: 'Minimum Value' },
           { name: 'mode', description: 'Most-Likely Value' },
           { name: 'max', description: 'Maximum Value' },
+          // { name: 'discrete', description: 'Discrete', default: false },
         ],
         fn: this.multivariate_triangular.bind(this),
         category: ['RiskAMP Random Distributions'],
@@ -1163,50 +1165,108 @@ export class SimulationModel {
     return { type: ValueType.number, value: MC.Beta(1, { a, b })[0] };
   }
 
-  public multivariate_uniform(range_of_values: string, correlation_matrix: number[][], min = 0, max = 1): UnionValue  {
+  public multivariate_uniform(range_of_values: string, correlation_matrix: number[][], min = 0, max = 1, discrete = false): UnionValue  {
+
+    // ref uniformvalue
+
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
-      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
-        MC.Uniform(this.iterations, { min, max, lhs: this.lhs, ordered: true });
+
+      if (discrete) {
+        min = Math.floor(min);
+        max = Math.floor(max + 1);
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          Discrete(MC.Uniform(this.iterations, { min, max, lhs: this.lhs, ordered: true }));
+      }
+      else {
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          MC.Uniform(this.iterations, { min, max, lhs: this.lhs, ordered: true });
+      }
     }
     else if (this.state === SimulationState.Simulation) {
       return { type: ValueType.number, value: this.distributions[this.address.sheet_id || 0]
         [this.address.column][this.address.row][this.call_index][this.iteration] };
     }
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
-    return { type: ValueType.number, value: MC.Uniform(1, { min, max })[0] };
+
+    if (discrete) {
+      return { type: ValueType.number, value: Math.floor(MC.Uniform(1, { 
+          min: Math.floor(min), 
+          max: Math.floor(max + 1),
+        })[0]) };
+    }
+    else {
+      return { type: ValueType.number, value: MC.Uniform(1, { min, max })[0] };
+    }
+
   }
 
   public multivariate_pert(range_of_values: string,
-    correlation_matrix: number[][], min = 0, mode = 0.5, max = 1, lambda = 4): UnionValue  {
+    correlation_matrix: number[][], min = 0, mode = 0.5, max = 1, lambda = 4, discrete = false): UnionValue  {
+
+    // ref pertvalue
 
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
-      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
-        MC.PERT(this.iterations, { a: min, b: max, c: mode, lambda, lhs: this.lhs, ordered: true });
+
+      if (discrete) {
+        [min, mode, max] = Discrete3Parameters(min, mode, max);
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          Discrete(MC.PERT(this.iterations, { a: min, b: max, c: mode, lambda, lhs: this.lhs, ordered: true }));
+      }
+      else {
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          MC.PERT(this.iterations, { a: min, b: max, c: mode, lambda, lhs: this.lhs, ordered: true });
+      }
     }
     else if (this.state === SimulationState.Simulation) {
       return { type: ValueType.number, value: this.distributions[this.address.sheet_id || 0]
         [this.address.column][this.address.row][this.call_index][this.iteration] };
     }
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
-    return { type: ValueType.number, value: MC.PERT(1, { a: min, b: max, c: mode, lambda })[0] };
+
+    if (discrete) {
+      [min, mode, max] = Discrete3Parameters(min, mode, max);
+    }
+
+    return { type: ValueType.number, value: 
+      discrete ? Math.floor(MC.PERT(1, { a: min, b: max, c: mode, lambda })[0]) : 
+                 MC.PERT(1, { a: min, b: max, c: mode, lambda })[0]
+    };
+
   }
 
   public multivariate_triangular(range_of_values: string,
-    correlation_matrix: number[][], min = 0, mode = 0.5, max = 1): UnionValue  {
+    correlation_matrix: number[][], min = 0, mode = 0.5, max = 1, discrete = false): UnionValue  {
+
+    // ref triangularvalue
 
     if (this.state === SimulationState.Prep) {
       this.PrepMultivariate(range_of_values, correlation_matrix);
-      this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
-        MC.Triangular(this.iterations, { a: min, b: max, c: mode, lhs: this.lhs, ordered: true });
+
+      if (discrete) {
+        [min, mode, max] = Discrete3Parameters(min, mode, max);
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          Discrete(MC.Triangular(this.iterations, { a: min, b: max, c: mode, lhs: this.lhs, ordered: true }));
+      }
+      else {
+        this.distributions[this.address.sheet_id || 0][this.address.column][this.address.row][this.call_index] =
+          MC.Triangular(this.iterations, { a: min, b: max, c: mode, lhs: this.lhs, ordered: true });
+      }
     }
     else if (this.state === SimulationState.Simulation) {
       return { type: ValueType.number, value: this.distributions[this.address.sheet_id || 0]
         [this.address.column][this.address.row][this.call_index][this.iteration] };
     }
     if (!this.ValidateCorrelationMatrix(correlation_matrix)) { return DataError(); }
-    return { type: ValueType.number, value: MC.Triangular(1, { a: min, b: max, c: mode })[0] };
+
+    if (discrete) {
+      [min, mode, max] = Discrete3Parameters(min, mode, max);
+    }
+    return { type: ValueType.number, value: 
+      discrete ? Math.floor(MC.Triangular(1, { a: min, b: max, c: mode })[0]) :
+                 MC.Triangular(1, { a: min, b: max, c: mode })[0] };
+
   }
 
   // --- discrete distributions ------------------------------------------------
