@@ -495,6 +495,17 @@ export class SimulationModel {
 
       // stats
 
+      SimulationCorrelationMatrix: {
+        description: 'Returns the correlation among a set of data, as a matrix',
+        arguments: [
+          { name: 'range', description: 'Range of data', collector: true },
+          { name: 'full matrix', description: 'Full matrix', default: false },
+        ],
+        fn: this.simulationcorrelationmatrix.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+        extension: true,
+      },
+
       SimulationCorrelation: {
         description: 'Returns the correlation between the data from two cells in the simulation',
         arguments: [
@@ -982,6 +993,18 @@ export class SimulationModel {
     for (const key of Object.keys(this.correlated_distributions)) {
 
       const desc = this.correlated_distributions[key];
+      console.info({key, desc});
+
+      // addresses can get in here in an unsorted order. that was unexpected,
+      // but we can resolve it by sorting before correlating. this matters
+      // because the order of distributions needs to match the order of the
+      // correlation matrix.
+
+      // NOTE that there may still be problems if there are holes in the
+      // dataset. however that's technically unsupported and therefore undefined,
+      // so not sure how we should resolve it.
+
+      desc.addresses.sort((a, b) => (a.column === b.column) ? a.row - b.row : a.column - b.column);
 
       const distributions = desc.addresses.map((address) => {
         return this.distributions[address.sheet_id || 0][address.column][address.row][address.call_index];
@@ -1059,7 +1082,7 @@ export class SimulationModel {
 
       // support lower-triangular
       let correlation = CDMatrix.FromArray(correlation_matrix);
-      
+
       if (!correlation.IsSymmetric()) {
         for (let m = 1; m < correlation_matrix.length; m++) {
           for (let n = 0; n < m; n++) {
@@ -1821,6 +1844,85 @@ export class SimulationModel {
     }
 
     return { type: ValueType.number, value: Stats.Correlation(a, b) };
+  }
+
+  public simulationcorrelationmatrix(range: any, full_matrix = false): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+
+    // could be one cell... we don't really have a good
+    // way of checking that. for a range, though, should be 2D
+
+    if (!Array.isArray(range) || !Array.isArray(range[0])) {
+      // console.info("maybe 1d?")
+      return { type: ValueType.number, value: 1 };
+    }
+
+    // make sure that we only have one row or one column
+    // we can assume, atm, that range is square. not a super
+    // safe assumption though, it might change in the future...
+
+    if (range.length > 1) {
+      if (range[0].length > 1) {
+        return ArgumentError();
+      }
+    }
+
+    // OK we have a row or column, now we can apply. create a flat set
+    // (FIXME: does this need to change orientation depending on input?)
+
+    const flat: (number[]|Float64Array)[] = [];
+
+    for (const row of range) {
+      for (const entry of row) {
+        flat.push(entry);
+      }
+    }
+
+    const len = flat.length;
+    const result: UnionValue[][] = [];
+
+    // this needs to be square as well, or the spread routine 
+    // might short-cut when rendering it into the spreadsheet
+
+    let i = 0;
+    let j = 0;
+
+    for (i = 0; i < len; i++) {
+      const row: UnionValue[] = [];
+      for (j = 0; j <= i; j++) {
+        row.push({ 
+          type: ValueType.number, 
+          value: i === j ? 1 : Stats.Correlation(flat[i], flat[j]),
+        });
+      }
+      for (; j < len; j++) {
+        row.push({ type: ValueType.undefined });
+      }
+      result.push(row);
+    }
+
+    // console.info({result});
+
+    return { type: ValueType.array, value: Utils.TransposeArray(result) };
+    
+    /*
+    const result: UnionValue[][] = [];
+    let index = 0;
+    for (let c = 0; c < columns; c++) {
+      const column: UnionValue[] = [];
+      for (let r = 0; r < rows; r++) {
+        column.push({ type: ValueType.number, value: shuffled[index++] });
+      }
+      result.push(column);
+    }
+
+    return { type: ValueType.array, value: result };
+    */
+
+    return { type: ValueType.number, value: 143, };
   }
 
   public sortedsimulationindex(data?: number[], index = 1): UnionValue {

@@ -9,7 +9,7 @@ import { NameError, ReferenceError } from '../../treb-calculator/src/function-er
 import { SimulationModel, SimulationState } from './simulation-model';
 import { MCCompositeFunctionDescriptor } from './descriptors';
 
-import { Cell, ICellAddress, ValueType, UnionValue /*, UnionOrArray*/ } from 'treb-base-types';
+import { Cell, ICellAddress, ValueType, UnionValue, Area} from 'treb-base-types';
 import { Parser, UnitCall } from 'treb-parser';
 
 
@@ -66,6 +66,10 @@ export class MCExpressionCalculator extends ExpressionCalculator {
 
           if (arg.type === 'address') {
             this.simulation_model.StoreCellResults(arg);
+          }
+          else if (arg.type === 'range') {
+            const area = new Area(arg.start, arg.end);
+            area.Iterate(address => this.simulation_model.StoreCellResults(address));
           }
           else if (arg.type === 'identifier') {
             const named_range = this.named_range_map[arg.name.toUpperCase()];
@@ -214,7 +218,25 @@ export class MCExpressionCalculator extends ExpressionCalculator {
             return this.simulation_model.StoreCellResults(arg);
           }
           else if (arg.type === 'range') {
-            return this.simulation_model.StoreCellResults(arg.start);
+
+            // FIXME: we need to match the row/column structure of the input
+
+            // is this going to break stuff that relies on this working incorrectly? 
+            // (A: don't care)
+
+            const result: (number[]|Float64Array|undefined)[][] = [];
+            for (let r = arg.start.row; r <= arg.end.row; r++) {
+              const row: (number[]|Float64Array|undefined)[] = [];
+              for (let c = arg.start.column; c <= arg.end.column; c++) {
+                row.push(this.simulation_model.StoreCellResults({
+                  row: r, column: c, sheet_id: arg.start.sheet_id,
+                }));
+              }
+              result.push(row);
+            }
+
+            return result;
+
           }
           else if (arg.type === 'identifier') {
             const named_range = this.named_range_map[arg.name.toUpperCase()];
