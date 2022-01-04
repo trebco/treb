@@ -844,7 +844,7 @@ export class Chart {
     const min: number[] = [];
     const max: number[] = [];
 
-    const data: UnionValue[] = Array.isArray(args[0]) ? args[0] : [args[0]];
+    const data: UnionValue[] = Array.isArray(args[0].value) ? args[0].value : [args[0]];
 
     for (const union of data) {
       if (!union || union.type !== ValueType.object || !this.IsCellData(union.value)) {
@@ -861,7 +861,7 @@ export class Chart {
     }
 
     if (!min.length || !max.length) {
-      console.info('no data');
+      // console.info('no data');
       this.Clear();
       return;
     }
