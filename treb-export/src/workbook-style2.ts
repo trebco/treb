@@ -1019,8 +1019,8 @@ export class StyleCache {
           xf.border === border_index &&
           xf.number_format === number_format_index &&
           !!xf.wrap_text === !!options.wrap &&
-          (!options.horizontal_alignment || options.horizontal_alignment === xf.horizontal_alignment) &&
-          (!options.vertical_alignment || options.vertical_alignment === xf.vertical_alignment)) {
+          ((!options.horizontal_alignment && !xf.horizontal_alignment) || options.horizontal_alignment === xf.horizontal_alignment) &&
+          ((!options.vertical_alignment && !xf.vertical_alignment) || options.vertical_alignment === xf.vertical_alignment)) {
           
         return i;
       }
