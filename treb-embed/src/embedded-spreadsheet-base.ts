@@ -145,6 +145,9 @@ export interface SetRangeOptions {
   /** apply as an array (as if you pressed ctrl+shift+enter) */
   array?: boolean;
 
+  /** spill over */
+  spill?: boolean;
+
 }
 
 /**
@@ -353,13 +356,13 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   }
 
   /** current grid scale */
-  public set scale(value: number) {
-    this.grid.scale = value;
+  public get scale(): number {
+    return this.grid.scale;
   }
 
   /** current grid scale */
-  public get scale(): number {
-    return this.grid.scale;
+  public set scale(value: number) {
+    this.grid.scale = value;
   }
 
   /** headless state */
@@ -2843,9 +2846,20 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     }
 
     if (range) {
+      const area = this.calculator.ResolveArea(range);
+
+      if (options.spill && Array.isArray(data)) {
+        const rows = data.length;
+        const columns = Math.max(0, ...data.map(row => row.length));
+        const target = { 
+          row: area.start.row + rows + 1, 
+          column: area.start.column + columns + 1,
+        }
+        area.ConsumeAddress(target);
+      }
+
       return this.grid.SetRange(
-        this.calculator.ResolveArea(range),
-        data, options.recycle, options.transpose, options.array);
+        area, data, options.recycle, options.transpose, options.array);
     }
 
   }
