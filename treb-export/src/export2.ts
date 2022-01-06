@@ -510,10 +510,6 @@ export class Exporter {
 
     const options = style_cache.StyleOptionsFromProperties(Style.Composite(list));
 
-    if (row === 2 && column === 5)
-      console.info("calculated", JSON.stringify(options, undefined, 2));
-
-
     return style_cache.EnsureStyle(options);
 
   }
@@ -1225,10 +1221,6 @@ export class Exporter {
 
               // s is style, index into the style table 
               const s: number|undefined = this.StyleFromCell(sheet, style_cache, r, c, cell.style);
-
-              if (r === 2 && c === 5) {
-                console.info('s', s, cell, style_cache)
-              }
 
               // v (child element) is the value
               let v: CellValue = undefined;
