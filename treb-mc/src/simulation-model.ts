@@ -993,7 +993,6 @@ export class SimulationModel {
     for (const key of Object.keys(this.correlated_distributions)) {
 
       const desc = this.correlated_distributions[key];
-      console.info({key, desc});
 
       // addresses can get in here in an unsorted order. that was unexpected,
       // but we can resolve it by sorting before correlating. this matters

@@ -1,4 +1,4 @@
-/*! API v14.1. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+/*! API v14.2. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -82,6 +82,9 @@ export interface SetRangeOptions {
 
     /** apply as an array (as if you pressed ctrl+shift+enter) */
     array?: boolean;
+
+    /** spill over */
+    spill?: boolean;
 }
 
 /**
@@ -125,10 +128,10 @@ export declare class EmbeddedSpreadsheet {
     set user_data(data: unknown);
 
     /** current grid scale */
-    set scale(value: number);
+    get scale(): number;
 
     /** current grid scale */
-    get scale(): number;
+    set scale(value: number);
 
     /** headless state */
     get headless(): boolean;
