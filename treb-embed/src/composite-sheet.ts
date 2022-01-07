@@ -40,7 +40,7 @@ export class CompositeSheet {
   public static symbols_injected = false;
 
   /** the caller container */
-  public outer_container: HTMLElement;
+  // public outer_container: HTMLElement;
 
   /** the container for the actual grid (+ tab bar) */
   public inner_container: HTMLElement;
@@ -79,7 +79,7 @@ export class CompositeSheet {
       ...options
     };
 
-    this.outer_container = container;
+    // this.outer_container = container;
 
     // UPDATE: only force if it's position:static, which we don't support.
     // optimally we should not do this, just warn, but it's going to break
@@ -91,9 +91,9 @@ export class CompositeSheet {
     }
     
     // set a default size if there's no width or height (fixme: one or the other?)
-    const rect = this.outer_container.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
     if (!this.options.headless && (!rect.width || !rect.height)) {
-      this.outer_container.classList.add('default-spreadsheet-size');
+      container.classList.add('default-spreadsheet-size');
     }
 
     this.inner_container = document.createElement('div');
@@ -102,13 +102,13 @@ export class CompositeSheet {
     // initial styles so we don't get animation on load
 
     if (!this.options.collapsed) {
-      this.outer_container.classList.add('sidebar-open');
+      container.classList.add('sidebar-open');
     }
     if (this.options.toolbar === 'show' || this.options.toolbar === 'show-narrow') {
-      this.outer_container.classList.add('toolbar-open');
+      container.classList.add('toolbar-open');
     }
 
-    this.outer_container.appendChild(this.inner_container);
+    container.appendChild(this.inner_container);
 
     this.sheet = new EmbeddedSpreadsheet({
       ...this.options,
@@ -140,13 +140,13 @@ export class CompositeSheet {
       this.toolbar_container = document.createElement('div');
       this.toolbar_container.classList.add('toolbar-container');
 
-     this.toolbar_button = this.AddSidebarButton({
+      this.toolbar_button = this.AddSidebarButton({
         icon: 'treb-toolbar-icon',
         title: 'Show Toolbar',
         click: () => this.ToggleToolbar(),
       });
 
-      this.outer_container.appendChild(this.toolbar_container);
+      container.appendChild(this.toolbar_container);
 
       this.sheet.toolbar_ctl = { Show: (show: boolean) => this.ShowToolbar(show) };
 
@@ -200,7 +200,7 @@ export class CompositeSheet {
       click: () => this.HideSidebar(),
     });
 
-    this.outer_container.appendChild(this.sidebar);
+    container.appendChild(this.sidebar);
 
     const show_sidebar_button = this.AddSidebarButton({
       icon: 'treb-chevron-left-icon',
@@ -209,14 +209,14 @@ export class CompositeSheet {
       click: () => this.ShowSidebar(),
     }, undefined);
 
-    this.outer_container.appendChild(show_sidebar_button);
+    container.appendChild(show_sidebar_button);
 
     if (this.options.resizable) {
       const node = container.querySelector('.treb-grid');
       const master = container.querySelector('.treb-layout-master');
       if (node) {
         Resizable.Create({
-          container: this.outer_container, 
+          container, 
           node: node as HTMLElement, 
           resize_callback: () => this.sheet.Resize(), 
           layout_reference: master as HTMLElement || undefined, // this.inner_container,
@@ -546,17 +546,19 @@ export class CompositeSheet {
 
   /** toggle sidebar */
   public ToggleSidebar(): void {
-    this.outer_container.classList.toggle(sidebar_open_class);
+    const container = this.sidebar.parentElement as HTMLElement;
+    container.classList.toggle(sidebar_open_class);
   }
 
   /** show or hide sidebar */
   public ShowSidebar(show = true): void {
+    const container = this.sidebar.parentElement as HTMLElement;
     if (show) {
-      this.outer_container.classList.add(sidebar_open_class);
+      container.classList.add(sidebar_open_class);
 
     }
     else {
-      this.outer_container.classList.remove(sidebar_open_class);
+      container.classList.remove(sidebar_open_class);
     }
   }
 
@@ -565,63 +567,27 @@ export class CompositeSheet {
 
   /** toggle toolbar */
   public ToggleToolbar(): void {
+    const container = this.toolbar_container?.parentElement as HTMLElement;
 
     // we're doing this manually so we can control the actual toolbar
-    // const has_class = new RegExp('(?:^|\\s)' + toolbar_open_class + '(?:$|\\s)').test(this.outer_container.getAttribute('class') || '');
-    
-    this.ShowToolbar(!this.outer_container.classList.contains(toolbar_open_class));
+    this.ShowToolbar(!container.classList.contains(toolbar_open_class));
 
-    // this.outer_container.classList.toggle(toolbar_open_class);
   }
 
   /** show or hide toolbar */
   public ShowToolbar(show = true): void {
 
+    const container = this.toolbar_container?.parentElement as HTMLElement;
     let toolbar_button_title = 'Hide Toolbar';
 
     if (show) {
-
-      /*
-      // if (!this.toolbar && this.toolbar_container) {
-      if (!this.sheet.toolbar && this.toolbar_container) {
-
-        / *
-
-        const options: ToolbarOptions = {
-          add_delete_sheet: !!this.options.add_tab,
-          file_toolbar: !!this.options.file_menu,
-          chart_menu: !!this.options.chart_menu,
-          compressed_align_menus: (
-            this.options.toolbar === 'compressed' ||
-            this.options.toolbar === 'show-compressed'),
-          // file_menu: this.options.toolbar_file_menu,
-        };
-
-        this.toolbar = new FormattingToolbar(
-          this.sheet, 
-          this.toolbar_container, 
-          options);
-  
-          * /
-
-        this.sheet.CreateToolbar(this.toolbar_container);
-
-        // this is a patch for old behavior, which should be removed
-
-        const toolbar_node = this.toolbar_container.querySelector('.treb-formatting-toolbar');
-        if (toolbar_node) {
-          (toolbar_node as HTMLElement).style.marginBottom = '0';
-        }
-        */
-
-        if (this.toolbar_container && !this.toolbar) {
-          this.toolbar = this.sheet.CreateToolbar(this.toolbar_container);
-        }
-
-      this.outer_container.classList.add(toolbar_open_class);
+      if (this.toolbar_container && !this.toolbar) {
+        this.toolbar = this.sheet.CreateToolbar(this.toolbar_container);
+      }
+      container.classList.add(toolbar_open_class);
     }
     else {
-      this.outer_container.classList.remove(toolbar_open_class);
+      container.classList.remove(toolbar_open_class);
       toolbar_button_title = 'Show Toolbar';
     }
 
