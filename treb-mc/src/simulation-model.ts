@@ -1874,10 +1874,19 @@ export class SimulationModel {
 
     const flat: (number[]|Float64Array)[] = [];
 
+    let missing = false;
+
     for (const row of range) {
       for (const entry of row) {
         flat.push(entry);
+        if (!entry.length) {
+          missing = true;
+        }
       }
+    }
+
+    if (missing) {
+      return DataError();
     }
 
     const len = flat.length;
