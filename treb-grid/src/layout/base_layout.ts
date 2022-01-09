@@ -1291,6 +1291,13 @@ export abstract class BaseLayout {
     }
   }
 
+  /**
+   * this method returns the scroll offset adjusted for headers.
+   * if you just want the raw scroll offset, use the accessor.
+   * 
+   * @param offset_headers 
+   * @returns 
+   */
   public GetScrollOffset(): Point {
     return {
       x: this.scroll_reference_node.scrollLeft + this.header_offset.x,

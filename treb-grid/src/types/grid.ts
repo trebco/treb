@@ -2533,8 +2533,17 @@ export class Grid {
     return this.layout.GetScrollOffset();
   }
 
-  public SetScrollOffset(offset: {x: number, y: number}) {
-    this.layout.scroll_offset = offset;
+  /**
+   * get/set the raw scroll offset (ignoring headers). support for API method.
+   * @param offset 
+   */
+  public ScrollOffset(offset?: {x: number, y: number}): {x: number, y: number}|undefined {
+    if (offset) {
+      this.layout.scroll_offset = offset;
+    }
+    else {
+      return this.layout.scroll_offset;
+    }
   }
 
   // --- private methods -------------------------------------------------------

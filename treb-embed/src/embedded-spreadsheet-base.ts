@@ -2142,12 +2142,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * restoring scroll if you cache the containing element.
    */
   public ScrollOffset(offset?: {x: number, y: number}): {x: number, y:number} | undefined {
-    if (typeof offset !== 'undefined') {
-      this.grid.SetScrollOffset(offset);
-    }
-    else {
-      return this.grid.GetScrollOffset();
-    }
+    return this.grid.ScrollOffset(offset);
   }
 
   /**
