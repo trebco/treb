@@ -122,7 +122,8 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           <div class='drop-menu' tabindex='-1'>
             <ul>
               <li>${this.IconButton('fa/light/arrow-up-to-line', 'align-top-drop', 'align-top', 'Align top', 'vertical-align')}</li>
-              <li>${this.IconButton('bootstrap/arrows-collapse', 'align-middle-drop', 'align-middle', 'Align middle', 'vertical-align')}</li>
+              <!-- <li>${this.IconButton('bootstrap/arrows-collapse', 'align-middle-drop', 'align-middle', 'Align middle', 'vertical-align')}</li> -->
+              <li>${this.IconButton('fa/light/arrows-to-line', 'align-middle-drop', 'align-middle', 'Align middle', 'vertical-align')}</li>
               <li>${this.IconButton('fa/light/arrow-down-to-line', 'align-bottom-drop', 'align-bottom', 'Align bottom', 'vertical-align')}</li>
             </ul>
           </div>
@@ -152,7 +153,8 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         <div class='group wide'>
           ${this.IconButton('fa/light/arrow-up-to-line', 'align-top', true, 'Align top')}
-          ${this.IconButton('bootstrap/arrows-collapse', 'align-middle', true, 'Align middle')}
+          <!-- ${this.IconButton('bootstrap/arrows-collapse', 'align-middle', true, 'Align middle')} -->
+          ${this.IconButton('fa/light/arrows-to-line', 'align-middle', true, 'Align middle')}
           ${this.IconButton('fa/light/arrow-down-to-line', 'align-bottom', true, 'Align bottom')}
         </div>
 
@@ -265,7 +267,8 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         
         <div class='group'>
           <button id='layout' class='drop-button' title='Rows/columns'>
-            ${this.Icon('fa/light/table-columns')}
+            <!-- ${this.Icon('fa/light/table-columns')} -->
+            ${this.Icon('fa/light/ruler-combined')}
           </button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
@@ -1121,7 +1124,6 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     if (!model) {
       model = symbol_defs[icon];
-      // base = 'symbol';
       base = `symbol`;
     }
 
