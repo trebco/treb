@@ -2136,6 +2136,20 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
   }
 
+  /** 
+   * get or set the current scroll offset. scroll offset is automatically 
+   * saved if you save the document or switch tabs; this is for saving/
+   * restoring scroll if you cache the containing element.
+   */
+  public ScrollOffset(offset?: {x: number, y: number}): {x: number, y:number} | undefined {
+    if (typeof offset !== 'undefined') {
+      this.grid.SetScrollOffset(offset);
+    }
+    else {
+      return this.grid.GetScrollOffset();
+    }
+  }
+
   /**
    * unserialize document from data.
    *

@@ -1,4 +1,4 @@
-/*! API v14.3. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+/*! API v14.4. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -416,6 +416,19 @@ export declare class EmbeddedSpreadsheet {
      * @public
      */
     LoadCSV(csv: string, source?: LoadSource): void;
+
+    /**
+     * get or set the current scroll offset. scroll offset is automatically
+     * saved if you save the document or switch tabs; this is for saving/
+     * restoring scroll if you cache the containing element.
+     */
+    ScrollOffset(offset?: {
+        x: number;
+        y: number;
+    }): {
+        x: number;
+        y: number;
+    } | undefined;
 
     /**
      * unserialize document from data.

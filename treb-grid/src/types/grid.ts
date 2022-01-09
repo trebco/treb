@@ -2533,6 +2533,10 @@ export class Grid {
     return this.layout.GetScrollOffset();
   }
 
+  public SetScrollOffset(offset: {x: number, y: number}) {
+    this.layout.scroll_offset = offset;
+  }
+
   // --- private methods -------------------------------------------------------
 
   private DeleteSheetInternal(command: DeleteSheetCommand) {
