@@ -10,7 +10,9 @@ const ParseIcon = (text) => {
 
   // console.info('source\n', text, '\n');
 
-  text = text.replace(/<!--[\s\S]*-->/g, '');
+  text = text.replace(/<!--[\s\S]*-->/g, ''); // comment
+  text = text.replace(/<\?[\s\S]*?\?>/g, ''); // <?xml declaration
+  text = text.replace(/<!DOCTYPE[\s\S]*?>/g, ''); // doctype declaration
 
   let viewbox = '';
   
