@@ -302,10 +302,18 @@ const CreateConfig = (config, entry, options, target) => {
               // this is our template compressor plugin. see the source file
               // (in this directory).
 
-              loader: path.resolve('./template-compressor.js'),
+              loader: path.resolve('./template-compressor-2.js'),
               options: {
+                // dev: true,
                 tags: [
-                  { tag: 'tmpl', trim_lines: true, },
+                  { tag: 'tmpl', 
+                    trim_lines: true, 
+                    remove_html_comments: true,
+                    icons: {
+                      tag: 'icon',
+                      dir: path.resolve(__dirname, 'treb-embed', 'icons', '4'),
+                    },
+                  },
                   { tag: 'composite', trim_lines: true, remove_tag: true, },
                   { tag: 'css', remove_whitespace: true, remove_tag: true, },
                 ],

@@ -1,7 +1,7 @@
 
 import { tmpl, composite, NodeModel } from 'treb-utils';
-import { icons } from './generated/toolbar42';
-import { symbol_defs } from './generated/symbol-defs';
+// import { icons } from './generated/toolbar42';
+// import { symbol_defs } from './generated/symbol-defs';
 import { Style, Localization, Area, Theme, Color } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
 import { NumberFormatCache } from 'treb-format';
@@ -105,33 +105,34 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       <div id='root' class='treb-toolbar'>
 
         <div class='group narrow'>
-          ${this.IconButton('bootstrap/text-left', 'text-align', 'align-left', 'Align left')}
+          <button id='text-align' data-command='align-left' title='Align left'><icon>bootstrap/text-left</icon></button>
+
           <button class='drop'></button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
-              <li>${this.IconButton('bootstrap/text-left', 'align-left-drop', 'align-left', 'Align left', 'text-align')}</li>
-              <li>${this.IconButton('bootstrap/text-center', 'align-center-drop', 'align-center', 'Align center', 'text-align')}</li>
-              <li>${this.IconButton('bootstrap/text-right', 'align-right-drop', 'align-right', 'Align right', 'text-align')}</li>
+              <li><button id='align-left-drop' data-command='align-left' title='Align left', data-replace='text-align'><icon>bootstrap/text-left</icon></button></li>
+              <li><button id='align-center-drop' data-command='align-center' title='Align center', data-replace='text-align'><icon>bootstrap/text-center</icon></button></li>
+              <li><button id='align-right-drop' data-command='align-right' title='Align right', data-replace='text-align'><icon>bootstrap/text-right</icon></button></li>
             </ul>
           </div>
         </div>
 
         <div class='group narrow'>
-          ${this.IconButton('fa/light/arrow-up-to-line', 'vertical-align', 'align-top', 'Align top')}
+          <button id='vertical-align' data-command='align-top' title='Align top'><icon>FA/light/arrow-up-to-line</icon></button>
+
           <button class='drop'></button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
-              <li>${this.IconButton('fa/light/arrow-up-to-line', 'align-top-drop', 'align-top', 'Align top', 'vertical-align')}</li>
-              <!-- <li>${this.IconButton('bootstrap/arrows-collapse', 'align-middle-drop', 'align-middle', 'Align middle', 'vertical-align')}</li> -->
-              <li>${this.IconButton('fa/light/arrows-to-line', 'align-middle-drop', 'align-middle', 'Align middle', 'vertical-align')}</li>
-              <li>${this.IconButton('fa/light/arrow-down-to-line', 'align-bottom-drop', 'align-bottom', 'Align bottom', 'vertical-align')}</li>
+              <li><button id='align-top-drop' data-command='align-top' title='Align top', data-replace='vertical-align'><icon>FA/light/arrow-up-to-line</icon></button></li>
+              <li><button id='align-middle-drop' data-command='align-middle' title='Align middle', data-replace='vertical-align'><icon>FA/light/arrows-to-line</icon></button></li>
+              <li><button id='align-bottom-drop' data-command='align-bottom' title='Align bottom', data-replace='vertical-align'><icon>FA/light/arrow-down-to-line</icon></button></li>
             </ul>
           </div>
         </div>
 
         ${options.file_menu ? `
         <div class='group wide'>
-          <button title='File options' class='drop-button'>${this.Icon('fa/light/save')}</button>
+          <button title='File options' class='drop-button'><icon>FA/light/save</icon></button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
               <li><button class='text' data-command='reset'>New Document</button></li>
@@ -146,34 +147,34 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         ` : ''}
 
         <div class='group wide'>
-          ${this.IconButton('bootstrap/text-left', 'align-left', true, 'Align left')}
-          ${this.IconButton('bootstrap/text-center', 'align-center', true, 'Align center')}
-          ${this.IconButton('bootstrap/text-right', 'align-right', true, 'Align right')}
+          <button id='align-left' title='Align left' data-command='align-left'><icon>bootstrap/text-left</icon></button>
+          <button id='align-center' title='Align center' data-command='align-center'><icon>bootstrap/text-center</icon></button>
+          <button id='align-right' title='Align right' data-command='align-right'><icon>bootstrap/text-right</icon></button>
         </div>
 
         <div class='group wide'>
-          ${this.IconButton('fa/light/arrow-up-to-line', 'align-top', true, 'Align top')}
-          <!-- ${this.IconButton('bootstrap/arrows-collapse', 'align-middle', true, 'Align middle')} -->
-          ${this.IconButton('fa/light/arrows-to-line', 'align-middle', true, 'Align middle')}
-          ${this.IconButton('fa/light/arrow-down-to-line', 'align-bottom', true, 'Align bottom')}
+          <button id='align-top' data-command='align-top' title='Align top'><icon>FA/light/arrow-up-to-line</icon></button>
+          <button id='align-middle' data-command='align-middle' title='Align middle'><icon>FA/light/arrows-to-line</icon></button>
+          <button id='align-bottom' data-command='align-bottom' title='Align bottom'><icon>FA/light/arrow-down-to-line</icon></button>
         </div>
 
         <div class='group'>
 
           <button id='wrap' data-command='wrap' title='Wrap text'>
-            ${this.Icon('extra/wrap')}
+            <icon>extra/wrap</icon>
           </button>
 
           <button id='merge' data-command='merge' title='Merge cells'>
-            ${this.Icon('fa/light/expand', 'active-icon')}
-            ${this.Icon('fa/light/compress', 'inactive-icon')}
+            <icon class='zam active-icon'>FA/light/expand</icon>
+            <icon class='zam inactive-icon'>FA/light/compress</icon>
           </button>
           
-          ${this.IconButton('fa/light/lock-keyhole', 'lock')}
+          <button id='lock' data-command='lock'><icon>FA/light/lock-keyhole</icon></button>
 
           <button id='comment' class='drop-button' title='Comment'>
-            ${this.Icon('fa/light/message')}
+            <icon>FA/light/message</icon>
           </button>
+
           <div class='drop-menu' tabindex='-1'>
             <div class='comment-editor'>
               <div class='label' id='comment-label'></div>
@@ -188,7 +189,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         <div class='group'>
           <button class='color-button' data-command='background-color' title='Background color'>
-            ${this.Icon('fa/light/fill-drip')}
+            <icon>FA/light/fill-drip</icon>
             <div id='background-color-bar' class='color-bar' ></div>
           </button>
           <button class='drop'></button>
@@ -197,7 +198,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         <div class='group'>
           <button class='color-button' data-command='foreground-color' title='Text color'>
-            ${this.Icon('fa/light/font')}
+            <icon>FA/light/font</icon>
             <div id='foreground-color-bar' class='color-bar' ></div>
           </button>
           <button class='drop'></button>
@@ -225,35 +226,61 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         </div>
         ` : ''}
 
-        ${ /* 
-        <div class='split-button'>
-          <button data-command='increase-font-size' title='Larger font'>
-            <div>T + </div>
-          </button>
-          <button data-command='decrease-font-size' title='Smaller font'>
-            <div>T - </div>
-          </button>
-        </div>
-        */ '' }
-
         <div class='group'>
-          ${this.IconButton('fa/light/border-bottom', 'update-border', 'border-bottom', 'Bottom border')}
+          <button id='update-border' data-command='border-bottom' title='Bottom border'><icon>FA/light/border-bottom</icon></button>
+
           <button class='drop'>
           </button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
-              <li>${this.IconButton('fa/light/border-top', 'border-top', true, 'Top border', 'update-border')}</li>
-              <li>${this.IconButton('fa/light/border-left', 'border-left', true, 'Left border', 'update-border')}</li>
-              <li>${this.IconButton('fa/light/border-right', 'border-right', true, 'Right border', 'update-border')}</li>
-              <li>${this.IconButton('fa/light/border-bottom', 'border-bottom', true, 'Bottom border', 'update-border')}</li>
-              <li>${this.IconButton('extra/border-double-bottom2', 'border-double-bottom', true, 'Double bottom border', 'update-border')}</li>
-              <li>${this.IconButton('fa/light/border-all', 'border-all', true, 'All borders', 'update-border')}</li>
-              <li>${this.IconButton('fa/light/border-outer', 'border-outside', true, 'Outside borders', 'update-border')}</li>
-              <li>${this.IconButton('fa/light/border-none', 'border-none', true, 'Clear borders', 'update-border')}</li>
+              <li>
+                <button id='border-top' data-command='border-top' title='Top border' data-replace='update-border'>
+                  <icon>FA/light/border-top</icon>
+                </button>
+              </li>        
+              <li>
+                <button id='border-left' data-command='border-left' title='Left border' data-replace='update-border'>
+                  <icon>FA/light/border-left</icon>
+                </button>
+              </li>        
+              <li>
+                <button id='border-right' data-command='border-right' title='Right border' data-replace='update-border'>
+                  <icon>FA/light/border-right</icon>
+                </button>
+              </li>        
+              <li>
+                <button id='border-bottom' data-command='border-bottom' title='Bottom border' data-replace='update-border'>
+                  <icon>FA/light/border-bottom</icon>
+                </button>
+              </li>        
+
+              <li>
+                <button id='border-double-bottom' data-command='border-double-bottom' title='Double bottom border' data-replace='update-border'>
+                  <icon>extra/border-double-bottom2</icon>
+                </button>
+              </li>        
+
+              <li>
+                <button id='border-all' data-command='border-all' title='All borders' data-replace='update-border'>
+                  <icon>FA/light/border-all</icon>
+                </button>
+              </li>        
+              <li>
+                <button id='border-outside' data-command='border-outside' title='Outside borders' data-replace='update-border'>
+                  <icon>FA/light/border-outer</icon>
+                </button>
+              </li>        
+              <li>
+                <button id='border-none' data-command='border-none' title='Remove borders' data-replace='update-border'>
+                  <icon>FA/light/border-none</icon>
+                </button>
+              </li>        
+
               <hr/>
+
               <li>
                 <button id='border-color' class='color-button drop-button' data-position='horizontal' title='Border color'>
-                  ${this.Icon('fa/light/palette')}
+                  <icon>FA/light/palette</icon>
                   <div id='border-color-bar' class='color-bar'></div>
                 </button>
 
@@ -267,8 +294,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         
         <div class='group'>
           <button id='layout' class='drop-button' title='Rows/columns'>
-            <!-- ${this.Icon('fa/light/table-columns')} -->
-            ${this.Icon('fa/light/ruler-combined')}
+            <icon>FA/light/ruler-combined</icon>
           </button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
@@ -288,8 +314,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         </div>
 
         <div class='group'>
-        ${this.IconButton('fa/light/snowflake', 'freeze')}
-        <!-- lock was here -->
+          <button id='freeze' data-command='freeze'><icon>FA/light/snowflake</icon></button>
         </div>
 
         <div class='group'>
@@ -310,16 +335,24 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         </div>
 
         <div class='group'>
-          ${this.IconButton('column-chart', 'insert-annotation', 'column-chart', 'Insert column chart')}
+
+          <button id='insert-annotation' data-command='column-chart' title='Insert column chart'>
+            <icon class='symbol'>extra/column-chart</icon>
+          </button>
+
           <button class='drop'></button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
-              <li>${this.IconButton('column-chart', 'column-chart', true, 'Insert column chart', 'insert-annotation')}</li>
-              <li>${this.IconButton('donut-chart', 'donut-chart', true, 'Insert donut chart', 'insert-annotation')}</li>
-              <li>${this.IconButton('bar-chart', 'bar-chart', true, 'Insert bar chart', 'insert-annotation')}</li>
-              <li>${this.IconButton('line-chart', 'line-chart', true, 'Insert line chart', 'insert-annotation')}</li>
+              <li><button title='Insert column chart' id='column-chart' data-command='column-chart' data-replace='insert-annotation'><icon class='symbol'>extra/column-chart</icon></button></li>
+              <li><button title='Insert donut chart' id='donut-chart' data-command='donut-chart' data-replace='insert-annotation'><icon class='symbol'>extra/donut-chart</icon></button></li>
+              <li><button title='Insert bar chart' id='bar-chart' data-command='bar-chart' data-replace='insert-annotation'><icon class='symbol'>extra/bar-chart</icon></button></li>
+              <li><button title='Insert line chart' id='line-chart' data-command='line-chart' data-replace='insert-annotation'><icon class='symbol'>extra/line-chart</icon></button></li>
               <hr/>
-              <li>${this.IconButton('fa/light/image', 'insert-image', true, 'Insert image', 'insert-annotation')}</li>
+              <li>
+                <button id='insert-image' data-command='insert-image' title='Insert image' data-replace='insert-annotation'>
+                  <icon>FA/light/image</icon>
+                </button>
+              </li>
             </ul>
           </div>
         </div>
@@ -327,7 +360,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         ${ options.toolbar_recalculate_button ? `
             <div class='group end-group'>
               <button data-command='recalculate' title='Recalculate'>
-                ${this.Icon('fa/light/arrows-rotate')}
+                <icon>FA/light/arrows-rotate</icon>
               </button>
             </div>
         ` : ``
@@ -344,7 +377,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
             <div class='new-color'>
               <input id='color-input' placeholder='New Color'>
               <button id='color-button'>
-                ${this.Icon('fa/light/check')}
+                <icon>FA/light/check</icon>
               </button>
             </div>
           </div>
@@ -1108,6 +1141,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
   }
   */
 
+  /*
   public IconButton(icon: string, id?: string, command: string|boolean = true, title?: string, replace?: string): string {
     if (id && command === true) { 
       command = id;
@@ -1148,6 +1182,6 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     }).join('')}</svg>`;
 
   }
-
+  */
   
 }
