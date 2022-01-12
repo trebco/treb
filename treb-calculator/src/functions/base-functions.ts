@@ -2,7 +2,8 @@
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
-import { Box, UnionValue, ValueType, GetValueType, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex } from 'treb-base-types';
+import { Box, UnionValue, ValueType, GetValueType, 
+         CellValue, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex } from 'treb-base-types';
 import { Sparkline } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -546,6 +547,50 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    /**
+     * 
+     * match type: 
+     * 
+     *  1: largest value <= target value; assumes table is in ascending order.
+     *  0: exact match only.
+     * -1: smallest value >= target value; assumes table is in descending order.
+     * 
+     * NOTE that string matches can accept wildcards in Excel, not sure if we 
+     * necessarily want to support that... how does string matching deal with
+     * inequalities?
+     * /
+    Match: {
+      fn: (value: CellValue, table: CellValue[][], match_type: 1|0|-1 = 1) => {
+
+        const flat = table.reduce((a, row) => ([...a, ...row]), []);
+        for (let i = 0; i < flat.length; i++) {
+
+          const compare = flat[i];
+
+          console.info("CV", compare, value);
+
+          // this is true regardless of match type... right?
+          if (compare === value) {
+            return { type: ValueType.number, value: i + 1 };
+          }
+ 
+          if ((typeof compare !== 'undefined' && typeof value !== 'undefined') && (
+              (match_type === 1 && compare > value) || 
+              (match_type === -1 && compare < value))) {
+
+            if (i === 0 || i === flat.length - 1) {
+              return NAError();
+            }
+
+            return { type: ValueType.number, value: i }; // implicit -1
+          }
+
+        }
+        return NAError();
+      },
+    },
+    */
+   
     /**
      * FIXME: does not implement inexact matching (what's the algo for
      * that, anyway? nearest? price is right style? what about ties?)
