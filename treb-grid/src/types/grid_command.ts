@@ -149,6 +149,7 @@ export interface DataValidationCommand {
   target: ICellAddress;
   range?: IArea;
   list?: CellValue[];
+  error?: boolean;
 }
 
 /**

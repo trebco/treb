@@ -133,25 +133,29 @@ export enum ValidationType {
   Boolean,
 }
 
-export interface DataValidationRange {
+export interface DataValidationBase {
+  error?: boolean;
+}
+
+export interface DataValidationRange extends DataValidationBase {
   type: ValidationType.Range;
   area: IArea;
 }
 
-export interface DataValidationList {
+export interface DataValidationList extends DataValidationBase {
   type: ValidationType.List;
   list: CellValue[];
 }
 
-export interface DataValidationDate {
+export interface DataValidationDate extends DataValidationBase {
   type: ValidationType.Date;
 }
 
-export interface DataValidationNumber {
+export interface DataValidationNumber extends DataValidationBase {
   type: ValidationType.Number;
 }
 
-export interface DataValidationBoolean {
+export interface DataValidationBoolean extends DataValidationBase {
   type: ValidationType.Boolean;
 }
 

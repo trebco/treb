@@ -2278,6 +2278,66 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
   }
 
+  /**
+   * set or clear cell valiation.
+   * 
+   * @param address - target cell
+   * @param validation - a spreadsheet range, list of data, or undefined. pass
+   * undefined to remove existing cell validation. 
+   */
+  public SetValidation(address: AddressReference, validation?: RangeReference|CellValue[], error?: boolean) {
+
+    if (typeof address === 'string') {
+      const reference = this.calculator.ResolveAddress(address);
+      address = IsCellAddress(reference) ? reference : reference.start;
+    }
+
+    if (typeof validation === 'undefined' || Array.isArray(validation)) {
+      this.grid.SetValidation(address, validation, error);
+    }
+    else {
+      const range = this.calculator.ResolveArea(validation);
+      this.grid.SetValidation(address, range, error);
+    }
+
+  }
+
+  /*
+  public RemoveValidation(address: AddressReference) {
+
+    if (typeof address === 'string') {
+      const reference = this.calculator.ResolveAddress(address);
+      address = IsCellAddress(reference) ? reference : reference.start;
+    }
+
+    this.grid.SetValidation(address, undefined);
+
+  }
+
+  public SetValidationList(address: AddressReference, list: CellValue[]) {
+
+    if (typeof address === 'string') {
+      const reference = this.calculator.ResolveAddress(address);
+      address = IsCellAddress(reference) ? reference : reference.start;
+    }
+
+    this.grid.SetValidation(address, list);
+
+  }
+
+  public SetValidationRange(address: AddressReference, range: RangeReference) {
+
+    if (typeof address === 'string') {
+      const reference = this.calculator.ResolveAddress(address);
+      address = IsCellAddress(reference) ? reference : reference.start;
+    }
+
+    range = this.calculator.ResolveArea(range);
+    this.grid.SetValidation(address, range);
+
+  }
+  */
+
   /** 
    * Delete a macro function.
    * 

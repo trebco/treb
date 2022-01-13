@@ -1,4 +1,4 @@
-/*! API v14.6. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+/*! API v14.7. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -443,6 +443,15 @@ export declare class EmbeddedSpreadsheet {
      * @param note note text, or leave undefined to clear existing note.
      */
     SetNote(address: AddressReference | undefined, note?: string): void;
+
+    /**
+     * set or clear cell valiation.
+     *
+     * @param address - target cell
+     * @param validation - a spreadsheet range, list of data, or undefined. pass
+     * undefined to remove existing cell validation.
+     */
+    SetValidation(address: AddressReference, validation?: RangeReference | CellValue[], error?: boolean): void;
 
     /**
      * Delete a macro function.

@@ -2019,7 +2019,7 @@ export class Grid {
    * and will render as a dropdown; the list can be a list of values or
    * a range reference.
    */
-  public SetValidation(target?: ICellAddress, data?: CellValue[]|IArea): void {
+  public SetValidation(target?: ICellAddress, data?: CellValue[]|IArea, error?: boolean): void {
 
     if (!target) {
       if (this.primary_selection.empty) {
@@ -2028,11 +2028,12 @@ export class Grid {
       target = this.primary_selection.target;
     }
 
-    console.info('target', target);
+    // console.info({target, data});
 
     const command: DataValidationCommand = {
       key: CommandKey.DataValidation,
       target,
+      error,
     };
     
     if (data) {
@@ -2048,6 +2049,25 @@ export class Grid {
 
     this.ExecCommand(command);
 
+    //
+    // we should repaint or reselect the currect active cell if that cell
+    // is the target; otherwise the dropdown caret does not appear/ stays
+    // around.
+    //
+
+    if (!this.primary_selection.empty &&
+        (!target.sheet_id || target.sheet_id === this.model.active_sheet.id) && 
+        (this.primary_selection.target.row === target.row) && 
+        (this.primary_selection.target.column === target.column)) {
+
+      // console.info('repaint selection');
+
+      requestAnimationFrame(() => this.Select(
+        this.primary_selection, 
+        this.primary_selection.area,
+        this.primary_selection.target));
+    }
+    
   }
 
   /**
@@ -5394,7 +5414,7 @@ export class Grid {
       }
     }
 
-    if (cell.validation) {
+    if (cell.validation && cell.validation.error) {
       
       let list: CellValue[]|undefined;
       
@@ -5419,7 +5439,7 @@ export class Grid {
         }
         if (!match) {
           // removed in favor of error //this.layout.HighlightError(selection.target);
-          this.Error(`Invalid value (data validation).`);
+          this.Error(`Invalid value (data validation)`);
           return; 
         }
       }
@@ -6615,12 +6635,14 @@ export class Grid {
       cell.validation = {
         type: ValidationType.Range,
         area: command.range,
+        error: !!command.error,
       };
     }
     else if (command.list) {
       cell.validation = {
         type: ValidationType.List,
         list: JSON.parse(JSON.stringify(command.list)),
+        error: !!command.error,
       }
     }
     else {
