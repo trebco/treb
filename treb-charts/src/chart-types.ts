@@ -214,6 +214,6 @@ export interface SeriesType {
   label?: string;
   x: SubSeries;
   y: SubSeries;
-
+  index?: number;
 }
 

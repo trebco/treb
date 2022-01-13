@@ -60,6 +60,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'Label' }, // , metadata: true, },
       { name: 'X', metadata: true, },
       { name: 'Y', metadata: true, },
+      { name: 'index', },
     ],
     fn: (...args: any) => {
       // (args as DecoratedArray<unknown>)._type = 'series';

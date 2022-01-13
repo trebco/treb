@@ -178,6 +178,10 @@ export class Chart {
       y: { data: [] },
     };
 
+    if (data[3] && typeof data[3] === 'number') {
+      series.index = data[3];
+    }
+
     if (data[0]) {
       
       const flat = Util.Flatten(data[0]);
@@ -551,6 +555,8 @@ export class Chart {
 
     // const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
     const series: SeriesType[] = this.TransformSeriesData(args[0]);
+
+    // console.info('transformed', {series});
 
     const common = this.CommonData(series);
 
@@ -1262,6 +1268,7 @@ export class Chart {
       if (this.chart_data.series) {
         for (let i = 0; i < this.chart_data.series.length; i++) {
           const series = this.chart_data.series[i];
+          const index = typeof series.index === 'number' ? series.index : i + 1;
           this.renderer.RenderScatterSeries(area, 
             series.x.data, 
             series.y.data, 
@@ -1272,7 +1279,7 @@ export class Chart {
               !!this.chart_data.filled,
               !!this.chart_data.markers,
               !!this.chart_data.smooth,
-              `scatter-plot series-${i + 1}`);
+              `scatter-plot series-${index}`);
         }
         if (this.chart_data.data_labels) {
           for (let i = 0; i < this.chart_data.series.length; i++) {
@@ -1324,6 +1331,9 @@ export class Chart {
           // series
           let series_index = 0;
           for (const series of this.chart_data.series) {
+
+            
+
             const y = series.map((point) => {
               if (typeof point === 'undefined') { return undefined; }
               return Util.ApplyScale(point, area.height, scale);
@@ -1385,6 +1395,7 @@ export class Chart {
 
           for (let s = 0; s < series_count; s++) {
             const series = this.chart_data.series2[s];
+            const color_index = typeof series.index === 'number' ? series.index : s + 1;
 
             for (let i = 0; i < series.y.data.length; i++ ){
               const value = series.y.data[i];
@@ -1415,19 +1426,10 @@ export class Chart {
                 // const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
                 const bar_title = undefined;
 
-                /*
-                this.renderer.RenderRectangle(new Area(
-                  negative ? x - 1 : x, 
-                  y - 1, 
-                  negative ? x + width : x + width + 1, 
-                  y + height + 1,
-                ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
-                  */
-
                 if (width) {
                   this.renderer.RenderRectangle(new Area(
                     x, y, x + width, y + height,
-                  ), corners, ['chart-column', `series-${s + 1}`], bar_title || undefined);
+                  ), corners, ['chart-column', `series-${color_index}`], bar_title || undefined);
                 }
               }
             }
@@ -1490,6 +1492,7 @@ export class Chart {
 
           for (let s = 0; s < series_count; s++) {
             const series = this.chart_data.series2[s];
+            const color_index = typeof series.index === 'number' ? series.index : s + 1;
 
             for (let i = 0; i < series.y.data.length; i++ ){
               const value = series.y.data[i];
@@ -1523,15 +1526,6 @@ export class Chart {
                 // const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
                 const bar_title = undefined;
 
-                /*
-                this.renderer.RenderRectangle(new Area(
-                  x - 1, 
-                  negative ? y : y - 1, 
-                  x + width + 1, 
-                  negative ? y + height + 1 : y + height,
-                ), ['chart-column-shadow', `series-${s + 1}`], bar_title || undefined);
-                  */
-
                 if (height) {
 
                   const label = (this.chart_data.data_labels && !!series.y.labels) ? series.y.labels[i] : '';
@@ -1542,7 +1536,7 @@ export class Chart {
 
                   this.renderer.RenderRectangle(new Area(
                     x, y, x + width, y + height,
-                  ), corners, ['chart-column', `series-${s + 1}`], bar_title || undefined, label, label_point);
+                  ), corners, ['chart-column', `series-${color_index}`], bar_title || undefined, label, label_point);
                 }
               }
             }
