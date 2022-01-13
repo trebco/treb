@@ -2284,6 +2284,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * @param address - target cell
    * @param validation - a spreadsheet range, list of data, or undefined. pass
    * undefined to remove existing cell validation. 
+   * @param error - setting an invalid value in the target cell is an error (and
+   * is blocked). defaults to false.
    */
   public SetValidation(address: AddressReference, validation?: RangeReference|CellValue[], error?: boolean) {
 
