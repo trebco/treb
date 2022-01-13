@@ -123,7 +123,7 @@ export class ChartRenderer {
     const marker_width = (options.style === LegendStyle.marker) ? 14 : 26;
 
     const metrics = options.labels.map((label, index) => {
-      measure.textContent = label;
+      measure.textContent = label.label;
 
       const text_rect = measure.getBoundingClientRect();
       const text_metrics = { width: text_rect.width, height: text_rect.height };
@@ -197,16 +197,18 @@ export class ChartRenderer {
           trident = /trident/i.test(navigator?.userAgent || '');
         }
 
+        const color = typeof label.index === 'number' ? label.index : index + 1;
+
         group.appendChild(SVGNode('text', {
-          'dominant-baseline': 'middle', x: x + marker_width, y, dy: (trident ? '.3em' : undefined) }, label));
+          'dominant-baseline': 'middle', x: x + marker_width, y, dy: (trident ? '.3em' : undefined) }, label.label));
 
         if (options.style === LegendStyle.marker) {
           group.appendChild(SVGNode('rect', { 
-            class: `series-${index + 1}`, x, y: marker_y - 4, width: 8, height: 8 }));
+            class: `series-${color}`, x, y: marker_y - 4, width: 8, height: 8 }));
         }
         else {
           group.appendChild(SVGNode('rect', { 
-            class: `series-${index + 1}`, x, y: marker_y - 1, width: marker_width - 3, height: 2}));
+            class: `series-${color}`, x, y: marker_y - 1, width: marker_width - 3, height: 2}));
         }
 
         h = Math.max(h, text_metrrics.height);

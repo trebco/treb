@@ -1,12 +1,11 @@
 
-import { NumberFormat, NumberFormatCache } from 'treb-format';
+import { NumberFormatCache } from 'treb-format';
 import { ChartRenderer, Metrics } from './renderer';
 import { Area } from './rectangle';
 import { Util } from './util';
-import { BarData, CellData, ChartData, DonutSlice, LegendLayout, LegendPosition, LegendStyle, NumberOrUndefinedArray, SeriesType, SubSeries } from './chart-types';
+import { BarData, CellData, ChartData, DonutSlice, LegendLayout, LegendPosition, LegendStyle, SeriesType, SubSeries } from './chart-types';
 // import { DecoratedArray } from './chart-functions';
-
-import { RangeScale } from 'treb-utils';
+// import { RangeScale } from 'treb-utils';
 import { ArrayUnion, ExtendedUnion, UnionValue, ValueType } from 'treb-base-types';
 
 // require('../style/charts.scss');
@@ -475,9 +474,13 @@ export class Chart {
       if (entry.x.format && !x_format) { x_format = entry.x.format; }
     }
 
-    let legend: string[]|undefined;
+    let legend: Array<{label: string, index?: number}>|undefined; // string[]|undefined;
     if (series.some(test => test.label && (test.label.length > 0))) {
-      legend = series.map((entry, i) => entry.label || `Series ${i + 1}`);
+      // legend = series.map((entry, i) => entry.label || `Series ${i + 1}`);
+      legend = series.map((entry, i) => ({
+        label: entry.label || `Series ${i + 1}`,
+        index: typeof entry.index === 'number' ? entry.index : i + 1,
+      }));
     }
 
     const x = series.filter(test => test.x.range);

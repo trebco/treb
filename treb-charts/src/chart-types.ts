@@ -53,7 +53,8 @@ export interface DonutSlice {
 /** common to all chart data types */
 export interface ChartDataBaseType {
   title?: string;
-  legend?: string[];
+  // legend?: string[];
+  legend?: Array<{label: string, index?: number}>;
   legend_position?: LegendPosition;
   legend_style?: LegendStyle;
   title_layout?: 'top'|'bottom';
@@ -196,7 +197,8 @@ export enum LegendStyle {
 }
 
 export interface LegendOptions {
-  labels: string[];
+  // labels: string[];
+  labels: Array<{label: string, index?: number}>;
   layout?: LegendLayout;
   position?: LegendPosition;
   style?: LegendStyle;
