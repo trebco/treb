@@ -2519,6 +2519,9 @@ export class Grid {
    *
    * FIXME: we should use this to normalize function names, on insert and
    * on paste (if we're doing that).
+   * 
+   * FIXME: are named expressions included here? (this function predates
+   * named expressions).
    */
   public SetAutocompleteFunctions(functions: FunctionDescriptor[]): void {
     const consolidated = functions.slice(0).concat(
@@ -2846,6 +2849,12 @@ export class Grid {
   }
 
   private ResolveSheet(command: SheetSelection) {
+
+    // NOTE: since you are using typeof here to check for undefined,
+    // it seems like it would be efficient to use typeof to check
+    // the actual type; hence merging "index" and "name" might be
+    // more efficient than checking each one separately.
+
     if (typeof command.index !== 'undefined') {
       return this.model.sheets[command.index];
     }
