@@ -345,7 +345,7 @@ export namespace Style {
       if (!value || isNaN(value) || value < 0) {
         return {}; // invalid
       }
-      let unit = match[2].toLowerCase() || default_unit;
+      const unit = match[2].toLowerCase() || default_unit;
       if (unit === 'pt' || unit === 'em' || unit === '%' || unit === 'px') {
         // return { font_size_unit: unit, font_size_value: value };
         return {
@@ -427,7 +427,7 @@ export namespace Style {
   /** @internal */
   export const FontSize = (properties: Properties, prefer_points = true): string => {
 
-    let value = properties.font_size?.value;
+    const value = properties.font_size?.value;
 
     switch (properties.font_size?.unit) {
       case 'pt':
@@ -435,7 +435,7 @@ export namespace Style {
 
       case 'px':
         if (prefer_points) {
-          let points = Math.round((value||16) * 300 / 4) / 100;
+          const points = Math.round((value||16) * 300 / 4) / 100;
           return (points) + 'pt';
         }
         return (value||16) + 'px';
