@@ -707,8 +707,24 @@ export interface IRectangle {
     height: number;
 }
 export declare namespace Style {
-    type HorizontalAlign = 0 | 1 | 2 | 3;
-    type VerticalAlign = 0 | 1 | 2 | 3;
+
+    /**
+         * horizontal align constants.
+         *
+         * @remarks
+         * this is an enum, but our types generator will convert it to a union
+         * type for export. we recognize this is still not optimal, we may change
+         * these to string values in the future.
+         */ type HorizontalAlign = 0 | 1 | 2 | 3;
+
+    /**
+         * vertical align constants.
+         *
+         * @remarks
+         * this is an enum, but our types generator will convert it to a union
+         * type for export. we recognize this is still not optimal, we may change
+         * these to string values in the future.
+         */ type VerticalAlign = 0 | 1 | 2 | 3;
 
     /** composite font size */
     interface FontSize {

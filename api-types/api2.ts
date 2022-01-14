@@ -158,6 +158,23 @@ const GetDocTags = (node: ts.Node): string[] => {
 }
 
 /**
+ * when adding fake (synthetic) comments, the printer will add multiline
+ * comment markers \/* *\/. we need to remove them.
+ * @param text 
+ */
+function CleanComment(text: string): string {
+
+  if (/^\/\*/.test(text)) {
+    text = text.substring(2);
+  }
+  if (/\*\/$/.test(text)) {
+    text = text.substring(0, text.length - 2);
+  }
+
+  return text;
+}
+
+/**
  * 
  * @param args 
  * @returns 
@@ -236,6 +253,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
         if (ts.isEnumDeclaration(node)) {
 
           if (config.flatten_enums) {
+
             const alias = ts.factory.createTypeAliasDeclaration(
               node.decorators,
               node.modifiers,
@@ -262,6 +280,17 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
 
                 })
               ));
+
+            if ((node as any).jsDoc) {
+
+              const source_text = node.getSourceFile().text;
+              const jsDoc: ts.JSDoc[] = (node as any).jsDoc;
+              const comment = CleanComment(source_text.substring(jsDoc[0].pos, jsDoc[0].end));
+
+              ts.addSyntheticLeadingComment(alias, ts.SyntaxKind.MultiLineCommentTrivia, comment);
+
+            }
+
             return ts.visitEachChild(alias, child => visit(child), context);
           }
 
