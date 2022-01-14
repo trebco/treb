@@ -714,7 +714,13 @@ export declare namespace Style {
          * @remarks
          * this is an enum, but our types generator will convert it to a union
          * type for export. we recognize this is still not optimal, we may change
-         * these to string values in the future.
+         * these to symbolic values in the future.
+         *
+         * 0 undefined
+         * 1 left
+         * 2 center
+         * 3 right
+         *
          */ type HorizontalAlign = 0 | 1 | 2 | 3;
 
     /**

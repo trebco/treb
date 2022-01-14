@@ -15,7 +15,7 @@ export namespace Style {
    * @remarks
    * this is an enum, but our types generator will convert it to a union 
    * type for export. we recognize this is still not optimal, we may change 
-   * these to string values in the future.
+   * these to symbolic values in the future.
    */
   export enum HorizontalAlign {
     None = 0,
@@ -30,7 +30,7 @@ export namespace Style {
    * @remarks
    * this is an enum, but our types generator will convert it to a union 
    * type for export. we recognize this is still not optimal, we may change 
-   * these to string values in the future.
+   * these to symbolic values in the future.
    */
   export enum VerticalAlign {
     None = 0,
