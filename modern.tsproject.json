@@ -18,7 +18,9 @@
     "noEmitHelpers": true,
     "lib": [
       "dom", "es2015"
-    ]
+    ],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
   },
   "exclude": [
     "node_modules",

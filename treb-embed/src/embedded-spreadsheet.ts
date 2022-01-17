@@ -17,7 +17,7 @@ import * as Base64JS from 'base64-js';
 // testing (should remove)
 import * as z85 from 'z85-codec';
 
-import * as PackResults from 'treb-mc/src/pack-results';
+import * as PackResults from 'treb-mc/src/pack-results'; // <-- why direct?
 
 // config
 import { DialogType } from './progress-dialog';

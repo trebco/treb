@@ -1,5 +1,6 @@
 
-import * as JSZip from 'jszip';
+//import * as JSZip from 'jszip';
+import JSZip from 'jszip';
 
 import { AnchoredChartDescription, ChartType, Workbook } from './workbook2';
 import { Parser, ParseResult } from 'treb-parser';

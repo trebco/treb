@@ -1,5 +1,5 @@
 
-import * as JSZip from 'jszip';
+import JSZip from 'jszip';
 import * as xmlparser from 'fast-xml-parser';
 // import * as he from 'he';
 

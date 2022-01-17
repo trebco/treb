@@ -1,0 +1,230 @@
+
+/**
+ * NOTE: this file uses the color-mod() function and a postcss library
+ * to translate it. that function is no longer in the spec and will be 
+ * implemented differently, so this will probably need to change.
+ *
+ * originally this file used sass so we used some sass library functions
+ * to do the same thing. all we are doing is (1) set alpha on a color and
+ * (2) darken a color.
+ */
+
+$color1:  #8DD3C7;
+$color2:  #FFFFB3;
+$color3:  #BEBADA;
+$color4:  #FB8072;
+$color5:  #80B1D3;
+$color6:  #FDB462;
+$color7:  #B3DE69;
+$color8:  #FCCDE5;
+$color9:  #D9D9D9;
+$color10: #BC80BD;
+$color11: #CCEBC5;
+$color12: #FFED6F;
+
+$font-stack:  // "-apple-system",
+  "BlinkMacSystemFont",
+  "Segoe UI",
+  "Roboto",
+  "Oxygen-Sans",
+  "Ubuntu",
+  "Cantarell",
+  "Helvetica Neue",
+  "sans-serif";
+
+.treb-chart {
+
+  font-family: $font-stack;
+
+  /* box-shadow:0 3px 7px rgba(0,0,0,.3); // looks good though */
+
+  background: #fff;
+
+  .axis-label {
+    font-size: 8.5pt;
+  }
+
+  .chart-title {
+    font-size: 14pt;
+  }
+
+  .chart-column {
+    fill: $color1;
+  }
+
+  .chart-column-shadow {
+    fill: color-mod($color1 shade(25%));
+  }
+
+  .chart-grid, .chart-ticks {
+    stroke: #ddd;
+  }
+
+  .chart-column, .chart-bar {
+    &.chart-column-shadow {
+      &.series-1  { fill: color-mod($color1 shade(25%)); }
+      &.series-2  { fill: color-mod($color3 shade(25%)); }
+      &.series-3  { fill: color-mod($color4 shade(25%)); }
+      &.series-4  { fill: color-mod($color5 shade(25%)); }
+      &.series-5  { fill: color-mod($color6 shade(25%)); }
+      &.series-6  { fill: color-mod($color7 shade(25%)); }
+      &.series-7  { fill: color-mod($color8 shade(25%)); }
+      &.series-8  { fill: color-mod($color9 shade(25%)); }
+      &.series-9  { fill: color-mod($color10 shade(25%)); }
+      &.series-10  { fill: color-mod($color11 shade(25%)); }
+      &.series-11  { fill: color-mod($color12 shade(25%)); }
+      &.series-12  { fill: color-mod($color2 shade(25%)); }
+    }
+
+    &.series-1  { fill: $color1; }
+    &.series-2  { fill: $color3; }
+    &.series-3  { fill: $color4; }
+    &.series-4  { fill: $color5; }
+    &.series-5  { fill: $color6; }
+    &.series-6  { fill: $color7; }
+    &.series-7  { fill: $color8; }
+    &.series-8  { fill: $color9; }
+    &.series-9  { fill: $color10; }
+    &.series-10  { fill: $color11; }
+    &.series-11  { fill: $color12; }
+    &.series-12  { fill: $color2; }
+
+    
+  }
+
+  .chart-line, .chart-area {
+
+    .line {
+
+      fill: none;
+      stroke-width: 2px;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+
+    }
+
+    &.scatter-line .line {
+      stroke-width: 3px;
+    }
+
+    &.scatter-line .marker {
+      stroke-width: 6px;
+      fill: #fff;
+      /* 
+      d: path('M-1,-1 L1,-1 L1,1 L-1,1 Z');
+      */
+      d: path('M0,-1.5 a1.5,1.5,0,1,1,0,3 a1.5,1.5,0,1,1,0,-3'); /* circle */
+      transition: d .15s ease-in;
+
+      &:hover {
+        d: path('M0,-3 a3,3,0,1,1,0,6 a3,3,0,1,1,0,-6'); /* circle */
+      }
+
+    }
+
+    &.series-1  { stroke: $color1; }
+    &.series-2  { stroke: $color3; }
+    &.series-3  { stroke: $color4; }
+    &.series-4  { stroke: $color5; }
+    &.series-5  { stroke: $color6; }
+    &.series-6  { stroke: $color7; }
+    &.series-7  { stroke: $color8; }
+    &.series-8  { stroke: $color9; }
+    &.series-9  { stroke: $color10; }
+    &.series-10  { stroke: $color11; }
+    &.series-11  { stroke: $color12; }
+    &.series-12  { stroke: $color2; }
+
+  }
+
+  .chart-area {
+
+    &.series-1  { fill: color-mod($color1 a(.75)); }
+    &.series-2  { fill: color-mod($color3 a(.75)); }
+    &.series-3  { fill: color-mod($color4 a(.75)); }
+    &.series-4  { fill: color-mod($color5 a(.75)); }
+    &.series-5  { fill: color-mod($color6 a(.75)); }
+    &.series-6  { fill: color-mod($color7 a(.75)); }
+    &.series-7  { fill: color-mod($color8 a(.75)); }
+    &.series-8  { fill: color-mod($color9 a(.75)); }
+    &.series-9  { fill: color-mod($color10 a(.75)); }
+    &.series-10  { fill: color-mod($color11 a(.75)); }
+    &.series-11  { fill: color-mod($color12 a(.75)); }
+    &.series-12  { fill: color-mod($color2 a(.75)); }
+
+    .fill {
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+  }
+
+  .points {
+    stroke-width: 1;
+    stroke: #39f;
+  }
+
+  .mouse-layer {
+    fill: transparent;
+  }
+
+  .donut path.callout {
+    fill: none;
+    stroke: #999;
+    stroke-dasharray: 2 2;
+  }
+
+  text.callout-label {
+    font-size: 10pt;
+  }
+
+  .legend {
+    font-size: 10.5pt;
+
+    & { stroke: none; }
+
+    .series-1  { fill: $color1; }
+    .series-2  { fill: $color3; }
+    .series-3  { fill: $color4; }
+    .series-4  { fill: $color5; }
+    .series-5  { fill: $color6; }
+    .series-6  { fill: $color7; }
+    .series-7  { fill: $color8; }
+    .series-8  { fill: $color9; }
+    .series-9  { fill: $color10; }
+    .series-10  { fill: $color11; }
+    .series-11  { fill: $color12; }
+    .series-12  { fill: $color2; }
+
+
+  }
+
+  .donut path {
+
+    stroke: none;
+
+    /*
+    don't use child ordering for color, use explicit series values.
+    we want to tie color to input order, even if the chart sorts the
+    data.
+
+    I don't like this. we should use order. if necesary, you can
+    add the nodes out of order.
+    */
+
+    &.series-1  { fill: $color1; }
+    &.series-2  { fill: $color2; }
+    &.series-3  { fill: $color3; }
+    &.series-4  { fill: $color4; }
+    &.series-5  { fill: $color5; }
+    &.series-6  { fill: $color6; }
+    &.series-7  { fill: $color7; }
+    &.series-8  { fill: $color8; }
+    &.series-9  { fill: $color9; }
+    &.series-10  { fill: $color10; }
+    &.series-11  { fill: $color11; }
+    &.series-12  { fill: $color12; }
+
+  }  
+
+}

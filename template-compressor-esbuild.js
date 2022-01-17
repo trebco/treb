@@ -223,89 +223,108 @@ const Parser = (match, tag) => {
 
 };
 
-module.exports = function(source) {
-  
-  const options = this.getOptions();
 
-  let tags = options ? options.tags || [] : [];
+const transform = (options, source) => {
 
-  // test
-  if (this.options && this.options.tags) { 
-    tags = this.options.tags; 
-  }
+    let tags = options ? options.tags || [] : [];
 
-  // let's start with the dangerous assumption that 
-  // there are no nested templates. 
-
-  // [ok, works, moving on... this will be trouble]
-
-  // UPDATE: proper parser now (more or less)
-
-  // NOTE: we could optionally remove the tags, if there are no expressions
-  // (...)
-
-  // or better yet we could remove them in favor of regular backticks, and
-  // let ts handle the conversion
-
-  const pairs = [];
-
-  for (const tag of tags) {
-
-    // const rex = new RegExp(tag.tag + '`[\\s\\S]*?`', 'g');
-    const rex = new RegExp(tag.tag + '`', 'g');
-    for (;;) {
-      const match = rex.exec(source);
-      if (!match) { break; }
-
-      // includes tag and open & closing backticks
-      const raw = Parser(match, tag.tag);
-     
-      if (options.dev) {
-        console.info(raw);
-      }
-
-      let cooked = raw;
-
-      if (tag.remove_html_comments) {
-        cooked = cooked.replace(/<!--[\s\S]+?-->/g, '');
-        // console.info(cooked);
-      }
-
-      if (tag.icons) {
-        cooked = ResolveIcons(tag.icons, cooked);
-      } 
-
-      if (tag.trim_lines) {
-        cooked = cooked.split('\n').map(line => line.trim()).join('');
-      }
-
-      // this is too aggressive for CSS because it removes spaces in
-      // composite rule selectors. it works for simple rules, but we
-      // need to adjust... I think the rule should be keep space 
-      // characters (not newlines, although there should be a single space)
-      // outside of braces 
-
-      if (tag.remove_whitespace) {
-        cooked = cooked.replace(/[\s\r\n]+/g, '');
-      }
-
-      if (tag.remove_tag) {
-        cooked = cooked.substr(tag.tag.length);
-      }
-
-      if (options.dev) {
-        console.info(cooked);
-        console.info('---');
-      }
-      
-      pairs.push([raw, cooked]);
+    // test
+    if (this.options && this.options.tags) { 
+      tags = this.options.tags; 
     }
-  }
 
-  for (const pair of pairs) {
-    source = source.replace(pair[0], pair[1]);
-  }
+    // let's start with the dangerous assumption that 
+    // there are no nested templates. 
 
-  return source;
+    // [ok, works, moving on... this will be trouble]
 
-}
+    // UPDATE: proper parser now (more or less)
+
+    // NOTE: we could optionally remove the tags, if there are no expressions
+    // (...)
+
+    // or better yet we could remove them in favor of regular backticks, and
+    // let ts handle the conversion
+
+    const pairs = [];
+
+    for (const tag of tags) {
+
+      // const rex = new RegExp(tag.tag + '`[\\s\\S]*?`', 'g');
+      const rex = new RegExp(tag.tag + '`', 'g');
+      for (;;) {
+        const match = rex.exec(source);
+        if (!match) { break; }
+
+        // includes tag and open & closing backticks
+        const raw = Parser(match, tag.tag);
+      
+        if (options.dev) {
+          console.info(raw);
+        }
+
+        let cooked = raw;
+
+        if (tag.remove_html_comments) {
+          cooked = cooked.replace(/<!--[\s\S]+?-->/g, '');
+          // console.info(cooked);
+        }
+
+        if (tag.icons) {
+          cooked = ResolveIcons(tag.icons, cooked);
+        } 
+
+        if (tag.trim_lines) {
+          cooked = cooked.split('\n').map(line => line.trim()).join('');
+        }
+
+        // this is too aggressive for CSS because it removes spaces in
+        // composite rule selectors. it works for simple rules, but we
+        // need to adjust... I think the rule should be keep space 
+        // characters (not newlines, although there should be a single space)
+        // outside of braces 
+
+        if (tag.remove_whitespace) {
+          cooked = cooked.replace(/[\s\r\n]+/g, '');
+        }
+
+        if (tag.remove_tag) {
+          cooked = cooked.substr(tag.tag.length);
+        }
+
+        if (options.dev) {
+          console.info(cooked);
+          console.info('---');
+        }
+        
+        pairs.push([raw, cooked]);
+      }
+    }
+
+    for (const pair of pairs) {
+      source = source.replace(pair[0], pair[1]);
+    }
+
+    return source;
+
+};
+
+module.exports = function(options) {
+
+  return {
+  name: 'template-compressor',
+  setup(build) {
+    build.onLoad({ filter: /\.ts$/ }, async (args) => {
+      // console.info(args.path);
+      let text = await fs.promises.readFile(args.path, 'utf8')
+      return {
+        contents: transform(options, text), // JSON.stringify(text.split(/\s+/)),
+        loader: 'ts',
+      }
+    })
+  },
+};
+
+};
+
+

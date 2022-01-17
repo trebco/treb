@@ -8,8 +8,7 @@ import { BarData, CellData, ChartData, DonutSlice, LegendLayout, LegendPosition,
 // import { RangeScale } from 'treb-utils';
 import { ArrayUnion, ExtendedUnion, UnionValue, ValueType } from 'treb-base-types';
 
-// require('../style/charts.scss');
-require('../style/charts.pcss');
+require('../style/charts.scss');
 
 const DEFAULT_FORMAT = '#,##0.00'; // why not use "general", or whatever the usual default is?
 
