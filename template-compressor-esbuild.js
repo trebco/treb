@@ -309,22 +309,28 @@ const transform = (options, source) => {
 
 };
 
+/*
 module.exports = function(options) {
 
   return {
-  name: 'template-compressor',
-  setup(build) {
-    build.onLoad({ filter: /\.ts$/ }, async (args) => {
-      // console.info(args.path);
-      let text = await fs.promises.readFile(args.path, 'utf8')
-      return {
-        contents: transform(options, text), // JSON.stringify(text.split(/\s+/)),
-        loader: 'ts',
-      }
-    })
-  },
-};
+    name: 'template-compressor',
+    setup(build) {
+      build.onLoad({ filter: /\.ts$/ }, async (args) => {
+        // console.info(args.path);
+        let text = await fs.promises.readFile(args.path, 'utf8')
+        return {
+          contents: transform(options, text), // JSON.stringify(text.split(/\s+/)),
+          loader: 'ts',
+        }
+      })
+    },
+  };
 
+};
+*/
+
+module.exports = {
+  transform,
 };
 
 
