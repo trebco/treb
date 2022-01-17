@@ -422,13 +422,7 @@ export declare class EmbeddedSpreadsheet {
      * saved if you save the document or switch tabs; this is for saving/
      * restoring scroll if you cache the containing element.
      */
-    ScrollOffset(offset?: {
-        x: number;
-        y: number;
-    }): {
-        x: number;
-        y: number;
-    } | undefined;
+    ScrollOffset(offset?: Point): Point | undefined;
 
     /**
      * unserialize document from data.
@@ -698,6 +692,10 @@ export interface IArea {
     start: ICellAddress;
     end: ICellAddress;
 }
+export interface Point {
+    x: number;
+    y: number;
+}
 
 /** structure represents rectangle coordinates */
 export interface IRectangle {
@@ -715,12 +713,6 @@ export declare namespace Style {
          * this is an enum, but our types generator will convert it to a union
          * type for export. we recognize this is still not optimal, we may change
          * these to symbolic values in the future.
-         *
-         * 0 undefined
-         * 1 left
-         * 2 center
-         * 3 right
-         *
          */ type HorizontalAlign = 0 | 1 | 2 | 3;
 
     /**
@@ -729,7 +721,7 @@ export declare namespace Style {
          * @remarks
          * this is an enum, but our types generator will convert it to a union
          * type for export. we recognize this is still not optimal, we may change
-         * these to string values in the future.
+         * these to symbolic values in the future.
          */ type VerticalAlign = 0 | 1 | 2 | 3;
 
     /** composite font size */

@@ -10,7 +10,7 @@ import { LeafVertex } from 'treb-calculator';
 import { Calculator } from 'treb-calculator';
 
 import {
-  IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue,
+  IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue, Point,
   IsFlatData, IsFlatDataArray, Rectangle, IsComplex, ComplexToString, Complex, ExtendedUnion, IRectangle
 } from 'treb-base-types';
 
@@ -2141,7 +2141,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * saved if you save the document or switch tabs; this is for saving/
    * restoring scroll if you cache the containing element.
    */
-  public ScrollOffset(offset?: {x: number, y: number}): {x: number, y:number} | undefined {
+  public ScrollOffset(offset?: Point): Point|undefined {
     return this.grid.ScrollOffset(offset);
   }
 
