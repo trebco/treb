@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "14.8.0",
+  "version": "15.0.0",
   "main": "dist/index.js",
   "devDependencies": {
     "@types/base64-js": "^1.3.0",
@@ -43,19 +43,18 @@
     "z85-codec": "^0.1.0"
   },
   "scripts": {
-    "build": "node compile2.js",
-    "dev": "node compile2.js -d --modern",
-    "dev-legacy": "node compile2.js -d --legacy",
-    "watch": "node compile2.js -w",
+    "build": "node esbuild.js",
+    "dev": "node esbuild.js --dev",
+    "dev-legacy": "node compile3.js -d --legacy",
+    "watch": "node esbuild.js --watch",
     "generate-api": "ts-node-dev api-types/api2.ts --config api-config.json && cp treb.d.ts release-distribution-files/",
     "watch-api": "ts-node-dev --respawn api-types/api2.ts --config api-config.json && cp treb.d.ts release-distribution-files/",
-    "watch-modern": "node compile2.js -w --modern -d",
-    "watch-legacy": "node compile2.js -w --legacy -d",
-    "build-modern": "node compile2.js --modern",
-    "build-legacy": "node compile2.js --legacy",
+    "watch-modern": "node esbuild.js --watch --modern --dev",
+    "watch-legacy": "node compile3.js -w --legacy -d",
+    "build-modern": "node esbuild.js --modern",
+    "build-legacy": "node compile3.js --legacy",
     "update-icons": "node treb-embed/script/process-icons.js --filter unused --source treb-embed/icons/4 > treb-embed/src/generated/toolbar42.ts",
-    "watch-dev": "node compile2.js -w -d",
-    "release": "node compile2.js --clean && npm run generate-api && node copy-distribution-files.js && node zip-package.js"
+    "release": "node compile3.js --clean --legacy && node esbuild.js --modern --module && npm run generate-api && node copy-distribution-files.js && node zip-package.js"
   },
   "build-entry-points": {
     "main": "treb-bundle",

@@ -1,5 +1,5 @@
 
-import { Complex, IsComplex, UnionValue, ValueType } from 'treb-base-types/src';
+import { Complex, IsComplex, UnionValue, ValueType } from 'treb-base-types';
 import { DivideByZeroError, ValueError } from './function-error';
 
 import * as ComplexLib from './complex-math';

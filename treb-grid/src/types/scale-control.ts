@@ -1,7 +1,7 @@
 
 import { DOMUtilities as DOM } from '../util/dom_utilities';
 import { NumberFormat, NumberFormatCache, ValueParser } from 'treb-format';
-import { ValueType } from 'treb-base-types/src';
+import { ValueType } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
 
 export interface ScaleEvent {

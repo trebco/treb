@@ -85,7 +85,7 @@ if (watch) {
   let count = 0;
   if (version.modern) { count++; } 
   // if (version.legacy) { count++; } 
-  if (version.xmodule) { count++; }  
+  if (version.module) { count++; }  
   if (count > 1) {
     throw new Error('can only watch one at a time');
   }
@@ -151,7 +151,7 @@ const sass_style = sass_plugin.sassPlugin(production ? {
 const sass_default = sass_plugin.sassPlugin();
 
 /** outdir */
-const outdir_parent = 'esbuild-output';
+const outdir_parent = 'build';
 let outdir = '';
 
 // ---- 
@@ -304,6 +304,7 @@ const Run = async () => {
   // modern version includes all support files
 
   if (version.modern) {
+    console.info('building modern...');
     const result = await esbuild.build(GenerateConfig('modern'));
     if (result.metafile) {
       if (metafile) {
@@ -317,6 +318,13 @@ const Run = async () => {
       }
     }
   }
+
+  const currentdir = path.join(outdir_parent, 'current');
+  await fs.promises.mkdir(currentdir, { recursive: true });
+
+  await new Promise((resolve) => {
+    child_process.exec(`cp ${path.join(outdir, '*')} ${currentdir}`, () => resolve());
+  });
 
 };
 

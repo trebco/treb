@@ -1,4 +1,4 @@
-import { UnionValue, ValueType } from 'treb-base-types/src';
+import { UnionValue, ValueType } from 'treb-base-types';
 
 export enum ErrorType {
   Argument =    'ARG',
