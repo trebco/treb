@@ -7,7 +7,7 @@ import { FormulaEditorBase, FormulaEditorEvent } from './formula_editor_base';
 import { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
 import { DataModel } from '../types/data_model';
-import { Parser } from 'treb-parser/src';
+import { Parser } from 'treb-parser';
 
 export interface FormulaBarResizeEvent {
   type: 'formula-bar-resize';
@@ -62,6 +62,11 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
   private label_update_timer = 0;
 
+  /** get formula text */
+  public get formula(): string {
+    return this.editor_node ? this.editor_node.textContent || '' : '';
+  }
+
   /** set formula text */
   public set formula(text: string) {
     if (this.editor_node) {
@@ -71,9 +76,9 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.last_formula = text;
   }
 
-  /** get formula text */
-  public get formula(): string {
-    return this.editor_node ? this.editor_node.textContent || '' : '';
+  /** get address label text */
+  public get label(): string {
+    return this.address_label?.textContent || '';
   }
 
   /**
@@ -106,11 +111,6 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
       }
       
     }
-  }
-
-  /** get address label text */
-  public get label(): string {
-    return this.address_label?.textContent || '';
   }
 
   /** toggle editable property: supports locked cells */

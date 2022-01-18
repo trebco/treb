@@ -2,6 +2,9 @@
   "extends": "./modern.tsproject.json",
   "compilerOptions": {
     "target": "es5",
-    "outDir": "./dist/legacy"
+    "outDir": "./dist/legacy",
+    "paths": {
+      "@grid-conditional/*": ["./treb-grid/src/conditional/legacy/*"]
+    }
   }
 }

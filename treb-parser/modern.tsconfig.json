@@ -4,6 +4,7 @@
     "src/index.ts",
     "src/parser.ts",
     "src/csv-parser.ts",
+    "src/md-parser.ts",
     "src/parser-types.ts"
   ]
 }

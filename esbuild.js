@@ -29,8 +29,8 @@ const version = {
 /** clean outdir, jic */
 let clean = false;
 
-/** prod: minify, generate license file */
-let production = false;
+/** prod: minify, generate license file (now default) */
+let production = true;
 
 /** watch and rebuild */
 let watch = false;
@@ -42,9 +42,9 @@ let license = false;
 let metafile = false;
 
 for (let i = 0; i < process.argv.length; i++) {
-  if (process.argv[i] === '--production') {
-    production = true;
-    license = true; // implied
+  if (process.argv[i] === '--dev') {
+    production = false;
+    // license = true; // implied
   }
   else if (process.argv[i] === '--license') {
     license = true;
@@ -69,6 +69,10 @@ for (let i = 0; i < process.argv.length; i++) {
   else if (process.argv[i] === '--metafile') {
     metafile = true;
   }
+}
+
+if (production) {
+  license = true; // implied
 }
 
 // default to modern if nothing else is set

@@ -7,8 +7,11 @@ import { GridSelection } from '../types/grid_selection';
 import { FormulaEditorBase } from './formula_editor_base';
 import { Autocomplete } from './autocomplete';
 import { DataModel } from '../types/data_model';
+import { Parser } from 'treb-parser';
 
-
+/**
+ * @deprecated
+ */
 export class CellEditor extends FormulaEditorBase {
 
   // tslint:disable-next-line:variable-name
@@ -23,9 +26,9 @@ export class CellEditor extends FormulaEditorBase {
   /** accessor for editor visible */
   public get visible(){ return this.visible_; }
 
-  constructor(private container: HTMLElement, theme: Theme, model: DataModel, autocomplete: Autocomplete){
+  constructor(private container: HTMLElement, parser: Parser, theme: Theme, model: DataModel, autocomplete: Autocomplete){
 
-    super(theme, model, autocomplete);
+    super(parser, theme, model, autocomplete);
 
     // this.autocomplete = new Autocomplete({
     //  theme: this.theme,

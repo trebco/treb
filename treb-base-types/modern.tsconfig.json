@@ -1,4 +1,7 @@
 {
-  "extends": "../modern.tsproject.json"
+  "extends": "../modern.tsproject.json",
+  "exclude": [
+    "test/**/*"
+  ]
 }
 

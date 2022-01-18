@@ -1,4 +1,7 @@
 {
-  "extends": "../legacy.tsproject.json"
+  "extends": "../legacy.tsproject.json",
+  "exclude": [
+    "test/**/*"
+  ]
 }
 
