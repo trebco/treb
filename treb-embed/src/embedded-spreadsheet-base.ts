@@ -784,7 +784,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     // FIXME: fragile!
     const default_script_name = process.env.BUILD_ENTRY_MAIN || '';
-    const rex = new RegExp(default_script_name);
+    let rex = new RegExp(default_script_name);
 
     // tslint:disable-next-line:prefer-for-of
     for (let i = 0; i < tags.length; i++) {
@@ -823,6 +823,23 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     }
 
+    // to support .mjs imports, look for the import line
+
+    rex = new RegExp(`import.*?from.*?['"](.*?${default_script_name}.*?)['"]`);
+    for (let i = 0; i < tags.length; i++) {
+      const tag = tags[i];
+      if (!tag.src) {
+        const text = tag.textContent;
+        const match = (text||'').match(rex);
+        if (match) {
+          const src = match[1];
+          this.treb_embedded_script_path = src;
+          this.treb_base_path = src.replace(new RegExp(default_script_name + '.*$'), '');
+          return;
+        }
+      }
+    }
+    
   }
   
   // --- public internal methods -----------------------------------------------

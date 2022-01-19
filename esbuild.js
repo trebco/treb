@@ -21,7 +21,6 @@ const license_plugin = require('./license-plugin-esbuild');
  * module version you will need to build the modern version to get the workers.
  */
 const version = {
-  // legacy: false,
   modern: false,
   module: false,
 };
@@ -61,11 +60,6 @@ for (let i = 0; i < process.argv.length; i++) {
   else if (process.argv[i] === '--module') {
     version.module = true;
   }
-  /*
-  else if (process.argv[i] === '--legacy') {
-    version.legacy = true;
-  }
-  */
   else if (process.argv[i] === '--metafile') {
     metafile = true;
   }
@@ -84,7 +78,6 @@ if (!version.modern && !version.module) {
 if (watch) {
   let count = 0;
   if (version.modern) { count++; } 
-  // if (version.legacy) { count++; } 
   if (version.module) { count++; }  
   if (count > 1) {
     throw new Error('can only watch one at a time');
@@ -113,16 +106,6 @@ const modern_entry = {
   [package['build-entry-points']['export-worker'] + '-' + package.version]: './treb-export/src/export-worker/index-modern.ts',
   [package['build-entry-points']['calculation-worker'] + '-' + package.version]: './treb-mc/src/calculation-worker/index-modern.ts',
 };
-
-/* *
- * entry points for legacy build
- * /
-const legacy_entry = {
-  [package['build-entry-points']['main'] + '-es5']: './treb-embed/src/index-legacy.ts',
-  [package['build-entry-points']['export-worker'] + '-es5-' + package.version]: './treb-export/src/export-worker/index-legacy.ts',
-  [package['build-entry-points']['calculation-worker'] + '-es5-' + package.version]: './treb-mc/src/calculation-worker/index-legacy.ts',
-};
-*/
 
 /**
  * list of replacements, will be set via DEFINE (very handy)
@@ -165,12 +148,6 @@ const LoadPlugin = (options) => {
         // console.info(args.path);
         let text = await fs.promises.readFile(args.path, 'utf8')
         let contents = template_compressor.transform(options, text);
-
-        /*
-        if (options.version === 'legacy') {
-          contents = contents.replace(/conditional\/modern/g, 'conditional/legacy');
-        }
-        */
 
         return {
           contents,
@@ -240,15 +217,6 @@ const GenerateConfig = (version) => {
       config.plugins.push(sass_style);
       break;
 
-    /*
-    case 'legacy':
-      config.entryPoints = legacy_entry;
-      config.plugins.push(sass_style);
-      // config.format = 'iife';
-      config.target = 'es5';
-      break;
-    */
-
     case 'module':
       config.entryPoints = module_entry;
       config.format = 'esm';
@@ -256,8 +224,6 @@ const GenerateConfig = (version) => {
       config.plugins.push(sass_default);
       break;
 
-    // case 'legacy':
-    //  break;
   }
   
 
@@ -269,9 +235,9 @@ const GenerateConfig = (version) => {
 
 const Run = async () => {
 
-  // set versioned directory & ensure
+  // UPDATE: writing to "current", and we will copy to versioned dir.
   
-  outdir = path.join(outdir_parent, package.version);
+  outdir = path.join(outdir_parent, 'current');
   await fs.promises.mkdir(outdir, { recursive: true });
 
   // FIXME: clean should -r ?
@@ -293,13 +259,6 @@ const Run = async () => {
     console.info('building module...');
     await esbuild.build(GenerateConfig('module'));
   }
-
-  /*
-  if (version.legacy) {
-    console.info('building legacy...');
-    await esbuild.build(GenerateConfig('legacy'));
-  }
-  */
   
   // modern version includes all support files
 
@@ -319,11 +278,11 @@ const Run = async () => {
     }
   }
 
-  const currentdir = path.join(outdir_parent, 'current');
-  await fs.promises.mkdir(currentdir, { recursive: true });
+  const versioned_dir = path.join(outdir_parent, package.version);
+  await fs.promises.mkdir(versioned_dir, { recursive: true });
 
   await new Promise((resolve) => {
-    child_process.exec(`cp ${path.join(outdir, '*')} ${currentdir}`, () => resolve());
+    child_process.exec(`cp ${path.join(outdir, '*')} ${versioned_dir}`, () => resolve());
   });
 
 };

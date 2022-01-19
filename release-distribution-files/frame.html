@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<!-- 
+  
+  this page is used for embedding in an iframe. the content will expand
+  to the size of the frame, and any get parameters passed in with the 
+  document will be treated as options when creating the spreadsheet. 
+  
+  the option `doc` is shorthand for `network_document`. 
+  
+  TODO: basic theming, since frames can't inherit styling
+
+ -->
+<html>
+  <head>
+    <meta charset="utf8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel='stylesheet' href='/treb/current/treb-bundle.css'>
+
+    <style>
+
+      html, body {
+        box-sizing: border-box;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        position: relative;
+      }
+
+      body {
+        display: flex;
+      }
+
+      div.inner {
+        flex-grow: 1;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class='inner'></div>
+    <script type='module'>
+
+import { TREB } from '/treb/current/treb-bundle.mjs';
+
+document.addEventListener('DOMContentLoaded', () => { 
+
+  // naive tokenizer, doesn't handle escaped or quoted chars
+  const tokenize = (text, delimiter) => {
+    const tokens = (text || '').split(delimiter || '&');
+    const map = {};
+    for (const token of tokens) {
+      const match = token.match(/^(.+?)=(.*)$/);
+      if (match) {
+        map[match[1]] = match[2];
+      }
+      else {
+        map[token] = true;
+      }
+    }
+    return map;
+  };
+
+  const options = {
+    resizable: false,
+    collapsed: true,
+    toolbar: true,
+  };
+
+  const parameters = tokenize((document.location.search || '').substr(1));
+  for (const key of Object.keys(parameters)) {
+    options[key] = parameters[key];
+  }
+  if (parameters.doc) {
+    options.network_document = parameters.doc; // shorthand
+  }
+
+  options.container = document.querySelector('.inner');
+  const sheet = TREB.CreateSpreadsheet(options);
+
+  let token = undefined;
+  window.addEventListener('resize', () => {
+    if (!token) {
+      token = requestAnimationFrame(() => {
+        token = undefined;
+        sheet.Resize();
+      });
+    }
+  });
+
+  window.sheet = sheet;
+
+});
+
+    </script>
+  </body>
+
+</html>
