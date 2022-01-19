@@ -63,6 +63,9 @@ for (let i = 0; i < process.argv.length; i++) {
   else if (process.argv[i] === '--metafile') {
     metafile = true;
   }
+  else if (/^-/.test(process.argv[i])){
+    console.warn('Unrecognized option: ' + process.argv[i]);
+  }
 }
 
 if (production) {
