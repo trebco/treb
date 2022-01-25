@@ -14,10 +14,6 @@ export interface MacroFunction {
   expression?: ExpressionUnit;
 }
 
-export interface MacroFunctionMap {
-  [index: string]: MacroFunction;
-}
-
 /**
  * FIXME: this should move out of the grid module, grid should be focused on view
  */
@@ -43,7 +39,7 @@ export interface DataModel {
   named_ranges: NamedRangeCollection;
 
   /** macro functions are functions written in spreadsheet language */
-  macro_functions: MacroFunctionMap;
+  macro_functions: Record<string, MacroFunction>;
 
   /** 
    * new, for parametric. these might move to a different construct. 

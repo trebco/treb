@@ -257,7 +257,7 @@ export const TextFunctionLibrary: FunctionMap = {
 
 };
 
-export const TextFunctionAliases: {[index: string]: string} = {
+export const TextFunctionAliases: Record<string, string> = {
   Concatenate: 'Concat',
 };
 

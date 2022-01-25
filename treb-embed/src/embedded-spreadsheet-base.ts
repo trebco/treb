@@ -300,7 +300,6 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * keep track of what we've registered, for external libraries
    * (currently charts), which is per sheet instance.
    */
-  // protected registered_libraries: { [index: string]: any } = {};
   protected registered_libraries: Record<string, boolean> = {};
 
   /**
@@ -3733,8 +3732,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       return;
     }
 
-    const number_format_map: { [index: string]: number } = {};
-    const color_map: { [index: string]: number } = {};
+    const number_format_map: Record<string, number> = {};
+    const color_map: Record<string, number> = {};
 
     for (const sheet of this.grid.model.sheets) {
       sheet.NumberFormatsAndColors(color_map, number_format_map);
