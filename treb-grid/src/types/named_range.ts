@@ -21,11 +21,11 @@ export class NamedRangeCollection {
   }
 
   /** FIXME: why not just use toJSON? */
-  public Serialize(): {[index: string]: Area} {
+  public Serialize(): Record<string, IArea> {
     return JSON.parse(JSON.stringify(this.Map()));
   }
 
-  public Deserialize(data?: {[index: string]: IArea}): void {
+  public Deserialize(data?: Record<string, IArea>): void {
     this.Reset();
     if (data) {
       for (const key of Object.keys(data)) {

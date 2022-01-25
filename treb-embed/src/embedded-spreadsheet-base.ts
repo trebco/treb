@@ -2823,6 +2823,23 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    */
   public DefineName(name: string, range?: RangeReference): void {
 
+    // how can we unify named ranges and named expressions?
+    //
+    // (1) if the argument is undefined, by our semantics that means
+    //     "create a named range from selection". that may or may not
+    //     be a good idea, but it's the way it works now.
+    //
+    // (2) if the argument is an object, we can check if it's a 
+    //     range or address (right?) and if so, treat it as a named range
+    //
+    // (3) if the argument is a string, we can use a parser to distinguish
+    //     between addresses/ranges and other things (can we?). an expression
+    //     that resolves to a single address/range should be treated as a 
+    //     named range (should it?)
+    //
+    // (4) if the argument is another kind of intrinsic type, we can
+    //     set it as a named expression
+
     // API v1 OK
 
     if (!range) {

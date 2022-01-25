@@ -1,5 +1,6 @@
 
 import { Sheet } from './sheet';
+import { IArea } from 'treb-base-types';
 import { SerializedSheet } from './sheet_types';
 import { NamedRangeCollection } from './named_range';
 import { ExpressionUnit } from 'treb-parser';
@@ -59,7 +60,7 @@ export interface SerializedNamedExpression {
 export interface SerializedModel {
   sheet_data: SerializedSheet[];
   active_sheet: number;
-  named_ranges?: any;
+  named_ranges?: Record<string, IArea>;
   macro_functions?: MacroFunction[];
   named_expressions?: SerializedNamedExpression[];
   decimal_mark?: ','|'.';
