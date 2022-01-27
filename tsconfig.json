@@ -4,10 +4,7 @@
   },
   "references": [
     { "path": "./treb-embed/modern.tsconfig.json" },
-    { "path": "./treb-embed/legacy.tsconfig.json" },
-    
-    { "path": "./treb-export/modern.tsconfig.json" },
-    { "path": "./treb-export/legacy.tsconfig.json" }
+    { "path": "./treb-export/modern.tsconfig.json" }
   ],
   "files": []
 }

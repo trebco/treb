@@ -12,6 +12,7 @@ import {
   ArgumentSeparatorType,
   DecimalMarkType,
   UnitLiteral,
+  UnitLiteralNumber,
 } from './parser-types';
 
 interface PrecedenceList {
@@ -137,20 +138,54 @@ export class Parser {
   public decimal_mark = DecimalMarkType.Period;
 
   /**
-   * flag: support spreadsheet addresses (e.g. "A1"). this is the default,
-   * as it's useful in spreadsheets. however if we want to use the parser
-   * non-spreadsheet things, it might be preferable to treat things that look
-   * like spreadsheet addresses as tokens instead.
-   * 
-   * this is default so it won't break existing behavior.
+   * unifying flags
    */
-  public spreadsheet_semantics = true;
+  public flags = {
 
-  /**
-   * flag: support expressions with units, like `3mm` or `=3mm + 2in`.
-   * this is for parametric modeling. testing/dev atm.
-   */
-  public support_dimensioned_quantities = false;
+    /**
+     * flag: support spreadsheet addresses (e.g. "A1"). this is the default,
+     * as it's useful in spreadsheets. however if we want to use the parser
+     * non-spreadsheet things, it might be preferable to treat things that look
+     * like spreadsheet addresses as tokens instead.
+     * 
+     * this is default so it won't break existing behavior.
+     */
+    spreadsheet_semantics: true,
+
+    /**
+     * flag: support expressions with units, like `3mm` or `=3mm + 2in`.
+     * this is for parametric modeling. testing/dev atm.
+     */
+    dimensioned_quantities: false,
+
+    /**
+     * support fractions. this is kind of a weird edge case, mostly it should
+     * be handled by the value parser. (actually there might be some need for
+     * separate parsing with dimensioned quantities).
+     * 
+     * in any case, if you type `=1/2` that should be a binary expression.
+     * if you type `=3 1/2`, though, that means 3.5 and we need to treat it 
+     * as such.
+     * 
+     * rules:
+     * 
+     *  - must be a binary "/" (divide) operation, with integer operands.
+     *  - must be [literal integer] [fraction] where the interval must be one space.
+     *  - can be negated (e.g. "-3 1/2", so that makes things more complicated.
+     *  - if we do translate, translate hard so this becomes a literal number.
+     *
+     * ...default? since we didn't support this before, we could leave it
+     * off for now. needs some more testing.
+     * 
+     */
+    fractions: false,
+
+    /**
+     * flag: support complex numbers. it might be useful to turn this off if it 
+     * conflicts with dimensioned quantities (it doesn't, really, there's no i unit).
+     */
+    // complex_numbers: true,
+  };
 
   /**
    * internal argument separator, as a number. this is set internally on
@@ -757,6 +792,66 @@ export class Parser {
       
       stream = this.BinaryToRange2(stream);
 
+      // FIXME: fractions should perhaps move, not sure about the proper 
+      // ordering...
+
+      if (this.flags.fractions) {
+
+        // the specific pattern we are looking for for a fraction is
+        //
+        // literal (integer)
+        // literal (integer)
+        // operator (/)
+        // literal (integer)
+        // 
+
+        // NOTE: excel actually translates these functions after you
+        // enter them to remove the fractions. not sure why, but it's 
+        // possible that exporting them to something else (lotus?) wouldn't
+        // work. we can export them to excel, however, so maybe we can just
+        // leave as-is.
+
+        const rebuilt: ExpressionUnit[] = [];
+        const IsInteger = (test: ExpressionUnit) => {
+          return (test.type === 'literal')
+            && ((typeof test.value) === 'number')
+            && ((test.value as number) % 1 === 0); // bad typescript
+        };
+
+        let i = 0;
+        for (; i < stream.length - 3; i++) {
+          if (IsInteger(stream[i])
+            && IsInteger(stream[i + 1])
+            && (stream[i + 2].type === 'operator' && (stream[i+2] as UnitOperator).operator === '/')
+            && IsInteger(stream[i + 3])) {
+
+            const a = stream[i] as UnitLiteralNumber;
+            const b = stream[i + 1] as UnitLiteralNumber;
+            const c = stream[i + 3] as UnitLiteralNumber;
+            const f = ((a.value < 0) ? -1 : 1) * (b.value / c.value);
+
+            i += 3;
+            rebuilt.push({
+              id: stream[i].id,
+              type: 'literal', 
+              text: this.expression.substring(a.position, c.position + 1),
+              value: a.value + f,
+              position: a.position,
+            })
+          }
+          else {
+            rebuilt.push(stream[i]);
+          }
+        }
+        for (; i < stream.length; i++){ 
+          rebuilt.push(stream[i]);
+        }
+
+        stream = rebuilt;
+
+      }
+
+
       // so we're moving complex handling to post-reordering, to support
       // precedence properly. there's still one thing we have to do here,
       // though: handle those cases of naked imaginary values "i". these
@@ -780,7 +875,7 @@ export class Parser {
         return test;
       });
 
-      if (this.support_dimensioned_quantities) {
+      if (this.flags.dimensioned_quantities) {
 
         // support dimensioned quantities. we need to think a little about what 
         // should and should not be supported here -- definitely a literal 
@@ -838,128 +933,6 @@ export class Parser {
     // return this.ArrangeUnits(stream);
     return this.BinaryToComplex(this.ArrangeUnits(stream));
   }
-
-  /* *
-   * we parse real and imaginary numbers, but we want the output to contain
-   * complex numbers. this stage reads a stream of basic units (before we 
-   * build binary or unary blocks) and translates complex numbers.
-   * 
-   * there are three things we're looking for (three-and-a-half):
-   *
-   * (1) a naked imaginary number, like 3i. turn this into a complex number
-   *     with the same value.
-   *
-   * (2) a token "i" (or "j", depending). if we support complex numbers then
-   *     treat this as 1i, turn it into a complex number.
-   *
-   * (3) a composite complex number that looks like (real)(+/-)(imaginary).
-   *     turn that into a complex number. 
-   * 
-   * (+) we may also see something like 3.2+i, where "i" will be represented 
-   *     as an identifier (as in (2) above). in that case treat it as +/- 1i.
-   * 
-   * 
-   * @param stream 
-   * /
-  protected CompositeComplexNumbers(stream: ExpressionUnit[], composite = false): ExpressionUnit[] {
-
-    let result: ExpressionUnit[] = [];
-
-    for (let i = 0; i < stream.length; i++) {
-      const a = stream[i];
-      const b = stream[i + 1];
-      const c = stream[i + 2];
-
-      //
-      // case 3 is now gated by a flag, which we use for non-functions.
-      // handle case 3 (and 3 1/2) first because it will consume 3 tokens
-      //
-
-      if (composite 
-            && a.type === 'literal' 
-            && typeof a.value === 'number' 
-            && b && c 
-            && b.type === 'operator'
-            && (b.operator === '+' || b.operator === '-')
-            && (c.type === 'imaginary' || (c.type === 'identifier' && c.name === this.imaginary_number))) {
-
-        // let text = a.text + b.operator;
-        let imaginary_value = 1;
-
-        // binary-to-range has a better mechanism for text, it uses the 
-        // positions as indexes into the original expression (updated)
-
-        let text = '';
-
-        if (c.type === 'imaginary') {
-          // text += (c.text || '');
-          imaginary_value = c.value;
-          text = this.expression.substring(a.position, b.position + (c.text?.length || 0));
-        }
-        else {
-          // text += 'i';
-          text = this.expression.substring(a.position, b.position + c.name.length);
-        }
-
-        if (b.operator === '-') {
-          imaginary_value = -imaginary_value;
-        }
-
-        result.push({
-          type: 'complex',
-          position: a.position,
-          text: text, 
-          id: a.id,
-          imaginary: imaginary_value,
-          real: a.value,
-        });
-
-        // jump
-        i += 2;
-
-      }
-      else if (a.type === 'imaginary') {
-
-        // this is case 1
-
-        // convert to complex
-        result.push({
-          type: 'complex',
-          position: a.position,
-          text: a.text, 
-          id: a.id,
-          imaginary: a.value,
-          real: 0,
-        });
-
-      }
-      else if (a.type === 'identifier' && a.name === this.imaginary_number) {
-
-        // this is case 2, something that looks like an identifier.
-        //
-        // FIXME: this will break column range notation like i:i.
-        // perhaps we should do the range operation first.
-
-        // call this 1i
-        result.push({
-          type: 'complex',
-          position: a.position,
-          text: a.name, 
-          id: a.id,
-          imaginary: 1,
-          real: 0,
-        });
-
-      }
-      else {
-        result.push(a);
-      }
-    }
-
-    return result;
-
-  }
-  */
 
   /**
    * helper function, @see BinaryToRange
@@ -1324,19 +1297,6 @@ export class Parser {
       };
 
     }
-
-    /*
-    else if (unit.type === 'imaginary') {
-      return {
-        type: 'complex',
-        real: 0,
-        imaginary: unit.value,
-        position: unit.position,
-        text: unit.text,
-        id: unit.id,
-      };
-    }
-    */
 
     return unit;
 
@@ -1728,25 +1688,7 @@ export class Parser {
       };
     }
     else if ((char >= ZERO && char <= NINE) || char === this.decimal_mark_char) {
-
-      // FIXME: is there a case where period needs to be handled the
-      // same way as plus and minus, below?
-
-      /*
-      const position = this.index;
-      const [value, text] = this.ConsumeNumber();
-
-      return {
-        type: 'literal',
-        id: this.id_counter++,
-        position,
-        value,
-        text,
-      };
-      */
-
       return this.ConsumeNumber();
-
     }
     else if (char === OPEN_BRACE) {
       return this.ConsumeArray();
@@ -1764,22 +1706,7 @@ export class Parser {
         (check >= ZERO && check <= NINE) ||
         check === this.decimal_mark_char
       ) {
-
-        /*
-        const position = this.index;
-        const [value, text] = this.ConsumeNumber();
-
-        return {
-          type: 'literal',
-          id: this.id_counter++,
-          position,
-          value,
-          text,
-        };
-        */
-       
         return this.ConsumeNumber();
-
       }
     }
     else if (
@@ -2019,7 +1946,7 @@ export class Parser {
     // range operator, and a second address. that will be turned into a range
     // later.
 
-    if (this.spreadsheet_semantics) {
+    if (this.flags.spreadsheet_semantics) {
       const address = this.ConsumeAddress(str, position);
       if (address) return address;
     }
@@ -2270,9 +2197,6 @@ export class Parser {
         }
         else break; // end of token -- not consuming
       }
-      // else if (char === COMMA){
-      //  // ... FIXME: validate that we're in the integer part
-      // }
       else if (char === UC_E || char === LC_E) {
         if (state === 'integer' || state === 'fraction') {
           state = 'exponent';

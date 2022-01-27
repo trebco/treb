@@ -1,0 +1,8 @@
+{
+  "name": "treb-format",
+  "version": "16.0.0",
+  "main": "src/index.ts",
+  "dependencies": {
+    "treb-base-types": "file:../treb-base-types"
+  }
+}

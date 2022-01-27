@@ -1,7 +1,0 @@
-{
-  "extends": "../modern.tsproject.json",
-  "exclude": [
-    "test/**/*"
-  ]
-}
-

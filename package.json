@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "15.1.0",
+  "version": "15.2.0",
   "main": "dist/index.js",
   "devDependencies": {
     "@types/base64-js": "^1.3.0",
@@ -35,6 +35,9 @@
     "stream-browserify": "^3.0.0",
     "style-loader": "^3.2.1",
     "terser": "^5.10.0",
+    "treb-base-types": "file:lib/treb-base-types",
+    "treb-format": "file:lib/treb-format",
+    "treb-parser": "file:lib/treb-parser",
     "ts-loader": "^9.2.2",
     "ts-node-dev": "^1.1.8",
     "tslib": "^2.2.0",

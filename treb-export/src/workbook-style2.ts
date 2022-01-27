@@ -2,9 +2,9 @@
 // import * as ElementTree from 'elementtree';
 // import { Element, ElementTree as Tree } from 'elementtree';
 
-import { Style } from '../../treb-base-types';
+import { Style } from 'treb-base-types';
 import { Theme } from './workbook-theme2';
-import { NumberFormatCache } from '../../treb-format';
+import { NumberFormatCache } from 'treb-format';
 import { XMLUtils } from './xml-utils';
 
 export interface Font {

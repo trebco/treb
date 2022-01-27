@@ -4,12 +4,12 @@ import { symbols } from './symbol-defs';
 import { CreateSheetOptions, DefaultOptions } from './options';
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { composite, Resizable } from 'treb-utils';
-// import { ToolbarOptions, CompositeToolbar as FormattingToolbar } from './toolbar/';
 import { css } from 'treb-utils';
 import { Toolbar } from './toolbar';
 
 import '../style/composite-sheet.scss';
-import '../../treb-base-types/style/resizable.css';
+// import '../../treb-base-types/style/resizable.css';
+import 'treb-base-types/style/resizable.css';
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 
 const sidebar_open_class = 'sidebar-open';

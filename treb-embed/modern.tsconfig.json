@@ -2,12 +2,10 @@
   "extends": "../modern.tsproject.json",
   "references": [
     { "path": "../treb-grid/modern.tsconfig.json" },
-    { "path": "../treb-format/modern.tsconfig.json" },
     { "path": "../treb-utils/modern.tsconfig.json" },
     { "path": "../treb-mc/modern.tsconfig.json" },
     { "path": "../treb-charts/modern.tsconfig.json" },
-    { "path": "../treb-calculator/modern.tsconfig.json" },
-    { "path": "../treb-base-types/modern.tsconfig.json" }
+    { "path": "../treb-calculator/modern.tsconfig.json" }
   ],
   "include": [
     "../package.json",

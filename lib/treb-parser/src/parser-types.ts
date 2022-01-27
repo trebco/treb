@@ -8,15 +8,37 @@ export interface BaseUnit {
   id: number;
 }
 
+export interface UnitLiteralNumber extends BaseUnit {
+  type: 'literal';
+  position: number;
+  value: number;
+  text?: string;
+}
+export interface UnitLiteralString extends BaseUnit {
+  type: 'literal';
+  position: number;
+  value: string;
+  text?: string;
+}
+export interface UnitLiteralBoolean extends BaseUnit {
+  type: 'literal';
+  position: number;
+  value: boolean;
+  text?: string;
+}
+
 /**
  * expression unit representing a literal: string, number, boolean.
- */
+ * FIXME: would be nice if we had subtypes so we could specify
+ * /
 export interface UnitLiteral extends BaseUnit {
   type: 'literal';
   position: number;
   value: string | boolean | number;
   text?: string;
 }
+*/
+export type UnitLiteral = UnitLiteralNumber|UnitLiteralBoolean|UnitLiteralString;
 
 /**
  * testing: complex
