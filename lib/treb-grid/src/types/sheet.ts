@@ -3,7 +3,7 @@
 
 import {
   Cell, ValueType, Cells, Style,
-  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData, Complex, TextPartFlag
+  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData, Complex, TextPartFlag, DimensionedQuantity, DimensionedQuantityUnion
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';
@@ -1222,6 +1222,21 @@ export class Sheet {
       }
 
       cell.rendered_type = ValueType.complex;
+    }
+    else if (type === ValueType.dimensioned_quantity) {
+      
+      if (isNaN((value as DimensionedQuantity).value)) {
+        cell.formatted = // Style.Format(cell.style, value); // formats NaN
+          (typeof cell.style.nan === 'undefined') ? 'NaN' : cell.style.nan;
+      }
+      else {
+        cell.formatted = // Style.Format(cell.style, value);
+          this.FormatNumber((value as DimensionedQuantity).value, cell.style.number_format);
+      }
+
+      cell.formatted += (` ` + (value as DimensionedQuantity).unit);
+      cell.rendered_type = ValueType.dimensioned_quantity; // who cares about rendered_type? (...)
+
     }
     else {
 

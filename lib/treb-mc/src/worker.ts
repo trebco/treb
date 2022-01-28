@@ -10,7 +10,7 @@ import { DataModel } from 'treb-grid/src/types/data_model';
 import { Sheet } from 'treb-grid/src/types/sheet';
 import { NamedRangeCollection } from 'treb-grid/src/types/named_range';
 import { MCCalculator } from './simulation-calculator';
-import { GraphStatus } from '../../treb-calculator/src/dag/graph';
+import { GraphStatus } from 'treb-calculator/src/dag/graph';
 
 export class WorkerImpl {
 

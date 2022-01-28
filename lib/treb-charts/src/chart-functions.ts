@@ -2,7 +2,8 @@
 import { UnionValue, ValueType } from 'treb-base-types';
 
 // TYPE ONLY
-type FunctionMap = import('../../treb-calculator/src/descriptors').FunctionMap;
+// type FunctionMap = import('../../treb-calculator/src/descriptors').FunctionMap;
+import type { FunctionMap } from 'treb-calculator/src/descriptors';
 
 /** 
  * we might as well do this properly, since we're in the 

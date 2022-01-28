@@ -1,8 +1,0 @@
-{
-  "extends": "../modern.tsproject.json",
-  "references": [
-    { "path": "../treb-calculator/modern.tsconfig.json" },
-    { "path": "../treb-utils/modern.tsconfig.json" }
-  ]
-}
-

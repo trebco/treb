@@ -10,11 +10,11 @@ export interface Complex {
   imaginary: number,
 }
 
-export const IsComplex = (value: any): value is Complex => {
+export const IsComplex = (value: unknown): value is Complex => {
   return (typeof value === 'object')
           && (!!value)
-          && (typeof value.real === 'number')
-          && (typeof value.imaginary === 'number');
+          && (typeof (value as Complex).real === 'number')
+          && (typeof (value as Complex).imaginary === 'number');
 };
 
 export const ComplexToString = (value: Complex): string => {
@@ -37,6 +37,18 @@ export const ComplexToString = (value: Complex): string => {
   else {
     return '0';
   }
+};
+
+export interface DimensionedQuantity {
+  value: number;
+  unit: string;
+}
+
+export const IsDimensionedQuantity = (value: unknown): value is DimensionedQuantity => {
+  return (typeof value === 'object')
+          && (!!value)
+          && (typeof (value as DimensionedQuantity).value === 'number')
+          && (typeof (value as DimensionedQuantity).unit === 'string');
 };
 
 /**
@@ -73,7 +85,10 @@ export enum ValueType {
   // this is new though. this is not a cell value, it's 
   // only for union types. perhaps we should move or rename 
   // this array, and then cells could have a subset?
-    array = 8,
+  array = 8,
+
+  // adding DQ to union
+  dimensioned_quantity = 9,
 
 }
 
@@ -96,6 +111,9 @@ export const GetValueType = (value: unknown): ValueType => {
       }
       else if (IsComplex(value)) {
         return ValueType.complex;
+      }
+      else if (IsDimensionedQuantity(value)) {
+        return ValueType.dimensioned_quantity;
       }
       return ValueType.object;
 

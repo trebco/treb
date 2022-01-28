@@ -1,20 +1,18 @@
 {
   "extends": "../modern.tsproject.json",
   "references": [
-    { "path": "../treb-grid/modern.tsconfig.json" },
-    { "path": "../treb-utils/modern.tsconfig.json" },
-    { "path": "../treb-mc/modern.tsconfig.json" },
-    { "path": "../treb-charts/modern.tsconfig.json" },
-    { "path": "../treb-calculator/modern.tsconfig.json" }
   ],
   "include": [
     "../package.json",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "../lib/**/*.ts"
   ],
   "exclude": [
     "src/API/api-v1.ts",
     "src/API/api-utils.ts",
-    "src/index-legacy.ts"
+    "src/index-legacy.ts",
+    "../lib/treb-parser/test/**/*.ts",
+    "../lib/**/*.test.ts"
   ]
 }
 

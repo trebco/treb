@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "15.2.0",
+  "version": "15.3.0",
   "main": "dist/index.js",
   "devDependencies": {
     "@types/base64-js": "^1.3.0",
@@ -36,8 +36,13 @@
     "style-loader": "^3.2.1",
     "terser": "^5.10.0",
     "treb-base-types": "file:lib/treb-base-types",
+    "treb-calculator": "file:lib/treb-calculator",
+    "treb-charts": "file:lib/treb-charts",
     "treb-format": "file:lib/treb-format",
+    "treb-grid": "file:lib/treb-grid",
+    "treb-mc": "file:lib/treb-mc",
     "treb-parser": "file:lib/treb-parser",
+    "treb-utils": "file:lib/treb-utils",
     "ts-loader": "^9.2.2",
     "ts-node-dev": "^1.1.8",
     "tslib": "^2.2.0",

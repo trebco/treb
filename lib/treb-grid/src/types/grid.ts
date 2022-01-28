@@ -35,10 +35,9 @@ import { TabBar } from './tab_bar';
 import { Sheet } from './sheet';
 import { TileRange, BaseLayout } from '../layout/base_layout';
 
-//import { CreateLayout } from 'grid-conditional/layout_manager';
-// this will get changed at compile time to modern/legacy
-// import { CreateLayout } from '../conditional/modern/layout_manager';
-import { CreateLayout } from '@grid-conditional/layout_manager';
+// this was conditional compilation. we're dropping as we no longer support IE11.
+// import { CreateLayout } from '@grid-conditional/layout_manager';
+import { CreateLayout } from '../conditional/modern/layout_manager';
 
 import { GridSelection } from './grid_selection';
 import { OverlayEditor, OverlayEditorResult } from '../editors/overlay_editor';

@@ -178,7 +178,30 @@ export class Parser {
      * off for now. needs some more testing.
      * 
      */
-    fractions: false,
+    fractions: true,
+
+    /**
+     * what if we do want =1/2 to be a fraction? more importantly, if we are
+     * using dimensioned quantities we might want =1/2C to be 0.5C, as opposed
+     * to a binary operation =1 / (2C) 
+     * 
+     * ...
+     * 
+     * actually now that I think about it, that's equivalent. I was worred about
+     * the concept of 1 / (2C) but logically that's the same as 2C / 4C^2 (multiply
+     * numerator and denominator by denominator)) which is === (1/2)C. basically
+     * as long as you only have one value with a dimension/unit, then division
+     * and multiplication are a wash. it's only a concern when you have two 
+     * values with dimensions/units.
+     * 
+     * so essentially this isn't necessary except for representation, which can
+     * be handled separately.
+     * 
+     * ALTHOUGH, if you do that, you have to do the math before you do any 
+     * unit conversion. because otherwise the ratios get screwed up.
+     * 
+     */
+    // aggressive_fractions: false,
 
     /**
      * flag: support complex numbers. it might be useful to turn this off if it 
@@ -273,6 +296,13 @@ export class Parser {
       case 'identifier':
       case 'operator':
         func(unit);
+        return;
+
+      case 'dimensioned':
+        if (func(unit)) {
+          this.Walk(unit.expression, func);
+          this.Walk(unit.unit, func);
+        }
         return;
 
       case 'range':
@@ -554,6 +584,10 @@ export class Parser {
             .join(separator) +
           ')'
         );
+
+      case 'dimensioned':
+        return this.Render(unit.expression) + ' ' + this.Render(unit.unit);
+
     }
 
     return '??';
@@ -886,22 +920,38 @@ export class Parser {
         // group: (3+2)mm [yes]
         // call: sin(3)mm [yes]
         // name?: Xmm [...]
+        //
+        // what about space?
+        // 10 fluid ounces
+        // 10 fl oz
+        // 
 
         const rebuilt: ExpressionUnit[] = [];
         let unit: ExpressionUnit | undefined;
 
-        for (const entry of stream) {
+        for (let i = 0; i < stream.length; i++) {
+        //for (const entry of stream) {
+          const entry = stream[i];
+
           if (!unit) {
             unit = entry;
           }
           else if (entry.type === 'identifier' && (unit.type === 'literal' || unit.type === 'group' || unit.type === 'call')) {
-              rebuilt.push({
-                type: 'dimensioned',
-                expression: unit,
-                unit: entry as UnitIdentifier,
-                id: this.id_counter++,
-              });
-              unit = undefined; // consume
+
+            // check for multi-word unit (unit has spaces)
+
+            const identifier = entry as UnitIdentifier;
+            while (stream[i + 1]?.type === 'identifier') {
+              identifier.name += (' ' + (stream[++i] as UnitIdentifier).name);
+            }
+            
+            rebuilt.push({
+              type: 'dimensioned',
+              expression: unit,
+              unit: entry as UnitIdentifier,
+              id: this.id_counter++,
+            });
+            unit = undefined; // consume
           }
           else {
             rebuilt.push(unit);

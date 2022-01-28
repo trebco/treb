@@ -1,7 +1,7 @@
 
-import { ValueType, Complex, GetValueType } from './value-type';
+import { ValueType, Complex, GetValueType, DimensionedQuantity } from './value-type';
 
-export type CellValue = undefined | string | number | boolean | Complex;
+export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
 /** utility method */
 export const Is2DArray = <T>(obj: undefined|T|T[]|T[][]): obj is T[][] => {
@@ -39,6 +39,11 @@ export interface ComplexUnion {
   value: Complex;
 }
 
+export interface DimensionedQuantityUnion {
+  type: ValueType.dimensioned_quantity;
+  value: DimensionedQuantity;
+}
+
 export interface UndefinedUnion {
   type: ValueType.undefined;
   value?: undefined;
@@ -60,7 +65,8 @@ export interface ArrayUnion {
 export type UnionValue 
     = NumberUnion 
     | ArrayUnion 
-    | ComplexUnion 
+    | ComplexUnion
+    | DimensionedQuantityUnion 
     | ExtendedUnion
     | StringUnion 
     | FormulaUnion

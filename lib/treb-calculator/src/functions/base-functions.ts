@@ -1059,3 +1059,52 @@ if (!Math.log10) {
   };
   */
 }
+
+//
+// this should disappear in prod with tree-shaking, because we'll
+// get a constant string inequality. depends on the quality of the
+// tree shaking, but from what I can determine, it works.
+//
+if (process.env.NODE_ENV === 'dev') {
+
+  BaseFunctionLibrary['TestDQ'] = {
+    fn: (): UnionValue => {
+
+      const value = Math.round(Math.random() * 17);
+      let unit = 'n/a';
+
+      switch (Math.round(Math.random() * 7)) {
+        case 0: 
+          unit = 'tbsp';
+          break;
+        case 1:
+          unit = 'tsp';
+          break;
+        case 2:
+          unit = 'oz';
+          break;
+        case 3:
+          unit = 'g';
+          break;
+        case 4:
+          unit = 'mm';
+          break;
+        case 5:
+          unit = 'cup';
+          break;
+        case 6:
+          unit = 'fl oz';
+          break;
+        case 7:
+          unit = 'm/s';
+          break;
+        }
+    
+      return {
+        type: ValueType.dimensioned_quantity,
+        value: { value, unit },
+      }
+    }
+  };
+
+}

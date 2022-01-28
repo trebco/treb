@@ -1,10 +1,10 @@
 /* eslint-disable no-unexpected-multiline */
 
 import { /*UnionOrArray,*/ ICellAddress, Cell, UnionValue, ValueType, GetValueType, ArrayUnion, CellValue } from 'treb-base-types';
-import * as Utils from '../../treb-calculator/src/utilities';
+import * as Utils from 'treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats, Random } from 'riskampjs-mc';
 import { MCFunctionMap } from './descriptors';
-import { DataError, ArgumentError, ValueError } from '../../treb-calculator/src/function-error';
+import { DataError, ArgumentError, ValueError } from 'treb-calculator/src/function-error';
 import { Scale as CreateScale } from 'treb-utils';
 import { DataModel } from 'treb-grid';
 
