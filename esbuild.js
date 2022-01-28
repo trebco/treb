@@ -107,7 +107,7 @@ const banner = `/*! v${package.version}. Copyright 2018-${new Date().getFullYear
 const modern_entry = {
   [package['build-entry-points']['main']]: './treb-embed/src/index-modern.ts',
   [package['build-entry-points']['export-worker'] + '-' + package.version]: './treb-export/src/export-worker/index-modern.ts',
-  [package['build-entry-points']['calculation-worker'] + '-' + package.version]: './lib/treb-mc/src/calculation-worker/index-modern.ts',
+  [package['build-entry-points']['calculation-worker'] + '-' + package.version]: './treb-mc/src/calculation-worker/index-modern.ts',
 };
 
 /**

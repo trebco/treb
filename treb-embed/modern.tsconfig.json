@@ -1,6 +1,7 @@
 {
   "extends": "../modern.tsproject.json",
   "references": [
+    { "path": "../treb-mc/modern.tsconfig.json" }
   ],
   "include": [
     "../package.json",

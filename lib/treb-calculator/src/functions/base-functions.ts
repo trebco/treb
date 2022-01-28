@@ -1070,7 +1070,7 @@ if (process.env.NODE_ENV === 'dev') {
   BaseFunctionLibrary['TestDQ'] = {
     fn: (): UnionValue => {
 
-      const value = Math.round(Math.random() * 17);
+      const value = (Math.random() * 17);
       let unit = 'n/a';
 
       switch (Math.round(Math.random() * 7)) {
