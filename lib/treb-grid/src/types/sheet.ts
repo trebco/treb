@@ -1225,16 +1225,28 @@ export class Sheet {
     }
     else if (type === ValueType.dimensioned_quantity) {
       
+      // is this really what we want? NaN mm? or can we just do NaN?
+
+      // the reason for the question is that we want to move formatting
+      // of DQ into format, in order that we can do logic on the formatting
+      // side. but that won't work if we're short-circuiting here
+      
+      // actually I guess it's immaterial, NaN mm is effectively === to NaN ft
+
       if (isNaN((value as DimensionedQuantity).value)) {
         cell.formatted = // Style.Format(cell.style, value); // formats NaN
           (typeof cell.style.nan === 'undefined') ? 'NaN' : cell.style.nan;
+
+        cell.formatted += (` ` + (value as DimensionedQuantity).unit);
       }
       else {
+        const format = NumberFormatCache.Get(cell.style.number_format || '', true);
         cell.formatted = // Style.Format(cell.style, value);
-          this.FormatNumber((value as DimensionedQuantity).value, cell.style.number_format);
+          // this.FormatNumber((value as DimensionedQuantity).value, cell.style.number_format);
+          // this.FormatNumber(value, cell.style.number_format);
+          format.FormatDimensionedQuantity(value as DimensionedQuantity);
       }
 
-      cell.formatted += (` ` + (value as DimensionedQuantity).unit);
       cell.rendered_type = ValueType.dimensioned_quantity; // who cares about rendered_type? (...)
 
     }

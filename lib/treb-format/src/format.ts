@@ -1,7 +1,9 @@
 
 import { FormatParser } from './format_parser';
 import { NumberFormatSection } from './number_format_section';
-import { Localization, TextPartFlag, TextPart, Complex } from 'treb-base-types';
+import { 
+    Localization, TextPartFlag, TextPart, Complex, DimensionedQuantity, CellValue,
+  } from 'treb-base-types';
 
 //
 // excel time is explicitly universal, so we need all dates in and out 
@@ -100,6 +102,18 @@ export class NumberFormat {
 
   /** for the "General" format, a magic decimal point */
   public magic_decimal = false;
+
+  /**
+   * (testing) transformer. this is not rendered or persisted, like magic
+   * decimal it needs to be applied in code. ATM this is only applied in
+   * formatting DQ, but it might turn out to be more universal...
+   * 
+   * NOTE that atm this transforms value back into the same type; we don't
+   * cross types (at least for now). perhaps we should support that? that
+   * might mean switching in here and removing the "special" format calls
+   * for complex and DQ.
+   */
+  public transform_value?: <T>(value: T) => T;
 
   // tslint:disable-next-line:variable-name
   protected _pattern = '';
@@ -378,6 +392,26 @@ export class NumberFormat {
 
     }).join(';');
 
+  }
+
+  /** also temporary? why not switch in here? */
+  public FormatDimensionedQuantity(value: DimensionedQuantity): TextPart[] {
+
+    if (this.transform_value) {
+      value = this.transform_value(value);
+    }
+
+    const parts: TextPart[] = this.FormatParts(value.value || 0);
+
+    // anything fancy we want to do in here...
+
+    if (value.unit) {
+      parts.push({text: ' '}, {
+        text: value.unit
+      });
+    }
+
+    return parts;
   }
 
   /** temporary */

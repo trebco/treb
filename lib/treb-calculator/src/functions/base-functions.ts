@@ -3,7 +3,7 @@ import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
 import { Box, UnionValue, ValueType, GetValueType, 
-         CellValue, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex } from 'treb-base-types';
+         CellValue, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex, IsDimensionedQuantity } from 'treb-base-types';
 import { Sparkline } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -1066,6 +1066,42 @@ if (!Math.log10) {
 // tree shaking, but from what I can determine, it works.
 //
 if (process.env.NODE_ENV === 'dev') {
+
+  BaseFunctionLibrary['DQ'] = {
+    fn: (value: number, unit: string) => {
+      return {
+        type: ValueType.dimensioned_quantity,
+        value: {
+          value,
+          unit,
+        },
+      };
+    },
+  },
+
+  BaseFunctionLibrary['DQ.Unit'] = {
+    fn: (value: UnionValue): UnionValue => {
+      if (IsDimensionedQuantity(value)) {
+        return {
+          type: ValueType.string,
+          value: value.unit,
+        };
+      }
+      return ArgumentError();
+    }
+  },
+
+  BaseFunctionLibrary['DQ.Quantity'] = {
+    fn: (value: UnionValue): UnionValue => {
+      if (IsDimensionedQuantity(value)) {
+        return {
+          type: ValueType.number,
+          value: value.value,
+        };
+      }
+      return ArgumentError();
+    }
+  },
 
   BaseFunctionLibrary['TestDQ'] = {
     fn: (): UnionValue => {
