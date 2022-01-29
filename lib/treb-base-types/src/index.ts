@@ -13,6 +13,7 @@ export * from './value-type';
 export * from './theme';
 export * from './color';
 export * from './layout';
+export * from './render_text';
 
 // import * as Style from './style';
 // export { Style };

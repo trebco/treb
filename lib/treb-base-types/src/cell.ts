@@ -6,6 +6,7 @@ import { Style } from './style';
 import { TextPart } from './text_part';
 import { ValueType, GetValueType, Complex } from './value-type';
 import { CellValue, UnionValue } from './union';
+import { PreparedText, RenderTextPart } from './render_text';
 
 export interface RenderFunctionOptions {
   height: number;
@@ -260,10 +261,20 @@ export class Cell {
   // value in the case of negative color or value-based styling.
   public formatted?: string | TextPart[];
 
-  // rendered type may be different than value type: could be a function
-  // returns a number, or an error. rendering an empty value should result
-  // in a string, so you can test on this type -- it should never be 0
-  // (or undefined) if the cell has been rendered.
+  /**
+   * rendered type may be different than value type: could be a function
+   * returns a number, or an error. rendering an empty value should result
+   * in a string, so you can test on this type -- it should never be 0
+   * (or undefined) if the cell has been rendered.
+   * 
+   * NOTE: no one really uses this. it's only read in two places -- one in
+   * grid to check if it's a number and we want to format as % (which seems 
+   * wrong anyway, because what if it's a function?) -- and in sheet, as a 
+   * flag indicating we have already rendered it (it gets flushed on change).
+   * 
+   * so we could maybe remove it or switch to a boolean or something... is 
+   * boolean any smaller than number?
+   */
   public rendered_type?: ValueType;
 
   // style is an index into the style dictionary, not the actual style
@@ -288,9 +299,16 @@ export class Cell {
    * the cell data or style.
    *
    * UPDATE: renderer data is no longer flushed. we set a dirty flag.
-   *
+   * 
+   * FIXME: we could type this. types are currently in TileRenderer,
+   * but we could move them to base_types lib and then type this properly.
    */
-  public renderer_data?: any;
+  public renderer_data?: {
+    text_data?: PreparedText;
+    overflowed?: boolean;
+    width?: number;
+    height?: number;
+  };
 
   public render_dirty = true;
 

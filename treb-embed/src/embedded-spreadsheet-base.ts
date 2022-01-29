@@ -3762,6 +3762,14 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // the localization flags; seems safer to use a separate instance and
     // not change the local instance
 
+    // this is an issue, though, if we need to keep parser flags in sync.
+    // as long as all flags are in the same place, we could just copy...
+
+    // still, that's an issue generally as we have parsers in a couple
+    // of different places. at a minimum we should share parsers across
+    // each context (main/worker). atm we have one instance in calculator
+    // and a different one in grid...
+
     const parser = new Parser();
 
     let target_decimal_mark: DecimalMarkType;
