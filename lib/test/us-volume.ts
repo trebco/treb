@@ -42,7 +42,7 @@ export interface USVolume {
 
   // TODO: pints, quarts, gallons
 
-  cups: Partial<VolumeMeasure>;
+  cup: Partial<VolumeMeasure>;
   tbsp: Partial<VolumeMeasure>;
   tsp: Partial<VolumeMeasure>;
   pinch: Partial<VolumeMeasure>;
@@ -55,11 +55,11 @@ interface FitResult {
   next?: boolean;
 }
 
-export class USVolumeManager {
+export class Converter {
 
   public us_volume_template: Partial<USVolume> = {
   
-    cups: {
+    cup: {
       unit: cup_ml,
       '3/4': cup_ml * 3 / 4,
       '1/2': cup_ml / 2,
@@ -97,12 +97,15 @@ export class USVolumeManager {
 
     for (const base of Object.keys(this.us_volume_template) as Array<keyof USVolume>) {
       const unit = this.us_volume_template[base];
-      for (const fraction of Object.keys(unit) as Array<keyof VolumeMeasure>) {
-        result.push({
-          base, 
-          fraction, 
-          value: unit[fraction],
-        });
+      if (unit) {
+        for (const fraction of Object.keys(unit) as Array<keyof VolumeMeasure>) {
+          const unit_fraction = unit[fraction] as number;
+          result.push({
+            base, 
+            fraction, 
+            value: unit_fraction,
+          });
+        }
       }
     }
 
@@ -111,6 +114,16 @@ export class USVolumeManager {
 
     this.unit_list = result;
 
+  }
+
+  public Pluralize(value: number, unit: string): string {
+    const lc = unit.toLowerCase();
+    if (value === 0 || value > 1) {
+      if (lc === 'cup') {
+        return unit + 's';
+      }
+    }
+    return unit;
   }
 
   public Render(volume: Partial<USVolume>): string {
@@ -122,30 +135,35 @@ export class USVolumeManager {
     const composite: string[] = [];
     let s: string[] = [];
     let active_base = '';
+    let active_value = 0;
 
     for (const element of this.unit_list) {
       const { base, fraction } = element;
 
       if (base !== active_base) {
+
         if (active_base && s.length) {
-          composite.push(s.join(' ') + ' ' + active_base);
+          composite.push(s.join(' ') + ' ' + this.Pluralize(active_value, active_base));
         }
         active_base = base;
+        active_value = 0;
         s = [];
       }
 
-      if (volume[base] && volume[base][fraction]) {
+      if (volume[base] && (volume[base] as any)[fraction]) {
         if (fraction === 'unit') {
-          s.push(volume[base].unit.toString());
+          s.push((volume[base] as any).unit.toString());
+          active_value += ((volume[base] as any).unit || 0);
         }
         else {
           s.push(fraction);
+          active_value += 0.5;
         }
       }
     }
 
     if (active_base && s.length) {
-      composite.push(s.join(' ') + ' ' + active_base);
+      composite.push(s.join(' ') + ' ' + this.Pluralize(active_value, active_base));
     }
 
     return composite.join(' + ');
@@ -261,11 +279,15 @@ export class USVolumeManager {
 
     // special case: pinch is 1/8 tsp
     if (volume.pinch?.unit) {
-      ml = volume.pinch.unit * this.us_volume_template.tsp['1/4'] * .5;
+
+      // yes this is ugly but I know this value exists
+      // should be a way to specify... use a more concrete type
+
+      ml = volume.pinch.unit * (this.us_volume_template as any).tsp['1/4'] * .5;
     }
 
     for (const base of Object.keys(volume) as Array<keyof USVolume>) {
-      const vm = volume[base];
+      const vm = volume[base] as Partial<VolumeMeasure>;
       const template = this.us_volume_template[base];
       if (!template) {
         throw new Error('invalid unit type: ' + base);
@@ -275,7 +297,10 @@ export class USVolumeManager {
         if (!template[fraction]) {
           throw new Error('invalid unit fraction: ' + fraction + ' ' + base);
         }
-        ml += template[fraction] * vm[fraction];
+
+        // the problem here is that ts doesn't believe these array indexes...
+
+        ml += (template as any)[fraction] * (vm as any)[fraction];
       }
 
     }
@@ -294,7 +319,7 @@ export class USVolumeManager {
     // the standard error. pinch is never a remainder, it only appears
     // as a unique volume.
 
-    const qt = this.us_volume_template.tsp['1/4'];
+    const qt = (this.us_volume_template as any).tsp['1/4'];
     if (ml < qt) {
       if (ml >= qt * .75) {
         result.tsp = { '1/4': 1 };
@@ -323,7 +348,7 @@ export class USVolumeManager {
         if (!result[entry.base]) {
           result[entry.base] = {};
         }
-        result[entry.base][entry.fraction] = fit.count;
+        (result[entry.base] as any)[entry.fraction] = fit.count;
         ml = fit.ml;
       }
 
@@ -331,7 +356,7 @@ export class USVolumeManager {
         if (!result[next_entry.base]) {
           result[next_entry.base] = {};
         }
-        result[next_entry.base][next_entry.fraction] = 1;
+        (result[next_entry.base] as any)[next_entry.fraction] = 1;
         ml = 0;
       }
 
@@ -341,4 +366,4 @@ export class USVolumeManager {
 
 }
 
-export const USVolumeConversion = new USVolumeManager();
+export const USVolumeConverter = new Converter();

@@ -45,6 +45,13 @@ import '../style/embed.scss';
 import { SerializedModel } from 'treb-grid/src/types/data_model';
 import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
 
+// --- DEV ---
+
+import { Init as USVInit } from '../../lib/test/us-volume-init';
+USVInit();
+
+// --- /DEV --- 
+
 /**
  * options for saving files. we add the option for JSON formatting.
  */

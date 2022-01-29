@@ -1,6 +1,6 @@
 
-import { ExpressionUnit, UnitBinary, UnitDimensionedQuantity, UnitLiteral, UnitLiteralString, UnitUnary } from '..';
-import { UnionValue, ValueType } from '../../treb-base-types';
+import { ExpressionUnit, UnitBinary, UnitDimensionedQuantity, UnitLiteral, UnitLiteralString, UnitUnary } from 'treb-parser';
+import { UnionValue, ValueType } from 'treb-base-types';
 
 /**
  * simple calculator, no caching and no functions (atm). 

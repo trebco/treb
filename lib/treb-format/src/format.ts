@@ -2,7 +2,7 @@
 import { FormatParser } from './format_parser';
 import { NumberFormatSection } from './number_format_section';
 import { 
-    Localization, TextPartFlag, TextPart, Complex, DimensionedQuantity, CellValue,
+    Localization, TextPartFlag, TextPart, Complex, DimensionedQuantity, CellValue, IsDimensionedQuantity,
   } from 'treb-base-types';
 
 //
@@ -113,7 +113,7 @@ export class NumberFormat {
    * might mean switching in here and removing the "special" format calls
    * for complex and DQ.
    */
-  public transform_value?: <T>(value: T) => T;
+  public transform_value?: (value: CellValue) => CellValue;
 
   // tslint:disable-next-line:variable-name
   protected _pattern = '';
@@ -395,10 +395,28 @@ export class NumberFormat {
   }
 
   /** also temporary? why not switch in here? */
-  public FormatDimensionedQuantity(value: DimensionedQuantity): TextPart[] {
+  public FormatDimensionedQuantity(value: DimensionedQuantity): TextPart[]|string {
 
     if (this.transform_value) {
-      value = this.transform_value(value);
+      const result = this.transform_value(value);
+      if (IsDimensionedQuantity(result)) {
+        value = result;
+      }
+      else if (typeof result === 'string') {
+
+        // so this is new, but we want string semantics here; rendering
+        // is different because strings can wrap
+
+        return result;
+      }
+      else {
+
+        // could be a complex (not likely now, but things change), in which
+        // case this is not the right method -- we need a method that checks
+        // and switches.
+
+        return this.FormatParts(result);
+      }
     }
 
     const parts: TextPart[] = this.FormatParts(value.value || 0);
@@ -483,6 +501,10 @@ export class NumberFormat {
 
     // new, shortcut
     if (typeof value !== 'number' && !this.sections[3]) {
+
+      // NOTE: that note (next line) seems to be incorrect, not sure why
+      // ofc if that was true there'd be no point to this block...
+
       return [{ text: value.toString() }] as TextPart[]; // unreachable because we ensure 4 sections
     }
 
@@ -491,7 +513,9 @@ export class NumberFormat {
 
     if (section.date_format || section.string_format) {
       for (const part of parts) {
-        if (typeof part === 'string') text_parts.push({ text: part });
+        if (typeof part === 'string') {
+          text_parts.push({ text: part });
+        }
         else text_parts.push(part);
       }
     }
