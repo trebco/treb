@@ -299,9 +299,6 @@ export class Cell {
    * the cell data or style.
    *
    * UPDATE: renderer data is no longer flushed. we set a dirty flag.
-   * 
-   * FIXME: we could type this. types are currently in TileRenderer,
-   * but we could move them to base_types lib and then type this properly.
    */
   public renderer_data?: {
     text_data?: PreparedText;
@@ -349,7 +346,7 @@ export class Cell {
 
   // --- class methods --------------------------------------------------------
 
-  constructor(value?: any, value_type?: ValueType){
+  constructor(value?: CellValue, value_type?: ValueType){
     if (typeof value !== 'undefined') this.Set(value, value_type);
   }
 
