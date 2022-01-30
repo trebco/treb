@@ -1,12 +1,30 @@
 
 import { CompositeSheet, DecoratedHTMLElement } from './composite-sheet';
 
+type DecoratedSelf = (typeof self) & {
+  load: (sheet: any, element: HTMLElement) => void;
+}
+
 export class AutoEmbedManager {
   
-  /** auto-embed */
-  public static Run(): void {
+  /** attach to DOM events */
+  public static Attach(attr: string, factory: (...args: any[]) => any): void {
 
-    const elements = document.querySelectorAll('div[data-treb]');
+    document.addEventListener('DOMContentLoaded', () => this.Run(attr, factory));
+
+    document.addEventListener('readystatechange', () => {
+      if (document.readyState === 'complete') {
+        this.Run(attr, factory);
+      }
+    });
+
+  }
+
+  /** auto-embed */
+  public static Run(attr: string, factory: (...args: any[]) => any): void {
+
+    // const elements = document.querySelectorAll('div[data-treb]');
+    const elements = document.querySelectorAll(`div[${attr}]`);
 
     for (let i = 0; i < elements.length; i++) {
 
@@ -46,14 +64,15 @@ export class AutoEmbedManager {
         }
       }
 
-      const sheet = CompositeSheet.Create(options);
+      //const sheet = CompositeSheet.Create(type, options);
+      const sheet = factory(options);
 
       // optional load callback
       const load = options.load || dataset.load;
       if (load) {
-        const aself = (self as any);
-        if (aself[load]) {
-          aself[load](sheet, element); // callback wants sheet, not embed
+        const decorated = (self as DecoratedSelf);
+        if (decorated.load) {
+          decorated.load(sheet, element); // callback wants sheet, not embed
         }
         else {
           console.warn(`function ${load} not found`);

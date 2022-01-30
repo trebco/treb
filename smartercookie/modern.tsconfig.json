@@ -1,0 +1,19 @@
+{
+  "extends": "../modern.tsproject.json",
+  "references": [
+    { "path": "../treb-embed/modern.tsconfig.json" }
+  ],
+  "include": [
+    "../package.json",
+    "src/**/*.ts",
+    "../lib/**/*.ts"
+  ],
+  "exclude": [
+    "src/API/api-v1.ts",
+    "src/API/api-utils.ts",
+    "src/index-legacy.ts",
+    "../lib/treb-parser/test/**/*.ts",
+    "../lib/**/*.test.ts"
+  ]
+}
+

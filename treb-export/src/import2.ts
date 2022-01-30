@@ -24,6 +24,7 @@ interface SharedFormulaMap { [index: string]: SharedFormula }
 
 export class Importer {
 
+  // FIXME: need a way to share/pass parser flags
   public parser = new Parser();
 
   public workbook?: Workbook;

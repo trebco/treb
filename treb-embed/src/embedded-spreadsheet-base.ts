@@ -45,13 +45,6 @@ import '../style/embed.scss';
 import { SerializedModel } from 'treb-grid/src/types/data_model';
 import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
 
-// --- DEV ---
-/*
-import { Init as USVInit } from '../../lib/test/us-volume-init';
-USVInit();
-*/
-// --- /DEV --- 
-
 /**
  * options for saving files. we add the option for JSON formatting.
  */
@@ -3761,6 +3754,13 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   }
   */
 
+  /**
+   * this function is called when the file locale (as indicated by the
+   * decimal separator) is different than the current active locale.
+   * 
+   * so we know that we want to translate. that's why there are no tests
+   * in this function.
+   */
   protected ConvertLocale(data: TREBDocument): void {
 
     // FIXME: belongs in model? (...)
@@ -3776,6 +3776,11 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // of different places. at a minimum we should share parsers across
     // each context (main/worker). atm we have one instance in calculator
     // and a different one in grid...
+
+    // seems like in this case we could just cache/set/reset. shouldn't
+    // be an issue. (famous last words...)
+
+    // FIXME: need a way to share/pass parser flags
 
     const parser = new Parser();
 
@@ -3871,8 +3876,11 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     const bv = b.split('.').map(value => Number(value) || 0).concat([0, 0, 0]);
 
     const levels: SemanticVersionElement[] = [
-      SemanticVersionElement.major, SemanticVersionElement.minor, SemanticVersionElement.patch
+      SemanticVersionElement.major, 
+      SemanticVersionElement.minor, 
+      SemanticVersionElement.patch
     ];
+    
     const result: SemanticVersionComparison = { match: 0 };
 
     for (let i = 0; i < 3; i++) {

@@ -225,6 +225,15 @@ export class Grid {
   /**
    * spreadsheet language parser. used to pull out address
    * references from functions, for highlighting
+   * 
+   * ...
+   * 
+   * it's used for lots of stuff now, in addition to highlighting.
+   * copy/paste with translation; csv; defines; and some other stuff.
+   * still would like to share w/ parent though, if possible.
+   * 
+   * 
+   * FIXME: need a way to share/pass parser flags
    */
   private parser = new Parser();
 

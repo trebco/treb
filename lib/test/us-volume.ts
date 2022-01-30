@@ -196,7 +196,7 @@ export class Converter {
         const check_err_1 = Math.abs(remainder - unit_ml) / remainder;
         const check_err_2 = Math.abs(remainder - next_unit_ml) / remainder;
 
-        console.info(`(${count} ${label}) adding fudge. check next...`, check_err_1, check_err_2);
+        // console.info(`(${count} ${label}) adding fudge. check next...`, check_err_1, check_err_2);
 
         if (check_err_2 < check_err_1) {
           return {

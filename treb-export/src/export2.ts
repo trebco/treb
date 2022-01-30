@@ -58,6 +58,7 @@ export class Exporter {
 
   public xmlparser = new xmlparser.j2xParser(this.xmloptions);
 
+  // FIXME: need a way to share/pass parser flags
   public parser = new Parser();
 
   public decorated_functions: Record<string, string> = {};

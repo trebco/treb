@@ -2,7 +2,7 @@
 
 import { symbols } from './symbol-defs';
 import { CreateSheetOptions, DefaultOptions } from './options';
-import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
+// import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { composite, Resizable } from 'treb-utils';
 import { css } from 'treb-utils';
 import { Toolbar } from './toolbar';
@@ -31,10 +31,14 @@ export interface DecoratedHTMLElement extends HTMLElement {
   _spreadsheet: any;
 }
 
+interface IConstructor<T> {
+  new (...args: any[]): T;
+}
+
 /**
  * sheet plus toolbar and sidebar (replacement for the old autoembed)
  */
-export class CompositeSheet {
+export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
 
   /** flag for svg injection */
   public static symbols_injected = false;
@@ -55,7 +59,8 @@ export class CompositeSheet {
   public toolbar_button?: HTMLElement;
 
   /** sheet instance */
-  public sheet: EmbeddedSpreadsheet;
+  // public sheet: EmbeddedSpreadsheet;
+  public sheet: T;
 
   /** options will get passed down to sheet */
   public options: CreateSheetOptions;
@@ -64,7 +69,7 @@ export class CompositeSheet {
   // public toolbar?: FormattingToolbar;
   public toolbar?: Toolbar;
 
-  constructor(options: CreateSheetOptions) { // container: HTMLElement) {
+  constructor(protected base_type: IConstructor<T>, options: CreateSheetOptions) { // container: HTMLElement) {
 
     const container = (typeof options.container === 'string')
       ? document.querySelector(options.container) as HTMLElement
@@ -110,7 +115,8 @@ export class CompositeSheet {
 
     container.appendChild(this.inner_container);
 
-    this.sheet = new EmbeddedSpreadsheet({
+    //this.sheet = new EmbeddedSpreadsheet({
+    this.sheet = new base_type({
       ...this.options,
       container: this.inner_container,
       resizable: false, // we handle now
@@ -121,11 +127,13 @@ export class CompositeSheet {
 
     CompositeSheet.EnsureSymbols();
 
+    // FIXME: could we move this somewhere better typed?
+
     if (this.options.mc) {
       this.AddSidebarButton({
         icon: 'treb-simulation-icon',
         title: 'Run Simulation',
-        click: () => this.sheet.RunSimulation(),
+        click: () => (this.sheet as any).RunSimulation(),
       });
     }
 
@@ -278,8 +286,8 @@ export class CompositeSheet {
    * (in this version) the class has some properties; use the factory method
    * to just get back the embedded sheet.
    */
-  public static Create(options: CreateSheetOptions): EmbeddedSpreadsheet {
-    return new CompositeSheet(options).sheet;
+  public static Create<T extends EmbeddedSpreadsheetBase>(base_type: IConstructor<T>, options: CreateSheetOptions): T {
+    return new CompositeSheet(base_type, options).sheet;
   }
 
   /**
@@ -374,7 +382,9 @@ export class CompositeSheet {
     }
     */
 
-    const document_data = JSON.stringify(this.sheet.SerializeDocument({
+    // FIXME: could we move this somewhere better typed?
+
+    const document_data = JSON.stringify((this.sheet as any).SerializeDocument({
       preserve_simulation_data: true, 
       rendered_values: true,
     }));

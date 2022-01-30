@@ -23,6 +23,7 @@ const license_plugin = require('./license-plugin-esbuild');
 const version = {
   modern: false,
   module: false,
+  cookie: false,
 };
 
 /** clean outdir, jic */
@@ -60,6 +61,9 @@ for (let i = 0; i < process.argv.length; i++) {
   else if (process.argv[i] === '--module') {
     version.module = true;
   }
+  else if (process.argv[i] === '--cookie') {
+    version.cookie = true;
+  }
   else if (process.argv[i] === '--metafile') {
     metafile = true;
   }
@@ -72,8 +76,10 @@ if (production) {
   license = true; // implied
 }
 
+const version_str = production ? 'production' : 'dev';
+
 // default to modern if nothing else is set
-if (!version.modern && !version.module) {
+if (!version.modern && !version.module && !version.cookie) {
   version.modern = true;
 }
 
@@ -82,6 +88,7 @@ if (watch) {
   let count = 0;
   if (version.modern) { count++; } 
   if (version.module) { count++; }  
+  if (version.cookie) { count++; }  
   if (count > 1) {
     throw new Error('can only watch one at a time');
   }
@@ -108,6 +115,10 @@ const modern_entry = {
   [package['build-entry-points']['main']]: './treb-embed/src/index-modern.ts',
   [package['build-entry-points']['export-worker'] + '-' + package.version]: './treb-export/src/export-worker/index-modern.ts',
   [package['build-entry-points']['calculation-worker'] + '-' + package.version]: './treb-mc/src/calculation-worker/index-modern.ts',
+};
+
+const cookie_entry = {
+  'smarter-cookie': './smartercookie/src/index.ts',
 };
 
 /**
@@ -182,7 +193,7 @@ const GenerateConfig = (version) => {
       css: banner,
     },  
     define: {
-      'process.env.NODE_ENV': `"${production ? 'production' : 'dev'}"`,
+      'process.env.NODE_ENV': `"${version_str}"`,
       'process.env.BUILD_VERSION': `"${package.version}"`,
       'process.env.BUILD_NAME': `"${package.name}"`,
       ...build_entry_replacements,
@@ -216,6 +227,11 @@ const GenerateConfig = (version) => {
   };
 
   switch (version) {
+    case 'cookie':
+      config.entryPoints = cookie_entry;
+      config.plugins.push(sass_style);
+      break;
+
     case 'modern':
       config.entryPoints = modern_entry;
       config.plugins.push(sass_style);
@@ -257,17 +273,25 @@ const Run = async () => {
   // module vesion just builds the main script. for support files you must
   // build the modern/default verison.
 
+
   // FIXME: module should split out css... TODO
 
   if (version.module) {
-    console.info('building module...');
+    console.info(`building module (${version_str})...`);
     await esbuild.build(GenerateConfig('module'));
   }
   
+  // ...
+
+  if (version.cookie) {
+    console.info(`building cookie (${version_str})...`);
+    await esbuild.build(GenerateConfig('cookie'));
+  }
+
   // modern version includes all support files
 
   if (version.modern) {
-    console.info('building modern...');
+    console.info(`building modern (${version_str})...`);
     const result = await esbuild.build(GenerateConfig('modern'));
     if (result.metafile) {
       if (metafile) {

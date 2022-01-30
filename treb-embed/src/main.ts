@@ -40,7 +40,7 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
     const value: TREBNamespace = {
       version: process.env.BUILD_VERSION, // this is fake, it will get replaced
-      CreateSpreadsheet: (options: CreateSheetOptions) => CompositeSheet.Create(options),
+      CreateSpreadsheet: (options: CreateSheetOptions) => CompositeSheet.Create(EmbeddedSpreadsheet, options),
     };
 
     // NOTE: dropping formatter but keeping engine/headless (for now)
@@ -73,12 +73,8 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
       enumerable: true,
     });
 
-    document.addEventListener('DOMContentLoaded', () => AutoEmbedManager.Run());
-    document.addEventListener('readystatechange', () => {
-      if (document.readyState === 'complete') {
-        AutoEmbedManager.Run();
-      }
-    });
+    AutoEmbedManager.Attach('data-treb', 
+      (...args: any) => CompositeSheet.Create(EmbeddedSpreadsheet, args[0]));
 
   }
 
