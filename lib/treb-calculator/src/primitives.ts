@@ -240,11 +240,14 @@ export const Equals = (a: UnionValue, b: UnionValue): UnionValue => {
 
 export const NotEquals = (a: UnionValue, b: UnionValue): UnionValue => {
   const result = Equals(a, b);
+  if (result.type === ValueType.error) {
+    return result;
+  }
   return {
     type: ValueType.boolean,
     value: !result.value,
   };
-}
+};
 
 /* *
  * this is duplicative, but it seems better than another function call.

@@ -234,8 +234,9 @@ export class Grid {
    * 
    * 
    * FIXME: need a way to share/pass parser flags
+   * UPDATE: sharing parser w/ owner (embedded sheet)
    */
-  private parser = new Parser();
+  private parser;
 
   /** this is used when testing if a typed character is numeric */
   private decimal_separator_code = 0x2e; // "."
@@ -373,7 +374,10 @@ export class Grid {
   /**
    * FIXME: NO PARAMETER INITIALIZATIONS
    */
-  constructor(options: GridOptions = {}, theme: Theme = DefaultTheme) {
+  constructor(
+    options: GridOptions = {}, 
+    parser: Parser,
+    theme: Theme = DefaultTheme) {
 
     // construct model. it's a little convoluted because the
     // "active sheet" reference points to one of the array members
@@ -425,6 +429,11 @@ export class Grid {
       this.primary_selection,
       this.additional_selections);
 
+    // shared parser
+    this.parser = parser;
+
+    /* if we are using shared parser, no need to update again
+
     if (Localization.decimal_separator === '.') {
       this.parser.decimal_mark = DecimalMarkType.Period;
       this.parser.argument_separator = ArgumentSeparatorType.Comma;
@@ -433,6 +442,8 @@ export class Grid {
       this.parser.decimal_mark = DecimalMarkType.Comma;
       this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
     }
+
+    */
 
     this.decimal_separator_code = Localization.decimal_separator.charCodeAt(0);
 

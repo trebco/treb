@@ -241,3 +241,76 @@ export interface ParseResult {
   decimal_mark?: string;
   full_reference_list?: Array<UnitRange | UnitAddress | UnitIdentifier>;
 }
+
+// 
+
+export interface ParserFlags {
+
+  /**
+   * flag: support spreadsheet addresses (e.g. "A1"). this is the default,
+   * as it's useful in spreadsheets. however if we want to use the parser
+   * non-spreadsheet things, it might be preferable to treat things that look
+   * like spreadsheet addresses as tokens instead.
+   * 
+   * this is default so it won't break existing behavior.
+   */
+  spreadsheet_semantics: boolean,
+
+  /**
+   * flag: support expressions with units, like `3mm` or `=3mm + 2in`.
+   * this is for parametric modeling. testing/dev atm.
+   */
+  dimensioned_quantities: boolean,
+
+  /**
+   * support fractions. this is kind of a weird edge case, mostly it should
+   * be handled by the value parser. (actually there might be some need for
+   * separate parsing with dimensioned quantities).
+   * 
+   * in any case, if you type `=1/2` that should be a binary expression.
+   * if you type `=3 1/2`, though, that means 3.5 and we need to treat it 
+   * as such.
+   * 
+   * rules:
+   * 
+   *  - must be a binary "/" (divide) operation, with integer operands.
+   *  - must be [literal integer] [fraction] where the interval must be one space.
+   *  - can be negated (e.g. "-3 1/2", so that makes things more complicated.
+   *  - if we do translate, translate hard so this becomes a literal number.
+   *
+   * ...default? since we didn't support this before, we could leave it
+   * off for now. needs some more testing.
+   * 
+   */
+  fractions: boolean,
+
+  /* *
+   * what if we do want =1/2 to be a fraction? more importantly, if we are
+   * using dimensioned quantities we might want =1/2C to be 0.5C, as opposed
+   * to a binary operation =1 / (2C) 
+   * 
+   * ...
+   * 
+   * actually now that I think about it, that's equivalent. I was worred about
+   * the concept of 1 / (2C) but logically that's the same as 2C / 4C^2 (multiply
+   * numerator and denominator by denominator)) which is === (1/2)C. basically
+   * as long as you only have one value with a dimension/unit, then division
+   * and multiplication are a wash. it's only a concern when you have two 
+   * values with dimensions/units.
+   * 
+   * so essentially this isn't necessary except for representation, which can
+   * be handled separately.
+   * 
+   * ALTHOUGH, if you do that, you have to do the math before you do any 
+   * unit conversion. because otherwise the ratios get screwed up.
+   * 
+   */
+  // aggressive_fractions: false,
+
+  /* *
+   * flag: support complex numbers. it might be useful to turn this off if it 
+   * conflicts with dimensioned quantities (it doesn't, really, there's no i unit).
+   */
+  // complex_numbers: true,
+
+}

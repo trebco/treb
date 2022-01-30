@@ -309,6 +309,24 @@ export class Converter {
   }
 
   /**
+   * convert g to oz, lb
+   * @param g 
+   */
+  public ConvertG = (g: number) => {
+
+    const oz_g = 28.3495; // oz -> g
+    const lb_g = 453.592; // lb -> g
+
+    const lb = Math.floor(g / lb_g);
+    g -= (lb * lb_g);
+    
+    const oz = g / oz_g;
+
+    return { lb, oz };
+
+  };
+
+  /**
    * convert arbitrary ml value to our US volume units. aggregate error.
    */
   public ConvertML(ml: number, err?: number, strategy = 1): Partial<USVolume> {

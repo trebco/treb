@@ -522,7 +522,14 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     }
 
-    this.grid = new Grid(grid_options);
+    // creating calculator first, because it owns parser. not a good idea?
+    // we could own parser, and then pass to calculator.
+
+    this.calculator = new type();
+
+    // now grid
+
+    this.grid = new Grid(grid_options, this.parser);
 
     if (this.options.headless) {
       this.grid.headless = true; // FIXME: move into grid options
@@ -690,8 +697,10 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       this.grid.headless = true; // ensure
     }
 
+    // moved up so we can share parser w/ grid
+
     // this.calculator = this.InitCalculator();
-    this.calculator = new type();
+    // this.calculator = new type();
 
     // FIXME: this should yield so we can subscribe to events before the initial load
 
@@ -3783,6 +3792,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // FIXME: need a way to share/pass parser flags
 
     const parser = new Parser();
+    parser.flags = {...this.parser.flags}; // <-- this is one way
 
     let target_decimal_mark: DecimalMarkType;
     let target_argument_separator: ArgumentSeparatorType;
@@ -3880,7 +3890,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       SemanticVersionElement.minor, 
       SemanticVersionElement.patch
     ];
-    
+
     const result: SemanticVersionComparison = { match: 0 };
 
     for (let i = 0; i < 3; i++) {

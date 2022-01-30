@@ -48,6 +48,8 @@ export class Calculator extends Graph {
   // FIXME: remove from calculator class
   // protected readonly simulation_model = new SimulationModel();
 
+  // FIXME: need a way to share/pass parser flags
+
   public readonly parser: Parser = new Parser();
 
   protected readonly library = new FunctionLibrary();
@@ -67,7 +69,7 @@ export class Calculator extends Graph {
   constructor() {
     super();
 
-    this.UpdateLocale();
+    this.UpdateLocale(); // for parser
 
     // base functions
     this.library.Register(

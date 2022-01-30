@@ -751,21 +751,7 @@ export class ExpressionCalculator {
         else if (right.type === ValueType.array) {
           return this.ElementwiseBinaryExpression(fn, {type: ValueType.array, value: [[left]]}, right as ArrayUnion);
         }
-
-        /*
-        if (Array.isArray(left)){
-          if (Array.isArray(right)){
-            return this.ElementwiseBinaryExpression(fn, left, right);
-          }
-          else {
-            return this.ElementwiseBinaryExpression(fn, left, [[right]]);
-          }
-        }
-        else if (Array.isArray(right)) {
-          return this.ElementwiseBinaryExpression(fn, [[left]], right);
-        }
-        */
-
+        
         return fn(left, right);
 
       };

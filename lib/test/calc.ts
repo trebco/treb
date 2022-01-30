@@ -1,6 +1,6 @@
 
 import { ExpressionUnit, UnitBinary, UnitDimensionedQuantity, UnitLiteral, UnitLiteralString, UnitUnary } from 'treb-parser';
-import { UnionValue, ValueType } from 'treb-base-types';
+import { DimensionedQuantity, UnionValue, ValueType } from 'treb-base-types';
 
 /**
  * simple calculator, no caching and no functions (atm). 
@@ -117,6 +117,31 @@ export class Calculator {
 
     return undefined;
     
+  }
+
+  public ConvertValue(value: DimensionedQuantity): DimensionedQuantity|undefined {
+
+    const normalized = this.MapUnit(value.unit);
+
+    if (!normalized) {
+      return undefined;
+    }
+
+    const unit = this.unit_map[normalized];
+
+    // clone so we don't overwrite
+    // const result: DimensionedQuantity = {...value};
+
+    if (value.unit === 'ml' || value.unit === 'g') {
+      return {...value}; // no change 
+    }
+
+
+    return {
+      unit: unit.unit,
+      value: unit.value * value.value,
+    };
+
   }
 
   /**
@@ -248,6 +273,8 @@ export class Calculator {
     // for divide, we can have 0, 1 or 2 dimensioned quantities. if there is
     // 1 DQ, where the dimension unit is doesn't matter (for an intuition, 
     // multiply both numerator and denominator by the denominator).
+
+    // What? that's nonsense... at least the intuition is nonsense, how would that work?
 
     if (a.type === 'literal' && b.type === 'literal') {
 
