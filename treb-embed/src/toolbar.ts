@@ -294,7 +294,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         
         <div class='group'>
           <button id='layout' class='drop-button' title='Rows/columns'>
-            <icon>FA/light/ruler-combined</icon>
+            <icon>FA/light/ruler-triangle</icon>
           </button>
           <div class='drop-menu' tabindex='-1'>
             <ul>

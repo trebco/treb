@@ -5,9 +5,11 @@ import { Cell, Cells, ICellAddress, ValueType, GetValueType,
          ArrayUnion,
          NumberUnion,
          UndefinedUnion,
-         ComplexUnion} from 'treb-base-types';
+         ComplexUnion,
+         DimensionedQuantity,
+         DimensionedQuantityUnion} from 'treb-base-types';
 import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
-         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall } from 'treb-parser';
+         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity } from 'treb-parser';
 import { DataModel, MacroFunction } from 'treb-grid';
 import { NameError, ReferenceError, ExpressionError, UnknownError } from './function-error';
 import { ReturnType } from './descriptors';
@@ -609,6 +611,21 @@ export class ExpressionCalculator {
 
   }
 
+  protected ResolveDimensionedQuantity(): (exp: UnitDimensionedQuantity) => UnionValue {
+
+    return (expr: UnitDimensionedQuantity): UnionValue => {
+      const expression = this.CalculateExpression(expr.expression as ExtendedExpressionUnit);
+      return {
+        type: ValueType.dimensioned_quantity,
+        value: {
+          value: expression.value,
+          unit: expr.unit.name,
+        },
+      };
+    };
+
+  }
+
   protected UnaryExpression(x: UnitUnary): (expr: UnitUnary) => UnionValue /*UnionOrArray*/ { // operator: string, operand: any){
 
     // there are basically three code paths here: negate, identity, and error.
@@ -891,6 +908,9 @@ export class ExpressionCalculator {
 
     case 'missing':
       return (expr.user_data = () => { return { value: undefined, type: ValueType.undefined } as UndefinedUnion })(); // check
+
+    case 'dimensioned':
+      return (expr.user_data = this.ResolveDimensionedQuantity())(expr);
 
     case 'literal':
       {

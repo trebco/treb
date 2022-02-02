@@ -1393,11 +1393,15 @@ export class TileRenderer {
       strong_emphasis: Style.Font({...style, bold: true, italic: true}, this.layout.scale),
     };
 
-    //if (font !== this.last_font) {
-    //  context.font = this.last_font = font; // set in context so we can measure
-    //}
-
     context.font = fonts.base; 
+
+    //
+    // NOTE: we appear to be updating render data on cell size changes 
+    // (width/height) to account for line breaks, but that should only
+    // be necessary if the text is wrapped -- correct? maybe we can skip
+    //
+    // (FIXME/TODO)
+    //
 
     if (dirty || !cell.renderer_data || cell.renderer_data.width !== width || cell.renderer_data.height !== height) {
       const text_data = this.PrepText(context, fonts, cell, width);
@@ -1407,9 +1411,7 @@ export class TileRenderer {
         width, 
         height,
       };
-      //if (renderer_title) {
-      //  cell.renderer_data.title = renderer_title;
-      //}
+
     }
 
     const text_data: PreparedText = cell.renderer_data.text_data as PreparedText;
@@ -1420,6 +1422,8 @@ export class TileRenderer {
     // (2) wrapped and merged cells cannot overflow.
     // (3) overflow is horizontal only.
     // (4) overflow can extend indefinitely.
+
+    // Q: what about DQ?
 
     const overflow = text_data.width > (width - 2 * this.cell_edge_buffer);
 
@@ -1432,7 +1436,9 @@ export class TileRenderer {
         cell.type === ValueType.number || 
         cell.calculated_type === ValueType.number ||
         cell.type === ValueType.complex || 
-        cell.calculated_type === ValueType.complex);
+        cell.calculated_type === ValueType.complex ||
+        cell.type === ValueType.dimensioned_quantity ||
+        cell.calculated_type === ValueType.dimensioned_quantity );
 
     let horizontal_align = style.horizontal_align;
     if (horizontal_align === Style.HorizontalAlign.None) {

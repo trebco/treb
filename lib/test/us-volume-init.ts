@@ -33,7 +33,7 @@ export const Init = () => {
 
   // ---- case 2: cup/oz -------------------------------------------------------
 
-  const base_format = new NumberFormat('#.#');
+  const base_format = new NumberFormat('0.#');
   base_format.magic_decimal = true;
 
   const cup_oz = new NumberFormat('? ##/##');
@@ -71,6 +71,7 @@ export const Init = () => {
 
   // ---- case 3: cup/g --------------------------------------------------------
 
+  const gram_format = new NumberFormat('0');
   const cup_gram = new NumberFormat('? ##/##');
   cup_gram.transform_value = (value: CellValue): CellValue => {
     if (IsDimensionedQuantity(value)) {
@@ -86,7 +87,12 @@ export const Init = () => {
         return str;
       }
       else if (check.unit === 'g') {
-        return check;
+
+        // we don't want this to be formatted using the default formatter
+        // (which is fractional)
+
+        // return check;
+        return gram_format.Format(check.value) + ' ' + check.unit;
       }
 
       return check;

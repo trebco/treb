@@ -1,9 +1,9 @@
 
 import { FunctionMap } from 'treb-calculator/src/descriptors';
 import * as Utils from 'treb-calculator/src/utilities';
-import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from 'treb-calculator/src/function-error';
+import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError, UnknownError } from 'treb-calculator/src/function-error';
 import { Box, UnionValue, ValueType, GetValueType, 
-         CellValue, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex, IsDimensionedQuantity } from 'treb-base-types';
+         CellValue, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex, IsDimensionedQuantity, DimensionedQuantityUnion } from 'treb-base-types';
 
 import { calculator as volume_calculator } from '../../lib/test/us-volume-init';
 import { UnitError } from './error';
@@ -82,6 +82,62 @@ FunctionLibrary['Sum'] = {
   },
 };
 
+FunctionLibrary['Convert'] = {
+
+  fn: (value: DimensionedQuantityUnion, ingredient: string) => {
+
+    ingredient = ingredient.toLowerCase();
+    const unit = value?.value?.unit || '';
+
+    // FIXME: should reduce to the known unit (ml/g), unless
+    // it's a nonstandard/unknown unit (stick, egg)
+
+    switch (ingredient) {
+      case 'butter':
+
+        if (/^sticks{0,1}$/i.test(unit)) { // stick -> g
+          return {
+            type: ValueType.dimensioned_quantity,
+            value: {
+              unit: 'g',
+              value: (value?.value?.value||1) * 28.3495 * 4, // 4 oz
+            },
+          };
+        }
+        if (/Ts{0,1}$/.test(unit) || /^(?:tbsp|tbl|tablespoon)s{0,1}$/.test(unit)) { // tablespoon -> g
+          return {
+            type: ValueType.dimensioned_quantity,
+            value: {
+              unit: 'g',
+              value: (value?.value?.value||1) * 28.3495 / 2, // 0.5 oz
+            },
+          };
+        }
+
+        if (/^(?:g|gram|gm)$/i.test(unit)) { // grams -> volume
+          return {
+            type: ValueType.dimensioned_quantity,
+            value: {
+              unit: 'tbsp',
+              value: (value?.value?.value||1) / (28.3495 * 4) * 8,
+            },
+          };
+        }
+
+        console.info("X", {value, ingredient, unit});
+        return UnitError();
+    }
+    
+    console.info("V", {value, ingredient, unit});
+
+    return UnknownError();
+  },
+  arguments: [
+    { name: 'Value', boxed: true, },
+    { name: 'Ingredient', },
+  ],
+
+};
 
 //
 // this should disappear in prod with tree-shaking, because we'll
