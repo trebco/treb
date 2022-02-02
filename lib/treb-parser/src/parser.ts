@@ -61,6 +61,9 @@ const DOLLAR_SIGN = 0x24;
 const OPEN_BRACE = 0x7b;
 const CLOSE_BRACE = 0x7d;
 
+const OPEN_SQUARE_BRACKET = 0x5b;
+const CLOSE_SQUARE_BRACKET = 0x5d;
+
 const EXCLAMATION_MARK = 0x21;
 // const COLON = 0x3a; // became an operator
 const SEMICOLON = 0x3b;
@@ -141,11 +144,13 @@ export class Parser {
   /**
    * unifying flags
    */
-  public flags: ParserFlags = {
+  public flags: Partial<ParserFlags> = {
     spreadsheet_semantics: true,
     dimensioned_quantities: false,
     fractions: true,
   };
+
+  protected r1c1_regex = /[rR]((?:\[[-+]{0,1}\d+\]|\d+))[cC]((?:\[[-+]{0,1}\d+\]|\d+))$/;
 
   /**
    * internal argument separator, as a number. this is set internally on
@@ -1852,6 +1857,7 @@ export class Parser {
     const position = this.index;
 
     let single_quote = (initial_char === SINGLE_QUOTE);
+    let square_bracket = false; // this one can't be initial
 
     for (++this.index; this.index < this.length; this.index++) {
       const char = this.data[this.index];
@@ -1865,12 +1871,28 @@ export class Parser {
         char === EXCLAMATION_MARK ||
         single_quote || // ((char === SINGLE_QUOTE || char === SPACE) && single_quote) ||
         (char >= ZERO && char <= NINE) // tokens can't start with a number, but this loop starts at index 1
+
+        || (this.flags.r1c1 && (
+          char === OPEN_SQUARE_BRACKET ||
+          char === CLOSE_SQUARE_BRACKET ||
+          (char === MINUS && square_bracket)
+        ))
+
       ) {
         token.push(char);
+
+        if (char === OPEN_SQUARE_BRACKET) {
+          square_bracket = true;
+        }
+        if (char === CLOSE_SQUARE_BRACKET) {
+          square_bracket = false;
+        }
+
         if (char === SINGLE_QUOTE) {
           single_quote = false; // one only
         }
       }
+
       else break;
     }
 
@@ -1937,7 +1959,7 @@ export class Parser {
       const address = this.ConsumeAddress(str, position);
       if (address) return address;
     }
-    
+ 
     const identifier: UnitIdentifier = {
       type: 'identifier',
       id: this.id_counter++,
@@ -1980,12 +2002,46 @@ export class Parser {
       position += sheet.length + 1;
     }
 
-    /*
-    if (tokens.length === 2) {
-      sheet = tokens[0];
-      position += (tokens[0].length + 1);
+    // handle first
+
+    if (this.flags.r1c1) {
+
+      const match = tokens[tokens.length - 1].match(this.r1c1_regex);
+      if (match) {
+
+        const r1c1: UnitAddress = {
+          type: 'address',
+          id: this.id_counter++,
+          label: token, // TODO
+          row: 0,
+          column: 0,
+          // absolute_row: false, // TODO: is this supported?
+          // absolute_column: false, // TODO: is this supported?
+          position: index,
+          sheet,
+          r1c1: true,
+        };
+
+        if (match[1][0] === '[') { // relative
+          r1c1.offset_row = true;
+          r1c1.row = Number(match[1].substring(1, match[1].length - 1));
+        }
+        else { // absolute
+          r1c1.row = Number(match[1]) - 1; // R1C1 is 1-based
+        }
+
+        if (match[2][0] === '[') { // relative
+          r1c1.offset_column = true;
+          r1c1.column = Number(match[2].substring(1, match[2].length - 1));
+        }
+        else { // absolute
+          r1c1.column = Number(match[2]) - 1; // R1C1 is 1-based
+        }
+
+        return r1c1;
+
+      }
     }
-    */
 
     // FIXME: can inline
 

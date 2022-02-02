@@ -8235,14 +8235,6 @@ export class Grid {
       else {
         sheet.SetAreaValues2(area, command.value);
       }
-      /*
-      else if (!Array.isArray(command.value) && !ArrayBuffer.isView(command.value)) {
-        this.model.sheet.SetAreaValue(area, command.value);
-      }
-      else {
-        this.model.sheet.SetAreaValues(area, command.value as any[][]);
-      }
-      */
 
       return area;
 

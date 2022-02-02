@@ -24,6 +24,8 @@ import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent } from './ty
 
 import { SelectionState, Toolbar } from './toolbar';
 
+// import { CreateProxy } from './data-proxy';
+
 // this is a circular reference. this seems like a bad idea, 
 // but it's legal in typescript. not sure how I feel about this.
 
@@ -204,6 +206,43 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
   /** @internal */
   public static enable_formatter = false;
+
+  /* * 
+   * the data field is a proxy object that references spreadsheet data 
+   * directly. it's intended to simplify getting/setting values from the 
+   * sheet.
+   * 
+   * this field is EXPERIMENTAL and the semantics may change in future 
+   * versions. don't use it in production.
+   * 
+   * because this is a proxy, it will usually be slower than using the 
+   * GetRange and SetRange functions. the convenience of using the proxy
+   * may outweigh the extra cost.
+   * 
+   * to get/set data, use offsets for the row and column (in that order).
+   * row and column are zero-based. for example, to get the value in cell
+   * C7, use `sheet.data[6][2]` (row 6, column 2).
+   * 
+   * to set the value in that cell, just assign the value: `sheet.data[6][2] = 100`.
+   * 
+   * you can optionally also include a sheet name. if you don't use a sheet
+   * name the proxy will refer to the current active sheet.
+   * 
+   * `sheet.data['Sheet1'][2][2] = 10;`
+   * 
+   * both GetRange and SetRange take options that change the meaning of the
+   * function. for example, GetRange options has a field `formula` which 
+   * means "return the formula instead of the calculated value".
+   * 
+   * the proxy has an "options" field which is passed to GetRange/SetRange,
+   * so you can set options for getting and setting values.
+   * 
+   * `sheet.data.options.formula = true;`
+   * 
+   * @experimental
+   * @internal
+   */
+  // public data = CreateProxy(this);
 
   /**
    * this flag will be set on LoadDocument. the intent is to be able to
@@ -2940,6 +2979,12 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
   }
 
+  /*
+  public OffsetFormula(formula: string, base: ICellAddress): string|undefined {
+
+  }
+  */
+
   /**
    * Set data in range.
    * 
@@ -2970,6 +3015,55 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         }
         area.ConsumeAddress(target);
       }
+
+      /*
+
+      // we're going to do R1C1 translation here. that's so we don't pollute
+      // any more objects with R1C1 syntax. we want to support it in the API,
+      // but that's it.
+
+      // ---
+
+      const cached = this.parser.flags.r1c1;
+      this.parser.flags.r1c1 = true; // set
+
+      if (Array.isArray(data)) {
+        // TODO
+      }
+      else {
+        if (typeof data === 'string' && data[0] === '=') {
+          const result = this.parser.Parse(data);
+          if (result.expression) {
+            let transformed = false;
+            this.parser.Walk(result.expression, unit => {
+              if (unit.type === 'address') {
+                transformed = transformed || (!!unit.r1c1);
+
+                if (unit.offset_column) {
+                  unit.offset_column = false;
+                  unit.column = 10;
+                  transformed = true;
+                }
+                if (unit.offset_row) {
+                  unit.offset_row = false;
+                  unit.row = 10;
+                  transformed = true;
+                }
+              }
+              return true;
+            });
+            if (transformed) {
+              data = '=' + this.parser.Render(result.expression);
+            }
+          }
+        }
+      }
+
+      this.parser.flags.r1c1 = cached; // reset
+
+      */
+
+      // ---
 
       return this.grid.SetRange(
         area, data, options.recycle, options.transpose, options.array);

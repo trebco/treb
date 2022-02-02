@@ -168,6 +168,22 @@ export interface UnitAddress extends BaseUnit {
   column: number;
   absolute_row?: boolean;
   absolute_column?: boolean;
+
+  /** 
+   * this means the row is a relative offset from the current row. this 
+   * happens if you use R1C1 syntax with square brackets. 
+   */
+  offset_row?: boolean;
+
+  /** 
+   * this means the column is a relative offset from the current column. 
+   * this happens if you use R1C1 syntax with square brackets. 
+   */
+  offset_column?: boolean;
+
+  /** the formula was originally in R1C1. we probably want to translate it. */
+  r1c1?: boolean;
+
   position: number;
 }
 
@@ -283,6 +299,14 @@ export interface ParserFlags {
    * 
    */
   fractions: boolean,
+
+  /**
+   * support R1C1 addressing. we support absolute (`R2C3`) and relative
+   * (R[-1]C[0]) addresses. can we squeeze this into the existing address
+   * structure, or do we need a new structure? (...)
+   */
+  r1c1: boolean,
+
 
   /* *
    * what if we do want =1/2 to be a fraction? more importantly, if we are
