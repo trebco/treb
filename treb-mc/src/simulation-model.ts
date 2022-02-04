@@ -418,12 +418,24 @@ export class SimulationModel {
         extension: true,
       },
 
+      ScaledLognormalValue: {
+        description: 'Returns a sample from the log-normal distribution, scaled to the desired mean and standard deviation',
+        simulation_volatile: true,
+        arguments: [
+          { name: 'mean', description: 'Target mean', default: 0 },
+          { name: 'stdev', description: 'Standard deviation', default: 1 },
+        ],
+        fn: this.scaledlognormalvalue.bind(this),
+        category: ['RiskAMP Random Distributions'],
+        extension: true,
+      },
+
       LognormalValue: {
         description: 'Returns a sample from the log-normal distribution',
         simulation_volatile: true,
         arguments: [
           { name: 'mean', description: 'Mean of underlying Normal distribution', default: 0 },
-          { name: 'stdev', description: 'Standard Deviation of underlying Normal distribution', default: 1 },
+          { name: 'stdev', description: 'Standard deviation of underlying Normal distribution', default: 1 },
         ],
         fn: this.lognormalvalue.bind(this),
         category: ['RiskAMP Random Distributions'],
@@ -1444,6 +1456,12 @@ export class SimulationModel {
       type: ValueType.number,
       value: 1
     };
+  }
+
+  public scaledlognormalvalue(mu = 0, sigma = 1): UnionValue {
+    const m = Math.log( (mu*mu) / Math.sqrt( (mu*mu) + (sigma*sigma) ) );
+    const s = Math.sqrt( Math.log( ((mu*mu) + (sigma*sigma)) / ( mu*mu) ) );
+    return this.lognormalvalue(m, s);
   }
 
   public lognormalvalue(mean = 0, sd = 1): UnionValue {
