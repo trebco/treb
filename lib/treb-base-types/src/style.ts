@@ -7,7 +7,7 @@
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace Style {
 
-  const empty_json = JSON.stringify({});
+  const empty_json = JSON.stringify({}); // we could probably hard-code this
 
   /** 
    * horizontal align constants
@@ -21,14 +21,16 @@ export namespace Style {
 
   /** 
    * vertical align constants
+   * 
+   * @privateRemarks
+   * 
+   * horizontal alignment was (none), left, center, right.
+   * vertical aligment was (none), top, bottom, middle.
+   * 
+   * not sure why these were not symmetrical, but having strings makes it 
+   * easier to manage.
    */
   export enum VerticalAlign {
-    /*
-    None = 0,
-    Top = 1,
-    Bottom = 2,
-    Middle = 3,
-    */
     None = '',
     Top = 'top',
     Bottom = 'bottom',

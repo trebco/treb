@@ -126,6 +126,8 @@ export interface GetRangeOptions {
   /** 
    * return formulas instead of values. formula takes precedence over
    * "formatted"; if you pass both, returned values will *not* be formatted.
+   *
+   * @privateRemarks
    * 
    * FIXME: that should throw?
    */
