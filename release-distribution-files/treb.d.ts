@@ -57,15 +57,27 @@ export interface GetRangeOptions {
 
     /**
      * return formatted values (apply number formats and return strings)
+     * @deprecated
      */
     formatted?: boolean;
 
     /**
      * return formulas instead of values. formula takes precedence over
      * "formatted"; if you pass both, returned values will *not* be formatted.
+     * @deprecated
      *
      **/
     formula?: boolean;
+
+    /**
+     * optional style for returned values (replaces old flags).
+     *
+     * @remarks
+     *
+     * `formatted` returns formatted values, applying number formatting and
+     * returning strings. `formula` returns cell formulas instead of values.
+     */
+    style?: 'formatted' | 'formula';
 }
 
 /**
@@ -1005,8 +1017,7 @@ export interface DocumentLoadEvent {
 /**
  * This event is sent when the document is reset.
  *
- * @deprecated we should remove this in favor of the Load event, plus a suitable load source.
- */
+ **/
 export interface DocumentResetEvent {
     type: 'reset';
 }

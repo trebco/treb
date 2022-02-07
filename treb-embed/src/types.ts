@@ -75,7 +75,8 @@ export interface DocumentLoadEvent {
 /**
  * This event is sent when the document is reset.
  * 
- * @deprecated we should remove this in favor of the Load event, plus a suitable load source.
+ * @privateRemarks 
+ * we should remove this in favor of the Load event, plus a suitable load source.
  */
 export interface DocumentResetEvent {
   type: 'reset';
