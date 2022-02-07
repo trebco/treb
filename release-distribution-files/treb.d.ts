@@ -64,8 +64,7 @@ export interface GetRangeOptions {
      * return formulas instead of values. formula takes precedence over
      * "formatted"; if you pass both, returned values will *not* be formatted.
      *
-     * FIXME: that should throw?
-     */
+     **/
     formula?: boolean;
 }
 
@@ -716,7 +715,8 @@ export declare namespace Style {
 
     /**
          * vertical align constants
-         */ type VerticalAlign = "" | "top" | "bottom" | "middle";
+         *
+         **/ type VerticalAlign = "" | "top" | "bottom" | "middle";
 
     /** composite font size */
     interface FontSize {

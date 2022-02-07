@@ -120,18 +120,30 @@ export interface GetRangeOptions {
 
   /** 
    * return formatted values (apply number formats and return strings)
+   * @deprecated
    */
   formatted?: boolean;
 
   /** 
    * return formulas instead of values. formula takes precedence over
    * "formatted"; if you pass both, returned values will *not* be formatted.
+   * @deprecated
    *
    * @privateRemarks
    * 
    * FIXME: that should throw?
    */
   formula?: boolean;
+
+  /**
+   * optional style for returned values (replaces old flags).
+   * 
+   * @remarks
+   * 
+   * `formatted` returns formatted values, applying number formatting and
+   * returning strings. `formula` returns cell formulas instead of values.
+   */
+  style?: 'formatted'|'formula';
 
 }
 
@@ -2978,8 +2990,24 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       }
     }
 
+    // handle the old flags and the precedence rule
+
+    let formatted = !!options.formatted;
+    let formula = !!options.formula;
+
+    if (formula) {
+      formatted = false;
+    }
+
+    // new style (style) takes precedence over old flags
+
+    if (typeof options.style !== 'undefined') {
+      formula = (options.style === 'formula');
+      formatted = (options.style === 'formatted');
+    }
+
     return range ?
-      this.grid.GetRange(this.calculator.ResolveAddress(range), options.formula, options.formatted) : undefined;
+      this.grid.GetRange(this.calculator.ResolveAddress(range), formula, formatted) : undefined;
 
   }
 
