@@ -2837,6 +2837,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     // ditto re: grid method taking undefined target
 
+    // translate old-style alignment constants (UPDATE: moved to grid)
+
     this.grid.ApplyStyle(
       range ? this.calculator.ResolveArea(range) : undefined, style, delta);
   }

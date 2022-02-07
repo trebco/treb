@@ -247,6 +247,34 @@ export class Sheet {
   }
 
   /**
+   * update old-style alignment constants to the new symbolic values.
+   * updates in place.
+   */
+  public static UpdateStyle(properties: Style.Properties) {
+
+    if (typeof properties.horizontal_align === 'number') {
+      const members = [
+        Style.HorizontalAlign.None,
+        Style.HorizontalAlign.Left,
+        Style.HorizontalAlign.Center,
+        Style.HorizontalAlign.Right,
+      ]
+      properties.horizontal_align = members[properties.horizontal_align] || undefined;
+    }
+
+    if (typeof properties.vertical_align === 'number') {
+      const members = [
+        Style.VerticalAlign.None,
+        Style.VerticalAlign.Top,
+        Style.VerticalAlign.Bottom,
+        Style.VerticalAlign.Middle,
+      ]
+      properties.vertical_align = members[properties.vertical_align] || undefined;
+    }
+    
+  }
+
+  /**
    * deserialize json representation. returns new instance or updates
    * passed instance.
    *
@@ -316,39 +344,7 @@ export class Sheet {
 
       });
 
-      if (typeof ref.horizontal_align === 'number') {
-        switch (ref.horizontal_align) {
-          case 0:
-            ref.horizontal_align = Style.HorizontalAlign.None;
-            break;
-          case 1:
-            ref.horizontal_align = Style.HorizontalAlign.Left;
-            break;
-          case 2:
-            ref.horizontal_align = Style.HorizontalAlign.Center;
-            break;
-          case 3:
-            ref.horizontal_align = Style.HorizontalAlign.Right;
-            break;
-        }
-      }
-
-      if (typeof ref.vertical_align === 'number') {
-        switch (ref.vertical_align) {
-          case 0:
-            ref.vertical_align = Style.VerticalAlign.None;
-            break;
-          case 1:
-            ref.vertical_align = Style.VerticalAlign.Top;
-            break;
-          case 2:
-            ref.vertical_align = Style.VerticalAlign.Bottom;
-            break;
-          case 3:
-            ref.vertical_align = Style.VerticalAlign.Middle;
-            break;
-        }
-      }
+      this.UpdateStyle(ref);
 
       if (ref.font_size_value || ref.font_size_unit) {
 

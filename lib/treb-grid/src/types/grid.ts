@@ -2309,6 +2309,9 @@ export class Grid {
       else area = this.primary_selection.area;
     }
 
+    // patch for old versions
+    Sheet.UpdateStyle(properties);
+
     this.ExecCommand({
       key: CommandKey.UpdateStyle,
       area,
