@@ -1441,7 +1441,7 @@ export class TileRenderer {
         cell.calculated_type === ValueType.dimensioned_quantity );
 
     let horizontal_align = style.horizontal_align;
-    if (horizontal_align === Style.HorizontalAlign.None) {
+    if (!horizontal_align) {
       horizontal_align = is_number ? Style.HorizontalAlign.Right : Style.HorizontalAlign.Left;
     }
 

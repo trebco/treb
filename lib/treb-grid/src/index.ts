@@ -1,9 +1,9 @@
 
 export { Grid } from './types/grid';
 export { Sheet } from './types/sheet';
-export { DataModel, MacroFunction, SerializedNamedExpression } from './types/data_model';
+export { DataModel, MacroFunction, SerializedNamedExpression, SerializedModel } from './types/data_model';
 export * from './types/grid_events';
-export { SerializedSheet } from './types/sheet_types';
+export { SerializedSheet, FreezePane } from './types/sheet_types';
 export { Annotation } from './types/annotation';
 export { GridOptions } from './types/grid_options';
 export { Command, CommandKey } from './types/grid_command';

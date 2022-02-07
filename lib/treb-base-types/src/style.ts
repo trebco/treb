@@ -10,33 +10,29 @@ export namespace Style {
   const empty_json = JSON.stringify({});
 
   /** 
-   * horizontal align constants. 
-   * 
-   * @remarks
-   * this is an enum, but our types generator will convert it to a union 
-   * type for export. we recognize this is still not optimal, we may change 
-   * these to symbolic values in the future.
+   * horizontal align constants
    */
   export enum HorizontalAlign {
-    None = 0,
-    Left = 1,
-    Center = 2,
-    Right = 3,
+    None = '',
+    Left = 'left', 
+    Center = 'center',
+    Right = 'right',
   }
 
   /** 
-   * vertical align constants. 
-   * 
-   * @remarks
-   * this is an enum, but our types generator will convert it to a union 
-   * type for export. we recognize this is still not optimal, we may change 
-   * these to symbolic values in the future.
+   * vertical align constants
    */
   export enum VerticalAlign {
+    /*
     None = 0,
     Top = 1,
     Bottom = 2,
     Middle = 3,
+    */
+    None = '',
+    Top = 'top',
+    Bottom = 'bottom',
+    Middle = 'middle',
   }
 
   /** composite font size */

@@ -1,4 +1,4 @@
-/*! API v16.1. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+/*! API v16.2. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -648,6 +648,10 @@ export declare class EmbeddedSpreadsheet {
      */
     Cancel(token: number): void;
 }
+export interface FreezePane {
+    rows: number;
+    columns: number;
+}
 export declare type BorderConstants = "none" | "all" | "outside" | "top" | "bottom" | "left" | "right" | "double-top" | "double-bottom";
 
 /**
@@ -707,22 +711,12 @@ export interface IRectangle {
 export declare namespace Style {
 
     /**
-         * horizontal align constants.
-         *
-         * @remarks
-         * this is an enum, but our types generator will convert it to a union
-         * type for export. we recognize this is still not optimal, we may change
-         * these to symbolic values in the future.
-         */ type HorizontalAlign = 0 | 1 | 2 | 3;
+         * horizontal align constants
+         */ type HorizontalAlign = "" | "left" | "center" | "right";
 
     /**
-         * vertical align constants.
-         *
-         * @remarks
-         * this is an enum, but our types generator will convert it to a union
-         * type for export. we recognize this is still not optimal, we may change
-         * these to symbolic values in the future.
-         */ type VerticalAlign = 0 | 1 | 2 | 3;
+         * vertical align constants
+         */ type VerticalAlign = "" | "top" | "bottom" | "middle";
 
     /** composite font size */
     interface FontSize {
@@ -820,7 +814,7 @@ export declare namespace Style {
         locked?: boolean;
     }
 }
-export declare type CellValue = undefined | string | number | boolean | Complex;
+export declare type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
 /**
  * Complex number type
@@ -828,6 +822,10 @@ export declare type CellValue = undefined | string | number | boolean | Complex;
 export interface Complex {
     real: number;
     imaginary: number;
+}
+export interface DimensionedQuantity {
+    value: number;
+    unit: string;
 }
 
 /**
@@ -981,10 +979,6 @@ export interface EmbeddedSpreadsheetOptions {
 
     /** show tinted colors in toolbar color dropdowns */
     tint_theme_colors?: boolean;
-}
-export interface FreezePane {
-    rows: number;
-    columns: number;
 }
 export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file" | "local-storage" | "undo";
 

@@ -316,6 +316,40 @@ export class Sheet {
 
       });
 
+      if (typeof ref.horizontal_align === 'number') {
+        switch (ref.horizontal_align) {
+          case 0:
+            ref.horizontal_align = Style.HorizontalAlign.None;
+            break;
+          case 1:
+            ref.horizontal_align = Style.HorizontalAlign.Left;
+            break;
+          case 2:
+            ref.horizontal_align = Style.HorizontalAlign.Center;
+            break;
+          case 3:
+            ref.horizontal_align = Style.HorizontalAlign.Right;
+            break;
+        }
+      }
+
+      if (typeof ref.vertical_align === 'number') {
+        switch (ref.vertical_align) {
+          case 0:
+            ref.vertical_align = Style.VerticalAlign.None;
+            break;
+          case 1:
+            ref.vertical_align = Style.VerticalAlign.Top;
+            break;
+          case 2:
+            ref.vertical_align = Style.VerticalAlign.Bottom;
+            break;
+          case 3:
+            ref.vertical_align = Style.VerticalAlign.Middle;
+            break;
+        }
+      }
+
       if (ref.font_size_value || ref.font_size_unit) {
 
         ref.font_size = {

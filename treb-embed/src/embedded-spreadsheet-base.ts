@@ -44,8 +44,8 @@ import * as FileSaver from 'file-saver';
 import '../style/embed.scss';
 
 // what is this? if these are being used outside of grid they should be exported
-import { SerializedModel } from 'treb-grid/src/types/data_model';
-import { FreezePane, SerializedSheet } from 'treb-grid/src/types/sheet_types';
+import { SerializedModel } from 'treb-grid' ; // /src/types/data_model';
+import { FreezePane, SerializedSheet } from 'treb-grid'; // /src/types/sheet_types';
 
 /**
  * options for saving files. we add the option for JSON formatting.

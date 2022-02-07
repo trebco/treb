@@ -251,7 +251,6 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
         }
 
         if (ts.isEnumDeclaration(node)) {
-
           if (config.flatten_enums) {
 
             const alias = ts.factory.createTypeAliasDeclaration(
@@ -261,7 +260,9 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
               [], 
               ts.factory.createUnionTypeNode(
                 node.members.map((member, i) => {
+
                   if (member.initializer) {
+
                     if (ts.isNumericLiteral(member.initializer)
                         || ts.isStringLiteral(member.initializer)) {
                       return ts.factory.createLiteralTypeNode(member.initializer);
@@ -731,6 +732,9 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
   for (let i = 0; i < depth; i++) { depth_prefix += ' '; }
 
   const RelativeFilePath = (key: string): string => {
+
+    // console.info("RDP", key);
+
     if (key.startsWith('.')) {
       return path.join(path.dirname(file), key + '.d.ts');
     }
@@ -738,7 +742,8 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
       return path.join(config_dir, config.root, key + '.d.ts');
     }
     else {
-      return path.join(config_dir, config.root, key, 'src', 'index.d.ts');
+      return path.join(config_dir, config.root, 'lib', key, 'src', 'index.d.ts');
+      // return path.join(config_dir, config.root, key, 'src', 'index.d.ts');
     }
   };
 
