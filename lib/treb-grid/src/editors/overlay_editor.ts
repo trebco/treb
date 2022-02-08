@@ -6,7 +6,7 @@
  * this is development branch only atm
  */
 
-import { Style, Theme, ThemeColor, CellValue, Rectangle, ThemeColor2, Cell } from 'treb-base-types';
+import { Style, Theme, CellValue, Rectangle, ThemeColor2, Cell } from 'treb-base-types';
 import { Yield } from 'treb-utils';
 import { Parser } from 'treb-parser';
 import { GridSelection } from '../types/grid_selection';
@@ -242,8 +242,10 @@ export class OverlayEditor extends FormulaEditorBase {
 
     this.edit_node.style.font = Style.Font(style, this.scale);
     this.edit_node.style.color = ThemeColor2(this.theme, style.text, 1);
-    // this.edit_node.style.backgroundColor = ThemeColor(this.theme, style.fill);
-    this.edit_inset.style.backgroundColor = ThemeColor(this.theme, style.fill);
+    this.edit_inset.style.backgroundColor = ThemeColor2(this.theme, style.fill, 0);
+
+    // NOTE: now that we dropped support for IE11, we can probably 
+    // remove more than one class at the same time.
 
     switch (style.horizontal_align) {
       case Style.HorizontalAlign.Right:
@@ -262,16 +264,6 @@ export class OverlayEditor extends FormulaEditorBase {
         this.edit_inset.classList.add('align-left');
         break;
     }
-
-    /*
-    const canvas = document.createElement('canvas') as HTMLCanvasElement;
-    const context = canvas.getContext('2d');
-    if (context) {
-      context.font = Style.Font(style, this.scale);
-      const metrics = context.measureText('Fishery');
-      console.info('m', metrics);
-    }
-    */
 
     this.edit_node.style.paddingBottom = `${ Math.max(0, (self.devicePixelRatio||1) - 1)}px`;
     
@@ -455,17 +447,7 @@ export class OverlayEditor extends FormulaEditorBase {
   // --- from old ICE ----------------------------------------------------------
 
   public UpdateTheme(scale: number): void {
-
     this.scale = scale;
-
-    //this.edit_container.style.color = ThemeColor(this.theme, this.theme.grid_cell?.text);
-    //this.edit_container.style.font = Style.Font(this.theme.grid_cell||{}, scale);
-    //this.edit_container.style.backgroundColor = this.theme.grid_cell?.fill ? ThemeColor(this.theme, this.theme.grid_cell.fill) : '';
-
-    // why have a border at all? (...)
-    // actually border is not displayed... or is it? (...)
-    // this.edit_container.style.borderColor = this.theme.grid_color || '';
-
   }
 
 }

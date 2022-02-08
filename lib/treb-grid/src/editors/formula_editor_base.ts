@@ -517,6 +517,9 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
       };
 
       if (this.last_parse_result.expression) {
+
+        // console.info({expr: this.last_parse_result.expression});
+
         this.parser.Walk(this.last_parse_result.expression, (unit: ExpressionUnit) => {
 
           switch (unit.type) {
@@ -530,7 +533,21 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
                 append_node(base, text.substring(base, unit.position + 1), 'text');
               }
 
-              label = (unit.type === 'call' || unit.type === 'identifier') ? unit.name : unit.label;
+              // let's get the raw text, and not the "label" -- that's causing
+              // text to toggle as we type, which is generally OK except when
+              // it's not, but when it's not it's really annoying.
+
+              if (unit.type === 'call' || unit.type === 'identifier') { label = unit.name; }
+              else {
+
+                // use the raw text. FIXME: parser could save raw 
+                // text here, so we don't have to substring.
+
+                label = this.last_parse_string.substring(unit.position + 1, unit.position + unit.label.length + 1);
+              }
+
+              // label = (unit.type === 'call' || unit.type === 'identifier') ? unit.name : unit.label;
+              
               append_node(unit.position + 1, label, unit.type);
 
               base = unit.position + label.length + 1;
@@ -548,70 +565,6 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
       last_node = append_node(base, last_text, 'text');
 
     }
-
-    /*
-    let start = 0;
-
-    for (let i = 0; i < this.reference_list.length; i++ ){
-      const reference = this.reference_list[i];
-      
-      // use the original text, so we're not auto-capitalizing
-      // (even though I like doing that)
-      const label = text.substr(reference.position + 1, reference.label.length);
-
-      // text up to position
-      const text_node = document.createTextNode(text.substring(start, reference.position + 1));
-      fragment.appendChild(text_node);
-      if (caret >= start && caret <= reference.position + 1) {
-        selection_target_node = text_node;
-        selection_offset = caret - start;
-      }
-
-      // address/range
-      const span = document.createElement('span');
-      span.classList.add(`highlight-${(this.reference_index_map[i] % 5) + 1}`);
-
-      // span.style.color = this.HighlightColor(this.reference_index_map[i], false);
-      fragment.appendChild(span);
-
-      const child_text_node = document.createTextNode(label);
-      span.appendChild(child_text_node);
-
-      // advance
-      start = reference.position + label.length + 1;
-
-      if (caret > reference.position + 1 && caret < start) {
-        selection_target_node = child_text_node;
-        selection_offset = caret - (reference.position + 1);
-      }
-
-    }
-
-    const remainder = text.substr(start) || '';
-    const remainder_node = document.createTextNode(remainder);
-
-    // this was here when I was trying to force a space character
-    // after you inserted a named range reference via autocomplete.
-    // contenteditable won't properly move after a space in a text
-    // node, so if you want that space it has to be in an element.
-
-    // this works, but then I decided I don't actually want that 
-    // space -- after the named range you might enter a comma or close
-    // paren or something.
-
-    / *
-    let remainder_node: Node;
-    if(/^\s+$/.test(remainder)) {
-      remainder_node = document.createElement('span');
-      (remainder_node as HTMLElement).innerHTML = '&nbsp;';
-    }
-    else {
-      remainder_node = document.createTextNode(remainder);
-    }
-    * /
-
-    fragment.appendChild(remainder_node);
-    */
 
     if (!selection_target_node) {
      if (text.length === caret) {
