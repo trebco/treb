@@ -2205,17 +2205,20 @@ export class Grid {
    * @param recycle recycle values. we only recycle single values or single
    * rows/columns -- we will not recycle a matrix.
    * @param transpose transpose before inserting (data is column-major)
+   * @param r1c1 - support R1C1 notation. this does not mean the data _is_ in
+   * R1C1, just that we need to check for it and handle it. R1C1 is useful for
+   * relative offsets.
    */
-  public SetRange(range: Area, data: CellValue|CellValue[]|CellValue[][], recycle = false, transpose = false, array = false): void {
+  public SetRange(range: Area, data: CellValue|CellValue[]|CellValue[][], recycle = false, transpose = false, array = false, r1c1 = false): void {
 
      // single value, easiest
     if (!Array.isArray(data)) {
 
       if (recycle || array) {
-        this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array });
+        this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array, r1c1 });
       }
       else {
-        this.ExecCommand({ key: CommandKey.SetRange, area: range.start, value: data, array });
+        this.ExecCommand({ key: CommandKey.SetRange, area: range.start, value: data, array, r1c1 });
       }
 
     }
@@ -2257,9 +2260,11 @@ export class Grid {
 
       if (transpose) { data = this.Transpose(data); }
 
-      this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array });
+      this.ExecCommand({ key: CommandKey.SetRange, area: range, value: data, array, r1c1 });
 
     }
+
+    // how does this make sense here, if the command is executed asynchronously? (...)
 
     if (!this.primary_selection.empty && range.Contains(this.primary_selection.target)) {
       this.UpdateFormulaBarFormula();
@@ -8146,10 +8151,56 @@ export class Grid {
 
   }
 
+  private TranslateR1C1(address: ICellAddress, value: CellValue): CellValue {
+
+    let transformed = false;
+
+    const cached = this.parser.flags.r1c1;
+    this.parser.flags.r1c1 = true; // set
+     
+    if (typeof value === 'string' && value[0] === '=') {
+      const result = this.parser.Parse(value);
+      if (result.expression) {
+        this.parser.Walk(result.expression, unit => {
+          if (unit.type === 'address' && unit.r1c1) {
+            transformed = true;
+
+            // translate...
+            if (unit.offset_column) {
+              unit.column = unit.column + address.column;
+            }
+            if (unit.offset_row) {
+              unit.row = unit.row + address.row;
+            }
+
+          }
+          return true;
+        });
+        if (transformed) {
+
+          if (!(this as any).warned_r1c1) {
+            (this as any).warned_r1c1 = true;
+            console.warn('NOTE: R1C1 support is experimental. the semantics may change in the future.');
+          }
+
+          value = '=' + this.parser.Render(result.expression);
+        }
+      }
+    }
+
+    this.parser.flags.r1c1 = cached; // reset
+    return value;
+
+  }
+
   /**
    * set range, via command. returns affected area.
    */
   private SetRangeInternal(command: SetRangeCommand) {
+
+    // NOTE: apparently if we call SetRange with a single target
+    // and the array flag set, it gets translated to an area. which
+    // is OK, I guess, but there may be an unecessary branch in here.
 
     const area = IsCellAddress(command.area)
       ? new Area(command.area)
@@ -8193,7 +8244,6 @@ export class Grid {
 
       const cell = sheet.CellData(command.area);
       if (cell.area && (cell.area.rows > 1 || cell.area.columns > 1)) {
-        // throw new Error('can\'t change part of an array');
         this.Error(`You can't change part of an array.`);
         return;
       }
@@ -8205,10 +8255,33 @@ export class Grid {
       // we may have supported value[], or maybe they were passed in 
       // accidentally, but check regardless.
 
-      const value = Array.isArray(command.value) ?
+      // FIXME: no, that should throw (or otherwise error) (or fix the data?). 
+      // we can't handle errors all the way down the call stack.
+
+      let value = Array.isArray(command.value) ?
         Array.isArray(command.value[0]) ? command.value[0][0] : command.value[0] : command.value;
 
+      // translate R1C1. in this case, we translate relative to the 
+      // target address, irrspective of the array flag. this is the
+      // easiest case?
+
+      // NOTE: as noted above (top of function), if a single cell target
+      // is set with the array flag, it may fall into the next branch. not 
+      // sure that makes much of a difference.
+
+      if (command.r1c1) {
+        value = this.TranslateR1C1(command.area, value);
+      }
+     
       if (command.array) {
+
+        // what is the case for this? not saying it doesn't happen, just
+        // when is it useful?
+
+        // A: there is the case in Excel where there are different semantics
+        // for array calculation; something we mentioned in one of the kb
+        // articles, something about array functions... [FIXME: ref?]
+
         sheet.SetArrayValue(area, value);
       }
       else {
@@ -8230,12 +8303,74 @@ export class Grid {
 
       if (command.array) {
 
-        const value = Array.isArray(command.value) ?
+        let value = Array.isArray(command.value) ?
           Array.isArray(command.value[0]) ? command.value[0][0] : command.value[0] : command.value;
         
+        if (command.r1c1) {
+          value = this.TranslateR1C1(area.start, value);
+        }
+
         sheet.SetArrayValue(area, value);
       }
       else {
+
+        // in this case, either value is a single value or it's a 2D array;
+        // and area is a range of unknown size. we do a 1-1 map from area
+        // member to data member. if the data is not the same shape, it just
+        // results in empty cells (if area is larger) or dropped data (if value
+        // is larger).
+
+        // so for the purposes of R1C1, we have to run the same loop that 
+        // happens internally in the Cells.SetArea routine. but I definitely
+        // don't want R1C1 to get all the way in there. 
+
+        // FIXME/TODO: we're doing this the naive way for now. it could be 
+        // optimized in several ways.
+
+        if (command.r1c1) {
+          if (Array.isArray(command.value)) {
+
+            // loop on DATA, since that's what we care about here. we can 
+            // expand data, since it won't spill in the next call (spill is
+            // handled earlier in the call stack).
+
+            for (let r = 0; r < command.value.length && r < area.rows; r++) {
+              if (!command.value[r]) {
+                command.value[r] = [];
+              }
+              const row = command.value[r];
+              for (let c = 0; c < row.length && c < area.columns; c++) {
+                const target: ICellAddress = { ...area.start, row: area.start.row + r, column: area.start.column + c };
+                row[c] = this.TranslateR1C1(target, row[c]);
+              }
+            }
+
+          }
+          else {
+
+            // only have to do this for strings
+            if (typeof command.value === 'string' && command.value[0] === '=') {
+
+              // we need to rebuild the value so it is an array, so that 
+              // relative addresses will be relative to the cell.
+
+              const value: CellValue[][] = [];
+
+              for (let r = 0; r < area.rows; r++) {
+                const row: CellValue[] = [];
+                for (let c = 0; c < area.columns; c++) {
+                  const target: ICellAddress = { ...area.start, row: area.start.row + r, column: area.start.column + c };
+                  row.push(this.TranslateR1C1(target, command.value));
+                }
+                value.push(row);
+              }
+
+              command.value = value;
+
+            }
+          }
+        }
+
         sheet.SetAreaValues2(area, command.value);
       }
 

@@ -174,6 +174,13 @@ export interface SetRangeCommand {
   /** set as array (usually control-enter) */
   array?: boolean;
 
+  /** 
+   * support R1C1 notation, which can come from API only (atm). this 
+   * flag does not mean the notation _is_ R1C1, just that we need to
+   * check for it and handle it if found.
+   */
+  r1c1?: boolean;
+
   /** missing data implies clear cell(s) */
   value?: CellValue|CellValue[][];
 }

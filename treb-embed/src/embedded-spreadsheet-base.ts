@@ -3048,57 +3048,24 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         area.ConsumeAddress(target);
       }
 
-      /*
+      // I wanted to do R1C1 translation here, but it's not really 
+      // feasible because the grid does things like recycle and transpose.
+      // we want to leave those in grid, because they are used in other
+      // cases as well -- like paste. so we probably need to do R1C1 in 
+      // grid, where we have better access to the final source/target data.
 
-      // we're going to do R1C1 translation here. that's so we don't pollute
-      // any more objects with R1C1 syntax. we want to support it in the API,
-      // but that's it.
+      // we still want to limit R1C1 to API (and not in-cell, for example)
+      // so we'll use a flag.
 
-      // ---
+      // FIXME: should we gate R1C1 on an option? might reduce reliance for now.
 
-      const cached = this.parser.flags.r1c1;
-      this.parser.flags.r1c1 = true; // set
-
-      if (Array.isArray(data)) {
-        // TODO
-      }
-      else {
-        if (typeof data === 'string' && data[0] === '=') {
-          const result = this.parser.Parse(data);
-          if (result.expression) {
-            let transformed = false;
-            this.parser.Walk(result.expression, unit => {
-              if (unit.type === 'address') {
-                transformed = transformed || (!!unit.r1c1);
-
-                if (unit.offset_column) {
-                  unit.offset_column = false;
-                  unit.column = 10;
-                  transformed = true;
-                }
-                if (unit.offset_row) {
-                  unit.offset_row = false;
-                  unit.row = 10;
-                  transformed = true;
-                }
-              }
-              return true;
-            });
-            if (transformed) {
-              data = '=' + this.parser.Render(result.expression);
-            }
-          }
-        }
-      }
-
-      this.parser.flags.r1c1 = cached; // reset
-
-      */
+      // also just FYI we don't support R1C1 as the range argument, only 
+      // values.
 
       // ---
 
       return this.grid.SetRange(
-        area, data, options.recycle, options.transpose, options.array);
+        area, data, options.recycle, options.transpose, options.array, true); // <-- add r1c1 flag
     }
 
   }
