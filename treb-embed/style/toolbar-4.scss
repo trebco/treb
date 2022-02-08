@@ -19,16 +19,22 @@ $swatch-width: 1.1em;
   z-index: 9;
   box-shadow: 0 2px 4px #0d131e1a;
   outline: none;
-  margin: 0;
 
   opacity: 0;
   pointer-events: none;
   transition: opacity .125s;
 
+  display: none;
+
+  &.enabled {
+    display: initial;
+  }
+
   &.visible {
+
     opacity: 1;
     pointer-events: initial;
-
+  
     .comment-editor textarea {
       resize: both;
     }

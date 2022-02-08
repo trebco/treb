@@ -506,12 +506,6 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     // console.info(this.model);
     container.appendChild(this.model.root);
 
-    /*
-    setTimeout(() => {
-      (this.model.comment as HTMLElement).click();
-    }, 300);
-    */
-
   }
 
   public HandleClick(event: MouseEvent): void {
@@ -799,7 +793,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
     element.style.left = left + 'px';
     element.style.top = top + 'px';
-    element.classList.add('visible');
+
+    element.classList.add('enabled');
+    requestAnimationFrame(() => element.classList.add('visible'));
 
     // handle escape key (closes popup)
     const esc = (event: KeyboardEvent) => {
