@@ -6,8 +6,7 @@ import {
 } from 'treb-grid';
 
 import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
-import { LeafVertex } from 'treb-calculator';
-import { Calculator } from 'treb-calculator';
+import { Calculator, LeafVertex } from 'treb-calculator';
 
 import {
   IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue, Point,

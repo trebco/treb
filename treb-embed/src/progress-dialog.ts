@@ -280,7 +280,9 @@ export class ProgressDialog {
             <div id='title' class='treb-embed-dialog-title'></div>
             <div id='message' class='treb-embed-dialog-message'></div>
             <div id='about' class='treb-embed-dialog-body'>
-              TREB version ${process.env.BUILD_VERSION}<div class='smaller'><a target=_blank href='https://treb.app'>http://treb.app</a></div>
+              TREB version ${process.env.BUILD_VERSION}
+              ${process.env.NODE_ENV === 'production' ? '' : `<div class='smaller'>(development build)</div>`}
+              <div class='smaller'><a target=_blank href='https://treb.app'>http://treb.app</a></div>
             </div>
           </div>
           <div id='close' class='close-box'>
