@@ -1,10 +1,6 @@
 
 import { CompositeSheet, DecoratedHTMLElement } from './composite-sheet';
 
-type DecoratedSelf = (typeof self) & {
-  load: (sheet: any, element: HTMLElement) => void;
-}
-
 export class AutoEmbedManager {
   
   /** attach to DOM events */
@@ -70,9 +66,9 @@ export class AutoEmbedManager {
       // optional load callback
       const load = options.load || dataset.load;
       if (load) {
-        const decorated = (self as DecoratedSelf);
-        if (decorated.load) {
-          decorated.load(sheet, element); // callback wants sheet, not embed
+        const func = (self as any)[load] as (sheet: any, element: HTMLElement) => void;
+        if (func) {
+          func(sheet, element); // callback wants sheet, not embed
         }
         else {
           console.warn(`function ${load} not found`);
