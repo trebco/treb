@@ -109,6 +109,38 @@ export class TileRenderer {
 
   }
 
+  /**
+   * use one of the tile contexts to measure text. we are using the tile
+   * context because it's attached to the DOM, and style is applied. we need
+   * that for the root font size, in case font size in the style is relative
+   * (which it should be).
+   * 
+   * we could use the buffer context, if that were attached to the DOM, but
+   * at the moment it is not so this is a shortcut. since we're not actually
+   * painting, it's not too bad, but we still fetch the context every time.
+   * hopefully it's cached.
+   * 
+   * FIXME: if you're doing it this way, maybe pass in an array of strings/
+   * fonts, to avoid getting the context every time?
+   * 
+   * @param text 
+   * @param font 
+   */
+  public MeasureText(text: string, font?: string): TextMetrics {
+
+    const context = this.layout.grid_tiles[0][0].getContext('2d', { alpha: false });
+    
+    if (!context) {
+      throw new Error('invalid context');
+    }
+
+    if (font) {
+      context.font = font;
+    }
+
+    return context.measureText(text);
+  }
+
   public UpdateTheme() {
 
     //  console.info("UT", this.theme.grid_cell?.font_size);
@@ -1393,7 +1425,7 @@ export class TileRenderer {
       strong_emphasis: Style.Font({...style, bold: true, italic: true}, this.layout.scale),
     };
 
-    context.font = fonts.base; 
+    context.font = fonts.base;
 
     //
     // NOTE: we appear to be updating render data on cell size changes 

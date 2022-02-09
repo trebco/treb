@@ -39,7 +39,7 @@ export class Sheet {
   public static readonly default_sheet_name = 'Sheet1';
 
   // FIXME: use the external measurement object (from utils)
-  private static measurement_canvas?: HTMLCanvasElement;
+  // private static measurement_canvas?: HTMLCanvasElement;
 
   /**
    * adding verbose flag so we can figure out who is publishing
@@ -1366,16 +1366,26 @@ export class Sheet {
 
   }
 
-  /**
+  /* *
    * auto-sizes the column, but if the allow_shrink parameter is not set
    * it will only enlarge, never shrink the column.
    *
    * UPDATE: since the only caller calls with inline = true, removing 
    * parameter, test, and extra behavior.
-   */
+   * 
+   * UPDATE: moving to grid, for reasons of canvas...
+   * /
   public AutoSizeColumn(column: number, allow_shrink = true): void {
 
-    if (!Sheet.measurement_canvas) Sheet.measurement_canvas = document.createElement('canvas');
+    if (!Sheet.measurement_canvas) {
+      Sheet.measurement_canvas = document.createElement('canvas');
+    }
+    Sheet.measurement_canvas.style.font = Style.Font(this.default_style_properties);
+    console.info("SMC", Sheet.measurement_canvas.style.font);
+    (self as any).SMC = Sheet.measurement_canvas;
+
+    document
+
     const context = Sheet.measurement_canvas.getContext('2d');
     if (!context) return;
 
@@ -1393,6 +1403,9 @@ export class Sheet {
 
       if (text && text.length) {
         context.font = Style.Font(cell.style || {});
+
+        console.info({text, style: Style.Font(cell.style||{}), cf: context.font});
+
         width = Math.max(width, Math.ceil(context.measureText(text).width) + padding);
       }
     }
@@ -1400,6 +1413,7 @@ export class Sheet {
     this.SetColumnWidth(column, width);
 
   }
+  */
 
   /** returns the style properties for a given style index */
   public GetStyle(index: number): Style.Properties {

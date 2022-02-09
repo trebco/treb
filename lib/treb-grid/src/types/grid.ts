@@ -2639,6 +2639,39 @@ export class Grid {
 
   // --- private methods -------------------------------------------------------
 
+  private AutoSizeColumn(sheet: Sheet, column: number, allow_shrink = true): void {
+
+    // const context = Sheet.measurement_canvas.getContext('2d');
+    // if (!context) return;
+
+    let width = 12;
+    const padding = 4 * 2; // FIXME: parameterize
+
+    if (!allow_shrink) width = this.active_sheet.GetColumnWidth(column);
+
+    for (let row = 0; row < this.active_sheet.cells.rows; row++) {
+      const cell = this.active_sheet.CellData({ row, column });
+      let text = cell.formatted || '';
+      if (typeof text !== 'string') {
+        text = text.map((part) => part.text).join('');
+      }
+
+      if (text && text.length) {
+        const metrics = this.tile_renderer.MeasureText(text, Style.Font(cell.style || {}));
+
+        // context.font = Style.Font(cell.style || {});
+        // console.info({text, style: Style.Font(cell.style||{}), cf: context.font});
+        // width = Math.max(width, Math.ceil(context.measureText(text).width) + padding);
+        width = Math.max(width, Math.ceil(metrics.width) + padding);
+      }
+    }
+
+    this.active_sheet.SetColumnWidth(column, width);
+
+  }
+
+  //
+
   private DeleteSheetInternal(command: DeleteSheetCommand) {
 
     let is_active = false;
@@ -8790,7 +8823,8 @@ export class Grid {
             }
             else {
               for (const entry of column) {
-                this.active_sheet.AutoSizeColumn(entry, false);
+                // this.active_sheet.AutoSizeColumn(entry, false);
+                this.AutoSizeColumn(this.active_sheet, entry, false);
               }
             }
 
