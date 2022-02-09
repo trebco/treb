@@ -3,7 +3,7 @@
 
 import {
   Cell, ValueType, Cells, Style,
-  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData, Complex, TextPartFlag, DimensionedQuantity, DimensionedQuantityUnion
+  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData, Complex, TextPartFlag, DimensionedQuantity, DimensionedQuantityUnion, IsCellAddress, IArea
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';
@@ -1785,6 +1785,37 @@ export class Sheet {
 
   }
 
+  /**
+   * this is a new GetCellStyle function, used for external access
+   * to style (for API access). there was an old GetCellStyle function
+   * for rendering, but that's been removed (control+F for info).
+   */
+  public GetCellStyle(area: ICellAddress|IArea, apply_theme = false): Style.Properties|Style.Properties[][] {
+
+    if (IsCellAddress(area)) {
+      return this.CompositeStyleForCell(area, true, false, apply_theme);
+    }
+
+    if (area.start.row === area.end.row && area.start.column === area.end.column) {
+      return this.CompositeStyleForCell(area.start, true, false, apply_theme);
+    }
+
+    const result: Style.Properties[][] = [];
+
+    for (let r = area.start.row; r <= area.end.row; r++) {
+      const row: Style.Properties[] = [];
+      for (let c = area.start.column; c <= area.end.column; c++) {
+        // const cell = this.CellData({row: r, column: c});
+        // row.push(cell.style || {});
+        row.push(this.CompositeStyleForCell({row: r, column: c}, true, false, apply_theme));
+      }
+      result.push(row);
+    }
+
+    return result;
+
+  }
+
   ///
   public FormattedCellValue(address: ICellAddress): CellValue {
 
@@ -2597,7 +2628,7 @@ export class Sheet {
 
   }
 
-  /**
+  /* *
    * styles are applied as a stack, 
    * 
    * sheet
@@ -2611,12 +2642,13 @@ export class Sheet {
    * necessarily useful to do it in real time -- we can do it on load/save
    * or perhaps on idle.
    * 
-   */
+   * /
   private FlattenStyles() {
 
     this.CompositeStyleForCell
 
   }
+  */
 
   /**
    * updates column properties. reverse-overrides cells (@see UpdateSheetStyle).
@@ -2677,10 +2709,15 @@ export class Sheet {
    * want to check what happens if the cell style is not applied; if nothing 
    * happens, then we can drop the cell style (or the property in the style).
    */
-  private CompositeStyleForCell(address: ICellAddress, apply_cell_style = true, apply_row_pattern = true) {
+  private CompositeStyleForCell(address: ICellAddress, apply_cell_style = true, apply_row_pattern = true, apply_default = true) {
 
     const { row, column } = address;
-    const stack = [this.default_style_properties, this.sheet_style];
+    const stack: Style.Properties[] = [];
+    
+    if (apply_default) {
+      stack.push(this.default_style_properties);
+    }
+    stack.push(this.sheet_style);
 
     if (apply_row_pattern && this.row_pattern.length) {
       stack.push(this.row_pattern[row % this.row_pattern.length]);

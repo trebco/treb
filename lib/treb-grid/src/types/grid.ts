@@ -2157,10 +2157,18 @@ export class Grid {
   }
 
   /**
-   * get data in a given range, optionally formulas
-   * API method
+   * I can't figure out a way in typescript to overload the GetRange function 
+   * but call it with a variable to determine the overload (the aim is to have
+   * different return types).
+   * 
+   * it seems to work fine if we use static values for the parameter (type, 
+   * below) but not a variable which is (theoretically) type-restricted to the
+   * same values. One to work on, maybe.
+   * 
+   * @param range 
+   * @returns 
    */
-  public GetRange(range: ICellAddress | IArea, formula = false, formatted = false): CellValue|CellValue[][]|undefined {
+  public GetRangeStyle(range: ICellAddress|IArea, apply_theme = false): Style.Properties|Style.Properties[][]|undefined {
 
     let sheet_id = 0;
 
@@ -2169,8 +2177,40 @@ export class Grid {
       sheet_id = range.sheet_id || this.active_sheet.id;
       for (const sheet of this.model.sheets) {
         if (sheet.id === sheet_id) {
-          if (formula) { return sheet.cells.RawValue(range); }
-          if (formatted) { return sheet.GetFormattedRange(range); }
+          return sheet.GetCellStyle(range, apply_theme);
+        }
+      }
+      return undefined;
+
+    }
+
+    sheet_id = range.start.sheet_id || this.active_sheet.id;
+    for (const sheet of this.model.sheets) {
+      if (sheet.id === sheet_id) {
+        return sheet.GetCellStyle(range, apply_theme);
+      }
+    }
+
+    return undefined;
+    
+  }
+
+  /**
+   * get data in a given range, optionally formulas
+   * API method
+   */
+  public GetRange(range: ICellAddress | IArea, type?: 'formula'|'formatted'): CellValue|CellValue[][]|undefined {
+
+    let sheet_id = 0;
+
+    if (IsCellAddress(range)) {
+
+      sheet_id = range.sheet_id || this.active_sheet.id;
+      for (const sheet of this.model.sheets) {
+        if (sheet.id === sheet_id) {
+          if (type === 'formula') { return sheet.cells.RawValue(range); }
+          if (type === 'formatted') { return sheet.GetFormattedRange(range); }
+          // if (type === 'style') { return sheet.GetCellStyle(range); }
           return sheet.cells.GetRange(range);
         }
       }
@@ -2181,8 +2221,9 @@ export class Grid {
     sheet_id = range.start.sheet_id || this.active_sheet.id;
     for (const sheet of this.model.sheets) {
       if (sheet.id === sheet_id) {
-        if (formula) { return sheet.cells.RawValue(range.start, range.end); }
-        if (formatted) { return sheet.GetFormattedRange(range.start, range.end); }
+        if (type === 'formula') { return sheet.cells.RawValue(range.start, range.end); }
+        if (type === 'formatted') { return sheet.GetFormattedRange(range.start, range.end); }
+        // if (type === 'style') { return sheet.GetCellStyle(range); }
         return sheet.cells.GetRange(range.start, range.end);
       }
     }

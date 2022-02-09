@@ -112,10 +112,11 @@ export interface LoadDocumentOptions {
   source?: LoadSource,
 }
 
+
 /**
  * options for the GetRange method
  */
-export interface GetRangeOptions {
+ export interface GetRangeOptions {
 
   /** 
    * return formatted values (apply number formats and return strings)
@@ -142,7 +143,7 @@ export interface GetRangeOptions {
    * `formatted` returns formatted values, applying number formatting and
    * returning strings. `formula` returns cell formulas instead of values.
    */
-  style?: 'formatted'|'formula';
+  type?: 'formatted'|'formula';
 
 }
 
@@ -2971,14 +2972,13 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     this.grid.SelectRange(this.calculator.ResolveArea(range));
   }
 
-
   /** 
    * 
    * @param range target range. leave undefined to use current selection.
    * 
    * @public
    */
-  public GetRange(range?: RangeReference, options: GetRangeOptions = {}): CellValue|CellValue[][] {
+  public GetRange(range?: RangeReference, options: GetRangeOptions = {}): CellValue|CellValue[][]|undefined {
 
     // API v1 OK
 
@@ -2989,25 +2989,50 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       }
     }
 
-    // handle the old flags and the precedence rule
+    if (!range) { return undefined; }
 
-    let formatted = !!options.formatted;
-    let formula = !!options.formula;
+    // handle the old flags and the precedence rule. type takes precedence.
 
-    if (formula) {
-      formatted = false;
+    if (!options.type) {
+      if (options.formatted) {
+        options.type = 'formatted';
+      }
+      if (options.formula) {
+        options.type = 'formula';
+      }
     }
 
-    // new style (style) takes precedence over old flags
+    return this.grid.GetRange(this.calculator.ResolveAddress(range), options.type);
 
-    if (typeof options.style !== 'undefined') {
-      formula = (options.style === 'formula');
-      formatted = (options.style === 'formatted');
+  }
+
+  /**
+   * returns the style from the target address or range. 
+   * 
+   * @privateRemarks
+   * optimally this could be consolidated with the `GetRange` function, but 
+   * that requires some gymnastics to manage the return type which I'm not 
+   * willing (at the moment) to do.
+   * 
+   * @param range - target range. leave undefined to use current selection
+   * @param apply_theme - include theme defaults when returning style
+   * 
+   */
+  public GetStyle(range?: RangeReference, apply_theme = false): Style.Properties|Style.Properties[][]|undefined {
+
+    // API v1 OK
+
+    if (!range) {
+      const selection = this.GetSelectionReference();
+      if (!selection.empty) {
+        range = selection.area;
+      }
     }
 
-    return range ?
-      this.grid.GetRange(this.calculator.ResolveAddress(range), formula, formatted) : undefined;
+    if (!range) { return undefined; }
 
+    return this.grid.GetRangeStyle(this.calculator.ResolveAddress(range), apply_theme);
+    
   }
 
   /*

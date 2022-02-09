@@ -1,4 +1,4 @@
-/*! API v16.3. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+/*! API v16.4. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -77,7 +77,7 @@ export interface GetRangeOptions {
      * `formatted` returns formatted values, applying number formatting and
      * returning strings. `formula` returns cell formulas instead of values.
      */
-    style?: 'formatted' | 'formula';
+    type?: 'formatted' | 'formula';
 }
 
 /**
@@ -635,7 +635,16 @@ export declare class EmbeddedSpreadsheet {
      *
      * @public
      */
-    GetRange(range?: RangeReference, options?: GetRangeOptions): CellValue | CellValue[][];
+    GetRange(range?: RangeReference, options?: GetRangeOptions): CellValue | CellValue[][] | undefined;
+
+    /**
+     * returns the style from the target address or range.
+     *
+     * @param range - target range. leave undefined to use current selection
+     * @param apply_theme - include theme defaults when returning style
+     *
+     */
+    GetStyle(range?: RangeReference, apply_theme?: boolean): Style.Properties | Style.Properties[][] | undefined;
 
     /**
      * Set data in range.
