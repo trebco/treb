@@ -174,30 +174,19 @@ const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
     font_size: {
       unit, value,
     },
-    // font_size_unit: unit,
-    // font_size_value: value,
     font_face: css.fontFamily,
   };
 
-  // not sure about this... should maybe be undefined?
-
-  // console.info("BC?", css.borderBottomColor);
-
-  //style.border_bottom_color = css.borderBottomColor || ''; // 'none';
-  //style.border_top_color = css.borderTopColor || ''; // 'none';
-  //style.border_left_color = css.borderLeftColor || ''; // 'none';
-  //style.border_right_color = css.borderRightColor || ''; // 'none';
+  // the default border comes from the "theme colors", not from 
+  // the CSS property (it used to come from the CSS property, which
+  // is why we have the CSS property set). 
+  //
+  // default border is theme color 1.
+  //
 
   if (/italic/i.test(css.font)) {
     style.italic = true;
   }
-
-  /*
-  const weight = Number(css.fontWeight);
-  if (!isNaN(weight) && weight) {
-    style.font_weight = weight;
-  }
-  */
 
   return style;
 }
