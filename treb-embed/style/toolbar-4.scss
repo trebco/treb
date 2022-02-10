@@ -384,6 +384,9 @@ $swatch-width: 1.1em;
   }
 
   .container > input {
+    background: transparent;
+    color: inherit;
+    
     font-family: inherit;
     font-size: .85em; /* ?? */
     overflow: hidden;
