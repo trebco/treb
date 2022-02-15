@@ -2,15 +2,14 @@
 
 import { symbols } from './symbol-defs';
 import { CreateSheetOptions, DefaultOptions } from './options';
-// import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { composite, Resizable } from 'treb-utils';
 import { css } from 'treb-utils';
 import { Toolbar } from './toolbar';
 
 import '../style/composite-sheet.scss';
-// import '../../treb-base-types/style/resizable.css';
 import 'treb-base-types/style/resizable.css';
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
+import { SerializeOptions } from 'lib/treb-grid/src';
 
 const sidebar_open_class = 'sidebar-open';
 const toolbar_open_class = 'toolbar-open';
@@ -384,10 +383,10 @@ export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
 
     // FIXME: could we move this somewhere better typed?
 
-    const document_data = JSON.stringify((this.sheet as any).SerializeDocument({
+    const document_data = JSON.stringify(this.sheet.SerializeDocument({
       preserve_simulation_data: true, 
       rendered_values: true,
-    }));
+    } as SerializeOptions));
 
     const style = new_window.document.createElement('style');
     style.setAttribute('type', 'text/css');

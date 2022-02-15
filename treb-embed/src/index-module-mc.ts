@@ -1,10 +1,8 @@
 
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
-// import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
+import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { CompositeSheet } from './composite-sheet';
 import { CreateSheetOptions } from './options';
-
-// non-mc version
 
 //
 // this is export for MJS/ESM. in this case we don't run globals. note we
@@ -13,7 +11,7 @@ import { CreateSheetOptions } from './options';
 //
 export const TREB = {
   version: process.env.BUILD_VERSION, // this is fake, it will get replaced
-  CreateSpreadsheet: (options: CreateSheetOptions): EmbeddedSpreadsheetBase => CompositeSheet.Create(EmbeddedSpreadsheetBase, options),
+  CreateSpreadsheet: (options: CreateSheetOptions): EmbeddedSpreadsheet => CompositeSheet.Create(EmbeddedSpreadsheet, options),
   SetScriptPath: (path: string): void => { EmbeddedSpreadsheetBase.treb_base_path = path; },
 };
 

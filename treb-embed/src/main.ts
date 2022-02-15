@@ -1,4 +1,5 @@
 
+/*
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { CompositeSheet } from './composite-sheet';
 import { AutoEmbedManager } from './auto-embed';
@@ -53,7 +54,7 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
     // testing
 
-    /*
+    / *
     if (EmbeddedSpreadsheetBase.enable_utils) {
       value.Localization = Localization;
       value.NumberFormatCache = NumberFormatCache;
@@ -61,7 +62,7 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
       value.ChartUtils = ChartUtils;
       value.CreateChart = () => new Chart();
     }
-    */
+    * /
 
     // FIXME: writable and configurable default to false, you don't
     // need to define them here. 
@@ -78,7 +79,7 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
   }
 
-  /*
+  / *
 
   const TREB: TREBNamespace = (self as DecoratedGlobal).TREB || {};
 
@@ -126,10 +127,11 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
   }
 
-  */
+  * /
 
 })();
 
 // re-export
 
 export { EmbeddedSpreadsheet } from './embedded-spreadsheet';
+*/

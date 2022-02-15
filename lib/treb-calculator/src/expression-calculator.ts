@@ -413,6 +413,21 @@ export class ExpressionCalculator {
    * 
    * it will only return address/range if the parameter flag is set, so we
    * could in theory lock it down a bit with overloads.
+   * 
+   * ---
+   * 
+   * UPDATE: that's no longer the case. we require that functions return 
+   * a UnionValue type (union), which can itself contain an array.
+   * 
+   * ---
+   * 
+   * FIXME: there is far too much duplication between this and the MC version
+   * (in simulation-expression-calculator). we need to find a way to consolidate
+   * these.
+   * 
+   * I think the problem is that we don't want a lot of switches, but the cost
+   * is an almost complete duplicate of this function in the subclass.
+   * 
    */
   protected CallExpression(outer: UnitCall, return_reference = false): (expr: UnitCall) => UnionValue /*UnionOrArray*/ {
 

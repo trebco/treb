@@ -22,7 +22,11 @@ export class MCExpressionCalculator extends ExpressionCalculator {
     this.context = this.simulation_model;
   }
 
-  /** excutes a function call */
+  /** 
+   * excutes a function call 
+   *
+   * @see ExpressionCalculator.CallExpression 
+   */
   protected CallExpression(outer: UnitCall, return_reference = false): (expr: UnitCall) => UnionValue { // TEMP DISABLING
 
     // get the function descriptor, which won't change.

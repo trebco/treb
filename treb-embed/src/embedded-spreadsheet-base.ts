@@ -437,7 +437,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * constructor takes spreadsheet options
    * @internal
    */
-  constructor(options: EmbeddedSpreadsheetOptions, type: (new () => CalcType)) {
+  constructor(options: EmbeddedSpreadsheetOptions, type: (new () => CalcType) = Calculator as (new () => CalcType)) {
 
     // super();
 
