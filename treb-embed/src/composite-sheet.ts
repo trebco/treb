@@ -128,12 +128,14 @@ export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
 
     // FIXME: could we move this somewhere better typed?
 
-    if (this.options.mc) {
-      this.AddSidebarButton({
-        icon: 'treb-simulation-icon',
-        title: 'Run Simulation',
-        click: () => (this.sheet as any).RunSimulation(),
-      });
+    if (process.env.MC) {
+      if (this.options.mc) {
+        this.AddSidebarButton({
+          icon: 'treb-simulation-icon',
+          title: 'Run Simulation',
+          click: () => (this.sheet as any).RunSimulation(),
+        });
+      }
     }
 
     this.AddSidebarButton({

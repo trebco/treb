@@ -1824,7 +1824,7 @@ export class TileRenderer {
               context.lineTo(x + part.width, underline_y);
             }
             
-            if (style.strike) {
+            if (style.strike || part.strike) {
               context.moveTo(x, strike_y);
               context.lineTo(x + part.width, strike_y);
             }

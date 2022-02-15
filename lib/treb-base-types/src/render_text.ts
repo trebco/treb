@@ -28,7 +28,7 @@ export interface RenderTextPart {
   // testing, md
   strong?: boolean;
   emphasis?: boolean;
-  // strike?: boolean;
+  strike?: boolean;
 
 }
 

@@ -79,6 +79,10 @@ export class MDParser {
 
   /**
    * given some formatted text (output of the `Parse` method), return HTML.
+   * FIXME: is this used outside of testing? seems like we're wasting bytes.
+   * 
+   * also the way this works adds extra tags if you have nested styles. not
+   * an issue if it's just for testing though.
    */
   public HTML(formatted: FormattedString[][]): string {
 
@@ -212,7 +216,7 @@ export class MDParser {
 
   /** is this worth a function call? will it get inlined? */
   protected IsDelimeter(char: string): boolean {
-    return char === '*' || char === '_';
+    return char === '*' || char === '_' || char === '~';
   }
 
   /**
@@ -240,9 +244,10 @@ export class MDParser {
         // can we have a method? or maybe this should be a bitmask, 
         // so we can use === and only have to worry about 0
 
-        if ((!!format.strong !== !!token.strong) || (!!format.emphasis !== !!token.emphasis)) {
+        if ((!!format.strong !== !!token.strong) || (!!format.emphasis !== !!token.emphasis) || (!!format.strike !== !!token.strike)) {
           format.strong = !!token.strong;
           format.emphasis = !!token.emphasis;
+          format.strike = !!token.strike;
           if (current_token.text.length) {
             line.push(current_token);
           }
@@ -315,8 +320,10 @@ export class MDParser {
             // what format to we apply to the contained block? depends on the 
             // CLOSING delimeter, which may be < the opening delimeter.
 
-            const emphasis = !!(format % 2);
-            const strong = (format >= 2);
+            const strike = token.char === '~';
+
+            const emphasis = !strike && !!(format % 2);
+            const strong = !strike && (format >= 2);
 
             /*
             const formats: string[] = [];
@@ -330,6 +337,7 @@ export class MDParser {
             for (let i = index + 1; i <= index + result.index; i++) {
               tokens[i].strong = (!!tokens[i].strong) || strong;
               tokens[i].emphasis = (!!tokens[i].emphasis) || emphasis;
+              tokens[i].strike = (!!tokens[i].strike) || strike;
             }
 
             // now we have to handle two separate cases. 
