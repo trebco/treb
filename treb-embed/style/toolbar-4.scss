@@ -54,12 +54,18 @@ $swatch-width: 1.1em;
   // we _should_ use li/ with a class instead of this
 
   hr {
+
+    /*
     border-top-width: 0px;
     border-left-width: 0px;
     border-right-width: 0px;
 
     border-bottom-width: 1px;
     border-bottom-color: rgb(209, 213, 219);
+    */
+    border: none;
+    height: 1px;
+    background: rgb(209, 213, 219);
 
     margin-bottom: .5em;
     margin-top: .5em;
