@@ -268,15 +268,40 @@ export class TileRenderer {
     context.fillRect(0, 0, x, header_size.y);
     context.fillRect(0, 0, header_size.x, y);
 
-    context.strokeStyle = this.theme.grid_color || '';
+    // we have to split this into two parts because of the new
+    // header grid color. do the header part first...
+
+    context.strokeStyle = this.theme.headers_grid_color || '';
+
     context.beginPath();
     context.moveTo(header_size.x - 0.5, 0);
-    context.lineTo(header_size.x - 0.5, y);
+    context.lineTo(header_size.x - 0.5, header_size.y);
     context.moveTo(0, header_size.y - 0.5);
-    context.lineTo(x, header_size.y - 0.5);
+    context.lineTo(header_size.x, header_size.y - 0.5);
     context.stroke();
 
+    // actually we can bail out first
+
     if (!this.model.active_sheet.freeze.columns && !this.model.active_sheet.freeze.rows) return;
+
+    // then do the other part with the regular grid color
+
+    context.strokeStyle = this.theme.grid_color || '';
+
+    context.beginPath();
+    if (y !== header_size.y) {
+      context.moveTo(header_size.x - 0.5, header_size.y);
+      context.lineTo(header_size.x - 0.5, y);
+    }
+    if (x !== header_size.x) {
+      context.moveTo(header_size.x, header_size.y - 0.5);
+      context.lineTo(x, header_size.y - 0.5);
+    }
+    context.stroke();
+
+    // here we go back to the header grid color for the breaks
+
+    context.strokeStyle = this.theme.headers_grid_color || '';
 
     // NOTE: if headers are hidden (which is done by setting width/height to
     // 0 or 1 pixel) we don't want to render them here.
@@ -402,12 +427,17 @@ export class TileRenderer {
         context.fillRect(0, 0, tile.logical_size.width, this.layout.header_offset.y);
         context.strokeStyle = this.theme.grid_color || '';
 
-        // this draws a line at the bottom of the header...
+        // this draws a line at the bottom of the header
+        // (using regular grid color)
 
         context.beginPath();
         context.moveTo(0, header_size.y - 0.5);
         context.lineTo(tile.logical_size.width, header_size.y - 0.5);
         context.stroke();
+
+        // then we switch to the header color for the edges
+
+        context.strokeStyle = this.theme.headers_grid_color || '';
 
         this.RenderColumnLabels(context, tile.first_cell.column, tile.last_cell.column);
 
@@ -430,7 +460,7 @@ export class TileRenderer {
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
-  
+
         context.fillRect(0, 0, this.layout.header_offset.x, tile.logical_size.height);
 
         context.strokeStyle = this.theme.grid_color || '';
@@ -439,6 +469,8 @@ export class TileRenderer {
         context.moveTo(header_size.x - 0.5, 0);
         context.lineTo(header_size.x - 0.5, tile.logical_size.height);
         context.stroke();
+
+        context.strokeStyle = this.theme.headers_grid_color || '';
 
         this.RenderRowLabels(context, tile.first_cell.row, tile.last_cell.row, m2.block);
 
@@ -629,7 +661,7 @@ export class TileRenderer {
    * because they never overlap).
    *
    * UPDATED returning a 2d array, where the first dimension represents lines
-   * and the second dimension represents components is lines and the second
+   * and the second dimension represents components
    */
   protected PrepText(context: CanvasRenderingContext2D, 
                      fonts: FontSet, 

@@ -40,6 +40,12 @@ export interface Theme {
   /** gridlines color */
   grid_color: string;
 
+  /** 
+   * new: gridlines color for headers. should default to the regular grid
+   * color unless it's explicitly set.
+   */
+  headers_grid_color?: string;
+
   /** color of grid lines */
   // grid?: Style.Properties;
 
@@ -188,6 +194,13 @@ const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
     style.italic = true;
   }
 
+  // for painting we only support regular (400) and bold (700), those 
+  // are the only values allowed by canvas (I think)
+
+  if (css.fontWeight === '700') {
+    style.bold = true;
+  }
+
   return style;
 }
 
@@ -215,6 +228,12 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
 
   css = CSS('grid-headers');
   theme.headers = StyleFromCSS(css);
+  theme.headers_grid_color = css.stroke;
+  if (!theme.headers_grid_color || theme.headers_grid_color === 'none') {
+    theme.headers_grid_color = theme.grid_color;
+  }
+
+  console.info({css, headers: theme.headers});
 
   // this _is_ painted, but it doesn't necessarily need to be -- we
   // could use a node. that would require moving it around, though. 
