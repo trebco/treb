@@ -233,8 +233,6 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
     theme.headers_grid_color = theme.grid_color;
   }
 
-  console.info({css, headers: theme.headers});
-
   // this _is_ painted, but it doesn't necessarily need to be -- we
   // could use a node. that would require moving it around, though. 
   // let's leave it for now.
