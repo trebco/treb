@@ -1352,16 +1352,39 @@ export class Grid {
     this.model.user_data = undefined;
   }
 
+  /**
+   * This function is called via Shift+PageUp/PageDown. We need
+   * to update to account for hidden sheets, which can't be activated.
+   */
   public NextSheet(step = 1): void {
-    if (this.model.sheets.length === 1) return;
-    for (let i = 0; i < this.model.sheets.length; i++) {
-      if (this.model.sheets[i] === this.active_sheet) {
-        let index = (i + step) % this.model.sheets.length;
-        while (index < 0) { index += this.model.sheets.length; }
-        this.ActivateSheet(index);
+
+    if (this.model.sheets.length === 1) {
+      return;
+    }
+
+    // we could build a list of allowable sheets, or we could walk...
+
+    // building a list would help identify cases where 
+    // there's only one sheet visible, and we could leave early
+
+    // (walking would be simpler, in the end, there are three loops here)
+
+    // list of tuples: visible sheet, index
+    const visible = this.model.sheets.map((sheet, index) => ({ sheet, index })).filter(test => test.sheet.visible);
+
+    if (visible.length === 1) {
+      return; 
+    }
+
+    for (let i = 0; i < visible.length; i++) {
+      if (visible[i].sheet === this.active_sheet) {
+        let index = (i + step) % visible.length;
+        while (index < 0) { index += visible.length; }
+        this.ActivateSheet(visible[index].index);
         return;
       }
     }
+    
   }
 
   /** insert sheet at the given index (or current index) */
