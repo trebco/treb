@@ -23,6 +23,9 @@ export interface GridOptions {
   /** scale controls. implies tab bar */
   scale_control?: boolean;
 
+  /** stats panel. implies tab bar */
+  stats?: boolean;
+
   /** save/load scale to storage, with the given key */
   persist_scale_key?: string;
 

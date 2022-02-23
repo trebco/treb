@@ -161,6 +161,9 @@ export interface EmbeddedSpreadsheetOptions {
   /** show scale buttons */
   scale_control?: boolean;
 
+  /** show stats panel */
+  stats?: boolean;
+
   /** save/load scale. this can optionally have a string key to disambiguate */
   persist_scale?: boolean|string;
 

@@ -6734,6 +6734,10 @@ export class Grid {
       this.UpdateAddressLabel();
       this.UpdateFormulaBarFormula();
 
+      if (this.options.stats) {
+        this.UpdateStats();
+      }
+
     }
 
   }
@@ -6900,6 +6904,56 @@ export class Grid {
       }
     }
 
+  }
+
+  private UpdateStats() {
+    if (this.tab_bar) {
+      if (!this.primary_selection.empty && this.primary_selection.area.count > 1) {
+        const values = this.GetRange(this.primary_selection.area);
+        if (Array.isArray(values)) {
+
+          // we count numbers, in addition to accumulating, because
+          // it's possible for numbers to sum up to 0. therefore you
+          // can't switch on !sum to check if you have any numbers.
+          // also, "count" counts things that are non-empty but not
+          // numbers, so you need to count numbers for averages.
+
+          // we could possibly accept a function here to display different
+          // kind of stats (looking at you, 🧠🧠🍪). call that a TODO.
+
+          let count = 0;
+          let numbers = 0;
+          let sum = 0;
+
+          for (const row of values) {
+            for (const cell of row) {
+              if (typeof cell === 'number') {
+                sum += cell;
+                numbers++;
+              }
+              if (typeof cell !== 'undefined') {
+                count++;
+              }
+            }
+          }
+
+          if (count > 0) {
+            if (numbers > 0) {
+              const average = NumberFormatCache.Get('General').Format(sum/numbers);
+              this.tab_bar.stats_text = `Count: ${count} Sum: ${sum} Average: ${average}`;
+            }
+            else {
+              this.tab_bar.stats_text = `Count: ${count}`;
+            }
+            return;
+          }
+
+        }
+
+        return;
+      }
+      this.tab_bar.stats_text = '';
+    }
   }
 
   private UpdateAddressLabel(selection = this.primary_selection, text?: string) {

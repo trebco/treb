@@ -71,6 +71,7 @@ export class TabBar extends EventSource<TabEvent> {
   // private scale = 1;
 
   private scale_control?: ScaleControl;
+  private stats_panel?: HTMLDivElement;
 
   private dragging = false;
 
@@ -84,6 +85,12 @@ export class TabBar extends EventSource<TabEvent> {
 
   public get visible(): boolean {
     return this._visible;
+  }
+
+  public set stats_text(value: string) {
+    if (this.stats_panel) {
+      this.stats_panel.innerText = value;
+    }
   }
 
   constructor(
@@ -233,14 +240,20 @@ export class TabBar extends EventSource<TabEvent> {
     if (!end_nodes) {
       let div = document.createElement('div');
       div.classList.add('tab-bar-spacer')
-      div.style.order = '9998';
+      // div.style.order = '9998';
       div.dataset.preserve = 'true';
       target.appendChild(div);
 
       div = document.createElement('div');
       div.classList.add('tab-bar-end');
-      div.style.order = '9999';
+      // div.style.order = '9999';
       div.dataset.preserve = 'true';
+
+      if (this.options.stats) {
+        this.stats_panel = document.createElement('div');
+        this.stats_panel.classList.add('treb-stats-panel');
+        div.appendChild(this.stats_panel);
+      }
 
       if (this.options.scale_control) {
         this.scale_control = new ScaleControl(div);

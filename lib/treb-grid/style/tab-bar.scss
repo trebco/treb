@@ -218,7 +218,21 @@
 
     & .tab-bar-spacer {
       flex-grow: 1;
+      order: 9998;
     }
+
+    & .tab-bar-end {
+      order: 9999;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+
+    /*
+    & .treb-stats-panel {
+      font-size: .9em;
+    }
+    */
 
     /** don't overflow/ellipsis the add tab button */
 
