@@ -150,6 +150,12 @@ export class Calculator extends Graph {
           expression.left.values = [data];
           const result = this.CalculateExpression(expression);
 
+          console.info({expression, result});
+
+          // this is no longer the case because we're getting 
+          // a boxed result (union)
+
+          /*
           if (Array.isArray(result)) {
             let count = 0;
             for (const column of result) {
@@ -159,7 +165,18 @@ export class Calculator extends Graph {
             }
             return { type: ValueType.number, value: count };
           }
-          
+          */
+
+          if (result.type === ValueType.array) {
+            let count = 0;
+            for (const column of (result as ArrayUnion).value) {
+              for (const cell of column) {
+                if (cell.value) { count++; }
+              }
+            }
+            return { type: ValueType.number, value: count };
+          }
+
           return result; // error?
 
         },
