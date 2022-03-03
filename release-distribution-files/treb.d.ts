@@ -1,4 +1,4 @@
-/*! API v16.6. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+/*! API v16.7. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -981,6 +981,9 @@ export interface EmbeddedSpreadsheetOptions {
 
     /** show scale buttons */
     scale_control?: boolean;
+
+    /** show stats panel */
+    stats?: boolean;
 
     /** save/load scale. this can optionally have a string key to disambiguate */
     persist_scale?: boolean | string;
