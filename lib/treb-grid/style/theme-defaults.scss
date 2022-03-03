@@ -98,7 +98,8 @@ $text-reference-color-5: rgb(254, 47, 1);
    */
   .grid-cells {
     font-size: 14px;
-    color: #333;
+    // color: #333;
+    color: inherit;
     background: #fff;
     border-color: #666;
     stroke: rgb(204, 204, 212);
