@@ -6907,80 +6907,93 @@ export class Grid {
 
   }
 
-  private UpdateStats() {
-    if (this.tab_bar) {
-      if (!this.primary_selection.empty && this.primary_selection.area.count > 1) {
-        const values = this.GetRange(this.primary_selection.area);
-        if (Array.isArray(values)) {
+  /**
+   * splitting the stats update call and the rendering method, 
+   * if we want to make a pluggable stats method.
+   * 
+   * default will show count/sum/average of numbers, either real 
+   * or complex.
+   */
+  private RenderStats(values: CellValue|CellValue[][]): string {
 
-          // we count numbers, in addition to accumulating, because
-          // it's possible for numbers to sum up to 0. therefore you
-          // can't switch on !sum to check if you have any numbers.
-          // also, "count" counts things that are non-empty but not
-          // numbers, so you need to count numbers for averages.
+    // we don't handle single values
 
-          // we could possibly accept a function here to display different
-          // kind of stats (looking at you, 🧠🧠🍪). call that a TODO.
+    if (!Array.isArray(values)) {
+      return '';
+    }
 
-          // ...complex...
+    // we count numbers, in addition to accumulating, because
+    // it's possible for numbers to sum up to 0. therefore you
+    // can't switch on !sum to check if you have any numbers.
+    // also, "count" counts things that are non-empty but not
+    // numbers, so you need to count numbers for averages.
 
-          let count = 0;
-          let numbers = 0;
+    // we could possibly accept a function here to display different
+    // kind of stats (looking at you, 🧠🧠🍪). call that a TODO.
 
-          const sum: Complex = { real: 0, imaginary: 0 };
+    // ...complex...
 
-          for (const row of values) {
-            for (const cell of row) {
-              
-              if (typeof cell === 'number') {
-                sum.real += cell;
-                numbers++;
-              }
-              else if (IsComplex(cell)) {
-                sum.real += cell.real;
-                sum.imaginary += cell.imaginary;
-                numbers++;
-              }
+    let count = 0;
+    let numbers = 0;
 
-              // count, not else if
+    const sum: Complex = { real: 0, imaginary: 0 };
 
-              if (typeof cell !== 'undefined') {
-                count++;
-              }
-
-            }
-          }
-
-          if (count > 0) {
-            if (numbers > 0) {
-              const general = NumberFormatCache.Get('General')
-              if (sum.imaginary) {
-                const average: Complex = { real: sum.real / numbers, imaginary: sum.imaginary / numbers };
-                this.tab_bar.stats_text = `Count: ${count} Sum: ${
-                  NumberFormat.FormatPartsAsText(general.FormatComplex(sum))
-                } Average: ${
-                  NumberFormat.FormatPartsAsText(general.FormatComplex(average))
-                }`;
-              }
-              else {
-                this.tab_bar.stats_text = `Count: ${count} Sum: ${
-                  general.Format(sum.real)
-                } Average: ${
-                  general.Format(sum.real/numbers)
-                }`;
-              }
-            }
-            else {
-              this.tab_bar.stats_text = `Count: ${count}`;
-            }
-            return;
-          }
-
+    for (const row of values) {
+      for (const cell of row) {
+        
+        if (typeof cell === 'number') {
+          sum.real += cell;
+          numbers++;
+        }
+        else if (IsComplex(cell)) {
+          sum.real += cell.real;
+          sum.imaginary += cell.imaginary;
+          numbers++;
         }
 
-        return;
+        // count, not else if
+
+        if (typeof cell !== 'undefined') {
+          count++;
+        }
+
       }
-      this.tab_bar.stats_text = '';
+    }
+
+    if (count > 1) {
+      if (numbers > 0) {
+        const general = NumberFormatCache.Get('General')
+        if (sum.imaginary) {
+          const average: Complex = { real: sum.real / numbers, imaginary: sum.imaginary / numbers };
+          return `Count: ${count} Sum: ${
+            NumberFormat.FormatPartsAsText(general.FormatComplex(sum))
+          } Average: ${
+            NumberFormat.FormatPartsAsText(general.FormatComplex(average))
+          }`;
+        }
+        else {
+          return `Count: ${count} Sum: ${
+            general.Format(sum.real)
+          } Average: ${
+            general.Format(sum.real/numbers)
+          }`;
+        }
+      }
+      else {
+        return `Count: ${count}`;
+      }
+    }
+
+    return '';
+  }
+
+  private UpdateStats() {
+    if (this.tab_bar) {
+      let text = '';
+      if (!this.primary_selection.empty && this.primary_selection.area.count > 1) {
+        text = this.RenderStats(this.GetRange(this.primary_selection.area));
+      }
+      this.tab_bar.stats_text = text;
     }
   }
 

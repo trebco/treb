@@ -105,12 +105,24 @@ if (watch) {
   }
 }
 
+// --- for MC, rename keys in package ------------------------------------------
+
+if (mc) {
+  const tag_keys = Object.keys(package['build-entry-points']);
+  for (const key of tag_keys) {
+    package['build-entry-points'][key] = package['build-entry-points'][key].replace(/treb/, 'riskamp-web');
+  }
+}
+
 // ---- setup/data -------------------------------------------------------------
 
 /**
  * banner will be prepended to any and all output files
+ * UPDATE: version specific
  */
-const banner = `/*! v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */`;
+const banner = mc ?
+  `/*! RiskAMP web v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. https://web.riskamp.com/ */` :
+  `/*! TREB v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */` ;
 
 /**
  * entry points for module build, keyed by output file name
