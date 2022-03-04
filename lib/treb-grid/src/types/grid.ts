@@ -20,6 +20,7 @@ import {
   ComplexToString,
   Complex,
   IRectangle,
+  IsComplex,
 } from 'treb-base-types';
 
 import {
@@ -6921,26 +6922,53 @@ export class Grid {
           // we could possibly accept a function here to display different
           // kind of stats (looking at you, 🧠🧠🍪). call that a TODO.
 
+          // ...complex...
+
           let count = 0;
           let numbers = 0;
-          let sum = 0;
+
+          const sum: Complex = { real: 0, imaginary: 0 };
 
           for (const row of values) {
             for (const cell of row) {
+              
               if (typeof cell === 'number') {
-                sum += cell;
+                sum.real += cell;
                 numbers++;
               }
+              else if (IsComplex(cell)) {
+                sum.real += cell.real;
+                sum.imaginary += cell.imaginary;
+                numbers++;
+              }
+
+              // count, not else if
+
               if (typeof cell !== 'undefined') {
                 count++;
               }
+
             }
           }
 
           if (count > 0) {
             if (numbers > 0) {
-              const average = NumberFormatCache.Get('General').Format(sum/numbers);
-              this.tab_bar.stats_text = `Count: ${count} Sum: ${sum} Average: ${average}`;
+              const general = NumberFormatCache.Get('General')
+              if (sum.imaginary) {
+                const average: Complex = { real: sum.real / numbers, imaginary: sum.imaginary / numbers };
+                this.tab_bar.stats_text = `Count: ${count} Sum: ${
+                  NumberFormat.FormatPartsAsText(general.FormatComplex(sum))
+                } Average: ${
+                  NumberFormat.FormatPartsAsText(general.FormatComplex(average))
+                }`;
+              }
+              else {
+                this.tab_bar.stats_text = `Count: ${count} Sum: ${
+                  general.Format(sum.real)
+                } Average: ${
+                  general.Format(sum.real/numbers)
+                }`;
+              }
             }
             else {
               this.tab_bar.stats_text = `Count: ${count}`;
