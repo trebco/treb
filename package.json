@@ -64,7 +64,7 @@
     "build-cookie": "node esbuild.js --cookie",
     "update-icons": "node treb-embed/script/process-icons.js --filter unused --source treb-embed/icons/4 > treb-embed/src/generated/toolbar42.ts",
     "release": "node esbuild.js --clean --modern --module --nomc && npm run tsc && npm run generate-api && node copy-distribution-files.js && node zip-package.js",
-    "release-mc": "node esbuild.js --clean --modern --module && npm run tsc && npm run generate-api && node copy-distribution-files.js && node zip-package.js"
+    "release-mc": "node esbuild.js --clean --modern --module && npm run tsc && npm run generate-api && node copy-distribution-files.js && node zip-package.js --name riskamp-web"
   },
   "build-entry-points": {
     "main": "treb-bundle",

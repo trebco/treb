@@ -2,31 +2,24 @@
 
 const fs = require('fs');
 const path = require('path');
-//const exec = require('child_process').exec;
 const package = require('./package.json');
 const archiver = require('archiver');
 
 const dist_dir = 'build';
-//const build_dir = path.resolve(__dirname, dist_dir, package.version);
 const current_dir = path.resolve(__dirname, dist_dir, 'current');
+
+let name = 'treb';
+for (let i = 0; i < process.argv.length; i++) {
+  if (process.argv[i] === '--name') {
+    name = process.argv[++i];
+  }
+}
 
 const BuildZip = async () => {
 
-  // moved to compiler
-  /*
-  await new Promise((resolve, reject) => {
-    exec('cp ' + path.resolve(__dirname, 'treb-embed/distribution') + '/* ' + build_dir, (err, stdout, stderr) => {
-      if (err) return reject(err);
-      if (stdout) process.stdout.write(stdout);
-      if (stderr) process.stderr.write(stderr);
-      resolve();
-    });
-  });
-  */
-
   await new Promise((resolve, reject) => {
 
-    const output = fs.createWriteStream(path.resolve(__dirname, dist_dir, 'treb-' + package.version + '.zip'));
+    const output = fs.createWriteStream(path.resolve(__dirname, dist_dir, name + '-' + package.version + '.zip'));
     const archive = archiver('zip', {
       zlib: { level: 9 } // Sets the compression level.
     });
