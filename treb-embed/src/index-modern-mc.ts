@@ -41,6 +41,10 @@ interface TREBNamespace {
   ChartUtils?: ChartUtils,
   CreateChart?: () => Chart,
 
+  // new, tracking
+
+  instances?: EmbeddedSpreadsheetBase[],
+
 }
 
 // convenience type
@@ -53,9 +57,16 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
     // find path for worker loaders
     EmbeddedSpreadsheetBase.BuildPath();
 
+    const instances: EmbeddedSpreadsheetBase[] = [];
+
     const value: TREBNamespace = {
       version: process.env.BUILD_VERSION, // this is fake, it will get replaced
-      CreateSpreadsheet: (options: CreateSheetOptions) => CompositeSheet.Create(EmbeddedSpreadsheet, options),
+      instances,
+      CreateSpreadsheet: (options: CreateSheetOptions) => {
+        const sheet = CompositeSheet.Create(EmbeddedSpreadsheet, options);
+        instances.push(sheet);
+        return sheet;
+      },
     };
 
     // NOTE: dropping formatter but keeping engine/headless (for now)
@@ -89,7 +100,11 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
     });
 
     AutoEmbedManager.Attach('data-treb', 
-      (...args: any) => CompositeSheet.Create(EmbeddedSpreadsheet, args[0]));
+      (...args: any) => {
+        const sheet = CompositeSheet.Create(EmbeddedSpreadsheet, args[0]);
+        instances.push(sheet);
+        return sheet;
+      });
 
   }
 
