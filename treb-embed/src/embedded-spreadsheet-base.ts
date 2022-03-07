@@ -537,7 +537,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     //    }
 
     if (this.options.stats) {
-      grid_options.stats = true;
+      grid_options.stats = this.options.stats;
       grid_options.tab_bar = true; // implied
     }
 

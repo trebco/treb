@@ -6988,10 +6988,20 @@ export class Grid {
   }
 
   private UpdateStats() {
+
+    console.info("TSO", this.options);
+
     if (this.tab_bar) {
       let text = '';
-      if (!this.primary_selection.empty && this.primary_selection.area.count > 1) {
-        text = this.RenderStats(this.GetRange(this.primary_selection.area));
+      if (typeof this.options.stats === 'function') {
+        if (!this.primary_selection.empty) {
+          text = this.options.stats.call(undefined, this.GetRange(this.primary_selection.area));
+        }
+      }
+      else {
+        if (!this.primary_selection.empty && this.primary_selection.area.count > 1) {
+          text = this.RenderStats(this.GetRange(this.primary_selection.area));
+        }
       }
       this.tab_bar.stats_text = text;
     }

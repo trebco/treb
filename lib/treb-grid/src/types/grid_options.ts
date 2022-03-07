@@ -1,4 +1,8 @@
 
+import { CellValue } from 'treb-base-types';
+
+export type StatsFunction = (data: CellValue|CellValue[][]|undefined) => string;
+
 export interface GridOptions {
 
   /** can expand rows/columns */
@@ -24,7 +28,7 @@ export interface GridOptions {
   scale_control?: boolean;
 
   /** stats panel. implies tab bar */
-  stats?: boolean;
+  stats?: boolean|StatsFunction;
 
   /** save/load scale to storage, with the given key */
   persist_scale_key?: string;
