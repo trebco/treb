@@ -7095,6 +7095,17 @@ export class Grid {
       this.SelectAll();
     });
 
+    // this is for resize: we want to repaint on scale events. we should
+    // probably not do this synchronously, because scale changes are usually
+    // repeated.
+    window.addEventListener('resize', () => {
+      const update = this.layout.UpdateDPR();
+      if (update) {
+        this.QueueLayoutUpdate();
+        this.Repaint(true, true, true);
+      }
+    });
+
   }
 
   private HandleCopy(event: ClipboardEvent) {

@@ -331,6 +331,20 @@ export abstract class BaseLayout {
 
   }
 
+  /**
+   * if the DPR has changed, update it and return true. otherwise return
+   * false. this is used on resize events: if the scale has changed, we 
+   * probably want to repaint (and we need to update scale).
+   */
+  public UpdateDPR(): boolean {
+    const dpr = Math.max(1, self.devicePixelRatio || 1);
+    if (dpr === this.dpr) {
+      return false;
+    }
+    this.dpr = dpr;
+    return true;
+  }
+
   /** wrapper around sheet method, incorporating scale */
   public ColumnWidth(column: number): number {
     return Math.round(this.model.active_sheet.GetColumnWidth(column) * this.scale);
