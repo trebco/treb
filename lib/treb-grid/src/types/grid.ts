@@ -6989,8 +6989,6 @@ export class Grid {
 
   private UpdateStats() {
 
-    console.info("TSO", this.options);
-
     if (this.tab_bar) {
       let text = '';
       if (typeof this.options.stats === 'function') {
@@ -8390,6 +8388,8 @@ export class Grid {
           return true;
         });
         if (transformed) {
+
+          // yuck
 
           if (!(this as any).warned_r1c1) {
             (this as any).warned_r1c1 = true;
