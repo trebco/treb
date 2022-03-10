@@ -148,21 +148,40 @@ export class Cells {
    */
   public InsertColumns(before = 0, count = 1): void {
 
+    const pre = JSON.parse(JSON.stringify(this.data[13]));
+
     // NOTE: iterating a sparse array, in chrome at least, only
     // hits populated keys. the returned array has the same
     // indexes. that is very nice.
 
-    this.data = this.data.map((row) => {
+    this.data = this.data.map(row => {
       if (row.length >= before){
         const tmp = row.slice(0, before);
         let index = before + count;
-        row.slice(before).forEach((column) => tmp[index++] = column);
+
+        // this forEach is broken when there are empty values in the row,
+        // which doesn't happen so much anymore but can (and does) happen
+        // in some older sheets. 
+
+        // row.slice(before).forEach((column) => tmp[index++] = column);
+
+        // do it with an explicit index loop, should resolve
+
+        const after = row.slice(before);
+        for (let i = 0; i < after.length; i++) {
+          tmp[index++] = after[i];
+        }
+
         return tmp;
       }
       return row;
     });
 
     this.columns_ += count;
+
+    const clone = JSON.parse(JSON.stringify(this.data[13]));
+    console.info({pre, clone});
+    
   }
 
   public DeleteColumns(index: number, count= 1): void {
