@@ -170,6 +170,18 @@ export class Grid {
 
   // --- private members -------------------------------------------------------
 
+  /** 
+   * maps common language (english) -> local language. this should 
+   * be passed in (actually set via a function).
+   */
+  private language_map?: Record<string, string>;
+
+  /**
+   * maps local language -> common (english). this should be constructed
+   * when the forward function is passed in, so there's a 1-1 correspondence.
+   */
+  private reverse_language_map?: Record<string, string>;
+
   // testing
   private hover_data: {
     note?: boolean;
@@ -451,6 +463,44 @@ export class Grid {
   }
 
   // --- public methods --------------------------------------------------------
+
+  /**
+   * set the language translation map. this is a set of function names 
+   * (in english) -> the local equivalent. both should be in canonical form,
+   * as that will be used when we translate one way or the other.
+   */
+  public SetLanguageMap(language_map?: Record<string, string>) {
+
+    if (!language_map) {
+      this.language_map = this.reverse_language_map = undefined;
+    }
+    else {
+
+      const keys = Object.keys(language_map);
+
+      // normalize forward
+      this.language_map = {};
+      for (const key of keys) {
+        this.language_map[key.toUpperCase()] = language_map[key];
+      }
+
+      // normalize backward
+      this.reverse_language_map = {};
+      for (const key of keys) {
+        const value = language_map[key];
+        this.reverse_language_map[value.toUpperCase()] = key;
+      }
+
+    }
+
+    // we might need to update the current displayed selection. depends
+    // on when we expect languages to be set.
+
+    if (!this.primary_selection.empty) {
+      this.Select(this.primary_selection, this.primary_selection.area, this.primary_selection.target);
+    }
+
+  }
 
   /**
    * set note at the given address, or current selection
@@ -5924,6 +5974,9 @@ export class Grid {
    * this prepares the cell value for _editing_ -- it's not the displayed
    * value, it's how we want the value to be displayed in the editor and 
    * formula bar. 
+   * 
+   * NOTE: is this the spot to do translation -> local language? (...)
+   * 
    */
   private NormalizeCellValue(cell: Cell) {
 
@@ -5988,9 +6041,75 @@ export class Grid {
       cell_value = `${formatted.real}${cell.value.imaginary < 0 ? ' - ' : ' + '}${formatted.imaginary}i`;
 
     }
+    else if (cell.ValueIsFormula()){ 
+
+      // this is where we _render_ translation. so names in function
+      // calls shoule be translated before returning.
+
+      cell_value = this.TranslateFunction(cell.value);
+
+    }
 
     return cell_value;
 
+  }
+
+  /**
+   * translation back and forth is the same operation, with a different 
+   * (inverted) map. although it still might be worth inlining depending
+   * on cost.
+   * 
+   * FIXME: it's about time we started using proper maps, we dropped 
+   * support for IE11 some time ago.
+   */
+  private TranslateInternal(value: string, map: Record<string, string>): string {
+
+    const parse_result = this.parser.Parse(value);
+
+    if (parse_result.expression) {
+      
+      let modified = false;
+      this.parser.Walk(parse_result.expression, unit => {
+        if (unit.type === 'call') {
+          const replacement = map[unit.name.toUpperCase()];
+          if (replacement) {
+            modified = true;
+            unit.name = replacement;
+          }
+        }
+        return true;
+      });
+
+      if (modified) {
+        return '=' + this.parser.Render(parse_result.expression, undefined, '');
+      }
+    }
+
+    return value;
+
+  }
+
+  /**
+   * translate function from common (english) -> local language. this could
+   * be inlined (assuming it's only called in one place), but we are breaking
+   * it out so we can develop/test/manage it.
+   */
+  private TranslateFunction(value: string): string {
+    if (this.language_map) {
+      return this.TranslateInternal(value, this.language_map);
+    }
+    return value;
+  }
+
+  /**
+   * translate from local language -> common (english).
+   * @see TranslateFunction
+   */
+  private UntranslateFunction(value: string): string {
+    if (this.reverse_language_map) {
+      return this.TranslateInternal(value, this.reverse_language_map);
+    }
+    return value;
   }
 
   /**
@@ -8410,6 +8529,28 @@ export class Grid {
    * set range, via command. returns affected area.
    */
   private SetRangeInternal(command: SetRangeCommand) {
+
+    // language translation. this is _not_ the best place for this,
+    // because if we are using the command queue, the language might
+    // chnage. we need to do translation _before_ things go into the 
+    // queue.
+
+    // but that said, for the time being we can put it here.
+
+    if (Array.isArray(command.value)) {
+      for (const row of command.value) {
+        for (let i = 0; i < row.length; i++) {
+          const value = row[i];
+          if (typeof value === 'string' && value[0] === '=') {
+            row[i] = this.UntranslateFunction(value);
+          }
+        }
+      }
+    }
+    else if (command.value && typeof command.value === 'string' && command.value[0] === '=') {
+      command.value = this.UntranslateFunction(command.value);
+    }
+
 
     // NOTE: apparently if we call SetRange with a single target
     // and the array flag set, it gets translated to an area. which
