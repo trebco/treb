@@ -59,9 +59,19 @@ So the grid API can stay as-is.
    `Calculator.SupportedFunctions, with an additional field indicating the 
    function that any element is replacing.
 
+   have an interface for this now; still needs UI and number format, but 
+   has a place for the function descriptors. function descriptors use the 
+   AC descriptors as a base.
+
  - we may need to add translation to the `DefineMacro` routine, translating
    the function you define -> common. not sure.
+
+   ...probably (TODO).
 
  - how to load/where to store? should probably be individual JSON files with
    well-defined names by locale. we could have a common location, but also
    allow custom definition.
+
+ - we'll need a similar translation system for symbolic number formats
+ - not to mention the UI
+

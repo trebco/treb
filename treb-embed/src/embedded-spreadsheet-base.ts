@@ -2,7 +2,7 @@
 // treb imports
 import {
   Grid, GridEvent, SerializeOptions, Annotation,
-  BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection, CellEvent,
+  BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection, CellEvent, FunctionDescriptor,
 } from 'treb-grid';
 
 import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
@@ -20,6 +20,8 @@ import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 import { ProgressDialog, DialogType } from './progress-dialog';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './options';
 import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent } from './types';
+
+import { LanguageModel, TranslatedFunctionDescriptor } from './language-model';
 
 import { SelectionState, Toolbar } from './toolbar';
 
@@ -199,7 +201,15 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   /** @internal */
   public static treb_base_path = '';
 
-  /** @internal */
+  /** 
+   * this is the interepreted language, i.e. es5/es6. we used to use this 
+   * to identify the version when loading workers. it's probably not relevant
+   * any longer since we dropped legacy support.
+   * 
+   * TODO/FIXME: remove
+   * 
+   * @internal 
+   */
   public static treb_language = '';
 
   /* * 
@@ -284,6 +294,9 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   public get Localization(): Localization {
     return Localization;
   }
+
+  /** loaded language model, if any */
+  protected language_model?: LanguageModel;
 
   protected events = new EventSource<{type: string}>();
 
@@ -799,7 +812,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     // init AC
 
-    this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+    // this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+    this.UpdateAC();
 
     // dev
     if (this.options.global_name) {
@@ -907,7 +921,33 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     }
     
   }
-  
+
+  /**
+   * update autocomplete functions. we're breaking this out into a 
+   * separate method so we can better manage language translation.
+   */
+  private UpdateAC(): void {
+
+    let list: FunctionDescriptor[] = this.calculator.SupportedFunctions();
+
+    if (this.language_model) {
+
+      const map: Record<string, TranslatedFunctionDescriptor> = {};
+      for (const entry of this.language_model.functions || []) {
+        map[entry.base.toUpperCase()] = entry;
+      }
+
+      list = list.map(descriptor => {
+        return map[descriptor.name.toUpperCase()] || descriptor;
+      });
+
+    }
+
+    // original
+    this.grid.SetAutocompleteFunctions(list);
+
+  }
+
   // --- public internal methods -----------------------------------------------
 
   // these are methods that are public for whatever reason, but we don't want
@@ -1187,13 +1227,43 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     if (!this.registered_libraries['treb-charts']) {
       this.calculator.RegisterFunction(ChartFunctions);
       this.registered_libraries['treb-charts'] = true;
-      this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+
+      // this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+      this.UpdateAC();
+
     }
 
     return new Chart();
   }
 
   // --- public API methods ----------------------------------------------------
+
+  /** 
+   * this is not public _yet_ 
+   * 
+   * @internal
+   */
+  public SetLanguage(model?: LanguageModel): void {
+
+    this.language_model = model;
+
+    if (!model) {
+      this.grid.SetLanguageMap(); // clear
+    }
+    else {
+
+      // create a name map for grid
+
+      const map: Record< string, string > = {};
+      for (const entry of model.functions || []) {
+        map[entry.base] = entry.name;
+      }
+      this.grid.SetLanguageMap(map);
+    }
+
+    this.UpdateAC();
+
+  }
 
   /**
    * Use this function to batch multiple document changes. Essentially the 
@@ -2440,7 +2510,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       }
     }
 
-    this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+    // this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+    this.UpdateAC();
 
   }
 
@@ -2483,7 +2554,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       expression: this.parser.Parse(function_def).expression,
     };
 
-    this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+    // this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+    this.UpdateAC();
 
   }
 
@@ -3643,7 +3715,9 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
             this.registered_libraries['treb-charts'] = true;
 
             // update AC list
-            this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+            // this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+            this.UpdateAC();
+
           }
 
           const update_chart = () => {
