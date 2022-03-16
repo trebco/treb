@@ -1,8 +1,8 @@
 
-import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
+import { EmbeddedSpreadsheetBase } from '../../treb-embed/src/embedded-spreadsheet-base';
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
-import { CompositeSheet } from './composite-sheet';
-import { CreateSheetOptions } from './options';
+import { CompositeSheet } from '../../treb-embed/src/composite-sheet';
+import { CreateSheetOptions } from '../../treb-embed/src/options';
 
 //
 // this is export for MJS/ESM. in this case we don't run globals. note we

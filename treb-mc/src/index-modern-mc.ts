@@ -15,12 +15,12 @@
 // mc version
 
 import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
-import { CompositeSheet } from './composite-sheet';
-import { AutoEmbedManager } from './auto-embed';
-import { CreateSheetOptions, EmbeddedSpreadsheetOptions } from './options';
+import { CompositeSheet } from '../../treb-embed/src/composite-sheet';
+import { AutoEmbedManager } from '../../treb-embed/src/auto-embed';
+import { CreateSheetOptions, EmbeddedSpreadsheetOptions } from '../../treb-embed/src/options';
 import { NumberFormatCache, ValueParser } from 'treb-format';
 import { Complex, Localization } from 'treb-base-types';
-import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
+import { EmbeddedSpreadsheetBase } from '../../treb-embed/src/embedded-spreadsheet-base';
 import { Util as ChartUtils, Chart } from 'treb-charts';
 
 

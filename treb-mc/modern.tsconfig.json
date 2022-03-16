@@ -1,0 +1,13 @@
+{
+  "extends": "../modern.tsproject.json",
+  "references": [
+  ],
+  "include": [
+    "../package.json",
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "src/calculation-worker/index-legacy.ts"
+  ]
+}
+

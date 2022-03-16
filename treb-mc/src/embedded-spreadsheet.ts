@@ -1,11 +1,15 @@
 
-import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
-import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage, ExtendedSerializeOptions } from 'treb-mc';
+import { EmbeddedSpreadsheetBase } from '../../treb-embed/src/embedded-spreadsheet-base';
+//import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage, ExtendedSerializeOptions } from 'treb-mc';
+import { MCCalculator } from './simulation-calculator';
+import { ResultContainer } from './pack-results';
+import { CalculationWorker, WorkerMessage } from './worker-types';
+import { ExtendedSerializeOptions } from './extended-serialize-options';
 import { Random } from 'riskampjs-mc';
 
 import { Localization, ICellAddress, IsCellAddress } from 'treb-base-types';
 import { MacroFunction, SerializedNamedExpression } from 'treb-grid';
-import { EmbeddedSheetEvent, CompositeEmbeddedSheetEvent, TREBDocument } from './types';
+import { EmbeddedSheetEvent, CompositeEmbeddedSheetEvent, TREBDocument } from '../../treb-embed/src/types';
 
 // we are stuck on an old version of this, and I can't remember 
 // why; nor can I remember why this is better than any other solution 
@@ -17,12 +21,12 @@ import * as Base64JS from 'base64-js';
 // testing (should remove)
 import * as z85 from 'z85-codec';
 
-import * as PackResults from 'treb-mc/src/pack-results'; // <-- why direct?
+import * as PackResults from './pack-results'; // <-- why direct?
 
 // config
-import { DialogType } from './progress-dialog';
+import { DialogType } from '../../treb-embed/src/progress-dialog';
 import { Calculator } from 'treb-calculator/src'; // <-- why direct?
-import { EmbeddedSpreadsheetOptions, RunSimulationOptions } from './options';
+import { EmbeddedSpreadsheetOptions, RunSimulationOptions } from '../../treb-embed/src/options';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
 
