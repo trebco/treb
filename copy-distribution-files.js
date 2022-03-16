@@ -14,19 +14,3 @@ const build_dir = path.resolve(__dirname, 'build', package.version);
 
 execSync('cp ' + distribution_dir + '/* ' + build_dir);
 execSync('cp ' + distribution_dir + '/* ' + current_dir);
-
-  /*
-  // copy distribution files. note that we're doing this _after_ adding 
-  // banners, to exclude the single-file embed script (not sure if that's
-  // useful or not, but it's intentional)
-
-  execSync('cp ' + path.resolve(__dirname, 'treb-embed/distribution') + '/* ' + build_dir);
-
-  console.info('copying files');
-  fs.mkdir(current_dir, () => {
-    exec('cp -r ' + build_dir + '/* ' + current_dir, (err, stdout, stderr) => {
-      if (stdout) process.stdout.write(stdout);
-      if (stderr) process.stderr.write(stderr);
-    });
-  });
-  */

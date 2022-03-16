@@ -19,9 +19,6 @@
     "lib": [
       "dom", "es2015"
     ],
-    "paths": {
-      "@grid-conditional/*": ["./treb-grid/src/conditional/modern/*"]
-    },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
   },

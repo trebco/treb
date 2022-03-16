@@ -38,7 +38,12 @@ import { TileRange, BaseLayout } from '../layout/base_layout';
 
 // this was conditional compilation. we're dropping as we no longer support IE11.
 // import { CreateLayout } from '@grid-conditional/layout_manager';
-import { CreateLayout } from '../conditional/modern/layout_manager';
+// import { CreateLayout } from '../conditional/modern/layout_manager';
+
+// now we can drop the conditional compilation as well...
+
+import { GridLayout } from '../layout/grid_layout';
+import '../../style/grid-layout.scss';
 
 import { GridSelection } from './grid_selection';
 import { OverlayEditor, OverlayEditorResult } from '../editors/overlay_editor';
@@ -423,7 +428,9 @@ export class Grid {
       new GridLayout(this.model) :
       new LegacyLayout(this.model);
     */
-    this.layout = CreateLayout(this.model);
+    // this.layout = CreateLayout(this.model);
+    this.layout = new GridLayout(this.model);
+
     if (options.initial_scale) {
       if (typeof options.initial_scale === 'string') {
         options.initial_scale = Number(options.initial_scale);

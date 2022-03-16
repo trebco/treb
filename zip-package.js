@@ -8,11 +8,22 @@ const archiver = require('archiver');
 const dist_dir = 'build';
 const current_dir = path.resolve(__dirname, dist_dir, 'current');
 
-let name = 'treb';
+let name = '';
 for (let i = 0; i < process.argv.length; i++) {
   if (process.argv[i] === '--name') {
     name = process.argv[++i];
   }
+}
+
+if (!name) {
+  throw new Error('name is required (zip-package)');
+}
+
+const format = (length) => {
+  if (length === 0) { return '0B'; }
+  const label = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(length) / Math.log(1024));
+  return parseFloat((length / Math.pow(1024, i)).toFixed(2)) + ' ' + label[i];
 }
 
 const BuildZip = async () => {
@@ -25,7 +36,7 @@ const BuildZip = async () => {
     });
 
     output.on('close', function () {
-      console.log('zipped (' + archive.pointer() + ' bytes)');
+      console.log(`zipped (${format(archive.pointer())})`);
       resolve();
     });
 
@@ -34,8 +45,7 @@ const BuildZip = async () => {
     });
 
     archive.pipe(output);
-    // archive.directory(build_dir, 'TREB');
-    archive.directory(current_dir, 'TREB');
+    archive.directory(current_dir, name.toUpperCase());
     archive.finalize();
 
   });

@@ -742,7 +742,7 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
       return path.join(config_dir, config.root, key + '.d.ts');
     }
     else {
-      return path.join(config_dir, config.root, 'lib', key, 'src', 'index.d.ts');
+      return path.join(config_dir, config.root, key, 'src', 'index.d.ts');
       // return path.join(config_dir, config.root, key, 'src', 'index.d.ts');
     }
   };
