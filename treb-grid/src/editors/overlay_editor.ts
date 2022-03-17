@@ -3,7 +3,8 @@
  * for the grid; the aim is to support IME in ICE, which did not work
  * in our old scheme.
  * 
- * this is development branch only atm
+ * update: trying to clean up the node structure, remove one node,
+ * and get layout working properly. 
  */
 
 import { Style, Theme, CellValue, Rectangle, ThemeColor2, Cell } from 'treb-base-types';
@@ -29,7 +30,7 @@ export enum OverlayEditorResult {
 // const support_cloned_events = (typeof KeyboardEvent === 'function');
 
 /** legacy */
-const use_create_text_range = (typeof ((document?.body as any)?.createTextRange) === 'function');
+// const use_create_text_range = (typeof ((document?.body as any)?.createTextRange) === 'function');
 
 export class OverlayEditor extends FormulaEditorBase {
 
@@ -71,7 +72,7 @@ export class OverlayEditor extends FormulaEditorBase {
     super(parser, theme, model, autocomplete);
 
     this.edit_container = document.createElement('div');
-    this.edit_container.classList.add('overlay-editor-container');
+    this.edit_container.classList.add('overlay-container');
     this.edit_container.classList.add('notranslate');
     this.edit_container.translate = false;
 
@@ -81,6 +82,10 @@ export class OverlayEditor extends FormulaEditorBase {
     this.edit_node.tabIndex = -1;
     this.edit_node.spellcheck = true; // default
 
+    if (UA.is_firefox) {
+      this.edit_node.classList.add('firefox');
+    }
+    
     // attempting to cancel "auto" keyboard on ios
     this.edit_node.inputMode = 'none';
 
@@ -153,10 +158,12 @@ export class OverlayEditor extends FormulaEditorBase {
     this.edit_inset = document.createElement('div');
     this.edit_inset.classList.add('overlay-inset');
     
-    // this.edit_container.appendChild(this.edit_node);
+    this.edit_container.appendChild(this.edit_node);
 
     this.edit_container.appendChild(this.edit_inset);
     this.edit_inset.appendChild(this.edit_node);
+
+    // this.edit_container.appendChild(this.edit_node); // dropping inset
 
     container.appendChild(this.edit_container);
 
@@ -242,26 +249,31 @@ export class OverlayEditor extends FormulaEditorBase {
 
     this.edit_node.style.font = Style.Font(style, this.scale);
     this.edit_node.style.color = ThemeColor2(this.theme, style.text, 1);
+    
     this.edit_inset.style.backgroundColor = ThemeColor2(this.theme, style.fill, 0);
+    // this.edit_container.style.backgroundColor = ThemeColor2(this.theme, style.fill, 0);
 
     // NOTE: now that we dropped support for IE11, we can probably 
     // remove more than one class at the same time.
 
+    // (but apparently firefox didn't support multiple classes either,
+    //  until v[x]? I think that may have been years ago...)
+
     switch (style.horizontal_align) {
       case Style.HorizontalAlign.Right:
-        this.edit_inset.classList.add('align-right');
-        this.edit_inset.classList.remove('align-center');
-        this.edit_inset.classList.remove('align-left');
+        this.edit_container.classList.add('align-right');
+        this.edit_container.classList.remove('align-center');
+        this.edit_container.classList.remove('align-left');
         break;
       case Style.HorizontalAlign.Center:
-        this.edit_inset.classList.remove('align-right');
-        this.edit_inset.classList.add('align-center');
-        this.edit_inset.classList.remove('align-left');
+        this.edit_container.classList.remove('align-right');
+        this.edit_container.classList.add('align-center');
+        this.edit_container.classList.remove('align-left');
         break;
       default:
-        this.edit_inset.classList.remove('align-right');
-        this.edit_inset.classList.remove('align-center');
-        this.edit_inset.classList.add('align-left');
+        this.edit_container.classList.remove('align-right');
+        this.edit_container.classList.remove('align-center');
+        this.edit_container.classList.add('align-left');
         break;
     }
 
@@ -291,6 +303,9 @@ export class OverlayEditor extends FormulaEditorBase {
       const value_length = value_string.length;
       this.edit_node.textContent = value_string;
 
+      // legacy
+
+      /*
       if (use_create_text_range) {
 
         Yield().then(() => {
@@ -317,7 +332,9 @@ export class OverlayEditor extends FormulaEditorBase {
 
         });
       }
-      else {
+      else 
+      */
+      {
 
         const range = document.createRange();
         const selection = window.getSelection();
@@ -349,7 +366,6 @@ export class OverlayEditor extends FormulaEditorBase {
     else {
 
       // FIXME: mozilla junk? check old ICE
-
 
     }
 

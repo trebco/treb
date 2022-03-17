@@ -1,0 +1,74 @@
+
+.treb-main .treb-grid {
+
+  // rewrite of the overlay structure. much simpler. 
+  // 
+  // the aim is to bottom-justify the editor in a cell, and then 
+  // left/right/center justify based on cell style. all that seems
+  // to work with this new structure, and we were able to drop the
+  // extra node.
+  //
+  // there is one layout issue in firefox having to do with the caret
+  // in an empty contenteditable cell. we're adding a zero-width space
+  // in a ::before pseudoelement, which seems to fix. this should only
+  // be necessary when the edit node is empty, but I can't get firefox
+  // to do :empty::before (could be I have the syntax wrong).
+  
+  // going to bring back the extra node, so we can have a background
+  // that crosses the selection box...
+
+  .overlay-container {
+
+    padding: 0;
+    margin: 0;
+
+    /* gets positioned to the rect */
+    position: absolute;
+
+    /* gets set on edit, along with pointer-events */
+    opacity: 0;
+
+    /* probably unecessary */
+    outline: none;
+
+    z-index: $z-index-cell-editor;
+
+    &.align-right .overlay-inset {
+      right: 0px;
+      text-align: right;
+      padding-right: 3px;
+    }
+
+    &.align-center .overlay-inset {
+      text-align: center;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+  }
+
+  .overlay-inset {
+    padding: 0;
+    margin: 0;
+    padding: 0 4px;
+
+    position: absolute;
+    height: 100%;
+    min-width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .overlay-editor {
+    outline: none;
+    white-space: nowrap;
+  }
+
+  /** fix for firefox layout bug */
+  .overlay-editor.firefox::before {
+    content: '\200B';
+  }
+
+}

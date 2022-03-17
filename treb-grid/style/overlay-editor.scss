@@ -1,6 +1,5 @@
 
-.treb-main {
-  .treb-grid {
+.treb-main .treb-grid {
 
       /* double node stucture for better control */
       /* control of what? */
@@ -26,6 +25,20 @@
        * of all worlds! but it does what we want, aligning bottom and then
        * one of left/right/center, growing in the right direction(s).
        */
+
+      /*
+       * there's a new issue, apparently recent in chrome/chredge. when you
+       * start the editor, the cursor is at the top of the cell. when you enter
+       * any text, it drops to the bottom. strange, but we're kind of abusing 
+       * the thing so not a huge surprise. we may need to rebuild. just keep
+       * the goals in mind.
+       *
+       * we can fix in chrome without tables, but then mozilla goes crazy...
+       * cursor is raised 50%. then if you press space-backspace, so it's
+       * still empty, the cursor goes to the right place. (...)
+       *
+       * need to check safari
+       */ 
 
       .overlay-editor-container {
         padding: 0;
@@ -81,10 +94,36 @@
           }
         }
 
+        // testing
+        // border: 1px solid green;
+        display: block;
+        position: relative;
+
+        &.align-right {
+          right: 0px;
+          .overlay-editor {
+            text-align: right;
+            padding-right: 3px;
+            right: 0px;
+          }
+        }
+
+        &.align-center {
+          /* left: calc(50% + 1px); */
+          left: 50%;
+          transform: translateX(-50%);
+          .overlay-editor {
+            text-align: center;
+            padding-right: 1px;
+            left: 50%;
+            transform: translateX(-50%);
+            }
+        }
+
       }
 
       .overlay-editor {
-        position: absolute;
+        // position: absolute;
         position: relative;
 
         /* V H */
@@ -98,76 +137,15 @@
 
         outline: none; /* new chrome style */
   
-      }
-
-      /* here we go again... * /
-
-      .overlay-editor-container {
-        padding: 0;
-        margin: 0;
-
-        / * gets positioned to the rect * /
+        // testing
         position: absolute;
-
-        / * gets set on edit, along with pointer-events * /
-        opacity: 0;
-
-        / * probably unecessary * /
-        outline: none;
-
-        z-index: $z-index-cell-editor;
+        outline: 2px dashed red;
+        // display: block;
+        // height: 100%;
+        bottom: 0px;
 
       }
 
-      .overlay-inset {
-
-        position: absolute;
-        height: 100%;
-        min-width: 100%;
-
-        &.align-left {
-          .overlay-editor {
-            padding-left: 4.5px;
-            padding-right: 4px;
-          }
-        }
-
-        &.align-center {
-          left: calc(50%);
-          transform: translateX(-50%);
-          .overlay-editor {
-            text-align: center;
-            transform: translateX(-50%) translateY(-100%);
-            left: calc(50%);
-            padding-left: 4.5px;
-            padding-right: 2px;
-          }
-        }
-
-        &.align-right {
-          right: 0px;
-          .overlay-editor {
-            text-align: right;
-            transform: translateX(-100%) translateY(-100%);
-            left: calc(100%);
-            padding-left: 2.5px;
-            padding-right: 2.5px;
-          }
-        }
-
-      }
-
-      .overlay-editor {
-        position: relative;
-        top: calc(100%);
-        transform: translateY(-100%);
-        display: inline-block;
- 
-        white-space: nowrap;
-
-        outline: none; / * new chrome style * /
   
-      }
-      */
-  }
+
 }
