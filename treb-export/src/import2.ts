@@ -340,9 +340,18 @@ export class Importer {
         let address: ICellAddress|undefined;
         let validation: DataValidation|undefined;
         let parse_result = this.parser.Parse(ref);
-        if (parse_result.expression && parse_result.expression.type === 'address') {
-          address = parse_result.expression;
+
+        // apparently these are encoded as ranges for merged cells...
+
+        if (parse_result.expression) {
+          if (parse_result.expression.type === 'address') {
+            address = parse_result.expression;
+          }
+          else if (parse_result.expression.type === 'range') {
+            address = parse_result.expression.start;
+          }
         }
+
         parse_result = this.parser.Parse(formula);
         if (parse_result.expression) {
           if (parse_result.expression.type === 'range') {
