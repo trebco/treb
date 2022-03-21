@@ -137,9 +137,51 @@ export class Vertex {
    * [A: logically you are correct, but this works, and matching grey does not].
    */
   public LoopCheck(): boolean {
+
+
+    const stack: Vertex[] = [this];
+
+    while (stack.length) {
+      const v = stack[stack.length - 1];
+      let complete = true;
+
+      // can we just skip this?
+      if (v.color !== Color.black) {
+
+        v.color = Color.gray; // set here, not top of function
+
+        for (const edge of v.edges_out) {
+
+          if (edge.color === Color.gray) {
+            this.color = Color.white; // note: this, not v
+            return true; // loop
+          }
+
+          if (edge.color === Color.white && edge.edges_out.length) {
+            stack.push(edge);
+            complete = false;
+            break;
+          }
+
+        }
+
+      }
+
+      if (complete) {
+        v.color = Color.black;
+        stack.pop();
+      }
+
+    }
+
+
+    /*
     this.color = Color.gray;
    
     // switch to stack algorithm. see the method in Graph for details.
+
+    // NOTE: this is bugged. need to rewrite. it's generating false positives
+    // where the recursive version still works.
 
     const stack: Vertex[] = [this];
 
@@ -177,10 +219,11 @@ export class Vertex {
       }
 
     }
-
+    */
+    
+    /*
     // the old recursive version
 
-    /*
     for (const edge of this.edges_out) {
       if (edge.color === Color.gray || (edge.color === Color.white && edge.LoopCheck())) { 
         this.color = Color.white; // someone else can test

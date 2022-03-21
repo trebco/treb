@@ -423,6 +423,10 @@ export abstract class Graph implements GraphCallbacks {
     // unwind recursion -> stack. seems to work OK. could we not just 
     // use the list as the initial stack? (...)
     
+    // NOTE: I think this method is bugged. I'm fixing it in the vertex
+    // version of the loop check routine (because we don't use this anymore)
+    // but if this ever comes back it needs to be fixed.
+
     const stack: Vertex[] = [];
 
     for (const vertex of list) {
@@ -674,7 +678,7 @@ export abstract class Graph implements GraphCallbacks {
         ...u,
         row: v_u.reference.area.start.row,
         column: v_u.reference.area.start.column,
-      }, v, "implicit");
+      }, v, 'implicit');
     }
 
     this.loop_check_required = true; // because new edges

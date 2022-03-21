@@ -100,7 +100,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
     if (this.color === Color.white && this.LoopCheck()) {
 
-      // console.info('LC', `R${this.address?.row} C${this.address?.column}`, this);
+      // console.info('LCB', `R${this.address?.row} C${this.address?.column}`, this);
 
       // if (this.LoopCheck()) {
         // throw new Error('loop loop 2')
