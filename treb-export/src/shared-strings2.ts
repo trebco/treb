@@ -25,8 +25,25 @@ export class SharedStrings {
       // </si>
 
       if (si.t) {
-        this.strings[index] = si.t;
-        this.reverse[si.t] = index;
+
+        // seen recently in the wild, text with leading (or trailing) spaces
+        // has an attribute xml:space=preserve (which makes sense, but was not
+        // expecting it)
+        //
+        // <si>
+        //   <t xml:space="preserve">    (Target portfolio lease rate based on internal estimate of average Canadian farmland rates)</t>
+        // </si>
+        //
+
+        let base = '';
+        if (typeof si.t === 'string') { base = si.t; }
+        else if (si.t.t$) {
+          base = si.t.t$;
+        }
+
+        this.strings[index] = base;
+        this.reverse[base] = index;
+
       }
 
       // complex string looks like

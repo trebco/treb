@@ -7,6 +7,8 @@ import { Theme } from './workbook-theme2';
 import { NumberFormatCache } from 'treb-format';
 import { XMLUtils } from './xml-utils';
 
+import * as he from 'he';
+
 export interface Font {
   size?: number;
   name?: string;
@@ -1103,7 +1105,7 @@ export class StyleCache {
     this.number_formats = composite.map(element => {
       return {
         id: Number(element.a$?.numFmtId || 0),
-        format: element.a$?.formatCode,
+        format: he.decode(element.a$?.formatCode || ''),
       };
     });
 
