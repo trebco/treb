@@ -1,9 +1,9 @@
 
 import { FunctionMap } from '../descriptors';
-import { NumberFormatCache } from 'treb-format';
+import { NumberFormatCache, ValueParser } from 'treb-format';
 import { Localization, UnionValue, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
-import { ValueError } from '../function-error';
+import { ArgumentError, ValueError } from '../function-error';
 
 /**
  * parse a string with wildcards into a regex pattern
@@ -78,6 +78,21 @@ export const TextFunctionLibrary: FunctionMap = {
     }],
     fn: (str: string): UnionValue => {
       return { type: ValueType.number, value: str.codePointAt(0) || 0 }; // FIXME: default?
+    },
+    category: ['text'],
+  },
+
+  Value: {
+    arguments: [
+      { name: 'text' },
+    ],
+    fn: (text: string): UnionValue => {
+      const value = ValueParser.TryParse(text);
+      if (value.type === ValueType.number) {
+        return { type: ValueType.number, value: value.value as number };
+      }
+      return ArgumentError();
+
     },
     category: ['text'],
   },
