@@ -861,7 +861,8 @@ export class ExpressionCalculator {
       }
       */
 
-      console.info( '** identifier', identifier);
+      // console.info( '** identifier', {identifier, expr, context: this.context});
+      
       return NameError();
 
     };
