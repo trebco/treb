@@ -25,7 +25,7 @@ import { MatrixFunctionLibrary } from './functions/matrix-functions';
 import { DataModel, Annotation, FunctionDescriptor } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
 
-import { ArgumentError, ReferenceError, UnknownError, IsError, ValueError, ExpressionError, FunctionError } from './function-error';
+import { ArgumentError, ReferenceError, UnknownError, IsError, ValueError, ExpressionError, FunctionError, NAError } from './function-error';
 
 /**
  * Calculator now extends graph. there's a 1-1 relationship between the
@@ -150,7 +150,7 @@ export class Calculator extends Graph {
           expression.left.values = [data];
           const result = this.CalculateExpression(expression);
 
-          console.info({expression, result});
+          // console.info({expression, result});
 
           // this is no longer the case because we're getting 
           // a boxed result (union)
@@ -296,6 +296,140 @@ export class Calculator extends Graph {
 
       },
 
+      /**
+       * FIXME: there are cases we are not handling
+       * 
+       * match seems to return either the matching row, in a column set,
+       * or matching column, in a row set. you can't search a 2d array.
+       * match also supports inexact matching but assumes data is ordered.
+       * (TODO).
+       * 
+       * FIXME: we also need to icase match strings
+       * 
+       * /
+      Match: {
+        arguments: [
+          { name: 'value', boxed: true }, 
+          { name: 'range', boxed: true }, 
+          { name: 'type', },
+        ],
+        fn: (value: UnionValue, range: UnionValue, type = 0) => {
+
+          if (type) {
+            console.warn('inexact match not supported', {value, range, type});
+            return NAError();
+          }
+          else {
+
+            // I suppose you can match on a single value
+            if (range.type === ValueType.array) {
+              if (range.value.length === 1) {
+                const arr = range.value[0];
+                for (let i = 0; i < arr.length; i++) {
+                  if (value.type == arr[i].type && value.value === arr[i].value) {
+                    return {type: ValueType.number, value: i + 1};
+                  }
+                }
+              }
+              else {
+                for (let i = 0; i < range.value.length; i++) {
+                  const arr = range.value[i];
+                  if (arr.length !== 1) {
+                    return NAError();
+                  }
+                  if (value.type == arr[0].type && value.value === arr[0].value) {
+                    return {type: ValueType.number, value: i + 1};
+                  }
+                }
+              }
+              return NAError();
+            }
+            else {
+              if (value.type === range.type && value.value === range.value) {
+                return {
+                  type: ValueType.number, value: 1,
+                };
+              }
+              return NAError();
+            }
+          }
+          return ArgumentError();
+        },
+      },
+
+      /**
+       * FIXME: there are cases we are not handling
+       * /
+      Index: {
+        arguments: [
+          { name: 'range', boxed: true }, 
+          { name: 'row', }, 
+          { name: 'column', }
+        ],
+        volatile: false,
+
+        // FIXME: handle full row, full column calls
+        fn: (data: UnionValue, row?: number, column?: number) => {
+
+          if (data.type === ValueType.array) {
+
+            // handle array cases: if row or column (but not both) are 
+            // zero, return an array on the other axis.
+
+            if (!row && !column) {
+              return ArgumentError();
+            }
+
+            if (!row || !column) {
+
+              if (!row && column) { // column array (typescript is not smart)
+                return {
+                  type: ValueType.array,
+                  value: [data.value[column - 1] || [{ type: ValueType.undefined }]]
+                }
+
+              }
+              else if (row) { // row array
+
+                const value: UnionValue[][] = [];
+                for (const r of data.value) {
+                  if (r[row - 1]) {
+                    value.push([r[row - 1] || { type: ValueType.undefined }]);
+                  }
+                }
+                return { type: ValueType.array, value };
+
+              }
+              return ArgumentError();
+              
+            }
+
+            const c = data.value[column - 1];
+            if (c) {
+              
+              / *
+              if (c[row - 1]) {
+                return c[row - 1];
+              }
+              console.info('err 16', data, row, column);
+              * /
+
+              return c[row - 1] || ArgumentError();
+            }
+            // console.info('err 17', data, row, column);
+            return ArgumentError();
+
+          }
+          else {
+            if (row !== 1 || column !== 1) {
+              // console.info('err 18');
+              return ArgumentError();
+            }
+            return data;
+          }
+          
+        },
+      },
 
       /**
        * this one does not have to be here, it's just here because
