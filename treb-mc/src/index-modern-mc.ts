@@ -59,14 +59,24 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
     const instances: EmbeddedSpreadsheetBase[] = [];
 
+    const CreateSpreadsheet = (options: CreateSheetOptions): EmbeddedSpreadsheet => {
+      const composite = CompositeSheet.Create(EmbeddedSpreadsheet, options);
+      if (options.mc) {
+        composite.AddSidebarButton({
+          position: 0,
+          icon: 'treb-simulation-icon',
+          title: 'Run Simulation',
+          click: () => composite.sheet.RunSimulation(),
+        });
+      }
+      instances.push(composite.sheet);
+      return composite.sheet;
+    };
+
     const value: TREBNamespace = {
       version: process.env.BUILD_VERSION, // this is fake, it will get replaced
       instances,
-      CreateSpreadsheet: (options: CreateSheetOptions) => {
-        const sheet = CompositeSheet.Create(EmbeddedSpreadsheet, options);
-        instances.push(sheet);
-        return sheet;
-      },
+      CreateSpreadsheet,
     };
 
     // NOTE: dropping formatter but keeping engine/headless (for now)
@@ -100,12 +110,7 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
     });
 
     AutoEmbedManager.Attach('data-treb', 
-      (...args: any) => {
-        const sheet = CompositeSheet.Create(EmbeddedSpreadsheet, args[0]);
-        instances.push(sheet);
-        return sheet;
-      });
-
+      (...args: any) => CreateSpreadsheet(args[0]));
   }
 
 })();

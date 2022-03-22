@@ -64,9 +64,9 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
       version: process.env.BUILD_VERSION, // this is fake, it will get replaced
       instances,
       CreateSpreadsheet: (options: CreateSheetOptions) => {
-        const sheet = CompositeSheet.Create(EmbeddedSpreadsheetBase, options);
-        instances.push(sheet);
-        return sheet;
+        const composite = CompositeSheet.Create(EmbeddedSpreadsheetBase, options);
+        instances.push(composite.sheet);
+        return composite.sheet;
       },
     };
 
@@ -102,9 +102,9 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
     AutoEmbedManager.Attach('data-treb', 
       (...args: any) => {
-        const sheet = CompositeSheet.Create(EmbeddedSpreadsheetBase, args[0]);
-        instances.push(sheet);
-        return sheet;
+        const composite = CompositeSheet.Create(EmbeddedSpreadsheetBase, args[0]);
+        instances.push(composite.sheet);
+        return composite.sheet;
       });
 
   }

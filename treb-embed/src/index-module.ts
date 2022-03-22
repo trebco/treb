@@ -13,7 +13,7 @@ import { CreateSheetOptions } from './options';
 //
 export const TREB = {
   version: process.env.BUILD_VERSION, // this is fake, it will get replaced
-  CreateSpreadsheet: (options: CreateSheetOptions): EmbeddedSpreadsheetBase => CompositeSheet.Create(EmbeddedSpreadsheetBase, options),
+  CreateSpreadsheet: (options: CreateSheetOptions): EmbeddedSpreadsheetBase => CompositeSheet.Create(EmbeddedSpreadsheetBase, options).sheet,
   SetScriptPath: (path: string): void => { EmbeddedSpreadsheetBase.treb_base_path = path; },
 };
 

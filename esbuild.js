@@ -222,7 +222,7 @@ const GenerateConfig = (version) => {
       'process.env.NODE_ENV': `"${version_str}"`,
       'process.env.BUILD_VERSION': `"${package.version}"`,
       'process.env.BUILD_NAME': `"${package.name}"`,
-      'process.env.MC': mc ? 'true' : 'false',
+      // 'process.env.MC': mc ? 'true' : 'false', // now implicit
       ...build_entry_replacements,
     },
     // entryPoints: modern_entry,

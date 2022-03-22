@@ -233,6 +233,7 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
 
 };
 
+/** FIXME: move */
 export interface RunSimulationOptions {
   trials: number;
   lhs: boolean;

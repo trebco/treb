@@ -24,6 +24,9 @@ interface SidebarButtonOptions {
   title?: string;
   classes?: string|string[];
   click?: () => void;
+
+  /** adding insert position */
+  position?: number;
 }
 
 export interface DecoratedHTMLElement extends HTMLElement {
@@ -126,6 +129,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
 
     CompositeSheet.EnsureSymbols();
 
+    /*
     // FIXME: could we move this somewhere better typed?
 
     if (process.env.MC) {
@@ -137,6 +141,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
         });
       }
     }
+    */
 
     this.AddSidebarButton({
       icon: 'treb-reset-icon',
@@ -286,9 +291,12 @@ export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
    * factory method. we don't necessarily need the class instance, although
    * (in this version) the class has some properties; use the factory method
    * to just get back the embedded sheet.
+   * 
+   * UPDATE: providing access to the container so we can modify it... use
+   * sparingly
    */
-  public static Create<T extends EmbeddedSpreadsheetBase>(base_type: IConstructor<T>, options: CreateSheetOptions): T {
-    return new CompositeSheet(base_type, options).sheet;
+  public static Create<T extends EmbeddedSpreadsheetBase>(base_type: IConstructor<T>, options: CreateSheetOptions): CompositeSheet<T> {
+    return new CompositeSheet(base_type, options); // .sheet;
   }
 
   /**
@@ -548,7 +556,20 @@ export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
     }
 
     if (container) {
-      container.appendChild(button);
+
+      if (typeof options.position === 'number') {
+        const children = container.children;
+        const target = children[options.position];
+        if (target) {
+          container.insertBefore(button, target);
+        }
+        else {
+          container.appendChild(button);
+        }
+      }
+      else {
+        container.appendChild(button);
+      }
     }
 
     return button;
