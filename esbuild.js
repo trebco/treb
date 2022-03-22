@@ -128,14 +128,14 @@ const banner = mc ?
  * entry points for module build, keyed by output file name
  */
  const module_entry = {
-  [package['build-entry-points']['main']]: mc ? './treb-embed/src/index-module-mc.ts' : './treb-embed/src/index-module.ts',
+  [package['build-entry-points']['main']]: mc ? './treb-mc/src/index-module-mc.ts' : './treb-embed/src/index-module.ts',
 };
 
 /**
  * entry points for regular build, keyed by output file name
  */
 const modern_entry = mc ? {
-  [package['build-entry-points']['main']]: './treb-embed/src/index-modern-mc.ts',
+  [package['build-entry-points']['main']]: './treb-mc/src/index-modern-mc.ts',
   [package['build-entry-points']['export-worker'] + '-' + package.version]: './treb-export/src/export-worker/index-modern.ts',
   [package['build-entry-points']['calculation-worker'] + '-' + package.version]: './treb-mc/src/calculation-worker/index-modern.ts',
 } : {
