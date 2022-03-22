@@ -125,6 +125,40 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
   },
 
+  Date: {
+    description: 'Constructs a Lotus date from parts',
+    arguments: [
+      { name: 'year' },
+      { name: 'month' },
+      { name: 'day' },
+    ],
+    fn: (year: number, month: number, day: number) => {
+      const date = new Date();
+      date.setMilliseconds(0);
+      date.setSeconds(0);
+      date.setMinutes(0);
+      date.setHours(0);
+      
+      if (year < 0 || year > 10000) { 
+        return ArgumentError();
+      }
+      if (year < 1899) { year += 1900; }
+      date.setFullYear(year);
+
+      if (month < 1 || month > 12) {
+        return ArgumentError();
+      }
+      date.setMonth(month - 1);
+
+      if (day < 1 || day > 31) {
+        return ArgumentError();
+      }
+      date.setDate(day);
+
+      return { type: ValueType.number, value: UnlotusDate(date.getTime()) };
+    },
+  },
+
   Today: {
     description: 'Returns current day',
     volatile: true,
