@@ -306,7 +306,7 @@ export class Calculator extends Graph {
        * 
        * FIXME: we also need to icase match strings
        * 
-       * /
+       */
       Match: {
         arguments: [
           { name: 'value', boxed: true }, 
@@ -359,7 +359,7 @@ export class Calculator extends Graph {
 
       /**
        * FIXME: there are cases we are not handling
-       * /
+       */
       Index: {
         arguments: [
           { name: 'range', boxed: true }, 
@@ -371,62 +371,56 @@ export class Calculator extends Graph {
         // FIXME: handle full row, full column calls
         fn: (data: UnionValue, row?: number, column?: number) => {
 
-          if (data.type === ValueType.array) {
+          // ensure array
+          if (data && data.type !== ValueType.array) {
+            data = {
+              type: ValueType.array,
+              value: [[data]],
+            };
+          }
 
-            // handle array cases: if row or column (but not both) are 
-            // zero, return an array on the other axis.
+          if (row && column) {
 
-            if (!row && !column) {
-              return ArgumentError();
-            }
-
-            if (!row || !column) {
-
-              if (!row && column) { // column array (typescript is not smart)
-                return {
-                  type: ValueType.array,
-                  value: [data.value[column - 1] || [{ type: ValueType.undefined }]]
-                }
-
-              }
-              else if (row) { // row array
-
-                const value: UnionValue[][] = [];
-                for (const r of data.value) {
-                  if (r[row - 1]) {
-                    value.push([r[row - 1] || { type: ValueType.undefined }]);
-                  }
-                }
-                return { type: ValueType.array, value };
-
-              }
-              return ArgumentError();
-              
-            }
+            // simple case: 2 indexes
 
             const c = data.value[column - 1];
             if (c) {
-              
-              / *
-              if (c[row - 1]) {
-                return c[row - 1];
+              const cell = c[row - 1];
+              if (cell) {
+                return cell;
               }
-              console.info('err 16', data, row, column);
-              * /
-
-              return c[row - 1] || ArgumentError();
             }
-            // console.info('err 17', data, row, column);
-            return ArgumentError();
+          }
+          else if (row) {
 
-          }
-          else {
-            if (row !== 1 || column !== 1) {
-              // console.info('err 18');
-              return ArgumentError();
+            // return an array
+
+            const value: UnionValue[][] = [];
+            for (const c of data.value) {
+              if (!c[row - 1]) {
+                return ArgumentError();
+              }
+              value.push([c[row-1]]);
             }
-            return data;
+            return {
+              type: ValueType.array,
+              value,
+            };
           }
+          else if (column) {
+
+            // return an array
+
+            const c = data.value[column - 1];
+            if (c) {
+              return {
+                type: ValueType.array,
+                value: [c],
+              };
+            }
+          }
+
+          return ArgumentError();
           
         },
       },
