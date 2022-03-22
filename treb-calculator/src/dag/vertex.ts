@@ -160,7 +160,17 @@ export class Vertex {
           if (edge.color === Color.white && edge.edges_out.length) {
             stack.push(edge);
             complete = false;
-            break;
+
+            // the only thing this break does is add loops. we can 
+            // safely add all (white) edges as long as we don't color 
+            // them here -- that was the issue in the last version.
+
+            // break; // ?
+
+            // if you really want fidelity with the recursive version
+            // you could reverse the order, but the order is arbitrary
+            // anyway so it makes no difference.
+
           }
 
         }
