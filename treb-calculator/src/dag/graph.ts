@@ -475,7 +475,7 @@ export abstract class Graph implements GraphCallbacks {
                 // next, but since v is still on the stack once those are done
                 // we will hit v again. 
 
-                edge.color = Color.gray;
+                // edge.color = Color.gray;
                 stack.push(edge);
                 completed = false;
               }

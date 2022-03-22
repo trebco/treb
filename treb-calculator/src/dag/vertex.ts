@@ -142,10 +142,14 @@ export class Vertex {
     const stack: Vertex[] = [this];
 
     while (stack.length) {
+
+      // note peek: we leave it on the stack
       const v = stack[stack.length - 1];
+
+      // state flag: unset if we have edges we need to check
       let complete = true;
 
-      // can we just skip this?
+      // skip this vertex if it's clean
       if (v.color !== Color.black) {
 
         v.color = Color.gray; // set here, not top of function
@@ -154,7 +158,7 @@ export class Vertex {
 
           if (edge.color === Color.gray) {
             this.color = Color.white; // note: this, not v
-            return true; // loop
+            return true; // found a loop
           }
 
           if (edge.color === Color.white && edge.edges_out.length) {
