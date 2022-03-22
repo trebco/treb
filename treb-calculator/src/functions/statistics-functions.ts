@@ -1,7 +1,7 @@
 
 import { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ValueError, FunctionError } from '../function-error';
+import { ValueError, FunctionError, ArgumentError, NAError } from '../function-error';
 import { Complex, UnionValue, ValueType } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
 
@@ -64,6 +64,65 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     arguments: [{ name: 'data', }],
     fn: (...args: any[]): UnionValue => {
       return { type: ValueType.number, value: Variance(Utils.FlattenUnboxed(args), true) };
+    },
+  },
+
+  Covar: {
+    description: 'Returns the covariance between two ranges of values',
+    arguments: [{
+      name: 'A',
+    }, {
+      name: 'B',
+    }],
+    fn: (x: any[], y: any[]): UnionValue => {
+
+      // both must be 2d arrays, we're assuming the same or mostly similar shape
+      if (!Array.isArray(x) || !Array.isArray(y)) { return ValueError(); }
+      if (!Array.isArray(x[0]) || !Array.isArray(y[0])) { return ValueError(); }
+
+      if (x.length !== y.length) {
+        return ArgumentError();
+      }
+
+      let sum = 0;
+      let length = 0;
+
+      const mean = { x: 0, y: 0 };
+      const data: { x: number[], y: number[] } = { x: [], y: [] };
+
+      for (let j = 0; j < x.length; j++) {
+
+        if (!x[j] || !y[j]) { continue; }
+        if (x[j].length !== y[j].length) {
+          return ArgumentError();
+        }
+        
+        const len = x[j].length;
+        length += len;
+
+        for (let i = 0; i < len; i++) {
+          mean.x += x[j][i];
+          mean.y += y[j][i];
+
+          data.x.push(x[j][i]);
+          data.y.push(y[j][i]);
+        }
+
+      }
+
+      if (length === 0) {
+        return NAError();
+      }
+
+      mean.x /= length;
+      mean.y /= length;
+
+      for (let i = 0; i < length; i++) {
+        sum += (data.x[i] - mean.x) * (data.y[i] - mean.y);
+      }
+
+      return { type: ValueType.number, value: sum / length, };
+
     },
   },
 
