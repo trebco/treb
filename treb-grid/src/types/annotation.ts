@@ -47,6 +47,9 @@ export class Annotation {
   /** opaque data. this is serialized, so it's persistent data */
   public data: any = {};
 
+  // opaque string which will be added to the class of any containing node 
+  // public class_name?: string;
+
   /** type, for filtering. ensure a value */
   public type = '';
 
@@ -143,6 +146,7 @@ export class Annotation {
     if (this.data) result.data = this.data;
     if (this.formula) result.formula = this.formula;
     if (this.type) result.type = this.type;
+    // if (this.class_name) result.class_name = this.class_name;
 
     if (!this.resizable) result.resizable = this.resizable;
     if (!this.movable) result.movable = this.movable;

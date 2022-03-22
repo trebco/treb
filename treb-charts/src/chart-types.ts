@@ -65,6 +65,8 @@ export interface ChartDataBaseType {
   smooth?: boolean;
   data_labels?: boolean;
 
+  class_name?: string;
+
   /** different marker type for scatter plot */
   points?: boolean;
 

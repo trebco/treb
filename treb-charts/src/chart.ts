@@ -157,9 +157,21 @@ export class Chart {
       (this.chart_data as BarData).round = /round/i.test(options);
       this.chart_data.data_labels = /labels/i.test(options);
 
-      const match = options.match(/labels="(.*?)"/);
+      let match = options.match(/labels="(.*?)"/);
       if (match && series) {
         this.ApplyLabels(series, match[1], category_labels);
+      }
+      else {
+        match = options.match(/labels=([^\s\r\n,]+)(?:\W|$)/);
+        if (match && series) {
+          this.ApplyLabels(series, match[1], category_labels);
+        }
+ 
+      }
+
+      match = options.match(/class=([\w_-]+)(?:\W|$)/);
+      if (match) {
+        this.chart_data.class_name = match[1];
       }
 
     }
@@ -589,9 +601,20 @@ export class Chart {
       this.chart_data.smooth = /smooth/i.test(options);
       this.chart_data.data_labels = /labels/i.test(options);
 
-      const match = options.match(/labels="(.*?)"/);
+      let match = options.match(/labels="(.*?)"/);
       if (match && this.chart_data.series) {
         this.ApplyLabels(this.chart_data.series, match[1]);
+      }
+      else {
+        match = options.match(/labels=([^\s\r\n,]+)(?:\W|$)/);
+        if (match && this.chart_data.series) {
+          this.ApplyLabels(this.chart_data.series, match[1]);
+        }
+      }
+
+      match = options.match(/class=([\w_-]+)(?:\W|$)/);
+      if (match) {
+        this.chart_data.class_name = match[1];
       }
 
     }
@@ -660,6 +683,12 @@ export class Chart {
       // this.chart_data.markers = /marker/i.test(options);
       this.chart_data.smooth = /smooth/i.test(options);
       // this.chart_data.data_labels = /labels/i.test(options);
+      
+      const match = options.match(/class=([\w_-]+)(?:\W|$)/);
+      if (match) {
+        this.chart_data.class_name = match[1];
+      }
+
     }
 
   }
@@ -775,6 +804,31 @@ export class Chart {
 
     // optionally sort...
 
+    const options = (args[3] || '').toString().trim();
+    
+    // old-style...
+
+    let sort = options.toUpperCase();
+    if (sort === 'ASC' || sort === 'ASCENDING' || sort === 'INC') {
+      slices.sort((a, b) => { return (a.value || 0) - (b.value || 0); });
+    }
+    else if (sort === 'DESC' || sort === 'DESCENDING' || sort === 'DEC') {
+      slices.sort((a, b) => { return (b.value || 0) - (a.value || 0); });
+    }
+    else {
+      const match = options.match(/sort=([\w]+)(?:\W|$)/i);
+      if (match) {
+        sort = match[1];
+        if (/^(asc|inc)/i.test(sort)) {
+          slices.sort((a, b) => { return (a.value || 0) - (b.value || 0); });
+        }
+        else if (/^(desc|dec)/i.test(sort)) {
+          slices.sort((a, b) => { return (b.value || 0) - (a.value || 0); });
+        }
+      }
+    }
+    
+    /*
     const sort = (args[3] || '').toString().trim();
 
     if (/^(asc|inc)/i.test(sort)) {
@@ -787,12 +841,20 @@ export class Chart {
         return (b.value || 0) - (a.value || 0);
       });
     }
+    */
 
     this.chart_data = {
       type: pie_chart ? 'pie' : 'donut',
       slices,
       title,
     };
+
+    if (options) {
+      const match = options.match(/class=([_-\w]+)(?:\W|$)/);
+      if (match) {
+        this.chart_data.class_name = match[1];
+      }
+    }
 
   }
 
@@ -1090,7 +1152,7 @@ export class Chart {
     // reset
     this.renderer.Resize(); // just too many problems
     this.renderer.Prerender();
-    this.renderer.Clear();
+    this.renderer.Clear(this.chart_data.class_name);
 
     // get usable area [FIXME: method]
     const area = new Area(0, 0, this.renderer.size.width, this.renderer.size.height);

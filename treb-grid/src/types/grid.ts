@@ -1002,6 +1002,10 @@ export class Grid {
     }
 
     annotation.node.classList.add('annotation');
+    
+    // if (annotation.class_name) {
+    //   annotation.node.classList.add(annotation.class_name);
+    // }
 
     if (add_to_layout) {
       this.layout.AddAnnotation(annotation);

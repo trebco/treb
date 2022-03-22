@@ -1429,12 +1429,21 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       target = Rectangle.IsRectangle(rect) ? rect : this.calculator.ResolveArea(rect);
     }
 
+    /*
+    if (class_name) {
+      if (!/^[_\-a-zA-Z][\w_-]*$/.test(class_name)) {
+        throw new Error('invalid class name');
+      }
+    }
+    */
+
     const { x, y } = this.grid.GetScrollOffset();
     const scale = this.grid.scale || 1;
 
     this.grid.CreateAnnotation({
       type,
       formula,
+      // class_name,
     }, undefined, undefined, target || { top: y / scale + 30, left: x / scale + 30, width: 300, height: 300 });
 
   }

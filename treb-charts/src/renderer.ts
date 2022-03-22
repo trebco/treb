@@ -257,10 +257,12 @@ export class ChartRenderer {
 
   }
 
-  public Clear(): void {
+  public Clear(class_name?: string): void {
     this.group.textContent = '';
     this.axis_group.textContent = '';
     this.label_group.textContent = '';
+    class_name = 'treb-chart' + (class_name ? ' ' + class_name: '');
+    this.svg_node.setAttribute('class', class_name);
   }
 
   public Resize(): void {
