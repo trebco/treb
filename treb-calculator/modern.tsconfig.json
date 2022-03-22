@@ -3,6 +3,9 @@
   "references": [
     { "path": "../treb-grid/modern.tsconfig.json" },
     { "path": "../treb-utils/modern.tsconfig.json" }
+  ],
+  "include": [
+    "../treb-base-types/**/*.ts"
   ]
 }
 
