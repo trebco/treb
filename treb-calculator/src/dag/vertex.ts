@@ -60,6 +60,10 @@ export class Vertex {
   public ClearDependencies(): void {
     for (const edge of this.edges_in) {
       edge.RemoveDependent(this);
+
+      // testing inline...
+      // edge.edges_out = edge.edges_out.filter(check => check !== this);      
+
     }
     this.edges_in = [];
   }
@@ -79,7 +83,37 @@ export class Vertex {
 
   /** remove a dependent */
   public RemoveDependent(edge: Vertex): void {
-    this.edges_out = this.edges_out.filter((check) => check !== edge);
+
+    // this.edges_out = this.edges_out.filter((check) => check !== edge);
+
+    // updated for performance.
+
+    // this seems to be faster than any other method of removing an item.
+    // (also tried: temp loop and copy non-matching).
+
+    // this does assume that edges can't be in the list twice, but that
+    // should already be true (it would cause all sorts of other problems).
+
+    // actually does this just win because we break the loop earlier?
+    // (presumably in 50% of cases)? even if so, if the splice is not 
+    // more expensive this is a win.
+
+    // splice should be expensive, though... weird. because what splice
+    // does (AIUI) is reassign array indexes above the delete index.
+    // it would be better if we could get rid of indexes altogether, perhaps
+    // using a set?
+
+    // note: tried to improve on splice with some direct methods, nothing
+    // seemed to work any better (not worse, either, but if there's no 
+    // improvement we should use the native method).
+
+    for (let i = 0; i < this.edges_out.length; i++) {
+      if (this.edges_out[i] === edge) {
+        this.edges_out.splice(i, 1);
+        return;
+      }
+    }
+
   }
 
   /** add a dependency. doesn't add if already in the list */

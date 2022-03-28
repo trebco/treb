@@ -236,6 +236,7 @@ export abstract class Graph implements GraphCallbacks {
     if (vertex) vertex.Reset();
   }
 
+  public RIBcount = 0;
 
   /**
    * resets the vertex by removing inbound edges and clearing formula flag.
@@ -244,6 +245,8 @@ export abstract class Graph implements GraphCallbacks {
    */
   public ResetInbound(address: ICellAddress, set_dirty = false, create = true, remove = false): void {
 
+    this.RIBcount++;
+    
     const vertex = this.GetVertex(address, create);
 
     // console.info("RIB", address.row, address.column, 'd?', set_dirty, vertex, 'R?', remove);
@@ -262,7 +265,13 @@ export abstract class Graph implements GraphCallbacks {
     // (to this); in that case, we could remove the dependency vertex, 
     // since it is essentially orphaned
 
-    const dependencies = vertex.edges_in.slice(0);
+    let dependencies: Vertex[] = [];
+
+    // do this conditionally so we avoid the slice if unecessary
+
+    if (remove) {
+      dependencies = vertex.edges_in.slice(0);
+    }
 
     vertex.ClearDependencies();
 
