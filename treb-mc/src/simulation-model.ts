@@ -625,6 +625,17 @@ export class SimulationModel {
         extension: true,
       },
 
+      'SimulationValue.Cumulative': {
+        description: 'Returns the value of this cell in the simulation at the given trial number (cumulative)',
+        arguments: [
+          { name: 'reference cell', description: 'Source Cell', collector: true },
+          { name: 'iteration', description: 'Trial Number' },
+        ],
+        fn: this.simulationvalue_cumulative.bind(this),
+        category: ['RiskAMP Simulation Functions'],
+        extension: true,
+      },
+
       SimulationValuesArray: {
         description: 'Returns all values of this cell in the simulation, as an array',
         arguments: [
@@ -1969,6 +1980,28 @@ export class SimulationModel {
 
     return { type: ValueType.number, value: pairs[index - 1][1] };
 
+  }
+
+  public simulationvalue_cumulative(data?: number[], index = 1): UnionValue {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!data || !data.length) {
+      return DataError();
+    }
+
+    if (index < 1 || index > data.length) {
+      return ArgumentError();
+    }
+
+    let cumulative = 0;
+    for (let i = 0; i < index; i++) {
+      cumulative += data[i];
+    }
+
+    return { type:ValueType.number, value: cumulative };
+    
   }
 
   public simulationvalue(data?: number[], index = 1): UnionValue {
