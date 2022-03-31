@@ -68,6 +68,10 @@ enum CalculationOptions {
   manual,
 }
 
+enum FileChooserOperation {
+  None, LoadFile, InsertImage, 
+}
+
 /**
  * @internal
  */
@@ -339,6 +343,12 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * element (i.e. not when we're just using the engine)
    */
   protected dialog?: ProgressDialog;
+
+  /** file chooser */
+  protected file_chooser?: HTMLInputElement;
+
+  /** file chooser operation */
+  protected file_chooser_operation = FileChooserOperation.None;
 
   protected toolbar?: Toolbar;
 
@@ -1451,101 +1461,9 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   /**
    * Insert an image. This method will open a file chooser and (if an image
    * is selected) insert the image into the document.
-   * 
-   * @privateRemarks
-   * 
-   * Should we have a separate method that takes either an Image (node) or 
-   * a data URI? 
    */
-  public async InsertImage(file?: File): Promise<void> {
-
-    if (!file) {
-      file = await this.SelectFile('.png, .jpg, .jpeg, .gif, .svg');
-    }
-
-    if (!file) { return; }
-
-    if (this.options.max_file_size && file.size > this.options.max_file_size) {
-      this.dialog?.ShowDialog({
-        type: DialogType.error,
-        message: 'This file exceeds the allowed image size. Please try a smaller image.',
-        title: 'Error adding image',
-        timeout: 3000,
-        close_box: true,
-      });
-      return;
-    }
-
-    const reference = file;
-
-    await new Promise<void>((resolve, reject) => {
-
-      const reader = new FileReader();
-
-      reader.onload = async () => {
-
-        try {
-          if (reader.result) {
-            let contents: string;
-            if (typeof reader.result === 'string') {
-              contents = reader.result;
-            }
-            else {
-              contents = '';
-              const bytes = new Uint8Array(reader.result);
-              for (let i = 0; i < bytes.byteLength; i++) {
-                contents += String.fromCharCode(bytes[i]);
-              }
-            }
-
-            const img = document.createElement('img');
-            img.src = contents;
-
-            // this is to let the browser figure out the image size.
-            // we should maybe use requestAnimationFrame? 
-
-            await Promise.resolve();
-
-            // note: this works, somewhat contrary to expectations,
-            // probably because there are some async calls; hence the
-            // src attribute is set before it's inflated. 
-
-            const annotation = this.grid.CreateAnnotation({
-              type: 'image',
-              formula: '',
-            }, undefined, undefined, {
-              top: 30,
-              left: 30,
-              width: img.width || 300,
-              height: img.height || 300
-            });
-
-            annotation.data.src = contents;
-            annotation.data.original_size = { width: img.width || 300, height: img.height || 300 };
-
-          }
-
-          resolve();
-          
-        }
-        catch (err) {
-          reject(err);
-        }
-      };
-
-      reader.onabort = () => { reject('Aborted'); };
-      reader.onerror = () => { reject('File error'); };
-
-      // need a nontrivial delay to allow IE to re-render.
-      // FIXME: this should be done async, possibly in a worker
-
-      setTimeout(() => {
-        reader.readAsDataURL(reference);
-      }, 100);
-
-    });
-
-
+  public InsertImage(): void {
+    this.SelectFile2('.png, .jpg, .jpeg, .gif, .svg', FileChooserOperation.InsertImage);
   }
 
   /** 
@@ -2054,39 +1972,12 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * Load a desktop file. This method will show a file chooser and open 
    * the selected file (if any). 
    * 
-   * @returns boolean, where true indicates we have successfully loaded a file.
-   * false could be a load error or user cancel from the dialog.
-   * 
    * @public
    */
-  public async LoadLocalFile(): Promise<boolean> {
-
-    // API v1 OK
-
-    const file = await (this.SelectFile(
-      '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json'));
-
-    if (file) {
-
-      try {
-        await this.LoadFileInternal(file, LoadSource.LOCAL_FILE);
-        return true;
-      }
-      catch (err) {
-        this.dialog?.ShowDialog({
-          title: 'Error reading file',
-          close_box: true,
-          message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
-          type: DialogType.error,
-          timeout: 3000,
-        });
-        return false;
-      }
-
-    }
-
-    return false;
-
+  public async LoadLocalFile() {
+    this.SelectFile2(
+      '.treb, .csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json',
+      FileChooserOperation.LoadFile);
   }
 
   /**
@@ -3389,27 +3280,15 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   }
 
   protected HandleDrop(event: DragEvent): void {
-
     if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
       event.preventDefault();
       const file = event.dataTransfer.files[0];
 
       if (/^image/.test(file.type)) {
-        this.InsertImage(file);
+        this.InsertImageInternal(file);
       }
       else {
-        this.LoadFileInternal(file, LoadSource.DRAG_AND_DROP).then(() => {
-          // ...
-        }).catch((err) => {
-          this.dialog?.ShowDialog({
-            title: 'Error reading file',
-            close_box: true,
-            message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
-            type: DialogType.error,
-            timeout: 3000,
-          });
-          console.error(err);
-        });
+        this.LoadFileInternal(file, LoadSource.DRAG_AND_DROP).catch(() => undefined);
       }
     }
   }
@@ -3431,10 +3310,62 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     });
   }
 
-
   /**
-   * show file chooser and resolve with the selected file, or undefined
+   * I'm restructuring the select file routine to simplify, in service
+   * of figuring out what's going wrong in OSX/Chrome. the current routine
+   * is unecssarily complicated.
+   * 
+   * the original concern was that you don't receive a "cancel" event from
+   * the file chooser dialog; but that is only relevant if you have ephemeral
+   * dialogs. if you have a constant dialog (html input element) you don't need
+   * to do this asynchronously because the dialog blocks.
+   * 
+   * the downside is that you can't get a return value from 'LoadFile' or 
+   * 'InsertImage'. not sure how much of a problem that is. need to check
+   * what RAW does.
+   * 
+   * 
+   * @param accept 
    */
+  protected SelectFile2(accept: string, operation: FileChooserOperation) {
+
+    if (!this.file_chooser) {
+      this.file_chooser = document.createElement('input');
+      this.file_chooser.type = 'file';
+
+      const file_chooser = this.file_chooser;      
+      file_chooser.addEventListener('change', () => {
+        if (file_chooser.files && file_chooser.files[0]) {
+          const file = file_chooser.files[0];
+          file_chooser.value = '';
+          switch (this.file_chooser_operation) {
+            case FileChooserOperation.InsertImage:
+              this.InsertImageInternal(file);
+              break;
+            case FileChooserOperation.LoadFile:
+              this.LoadFileInternal(file, LoadSource.LOCAL_FILE, true);
+              break;
+            default:
+              console.warn('file chooser: no operation');
+              break;
+          }
+        }
+      });
+    }
+
+    if (!this.file_chooser) {
+      throw new Error('could not create file chooser');
+    }
+
+    this.file_chooser_operation = operation;
+    this.file_chooser.accept = accept || '';
+    this.file_chooser.click();
+
+  }
+
+  /* *
+   * show file chooser and resolve with the selected file, or undefined
+   * /
   protected SelectFile(accept?: string): Promise<File | undefined> {
 
     return new Promise((resolve) => {
@@ -3503,9 +3434,104 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     });
 
   }
+  */
+
+  /**
+   * Insert an image. This method will open a file chooser and (if an image
+   * is selected) insert the image into the document.
+   * 
+   * @privateRemarks
+   * 
+   * Should we have a separate method that takes either an Image (node) or 
+   * a data URI? 
+   */
+   protected async InsertImageInternal(file: File): Promise<void> {
+
+    if (this.options.max_file_size && file.size > this.options.max_file_size) {
+      this.dialog?.ShowDialog({
+        type: DialogType.error,
+        message: 'This file exceeds the allowed image size. Please try a smaller image.',
+        title: 'Error adding image',
+        timeout: 3000,
+        close_box: true,
+      });
+      return;
+    }
+
+    const reference = file;
+
+    await new Promise<void>((resolve, reject) => {
+
+      const reader = new FileReader();
+
+      reader.onload = async () => {
+
+        try {
+          if (reader.result) {
+            let contents: string;
+            if (typeof reader.result === 'string') {
+              contents = reader.result;
+            }
+            else {
+              contents = '';
+              const bytes = new Uint8Array(reader.result);
+              for (let i = 0; i < bytes.byteLength; i++) {
+                contents += String.fromCharCode(bytes[i]);
+              }
+            }
+
+            const img = document.createElement('img');
+            img.src = contents;
+
+            // this is to let the browser figure out the image size.
+            // we should maybe use requestAnimationFrame? 
+
+            await Promise.resolve();
+
+            // note: this works, somewhat contrary to expectations,
+            // probably because there are some async calls; hence the
+            // src attribute is set before it's inflated. 
+
+            const annotation = this.grid.CreateAnnotation({
+              type: 'image',
+              formula: '',
+            }, undefined, undefined, {
+              top: 30,
+              left: 30,
+              width: img.width || 300,
+              height: img.height || 300
+            });
+
+            annotation.data.src = contents;
+            annotation.data.original_size = { width: img.width || 300, height: img.height || 300 };
+
+          }
+
+          resolve();
+          
+        }
+        catch (err) {
+          reject(err);
+        }
+      };
+
+      reader.onabort = () => { reject('Aborted'); };
+      reader.onerror = () => { reject('File error'); };
+
+      // need a nontrivial delay to allow IE to re-render.
+      // FIXME: this should be done async, possibly in a worker
+
+      setTimeout(() => {
+        reader.readAsDataURL(reference);
+      }, 100);
+
+    });
+
+
+  }
 
   /** called when we have a file to write to */
-  protected LoadFileInternal(file: File, source: LoadSource): Promise<void> {
+  protected LoadFileInternal(file: File, source: LoadSource, dialog = true): Promise<void> {
 
     if (!file) { return Promise.resolve(); }
 
@@ -3520,8 +3546,20 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         reader.onload = null;
         reader.onabort = null;
         reader.onerror = null;
-        // this.busy = false;
-        if (err) reject(err);
+
+        if (err) {
+          if (dialog) {
+            this.dialog?.ShowDialog({
+              title: 'Error reading file',
+              close_box: true,
+              message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
+              type: DialogType.error,
+              timeout: 3000,
+            });
+            console.error(err);
+          }
+          reject(err);
+        }
         else resolve();
       };
 
