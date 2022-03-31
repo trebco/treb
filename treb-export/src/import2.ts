@@ -416,30 +416,7 @@ export class Importer {
       links.push({ address, reference, text });
     }
 
-    // data (and row heights)
-
-    const row_heights: number[] = [];
-
-    const rows = FindAll('worksheet/sheetData/row');
-    for (const row of rows) {
-      const row_index = row.a$?.r ? Number(row.a$.r) : 1;
-      if (row.a$?.ht && row.a$?.customHeight) {
-        const num = Number(row.a$.ht);
-        if (!isNaN(num)) {
-          row_heights[row_index - 1] = Math.round(num * 4 / 3); // seems to be the excel unit -> pixel ratio
-        }
-      }
-
-      let cells = row.c || [];
-      if (!Array.isArray(cells)) { cells = [cells]; }
-
-      for (const element of cells) {
-        const cell = this.ParseCell(sheet, element, shared_formulae, arrays, merges, links, validations);
-        if (cell) {
-          data.push(cell);
-        }
-      }
-    }
+    // base
 
     let default_row_height = 21;
     let default_column_width = 100; // ?
@@ -457,6 +434,51 @@ export class Importer {
         const height = Number(sheet_format.a$.defaultRowHeight);
         if (!isNaN(height)) {
           default_row_height = Math.round(height * 4 / 3); // ??
+        }
+      }
+    }
+
+    // data (and row heights)
+
+    const row_heights: number[] = [];
+
+    const rows = FindAll('worksheet/sheetData/row');
+
+    for (const row of rows) {
+      const row_index = row.a$?.r ? Number(row.a$.r) : 1;
+
+      let height = default_row_height;
+      if (row.a$?.ht) {
+        const num = Number(row.a$.ht);
+        if (!isNaN(num)) {
+          height = Math.round(num * 4 / 3); // seems to be the excel unit -> pixel ratio
+        }
+      }
+
+      // if there's a height which is not === default height, but 
+      // the customHeight attribute is not set, then it's been auto-sized.
+      // not sure that's something we need to care about necessarily...
+
+      if (height !== default_row_height) {
+        row_heights[row_index - 1] = height;
+      }
+
+      /*
+      if (row.a$?.ht && row.a$?.customHeight) {
+        const num = Number(row.a$.ht);
+        if (!isNaN(num)) {
+          row_heights[row_index - 1] = Math.round(num * 4 / 3); // seems to be the excel unit -> pixel ratio
+        }
+      }
+      */
+
+      let cells = row.c || [];
+      if (!Array.isArray(cells)) { cells = [cells]; }
+
+      for (const element of cells) {
+        const cell = this.ParseCell(sheet, element, shared_formulae, arrays, merges, links, validations);
+        if (cell) {
+          data.push(cell);
         }
       }
     }

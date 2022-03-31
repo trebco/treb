@@ -483,12 +483,24 @@ export class StyleCache {
 
     // font attributes (atm we are ignoring size, face)
 
+    const base_font = this.fonts[0];
     const font = this.fonts[xf.font || 0];
+
     if (font) {
       if (font.bold) props.bold = true;
       if (font.italic) props.italic = true;
       if (font.underline) props.underline = true;
       if (font.strike) props.strike = true;
+
+      // implement font size... experimental. treat font size as % of 
+      // base size, which we assume is in slot 0.
+
+      if (base_font && base_font.size && font.size && base_font.size !== font.size) {
+        props.font_size = {
+          value: 100 * font.size / base_font.size,
+          unit: '%',
+        };
+      }
 
       if (font.color_argb) {
         props.text = { 
