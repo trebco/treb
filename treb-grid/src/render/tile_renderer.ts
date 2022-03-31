@@ -80,9 +80,18 @@ export class TileRenderer {
     protected model: DataModel,
     protected options: GridOptions, ) {
 
-    this.buffer_canvas = document.createElement('canvas');
+    // this.buffer_canvas = document.createElement('canvas');
+
+    this.buffer_canvas = layout.buffer_canvas;
+
     this.buffer_canvas.width = this.buffer_canvas_size.width;
     this.buffer_canvas.height = this.buffer_canvas_size.height;
+    
+    // we need this attached to the document so it inherits fonts properly.
+    // in fact layout should manage it and then hand it to us (or we can grab it)
+
+    // this.buffer_canvas.classList.add('treb-buffer-canvas');
+    // document.body.appendChild(this.buffer_canvas);
 
     const context = this.buffer_canvas.getContext('2d', { alpha: false });
 
@@ -139,25 +148,6 @@ export class TileRenderer {
     }
 
     return context.measureText(text);
-  }
-
-  public UpdateTheme() {
-
-    //  console.info("UT", this.theme.grid_cell?.font_size);
-
-    /*
-    if (this.theme.grid_cell?.font_size?.value){
-      if (this.theme.grid_cell.font_size.unit === 'px') {
-        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size.value;
-      }
-      else if (this.theme.grid_cell.font_size.unit === 'pt') {
-        FontMetricsCache.base_size_px = this.theme.grid_cell.font_size.value * 4 / 3;
-      }
-    }
-
-    FontMetricsCache.Flush();
-    */
-
   }
 
   /**
@@ -1661,6 +1651,7 @@ export class TileRenderer {
     if (result.tile_overflow_bottom || result.tile_overflow_left || result.tile_overflow_right) {
 
       buffering = true;
+      // console.info("buffering", result, {paint_left, paint_right, text_data});
 
       result.width = paint_right - paint_left;
       result.height = height;
@@ -1848,6 +1839,7 @@ export class TileRenderer {
           if (!part.hidden) {
 
             if (part.text) {
+              // console.info({text: part.text, x, baseline, clip, buffering, text_data});
               context.fillText(part.text, x, baseline);
             }
 

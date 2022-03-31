@@ -43,6 +43,8 @@ export abstract class BaseLayout {
   public row_header!: HTMLDivElement;
   public contents!: HTMLDivElement;
 
+  public buffer_canvas!: HTMLCanvasElement;
+
   public corner!: HTMLDivElement;
   public corner_canvas!: HTMLCanvasElement; // HTMLDivElement;
 

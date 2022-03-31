@@ -1839,7 +1839,7 @@ export class Grid {
 
     this.layout.ApplyTheme(this.theme);
 
-    this.tile_renderer.UpdateTheme(); // has reference
+    // this.tile_renderer.UpdateTheme(); // has reference
 
     if (!initial) {
 

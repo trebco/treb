@@ -1,5 +1,16 @@
 
 .treb-main {
+
+  /* 
+   * new: we need the rendering buffer to inherit font size. so 
+   * we add it as a child of contents, but it's not displayed.
+   * still seems to paint OK.
+   */
+  .treb-buffer-canvas {
+    position: absolute;
+    display: none;
+  }
+
   .treb-grid {
 
     &.grid-layout {

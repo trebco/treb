@@ -678,7 +678,7 @@ export class Importer {
         }
 
         const formula = `=${func}(${args.join(', ')})`;
-        console.info('f', formula);
+        // console.info('f', formula);
 
         if (type && formula) {
           annotations.push({

@@ -71,6 +71,7 @@ export class GridLayout extends BaseLayout {
     this.corner.appendChild(this.corner_canvas);
 
     this.contents = DOMUtilities.CreateDiv('contents');
+    this.buffer_canvas = DOMUtilities.Create('canvas', 'treb-buffer-canvas', this.contents);
 
     // selection node attached to contents
     this.grid_selection = document.createElementNS(SVGNS, 'svg');
