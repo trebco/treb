@@ -211,9 +211,8 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Insert an image. This method will open a file chooser and (if an image
      * is selected) insert the image into the document.
-     *
-     **/
-    InsertImage(file?: File): Promise<void>;
+     */
+    InsertImage(): void;
 
     /**
      * Rename a sheet.
@@ -392,12 +391,9 @@ export declare class EmbeddedSpreadsheet {
      * Load a desktop file. This method will show a file chooser and open
      * the selected file (if any).
      *
-     * @returns boolean, where true indicates we have successfully loaded a file.
-     * false could be a load error or user cancel from the dialog.
-     *
      * @public
      */
-    LoadLocalFile(): Promise<boolean>;
+    LoadLocalFile(): Promise<void>;
 
     /**
      * Export sheet as CSV/TSV. This is an internal method called by the save
