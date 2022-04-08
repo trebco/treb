@@ -58,12 +58,16 @@ export abstract class Graph implements GraphCallbacks {
   }
 
   /**
-   * attach data. normally this is done as part of a calculation, but we can
-   * do it without a calculation to support annotations that use leaf vertices
+   * we used to attach the data model here, but it's now an instance
+   * property (and readonly). we map still need to rebuild the map, 
+   * so we're retaining the method for the time being (but renamed and 
+   * reparameterized).
+   * 
+   * if model were a class we wouldn't have to do this...
    */
-  protected AttachData(model: DataModel): void {
+  protected RebuildMap(): void {
     this.cells_map = {};
-    for (const sheet of model.sheets) {
+    for (const sheet of this.model.sheets) {
       this.cells_map[sheet.id] = sheet.cells;
     }
   }

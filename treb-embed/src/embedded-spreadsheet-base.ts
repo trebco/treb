@@ -800,7 +800,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       // no data and no network document -- we need to connect the grid model
       // and the calculator, which would otherwise happen on document load
 
-      this.calculator.RebuildClean(this.grid.model, true);
+      this.calculator.RebuildClean(true);
 
     }
 
@@ -1875,7 +1875,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     this.grid.Clear();
     this.ResetInternal();
-    this.calculator.AttachModel(this.grid.model); // for leaf nodes
+    this.calculator.AttachModel();
     this.Publish({ type: 'reset' });
   }
 
@@ -2288,7 +2288,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     if (data.rendered_values && !options.recalculate) {
       this.grid.Update();
-      this.calculator.RebuildClean(this.grid.model, true);
+      this.calculator.RebuildClean(true);
     }
     else {
       // console.info('load recalc');
@@ -2530,7 +2530,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       area = event.area;
     }
 
-    this.calculator.Calculate(this.grid.model, area);
+    this.calculator.Calculate(area);
 
     this.grid.Update(true); // , area);
     this.UpdateAnnotations();
@@ -3136,7 +3136,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
             // this one _is_ the grid cells
 
-            this.calculator.AttachModel(this.grid.model);
+            this.calculator.AttachModel();
             this.Publish({ type: 'load', source, });
             this.UpdateDocumentStyles();
 

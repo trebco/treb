@@ -837,19 +837,18 @@ export class Calculator extends Graph {
    * at the same time (we should unwind this a little bit, it's an artifact
    * of graph being a separate class)
    */
-  public AttachModel(model: DataModel): void {
-    this.AttachData(model);
-    this.expression_calculator.SetModel(model);
+  public AttachModel(): void {
+    this.RebuildMap();
+    this.expression_calculator.SetModel(this.model);
   }
 
   /**
    * wrapper method for calculation. this should be used for 1-time
    * calculations (i.e. not in a simulation).
    */
-  public Calculate(model: DataModel, subset?: Area): void {
+  public Calculate(subset?: Area): void {
 
-    // this.AttachData(model); // for graph. FIXME
-    this.AttachModel(model);
+    this.AttachModel();
 
     // this gets checked later, now... it would be better if we could
     // check it here are skip the later check, but that field is optional
@@ -883,14 +882,9 @@ export class Calculator extends Graph {
    * resets graph and graph status
    */
   public Reset(): void {
-
     this.FlushTree();
-    if (this.model) {
-      // this.AttachData(this.model);
-      this.AttachModel(this.model);
-    }
+    this.AttachModel();
     this.full_rebuild_required = true;
-
   }
 
   /**
@@ -1037,13 +1031,11 @@ export class Calculator extends Graph {
    * UPDATE: optionally recalculate if there are volatile cells. that's used
    * for loading documents.
    */
-  public RebuildClean(model: DataModel, recalculate_if_volatile = false): void {
+  public RebuildClean(recalculate_if_volatile = false): void {
 
     this.full_rebuild_required = false; // unset
 
-    // this.AttachData(model);
-    // this.expression_calculator.SetModel(model);
-    this.AttachModel(model);
+    this.AttachModel();
 
     this.RebuildGraph();
 
@@ -1446,12 +1438,12 @@ export class Calculator extends Graph {
 
   }
 
-  /**
+  /* *
    * we're passing model here to skip the test on each call
    * 
    * @param unit 
    * @param model 
-   */
+   * /
   protected ApplyMacroFunctionInternal(
       unit: ExpressionUnit, 
       model: DataModel, 
@@ -1534,6 +1526,7 @@ export class Calculator extends Graph {
     return this.ApplyMacroFunctionInternal(expression, this.model, []);
 
   }
+  */
 
   /** 
    * 

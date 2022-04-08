@@ -62,7 +62,7 @@ export class MCCalculator extends Calculator {
     this.Reset();
     // this.AttachData(model);
     // this.expression_calculator.SetModel(model);
-    this.AttachModel(model);
+    this.AttachModel();
 
     // add additional cells to monitor, but only if they actually
     // exist; otherwise they will generate calc errors. 
