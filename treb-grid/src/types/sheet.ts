@@ -672,7 +672,7 @@ export class Sheet {
     area = area.Clone();
     this.cells.Apply(area, (cell, c, r) => {
       cell.merge_area = area;
-      cell.render_dirty = true;
+      cell.render_clean = false;
 
       // clear data in !head
       if (c !== area.start.column || r !== area.start.row) cell.Reset();
@@ -699,7 +699,7 @@ export class Sheet {
 
     this.cells.Apply(area, (cell) => {
       cell.merge_area = undefined;
-      cell.render_dirty = true;
+      cell.render_clean = false;
     }, false);
 
   }
@@ -979,7 +979,7 @@ export class Sheet {
    * neighboring cells.
    */
   public Invalidate(area: Area): void {
-    this.cells.Apply(this.RealArea(area), cell => cell.render_dirty = true);
+    this.cells.Apply(this.RealArea(area), cell => cell.render_clean = false);
   }
 
   /**

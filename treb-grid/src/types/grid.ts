@@ -5988,7 +5988,7 @@ export class Grid {
 
     if (this.overlay_editor?.active_cell) {
       this.overlay_editor.active_cell.editing = false;
-      this.overlay_editor.active_cell.render_dirty = true;
+      this.overlay_editor.active_cell.render_clean = false;
       this.DelayedRender(undefined, this.overlay_editor.selection.area);
     }
 
@@ -6264,7 +6264,7 @@ export class Grid {
     this.overlay_editor?.Edit(selection, rect.Expand(-1, -1), cell, cell_value, event);
 
     cell.editing = true;
-    cell.render_dirty = true;
+    cell.render_clean = false;
 
     this.DelayedRender(false, selection.area);
 
@@ -9228,7 +9228,7 @@ export class Grid {
               }
               else {
                 cell.hyperlink = command.reference || undefined;
-                cell.render_dirty = true;
+                cell.render_clean = false;
               }
 
               if (sheet === this.active_sheet) {

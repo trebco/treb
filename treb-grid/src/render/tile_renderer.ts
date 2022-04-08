@@ -203,14 +203,14 @@ export class TileRenderer {
       if (!dirty) {
         for (let column = overflow.area.start.column; !dirty && column <= overflow.area.end.column; column++) {
           const cell = this.view.active_sheet.cells.GetCell({ row, column }, false);
-          dirty = !!(cell && cell.render_dirty);
+          dirty = !!(cell && !cell.render_clean);
         }
       }
       if (dirty) {
         for (let column = overflow.area.start.column; column <= overflow.area.end.column; column++) {
           const cell = this.view.active_sheet.cells.GetCell({ row, column }, false);
           if (cell) {
-            cell.render_dirty = true;
+            cell.render_clean = false;
             if (cell.renderer_data && cell.renderer_data.overflowed) {
               cell.renderer_data = undefined;
             }
@@ -551,7 +551,7 @@ export class TileRenderer {
           context.setTransform(scale, 0, 0, scale, left, top);
           const cell = this.view.active_sheet.CellData({ row, column });
 
-          if (tile.needs_full_repaint || cell.render_dirty) {
+          if (tile.needs_full_repaint || !cell.render_clean) {
 
             const result = this.RenderCell(tile, cell, context, { row, column }, width, height);
             // render_list.push({row, column, cell});
@@ -1245,8 +1245,8 @@ export class TileRenderer {
 
     // preserve the flag, then unset so we don't have to track around
 
-    const dirty = cell.render_dirty;
-    cell.render_dirty = false;
+    const dirty = !cell.render_clean;
+    cell.render_clean = true;
 
     // special case for overflows (this has been set by someone to the left)
 
@@ -1571,7 +1571,7 @@ export class TileRenderer {
             // that will keep them from getting painted. we only need to
             // do that on the right side.
 
-            target_cell.render_dirty = false;
+            target_cell.render_clean = true;
             target_cell.renderer_data = {
               overflowed: true,
             };
