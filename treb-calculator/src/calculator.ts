@@ -486,7 +486,7 @@ export class Calculator extends Graph {
           // be in the same sheet... we don't need to look up every time
 
           if (ref?.value?.address) {
-            for (const sheet of this.model?.sheets||[]) {
+            for (const sheet of this.model.sheets||[]) {
               if (sheet.id === ref.value.address.sheet_id) {
                 const cell = sheet.cells.GetCell(ref.value.address, false);
                 return { 
@@ -607,11 +607,6 @@ export class Calculator extends Graph {
         resize_rows = 1,
         resize_columns = 1,
       ) : {dirty: boolean, area: Area}|undefined {
-
-    if (!this.model) {
-      // return UnknownError;
-      return undefined;
-    }
 
     // UPDATE: use current context (passed in as argument) to resolve
     // relative references. otherwise the reference will change depending
@@ -787,17 +782,15 @@ export class Calculator extends Graph {
       };
     });
 
-    if (this.model) {
-      for (const key of Object.keys(this.model.macro_functions)) {
-        const macro = this.model.macro_functions[key];
-        function_list.push({
-          name: macro.name,
-          description: macro.description,
-          arguments: (macro.argument_names || []).map(argument => {
-            return { name: argument };
-          }),
-        });
-      }
+    for (const key of Object.keys(this.model.macro_functions)) {
+      const macro = this.model.macro_functions[key];
+      function_list.push({
+        name: macro.name,
+        description: macro.description,
+        arguments: (macro.argument_names || []).map(argument => {
+          return { name: argument };
+        }),
+      });
     }
 
     return function_list;
@@ -960,7 +953,7 @@ export class Calculator extends Graph {
 
         // is named range guaranteed to have a sheet ID? (I think yes...)
 
-        const named_range = this.model?.named_ranges.Get(parse_result.expression.name);
+        const named_range = this.model.named_ranges.Get(parse_result.expression.name);
         if (named_range) {
           return named_range;
         }
@@ -1084,7 +1077,8 @@ export class Calculator extends Graph {
    */
   public MetadataReferences(formula: string): ICellAddress[] {
     const references: ICellAddress[] = [];
-    if (!this.model) { return references; }
+    //if (!this.model) { return references; }
+
     const parse_result = this.parser.Parse(formula);
     if (parse_result.expression && parse_result.expression.type === 'call') {
       const func = this.GetFunction(parse_result.expression.name);
@@ -1208,7 +1202,7 @@ export class Calculator extends Graph {
         break;
 
       case 'identifier':
-        if (this.model) {
+        {
           const named_range =
             this.model.named_ranges.Get(expr.name.toUpperCase());
           if (named_range) {
@@ -1223,7 +1217,6 @@ export class Calculator extends Graph {
   }
 
   protected NamedRangeToAddressUnit(unit: UnitIdentifier): UnitAddress|UnitRange|undefined {
-    if (!this.model) return undefined;
 
     const normalized = unit.name.toUpperCase();
     const named_range = this.model.named_ranges.Get(normalized);
@@ -1286,22 +1279,20 @@ export class Calculator extends Graph {
     if (!sheet_name_map) {
 
       sheet_name_map = {};
-      if (this.model) {
 
+      for (const sheet of this.model.sheets) {
+        sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
+      }
+
+      if (!relative_sheet_name) {
         for (const sheet of this.model.sheets) {
-          sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
-        }
-
-        if (!relative_sheet_name) {
-          for (const sheet of this.model.sheets) {
-            if (sheet.id === relative_sheet_id) {
-              relative_sheet_name = sheet.name;
-              break;
-            }
+          if (sheet.id === relative_sheet_id) {
+            relative_sheet_name = sheet.name;
+            break;
           }
         }
-
       }
+
     }
 
     switch (unit.type){
@@ -1742,7 +1733,7 @@ export class Calculator extends Graph {
 
     }
     else {
-      for (const sheet of this.model?.sheets || []) {
+      for (const sheet of this.model.sheets || []) {
         const rows = sheet.cells.data.length;
         for (let row = 0; row < rows; row++) {
           const row_array = sheet.cells.data[row];

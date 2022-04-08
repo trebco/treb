@@ -554,7 +554,7 @@ export abstract class Graph implements GraphCallbacks {
     if (!address) { return 'undefined'; }
 
     let sheet_name = '';
-    if (address.sheet_id && this.model) {
+    if (address.sheet_id) {
       for (const sheet of this.model.sheets) {
         if (address.sheet_id === sheet.id) {
           sheet_name = sheet.name + '!';
