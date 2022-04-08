@@ -203,14 +203,14 @@ export class TileRenderer {
       if (!dirty) {
         for (let column = overflow.area.start.column; !dirty && column <= overflow.area.end.column; column++) {
           const cell = this.view.active_sheet.cells.GetCell({ row, column }, false);
-          dirty = !!(cell && !cell.render_clean);
+          dirty = !!(cell && !cell.render_clean[this.view.view_index]);
         }
       }
       if (dirty) {
         for (let column = overflow.area.start.column; column <= overflow.area.end.column; column++) {
           const cell = this.view.active_sheet.cells.GetCell({ row, column }, false);
           if (cell) {
-            cell.render_clean = false;
+            cell.render_clean[this.view.view_index] = false;
             if (cell.renderer_data && cell.renderer_data.overflowed) {
               cell.renderer_data = undefined;
             }
@@ -551,7 +551,7 @@ export class TileRenderer {
           context.setTransform(scale, 0, 0, scale, left, top);
           const cell = this.view.active_sheet.CellData({ row, column });
 
-          if (tile.needs_full_repaint || !cell.render_clean) {
+          if (tile.needs_full_repaint || !cell.render_clean[this.view.view_index]) {
 
             const result = this.RenderCell(tile, cell, context, { row, column }, width, height);
             // render_list.push({row, column, cell});
@@ -1245,8 +1245,8 @@ export class TileRenderer {
 
     // preserve the flag, then unset so we don't have to track around
 
-    const dirty = !cell.render_clean;
-    cell.render_clean = true;
+    const dirty = !cell.render_clean[this.view.view_index];
+    cell.render_clean[this.view.view_index] = true;
 
     // special case for overflows (this has been set by someone to the left)
 
@@ -1571,7 +1571,7 @@ export class TileRenderer {
             // that will keep them from getting painted. we only need to
             // do that on the right side.
 
-            target_cell.render_clean = true;
+            target_cell.render_clean[this.view.view_index] = true;
             target_cell.renderer_data = {
               overflowed: true,
             };

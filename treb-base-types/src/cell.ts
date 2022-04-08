@@ -310,7 +310,7 @@ export class Cell {
   /**
    * step 1: invert flag (dirty -> clean)
    */
-  public render_clean = false;
+  public render_clean: boolean[] = [];
 
   public note?: string;
 
@@ -378,7 +378,7 @@ export class Cell {
   /** flush style information and things that rely on it (formatted value) */
   public FlushStyle(): void{
     this.formatted = this.rendered_type = this.style = undefined;
-    this.render_clean = false;
+    this.render_clean = [];
   }
 
   /** flush array information */
@@ -395,7 +395,7 @@ export class Cell {
       = this.render_function
       = this.click_function
       = undefined;
-    this.render_clean = false;
+    this.render_clean = [];
   }
 
   public Reset(): void{
@@ -413,7 +413,7 @@ export class Cell {
       = this.render_function
       = this.click_function
       = undefined;
-    this.render_clean = false;
+    this.render_clean = [];
   }
 
   public Set(value: CellValue, type = GetValueType(value)): void {
@@ -427,7 +427,7 @@ export class Cell {
       this.render_function =
       this.click_function =
       this.area = undefined;
-    this.render_clean = false;
+    this.render_clean = [];
   }
 
   /** sets calculated value and flushes cached value */
@@ -436,7 +436,7 @@ export class Cell {
     this.calculated = value;
     this.calculated_type = type;
     this.formatted = this.rendered_type = undefined;
-    this.render_clean = false;
+    this.render_clean = [];
   }
 
   /**
@@ -456,7 +456,7 @@ export class Cell {
     this.calculated = value;
     this.calculated_type = type;
     this.formatted = this.rendered_type = undefined;
-    this.render_clean = false;
+    this.render_clean = [];
   }
 
   /**
@@ -560,7 +560,7 @@ export class Cell {
    */
   public SetNote(note?: string): void {
     this.note = note;
-    this.render_clean = false;
+    this.render_clean = [];
   }
 
   /** sets error (FIXME: error type) */
@@ -578,7 +578,7 @@ export class Cell {
       this.calculated =
       this.calculated_type = undefined;
     this.area = area;
-    this.render_clean = false;
+    this.render_clean = [];
   }
 
   public SetArrayHead(area: Area, value: CellValue): void {
@@ -590,7 +590,7 @@ export class Cell {
       this.calculated =
       this.calculated_type = undefined;
     this.area = area;
-    this.render_clean = false;
+    this.render_clean = [];
   }
 
 }
