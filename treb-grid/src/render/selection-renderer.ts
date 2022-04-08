@@ -4,7 +4,7 @@ import { BaseLayout } from '../layout/base_layout';
 import { SVGSelectionBlock, SelectionOffset } from './svg_selection_block';
 import { GridSelection } from '../types/grid_selection';
 import { HeaderOverlay, Orientation } from './svg_header_overlay';
-import { DataModel } from '../types/data_model';
+import { DataModel, ViewModel } from '../types/data_model';
 
 // const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -29,6 +29,7 @@ export class SelectionRenderer {
       private theme: Theme,
       private layout: BaseLayout,
       private model: DataModel,
+      private view: ViewModel,
       private primary_selection: GridSelection,
       // private highlight_selection: GridSelection,
       private additional_selections: GridSelection[]) {
@@ -125,7 +126,7 @@ export class SelectionRenderer {
 
     let header_selection_rect = new Rectangle(-1, -1, 0, 0);
     if (!this.primary_selection.empty) {
-      const area = this.model.active_sheet.RealArea(this.primary_selection.area);
+      const area = this.view.active_sheet.RealArea(this.primary_selection.area);
       header_selection_rect =
         this.layout.CellAddressToRectangle(area.start).Combine(
           this.layout.CellAddressToRectangle(area.end));
@@ -157,7 +158,7 @@ export class SelectionRenderer {
       this.corner_column_overlay.Hide();
     }
 
-    if (!this.model.active_sheet.freeze.columns && !this.model.active_sheet.freeze.rows) {
+    if (!this.view.active_sheet.freeze.columns && !this.view.active_sheet.freeze.rows) {
       this.primary_selection.empty = cache_primary_empty;
       return;
     }
@@ -174,39 +175,39 @@ export class SelectionRenderer {
     else {
       const start = this.primary_selection.area.start;
       visible_row.push(
-        (start.row <= this.model.active_sheet.freeze.rows) ||
+        (start.row <= this.view.active_sheet.freeze.rows) ||
         (start.row === Infinity));
 
       visible_column.push(
-        (start.column <= this.model.active_sheet.freeze.columns) ||
+        (start.column <= this.view.active_sheet.freeze.columns) ||
         (start.column === Infinity));
     }
 
     for (const {area} of this.additional_selections) {
       visible_row.push(
-        (area.start.row <= this.model.active_sheet.freeze.rows) ||
+        (area.start.row <= this.view.active_sheet.freeze.rows) ||
         (area.start.row === Infinity));
 
       visible_column.push(
-        (area.start.column <= this.model.active_sheet.freeze.columns) ||
+        (area.start.column <= this.view.active_sheet.freeze.columns) ||
         (area.start.column === Infinity));
     }
 
     // selections...
 
-    if (this.model.active_sheet.freeze.rows) {
+    if (this.view.active_sheet.freeze.rows) {
       this.RenderSelectionGroup(aggregate, this.layout.row_header_selection,
         visible_row, undefined, this.row_header_selections,
         {x: 0, y: this.layout.header_offset.y});
     }
 
-    if (this.model.active_sheet.freeze.columns) {
+    if (this.view.active_sheet.freeze.columns) {
       this.RenderSelectionGroup(aggregate, this.layout.column_header_selection,
         visible_column, undefined, this.column_header_selections,
         {x: this.layout.header_offset.x, y: 0});
     }
 
-    if (this.model.active_sheet.freeze.rows && this.model.active_sheet.freeze.columns) {
+    if (this.view.active_sheet.freeze.rows && this.view.active_sheet.freeze.columns) {
       this.RenderSelectionGroup(aggregate, this.layout.corner_selection,
         visible_column, visible_row, this.corner_selections, {...this.layout.header_offset});
     }
@@ -231,7 +232,7 @@ export class SelectionRenderer {
     for (let i = 0; i < aggregate.length; i++ ){
 
       const sheet_match = (!aggregate[i].area.start.sheet_id) ||
-        (aggregate[i].area.start.sheet_id === this.model.active_sheet.id);
+        (aggregate[i].area.start.sheet_id === this.view.active_sheet.id);
 
       if (sheet_match && !aggregate[i].empty && (!visible_a || visible_a[i]) && (!visible_b || visible_b[i])) {
         if (rerender || !aggregate[i].rendered) {
@@ -302,8 +303,8 @@ export class SelectionRenderer {
     // NOTE: column/row can be infinity, but min handles that properly
 
     return {
-      row: Math.min(address.row, this.model.active_sheet.rows - 1),
-      column: Math.min(address.column, this.model.active_sheet.columns - 1),
+      row: Math.min(address.row, this.view.active_sheet.rows - 1),
+      column: Math.min(address.column, this.view.active_sheet.columns - 1),
     };
 
   }
@@ -313,7 +314,7 @@ export class SelectionRenderer {
    */
   private RenderSVGSelection(selection: GridSelection, block: SVGSelectionBlock, index = 0) {
 
-    const area = this.model.active_sheet.RealArea(selection.area, true);
+    const area = this.view.active_sheet.RealArea(selection.area, true);
 
     let rect = this.layout.CellAddressToRectangle(area.start);
     if (area.count > 1) {
@@ -323,7 +324,7 @@ export class SelectionRenderer {
 
       // update: select merge areas for alternate selections when single
 
-      const data = this.model.active_sheet.CellData(selection.target);
+      const data = this.view.active_sheet.CellData(selection.target);
       if (data.merge_area) {
         rect = this.layout.CellAddressToRectangle(data.merge_area.start);
         rect = rect.Combine(this.layout.CellAddressToRectangle(data.merge_area.end));
@@ -373,7 +374,7 @@ export class SelectionRenderer {
       // get the target rect (primary only)
 
       let target_rect = this.layout.CellAddressToRectangle(selection.target);
-      const data = this.model.active_sheet.CellData(selection.target);
+      const data = this.view.active_sheet.CellData(selection.target);
       if (data.merge_area) {
         target_rect = this.layout.CellAddressToRectangle(data.merge_area.start);
         target_rect = target_rect.Combine(this.layout.CellAddressToRectangle(data.merge_area.end));

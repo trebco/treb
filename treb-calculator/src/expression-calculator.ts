@@ -10,7 +10,7 @@ import { Cell, Cells, ICellAddress, ValueType, GetValueType,
          DimensionedQuantityUnion} from 'treb-base-types';
 import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity } from 'treb-parser';
-import { DataModel, MacroFunction } from 'treb-grid';
+import { DataModel, MacroFunction, Sheet } from 'treb-grid';
 import { NameError, ReferenceError, ExpressionError, UnknownError } from './function-error';
 import { ReturnType } from './descriptors';
 
@@ -258,14 +258,18 @@ export class ExpressionCalculator {
 
       // don't we have a map? [...] only for names?
 
-      let sheet = this.data_model.active_sheet;
-      if (address.sheet_id && address.sheet_id !== sheet.id) {
+      let sheet: Sheet|undefined; // = this.data_model.active_sheet;
+      if (address.sheet_id) { // && address.sheet_id !== sheet.id) {
         for (const test of this.data_model.sheets) {
           if (test.id === address.sheet_id) {
             sheet = test;
             break;
           }
         }
+      }
+
+      if (!sheet) {
+        throw new Error('missing sheet [ac8]');
       }
 
       const cell_data = sheet.CellData(address);
@@ -289,14 +293,18 @@ export class ExpressionCalculator {
         return ReferenceError();
       }
 
-      let sheet = this.data_model.active_sheet;
-      if (range.start.sheet_id && range.start.sheet_id !== sheet.id) {
+      let sheet: Sheet|undefined; // = this.data_model.active_sheet;
+      if (range.start.sheet_id) { // && range.start.sheet_id !== sheet.id) {
         for (const test of this.data_model.sheets) {
           if (test.id === range.start.sheet_id) {
             sheet = test;
             break;
           }
         }
+      }
+
+      if (!sheet) {
+        throw new Error('missing sheet [ac9]');
       }
 
       const range_result: UnionValue[][] = [];

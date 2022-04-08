@@ -1,18 +1,15 @@
 
-// import { Point } from 'treb-base-types';
 import { BaseLayout } from './base_layout';
 import { Tile } from '../types/tile';
 import { DOMUtilities } from '../util/dom_utilities';
-// import { Sheet } from '../types/sheet';
-import { DataModel } from '../types/data_model';
-// import { tmpl, NodeModel } from 'treb-utils';
+import { DataModel, ViewModel } from '../types/data_model';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
 export class GridLayout extends BaseLayout {
 
-  constructor(model: DataModel){
-    super(model);
+  constructor(model: DataModel, view: ViewModel){
+    super(model, view);
 
     /*
     const nodes = tmpl`
@@ -161,11 +158,11 @@ export class GridLayout extends BaseLayout {
     let x = this.header_offset.x;
     let y = this.header_offset.y;
 
-    if (this.model.active_sheet.freeze.columns) {
-      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) x += this.ColumnWidth(i);
+    if (this.view.active_sheet.freeze.columns) {
+      for (let i = 0; i < this.view.active_sheet.freeze.columns; i++) x += this.ColumnWidth(i);
     }
-    if (this.model.active_sheet.freeze.rows) {
-      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) y += this.RowHeight(i);
+    if (this.view.active_sheet.freeze.rows) {
+      for (let i = 0; i < this.view.active_sheet.freeze.rows; i++) y += this.RowHeight(i);
     }
 
     // this.container.style.gridTemplateColumns = `${x}px auto`;
@@ -210,9 +207,9 @@ export class GridLayout extends BaseLayout {
     // as well (moved from render headers)
 
     let y = this.header_offset.y;
-    if (this.model.active_sheet.freeze.rows) {
+    if (this.view.active_sheet.freeze.rows) {
       // let y = 0;
-      for (let i = 0; i < this.model.active_sheet.freeze.rows; i++) {
+      for (let i = 0; i < this.view.active_sheet.freeze.rows; i++) {
         y += this.RowHeight(i);
       }
     }
@@ -228,8 +225,8 @@ export class GridLayout extends BaseLayout {
     this.row_header_selection.style.left = `0px`;
 
     let x = this.header_offset.x;
-    if (this.model.active_sheet.freeze.columns) {
-      for (let i = 0; i < this.model.active_sheet.freeze.columns; i++) {
+    if (this.view.active_sheet.freeze.columns) {
+      for (let i = 0; i < this.view.active_sheet.freeze.columns; i++) {
         x += this.ColumnWidth(i);
       }
     }
@@ -244,11 +241,11 @@ export class GridLayout extends BaseLayout {
     // --
 
     const scaled_header = {
-      x: this.model.active_sheet.header_offset.x * this.scale,
-      y: this.model.active_sheet.header_offset.y * this.scale,
+      x: this.view.active_sheet.header_offset.x * this.scale,
+      y: this.view.active_sheet.header_offset.y * this.scale,
     };
 
-    const freeze = this.model.active_sheet.freeze;
+    const freeze = this.view.active_sheet.freeze;
     
     if (freeze.rows && freeze.columns) {
       this.row_header_annotations.style.display = 'block';

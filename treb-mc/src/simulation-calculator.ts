@@ -21,8 +21,8 @@ export class MCCalculator extends Calculator {
   // reference
   protected simulation_expression_calculator: MCExpressionCalculator;
 
-  constructor() {
-    super();
+  constructor(model: DataModel) {
+    super(model);
 
     this.expression_calculator =
       this.simulation_expression_calculator = new MCExpressionCalculator(
@@ -278,9 +278,11 @@ export class MCCalculator extends Calculator {
 
         const entry = (result instanceof ArrayBuffer) ? PackResults.UnpackOne(new Float64Array(result)) : result;
 
+        /** ?
         if (!entry.sheet_id) {
           entry.sheet_id = model.active_sheet.id;
         }
+        */
 
         if (!simulation_model.results[entry.sheet_id]){
           simulation_model.results[entry.sheet_id] = [];

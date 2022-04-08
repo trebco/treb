@@ -22,10 +22,10 @@ import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './function
 import { ComplexFunctionLibrary } from './functions/complex-functions';
 import { MatrixFunctionLibrary } from './functions/matrix-functions';
 
-import { DataModel, Annotation, FunctionDescriptor } from 'treb-grid';
+import { DataModel, Annotation, FunctionDescriptor, Sheet } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
 
-import { ArgumentError, ReferenceError, UnknownError, IsError, ValueError, ExpressionError, FunctionError, NAError } from './function-error';
+import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError } from './function-error';
 
 /**
  * Calculator now extends graph. there's a 1-1 relationship between the
@@ -66,7 +66,8 @@ export class Calculator extends Graph {
   /** the next calculation must do a full rebuild -- set on reset */
   protected full_rebuild_required = false;
 
-  constructor() {
+  constructor(protected readonly model: DataModel) {
+
     super();
 
     this.UpdateLocale(); // for parser
@@ -628,12 +629,48 @@ export class Calculator extends Graph {
 
 //    if (area) {
 
+    let sheet: Sheet|undefined;
+
+    if (expression.type === 'address' || expression.type === 'range') {
+      const address_expression = (expression.type === 'range') ? expression.start : expression;
+      if (address_expression.sheet_id) {
+        for (const test of this.model.sheets) {
+          if (test.id === address_expression.sheet_id) {
+            sheet = test;
+            break;
+          }
+        }
+      }
+      else if (address_expression.sheet) {
+        const lc = address_expression.sheet.toLowerCase();
+        for (const test of this.model.sheets) {
+          if (test.name.toLowerCase() === lc) {
+            sheet = test;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!sheet && context?.sheet_id) {
+      for (const test of this.model.sheets) {
+        if (test.id === context.sheet_id) {
+          sheet = test;
+          break;
+        }
+      }
+    }
+
+    if (!sheet) {
+      throw new Error('missing sheet in dynamic dependencies [b21]');
+    }
+
       // check any dirty...
 
       // THIS IS ALMOST CERTAINLY WRONG. we should not be using active_sheet
       // here, we should use the area sheet. FIXME
 
-      area = this.model.active_sheet.RealArea(area); 
+      area = sheet.RealArea(area); 
 
       const sheet_id = area.start.sheet_id;
 
@@ -885,8 +922,8 @@ export class Calculator extends Graph {
   }
 
   /** wrapper method ensures it always returns an Area (instance, not interface) */
-  public ResolveArea(address: string|ICellAddress|IArea): Area {
-    const resolved = this.ResolveAddress(address);
+  public ResolveArea(address: string|ICellAddress|IArea, active_sheet: Sheet): Area {
+    const resolved = this.ResolveAddress(address, active_sheet);
     return IsCellAddress(resolved) ? new Area(resolved) : new Area(resolved.start, resolved.end);
   }
 
@@ -899,12 +936,12 @@ export class Calculator extends Graph {
    * Q: why are we not preserving absoute/relative? (...)
    * 
    */
-   public ResolveAddress(address: string|ICellAddress|IArea): ICellAddress|IArea {
+   public ResolveAddress(address: string|ICellAddress|IArea, active_sheet: Sheet): ICellAddress|IArea {
     
     if (typeof address === 'string') {
       const parse_result = this.parser.Parse(address);
       if (parse_result.expression && parse_result.expression.type === 'address') {
-        this.ResolveSheetID(parse_result.expression);
+        this.ResolveSheetID(parse_result.expression, undefined, active_sheet);
         return {
           row: parse_result.expression.row,
           column: parse_result.expression.column,
@@ -912,7 +949,7 @@ export class Calculator extends Graph {
         };
       }
       else if (parse_result.expression && parse_result.expression.type === 'range') {
-        this.ResolveSheetID(parse_result.expression);
+        this.ResolveSheetID(parse_result.expression, undefined, active_sheet);
         return {
           start: {
             row: parse_result.expression.start.row,
@@ -944,7 +981,7 @@ export class Calculator extends Graph {
   }
 
   /** moved from embedded sheet */
-  public Evaluate(expression: string) {
+  public Evaluate(expression: string, active_sheet?: Sheet) {
     
     const parse_result = this.parser.Parse(expression);
 
@@ -952,7 +989,7 @@ export class Calculator extends Graph {
 
       this.parser.Walk(parse_result.expression, (unit) => {
         if (unit.type === 'address' || unit.type === 'range') {
-          this.ResolveSheetID(unit);
+          this.ResolveSheetID(unit, undefined, active_sheet);
         }
         return true;
       });
@@ -1085,10 +1122,25 @@ export class Calculator extends Graph {
     this.RemoveLeafVertex(vertex);
   }
 
-  public UpdateAnnotations(list?: Annotation|Annotation[]): void {
+  public UpdateAnnotations(list?: Annotation|Annotation[], context?: Sheet): void {
 
-    if (!list && this.model) list = this.model.active_sheet.annotations;
-    if (!list) return;
+    if (!list) {
+
+      // update: since we don't have access to active_sheet, 
+      // just add all annotations. slightly less efficient 
+      // (perhaps) but better for handling multiple views.
+
+      for (const sheet of this.model.sheets) {
+        this.UpdateAnnotations(sheet.annotations, sheet);
+      }
+
+      return;
+
+    }
+
+    if (!context) {
+      throw new Error('invalid call to UpdateAnnotations with list but no sheet');
+    }
 
     if (typeof list !== 'undefined' && !Array.isArray(list)) {
       list = [list];
@@ -1101,7 +1153,7 @@ export class Calculator extends Graph {
         }
         const vertex = entry.temp.vertex as LeafVertex;
         this.AddLeafVertex(vertex);
-        this.UpdateLeafVertex(vertex, entry.formula);
+        this.UpdateLeafVertex(vertex, entry.formula, context);
       }
     }
 
@@ -1112,8 +1164,7 @@ export class Calculator extends Graph {
    * means the name changed (that's the case we are working on with
    * this fix).
    */
-  public ResolveSheetID(expr: UnitAddress|UnitRange, context?: ICellAddress): boolean {
-    if (!this.model) { throw new Error('ResolveSheetID called without model'); }
+  public ResolveSheetID(expr: UnitAddress|UnitRange, context?: ICellAddress, active_sheet?: Sheet): boolean {
 
     const target = expr.type === 'address' ? expr : expr.start;
 
@@ -1130,8 +1181,12 @@ export class Calculator extends Graph {
         }
       }
     }
-    else {
-      target.sheet_id = context?.sheet_id || this.model.active_sheet.id;
+    else if (context?.sheet_id) {
+      target.sheet_id = context.sheet_id;
+      return true;
+    }
+    else if (active_sheet?.id) {
+      target.sheet_id = active_sheet.id;
       return true;
     }
 
@@ -1347,11 +1402,7 @@ export class Calculator extends Graph {
     return dependencies;
   }
 
-  protected UpdateLeafVertex(vertex: LeafVertex, formula: string): void {
-
-    if (!this.model) {
-      throw new Error('UpdateLeafVertex called without model')
-    }
+  protected UpdateLeafVertex(vertex: LeafVertex, formula: string, context: Sheet): void {
 
     vertex.Reset();
 
@@ -1360,8 +1411,10 @@ export class Calculator extends Graph {
       const dependencies =
         this.RebuildDependencies(
           parse_result.expression,
-          this.model.active_sheet.id,
-          this.model.active_sheet.name,
+          // this.model.active_sheet.id,
+          // this.model.active_sheet.name,
+          context.id,
+          context.name,
         );
 
       for (const key of Object.keys(dependencies.ranges)){

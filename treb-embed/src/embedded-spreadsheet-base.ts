@@ -2,7 +2,7 @@
 // treb imports
 import {
   Grid, GridEvent, SerializeOptions, Annotation,
-  BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection, CellEvent, FunctionDescriptor,
+  BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection, CellEvent, FunctionDescriptor, DataModel, NamedRangeCollection,
 } from 'treb-grid';
 
 import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
@@ -336,6 +336,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    */
   protected grid: Grid;
 
+  protected model: DataModel;
+
   protected options: EmbeddedSpreadsheetOptions;
 
   /**
@@ -460,7 +462,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * constructor takes spreadsheet options
    * @internal
    */
-  constructor(options: EmbeddedSpreadsheetOptions, type: (new () => CalcType) = Calculator as (new () => CalcType)) {
+  constructor(options: EmbeddedSpreadsheetOptions, type: (new (model: DataModel) => CalcType) = Calculator as (new (model: DataModel) => CalcType)) {
 
     // super();
 
@@ -603,14 +605,18 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     }
 
-    // creating calculator first, because it owns parser. not a good idea?
-    // we could own parser, and then pass to calculator.
+    this.model = {
+      sheets: [Sheet.Blank(Style.Composite([Style.DefaultProperties]))],
+      // active_sheet: sheets[0],
+      // annotations: [],
+      named_ranges: new NamedRangeCollection(),
+      macro_functions: {},
+      named_expressions: {},
+      view_count: 0,
+    };
 
-    this.calculator = new type();
-
-    // now grid
-
-    this.grid = new Grid(grid_options, this.parser);
+    this.calculator = new type(this.model);
+    this.grid = new Grid(grid_options, this.parser, this.model);
 
     if (this.options.headless) {
       this.grid.headless = true; // FIXME: move into grid options
@@ -718,7 +724,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
               switch (event.event) {
                 case 'create':
                   this.InflateAnnotation(event.annotation);
-                  this.calculator.UpdateAnnotations(event.annotation);
+                  this.calculator.UpdateAnnotations(event.annotation, this.grid.active_sheet);
                   this.grid.AnnotationUpdated(event.annotation);
                   break;
                 case 'delete':
@@ -1436,7 +1442,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     let target: IRectangle | Partial<Area> | undefined;
 
     if (rect) {
-      target = Rectangle.IsRectangle(rect) ? rect : this.calculator.ResolveArea(rect);
+      target = Rectangle.IsRectangle(rect) ? rect : this.calculator.ResolveArea(rect, this.grid.active_sheet);
     }
 
     /*
@@ -1700,7 +1706,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     // API v1 OK
 
-    this.grid.MergeCells(range ? this.calculator.ResolveArea(range) : undefined);
+    this.grid.MergeCells(range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : undefined);
   }
 
   /**
@@ -1714,7 +1720,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     // API v1 OK
 
-    this.grid.UnmergeCells(range ? this.calculator.ResolveArea(range) : undefined);
+    this.grid.UnmergeCells(range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : undefined);
   }
 
   /** 
@@ -2002,7 +2008,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       throw new Error('invalid delimiter');
     }
 
-    let sheet: Sheet | undefined = this.grid.model.active_sheet;
+    let sheet: Sheet | undefined = this.grid.active_sheet;
 
     switch (typeof options.sheet) {
 
@@ -2112,7 +2118,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     if (parts.length <= 1) {
       if ((type === SaveFileType.csv || type === SaveFileType.tsv) && this.grid.model.sheets.length > 1) {
-        const active_sheet = this.grid.model.active_sheet.name;
+        const active_sheet = this.grid.active_sheet.name;
         filename = (document_name + '-' + active_sheet).toLowerCase().replace(/\W+/g, '-') + '.' + type;
       }
       else {
@@ -2323,7 +2329,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // API v1 OK
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address);
+      const reference = this.calculator.ResolveAddress(address, this.grid.active_sheet);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
@@ -2343,7 +2349,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   public SetValidation(address: AddressReference, validation?: RangeReference|CellValue[], error?: boolean) {
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address);
+      const reference = this.calculator.ResolveAddress(address, this.grid.active_sheet);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
@@ -2351,7 +2357,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       this.grid.SetValidation(address, validation, error);
     }
     else {
-      const range = this.calculator.ResolveArea(validation);
+      const range = this.calculator.ResolveArea(validation, this.grid.active_sheet);
       this.grid.SetValidation(address, range, error);
     }
 
@@ -2629,7 +2635,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // API v1 OK
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address);
+      const reference = this.calculator.ResolveAddress(address, this.grid.active_sheet);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
@@ -2669,7 +2675,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // FIXME: we're using the sheet EnsureAddress method, but that should
     // move either in here or into some sort of helper class
 
-    const result = this.calculator.ResolveAddress(reference);
+    const result = this.calculator.ResolveAddress(reference, this.grid.active_sheet);
 
     if (IsCellAddress(result)) {
       return result.sheet_id ? result : undefined;
@@ -2808,7 +2814,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     // still for now we can take advantage of that and skip the check.
 
-    this.grid.ApplyBorders(range ? this.calculator.ResolveArea(range) : undefined, borders, undefined, width);
+    this.grid.ApplyBorders(range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : undefined, borders, undefined, width);
 
   }
 
@@ -2831,7 +2837,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // translate old-style alignment constants (UPDATE: moved to grid)
 
     this.grid.ApplyStyle(
-      range ? this.calculator.ResolveArea(range) : undefined, style, delta);
+      range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : undefined, style, delta);
   }
 
   /**
@@ -2894,7 +2900,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     // NOTE: AC is handled internally
 
-    this.grid.SetName(name, this.calculator.ResolveArea(range));
+    this.grid.SetName(name, this.calculator.ResolveArea(range, this.grid.active_sheet));
 
   }
 
@@ -2919,7 +2925,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // API v1 OK
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address);
+      const reference = this.calculator.ResolveAddress(address, this.grid.active_sheet);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
@@ -2946,7 +2952,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     // FIXME: what if the range is on another sheet? (...)
 
-    this.grid.SelectRange(this.calculator.ResolveArea(range));
+    this.grid.SelectRange(this.calculator.ResolveArea(range, this.grid.active_sheet));
   }
 
   /** 
@@ -2979,7 +2985,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       }
     }
 
-    return this.grid.GetRange(this.calculator.ResolveAddress(range), options.type);
+    return this.grid.GetRange(this.calculator.ResolveAddress(range, this.grid.active_sheet), options.type);
 
   }
 
@@ -3008,7 +3014,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     if (!range) { return undefined; }
 
-    return this.grid.GetRangeStyle(this.calculator.ResolveAddress(range), apply_theme);
+    return this.grid.GetRangeStyle(this.calculator.ResolveAddress(range, this.grid.active_sheet), apply_theme);
     
   }
 
@@ -3037,7 +3043,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     }
 
     if (range) {
-      const area = this.calculator.ResolveArea(range);
+      const area = this.calculator.ResolveArea(range, this.grid.active_sheet);
 
       if (options.spill && Array.isArray(data)) {
         const rows = data.length;
@@ -3249,7 +3255,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       // }
 
       this.InflateAnnotation(annotation);
-      this.calculator.UpdateAnnotations(annotation);
+      this.calculator.UpdateAnnotations(annotation, event.activate);
 
     }
 
@@ -3640,7 +3646,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * (just sparklines atm) and update if necessary.
    */
   protected UpdateAnnotations(): void {
-    for (const annotation of this.grid.model.active_sheet.annotations) {
+    for (const annotation of this.grid.active_sheet.annotations) {
       if (annotation.temp.vertex) {
         const vertex = annotation.temp.vertex as LeafVertex;
         if (vertex.state_id !== annotation.temp.state) {
@@ -3673,7 +3679,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * this method should be called after changing the headless flag
    */
   protected RebuildAllAnnotations(): void {
-    for (const annotation of this.grid.model.active_sheet.annotations) {
+    for (const annotation of this.grid.active_sheet.annotations) {
       this.InflateAnnotation(annotation);
       if (annotation.resize_callback) {
         annotation.resize_callback();
@@ -3691,7 +3697,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * FIXME: why is this public?
    */
   protected InflateAnnotations(): void {
-    for (const annotation of this.grid.model.active_sheet.annotations) {
+    for (const annotation of this.grid.active_sheet.annotations) {
       this.InflateAnnotation(annotation);
     }
   }
@@ -3779,7 +3785,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
                 this.parser.Walk(parse_result.expression, (unit) => {
                   if (unit.type === 'address' || unit.type === 'range') {
-                    this.calculator.ResolveSheetID(unit);
+                    this.calculator.ResolveSheetID(unit, undefined, this.grid.active_sheet);
                   }
                   return true;
                 });
@@ -3956,13 +3962,13 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
       state.selection = selection;
       state.merge = false;
-      let data = this.grid.model.active_sheet.CellData(selection.target);
+      let data = this.grid.active_sheet.CellData(selection.target);
 
       state.merge = !!data.merge_area;
       if (state.merge && data.merge_area && (
         data.merge_area.start.row !== selection.target.row ||
         data.merge_area.start.column !== selection.target.column)) {
-        data = this.grid.model.active_sheet.CellData(data.merge_area.start);
+        data = this.grid.active_sheet.CellData(data.merge_area.start);
       }
 
       this.active_selection_style = data.style;

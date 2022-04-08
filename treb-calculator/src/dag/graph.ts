@@ -31,7 +31,7 @@ export abstract class Graph implements GraphCallbacks {
 
   public cells_map: {[index: number]: Cells} = {};
 
-  public model?: DataModel;
+  protected abstract readonly model: DataModel;
 
   /**
    * where is the loop in the graph (or at least the first one we found)?
@@ -62,7 +62,6 @@ export abstract class Graph implements GraphCallbacks {
    * do it without a calculation to support annotations that use leaf vertices
    */
   protected AttachData(model: DataModel): void {
-    this.model = model;
     this.cells_map = {};
     for (const sheet of model.sheets) {
       this.cells_map[sheet.id] = sheet.cells;

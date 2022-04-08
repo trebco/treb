@@ -69,7 +69,7 @@ import {
   ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand, DataValidationCommand, DuplicateSheetCommand
 } from './grid_command';
 
-import { DataModel, MacroFunction, SerializedModel } from './data_model';
+import { DataModel, ViewModel, MacroFunction, SerializedModel } from './data_model';
 import { NamedRangeCollection } from './named_range';
 
 import '../../style/grid.scss';
@@ -133,12 +133,14 @@ export class Grid {
    */
   public readonly model: DataModel;
 
+  public readonly view: ViewModel;
+
   public get active_sheet(): Sheet { 
-    return this.model.active_sheet; 
+    return this.view.active_sheet; 
   }
 
   public set active_sheet(sheet: Sheet) { 
-    this.model.active_sheet = sheet; 
+    this.view.active_sheet = sheet; 
   }
 
   public hide_selection = false;
@@ -395,8 +397,10 @@ export class Grid {
   constructor(
     options: GridOptions = {}, 
     parser: Parser,
+    model: DataModel,
     theme: Theme = DefaultTheme) {
 
+    /*
     // construct model. it's a little convoluted because the
     // "active sheet" reference points to one of the array members
 
@@ -406,11 +410,20 @@ export class Grid {
 
     this.model = {
       sheets,
-      active_sheet: sheets[0],
+      // active_sheet: sheets[0],
       // annotations: [],
       named_ranges: new NamedRangeCollection(),
       macro_functions: {},
       named_expressions: {},
+      view_count: 0,
+    };
+    */
+
+    this.model = model;
+
+    this.view = {
+      active_sheet: this.model.sheets[0],
+      view_index: this.model.view_count++,
     };
 
     // set properties here, we will update in initialize()
@@ -429,7 +442,7 @@ export class Grid {
       new LegacyLayout(this.model);
     */
     // this.layout = CreateLayout(this.model);
-    this.layout = new GridLayout(this.model);
+    this.layout = new GridLayout(this.model, this.view);
 
     if (options.initial_scale) {
       if (typeof options.initial_scale === 'string') {
@@ -441,13 +454,20 @@ export class Grid {
       // this.tab_bar?.UpdateScale(options.initial_scale);
     }
 
-    this.tile_renderer = new TileRenderer(this.theme, this.layout, this.model, this.options);
+    this.tile_renderer = new TileRenderer(
+        this.theme, 
+        this.layout, 
+        this.model, 
+        this.view, 
+        this.options);
+
     this.selection_renderer = new SelectionRenderer(
-      this.theme,
-      this.layout,
-      this.model,
-      this.primary_selection,
-      this.additional_selections);
+        this.theme,
+        this.layout,
+        this.model,
+        this.view,
+        this.primary_selection,
+        this.additional_selections);
 
     // shared parser
     this.parser = parser;
@@ -1910,7 +1930,7 @@ export class Grid {
 
     if (this.options.tab_bar) {
 
-      this.tab_bar = new TabBar(this.layout, this.model, this.options, this.theme, grid_container);
+      this.tab_bar = new TabBar(this.layout, this.model, this.view, this.options, this.theme, grid_container);
       this.tab_bar.Subscribe((event) => {
         switch (event.type) {
           case 'cancel':
@@ -2160,7 +2180,7 @@ export class Grid {
     //
 
     if (!this.primary_selection.empty &&
-        (!target.sheet_id || target.sheet_id === this.model.active_sheet.id) && 
+        (!target.sheet_id || target.sheet_id === this.view.active_sheet.id) && 
         (this.primary_selection.target.row === target.row) && 
         (this.primary_selection.target.column === target.column)) {
 
@@ -3352,6 +3372,7 @@ export class Grid {
       this.parser,
       this.theme,
       this.model,
+      this.view,
       this.options, autocomplete);
 
     this.formula_bar.autocomplete_matcher = this.autocomplete_matcher;
@@ -3526,6 +3547,7 @@ export class Grid {
         this.parser,
         this.theme,
         this.model,
+        this.view,
         autocomplete);
 
     this.overlay_editor.UpdateTheme(this.layout.scale);
@@ -6880,8 +6902,8 @@ export class Grid {
     let sheet: Sheet|undefined;
     let cell: Cell|undefined;
 
-    if (!command.target.sheet_id || command.target.sheet_id === this.model.active_sheet.id) {
-      sheet = this.model.active_sheet;
+    if (!command.target.sheet_id || command.target.sheet_id === this.view.active_sheet.id) {
+      sheet = this.view.active_sheet;
     }
     else {
       for (const test of this.model.sheets) {
@@ -6928,8 +6950,8 @@ export class Grid {
     let sheet: Sheet|undefined;
     let list: CellValue[]|undefined;
 
-    if (!area.start.sheet_id || area.start.sheet_id === this.model.active_sheet.id) {
-      sheet = this.model.active_sheet;
+    if (!area.start.sheet_id || area.start.sheet_id === this.view.active_sheet.id) {
+      sheet = this.view.active_sheet;
     }
     else {
       for (const test of this.model.sheets) {

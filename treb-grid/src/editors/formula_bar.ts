@@ -6,7 +6,7 @@ import { Theme } from 'treb-base-types';
 import { FormulaEditorBase, FormulaEditorEvent } from './formula_editor_base';
 import { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
-import { DataModel } from '../types/data_model';
+import { DataModel, ViewModel } from '../types/data_model';
 import { Parser } from 'treb-parser';
 
 export interface FormulaBarResizeEvent {
@@ -141,11 +141,12 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     parser: Parser,
     theme: Theme,
     model: DataModel,
+    view: ViewModel,
     private options: GridOptions,
     autocomplete: Autocomplete,
     ) {
 
-    super(parser, theme, model, autocomplete);
+    super(parser, theme, model, view, autocomplete);
 
     /*
     this.autocomplete = new Autocomplete({

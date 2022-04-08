@@ -1,5 +1,5 @@
 
-import { DataModel } from './data_model';
+import { DataModel, ViewModel } from './data_model';
 import { EventSource } from 'treb-utils';
 import { Sheet } from './sheet';
 import { BaseLayout } from '../layout/base_layout';
@@ -96,6 +96,7 @@ export class TabBar extends EventSource<TabEvent> {
   constructor(
       private layout: BaseLayout,
       private model: DataModel,
+      private view: ViewModel,
       private options: GridOptions,
       private theme: Theme,
       private grid_container: HTMLElement,
@@ -331,7 +332,7 @@ export class TabBar extends EventSource<TabEvent> {
       tab.classList.add('tab');
       tab.style.order = (index * 2).toString();
 
-      this.SetActive(tab, sheet === this.model.active_sheet);
+      this.SetActive(tab, sheet === this.view.active_sheet);
 
       const mousedown = (event: MouseEvent) => {
         event.stopPropagation();

@@ -85,10 +85,10 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
    */
   public SimulationData(address: string | ICellAddress): number[]|Float64Array|undefined {
 
-    const area = this.calculator.ResolveAddress(address);
+    const area = this.calculator.ResolveAddress(address, this.grid.active_sheet);
     address = IsCellAddress(area) ? area : area.start;
 
-    const sheet_id = address.sheet_id || this.grid.model.active_sheet.id;
+    const sheet_id = address.sheet_id || this.grid.active_sheet.id;
 
     const data = this.calculator.GetResults();
     if (!data) return undefined;
@@ -261,7 +261,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
 
     // add any required additional collector cells from annotations (charts)
 
-    for (const annotation of this.grid.model.active_sheet.annotations) {
+    for (const annotation of this.grid.active_sheet.annotations) {
       if (annotation.formula) {
         additional_cells = additional_cells.concat(
           this.calculator.MetadataReferences(annotation.formula));
@@ -463,7 +463,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
    * overload for MC calculator replaces base calculator
    */
   protected InitCalculator(): Calculator {
-    return new MCCalculator();
+    return new MCCalculator(this.model);
   }
 
   protected ImportDocumentData(data: TREBDocument, override_sheet?: string): void {

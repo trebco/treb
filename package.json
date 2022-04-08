@@ -40,6 +40,7 @@
     "dev": "node esbuild.js --dev",
     "watch": "node esbuild.js --watch",
     "tsc": "tsc -b treb-embed/modern.tsconfig.json",
+    "tsc-mc": "tsc -b treb-mc/modern.tsconfig.json",
     "generate-api": "ts-node-dev api-types/api2.ts --config api-config.json && cp treb.d.ts release-distribution-files/",
     "watch-api": "ts-node-dev --respawn api-types/api2.ts --config api-config.json && cp treb.d.ts release-distribution-files/",
     "watch-modern-mc": "node esbuild.js --watch --modern --dev",

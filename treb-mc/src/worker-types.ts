@@ -44,7 +44,7 @@ export interface ProgressMessage {
 export interface UpdateMessage {
   type: 'update';
   percent_complete: number;
-  cells: any;
+  // cells: any;
   trial_data: ResultContainer; // TrialData;
 }
 

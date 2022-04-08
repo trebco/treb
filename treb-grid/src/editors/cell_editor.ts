@@ -6,7 +6,7 @@ import { DOMUtilities } from '../util/dom_utilities';
 import { GridSelection } from '../types/grid_selection';
 import { FormulaEditorBase } from './formula_editor_base';
 import { Autocomplete } from './autocomplete';
-import { DataModel } from '../types/data_model';
+import { DataModel, ViewModel } from '../types/data_model';
 import { Parser } from 'treb-parser';
 
 /**
@@ -26,9 +26,9 @@ export class CellEditor extends FormulaEditorBase {
   /** accessor for editor visible */
   public get visible(){ return this.visible_; }
 
-  constructor(private container: HTMLElement, parser: Parser, theme: Theme, model: DataModel, autocomplete: Autocomplete){
+  constructor(private container: HTMLElement, parser: Parser, theme: Theme, model: DataModel, view: ViewModel, autocomplete: Autocomplete){
 
-    super(parser, theme, model, autocomplete);
+    super(parser, theme, model, view, autocomplete);
 
     // this.autocomplete = new Autocomplete({
     //  theme: this.theme,

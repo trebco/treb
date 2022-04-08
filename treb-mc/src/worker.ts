@@ -17,14 +17,15 @@ export class WorkerImpl {
   protected trials = 0;
   protected lhs = false;
   protected data_model: DataModel = {
-    active_sheet: Sheet.Blank({}),
+    // active_sheet: Sheet.Blank({}),
     sheets: [Sheet.Blank({})],
     named_ranges: new NamedRangeCollection(),
     named_expressions: {},
     macro_functions: {},
+    view_count: 0,
   };
   protected screen_updates = false;
-  protected calculator = new MCCalculator();
+  protected calculator = new MCCalculator(this.data_model);
   protected start_time = 0;
   protected seed?: number;
 
@@ -67,7 +68,7 @@ export class WorkerImpl {
 
       this.data_model.sheets = message.sheets.map((sheet) => 
         Sheet.FromJSON(sheet, {}));
-      this.data_model.active_sheet = this.data_model.sheets[0];
+      // this.data_model.active_sheet = this.data_model.sheets[0];
 
       if (message.additional_cells) {
         this.additional_cells = message.additional_cells;
@@ -169,7 +170,7 @@ export class WorkerImpl {
     this.Post({
       type: 'update',
       percent_complete,
-      cells: this.data_model.active_sheet.cells.toJSON(), // this.cells.toJSON(),
+      // cells: this.data_model.active_sheet.cells.toJSON(), // this.cells.toJSON(),
       trial_data: {
         results: flattened,
         trials: this.iteration,

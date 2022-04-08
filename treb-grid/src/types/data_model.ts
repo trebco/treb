@@ -27,7 +27,7 @@ export interface DataModel {
   user_data?: any;
 
   /** reference */
-  active_sheet: Sheet;
+  // active_sheet: Sheet;
 
   /** 
    * list of sheets. we _should_ index these by ID, so we 
@@ -46,6 +46,14 @@ export interface DataModel {
    */
   named_expressions: Record<string, ExpressionUnit>;
 
+  /** index for views */
+  view_count: number;
+
+}
+
+export interface ViewModel {
+  active_sheet: Sheet;
+  view_index: number;
 }
 
 export interface SerializedNamedExpression {

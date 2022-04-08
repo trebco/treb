@@ -7,7 +7,7 @@ import { GridSelection } from '../types/grid_selection';
 import { Autocomplete, AutocompleteResult } from './autocomplete';
 import { AutocompleteExecResult, AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
 
-import { DataModel } from '../types/data_model';
+import { DataModel, ViewModel } from '../types/data_model';
 import { UA } from '../util/ua';
 
 /** event on commit, either enter or tab */
@@ -187,6 +187,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
       protected readonly parser: Parser,
       protected readonly theme: Theme,
       protected readonly model: DataModel,
+      protected readonly view: ViewModel,
       protected readonly autocomplete: Autocomplete){
 
     super();
@@ -650,7 +651,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
                   start.sheet_id = sheet_name_map[start.sheet.toLowerCase()] || 0;
                 }
                 else {
-                  start.sheet_id = this.model.active_sheet.id;
+                  start.sheet_id = this.view.active_sheet.id;
                 }
               }
               this.reference_list.push(unit);

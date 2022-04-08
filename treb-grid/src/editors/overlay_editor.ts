@@ -13,7 +13,7 @@ import { Parser } from 'treb-parser';
 import { GridSelection } from '../types/grid_selection';
 import { FormulaEditorBase } from './formula_editor_base';
 import { Autocomplete } from './autocomplete';
-import { DataModel } from '../types/data_model';
+import { DataModel, ViewModel } from '../types/data_model';
 import { UA } from '../util/ua';
 
 /**
@@ -67,9 +67,9 @@ export class OverlayEditor extends FormulaEditorBase {
     }
   }
 
-  constructor(private container: HTMLElement, parser: Parser, theme: Theme, model: DataModel, autocomplete: Autocomplete) {
+  constructor(private container: HTMLElement, parser: Parser, theme: Theme, model: DataModel, view: ViewModel, autocomplete: Autocomplete) {
 
-    super(parser, theme, model, autocomplete);
+    super(parser, theme, model, view, autocomplete);
 
     this.edit_container = document.createElement('div');
     this.edit_container.classList.add('overlay-container');
