@@ -374,11 +374,12 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    */
   protected export_worker?: Worker;
 
-  /**
+  /* moved to calculator *
    * keep track of what we've registered, for external libraries
    * (currently charts), which is per sheet instance.
-   */
+   * /
   protected registered_libraries: Record<string, boolean> = {};
+  */
 
   /**
    * undo pointer points to the next insert spot. that means that when
@@ -1236,19 +1237,10 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * 
    * @internal
    */
-   public CreateChart(): Chart {
-
-    // FIXME: we should just always do this
-
-    if (!this.registered_libraries['treb-charts']) {
-      this.calculator.RegisterFunction(ChartFunctions);
-      this.registered_libraries['treb-charts'] = true;
-
-      // this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+  public CreateChart(): Chart {
+    if (this.calculator.RegisterLibrary('treb-charts', ChartFunctions)) {
       this.UpdateAC();
-
     }
-
     return new Chart();
   }
 
@@ -3747,30 +3739,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
           const chart = new Chart();
           chart.Initialize(annotation.content_node);
 
-          // const chart = (self as any).TREB.CreateChart2(annotation.node) as Chart;
-
-          // we may need to register library functions. we only need to do
-          // that once. not sure I like this as the place for the test, though.
-
-          // HEADS UP: this breaks when there are multiple sheet instances on
-          // the page, because the register flag is in the other lib (!)
-
-          // we need a local flag...
-
-          if (!this.registered_libraries['treb-charts']) {
-
-            // this is a little simpler because we now integrate charts;
-            // some of this logic should be restructured (although we 
-            // should memorialize the pattern for managing external libs)
-
-            //this.calculator.RegisterFunction((chart.constructor as any).chart_functions);
-            this.calculator.RegisterFunction(ChartFunctions);
-            this.registered_libraries['treb-charts'] = true;
-
-            // update AC list
-            // this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
+          if (this.calculator.RegisterLibrary('treb-charts', ChartFunctions)) {
             this.UpdateAC();
-
           }
 
           const update_chart = () => {

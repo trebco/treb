@@ -54,6 +54,8 @@ export class Calculator extends Graph {
 
   protected readonly library = new FunctionLibrary();
 
+  protected registered_libraries: Record<string, boolean> = {};
+
   // protected graph: Graph = new Graph(); // |null = null;
   // protected status: GraphStatus = GraphStatus.OK;
 
@@ -795,6 +797,20 @@ export class Calculator extends Graph {
 
     return function_list;
 
+  }
+
+  /**
+   * 
+   * @param name 
+   * @param map 
+   */
+  public RegisterLibrary(name: string, map: FunctionMap): boolean {
+    if (this.registered_libraries[name]) {
+      return false;
+    }
+    this.RegisterFunction(map);
+    this.registered_libraries[name] = true;
+    return true;
   }
 
   /**
