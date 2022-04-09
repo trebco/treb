@@ -104,7 +104,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
     }
 
     this.inner_container = document.createElement('div');
-    this.inner_container.classList.add('embedded-spreadsheet-container');
+    this.inner_container.classList.add('treb-views');
 
     // initial styles so we don't get animation on load
 

@@ -627,12 +627,16 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     if (container) {
 
+      const view = document.createElement('div');
+      view.classList.add('treb-view');
+
       // we used to set a class on this node, but grid will set 
       // "treb-main treb-theme" and some other stuff, we can use those
       // as necessary
 
       this.node = document.createElement('div');
-      container.appendChild(this.node);
+      view.appendChild(this.node);
+      container.appendChild(view);
 
       // handle key. TODO: move undo to grid (makes more sense)
 
@@ -970,6 +974,14 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   // these are methods that are public for whatever reason, but we don't want
   // them published to any public API. if we ever get around to encapsulating
   // the API, leave these out.
+
+  /**
+   * @internal
+   */
+  public Split(): void {
+    const view = new EmbeddedSpreadsheetBase(this.options);
+    
+  }
 
   /** 
    * this is public because it's created by the composite sheet. 

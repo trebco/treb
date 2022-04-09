@@ -9,7 +9,7 @@ $toolbar_height: 38px;
  * allocate space for sidebar/toolbar, everything else
  * should be taken care of by grid.
  */
-.embedded-spreadsheet-container {
+.treb-views {
   box-sizing: border-box;
   position: absolute;
   left: 0px;
@@ -17,6 +17,17 @@ $toolbar_height: 38px;
   bottom: 0px;
   right: 0px;
   transition: right $transition_options, top $transition_options;
+  display: flex;
+  flex-direction: row;
+}
+
+.treb-view {
+  flex-grow: 1;
+  position: relative;
+}
+
+.treb-view ~ .treb-view {
+  margin-left: 1em;
 }
 
 /**
@@ -35,7 +46,7 @@ $toolbar_height: 38px;
 .sidebar-open {
 
   /** resize the container width by X */
-  .embedded-spreadsheet-container {
+  .treb-views {
     right: $sidebar_width;
   }
 
@@ -82,7 +93,7 @@ $toolbar_height: 38px;
 .toolbar-open {
 
   /** resize grid */
-  .embedded-spreadsheet-container {
+  .treb-views {
     top: $toolbar_height;
   }
 
@@ -238,14 +249,14 @@ $fullscreen_toolbar_height: 45px;
   }
 
   &.sidebar-open {
-    .embedded-spreadsheet-container {
+    .treb-views {
       right: $fullscreen_sidebar_width;
     }
   }
   
   &.toolbar-open {
 
-    .embedded-spreadsheet-container {
+    .treb-views {
       top: $fullscreen_toolbar_height;
     }
   
