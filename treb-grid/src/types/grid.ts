@@ -2180,7 +2180,7 @@ export class Grid {
     //
 
     if (!this.primary_selection.empty &&
-        (!target.sheet_id || target.sheet_id === this.view.active_sheet.id) && 
+        (!target.sheet_id || target.sheet_id === this.active_sheet.id) && 
         (this.primary_selection.target.row === target.row) && 
         (this.primary_selection.target.column === target.column)) {
 
@@ -2773,6 +2773,32 @@ export class Grid {
 
     this.active_sheet.SetColumnWidth(column, width);
 
+  }
+
+  /**
+   * we have to handle the case where we have a split view and the model
+   * changes in some way -- remove a sheet, for example -- that invalidates
+   * our active sheet. if that happens, we need to switch to a different
+   * sheet.
+   * 
+   * we don't get events about this (should we?) so someone will have to 
+   * call it. FIXME: we should get events about that.
+   */
+  public EnsureActiveSheet() {
+  
+    for (const sheet of this.model.sheets) {
+      if (sheet === this.active_sheet) {
+        return;
+      }
+    }    
+
+    // invalid -- jump to 0
+
+    this.ActivateSheetInternal({
+      key: CommandKey.ActivateSheet,
+      index: 0,
+    });
+    
   }
 
   //
@@ -6902,8 +6928,8 @@ export class Grid {
     let sheet: Sheet|undefined;
     let cell: Cell|undefined;
 
-    if (!command.target.sheet_id || command.target.sheet_id === this.view.active_sheet.id) {
-      sheet = this.view.active_sheet;
+    if (!command.target.sheet_id || command.target.sheet_id === this.active_sheet.id) {
+      sheet = this.active_sheet;
     }
     else {
       for (const test of this.model.sheets) {
@@ -6950,8 +6976,8 @@ export class Grid {
     let sheet: Sheet|undefined;
     let list: CellValue[]|undefined;
 
-    if (!area.start.sheet_id || area.start.sheet_id === this.view.active_sheet.id) {
-      sheet = this.view.active_sheet;
+    if (!area.start.sheet_id || area.start.sheet_id === this.active_sheet.id) {
+      sheet = this.active_sheet;
     }
     else {
       for (const test of this.model.sheets) {

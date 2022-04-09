@@ -23,7 +23,7 @@ import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent } from './ty
 
 import { LanguageModel, TranslatedFunctionDescriptor } from './language-model';
 
-import { SelectionState, Toolbar } from './toolbar';
+import { SelectionState, Toolbar, ToolbarEvent } from './toolbar';
 
 // import { CreateProxy } from './data-proxy';
 
@@ -368,6 +368,10 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
   protected node?: HTMLElement;
 
+  protected views: EmbeddedSpreadsheetBase[] = [];
+
+  protected focus_target: EmbeddedSpreadsheetBase = this;
+
   /**
    * export worker (no longer using worker-loader).
    * export worker is loaded on demand, not by default.
@@ -463,7 +467,9 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * constructor takes spreadsheet options
    * @internal
    */
-  constructor(options: EmbeddedSpreadsheetOptions, type: (new (model: DataModel) => CalcType) = Calculator as (new (model: DataModel) => CalcType)) {
+  constructor(
+      options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheetBase }, 
+      type: (new (model: DataModel) => CalcType) = Calculator as (new (model: DataModel) => CalcType)) {
 
     // super();
 
@@ -491,7 +497,10 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     let data: string | undefined;
     let source: LoadSource | undefined;
 
-    if (this.options.storage_key && !this.options.toll_initial_load) {
+    // don't load if we're a split view. we can also skip the 
+    // unload event, as parent will already have that set
+
+    if (this.options.storage_key && !this.options.toll_initial_load && !options.model) {
       data = localStorage.getItem(this.options.storage_key) || undefined;
       if (data) {
         source = LoadSource.LOCAL_STORAGE;
@@ -606,17 +615,22 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     }
 
-    this.model = {
-      sheets: [Sheet.Blank(Style.Composite([Style.DefaultProperties]))],
-      // active_sheet: sheets[0],
-      // annotations: [],
-      named_ranges: new NamedRangeCollection(),
-      macro_functions: {},
-      named_expressions: {},
-      view_count: 0,
-    };
+    if (options.model) {
+      this.model = options.model.model;
+      this.calculator = options.model.calculator as CalcType;
+    }
+    else {
+      this.model = {
+        sheets: [Sheet.Blank(Style.Composite([Style.DefaultProperties]))],
+        named_ranges: new NamedRangeCollection(),
+        macro_functions: {},
+        named_expressions: {},
+        view_count: 0,
+      };
 
-    this.calculator = new type(this.model);
+      this.calculator = new type(this.model);
+    }
+
     this.grid = new Grid(grid_options, this.parser, this.model);
 
     if (this.options.headless) {
@@ -637,6 +651,10 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       this.node = document.createElement('div');
       view.appendChild(this.node);
       container.appendChild(view);
+
+      this.node.addEventListener('focusin', () => {
+        this.focus_target = this;
+      });
 
       // handle key. TODO: move undo to grid (makes more sense)
 
@@ -846,7 +864,9 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     }
 
-    if (network_document) {
+    // don't load if we are a split view
+
+    if (network_document && !options.model) {
       this.LoadNetworkDocument(network_document, this.options);
     }
 
@@ -969,6 +989,17 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
   }
 
+  /**
+   * this will need to get overloaded for subclasses so they can
+   * create the correct type
+   */
+  protected CreateView(): EmbeddedSpreadsheetBase {
+    return new EmbeddedSpreadsheetBase({
+      ...this.options,
+      model: this,
+    });
+  }
+
   // --- public internal methods -----------------------------------------------
 
   // these are methods that are public for whatever reason, but we don't want
@@ -976,11 +1007,296 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   // the API, leave these out.
 
   /**
+   * this is not very efficient atm. we create another whole instance of this
+   * class, do a lot of unecssary painting and layout. it works but it could
+   * definitely be improved.
+   * 
    * @internal
    */
   public Split(): void {
-    const view = new EmbeddedSpreadsheetBase(this.options);
-    
+
+    const view = this.CreateView();
+    this.views.push(view);
+    view.node?.addEventListener('focusin', () => {
+      this.focus_target = view;
+    });
+
+    view.grid.grid_events.Subscribe(event => {
+      if (event.type === 'structure') {
+        this.grid.EnsureActiveSheet();
+        this.grid.UpdateLayout();
+        (this.grid as any).tab_bar?.Update();
+      }
+    });
+
+    view.Subscribe(event => {
+      switch (event.type) {
+        case 'selection':
+          break;
+        default:
+          this.grid.Update(true);
+      }
+    });
+
+    this.grid.grid_events.Subscribe(event => {
+      if (event.type === 'structure') {
+        view.grid.EnsureActiveSheet();
+        view.grid.UpdateLayout();
+        (view.grid as any).tab_bar?.Update();
+      }
+    });
+
+    this.Subscribe(event => {
+      switch (event.type) {
+        case 'selection':
+          break;
+        default:
+          view.grid.Update(true);
+      }
+    });
+
+  }
+
+  protected HandleToolbarEvent(event: ToolbarEvent): void {
+
+    let updated_style: Style.Properties = {};
+
+    const insert_annotation = (func: string) => {
+      const selection = this.grid.GetSelection();
+      if (selection && !selection.empty) {
+        const label = selection.area.spreadsheet_label;
+        this.InsertAnnotation(`=${func}(${label},,"${label}")`);
+      }
+    };
+
+    if (event.type === 'format') {
+      updated_style.number_format = event.format || 'General';
+    }
+    else if (event.type === 'font-size') {
+
+      // NOTE we're doing this a little differently; not using
+      // updated style because we also want to resize rows, and
+      // we want those things to be a single transaction.
+
+      const selection = this.grid.GetSelection();
+      const area = this.grid.RealArea(selection.area);
+
+      this.grid.ApplyStyle(undefined, event.style, true);
+      const rows: number[] = [];
+      for (let row = area.start.row; row <= area.end.row; row++) {
+        rows.push(row);
+      }
+      this.grid.SetRowHeight(rows, undefined, false);
+
+    }
+    else if (event.type === 'button') {
+      switch (event.command) {
+
+        case 'font-scale':
+
+          // above we handle 'font-size' events; this comes from a dropdown,
+          // so we're handling it inline, but we want the same behavior.
+          // FIXME: break out
+
+          {
+            const selection = this.grid.GetSelection();
+            const area = this.grid.RealArea(selection.area);
+            const scale = Number(event.data?.scale || 1);
+
+            if (scale && !isNaN(scale)) {
+              this.grid.ApplyStyle(undefined, {
+                //font_size_unit: 'em', font_size_value: scale 
+                font_size: {
+                  unit: 'em', value: scale,
+                },
+              }, true);
+              const rows: number[] = [];
+              for (let row = area.start.row; row <= area.end.row; row++) {
+                rows.push(row);
+              }
+              this.grid.SetRowHeight(rows, undefined, false);
+            }
+          }
+          break;
+
+        case 'update-comment':
+          this.SetNote(undefined, event.data?.comment || '');
+          break;
+
+        case 'clear-comment':
+          this.SetNote(undefined, '');
+          break;
+
+        case 'border':
+          {
+            let width = 1;
+            let border = (event.data?.border || '').replace(/^border-/, '');
+
+            if (border === 'double-bottom') {
+              border = 'bottom';
+              width = 2;
+            }
+
+            if (border) {
+              this.grid.ApplyBorders2(
+                undefined,
+                border,
+                event.data?.color || undefined,
+                width,
+              );
+            }
+
+          }
+          break;
+
+        case 'color':
+        case 'background-color':
+        case 'foreground-color':
+        case 'border-color':
+
+          switch (event.data?.target) {
+            case 'border':
+              updated_style.border_top_fill =
+                updated_style.border_bottom_fill =
+                updated_style.border_left_fill =
+                updated_style.border_right_fill = event.data?.color || {};
+              break;
+            case 'foreground':
+
+              // empty would work here because it means "use default"; but
+              // if we set it explicitly, it can be removed on composite delta
+              updated_style.text = event.data?.color || { theme: 1 };
+
+              break;
+            case 'background':
+
+              // FIXME: theme colors
+              updated_style.fill = event.data?.color || {};
+              break;
+          }
+          break;
+
+        // why are these calling grid methods? should we contain this in some way? (...)
+
+        case 'insert-row': this.InsertRows(); break;
+        case 'insert-column': this.InsertColumns(); break;
+        case 'delete-row': this.DeleteRows(); break;
+        case 'delete-column': this.DeleteColumns(); break;
+        case 'insert-sheet': this.grid.InsertSheet(); break;
+        case 'delete-sheet': this.grid.DeleteSheet(); break;
+
+        case 'freeze':
+          {
+            const freeze = this.grid.GetFreeze();
+            if (freeze.rows || freeze.columns) {
+              this.Freeze(0, 0);
+            }
+            else {
+              this.FreezeSelection();
+            }
+          }
+          break;
+
+        case 'insert-image': this.InsertImage(); break;
+
+        case 'donut-chart': insert_annotation('Donut.Chart'); break;
+        case 'column-chart': insert_annotation('Column.Chart'); break;
+        case 'bar-chart': insert_annotation('Bar.Chart'); break;
+        case 'line-chart': insert_annotation('Line.Chart'); break;
+
+        case 'increase-decimal':
+        case 'decrease-decimal':
+          if (this.active_selection_style) {
+            const format = NumberFormatCache.Get(this.active_selection_style.number_format || 'General');
+            if (format.date_format) { break; }
+            const clone = new NumberFormat(format.pattern);
+            if (event.command === 'increase-decimal') {
+              clone.IncreaseDecimal();
+            }
+            else {
+              clone.DecreaseDecimal();
+            }
+            updated_style.number_format = clone.toString();
+          }
+          break;
+
+        case 'merge':
+          this.grid.MergeCells();
+          break
+        case 'unmerge':
+          this.grid.UnmergeCells();
+          break;
+
+        case 'lock':
+          updated_style = {
+            locked:
+              this.active_selection_style ?
+                !this.active_selection_style.locked : true,
+          };
+          break;
+
+        case 'wrap':
+          updated_style = {
+            wrap: this.active_selection_style ?
+              !this.active_selection_style.wrap : true,
+          };
+          break;
+
+        case 'align-left':
+          updated_style = { horizontal_align: Style.HorizontalAlign.Left };
+          break;
+        case 'align-center':
+          updated_style = { horizontal_align: Style.HorizontalAlign.Center };
+          break;
+        case 'align-right':
+          updated_style = { horizontal_align: Style.HorizontalAlign.Right };
+          break;
+
+        case 'align-top':
+          updated_style = { vertical_align: Style.VerticalAlign.Top };
+          break;
+        case 'align-middle':
+          updated_style = { vertical_align: Style.VerticalAlign.Middle };
+          break;
+        case 'align-bottom':
+          updated_style = { vertical_align: Style.VerticalAlign.Bottom };
+          break;
+
+        case 'reset':
+          this.Reset();
+          break;
+        case 'import-desktop':
+          this.LoadLocalFile();
+          break;
+        //case 'import-url':
+        //  this.ImportURL();
+        //  break;
+        case 'save-json':
+          this.SaveLocalFile();
+          break;
+        case 'save-csv':
+          this.SaveLocalFile(SaveFileType.csv);
+          break;
+        case 'export-xlsx':
+          this.Export();
+          break;
+
+        case 'recalculate':
+          this.Recalculate();
+          break;
+
+        default:
+          console.info('unhandled', event.command);
+          break;
+      }
+    }
+
+    if (Object.keys(updated_style).length) {
+      this.grid.ApplyStyle(undefined, updated_style, true);
+    }
+
+    this.Focus();
+
   }
 
   /** 
@@ -991,247 +1307,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    */
    public CreateToolbar(container: HTMLElement): Toolbar {
     this.toolbar = new Toolbar(container, this.options, this.grid.theme);
-    this.toolbar.Subscribe((event) => {
-
-      let updated_style: Style.Properties = {};
-
-      const insert_annotation = (func: string) => {
-        const selection = this.grid.GetSelection();
-        if (selection && !selection.empty) {
-          const label = selection.area.spreadsheet_label;
-          this.InsertAnnotation(`=${func}(${label},,"${label}")`);
-        }
-      };
-
-      if (event.type === 'format') {
-        updated_style.number_format = event.format || 'General';
-      }
-      else if (event.type === 'font-size') {
-
-        // NOTE we're doing this a little differently; not using
-        // updated style because we also want to resize rows, and
-        // we want those things to be a single transaction.
-
-        const selection = this.grid.GetSelection();
-        const area = this.grid.RealArea(selection.area);
-
-        this.grid.ApplyStyle(undefined, event.style, true);
-        const rows: number[] = [];
-        for (let row = area.start.row; row <= area.end.row; row++) {
-          rows.push(row);
-        }
-        this.grid.SetRowHeight(rows, undefined, false);
-
-      }
-      else if (event.type === 'button') {
-        switch (event.command) {
-
-          case 'font-scale':
-
-            // above we handle 'font-size' events; this comes from a dropdown,
-            // so we're handling it inline, but we want the same behavior.
-            // FIXME: break out
-
-            {
-              const selection = this.grid.GetSelection();
-              const area = this.grid.RealArea(selection.area);
-              const scale = Number(event.data?.scale || 1);
-
-              if (scale && !isNaN(scale)) {
-                this.grid.ApplyStyle(undefined, {
-                  //font_size_unit: 'em', font_size_value: scale 
-                  font_size: {
-                    unit: 'em', value: scale,
-                  },
-                }, true);
-                const rows: number[] = [];
-                for (let row = area.start.row; row <= area.end.row; row++) {
-                  rows.push(row);
-                }
-                this.grid.SetRowHeight(rows, undefined, false);
-              }
-            }
-            break;
-
-          case 'update-comment':
-            this.SetNote(undefined, event.data?.comment || '');
-            break;
-
-          case 'clear-comment':
-            this.SetNote(undefined, '');
-            break;
-
-          case 'border':
-            {
-              let width = 1;
-              let border = (event.data?.border || '').replace(/^border-/, '');
-
-              if (border === 'double-bottom') {
-                border = 'bottom';
-                width = 2;
-              }
-
-              if (border) {
-                this.grid.ApplyBorders2(
-                  undefined,
-                  border,
-                  event.data?.color || undefined,
-                  width,
-                );
-              }
-
-            }
-            break;
-
-          case 'color':
-          case 'background-color':
-          case 'foreground-color':
-          case 'border-color':
-
-            switch (event.data?.target) {
-              case 'border':
-                updated_style.border_top_fill =
-                  updated_style.border_bottom_fill =
-                  updated_style.border_left_fill =
-                  updated_style.border_right_fill = event.data?.color || {};
-                break;
-              case 'foreground':
-
-                // empty would work here because it means "use default"; but
-                // if we set it explicitly, it can be removed on composite delta
-                updated_style.text = event.data?.color || { theme: 1 };
-
-                break;
-              case 'background':
-
-                // FIXME: theme colors
-                updated_style.fill = event.data?.color || {};
-                break;
-            }
-            break;
-
-          // why are these calling grid methods? should we contain this in some way? (...)
-
-          case 'insert-row': this.InsertRows(); break;
-          case 'insert-column': this.InsertColumns(); break;
-          case 'delete-row': this.DeleteRows(); break;
-          case 'delete-column': this.DeleteColumns(); break;
-          case 'insert-sheet': this.grid.InsertSheet(); break;
-          case 'delete-sheet': this.grid.DeleteSheet(); break;
-
-          case 'freeze':
-            {
-              const freeze = this.grid.GetFreeze();
-              if (freeze.rows || freeze.columns) {
-                this.Freeze(0, 0);
-              }
-              else {
-                this.FreezeSelection();
-              }
-            }
-            break;
-
-          case 'insert-image': this.InsertImage(); break;
-
-          case 'donut-chart': insert_annotation('Donut.Chart'); break;
-          case 'column-chart': insert_annotation('Column.Chart'); break;
-          case 'bar-chart': insert_annotation('Bar.Chart'); break;
-          case 'line-chart': insert_annotation('Line.Chart'); break;
-
-          case 'increase-decimal':
-          case 'decrease-decimal':
-            if (this.active_selection_style) {
-              const format = NumberFormatCache.Get(this.active_selection_style.number_format || 'General');
-              if (format.date_format) { break; }
-              const clone = new NumberFormat(format.pattern);
-              if (event.command === 'increase-decimal') {
-                clone.IncreaseDecimal();
-              }
-              else {
-                clone.DecreaseDecimal();
-              }
-              updated_style.number_format = clone.toString();
-            }
-            break;
-
-          case 'merge':
-            this.grid.MergeCells();
-            break
-          case 'unmerge':
-            this.grid.UnmergeCells();
-            break;
-
-          case 'lock':
-            updated_style = {
-              locked:
-                this.active_selection_style ?
-                  !this.active_selection_style.locked : true,
-            };
-            break;
-
-          case 'wrap':
-            updated_style = {
-              wrap: this.active_selection_style ?
-                !this.active_selection_style.wrap : true,
-            };
-            break;
-
-          case 'align-left':
-            updated_style = { horizontal_align: Style.HorizontalAlign.Left };
-            break;
-          case 'align-center':
-            updated_style = { horizontal_align: Style.HorizontalAlign.Center };
-            break;
-          case 'align-right':
-            updated_style = { horizontal_align: Style.HorizontalAlign.Right };
-            break;
-
-          case 'align-top':
-            updated_style = { vertical_align: Style.VerticalAlign.Top };
-            break;
-          case 'align-middle':
-            updated_style = { vertical_align: Style.VerticalAlign.Middle };
-            break;
-          case 'align-bottom':
-            updated_style = { vertical_align: Style.VerticalAlign.Bottom };
-            break;
-
-          case 'reset':
-            this.Reset();
-            break;
-          case 'import-desktop':
-            this.LoadLocalFile();
-            break;
-          //case 'import-url':
-          //  this.ImportURL();
-          //  break;
-          case 'save-json':
-            this.SaveLocalFile();
-            break;
-          case 'save-csv':
-            this.SaveLocalFile(SaveFileType.csv);
-            break;
-          case 'export-xlsx':
-            this.Export();
-            break;
-
-          case 'recalculate':
-            this.Recalculate();
-            break;
-
-          default:
-            console.info('unhandled', event.command);
-            break;
-        }
-      }
-
-      if (Object.keys(updated_style).length) {
-        this.grid.ApplyStyle(undefined, updated_style, true);
-      }
-
-      this.Focus();
-
-    });
+    this.toolbar.Subscribe(event => this.focus_target.HandleToolbarEvent(event));
 
     this.UpdateDocumentStyles(false);
     this.UpdateSelectionStyle(undefined);
@@ -3832,11 +3908,15 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     Yield().then(() => {
 
+      // console.info('serializing');
+
       const json = JSON.stringify(this.SerializeDocument({
         preserve_simulation_data: false,
         rendered_values: true,
         expand_arrays: true,
       } as SerializeOptions));
+
+      // console.info(json);
 
       if (this.options.storage_key) {
         localStorage.setItem(this.options.storage_key, json);
