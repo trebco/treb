@@ -1,52 +1,47 @@
 
-// treb imports
+// --- imports -----------------------------------------------------------------
+
 import {
   Grid, GridEvent, SerializeOptions, Annotation,
-  BorderConstants, SheetChangeEvent, GridOptions, Sheet, GridSelection, CellEvent, FunctionDescriptor, DataModel, NamedRangeCollection,
+  SerializedModel, FreezePane, SerializedSheet,
+  BorderConstants, SheetChangeEvent, GridOptions, 
+  Sheet, GridSelection, CellEvent, FunctionDescriptor, 
+  DataModel, NamedRangeCollection,
 } from 'treb-grid';
 
-import { Parser, DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
+import { 
+  Parser, DecimalMarkType, 
+  ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
+
 import { Calculator, LeafVertex } from 'treb-calculator';
 
 import {
-  IsCellAddress, Localization, Style, ICellAddress, Area, IArea, CellValue, Point,
-  IsFlatData, IsFlatDataArray, Rectangle, IsComplex, ComplexToString, Complex, ExtendedUnion, IRectangle
+  IsCellAddress, Localization, Style, ICellAddress, 
+  Area, IArea, CellValue, Point,
+  IsFlatData, IsFlatDataArray, Rectangle, IsComplex, 
+  ComplexToString, Complex, ExtendedUnion, IRectangle
 } from 'treb-base-types';
 
 import { EventSource, Yield } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
-// local
+// --- local -------------------------------------------------------------------
+
 import { ProgressDialog, DialogType } from './progress-dialog';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './options';
 import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent } from './types';
 
 import { LanguageModel, TranslatedFunctionDescriptor } from './language-model';
-
 import { SelectionState, Toolbar, ToolbarEvent } from './toolbar';
-
-// import { CreateProxy } from './data-proxy';
-
-// this is a circular reference. this seems like a bad idea, 
-// but it's legal in typescript. not sure how I feel about this.
-
-// import { APIv1 } from './API/api-v1';
-
-// TYPE ONLY
-// type Chart = import('../../treb-charts/src/index').Chart;
-
 import { Chart, ChartFunctions } from 'treb-charts';
 
-// 3d party modules
+// --- 3d party ----------------------------------------------------------------
+
 import * as FileSaver from 'file-saver';
 
-// style
-// import 'treb-grid/style/grid.scss';
-import '../style/embed.scss';
+// --- style -------------------------------------------------------------------
 
-// what is this? if these are being used outside of grid they should be exported
-import { SerializedModel } from 'treb-grid' ; // /src/types/data_model';
-import { FreezePane, SerializedSheet } from 'treb-grid'; // /src/types/sheet_types';
+import '../style/embed.scss';
 
 /**
  * options for saving files. we add the option for JSON formatting.
@@ -336,6 +331,10 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    */
   protected grid: Grid;
 
+  /**
+   * model moved from grid. we control it now. grid still maintains
+   * its own view, including active sheet.
+   */
   protected model: DataModel;
 
   protected options: EmbeddedSpreadsheetOptions;
