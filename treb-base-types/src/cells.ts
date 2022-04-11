@@ -751,11 +751,11 @@ export class Cells {
       return undefined;
     }
 
-    const value = [];
+    const value: CellValue[][] = [];
 
     if (transpose){
       for ( let c = from.column; c <= to.column; c++ ){
-        const column = [];
+        const column: CellValue[] = [];
         for ( let r = from.row; r <= to.row; r++ ){
           if (this.data[r] && this.data[r][c]) column.push(this.data[r][c].GetValue());
           else column.push(undefined);
@@ -765,7 +765,7 @@ export class Cells {
     }
     else {
       for ( let r = from.row; r <= to.row; r++ ){
-        const row = [];
+        const row: CellValue[] = [];
         for ( let c = from.column; c <= to.column; c++ ){
           if (this.data[r] && this.data[r][c]) row.push(this.data[r][c].GetValue());
           else row.push(undefined);
