@@ -1016,6 +1016,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   public Split(): void {
 
     const view = this.CreateView();
+    view.grid.EnsureActiveSheet(true);
+
     this.views.push(view);
     view.node?.addEventListener('focusin', () => {
       this.focus_target = view;
