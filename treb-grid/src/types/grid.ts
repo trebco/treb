@@ -2802,7 +2802,6 @@ export class Grid {
     for (const sheet of this.model.sheets) {
       if (sheet === this.active_sheet) {
         if (force) {
-          console.info('activate on force');
           this.ActivateSheetInternal({
             key: CommandKey.ActivateSheet,
             id: sheet.id,
