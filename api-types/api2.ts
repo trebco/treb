@@ -473,7 +473,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
 
   };
 
-  const AddReferencedType = (name: string) => {
+  const AddReferencedType = (name: string, track: number) => {
 
     // we're trying to block intrinsic types here but this will still
     // miss DOM types since they're not present in node... either we 
@@ -491,7 +491,9 @@ function CollectDependencyTransformer<T extends ts.Node>(
     const container = containing_type[0];
 
     const list = args.referenced_type_map[container] || [];
-    if (!list.includes(name)) { list.push(name); }
+    if (!list.includes(name)) { 
+      list.push(name); 
+    }
     args.referenced_type_map[container] = list;
 
     args.referenced_types[name] = (args.referenced_types[name]||0) + 1;
@@ -584,12 +586,12 @@ function CollectDependencyTransformer<T extends ts.Node>(
       else if (ts.isExpressionWithTypeArguments(node)) {
         if (ts.isIdentifier(node.expression)) {
           const key = node.expression.escapedText.toString();
-          AddReferencedType(key);
+          AddReferencedType(key, 0);
         }
         else if (ts.isQualifiedName(node.expression)) {
           const stack = FlattenQualifiedName(node.expression);
           if (stack.length) { 
-            AddReferencedType(stack[0]);
+            AddReferencedType(stack[0], 1);
           }
         }
       }
@@ -598,7 +600,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
         
         if (ts.isIdentifier(node.typeName)) {
           const key = node.typeName.escapedText.toString();
-          AddReferencedType(key);
+          AddReferencedType(key, 2);
         }
         else if (ts.isQualifiedName(node.typeName)) {
           
@@ -608,7 +610,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
           const stack = FlattenQualifiedName(node.typeName);
           // AddReferencedType(FlattenQualifiedName(node.typeName).join('.'));
           if (stack.length) { 
-            AddReferencedType(stack[0]);
+            AddReferencedType(stack[0], 3);
           }
 
         }
@@ -630,14 +632,28 @@ function CollectDependencyTransformer<T extends ts.Node>(
         // must be public).
 
         if (ts.isIdentifier(node.name)) {
+
           if (!is_public || internal) {
             return undefined; // don't recurse
           }
+
         }
         else {
           throw new Error('unhandled case (15)');
         }
         
+      }
+
+      else if (ts.isConstructorDeclaration(node)) {
+
+        if (!is_public || internal) {
+          return undefined; // don't recurse
+        }
+        else {
+          // console.info(node);
+          // console.info('public?', is_public, 'tags?', tags);
+          // throw new Error('no');
+        }
       }
 
       else if (ts.isImportDeclaration(node)) {
@@ -777,7 +793,43 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
   // what we should do is climb up the containing type list. note
   // that there could be more than one highest-level type...
 
+  //============================================================================
+  // Q: what is this for? it's broken. temporarily removing.
+  //============================================================================
+
   const containing_keys = Object.keys(args.referenced_type_map);
+
+  /*
+  {
+    fs.writeFileSync('check.json', JSON.stringify(args.referenced_type_map, undefined, 2), {encoding: 'utf8'});
+  }
+  */
+
+  const ResolveContainingTypes = (base: string, list: string[] = [], depth = 0) => {
+    // find any types that contain this type
+
+    /*
+    let s = '';
+    for (let i = 0; i< depth; i++) s += ' ';
+    console.info(s, 'rct', base, '');
+    */
+
+    for (const container of containing_keys) {
+      if (args.referenced_type_map[container].includes(base)) {
+        if (!list.includes(container)) {
+          // console.info(s, '   check [2]', container);
+          list.push(container);
+          //const sublist = ResolveContainingTypes(container, list, depth + 1);
+          ResolveContainingTypes(container, list, depth + 1);
+
+          // list.push(...sublist);
+        }
+      }
+    }
+    return list;
+  }
+
+  /**
   const ResolveContainingTypes = (base: string, list: string[] = []) => {
 
     // find any types that contain this type
@@ -785,12 +837,16 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
       if (args.referenced_type_map[container].includes(base)) {
         if (!list.includes(container)) {
           list.push(container);
-          list.push(...ResolveContainingTypes(container, list));
+          const sublist = ResolveContainingTypes(container, list);
+          list.push(...sublist);
         }
       }
     }
     return list;
   };
+  */
+
+  // console.info('\n');
 
   if (types) {
     keys = keys.filter(key => {
@@ -798,6 +854,7 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
       for (const entry of list) {
         if (types.includes(entry)) { return true; }
       }
+      // console.info("DROPPING", key);
       return false;
     });
   }
