@@ -1249,8 +1249,28 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
               find_number:
               for (let i = 0; i < rng.length; i++) {
                 for (let j = 0; j < rng[i].length; j++) {
-                  if (typeof rng[i][j] === 'number') {
-                    const parts = format.BaseFormat(rng[i][j]);
+                  const value = rng[i][j];
+
+                  if (typeof value !== 'undefined' && IsComplex(value)) {
+
+                    // find the longer of the two, use that as base
+
+                    const f2 = NumberFormatCache.Get(this.active_selection_style.number_format || 'General', true);
+                    const real_parts = f2.BaseFormat(value.real);
+                    const imaginary_parts = f2.BaseFormat(value.imaginary);
+
+                    if (real_parts.parts && typeof real_parts.parts[1] === 'string') {
+                      len = real_parts.parts[1].length;
+                    }
+                    if (imaginary_parts.parts && typeof imaginary_parts.parts[1] === 'string') {
+                      len = Math.max(len, imaginary_parts.parts[1].length);
+                    }
+                    
+                    break find_number;
+
+                  }
+                  else if (typeof value === 'number') {
+                    const parts = format.BaseFormat(value);
                     if (parts.parts && typeof parts.parts[1] === 'string') {
                       len = parts.parts[1].length;
                     }
