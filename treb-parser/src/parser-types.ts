@@ -200,26 +200,33 @@ export interface UnitRange extends BaseUnit {
 
 export interface UnitDimensionedQuantity extends BaseUnit {
   type: 'dimensioned';
-  expression: ExpressionUnit;
+  expression: BaseExpressionUnit; // <!-- does not support recursive DQs
   unit: UnitIdentifier;
 }
 
-/** discriminated union for type guards */
+/** 
+ * discriminated union. this version allows any expression unit _except_ dimensioned quantity
+ */
+export type BaseExpressionUnit =
+| UnitLiteral
+| UnitComplex
+| UnitArray
+| UnitIdentifier
+| UnitCall
+| UnitMissing
+| UnitGroup
+| UnitOperator
+| UnitBinary
+| UnitUnary
+| UnitAddress
+| UnitRange;
+
+/** 
+ * discriminated union for type guards, all types
+ */
 export type ExpressionUnit =
-  | UnitLiteral
-  | UnitComplex
-//  | UnitImaginary
-  | UnitDimensionedQuantity
-  | UnitArray
-  | UnitIdentifier
-  | UnitCall
-  | UnitMissing
-  | UnitGroup
-  | UnitOperator
-  | UnitBinary
-  | UnitUnary
-  | UnitAddress
-  | UnitRange;
+  | BaseExpressionUnit
+  | UnitDimensionedQuantity;
 
 /** list of addresses and ranges in the formula, for graphs */
 export interface DependencyList {
