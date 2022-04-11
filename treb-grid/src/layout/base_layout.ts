@@ -147,7 +147,7 @@ export abstract class BaseLayout {
   private dropdown_callback?: (value: CellValue) => void;
   private dropdown_selected?: HTMLElement;
 
-  private selection_layout_token?: any;
+  // private selection_layout_token?: any;
 
   // private error_highlight: HTMLDivElement;
   // private error_highlight_timeout?: any;
@@ -582,7 +582,8 @@ export abstract class BaseLayout {
   public UpdateAnnotation(elements: Annotation | Annotation[]): void {
     if (!Array.isArray(elements)) elements = [elements];
     for (const annotation of elements) {
-      if (annotation.node) {
+      const view = annotation.view[this.view.view_index] || {};
+      if (view.node) {
 
         /*
         if (annotation.node.dataset.scale && annotation.node.dataset.scale !== this.scale.toString()) {
@@ -590,8 +591,8 @@ export abstract class BaseLayout {
         }
         */
 
-        annotation.node.dataset.scale = this.scale.toString();
-        annotation.node.style.fontSize = `${10 * this.scale}pt`;
+        view.node.dataset.scale = this.scale.toString();
+        view.node.style.fontSize = `${10 * this.scale}pt`;
 
         // update the layout here if necessary. after that it should
         // be persisted (assuming it's saved). eventually this should
@@ -612,7 +613,7 @@ export abstract class BaseLayout {
         if (annotation.layout) {
 
           const rect = this.AnnotationLayoutToRect(annotation.layout);
-          rect.ApplyStyle(annotation.node);
+          rect.ApplyStyle(view.node);
 
           // NOTE: we still set the scaled rect, because that's used in 
           // manipulating at scale. we will need to make sure that we update
@@ -622,7 +623,7 @@ export abstract class BaseLayout {
 
         }
 
-        annotation.node.dataset.key = annotation.key.toString();
+        view.node.dataset.key = annotation.key.toString();
 
         // FIXME: only do this if necessary (if frozen).
 
@@ -645,7 +646,8 @@ export abstract class BaseLayout {
    */
   public CloneFrozenAnnotations(): void {
     for (const annotation of this.view.active_sheet.annotations) {
-      if (annotation.node && annotation.key) {
+      const view = annotation.view[this.view.view_index];
+      if (view?.node && annotation.key) {
         this.CloneFrozenAnnotation(annotation);
       }
     }
@@ -692,7 +694,9 @@ export abstract class BaseLayout {
       if (element) {
         element.parentElement?.removeChild(element);
       }
-      element = annotation.node?.cloneNode(true);
+
+      const view = annotation.view[this.view.view_index];
+      element = view?.node?.cloneNode(true);
 
       if (element) {
 
@@ -700,12 +704,12 @@ export abstract class BaseLayout {
         const resize_target = (element as HTMLElement).querySelector('.annotation-resize-target') as HTMLElement;
 
         (element as HTMLElement).addEventListener('mousedown', (event: MouseEvent) => {
-          const node = annotation.node;
+          const node = view.node;
           requestAnimationFrame(() => {
             // console.info('calling focus on', node);
             node?.focus();
           });
-          this.AnnotationMouseDown(annotation, annotation.node as HTMLElement, event, move_target, resize_target);
+          this.AnnotationMouseDown(annotation, view.node as HTMLElement, event, move_target, resize_target);
         });
         container.appendChild(element);
       }
@@ -715,8 +719,9 @@ export abstract class BaseLayout {
   }
 
   public RemoveAnnotation(annotation: Annotation): void {
-    if (annotation.node) {
-      annotation.node.parentElement?.removeChild(annotation.node);
+    const view = annotation.view[this.view.view_index] || {};
+    if (view.node) {
+      view.node.parentElement?.removeChild(view.node);
     }
     this.RemoveFrozenAnnotation(annotation);
   }
@@ -751,10 +756,11 @@ export abstract class BaseLayout {
   }
 
   public AddAnnotation(annotation: Annotation): void {
-    if (!annotation.node) {
-      throw new Error('annotation node missing');
+    const view = annotation.view[this.view.view_index] || {};
+    if (!view.node) {
+      throw new Error('annotation view/node missing');
     }
-    this.annotation_container.appendChild(annotation.node);
+    this.annotation_container.appendChild(view.node);
     this.UpdateAnnotation(annotation);
   }
 

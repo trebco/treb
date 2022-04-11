@@ -6,7 +6,7 @@ import {
   SerializedModel, FreezePane, SerializedSheet,
   BorderConstants, SheetChangeEvent, GridOptions, 
   Sheet, GridSelection, CellEvent, FunctionDescriptor, 
-  DataModel, NamedRangeCollection,
+  DataModel, NamedRangeCollection, AnnotationViewData,
 } from 'treb-grid';
 
 import { 
@@ -741,6 +741,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
             // not on move or resize)
 
             if (event.annotation) {
+              const view: AnnotationViewData = event.annotation.view[this.grid.view_index] || {};
 
               this.DocumentChange();
               switch (event.event) {
@@ -753,8 +754,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
                   this.calculator.RemoveAnnotation(event.annotation); // clean up vertex
                   break;
                 case 'update':
-                  if (event.annotation.update_callback) {
-                    event.annotation.update_callback();
+                  if (view.update_callback) {
+                    view.update_callback();
                     this.grid.AnnotationUpdated(event.annotation);
                   }
                   else {
@@ -763,8 +764,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
                   this.calculator.UpdateAnnotations(event.annotation);
                   break;
                 case 'resize':
-                  if (event.annotation.resize_callback) {
-                    event.annotation.resize_callback();
+                  if (view.resize_callback) {
+                    view.resize_callback();
                     this.grid.AnnotationUpdated(event.annotation);
                   }
                   break;
@@ -1050,6 +1051,13 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       switch (event.type) {
         case 'selection':
           break;
+        
+        case 'load':
+          view.grid.EnsureActiveSheet(true); // force update of annotations
+          view.UpdateAnnotations();
+          view.grid.Update(true);
+          break;
+
         default:
           view.UpdateAnnotations();
           view.grid.Update(true);
@@ -3732,12 +3740,37 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         const vertex = annotation.temp.vertex as LeafVertex;
         if (vertex.state_id !== annotation.temp.state) {
           annotation.temp.state = vertex.state_id;
-          if (annotation.update_callback) {
-            annotation.update_callback();
+
+          // set all views dirty in this case
+          for (const view of annotation.view) {
+            view.dirty = true;
           }
-          this.grid.AnnotationUpdated(annotation);
         }
+
+          /*
+          const view: AnnotationViewData = annotation.view[this.grid.view_index] || {};
+          if (view.update_callback) {
+            view.update_callback();
+          }
+
+          this.grid.AnnotationUpdated(annotation);
+          */
       }
+
+      const view: AnnotationViewData = annotation.view[this.grid.view_index] || {};
+      if (view.dirty) {
+
+        // either we just set this dirty for all views, or another
+        // view set it dirty for us: in either case, update
+
+        if (view.update_callback) {
+          view.update_callback();
+        }
+
+        this.grid.AnnotationUpdated(annotation);
+
+      }
+
     }
   }
 
@@ -3762,11 +3795,13 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   protected RebuildAllAnnotations(): void {
     for (const annotation of this.grid.active_sheet.annotations) {
       this.InflateAnnotation(annotation);
-      if (annotation.resize_callback) {
-        annotation.resize_callback();
+      const view: AnnotationViewData = annotation.view[this.grid.view_index] || {};
+
+      if (view.resize_callback) {
+        view.resize_callback();
       }
-      if (annotation.update_callback) {
-        annotation.update_callback();
+      if (view.update_callback) {
+        view.update_callback();
       }
     }
   }
@@ -3786,10 +3821,11 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   protected InflateAnnotation(annotation: Annotation): void {
 
     if (this.grid.headless) { return; }
+    const view: AnnotationViewData = annotation.view[this.grid.view_index] || {};
 
     // only inflate once, to prevent overwriting instance methods
 
-    if (annotation.inflated) {
+    if (view.inflated) {
 
       // I don't think we're using dirty anymore... actually we still
       // need it right now. it gets _set_ on express scale change, so
@@ -3801,21 +3837,21 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
       if (annotation.dirty) {
 
-        if (annotation.resize_callback) {
-          annotation.resize_callback();
+        if (view.resize_callback) {
+          view.resize_callback();
         }
         annotation.dirty = false;
       }
       return;
     }
 
-    annotation.inflated = true;
+    view.inflated = true;
 
     if (annotation.dirty) {
       annotation.dirty = false;
     }
 
-    if (annotation.content_node && annotation.data) {
+    if (view.content_node && annotation.data) {
 
       if (annotation.type === 'treb-chart') {
 
@@ -3826,7 +3862,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         {
 
           const chart = new Chart();
-          chart.Initialize(annotation.content_node);
+          chart.Initialize(view.content_node);
 
           if (this.calculator.RegisterLibrary('treb-charts', ChartFunctions)) {
             this.UpdateAC();
@@ -3863,7 +3899,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
           };
 
           /** resize callback */
-          annotation.resize_callback = () => {
+          view.resize_callback = () => {
             if (!this.grid.headless) {
               chart.Resize();
               chart.Update();
@@ -3871,14 +3907,14 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
           };
 
           /** update callback */
-          annotation.update_callback = () => {
+          view.update_callback = () => {
             if (!this.grid.headless) {
               update_chart();
             }
           };
 
           /** call once */
-          if (annotation.node?.parentElement) {
+          if (view.node?.parentElement) {
             if (!this.grid.headless) {
               update_chart();
             }
@@ -3894,7 +3930,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         }
         img.style.width = '100%';
         img.style.height = '100%';
-        annotation.content_node.appendChild(img);
+        view.content_node.appendChild(img);
       }
     }
   }

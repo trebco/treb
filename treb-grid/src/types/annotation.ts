@@ -24,10 +24,40 @@ import { Rectangle, ICellAddress, AnnotationLayout } from 'treb-base-types';
  * 
  * we'll leave the old extent in there (for now, at least) to prevent
  * any unintended consequences. 
- * 
+ *
+ * UPDATE: adding a view interface for view-specific data. this is prep
+ * for supporting annotations in split views; we have to change how we
+ * manage nodes and callbacks.
+ *  
  */
 
 let key_generator = 100;
+
+/**
+ * moving view-specific data into a separate interface to support split.
+ * nothing in view is serialized.
+ */
+export interface ViewData {
+
+  /** flag indicating we have inflated this. not serialized */
+  inflated?: boolean;
+
+  /** if function exists, will be called when the annotation is resized */
+  resize_callback?: () => void;
+  
+  /** if function exists, will be called when the annotation needs to update */
+  update_callback?: () => void;
+
+  /** layout node */
+  node?: HTMLDivElement;
+
+  /** content node */
+  content_node?: HTMLDivElement;
+
+  /** view-specific dirty flag */
+  dirty?: boolean;
+
+}
 
 export class Annotation {
 
@@ -56,14 +86,14 @@ export class Annotation {
   /** also opaque data, but not serialized. */
   public temp: any = {};
 
-  /** flag indicating we have inflated this. not serialized */
-  public inflated = false;
+  /* * flag indicating we have inflated this. not serialized */
+  // public inflated = false;
 
-  /** if function exists, will be called when the annotation is resized */
-  public resize_callback?: () => void;
+  /* * if function exists, will be called when the annotation is resized */
+  // public resize_callback?: () => void;
 
-  /** if function exists, will be called when the annotation needs to update */
-  public update_callback?: () => void;
+  /* * if function exists, will be called when the annotation needs to update */
+  // public update_callback?: () => void;
 
   /** annotation can be resized. this is advisory, for UI */
   public resizable = true;
@@ -83,11 +113,13 @@ export class Annotation {
   /** resize when resizing/inserting rows/columns */
   public resize_with_cells = true;
 
-  /** layout node, obviously not serialized */
-  public node?: HTMLDivElement;
+  /* * layout node, obviously not serialized */
+  // public node?: HTMLDivElement;
 
-  /** content node */
-  public content_node?: HTMLDivElement;
+  /* * content node */
+  // public content_node?: HTMLDivElement;
+
+  public view: ViewData[] = [];
 
   /**
    * advisory, meaning we probably need an update if there's an opportunity.

@@ -576,7 +576,8 @@ export class Grid {
   /** find an annotation, given a node */
   public FindAnnotation(node: HTMLElement): Annotation|undefined {
     for (const annotation of this.active_sheet.annotations) {
-      if (annotation.node === node) {
+      const view = annotation.view[this.view_index] || {};
+      if (view.node === node) {
         return annotation;
       }
     }
@@ -846,20 +847,27 @@ export class Grid {
   /** add an annotation. it will be returned with a usable node. */
   public AddAnnotation(annotation: Annotation, toll_events = false, add_to_layout = true): void {
 
-    if (!annotation.node) {
+    let view = annotation.view[this.view_index];
+
+    if (!view) {
+      view = {};
+      annotation.view[this.view_index] = view;
+    }
+
+    if (!view.node) {
 
       // FIXME: why is this not in layout? it is layout.
 
-      annotation.node = document.createElement('div');
-      annotation.node.dataset.scale = this.layout.scale.toString();
-      annotation.node.style.fontSize = `${10 * this.layout.scale}pt`;
+      view.node = document.createElement('div');
+      view.node.dataset.scale = this.layout.scale.toString();
+      view.node.style.fontSize = `${10 * this.layout.scale}pt`;
 
-      annotation.content_node = DOMUtilities.CreateDiv('annotation-content', annotation.node);
-      const move_target = DOMUtilities.CreateDiv('annotation-move-target', annotation.node);
-      const resize_target = DOMUtilities.CreateDiv('annotation-resize-target', annotation.node);
+      view.content_node = DOMUtilities.CreateDiv('annotation-content', view.node);
+      const move_target = DOMUtilities.CreateDiv('annotation-move-target', view.node);
+      const resize_target = DOMUtilities.CreateDiv('annotation-resize-target', view.node);
 
-      if (annotation.node) {
-        const node = annotation.node;
+      if (view.node) {
+        const node = view.node;
 
         // support focus
         node.setAttribute('tabindex', '-1');
@@ -880,7 +888,7 @@ export class Grid {
           });
         });
 
-        annotation.node.addEventListener('focusin', () => {
+        node.addEventListener('focusin', () => {
 
           // console.info('annotation focusin', annotation);
 
@@ -900,7 +908,7 @@ export class Grid {
           this.HideGridSelection();
         });
 
-        annotation.node.addEventListener('focusout', (event) => {
+        node.addEventListener('focusout', (event) => {
 
           // console.info('annotation focusout', annotation);
 
@@ -923,7 +931,7 @@ export class Grid {
           }
         });
 
-        annotation.node.addEventListener('keydown', (event) => {
+        node.addEventListener('keydown', (event) => {
       
           const rect = annotation.scaled_rect;
           if (!rect) {
@@ -1026,7 +1034,7 @@ export class Grid {
       }
     }
 
-    annotation.node.classList.add('annotation');
+    view.node.classList.add('annotation');
     
     // if (annotation.class_name) {
     //   annotation.node.classList.add(annotation.class_name);
@@ -2789,10 +2797,18 @@ export class Grid {
    * we don't get events about this (should we?) so someone will have to 
    * call it. FIXME: we should get events about that.
    */
-  public EnsureActiveSheet() {
-  
+  public EnsureActiveSheet(force = false) {
+
     for (const sheet of this.model.sheets) {
       if (sheet === this.active_sheet) {
+        if (force) {
+          console.info('activate on force');
+          this.ActivateSheetInternal({
+            key: CommandKey.ActivateSheet,
+            id: sheet.id,
+            force: true,
+          });
+        }
         return;
       }
     }    
@@ -2994,7 +3010,7 @@ export class Grid {
 
     // ok, activate...
 
-    if (this.active_sheet === candidate) {
+    if (this.active_sheet === candidate && !command.force) {
       return;
     }
 
@@ -3446,8 +3462,9 @@ export class Grid {
           if (this.editing_annotation) {
             this.ClearAdditionalSelections();
             this.ClearSelection(this.active_selection);
-            if (this.editing_annotation.node) {
-              this.editing_annotation.node.focus();
+            const node = this.editing_annotation.view[this.view_index]?.node;
+            if (node) {
+              node.focus();
             }
             this.editing_annotation = undefined;
             this.UpdateFormulaBarFormula();
@@ -3489,8 +3506,9 @@ export class Grid {
             this.ClearAdditionalSelections();
             this.ClearSelection(this.active_selection);
             annotation.formula = event.value ? this.FixFormula(event.value) : '';
-            if (annotation.node) {
-              annotation.node.focus();
+            const node = this.editing_annotation.view[this.view_index]?.node;
+            if (node) {
+              node.focus();
             }
             this.grid_events.Publish({ type: 'annotation', event: 'update', annotation });
             this.editing_annotation = undefined;
@@ -3873,7 +3891,8 @@ export class Grid {
         if (!annotation.scaled_rect || annotation.scaled_rect.bottom < y) { continue; }
 
         const nodes: HTMLElement[] = [...this.layout.GetFrozenAnnotations(annotation)];
-        if (annotation.node) { nodes.push(annotation.node); }
+        const node = annotation.view[this.view_index]?.node;
+        if (node) { nodes.push(node); }
 
         if (y <= annotation.scaled_rect.top && annotation.move_with_cells) {
           move_annotation_list.push({ annotation, y: annotation.scaled_rect.top, nodes });
@@ -3999,8 +4018,9 @@ export class Grid {
             if (annotation.scaled_rect) {
               annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
             }
-            if (annotation.resize_callback) {
-              annotation.resize_callback.call(undefined);
+            const view = annotation.view[this.view_index];
+            if (view && view.resize_callback) {
+              view.resize_callback.call(undefined);
             }
           }
 
@@ -4135,7 +4155,8 @@ export class Grid {
         if (!annotation.scaled_rect || annotation.scaled_rect.right < x) { continue; }
 
         const nodes: HTMLElement[] = [...this.layout.GetFrozenAnnotations(annotation)];
-        if (annotation.node) { nodes.push(annotation.node); }
+        const node = annotation.view[this.view_index]?.node;
+        if (node) { nodes.push(node); }
 
         if (x <= annotation.scaled_rect.left && annotation.move_with_cells) {
           move_annotation_list.push({ annotation, x: annotation.scaled_rect.left, nodes });
@@ -4257,8 +4278,9 @@ export class Grid {
             if (annotation.scaled_rect) {
               annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
             }
-            if (annotation.resize_callback) {
-              annotation.resize_callback.call(undefined);
+            const view = annotation.view[this.view_index];
+            if (view && view.resize_callback) {
+              view.resize_callback.call(undefined);
             }
           }
 
@@ -7319,9 +7341,11 @@ export class Grid {
           });
           event.clipboardData.setData('text/x-treb-annotation', composite);
 
-          if (this.selected_annotation.node) {
+          const view = this.selected_annotation.view[this.view_index];
+
+          if (view && view.node) {
             // this.selected_annotation.node.innerHTML;
-            const node = this.selected_annotation.node.firstChild;
+            const node = view.node.firstChild;
             if (node) {
               const html = (SerializeHTML(node as Element) as HTMLElement).outerHTML;
 
@@ -7515,8 +7539,9 @@ export class Grid {
           }
         }
         const annotation = this.CreateAnnotation(composite.data, true, true);
-        if (annotation.node) {
-          const node = annotation.node;
+        const view = annotation.view[this.view_index];
+        if (view && view.node) {
+          const node = view.node;
           setTimeout(() => {
             node.focus();
           }, 1);
@@ -8145,8 +8170,9 @@ export class Grid {
     if (update_annotations_list.length) {
       this.layout.UpdateAnnotation(update_annotations_list);
       for (const annotation of resize_annotations_list) {
-        if (annotation.resize_callback) {
-          annotation.resize_callback.call(undefined);
+        const view = annotation.view[this.view_index];
+        if (view?.resize_callback) {
+          view.resize_callback.call(undefined);
         }
       }
     }
@@ -8362,8 +8388,9 @@ export class Grid {
     if (update_annotations_list.length) {
       this.layout.UpdateAnnotation(update_annotations_list);
       for (const annotation of resize_annotations_list) {
-        if (annotation.resize_callback) {
-          annotation.resize_callback.call(undefined);
+        const view = annotation.view[this.view_index];
+        if (view?.resize_callback) {
+          view.resize_callback.call(undefined);
         }
       }
     }

@@ -296,6 +296,8 @@ export interface ActivateSheetCommand extends SheetSelection {
 
   /** ... */
   tab_bar_event?: boolean;
+
+  force?: boolean;
 }
 
 /**
