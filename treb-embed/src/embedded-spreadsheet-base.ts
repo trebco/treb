@@ -463,7 +463,9 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   }
 
   /**
-   * constructor takes spreadsheet options
+   * constructor takes spreadsheet options. type should be implicit, either
+   * the default (here) or a subclass
+   * 
    * @internal
    */
   constructor(
