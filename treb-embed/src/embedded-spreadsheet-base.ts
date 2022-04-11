@@ -1220,14 +1220,60 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         case 'increase-decimal':
         case 'decrease-decimal':
           if (this.active_selection_style) {
+
             const format = NumberFormatCache.Get(this.active_selection_style.number_format || 'General');
             if (format.date_format) { break; }
             const clone = new NumberFormat(format.pattern);
-            if (event.command === 'increase-decimal') {
-              clone.IncreaseDecimal();
+
+            // special case: from general, we want to go to a relative number...
+            // for that to work, we need a (the first) value... then go from there.
+
+            // NOTE: this isn't really the way to identify this, we only want
+            // to do this if the style === 'General'. 
+
+            if (format.magic_decimal) {
+
+              // but what we're doing here, if there's a magic decimal, is
+              // measuring the decimal part of the first number we find. then
+              // we increase/decrease from that.
+
+              let len = 0;
+              let rng = this.GetRange();
+              
+              // find the first number...
+
+              if (!Array.isArray(rng)) {
+                rng = [[rng]];
+              }
+
+              find_number:
+              for (let i = 0; i < rng.length; i++) {
+                for (let j = 0; j < rng[i].length; j++) {
+                  if (typeof rng[i][j] === 'number') {
+                    const parts = format.BaseFormat(rng[i][j]);
+                    if (parts.parts && typeof parts.parts[1] === 'string') {
+                      len = parts.parts[1].length;
+                    }
+                    break find_number;
+                  }
+                }
+              }
+
+              if (event.command === 'increase-decimal') {
+                clone.SetDecimal(len + 1);
+              }
+              else {
+                clone.SetDecimal(Math.max(0, len - 1));
+              }
+              
             }
             else {
-              clone.DecreaseDecimal();
+              if (event.command === 'increase-decimal') {
+                clone.IncreaseDecimal();
+              }
+              else {
+                clone.DecreaseDecimal();
+              }
             }
             updated_style.number_format = clone.toString();
           }

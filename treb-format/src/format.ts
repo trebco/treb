@@ -252,6 +252,16 @@ export class NumberFormat {
 
   }
 
+  /** for decimal only, set an explicit number of digits */
+  public SetDecimal(digits: number): void {
+    for (const section of this.sections) {
+      if (!section.fraction_format) {
+        section.decimal_min_digits = digits;
+        section.decimal_max_digits = digits;
+      }
+    }
+  }
+
   /** 
    * mutate 
    * UPDATE: for fractional formats, increase the denominator digits
