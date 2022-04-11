@@ -143,6 +143,11 @@ export class Grid {
     this.view.active_sheet = sheet; 
   }
 
+  /** access the view index, if needed */
+  public get view_index() {
+    return this.view.view_index;
+  }
+
   public hide_selection = false;
 
   // new...

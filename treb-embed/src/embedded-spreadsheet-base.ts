@@ -1033,6 +1033,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         case 'selection':
           break;
         default:
+          view.UpdateAnnotations();
           this.grid.Update(true);
       }
     });
@@ -1050,6 +1051,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         case 'selection':
           break;
         default:
+          view.UpdateAnnotations();
           view.grid.Update(true);
       }
     });
