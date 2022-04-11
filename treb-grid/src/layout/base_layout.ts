@@ -792,7 +792,7 @@ export abstract class BaseLayout {
       // IE11 is not targeting the child nodes? why not? (...)
       // console.info('target', (event.target as HTMLElement)?.className);
 
-      if (event.target === move_target) {
+      if (event.target === move_target || (event.target !== resize_target && event.altKey)) {
 
         event.stopPropagation();
         event.preventDefault();
