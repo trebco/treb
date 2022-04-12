@@ -122,7 +122,10 @@ export abstract class Graph implements GraphCallbacks {
   /** returns the vertex at this address. creates it if necessary. */
   public GetVertex(address: ICellAddress, create?: boolean): SpreadsheetVertex | undefined {
 
-    if (!address.sheet_id) { throw new Error('getvertex with no sheet id'); }
+    if (!address.sheet_id) { 
+      console.info({address, create});
+      throw new Error('getvertex with no sheet id'); 
+    }
 
     // if (!this.cells) return undefined;
 

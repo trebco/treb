@@ -45,12 +45,22 @@ export const UnpackOne = (data: Float64Array) => {
   // we might have old-style data... how to know? should have
   // added a version flag (probably not, wasteful)
 
+  /*
+
   if (data.length === 3 + data[2]) {
+    console.info('m1');
     return { column: data[0], row: data[1], sheet_id: 0, data: data.subarray(3) };
   }
   else {
+    console.info('m2');
     return { column: data[0], row: data[1], sheet_id: data[2], data: data.subarray(4) };
   }
+  */
+
+  // huh. saw some collisions. probably not unexpected. 
+  // we can drop support for old data by now.
+
+  return { column: data[0], row: data[1], sheet_id: data[2], data: data.subarray(4) };
 
 };
 

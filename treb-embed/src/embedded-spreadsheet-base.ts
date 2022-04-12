@@ -763,7 +763,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
                   else {
                     console.info('annotation update event without update callback');
                   }
-                  this.calculator.UpdateAnnotations(event.annotation);
+                  this.calculator.UpdateAnnotations(event.annotation, this.grid.active_sheet);
                   break;
                 case 'resize':
                   if (view.resize_callback) {
