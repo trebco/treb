@@ -6110,20 +6110,24 @@ export class Grid {
     }
     else if (cell.ValueIsComplex()) {
 
-      const formatted = { 
-        real: cell.value.real.toString(),
-        imaginary: Math.abs(cell.value.imaginary).toString(),
-      };
+      if (cell.value.imaginary) {
+        if (cell.value.real) {
+          // both parts: render with spacing
+          cell_value = `${cell.value.real.toString()}${cell.value.imaginary < 0 ? ' - ' : ' + '}${Math.abs(cell.value.imaginary).toString()}i`;
+        }
+        else {
+          // imaginary only, leave sign
+          cell_value = cell.value.imaginary.toString() + 'i';
+        }
+      }
+      else {
+        // real only (or 0)
+        cell_value = cell.value.real.toString();
+      }
 
       if (Localization.decimal_separator === ',') {
-        formatted.real = formatted.real.replace(/\./, ',');
-        formatted.imaginary = formatted.imaginary.replace(/\./, ',');
+        cell_value = cell_value.replace(/\./, ',');
       }
-      
-      // formatting complex value (note for searching)
-      // NOTE that this format uses an ASCII "i"; intended to simplify editing.
-
-      cell_value = `${formatted.real}${cell.value.imaginary < 0 ? ' - ' : ' + '}${formatted.imaginary}i`;
 
     }
     else if (cell.ValueIsFormula()){ 
