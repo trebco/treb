@@ -2219,6 +2219,28 @@ export class Grid {
       throw new Error('invalid name');
     }
 
+    // check against functions
+
+    console.info('checking...', name, this.autocomplete_matcher?.function_map);
+
+    const compare = name.trim().toUpperCase();
+    if (this.autocomplete_matcher) {
+      for (const name of Object.keys(this.autocomplete_matcher.function_map)) {
+        if (compare === name.toUpperCase()) {
+          const descriptor = this.autocomplete_matcher.function_map[name];
+
+          // hmmm... we're not actually setting this type 
+          // (DescriptorType.Function). it seems like we only 
+          // set the _other_ type. sloppy.
+
+          if (descriptor.type !== DescriptorType.Token) {
+            throw new Error('invalid name');
+          }
+          break; // since we can't have two with the same name
+        }
+      }
+    }
+    
     name = validated;
 
     const command: SetNameCommand = {
@@ -9048,7 +9070,17 @@ export class Grid {
           break;
 
         case CommandKey.SetName:
+
+          // it seems like we're allowing overwriting names if those
+          // names exist as expressions or named ranges. however we
+          // should not allow overriding a built-in function name (or
+          // a macro function name?)
+
+          // FOR THE TIME BEING we're going to add that restriction to
+          // the calling function, which (atm) is the only way to get here.
+
           if (command.area) {
+
             if (this.model.named_expressions[command.name]) {
               delete this.model.named_expressions[command.name];
             }

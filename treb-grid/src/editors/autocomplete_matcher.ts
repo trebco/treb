@@ -58,9 +58,15 @@ export class AutocompleteMatcher {
 
   private function_names: string[] = [];
 
-  private function_map: {[index: string]: FunctionDescriptor} = {};
+  //private function_map: {[index: string]: FunctionDescriptor} = {};
 
   private argument_separator = Localization.argument_separator.charCodeAt(0);
+
+  /**
+   * making this public (and scrubbing the type). we need it public so we 
+   * can check collisions. I'm not sure why it was originally private...
+   */
+  public function_map: Record<string, FunctionDescriptor> = {};
 
   public RemoveFunctions(functions: FunctionDescriptor|FunctionDescriptor[]): void {
     if (!Array.isArray(functions)) { functions = [functions]; }

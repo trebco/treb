@@ -829,6 +829,10 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Simplify: {
+      arguments: [
+        { name: 'value' }, 
+        { name: 'significant digits' },
+      ],
       fn: Utils.ApplyAsArray2((value: number, significant_digits = 2): UnionValue => {
         significant_digits = significant_digits || 2;
         if (value === 0) {
