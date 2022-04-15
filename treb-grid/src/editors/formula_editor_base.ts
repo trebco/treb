@@ -414,11 +414,33 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
    */
   protected Reconstruct(): void {
 
-    if (!this.enable_reconstruct) return; // disabled
+    if (!this.enable_reconstruct) {
+      return; // disabled
+    }
 
-    if (!this.editor_node) return;
+    if (!this.editor_node) {
+      return;
+    }
+
     this.ParseDependencies();
-    if (!this.reference_list ) return;
+
+    // ---
+
+    // this was originally here and wasn't doing what it was supposed to
+    // do, because the reference list could be empty but still !false. however
+    // we're actually adding nodes for other things (calls) so we should leave
+    // it as is for now
+
+    if (!this.reference_list) {
+      return;
+    }
+
+    // my attempted fix
+    // if (!this.reference_list || !this.reference_list.length) {
+    //   return;
+    // }
+
+    // ---
 
     // here we would normally set spellcheck to true for strings,
     // but that seems to break IME (at least in chrome). what we 

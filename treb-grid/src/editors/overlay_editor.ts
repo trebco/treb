@@ -120,6 +120,15 @@ export class OverlayEditor extends FormulaEditorBase {
 
     this.edit_node.addEventListener('input', () => {
 
+      // this is a new thing that popped up in chrome (actually edge).
+      // not sure what's happening but this seems to clean it up.
+      // we technically could allow a newline here, but... call that a TODO
+
+      const first_child = this.edit_node.firstChild as HTMLElement;
+      if (first_child && first_child.tagName === 'BR') {
+        this.edit_node.removeChild(first_child);
+      }
+      
       // should we dynamically add this when editing? (...)
       if (!this.editing) { return; }
 
