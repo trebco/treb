@@ -58,7 +58,7 @@ export const UnpackOne = (data: Float64Array) => {
   */
 
   // huh. saw some collisions. probably not unexpected. 
-  // we can drop support for old data by now.
+  // we can drop support for old data by now. [this is biting riskamp.com!]
 
   return { column: data[0], row: data[1], sheet_id: data[2], data: data.subarray(4) };
 

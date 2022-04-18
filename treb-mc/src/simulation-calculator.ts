@@ -12,6 +12,18 @@ import * as PackResults from './pack-results';
 import { MCExpressionCalculator } from './simulation-expression-calculator';
 import { SimulationResultsData, SimulationState } from './simulation-model';
 
+// we are stuck on an old version of this, and I can't remember 
+// why; nor can I remember why this is better than any other solution 
+// (including built-in browser functions) 
+
+// whelp I guess I updated that, not broken, so NHNF?
+import * as Base64JS from 'base64-js';
+
+// testing (should remove)
+import * as z85 from 'z85-codec';
+import { TREBSimulationData } from '../../treb-embed/src/types';
+import { ExtendedSerializeOptions } from './extended-serialize-options';
+
 
 export class MCCalculator extends Calculator {
 
@@ -20,6 +32,10 @@ export class MCCalculator extends Calculator {
 
   // reference
   protected simulation_expression_calculator: MCExpressionCalculator;
+
+  // moved from embedded spreadsheet because of constructor
+  // order/initialization timing issues. FIXME: access (+accessor)
+  public last_simulation_data?: PackResults.ResultContainer;
 
   constructor(model: DataModel) {
     super(model);
@@ -233,11 +249,88 @@ export class MCCalculator extends Calculator {
     simulation_model.results = [];
     simulation_model.elapsed = 0;
     simulation_model.trials = 0;
+
+    this.last_simulation_data = undefined;
   }
 
   /** TODO */
   public ShiftSimulationResults(before_row: number, before_column: number, rows: number, columns: number) {
     // ...
+  }
+
+  public SerializeSimulationData(options: ExtendedSerializeOptions): TREBSimulationData {
+
+    const data: TREBSimulationData = {
+      elapsed: this.last_simulation_data.elapsed,
+      trials: this.last_simulation_data.trials,
+      results: undefined,
+    };
+
+    const results = this.last_simulation_data?.results || [];
+
+    // testing 32-bit data...
+
+    if (options.use_float32) {
+      data.bitness = 32;
+      data.results = results.map(result => {
+
+        // 64 -> 32
+        const array32 = Float32Array.from(new Float64Array(result)); 
+        return options.use_z85 ? 
+            z85.encode(new Uint8Array(array32.buffer)) : 
+            Base64JS.fromByteArray(new Uint8Array(array32.buffer));
+      });
+    }
+    else {
+      data.results = results.map(result => {
+        return options.use_z85 ? 
+            z85.encode(new Uint8Array(result)) : 
+            Base64JS.fromByteArray(new Uint8Array(result));
+      });
+    }
+
+    if (options.use_z85) { 
+      data.encoding = 'z85'; 
+    }
+
+    return data;
+
+  }
+
+  public UnserializeSimulationData(data: TREBSimulationData): void {
+
+    const z = data.encoding === 'z85';
+    this.last_simulation_data = data;
+
+    if (data.bitness === 32) {
+        this.last_simulation_data.results =
+          (this.last_simulation_data.results || []).map((entry) => {
+            if (z) {
+              const decoded = z85.decode(entry as any);
+              return decoded ? Float64Array.from(decoded).buffer : new Float64Array().buffer;
+            }
+            else {
+              const array32 = new Float32Array(Base64JS.toByteArray(entry as any).buffer);
+              return Float64Array.from(array32).buffer;
+            }
+          });
+
+      }
+      else {
+        this.last_simulation_data.results =
+          (this.last_simulation_data.results || []).map((entry) => {
+            if (z) {
+              const decoded = z85.decode(entry as any);
+              return decoded ? decoded.buffer : new Uint8Array().buffer;
+            }
+            else {
+              return Base64JS.toByteArray(entry as any).buffer;
+            }
+          });
+      }
+
+      this.UpdateResults(false);
+
   }
 
   /**
@@ -256,14 +349,16 @@ export class MCCalculator extends Calculator {
    * load it may not yet be available, and we are going to mark it dirty
    * later anyway -- so pass false to skip.
    */
-  public UpdateResults(data?: PackResults.ResultContainer, model = this.model, set_dirty = true){
+  public UpdateResults(set_dirty = true){
 
-    if (!model) {
-      throw new Error('UpdateResults called without model');
-    }
+    //if (!model) {
+    //  throw new Error('UpdateResults called without model');
+    //}
 
     const simulation_model = this.simulation_expression_calculator.simulation_model;
 
+    const data = this.last_simulation_data;
+    
     if (!data) {
       simulation_model.results = [];
       simulation_model.elapsed = 0;
@@ -294,11 +389,13 @@ export class MCCalculator extends Calculator {
 
         simulation_model.results[entry.sheet_id][entry.column][entry.row] = entry.data as any;
         if (set_dirty) {
+          // console.info('set dirty', entry);
           this.SetDirty(entry);
         }
 
       }
     }
+
   }
 
   /*

@@ -1,6 +1,5 @@
 
 import { EmbeddedSpreadsheetBase } from '../../treb-embed/src/embedded-spreadsheet-base';
-//import { ResultContainer, MCCalculator, CalculationWorker, WorkerMessage, ExtendedSerializeOptions } from 'treb-mc';
 import { MCCalculator } from './simulation-calculator';
 import { ResultContainer } from './pack-results';
 import { CalculationWorker, WorkerMessage } from './worker-types';
@@ -11,16 +10,6 @@ import { Localization, ICellAddress, IsCellAddress } from 'treb-base-types';
 import { MacroFunction, SerializedNamedExpression } from 'treb-grid';
 import { EmbeddedSheetEvent, CompositeEmbeddedSheetEvent, TREBDocument } from '../../treb-embed/src/types';
 
-// we are stuck on an old version of this, and I can't remember 
-// why; nor can I remember why this is better than any other solution 
-// (including built-in browser functions) 
-
-// whelp I guess I updated that, not broken, so NHNF?
-import * as Base64JS from 'base64-js';
-
-// testing (should remove)
-import * as z85 from 'z85-codec';
-
 import * as PackResults from './pack-results'; // <-- why direct?
 
 // config
@@ -29,11 +18,6 @@ import { Calculator } from 'treb-calculator/src'; // <-- why direct?
 import { EmbeddedSpreadsheetOptions, RunSimulationOptions } from '../../treb-embed/src/options';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
-
-  // public calculator!: MCCalculator;
-
-  /* for storing; also inefficient. pack, zip, do something. */
-  protected last_simulation_data?: ResultContainer;
 
   /** seed state for "replay simulation" */
   protected replay_buffer: number[] = [];
@@ -51,7 +35,6 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
    * NOTE: why is this managed by this class, and not by calculator?
    * it seems like that would better encapsulate the calculation.
    */
-  // private worker?: CalculationWorker;
   private workers: CalculationWorker[] = [];
 
   private simulation_status = { 
@@ -112,44 +95,14 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
    */
   public SerializeDocument(options: ExtendedSerializeOptions = {}): TREBDocument {
 
+    // add default, unless it's explicitly set
+
+    options = {preserve_simulation_data: true, ...options};
+
     const serialized = super.SerializeDocument(options);
 
-    if (options.preserve_simulation_data && this.last_simulation_data) {
-
-      // it might be useful to prune this a bit, specifically to prune
-      // results that are not referenced. can we use the graph to do that?
-
-      serialized.simulation_data = {
-        elapsed: this.last_simulation_data.elapsed,
-        trials: this.last_simulation_data.trials,
-        results: undefined,
-      };
-
-      // testing 32-bit data...
-
-      if (options.use_float32) {
-        serialized.simulation_data.bitness = 32;
-        serialized.simulation_data.results = (this.last_simulation_data.results || []).map(result => {
-
-          // 64 -> 32
-          const array32 = Float32Array.from(new Float64Array(result)); 
-          return options.use_z85 ? 
-              z85.encode(new Uint8Array(array32.buffer)) : 
-              Base64JS.fromByteArray(new Uint8Array(array32.buffer));
-        });
-      }
-      else {
-        serialized.simulation_data.results = (this.last_simulation_data.results || []).map(result => {
-          return options.use_z85 ? 
-              z85.encode(new Uint8Array(result)) : 
-              Base64JS.fromByteArray(new Uint8Array(result));
-        });
-      }
-
-      if (options.use_z85) { 
-        serialized.simulation_data.encoding = 'z85'; 
-      }
-
+    if (options.preserve_simulation_data && this.calculator.last_simulation_data) {
+      serialized.simulation_data = this.calculator.SerializeSimulationData(options);
     }
 
     return serialized;
@@ -381,7 +334,6 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
 
   protected FlushSimulationResults(): void {
     this.calculator.FlushSimulationResults();
-    this.last_simulation_data = undefined;
   }
 
   /**
@@ -471,36 +423,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
     super.ImportDocumentData(data, override_sheet);
 
     if (data.simulation_data) {
-      const z = data.simulation_data.encoding === 'z85';
-      this.last_simulation_data = data.simulation_data;
-
-      if (data.simulation_data.bitness === 32) {
-        this.last_simulation_data.results =
-          (this.last_simulation_data.results || []).map((entry) => {
-            if (z) {
-              const decoded = z85.decode(entry as any);
-              return decoded ? Float64Array.from(decoded).buffer : new Float64Array().buffer;
-            }
-            else {
-              const array32 = new Float32Array(Base64JS.toByteArray(entry as any).buffer);
-              return Float64Array.from(array32).buffer;
-            }
-          });
-
-      }
-      else {
-        this.last_simulation_data.results =
-          (this.last_simulation_data.results || []).map((entry) => {
-            if (z) {
-              const decoded = z85.decode(entry as any);
-              return decoded ? decoded.buffer : new Uint8Array().buffer;
-            }
-            else {
-              return Base64JS.toByteArray(entry as any).buffer;
-            }
-          });
-      }
-      this.calculator.UpdateResults(this.last_simulation_data, this.grid.model, false);
+      this.calculator.UnserializeSimulationData(data.simulation_data);
     }
     else {
       this.FlushSimulationResults();
@@ -556,10 +479,13 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
 
         this.UpdateProgress(message.percent_complete, index);
         this.simulation_status.results[index] = message.trial_data;
-        this.last_simulation_data =
+
+        this.calculator.last_simulation_data =
           PackResults.ConsolidateResults(this.simulation_status.results.filter(test => !!test));
 
-        this.calculator.UpdateResults(this.last_simulation_data);
+        // this.calculator.UpdateResults(this.calculator.last_simulation_data);
+        this.calculator.UpdateResults();
+
         this.Recalculate().then(() => {
           this.workers[index].postMessage({ type: 'step' });
           // if(!this.grid.headless) { this.Focus() }
@@ -591,11 +517,13 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
         if (this.simulation_status.completed === this.simulation_status.threads) {
 
           this.simulation_status.running = false;
-          this.last_simulation_data =
+          this.calculator.last_simulation_data =
             PackResults.ConsolidateResults(this.simulation_status.results);
 
           requestAnimationFrame(() => {
-            this.calculator.UpdateResults(this.last_simulation_data);
+            //this.calculator.UpdateResults(this.calculator.last_simulation_data);
+            this.calculator.UpdateResults();
+            
             this.Recalculate().then(() => {
               if(!this.grid.headless) { this.Focus() }
             });
@@ -604,8 +532,8 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
               this.dialog?.HideDialog();
               this.Publish({ 
                 type: 'simulation-complete',
-                elapsed: this.last_simulation_data?.elapsed || 0,
-                trials: this.last_simulation_data?.trials || 0,
+                elapsed: this.calculator.last_simulation_data?.elapsed || 0,
+                trials: this.calculator.last_simulation_data?.trials || 0,
                 // threads: this.simulation_status.threads,
               });
 
