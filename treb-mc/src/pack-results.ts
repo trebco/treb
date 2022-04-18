@@ -45,6 +45,11 @@ export const UnpackOne = (data: Float64Array) => {
   // we might have old-style data... how to know? should have
   // added a version flag (probably not, wasteful)
 
+  if (data.length === 3 + data[2] && data[2] === 5000) {
+    console.warn('old-style data');
+    return { column: data[0], row: data[1], sheet_id: 0, data: data.subarray(3) };
+  }
+
   /*
 
   if (data.length === 3 + data[2]) {
