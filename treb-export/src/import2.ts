@@ -365,6 +365,14 @@ export class Importer {
               type: ValidationType.List,
               list: parse_result.expression.value.toString().split(/,/).map(value => {
                 const tmp = this.parser.Parse(value);
+                
+                // if type is "group", that means we saw some spaces. this 
+                // is (probably) an unquoted string literal. for the time
+                // being let's assume that. need a counterexample.
+
+                if (tmp.expression?.type === 'group' && /\s/.test(value)) {
+                  return value;
+                }
                 if (tmp.expression?.type === 'literal') {
                   return tmp.expression.value;
                 }
