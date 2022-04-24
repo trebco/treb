@@ -3,7 +3,7 @@ import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, Union
          ArrayUnion, IArea, IsCellAddress} from 'treb-base-types';
          
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
-         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing } from 'treb-parser';
+         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing, QuotedSheetNameRegex } from 'treb-parser';
 
 import { Graph } from './dag/graph';
 import { SpreadsheetVertex } from './dag/spreadsheet_vertex';
@@ -26,6 +26,43 @@ import { DataModel, Annotation, FunctionDescriptor, Sheet } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
 
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError } from './function-error';
+import { RangeReference } from 'treb-embed/src/embedded-spreadsheet-base';
+
+export interface NotifierType {
+
+  /** opaque user data */
+  data?: any;
+
+  /** function callback */
+  callback?: (data?: any) => void;
+
+}
+
+interface InternalNotifierType {
+
+  /** 
+   * assigned ID. this is (optionally) used for mamagement 
+   */
+  id: number;
+
+  /** client */
+  notifier: NotifierType;
+
+  /** node */
+  vertex: LeafVertex;
+
+  /**  */
+  state: number;
+
+  /** 
+   * we preserve our target ranges instead of the formula. this allows us
+   * to survive sheet name changes, as well as to rebuild when the original
+   * context sheet disappears.
+   */
+  references: Area[];
+ 
+
+}
 
 /**
  * Calculator now extends graph. there's a 1-1 relationship between the
@@ -55,6 +92,9 @@ export class Calculator extends Graph {
   protected readonly library = new FunctionLibrary();
 
   protected registered_libraries: Record<string, boolean> = {};
+
+  protected notifier_id_source = 100;
+  protected notifiers: InternalNotifierType[] = [];
 
   // protected graph: Graph = new Graph(); // |null = null;
   // protected status: GraphStatus = GraphStatus.OK;
@@ -870,6 +910,7 @@ export class Calculator extends Graph {
     if (this.full_rebuild_required) {
       subset = undefined;
       this.UpdateAnnotations();
+      this.UpdateNotifiers();
       this.full_rebuild_required = false; // unset
     }
 
@@ -885,14 +926,39 @@ export class Calculator extends Graph {
       console.info('calculation error trapped');
     }
 
+    const callbacks: NotifierType[] = [];
+    for (const notifier of this.notifiers) {
+      if (notifier.vertex.state_id !== notifier.state) {
+        notifier.state = notifier.vertex.state_id;
+        if (notifier.notifier.callback) {
+          callbacks.push(notifier.notifier);
+        }
+      }
+    }
+
+    if (callbacks.length) {
+      Promise.resolve().then(() => {
+        for (const notifier of callbacks) {
+          if (notifier.callback) {
+            notifier.callback.call(undefined, notifier);
+          }
+        }
+      });
+    }
+
   }
 
   /**
-   * resets graph and graph status
+   * resets graph and graph status. this is called when structure changes --
+   * such as adding or removing sheets -- so we need to preserve notifiers
+   * across resets. we need to either add a flag or add a separate method
+   * to handle clearing notifiers.
    */
   public Reset(): void {
+
     this.FlushTree();
     this.AttachModel();
+
     this.full_rebuild_required = true;
   }
 
@@ -1052,6 +1118,10 @@ export class Calculator extends Graph {
 
     this.UpdateAnnotations(); // all
 
+    // and notifiers
+
+    this.UpdateNotifiers();
+
     // there's a weird back-and-forth that happens here 
     // (calculator -> graph -> calculator) to check for volatile
     // cells. it could probably be simplified.
@@ -1115,6 +1185,183 @@ export class Calculator extends Graph {
       }
     }
     return references;
+  }
+
+  /** remove all notifiers */
+  public RemoveNotifiers(): void {
+    for (const internal of this.notifiers) {
+      if (internal.vertex) {
+        internal.vertex.Reset();
+        this.RemoveLeafVertex(internal.vertex);
+      }
+    }
+    this.notifiers = [];
+  }
+
+  /** 
+   * remove specified notifier. you can pass the returned ID or the original
+   * object used to create it.
+   */
+  public RemoveNotifier(notifier: NotifierType|number): void {
+
+    let internal: InternalNotifierType|undefined;
+
+    this.notifiers = this.notifiers.filter(test => {
+      if (test.id === notifier || test === notifier) {
+        internal = test;
+        return false;
+      }
+      return true;
+    });
+
+    if (!internal) {
+      // FIXME: error
+      console.warn('invalid notifier');
+    }
+    else {
+
+      // remove vertex
+      if (internal.vertex) {
+        internal.vertex.Reset();
+        this.RemoveLeafVertex(internal.vertex);
+      }
+
+    }
+
+  }
+
+  /**
+   * update a notifier or notifiers, or the entire list (default).
+   */
+  protected UpdateNotifiers(notifiers: InternalNotifierType|InternalNotifierType[] = this.notifiers): void {
+
+    if (!Array.isArray(notifiers)) {
+      notifiers = [notifiers];
+    }
+
+    for (const notifier of notifiers) {
+
+      if (notifier.vertex) {
+        notifier.vertex.Reset();
+      }
+      else {
+        notifier.vertex = new LeafVertex();
+      }
+
+      // construct formula (inlining)
+
+      const string_reference = notifier.references.map(reference => {
+
+        // I don't want to go through strings here... OTOH if we build an 
+        // expression manually it's going to be fragile to changes in the
+        // parser...
+
+        let sheet_name = '';
+        let base: ICellAddress;
+        let label = '';
+
+        if (reference.count === 1) {
+          base = reference.start;
+          label = Area.CellAddressToLabel(reference.start, false);
+        }
+        else {
+          base = reference.start;
+          label = Area.CellAddressToLabel(reference.start, false) + ':' +
+                  Area.CellAddressToLabel(reference.end, false);
+        }
+
+        for (const sheet of this.model.sheets) {
+          if (sheet.id === base.sheet_id) {
+            sheet_name = sheet.name;
+            break;
+          }
+        }
+
+        if (!sheet_name) {
+          throw new Error('invalid sheet in reference');
+        }
+
+        if (QuotedSheetNameRegex.test(sheet_name)) {
+          return `'${sheet_name}'!${label}`;
+        }
+
+        return `${sheet_name}!${label}`;
+
+      }).join(',');
+
+      // the function (here "Notify") is never called. we're using a leaf
+      // node, which bypasses the standard calculation system and only updates
+      // a state reference when dirty. so here it's just an arbitrary string.
+
+      // still, we should use something that's not going to be used elsewhere
+      // in the future...
+
+      const formula = `=Internal.Notify(${string_reference})`;
+      // console.info('f', formula);
+
+      // we (theoretically) guarantee that all refeerences are qualified,
+      // so we don't need a context (active sheet) for relative references.
+      // we can just use model[0]
+
+      this.AddLeafVertex(notifier.vertex);
+      this.UpdateLeafVertex(notifier.vertex, formula, this.model.sheets[0]);
+
+      // update state (gets reset?)
+
+      notifier.state = notifier.vertex.state_id;
+      
+    }
+  }
+
+  /**
+   * new notification API (testing)
+   */
+  public AddNotifier(references: RangeReference|RangeReference[], notifier: NotifierType, context: Sheet): number {
+
+    if (!Array.isArray(references)) {
+      references = [references];
+    }
+
+    // even if these are strings we want to properly resolve them so
+    // we can store qualified references
+   
+    const qualified: Area[] = references.map(reference => {
+
+      if (typeof reference === 'string') {
+        return this.ResolveArea(reference, context).Clone();
+      }
+      if (IsCellAddress(reference)) {
+        return new Area({
+            ...reference, 
+            sheet_id: reference.sheet_id || context.id,
+          });
+      }
+
+      return new Area({
+          ...reference.start, 
+          sheet_id: reference.start.sheet_id || context.id,
+        }, {
+          ...reference.end, 
+        });
+
+    });
+
+    const internal: InternalNotifierType = {
+      id: this.notifier_id_source++,
+      notifier,
+      references: qualified,
+      vertex: new LeafVertex(), 
+      state: 0,
+    };
+
+    // update
+    this.UpdateNotifiers(internal);
+
+    // push to notifications
+    this.notifiers.push(internal);
+    
+    return internal.id;
+
   }
 
   public RemoveAnnotation(annotation: Annotation): void {
