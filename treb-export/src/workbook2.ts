@@ -1,6 +1,13 @@
 
 import JSZip from 'jszip';
-import * as xmlparser from 'fast-xml-parser';
+// import * as xmlparser from 'fast-xml-parser';
+import { XMLParser } from 'fast-xml-parser';
+import { XMLUtils, XMLOptions, XMLOptions2 } from './xml-utils';
+
+// const xmlparser = new XMLParser();
+const xmlparser1 = new XMLParser(XMLOptions);
+const xmlparser2 = new XMLParser(XMLOptions2);
+
 // import * as he from 'he';
 
 //import { Drawing, TwoCellAnchor, CellAnchor } from './drawing/drawing';
@@ -13,7 +20,6 @@ import { Theme } from './workbook-theme2';
 import { Sheet, VisibleState } from './workbook-sheet2';
 import { RelationshipMap } from './relationship';
 
-import { XMLUtils, XMLOptions, XMLOptions2 } from './xml-utils';
 
 /*
 const XMLTypeMap = {
@@ -90,10 +96,7 @@ export class Workbook {
     // force array on <Relationship/> elements, but be slack on the rest
     // (we know they are single elements)
     //
-    const xml = xmlparser.parse(data || '', {
-      ...XMLOptions2,
-      arrayMode: /Relationship$/,
-    });
+    const xml = xmlparser2.parse(data || '');
 
     for (const relationship of xml.Relationships?.Relationship || []) {
       const id = relationship.a$.Id;
@@ -115,22 +118,22 @@ export class Workbook {
     
     // shared strings
     let data = await this.zip.file('xl/sharedStrings.xml')?.async('text') as string;
-    let xml = xmlparser.parse(data || '', XMLOptions2);
+    let xml = xmlparser2.parse(data || '');
     this.shared_strings.FromXML(xml);
 
     // theme
     data = await this.zip.file('xl/theme/theme1.xml')?.async('text') as string;
-    xml = xmlparser.parse(data || '', XMLOptions2);
+    xml = xmlparser2.parse(data);
     this.theme.FromXML(xml);
 
     // styles
     data = await this.zip.file('xl/styles.xml')?.async('text') as string;
-    xml = xmlparser.parse(data || '', XMLOptions2);
+    xml = xmlparser2.parse(data);
     this.style_cache.FromXML(xml, this.theme);
 
     // read workbook
     data = await this.zip.file('xl/workbook.xml')?.async('text') as string;
-    xml = xmlparser.parse(data || '', XMLOptions2);
+    xml = xmlparser2.parse(data);
 
     const workbook_views = XMLUtils.FindAll(xml, 'workbook/bookViews/workbookView');
 
@@ -167,10 +170,7 @@ export class Workbook {
         worksheet.rels_path = worksheet.path.replace('worksheets', 'worksheets/_rels') + '.rels';
 
         data = await this.zip.file(worksheet.path)?.async('text') as string;
-        worksheet.sheet_data = xmlparser.parse(data || '', XMLOptions2);
-
-        // data = await this.zip.file(worksheet.rels_path)?.async('text') as string;
-        // worksheet.rels_data = xmlparser.parse(data || '', XMLOptions2);
+        worksheet.sheet_data = xmlparser2.parse(data || '');
         worksheet.rels = await this.ReadRels(worksheet.rels_path);
 
         worksheet.Parse();
@@ -191,7 +191,7 @@ export class Workbook {
     if (!data) {
       return undefined;
     }
-    const xml = xmlparser.parse(data, XMLOptions2);
+    const xml = xmlparser2.parse(data);
 
     const drawing_rels = await this.ReadRels(reference.replace(/^..\/drawings/, 'xl/drawings/_rels') + '.rels');
 
@@ -244,7 +244,7 @@ export class Workbook {
     const data = await this.zip.file(reference.replace(/^../, 'xl'))?.async('text') as string;
     if (!data) { return undefined; }
 
-    const xml = xmlparser.parse(data, XMLOptions);
+    const xml = xmlparser1.parse(data);
 
     const result: ChartDescription = {
       type: ChartType.Unknown

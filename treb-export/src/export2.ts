@@ -19,7 +19,9 @@ import { SerializedSheet } from 'treb-grid';
 import { IArea, Area, ICellAddress, Cells, ValueType, CellValue, Style, DataValidation, ValidationType,
          AnnotationLayout, Corner as LayoutCorner } from 'treb-base-types';
 
-import * as xmlparser from 'fast-xml-parser';
+// import * as xmlparser from 'fast-xml-parser';
+import { XMLParser, XmlBuilderOptions, XMLBuilder } from 'fast-xml-parser';
+
 import { SharedStrings } from './shared-strings2';
 import { StyleCache, XlColor, BorderEdge } from './workbook-style2';
 import { Theme } from './workbook-theme2';
@@ -38,25 +40,28 @@ export class Exporter {
 
   public zip?: JSZip;
 
-  public xmloptions: Partial<xmlparser.J2xOptions> = {
+  public xmloptions: Partial<XmlBuilderOptions> = {
     format: true,
-    attrNodeName: 'a$',
+    //attrNodeName: 'a$',
+    attributesGroupName: 'a$',
     textNodeName: 't$',
     ignoreAttributes: false,
-    supressEmptyNode: true,
-    tagValueProcessor: a => (typeof a === 'string') ? he.encode(a, { useNamedReferences: true}) : a,
+    suppressEmptyNode: true,
+    tagValueProcessor: (name: string, a: string) => (typeof a === 'string') ? he.encode(a, { useNamedReferences: true}) : a,
 
     // there's a "isAttributeValue" for decode, but no option for encode?
     // we only want to encode ' and "
 
     // attrValueProcessor: a => (typeof a === 'string') ? he.encode(a, { useNamedReferences: true }) : a,
 
-    attrValueProcessor: a => (typeof a === 'string') ? 
+    attributeValueProcessor: (name: string, a: string) => (typeof a === 'string') ? 
       a.replace(/"/g, '&quot;').replace(/'/g, '&apos;') : a,
 
   };
 
-  public xmlparser = new xmlparser.j2xParser(this.xmloptions);
+  // public xmlparser = new xmlparser.j2xParser(this.xmloptions);
+  public xmlbuilder1 = new XMLBuilder(this.xmloptions);
+  public xmlparser2 = new XMLParser(XMLOptions2);
 
   // FIXME: need a way to share/pass parser flags
   public parser = new Parser();
@@ -115,7 +120,10 @@ export class Exporter {
       },
     };
 
-    const xml = XMLDeclaration + this.xmlparser.parse(dom);
+    const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
+
+    console.info({dom, xml});
+
     if (dump) {
       console.info(xml);
     }
@@ -379,7 +387,7 @@ export class Exporter {
     //  dxfs
     //  tableStyles
     
-    const xml = XMLDeclaration + this.xmlparser.parse(dom);
+    const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
     // console.info(xml);
     await this.zip?.file('xl/styles.xml', xml);
 
@@ -408,14 +416,14 @@ export class Exporter {
       },
     };
 
-    const xml = XMLDeclaration + this.xmlparser.parse(dom);
+    const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
     await this.zip?.file('xl/sharedStrings.xml', xml);
 
   }
 
   /**
    * FIXME: merge with workbook function (put somewhere else)
-   */
+   * /
   public async ReadRels(zip?: JSZip, path = ''): Promise<RelationshipMap> {
 
     const rels: RelationshipMap = {};
@@ -424,10 +432,8 @@ export class Exporter {
     // force array on <Relationship/> elements, but be slack on the rest
     // (we know they are single elements)
     //
-    const xml = xmlparser.parse(data || '', {
-      ...XMLOptions2,
-      arrayMode: /Relationship$/,
-    });
+    const xml = this.xmlparser2.parse(data || '');
+    console.info(path, xml);
 
     for (const relationship of xml.Relationships?.Relationship || []) {
       const id = relationship.a$.Id;
@@ -441,6 +447,7 @@ export class Exporter {
     return rels;
 
   }
+  */
 
   public StyleFromCell(sheet: SerializedSheet, style_cache: StyleCache, row: number, column: number, style: Style.Properties = {}) {
 
@@ -997,10 +1004,11 @@ export class Exporter {
     const theme = new Theme();
 
     let data = await this.zip?.file('xl/theme/theme1.xml')?.async('text') as string;
-    theme.FromXML(xmlparser.parse(data || '', XMLOptions2));
+    theme.FromXML(this.xmlparser2.parse(data || ''));
+    // console.info({data, xml: this.xmlparser2.parse(data)})
 
     data = await this.zip?.file('xl/styles.xml')?.async('text') as string;
-    style_cache.FromXML(xmlparser.parse(data || '', XMLOptions2), theme);
+    style_cache.FromXML(this.xmlparser2.parse(data || ''), theme);
 
     // reset counters
 
@@ -1586,14 +1594,14 @@ export class Exporter {
 
         for (const {chart} of drawing.charts) {
           const dom = chart.toJSON();
-          const xml = XMLDeclaration + this.xmlparser.parse(dom);
+          const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
           await this.zip?.file(`xl/charts/chart${chart.index}.xml`, xml);
           await this.WriteRels(chart.relationships, `xl/charts/_rels/chart${chart.index}.xml.rels`);
         }
 
         await this.WriteRels(drawing.relationships, `xl/drawings/_rels/drawing${drawing.index}.xml.rels`);
 
-        const xml = XMLDeclaration + this.xmlparser.parse(drawing.toJSON());
+        const xml = XMLDeclaration + this.xmlbuilder1.build(drawing.toJSON());
 
         await this.zip?.file(`xl/drawings/drawing${drawing.index}.xml`, xml);
 
@@ -1621,7 +1629,7 @@ export class Exporter {
       // be to use the renderer on blocks and then assemble the blocks ourselves.
 
       dom.worksheet.dimension.a$.ref = new Area(extent.start, extent.end).spreadsheet_label;
-      const xml = XMLDeclaration + this.xmlparser.parse(dom);
+      const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
 
       // write this into the file
 
@@ -1697,7 +1705,7 @@ export class Exporter {
       },
     };
 
-    const workbook_xml = XMLDeclaration + this.xmlparser.parse(workbook_dom);
+    const workbook_xml = XMLDeclaration + this.xmlbuilder1.build(workbook_dom);
     // console.info(workbook_xml);
     await this.zip?.file(`xl/workbook.xml`, workbook_xml);
 
@@ -1768,7 +1776,7 @@ export class Exporter {
       },
     };
 
-    const content_types_xml = XMLDeclaration + this.xmlparser.parse(content_types_dom);
+    const content_types_xml = XMLDeclaration + this.xmlbuilder1.build(content_types_dom);
     // console.info(content_types_xml);
     await this.zip?.file(`[Content_Types].xml`, content_types_xml);
 

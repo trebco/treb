@@ -1,30 +1,41 @@
 
 import * as he from 'he';
-import * as xmlparser from 'fast-xml-parser';
+// import * as xmlparser from 'fast-xml-parser';
+import { X2jOptions } from 'fast-xml-parser';
 
-export const XMLTagProcessor = (value: string, name: string): string => {
+//export const XMLTagProcessor = (value: string, name: string): string => {
+export const XMLTagProcessor = (name: string, value: string): string => {
   return he.decode(value);
 };
 
-export const XMLOptions: Partial<xmlparser.X2jOptions> = {
+export const XMLOptions: Partial<X2jOptions> = {
   ignoreAttributes: false,
   attributeNamePrefix: '__',
   trimValues: false,
   textNodeName: 'text__',
   tagValueProcessor: XMLTagProcessor,
+  ignoreDeclaration: true,
 };
 
 /**
  * group attributes under `a$`, and don't add attribute prefixes (should be 
  * implicit on that option, but hey).
  */
-export const XMLOptions2: Partial<xmlparser.X2jOptions> = {
+export const XMLOptions2: Partial<X2jOptions> = {
   ignoreAttributes: false,
-  attrNodeName: 'a$',
+  // attrNodeName: 'a$', // FXP v4
+  attributesGroupName: 'a$',
   attributeNamePrefix: '',
   textNodeName: 't$',
   trimValues: false,
-  arrayMode: false,
+  ignoreDeclaration: true,
+
+  // arrayMode: false, // this was removed in FXP, but false is default anyway
+
+  isArray: (tagName: string, jPath: string, isLeafNode: boolean, isAttribute: boolean) => {
+    return /Relationship$/.test(tagName);
+  },
+
   tagValueProcessor: XMLTagProcessor,
 };
 
