@@ -1,20 +1,4 @@
 
-//------------------------------------------------------------------------------
-// this is what this file used to look like. preserving in case we ever
-// need to rebuild legacy.
-//------------------------------------------------------------------------------
-
-// old index
-// import './main';
-
-// why are we exporting this? (...)
-// export { EmbeddedSpreadsheet } from './embedded-spreadsheet';
-
-//------------------------------------------------------------------------------
-
-// non-mc version
-
-// import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { CompositeSheet } from './composite-sheet';
 import { AutoEmbedManager } from './auto-embed';
 import { CreateSheetOptions, EmbeddedSpreadsheetOptions } from './options';
@@ -22,7 +6,6 @@ import { NumberFormatCache, ValueParser } from 'treb-format';
 import { Complex, Localization } from 'treb-base-types';
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
 import { Util as ChartUtils, Chart } from 'treb-charts';
-
 
 interface TREBNamespace {
 
@@ -77,19 +60,7 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
     if (EmbeddedSpreadsheetBase.enable_engine) {
       value.CreateEngine = (options = {}) => new EmbeddedSpreadsheetBase(options);
     }
-
-    // testing
-
-    /*
-    if (EmbeddedSpreadsheetBase.enable_utils) {
-      value.Localization = Localization;
-      value.NumberFormatCache = NumberFormatCache;
-      value.ValueParser = ValueParser;
-      value.ChartUtils = ChartUtils;
-      value.CreateChart = () => new Chart();
-    }
-    */
-
+  
     // FIXME: writable and configurable default to false, you don't
     // need to define them here. 
 
