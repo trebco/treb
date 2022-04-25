@@ -6,7 +6,15 @@
   ],
   "include": [
     "../package.json",
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "../treb-utils/**/*.ts",
+    "../treb-grid/**/*.ts",
+    "../treb-embed/**/*.ts",
+    "../treb-charts/**/*.ts",
+    "../treb-format/**/*.ts",
+    "../treb-parser/**/*.ts",
+    "../treb-calculator/**/*.ts",
+    "../treb-base-types/**/*.ts"
   ],
   "exclude": [
     "src/export-worker/index-legacy.ts"

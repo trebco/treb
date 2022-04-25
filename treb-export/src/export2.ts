@@ -33,7 +33,7 @@ import { Parser, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
 
 // FIXME: move
 import { Chart, ChartOptions } from './drawing2/chart2';
-import { ImageOptions, EmbeddedImage } from './drawing2/embedded-image';
+import { ImageOptions } from './drawing2/embedded-image';
 import { Drawing, TwoCellAnchor } from './drawing2/drawing2';
 
 export class Exporter {
