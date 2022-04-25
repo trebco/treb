@@ -122,7 +122,7 @@ export class Exporter {
 
     const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
 
-    console.info({dom, xml});
+    // console.info({dom, xml});
 
     if (dump) {
       console.info(xml);
