@@ -1,4 +1,4 @@
-/*! API v18.4. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+/*! API v18.5. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -149,6 +149,15 @@ export declare class EmbeddedSpreadsheet {
 
     /** headless state */
     set headless(value: boolean);
+
+    /**
+     * this is a loose representation of the document change state, with the
+     * value being 0 when a document is loaded and incremented on any data,
+     * structure or document change. it can be used to track changes or
+     * identify a particular state (such as when you serialize it) for
+     * comparison.
+     */
+    get state(): number;
 
     /**
      * Use this function to batch multiple document changes. Essentially the

@@ -442,6 +442,17 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   }
 
   /**
+   * this is a loose representation of the document change state, with the 
+   * value being 0 when a document is loaded and incremented on any data, 
+   * structure or document change. it can be used to track changes or
+   * identify a particular state (such as when you serialize it) for 
+   * comparison.
+   */
+  public get state() {
+    return this.file_version;
+  }
+
+  /**
    * constructor takes spreadsheet options. type should be implicit, either
    * the default (here) or a subclass
    * 
