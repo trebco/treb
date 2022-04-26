@@ -442,7 +442,14 @@ export class NumberFormat {
     return parts;
   }
 
-  /** temporary */
+  /** 
+   * temporary 
+   * 
+   * FIXME: merge with FormatParts, use a test to check if it's complex?
+   * OTOH that adds a test to every format which is probably wasteful...
+   * although we can check for 'number' first
+   * 
+   */
   public FormatComplex(value: Complex): TextPart[] {
 
     // formatting complex value (note for searching)
