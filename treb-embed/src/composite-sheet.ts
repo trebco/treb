@@ -356,9 +356,11 @@ export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
 
     let script_path = process.env.BUILD_ENTRY_MAIN || '';
 
+    /*
     if (EmbeddedSpreadsheetBase.treb_language) {
       script_path += '-' + EmbeddedSpreadsheetBase.treb_language;
     }
+    */
 
     if (!/\.js$/.test(script_path)) script_path += '.js';
     let treb_path = EmbeddedSpreadsheetBase.treb_base_path;

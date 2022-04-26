@@ -200,32 +200,11 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   /** @internal */
   public static treb_base_path = '';
 
-  /** 
-   * this is the interepreted language, i.e. es5/es6. we used to use this 
-   * to identify the version when loading workers. it's probably not relevant
-   * any longer since we dropped legacy support.
-   * 
-   * TODO/FIXME: remove
-   * 
-   * @internal 
-   */
-  public static treb_language = '';
-
-  /* * 
-   * what is this? does not seem to be used anymore
-   * 
-   * @internal 
-   */
-  // public static treb_script_host = '';
-
   /** @internal */
   public static treb_embedded_script_path = '';
 
   /** @internal */
   public static enable_engine = false;
-
-  // / * * @internal * /
-  // public static enable_utils = false;
 
   /** @internal */
   public static enable_formatter = false;
@@ -4426,10 +4405,6 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         + 'include the script in a document <script/> tag, or call the method TREB.SetScriptPath() to '
         + 'set the load path for workers (this should be the path to TREB script files).');
       throw new Error('worker path not set');
-    }
-
-    if (EmbeddedSpreadsheetBase.treb_language) {
-      name += '-' + EmbeddedSpreadsheetBase.treb_language;
     }
 
     if (!/\.js$/.test(name)) name += ('-' + process.env.BUILD_VERSION + '.js');

@@ -268,28 +268,42 @@ export class MCCalculator extends Calculator {
 
     const results = this.last_simulation_data?.results || [];
 
+    // NOTE: the z85 code below does not ensure the source data is
+    // length-divisible by 4. that's required for z85 and also for
+    // this library, apparently, so it will probably break.
+    // 
+    // I think we should use z85, but we need to do it properly.
+    //
+    // ...although, we're encoding a bunch of either 32-bit or 64-bit
+    // numbers. so we will almost certainly always have properly sized
+    // data. 
+    //
+    // still, that apparently happened by accident and not because we
+    // were being clever.
+
+
     // testing 32-bit data...
 
-    if (options.use_float32) {
+    if (options.float32) {
       data.bitness = 32;
       data.results = results.map(result => {
 
         // 64 -> 32
         const array32 = Float32Array.from(new Float64Array(result)); 
-        return options.use_z85 ? 
+        return options.z85 ? 
             z85.encode(new Uint8Array(array32.buffer)) : 
             Base64JS.fromByteArray(new Uint8Array(array32.buffer));
       });
     }
     else {
       data.results = results.map(result => {
-        return options.use_z85 ? 
+        return options.z85 ? 
             z85.encode(new Uint8Array(result)) : 
             Base64JS.fromByteArray(new Uint8Array(result));
       });
     }
 
-    if (options.use_z85) { 
+    if (options.z85) { 
       data.encoding = 'z85'; 
     }
 

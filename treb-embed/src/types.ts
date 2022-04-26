@@ -30,7 +30,6 @@ export interface TREBSimulationData {
 
 export interface TREBDocument {
   app: string;
-  // document_id: number;
   version: string;
   name?: string;
   user_data?: any;
