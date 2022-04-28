@@ -391,8 +391,8 @@ export class Grid {
    *
    * SEE comment in sheet class
    */
-  private readonly theme_style_properties: Style.Properties =
-    Style.Composite([Style.DefaultProperties]);
+  //private readonly theme_style_properties: Style.Properties =
+  //  Style.Composite([Style.DefaultProperties]);
 
   // --- constructor -----------------------------------------------------------
 
@@ -1286,7 +1286,7 @@ export class Grid {
     const sheet_data = import_data.sheets;
 
     const base_sheets = sheet_data.map(() => {
-      return Sheet.Blank(this.theme_style_properties).toJSON();
+      return Sheet.Blank(this.model.theme_style_properties).toJSON();
     });
 
     // it's possible that the first sheet is hidden, in which case we 
@@ -1626,12 +1626,12 @@ export class Grid {
 
     Sheet.Reset(); // reset ID generation
 
-    const sheets = data.map((sheet) => Sheet.FromJSON(sheet, this.theme_style_properties));
+    const sheets = data.map((sheet) => Sheet.FromJSON(sheet, this.model.theme_style_properties));
 
     // ensure we have a sheets[0] so we can set active
 
     if (sheets.length === 0) {
-      sheets.push(Sheet.Blank(this.theme_style_properties));
+      sheets.push(Sheet.Blank(this.model.theme_style_properties));
     }
 
     // now assign sheets
@@ -1804,14 +1804,15 @@ export class Grid {
     this.Repaint(true);
   }
 
-  /**
+  /* *
    * splitting the old UpdateTheme, since that is becoming more
    * important for post-constructor theme updates, and the name applies
    * more to that function than to what we do at startup.
-   */
+   * /
   public ApplyTheme(): void {
     this.UpdateTheme(true);
   }
+  */
 
   /**
    * @param initial first call, from the grid Initialize() method
@@ -1921,7 +1922,8 @@ export class Grid {
 
     grid_container.classList.add('treb-theme');
 
-    this.ApplyTheme();
+    // this.ApplyTheme();
+    this.UpdateTheme(true);
 
     const container = document.createElement('div');
 
@@ -2866,12 +2868,12 @@ export class Grid {
     // UPDATE: we also need to create if all remaining sheets are hidden
 
     if (!sheets.length) {
-      sheets.push(Sheet.Blank(this.theme_style_properties));
+      sheets.push(Sheet.Blank(this.model.theme_style_properties));
       index = 0;
     }
     else if (sheets.every(test => !test.visible)) {
       // console.info('all remaining sheets are hidden!');
-      sheets.unshift(Sheet.Blank(this.theme_style_properties));
+      sheets.unshift(Sheet.Blank(this.model.theme_style_properties));
       index = 0;
     }
     else {
@@ -2925,7 +2927,7 @@ export class Grid {
 
     // FIXME: structure event
 
-    const sheet = Sheet.Blank(this.theme_style_properties, name);
+    const sheet = Sheet.Blank(this.model.theme_style_properties, name);
 
     if (insert_index >= 0) {
       this.model.sheets.splice(insert_index, 0, sheet);
@@ -2992,7 +2994,7 @@ export class Grid {
       rendered_values: true,
     };
 
-    const clone = Sheet.FromJSON(source.toJSON(options), this.theme_style_properties);
+    const clone = Sheet.FromJSON(source.toJSON(options), this.model.theme_style_properties);
     
     let name = command.new_name || source.name;
     while (this.model.sheets.some((test) => test.name === name)) {
@@ -3192,9 +3194,9 @@ export class Grid {
 
   private StyleDefaultFromTheme() {
 
-    this.theme_style_properties.font_face = this.theme.grid_cell?.font_face || '';
+    this.model.theme_style_properties.font_face = this.theme.grid_cell?.font_face || '';
 
-    this.theme_style_properties.font_size = 
+    this.model.theme_style_properties.font_size = 
       this.theme.grid_cell?.font_size || { unit: 'pt', value: 10 };
    
     // this.theme_style_properties.font_size_unit = this.theme.grid_cell?.font_size_unit || 'pt';

@@ -59,7 +59,11 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
     const instances: EmbeddedSpreadsheetBase[] = [];
 
-    const CreateSpreadsheet = (options: CreateSheetOptions): EmbeddedSpreadsheet => {
+    const CreateSpreadsheet = (options: CreateSheetOptions = {}): EmbeddedSpreadsheet => {
+
+      // default to MC on, but it's possible to disable it for some reason
+
+      options = { mc: true, ...options };
       const composite = CompositeSheet.Create(EmbeddedSpreadsheet, options);
       if (options.mc) {
         composite.AddSidebarButton({

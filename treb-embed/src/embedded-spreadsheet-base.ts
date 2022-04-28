@@ -611,13 +611,40 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       this.calculator = options.model.calculator as CalcType;
     }
     else {
+
+      // so what broke recently was the concept of theme style 
+      // defaults being passed around, because we started creating
+      // sheets outside of grid.
+
+      // in the old model, grid would create sheets and would pass
+      // a readonly reference object for theme defaults that could
+      // be updated "live" and pass changes to sheets that referenced
+      // it. when we started creating sheets outside of grid (as part
+      // of the "split" project) we lost those references and the
+      // initial sheet would have junk styles.
+      
+      // for now I moved the default object to the model, and grid 
+      // now updates that, so we're back to where we were. but this all
+      // needs to get cleaned up.
+
       this.model = {
-        sheets: [Sheet.Blank(Style.Composite([Style.DefaultProperties]))],
+        sheets: [],
         named_ranges: new NamedRangeCollection(),
         macro_functions: {},
         named_expressions: {},
         view_count: 0,
+
+        // create the initial object from style defaults, 
+        // but don't reference that object
+        
+        theme_style_properties: JSON.parse(JSON.stringify(Style.DefaultProperties)),
       };
+
+      // we need an initial sheet, now we're pointing to the model theme
+      // properties and those will get updated by grid on initialize, and
+      // then on any theme update.
+
+      this.model.sheets.push(Sheet.Blank(this.model.theme_style_properties));
 
       this.calculator = new type(this.model);
     }

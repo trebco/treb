@@ -195,13 +195,19 @@ export namespace Style {
     nan: 'NaN',
     // font_size: 10,              // should have units
 
+    font_size: { unit: 'pt', value: 10.5 },
+    font_face: 'sans-serif',
+
+    /*
     // font_size_value: 10,
     // font_size_unit: 'pt',
     font_size: {
-      unit: 'pt', value: 10,
+      unit: 'em', value: 1,
     },
 
-    font_face: 'calibri',       // switch to something generic "sans serif"
+    font_face: 'times new roman',       // switch to something generic "sans serif"
+    */
+
     bold: false,           // drop "font_"
     italic: false,         // ...
     underline: false,      // ...

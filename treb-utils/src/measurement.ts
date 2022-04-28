@@ -78,6 +78,9 @@ export class Measurement {
         this.text_measurement_node.classList.add('treb-chart-measurement-node');
         this.text_measurement_node.style.margin = '0px';
         this.text_measurement_node.style.padding = '0px';
+        this.text_measurement_node.style.height = 'initial';
+        this.text_measurement_node.style.width = 'initial';
+        
         this.text_measurement_node.style.whiteSpace = 'nowrap';
         this.text_measurement_node.style.position = 'fixed';
         this.text_measurement_node.style.border = '0px';

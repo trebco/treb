@@ -4,6 +4,7 @@ import { IArea } from 'treb-base-types';
 import { SerializedSheet } from './sheet_types';
 import { NamedRangeCollection } from './named_range';
 import { ExpressionUnit } from 'treb-parser';
+import { Style } from 'treb-base-types';
 
 export interface MacroFunction {
   name: string;
@@ -48,6 +49,12 @@ export interface DataModel {
 
   /** index for views */
   view_count: number;
+
+  /**
+   * base style properties moved to model, so we can have a single
+   * and consistent reference.
+   */
+  theme_style_properties: Style.Properties;
 
 }
 
