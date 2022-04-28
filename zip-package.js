@@ -45,7 +45,7 @@ const BuildZip = async () => {
     });
 
     archive.pipe(output);
-    archive.directory(current_dir, name.toUpperCase());
+    archive.directory(current_dir, name === 'treb' ? name.toUpperCase() : name);
     archive.finalize();
 
   });
