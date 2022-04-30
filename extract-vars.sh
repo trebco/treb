@@ -8,7 +8,7 @@
 # this is a useful check that we haven't missed anything.
 #
 # note that we're specifically looking for vars being /used/, not 
-# defined. which is probably better in case we have vars we're 
+# /defined/. which is probably better in case we have vars we're 
 # defining but never using.
 #
 
