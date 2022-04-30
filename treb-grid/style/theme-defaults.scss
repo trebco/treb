@@ -338,8 +338,9 @@ $text-reference-color-5: rgb(254, 47, 1);
            * which breaks IE11. 
            *
            * (removed nasty comment about webpack)
+           *
+           * FIXME: this makes theming the lock icon impossible. use a node.
            */
-
           background-image: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M416 224H400V144C400 65 335 0 256 0S112 65 112 144V224H96C61 224 32 253 32 288V448C32 483 61 512 96 512H416C451 512 480 483 480 448V288C480 253 451 224 416 224ZM176 144C176 100 212 64 256 64S336 100 336 144V224H176V144Z' fill='currentColor'/%3E%3C/svg%3E");
         }
 
@@ -356,13 +357,12 @@ $text-reference-color-5: rgb(254, 47, 1);
  * you should still be able to override with a regular theme style,
  * or (potentially) also override for windows specifically. fancy!
  */
- .treb-ua-windows .grid-cells {
-
-  font-size: var(--treb-grid-font-size-windows, 12pt); 
-  font-family: var(--treb-grid-font-family-windows, "Calibri", $font-stack); // does this actually work? is this included? (...)
+.treb-ua-windows .grid-cells {
+  font-size: var(--treb-grid-font-size-windows, var(--treb-grid-font-size, 12pt)); 
+  font-family: var(--treb-grid-font-family-windows, var(--treb-grid-font-family, "Calibri", $font-stack)); // does this actually work? is this included? (...)
 }
 
 .treb-ua-osx .grid-cells {
-  font-size: var(--treb-grid-font-size-osx, 10pt); // slightly smaller default
-  // font-family: var(--treb-grid-font-family-osx, inherit);
+  font-size: var(--treb-grid-font-size-osx, var(--treb-grid-font-size, 10pt)); // slightly smaller default
+  font-family: var(--treb-grid-font-family-osx, var(--treb-grid-font-family, inherit));
 }
