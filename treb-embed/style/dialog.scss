@@ -7,8 +7,7 @@
   */
   line-height: 1.6em;
 
-  border: 1px solid #ccc;
-  border: 1px solid #999;
+  border: 1px solid var(--treb-dialog-border-color, var(--treb-ui-border-color, #999));
   
   border-top-width: 3px;
   border-top-color: rgb(0, 157, 255);
@@ -103,7 +102,9 @@
   }
 
   padding: 1em;
-  background: #fff;
+  background: var(--treb-dialog-background, #fff);
+  color: var(--treb-dialog-color, #000);
+
   text-align: left;
   border-radius: 3px;
   /* font-family: inherit; */

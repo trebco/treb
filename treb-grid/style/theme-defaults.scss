@@ -23,7 +23,7 @@ $alternate-selection-color-4: rgb(33, 118, 174);
 $alternate-selection-color-5: rgb(254, 104, 71);
 
 /**
- * slightly darking colors for text highlighting
+ * slightly darkening colors for text highlighting
  * algo: convert to HSL; if L > .5, regenerate with L = .5; back to RGB (why?)
  */
 $text-reference-color-1: rgb(250, 155, 5);
@@ -70,7 +70,7 @@ $text-reference-color-5: rgb(254, 47, 1);
    * highlight in the corner of a cell when there's a comment. this is painted.
    */
   .note-marker {
-    background: #6FAB20;
+    background:   var(--treb-note-marker-color,       #6FAB20);
   }
 
   /** 
@@ -78,18 +78,17 @@ $text-reference-color-5: rgb(254, 47, 1);
    * instead of applied.
    */
   .grid-headers {
-    font-family: inherit;
-    font-size: 10pt;
-    font-weight: normal;
-    font-style: normal;
-    background: rgb(238, 238, 242);
-    color: #666;
+    font-family:  var(--treb-grid-header-font-family,   inherit);
+    font-size:    var(--treb-grid-header-font-size,     10pt);
+    font-weight:  var(--treb-grid-header-font-weight,   normal);
+    font-style:   var(--treb-grid-header-font-style,    normal);
+    background:   var(--treb-grid-header-background,  rgb(238, 238, 242));
+    color:        var(--treb-grid-header-color,       #666);
   }
 
   /** 
    * cells in the grid. background is the unstyled background color 
-   * (should probably be in grid, not here). border-color is the default,
-   * if there is a border width applied but no specific color. 
+   * (should probably be in grid, not here). 
    *
    * everything can be overridden by cell/column/row/sheet styles.
    *
@@ -97,12 +96,11 @@ $text-reference-color-5: rgb(254, 47, 1);
    * section, but it seems superfluous.
    */
   .grid-cells {
-    font-size: 14px;
-    // color: #333;
-    color: inherit;
-    background: #fff;
-    border-color: #666;
-    stroke: rgb(204, 204, 212);
+    font-family:  var(--treb-grid-font-family,          inherit);
+    font-size:    var(--treb-grid-font-size,            14px);
+    color:        var(--treb-grid-default-color,        inherit);
+    stroke:       var(--treb-grid-grid-color,         rgb(204, 204, 212));
+    background:   var(--treb-grid-background,         #fff);
   }
 
   /**
@@ -123,10 +121,10 @@ $text-reference-color-5: rgb(254, 47, 1);
   .treb-autocomplete-tooltip {
 
     font-size: 14px; /* FIXME: relative */
-
-    background: #fffbb5;
     border-radius: 2px;
-    color: inherit;
+
+    background:   var(--treb-autocomplete-tooltip-background,   #fffbb5);
+    color:        var(--treb-autocomplete-tooltip-color,          inherit);
   
     & .active-argument {
       font-weight: 700;
@@ -148,17 +146,17 @@ $text-reference-color-5: rgb(254, 47, 1);
   .treb-autocomplete {
 
     font-size: 14px; /* FIXME: relative? could be larger, actually */
-    background: #fff;
+    background: var(--treb-autocomplete-background, #fff);
     border-radius: 2px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--treb-ui-border-color, #ccc);
     box-shadow: $default-box-shadow;
 
     li {
-      color: #333;
+      color: var(--treb-autocomplete-entry-color, #333);
       a.selected {
         // background: #339966;
-        background: #2e8dd6;
-        color: #fff;
+        background: var(--treb-autocomplete-selected-entry-background, #2e8dd6);
+        color: var(--treb-autocomplete-selected-entry-color, #fff);
       }
     }
 
@@ -168,7 +166,7 @@ $text-reference-color-5: rgb(254, 47, 1);
   .header-overlay {
 
     stroke: none;
-    color: $primary-selection-color;
+    color: var(--treb-selection-color, $primary-selection-color);
 
     .overlay {
       fill: rgb(0, 0, 0); /* FIXME: use color? */
@@ -224,7 +222,7 @@ $text-reference-color-5: rgb(254, 47, 1);
 
     /** common */
     .selection {
-      stroke-width: 2px;
+      stroke-width: var(--treb-selection-stroke-width, 2px);
       .outline {
         stroke: currentColor;
         fill: none;
@@ -232,13 +230,13 @@ $text-reference-color-5: rgb(254, 47, 1);
       .fill {
         stroke: none;
         fill: currentColor;
-        opacity: .1;
+        opacity: var(--treb-selection-fill-opacity, .1);
       }
     }
 
     /** common to alternate selections */
     .alternate-selection {
-      stroke-dasharray: 3 2;
+      stroke-dasharray: var(--treb-alternate-selection-dasharray, 3 2);
     }
 
     .alternate-selection:nth-of-type(1n) {
@@ -266,9 +264,9 @@ $text-reference-color-5: rgb(254, 47, 1);
      * not filled
      */
     .primary-selection {
-      color: $primary-selection-color;
+      color: var(--treb-selection-color, $primary-selection-color);
       .nub {
-        stroke: #fff;
+        stroke: #fff; // <-- ? maybe grid background color?
         fill: currentColor;
         stroke-width: 1px;
       }
@@ -283,9 +281,9 @@ $text-reference-color-5: rgb(254, 47, 1);
 
     font-size: 11pt; /** FIXME: relative */
 
-    background: rgba(0, 0, 0, .8);
-    color: #fff;
-    border-color: rgba(0, 0, 0, .8); /* for arrow */
+    background:     var(--treb-resize-tooltip-background,   rgba(0, 0, 0, .8));
+    color:          var(--treb-resize-tooltip-color,        #fff);
+    border-color:   var(--treb-resize-tooltip-background,   rgba(0, 0, 0, .8)); /* for arrow */
 
   }
 
@@ -298,9 +296,12 @@ $text-reference-color-5: rgb(254, 47, 1);
     font-size: 14px; /* FIXME: could be relative? */
 
     .tab, .add-tab {
-      background: rgb(238, 238, 242);
+      background: var(--treb-tab-bar-tab-background, rgb(238, 238, 242));
+      color: var(--treb-tab-bar-tab-color, var(--treb-ui-color, inherit));
+
       &.selected {
-        background: #fff;
+        background: var(--treb-tab-bar-active-tab-background, #fff);
+        color: var(--treb-tab-bar-active-tab-color, var(--treb-ui-color, inherit));
       }
     }
 
@@ -315,7 +316,8 @@ $text-reference-color-5: rgb(254, 47, 1);
    */
   .treb-formula-bar {
     .address-label, .editor-container {
-      background: #fff;
+      background: var(--treb-formula-bar-background, transparent);
+      color: var(--treb-formula-bar-color, var(--treb-ui-color, inherit));
 
       &.locked {
         background: rgb(238, 244, 252);
@@ -355,10 +357,12 @@ $text-reference-color-5: rgb(254, 47, 1);
  * or (potentially) also override for windows specifically. fancy!
  */
  .treb-ua-windows .grid-cells {
-  font-size: 12pt; 
-  font-family: "Calibri", $font-stack; // does this actually work? is this included? (...)
+
+  font-size: var(--treb-grid-font-size-windows, 12pt); 
+  font-family: var(--treb-grid-font-family-windows, "Calibri", $font-stack); // does this actually work? is this included? (...)
 }
 
 .treb-ua-osx .grid-cells {
-  font-size: 10pt; // slightly smaller default
+  font-size: var(--treb-grid-font-size-osx, 10pt); // slightly smaller default
+  // font-family: var(--treb-grid-font-family-osx, inherit);
 }

@@ -28,7 +28,7 @@
 
         min-height: 1.5em;
         height: 1.75em;
-        border: 1px solid #ccc;
+        border: 1px solid var(--treb-formula-bar-border-color, var(--treb-ui-border-color, #ccc));
         border-radius: 2px;
         display: flex;
         flex-direction: column;
@@ -78,7 +78,7 @@
       }
 
       .editor-container {
-        border: 1px solid #ccc;
+        border: 1px solid var(--treb-formula-bar-border-color, var(--treb-ui-border-color, #ccc));;
         border-radius: 2px;
         flex-grow: 1;
         

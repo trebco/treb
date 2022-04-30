@@ -13,9 +13,9 @@ $swatch-width: 1.1em;
   top: -1000px;
   left: -1000px;
  
-  background: #fff;
+  background: var(--treb-toolbar-button-background, #fff);
   border-radius: 3px;
-  border: 1px solid rgb(209, 213, 219);
+  border: 1px solid var(--treb-toolbar-border-color, var(--treb-ui-border-color, rgb(209, 213, 219)));
   z-index: 9;
   box-shadow: 0 2px 4px #0d131e1a;
   outline: none;
@@ -65,7 +65,7 @@ $swatch-width: 1.1em;
     */
     border: none;
     height: 1px;
-    background: rgb(209, 213, 219);
+    background: var(--treb-toolbar-border-color, var(--treb-ui-border-color,rgb(209, 213, 219)));
 
     margin-bottom: .5em;
     margin-top: .5em;
@@ -172,7 +172,7 @@ $swatch-width: 1.1em;
 
   font-style: normal;
   font-weight: normal;
-  color: #333;
+  color: var(--treb-toolbar-color, var(--treb-ui-color, #333));
   font-size: 16px;
 
   box-sizing: border-box;
@@ -222,8 +222,8 @@ $swatch-width: 1.1em;
   .container, button {
     font-family: inherit;
     font-size: inherit;
-    background: transparent;
-    border: 1px solid rgb(209, 213, 219);
+    background: var(--treb-toolbar-button-background, transparent);
+    border: 1px solid var(--treb-toolbar-border-color, var(--treb-ui-border-color, rgb(209, 213, 219)));
     border-radius: 0.125em;
     outline: none;
   }
@@ -257,11 +257,13 @@ $swatch-width: 1.1em;
     }
 
     &:hover {
-      background: #f3f4f6;
+      // background: #f3f4f6;
+      background: var(--treb-toolbar-hover-button-background, #f3f4f6);
     }
 
     &.active, &:focus {
-      background: #f3f4f6;
+      // background: #f3f4f6;
+      background: var(--treb-toolbar-active-button-background, #f3f4f6);
     }
 
     svg {
