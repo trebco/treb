@@ -6137,11 +6137,20 @@ export class Grid {
       if (cell.value.imaginary) {
         if (cell.value.real) {
           // both parts: render with spacing
-          cell_value = `${cell.value.real.toString()}${cell.value.imaginary < 0 ? ' - ' : ' + '}${Math.abs(cell.value.imaginary).toString()}i`;
+          cell_value = `${cell.value.real.toString()}${cell.value.imaginary < 0 ? ' - ' : ' + '}${
+            (cell.value.imaginary === 1 || cell.value.imaginary === -1) ? '' : Math.abs(cell.value.imaginary).toString()}i`;
         }
         else {
           // imaginary only, leave sign
-          cell_value = cell.value.imaginary.toString() + 'i';
+          if (cell.value.imaginary === 1) {
+            cell_value = 'i';
+          }
+          else if (cell.value.imaginary === -1) {
+            cell_value = '-i';
+          }
+          else {
+            cell_value = cell.value.imaginary.toString() + 'i';
+          }
         }
       }
       else {

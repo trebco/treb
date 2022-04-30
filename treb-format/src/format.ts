@@ -471,10 +471,30 @@ export class NumberFormat {
     let imaginary_format: TextPart[] = [];
     let real_format: TextPart[] = [];
 
+    let drop_imaginary_coefficient = false;
+
     let has_imaginary_value = !!value.imaginary;
     if (has_imaginary_value) {
       imaginary_format = this.FormatParts(value.imaginary);
       has_imaginary_value = imaginary_format.some(element => /[1-9]/.test(element.text));
+      
+      // special case: if the integer is not required and the value is
+      // either "1" or "-1", drop the integer. do this for integer length
+      // <= 1, because you want 0, i, 2i, 3i, &c. 
+
+      if (imaginary_format.length === 1 &&
+          this.sections[0].integer_min_digits <= 1 && 
+          imaginary_format[0].text === '1' ) {
+        imaginary_format[0].text = '';
+        drop_imaginary_coefficient = true;
+      }
+      else if (imaginary_format.length === 1 &&
+               this.sections[1].integer_min_digits <= 1 && 
+               imaginary_format[0].text === '-1' ) {
+        imaginary_format[0].text = '-';
+        drop_imaginary_coefficient = true;
+      }
+
     }
 
     let has_real_value = !!value.real;
@@ -488,21 +508,25 @@ export class NumberFormat {
     if (has_real_value || (!has_real_value && !has_imaginary_value)) {
 
       // has real part, or is === 0 
-      parts.push(...this.FormatParts(value.real));
+      parts.push(...real_format);
 
       if (has_imaginary_value) {
 
         // also has imaginary part
         const i = Math.abs(value.imaginary);
         parts.push({ text: value.imaginary < 0 ? ` ${NumberFormat.minus_character} ` : ' + ' });
-        parts.push(...this.FormatParts(Math.abs(value.imaginary)), { text: NumberFormat.imaginary_character });
+
+        const reformatted_imaginary = drop_imaginary_coefficient ?
+          [] : this.FormatParts(Math.abs(value.imaginary));
+
+        parts.push(...reformatted_imaginary, { text: NumberFormat.imaginary_character });
 
       }
     }
     else if (has_imaginary_value) {
 
       // only imaginary part
-      parts.push(...this.FormatParts(value.imaginary), { text: NumberFormat.imaginary_character });
+      parts.push(...imaginary_format, { text: NumberFormat.imaginary_character });
 
     }
 
