@@ -3,7 +3,8 @@ import { MacroFunction, SerializedNamedExpression, SerializedSheet } from 'treb-
 
 export enum SaveFileType {
   json = 'json',
-  treb = 'treb', 
+  treb = 'treb',
+  trebjson = 'treb.json', 
   csv = 'csv', 
   tsv = 'tsv', 
   xlsx = 'xlsx',

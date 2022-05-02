@@ -2292,7 +2292,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     const parts = filename.split(/\./).filter(test => test.trim().length);
     const type = parts.length ? parts[parts.length - 1].toLowerCase() : SaveFileType.treb;
 
-    if (parts.length <= 1) {
+    if (parts.length <= 1 || filename === 'treb.json') {
       if ((type === SaveFileType.csv || type === SaveFileType.tsv) && this.grid.model.sheets.length > 1) {
         const active_sheet = this.grid.active_sheet.name;
         filename = (document_name + '-' + active_sheet).toLowerCase().replace(/\W+/g, '-') + '.' + type;
