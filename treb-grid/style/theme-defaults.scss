@@ -43,16 +43,16 @@ $text-reference-color-5: rgb(254, 47, 1);
 
   */
 
-  .theme-color-1  { color: #E7E6E6; }
-  .theme-color-2  { color: #44546A; }
-  .theme-color-3  { color: #4472C4; }
-  .theme-color-4  { color: #ED7D31; }
-  .theme-color-5  { color: #A5A5A5; }
-  .theme-color-6  { color: #FFC000; }
-  .theme-color-7  { color: #5B9BD5; }
-  .theme-color-8  { color: #70AD47; }
-  .theme-color-9  { color: #0563C1; }
-  .theme-color-10 { color: #954F72; }
+  .theme-color-1  { color: var(--treb-theme-color-1,  #E7E6E6); }
+  .theme-color-2  { color: var(--treb-theme-color-2,  #44546A); }
+  .theme-color-3  { color: var(--treb-theme-color-3,  #4472C4); }
+  .theme-color-4  { color: var(--treb-theme-color-4,  #ED7D31); }
+  .theme-color-5  { color: var(--treb-theme-color-5,  #A5A5A5); }
+  .theme-color-6  { color: var(--treb-theme-color-6,  #FFC000); }
+  .theme-color-7  { color: var(--treb-theme-color-7,  #5B9BD5); }
+  .theme-color-8  { color: var(--treb-theme-color-8,  #70AD47); }
+  .theme-color-9  { color: var(--treb-theme-color-9,  #0563C1); }
+  .theme-color-10 { color: var(--treb-theme-color-10, #954F72); }
 
   /*
 
