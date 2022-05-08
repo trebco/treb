@@ -261,8 +261,8 @@ export class MCCalculator extends Calculator {
   public SerializeSimulationData(options: ExtendedSerializeOptions): TREBSimulationData {
 
     const data: TREBSimulationData = {
-      elapsed: this.last_simulation_data.elapsed,
-      trials: this.last_simulation_data.trials,
+      elapsed: this.last_simulation_data?.elapsed || 0,
+      trials: this.last_simulation_data?.trials || 0,
       results: undefined,
     };
 

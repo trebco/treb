@@ -23,6 +23,7 @@ export class WorkerImpl {
     named_expressions: {},
     macro_functions: {},
     view_count: 0,
+    theme_style_properties: {},
   };
   protected screen_updates = false;
   protected calculator = new MCCalculator(this.data_model);
