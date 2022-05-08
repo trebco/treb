@@ -2279,7 +2279,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * @public
    */
   public SaveLocalFile(
-    filename: string = SaveFileType.treb,
+    filename: string = SaveFileType.trebjson,
     additional_options: SaveOptions = {}): void {
 
     // API v1 OK
@@ -2290,9 +2290,14 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     let text: string;
 
     const parts = filename.split(/\./).filter(test => test.trim().length);
-    const type = parts.length ? parts[parts.length - 1].toLowerCase() : SaveFileType.treb;
+    let type = parts.length ? parts[parts.length - 1].toLowerCase() : SaveFileType.treb;
 
     if (parts.length <= 1 || filename === 'treb.json') {
+
+      if (filename === 'treb.json') {
+        type = filename;
+      }
+
       if ((type === SaveFileType.csv || type === SaveFileType.tsv) && this.grid.model.sheets.length > 1) {
         const active_sheet = this.grid.active_sheet.name;
         filename = (document_name + '-' + active_sheet).toLowerCase().replace(/\W+/g, '-') + '.' + type;
@@ -2314,6 +2319,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
       case SaveFileType.treb:
       case SaveFileType.json:
+      case SaveFileType.trebjson:
         data = this.SerializeDocument({
           // preserve_simulation_data,
           ...additional_options,
