@@ -1,7 +1,8 @@
 
 import { CellValue } from 'treb-base-types';
+import { StatsEntry } from './tab_bar';
 
-export type StatsFunction = (data: CellValue|CellValue[][]|undefined) => string;
+export type StatsFunction = (data: CellValue|CellValue[][]|undefined) => StatsEntry[];
 
 export interface GridOptions {
 

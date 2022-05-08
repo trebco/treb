@@ -234,6 +234,18 @@
       align-items: center;
     }
 
+    .treb-stats-panel {
+      > * + * {
+        margin-left: .5em;
+      }
+
+      .treb-stats-value {
+        border: 1px solid var(--treb-stats-value-border-color, var(--treb-ui-border-color, #ddd));
+        padding: 0 .3em;
+        border-radius: 3px;
+      }
+    }
+
     /*
     .treb-stats-panel {
       color: var(--treb-ui-color, #fff);

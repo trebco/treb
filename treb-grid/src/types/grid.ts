@@ -33,6 +33,8 @@ import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat, ParseRe
 import { SelectionRenderer } from '../render/selection-renderer';
 
 import { TabBar } from './tab_bar';
+import type { StatsEntry } from './tab_bar';
+
 import { Sheet } from './sheet';
 import { TileRange, BaseLayout } from '../layout/base_layout';
 
@@ -7155,12 +7157,12 @@ export class Grid {
    * default will show count/sum/average of numbers, either real 
    * or complex.
    */
-  private RenderStats(values: CellValue|CellValue[][]): string {
+  private RenderStats(values: CellValue|CellValue[][]): StatsEntry[] {
 
     // we don't handle single values
 
     if (!Array.isArray(values)) {
-      return '';
+      return [];
     }
 
     // we count numbers, in addition to accumulating, because
@@ -7206,43 +7208,64 @@ export class Grid {
         const general = NumberFormatCache.Get('General')
         if (sum.imaginary) {
           const average: Complex = { real: sum.real / numbers, imaginary: sum.imaginary / numbers };
+
+          return [
+            { label: 'Count', value: count.toString() }, 
+            { label: 'Sum', value: NumberFormat.FormatPartsAsText(general.FormatComplex(sum)) },
+            { label: 'Average', value: NumberFormat.FormatPartsAsText(general.FormatComplex(average)) },
+          ];
+
+          /*
           return `Count: ${count} Sum: ${
             NumberFormat.FormatPartsAsText(general.FormatComplex(sum))
           } Average: ${
             NumberFormat.FormatPartsAsText(general.FormatComplex(average))
           }`;
+          */
         }
         else {
+          return [
+            { label: 'Count', value: count.toString() }, 
+            { label: 'Sum', value: general.Format(sum.real) },
+            { label: 'Average', value: general.Format(sum.real/numbers) },
+          ];
+
+          /*
           return `Count: ${count} Sum: ${
             general.Format(sum.real)
           } Average: ${
             general.Format(sum.real/numbers)
           }`;
+          */
         }
       }
       else {
-        return `Count: ${count}`;
+        return [{ label: 'Count', value: count.toString() }] // `Count: ${count}`;
       }
     }
 
-    return '';
+    return [];
   }
 
   private UpdateStats() {
 
     if (this.tab_bar) {
-      let text = '';
+      let data: StatsEntry[] = [];
+
       if (typeof this.options.stats === 'function') {
         if (!this.primary_selection.empty) {
-          text = this.options.stats.call(undefined, this.GetRange(this.primary_selection.area));
+          // text = this.options.stats.call(undefined, this.GetRange(this.primary_selection.area));
+          data = this.options.stats.call(undefined, this.GetRange(this.primary_selection.area));
         }
       }
       else {
         if (!this.primary_selection.empty && this.primary_selection.area.count > 1) {
-          text = this.RenderStats(this.GetRange(this.primary_selection.area));
+          // text = this.RenderStats(this.GetRange(this.primary_selection.area));
+          data = this.RenderStats(this.GetRange(this.primary_selection.area));
         }
       }
-      this.tab_bar.stats_text = text;
+      
+      this.tab_bar.stats_data = data;
     }
   }
 

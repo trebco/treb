@@ -48,6 +48,11 @@ export type TabEvent
    | ActivateSheetEvent
    ;
 
+export interface StatsEntry {
+  label: string;
+  value: string;
+}
+
 /**
  * tabs for multiple sheets. at the bottom, atm (FIXME: options?)
  *
@@ -87,9 +92,27 @@ export class TabBar extends EventSource<TabEvent> {
     return this._visible;
   }
 
+  /*
   public set stats_text(value: string) {
     if (this.stats_panel) {
       this.stats_panel.innerText = value;
+    }
+  }
+  */
+  public set stats_data(value: StatsEntry[]) {
+    if (this.stats_panel) {
+      this.stats_panel.innerText = ''; // clear
+      for (const entry of value) {
+        const label = document.createElement('span');
+        label.classList.add('treb-stats-label');
+        label.textContent = entry.label;
+        this.stats_panel.appendChild(label);
+
+        const figure = document.createElement('span');
+        figure.classList.add('treb-stats-value');
+        figure.textContent = entry.value;
+        this.stats_panel.appendChild(figure);
+      }
     }
   }
 
