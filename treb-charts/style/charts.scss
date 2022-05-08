@@ -42,21 +42,21 @@ $font-stack: // "-apple-system",
    * of times we have to define the same colors.
    */
 
-  background: #fff;
+  background: var(--treb-chart-background, #fff);
 
   .nroken {}
-  .series-1  { color: #80B1D3; }
-  .series-2  { color: #8DD3C7; }
-  .series-3  { color: #BEBADA; }
-  .series-4  { color: #FB8072; }
-  .series-5  { color: #FDB462; }
-  .series-6  { color: #B3DE69; }
-  .series-7  { color: #FCCDE5; }
-  .series-8  { color: #D9D9D9; }
-  .series-9  { color: #BC80BD; }
-  .series-10 { color: #CCEBC5; }
-  .series-11 { color: #FFED6F; }
-  .series-12 { color: #FFFFB3; }
+  .series-1  { color: var(--treb-chart-color-series-1,  #80B1D3); }
+  .series-2  { color: var(--treb-chart-color-series-2,  #8DD3C7); }
+  .series-3  { color: var(--treb-chart-color-series-3,  #BEBADA); }
+  .series-4  { color: var(--treb-chart-color-series-4,  #FB8072); }
+  .series-5  { color: var(--treb-chart-color-series-5,  #FDB462); }
+  .series-6  { color: var(--treb-chart-color-series-6,  #B3DE69); }
+  .series-7  { color: var(--treb-chart-color-series-7,  #FCCDE5); }
+  .series-8  { color: var(--treb-chart-color-series-8,  #D9D9D9); }
+  .series-9  { color: var(--treb-chart-color-series-9,  #BC80BD); }
+  .series-10 { color: var(--treb-chart-color-series-10, #CCEBC5); }
+  .series-11 { color: var(--treb-chart-color-series-11, #FFED6F); }
+  .series-12 { color: var(--treb-chart-color-series-12, #FFFFB3); }
 
   /* default font */
   /*
@@ -65,26 +65,23 @@ $font-stack: // "-apple-system",
 
   /* chart title, at top or bottom */
   .chart-title {
-    /* font-size: 14pt; */
     font-size: 1.4em;
   }
 
   /* axis labels */
   .axis-group {
-    /* font-size: 9pt; */
     font-size: .9em;
   }
 
   /* default text color */
   text {
-    fill: #000;
+    fill: var(--treb-chart-text-color, #000);
     stroke: none;
   }
 
   /* legend uses matching series colors */
   .legend {
-    /* font-size: 10.5pt; */
-    font-size: 1.05em;
+    font-size: 1.05em; // ?
     rect {
       fill: currentColor;
     }
@@ -92,7 +89,7 @@ $font-stack: // "-apple-system",
 
   /* grid */
   .chart-grid, .chart-ticks {
-    stroke: #ddd;
+    stroke: var(--treb-chart-grid-color, #ddd);
   }
 
   /* mouse elements */

@@ -83,8 +83,10 @@ $text-reference-color-5: rgb(254, 47, 1);
     font-weight:  var(--treb-grid-header-font-weight,   normal);
     font-style:   var(--treb-grid-header-font-style,    normal);
     background:   var(--treb-grid-header-background,  rgb(238, 238, 242));
-    color:        var(--treb-grid-header-color,       #666);
-    stroke:       var(--treb-grid-header-grid-color,  rgb(204, 204, 212));
+
+    // for these two fall back to grid values, then defaults
+    color:        var(--treb-grid-header-color,       var(--treb-grid-default-color, #666));
+    stroke:       var(--treb-grid-header-grid-color,    var(--treb-grid-grid-color, rgb(204, 204, 212)));
   }
 
   /** 
@@ -126,7 +128,8 @@ $text-reference-color-5: rgb(254, 47, 1);
 
     background:   var(--treb-autocomplete-tooltip-background,   #fffbb5);
     color:        var(--treb-autocomplete-tooltip-color,          inherit);
-  
+    border: 1px solid var(--treb-autocomplete-tooltip-border-color, unset);
+    
     & .active-argument {
       font-weight: 700;
     }
@@ -149,7 +152,7 @@ $text-reference-color-5: rgb(254, 47, 1);
     font-size: 14px; /* FIXME: relative? could be larger, actually */
     background: var(--treb-autocomplete-background, #fff);
     border-radius: 2px;
-    border: 1px solid var(--treb-ui-border-color, #ccc);
+    border: 1px solid var(--treb-autocomplete-border-color, var(--treb-ui-border-color, #ccc));
     box-shadow: $default-box-shadow;
 
     li {

@@ -1,138 +1,52 @@
-/**
- * this is the style we use on https://treb.app when you are in dark mode.
- */
 
-.treb-dark .treb-main.treb-theme { 
-  color-scheme: dark;
-  color: #fff; 
+.treb-dark { 
+	--treb-autocomplete-background: #333;
+	--treb-autocomplete-border-color: #fff;
+	--treb-autocomplete-entry-color: #fff;
+	--treb-autocomplete-selected-entry-background: darkred;
+	--treb-autocomplete-tooltip-background: darkred;
+	--treb-autocomplete-tooltip-border-color: #fff;
+	--treb-autocomplete-tooltip-color: #fff;
+	--treb-chart-background: #000;
+	--treb-chart-grid-color: #976;
+	--treb-chart-text-color: #fff;
+	--treb-dialog-background: #000;
+	--treb-dialog-border-color: #fff;
+	--treb-dialog-color: #fff;
+	--treb-dropdown-background: #000;
+	--treb-dropdown-border-color: #fff;
+	--treb-dropdown-caret-active-background: darkred;
+	--treb-dropdown-caret-background: #444;
+	--treb-dropdown-caret-border-color: #fff;
+	--treb-dropdown-caret-color: #fff;
+	--treb-dropdown-color: #fff;
+	--treb-dropdown-selected-background: darkred;
+	--treb-grid-background: #000;
+	--treb-grid-default-color: #fff;
+	--treb-grid-grid-color: #666;
+	--treb-grid-header-background: #444;
+	--treb-grid-header-grid-color: #000;
+	--treb-note-background: #333;
+	--treb-note-border-color: #fff;
+	--treb-note-color: #fff;
+	--treb-note-marker-color: pink;
+	--treb-resize-tooltip-background: #fff;
+	--treb-resize-tooltip-color: #000;
+	--treb-scale-slider-accent-color: #fff;
+	--treb-scale-slider-background: #333;
+	--treb-scale-slider-border-color: #fff;
+	--treb-selection-color: yellow;
+	--treb-selection-fill-opacity: .2;
+	--treb-sidebar-button-background: #000;
+	--treb-sidebar-button-border-color: #eee;
+	--treb-tab-bar-active-tab-background: #444;
+	--treb-tab-bar-tab-background: #000;
+	--treb-tab-bar-tab-color: #fff;
+	--treb-toolbar-active-button-background: #555;
+	--treb-toolbar-button-background: #000;
+	--treb-toolbar-hover-button-background: #444;
+	--treb-ui-border-color: #666;
+	--treb-ui-color: #fff;
 }
 
-.treb-dark .treb-main.treb-theme .theme-color-1 { 
-  color: #222; 
-}
-
-.treb-dark .treb-main.treb-theme .theme-color-2 { 
-  color: #ddd; 
-}
-
-.treb-dark .treb-main.treb-theme .grid-cells { 
-  background: #000;
-  stroke: #445; 
-}
-
-.treb-dark .treb-main.treb-theme .grid-headers { 
-  background: #333;
-  color: #eee;
-  stroke: #556; 
-}
-
-.treb-dark .treb-toolbar button,
-.treb-dark .treb-toolbar .container,
-.treb-dark .treb-toolbar-drop-menu { 
-  background: #000; 
-}
-
-.treb-dark .treb-toolbar button.active,
-.treb-dark .treb-toolbar button:focus { 
-  background: #444; 
-}
-
-.treb-dark .treb-toolbar button:hover,
-.treb-dark .treb-toolbar-drop-menu button:hover { 
-  background: #333; 
-}
-
-.treb-dark .treb-toolbar button,
-.treb-dark .treb-toolbar .container { 
-  border-color: #667; 
-}
-
-.treb-dark .treb-toolbar,
-.treb-dark .treb-toolbar-drop-menu { 
-  color: #eee; 
-}
-
-.treb-dark .treb-main.treb-theme .treb-formula-bar .editor-container,
-.treb-dark .treb-main.treb-theme .treb-formula-bar .address-label { 
-  background: transparent;
-  color: #fff;
-  border-color: #667; 
-}
-
-.treb-dark .treb-main.treb-theme .treb-tab-bar .tab,
-.treb-dark .treb-main.treb-theme .treb-tab-bar .add-tab { 
-  color: #fff;
-  border-color: #667;
-  background: #000; 
-}
-
-.treb-dark .treb-main.treb-theme .treb-tab-bar .tab.selected { 
-  color: #fff;
-  background: #333; 
-}
-
-.treb-dark .treb-main.treb-theme .treb-tab-bar .delete-tab { 
-  color: #fff; 
-}
-
-.treb-dark .treb-main.treb-theme .treb-tooltip { 
-  background: #fff;
-  border-color: #fff;
-  color: #000; 
-}
-
-.treb-dark .treb-chart text { 
-  fill: #fff; 
-}
-
-.treb-dark .treb-chart { 
-  background: #000; 
-}
-
-.treb-dark .treb-chart .chart-grid { 
-  stroke: #655; 
-}
-
-.treb-dark .treb-main .treb-tab-bar-container .treb-scale-control-2:hover .treb-scale-input { 
-  background: #000; 
-}
-
-.treb-dark .treb-main .treb-tab-bar-container .treb-scale-control-2:hover .treb-scale-input,
-.treb-dark .treb-tab-bar-container .treb-scale-control-2:focus .treb-scale-input,
-.treb-dark .treb-tab-bar-container .treb-scale-control-2:hover .treb-slider-container { 
-  border-color: #667; 
-}
-
-.treb-dark .treb-main .treb-tab-bar-container .treb-scale-control-2 .treb-slider-container { 
-  background: #000;
-  accent-color: #fff; 
-}
-
-.treb-dark .show-sidebar-button { 
-  background: #000;
-  border-color: #667; 
-}
-
-.treb-dark .treb-main .treb-autocomplete ul li a { 
-  color: #fff; 
-}
-
-.treb-dark .treb-main .treb-autocomplete ul { 
-  background: #000; 
-}
-
-.treb-dark .treb-main .treb-autocomplete { 
-  border-color: #667; 
-}
-
-.treb-dark .treb-main .treb-autocomplete-tooltip { 
-  color: #000; 
-}
-
-.treb-dark .treb-embed-dialog { 
-  color: #fff;
-  background: #000;
-  border-left-color: #667;
-  border-right-color: #667;
-  border-bottom-color: #667; 
-}
+ 

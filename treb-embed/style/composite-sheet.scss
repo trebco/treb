@@ -169,14 +169,14 @@ $toolbar_height: 38px;
 .show-sidebar-button {
 
   position: absolute;
-  border: 1px solid #ccc;
+  border: 1px solid var(--treb-sidebar-button-border-color, var(--treb-ui-border-color, #ccc));
   border-right-width: 0px;
   z-index: 5;
   bottom: $sidebar_button_offset;
   right: 0px;
   border-top-left-radius: 12px;
   border-bottom-left-radius: 12px;
-  background: #fff;
+  background: var(--treb-sidebar-button-background, #fff);
   transition: opacity $transition_options;
 
 }

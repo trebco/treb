@@ -1,4 +1,7 @@
 
+// are these exactly the same? clearly we copied-and-pasted
+// at first. seems like we could consolidate.
+
 .treb-note {
 
   position: fixed;
@@ -21,9 +24,9 @@
 
   font-family: $font-stack;
 
-  border: 1px solid #ddd;
-  color: #333;
-  background: #fff;
+  border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, #ddd));
+  color: var(--treb-note-color, #333);
+  background: var(--treb-note-background, #fff);
   font-size: 10.5pt;
 
   white-space: pre-line;
@@ -52,9 +55,10 @@
 
   font-family: $font-stack; /* can't we inherit? ... */
 
-  border: 1px solid #ddd;
-  color: #333;
-  background: #fff;
+  border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, #ddd));
+  color: var(--treb-note-color, #333);
+  background: var(--treb-note-background, #fff);
+
   font-size: 10.5pt;
 
   white-space: pre-line;
