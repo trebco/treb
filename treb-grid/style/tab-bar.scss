@@ -241,6 +241,7 @@
 
       .treb-stats-value {
         border: 1px solid var(--treb-stats-value-border-color, var(--treb-ui-border-color, #ddd));
+        background: var(--treb-stats-value-background, transparent);
         padding: 0 .3em;
         border-radius: 3px;
       }
