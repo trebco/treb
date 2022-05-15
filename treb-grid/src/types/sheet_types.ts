@@ -31,7 +31,7 @@ export interface SerializedSheet {
   sheet_style: Style.Properties;
   rows: number;
   columns: number;
-  cell_styles: Array<{row: number; column: number; ref: number}>;
+  cell_styles: Array<{row: number; column: number; ref: number, rows?: number}>;
 
   /** @deprecated */
   cell_style_refs?: Style.Properties[]; // old 

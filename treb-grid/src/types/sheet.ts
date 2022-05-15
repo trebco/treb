@@ -23,11 +23,16 @@ const DEFAULT_COLUMN_WIDTH = 100;
 // const DEFAULT_ROW_HEIGHT = 26; // not used because it's based on font (theoretically)
 const DEFAULT_ROW_HEADER_WIDTH = 60;
 
+// does this have optional ref/style because an older version inlined styles, 
+// instead of using references? we can probably drop support for that because
+// if that was the case, it was a long time ago
+
 interface CellStyleRef {
   row: number;
   column: number;
   ref?: number;
   style?: Style.Properties;
+  rows?: number;
 }
 
 export class Sheet {
@@ -435,6 +440,9 @@ export class Sheet {
 
     // styles (part 1) -- moved up in case we use inlined style refs
 
+    // so this is converting "ref" (number) to "style" (properties)...
+    // in the same object. why do we do this here, and early?
+
     sheet.cell_style = [];
 
     if (cell_style_refs) {
@@ -518,6 +526,17 @@ export class Sheet {
       if (cell_style.style) {
         if (!sheet.cell_style[cell_style.column]) sheet.cell_style[cell_style.column] = [];
         sheet.cell_style[cell_style.column][cell_style.row] = cell_style.style;
+
+        // update for blocks
+        // these are styles, not references... not sure why we translated 
+        // (above) but if so, we probably need to clone
+
+        if (cell_style.rows) {
+          for (let r = 1; r < cell_style.rows; r++) {
+            sheet.cell_style[cell_style.column][cell_style.row + r] = 
+              JSON.parse(JSON.stringify(cell_style.style));
+          }
+        }
       }
     }
 
@@ -1950,6 +1969,46 @@ export class Sheet {
 
   }
 
+  public CompressCellStyles(data: number[][]) {
+
+    // we can almost certainly compress the cell style map (above) if there 
+    // are consistent areas. not sure what the optimal algorithms for this 
+    // are, but there are probably some out there. let's start naively and 
+    // see what we can get.
+
+    // I think the real issue is imports from XLSX; we're getting a lot
+    // of individual cell styles where there should probably be R/C styles.
+
+    const list: Array<{ row: number; column: number; ref: number, rows?: number }> = [];
+
+    for (let c = 0; c < data.length; c++) {
+      const column = data[c];
+      
+      if (column) {
+        for (let r = 0; r < column.length; r++) {
+          const style = column[r];
+          if (style) {
+
+            let k = r;
+            for (; k < column.length; k++) {
+              if (column[k] !== style) { break; }
+            }
+            if ( k > r + 1 ){
+              list.push({ row: r, column: c, ref: style, rows: k - r });
+            }
+            else {
+              list.push({ row: r, column: c, ref: style });
+            }
+            r = k - 1;
+          }
+        }
+      }
+    }
+
+    return list;
+
+  }
+
   /**
    * generates serializable object. given the new data semantics this
    * has to change a bit. here is what we are storing:
@@ -2019,6 +2078,10 @@ export class Sheet {
         }
       }
     }
+
+    // it might be more efficient to store cell styles separately from
+    // cell data, as we might be able to compress it. it looks more like
+    // an indexed image, and we likely don't have that many styles.
 
     /**
      * this assumes that "empty" style is at index 0
@@ -2207,6 +2270,7 @@ export class Sheet {
     // (3) (style) for anything that hasn't been consumed, create a
     //     cell style map. FIXME: optional [?]
 
+    /*
     const cell_styles: Array<{ row: number; column: number; ref: number }> = [];
 
     for (let c = 0; c < cell_reference_map.length; c++) {
@@ -2219,6 +2283,16 @@ export class Sheet {
         }
       }
     }
+
+    const CS2 = this.CompressCellStyles(cell_reference_map);
+    console.info({cs1: JSON.stringify(cell_styles), cs2: JSON.stringify(CS2)});
+    */
+
+    // using blocks. this is our naive method. we could do (at minimum)
+    // testing row-dominant vs column-dominant and see which is better; 
+    // but that kind of thing adds time, so it should be optional.
+
+    const cell_styles = this.CompressCellStyles(cell_reference_map);
 
     const result: SerializedSheet = {
 
