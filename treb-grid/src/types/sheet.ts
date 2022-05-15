@@ -2006,7 +2006,7 @@ export class Sheet {
             for (; k < column.length; k++) {
               if (column[k] !== style) { break; }
             }
-            
+
             if ( k > r + 1 ){
               list.push({ row: r, column: c, ref: style, rows: k - r });
             }
@@ -2236,9 +2236,6 @@ export class Sheet {
       }
     }
 
-    // keep temp copy (for blocks...)
-    const cell_reference_map_copy = JSON.parse(JSON.stringify(cell_reference_map));
-
     // FIXME: flatten row/column styles too
 
     // flatten data -- also remove unecessary fields (FIXME: you might
@@ -2311,7 +2308,7 @@ export class Sheet {
     // testing row-dominant vs column-dominant and see which is better; 
     // but that kind of thing adds time, so it should be optional.
 
-    const cell_styles = this.CompressCellStyles(cell_reference_map, cell_reference_map_copy);
+    const cell_styles = this.CompressCellStyles(cell_reference_map);
 
     const result: SerializedSheet = {
 
