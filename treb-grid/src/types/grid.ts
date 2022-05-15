@@ -876,6 +876,10 @@ export class Grid {
 
         node.addEventListener('mousedown', (event) => {
 
+          if (event.button !== 0) {
+            return;
+          }
+
           // this.AnnotationMouseDown(annotation, event, move_target, resize_target);
           this.layout.AnnotationMouseDown(annotation, node, event, move_target, resize_target).then(event => {
             // console.info('resolved', event);
@@ -3845,6 +3849,10 @@ export class Grid {
    */
   private MouseDown_RowHeader(event: MouseEvent) {
 
+    if (event.button !== 0) {
+      return;
+    }
+
     event.stopPropagation();
     event.preventDefault();
 
@@ -4102,6 +4110,10 @@ export class Grid {
    * FIXME: argument selection
    */
   private MouseDown_ColumnHeader(event: MouseEvent) {
+
+    if (event.button !== 0) {
+      return;
+    }
 
     event.stopPropagation();
     event.preventDefault();
@@ -4582,6 +4594,10 @@ export class Grid {
    * selection (click-drag) and editing (double-click)
    */
   private MouseDown_Grid(event: MouseEvent) {
+
+    if (event.button !== 0) {
+      return;
+    }
 
     /* removed, overlay editor does not use
     if (this.overlay_editor?.HandleMouseEvent(event)) {
