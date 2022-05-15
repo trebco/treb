@@ -1979,6 +1979,18 @@ export class Sheet {
     // I think the real issue is imports from XLSX; we're getting a lot
     // of individual cell styles where there should probably be R/C styles.
 
+    // actually we might be working against ourselves here if we are 
+    // removing populated cells from this array: because in that case we'll
+    // get fewer contiguous blocks. perhaps we should have a "lookaround"
+    // in the original array? (...)
+
+    // OTOH this can never be _worse_ than the old method, and I don't think
+    // it costs much more. so we'll stick with this for the time being, see
+    // if we can further optimize later.
+
+    // (note: tried passing the original array, and checking for overlap, 
+    //  but ultimately savings was minimal. not worth it)
+
     const list: Array<{ row: number; column: number; ref: number, rows?: number }> = [];
 
     for (let c = 0; c < data.length; c++) {
@@ -1989,17 +2001,21 @@ export class Sheet {
           const style = column[r];
           if (style) {
 
-            let k = r;
+            let k = r + 1;
+
             for (; k < column.length; k++) {
               if (column[k] !== style) { break; }
             }
+            
             if ( k > r + 1 ){
               list.push({ row: r, column: c, ref: style, rows: k - r });
             }
             else {
               list.push({ row: r, column: c, ref: style });
             }
+
             r = k - 1;
+
           }
         }
       }
@@ -2220,6 +2236,9 @@ export class Sheet {
       }
     }
 
+    // keep temp copy (for blocks...)
+    const cell_reference_map_copy = JSON.parse(JSON.stringify(cell_reference_map));
+
     // FIXME: flatten row/column styles too
 
     // flatten data -- also remove unecessary fields (FIXME: you might
@@ -2292,7 +2311,7 @@ export class Sheet {
     // testing row-dominant vs column-dominant and see which is better; 
     // but that kind of thing adds time, so it should be optional.
 
-    const cell_styles = this.CompressCellStyles(cell_reference_map);
+    const cell_styles = this.CompressCellStyles(cell_reference_map, cell_reference_map_copy);
 
     const result: SerializedSheet = {
 
