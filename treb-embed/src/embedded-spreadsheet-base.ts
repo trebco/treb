@@ -2103,11 +2103,17 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     try {
 
-      let response = await this.Fetch(uri);
+      const response = await fetch(uri);
+      
+      if (!response.ok) {
+        throw new Error('network error');
+      }
 
-      if (typeof response === 'string') {
+      let text = await response.text();
+
+      if (typeof text === 'string') {
         if (csv) {
-          this.LoadCSV(response, LoadSource.NETWORK_FILE);
+          this.LoadCSV(text, LoadSource.NETWORK_FILE);
         }
         else if (tsv) {
           // ...
@@ -2121,14 +2127,14 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
           // FIXME: why? the data is fully accessible once it's
           // been loaded in here. this is silly and unecessary.
 
-          if (response.substr(0, 11) === '&&&START&&&') {
-            response = response.substr(11);
+          if (text.substr(0, 11) === '&&&START&&&') {
+            text = text.substr(11);
           }
-          else if (response.substr(0, 8) === 'for(;;);') {
-            response = response.substr(8);
+          else if (text.substr(0, 8) === 'for(;;);') {
+            text = text.substr(8);
           }
 
-          const json = JSON.parse(response);
+          const json = JSON.parse(text);
           this.LoadDocument(json, { scroll, recalculate, override_sheet, source: LoadSource.NETWORK_FILE });
 
         }
@@ -3481,12 +3487,12 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     }
   }
 
-  /**
+  /* *
    * replacement for fetch
    * FIXME: move to utils or other lib
    * FIXME: we don't need to do this for ES6, presumably...
    * can this move into the legacy/modern code? or is there a polyfill? (...)
-   */
+   * /
   protected async Fetch(uri: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -3497,6 +3503,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       xhr.send();
     });
   }
+  */
 
   /**
    * I'm restructuring the select file routine to simplify, in service
@@ -4470,7 +4477,15 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // FIXME: testing... in particular URL.createObjectURL and new Blob
 
     if (/^(http:|https:|\/\/)/.test(name)) {
-      const script = await this.Fetch(name);
+      const response = await fetch(name);
+
+      if (!response.ok) {
+        throw new Error('Error loading worker script');
+      }
+      
+      const script = await response.text();
+
+      // const script = await this.Fetch(name);
       worker = new Worker(URL.createObjectURL(new Blob([script], { type: 'application/javascript' })));
     }
     else if (/^file:/.test(name)) {
