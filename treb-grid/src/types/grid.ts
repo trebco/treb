@@ -2229,7 +2229,7 @@ export class Grid {
 
     // check against functions
 
-    console.info('checking...', name, this.autocomplete_matcher?.function_map);
+    // console.info('checking...', name, this.autocomplete_matcher?.function_map);
 
     const compare = name.trim().toUpperCase();
     if (this.autocomplete_matcher) {
