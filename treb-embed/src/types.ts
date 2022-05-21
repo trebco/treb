@@ -32,6 +32,7 @@ export interface TREBSimulationData {
 export interface TREBDocument {
   app: string;
   version: string;
+  revision?: number;
   name?: string;
   user_data?: any;
   sheet_data?: SerializedSheet|SerializedSheet[]; // NOTE: support old version, but it would be nice to drop

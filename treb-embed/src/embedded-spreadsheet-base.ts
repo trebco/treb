@@ -2685,6 +2685,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     const serialized: TREBDocument = {
       app: process.env.BUILD_NAME || '',
       version: process.env.BUILD_VERSION || '',
+      revision: this.file_version,
       name: this.grid.model.document_name, // may be undefined
       user_data: this.grid.model.user_data, // may be undefined
       decimal_mark: Localization.decimal_separator,
@@ -2792,7 +2793,10 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     }); 
     // undefined, false, undefined, undefined, selection, LoadSource.UNDO);
 
-    this.file_version--; // decrement
+    // don't decrement because we will get the file version from the revision
+    // number in the file (this is new)
+
+    // this.file_version--; // decrement
 
   }
 
@@ -4047,6 +4051,11 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
       // console.info('serializing');
 
+      this.file_version++; // increment (roll at 2^16)
+      if (this.file_version >= 65536) {
+        this.file_version = 1;
+      }
+
       const json = JSON.stringify(this.SerializeDocument({
         preserve_simulation_data: false,
         rendered_values: true,
@@ -4059,7 +4068,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         localStorage.setItem(this.options.storage_key, json);
       }
       if (this.options.undo) {
-        this.PushUndo(json, undo_selection);
+        this.PushUndo(json, undo_selection, false);
       }
 
       this.Publish({ type: 'document-change' });
@@ -4067,7 +4076,17 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     });
   }
 
-  protected PushUndo(json?: string, last_selection?: string): void {
+  /**
+   * 
+   * @param json -- the serialized data is already calculated. that happens
+   * when we are storing to localStorage as part of handling a change; since
+   * we already have the json, we can pass it through. although we should
+   * switch around the order, it would make it a little easier to manage.
+   * 
+   * @param increment -- increment the file version. this is a parameter
+   * so we can _not_ increment on the initial state push, on load.
+   */
+  protected PushUndo(json?: string, last_selection?: string, increment = true): void {
 
     const selection = last_selection || this.last_selection;
 
@@ -4076,6 +4095,13 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     if (this.undo_stack[this.undo_pointer - 1]) {
       this.undo_stack[this.undo_pointer - 1].selection = selection;
       // console.info('set at pointer', this.undo_pointer-1, this.last_selection);
+    }
+
+    if (increment) {
+      this.file_version++; // increment (roll at 2^16)
+      if (this.file_version >= 65536) {
+        this.file_version = 1;
+      }
     }
 
     if (!json) {
@@ -4105,8 +4131,6 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       this.undo_pointer -= delta;
     }
 
-    this.file_version++; // increment
-
   }
 
   /**
@@ -4118,11 +4142,22 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     this.undo_stack = [];
     this.undo_pointer = 0;
+    this.last_save_version = this.file_version;
+
     if (push) {
-      this.PushUndo();
+      this.PushUndo(undefined, undefined, false);
     }
 
-    this.last_save_version = this.file_version = 0;
+    // this.last_save_version = this.file_version = 0;
+
+    // don't reset file version here. this is called from three places:
+    //
+    // (1) constructor 
+    // (2) load
+    // (3) reset 
+    //
+    // reset already sets this to 0. load should load from the
+    // file, and constructor will default to 0 unless there's a load.
 
   }
 
@@ -4357,6 +4392,9 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * import data from serialized document, doing locale conversion if necessary
    */
   protected ImportDocumentData(data: TREBDocument, override_sheet?: string): void {
+
+    this.file_version = data.revision || 0;
+    // console.info("IDD: file version ->", this.file_version);
 
     // FIXME: version check
 
