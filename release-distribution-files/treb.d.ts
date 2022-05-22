@@ -1008,6 +1008,9 @@ export interface EmbeddedSpreadsheetOptions {
 
     /** show tinted colors in toolbar color dropdowns */
     tint_theme_colors?: boolean;
+
+    /** show a spinner for long-running operations */
+    spinner?: boolean;
 }
 export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file" | "local-storage" | "undo";
 

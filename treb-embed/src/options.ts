@@ -194,6 +194,9 @@ export interface EmbeddedSpreadsheetOptions {
   /** show tinted colors in toolbar color dropdowns */
   tint_theme_colors?: boolean;
 
+  /** show a spinner for long-running operations */
+  spinner?: boolean;
+
 }
 
 /**
@@ -230,6 +233,7 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   delete_tab: false,
   expand: false,
   markdown: false,
+  spinner: false,
 
 };
 

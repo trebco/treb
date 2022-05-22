@@ -28,6 +28,7 @@ import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 // --- local -------------------------------------------------------------------
 
 import { ProgressDialog, DialogType } from './progress-dialog';
+import { Spinner } from './spinner';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './options';
 import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent } from './types';
 
@@ -323,6 +324,9 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * element (i.e. not when we're just using the engine)
    */
   protected dialog?: ProgressDialog;
+
+  /** new spinner */
+  protected spinner?: Spinner;
 
   /** file chooser */
   protected file_chooser?: HTMLInputElement;
@@ -881,6 +885,12 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
       (self as (typeof self & Record<string, unknown>))[this.options.global_name] = this;
 
+    }
+
+    // create spinner, we might want it for load
+
+    if (container && this.options.spinner) {
+      this.spinner = new Spinner(container);
     }
 
     // don't load if we are a split view
@@ -2098,12 +2108,17 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // NOTE: dropping fetch, in favor of XHR; fetch requires a
     // pretty large polyfill for IE11, not worth it
 
+    // (Update, 2022: back to fetch)
+
     const csv = /csv(?:$|\?|&)/i.test(uri);
     const tsv = /tsv(?:$|\?|&)/i.test(uri);
 
     try {
 
+      console.info('ts?', this.spinner);
+      this.spinner?.Show();
       const response = await fetch(uri);
+      this.spinner?.Hide();
       
       if (!response.ok) {
         throw new Error('network error');
