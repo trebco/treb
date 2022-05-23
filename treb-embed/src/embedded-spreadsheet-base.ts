@@ -2115,7 +2115,6 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     try {
 
-      console.info('ts?', this.spinner);
       this.spinner?.Show();
       const response = await fetch(uri);
       this.spinner?.Hide();
