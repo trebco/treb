@@ -289,6 +289,10 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * this might be something that should travel with the document,
    * as a way to compare different versions... something to think
    * about. we could certainly preserve/restore it on save/load.
+   * 
+   * UPDATE: we're now storing this with the document, as "revision".
+   * for the future we should be able to use this as the basis for
+   * dirty flags in various applications.
    */
   protected file_version = 0;
 
@@ -446,14 +450,22 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   }
 
   /**
-   * this is a loose representation of the document change state, with the 
-   * value being 0 when a document is loaded and incremented on any data, 
-   * structure or document change. it can be used to track changes or
-   * identify a particular state (such as when you serialize it) for 
-   * comparison.
+   * state is the current revision of the document. it is preserved any
+   * time the document is saved. it should be a consistent indication of
+   * the document version and can be used to compare versions.
+   * 
+   * state is an atomically-incrementing integer but rolls over at 2^16.
    */
   public get state() {
     return this.file_version;
+  }
+
+  /**
+   * indicates the current revision of the document is not equal to the 
+   * last-saved revision of the document.
+   */
+  public get dirty() {
+    return this.file_version !== this.last_save_version;
   }
 
   /**

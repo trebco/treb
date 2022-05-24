@@ -1,4 +1,4 @@
-/*! API v18.12. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+/*! API v18.13. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -151,13 +151,19 @@ export declare class EmbeddedSpreadsheet {
     set headless(value: boolean);
 
     /**
-     * this is a loose representation of the document change state, with the
-     * value being 0 when a document is loaded and incremented on any data,
-     * structure or document change. it can be used to track changes or
-     * identify a particular state (such as when you serialize it) for
-     * comparison.
+     * state is the current revision of the document. it is preserved any
+     * time the document is saved. it should be a consistent indication of
+     * the document version and can be used to compare versions.
+     *
+     * state is an atomically-incrementing integer but rolls over at 2^16.
      */
     get state(): number;
+
+    /**
+     * indicates the current revision of the document is not equal to the
+     * last-saved revision of the document.
+     */
+    get dirty(): boolean;
 
     /**
      * Use this function to batch multiple document changes. Essentially the
