@@ -216,6 +216,7 @@ export interface SubSeries {
 
 export interface SeriesType {
   label?: string;
+  subtype?: string;
   x: SubSeries;
   y: SubSeries;
   index?: number;

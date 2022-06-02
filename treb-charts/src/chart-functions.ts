@@ -62,6 +62,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'X', metadata: true, },
       { name: 'Y', metadata: true, },
       { name: 'index', },
+      { name: 'subtype', },
     ],
     fn: (...args: any) => {
       // (args as DecoratedArray<unknown>)._type = 'series';

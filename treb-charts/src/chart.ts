@@ -180,8 +180,6 @@ export class Chart {
 
   public ReadSeries(data: Array<any>): SeriesType {
     
-    // console.info("RSD", data);
-
     // in this case it's (label, X, Y)
     const series: SeriesType = {
       x: { data: [] },
@@ -190,6 +188,9 @@ export class Chart {
 
     if (data[3] && typeof data[3] === 'number') {
       series.index = data[3];
+    }
+    if (data[4]) {
+      series.subtype = data[4].toString();
     }
 
     if (data[0]) {
@@ -1332,14 +1333,27 @@ export class Chart {
       if (this.chart_data.series) {
         for (let i = 0; i < this.chart_data.series.length; i++) {
           const series = this.chart_data.series[i];
+
+          let lines = !!this.chart_data.lines;
+          let points = !!this.chart_data.points;
+
+          if (series.subtype === 'plot') {
+            points = true;
+            lines = false;
+          }
+          else if (series.subtype === 'line') {
+            points = false;
+            lines = true;
+          }
+
           const index = typeof series.index === 'number' ? series.index : i + 1;
           this.renderer.RenderScatterSeries(area, 
             series.x.data, 
             series.y.data, 
             this.chart_data.x_scale, 
             this.chart_data.y_scale, 
-              !!this.chart_data.lines,
-              !!this.chart_data.points,
+              lines,
+              points,
               !!this.chart_data.filled,
               !!this.chart_data.markers,
               !!this.chart_data.smooth,
