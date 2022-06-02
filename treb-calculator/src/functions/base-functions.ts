@@ -71,6 +71,11 @@ const inverse_normal = (q: number): number => {
 
 export const BaseFunctionLibrary: FunctionMap = {
 
+  Int: {
+    fn: (value: number) => {
+      return {type: ValueType.number, value: Math.floor(value) };
+    },
+  },
 
   Rand: {
     volatile: true,
