@@ -201,6 +201,10 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
         // data should now be clean when it gets here (famous last words)
 
+        // we're now sometimes getting 0-length arrays here. that's a 
+        // function of our new polynomial methods, BUT, we should probably
+        // handle it properly regardless.
+
         const single = (this.result.type === ValueType.array) ? this.result.value[0][0] : this.result;
         /*
         if (single.type === ValueType.object) {

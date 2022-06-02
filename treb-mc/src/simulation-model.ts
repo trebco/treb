@@ -7,6 +7,7 @@ import { MCFunctionMap } from './descriptors';
 import { DataError, ArgumentError, ValueError } from 'treb-calculator/src/function-error';
 import { Scale as CreateScale } from 'treb-utils';
 import { DataModel } from 'treb-grid';
+import { Polynomial } from './polynomial/polynomial';
 
 export type SimulationResultsData =  Array<Float64Array|number[]>[][];
 
@@ -975,8 +976,47 @@ export class SimulationModel {
         fn: this.Permutation.bind(this),
         extension: true,
         simulation_volatile: true,
-      }
+      },
 
+      'RiskAMP.IntervalInRange': {
+        description: 'Stochastic regression function',
+        arguments: [
+          { name: 'Order reference', description: 'Order reference', collector: true },
+          { name: 'Order min', description: 'Order min' }, 
+          { name: 'Order max', description: 'Order max' }, 
+          { name: 'Value reference', description: 'Value reference', collector: true },
+          { name: 'Value min', description: 'Value min' }, 
+        ],
+        extension: true,
+        fn: this.IntervalInRange.bind(this),
+      },
+
+      'RiskAMP.Polynomial.Fit': {
+        description: 'Fit polynomial',
+        arguments: [
+          { name: 'x', description: 'x', },
+          { name: 'y', description: 'y', },
+          { name: 'degree', description: 'degree', },
+        ],
+        extension: true,
+        fn: this.PolynomialFit.bind(this),
+      },
+
+      'RiskAMP.Polynomial.Apply': {
+        description: 'Apply polynomial',
+        arguments: [
+
+        ],
+        extension: true,
+        fn: this.PolynomialApply.bind(this),
+      },
+
+      'RiskAMP.Polynomial.RealRoots': {
+        description: 'Find real roots of a polynomial',
+        arguments: [],
+        extension: true,
+        fn: this.PolynomialRealRoots.bind(this),
+      },
 
     };
 
@@ -1778,6 +1818,115 @@ export class SimulationModel {
 
   public simulationtime(): UnionValue {
     return { type:ValueType.number, value: this.elapsed / 1000 };
+  }
+
+  public PolynomialRealRoots(coefficients: number[], offset_intercept = 0, min?: number, max?: number) {
+
+    // return { type: ValueType.undefined };
+
+    coefficients = Utils.FlattenUnboxed(coefficients);
+    if (offset_intercept) {
+      coefficients[0] += offset_intercept;
+    }
+
+    const roots = Polynomial.Roots(coefficients);
+    let real_roots: number[] = roots.filter(complex => complex.imaginary < 1e-12).map(x => x.real);
+
+    if (typeof min === 'number') {
+      real_roots = real_roots.filter(x => x >= min);
+    }
+    if (typeof max === 'number') {
+      real_roots = real_roots.filter(x => x <= max);
+    }
+
+    const value = real_roots.map(value => [{
+      type: ValueType.number,
+      value,
+    }]);
+
+    if (value.length > 0) {
+      return {
+        type: ValueType.array,
+        value: real_roots.map(value => [{
+            type: ValueType.number,
+            value,
+          }]),
+      };
+    }
+
+    return { type: ValueType.undefined };
+
+  }
+
+  public PolynomialApply(coefficients: number[][], x: number) {
+
+    // return { type: ValueType.undefined };
+
+    const value = Polynomial.Apply(Utils.FlattenUnboxed(coefficients), x);
+    return {
+      type: ValueType.number, 
+      value,
+    };
+
+  }
+
+  public PolynomialFit(x: number[][], y: number[][], degree: number) {
+
+    const result = Polynomial.Fit(Utils.FlattenUnboxed(x), Utils.FlattenUnboxed(y), degree);
+    // console.info({result, x, y});
+
+    const value = result.map(value => [{
+      type: ValueType.number,
+      value,
+    }]);
+
+    if (value.length) {
+      return {
+        type: ValueType.array,
+        value,
+      };
+    }
+
+    return { type: ValueType.undefined };
+
+  }
+
+  public IntervalInRange(order: number[], min: number, max: number, values: number[], floor = 0) {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!order || !order.length) {
+      return DataError();
+    }
+    if (!values || !values.length) {
+      return DataError();
+    }
+
+    // can't happen. we should validate anyway.
+    if (values.length !== order.length) {
+      return DataError();
+    }
+
+    let count = 0;
+    let rangecount = 0;
+
+    const len = values.length;
+
+    for (let i = 0; i < len; i++) {
+      if (order[i] >= min && order[i] <= max) {
+        rangecount++;
+        if (values[i] >= floor ) {
+          count++;
+        }
+      }
+    }
+
+    return { 
+      type:ValueType.number, 
+      value: rangecount > 0 ? count / rangecount : 0,
+    };
+
   }
 
   public simulationvaluesarray(data?: number[]): UnionValue {
