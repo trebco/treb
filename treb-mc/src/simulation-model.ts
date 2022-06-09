@@ -978,6 +978,31 @@ export class SimulationModel {
         simulation_volatile: true,
       },
 
+      /*
+      'RiskAMP.MatchingRange': {
+        description: 'Stochastic regression function',
+        arguments: [
+          { name: 'Order reference', description: 'Order reference', collector: true },
+          { name: 'Order min', description: 'Order min' }, 
+          { name: 'Order max', description: 'Order max' }, 
+          { name: 'Value reference', description: 'Value reference', collector: true },
+        ],
+        extension: true,
+        fn: this.MatchingRange.bind(this),
+      },
+      */
+
+      'RiskAMP.CountInRange': {
+        description: 'Stochastic regression function',
+        arguments: [
+          { name: 'Order reference', description: 'Order reference', collector: true },
+          { name: 'Order min', description: 'Order min' }, 
+          { name: 'Order max', description: 'Order max' }, 
+        ],
+        extension: true,
+        fn: this.CountInRange.bind(this),
+      },
+
       'RiskAMP.IntervalInRange': {
         description: 'Stochastic regression function',
         arguments: [
@@ -1016,6 +1041,13 @@ export class SimulationModel {
         arguments: [],
         extension: true,
         fn: this.PolynomialRealRoots.bind(this),
+      },
+
+      'RiskAMP.Polynomial.Roots': {
+        description: 'Find roots of a polynomial',
+        arguments: [],
+        extension: true,
+        fn: this.PolynomialRoots.bind(this),
       },
 
     };
@@ -1820,6 +1852,33 @@ export class SimulationModel {
     return { type:ValueType.number, value: this.elapsed / 1000 };
   }
 
+  public PolynomialRoots(coefficients: number[], offset_intercept = 0) {
+
+    coefficients = Utils.FlattenUnboxed(coefficients);
+    if (offset_intercept) {
+      coefficients[0] += offset_intercept;
+    }
+
+    const roots = Polynomial.Roots(coefficients);
+
+    if (roots.length) {
+      const values: UnionValue[] = [];
+      for (const root of roots) {
+        values.push({
+          type: ValueType.complex,
+          value: root,
+        });
+      }
+      return {
+        type: ValueType.array,
+        value: [values],
+      };
+    }
+
+    return { type: ValueType.undefined };
+
+  }
+
   public PolynomialRealRoots(coefficients: number[], offset_intercept = 0, min?: number, max?: number) {
 
     // return { type: ValueType.undefined };
@@ -1830,7 +1889,7 @@ export class SimulationModel {
     }
 
     const roots = Polynomial.Roots(coefficients);
-    let real_roots: number[] = roots.filter(complex => complex.imaginary < 1e-12).map(x => x.real);
+    let real_roots: number[] = roots.filter(complex => Math.abs(complex.imaginary) < 1e-12).map(x => x.real);
 
     if (typeof min === 'number') {
       real_roots = real_roots.filter(x => x >= min);
@@ -1891,6 +1950,94 @@ export class SimulationModel {
 
   }
 
+  /* testing */
+  public MatchingRange(order: number[], min: number, max: number, values: number[]) {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!order || !order.length) {
+      return DataError();
+    }
+    if (!values || !values.length) {
+      return DataError();
+    }
+
+    // can't happen. we should validate anyway.
+    if (values.length !== order.length) {
+      return DataError();
+    }
+
+    const data: UnionValue[] = [];
+
+    const len = values.length;
+
+    for (let i = 0; i < len; i++) {
+      if (order[i] >= min && order[i] <= max) {
+        data.push({
+          type: ValueType.number,
+          value: values[i],
+        });
+      }
+    }
+
+    return {
+      type: ValueType.array,
+      value: [data],
+    };
+
+  }
+
+  public CountInRange(order: number[], min: number, max: number) {
+
+    if (this.state !== SimulationState.Null) {
+      return { type: ValueType.number, value: 0 };
+    }
+    if (!order || !order.length) {
+      return DataError();
+    }
+
+    let count = 0;
+
+    const len = order.length;
+
+    for (let i = 0; i < len; i++) {
+      if (order[i] >= min && order[i] <= max) {
+          count++;
+      }
+    }
+
+    return { 
+      type:ValueType.number, 
+      value: count,
+    };
+
+  }
+
+  /**
+   * this is a support function for stochastic regression. it's a composite
+   * of various things you can do using regular functions, countif, and arrays,
+   * but it should be much more efficient.
+   * 
+   * @param order -- the ordering cell. this is usually the value we are 
+   * testing, and it should ordinarily be a uniform distribution (either discrete
+   * or continuous). we want it to be uniform so we have a similar count in
+   * each bucket.
+   * 
+   * @param min -- min value for the order cell
+   * @param max -- max value for the order cell
+   * 
+   * @param values -- the values cell. if the ordering cell value falls within
+   * the min/max range, we test the value cell. the count of "hits" here is
+   * the denominator of our result.
+   * 
+   * @param floor -- floor value for the values cell. if the values cell value
+   * in the given test is above the floor, we count that as 1. otherwise we 
+   * count it as 0. the sum of these test values is the numerator of our result.
+   * 
+   * @returns how many times, expressed as a percentage, was the values cell
+   * above the floor _when_ the order cell was within the target range.
+   */
   public IntervalInRange(order: number[], min: number, max: number, values: number[], floor = 0) {
 
     if (this.state !== SimulationState.Null) {
