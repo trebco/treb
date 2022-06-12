@@ -352,9 +352,19 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     return this.calculator.parser;
   }
 
+  /** for destruction */
+  protected view?: HTMLElement;
+
+  /** for destruction */
+  protected key_listener?: (event: KeyboardEvent) => void;
+
   protected node?: HTMLElement;
 
-  protected views: EmbeddedSpreadsheetBase[] = [];
+  // protected views: EmbeddedSpreadsheetBase[] = [];
+  protected views: Array<{
+    view: EmbeddedSpreadsheetBase;
+    subscription?: number;
+  }> = [];
 
   protected focus_target: EmbeddedSpreadsheetBase = this;
 
@@ -675,16 +685,16 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     if (container) {
 
-      const view = document.createElement('div');
-      view.classList.add('treb-view');
+      this.view = document.createElement('div');
+      this.view.classList.add('treb-view');
 
       // we used to set a class on this node, but grid will set 
       // "treb-main treb-theme" and some other stuff, we can use those
       // as necessary
 
       this.node = document.createElement('div');
-      view.appendChild(this.node);
-      container.appendChild(view);
+      this.view.appendChild(this.node);
+      container.appendChild(this.view);
 
       this.node.addEventListener('focusin', () => {
         this.focus_target = this;
@@ -692,7 +702,12 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
       // handle key. TODO: move undo to grid (makes more sense)
 
-      container.addEventListener('keydown', this.HandleKeyDown.bind(this));
+      // FIXME: undo is a little weird for split view. it seems to be bound
+      // to the current view. this can lead to strange behavior depending
+      // on which window you're in. needs some thought.
+
+      this.key_listener = this.HandleKeyDown.bind(this);
+      container.addEventListener('keydown', this.key_listener);
 
       const toll_initial_render = !!(data || this.options.network_document);
 
@@ -826,6 +841,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
         }
       });
+
+      // FIXME: split?
 
       if (this.options.prompt_save) {
         window.addEventListener('beforeunload', (event) => {
@@ -1037,6 +1054,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   protected CreateView(): EmbeddedSpreadsheetBase {
     return new EmbeddedSpreadsheetBase({
       ...this.options,
+      global_name: undefined, // don't overwrite
       model: this,
     });
   }
@@ -1046,6 +1064,38 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
   // these are methods that are public for whatever reason, but we don't want
   // them published to any public API. if we ever get around to encapsulating
   // the API, leave these out.
+
+  /**
+   * testing 
+   * 
+   * @internal
+   */
+  public Unsplit(): void {
+    // console.info("unsplit", this.views);
+    const target = this.views.pop();
+    if (target) {
+      const sheet = target.view;
+
+      // clean up
+      sheet.grid.grid_events.CancelAll();
+      sheet.events.CancelAll();
+      
+      if (sheet.view?.parentElement) {
+
+        // remove listener
+        if (sheet.key_listener) {
+          sheet.view.parentElement.removeEventListener('keydown', sheet.key_listener);
+        }
+
+        // remove node
+        sheet.view.parentElement.removeChild(sheet.view);
+      }            
+
+      // in case other view was focused
+      this.node?.focus();
+
+    }
+  }
 
   /**
    * this is not very efficient atm. we create another whole instance of this
@@ -1059,7 +1109,6 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     const view = this.CreateView();
     view.grid.EnsureActiveSheet(true);
 
-    this.views.push(view);
     view.node?.addEventListener('focusin', () => {
       this.focus_target = view;
     });
@@ -1090,7 +1139,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       }
     });
 
-    this.Subscribe(event => {
+    const subscription = this.Subscribe(event => {
       switch (event.type) {
         case 'selection':
           break;
@@ -1105,6 +1154,11 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
           view.UpdateAnnotations();
           view.grid.Update(true);
       }
+    });
+
+    this.views.push({
+      view,
+      subscription,
     });
 
   }

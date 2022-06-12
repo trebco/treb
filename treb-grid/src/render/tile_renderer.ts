@@ -416,10 +416,14 @@ export class TileRenderer {
 
         context.fillStyle = this.theme.headers?.fill ? ThemeColor2(this.theme, this.theme.headers.fill) : '';
         context.fillRect(0, 0, tile.logical_size.width, this.layout.header_offset.y);
-        context.strokeStyle = this.theme.grid_color || '';
+
+        // context.strokeStyle = this.theme.grid_color || '';
+        context.strokeStyle = this.theme.headers_grid_color || '';
 
         // this draws a line at the bottom of the header
         // (using regular grid color)
+
+        // looks better using the header grid color
 
         context.beginPath();
         context.moveTo(0, header_size.y - 0.5);
@@ -454,7 +458,8 @@ export class TileRenderer {
 
         context.fillRect(0, 0, this.layout.header_offset.x, tile.logical_size.height);
 
-        context.strokeStyle = this.theme.grid_color || '';
+        // context.strokeStyle = this.theme.grid_color || '';
+        context.strokeStyle = this.theme.headers_grid_color || '';
 
         context.beginPath();
         context.moveTo(header_size.x - 0.5, 0);
