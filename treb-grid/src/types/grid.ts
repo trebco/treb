@@ -1267,6 +1267,8 @@ export class Grid {
 
   /**
    * show or hide headers
+   * 
+   * FIXME: this shouldn't be sent if the current value === the desired value
    */
   public ShowHeaders(show = true): void {
     this.ExecCommand({
@@ -8930,8 +8932,12 @@ export class Grid {
    *
    * [NOTE: don't go crazy with that, some simple operations can be inlined]
    *
+   * FIXME: if we are using this for co-editing, and passing messages in,
+   * we should probably have a parameter that prevents re-queuing. that won't
+   * solve other problems but it will simplify using the queue for this.
+   * 
    */
-  private ExecCommand(commands: Command | Command[]) {
+  private ExecCommand(commands: Command | Command[], push_queue = true) {
 
     // FIXME: support ephemeral commands (...)
 
@@ -8946,8 +8952,9 @@ export class Grid {
     // this seems like the dumb way to do this... maybe?
     if (!Array.isArray(commands)) commands = [commands];
 
-    // gate on subscribers? (...)
-    this.command_log.Publish({ command: commands, timestamp: new Date().getTime() });
+    if (push_queue) {
+      this.command_log.Publish({ command: commands, timestamp: new Date().getTime() });
+    }
 
     for (const command of commands) {
 
