@@ -72,7 +72,7 @@ import {
 } from './grid_command';
 
 import { DataModel, ViewModel, MacroFunction, SerializedModel } from './data_model';
-import { NamedRangeCollection } from './named_range';
+// import { NamedRangeCollection } from './named_range';
 
 import '../../style/grid.scss';
 import { DOMUtilities } from '../util/dom_utilities';
@@ -248,6 +248,15 @@ export class Grid {
    * paint call.
    */
   private tile_update_pending = false;
+
+  /**
+   * for coediting/remotes, we may make a structural change that requires
+   * a full repaint of another sheet -- we won't be able to do that until
+   * the sheet is displayed. so let's keep track of these. 
+   * 
+   * these are numbers so we can use a sparse array. (or we could use a set...)
+   */
+  private pending_layout_update: Set<number> = new Set();
 
   /**
    * spreadsheet language parser. used to pull out address
@@ -551,7 +560,7 @@ export class Grid {
 
     this.ExecCommand({
       key: CommandKey.SetNote,
-      address,
+      area: address,
       note,
     });
 
@@ -569,7 +578,7 @@ export class Grid {
 
     this.ExecCommand({
       key: CommandKey.SetLink,
-      address,
+      area: address,
       reference,
     });
 
@@ -1509,6 +1518,7 @@ export class Grid {
       key: CommandKey.AddSheet,
       insert_index: index,
       name,
+      show: true,
     });
 
   }
@@ -1563,6 +1573,7 @@ export class Grid {
     this.ExecCommand({
       key: CommandKey.AddSheet,
       name,
+      show: true,
     });
   }
 
@@ -2179,7 +2190,7 @@ export class Grid {
 
     const command: DataValidationCommand = {
       key: CommandKey.DataValidation,
-      target,
+      area: target,
       error,
     };
     
@@ -2797,10 +2808,10 @@ export class Grid {
     let width = 12;
     const padding = 4 * 2; // FIXME: parameterize
 
-    if (!allow_shrink) width = this.active_sheet.GetColumnWidth(column);
+    if (!allow_shrink) width = sheet.GetColumnWidth(column);
 
-    for (let row = 0; row < this.active_sheet.cells.rows; row++) {
-      const cell = this.active_sheet.CellData({ row, column });
+    for (let row = 0; row < sheet.cells.rows; row++) {
+      const cell = sheet.CellData({ row, column });
       let text = cell.formatted || '';
       if (typeof text !== 'string') {
         text = text.map((part) => part.text).join('');
@@ -2816,7 +2827,7 @@ export class Grid {
       }
     }
 
-    this.active_sheet.SetColumnWidth(column, width);
+    sheet.SetColumnWidth(column, width);
 
   }
 
@@ -3113,10 +3124,22 @@ export class Grid {
 
     // this.StyleDefaultFromTheme(); // ?
 
-    // if (render)
-    {
+    // if (render) {
+
+    // our scheme for co-editing causes some cases where we will need to
+    // flush rendered data in background sheets. in that case we're using
+    // this set to list sheets as pending, so we can refresh when we activate
+    // the sheet.
+
+    if (this.pending_layout_update.has(this.active_sheet.id)) {
+      this.Repaint(true, true);
+      this.pending_layout_update.delete(this.active_sheet.id);
+    }
+    else {
       this.Repaint(false, false);
     }
+
+    // }
 
     // FIXME: structure event
 
@@ -7008,22 +7031,27 @@ export class Grid {
 
     // find target
 
-    let sheet: Sheet|undefined;
+    // let sheet: Sheet|undefined;
     let cell: Cell|undefined;
 
-    if (!command.target.sheet_id || command.target.sheet_id === this.active_sheet.id) {
+    const sheet = this.FindSheet(command.area);
+
+    /*
+    if (!command.area.sheet_id || command.area.sheet_id === this.active_sheet.id) {
       sheet = this.active_sheet;
     }
     else {
       for (const test of this.model.sheets) {
-        if (test.id === command.target.sheet_id) {
+        if (test.id === command.area.sheet_id) {
           sheet = test;
           break;
         }
       }
     }
+    */
+
     if (sheet) {
-      cell = sheet.cells.GetCell(command.target, true);
+      cell = sheet.cells.GetCell(command.area, true);
     }
 
     if (!cell) {
@@ -7056,9 +7084,12 @@ export class Grid {
    */
   private GetValidationRange(area: IArea): CellValue[]|undefined {
 
-    let sheet: Sheet|undefined;
+    // let sheet: Sheet|undefined;
     let list: CellValue[]|undefined;
 
+    const sheet = this.FindSheet(area);
+
+    /*
     if (!area.start.sheet_id || area.start.sheet_id === this.active_sheet.id) {
       sheet = this.active_sheet;
     }
@@ -7070,6 +7101,8 @@ export class Grid {
         }
       }
     }
+    */
+
     if (sheet) {
       list = [];
 
@@ -8498,7 +8531,9 @@ export class Grid {
       ? 0 : command.width;
 
     const area = new Area(command.area.start, command.area.end);
+    const sheet = this.FindSheet(area);
 
+    /*
     let sheet = this.active_sheet;
     if (command.area.start.sheet_id && command.area.start.sheet_id !== this.active_sheet.id) {
       for (const compare of this.model.sheets) {
@@ -8508,6 +8543,7 @@ export class Grid {
         }
       }
     }
+    */
 
     const top: Style.Properties = { border_top: width };
     const bottom: Style.Properties = { border_bottom: width };
@@ -8728,6 +8764,13 @@ export class Grid {
       ? new Area(command.area)
       : new Area(command.area.start, command.area.end);
 
+    const sheet = this.FindSheet(area);
+
+    if (!area.start.sheet_id) { 
+      area.start.sheet_id = sheet.id;
+    }
+
+    /*
     let sheet = this.active_sheet;
     if (area.start.sheet_id && area.start.sheet_id !== this.active_sheet.id) {
       for (const compare of this.model.sheets) {
@@ -8737,6 +8780,7 @@ export class Grid {
         }
       }
     }
+    */
 
     if (!area.entire_row && !area.entire_column && (
       area.end.row >= sheet.rows
@@ -8928,19 +8972,132 @@ export class Grid {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
+   * normalize commands. for co-editing support we need to ensure that
+   * commands properly have sheet IDs in areas/addresses (and explicit 
+   * fields in some cases).
+   * 
+   * at the same time we're editing the commands a little bit to make 
+   * them a little more consistent (within reason).
+   * 
+   * @param commands 
+   */
+  private NormalizeCommands(commands: Command|Command[]): Command[] {
+
+    if (!Array.isArray(commands)) {
+      commands = [commands];
+    }
+
+    const id = this.active_sheet.id;
+    
+    for (const command of commands) {
+      switch (command.key) {
+        
+        // nothing
+        case CommandKey.Null:
+        case CommandKey.ShowHeaders:
+        case CommandKey.ShowSheet:
+        case CommandKey.DuplicateSheet:
+        case CommandKey.DeleteSheet:
+        case CommandKey.ActivateSheet:
+        case CommandKey.RenameSheet:
+        case CommandKey.ReorderSheet:
+          break;
+
+        // both
+        case CommandKey.Clear:
+          if (command.area) {
+            if (!command.area.start.sheet_id) {
+              command.area.start.sheet_id = id;
+            }
+          }
+          else {
+            if (!command.sheet_id) {
+              command.sheet_id = id;
+            }
+          }
+          break;
+
+        // field
+        case CommandKey.ResizeRows:
+        case CommandKey.ResizeColumns:
+        case CommandKey.InsertColumns:
+        case CommandKey.InsertRows:
+        case CommandKey.Freeze:
+          if (!command.sheet_id) {
+            command.sheet_id = id;
+          }          
+          break;
+
+        // area: Area|Address (may be optional)
+        case CommandKey.SetNote:
+        case CommandKey.SetLink:
+        case CommandKey.UpdateBorders:
+        case CommandKey.MergeCells:
+        case CommandKey.UnmergeCells:
+        case CommandKey.DataValidation:
+        case CommandKey.SetRange:
+        case CommandKey.UpdateStyle:
+        case CommandKey.SetName:
+        case CommandKey.Select:
+
+          if (command.area) {
+            if (IsCellAddress(command.area)) {
+              if (!command.area.sheet_id) {
+                command.area.sheet_id = id;
+              }
+            }
+            else {
+              if (!command.area.start.sheet_id) {
+                command.area.start.sheet_id = id;
+              }
+            }
+          }
+          break;
+
+        default:
+          console.warn('unhandled command key', command.key);
+
+      }
+    }
+
+    return commands;
+
+  }
+
+  /**
+   * find sheet matching sheet_id in area.start, or active sheet
+   * 
+   * FIXME: should return undefined on !match
+   * FIXME: should be in model, which should be a class
+   */
+  private FindSheet(identifier: number|IArea|ICellAddress): Sheet {
+
+    const id = typeof identifier === 'number' ? identifier : IsCellAddress(identifier) ? identifier.sheet_id : identifier.start.sheet_id;
+
+    if (!id || id === this.active_sheet.id) {
+      return this.active_sheet;
+    }
+
+    for (const test of this.model.sheets) {
+      if (test.id === id) {
+        return test;
+      }
+    }
+
+    // FIXME: should return undefined here
+    return this.active_sheet;
+
+  }
+
+  /**
    * pass all data/style/structure operations through a command mechanism.
    * this method should optimally act as a dispatcher, so try to minimize
    * inline code in favor of method calls.
    *
    * [NOTE: don't go crazy with that, some simple operations can be inlined]
-   *
-   * FIXME: if we are using this for co-editing, and passing messages in,
-   * we should probably have a parameter that prevents re-queuing. that won't
-   * solve other problems but it will simplify using the queue for this.
    * 
    * NOTE: working on coediting. we will need to handle different sheets.
    * going to work one command at a time...
-   * 
    * 
    * @param queue -- push on the command log. this is default true so it
    * doesn't change existing behavior, but you can turn it off if the message
@@ -8954,13 +9111,28 @@ export class Grid {
     let render_area: Area | undefined;
     let data_area: Area | undefined;
     let style_area: Area | undefined;
+
+    // data and style events were triggered by the areas being set.
+    // we are not necessarily setting them for offsheet changes, so
+    // we need an explicit flag. this should be logically OR'ed with
+    // the area existing.
+
+    let data_event = false;
+    let style_event = false;
+
     let structure_event = false;
     let structure_rebuild_required = false;
 
     const events: GridEvent[] = [];
 
     // this seems like the dumb way to do this... maybe?
-    if (!Array.isArray(commands)) commands = [commands];
+    // if (!Array.isArray(commands)) commands = [commands];
+
+    // should we normalize always, or only if we're queueing?
+    // it seems like it's useful here, then we can be a little
+    // sloppier in the actual handlers.
+
+    commands = this.NormalizeCommands(commands);
 
     if (queue) {
       this.command_log.Publish({ command: commands, timestamp: new Date().getTime() });
@@ -9030,15 +9202,21 @@ export class Grid {
           this.active_sheet.MergeCells(
             new Area(command.area.start, command.area.end));
 
-          render_area = Area.Join(command.area, render_area);
-
-          // FIXME: sheet publishes a data event here, too. probably a good
-          // idea because references to the secondary (non-head) merge cells
-          // will break.
+          // sheet publishes a data event here, too. probably a good
+          // idea because references to the secondary (non-head) merge 
+          // cells will break.
 
           structure_event = true;
           structure_rebuild_required = true;
-          data_area = Area.Join(command.area, data_area);
+
+          if (!command.area.start.sheet_id || command.area.start.sheet_id === this.active_sheet.id) {
+            data_area = Area.Join(command.area, data_area);
+            render_area = Area.Join(command.area, render_area);
+          }
+          else {
+            data_event = true;
+          }
+
           break;
 
         case CommandKey.UnmergeCells:
@@ -9066,8 +9244,14 @@ export class Grid {
 
             // see above
 
-            render_area = Area.Join(command.area, render_area);
-            data_area = Area.Join(command.area, data_area);
+            if (!command.area.start.sheet_id || command.area.start.sheet_id === this.active_sheet.id) {
+              render_area = Area.Join(command.area, render_area);
+              data_area = Area.Join(command.area, data_area);
+            }
+            else {
+              data_event = true;
+            }
+
             structure_event = true;
             structure_rebuild_required = true;
           }
@@ -9081,30 +9265,14 @@ export class Grid {
             // style changes we may need to render one additional row/column.
 
             let area: Area|undefined;
-            let sheet = this.active_sheet;
+            const sheet = this.FindSheet(command.area);
 
             if (IsCellAddress(command.area)) {
               area = new Area(command.area);
-              if (area.start.sheet_id && area.start.sheet_id !== this.active_sheet.id) {
-                for (const test of this.model.sheets) {
-                  if (test.id === area.start.sheet_id) {
-                    sheet = test;
-                    break;
-                  }
-                }
-              }
               sheet.UpdateCellStyle(command.area, command.style, !!command.delta);
             }
             else {
               area = new Area(command.area.start, command.area.end);
-              if (area.start.sheet_id && area.start.sheet_id !== this.active_sheet.id) {
-                for (const test of this.model.sheets) {
-                  if (test.id === area.start.sheet_id) {
-                    sheet = test;
-                    break;
-                  }
-                }
-              }
               sheet.UpdateAreaStyle(area, command.style, !!command.delta);
             }
 
@@ -9129,13 +9297,17 @@ export class Grid {
               render_area = Area.Join(area, render_area);
               
             }
+            else {
+              style_event = true;
+            }
+
           }
 
           break;
 
         case CommandKey.DataValidation:
           this.SetValidationInternal(command);
-          render_area = Area.Join(new Area(command.target), render_area);
+          render_area = Area.Join(new Area(command.area), render_area);
           break;
 
         case CommandKey.SetName:
@@ -9241,103 +9413,146 @@ export class Grid {
 
         case CommandKey.ResizeRows:
           {
+            const sheet = command.sheet_id ? this.FindSheet(command.sheet_id) : this.active_sheet;
+
             let row = command.row;
             if (typeof row === 'undefined') {
               row = [];
-              for (let i = 0; i < this.active_sheet.rows; i++) row.push(i);
+              for (let i = 0; i < sheet.rows; i++) row.push(i);
             }
 
             if (typeof row === 'number') row = [row];
-            if (typeof command.height === 'number') {
-              for (const entry of row) {
-                this.layout.SetRowHeight(entry, command.height);
+
+            if (sheet === this.active_sheet) {
+
+              if (typeof command.height === 'number') {
+                for (const entry of row) {
+                  this.layout.SetRowHeight(entry, command.height);
+                }
               }
+              else {
+
+                // this is default true, but optional
+                const allow_shrink = (typeof command.shrink === 'boolean' ? command.shrink : true);
+                for (const entry of row) {
+                  this.active_sheet.AutoSizeRow(entry, this.theme.grid_cell, allow_shrink);
+                }
+              }
+
+              this.layout.UpdateTotalSize();
+
+              if (this.layout.container
+                && this.layout.container.offsetHeight
+                && this.layout.container.offsetHeight > this.layout.total_height) {
+                this.UpdateLayout();
+              }
+              else {
+                this.layout.UpdateTileHeights(true);
+                this.render_tiles = this.layout.VisibleTiles();
+                this.Repaint(false, true); // repaint full tiles
+              }
+
+              this.layout.UpdateAnnotation(this.active_sheet.annotations);
+              this.RenderSelections();
+
             }
             else {
-
-              // this is default true, but optional
-              const allow_shrink = (typeof command.shrink === 'boolean' ? command.shrink : true);
-              for (const entry of row) {
-                this.active_sheet.AutoSizeRow(entry, this.theme.grid_cell, allow_shrink);
+              if (typeof command.height === 'number') {
+                for (const entry of row) {
+                  sheet.SetRowHeight(entry, command.height);
+                }
               }
+              else {
+
+                // this is default true, but optional
+                const allow_shrink = (typeof command.shrink === 'boolean' ? command.shrink : true);
+                for (const entry of row) {
+                  sheet.AutoSizeRow(entry, this.theme.grid_cell, allow_shrink);
+                }
+              }
+
+              // see below
+              this.pending_layout_update.add(sheet.id);
+
             }
 
-            /*
-            const area = new Area(
-              { column: Infinity, row: row[0] },
-              { column: Infinity, row: row[row.length - 1] });
-            */
-
-            this.layout.UpdateTotalSize();
-
-            if (this.layout.container
-              && this.layout.container.offsetHeight
-              && this.layout.container.offsetHeight > this.layout.total_height) {
-              this.UpdateLayout();
-            }
-            else {
-              this.layout.UpdateTileHeights(true);
-              this.render_tiles = this.layout.VisibleTiles();
-              this.Repaint(false, true); // repaint full tiles
-            }
-
-            this.layout.UpdateAnnotation(this.active_sheet.annotations);
             structure_event = true;
-            this.RenderSelections();
 
           }
           break;
 
         case CommandKey.ResizeColumns:
           {
+            // COEDITING: ok
+
+            const sheet = command.sheet_id ? this.FindSheet(command.sheet_id) : this.active_sheet;
+
             let column = command.column;
 
             if (typeof column === 'undefined') {
               column = [];
-              for (let i = 0; i < this.active_sheet.columns; i++) column.push(i);
+              for (let i = 0; i < sheet.columns; i++) column.push(i);
             }
 
             if (typeof column === 'number') column = [column];
 
-            if (typeof command.width === 'number') {
-              for (const entry of column) {
-                this.layout.SetColumnWidth(entry, command.width);
+            if (sheet === this.active_sheet) {
+
+              if (typeof command.width === 'number') {
+                for (const entry of column) {
+                  this.layout.SetColumnWidth(entry, command.width);
+                }
               }
+              else {
+                for (const entry of column) {
+                  this.AutoSizeColumn(this.active_sheet, entry, false);
+                }
+              }
+
+              this.layout.UpdateTotalSize();
+
+              if (this.layout.container
+                && this.layout.container.offsetWidth
+                && this.layout.container.offsetWidth > this.layout.total_width) {
+                this.UpdateLayout();
+              }
+              else {
+                this.layout.UpdateTileWidths(true);
+                this.render_tiles = this.layout.VisibleTiles();
+                this.Repaint(false, true); // repaint full tiles
+              }
+
+              this.layout.UpdateAnnotation(this.active_sheet.annotations);
+              this.RenderSelections();
+
             }
             else {
-              for (const entry of column) {
-                // this.active_sheet.AutoSizeColumn(entry, false);
-                this.AutoSizeColumn(this.active_sheet, entry, false);
+
+              // this works, but there's one issue: if there's an overflow,
+              // that is cached, and not unset here. we need some way to 
+              // indicate that the sheet requires a full repaint so when it
+              // is shown it updates properly.
+
+              // (that applies to both auto size and explicit size)
+
+              if (typeof command.width === 'number') {
+                for (const entry of column) {
+                  sheet.SetColumnWidth(entry, command.width);
+                }
               }
+              else {
+                for (const entry of column) {
+                  this.AutoSizeColumn(sheet, entry, false);
+                }
+              }
+
+              // ok, use this set
+              this.pending_layout_update.add(sheet.id);
+
+
             }
 
-            /*
-             why are we not tracking this? is it because one of the subsequent
-             calls fires its own event? (...) if so, why are we setting the
-             structure_event flag? (...)
-  
-            const area = new Area(
-              {row: Infinity, column: column[0]},
-              {row: Infinity, column: column[column.length - 1]});
-  
-            */
-
-            this.layout.UpdateTotalSize();
-
-            if (this.layout.container
-              && this.layout.container.offsetWidth
-              && this.layout.container.offsetWidth > this.layout.total_width) {
-              this.UpdateLayout();
-            }
-            else {
-              this.layout.UpdateTileWidths(true);
-              this.render_tiles = this.layout.VisibleTiles();
-              this.Repaint(false, true); // repaint full tiles
-            }
-
-            this.layout.UpdateAnnotation(this.active_sheet.annotations);
             structure_event = true;
-            this.RenderSelections();
 
           }
           break;
@@ -9368,20 +9583,26 @@ export class Grid {
         case CommandKey.SetLink:
         case CommandKey.SetNote:
           {
+            // COEDITING: ok
+
             // note and link are basically the same, although there's a 
             // method for setting note (not sure why)
 
+            const sheet = this.FindSheet(command.area);
+
+            /*
             let sheet = this.active_sheet;
-            if (command.address.sheet_id) {
+            if (command.area.sheet_id) {
               for (const test of this.model.sheets) {
-                if (test.id === command.address.sheet_id) {
+                if (test.id === command.area.sheet_id) {
                   sheet = test;
                   break;
                 }
               }
             }
+            */
 
-            let cell = sheet.cells.GetCell(command.address, true);
+            let cell = sheet.cells.GetCell(command.area, true);
             if (cell) {
 
               let area: Area;
@@ -9390,7 +9611,7 @@ export class Grid {
                 cell = sheet.cells.GetCell(cell.merge_area.start, true);
               }
               else {
-                area = new Area(command.address);
+                area = new Area(command.area);
               }
 
               if (command.key === CommandKey.SetNote) {
@@ -9403,13 +9624,17 @@ export class Grid {
 
               if (sheet === this.active_sheet) {
                 this.DelayedRender(false, area);
+
+                // treat this as style, because it affects painting but
+                // does not require calculation.
+
+                style_area = Area.Join(area, style_area);
+                render_area = Area.Join(area, render_area);
+
               }
-
-              // treat this as style, because it affects painting but
-              // does not require calculation.
-
-              style_area = Area.Join(area, style_area);
-              render_area = Area.Join(area, render_area);
+              else {
+                style_event = true;
+              }
 
             }
           }
@@ -9418,12 +9643,13 @@ export class Grid {
         case CommandKey.SetRange:
           {
             // COEDITING: handles sheet ID properly
+            // FIXME: areas should check sheet
 
             // area could be undefined if there's an error
             // (try to change part of an array)
 
             const area = this.SetRangeInternal(command);
-            if (area) {
+            if (area && area.start.sheet_id === this.active_sheet.id) {
               
               data_area = Area.Join(area, data_area);
 
@@ -9434,11 +9660,17 @@ export class Grid {
               }
 
             }
+            else {
+              data_event = true;
+            }
 
           }
           break;
 
         case CommandKey.DeleteSheet:
+
+          // COEDITING: looks fine
+
           this.DeleteSheetInternal(command);
           structure_event = true;
           structure_rebuild_required = true;
@@ -9457,12 +9689,17 @@ export class Grid {
           // to know? we can guess implicitly from the queue parameter,
           // but it would be better to be explicit.
 
-          // const sheet_id = this.AddSheetInternal(undefined, command.insert_index); // default name
-          this.ActivateSheetInternal({
-            key: CommandKey.ActivateSheet,
-            id: this.AddSheetInternal(command.name, command.insert_index), // default name
-          });
-          structure_event = true;
+          {
+            const id = this.AddSheetInternal(command.name, command.insert_index); // default name
+            if (command.show) {
+              this.ActivateSheetInternal({
+                key: CommandKey.ActivateSheet,
+                id,
+              });
+            }
+            structure_event = true;
+
+          }
           break;
 
         case CommandKey.ActivateSheet:
@@ -9482,12 +9719,18 @@ export class Grid {
       }
       events.push({ type: 'data', area: data_area });
     }
+    else if (data_event) {
+      events.push({ type: 'data' });
+    }
 
     if (style_area) {
       if (!style_area.start.sheet_id) {
         style_area.SetSheetID(this.active_sheet.id);
       }
       events.push({ type: 'style', area: style_area });
+    }
+    else if (style_event) {
+      events.push({ type: 'style' });
     }
 
     if (structure_event) {

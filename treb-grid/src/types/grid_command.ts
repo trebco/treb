@@ -92,6 +92,7 @@ export interface ResizeRowsCommand {
   row?: number|number[];
   height?: number;
   shrink?: boolean;
+  sheet_id?: number;
 }
 
 /**
@@ -102,6 +103,7 @@ export interface ResizeColumnsCommand {
   key: CommandKey.ResizeColumns;
   column?: number|number[];
   width?: number;
+  sheet_id?: number;
 }
 
 /** insert one or more rows at the given insert point */
@@ -109,6 +111,7 @@ export interface InsertRowsCommand {
   key: CommandKey.InsertRows;
   before_row: number;
   count: number;
+  sheet_id?: number;
 }
 
 /** insert one or more columns at the given insert point */
@@ -116,6 +119,7 @@ export interface InsertColumnsCommand {
   key: CommandKey.InsertColumns;
   before_column: number;
   count: number;
+  sheet_id?: number;
 }
 
 /** show or hide headers */
@@ -128,7 +132,7 @@ export interface ShowHeadersCommand {
  * set or clear name (omit range to clear)
  *  
  * adding support for named expressions. you can pass either a range or
- * and expression. 
+ * an expression. 
  * 
  * if you use the same name more than once, it will overwrite the old name,
  * even if you change types range/expression.
@@ -146,7 +150,7 @@ export interface SetNameCommand {
 
 export interface DataValidationCommand {
   key: CommandKey.DataValidation;
-  target: ICellAddress;
+  area: ICellAddress;
   range?: IArea;
   list?: CellValue[];
   error?: boolean;
@@ -187,7 +191,7 @@ export interface SetRangeCommand {
 
 /** update borders for the given area. this is different than updating
  * style, because borders have slightly different semantics -- when applied
- * to an area, for example, "outside border" means the outside if the total
+ * to an area, for example, "outside border" means the outside of the total
  * area, not the outside of each cell.
  */
 export interface UpdateBordersCommand {
@@ -228,22 +232,30 @@ export interface UnmergeCellsCommand {
 /** set or clear note at given address. */
 export interface SetNoteCommand {
   key: CommandKey.SetNote;
-  address: ICellAddress;
+  area: ICellAddress;
   note?: string;
 }
 
 export interface SetLinkCommand {
   key: CommandKey.SetLink;
-  address: ICellAddress;
+  area: ICellAddress;
   reference?: string;
 }
 
 /**
- * clear an area, or the entire sheet
+ * clear an area, or the entire sheet.
+ * 
+ * because this command can omit area (meaning entire sheet), to
+ * support remotes we need to add a separate parameter for sheet id.
+ * 
+ * we could use infinite area as an indication it's a reset, but that's
+ * not really the same thing -- that would be more like select all / clear.
+ * 
  */
 export interface ClearCommand {
   key: CommandKey.Clear;
   area?: IArea;
+  sheet_id?: number;
 }
 
 /**
@@ -255,16 +267,18 @@ export interface FreezeCommand {
   rows: number;
   columns: number;
   highlight_transition?: boolean;
+  sheet_id?: number;
 }
 
 /**
  * FIXME: should this command include theme properties, or can we
  * base it on the local theme? (...) probably the former, otherwise
  * you lose synchronization
- */
+ * /
 export interface UpdateThemeCommand {
   key: CommandKey.UpdateTheme;
 }
+*/
 
 export interface NullCommand {
   key: CommandKey.Null;
@@ -274,6 +288,9 @@ export interface AddSheetCommand {
   key: CommandKey.AddSheet;
   insert_index?: number;
   name?: string;
+  
+  /** switch to the sheet immediately */
+  show?: boolean;
 }
 
 export interface DuplicateSheetCommand extends SheetSelection {
@@ -321,10 +338,11 @@ export interface ReorderSheetCommand {
 
 /**
  * ephemeral flag added to commands.
- */
+ * /
 export interface Ephemeral {
   ephemeral?: boolean;
 }
+*/
 
 /**
  * composite command type and ephemeral flag
@@ -355,7 +373,7 @@ export type Command =
   | ActivateSheetCommand
   | DataValidationCommand
   | DuplicateSheetCommand
-  ) & Ephemeral;
+  ) ; // & Ephemeral;
 
 /**
  * record type for recording/logging commands
