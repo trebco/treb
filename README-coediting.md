@@ -18,3 +18,15 @@ which target the current selection. For those we will need to put a specific
 range into the command.
 
 
+Data?
+----
+
+Here's an issue: RAND() (et al). this function will show different values
+in different remote views. Essentially, there's no master calculator.
+
+This is not solvable with our current scheme, we need to think about how
+to share calculated state. 
+
+A: share calculated state?
+then you need a defined master/main -- maybe useful for other things as well.
+also we should probably try to send deltas if possible

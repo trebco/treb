@@ -8749,8 +8749,10 @@ export class Grid {
       // size, in which case we should send the event. even though no addresses
       // change, there are new cells.
 
-      this.QueueLayoutUpdate();
-
+      if (sheet === this.active_sheet) {
+        this.QueueLayoutUpdate();
+      }
+      
     }
 
     // originally we called sheet methods here, but all the sheet
@@ -8936,8 +8938,16 @@ export class Grid {
    * we should probably have a parameter that prevents re-queuing. that won't
    * solve other problems but it will simplify using the queue for this.
    * 
+   * NOTE: working on coediting. we will need to handle different sheets.
+   * going to work one command at a time...
+   * 
+   * 
+   * @param queue -- push on the command log. this is default true so it
+   * doesn't change existing behavior, but you can turn it off if the message
+   * comes from a remote queue.
+   * 
    */
-  private ExecCommand(commands: Command | Command[], push_queue = true) {
+  private ExecCommand(commands: Command | Command[], queue = true) {
 
     // FIXME: support ephemeral commands (...)
 
@@ -8952,7 +8962,7 @@ export class Grid {
     // this seems like the dumb way to do this... maybe?
     if (!Array.isArray(commands)) commands = [commands];
 
-    if (push_queue) {
+    if (queue) {
       this.command_log.Publish({ command: commands, timestamp: new Date().getTime() });
     }
 
@@ -9065,6 +9075,8 @@ export class Grid {
 
         case CommandKey.UpdateStyle:
           {
+            // COEDITING: handles sheet ID properly
+
             // to account for our background bleeding up/left, when applying
             // style changes we may need to render one additional row/column.
 
@@ -9179,12 +9191,18 @@ export class Grid {
           break;
 
         case CommandKey.ShowSheet:
+
+          // COEDITING: we probably don't want this to pass through
+          // when coediting, but it won't break anything. you can filter.
+
           this.ShowSheetInternal(command);
           structure_event = true;
           break;
 
         case CommandKey.ReorderSheet:
           {
+            // COEDITING: seems OK, irrespective of active sheet
+
             const sheets: Sheet[] = [];
             const target = this.model.sheets[command.index];
 
@@ -9210,6 +9228,8 @@ export class Grid {
 
         case CommandKey.RenameSheet:
           {
+            // COEDITING: seems OK, irrespective of active sheet
+
             const sheet = this.ResolveSheet(command);
             if (sheet) {
               this.RenameSheetInternal(sheet, command.new_name);
@@ -9397,6 +9417,8 @@ export class Grid {
 
         case CommandKey.SetRange:
           {
+            // COEDITING: handles sheet ID properly
+
             // area could be undefined if there's an error
             // (try to change part of an array)
 
@@ -9429,6 +9451,12 @@ export class Grid {
           break;
 
         case CommandKey.AddSheet:
+
+          // COEDITING: this won't break, but it shouldn't change the 
+          // active sheet if this is a remote command. is there a way
+          // to know? we can guess implicitly from the queue parameter,
+          // but it would be better to be explicit.
+
           // const sheet_id = this.AddSheetInternal(undefined, command.insert_index); // default name
           this.ActivateSheetInternal({
             key: CommandKey.ActivateSheet,
