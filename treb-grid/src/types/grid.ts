@@ -8533,6 +8533,8 @@ export class Grid {
     const area = new Area(command.area.start, command.area.end);
     const sheet = this.FindSheet(area);
 
+    area.start.sheet_id = sheet.id; // ensure
+
     /*
     let sheet = this.active_sheet;
     if (command.area.start.sheet_id && command.area.start.sheet_id !== this.active_sheet.id) {
@@ -9356,9 +9358,18 @@ export class Grid {
 
         case CommandKey.UpdateBorders:
           {
+            // COEDITING: ok
+
             const area = this.ApplyBordersInternal(command);
-            render_area = Area.Join(area, render_area);
-            style_area = Area.Join(area, style_area);
+
+            if (area.start.sheet_id === this.active_sheet.id) {
+              render_area = Area.Join(area, render_area);
+              style_area = Area.Join(area, style_area);
+            }
+            else {
+              style_event = true;
+            }
+
           }
           break;
 
@@ -9413,6 +9424,8 @@ export class Grid {
 
         case CommandKey.ResizeRows:
           {
+            // COEDITING: ok
+
             const sheet = command.sheet_id ? this.FindSheet(command.sheet_id) : this.active_sheet;
 
             let row = command.row;
