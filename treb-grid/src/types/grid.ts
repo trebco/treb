@@ -8417,6 +8417,11 @@ export class Grid {
 
     const target_sheet = this.FindSheet(command.sheet_id);
 
+    // FIXME: we need to get this error out earlier. before this call,
+    // in the call that generates the insert event. otherwise if we 
+    // have remotes, everyone will see the error -- we only want the 
+    // actual actor to see the error.
+
     if (!target_sheet.InsertColumns(command.before_column, command.count)) {
       this.Error(`You can't change part of an array.`);
       return;
