@@ -98,6 +98,28 @@ export class NamedRangeCollection {
     }
   }
 
+  /**
+   * if we delete a sheet, remove ranges in that sheet
+   * @param sheet_id 
+   */
+  public RemoveRangesForSheet(sheet_id: number, apply = true) {
+
+    const temp: {[index: string]: Area} = {};
+    const list = this.List();    
+    
+    for (const entry of list) {
+      if (entry.range.start.sheet_id !== sheet_id) {
+        temp[entry.name] = entry.range;
+      }
+    }
+
+    this.forward = temp;
+
+    if (apply) {
+      this.RebuildList();
+    }
+  }
+
   public Reset(): void {
     this.forward = {};
     this.backward = [];
@@ -141,7 +163,7 @@ export class NamedRangeCollection {
   /**
    * fix named range references after row/column insert/delete
    */
-  public PatchNamedRanges(before_column: number, column_count: number, before_row: number, row_count: number) {
+  public PatchNamedRanges(sheet_id: number, before_column: number, column_count: number, before_row: number, row_count: number) {
 
     const copy = this.List().slice(0);
 
@@ -149,6 +171,11 @@ export class NamedRangeCollection {
 
       const key = entry.name;
       const range = entry.range;
+
+      if (range.start.sheet_id !== sheet_id) {
+        console.info('skipping name', key);
+        continue;
+      }
 
       if (column_count && before_column <= range.end.column) {
 
@@ -201,7 +228,7 @@ export class NamedRangeCollection {
           else if (before_column <= range.start.column) {
             const last_column = before_column - column_count - 1;
             this.SetName(key, new Area({
-              row: range.start.row, column: last_column + 1 + column_count }, {
+              row: range.start.row, column: last_column + 1 + column_count, sheet_id }, {
                 row: range.end.row, column: range.end.column + column_count }), false);
           }
 
@@ -210,12 +237,12 @@ export class NamedRangeCollection {
 
             if (last_column >= range.end.column) {
               this.SetName(key, new Area({
-                row: range.start.row, column: range.start.column }, {
+                row: range.start.row, column: range.start.column, sheet_id }, {
                   row: range.end.row, column: before_column - 1 }), false);
             }
             else {
               this.SetName(key, new Area({
-                row: range.start.row, column: range.start.column }, {
+                row: range.start.row, column: range.start.column, sheet_id }, {
                   row: range.end.row, column: range.start.column + range.columns + column_count - 1}), false);
             }
 
@@ -280,7 +307,7 @@ export class NamedRangeCollection {
           else if (before_row <= range.start.row) {
             const last_row = before_row - row_count - 1;
             this.SetName(key, new Area({
-              column: range.start.column, row: last_row + 1 + row_count }, {
+              column: range.start.column, row: last_row + 1 + row_count, sheet_id }, {
                 column: range.end.column, row: range.end.row + row_count }), false);
           }
 
@@ -288,12 +315,12 @@ export class NamedRangeCollection {
             const last_row = before_row - row_count - 1;
             if (last_row >= range.end.row) {
               this.SetName(key, new Area({
-                column: range.start.column, row: range.start.row }, {
+                column: range.start.column, row: range.start.row, sheet_id }, {
                   column: range.end.column, row: before_row - 1 }), false);
             }
             else {
               this.SetName(key, new Area({
-                column: range.start.column, row: range.start.row }, {
+                column: range.start.column, row: range.start.row, sheet_id }, {
                   column: range.end.column, row: range.start.row + range.rows + row_count - 1 }), false);
             }
 

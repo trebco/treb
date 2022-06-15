@@ -1587,7 +1587,17 @@ export class Calculator extends Graph {
             relative_sheet_id;
           if (!unit.sheet) { unit.sheet = relative_sheet_name; }
         }
-        dependencies.addresses[unit.sheet_id + '!' + unit.label] = unit;
+        if (!unit.sheet_id) {
+
+          // FIXME: we don't necessarily need to warn here, because we'll
+          // get a warning when it tries to calculate. still this is helpful
+          // for debugging.
+
+          console.warn('invalid address in range');
+        }
+        else {
+          dependencies.addresses[unit.sheet_id + '!' + unit.label] = unit;
+        }
         break; // this.AddressLabel(unit, offset);
 
       case 'range':
@@ -1597,7 +1607,15 @@ export class Calculator extends Graph {
             relative_sheet_id;
           if (!unit.start.sheet) { unit.start.sheet = relative_sheet_name; }
         }
-        dependencies.ranges[unit.start.sheet_id + '!' + unit.start.label + ':' + unit.end.label] = unit;
+        if (!unit.start.sheet_id) {
+
+          // see above in the address handler
+
+          console.warn('invalid sheet in range');
+        }
+        else {
+          dependencies.ranges[unit.start.sheet_id + '!' + unit.start.label + ':' + unit.end.label] = unit;
+        }
         break;
 
       case 'unary':

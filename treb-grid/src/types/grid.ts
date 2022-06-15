@@ -1278,6 +1278,9 @@ export class Grid {
    * show or hide headers
    * 
    * FIXME: this shouldn't be sent if the current value === the desired value
+   * 
+   * FIXME: this is a display option. I'm not sure it should go through the 
+   * command queue, because it's a local choice. leaving for now, but FIXME
    */
   public ShowHeaders(show = true): void {
     this.ExecCommand({
@@ -2877,6 +2880,9 @@ export class Grid {
     const sheets = this.model.sheets.filter((sheet, i) => {
       if (i === command.index || sheet.id === command.id || sheet.name.toLowerCase() === named_sheet) {
         is_active = (sheet === this.active_sheet);
+
+        this.model.named_ranges.RemoveRangesForSheet(sheet.id);
+
         index = i;
         return false;
       }
@@ -7869,43 +7875,48 @@ export class Grid {
 
   private FreezeInternal(command: FreezeCommand) {
 
-    // default true
-    const highlight = ((typeof command.highlight_transition) === 'boolean')
-      ? command.highlight_transition
-      : true;
+    const sheet = this.FindSheet(command.sheet_id || this.active_sheet.id);
 
-    //    if (command.rows === this.layout.freeze.rows &&
-    //      command.columns === this.layout.freeze.columns) {
-    if (command.rows === this.active_sheet.freeze.rows &&
-      command.columns === this.active_sheet.freeze.columns) {
+    // default true, if we're on the active sheet
+    const highlight = (((typeof command.highlight_transition) === 'boolean')
+                        ? command.highlight_transition
+                        : true) && (sheet === this.active_sheet);
+
+    if (command.rows === sheet.freeze.rows &&
+      command.columns === sheet.freeze.columns) {
       if (highlight) {
         this.HighlightFreezeArea();
       }
       return;
     }
 
-    // this.layout.freeze.rows = command.rows;
-    // this.layout.freeze.columns = command.columns;
-    this.active_sheet.freeze.rows = command.rows;
-    this.active_sheet.freeze.columns = command.columns;
+    sheet.freeze.rows = command.rows;
+    sheet.freeze.columns = command.columns;
 
     // FIXME: should we do this via events? (...)
 
     // we are sending an event via the exec command method that calls
     // this method, so we are not relying on the side-effect event anymore
 
-    this.QueueLayoutUpdate();
-    this.Repaint();
+    if (sheet === this.active_sheet) {
 
-    if (highlight) {
-      this.HighlightFreezeArea();
-    }
+      this.QueueLayoutUpdate();
+      this.Repaint();
 
-    if (command.rows || command.columns) {
-      this.layout.CloneFrozenAnnotations();
+      if (highlight) {
+        this.HighlightFreezeArea();
+      }
+
+      if (command.rows || command.columns) {
+        this.layout.CloneFrozenAnnotations();
+      }
+      else {
+        this.layout.ClearFrozenAnnotations();
+      }
+
     }
     else {
-      this.layout.ClearFrozenAnnotations();
+      this.pending_layout_update.add(sheet.id);
     }
 
   }
@@ -7999,8 +8010,8 @@ export class Grid {
     row_count: number,
     before_column: number,
     column_count: number,
-    active_sheet_name: string,
-    active_sheet: boolean) {
+    target_sheet_name: string,
+    is_target: boolean) {
 
     const parsed = this.parser.Parse(source || '');
     let modified = false;
@@ -8033,13 +8044,13 @@ export class Grid {
             // return ((element.start.sheet && element.start.sheet.toLowerCase() === active_sheet_name) || (!element.start.sheet && active_sheet));
 
 
-            if ((element.start.sheet && element.start.sheet.toLowerCase() === active_sheet_name) || (!element.start.sheet && active_sheet)) {
+            if ((element.start.sheet && element.start.sheet.toLowerCase() === target_sheet_name) || (!element.start.sheet && is_target)) {
               addresses.push(element.start, element.end);
             }
 
           }
           else if (element.type === 'address') {
-            if ((element.sheet && element.sheet.toLowerCase() === active_sheet_name) || (!element.sheet && active_sheet)) {
+            if ((element.sheet && element.sheet.toLowerCase() === target_sheet_name) || (!element.sheet && is_target)) {
               addresses.push(element);
             }
 
@@ -8096,23 +8107,25 @@ export class Grid {
    */
   private InsertRowsInternal(command: InsertRowsCommand) { // before_row = 0, count = 1) {
 
-    if (!this.active_sheet.InsertRows(command.before_row, command.count)){
+    const target_sheet = this.FindSheet(command.sheet_id);
+
+    if (!target_sheet.InsertRows(command.before_row, command.count)){
       this.Error(`You can't change part of an array.`);
       return;
     }
 
-    this.model.named_ranges.PatchNamedRanges(0, 0, command.before_row, command.count);
+    this.model.named_ranges.PatchNamedRanges(target_sheet.id, 0, 0, command.before_row, command.count);
 
-    const active_sheet_name = this.active_sheet.name.toLowerCase();
+    const target_sheet_name = target_sheet.name.toLowerCase();
 
     for (const sheet of this.model.sheets) {
-      const active_sheet = sheet === this.active_sheet;
+      const is_target = sheet === target_sheet;
 
       sheet.cells.IterateAll((cell: Cell) => {
         if (cell.ValueIsFormula()) {
           const modified = this.PatchFormulasInternal(cell.value || '',
             command.before_row, command.count, 0, 0,
-            active_sheet_name, active_sheet);
+            target_sheet_name, is_target);
           if (modified) {
             cell.value = modified;
           }
@@ -8123,7 +8136,7 @@ export class Grid {
         if (annotation.formula) {
           const modified = this.PatchFormulasInternal(annotation.formula || '',
             command.before_row, command.count, 0, 0,
-            active_sheet_name, active_sheet);
+            target_sheet_name, is_target);
           if (modified) {
             annotation.formula = modified;
           }
@@ -8132,159 +8145,168 @@ export class Grid {
 
     }
 
-    // annotations
+    // see InsertColumnsInternal
 
-    const update_annotations_list: Annotation[] = [];
-    const resize_annotations_list: Annotation[] = [];
+    if (target_sheet === this.active_sheet) {
 
-    if (command.count > 0) {
+      // annotations
 
-      const start = this.layout.CellAddressToRectangle({
-        row: command.before_row,
-        column: 0,
-      });
+      const update_annotations_list: Annotation[] = [];
+      const resize_annotations_list: Annotation[] = [];
 
-      const height = this.layout.default_row_height * command.count + 1; // ?
+      if (command.count > 0) {
 
-      for (const annotation of this.active_sheet.annotations) {
-        if (annotation.scaled_rect) {
-
-          if (start.top >= annotation.scaled_rect.bottom) {
-            continue;
-          }
-          else if (start.top <= annotation.scaled_rect.top) {
-            annotation.scaled_rect.top += (height - 1); // grid
-          }
-          else {
-            annotation.scaled_rect.height += height;
-            resize_annotations_list.push(annotation);
-          }
-          
-          // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-          annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
-
-          update_annotations_list.push(annotation);
-        }
-      }
-
-    }
-    else if (command.count < 0) { // delete
-
-      let rect = this.layout.CellAddressToRectangle({
-        row: command.before_row,
-        column: 0,
-      });
-
-      if (command.count < -1) {
-        rect = rect.Combine(this.layout.CellAddressToRectangle({
-          row: command.before_row - command.count - 1,
+        const start = this.layout.CellAddressToRectangle({
+          row: command.before_row,
           column: 0,
-        }));
-      }
+        });
 
-      for (const annotation of this.active_sheet.annotations) {
-        if (annotation.scaled_rect) {
+        const height = this.layout.default_row_height * command.count + 1; // ?
 
-          if (annotation.scaled_rect.bottom <= rect.top) {
-            continue; // unaffected
+        for (const annotation of target_sheet.annotations) {
+          if (annotation.scaled_rect) {
+
+            if (start.top >= annotation.scaled_rect.bottom) {
+              continue;
+            }
+            else if (start.top <= annotation.scaled_rect.top) {
+              annotation.scaled_rect.top += (height - 1); // grid
+            }
+            else {
+              annotation.scaled_rect.height += height;
+              resize_annotations_list.push(annotation);
+            }
+            
+            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+
+            update_annotations_list.push(annotation);
           }
-
-          // affected are is entirely above of annotation: move only
-          if (annotation.scaled_rect.top >= rect.bottom - 1) { // grid
-            annotation.scaled_rect.top -= (rect.height);
-          }
-
-          // affected area is entirely underneath the annotation: size only
-          else if (annotation.scaled_rect.top <= rect.top && annotation.scaled_rect.bottom >= rect.bottom) {
-            annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - rect.height, 10);
-            resize_annotations_list.push(annotation);
-          }
-
-          // affected area completely contains the annotation: do nothing, or delete? (...)
-          else if (annotation.scaled_rect.top >= rect.top && annotation.scaled_rect.bottom <= rect.bottom) {
-            // ...
-            continue; // do nothing, for now
-          }
-
-          // top edge: shift AND clip?
-          else if (annotation.scaled_rect.top >= rect.top && annotation.scaled_rect.bottom > rect.bottom) {
-            const shift = annotation.scaled_rect.top - rect.top + 1; // grid
-            const clip = rect.height - shift;
-            annotation.scaled_rect.top -= shift;
-            annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - clip, 10);
-            resize_annotations_list.push(annotation);
-          }
-
-          // bottom edge: clip, I guess
-          else if (annotation.scaled_rect.top < rect.top && annotation.scaled_rect.bottom <= rect.bottom) {
-            const clip = annotation.scaled_rect.bottom - rect.top;
-            annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - clip, 10);
-            resize_annotations_list.push(annotation);
-          }
-
-          else {
-            console.info('unhandled case');
-            // console.info("AR", annotation.rect, "R", rect);
-          }
-
-          // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-          annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
-
-          update_annotations_list.push(annotation);
-
         }
 
       }
+      else if (command.count < 0) { // delete
+
+        let rect = this.layout.CellAddressToRectangle({
+          row: command.before_row,
+          column: 0,
+        });
+
+        if (command.count < -1) {
+          rect = rect.Combine(this.layout.CellAddressToRectangle({
+            row: command.before_row - command.count - 1,
+            column: 0,
+          }));
+        }
+
+        for (const annotation of target_sheet.annotations) {
+          if (annotation.scaled_rect) {
+
+            if (annotation.scaled_rect.bottom <= rect.top) {
+              continue; // unaffected
+            }
+
+            // affected are is entirely above of annotation: move only
+            if (annotation.scaled_rect.top >= rect.bottom - 1) { // grid
+              annotation.scaled_rect.top -= (rect.height);
+            }
+
+            // affected area is entirely underneath the annotation: size only
+            else if (annotation.scaled_rect.top <= rect.top && annotation.scaled_rect.bottom >= rect.bottom) {
+              annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - rect.height, 10);
+              resize_annotations_list.push(annotation);
+            }
+
+            // affected area completely contains the annotation: do nothing, or delete? (...)
+            else if (annotation.scaled_rect.top >= rect.top && annotation.scaled_rect.bottom <= rect.bottom) {
+              // ...
+              continue; // do nothing, for now
+            }
+
+            // top edge: shift AND clip?
+            else if (annotation.scaled_rect.top >= rect.top && annotation.scaled_rect.bottom > rect.bottom) {
+              const shift = annotation.scaled_rect.top - rect.top + 1; // grid
+              const clip = rect.height - shift;
+              annotation.scaled_rect.top -= shift;
+              annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - clip, 10);
+              resize_annotations_list.push(annotation);
+            }
+
+            // bottom edge: clip, I guess
+            else if (annotation.scaled_rect.top < rect.top && annotation.scaled_rect.bottom <= rect.bottom) {
+              const clip = annotation.scaled_rect.bottom - rect.top;
+              annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - clip, 10);
+              resize_annotations_list.push(annotation);
+            }
+
+            else {
+              console.info('unhandled case');
+              // console.info("AR", annotation.rect, "R", rect);
+            }
+
+            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+
+            update_annotations_list.push(annotation);
+
+          }
+
+        }
 
 
-    }
-
-    // fix selections
-
-    if (command.count < 0) {
-      for (const selection of this.AllSelections()) {
-        selection.empty = true; // lazy
       }
+
+      // fix selections
+
+      if (command.count < 0) {
+        for (const selection of this.AllSelections()) {
+          selection.empty = true; // lazy
+        }
+      }
+      else {
+        for (const selection of this.AllSelections()) {
+          if (selection.target.row >= command.before_row) {
+            selection.target.row += command.count;
+          }
+          if (!selection.area.entire_column) {
+            if (selection.area.start.row >= command.before_row) {
+              selection.area.Shift(command.count, 0);
+            }
+            else if (selection.area.end.row >= command.before_row) {
+              selection.area.ConsumeAddress({
+                row: selection.area.end.row + command.count,
+                column: selection.area.end.column,
+              }); // expand
+            }
+          }
+        }
+      }
+
+      // force update
+
+      // note event is sent in exec command, not implicit here
+
+      this.QueueLayoutUpdate();
+
+      // we need to repaint (not render) because repaint adjusts the selection
+      // canvas for tile layout. FIXME: move that out of repaint so we can call
+      // it directly.
+
+      this.Repaint();
+
+      if (update_annotations_list.length) {
+        this.layout.UpdateAnnotation(update_annotations_list);
+        for (const annotation of resize_annotations_list) {
+          const view = annotation.view[this.view_index];
+          if (view?.resize_callback) {
+            view.resize_callback.call(undefined);
+          }
+        }
+      }
+
     }
     else {
-      for (const selection of this.AllSelections()) {
-        if (selection.target.row >= command.before_row) {
-          selection.target.row += command.count;
-        }
-        if (!selection.area.entire_column) {
-          if (selection.area.start.row >= command.before_row) {
-            selection.area.Shift(command.count, 0);
-          }
-          else if (selection.area.end.row >= command.before_row) {
-            selection.area.ConsumeAddress({
-              row: selection.area.end.row + command.count,
-              column: selection.area.end.column,
-            }); // expand
-          }
-        }
-      }
-    }
-
-    // force update
-
-    // note event is sent in exec command, not implicit here
-
-    this.QueueLayoutUpdate();
-
-    // we need to repaint (not render) because repaint adjusts the selection
-    // canvas for tile layout. FIXME: move that out of repaint so we can call
-    // it directly.
-
-    this.Repaint();
-
-    if (update_annotations_list.length) {
-      this.layout.UpdateAnnotation(update_annotations_list);
-      for (const annotation of resize_annotations_list) {
-        const view = annotation.view[this.view_index];
-        if (view?.resize_callback) {
-          view.resize_callback.call(undefined);
-        }
-      }
+      this.pending_layout_update.add(target_sheet.id);
     }
 
   }
@@ -8295,12 +8317,14 @@ export class Grid {
    */
   private InsertColumnsInternal(command: InsertColumnsCommand) { // before_column = 0, count = 1) {
 
-    if (!this.active_sheet.InsertColumns(command.before_column, command.count)) {
+    const target_sheet = this.FindSheet(command.sheet_id);
+
+    if (!target_sheet.InsertColumns(command.before_column, command.count)) {
       this.Error(`You can't change part of an array.`);
       return;
     }
     
-    this.model.named_ranges.PatchNamedRanges(command.before_column, command.count, 0, 0);
+    this.model.named_ranges.PatchNamedRanges(target_sheet.id, command.before_column, command.count, 0, 0);
 
     // FIXME: we need an event here? 
 
@@ -8319,16 +8343,16 @@ export class Grid {
     // (this) and the calculator. we could ask, but this isn't terrible and 
     // helps maintain that separation.
 
-    const active_sheet_name = this.active_sheet.name.toLowerCase();
+    const target_sheet_name = target_sheet.name.toLowerCase();
 
     for (const sheet of this.model.sheets) {
-      const active_sheet = sheet === this.active_sheet;
+      const is_target = sheet === target_sheet;
 
       sheet.cells.IterateAll((cell: Cell) => {
         if (cell.ValueIsFormula()) {
           const modified = this.PatchFormulasInternal(cell.value || '', 0, 0,
             command.before_column, command.count,
-            active_sheet_name, active_sheet);
+            target_sheet_name, is_target);
           if (modified) {
             cell.value = modified;
           }
@@ -8339,7 +8363,7 @@ export class Grid {
         if (annotation.formula) {
           const modified = this.PatchFormulasInternal(annotation.formula,
             0, 0, command.before_column, command.count,
-            active_sheet_name, active_sheet);
+            target_sheet_name, is_target);
           if (modified) {
             annotation.formula = modified;
           }
@@ -8348,161 +8372,171 @@ export class Grid {
 
     }
 
-    // annotations
+    // FIXME: this is just not going to work for !active sheet. we 
+    // need to think about how to handle this properly. TEMP: punting
 
-    const update_annotations_list: Annotation[] = [];
-    const resize_annotations_list: Annotation[] = [];
+    if (target_sheet === this.active_sheet) {
 
-    if (command.count > 0) {
+      // annotations
 
-      const start = this.layout.CellAddressToRectangle({
-        row: 0,
-        column: command.before_column,
-      });
+      const update_annotations_list: Annotation[] = [];
+      const resize_annotations_list: Annotation[] = [];
 
-      const width = this.layout.default_column_width * command.count + 1; // ?
+      if (command.count > 0) {
 
-      for (const annotation of this.active_sheet.annotations) {
-        if (annotation.scaled_rect) {
-
-          if (start.left >= annotation.scaled_rect.right) {
-            continue;
-          }
-          else if (start.left <= annotation.scaled_rect.left) {
-            annotation.scaled_rect.left += (width - 1); // grid
-          }
-          else {
-            annotation.scaled_rect.width += width;
-            resize_annotations_list.push(annotation);
-          }
-
-          // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-          annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
-
-          update_annotations_list.push(annotation);
-        }
-      }
-
-    }
-    else if (command.count < 0) { // delete
-
-      let rect = this.layout.CellAddressToRectangle({
-        row: 0,
-        column: command.before_column,
-      });
-
-      if (command.count < -1) {
-        rect = rect.Combine(this.layout.CellAddressToRectangle({
+        const start = this.layout.CellAddressToRectangle({
           row: 0,
-          column: command.before_column - command.count - 1,
-        }));
-      }
+          column: command.before_column,
+        });
 
-      for (const annotation of this.active_sheet.annotations) {
-        if (annotation.scaled_rect) {
+        const width = this.layout.default_column_width * command.count + 1; // ?
 
-          if (annotation.scaled_rect.right <= rect.left) {
-            continue; // unaffected
+        for (const annotation of target_sheet.annotations) {
+          if (annotation.scaled_rect) {
+
+            if (start.left >= annotation.scaled_rect.right) {
+              continue;
+            }
+            else if (start.left <= annotation.scaled_rect.left) {
+              annotation.scaled_rect.left += (width - 1); // grid
+            }
+            else {
+              annotation.scaled_rect.width += width;
+              resize_annotations_list.push(annotation);
+            }
+
+            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+
+            update_annotations_list.push(annotation);
           }
-
-          // affected are is entirely to the left of annotation: move only
-          if (annotation.scaled_rect.left >= rect.right - 1) { // grid
-            annotation.scaled_rect.left -= (rect.width);
-          }
-
-          // affected area is entirely underneath the annotation: size only
-          else if (annotation.scaled_rect.left <= rect.left && annotation.scaled_rect.right >= rect.right) {
-            annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - rect.width, 10);
-            resize_annotations_list.push(annotation);
-          }
-
-          // affected area completely contains the annotation: do nothing, or delete? (...)
-          else if (annotation.scaled_rect.left >= rect.left && annotation.scaled_rect.right <= rect.right) {
-            // ...
-            continue; // do nothing, for now
-          }
-
-          // left edge: shift AND clip?
-          else if (annotation.scaled_rect.left >= rect.left && annotation.scaled_rect.right > rect.right) {
-            const shift = annotation.scaled_rect.left - rect.left + 1; // grid
-            const clip = rect.width - shift;
-            annotation.scaled_rect.left -= shift;
-            annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - clip, 10);
-            resize_annotations_list.push(annotation);
-          }
-
-          // right edge: clip, I guess
-          else if (annotation.scaled_rect.left < rect.left && annotation.scaled_rect.right <= rect.right) {
-            const clip = annotation.scaled_rect.right - rect.left;
-            annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - clip, 10);
-            resize_annotations_list.push(annotation);
-          }
-
-          else {
-            console.info('unhandled case');
-            // console.info("AR", annotation.rect, "R", rect);
-          }
-
-          // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-          annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
-
-          update_annotations_list.push(annotation);
-
         }
 
       }
+      else if (command.count < 0) { // delete
+
+        let rect = this.layout.CellAddressToRectangle({
+          row: 0,
+          column: command.before_column,
+        });
+
+        if (command.count < -1) {
+          rect = rect.Combine(this.layout.CellAddressToRectangle({
+            row: 0,
+            column: command.before_column - command.count - 1,
+          }));
+        }
+
+        for (const annotation of target_sheet.annotations) {
+          if (annotation.scaled_rect) {
+
+            if (annotation.scaled_rect.right <= rect.left) {
+              continue; // unaffected
+            }
+
+            // affected are is entirely to the left of annotation: move only
+            if (annotation.scaled_rect.left >= rect.right - 1) { // grid
+              annotation.scaled_rect.left -= (rect.width);
+            }
+
+            // affected area is entirely underneath the annotation: size only
+            else if (annotation.scaled_rect.left <= rect.left && annotation.scaled_rect.right >= rect.right) {
+              annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - rect.width, 10);
+              resize_annotations_list.push(annotation);
+            }
+
+            // affected area completely contains the annotation: do nothing, or delete? (...)
+            else if (annotation.scaled_rect.left >= rect.left && annotation.scaled_rect.right <= rect.right) {
+              // ...
+              continue; // do nothing, for now
+            }
+
+            // left edge: shift AND clip?
+            else if (annotation.scaled_rect.left >= rect.left && annotation.scaled_rect.right > rect.right) {
+              const shift = annotation.scaled_rect.left - rect.left + 1; // grid
+              const clip = rect.width - shift;
+              annotation.scaled_rect.left -= shift;
+              annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - clip, 10);
+              resize_annotations_list.push(annotation);
+            }
+
+            // right edge: clip, I guess
+            else if (annotation.scaled_rect.left < rect.left && annotation.scaled_rect.right <= rect.right) {
+              const clip = annotation.scaled_rect.right - rect.left;
+              annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - clip, 10);
+              resize_annotations_list.push(annotation);
+            }
+
+            else {
+              console.info('unhandled case');
+              // console.info("AR", annotation.rect, "R", rect);
+            }
+
+            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
+            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+
+            update_annotations_list.push(annotation);
+
+          }
+
+        }
 
 
-    }
-
-    // fix selection(s)
-
-    // FIXME: sheet? (...) no, because the only way you have "active"
-    // selections on non-active sheet is if you are editing, and editing
-    // and insert/delete row/column can't happen at the same time.
-
-    // sheet selections are persisted in the sheets so they won't be affected
-
-    if (command.count < 0) {
-      for (const selection of this.AllSelections()) {
-        selection.empty = true; // lazy
       }
+
+      // fix selection(s)
+
+      // FIXME: sheet? (...) no, because the only way you have "active"
+      // selections on non-active sheet is if you are editing, and editing
+      // and insert/delete row/column can't happen at the same time.
+
+      // sheet selections are persisted in the sheets so they won't be affected
+
+      if (command.count < 0) {
+        for (const selection of this.AllSelections()) {
+          selection.empty = true; // lazy
+        }
+      }
+      else {
+        for (const selection of this.AllSelections()) {
+          if (selection.target.column >= command.before_column) {
+            selection.target.column += command.count;
+          }
+          if (!selection.area.entire_row) {
+            if (selection.area.start.column >= command.before_column) {
+              selection.area.Shift(0, command.count);
+            }
+            else if (selection.area.end.column >= command.before_column) {
+              selection.area.ConsumeAddress({
+                row: selection.area.end.row,
+                column: selection.area.end.column + command.count,
+              }); // expand
+            }
+          }
+        }
+      }
+
+      // note event is sent in exec command, not implicit here
+
+      this.QueueLayoutUpdate();
+
+      // @see InsertColumnsInternal re: why repaint
+
+      this.Repaint();
+
+      if (update_annotations_list.length) {
+        this.layout.UpdateAnnotation(update_annotations_list);
+        for (const annotation of resize_annotations_list) {
+          const view = annotation.view[this.view_index];
+          if (view?.resize_callback) {
+            view.resize_callback.call(undefined);
+          }
+        }
+      }
+
     }
     else {
-      for (const selection of this.AllSelections()) {
-        if (selection.target.column >= command.before_column) {
-          selection.target.column += command.count;
-        }
-        if (!selection.area.entire_row) {
-          if (selection.area.start.column >= command.before_column) {
-            selection.area.Shift(0, command.count);
-          }
-          else if (selection.area.end.column >= command.before_column) {
-            selection.area.ConsumeAddress({
-              row: selection.area.end.row,
-              column: selection.area.end.column + command.count,
-            }); // expand
-          }
-        }
-      }
-    }
-
-    // note event is sent in exec command, not implicit here
-
-    this.QueueLayoutUpdate();
-
-    // @see InsertColumnsInternal re: why repaint
-
-    this.Repaint();
-
-    if (update_annotations_list.length) {
-      this.layout.UpdateAnnotation(update_annotations_list);
-      for (const annotation of resize_annotations_list) {
-        const view = annotation.view[this.view_index];
-        if (view?.resize_callback) {
-          view.resize_callback.call(undefined);
-        }
-      }
+      this.pending_layout_update.add(target_sheet.id); 
     }
 
   }
@@ -9072,7 +9106,11 @@ export class Grid {
    * FIXME: should return undefined on !match
    * FIXME: should be in model, which should be a class
    */
-  private FindSheet(identifier: number|IArea|ICellAddress): Sheet {
+  private FindSheet(identifier: number|IArea|ICellAddress|undefined): Sheet {
+
+    if (identifier === undefined) {
+      return this.active_sheet;
+    }
 
     const id = typeof identifier === 'number' ? identifier : IsCellAddress(identifier) ? identifier.sheet_id : identifier.start.sheet_id;
 
@@ -9117,7 +9155,7 @@ export class Grid {
     // data and style events were triggered by the areas being set.
     // we are not necessarily setting them for offsheet changes, so
     // we need an explicit flag. this should be logically OR'ed with
-    // the area existing.
+    // the area existing (for purposes of sending an event).
 
     let data_event = false;
     let style_event = false;
@@ -9168,6 +9206,10 @@ export class Grid {
 
         case CommandKey.Select:
 
+          // nobody (except one routine) is using commands for selection.
+          // not sure why or why not, or if that's a problem. (it's definitely
+          // a problem if we are recording the log for playback)
+
           // case: empty selection
           if (!command.area) {
             this.ClearSelection(this.primary_selection);
@@ -9187,6 +9229,9 @@ export class Grid {
           break;
 
         case CommandKey.Freeze:
+
+          // COEDITING: ok
+
           this.FreezeInternal(command);
 
           // is the event necessary here? not sure. we were sending it as a
@@ -9201,36 +9246,48 @@ export class Grid {
           break;
 
         case CommandKey.MergeCells:
-          this.active_sheet.MergeCells(
-            new Area(command.area.start, command.area.end));
+          {
+            // COEDITING: ok
 
-          // sheet publishes a data event here, too. probably a good
-          // idea because references to the secondary (non-head) merge 
-          // cells will break.
+            const sheet = this.FindSheet(command.area);
 
-          structure_event = true;
-          structure_rebuild_required = true;
+            sheet.MergeCells(
+              new Area(command.area.start, command.area.end));
 
-          if (!command.area.start.sheet_id || command.area.start.sheet_id === this.active_sheet.id) {
-            data_area = Area.Join(command.area, data_area);
-            render_area = Area.Join(command.area, render_area);
-          }
-          else {
-            data_event = true;
+            // sheet publishes a data event here, too. probably a good
+            // idea because references to the secondary (non-head) merge 
+            // cells will break.
+
+            structure_event = true;
+            structure_rebuild_required = true;
+
+            if (sheet === this.active_sheet) {
+              data_area = Area.Join(command.area, data_area);
+              render_area = Area.Join(command.area, render_area);
+            }
+            else {
+              data_event = true;
+              this.pending_layout_update.add(sheet.id);
+            }
           }
 
           break;
 
         case CommandKey.UnmergeCells:
           {
+            // COEDITING: ok
+
             // the sheet unmerge routine requires a single, contiguous merge area.
             // we want to support multiple unmerges at the same time, though,
             // so let's check for multiple. create a list.
 
+            // FIXME: use a set
+
+            const sheet = this.FindSheet(command.area);
             const list: Record<string, Area> = {};
             const area = new Area(command.area.start, command.area.end);
 
-            this.active_sheet.cells.Apply(area, (cell: Cell) => {
+            sheet.cells.Apply(area, (cell: Cell) => {
               if (cell.merge_area) {
                 const label = Area.CellAddressToLabel(cell.merge_area.start) + ':'
                   + Area.CellAddressToLabel(cell.merge_area.end);
@@ -9241,17 +9298,18 @@ export class Grid {
             const keys = Object.keys(list);
 
             for (let i = 0; i < keys.length; i++) {
-              this.active_sheet.UnmergeCells(list[keys[i]]);
+              sheet.UnmergeCells(list[keys[i]]);
             }
 
             // see above
 
-            if (!command.area.start.sheet_id || command.area.start.sheet_id === this.active_sheet.id) {
+            if (sheet === this.active_sheet) {
               render_area = Area.Join(command.area, render_area);
               data_area = Area.Join(command.area, data_area);
             }
             else {
               data_event = true;
+              this.pending_layout_update.add(sheet.id);
             }
 
             structure_event = true;
@@ -9308,8 +9366,13 @@ export class Grid {
           break;
 
         case CommandKey.DataValidation:
+
+          // COEDITING: ok
+
           this.SetValidationInternal(command);
-          render_area = Area.Join(new Area(command.area), render_area);
+          if (!command.area.sheet_id || command.area.sheet_id === this.active_sheet.id) {
+            render_area = Area.Join(new Area(command.area), render_area);
+          }
           break;
 
         case CommandKey.SetName:
@@ -9582,12 +9645,18 @@ export class Grid {
           break;
 
         case CommandKey.InsertRows:
+
+          // COEDITING: annotations are broken
+
           this.InsertRowsInternal(command);
           structure_event = true;
           structure_rebuild_required = true;
           break;
 
         case CommandKey.InsertColumns:
+
+          // COEDITING: annotations are broken
+
           this.InsertColumnsInternal(command);
           structure_event = true;
           structure_rebuild_required = true;
@@ -9690,6 +9759,9 @@ export class Grid {
           break;
 
         case CommandKey.DuplicateSheet:
+
+          // FIXME: what happens to named ranges? we don't have sheet-local names...
+
           this.DuplicateSheetInternal(command);
           structure_event = true;
           structure_rebuild_required = true;

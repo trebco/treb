@@ -37,5 +37,16 @@ also we should probably try to send deltas if possible
 Notes
 -----
 
-Add sheet -- remote should not change sheets
+Add sheet -- remote should not change sheets (handled with an additional
+parameter, which can be set when passing to the queue)
 
+Annotations -- moving, resizing (adding? deleting?) aren't running through
+the command queue, so they're lost.
+
+Dragging the nub to fill in a pattern does not run through queue, doesn't 
+broadcast
+
+~~Paste doesn't broadcast~~ actually paste is fine -- it generates a large 
+number of events, which could be consolidated, but not the end of the world
+
+HOWEVER, paste is generating unnecessary style events? (not pruning)
