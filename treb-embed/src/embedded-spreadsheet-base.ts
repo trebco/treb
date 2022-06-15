@@ -828,9 +828,20 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
             break;
 
           case 'structure':
-            this.DocumentChange();
-            if (event.rebuild_required) {
-              this.calculator.Reset();
+            {
+              const cached_selection = this.last_selection;
+              if (event.rebuild_required) {
+                this.calculator.Reset();
+
+                ((this.calculation === CalculationOptions.automatic) ?
+                  this.Recalculate(event) : Promise.resolve()).then(() => {
+                    this.DocumentChange(cached_selection);
+                  });
+
+              }
+              else {
+                this.DocumentChange(cached_selection);
+              }
             }
             this.UpdateSelectionStyle();
             break;

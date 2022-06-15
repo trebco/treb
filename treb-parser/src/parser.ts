@@ -68,6 +68,8 @@ const EXCLAMATION_MARK = 0x21;
 // const COLON = 0x3a; // became an operator
 const SEMICOLON = 0x3b;
 
+const HASH = 0x23; // #
+
 const UC_A = 0x41;
 const LC_A = 0x61;
 const UC_E = 0x45;
@@ -667,6 +669,13 @@ export class Parser {
 
     let label = '';
     if (address.sheet) {
+
+      /*
+      if (address.sheet === '__REF') {
+        return '#REF'; // magic
+      }
+      */
+
       label = (QuotedSheetNameRegex.test(address.sheet) ?
         '\'' + address.sheet + '\'' : address.sheet) + '!';
     }
@@ -1705,6 +1714,7 @@ export class Parser {
       (char >= UC_A && char <= UC_Z) ||
       (char >= LC_A && char <= LC_Z) ||
       char === UNDERSCORE ||
+      char === HASH || // new: only allowed in position 1, always an error
       char === SINGLE_QUOTE ||
       char === DOLLAR_SIGN ||
       (char >= ACCENTED_RANGE_START && char <= ACCENTED_RANGE_END) // adding accented characters, needs some testing

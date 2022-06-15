@@ -817,6 +817,14 @@ export class ExpressionCalculator {
     // call that a FIXME? (...)
 
     const identifier = expr.name;
+
+    // anything starting with # is an error. the only thing we should 
+    // have is #REF, but maybe that will change in the future.
+
+    if (identifier[0] === '#') {
+      return () => ReferenceError();
+    }
+
     const upper_case = identifier.toUpperCase();
 
     switch (upper_case){

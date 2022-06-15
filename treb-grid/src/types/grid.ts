@@ -2869,10 +2869,16 @@ export class Grid {
 
   //
 
-  private DeleteSheetInternal(command: DeleteSheetCommand) {
+  /**
+   * @returns true if we need a recalc, because references have broken.
+   */
+  private DeleteSheetInternal(command: DeleteSheetCommand): boolean {
 
     let is_active = false;
     let index = -1;
+    let target_name = '';
+
+    let requires_recalc = false;
 
     // remove from array. check if this is the active sheet
 
@@ -2882,6 +2888,7 @@ export class Grid {
         is_active = (sheet === this.active_sheet);
 
         this.model.named_ranges.RemoveRangesForSheet(sheet.id);
+        target_name = sheet.name;
 
         index = i;
         return false;
@@ -2889,6 +2896,22 @@ export class Grid {
       return true;
     });
 
+    // NOTE: we might want to remove references to this sheet. see
+    // how we patch references in insert columns/rows functions.
+
+    // actually note the logic we need is already in the rename sheet
+    // function; we just need to split it out from actually renaming the
+    // sheet, then we can use it
+
+    // renamesheetinternal
+
+    if (target_name) {
+      const count = this.RenameSheetReferences(sheets, target_name, '#REF');
+      if (count > 0) {
+        requires_recalc = true;
+      }
+    }
+    
     // empty? create new, activate
     // UPDATE: we also need to create if all remaining sheets are hidden
 
@@ -2926,6 +2949,8 @@ export class Grid {
     // FIXME: this is not necessary if we just called activate, right? (...)
 
     if (this.tab_bar) { this.tab_bar.Update(); }
+
+    return requires_recalc;
 
   }
 
@@ -7945,8 +7970,13 @@ export class Grid {
       }
     }
 
-    const old_name = target.name.toLowerCase();
+    // function will LC the name
+    // const old_name = target.name.toLowerCase();
     target.name = name;
+
+    this.RenameSheetReferences(this.model.sheets, target.name, name);
+
+    /*
     for (const sheet of this.model.sheets) {
 
       // cells
@@ -7993,6 +8023,74 @@ export class Grid {
         }
       }
     }
+    */
+
+  }
+
+  /**
+   * splitting this logic into a new function so we can reuse it 
+   * for invalidating broken references. generally we'll call this
+   * on all sheets, but I wanted to leave the option open.
+   * 
+   * @returns count of changes made. it's useful for the delete routine, 
+   * so we can force a recalc.
+   */
+  private RenameSheetReferences(sheets: Sheet[], old_name: string, name: string): number {
+
+    let changes = 0;
+
+    old_name = old_name.toLowerCase();
+
+    for (const sheet of sheets) {
+
+      // cells
+      sheet.cells.IterateAll((cell: Cell) => {
+        if (cell.ValueIsFormula()) {
+          let modified = false;
+          const parsed = this.parser.Parse(cell.value || '');
+          if (parsed.expression) {
+            this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
+              if (element.type === 'address') {
+                if (element.sheet && element.sheet.toLowerCase() === old_name) {
+                  element.sheet = name;
+                  modified = true;
+                }
+              }
+              return true; // continue walk
+            });
+            if (modified) {
+              cell.value = '=' + this.parser.Render(parsed.expression, undefined, '');
+              changes++;
+            }
+          }
+        }
+      });
+
+      // annotations
+      for (const annotation of sheet.annotations) {
+        if (annotation.formula) {
+          let modified = false;
+          const parsed = this.parser.Parse(annotation.formula || '');
+          if (parsed.expression) {
+            this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
+              if (element.type === 'address') {
+                if (element.sheet && element.sheet.toLowerCase() === old_name) {
+                  element.sheet = name;
+                  modified = true;
+                }
+              }
+              return true; // continue walk
+            });
+            if (modified) {
+              annotation.formula = '=' + this.parser.Render(parsed.expression, undefined, '');
+              changes++;
+            }
+          }
+        }
+      }
+    }
+
+    return changes;
 
   }
 
