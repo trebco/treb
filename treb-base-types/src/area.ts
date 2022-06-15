@@ -157,6 +157,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
     return new Area({
         row: Math.max(0, area.start.row - length),
         column: Math.max(0, area.start.column - length),
+        sheet_id: area.start.sheet_id,
       }, {
         row: area.end.row + length,
         column: area.end.column + length,

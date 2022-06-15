@@ -9526,6 +9526,9 @@ export class Grid {
           {
             // COEDITING: ok
 
+            // UPDATE: actually had a problem with Area.Bleed dropping the
+            // sheet ID. fixed.
+
             const area = this.ApplyBordersInternal(command);
 
             if (area.start.sheet_id === this.active_sheet.id) {
