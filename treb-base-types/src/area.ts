@@ -510,6 +510,11 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
   /**
    * FIXME: is this different than what would be returned if
    * we just used the default json serializer? (...)
+   * 
+   * NOTE: we could return just the start if size === 1. if
+   * you pass an undefined to the Area class ctor it will reuse
+   * the start.
+   * 
    */
   public toJSON(): any {
 
