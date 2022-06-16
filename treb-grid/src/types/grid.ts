@@ -7667,7 +7667,13 @@ export class Grid {
               const parse_result = this.parser.Parse(composite.data.formula);
               if (parse_result.expression) {
                 this.parser.Walk(parse_result.expression, (unit) => {
-                  if (unit.type === 'address') {
+                  if (unit.type === 'range') {
+                    if (!unit.start.sheet_id && !unit.start.sheet) {
+                      unit.start.sheet = name;
+                    }
+                    return false; // don't recurse to individual addresses
+                  }
+                  else if (unit.type === 'address') {
                     if (!unit.sheet_id && !unit.sheet) {
                       unit.sheet = name;
                     }
