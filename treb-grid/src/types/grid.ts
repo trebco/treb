@@ -2041,7 +2041,11 @@ export class Grid {
             this.ActivateSheetID(event.sheet.id);
             break;
         }
-        this.Focus();
+
+        if (!this.SelectingArgument()) {
+          this.Focus();
+        }
+
       });
 
     }
@@ -3077,7 +3081,7 @@ export class Grid {
 
     const selecting_argument = this.SelectingArgument();
 
-    // console.info('activate sheet', command);
+    // console.info('activate sheet', command, 'sa?', selecting_argument);
 
     const candidate = this.ResolveSheet(command) || this.model.sheets[0];
 
@@ -3183,6 +3187,10 @@ export class Grid {
     if (this.tab_bar) { this.tab_bar.Update(); }
 
     this.layout.scroll_offset = this.active_sheet.scroll_offset;
+
+    if (this.formula_bar?.selecting) {
+      requestAnimationFrame(() => this.formula_bar?.FocusEditor());
+    }
 
   }
 
@@ -5163,6 +5171,8 @@ export class Grid {
   }
 
   private UpdateSelectedArgument(selection: GridSelection) {
+
+    // console.info("USA", selection);
 
     // if this is a single merged block, we want to insert it as the
     // root cell and not the range.
@@ -9141,6 +9151,7 @@ export class Grid {
         case CommandKey.Null:
         case CommandKey.ShowHeaders:
         case CommandKey.ShowSheet:
+        case CommandKey.AddSheet:
         case CommandKey.DuplicateSheet:
         case CommandKey.DeleteSheet:
         case CommandKey.ActivateSheet:

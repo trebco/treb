@@ -225,7 +225,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
       this.Publish([
         { type: 'start-editing', editor: 'formula-bar' },
         { type: 'update', text, cell: this.active_cell, dependencies },
-        { type: 'retain-focus', focus: true },
+        // { type: 'retain-focus', focus: true },
       ]);
 
       this.focused_ = true;
@@ -234,12 +234,16 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
     this.editor_node.addEventListener('focusout', () => {
 
+      if (this.selecting) {
+        console.info('focusout, but selecting...');
+      }
+
       // console.info('focus out');
 
       this.autocomplete.Hide();
       this.Publish([
         { type: 'stop-editing' },
-        { type: 'retain-focus', focus: false },
+        // { type: 'retain-focus', focus: false },
       ]);
       this.focused_ = false;
 

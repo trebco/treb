@@ -360,7 +360,7 @@ export class TabBar extends EventSource<TabEvent> {
       const mousedown = (event: MouseEvent) => {
         event.stopPropagation();
         event.preventDefault();
-
+        
         if (this.IsDoubleClick(index)) {
           return; // seems to allow us to process double clicks normally...
         }

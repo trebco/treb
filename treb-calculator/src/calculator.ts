@@ -1611,7 +1611,7 @@ export class Calculator extends Graph {
 
           // see above in the address handler
 
-          console.warn('invalid sheet in range');
+          console.warn('invalid sheet in range', unit);
         }
         else {
           dependencies.ranges[unit.start.sheet_id + '!' + unit.start.label + ':' + unit.end.label] = unit;

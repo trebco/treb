@@ -181,7 +181,8 @@ export class ExpressionCalculator {
   protected CellFunction4(start: ICellAddress, end: ICellAddress): UnionValue /*UnionOrArray*/ {
 
     if (!start.sheet_id) {
-      throw new Error('missing sheet id in CellFunction4');
+      return ReferenceError();
+      // throw new Error('missing sheet id in CellFunction4');
     }
 
     const cells = this.cells_map[start.sheet_id];

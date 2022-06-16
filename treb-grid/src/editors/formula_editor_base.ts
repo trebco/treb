@@ -53,10 +53,12 @@ export interface FormulaEditorUpdateEvent {
 //  cursor?: number;
 // }
 
+/*
 export interface RetainFocusEvent {
   type: 'retain-focus';
   focus: boolean;
 }
+*/
 
 export interface StartEditingEvent {
   type: 'start-editing';
@@ -70,7 +72,7 @@ export interface StopEditingEvent {
 
 /** discriminated union */
 export type FormulaEditorEvent
-  = RetainFocusEvent
+  = // RetainFocusEvent
   | StopEditingEvent
   | StartEditingEvent
   | FormulaEditorUpdateEvent
