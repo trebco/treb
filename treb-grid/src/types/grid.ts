@@ -9210,8 +9210,10 @@ export class Grid {
           }
           break;
 
-        default:
-          console.warn('unhandled command key', command.key);
+        // default:
+        //  // command key here should be `never` if we've covered all the 
+        //  // cases (ts will complain)
+        //  // console.warn('unhandled command key', command.key);
 
       }
     }
