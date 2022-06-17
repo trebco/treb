@@ -1,6 +1,6 @@
 
 import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue,
-         ArrayUnion, IArea, IsCellAddress} from 'treb-base-types';
+         ArrayUnion, IArea, IsCellAddress, FlatCellData} from 'treb-base-types';
          
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
          DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing, QuotedSheetNameRegex } from 'treb-parser';
@@ -515,6 +515,48 @@ export class Calculator extends Graph {
     });
 
 
+  }
+
+  /**
+   * support for co-editing. we need to export calculated values from
+   * the leader instance, because things like RAND() and NOW() are 
+   * nondeterministic (within reason). 
+   * 
+   * so the leader does the calculation and then we broadcast calculated
+   * values to followers.
+   */
+  public ExportCalculatedValues(): Record<number, FlatCellData[]> {
+    const data: any = {};
+    for (const sheet of this.model.sheets) {
+      const calculated = sheet.cells.toJSON({calculated_value: true}).data as FlatCellData[];
+      data[sheet.id] = calculated.filter(test => test.calculated !== undefined);
+    }
+    return data;
+  }
+
+  /**
+   * support for co-editing. if we get calculated values from the leader,
+   * we need to apply them to cells.
+   * 
+   * to _see_ the data, you still have to make a couple of calls to repaint
+   * and update annotations. see EmbeddedSpreadsheetBase.Recalculate for hints.
+   * 
+   * note that we're checking for list mismatch in one direction but not the 
+   * other direction. should probably check both.
+   */
+  public ApplyCalculatedValues(data: Record<number, FlatCellData[]>): void {
+    for (const sheet of this.model.sheets) {
+      const cells = data[sheet.id];
+      if (!cells) {
+        console.info('mismatch', sheet.id);
+      }
+      else {
+        for (const cell of cells) {
+          sheet.cells.data[cell.row][cell.column].SetCalculatedValue(cell.calculated);
+          // console.info(sheet.id, cell.row, cell.column, '->', cell.calculated);
+        }
+      }
+    }
   }
 
   /**
