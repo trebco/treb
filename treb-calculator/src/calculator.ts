@@ -28,41 +28,7 @@ import { LeafVertex } from './dag/leaf_vertex';
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError } from './function-error';
 import { RangeReference } from 'treb-embed/src/embedded-spreadsheet-base';
 
-export interface NotifierType {
-
-  /** opaque user data */
-  data?: any;
-
-  /** function callback */
-  callback?: (data?: any) => void;
-
-}
-
-interface InternalNotifierType {
-
-  /** 
-   * assigned ID. this is (optionally) used for mamagement 
-   */
-  id: number;
-
-  /** client */
-  notifier: NotifierType;
-
-  /** node */
-  vertex: LeafVertex;
-
-  /**  */
-  state: number;
-
-  /** 
-   * we preserve our target ranges instead of the formula. this allows us
-   * to survive sheet name changes, as well as to rebuild when the original
-   * context sheet disappears.
-   */
-  references: Area[];
- 
-
-}
+// import type { NotifierType, InternalNotifierType } from './notifier-types';
 
 /**
  * Calculator now extends graph. there's a 1-1 relationship between the
@@ -93,8 +59,8 @@ export class Calculator extends Graph {
 
   protected registered_libraries: Record<string, boolean> = {};
 
-  protected notifier_id_source = 100;
-  protected notifiers: InternalNotifierType[] = [];
+//  protected notifier_id_source = 100;
+//  protected notifiers: InternalNotifierType[] = [];
 
   // protected graph: Graph = new Graph(); // |null = null;
   // protected status: GraphStatus = GraphStatus.OK;
@@ -910,7 +876,7 @@ export class Calculator extends Graph {
     if (this.full_rebuild_required) {
       subset = undefined;
       this.UpdateAnnotations();
-      this.UpdateNotifiers();
+      // this.UpdateNotifiers();
       this.full_rebuild_required = false; // unset
     }
 
@@ -926,6 +892,7 @@ export class Calculator extends Graph {
       console.info('calculation error trapped');
     }
 
+    /*
     const callbacks: NotifierType[] = [];
     for (const notifier of this.notifiers) {
       if (notifier.vertex.state_id !== notifier.state) {
@@ -945,6 +912,7 @@ export class Calculator extends Graph {
         }
       });
     }
+    */
 
   }
 
@@ -1120,7 +1088,7 @@ export class Calculator extends Graph {
 
     // and notifiers
 
-    this.UpdateNotifiers();
+    // this.UpdateNotifiers();
 
     // there's a weird back-and-forth that happens here 
     // (calculator -> graph -> calculator) to check for volatile
@@ -1187,7 +1155,7 @@ export class Calculator extends Graph {
     return references;
   }
 
-  /** remove all notifiers */
+  /* * remove all notifiers * /
   public RemoveNotifiers(): void {
     for (const internal of this.notifiers) {
       if (internal.vertex) {
@@ -1197,11 +1165,12 @@ export class Calculator extends Graph {
     }
     this.notifiers = [];
   }
+  */
 
-  /** 
+  /* * 
    * remove specified notifier. you can pass the returned ID or the original
    * object used to create it.
-   */
+   * /
   public RemoveNotifier(notifier: NotifierType|number): void {
 
     let internal: InternalNotifierType|undefined;
@@ -1229,10 +1198,11 @@ export class Calculator extends Graph {
     }
 
   }
+  */
 
-  /**
+  /* *
    * update a notifier or notifiers, or the entire list (default).
-   */
+   * /
   protected UpdateNotifiers(notifiers: InternalNotifierType|InternalNotifierType[] = this.notifiers): void {
 
     if (!Array.isArray(notifiers)) {
@@ -1312,10 +1282,11 @@ export class Calculator extends Graph {
       
     }
   }
+  */
 
-  /**
+  /* *
    * new notification API (testing)
-   */
+   * /
   public AddNotifier(references: RangeReference|RangeReference[], notifier: NotifierType, context: Sheet): number {
 
     if (!Array.isArray(references)) {
@@ -1363,6 +1334,7 @@ export class Calculator extends Graph {
     return internal.id;
 
   }
+  */
 
   public RemoveAnnotation(annotation: Annotation): void {
     const vertex = (annotation.temp.vertex as LeafVertex);
