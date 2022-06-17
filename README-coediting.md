@@ -31,6 +31,14 @@ A: share calculated state?
 then you need a defined master/main -- maybe useful for other things as well.
 also we should probably try to send deltas if possible
 
+UPDATE: seems to work pretty well. we add two functions to calculator: 
+`ExportCalculatedValues` and `ApplyCalculatedValues`. along with some calls to
+repaint and update annotations, works great. also you should set calculation
+to manual for "followers" (i.e. not "leader").
+
+One remaining issue is if one of the followers hits recalculate, it calculates
+locally instead of remote. we need to trap that and send a message.
+
 
 ## Notes
 
