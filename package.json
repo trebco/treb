@@ -34,7 +34,8 @@
     "sass": "^1.51.0",
     "ts-node-dev": "^1.1.8",
     "tslib": "^2.2.0",
-    "typescript": "^4.6.4"
+    "typescript": "^4.6.4",
+    "ws": "^8.8.0"
   },
   "scripts": {
     "build": "node esbuild.js",
@@ -51,7 +52,8 @@
     "build-cookie": "node esbuild.js --cookie",
     "update-icons": "node treb-embed/script/process-icons.js --filter unused --source treb-embed/icons/4 > treb-embed/src/generated/toolbar42.ts",
     "release": "node esbuild.js --clean --modern --module --nomc && npm run tsc && npm run generate-api && node copy-distribution-files.js && node zip-package.js --name treb",
-    "release-mc": "node esbuild.js --clean --modern --module && npm run tsc && npm run generate-api && node copy-distribution-files.js && node zip-package.js --name riskamp-web"
+    "release-mc": "node esbuild.js --clean --modern --module && npm run tsc && npm run generate-api && node copy-distribution-files.js && node zip-package.js --name riskamp-web",
+    "ws-server": "ts-node-dev --project treb-ws/server/tsconfig.json --respawn treb-ws/server/src/index.ts"
   },
   "build-entry-points": {
     "main": "treb-bundle",
