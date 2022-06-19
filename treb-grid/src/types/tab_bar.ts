@@ -233,7 +233,7 @@ export class TabBar extends EventSource<TabEvent> {
 
     if (this.options.tab_bar === 'auto') {
 
-      const visible_count = this.model.sheets.reduce((count, test) => test.visible ? count + 1 : count, 0);
+      const visible_count = this.model.sheets.list.reduce((count, test) => test.visible ? count + 1 : count, 0);
 
       if (visible_count <= 1) {
         this.Show(false);
@@ -339,7 +339,7 @@ export class TabBar extends EventSource<TabEvent> {
     // store tabs
     const tabs: HTMLElement[] = [];
 
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
 
       if (!sheet.visible) { continue; }
 
@@ -430,7 +430,7 @@ export class TabBar extends EventSource<TabEvent> {
           // to adjust if there are hidden tabs in between.
 
           for (let i = 0; i < this.model.sheets.length; i++) {
-            if (!this.model.sheets[i].visible) {
+            if (!this.model.sheets.list[i].visible) {
               if (current >= i) { current++; }
               if (move_before >= i) { move_before++; }
             }
@@ -487,7 +487,9 @@ export class TabBar extends EventSource<TabEvent> {
 
         tab.addEventListener('focusout', () => {
           const name = tab.innerText.trim();
-          this.Publish({ type: 'rename-sheet', name, sheet });
+          if (name !== sheet.name) {
+            this.Publish({ type: 'rename-sheet', name, sheet });
+          }
         });
 
         tab.focus();

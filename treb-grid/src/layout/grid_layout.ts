@@ -221,7 +221,7 @@ export class GridLayout extends BaseLayout {
     this.corner_selection.style.height =
       this.row_header_selection.style.height = `${y}px`;
     this.corner_selection.style.top =
-      this.row_header_selection.style.top = '0px'; // `${this.model.sheet.header_offset.y}px`;
+      this.row_header_selection.style.top = '0px'; 
     this.row_header_selection.style.left = `0px`;
 
     let x = this.header_offset.x;

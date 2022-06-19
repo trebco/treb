@@ -29,7 +29,7 @@ export abstract class Graph implements GraphCallbacks {
 
   public calculation_list: SpreadsheetVertexBase[] = [];
 
-  public cells_map: {[index: number]: Cells} = {};
+  // public cells_map: {[index: number]: Cells} = {};
 
   protected abstract readonly model: DataModel;
 
@@ -57,20 +57,21 @@ export abstract class Graph implements GraphCallbacks {
     return vertex.type === SpreadsheetVertex.type;
   }
 
-  /**
+  /* *
    * we used to attach the data model here, but it's now an instance
    * property (and readonly). we map still need to rebuild the map, 
    * so we're retaining the method for the time being (but renamed and 
    * reparameterized).
    * 
    * if model were a class we wouldn't have to do this...
-   */
+   * /
   protected RebuildMap(): void {
     this.cells_map = {};
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
       this.cells_map[sheet.id] = sheet.cells;
     }
   }
+  */
 
   /**
    * flush the graph, calculation tree and cells reference
@@ -80,7 +81,7 @@ export abstract class Graph implements GraphCallbacks {
     this.volatile_list = [];
     this.vertices = [[]];
     this.leaf_vertices = [];
-    this.cells_map = {};
+    // this.cells_map = {};
 
     /** array vertex maintains its own list */
     ArrayVertex.Clear();
@@ -90,7 +91,8 @@ export abstract class Graph implements GraphCallbacks {
   public ResolveArrayHead(address: ICellAddress): ICellAddress {
 
     if (!address.sheet_id) { throw new Error('resolve array head with no sheet id'); }
-    const cells = this.cells_map[address.sheet_id];
+    //const cells = this.cells_map[address.sheet_id];
+    const cells = this.model.sheets.Find(address.sheet_id)?.cells;
 
     if (!cells) {
       throw new Error('no cells? sheet id ' + address.sheet_id);
@@ -129,7 +131,8 @@ export abstract class Graph implements GraphCallbacks {
 
     // if (!this.cells) return undefined;
 
-    const cells = this.cells_map[address.sheet_id];
+    //const cells = this.cells_map[address.sheet_id];
+    const cells = this.model.sheets.Find(address.sheet_id)?.cells;
 
     if (!cells) {
       throw new Error('no cells? sheet id ' + address.sheet_id);
@@ -558,12 +561,20 @@ export abstract class Graph implements GraphCallbacks {
 
     let sheet_name = '';
     if (address.sheet_id) {
-      for (const sheet of this.model.sheets) {
+      const sheet = this.model.sheets.Find(address.sheet_id);
+      if (sheet) {
+        sheet_name = sheet.name + '!';
+      }
+
+      /*
+      for (const sheet of this.model.sheets.list) {
         if (address.sheet_id === sheet.id) {
           sheet_name = sheet.name + '!';
           break;
         }
       }
+      */
+
     }
 
     const area = new Area(address);

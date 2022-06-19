@@ -493,16 +493,13 @@ export class Calculator extends Graph {
           // this is wasteful because we know that the range will all
           // be in the same sheet... we don't need to look up every time
 
-          if (ref?.value?.address) {
-            for (const sheet of this.model.sheets||[]) {
-              if (sheet.id === ref.value.address.sheet_id) {
-                const cell = sheet.cells.GetCell(ref.value.address, false);
-                return { 
-                  type: ValueType.boolean, 
-                  value: cell?.type === ValueType.formula,
-                };
-              }
-            }
+          const sheet = this.model.sheets.Find(ref?.value?.address?.sheet_id || 0);
+          if (sheet) {
+            const cell = sheet.cells.GetCell(ref.value.address, false);
+            return { 
+              type: ValueType.boolean, 
+              value: cell?.type === ValueType.formula,
+            };
           }
 
           return { 
@@ -527,7 +524,7 @@ export class Calculator extends Graph {
    */
   public ExportCalculatedValues(): Record<number, FlatCellData[]> {
     const data: any = {};
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
       const calculated = sheet.cells.toJSON({calculated_value: true}).data as FlatCellData[];
       data[sheet.id] = calculated.filter(test => test.calculated !== undefined);
     }
@@ -545,7 +542,7 @@ export class Calculator extends Graph {
    * other direction. should probably check both.
    */
   public ApplyCalculatedValues(data: Record<number, FlatCellData[]>): void {
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
       const cells = data[sheet.id];
       if (!cells) {
         console.info('mismatch', sheet.id);
@@ -567,7 +564,8 @@ export class Calculator extends Graph {
     if (!vertex.address || !vertex.address.sheet_id) {
       throw new Error('spread callback called without sheet id');
     }
-    const cells = this.cells_map[vertex.address.sheet_id];
+    // const cells = this.cells_map[vertex.address.sheet_id];
+    const cells = this.model.sheets.Find(vertex.address.sheet_id)?.cells;
 
     if (!cells) {
       throw new Error('spread callback called without cells');
@@ -679,14 +677,21 @@ export class Calculator extends Graph {
     if (expression.type === 'address' || expression.type === 'range') {
       const address_expression = (expression.type === 'range') ? expression.start : expression;
       if (address_expression.sheet_id) {
+        sheet = this.model.sheets.Find(address_expression.sheet_id);
+
+        /*
         for (const test of this.model.sheets) {
           if (test.id === address_expression.sheet_id) {
             sheet = test;
             break;
           }
         }
+        */
       }
       else if (address_expression.sheet) {
+        sheet = this.model.sheets.Find(address_expression.sheet);
+
+        /*
         const lc = address_expression.sheet.toLowerCase();
         for (const test of this.model.sheets) {
           if (test.name.toLowerCase() === lc) {
@@ -694,16 +699,21 @@ export class Calculator extends Graph {
             break;
           }
         }
+        */
       }
     }
 
     if (!sheet && context?.sheet_id) {
+      sheet = this.model.sheets.Find(context.sheet_id);
+
+      /*
       for (const test of this.model.sheets) {
         if (test.id === context.sheet_id) {
           sheet = test;
           break;
         }
       }
+      */
     }
 
     if (!sheet) {
@@ -832,6 +842,17 @@ export class Calculator extends Graph {
       };
     });
 
+    for (const macro of this.model.macro_functions.values()) {
+      function_list.push({
+        name: macro.name,
+        description: macro.description,
+        arguments: (macro.argument_names || []).map(argument => {
+          return { name: argument };
+        }),
+      });
+    }
+
+    /*
     for (const key of Object.keys(this.model.macro_functions)) {
       const macro = this.model.macro_functions[key];
       function_list.push({
@@ -842,6 +863,7 @@ export class Calculator extends Graph {
         }),
       });
     }
+    */
 
     return function_list;
 
@@ -895,7 +917,7 @@ export class Calculator extends Graph {
    * of graph being a separate class)
    */
   public AttachModel(): void {
-    this.RebuildMap();
+    // this.RebuildMap();
     this.expression_calculator.SetModel(this.model);
   }
 
@@ -1282,7 +1304,7 @@ export class Calculator extends Graph {
                   Area.CellAddressToLabel(reference.end, false);
         }
 
-        for (const sheet of this.model.sheets) {
+        for (const sheet of this.model.sheets.list) {
           if (sheet.id === base.sheet_id) {
             sheet_name = sheet.name;
             break;
@@ -1316,7 +1338,7 @@ export class Calculator extends Graph {
       // we can just use model[0]
 
       this.AddLeafVertex(notifier.vertex);
-      this.UpdateLeafVertex(notifier.vertex, formula, this.model.sheets[0]);
+      this.UpdateLeafVertex(notifier.vertex, formula, this.model.sheets.list[0]);
 
       // update state (gets reset?)
 
@@ -1393,7 +1415,7 @@ export class Calculator extends Graph {
       // just add all annotations. slightly less efficient 
       // (perhaps) but better for handling multiple views.
 
-      for (const sheet of this.model.sheets) {
+      for (const sheet of this.model.sheets.list) {
         this.UpdateAnnotations(sheet.annotations, sheet);
       }
 
@@ -1436,13 +1458,21 @@ export class Calculator extends Graph {
     }
 
     if (target.sheet) {
+      const sheet = this.model.sheets.Find(target.sheet);
+      if (sheet) {
+        target.sheet_id = sheet.id;
+        return true;
+      }
+
+      /*
       const lc = target.sheet.toLowerCase();
-      for (const sheet of this.model.sheets) {
+      for (const sheet of this.model.sheets.list) {
         if (sheet.name.toLowerCase() === lc) {
           target.sheet_id = sheet.id;
           return true;
         }
       }
+      */
     }
     else if (context?.sheet_id) {
       target.sheet_id = context.sheet_id;
@@ -1548,21 +1578,22 @@ export class Calculator extends Graph {
       relative_sheet_id: number,
       relative_sheet_name: string,
       dependencies: DependencyList = {addresses: {}, ranges: {}},
-      sheet_name_map?: {[index: string]: number},
+      // sheet_name_map?: {[index: string]: number},
     ): DependencyList {
 
     // does this get redone on every descent? dumb
 
+    /*
     if (!sheet_name_map) {
 
       sheet_name_map = {};
 
-      for (const sheet of this.model.sheets) {
+      for (const sheet of this.model.sheets.list) {
         sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
       }
 
       if (!relative_sheet_name) {
-        for (const sheet of this.model.sheets) {
+        for (const sheet of this.model.sheets.list) {
           if (sheet.id === relative_sheet_id) {
             relative_sheet_name = sheet.name;
             break;
@@ -1570,6 +1601,14 @@ export class Calculator extends Graph {
         }
       }
 
+    }
+    */
+
+    if (!relative_sheet_name) {
+      const sheet = this.model.sheets.Find(relative_sheet_id);
+      if (sheet) {
+        relative_sheet_name = sheet.name;
+      }
     }
 
     switch (unit.type){
@@ -1596,10 +1635,24 @@ export class Calculator extends Graph {
       case 'address':
 
         if (!unit.sheet_id) {
+          if (unit.sheet) {
+            const sheet = this.model.sheets.Find(unit.sheet);
+            if (sheet) {
+              unit.sheet_id = sheet.id;
+            }
+          }
+          else {
+            unit.sheet_id = relative_sheet_id;
+            unit.sheet = relative_sheet_name;
+          }
+
+          /*
           unit.sheet_id = unit.sheet ?
             (sheet_name_map[unit.sheet.toLowerCase()] || 0) :
             relative_sheet_id;
           if (!unit.sheet) { unit.sheet = relative_sheet_name; }
+          */
+
         }
         if (!unit.sheet_id) {
 
@@ -1616,10 +1669,24 @@ export class Calculator extends Graph {
 
       case 'range':
         if (!unit.start.sheet_id) {
+          if (unit.start.sheet) {
+            const sheet = this.model.sheets.Find(unit.start.sheet);
+            if (sheet) {
+              unit.start.sheet_id = sheet.id;
+            }
+          }
+          else {
+            unit.start.sheet_id = relative_sheet_id;
+            unit.start.sheet = relative_sheet_name;
+          }
+
+          /*
           unit.start.sheet_id = unit.start.sheet ?
             (sheet_name_map[unit.start.sheet.toLowerCase()] || 0) :
             relative_sheet_id;
           if (!unit.start.sheet) { unit.start.sheet = relative_sheet_name; }
+          */
+
         }
         if (!unit.start.sheet_id) {
 
@@ -1633,17 +1700,17 @@ export class Calculator extends Graph {
         break;
 
       case 'unary':
-        this.RebuildDependencies(unit.operand, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map);
+        this.RebuildDependencies(unit.operand, relative_sheet_id, relative_sheet_name, dependencies);//, sheet_name_map);
         break;
 
       case 'binary':
-        this.RebuildDependencies(unit.left, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map);
-        this.RebuildDependencies(unit.right, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map);
+        this.RebuildDependencies(unit.left, relative_sheet_id, relative_sheet_name, dependencies);//, sheet_name_map);
+        this.RebuildDependencies(unit.right, relative_sheet_id, relative_sheet_name, dependencies);//, sheet_name_map);
         break;
 
       case 'group':
         unit.elements.forEach((element) =>
-          this.RebuildDependencies(element, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map));
+          this.RebuildDependencies(element, relative_sheet_id, relative_sheet_name, dependencies));//, sheet_name_map));
         break;
 
       case 'call':
@@ -1664,13 +1731,13 @@ export class Calculator extends Graph {
                 // not tracking the dependency. to do that, we can recurse with
                 // a new (empty) dependency list, and just drop the new list
 
-                this.RebuildDependencies(args[index], relative_sheet_id, relative_sheet_name, undefined, sheet_name_map);
+                this.RebuildDependencies(args[index], relative_sheet_id, relative_sheet_name, undefined);//, sheet_name_map);
 
                 args[index] = { type: 'missing', id: -1 };
               }
             });
           }
-          args.forEach((arg) => this.RebuildDependencies(arg, relative_sheet_id, relative_sheet_name, dependencies, sheet_name_map));
+          args.forEach((arg) => this.RebuildDependencies(arg, relative_sheet_id, relative_sheet_name, dependencies));//, sheet_name_map));
 
         }
         break;
@@ -2012,23 +2079,26 @@ export class Calculator extends Graph {
         throw new Error('subset missing sheet id');
       }
 
-      const cells = this.cells_map[subset.start.sheet_id];
+      // const cells = this.cells_map[subset.start.sheet_id];
+      const cells = this.model.sheets.Find(subset.start.sheet_id)?.cells;
 
-      for (let row = subset.start.row; row <= subset.end.row; row++) {
-        const row_array = cells.data[row];
-        if (row_array) {
-          for (let column = subset.start.column; column <= subset.end.column; column++) {
-            const cell = row_array[column];
-            if (cell) {
-              this.RebuildGraphCell(cell, {row, column, sheet_id: subset.start.sheet_id});
+      if (cells) {
+        for (let row = subset.start.row; row <= subset.end.row; row++) {
+          const row_array = cells.data[row];
+          if (row_array) {
+            for (let column = subset.start.column; column <= subset.end.column; column++) {
+              const cell = row_array[column];
+              if (cell) {
+                this.RebuildGraphCell(cell, {row, column, sheet_id: subset.start.sheet_id});
+              }
             }
           }
-        }
+        } 
       }
 
     }
     else {
-      for (const sheet of this.model.sheets || []) {
+      for (const sheet of this.model.sheets.list || []) {
         const rows = sheet.cells.data.length;
         for (let row = 0; row < rows; row++) {
           const row_array = sheet.cells.data[row];

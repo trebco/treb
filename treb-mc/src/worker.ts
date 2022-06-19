@@ -16,6 +16,8 @@ export class WorkerImpl {
 
   protected trials = 0;
   protected lhs = false;
+
+  /*
   protected data_model: DataModel = {
     // active_sheet: Sheet.Blank({}),
     sheets: [Sheet.Blank({})],
@@ -25,6 +27,9 @@ export class WorkerImpl {
     view_count: 0,
     theme_style_properties: {},
   };
+  */
+  protected data_model = new DataModel();
+
   protected screen_updates = false;
   protected calculator = new MCCalculator(this.data_model);
   protected start_time = 0;
@@ -67,9 +72,14 @@ export class WorkerImpl {
         this.calculator.UpdateLocale();
       }
 
-      this.data_model.sheets = message.sheets.map((sheet) => 
-        Sheet.FromJSON(sheet, {}));
-      // this.data_model.active_sheet = this.data_model.sheets[0];
+      this.data_model.sheets.Assign(message.sheets.map((sheet) => Sheet.FromJSON(sheet, {})));
+
+      // old
+      // this.data_model.sheets = message.sheets.map((sheet) => 
+      //  Sheet.FromJSON(sheet, {}));
+
+      // older
+      // this.data_model.active_sheet = this.data_model.sheets.list[0];
 
       if (message.additional_cells) {
         this.additional_cells = message.additional_cells;

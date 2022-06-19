@@ -174,7 +174,7 @@ export class Grid {
         scale: value,
       });
   
-      for (const sheet of this.model.sheets) {
+      for (const sheet of this.model.sheets.list) {
         for (const annotation of sheet.annotations) {
           annotation.dirty = true;
         }
@@ -438,7 +438,7 @@ export class Grid {
     this.model = model;
 
     this.view = {
-      active_sheet: this.model.sheets[0],
+      active_sheet: this.model.sheets.list[0],
       view_index: this.model.view_count++,
     };
 
@@ -677,7 +677,7 @@ export class Grid {
       scale,
     });
 
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
       for (const annotation of sheet.annotations) {
         annotation.dirty = true;
       }
@@ -987,13 +987,24 @@ export class Grid {
 
     // NOTE: annotations moved to sheets, they will be serialized in the sheets
 
-    const sheet_data = this.model.sheets.map((sheet) => sheet.toJSON(options));
+    const sheet_data = this.model.sheets.list.map((sheet) => sheet.toJSON(options));
 
     // NOTE: moving into a structured object (the sheet data is also structured,
     // of course) but we are moving things out of sheet (just  named ranges atm))
 
     let macro_functions: MacroFunction[] | undefined;
 
+    if (this.model.macro_functions.size) {
+      macro_functions = [];
+      for (const macro of this.model.macro_functions.values()) {
+        macro_functions.push({
+          ...macro,
+          expression: undefined,
+        });
+      }
+    }
+
+    /*
     const macro_function_keys = Object.keys(this.model.macro_functions);
     if (macro_function_keys.length) {
       macro_functions = [];
@@ -1004,9 +1015,19 @@ export class Grid {
         });
       }
     }
+    */
 
     const named_expressions: SerializedNamedExpression[] = [];
     if (this.model.named_expressions) {
+
+      for (const [name, expr] of this.model.named_expressions) {
+        const rendered = this.parser.Render(expr, undefined, '');
+        named_expressions.push({
+          name, expression: rendered
+        });
+      }
+
+      /*
       for (const name of Object.keys(this.model.named_expressions)) {
         const expr = this.model.named_expressions[name];
         const rendered = this.parser.Render(expr, undefined, '');
@@ -1014,6 +1035,7 @@ export class Grid {
           name, expression: rendered
         });
       }
+      */
     }
 
     return {
@@ -1179,14 +1201,15 @@ export class Grid {
     
     // FIXME: are there macro functions in the data? (...)
 
-    this.model.macro_functions = {};
+    // this.model.macro_functions = {};
+    this.model.macro_functions.clear();
 
     this.ClearSelection(this.primary_selection);
 
     // moved data import into sheet
 
     for (let i = 0; i < sheet_data.length; i++) {
-      const sheet = this.model.sheets[i];
+      const sheet = this.model.sheets.list[i];
       sheet.ImportData(sheet_data[i]);
       name_map[sheet.name] = sheet.id;
     }
@@ -1322,7 +1345,7 @@ export class Grid {
     // (walking would be simpler, in the end, there are three loops here)
 
     // list of tuples: visible sheet, index
-    const visible = this.model.sheets.map((sheet, index) => ({ sheet, index })).filter(test => test.sheet.visible);
+    const visible = this.model.sheets.list.map((sheet, index) => ({ sheet, index })).filter(test => test.sheet.visible);
 
     if (visible.length === 1) {
       return; 
@@ -1343,7 +1366,7 @@ export class Grid {
   public InsertSheet(index?: number, name?: string): void {
 
     if (typeof index === 'undefined') {
-      if (!this.model.sheets.some((sheet, i) => {
+      if (!this.model.sheets.list.some((sheet, i) => {
         if (sheet === this.active_sheet) {
           index = i + 1;
           return true;
@@ -1363,13 +1386,20 @@ export class Grid {
 
   }
 
+  public DeleteSheetID(id: number): void {
+    this.ExecCommand({
+      key: CommandKey.DeleteSheet,
+      id,
+    });
+  }
+
   /**
    * delete sheet, by index or (omitting index) the current active sheet
    */
   public DeleteSheet(index?: number): void {
 
     if (typeof index === 'undefined') {
-      if (!this.model.sheets.some((sheet, i) => {
+      if (!this.model.sheets.list.some((sheet, i) => {
         if (sheet === this.active_sheet) {
           index = i;
           return true;
@@ -1495,15 +1525,23 @@ export class Grid {
 
     // now assign sheets
 
-    this.model.sheets = sheets;
+    // this.model.sheets = sheets;
+    this.model.sheets.Assign(sheets);
+
     this.active_sheet = sheets[0];
 
     // possibly set an active sheet on load (shortcut)
 
     if (activate_sheet) {
 
+      const sheet = this.model.sheets.Find(activate_sheet);
+      if (sheet) {
+        this.active_sheet = sheet;
+      }
+
+      /*
       if (typeof activate_sheet === 'number') {
-        for (const sheet of this.model.sheets) {
+        for (const sheet of this.model.sheets.list) {
           if (activate_sheet === sheet.id) {
             this.active_sheet = sheet;
             break;
@@ -1511,13 +1549,14 @@ export class Grid {
         }
       }
       else if (typeof activate_sheet === 'string') {
-        for (const sheet of this.model.sheets) {
+        for (const sheet of this.model.sheets.list) {
           if (activate_sheet === sheet.name) {
             this.active_sheet = sheet;
             break;
           }
         }
       }
+      */
     }
 
     // selection
@@ -1561,7 +1600,7 @@ export class Grid {
     // otherwise layout of annotations won't work properly
     this.layout.ClearLayoutCaches();
     
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
       for (const annotation of sheet.annotations) {
         this.AddAnnotation(annotation, true, (sheet === this.active_sheet));
       }
@@ -2178,26 +2217,19 @@ export class Grid {
     let sheet_id = 0;
 
     if (IsCellAddress(range)) {
-
       sheet_id = range.sheet_id || this.active_sheet.id;
-      for (const sheet of this.model.sheets) {
-        if (sheet.id === sheet_id) {
-          return sheet.GetCellStyle(range, apply_theme);
-        }
-      }
-      return undefined;
-
+    }
+    else {
+      sheet_id = range.start.sheet_id || this.active_sheet.id;
     }
 
-    sheet_id = range.start.sheet_id || this.active_sheet.id;
-    for (const sheet of this.model.sheets) {
-      if (sheet.id === sheet_id) {
-        return sheet.GetCellStyle(range, apply_theme);
-      }
+    if (sheet_id) {
+      const sheet = this.model.sheets.Find(sheet_id);
+      return sheet?.GetCellStyle(range, apply_theme) || undefined;
     }
 
     return undefined;
-    
+
   }
 
   /**
@@ -2206,32 +2238,42 @@ export class Grid {
    */
   public GetRange(range: ICellAddress | IArea, type?: 'formula'|'formatted'): CellValue|CellValue[][]|undefined {
 
-    let sheet_id = 0;
+    // let sheet_id = 0;
 
     if (IsCellAddress(range)) {
-
-      sheet_id = range.sheet_id || this.active_sheet.id;
-      for (const sheet of this.model.sheets) {
-        if (sheet.id === sheet_id) {
+      const sheet = this.model.sheets.Find(range.sheet_id || this.active_sheet.id);
+      if (sheet) {
+      // sheet_id = range.sheet_id || this.active_sheet.id;
+      //for (const sheet of this.model.sheets.list) {
+        //if (sheet.id === sheet_id) {
           if (type === 'formula') { return sheet.cells.RawValue(range); }
           if (type === 'formatted') { return sheet.GetFormattedRange(range); }
-          // if (type === 'style') { return sheet.GetCellStyle(range); }
           return sheet.cells.GetRange(range);
-        }
+        //}
+      //}
       }
       return undefined;
 
     }
 
+    const sheet = this.model.sheets.Find(range.start.sheet_id || this.active_sheet.id);
+    if (sheet) {
+      if (type === 'formula') { return sheet.cells.RawValue(range.start, range.end); }
+      if (type === 'formatted') { return sheet.GetFormattedRange(range.start, range.end); }
+      return sheet.cells.GetRange(range.start, range.end);
+    }
+
+    /*
     sheet_id = range.start.sheet_id || this.active_sheet.id;
-    for (const sheet of this.model.sheets) {
+
+    for (const sheet of this.model.sheets.list) {
       if (sheet.id === sheet_id) {
         if (type === 'formula') { return sheet.cells.RawValue(range.start, range.end); }
         if (type === 'formatted') { return sheet.GetFormattedRange(range.start, range.end); }
-        // if (type === 'style') { return sheet.GetCellStyle(range); }
         return sheet.cells.GetRange(range.start, range.end);
       }
     }
+    */
 
     return undefined;
 
@@ -2556,7 +2598,7 @@ export class Grid {
   /**
    * rename active sheet
    */
-  public RenameSheet(sheet = this.active_sheet, name: string): void {
+  public RenameSheet(sheet: Sheet, name: string): void {
     this.ExecCommand({
       key: CommandKey.RenameSheet,
       new_name: name,
@@ -2686,7 +2728,7 @@ export class Grid {
    */
   public EnsureActiveSheet(force = false) {
 
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
       if (sheet === this.active_sheet) {
         if (force) {
           this.ActivateSheetInternal({
@@ -2724,7 +2766,7 @@ export class Grid {
     // remove from array. check if this is the active sheet
 
     const named_sheet = command.name ? command.name.toLowerCase() : '';
-    const sheets = this.model.sheets.filter((sheet, i) => {
+    const sheets = this.model.sheets.list.filter((sheet, i) => {
       if (i === command.index || sheet.id === command.id || sheet.name.toLowerCase() === named_sheet) {
         is_active = (sheet === this.active_sheet);
 
@@ -2774,7 +2816,8 @@ export class Grid {
       }
     }
 
-    this.model.sheets = sheets;
+    // this.model.sheets = sheets;
+    this.model.sheets.Assign(sheets);
 
     // need to activate a new sheet? use the next one (now in the slot
     // we just removed). this will roll over properly if we're at the end.
@@ -2804,7 +2847,7 @@ export class Grid {
 
     // validate name...
 
-    while (this.model.sheets.some((test) => test.name === name)) {
+    while (this.model.sheets.list.some((test) => test.name === name)) {
 
       const match = name.match(/^(.*?)(\d+)$/);
       if (match) {
@@ -2821,10 +2864,10 @@ export class Grid {
     const sheet = Sheet.Blank(this.model.theme_style_properties, name);
 
     if (insert_index >= 0) {
-      this.model.sheets.splice(insert_index, 0, sheet);
+      this.model.sheets.Splice(insert_index, 0, sheet);
     }
     else {
-      this.model.sheets.push(sheet);
+      this.model.sheets.Add(sheet);
     }
 
     // if (activate) {
@@ -2853,11 +2896,11 @@ export class Grid {
     }
 
     const source = this.ResolveSheet(command);
-    const next_id = this.model.sheets.reduce((id, sheet) => Math.max(id, sheet.id), 0) + 1;
+    const next_id = this.model.sheets.list.reduce((id, sheet) => Math.max(id, sheet.id), 0) + 1;
 
     let insert_index = -1;
     for (let i = 0; i < this.model.sheets.length; i++) {
-      if (this.model.sheets[i] === source) {
+      if (this.model.sheets.list[i] === source) {
         insert_index = i + 1;
       }
     }
@@ -2874,7 +2917,7 @@ export class Grid {
     else if (typeof command.insert_before === 'string') {
       const lc = command.insert_before.toLowerCase();
       for (let i = 0; i < this.model.sheets.length; i++) {
-        if (this.model.sheets[i].name.toLowerCase() === lc) {
+        if (this.model.sheets.list[i].name.toLowerCase() === lc) {
           insert_index = i;
           break;
         }
@@ -2888,7 +2931,7 @@ export class Grid {
     const clone = Sheet.FromJSON(source.toJSON(options), this.model.theme_style_properties);
     
     let name = command.new_name || source.name;
-    while (this.model.sheets.some((test) => test.name === name)) {
+    while (this.model.sheets.list.some((test) => test.name === name)) {
       const match = name.match(/^(.*?)(\d+)$/);
       if (match) {
         name = match[1] + (Number(match[2]) + 1);
@@ -2903,7 +2946,7 @@ export class Grid {
 
     // console.info('CLONE', clone.id, clone);
 
-    this.model.sheets.splice(insert_index, 0, clone);
+    this.model.sheets.Splice(insert_index, 0, clone);
 
     if (this.tab_bar) { this.tab_bar.Update(); }
 
@@ -2920,7 +2963,7 @@ export class Grid {
 
     // console.info('activate sheet', command, 'sa?', selecting_argument);
 
-    const candidate = this.ResolveSheet(command) || this.model.sheets[0];
+    const candidate = this.ResolveSheet(command) || this.model.sheets.list[0];
 
     // ok, activate...
 
@@ -3039,18 +3082,25 @@ export class Grid {
     // more efficient than checking each one separately.
 
     if (typeof command.index !== 'undefined') {
-      return this.model.sheets[command.index];
+      return this.model.sheets.list[command.index];
     }
     if (typeof command.name !== 'undefined') {
+      return this.model.sheets.Find(command.name);
+
+      /*
       const compare = command.name.toLowerCase();
-      for (const sheet of this.model.sheets) {
+      for (const sheet of this.model.sheets.list) {
         if (sheet.name.toLowerCase() === compare) { return sheet; }
       }
+      */
     }
     if (command.id) {
-      for (const sheet of this.model.sheets) {
+      return this.model.sheets.Find(command.id);
+      /*
+      for (const sheet of this.model.sheets.list) {
         if (sheet.id === command.id) { return sheet; }
       }
+      */
     }
     return undefined;
   }
@@ -3069,7 +3119,7 @@ export class Grid {
     if (!command.show) {
 
       let count = 0;
-      for (const test of this.model.sheets) {
+      for (const test of this.model.sheets.list) {
         if (!sheet.visible || test === sheet) { count++; }
       }
       if (count >= this.model.sheets.length) {
@@ -3084,7 +3134,7 @@ export class Grid {
     // is this current?
     if (sheet === this.active_sheet) {
       for (let i = 0; i < this.model.sheets.length; i++) {
-        if (this.model.sheets[i] === this.active_sheet) {
+        if (this.model.sheets.list[i] === this.active_sheet) {
           this.ActivateSheetInternal({
             key: CommandKey.ActivateSheet,
             index: i + 1,
@@ -3274,14 +3324,14 @@ export class Grid {
 
       const resolve_sheet_name = (name = ''): number => {
         const lc = name.toLowerCase();
-        for (const sheet of this.model.sheets) {
+        for (const sheet of this.model.sheets.list) {
           if (sheet.name.toLowerCase() === lc) { return sheet.id; }
         }
         return this.active_sheet.id; // default to active sheet on short-hand names like "A2"
       }
 
       const get_sheet = (id?: number) => {
-        for (const sheet of this.model.sheets) {
+        for (const sheet of this.model.sheets.list) {
           if (sheet.id === id) { return sheet; }
         }
         return this.active_sheet;
@@ -5188,7 +5238,7 @@ export class Grid {
             event.stopPropagation();
             event.preventDefault();
             for (let i = 0; i < this.model.sheets.length; i++) {
-              if (this.model.sheets[i] === this.active_sheet) {
+              if (this.model.sheets.list[i] === this.active_sheet) {
                 this.DeleteSheet(i);
                 break;
               }
@@ -7504,12 +7554,20 @@ export class Grid {
         if (composite.source && composite.source !== this.active_sheet.id) {
           if (composite.data && composite.data.formula) {
             let name = '';
-            for (const sheet of this.model.sheets) {
+            const sheet = this.model.sheets.Find(composite.source as number);
+            if (sheet) {
+              name = sheet.name;
+            }
+
+            /*
+            for (const sheet of this.model.sheets.list) {
               if (sheet.id === composite.source) {
                 name = sheet.name;
                 break;
               }
             }
+            */
+
             if (name) {
               const parse_result = this.parser.Parse(composite.data.formula);
               if (parse_result.expression) {
@@ -7817,7 +7875,7 @@ export class Grid {
     // also can't have two sheets with the same name
 
     const compare = name.toLowerCase();
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
       if (sheet !== target && sheet.name.toLowerCase() === compare) {
         throw new Error('sheet name already exists');
       }
@@ -7825,12 +7883,16 @@ export class Grid {
 
     // function will LC the name
     // const old_name = target.name.toLowerCase();
+    const old_name = target.name;
     target.name = name;
 
-    this.RenameSheetReferences(this.model.sheets, target.name, name);
+    // need to update indexes
+    this.model.sheets.Assign(this.model.sheets.list);
+
+    this.RenameSheetReferences(this.model.sheets.list, old_name, name);
 
     /*
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
 
       // cells
       sheet.cells.IterateAll((cell: Cell) => {
@@ -8069,7 +8131,7 @@ export class Grid {
 
     const target_sheet_name = target_sheet.name.toLowerCase();
 
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
       const is_target = sheet === target_sheet;
 
       sheet.cells.IterateAll((cell: Cell) => {
@@ -8301,7 +8363,7 @@ export class Grid {
 
     const target_sheet_name = target_sheet.name.toLowerCase();
 
-    for (const sheet of this.model.sheets) {
+    for (const sheet of this.model.sheets.list) {
       const is_target = sheet === target_sheet;
 
       sheet.cells.IterateAll((cell: Cell) => {
@@ -9077,11 +9139,18 @@ export class Grid {
       return this.active_sheet;
     }
 
+    const sheet = this.model.sheets.Find(id);
+    if (sheet) { 
+      return sheet;
+    }
+
+    /*
     for (const test of this.model.sheets) {
       if (test.id === id) {
         return test;
       }
     }
+    */
 
     // FIXME: should return undefined here
     return this.active_sheet;
@@ -9155,7 +9224,7 @@ export class Grid {
             this.RemoveAnnotationNodes();
             this.UpdateSheets([], true);
             this.model.named_ranges.Reset();
-            this.model.macro_functions = {};
+            this.model.macro_functions.clear(); //  = {};
             this.ClearSelection(this.primary_selection);
             this.ScrollIntoView({ row: 0, column: 0 });
             this.QueueLayoutUpdate(); // necessary? (...)
@@ -9346,9 +9415,11 @@ export class Grid {
 
           if (command.area) {
 
-            if (this.model.named_expressions[command.name]) {
-              delete this.model.named_expressions[command.name];
-            }
+            //if (this.model.named_expressions[command.name]) {
+            //  delete this.model.named_expressions[command.name];
+            //}
+            this.model.named_expressions.delete(command.name);
+
             this.model.named_ranges.SetName(command.name,
               new Area(command.area.start, command.area.end));
             this.autocomplete_matcher.AddFunctions({
@@ -9358,7 +9429,7 @@ export class Grid {
           }
           else if (command.expression) {
             this.model.named_ranges.ClearName(command.name);
-            this.model.named_expressions[command.name] = command.expression;
+            this.model.named_expressions.set(command.name, command.expression);
             this.autocomplete_matcher.AddFunctions({
               type: DescriptorType.Token,
               name: command.name,
@@ -9366,9 +9437,11 @@ export class Grid {
           }
           else {
             this.model.named_ranges.ClearName(command.name);
-            if (this.model.named_expressions[command.name]) {
-              delete this.model.named_expressions[command.name];
-            }
+            //if (this.model.named_expressions[command.name]) {
+            //  delete this.model.named_expressions[command.name];
+            //}
+            this.model.named_expressions.delete(command.name);
+
             this.autocomplete_matcher.RemoveFunctions({
               type: DescriptorType.Token,
               name: command.name,
@@ -9412,14 +9485,14 @@ export class Grid {
             // COEDITING: seems OK, irrespective of active sheet
 
             const sheets: Sheet[] = [];
-            const target = this.model.sheets[command.index];
+            const target = this.model.sheets.list[command.index];
 
             for (let i = 0; i < this.model.sheets.length; i++) {
               if (i !== command.index) {
                 if (i === command.move_before) {
                   sheets.push(target);
                 }
-                sheets.push(this.model.sheets[i]);
+                sheets.push(this.model.sheets.list[i]);
               }
             }
 
@@ -9427,7 +9500,9 @@ export class Grid {
               sheets.push(target);
             }
 
-            this.model.sheets = sheets;
+            // this.model.sheets = sheets;
+            this.model.sheets.Assign(sheets);
+
             if (this.tab_bar) { this.tab_bar.Update(); }
             structure_event = true;
 

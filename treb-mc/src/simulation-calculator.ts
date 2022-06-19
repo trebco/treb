@@ -388,7 +388,7 @@ export class MCCalculator extends Calculator {
         const entry = (result instanceof ArrayBuffer) ? PackResults.UnpackOne(new Float64Array(result)) : result;
 
         if (!entry.sheet_id) {
-          entry.sheet_id = this.model.sheets[0].id; // patch for old-style data
+          entry.sheet_id = this.model.sheets.list[0].id; // patch for old-style data
         }
 
         /** ?

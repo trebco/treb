@@ -76,8 +76,8 @@ export class ExpressionCalculator {
 
   // local reference
   // protected cells: Cells = new Cells();
-  protected cells_map: {[index: number]: Cells} = {};
-  protected sheet_name_map: {[index: string]: number} = {};
+  // protected cells_map: {[index: number]: Cells} = {};
+  // protected sheet_name_map: {[index: string]: number} = {};
 
   // local reference
   protected named_range_map: {[index: string]: Area} = {};
@@ -98,13 +98,15 @@ export class ExpressionCalculator {
 
   public SetModel(model: DataModel): void {
 
-    this.cells_map = {};
-    this.sheet_name_map = {};
+    // this.cells_map = {};
+    // this.sheet_name_map = {};
 
-    for (const sheet of model.sheets) {
-      this.cells_map[sheet.id] = sheet.cells;
-      this.sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
+    /*
+    for (const sheet of model.sheets.list) {
+      // this.cells_map[sheet.id] = sheet.cells;
+      // this.sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
     }
+    */
 
     this.data_model = model;
     this.named_range_map = model.named_ranges.Map();
@@ -146,14 +148,18 @@ export class ExpressionCalculator {
 
     if (!expr.sheet_id) {
       if (expr.sheet) {
-        expr.sheet_id = this.sheet_name_map[expr.sheet.toLowerCase()];
+        expr.sheet_id = this.data_model.sheets.ID(expr.sheet) || 0;
+
+        // expr.sheet_id = this.sheet_name_map[expr.sheet.toLowerCase()];
       }
       else {
         return () => ReferenceError();
       }
     }
 
-    const cells = this.cells_map[expr.sheet_id];
+    // const cells = this.cells_map[expr.sheet_id];
+    const cells = this.data_model.sheets.Find(expr.sheet_id)?.cells;
+
     if (!cells) {
       console.warn('missing cells reference @ ' + expr.sheet_id);
       return () => ReferenceError();
@@ -185,8 +191,10 @@ export class ExpressionCalculator {
       // throw new Error('missing sheet id in CellFunction4');
     }
 
-    const cells = this.cells_map[start.sheet_id];
-    return cells.GetRange4(start, end, true);
+    //const cells = this.cells_map[start.sheet_id];
+    const cells = this.data_model.sheets.Find(start.sheet_id)?.cells;
+
+    return cells?.GetRange4(start, end, true) || ReferenceError();
 
   }
 
@@ -261,12 +269,16 @@ export class ExpressionCalculator {
 
       let sheet: Sheet|undefined; // = this.data_model.active_sheet;
       if (address.sheet_id) { // && address.sheet_id !== sheet.id) {
+        sheet = this.data_model.sheets.Find(address.sheet_id);
+
+        /*
         for (const test of this.data_model.sheets) {
           if (test.id === address.sheet_id) {
             sheet = test;
             break;
           }
         }
+        */
       }
 
       if (!sheet) {
@@ -296,12 +308,15 @@ export class ExpressionCalculator {
 
       let sheet: Sheet|undefined; // = this.data_model.active_sheet;
       if (range.start.sheet_id) { // && range.start.sheet_id !== sheet.id) {
+        sheet = this.data_model.sheets.Find(range.start.sheet_id);
+        /*
         for (const test of this.data_model.sheets) {
           if (test.id === range.start.sheet_id) {
             sheet = test;
             break;
           }
         }
+        */
       }
 
       if (!sheet) {
@@ -864,7 +879,7 @@ export class ExpressionCalculator {
         }
       }
 
-      const named_expression = this.data_model.named_expressions[upper_case]; 
+      const named_expression = this.data_model.named_expressions.get(upper_case); 
       if (named_expression) {
         return this.CalculateExpression(named_expression as ExtendedExpressionUnit);
       }
@@ -917,7 +932,7 @@ export class ExpressionCalculator {
     switch (expr.type){
     case 'call':
       {
-        const macro = this.data_model.macro_functions[expr.name.toUpperCase()];
+        const macro = this.data_model.macro_functions.get(expr.name.toUpperCase());
         if (macro) {
           return (expr.user_data = this.CallMacro(expr, macro))(expr);
         }

@@ -647,7 +647,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     if (text !== this.last_parse_string || !this.reference_list) {
 
       const sheet_name_map: {[index: string]: number} = {};
-      for (const sheet of this.model.sheets) {
+      for (const sheet of this.model.sheets.list) {
         sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
       }
 

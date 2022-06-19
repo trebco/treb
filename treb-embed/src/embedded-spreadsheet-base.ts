@@ -6,7 +6,7 @@ import {
   SerializedModel, FreezePane, SerializedSheet,
   BorderConstants, SheetChangeEvent, GridOptions, 
   Sheet, GridSelection, CellEvent, FunctionDescriptor, 
-  DataModel, NamedRangeCollection, AnnotationViewData,
+  DataModel, AnnotationViewData,
 } from 'treb-grid';
 
 import { 
@@ -653,6 +653,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       // now updates that, so we're back to where we were. but this all
       // needs to get cleaned up.
 
+      /*
       this.model = {
         sheets: [],
         named_ranges: new NamedRangeCollection(),
@@ -665,12 +666,14 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         
         theme_style_properties: JSON.parse(JSON.stringify(Style.DefaultProperties)),
       };
+      */
+      this.model = new DataModel();
 
       // we need an initial sheet, now we're pointing to the model theme
       // properties and those will get updated by grid on initialize, and
       // then on any theme update.
 
-      this.model.sheets.push(Sheet.Blank(this.model.theme_style_properties));
+      this.model.sheets.Add(Sheet.Blank(this.model.theme_style_properties));
 
       this.calculator = new type(this.model);
     }
@@ -1661,16 +1664,21 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // API v1 OK
 
     if (typeof sheet === 'number') {
-      const model_sheet = this.grid.model.sheets[sheet];
+      const model_sheet = this.grid.model.sheets.list[sheet];
       if (model_sheet) { return model_sheet.id; }
     }
     else {
+      const entry = this.model.sheets.Find(sheet);
+      if (entry) { return entry.id; }
+
+      /*
       const name = sheet.toUpperCase();
       for (const sheet of this.grid.model.sheets) {
         if (sheet.name.toUpperCase() === name) {
           return sheet.id;
         }
       }
+      */
     }
 
     return undefined;
@@ -1750,19 +1758,16 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     let sheet: Sheet|undefined;
 
     if (typeof index === 'number') {
-      sheet = this.grid.model.sheets[index];
-      if (!sheet) { return; }
+      sheet = this.grid.model.sheets.list[index];
     }
     else if (typeof index === 'string') {
-      const uc = index.toUpperCase();
-      for (const test of this.grid.model.sheets) {
-        if (test.name.toUpperCase() === uc) {
-          sheet = test;
-          break;
-        }
-      }
-      if (!sheet) { return; }
+      sheet = this.model.sheets.Find(index);
     }
+    else {
+      sheet = this.grid.active_sheet;
+    }
+
+    if (!sheet) { return; }
 
     this.grid.RenameSheet(sheet, new_name);
 
@@ -1780,14 +1785,21 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // API v1 OK
 
     if (typeof index === 'string') {
+      const sheet = this.model.sheets.Find(index);
+      if (sheet) {
+        this.grid.DeleteSheetID(sheet.id);
+      }
+
+      /*
       index = index.toLowerCase();
       for (let i = 0; i < this.grid.model.sheets.length; i++) {
-        const sheet = this.grid.model.sheets[i];
+        const sheet = this.grid.model.sheets.list[i];
         if (sheet.name.toLowerCase() === index) {
           this.grid.DeleteSheet(i);
           break;
         }
       }
+      */
     }
     else {
       this.grid.DeleteSheet(index); // index or undefined
@@ -2289,16 +2301,11 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         break;
 
       case 'string':
-        sheet = undefined;
-        for (const compare of this.grid.model.sheets) {
-          if (compare.name === options.sheet) {
-            sheet = compare;
-          }
-        }
+        sheet = this.model.sheets.Find(options.sheet);
         break;
 
       case 'number':
-        sheet = this.grid.model.sheets[options.sheet];
+        sheet = this.grid.model.sheets.list[options.sheet];
         break;
 
       default:
@@ -2688,12 +2695,16 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // API v1 OK
 
     const uppercase = name.toUpperCase();
+
+    /*
     const keys = Object.keys(this.grid.model.macro_functions);
     for (const key of keys) {
       if (key.toUpperCase() === uppercase) {
         delete this.grid.model.macro_functions[key];
       }
     }
+    */
+    this.model.macro_functions.delete(uppercase);
 
     // this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
     this.UpdateAC();
@@ -2732,12 +2743,12 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     // overwrite
     this.RemoveFunction(name);
 
-    this.grid.model.macro_functions[name.toUpperCase()] = {
+    this.grid.model.macro_functions.set(name.toUpperCase(), {
       name,
       function_def,
       argument_names,
       expression: this.parser.Parse(function_def).expression,
-    };
+    });
 
     // this.grid.SetAutocompleteFunctions(this.calculator.SupportedFunctions());
     this.UpdateAC();
@@ -4318,7 +4329,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     const number_format_map: Record<string, number> = {};
     const color_map: Record<string, number> = {};
 
-    for (const sheet of this.grid.model.sheets) {
+    for (const sheet of this.grid.model.sheets.list) {
       sheet.NumberFormatsAndColors(color_map, number_format_map);
     }
 
@@ -4547,27 +4558,27 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       model.named_ranges.Deserialize(named_range_data);
     }
 
-    model.named_expressions = {};
+    model.named_expressions.clear(); // = {};
     if (data.named_expressions) {
       for (const pair of data.named_expressions) {
         const parse_result = this.parser.Parse('' || pair.expression);
         if (parse_result.valid && parse_result.expression) {
-          model.named_expressions[pair.name.toUpperCase()] = parse_result.expression;
+          model.named_expressions.set(pair.name.toUpperCase(), parse_result.expression);
         }
       }
     }
 
-    model.macro_functions = {};
+    model.macro_functions.clear();
     if (data.macro_functions) {
       for (const macro_function of data.macro_functions) {
 
         // FIXME: i18n of expression
         // FIXME: autocomplete (also when you do that, remember to undo it)
 
-        model.macro_functions[macro_function.name.toUpperCase()] = {
+        model.macro_functions.set(macro_function.name.toUpperCase(), {
           ...macro_function,
           expression: this.parser.Parse(macro_function.function_def || '').expression,
-        };
+        });
 
       }
     }
@@ -4646,7 +4657,24 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     }
   }
 
+  /**
+   * this is only used in one place, can we just inline?
+   * [A: seems like it might be useful, though]
+   * 
+   * @param id 
+   * @param quote 
+   * @returns 
+   */
   protected ResolveSheetName(id: number, quote = false): string | undefined {
+    const sheet = this.model.sheets.Find(id);
+    if (sheet) {
+      if (quote && QuotedSheetNameRegex.test(sheet.name)) {
+        return `'${sheet.name}'`;
+      }
+      return sheet.name;
+    }
+
+    /*
     for (const sheet of this.grid.model.sheets) {
       if (sheet.id === id) {
         if (quote && QuotedSheetNameRegex.test(sheet.name)) {
@@ -4655,6 +4683,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         return sheet.name;
       }
     }
+    */
+
     return undefined;
   }
 
