@@ -1196,7 +1196,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       // we want those things to be a single transaction.
 
       const selection = this.grid.GetSelection();
-      const area = this.grid.RealArea(selection.area);
+      const area = this.grid.active_sheet.RealArea(selection.area);
 
       this.grid.ApplyStyle(undefined, event.style, true);
       const rows: number[] = [];
@@ -1217,7 +1217,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
           {
             const selection = this.grid.GetSelection();
-            const area = this.grid.RealArea(selection.area);
+            const area = this.grid.active_sheet.RealArea(selection.area);
             const scale = Number(event.data?.scale || 1);
 
             if (scale && !isNaN(scale)) {

@@ -691,170 +691,6 @@ export class Grid {
     // ...
   }
 
-  /*
-  public AnnotationMouseDown(annotation: Annotation, event: MouseEvent, move_target: HTMLElement, resize_target: HTMLElement) {
-
-    const node = annotation.node;
-    if (!node) {
-      return;
-    }
-          
-    console.info('annotation mousedown', annotation);
-
-    const rect = annotation.scaled_rect;
-    if (!rect) {
-      console.info('missing scaled rect!');
-      return;
-    }
-
-    const origin = {
-      left: rect.left,
-      top: rect.top,
-      width: rect.width,
-      height: rect.height,
-    };
-
-    const bounding_rect = node.getBoundingClientRect();
-
-    if (event.target === move_target) {
-
-      event.stopPropagation();
-      event.preventDefault();
-      node.focus();
-
-      const offset = {
-        x: bounding_rect.left + event.offsetX - rect.left,
-        y: bounding_rect.top + event.offsetY - rect.top,
-      };
-
-      MouseDrag(this.layout.mask, 'move', (move_event) => {
-
-        const elements = [node, ...this.layout.GetFrozenAnnotations(annotation)];
-
-        rect.top = move_event.offsetY - offset.y;
-        rect.left = move_event.offsetX - offset.x;
-
-        if (move_event.shiftKey) {
-
-          // move in one direction at a time
-          const dx = Math.abs(rect.left - origin.left);
-          const dy = Math.abs(rect.top - origin.top);
-
-          if (dx <= dy) { rect.left = origin.left; }
-          else { rect.top = origin.top; }
-
-        }
-
-        if (move_event.ctrlKey) {
-          const point = this.layout.ClampToGrid({
-            x: rect.left, y: rect.top,
-          });
-          rect.left = point.x;
-          rect.top = point.y;
-        }
-
-        // node.style.top = (rect.top) + 'px';
-        // node.style.left = (rect.left) + 'px';
-
-        for (const element of elements) {
-          element.style.top = (rect.top) + 'px';
-          element.style.left = (rect.left) + 'px';
-        }
-
-      }, () => {
-        annotation.extent = undefined; // reset
-        // annotation.rect = rect.Scale(1/this.layout.scale);
-        annotation.layout = this.layout.RectToAnnotationLayout(rect);
-        this.grid_events.Publish({ type: 'annotation', annotation, event: 'move' });
-      });
-
-      return;
-
-    }
-    else if (event.target === resize_target) {
-
-    //if ((bounding_rect.width - event.offsetX <= 13) &&
-    //  (bounding_rect.height - event.offsetY <= 13)) {
-
-      event.stopPropagation();
-      event.preventDefault();
-      node.focus();
-
-      let aspect = 0;
-      if (annotation.data?.original_size
-            && annotation.data.original_size.width
-            && annotation.data.original_size.height){
-        aspect = annotation.data.original_size.width / 
-                 annotation.data.original_size.height;
-      }
-
-      const bounds = node.getBoundingClientRect();
-      const offset = {
-        x: bounds.left + event.offsetX - rect.width + resize_target.offsetLeft,
-        y: bounds.top + event.offsetY - rect.height + resize_target.offsetTop,
-      };
-
-      MouseDrag(this.layout.mask, 'nw-resize', (move_event) => {
-
-        const elements = [node, ...this.layout.GetFrozenAnnotations(annotation)];
-
-        rect.height = move_event.offsetY - offset.y;
-        rect.width = move_event.offsetX - offset.x;
-
-        if (move_event.shiftKey && move_event.ctrlKey) {
-          if (aspect) {
-
-            const dx = Math.abs(rect.width - origin.width);
-            const dy = Math.abs(rect.height - origin.height);
-
-            if (dx < dy) {
-              rect.width = aspect * rect.height;
-            }
-            else {
-              rect.height = rect.width / aspect;
-            }
-
-          }
-        }
-        else if (move_event.shiftKey) {
-          // move in one direction at a time [is this backwards? ...]
-          const dx = Math.abs(rect.height - origin.height);
-          const dy = Math.abs(rect.width - origin.width);
-
-          if (dx > dy) { rect.width = origin.width; }
-          else { rect.height = origin.height; }
-        }
-        else if (move_event.ctrlKey) {
-          const point = this.layout.ClampToGrid({
-            x: rect.right, y: rect.bottom,
-          });
-          rect.width = point.x - rect.left + 1;
-          rect.height = point.y - rect.top + 1;
-        }
-
-        // node.style.height = (rect.height) + 'px';
-        // node.style.width = (rect.width) + 'px';
-
-        for (const element of elements) {
-          element.style.height = (rect.height) + 'px';
-          element.style.width = (rect.width) + 'px';
-        }
-
-      }, () => {
-        annotation.extent = undefined; // reset
-        // annotation.rect = rect.Scale(1/this.layout.scale);
-        annotation.layout = this.layout.RectToAnnotationLayout(rect);
-
-        this.grid_events.Publish({ type: 'annotation', annotation, event: 'resize' });
-      });
-
-      return;
-    }
-
-  
-  }
-  */
-
   /** add an annotation. it will be returned with a usable node. */
   public AddAnnotation(annotation: Annotation, toll_events = false, add_to_layout = true): void {
 
@@ -1192,15 +1028,16 @@ export class Grid {
 
   }
 
-  /** pass through */
+  /* * pass through * /
   public RealArea(area: Area): Area {
     return this.active_sheet.RealArea(area);
   }
 
-  /** pass through */
+  / ** pass through * /
   public CellRenderData(address: ICellAddress): Cell {
     return this.active_sheet.CellData(address);
   }
+  */
 
   /**
    * clear sheet, reset all data
@@ -6616,7 +6453,7 @@ export class Grid {
         // could be a very large selection, or we have moused
         // around -- so scroll the target into view.
 
-        const area = this.RealArea(selection.area);
+        const area = this.active_sheet.RealArea(selection.area);
         const address = selection.target;
 
         // two things happen when merged. (1) if the current target is a
