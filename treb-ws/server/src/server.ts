@@ -1,7 +1,10 @@
 
 import { WebSocket, WebSocketServer } from 'ws';
+import { createServer } from 'https';
 import { Message } from './message-type';
 import { WrappedSocket } from './wrapped-socket';
+import { readFileSync } from 'fs';
+import { parse } from 'url';
 
 export class WSServer {
 
@@ -19,7 +22,9 @@ export class WSServer {
   /** current connections */
   protected connections: Map<number, WrappedSocket> = new Map();
   
-  constructor(port) {
+  constructor(port: number) {
+
+    this.Log(`starting server on port ${port}`);
 
     // create server
     this.wss = new WebSocketServer({ port });

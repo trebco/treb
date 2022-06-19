@@ -9,6 +9,5 @@ for (let i = 0; i < process.argv.length; i++) {
   }
 }
 
-console.info(`starting server on port ${port}`);
 new WSServer(port);
 
