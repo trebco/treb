@@ -64,7 +64,7 @@ export class WSServer {
         const text = data.toString('utf-8');
         const message = JSON.parse(text) as Message;
 
-        console.info("RX", message);
+        // console.info("RX", message);
 
         switch (message.type) {
 
