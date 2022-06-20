@@ -78,6 +78,7 @@ import '../../style/grid.scss';
 import { DOMUtilities } from '../util/dom_utilities';
 import { SerializedNamedExpression } from '..';
 import { GridBase } from './grid_base';
+import { UpdateFlags } from './update_flags';
 
 interface ClipboardCellData {
   address: ICellAddress;
@@ -101,46 +102,6 @@ enum EditingState {
 export class Grid extends GridBase {
 
   // --- public members --------------------------------------------------------
-
-  /* * events * /
-  public grid_events = new EventSource<GridEvent>();
-
-  / ** for recording * /
-  public command_log = new EventSource<CommandRecord>();
-  * /
-
-  / **
-   * the theme object exists so we can pass it to constructors for
-   * various components, but it's no longer initialized until the
-   * initialization step (when we have a node).
-   * /
-  public readonly theme: Theme; // ExtendedTheme;
-  */
-
-  /* *
-   * local sheet instance. we always have a sheet, change the data
-   * (not the instance).
-   *
-   * UPDATE: sheet is now private. this is the first step in the long
-   * process of replacing it. to support the sheet being private, we need
-   * some additional methods and accessors.
-   *
-   * also readonly, to enforce that we keep the reference (note that you
-   * can in fact reassign readonly in the constructor. I do not like that).
-   *
-   * FIXME: why again is this readonly? I get that we want to pass references
-   * around, but why not have a container and pass references to that? sheet
-   * should not be constant/readonly. it breaks the metaphor.
-   *
-   * IN FACT, why not pass an accessor? (...)
-   * also a nice way to transition... we now have a wrapper object, and we can
-   * switch the member to an accessor (DM will have to become a class)
-   * /
-  public readonly model: DataModel;
-
-  public readonly view: ViewModel;
-    */
-
 
   public hide_selection = false;
 
@@ -175,19 +136,6 @@ export class Grid extends GridBase {
   }
 
   // --- private members -------------------------------------------------------
-
-  /* * 
-   * maps common language (english) -> local language. this should 
-   * be passed in (actually set via a function).
-   * /
-  private language_map?: Record<string, string>;
-
-  / **
-   * maps local language -> common (english). this should be constructed
-   * when the forward function is passed in, so there's a 1-1 correspondence.
-   * /
-  private reverse_language_map?: Record<string, string>;
-  */
 
   // testing
   private hover_data: {
@@ -2106,13 +2054,6 @@ export class Grid extends GridBase {
     this.ExecCommand(command);
   }
 
-  public GetNumberFormat(address: ICellAddress): string|undefined {
-    const style = this.active_sheet.CellStyleData(address);
-    if (style && style.number_format) {
-      return NumberFormatCache.Get(style.number_format).toString();
-    }
-  }
-
   public SelectAll(): void {
     this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
     this.RenderSelections();
@@ -2156,52 +2097,6 @@ export class Grid extends GridBase {
 
   }
 
-  /**
-   * get data in a given range, optionally formulas
-   * API method
-   */
-  public GetRange(range: ICellAddress | IArea, type?: 'formula'|'formatted'): CellValue|CellValue[][]|undefined {
-
-    // let sheet_id = 0;
-
-    if (IsCellAddress(range)) {
-      const sheet = this.model.sheets.Find(range.sheet_id || this.active_sheet.id);
-      if (sheet) {
-      // sheet_id = range.sheet_id || this.active_sheet.id;
-      //for (const sheet of this.model.sheets.list) {
-        //if (sheet.id === sheet_id) {
-          if (type === 'formula') { return sheet.cells.RawValue(range); }
-          if (type === 'formatted') { return sheet.GetFormattedRange(range); }
-          return sheet.cells.GetRange(range);
-        //}
-      //}
-      }
-      return undefined;
-
-    }
-
-    const sheet = this.model.sheets.Find(range.start.sheet_id || this.active_sheet.id);
-    if (sheet) {
-      if (type === 'formula') { return sheet.cells.RawValue(range.start, range.end); }
-      if (type === 'formatted') { return sheet.GetFormattedRange(range.start, range.end); }
-      return sheet.cells.GetRange(range.start, range.end);
-    }
-
-    /*
-    sheet_id = range.start.sheet_id || this.active_sheet.id;
-
-    for (const sheet of this.model.sheets.list) {
-      if (sheet.id === sheet_id) {
-        if (type === 'formula') { return sheet.cells.RawValue(range.start, range.end); }
-        if (type === 'formatted') { return sheet.GetFormattedRange(range.start, range.end); }
-        return sheet.cells.GetRange(range.start, range.end);
-      }
-    }
-    */
-
-    return undefined;
-
-  }
 
   /**
    * set data in given range
@@ -2552,24 +2447,6 @@ export class Grid extends GridBase {
     });
   }
 
-  /**
-   * set functions for AC matcher. should be called by calculator on init,
-   * or when any functions are added/removed.
-   *
-   * FIXME: we should use this to normalize function names, on insert and
-   * on paste (if we're doing that).
-   * 
-   * FIXME: are named expressions included here? (this function predates
-   * named expressions).
-   */
-  public SetAutocompleteFunctions(functions: FunctionDescriptor[]): void {
-    const consolidated = functions.slice(0).concat(
-      this.model.named_ranges.List().map((named_range) => {
-        return { name: named_range.name, type: DescriptorType.Token };
-      }));
-    //this.autocomplete_matcher.SetFunctions(functions);
-    this.autocomplete_matcher.SetFunctions(consolidated);
-  }
 
   /**
    * scrolls so that the given cell is in the top-left (assuming that is
@@ -2674,50 +2551,6 @@ export class Grid extends GridBase {
     
   }
 
-  //
-
-
-  private AddSheetInternal(name = Sheet.default_sheet_name, insert_index = -1) {
-
-    if (!this.options.add_tab) {
-      console.warn('add tab option not set or false');
-      return;
-    }
-
-    // validate name...
-
-    while (this.model.sheets.list.some((test) => test.name === name)) {
-
-      const match = name.match(/^(.*?)(\d+)$/);
-      if (match) {
-        name = match[1] + (Number(match[2]) + 1);
-      }
-      else {
-        name = name + '2';
-      }
-
-    }
-
-    // FIXME: structure event
-
-    const sheet = Sheet.Blank(this.model.theme_style_properties, name);
-
-    if (insert_index >= 0) {
-      this.model.sheets.Splice(insert_index, 0, sheet);
-    }
-    else {
-      this.model.sheets.Add(sheet);
-    }
-
-    // if (activate) {
-    //   this.ActivateSheetInternal({ key: CommandKey.ActivateSheet, id: sheet.id });
-    // }
-
-    if (this.tab_bar) { this.tab_bar.Update(); }
-
-    return sheet.id;
-
-  }
 
   /**
    * this breaks (or doesn't work) if the add_tab option is false; that's 
@@ -2913,36 +2746,6 @@ export class Grid extends GridBase {
 
   }
 
-  private ResolveSheet(command: SheetSelection) {
-
-    // NOTE: since you are using typeof here to check for undefined,
-    // it seems like it would be efficient to use typeof to check
-    // the actual type; hence merging "index" and "name" might be
-    // more efficient than checking each one separately.
-
-    if (typeof command.index !== 'undefined') {
-      return this.model.sheets.list[command.index];
-    }
-    if (typeof command.name !== 'undefined') {
-      return this.model.sheets.Find(command.name);
-
-      /*
-      const compare = command.name.toLowerCase();
-      for (const sheet of this.model.sheets.list) {
-        if (sheet.name.toLowerCase() === compare) { return sheet; }
-      }
-      */
-    }
-    if (command.id) {
-      return this.model.sheets.Find(command.id);
-      /*
-      for (const sheet of this.model.sheets.list) {
-        if (sheet.id === command.id) { return sheet; }
-      }
-      */
-    }
-    return undefined;
-  }
 
   private ShowSheetInternal(command: ShowSheetCommand) {
 
@@ -2988,67 +2791,6 @@ export class Grid extends GridBase {
 
   }
 
-  private StyleDefaultFromTheme() {
-
-    this.model.theme_style_properties.font_face = this.theme.grid_cell?.font_face || '';
-
-    this.model.theme_style_properties.font_size = 
-      this.theme.grid_cell?.font_size || { unit: 'pt', value: 10 };
-   
-    // this.theme_style_properties.font_size_unit = this.theme.grid_cell?.font_size_unit || 'pt';
-    // this.theme_style_properties.font_size_value = this.theme.grid_cell?.font_size_value || 10;
-
-    // this.theme_style_properties.text = this.theme.grid_cell?.text || 'none';
-    // this.theme_style_properties.text_theme = this.theme.grid_cell?.text_theme || 0;
-
-    // this.theme_style_properties.text = this.theme.grid_cell?.text ?
-    //  { ...this.theme.grid_cell?.text } : {};
-
-      /*
-    this.theme_style_properties.border_top_color = this.theme.grid_cell?.border_top_color || 'none';
-    this.theme_style_properties.border_left_color = this.theme.grid_cell?.border_left_color || 'none';
-    this.theme_style_properties.border_right_color = this.theme.grid_cell?.border_right_color || 'none';
-    this.theme_style_properties.border_bottom_color = this.theme.grid_cell?.border_bottom_color || 'none';
-    */
-
-    /*
-    this.theme_style_properties.border_top_fill = {theme: 0};
-    this.theme_style_properties.border_left_fill = {theme: 0};
-    this.theme_style_properties.border_right_fill = {theme: 0};
-    this.theme_style_properties.border_bottom_fill = {theme: 0};
-    */
-
-  }
-
-  /* *
-   *
-   * /
-  private PointToAnnotation(point: Point) {
-
-    / *
-    if (this.active_annotation &&
-        this.active_annotation.rect &&
-        this.active_annotation.rect.Contains(point.x, point.y)) {
-      return;
-    }
-
-    this.active_annotation = undefined;
-    * /
-
-    // console.info(point);
-    for (const annotation of this.model.annotations) {
-      if (annotation.rect && annotation.rect.Contains(point.x, point.y)) {
-
-        // FIXME: z-ordering (or make that implicit in the stack? ...)
-
-        // this.active_annotation = annotation;
-        return annotation;
-      }
-    }
-
-  }
-  */
-
   /**
    * why is this not in layout? (...)
    * how is this layout? it's an effect. make an effects class.
@@ -3062,14 +2804,14 @@ export class Grid extends GridBase {
 
         // in IE11 SVG nodes don't have classList
 
-        const base_class = node.getAttribute('class') || '';
+        // const base_class = node.getAttribute('class') || '';
 
-        if (UA.trident) {
-          node.setAttribute('class', base_class + ' highlight-area');
-        }
-        else {
+        //if (UA.trident) {
+        //  node.setAttribute('class', base_class + ' highlight-area');
+        //}
+        //else {
           node.classList.add('highlight-area');
-        }
+        //}
 
         /*
         node.style.transition = 'background .33s, border-bottom-color .33s, border-right-color .33s';
@@ -3082,12 +2824,12 @@ export class Grid extends GridBase {
         */
 
         setTimeout(() => {
-          if (UA.trident) {
-            node.setAttribute('class', base_class);
-          }
-          else {
+          //if (UA.trident) {
+          //  node.setAttribute('class', base_class);
+          //}
+          //else {
             node.classList.remove('highlight-area');
-          }
+          //}
           // node.style.background = 'transparent';
           // node.style.borderBottomColor = 'transparent';
           // node.style.borderRightColor = 'transparent';
@@ -3107,46 +2849,6 @@ export class Grid extends GridBase {
   private QueueLayoutUpdate() {
     this.tile_update_pending = true;
   }
-
-  /*
-  private RedispatchEvent(event: KeyboardEvent) {
-
-    let cloned_event: KeyboardEvent;
-
-    if (UA.trident) {
-      cloned_event = document.createEvent('KeyboardEvent');
-      const modifiers = [];
-      if (event.ctrlKey) modifiers.push('Control');
-      if (event.altKey) modifiers.push('Alt');
-      if (event.shiftKey) modifiers.push('Shift');
-
-      // have to mask type for trident
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (cloned_event as any).initKeyboardEvent(
-        event.type,
-        false,
-        false,
-        event.view,
-        event.key,
-        event.location,
-        modifiers.join(' '),
-        event.repeat,
-        Localization.locale);
-    }
-    else {
-      cloned_event = new KeyboardEvent(event.type, event);
-    }
-
-    //if (cloned_event && this.container) {
-    //  this.container.dispatchEvent(cloned_event);
-    //}
-
-    if (cloned_event && this.overlay_editor) {
-      this.overlay_editor.edit_node.dispatchEvent(cloned_event);
-    }
-
-  }
-  */
 
   private HandleAddressLabelEvent(text?: string) {
 
@@ -5981,64 +5683,6 @@ export class Grid extends GridBase {
   }
 
   /**
-   * translation back and forth is the same operation, with a different 
-   * (inverted) map. although it still might be worth inlining depending
-   * on cost.
-   * 
-   * FIXME: it's about time we started using proper maps, we dropped 
-   * support for IE11 some time ago.
-   */
-  private TranslateInternal(value: string, map: Record<string, string>): string {
-
-    const parse_result = this.parser.Parse(value);
-
-    if (parse_result.expression) {
-      
-      let modified = false;
-      this.parser.Walk(parse_result.expression, unit => {
-        if (unit.type === 'call') {
-          const replacement = map[unit.name.toUpperCase()];
-          if (replacement) {
-            modified = true;
-            unit.name = replacement;
-          }
-        }
-        return true;
-      });
-
-      if (modified) {
-        return '=' + this.parser.Render(parse_result.expression, undefined, '');
-      }
-    }
-
-    return value;
-
-  }
-
-  /**
-   * translate function from common (english) -> local language. this could
-   * be inlined (assuming it's only called in one place), but we are breaking
-   * it out so we can develop/test/manage it.
-   */
-  private TranslateFunction(value: string): string {
-    if (this.language_map) {
-      return this.TranslateInternal(value, this.language_map);
-    }
-    return value;
-  }
-
-  /**
-   * translate from local language -> common (english).
-   * @see TranslateFunction
-   */
-  private UntranslateFunction(value: string): string {
-    if (this.reverse_language_map) {
-      return this.TranslateInternal(value, this.reverse_language_map);
-    }
-    return value;
-  }
-
-  /**
    * this is used to handle a trailing % sign when entering a new value.
    * we need to decide if the user is typing a number, in which case we
    * retain the %; or something else, like a formula or a string, in which
@@ -7724,55 +7368,6 @@ export class Grid extends GridBase {
 
     this.RenameSheetReferences(this.model.sheets.list, old_name, name);
 
-    /*
-    for (const sheet of this.model.sheets.list) {
-
-      // cells
-      sheet.cells.IterateAll((cell: Cell) => {
-        if (cell.ValueIsFormula()) {
-          let modified = false;
-          const parsed = this.parser.Parse(cell.value || '');
-          if (parsed.expression) {
-            this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
-              if (element.type === 'address') {
-                if (element.sheet && element.sheet.toLowerCase() === old_name) {
-                  element.sheet = name;
-                  modified = true;
-                }
-              }
-              return true; // continue walk
-            });
-            if (modified) {
-              cell.value = '=' + this.parser.Render(parsed.expression, undefined, '');
-            }
-          }
-        }
-      });
-
-      // annotations
-      for (const annotation of sheet.annotations) {
-        if (annotation.formula) {
-          let modified = false;
-          const parsed = this.parser.Parse(annotation.formula || '');
-          if (parsed.expression) {
-            this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
-              if (element.type === 'address') {
-                if (element.sheet && element.sheet.toLowerCase() === old_name) {
-                  element.sheet = name;
-                  modified = true;
-                }
-              }
-              return true; // continue walk
-            });
-            if (modified) {
-              annotation.formula = '=' + this.parser.Render(parsed.expression, undefined, '');
-            }
-          }
-        }
-      }
-    }
-    */
-
   }
 
   /**
@@ -8350,18 +7945,6 @@ export class Grid extends GridBase {
       area.start.sheet_id = sheet.id;
     }
 
-    /*
-    let sheet = this.active_sheet;
-    if (area.start.sheet_id && area.start.sheet_id !== this.active_sheet.id) {
-      for (const compare of this.model.sheets) {
-        if (compare.id === area.start.sheet_id) {
-          sheet = compare;
-          break;
-        }
-      }
-    }
-    */
-
     if (!area.entire_row && !area.entire_column && (
       area.end.row >= sheet.rows
       || area.end.column >= sheet.columns)) {
@@ -8531,101 +8114,6 @@ export class Grid extends GridBase {
 
   //////////////////////////////////////////////////////////////////////////////
 
-  /**
-   * normalize commands. for co-editing support we need to ensure that
-   * commands properly have sheet IDs in areas/addresses (and explicit 
-   * fields in some cases).
-   * 
-   * at the same time we're editing the commands a little bit to make 
-   * them a little more consistent (within reason).
-   * 
-   * @param commands 
-   */
-  private NormalizeCommands(commands: Command|Command[]): Command[] {
-
-    if (!Array.isArray(commands)) {
-      commands = [commands];
-    }
-
-    const id = this.active_sheet.id;
-    
-    for (const command of commands) {
-      switch (command.key) {
-        
-        // nothing
-        case CommandKey.Null:
-        case CommandKey.ShowHeaders:
-        case CommandKey.ShowSheet:
-        case CommandKey.AddSheet:
-        case CommandKey.DuplicateSheet:
-        case CommandKey.DeleteSheet:
-        case CommandKey.ActivateSheet:
-        case CommandKey.RenameSheet:
-        case CommandKey.ReorderSheet:
-          break;
-
-        // both
-        case CommandKey.Clear:
-          if (command.area) {
-            if (!command.area.start.sheet_id) {
-              command.area.start.sheet_id = id;
-            }
-          }
-          else {
-            if (!command.sheet_id) {
-              command.sheet_id = id;
-            }
-          }
-          break;
-
-        // field
-        case CommandKey.ResizeRows:
-        case CommandKey.ResizeColumns:
-        case CommandKey.InsertColumns:
-        case CommandKey.InsertRows:
-        case CommandKey.Freeze:
-          if (!command.sheet_id) {
-            command.sheet_id = id;
-          }          
-          break;
-
-        // area: Area|Address (may be optional)
-        case CommandKey.SetNote:
-        case CommandKey.SetLink:
-        case CommandKey.UpdateBorders:
-        case CommandKey.MergeCells:
-        case CommandKey.UnmergeCells:
-        case CommandKey.DataValidation:
-        case CommandKey.SetRange:
-        case CommandKey.UpdateStyle:
-        case CommandKey.SetName:
-        case CommandKey.Select:
-
-          if (command.area) {
-            if (IsCellAddress(command.area)) {
-              if (!command.area.sheet_id) {
-                command.area.sheet_id = id;
-              }
-            }
-            else {
-              if (!command.area.start.sheet_id) {
-                command.area.start.sheet_id = id;
-              }
-            }
-          }
-          break;
-
-        // default:
-        //  // command key here should be `never` if we've covered all the 
-        //  // cases (ts will complain)
-        //  // console.warn('unhandled command key', command.key);
-
-      }
-    }
-
-    return commands;
-
-  }
 
   /**
    * pass all data/style/structure operations through a command mechanism.
@@ -8643,6 +8131,8 @@ export class Grid extends GridBase {
    * 
    */
   private ExecCommand(commands: Command | Command[], queue = true) {
+
+    const flags: UpdateFlags = {};
 
     // FIXME: support ephemeral commands (...)
 
@@ -8687,7 +8177,8 @@ export class Grid extends GridBase {
             // this.active_sheet.ClearArea(area, true);
             this.ClearAreaInternal(area);
             data_area = Area.Join(area, data_area);
-            this.UpdateFormulaBarFormula();
+            flags.formula = true;
+            // this.UpdateFormulaBarFormula();
           }
           else {
             Sheet.Reset();
@@ -9283,13 +8774,15 @@ export class Grid extends GridBase {
 
           {
             const id = this.AddSheetInternal(command.name, command.insert_index); // default name
-            if (command.show) {
+            if (typeof id === 'number' && command.show) {
               this.ActivateSheetInternal({
                 key: CommandKey.ActivateSheet,
                 id,
               });
             }
             structure_event = true;
+            flags.sheets = true;
+            flags.structure = true;
 
           }
           break;
@@ -9330,6 +8823,13 @@ export class Grid extends GridBase {
         type: 'structure',
         rebuild_required: structure_rebuild_required,
       });
+    }
+
+    if (flags.sheets && this.tab_bar) {
+      this.tab_bar.Update();
+    }
+    if (flags.formula) {
+      this.UpdateFormulaBarFormula();
     }
 
     if (this.batch) {

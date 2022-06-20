@@ -6,8 +6,9 @@ import { Area, Style, Localization, DefaultTheme, IsCellAddress } from 'treb-bas
 import type { ICellAddress, IArea, Cell, CellValue, Theme } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
+import { NumberFormatCache } from 'treb-format';
 
-import type { GridEvent } from './grid_events';
+import type { ErrorCode, GridEvent } from './grid_events';
 import type { CommandRecord } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
 import { SerializeOptions } from './serialize_options';
@@ -15,7 +16,7 @@ import { SerializeOptions } from './serialize_options';
 import { BorderConstants } from './border_constants';
 
 import { CommandKey } from './grid_command';
-import type { Command, DeleteSheetCommand, UpdateBordersCommand } from './grid_command';
+import type { Command, DeleteSheetCommand, UpdateBordersCommand, SheetSelection } from './grid_command';
 
 export class GridBase {
 
@@ -132,6 +133,59 @@ export class GridBase {
 
   // --- API methods -----------------------------------------------------------
 
+  /**
+   * set functions for AC matcher. should be called by calculator on init,
+   * or when any functions are added/removed.
+   *
+   * FIXME: we should use this to normalize function names, on insert and
+   * on paste (if we're doing that).
+   * 
+   * FIXME: are named expressions included here? (this function predates
+   * named expressions).
+   */
+   public SetAutocompleteFunctions(functions: FunctionDescriptor[]): void {
+    const consolidated = functions.slice(0).concat(
+      this.model.named_ranges.List().map((named_range) => {
+        return { name: named_range.name, type: DescriptorType.Token };
+      }));
+    //this.autocomplete_matcher.SetFunctions(functions);
+    this.autocomplete_matcher.SetFunctions(consolidated);
+  }
+
+  /**
+   * get data in a given range, optionally formulas
+   * API method
+   */
+   public GetRange(range: ICellAddress | IArea, type?: 'formula'|'formatted'): CellValue|CellValue[][]|undefined {
+
+    if (IsCellAddress(range)) {
+      const sheet = this.model.sheets.Find(range.sheet_id || this.active_sheet.id);
+      if (sheet) {
+        if (type === 'formula') { return sheet.cells.RawValue(range); }
+        if (type === 'formatted') { return sheet.GetFormattedRange(range); }
+        return sheet.cells.GetRange(range);
+      }
+      return undefined;
+    }
+
+    const sheet = this.model.sheets.Find(range.start.sheet_id || this.active_sheet.id);
+    if (sheet) {
+      if (type === 'formula') { return sheet.cells.RawValue(range.start, range.end); }
+      if (type === 'formatted') { return sheet.GetFormattedRange(range.start, range.end); }
+      return sheet.cells.GetRange(range.start, range.end);
+    }
+
+    return undefined;
+
+  }
+
+  public GetNumberFormat(address: ICellAddress): string|undefined {
+    const style = this.active_sheet.CellStyleData(address);
+    if (style && style.number_format) {
+      return NumberFormatCache.Get(style.number_format).toString();
+    }
+  }
+
   public ResetMetadata(): void {
     this.model.document_name = undefined;
     this.model.user_data = undefined;
@@ -200,6 +254,231 @@ export class GridBase {
 
   // --- protected methods -----------------------------------------------------
 
+  
+  /**
+   * normalize commands. for co-editing support we need to ensure that
+   * commands properly have sheet IDs in areas/addresses (and explicit 
+   * fields in some cases).
+   * 
+   * at the same time we're editing the commands a little bit to make 
+   * them a little more consistent (within reason).
+   * 
+   * @param commands 
+   */
+  protected NormalizeCommands(commands: Command|Command[]): Command[] {
+
+    if (!Array.isArray(commands)) {
+      commands = [commands];
+    }
+
+    const id = this.active_sheet.id;
+    
+    for (const command of commands) {
+      switch (command.key) {
+        
+        // nothing
+        case CommandKey.Null:
+        case CommandKey.ShowHeaders:
+        case CommandKey.ShowSheet:
+        case CommandKey.AddSheet:
+        case CommandKey.DuplicateSheet:
+        case CommandKey.DeleteSheet:
+        case CommandKey.ActivateSheet:
+        case CommandKey.RenameSheet:
+        case CommandKey.ReorderSheet:
+          break;
+
+        // both
+        case CommandKey.Clear:
+          if (command.area) {
+            if (!command.area.start.sheet_id) {
+              command.area.start.sheet_id = id;
+            }
+          }
+          else {
+            if (!command.sheet_id) {
+              command.sheet_id = id;
+            }
+          }
+          break;
+
+        // field
+        case CommandKey.ResizeRows:
+        case CommandKey.ResizeColumns:
+        case CommandKey.InsertColumns:
+        case CommandKey.InsertRows:
+        case CommandKey.Freeze:
+          if (!command.sheet_id) {
+            command.sheet_id = id;
+          }          
+          break;
+
+        // area: Area|Address (may be optional)
+        case CommandKey.SetNote:
+        case CommandKey.SetLink:
+        case CommandKey.UpdateBorders:
+        case CommandKey.MergeCells:
+        case CommandKey.UnmergeCells:
+        case CommandKey.DataValidation:
+        case CommandKey.SetRange:
+        case CommandKey.UpdateStyle:
+        case CommandKey.SetName:
+        case CommandKey.Select:
+
+          if (command.area) {
+            if (IsCellAddress(command.area)) {
+              if (!command.area.sheet_id) {
+                command.area.sheet_id = id;
+              }
+            }
+            else {
+              if (!command.area.start.sheet_id) {
+                command.area.start.sheet_id = id;
+              }
+            }
+          }
+          break;
+
+        // default:
+        //  // command key here should be `never` if we've covered all the 
+        //  // cases (ts will complain)
+        //  // console.warn('unhandled command key', command.key);
+
+      }
+    }
+
+    return commands;
+
+  }
+
+  protected StyleDefaultFromTheme() {
+    this.model.theme_style_properties.font_face = this.theme.grid_cell?.font_face || '';
+    this.model.theme_style_properties.font_size = 
+      this.theme.grid_cell?.font_size || { unit: 'pt', value: 10 };
+  }
+
+  /**
+   * add sheet. data only.
+   */
+  protected AddSheetInternal(name = Sheet.default_sheet_name, insert_index = -1): number|undefined {
+
+    if (!this.options.add_tab) {
+      console.warn('add tab option not set or false');
+      return;
+    }
+
+    // validate name...
+
+    while (this.model.sheets.list.some((test) => test.name === name)) {
+
+      const match = name.match(/^(.*?)(\d+)$/);
+      if (match) {
+        name = match[1] + (Number(match[2]) + 1);
+      }
+      else {
+        name = name + '2';
+      }
+
+    }
+
+    // FIXME: structure event
+
+    const sheet = Sheet.Blank(this.model.theme_style_properties, name);
+
+    if (insert_index >= 0) {
+      this.model.sheets.Splice(insert_index, 0, sheet);
+    }
+    else {
+      this.model.sheets.Add(sheet);
+    }
+
+    // moved to ExecCmomand
+    // if (this.tab_bar) { this.tab_bar.Update(); }
+
+    return sheet.id;
+
+  }
+
+  /**
+   * translation back and forth is the same operation, with a different 
+   * (inverted) map. although it still might be worth inlining depending
+   * on cost.
+   * 
+   * FIXME: it's about time we started using proper maps, we dropped 
+   * support for IE11 some time ago.
+   */
+  protected TranslateInternal(value: string, map: Record<string, string>): string {
+
+    const parse_result = this.parser.Parse(value);
+
+    if (parse_result.expression) {
+      
+      let modified = false;
+      this.parser.Walk(parse_result.expression, unit => {
+        if (unit.type === 'call') {
+          const replacement = map[unit.name.toUpperCase()];
+          if (replacement) {
+            modified = true;
+            unit.name = replacement;
+          }
+        }
+        return true;
+      });
+
+      if (modified) {
+        return '=' + this.parser.Render(parse_result.expression, undefined, '');
+      }
+    }
+
+    return value;
+
+  }
+
+  /**
+   * translate function from common (english) -> local language. this could
+   * be inlined (assuming it's only called in one place), but we are breaking
+   * it out so we can develop/test/manage it.
+   */
+   protected TranslateFunction(value: string): string {
+    if (this.language_map) {
+      return this.TranslateInternal(value, this.language_map);
+    }
+    return value;
+  }
+
+  /**
+   * translate from local language -> common (english).
+   * @see TranslateFunction
+   */
+  protected UntranslateFunction(value: string): string {
+    if (this.reverse_language_map) {
+      return this.TranslateInternal(value, this.reverse_language_map);
+    }
+    return value;
+  }
+
+  /**
+   * resolve sheet in a command that uses the SheetSelection interface;
+   * that allows sheet selection by name, id or index.
+   */
+  protected ResolveSheet(command: SheetSelection): Sheet|undefined {
+
+    // NOTE: since you are using typeof here to check for undefined,
+    // it seems like it would be efficient to use typeof to check
+    // the actual type; hence merging "index" and "name" might be
+    // more efficient than checking each one separately.
+
+    if (typeof command.index !== 'undefined') {
+      return this.model.sheets.list[command.index];
+    }
+    if (typeof command.name !== 'undefined') {
+      return this.model.sheets.Find(command.name);
+    }
+    if (command.id) {
+      return this.model.sheets.Find(command.id);
+    }
+    return undefined;
+  }
 
   /**
    * find sheet matching sheet_id in area.start, or active sheet
@@ -660,12 +939,20 @@ export class GridBase {
    * 
    * @param message 
    */
-  protected Error(message: string) {
+  protected Error(message: string|ErrorCode) {
     console.info('Error', message);
-    this.grid_events.Publish({
-      type: 'error',
-      message,
-    });
+    if (typeof message === 'string') {
+      this.grid_events.Publish({
+        type: 'error',
+        message,
+      });
+    }
+    else {
+      this.grid_events.Publish({
+        type: 'error',
+        code: message,
+      });
+    }
   }
 
 }

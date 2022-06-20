@@ -5,6 +5,16 @@ import { Annotation } from './annotation';
 import { Sheet } from './sheet';
 import { Area } from 'treb-base-types';
 
+export enum ErrorCode {
+
+  /** no error: zero */
+  None = 0,
+
+  /** you can't change part of an array */
+  Array,
+
+}
+
 export interface SheetChangeEvent {
   type: 'sheet-change';
   activate: Sheet;
@@ -25,6 +35,12 @@ export interface GridErrorEvent {
   type: 'error';
   message?: string;
   title?: string;
+
+  /** 
+   * adding coded errors for common types, so we can move text
+   * management (and l10n) somewhere else
+   */
+  code?: ErrorCode;
 }
 
 export interface StructureEvent {

@@ -38,9 +38,10 @@ class UAType {
   /** ... */
   public readonly is_chrome = /Chrome/i.test(user_agent);
 
-  /** this is for events (IE11 does't support event constructor) */
+  /* * this is for events (IE11 does't support event constructor) * /
   public trident = ((typeof navigator !== 'undefined') &&
     user_agent && /trident/i.test(user_agent));
+  */
 
   /** ... */
   public is_windows = /win64|win32|windows\s+nt/i.test(user_agent);

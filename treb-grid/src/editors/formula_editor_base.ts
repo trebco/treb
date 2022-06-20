@@ -134,8 +134,8 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
   // protected autocomplete!: Autocomplete; // = new Autocomplete();
 
   /** this never fucking ends */
-  protected trident = ((typeof navigator !== 'undefined') &&
-    navigator.userAgent && /trident/i.test(navigator.userAgent));
+  //protected trident = ((typeof navigator !== 'undefined') &&
+  //  navigator.userAgent && /trident/i.test(navigator.userAgent));
 
   // ...
   protected last_parse_string = '';

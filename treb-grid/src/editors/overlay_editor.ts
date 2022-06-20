@@ -60,9 +60,9 @@ export class OverlayEditor extends FormulaEditorBase {
       else {
         this.edit_container.style.opacity = '0';
         this.edit_container.style.pointerEvents = 'none';
-        if (UA.trident) {
-          this.edit_container.style.top = '-200px';
-        }
+        //if (UA.trident) {
+        //  this.edit_container.style.top = '-200px';
+        //}
       }
     }
   }

@@ -458,10 +458,10 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     // because there are no input events, we have to try this one -- note
     // we still won't capture pastes, FIXME (add handlers?)
 
-    if (this.trident) {
-      this.UpdateSelectState();
-      this.Reconstruct();
-    }
+    //if (this.trident) {
+    //  this.UpdateSelectState();
+    //  this.Reconstruct();
+    //}
 
   }
 
