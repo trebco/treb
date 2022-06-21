@@ -57,6 +57,8 @@ export interface ClickFunctionResult {
 
   /**
    * change the cell value, to the value passed here
+   * 
+   * NOTE: this must be in canonical form (english), not translated.
    */
   value?: CellValue;
 

@@ -14,11 +14,11 @@
 import { EventSource } from 'treb-utils';
 import { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
 import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex } from 'treb-parser';
-import { Area, Style, Localization, DefaultTheme, IsCellAddress, ValidationType } from 'treb-base-types';
+import { Area, Style, DefaultTheme, IsCellAddress, ValidationType, Is2DArray } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue, Theme } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
-import { NumberFormat, NumberFormatCache } from 'treb-format';
+import { NumberFormat } from 'treb-format';
 
 import type { ErrorCode, GridEvent } from './grid_events';
 import type { CommandRecord, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand } from './grid_command';
@@ -32,7 +32,6 @@ import type { Command, ActivateSheetCommand,
                DeleteSheetCommand, UpdateBordersCommand, SheetSelection } from './grid_command';
 import { UpdateFlags } from './update_flags';
 import { LegacySerializedSheet } from './sheet_types';
-import { GridSelection } from './grid_selection';
 import { Annotation } from './annotation';
 
 export class GridBase {
@@ -48,13 +47,6 @@ export class GridBase {
   public readonly model: DataModel;
 
   public readonly view: ViewModel;
-
-  /**
-   * the theme object exists so we can pass it to constructors for
-   * various components, but it's no longer initialized until the
-   * initialization step (when we have a node).
-   */
-  public readonly theme: Theme; // ExtendedTheme;
 
   // --- public accessors ------------------------------------------------------
 
@@ -85,24 +77,12 @@ export class GridBase {
   protected autocomplete_matcher = new AutocompleteMatcher();
 
   /**
-   * flags/state
+   * flags/state (used for some recordkeeping -- not super important)
    */
   protected flags: Record<string, boolean> = {};
 
   /** */
   protected options: GridOptions;
-
-  /** 
-   * maps common language (english) -> local language. this should 
-   * be passed in (actually set via a function).
-   */
-  protected language_map?: Record<string, string>;
-
-  /**
-   * maps local language -> common (english). this should be constructed
-   * when the forward function is passed in, so there's a 1-1 correspondence.
-   */
-  protected reverse_language_map?: Record<string, string>;
 
   /**
    * spreadsheet language parser. used to pull out address
@@ -120,16 +100,12 @@ export class GridBase {
    */
   protected parser: Parser;
 
-  /** this is used when testing if a typed character is numeric */
-  protected decimal_separator_code = 0x2e; // "."
-
   // --- constructor -----------------------------------------------------------
 
   constructor(
     options: GridOptions = {},
     parser: Parser,
-    model: DataModel,
-    theme: Theme = DefaultTheme) {
+    model: DataModel) {
 
     this.model = model;
 
@@ -141,11 +117,6 @@ export class GridBase {
     // shared parser
 
     this.parser = parser;
-    this.decimal_separator_code = Localization.decimal_separator.charCodeAt(0);
-
-    // set properties here, we will update in initialize()
-
-    this.theme = JSON.parse(JSON.stringify(theme));
 
     // apply default options, meaning that you need to explicitly set/unset
     // in order to change behavior. FIXME: this is ok for flat structure, but
@@ -567,6 +538,14 @@ export class GridBase {
 
     // but that said, for the time being we can put it here.
 
+    // actually this won't work -- because if this is a remote, it won't 
+    // necessarily have the right language map. we need to translate before
+    // we get here.
+
+    // we need to find every place we call setrange (via command) and
+    // translate there -- in grid. this needs to move out of base.
+
+    /*
     if (Array.isArray(command.value)) {
       for (const row of command.value) {
         for (let i = 0; i < row.length; i++) {
@@ -580,7 +559,7 @@ export class GridBase {
     else if (command.value && typeof command.value === 'string' && command.value[0] === '=') {
       command.value = this.UntranslateFunction(command.value);
     }
-
+    */
 
     // NOTE: apparently if we call SetRange with a single target
     // and the array flag set, it gets translated to an area. which
@@ -946,12 +925,6 @@ export class GridBase {
 
   }
 
-  protected StyleDefaultFromTheme() {
-    this.model.theme_style_properties.font_face = this.theme.grid_cell?.font_face || '';
-    this.model.theme_style_properties.font_size = 
-      this.theme.grid_cell?.font_size || { unit: 'pt', value: 10 };
-  }
-
   /**
    * add sheet. data only.
    */
@@ -992,64 +965,6 @@ export class GridBase {
 
     return sheet.id;
 
-  }
-
-  /**
-   * translation back and forth is the same operation, with a different 
-   * (inverted) map. although it still might be worth inlining depending
-   * on cost.
-   * 
-   * FIXME: it's about time we started using proper maps, we dropped 
-   * support for IE11 some time ago.
-   */
-  protected TranslateInternal(value: string, map: Record<string, string>): string {
-
-    const parse_result = this.parser.Parse(value);
-
-    if (parse_result.expression) {
-      
-      let modified = false;
-      this.parser.Walk(parse_result.expression, unit => {
-        if (unit.type === 'call') {
-          const replacement = map[unit.name.toUpperCase()];
-          if (replacement) {
-            modified = true;
-            unit.name = replacement;
-          }
-        }
-        return true;
-      });
-
-      if (modified) {
-        return '=' + this.parser.Render(parse_result.expression, undefined, '');
-      }
-    }
-
-    return value;
-
-  }
-
-  /**
-   * translate function from common (english) -> local language. this could
-   * be inlined (assuming it's only called in one place), but we are breaking
-   * it out so we can develop/test/manage it.
-   */
-   protected TranslateFunction(value: string): string {
-    if (this.language_map) {
-      return this.TranslateInternal(value, this.language_map);
-    }
-    return value;
-  }
-
-  /**
-   * translate from local language -> common (english).
-   * @see TranslateFunction
-   */
-  protected UntranslateFunction(value: string): string {
-    if (this.reverse_language_map) {
-      return this.TranslateInternal(value, this.reverse_language_map);
-    }
-    return value;
   }
 
   /**

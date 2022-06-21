@@ -137,7 +137,26 @@ export class Grid extends GridBase {
 
   }
 
+  /**
+   * the theme object exists so we can pass it to constructors for
+   * various components, but it's no longer initialized until the
+   * initialization step (when we have a node).
+   */
+  public readonly theme: Theme; // ExtendedTheme;
+
   // --- private members -------------------------------------------------------
+
+  /** 
+   * maps common language (english) -> local language. this should 
+   * be passed in (actually set via a function).
+   */
+   private language_map?: Record<string, string>;
+
+   /**
+    * maps local language -> common (english). this should be constructed
+    * when the forward function is passed in, so there's a 1-1 correspondence.
+    */
+  private reverse_language_map?: Record<string, string>;
 
   // testing
   private hover_data: {
@@ -212,11 +231,10 @@ export class Grid extends GridBase {
    * UPDATE: sharing parser w/ owner (embedded sheet)
    * /
   private parser;
-    * /
-
-  / ** this is used when testing if a typed character is numeric * /
-  private decimal_separator_code = 0x2e; // "."
     */
+
+  /** this is used when testing if a typed character is numeric */
+  private decimal_separator_code = 0x2e; // "."
 
   /** new key capture overlay/ICE */
   private overlay_editor?: OverlayEditor;
@@ -349,54 +367,14 @@ export class Grid extends GridBase {
     model: DataModel,
     theme: Theme = DefaultTheme) {
 
-    super(options, parser, model, theme);  
+    super(options, parser, model);  
 
-    /*
-    // construct model. it's a little convoluted because the
-    // "active sheet" reference points to one of the array members
+    this.decimal_separator_code = Localization.decimal_separator.charCodeAt(0);
 
-    const sheets = [
-      Sheet.Blank(this.theme_style_properties),
-    ];
-
-    this.model = {
-      sheets,
-      // active_sheet: sheets[0],
-      // annotations: [],
-      named_ranges: new NamedRangeCollection(),
-      macro_functions: {},
-      named_expressions: {},
-      view_count: 0,
-    };
-    */
-
-    /*
-    this.model = model;
-
-    this.view = {
-      active_sheet: this.model.sheets.list[0],
-      view_index: this.model.view_count++,
-    };
-    */
-
-    /*
     // set properties here, we will update in initialize()
 
     this.theme = JSON.parse(JSON.stringify(theme));
 
-    // apply default options, meaning that you need to explicitly set/unset
-    // in order to change behavior. FIXME: this is ok for flat structure, but
-    // anything more complicated will need a nested merge
-
-    this.options = { ...DefaultGridOptions, ...options };
-    */
-
-    /*
-    this.layout = UA.is_modern ?
-      new GridLayout(this.model) :
-      new LegacyLayout(this.model);
-    */
-    // this.layout = CreateLayout(this.model);
     this.layout = new GridLayout(this.model, this.view);
 
     if (options.initial_scale) {
@@ -423,23 +401,7 @@ export class Grid extends GridBase {
         this.view,
         this.primary_selection,
         this.additional_selections);
-
-
-    /* if we are using shared parser, no need to update again
-
-    if (Localization.decimal_separator === '.') {
-      this.parser.decimal_mark = DecimalMarkType.Period;
-      this.parser.argument_separator = ArgumentSeparatorType.Comma;
-    }
-    else {
-      this.parser.decimal_mark = DecimalMarkType.Comma;
-      this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-    }
-
-    */
-
-    // this.decimal_separator_code = Localization.decimal_separator.charCodeAt(0);
-
+        
   }
 
   // --- public methods --------------------------------------------------------
@@ -979,8 +941,10 @@ export class Grid extends GridBase {
       column: arr.reduce((max, row) => Math.max(max, Math.max(0, row.length - 1)), 0),
     };
 
-    // console.info(arr, end);
-
+    // NOTE: SetRange here does not need to be translated, because
+    // we're not expecting spreadsheet functions in the CSV. CSV should
+    // be data only. Famous last words.
+    
     this.ExecCommand([
       { key: CommandKey.Reset },
       {
@@ -2033,6 +1997,9 @@ export class Grid extends GridBase {
    */
   public SetRange(range: Area, data: CellValue|CellValue[]|CellValue[][], recycle = false, transpose = false, array = false, r1c1 = false): void {
 
+    // this is public so we need to (un)translate.
+    data = this.UntranslateData(data);
+    
      // single value, easiest
     if (!Array.isArray(data)) {
 
@@ -2348,6 +2315,105 @@ export class Grid extends GridBase {
   }
 
   // --- private methods -------------------------------------------------------
+
+  /**
+   * translation back and forth is the same operation, with a different 
+   * (inverted) map. although it still might be worth inlining depending
+   * on cost.
+   * 
+   * FIXME: it's about time we started using proper maps, we dropped 
+   * support for IE11 some time ago.
+   */
+  private TranslateInternal(value: string, map: Record<string, string>): string {
+
+    const parse_result = this.parser.Parse(value);
+
+    if (parse_result.expression) {
+      
+      let modified = false;
+      this.parser.Walk(parse_result.expression, unit => {
+        if (unit.type === 'call') {
+          const replacement = map[unit.name.toUpperCase()];
+          if (replacement) {
+            modified = true;
+            unit.name = replacement;
+          }
+        }
+        return true;
+      });
+
+      if (modified) {
+        return '=' + this.parser.Render(parse_result.expression, undefined, '');
+      }
+    }
+
+    return value;
+
+  }
+
+  /**
+   * translate function from common (english) -> local language. this could
+   * be inlined (assuming it's only called in one place), but we are breaking
+   * it out so we can develop/test/manage it.
+   */
+   protected TranslateFunction(value: string): string {
+    if (this.language_map) {
+      return this.TranslateInternal(value, this.language_map);
+    }
+    return value;
+  }
+
+  /**
+   * translate from local language -> common (english).
+   * @see TranslateFunction
+   */
+  protected UntranslateFunction(value: string): string {
+    if (this.reverse_language_map) {
+      return this.TranslateInternal(value, this.reverse_language_map);
+    }
+    return value;
+  }
+
+  protected UntranslateData(value: CellValue|CellValue[]|CellValue[][]): CellValue|CellValue[]|CellValue[][] {
+
+    if (Array.isArray(value)) {
+
+      // could be 1d or 2d. typescript is complaining, not sure why...
+
+      if (Is2DArray(value)) {
+        return value.map(row => row.map(entry => {
+          if (entry && typeof entry === 'string' && entry[0] === '=') {
+            return this.UntranslateFunction(entry);
+          }
+          return entry;
+        }));
+      }
+      else {
+        return value.map(entry => {
+          if (entry && typeof entry === 'string' && entry[0] === '=') {
+            return this.UntranslateFunction(entry);
+          }
+          return entry;
+        });
+      }
+
+    }
+    else if (value && typeof value === 'string' && value[0] === '=') {
+
+      // single value
+      value = this.UntranslateFunction(value);
+
+    }
+
+    return value;
+
+  }
+
+  private StyleDefaultFromTheme() {
+    this.model.theme_style_properties.font_face = this.theme.grid_cell?.font_face || '';
+    this.model.theme_style_properties.font_size = 
+      this.theme.grid_cell?.font_size || { unit: 'pt', value: 10 };
+  }
 
   private AutoSizeColumn(sheet: Sheet, column: number, allow_shrink = true): void {
 
@@ -3978,6 +4044,12 @@ export class Grid extends GridBase {
         });
 
         if (result.value) {
+
+          // do we need to (un)translate this? I think we don't,
+          // because this is the result of a click_function
+          // (only checkbox, afaik) -- let's make a rule that 
+          // click functions must use canonical (english) names.
+
           this.ExecCommand({
             key: CommandKey.SetRange,
             value: result.value,
@@ -4194,6 +4266,9 @@ export class Grid extends GridBase {
       }
     }
 
+    // we don't need to (un)translate this because it's getting the value
+    // from the cell, which will hold the canonical version.
+
     // special case: top-left is array and source_area is the whole, exact array
     if (cells[0][0].area && cells[0][0].area.Equals(source_area)) {
         this.ExecCommand({
@@ -4316,6 +4391,9 @@ export class Grid extends GridBase {
       }
 
     }
+
+    // as above, we don't need to (un)translate this because it comes
+    // from existing cell data, which should be in canonical form.
 
     const commands: Command[] = [{
       key: CommandKey.SetRange,
@@ -5154,11 +5232,14 @@ export class Grid extends GridBase {
     }
     */
 
+    // this is user-entered data, so we _do_ need to (un)translate it
+    // before calling SetRange.
+
     commands.push({
       key: CommandKey.SetRange,
       area: array ? selection.area : target,
       array,
-      value: is_function ? value : parse_result.value,
+      value: is_function ? this.UntranslateFunction(value || '') : parse_result.value,
     });
 
     if (exec) {
@@ -6364,6 +6445,9 @@ export class Grid extends GridBase {
     const data = this.active_sheet.CellData(this.primary_selection.target);
     const area = data.merge_area ? data.merge_area.start : this.primary_selection.target;
 
+    // I don't think we need to translate this -- you can't set a function
+    // using a dropdown (can you? ...)
+
     this.ExecCommand({
       key: CommandKey.SetRange,
       area,
@@ -6771,6 +6855,9 @@ export class Grid extends GridBase {
                 },
               };
 
+              // we do not need to translate here. the data should be 
+              // in canonical form on the clipboard.
+
               const command: SetRangeCommand = {
                 key: CommandKey.SetRange,
                 value: data,
@@ -6794,6 +6881,10 @@ export class Grid extends GridBase {
               }
 
               if (!skip) {
+
+                // we do not need to translate here -- the data should be 
+                // in canonical form on the clipboard.
+
                 commands.push({ key: CommandKey.SetRange, value: data, area: target_address });
               }
 
