@@ -1,9 +1,9 @@
 
-import { Sheet } from './sheet';
-import { IArea } from 'treb-base-types';
-import { SerializedSheet } from './sheet_types';
+import type { Sheet } from './sheet';
+import type { IArea } from 'treb-base-types';
+import type { SerializedSheet } from './sheet_types';
 import { NamedRangeCollection } from './named_range';
-import { ExpressionUnit } from 'treb-parser';
+import type { ExpressionUnit } from 'treb-parser';
 import { Style } from 'treb-base-types';
 
 export interface MacroFunction {

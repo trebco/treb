@@ -1,8 +1,8 @@
 
 import { BaseLayout } from './base_layout';
-import { Tile } from '../types/tile';
+import type { Tile } from '../types/tile';
 import { DOMUtilities } from '../util/dom_utilities';
-import { DataModel, ViewModel } from '../types/data_model';
+import type { DataModel, ViewModel } from '../types/data_model';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 

@@ -1,5 +1,5 @@
 
-import { ICellAddress } from 'treb-base-types';
+import type { ICellAddress } from 'treb-base-types';
 
 /**
  * options for exporting CSV/TSV

@@ -1,13 +1,13 @@
 
 import { Area, Cell, Theme, Rectangle, Localization } from 'treb-base-types';
 import { Yield, EventSource } from 'treb-utils';
-import { Parser, UnitRange, UnitAddress, ParseResult, ExpressionUnit } from 'treb-parser';
+import type { Parser, UnitRange, UnitAddress, ParseResult, ExpressionUnit } from 'treb-parser';
 
-import { GridSelection } from '../types/grid_selection';
-import { Autocomplete, AutocompleteResult } from './autocomplete';
+import type { GridSelection } from '../types/grid_selection';
+import type { Autocomplete, AutocompleteResult } from './autocomplete';
 import { AutocompleteExecResult, AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
 
-import { DataModel, ViewModel } from '../types/data_model';
+import type { DataModel, ViewModel } from '../types/data_model';
 import { UA } from '../util/ua';
 
 /** event on commit, either enter or tab */

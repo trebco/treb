@@ -1,5 +1,5 @@
 
-import { CompositeSheet, DecoratedHTMLElement } from './composite-sheet';
+import type { DecoratedHTMLElement } from './composite-sheet';
 
 export class AutoEmbedManager {
   

@@ -1,5 +1,5 @@
 
-import { ICellAddress } from './area';
+import type { ICellAddress } from './area';
 
 /**
  * offset from corner, as % of cell

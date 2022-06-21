@@ -16,6 +16,7 @@
     "rootDir": ".",
     "importHelpers": true,
     "noEmitHelpers": true,
+    "importsNotUsedAsValues": "error",
     "lib": [
       "dom", "es2015"
     ],

@@ -1,8 +1,7 @@
 
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
-// import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { CompositeSheet } from './composite-sheet';
-import { CreateSheetOptions } from './options';
+import type { CreateSheetOptions } from './options';
 
 // non-mc version
 

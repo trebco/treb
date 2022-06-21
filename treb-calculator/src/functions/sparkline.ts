@@ -10,7 +10,7 @@
  */
 
 
-import { Cell, Style } from 'treb-base-types';
+import type { Cell, Style } from 'treb-base-types';
 
 export interface SparklineRenderOptions {
   context: CanvasRenderingContext2D;

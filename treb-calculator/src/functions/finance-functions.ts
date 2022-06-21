@@ -1,8 +1,8 @@
 
 
-import { FunctionMap } from '../descriptors';
+import type { FunctionMap } from '../descriptors';
 import { CellValue, UnionValue, ValueType } from 'treb-base-types';
-import { FlattenBoxed, FlattenUnboxed } from '../utilities';
+import { FlattenUnboxed } from '../utilities';
 
 // use a single, static object for base functions
 

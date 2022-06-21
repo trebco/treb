@@ -1,11 +1,10 @@
 
-import { FunctionMap } from '../descriptors';
-import { Complex, IsComplex, ComplexUnion, /*UnionOrArray,*/ UnionValue, ValueType, ComplexOrReal } from 'treb-base-types';
-import * as Utils from '../utilities';
-import { ArgumentError, ValueError } from '../function-error';
+import type { FunctionMap } from '../descriptors';
+import { Complex, UnionValue, ValueType, ComplexOrReal } from 'treb-base-types';
+import { ValueError } from '../function-error';
 import * as ComplexMath from '../complex-math';
 
-import { ComplexMatrixType } from '../complex-math';
+import type { ComplexMatrixType } from '../complex-math';
 
 /**
  * given a range of data, ensure it's an array, check dimensions, and 

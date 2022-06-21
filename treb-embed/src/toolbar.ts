@@ -1,13 +1,11 @@
 
 import { tmpl, composite, NodeModel } from 'treb-utils';
-// import { icons } from './generated/toolbar42';
-// import { symbol_defs } from './generated/symbol-defs';
 import { Style, Localization, Area, Theme, Color } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';
-import { EmbeddedSpreadsheetOptions } from './options';
-import { GridSelection } from 'treb-grid';
+import type { EmbeddedSpreadsheetOptions } from './options';
+import type { GridSelection } from 'treb-grid';
 import { ThemeColor2 } from 'treb-base-types';
 
 import '../style/toolbar-4.scss';

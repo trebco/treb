@@ -1,5 +1,5 @@
 
-import { FunctionMap } from '../descriptors';
+import type { FunctionMap } from '../descriptors';
 import { NumberFormatCache, ValueParser } from 'treb-format';
 import { Localization, UnionValue, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';

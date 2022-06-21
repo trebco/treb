@@ -1,6 +1,6 @@
 
-import { CellValue } from 'treb-base-types';
-import { StatsEntry } from './tab_bar';
+import type { CellValue } from 'treb-base-types';
+import type { StatsEntry } from './tab_bar';
 
 export type StatsFunction = (data: CellValue|CellValue[][]|undefined) => StatsEntry[];
 

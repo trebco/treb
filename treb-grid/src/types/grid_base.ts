@@ -12,10 +12,10 @@
  */
 
 import { EventSource } from 'treb-utils';
-import { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
+import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
 import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex } from 'treb-parser';
-import { Area, Style, DefaultTheme, IsCellAddress, ValidationType, Is2DArray } from 'treb-base-types';
-import type { ICellAddress, IArea, Cell, CellValue, Theme } from 'treb-base-types';
+import { Area, Style, IsCellAddress, ValidationType } from 'treb-base-types';
+import type { ICellAddress, IArea, Cell, CellValue } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
 import { NumberFormat } from 'treb-format';
@@ -23,16 +23,16 @@ import { NumberFormat } from 'treb-format';
 import type { ErrorCode, GridEvent } from './grid_events';
 import type { CommandRecord, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
-import { SerializeOptions } from './serialize_options';
+import type { SerializeOptions } from './serialize_options';
 
 import { BorderConstants } from './border_constants';
 
 import { CommandKey } from './grid_command';
 import type { Command, ActivateSheetCommand, 
                DeleteSheetCommand, UpdateBordersCommand, SheetSelection } from './grid_command';
-import { UpdateFlags } from './update_flags';
-import { LegacySerializedSheet } from './sheet_types';
-import { Annotation } from './annotation';
+import type { UpdateFlags } from './update_flags';
+import type { LegacySerializedSheet } from './sheet_types';
+import type { Annotation } from './annotation';
 
 export class GridBase {
 

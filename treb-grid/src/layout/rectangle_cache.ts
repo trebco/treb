@@ -1,5 +1,5 @@
 
-import { Rectangle } from 'treb-base-types';
+import type { Rectangle } from 'treb-base-types';
 
 /**
  * FIXME: efficiency of using sparse arrays here?

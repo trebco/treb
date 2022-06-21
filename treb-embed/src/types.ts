@@ -1,5 +1,6 @@
-import { IArea } from 'treb-base-types';
-import { MacroFunction, SerializedNamedExpression, SerializedSheet } from 'treb-grid';
+
+import type { IArea } from 'treb-base-types';
+import type { MacroFunction, SerializedNamedExpression, SerializedSheet } from 'treb-grid';
 
 export enum SaveFileType {
   json = 'json',

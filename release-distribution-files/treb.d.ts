@@ -29,18 +29,6 @@ export interface SaveOptions extends SerializeOptions {
 }
 
 /**
- * type represents a reference passed in to API functions. it can be an
- * address object, or a string.
- */
-export declare type AddressReference = string | ICellAddress;
-
-/**
- * type represents a reference passed in to API functions. it can be an
- * address object, an area (range) object, or a string.
- */
-export declare type RangeReference = string | ICellAddress | IArea;
-
-/**
  * options for the LoadDocument method
  */
 export interface LoadDocumentOptions {
@@ -859,6 +847,18 @@ export interface DimensionedQuantity {
     value: number;
     unit: string;
 }
+
+/**
+ * type represents a reference passed in to API functions. it can be an
+ * address object, or a string.
+ */
+export declare type AddressReference = string | ICellAddress;
+
+/**
+ * type represents a reference passed in to API functions. it can be an
+ * address object, an area (range) object, or a string.
+ */
+export declare type RangeReference = string | ICellAddress | IArea;
 
 /**
  * options for exporting CSV/TSV

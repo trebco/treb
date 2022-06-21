@@ -1,6 +1,6 @@
 
-import { RangeScale } from 'treb-utils';
-import { Area } from './rectangle';
+import type { RangeScale } from 'treb-utils';
+import type { Area } from './rectangle';
 
 export type NumberOrUndefinedArray = Array<number|undefined>;
 

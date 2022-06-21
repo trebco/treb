@@ -1,8 +1,8 @@
 
-import { Vertex } from './vertex';
+import type { Vertex } from './vertex';
 import { GraphCallbacks, SpreadsheetVertexBase } from './spreadsheet_vertex_base';
-import { Area, ICellAddress2 } from 'treb-base-types';
-import { SpreadsheetVertex } from './spreadsheet_vertex';
+import type { Area, ICellAddress2 } from 'treb-base-types';
+import type { SpreadsheetVertex } from './spreadsheet_vertex';
 import { Color } from './vertex';
 
 /**

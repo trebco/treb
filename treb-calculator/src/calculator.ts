@@ -3,11 +3,11 @@ import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, Union
          ArrayUnion, IArea, IsCellAddress, FlatCellData} from 'treb-base-types';
          
 import { Parser, ExpressionUnit, DependencyList, UnitRange,
-         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier, UnitMissing, QuotedSheetNameRegex } from 'treb-parser';
+         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier } from 'treb-parser';
 
 import { Graph } from './dag/graph';
-import { SpreadsheetVertex } from './dag/spreadsheet_vertex';
-import { CalculationResult } from './dag/spreadsheet_vertex_base';
+import type { SpreadsheetVertex } from './dag/spreadsheet_vertex';
+import type { CalculationResult } from './dag/spreadsheet_vertex_base';
 
 import { ExpressionCalculator, UnionIsMetadata } from './expression-calculator';
 import * as Utilities from './utilities';
@@ -22,11 +22,10 @@ import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './function
 import { ComplexFunctionLibrary } from './functions/complex-functions';
 import { MatrixFunctionLibrary } from './functions/matrix-functions';
 
-import { DataModel, Annotation, FunctionDescriptor, Sheet } from 'treb-grid';
+import type { DataModel, Annotation, FunctionDescriptor, Sheet } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
 
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError } from './function-error';
-import { RangeReference } from 'treb-base-types';
 
 // import type { NotifierType, InternalNotifierType } from './notifier-types';
 

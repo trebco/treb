@@ -48,17 +48,17 @@ import { TileRange, BaseLayout } from '../layout/base_layout';
 
 import { GridLayout } from '../layout/grid_layout';
 
-import { GridSelection } from './grid_selection';
+import type { GridSelection } from './grid_selection';
 import { OverlayEditor, OverlayEditorResult } from '../editors/overlay_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
-import { GridEvent } from './grid_events';
-import { FreezePane, LegacySerializedSheet } from './sheet_types';
+import type { GridEvent } from './grid_events';
+import type { FreezePane, LegacySerializedSheet } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
-import { GridOptions } from './grid_options';
+import type { GridOptions } from './grid_options';
 import { DescriptorType } from '../editors/autocomplete_matcher';
 import { BorderConstants } from './border_constants';
-import { SerializeOptions } from './serialize_options';
+import type { SerializeOptions } from './serialize_options';
 import { UA } from '../util/ua';
 import { Annotation } from './annotation';
 import { Autocomplete } from '../editors/autocomplete';
@@ -74,7 +74,7 @@ import {
   SelectCommand
 } from './grid_command';
 
-import { DataModel, SerializedModel } from './data_model';
+import type { DataModel, SerializedModel } from './data_model';
 
 import { DOMUtilities } from '../util/dom_utilities';
 import { GridBase } from './grid_base';

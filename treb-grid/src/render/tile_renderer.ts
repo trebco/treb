@@ -4,17 +4,12 @@ import { TextPartFlag, ICellAddress, Style, ValueType,
          Cell, Area, Size, Rectangle, 
          Theme, ThemeColor, ThemeColor2 } from 'treb-base-types';
 
-import { Tile } from '../types/tile';
-
-// import { FontMetricsCache } from '../util/font_metrics_cache';
-// import { FontMetricsCache, FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
+import type { Tile } from '../types/tile';
 import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
-
 import { FormattedString, MDParser } from 'treb-parser';
-
-import { BaseLayout, TileRange } from '../layout/base_layout';
-import { DataModel, ViewModel } from '../types/data_model';
-import { GridOptions } from '../types/grid_options';
+import type { BaseLayout, TileRange } from '../layout/base_layout';
+import type { DataModel, ViewModel } from '../types/data_model';
+import type { GridOptions } from '../types/grid_options';
 
 const BASELINE = 'bottom';
 const WK = /webkit/i.test(typeof navigator === 'undefined' ? '' : navigator?.userAgent || '') ? 1 : 0;

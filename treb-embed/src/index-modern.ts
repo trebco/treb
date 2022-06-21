@@ -1,11 +1,11 @@
 
 import { CompositeSheet } from './composite-sheet';
 import { AutoEmbedManager } from './auto-embed';
-import { CreateSheetOptions, EmbeddedSpreadsheetOptions } from './options';
-import { NumberFormatCache, ValueParser } from 'treb-format';
-import { Complex, Localization } from 'treb-base-types';
+import type { CreateSheetOptions, EmbeddedSpreadsheetOptions } from './options';
+import type { NumberFormatCache, ValueParser } from 'treb-format';
+import type { Complex, Localization } from 'treb-base-types';
 import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
-import { Util as ChartUtils, Chart } from 'treb-charts';
+import type { Util as ChartUtils, Chart } from 'treb-charts';
 
 interface TREBNamespace {
 

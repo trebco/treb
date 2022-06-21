@@ -1,12 +1,12 @@
 
 // import { Parser } from 'treb-parser';
 
-import { Area, IArea } from './area';
-import { Style } from './style';
-import { TextPart } from './text_part';
+import type { Area, IArea } from './area';
+import type { Style } from './style';
+import type { TextPart } from './text_part';
 import { ValueType, GetValueType, Complex } from './value-type';
-import { CellValue, UnionValue } from './union';
-import { PreparedText, RenderTextPart } from './render_text';
+import type { CellValue, UnionValue } from './union';
+import type { PreparedText } from './render_text';
 
 export interface RenderFunctionOptions {
   height: number;

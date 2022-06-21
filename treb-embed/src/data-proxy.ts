@@ -2,8 +2,9 @@
  * testing a proxy for simplified cell/sheet access
  */
 
-import { CellValue } from 'treb-base-types';
-import { RangeReference, SetRangeOptions, GetRangeOptions } from './embedded-spreadsheet-base';
+import type { CellValue } from 'treb-base-types';
+import type { RangeReference } from 'treb-base-types';
+import type { SetRangeOptions, GetRangeOptions } from './embedded-spreadsheet-base';
 
 export interface SheetContainer {
   GetRange: (range?: RangeReference, options?: GetRangeOptions) => CellValue|CellValue[][],

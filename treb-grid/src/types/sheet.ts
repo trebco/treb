@@ -12,8 +12,8 @@ import type { TextPart } from 'treb-base-types';
 
 // --- local imports ----------------------------------------------------------
 
-import { FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
-import { SerializeOptions } from './serialize_options';
+import type { FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
+import type { SerializeOptions } from './serialize_options';
 import { CreateSelection, GridSelection } from './grid_selection';
 import { Annotation } from './annotation';
 

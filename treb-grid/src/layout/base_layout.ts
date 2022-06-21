@@ -1,12 +1,12 @@
 
 import { DOMUtilities } from '../util/dom_utilities';
-import { DataModel, ViewModel } from '../types/data_model';
+import type { DataModel, ViewModel } from '../types/data_model';
 
-import { Tile } from '../types/tile';
+import type { Tile } from '../types/tile';
 import { Style, Theme, Point, Extent, Size, Position, Area, ICellAddress, Rectangle, ThemeColor } from 'treb-base-types';
 
 import { MouseDrag } from '../types/drag_mask';
-import { GridEvent } from '../types/grid_events';
+import type { GridEvent } from '../types/grid_events';
 
 // aliasing Area as TileRange. this seemed like a good idea, initially, because
 // it can help clarify the function calls and return values when we "overload"
@@ -20,7 +20,7 @@ import { GridEvent } from '../types/grid_events';
 // force separation of all the functions between the two types (I think)
 
 import { Area as TileRange, CellValue, AnnotationLayout, Corner } from 'treb-base-types';
-import { Annotation } from '../types/annotation';
+import type { Annotation } from '../types/annotation';
 
 export { Area as TileRange } from 'treb-base-types';
 

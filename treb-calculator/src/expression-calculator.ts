@@ -1,16 +1,14 @@
 
-import { FunctionLibrary } from './function-library';
-import { Cell, Cells, ICellAddress, ValueType, GetValueType,
+import type { FunctionLibrary } from './function-library';
+import { Cell, ICellAddress, ValueType, GetValueType,
          Area, UnionValue, CellValue,
          ArrayUnion,
          NumberUnion,
          UndefinedUnion,
-         ComplexUnion,
-         DimensionedQuantity,
-         DimensionedQuantityUnion} from 'treb-base-types';
-import { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
+         ComplexUnion } from 'treb-base-types';
+import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity } from 'treb-parser';
-import { DataModel, MacroFunction, Sheet } from 'treb-grid';
+import type { DataModel, MacroFunction, Sheet } from 'treb-grid';
 import { NameError, ReferenceError, ExpressionError, UnknownError } from './function-error';
 import { ReturnType } from './descriptors';
 

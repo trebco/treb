@@ -1,5 +1,5 @@
 
-import { ICellAddress, IArea } from './area';
+import type { ICellAddress, IArea } from './area';
 
 // for updated API functions
 

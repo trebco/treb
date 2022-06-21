@@ -1,5 +1,5 @@
 
-import { GraphCallbacks } from './spreadsheet_vertex_base';
+import type { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
 import { Vertex, Color } from './vertex';
 

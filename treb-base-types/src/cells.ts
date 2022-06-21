@@ -3,11 +3,11 @@
  * (not sure if there are benefits yet either)
  */
 
-import { Area, IArea, ICellAddress, ICellAddress2, IsCellAddress } from './area';
+import { Area, IArea, ICellAddress, IsCellAddress } from './area';
 import { Cell, DataValidation } from './cell';
-import { ValueType, GetValueType, Complex } from './value-type';
-import { CellValue, UnionValue } from './union';
-import { Style } from './style';
+import { ValueType, GetValueType } from './value-type';
+import type { CellValue, UnionValue } from './union';
+import type { Style } from './style';
 
 export interface CellSerializationOptions {
   preserve_type?: boolean;

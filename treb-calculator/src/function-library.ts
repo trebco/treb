@@ -1,5 +1,6 @@
 
-import { ExtendedFunctionDescriptor, CompositeFunctionDescriptor,
+import type { 
+  ExtendedFunctionDescriptor, CompositeFunctionDescriptor,
   FunctionMap, ExtendedFunctionMap } from './descriptors';
 
 /**

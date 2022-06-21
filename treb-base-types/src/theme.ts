@@ -1,6 +1,6 @@
 
 
-import { Style } from './style';
+import type { Style } from './style';
 import { Color } from './color';
 
 /*

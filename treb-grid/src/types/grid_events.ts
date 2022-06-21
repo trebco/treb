@@ -1,9 +1,8 @@
 
-import { GridSelection } from './grid_selection';
-// import { SheetEvent } from './sheet_types';
-import { Annotation } from './annotation';
-import { Sheet } from './sheet';
-import { Area } from 'treb-base-types';
+import type { GridSelection } from './grid_selection';
+import type { Annotation } from './annotation';
+import type { Sheet } from './sheet';
+import type { Area } from 'treb-base-types';
 
 export enum ErrorCode {
 

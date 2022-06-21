@@ -1,9 +1,9 @@
 
-import { Style } from './style';
-import { ValueType } from './value-type';
-import { IArea } from './area';
-import { AnnotationLayout } from './layout';
-import { DataValidation } from './cell';
+import type { Style } from './style';
+import type { ValueType } from './value-type';
+import type { IArea } from './area';
+import type { AnnotationLayout } from './layout';
+import type { DataValidation } from './cell';
 
 export interface CellParseResult {
   row: number,

@@ -1,9 +1,9 @@
 
-import { FunctionMap } from '../descriptors';
+import type { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
 import { Box, UnionValue, ValueType, GetValueType, 
-         CellValue, RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex, IsDimensionedQuantity } from 'treb-base-types';
+         RenderFunctionResult, RenderFunctionOptions, ComplexOrReal, Complex } from 'treb-base-types';
 import { Sparkline } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 

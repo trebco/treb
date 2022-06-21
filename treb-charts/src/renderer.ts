@@ -1,7 +1,7 @@
 
 import { Area, Size, Point } from './rectangle';
 import { DonutSlice, LegendLayout, LegendOptions, LegendPosition, LegendStyle } from './chart-types';
-import { RangeScale } from 'treb-utils';
+import type { RangeScale } from 'treb-utils';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 

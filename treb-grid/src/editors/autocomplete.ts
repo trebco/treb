@@ -1,7 +1,7 @@
 
 import { DOMUtilities } from '../util/dom_utilities';
-import { Theme, Rectangle } from 'treb-base-types';
-import { AutocompleteExecResult, DescriptorType } from './autocomplete_matcher';
+import type { Theme, Rectangle } from 'treb-base-types';
+import type { AutocompleteExecResult, DescriptorType } from './autocomplete_matcher';
 
 export interface AutocompleteResult {
   handled: boolean;

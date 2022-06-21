@@ -1,7 +1,7 @@
 
 import { SpreadsheetVertexBase, GraphCallbacks } from './spreadsheet_vertex_base';
 import { Cell, Box, ICellAddress, ValueType, UnionValue } from 'treb-base-types';
-import { ExpressionUnit } from 'treb-parser';
+import type { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 
 export enum SpreadsheetError {

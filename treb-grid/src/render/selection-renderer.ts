@@ -1,10 +1,10 @@
 
 import { Theme, Rectangle, ICellAddress } from 'treb-base-types';
-import { BaseLayout } from '../layout/base_layout';
+import type { BaseLayout } from '../layout/base_layout';
 import { SVGSelectionBlock, SelectionOffset } from './svg_selection_block';
-import { GridSelection } from '../types/grid_selection';
+import type { GridSelection } from '../types/grid_selection';
 import { HeaderOverlay, Orientation } from './svg_header_overlay';
-import { DataModel, ViewModel } from '../types/data_model';
+import type { DataModel, ViewModel } from '../types/data_model';
 
 // const SVGNS = 'http://www.w3.org/2000/svg';
 

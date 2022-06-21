@@ -1,8 +1,8 @@
 
-import { FunctionMap } from '../descriptors';
+import type { FunctionMap } from '../descriptors';
 import { IsComplex, NumberUnion, UnionValue, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
-import { ArgumentError, ValueError } from '../function-error';
+import { ValueError } from '../function-error';
 import { RectangularToPolar } from '../complex-math';
 
 export const ComplexFunctionLibrary: FunctionMap = {

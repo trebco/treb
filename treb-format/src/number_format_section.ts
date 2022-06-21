@@ -1,4 +1,5 @@
-import {TextPart} from 'treb-base-types';
+
+import type { TextPart } from 'treb-base-types';
 
 /**
  * essentially number formats have a core section with the number

@@ -9,11 +9,11 @@
 
 import { Style, Theme, CellValue, Rectangle, ThemeColor2, Cell } from 'treb-base-types';
 import { Yield } from 'treb-utils';
-import { Parser } from 'treb-parser';
-import { GridSelection } from '../types/grid_selection';
+import type { Parser } from 'treb-parser';
+import type { GridSelection } from '../types/grid_selection';
 import { FormulaEditorBase } from './formula_editor_base';
-import { Autocomplete } from './autocomplete';
-import { DataModel, ViewModel } from '../types/data_model';
+import type { Autocomplete } from './autocomplete';
+import type { DataModel, ViewModel } from '../types/data_model';
 import { UA } from '../util/ua';
 
 /**

@@ -1,7 +1,7 @@
 
-import { ICellAddress, IArea, Style, CellValue } from 'treb-base-types';
-import { ExpressionUnit } from 'treb-parser';
-import { BorderConstants } from './border_constants';
+import type { ICellAddress, IArea, Style, CellValue } from 'treb-base-types';
+import type { ExpressionUnit } from 'treb-parser';
+import type { BorderConstants } from './border_constants';
 
 /**
  * switching to an exec-command based model, so we can serialize

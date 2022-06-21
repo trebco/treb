@@ -1,7 +1,7 @@
 
-import { FunctionMap } from '../descriptors';
+import type { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ValueError, FunctionError, ArgumentError, NAError } from '../function-error';
+import { ValueError, ArgumentError, NAError } from '../function-error';
 import { Complex, UnionValue, ValueType } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
 

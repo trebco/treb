@@ -1,7 +1,7 @@
 
-import { IArea, SerializedCellData, Style } from 'treb-base-types';
-import { Annotation } from './annotation';
-import { GridSelection } from './grid_selection';
+import type { IArea, SerializedCellData, Style } from 'treb-base-types';
+import type { Annotation } from './annotation';
+import type { GridSelection } from './grid_selection';
 
 export interface UpdateHints {
   data?: boolean;

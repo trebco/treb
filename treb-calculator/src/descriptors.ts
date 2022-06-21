@@ -1,5 +1,5 @@
 
-import { /*UnionOrArray,*/ RenderFunction, ClickFunction, UnionValue } from 'treb-base-types';
+import type { RenderFunction, ClickFunction, UnionValue } from 'treb-base-types';
 
 // FIXME: at least some of this could move to base types
 

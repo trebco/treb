@@ -1,11 +1,11 @@
 
-import { DataModel, ViewModel } from './data_model';
+import type { DataModel, ViewModel } from './data_model';
 import { EventSource } from 'treb-utils';
-import { Sheet } from './sheet';
-import { BaseLayout } from '../layout/base_layout';
+import type { Sheet } from './sheet';
+import type { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
-import { GridOptions } from './grid_options';
-import { Theme } from 'treb-base-types';
+import type { GridOptions } from './grid_options';
+import type { Theme } from 'treb-base-types';
 import { ScaleEvent, ScaleControl } from './scale-control';
 
 export interface ActivateSheetEvent {

@@ -33,7 +33,7 @@ import { Spinner } from './spinner';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './options';
 import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent } from './types';
 
-import { LanguageModel, TranslatedFunctionDescriptor } from './language-model';
+import type { LanguageModel, TranslatedFunctionDescriptor } from './language-model';
 import { SelectionState, Toolbar, ToolbarEvent } from './toolbar';
 import { Chart, ChartFunctions } from 'treb-charts';
 

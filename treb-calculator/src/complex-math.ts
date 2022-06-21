@@ -1,5 +1,5 @@
 
-import { Complex } from 'treb-base-types/src';
+import type { Complex } from 'treb-base-types/src';
 
 export interface ComplexMatrixType {
   array: Complex[][];
