@@ -120,6 +120,32 @@ export class TileRenderer {
   }
 
   /**
+   * we manage overflow blocks to simplify (more or less) rendering,
+   * but they break in the event of insert/delete row/column. we need 
+   * to adjust, or perhaps flush, when we insert/delete columns.
+   * 
+   */
+  public FlushOverflows() {
+
+    // flush all, mark dirty and drop areas.
+
+    const cells = this.view.active_sheet.cells;
+    cells.IterateAll(cell => {
+      if (cell.renderer_data?.overflowed) {
+        cell.renderer_data = undefined;
+        cell.render_clean[this.view.view_index] = false;
+      }
+    });
+
+    for (const overflow_area of this.overflow_areas) {
+      overflow_area.tile.dirty = true;
+    }
+    
+    this.overflow_areas = [];
+
+  }
+
+  /**
    * use one of the tile contexts to measure text. we are using the tile
    * context because it's attached to the DOM, and style is applied. we need
    * that for the root font size, in case font size in the style is relative

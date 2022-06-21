@@ -179,8 +179,9 @@ export class Cells {
 
     this.columns_ += count;
 
-    const clone = JSON.parse(JSON.stringify(this.data[13]));
-    console.info({pre, clone});
+    // wtf is this? some old debug stuff?
+    // const clone = JSON.parse(JSON.stringify(this.data[13]));
+    // console.info({pre, clone});
     
   }
 

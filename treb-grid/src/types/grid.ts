@@ -24,11 +24,13 @@ import {
 } from 'treb-base-types';
 
 import {
-  Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, ParseCSV,
-  QuotedSheetNameRegex, IllegalSheetNameRegex, UnitAddress, MDParser
+  Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, 
+  ParseCSV,
+  QuotedSheetNameRegex, 
+  MDParser
 } from 'treb-parser';
 
-import { EventSource, Yield, SerializeHTML } from 'treb-utils';
+import { Yield, SerializeHTML } from 'treb-utils';
 import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat, ParseResult as ParseResult2 } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
@@ -54,8 +56,8 @@ import { TileRenderer } from '../render/tile_renderer';
 import { GridEvent } from './grid_events';
 import { FreezePane, LegacySerializedSheet } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
-import { GridOptions, DefaultGridOptions } from './grid_options';
-import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
+import { GridOptions } from './grid_options';
+import { DescriptorType } from '../editors/autocomplete_matcher';
 import { BorderConstants } from './border_constants';
 import { SerializeOptions } from './serialize_options';
 import { UA } from '../util/ua';
@@ -65,20 +67,20 @@ import { Autocomplete } from '../editors/autocomplete';
 import { MouseDrag } from './drag_mask';
 
 import {
-  Command, CommandKey, CommandRecord,
-  SetRangeCommand, FreezeCommand, UpdateBordersCommand,
+  Command, CommandKey,
+  SetRangeCommand, FreezeCommand,
   InsertRowsCommand, InsertColumnsCommand, SetNameCommand,
-  ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand, DataValidationCommand, DuplicateSheetCommand, ResizeRowsCommand, ResizeColumnsCommand, SelectCommand
+  ActivateSheetCommand, ShowSheetCommand, DataValidationCommand, 
+  DuplicateSheetCommand, ResizeRowsCommand, ResizeColumnsCommand, 
+  SelectCommand
 } from './grid_command';
 
-import { DataModel, ViewModel, MacroFunction, SerializedModel } from './data_model';
-// import { NamedRangeCollection } from './named_range';
+import { DataModel, SerializedModel } from './data_model';
+
+import { DOMUtilities } from '../util/dom_utilities';
+import { GridBase } from './grid_base';
 
 import '../../style/grid.scss';
-import { DOMUtilities } from '../util/dom_utilities';
-import { SerializedNamedExpression } from '..';
-import { GridBase } from './grid_base';
-import { UpdateFlags } from './update_flags';
 
 interface ClipboardCellData {
   address: ICellAddress;
@@ -2217,59 +2219,6 @@ export class Grid extends GridBase {
 
     return events;
   }
-
-  /* *
-   * delete columns in current selection
-   * /
-  public DeleteColumns(): void {
-    if (this.primary_selection.empty) { return; }
-    const area = this.primary_selection.area;
-    if (area.entire_row) {
-      this.Clear();
-    }
-    else {
-      const before_column = area.start.column;
-      const count = -area.columns; // negative means remove
-      // this.InsertColumnsInternal(before_column, -count);
-      this.ExecCommand({
-        key: CommandKey.InsertColumns,
-        before_column,
-        count,
-      });
-    }
-  }
-
-  / * *
-   * delete rows in current selection
-   * /
-  public DeleteRows(): void {
-    if (this.primary_selection.empty) { return; }
-    const area = this.primary_selection.area;
-    if (area.entire_column) {
-      this.Clear();
-    }
-    else {
-      const before_row = area.start.row;
-      const count = -area.rows; // negative means remove
-      this.ExecCommand({
-        key: CommandKey.InsertRows,
-        before_row,
-        count,
-      });
-    }
-  }
-  */
-
-  /* *
-   * insert column at cursor
-   * /
-  public InsertColumn(): void {
-    if (this.primary_selection.empty) { return; }
-    const area = this.primary_selection.area;
-    const before_column = area.entire_row ? 0 : area.start.column;
-    this.InsertColumns(before_column, 1);
-  }
-  */
 
   /**
    * insert column(s) at some specific point
@@ -5147,48 +5096,6 @@ export class Grid extends GridBase {
 
       }
 
-      /*
-
-      // tslint:disable-next-line:no-bitwise
-      if (hints & Hints.Date) {
-        if (!cell.style || !cell.style.number_format ||
-          (NumberFormatCache.Equals(cell.style.number_format, 'General'))) {
-          number_format = 'Short Date';
-        }
-      }
-      // tslint:disable-next-line:no-bitwise
-      else if (hints & Hints.Exponential) {
-        if (!cell.style || !cell.style.number_format || !/e/.test(cell.style.number_format)) {
-          number_format = 'Exponential';
-        }
-      }
-      // tslint:disable-next-line:no-bitwise
-      else if (hints & Hints.Percent) {
-        if (!cell.style || !cell.style.number_format || !/%/.test(cell.style.number_format)) {
-          number_format = 'Percent';
-        }
-      }
-      // tslint:disable-next-line:no-bitwise
-      else if (hints & Hints.Currency) {
-        if (!cell.style || !cell.style.number_format || !/,/.test(cell.style.number_format)) {
-          number_format = 'Currency';
-        }
-      }
-      // tslint:disable-next-line:no-bitwise
-      else if (hints & Hints.Grouping) {
-        if (!cell.style || !cell.style.number_format || !new RegExp(Localization.grouping_separator).test(cell.style.number_format)) {
-          number_format = 'Accounting';
-        }
-      }
-      // tslint:disable-next-line:no-bitwise
-      else if (hints & Hints.Parens) {
-        if (!cell.style || !cell.style.number_format || !/,/.test(cell.style.number_format)) {
-          number_format = 'Accounting';
-        }
-      }
-
-      */
-
       if (number_format) {
         commands.push({
           key: CommandKey.UpdateStyle,
@@ -6947,131 +6854,19 @@ export class Grid extends GridBase {
 
 
   /**
-   * FIXME: should be API method
-   * FIXME: need to handle annotations that are address-based
-   *
-   * @see InsertColumns for inline comments
+   * UI method for inserting rows; updates layout
    */
-  protected InsertRowsInternal(command: InsertRowsCommand): boolean { // before_row = 0, count = 1) {
+  protected InsertRowsInternal(command: InsertRowsCommand) { 
 
     const result = super.InsertRowsInternal(command);
 
-    if (!result) {
-      return false;
+    if (result.error) {
+      return result;
     }
 
     const target_sheet = this.FindSheet(command.sheet_id);
 
-    // see InsertColumnsInternal
-
     if (target_sheet === this.active_sheet) {
-
-      // annotations
-
-      const update_annotations_list: Annotation[] = [];
-      const resize_annotations_list: Annotation[] = [];
-
-      if (command.count > 0) {
-
-        const start = this.layout.CellAddressToRectangle({
-          row: command.before_row,
-          column: 0,
-        });
-
-        const height = this.layout.default_row_height * command.count + 1; // ?
-
-        for (const annotation of target_sheet.annotations) {
-          if (annotation.scaled_rect) {
-
-            if (start.top >= annotation.scaled_rect.bottom) {
-              continue;
-            }
-            else if (start.top <= annotation.scaled_rect.top) {
-              annotation.scaled_rect.top += (height - 1); // grid
-            }
-            else {
-              annotation.scaled_rect.height += height;
-              resize_annotations_list.push(annotation);
-            }
-            
-            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
-
-            update_annotations_list.push(annotation);
-          }
-        }
-
-      }
-      else if (command.count < 0) { // delete
-
-        let rect = this.layout.CellAddressToRectangle({
-          row: command.before_row,
-          column: 0,
-        });
-
-        if (command.count < -1) {
-          rect = rect.Combine(this.layout.CellAddressToRectangle({
-            row: command.before_row - command.count - 1,
-            column: 0,
-          }));
-        }
-
-        for (const annotation of target_sheet.annotations) {
-          if (annotation.scaled_rect) {
-
-            if (annotation.scaled_rect.bottom <= rect.top) {
-              continue; // unaffected
-            }
-
-            // affected are is entirely above of annotation: move only
-            if (annotation.scaled_rect.top >= rect.bottom - 1) { // grid
-              annotation.scaled_rect.top -= (rect.height);
-            }
-
-            // affected area is entirely underneath the annotation: size only
-            else if (annotation.scaled_rect.top <= rect.top && annotation.scaled_rect.bottom >= rect.bottom) {
-              annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - rect.height, 10);
-              resize_annotations_list.push(annotation);
-            }
-
-            // affected area completely contains the annotation: do nothing, or delete? (...)
-            else if (annotation.scaled_rect.top >= rect.top && annotation.scaled_rect.bottom <= rect.bottom) {
-              // ...
-              continue; // do nothing, for now
-            }
-
-            // top edge: shift AND clip?
-            else if (annotation.scaled_rect.top >= rect.top && annotation.scaled_rect.bottom > rect.bottom) {
-              const shift = annotation.scaled_rect.top - rect.top + 1; // grid
-              const clip = rect.height - shift;
-              annotation.scaled_rect.top -= shift;
-              annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - clip, 10);
-              resize_annotations_list.push(annotation);
-            }
-
-            // bottom edge: clip, I guess
-            else if (annotation.scaled_rect.top < rect.top && annotation.scaled_rect.bottom <= rect.bottom) {
-              const clip = annotation.scaled_rect.bottom - rect.top;
-              annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - clip, 10);
-              resize_annotations_list.push(annotation);
-            }
-
-            else {
-              console.info('unhandled case');
-              // console.info("AR", annotation.rect, "R", rect);
-            }
-
-            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
-
-            update_annotations_list.push(annotation);
-
-          }
-
-        }
-
-
-      }
 
       // fix selections
 
@@ -7099,7 +6894,9 @@ export class Grid extends GridBase {
         }
       }
 
-      // force update
+      for (const annotation of result.delete_annotations_list || []) {
+        this.layout.RemoveAnnotation(annotation);
+      }
 
       // note event is sent in exec command, not implicit here
 
@@ -7111,9 +6908,9 @@ export class Grid extends GridBase {
 
       this.Repaint();
 
-      if (update_annotations_list.length) {
-        this.layout.UpdateAnnotation(update_annotations_list);
-        for (const annotation of resize_annotations_list) {
+      if (result.update_annotations_list?.length) {
+        this.layout.UpdateAnnotation(result.update_annotations_list);
+        for (const annotation of result.resize_annotations_list || []) {
           const view = annotation.view[this.view_index];
           if (view?.resize_callback) {
             view.resize_callback.call(undefined);
@@ -7126,179 +6923,26 @@ export class Grid extends GridBase {
       this.pending_layout_update.add(target_sheet.id);
     }
 
-    return true;
+    return result;
 
   }
 
   /**
-   * FIXME: should be API method
-   * FIXME: need to handle annotations that are address-based
+   * UI method for inserting columns; updates layout
    */
-  protected InsertColumnsInternal(command: InsertColumnsCommand): boolean {
+  protected InsertColumnsInternal(command: InsertColumnsCommand) {
 
     const result = super.InsertColumnsInternal(command);
 
-    if (!result) {
-      return false;
+    if (result.error) {
+      return result;
     }
 
     const target_sheet = this.FindSheet(command.sheet_id);
 
-    // FIXME: this is just not going to work for !active sheet. we 
-    // need to think about how to handle this properly. TEMP: punting
+    // ---
 
     if (target_sheet === this.active_sheet) {
-
-      // annotations
-
-      const update_annotations_list: Annotation[] = [];
-      const resize_annotations_list: Annotation[] = [];
-      const delete_annotations_list: Annotation[] = [];
-
-      if (command.count > 0) { // insert
-
-        const first = command.before_column;
-
-        for (const annotation of target_sheet.annotations) {
-          if (annotation.layout) {
-            const [start, end, endx] = [
-              annotation.layout.tl.address.column, 
-              annotation.layout.br.address.column,
-              annotation.layout.br.offset.x,
-            ];
-
-            if (first <= start ) { 
-
-              // start case 1: starts to the left of the annotation (including exactly at the left)
-
-              // shift
-              annotation.layout.tl.address.column += command.count;
-              annotation.layout.br.address.column += command.count;
-
-            }
-            else if (first < end || first === end && endx > 0) { 
-              
-              // start case 2: starts in the annotation, omitting the first column
-
-              annotation.layout.br.address.column += command.count;
-
-              // size changing
-              resize_annotations_list.push(annotation);
-
-            }
-            else {
-
-              // do nothing
-              continue;
-            }
-
-            update_annotations_list.push(annotation);
-          }
-        }
-
-      }
-      else if (command.count < 0) { // delete
-
-        // first and last column deleted
-
-        const first = command.before_column;
-        const last = command.before_column - command.count - 1;
-
-        for (const annotation of target_sheet.annotations) {
-          if (annotation.layout) {
-            
-            // start and end column of the annotation. recall that in
-            // this layout, the annotation may extend into the (first,last) 
-            // column but not beyond it. the offset is _within_ the column.
-
-            const [start, end, endx] = [
-              annotation.layout.tl.address.column, 
-              annotation.layout.br.address.column,
-              annotation.layout.br.offset.x,
-            ];
-
-            if (first <= start ) { 
-
-              // start case 1: starts to the left of the annotation (including exactly at the left)
-
-              if (last < start) { 
-
-                // end case 1: ends before the annotation
-
-                // shift
-                annotation.layout.tl.address.column += command.count;
-                annotation.layout.br.address.column += command.count;
-
-              }
-              else if (last < end - 1 || (last === end -1 && endx > 0)) { 
-             
-                // end case 2: ends before the end of the annotation
-
-                // shift + cut
-                annotation.layout.tl.address.column = first;
-                annotation.layout.tl.offset.x = 0;
-                annotation.layout.br.address.column += command.count;
-
-                // size changing
-                resize_annotations_list.push(annotation);
-
-              }
-              else { 
-                
-                // end case 3: ends after the annotation
-
-                // drop the annotation
-                delete_annotations_list.push(annotation);
-                continue;
-                
-              }
-
-            }
-            else if (first < end || first === end && endx > 0) { 
-              
-              // start case 2: starts in the annotation, omitting the first column
-
-              if (last < end - 1 || (last === end -1 && endx > 0)) { 
-                
-                // end case 2: ends before the end of the annotation
-
-                // shorten
-                annotation.layout.br.address.column += command.count;
-
-                // size changing
-                resize_annotations_list.push(annotation);
-
-              }
-              else { 
-                
-                // end case 3: ends after the annotation
-
-                // clip
-                annotation.layout.br.address.column = first;
-                annotation.layout.br.offset.x = 0;
-
-                // size changing
-                resize_annotations_list.push(annotation);
-
-              }
-
-            }
-            else { 
-              
-              // start case 3: starts after the annotation
-
-              // do nothing              
-             
-              continue;
-
-            }
-
-            update_annotations_list.push(annotation);
-
-          }
-        }
-
-      }
 
       // fix selection(s)
 
@@ -7332,23 +6976,25 @@ export class Grid extends GridBase {
         }
       }
 
-      for (const annotation of delete_annotations_list) {
-        // this.RemoveAnnotation(annotation);
+      for (const annotation of result.delete_annotations_list || []) {
         this.layout.RemoveAnnotation(annotation);
-        target_sheet.annotations = target_sheet.annotations.filter(test => test !== annotation);
       }
+
+      // overflows break or get orphaned if we muck up the list of 
+      // columns. we should be able to fix this, or we can just flush
+      // all overflows and force them to get recreated.
+
+      this.tile_renderer.FlushOverflows();
 
       // note event is sent in exec command, not implicit here
 
       this.QueueLayoutUpdate();
 
-      // @see InsertColumnsInternal re: why repaint
+      this.DelayedRender(true, undefined, true);
 
-      this.Repaint();
-
-      if (update_annotations_list.length) {
-        this.layout.UpdateAnnotation(update_annotations_list);
-        for (const annotation of resize_annotations_list) {
+      if (result.update_annotations_list?.length) {
+        this.layout.UpdateAnnotation(result.update_annotations_list);
+        for (const annotation of result.resize_annotations_list || []) {
           const view = annotation.view[this.view_index];
           if (view?.resize_callback) {
             view.resize_callback.call(undefined);
@@ -7361,7 +7007,7 @@ export class Grid extends GridBase {
       this.pending_layout_update.add(target_sheet.id); 
     }
 
-    return true;
+    return result;
 
   }
 
@@ -7593,602 +7239,6 @@ export class Grid extends GridBase {
   }
 
   //////////////////////////////////////////////////////////////////////////////
-
-
-
-  /* *
-   * pass all data/style/structure operations through a command mechanism.
-   * this method should optimally act as a dispatcher, so try to minimize
-   * inline code in favor of method calls.
-   *
-   * [NOTE: don't go crazy with that, some simple operations can be inlined]
-   * 
-   * NOTE: working on coediting. we will need to handle different sheets.
-   * going to work one command at a time...
-   * 
-   * @param queue -- push on the command log. this is default true so it
-   * doesn't change existing behavior, but you can turn it off if the message
-   * comes from a remote queue.
-   * 
-   * /
-  private ExecCommand(commands: Command | Command[], queue = true) {
-
-    // FIXME: support ephemeral commands (...)
-
-    // data and style events were triggered by the areas being set.
-    // we are not necessarily setting them for offsheet changes, so
-    // we need an explicit flag. this should be logically OR'ed with
-    // the area existing (for purposes of sending an event).
-
-    // all flags/areas moved to this struct
-
-    const flags: Partial<UpdateFlags> = {
-      pending: [],
-    };
-
-    const events: GridEvent[] = [];
-
-    // should we normalize always, or only if we're queueing?
-    // it seems like it's useful here, then we can be a little
-    // sloppier in the actual handlers. after normalizing, any
-    // command that has an address/area (or sheet ID parameter)
-    // will have an explicit sheet ID.
-
-    commands = this.NormalizeCommands(commands);
-
-    // FIXME: we should queue later, so we can remove any commands
-    // that fail... throw errors, and so on
-
-    if (queue) {
-      this.command_log.Publish({ command: commands, timestamp: new Date().getTime() });
-    }
-
-    for (const command of commands) {
-
-      // console.log(CommandKey[command.key], JSON.stringify(command));
-
-      switch (command.key) {
-        case CommandKey.Reset:
-
-          // not sure how well this fits in with the command queue. it
-          // doesn't look like it sends any events, so what's the point?
-          // just to get a command log event?
-
-          // the problem is that load doesn't run through the queue, so
-          // even if you did a reset -> load we'd just get the reset part.
-
-          // ...
-
-          // OK, actually this is used in the CSV import routine. we need
-          // to support it until we get rid of that (it needs to move).
-          
-          this.ResetInternal();
-          break;
-
-        case CommandKey.Clear:
-          if (command.area) {
-            const area = new Area(command.area.start, command.area.end);
-            this.ClearAreaInternal(area);
-            flags.data_area = Area.Join(area, flags.data_area);
-            flags.formula = true;
-          }
-          break;
-
-        case CommandKey.Select:
-
-          // nobody (except one routine) is using commands for selection.
-          // not sure why or why not, or if that's a problem. (it's definitely
-          // a problem if we are recording the log for playback)
-
-          // case: empty selection
-          if (!command.area) {
-            this.ClearSelection(this.primary_selection);
-          }
-          else {
-            // activate sheet, if necessary
-            if (command.area.start.sheet_id && command.area.start.sheet_id !== this.active_sheet.id) {
-              this.ActivateSheetInternal({
-                key: CommandKey.ActivateSheet,
-                id: command.area.start.sheet_id,
-              });
-            }
-            this.Select(this.primary_selection, new Area(command.area.start, command.area.end));
-            this.RenderSelections();
-          }
-
-          break;
-
-        case CommandKey.Freeze:
-
-          // COEDITING: ok
-
-          this.FreezeInternal(command);
-
-          // is the event necessary here? not sure. we were sending it as a
-          // side effect, so it was added here in case there was some reason
-          // it was necessary. at a minimum, it should not require a rebuild
-          // because no addresses change. (although we leave it in case someone
-          // else sets it).)
-
-          flags.structure_event = true;
-
-          break;
-
-        case CommandKey.MergeCells:
-          {
-            // COEDITING: ok
-
-            const sheet = this.FindSheet(command.area);
-
-            sheet.MergeCells(
-              new Area(command.area.start, command.area.end));
-
-            // sheet publishes a data event here, too. probably a good
-            // idea because references to the secondary (non-head) merge 
-            // cells will break.
-
-            flags.structure_event = true;
-            flags.structure_rebuild_required = true;
-
-            if (sheet === this.active_sheet) {
-              flags.data_area = Area.Join(command.area, flags.data_area);
-              flags.render_area = Area.Join(command.area, flags.render_area);
-            }
-            else {
-              flags.data_event = true;
-              this.pending_layout_update.add(sheet.id);
-            }
-          }
-
-          break;
-
-        case CommandKey.UnmergeCells:
-          {
-            // COEDITING: ok
-
-            // the sheet unmerge routine requires a single, contiguous merge area.
-            // we want to support multiple unmerges at the same time, though,
-            // so let's check for multiple. create a list.
-
-            // FIXME: use a set
-
-            const sheet = this.FindSheet(command.area);
-            const list: Record<string, Area> = {};
-            const area = new Area(command.area.start, command.area.end);
-
-            sheet.cells.Apply(area, (cell: Cell) => {
-              if (cell.merge_area) {
-                const label = Area.CellAddressToLabel(cell.merge_area.start) + ':'
-                  + Area.CellAddressToLabel(cell.merge_area.end);
-                list[label] = cell.merge_area;
-              }
-            }, false);
-
-            const keys = Object.keys(list);
-
-            for (let i = 0; i < keys.length; i++) {
-              sheet.UnmergeCells(list[keys[i]]);
-            }
-
-            // see above
-
-            if (sheet === this.active_sheet) {
-              flags.render_area = Area.Join(command.area, flags.render_area);
-              flags.data_area = Area.Join(command.area, flags.data_area);
-            }
-            else {
-              flags.data_event = true;
-              this.pending_layout_update.add(sheet.id);
-            }
-
-            flags.structure_event = true;
-            flags.structure_rebuild_required = true;
-          }
-          break;
-
-        case CommandKey.UpdateStyle:
-          {
-            // COEDITING: handles sheet ID properly
-
-            // to account for our background bleeding up/left, when applying
-            // style changes we may need to render one additional row/column.
-
-            let area: Area|undefined;
-            const sheet = this.FindSheet(command.area);
-
-            if (IsCellAddress(command.area)) {
-              area = new Area(command.area);
-              sheet.UpdateCellStyle(command.area, command.style, !!command.delta);
-            }
-            else {
-              area = new Area(command.area.start, command.area.end);
-              sheet.UpdateAreaStyle(area, command.style, !!command.delta);
-            }
-
-            if (sheet === this.active_sheet) {
-              flags.style_area = Area.Join(area, flags.style_area);
-            
-              // we can limit bleed handling to cases where it's necessary...
-              // if we really wanted to optimize we could call invalidate on .left, .top, &c
-
-              if (!command.delta 
-                  || command.style.fill
-                  || command.style.border_top
-                  || command.style.border_left
-                  || command.style.border_right
-                  || command.style.border_bottom) {
-
-                area = Area.Bleed(area); // bleed by 1 to account for borders/background 
-                this.active_sheet.Invalidate(area);
-
-              }
-
-              flags.render_area = Area.Join(area, flags.render_area);
-              
-            }
-            else {
-              flags.style_event = true;
-            }
-
-          }
-
-          break;
-
-        case CommandKey.DataValidation:
-
-          // COEDITING: ok
-
-          this.SetValidationInternal(command);
-          if (!command.area.sheet_id || command.area.sheet_id === this.active_sheet.id) {
-            flags.render_area = Area.Join(new Area(command.area), flags.render_area);
-          }
-          break;
-
-        case CommandKey.SetName:
-
-          // it seems like we're allowing overwriting names if those
-          // names exist as expressions or named ranges. however we
-          // should not allow overriding a built-in function name (or
-          // a macro function name?)
-
-          // FOR THE TIME BEING we're going to add that restriction to
-          // the calling function, which (atm) is the only way to get here.
-
-          if (command.area) {
-
-            //if (this.model.named_expressions[command.name]) {
-            //  delete this.model.named_expressions[command.name];
-            //}
-            this.model.named_expressions.delete(command.name);
-
-            this.model.named_ranges.SetName(command.name,
-              new Area(command.area.start, command.area.end));
-            this.autocomplete_matcher.AddFunctions({
-              type: DescriptorType.Token,
-              name: command.name,
-            });
-          }
-          else if (command.expression) {
-            this.model.named_ranges.ClearName(command.name);
-            this.model.named_expressions.set(command.name, command.expression);
-            this.autocomplete_matcher.AddFunctions({
-              type: DescriptorType.Token,
-              name: command.name,
-            });
-          }
-          else {
-            this.model.named_ranges.ClearName(command.name);
-            //if (this.model.named_expressions[command.name]) {
-            //  delete this.model.named_expressions[command.name];
-            //}
-            this.model.named_expressions.delete(command.name);
-
-            this.autocomplete_matcher.RemoveFunctions({
-              type: DescriptorType.Token,
-              name: command.name,
-            });
-          }
-          flags.structure_event = true;
-          flags.structure_rebuild_required = true;
-          break;
-
-        case CommandKey.UpdateBorders:
-          {
-            // COEDITING: ok
-
-            // UPDATE: actually had a problem with Area.Bleed dropping the
-            // sheet ID. fixed.
-
-            const area = this.ApplyBordersInternal(command);
-
-            if (area.start.sheet_id === this.active_sheet.id) {
-              flags.render_area = Area.Join(area, flags.render_area);
-              flags.style_area = Area.Join(area, flags.style_area);
-            }
-            else {
-              flags.style_event = true;
-            }
-
-          }
-          break;
-
-        case CommandKey.ShowSheet:
-
-          // COEDITING: we probably don't want this to pass through
-          // when coediting, but it won't break anything. you can filter.
-
-          this.ShowSheetInternal(command);
-          flags.sheets = true; // repaint tab bar
-          flags.structure_event = true;
-          break;
-
-        case CommandKey.ReorderSheet:
-          {
-            // COEDITING: seems OK, irrespective of active sheet
-
-            const sheets: Sheet[] = [];
-            const target = this.model.sheets.list[command.index];
-
-            for (let i = 0; i < this.model.sheets.length; i++) {
-              if (i !== command.index) {
-                if (i === command.move_before) {
-                  sheets.push(target);
-                }
-                sheets.push(this.model.sheets.list[i]);
-              }
-            }
-
-            if (command.move_before >= this.model.sheets.length) {
-              sheets.push(target);
-            }
-
-            // this.model.sheets = sheets;
-            this.model.sheets.Assign(sheets);
-
-            flags.sheets = true;
-            flags.structure_event = true;
-
-          }
-          break;
-
-        case CommandKey.RenameSheet:
-          {
-            // COEDITING: seems OK, irrespective of active sheet
-
-            const sheet = this.ResolveSheet(command);
-            if (sheet) {
-              this.RenameSheetInternal(sheet, command.new_name);
-              flags.sheets = true;
-              flags.structure_event = true;
-            }
-          }
-          break;
-
-        case CommandKey.ResizeRows:
-
-          // moving this to a method so we can specialize: non-UI grid
-          // should not support autosize (it can't)
-
-            // COEDITING: ok
-
-          this.ResizeRowsInternal(command);
-          flags.structure_event = true;
-          break;
-
-        case CommandKey.ResizeColumns:
-
-          this.ResizeColumnsInternal(command);
-          flags.structure_event = true;
-          break;
-
-        case CommandKey.ShowHeaders:
-
-          // FIXME: now that we don't support 2-level headers (or anything
-          // other than 1-level headers), headers should be managed by/move into
-          // the grid class.
-
-          this.active_sheet.SetHeaderSize(command.show ? undefined : 1, command.show ? undefined : 1);
-          this.flags.layout = true;
-          this.Repaint();
-          break;
-
-        case CommandKey.InsertRows:
-
-          // COEDITING: annotations are broken
-
-          this.InsertRowsInternal(command);
-          flags.structure_event = true;
-          flags.structure_rebuild_required = true;
-          break;
-
-        case CommandKey.InsertColumns:
-
-          // COEDITING: annotations are broken
-
-          this.InsertColumnsInternal(command);
-          flags.structure_event = true;
-          flags.structure_rebuild_required = true;
-          break;
-
-        case CommandKey.SetLink:
-        case CommandKey.SetNote:
-          {
-            // COEDITING: ok
-
-            // note and link are basically the same, although there's a 
-            // method for setting note (not sure why)
-
-            const sheet = this.FindSheet(command.area);
-
-            let cell = sheet.cells.GetCell(command.area, true);
-            if (cell) {
-
-              let area: Area;
-              if (cell.merge_area) {
-                area = new Area(cell.merge_area.start);
-                cell = sheet.cells.GetCell(cell.merge_area.start, true);
-              }
-              else {
-                area = new Area(command.area);
-              }
-
-              if (command.key === CommandKey.SetNote) {
-                cell.SetNote(command.note);
-              }
-              else {
-                cell.hyperlink = command.reference || undefined;
-                cell.render_clean = [];
-              }
-
-              if (sheet === this.active_sheet) {
-                this.DelayedRender(false, area);
-
-                // treat this as style, because it affects painting but
-                // does not require calculation.
-
-                flags.style_area = Area.Join(area, flags.style_area);
-                flags.render_area = Area.Join(area, flags.render_area);
-
-              }
-              else {
-                flags.style_event = true;
-              }
-
-            }
-          }
-          break;
-
-        case CommandKey.SetRange:
-          {
-            // COEDITING: handles sheet ID properly
-            // FIXME: areas should check sheet
-
-            // area could be undefined if there's an error
-            // (try to change part of an array)
-
-            const area = this.SetRangeInternal(command, flags);
-
-            if (area && area.start.sheet_id === this.active_sheet.id) {
-              
-              flags.data_area = Area.Join(area, flags.data_area);
-
-              // normally we don't paint, we wait for the calculator to resolve
-
-              if (this.options.repaint_on_cell_change) {
-                flags.render_area = Area.Join(area, flags.render_area);
-              }
-
-            }
-            else {
-              flags.data_event = true;
-            }
-
-          }
-          break;
-
-        case CommandKey.DeleteSheet:
-
-          // COEDITING: looks fine
-
-          this.DeleteSheetInternal(command);
-          flags.sheets = true;
-          flags.structure_event = true;
-          flags.structure_rebuild_required = true;
-          break;
-
-        case CommandKey.DuplicateSheet:
-
-          // FIXME: what happens to named ranges? we don't have sheet-local names...
-
-          this.DuplicateSheetInternal(command);
-          flags.structure_event = true;
-          flags.structure_rebuild_required = true;
-          break;
-
-        case CommandKey.AddSheet:
-
-          // COEDITING: this won't break, but it shouldn't change the 
-          // active sheet if this is a remote command. is there a way
-          // to know? we can guess implicitly from the queue parameter,
-          // but it would be better to be explicit.
-
-          {
-            const id = this.AddSheetInternal(command.name, command.insert_index); // default name
-            if (typeof id === 'number' && command.show) {
-              this.ActivateSheetInternal({
-                key: CommandKey.ActivateSheet,
-                id,
-              });
-            }
-            flags.structure_event = true;
-            flags.sheets = true;
-            flags.structure = true;
-
-          }
-          break;
-
-        case CommandKey.ActivateSheet:
-          this.ActivateSheetInternal(command);
-          break;
-
-        default:
-          console.warn(`unhandled command: ${CommandKey[command.key]} (${command.key})`);
-      }
-    }
-
-    // consolidate events and merge areas
-
-    if (flags.data_area) {
-      if (!flags.data_area.start.sheet_id) {
-        flags.data_area.SetSheetID(this.active_sheet.id);
-      }
-      events.push({ type: 'data', area: flags.data_area });
-    }
-    else if (flags.data_event) {
-      events.push({ type: 'data' });
-    }
-
-    if (flags.style_area) {
-      if (!flags.style_area.start.sheet_id) {
-        flags.style_area.SetSheetID(this.active_sheet.id);
-      }
-      events.push({ type: 'style', area: flags.style_area });
-    }
-    else if (flags.style_event) {
-      events.push({ type: 'style' });
-    }
-
-    if (flags.structure_event) {
-      events.push({
-        type: 'structure',
-        rebuild_required: flags.structure_rebuild_required,
-      });
-    }
-
-    if (flags.layout) {
-      this.QueueLayoutUpdate();
-    }
-
-    if (flags.sheets && this.tab_bar) {
-      this.tab_bar.Update();
-    }
-    if (flags.formula) {
-      this.UpdateFormulaBarFormula();
-    }
-
-    if (this.batch) {
-      this.batch_events.push(...events);
-    }
-    else {
-      this.grid_events.Publish(events);
-
-      if (flags.render_area) {
-        this.DelayedRender(false, flags.render_area);
-      }
-    }
-
-  }
-  */
 
   protected ExecCommand(commands: Command | Command[], queue = true) {
 

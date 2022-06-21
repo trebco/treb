@@ -33,6 +33,7 @@ import type { Command, ActivateSheetCommand,
 import { UpdateFlags } from './update_flags';
 import { LegacySerializedSheet } from './sheet_types';
 import { GridSelection } from './grid_selection';
+import { Annotation } from './annotation';
 
 export class GridBase {
 
@@ -1681,13 +1682,18 @@ export class GridBase {
    *
    * @see InsertColumns for inline comments
    */
-  protected InsertRowsInternal(command: InsertRowsCommand): boolean {
+  protected InsertRowsInternal(command: InsertRowsCommand): {
+        error?: boolean;
+        update_annotations_list?: Annotation[];
+        resize_annotations_list?: Annotation[];
+        delete_annotations_list?: Annotation[];
+      } {
 
     const target_sheet = this.FindSheet(command.sheet_id);
 
     if (!target_sheet.InsertRows(command.before_row, command.count)){
       this.Error(`You can't change part of an array.`);
-      return false;
+      return { error: true };
     }
 
     this.model.named_ranges.PatchNamedRanges(target_sheet.id, 0, 0, command.before_row, command.count);
@@ -1721,174 +1727,168 @@ export class GridBase {
 
     }
 
-    return true;
 
-    /*
-    // see InsertColumnsInternal
+    // annotations
 
-    if (target_sheet === this.active_sheet) {
+    const update_annotations_list: Annotation[] = [];
+    const resize_annotations_list: Annotation[] = [];
+    const delete_annotations_list: Annotation[] = [];
 
-      // annotations
+    if (command.count > 0) { // insert
 
-      const update_annotations_list: Annotation[] = [];
-      const resize_annotations_list: Annotation[] = [];
+      const first = command.before_row;
 
-      if (command.count > 0) {
+      for (const annotation of target_sheet.annotations) {
+        if (annotation.layout) {
+          const [start, end, endy] = [
+            annotation.layout.tl.address.row, 
+            annotation.layout.br.address.row,
+            annotation.layout.br.offset.y,
+          ];
 
-        const start = this.layout.CellAddressToRectangle({
-          row: command.before_row,
-          column: 0,
-        });
+          if (first <= start ) { 
 
-        const height = this.layout.default_row_height * command.count + 1; // ?
+            // start case 1: starts above the annotation (including exactly at the top)
 
-        for (const annotation of target_sheet.annotations) {
-          if (annotation.scaled_rect) {
+            // shift
+            annotation.layout.tl.address.row += command.count;
+            annotation.layout.br.address.row += command.count;
 
-            if (start.top >= annotation.scaled_rect.bottom) {
-              continue;
-            }
-            else if (start.top <= annotation.scaled_rect.top) {
-              annotation.scaled_rect.top += (height - 1); // grid
-            }
-            else {
-              annotation.scaled_rect.height += height;
-              resize_annotations_list.push(annotation);
-            }
+          }
+          else if (first < end || first === end && endy > 0) { 
             
-            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+            // start case 2: starts in the annotation, omitting the first row
 
-            update_annotations_list.push(annotation);
-          }
-        }
+            annotation.layout.br.address.row += command.count;
 
-      }
-      else if (command.count < 0) { // delete
-
-        let rect = this.layout.CellAddressToRectangle({
-          row: command.before_row,
-          column: 0,
-        });
-
-        if (command.count < -1) {
-          rect = rect.Combine(this.layout.CellAddressToRectangle({
-            row: command.before_row - command.count - 1,
-            column: 0,
-          }));
-        }
-
-        for (const annotation of target_sheet.annotations) {
-          if (annotation.scaled_rect) {
-
-            if (annotation.scaled_rect.bottom <= rect.top) {
-              continue; // unaffected
-            }
-
-            // affected are is entirely above of annotation: move only
-            if (annotation.scaled_rect.top >= rect.bottom - 1) { // grid
-              annotation.scaled_rect.top -= (rect.height);
-            }
-
-            // affected area is entirely underneath the annotation: size only
-            else if (annotation.scaled_rect.top <= rect.top && annotation.scaled_rect.bottom >= rect.bottom) {
-              annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - rect.height, 10);
-              resize_annotations_list.push(annotation);
-            }
-
-            // affected area completely contains the annotation: do nothing, or delete? (...)
-            else if (annotation.scaled_rect.top >= rect.top && annotation.scaled_rect.bottom <= rect.bottom) {
-              // ...
-              continue; // do nothing, for now
-            }
-
-            // top edge: shift AND clip?
-            else if (annotation.scaled_rect.top >= rect.top && annotation.scaled_rect.bottom > rect.bottom) {
-              const shift = annotation.scaled_rect.top - rect.top + 1; // grid
-              const clip = rect.height - shift;
-              annotation.scaled_rect.top -= shift;
-              annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - clip, 10);
-              resize_annotations_list.push(annotation);
-            }
-
-            // bottom edge: clip, I guess
-            else if (annotation.scaled_rect.top < rect.top && annotation.scaled_rect.bottom <= rect.bottom) {
-              const clip = annotation.scaled_rect.bottom - rect.top;
-              annotation.scaled_rect.height = Math.max(annotation.scaled_rect.height - clip, 10);
-              resize_annotations_list.push(annotation);
-            }
-
-            else {
-              console.info('unhandled case');
-              // console.info("AR", annotation.rect, "R", rect);
-            }
-
-            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
-
-            update_annotations_list.push(annotation);
+            // size changing
+            resize_annotations_list.push(annotation);
 
           }
+          else {
 
-        }
-
-
-      }
-
-      // fix selections
-
-      if (command.count < 0) {
-        for (const selection of this.AllSelections()) {
-          selection.empty = true; // lazy
-        }
-      }
-      else {
-        for (const selection of this.AllSelections()) {
-          if (selection.target.row >= command.before_row) {
-            selection.target.row += command.count;
+            // do nothing
+            continue;
           }
-          if (!selection.area.entire_column) {
-            if (selection.area.start.row >= command.before_row) {
-              selection.area.Shift(command.count, 0);
-            }
-            else if (selection.area.end.row >= command.before_row) {
-              selection.area.ConsumeAddress({
-                row: selection.area.end.row + command.count,
-                column: selection.area.end.column,
-              }); // expand
-            }
-          }
-        }
-      }
 
-      // force update
-
-      // note event is sent in exec command, not implicit here
-
-      this.QueueLayoutUpdate();
-
-      // we need to repaint (not render) because repaint adjusts the selection
-      // canvas for tile layout. FIXME: move that out of repaint so we can call
-      // it directly.
-
-      this.Repaint();
-
-      if (update_annotations_list.length) {
-        this.layout.UpdateAnnotation(update_annotations_list);
-        for (const annotation of resize_annotations_list) {
-          const view = annotation.view[this.view_index];
-          if (view?.resize_callback) {
-            view.resize_callback.call(undefined);
-          }
+          update_annotations_list.push(annotation);
         }
       }
 
     }
-    else {
-      this.pending_layout_update.add(target_sheet.id);
+    else if (command.count < 0) { // delete
+
+      // first and last column deleted
+
+      const first = command.before_row;
+      const last = command.before_row - command.count - 1;
+
+      for (const annotation of target_sheet.annotations) {
+        if (annotation.layout) {
+          
+          // start and end row of the annotation. recall that in
+          // this layout, the annotation may extend into the (first,last) 
+          // row but not beyond it. the offset is _within_ the row.
+
+          const [start, end, endy] = [
+            annotation.layout.tl.address.row, 
+            annotation.layout.br.address.row,
+            annotation.layout.br.offset.y,
+          ];
+
+          if (first <= start ) { 
+
+            // start case 1: starts above the annotation (including exactly at the top)
+
+            if (last < start) { 
+
+              // end case 1: ends before the annotation
+
+              // shift
+              annotation.layout.tl.address.row += command.count;
+              annotation.layout.br.address.row += command.count;
+
+            }
+            else if (last < end - 1 || (last === end -1 && endy > 0)) { 
+            
+              // end case 2: ends before the end of the annotation
+
+              // shift + cut
+              annotation.layout.tl.address.row = first;
+              annotation.layout.tl.offset.y = 0;
+              annotation.layout.br.address.row += command.count;
+
+              // size changing
+              resize_annotations_list.push(annotation);
+
+            }
+            else { 
+              
+              // end case 3: ends after the annotation
+
+              // drop the annotation
+              delete_annotations_list.push(annotation);
+              continue;
+              
+            }
+
+          }
+          else if (first < end || first === end && endy > 0) { 
+            
+            // start case 2: starts in the annotation, omitting the first row
+
+            if (last < end - 1 || (last === end -1 && endy > 0)) { 
+              
+              // end case 2: ends before the end of the annotation
+
+              // shorten
+              annotation.layout.br.address.row += command.count;
+
+              // size changing
+              resize_annotations_list.push(annotation);
+
+            }
+            else { 
+              
+              // end case 3: ends after the annotation
+
+              // clip
+              annotation.layout.br.address.row = first;
+              annotation.layout.br.offset.y = 0;
+
+              // size changing
+              resize_annotations_list.push(annotation);
+
+            }
+
+          }
+          else { 
+            
+            // start case 3: starts after the annotation
+
+            // do nothing              
+            
+            continue;
+
+          }
+
+          update_annotations_list.push(annotation);
+
+        }
+      }
+
     }
-    */
-   
+
+    for (const annotation of delete_annotations_list) {
+      target_sheet.annotations = target_sheet.annotations.filter(test => test !== annotation);
+    }
+
+    return {
+      update_annotations_list,
+      resize_annotations_list,
+      delete_annotations_list,
+    };
+    
   }
 
   /**
@@ -1896,7 +1896,12 @@ export class GridBase {
    * with annotations. we need to figure out how to update annotations
    * without layout.
    */
-   protected InsertColumnsInternal(command: InsertColumnsCommand): boolean {
+   protected InsertColumnsInternal(command: InsertColumnsCommand): {
+        error?: boolean;
+        update_annotations_list?: Annotation[];
+        resize_annotations_list?: Annotation[];
+        delete_annotations_list?: Annotation[];
+      } {
 
     const target_sheet = this.FindSheet(command.sheet_id);
 
@@ -1907,7 +1912,7 @@ export class GridBase {
 
     if (!target_sheet.InsertColumns(command.before_column, command.count)) {
       this.Error(`You can't change part of an array.`);
-      return false;
+      return { error: true };
     }
     
     this.model.named_ranges.PatchNamedRanges(target_sheet.id, command.before_column, command.count, 0, 0);
@@ -1958,177 +1963,166 @@ export class GridBase {
 
     }
 
-    return true;
+    // annotations
 
-    /*
+    const update_annotations_list: Annotation[] = [];
+    const resize_annotations_list: Annotation[] = [];
+    const delete_annotations_list: Annotation[] = [];
 
-    // FIXME: this is just not going to work for !active sheet. we 
-    // need to think about how to handle this properly. TEMP: punting
+    if (command.count > 0) { // insert
 
-    if (target_sheet === this.active_sheet) {
+      const first = command.before_column;
 
-      // annotations
+      for (const annotation of target_sheet.annotations) {
+        if (annotation.layout) {
+          const [start, end, endx] = [
+            annotation.layout.tl.address.column, 
+            annotation.layout.br.address.column,
+            annotation.layout.br.offset.x,
+          ];
 
-      const update_annotations_list: Annotation[] = [];
-      const resize_annotations_list: Annotation[] = [];
+          if (first <= start ) { 
 
-      if (command.count > 0) {
+            // start case 1: starts to the left of the annotation (including exactly at the left)
 
-        const start = this.layout.CellAddressToRectangle({
-          row: 0,
-          column: command.before_column,
-        });
+            // shift
+            annotation.layout.tl.address.column += command.count;
+            annotation.layout.br.address.column += command.count;
 
-        const width = this.layout.default_column_width * command.count + 1; // ?
+          }
+          else if (first < end || first === end && endx > 0) { 
+            
+            // start case 2: starts in the annotation, omitting the first column
 
-        for (const annotation of target_sheet.annotations) {
-          if (annotation.scaled_rect) {
+            annotation.layout.br.address.column += command.count;
 
-            if (start.left >= annotation.scaled_rect.right) {
+            // size changing
+            resize_annotations_list.push(annotation);
+
+          }
+          else {
+
+            // do nothing
+            continue;
+          }
+
+          update_annotations_list.push(annotation);
+        }
+      }
+
+    }
+    else if (command.count < 0) { // delete
+
+      // first and last column deleted
+
+      const first = command.before_column;
+      const last = command.before_column - command.count - 1;
+
+      for (const annotation of target_sheet.annotations) {
+        if (annotation.layout) {
+          
+          // start and end column of the annotation. recall that in
+          // this layout, the annotation may extend into the (first,last) 
+          // column but not beyond it. the offset is _within_ the column.
+
+          const [start, end, endx] = [
+            annotation.layout.tl.address.column, 
+            annotation.layout.br.address.column,
+            annotation.layout.br.offset.x,
+          ];
+
+          if (first <= start ) { 
+
+            // start case 1: starts to the left of the annotation (including exactly at the left)
+
+            if (last < start) { 
+
+              // end case 1: ends before the annotation
+
+              // shift
+              annotation.layout.tl.address.column += command.count;
+              annotation.layout.br.address.column += command.count;
+
+            }
+            else if (last < end - 1 || (last === end -1 && endx > 0)) { 
+            
+              // end case 2: ends before the end of the annotation
+
+              // shift + cut
+              annotation.layout.tl.address.column = first;
+              annotation.layout.tl.offset.x = 0;
+              annotation.layout.br.address.column += command.count;
+
+              // size changing
+              resize_annotations_list.push(annotation);
+
+            }
+            else { 
+              
+              // end case 3: ends after the annotation
+
+              // drop the annotation
+              delete_annotations_list.push(annotation);
               continue;
+              
             }
-            else if (start.left <= annotation.scaled_rect.left) {
-              annotation.scaled_rect.left += (width - 1); // grid
-            }
-            else {
-              annotation.scaled_rect.width += width;
+
+          }
+          else if (first < end || first === end && endx > 0) { 
+            
+            // start case 2: starts in the annotation, omitting the first column
+
+            if (last < end - 1 || (last === end -1 && endx > 0)) { 
+              
+              // end case 2: ends before the end of the annotation
+
+              // shorten
+              annotation.layout.br.address.column += command.count;
+
+              // size changing
               resize_annotations_list.push(annotation);
+
             }
+            else { 
+              
+              // end case 3: ends after the annotation
 
-            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+              // clip
+              annotation.layout.br.address.column = first;
+              annotation.layout.br.offset.x = 0;
 
-            update_annotations_list.push(annotation);
-          }
-        }
-
-      }
-      else if (command.count < 0) { // delete
-
-        let rect = this.layout.CellAddressToRectangle({
-          row: 0,
-          column: command.before_column,
-        });
-
-        if (command.count < -1) {
-          rect = rect.Combine(this.layout.CellAddressToRectangle({
-            row: 0,
-            column: command.before_column - command.count - 1,
-          }));
-        }
-
-        for (const annotation of target_sheet.annotations) {
-          if (annotation.scaled_rect) {
-
-            if (annotation.scaled_rect.right <= rect.left) {
-              continue; // unaffected
-            }
-
-            // affected are is entirely to the left of annotation: move only
-            if (annotation.scaled_rect.left >= rect.right - 1) { // grid
-              annotation.scaled_rect.left -= (rect.width);
-            }
-
-            // affected area is entirely underneath the annotation: size only
-            else if (annotation.scaled_rect.left <= rect.left && annotation.scaled_rect.right >= rect.right) {
-              annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - rect.width, 10);
+              // size changing
               resize_annotations_list.push(annotation);
+
             }
 
-            // affected area completely contains the annotation: do nothing, or delete? (...)
-            else if (annotation.scaled_rect.left >= rect.left && annotation.scaled_rect.right <= rect.right) {
-              // ...
-              continue; // do nothing, for now
-            }
+          }
+          else { 
+            
+            // start case 3: starts after the annotation
 
-            // left edge: shift AND clip?
-            else if (annotation.scaled_rect.left >= rect.left && annotation.scaled_rect.right > rect.right) {
-              const shift = annotation.scaled_rect.left - rect.left + 1; // grid
-              const clip = rect.width - shift;
-              annotation.scaled_rect.left -= shift;
-              annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - clip, 10);
-              resize_annotations_list.push(annotation);
-            }
-
-            // right edge: clip, I guess
-            else if (annotation.scaled_rect.left < rect.left && annotation.scaled_rect.right <= rect.right) {
-              const clip = annotation.scaled_rect.right - rect.left;
-              annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - clip, 10);
-              resize_annotations_list.push(annotation);
-            }
-
-            else {
-              console.info('unhandled case');
-              // console.info("AR", annotation.rect, "R", rect);
-            }
-
-            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
-
-            update_annotations_list.push(annotation);
+            // do nothing              
+            
+            continue;
 
           }
 
-        }
+          update_annotations_list.push(annotation);
 
-
-      }
-
-      // fix selection(s)
-
-      // FIXME: sheet? (...) no, because the only way you have "active"
-      // selections on non-active sheet is if you are editing, and editing
-      // and insert/delete row/column can't happen at the same time.
-
-      // sheet selections are persisted in the sheets so they won't be affected
-
-      if (command.count < 0) {
-        for (const selection of this.AllSelections()) {
-          selection.empty = true; // lazy
-        }
-      }
-      else {
-        for (const selection of this.AllSelections()) {
-          if (selection.target.column >= command.before_column) {
-            selection.target.column += command.count;
-          }
-          if (!selection.area.entire_row) {
-            if (selection.area.start.column >= command.before_column) {
-              selection.area.Shift(0, command.count);
-            }
-            else if (selection.area.end.column >= command.before_column) {
-              selection.area.ConsumeAddress({
-                row: selection.area.end.row,
-                column: selection.area.end.column + command.count,
-              }); // expand
-            }
-          }
-        }
-      }
-
-      // note event is sent in exec command, not implicit here
-
-      this.QueueLayoutUpdate();
-
-      // @see InsertColumnsInternal re: why repaint
-
-      this.Repaint();
-
-      if (update_annotations_list.length) {
-        this.layout.UpdateAnnotation(update_annotations_list);
-        for (const annotation of resize_annotations_list) {
-          const view = annotation.view[this.view_index];
-          if (view?.resize_callback) {
-            view.resize_callback.call(undefined);
-          }
         }
       }
 
     }
-    else {
-      this.pending_layout_update.add(target_sheet.id); 
+
+    for (const annotation of delete_annotations_list) {
+      target_sheet.annotations = target_sheet.annotations.filter(test => test !== annotation);
     }
-    */
+
+    return {
+      update_annotations_list,
+      resize_annotations_list,
+      delete_annotations_list,
+    };
 
   }
 
