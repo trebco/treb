@@ -1945,6 +1945,16 @@ export class Grid extends GridBase {
   }
 
   /**
+   * FIXME: who uses this? anyone?
+   */
+  public GetNumberFormat(address: ICellAddress): string|undefined {
+    const style = this.active_sheet.CellStyleData(address);
+    if (style && style.number_format) {
+      return NumberFormatCache.Get(style.number_format).toString();
+    }
+  }
+
+  /**
    * I can't figure out a way in typescript to overload the GetRange function 
    * but call it with a variable to determine the overload (the aim is to have
    * different return types).
@@ -1976,6 +1986,32 @@ export class Grid extends GridBase {
 
   }
 
+  /**
+   * get data in a given range, optionally formulas
+   * API method
+   */
+   public GetRange(range: ICellAddress | IArea, type?: 'formula'|'formatted'): CellValue|CellValue[][]|undefined {
+
+    if (IsCellAddress(range)) {
+      const sheet = this.model.sheets.Find(range.sheet_id || this.active_sheet.id);
+      if (sheet) {
+        if (type === 'formula') { return sheet.cells.RawValue(range); }
+        if (type === 'formatted') { return sheet.GetFormattedRange(range); }
+        return sheet.cells.GetRange(range);
+      }
+      return undefined;
+    }
+
+    const sheet = this.model.sheets.Find(range.start.sheet_id || this.active_sheet.id);
+    if (sheet) {
+      if (type === 'formula') { return sheet.cells.RawValue(range.start, range.end); }
+      if (type === 'formatted') { return sheet.GetFormattedRange(range.start, range.end); }
+      return sheet.cells.GetRange(range.start, range.end);
+    }
+
+    return undefined;
+
+  }
 
   /**
    * set data in given range

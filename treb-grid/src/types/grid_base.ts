@@ -208,6 +208,11 @@ export class GridBase {
    * 
    * FIXME: are named expressions included here? (this function predates
    * named expressions).
+   * 
+   * 
+   * this moved to grid base because we use the list to check for conflicts
+   * when setting names. 
+   * 
    */
    public SetAutocompleteFunctions(functions: FunctionDescriptor[]): void {
     const consolidated = functions.slice(0).concat(
@@ -216,40 +221,6 @@ export class GridBase {
       }));
     //this.autocomplete_matcher.SetFunctions(functions);
     this.autocomplete_matcher.SetFunctions(consolidated);
-  }
-
-  /**
-   * get data in a given range, optionally formulas
-   * API method
-   */
-   public GetRange(range: ICellAddress | IArea, type?: 'formula'|'formatted'): CellValue|CellValue[][]|undefined {
-
-    if (IsCellAddress(range)) {
-      const sheet = this.model.sheets.Find(range.sheet_id || this.active_sheet.id);
-      if (sheet) {
-        if (type === 'formula') { return sheet.cells.RawValue(range); }
-        if (type === 'formatted') { return sheet.GetFormattedRange(range); }
-        return sheet.cells.GetRange(range);
-      }
-      return undefined;
-    }
-
-    const sheet = this.model.sheets.Find(range.start.sheet_id || this.active_sheet.id);
-    if (sheet) {
-      if (type === 'formula') { return sheet.cells.RawValue(range.start, range.end); }
-      if (type === 'formatted') { return sheet.GetFormattedRange(range.start, range.end); }
-      return sheet.cells.GetRange(range.start, range.end);
-    }
-
-    return undefined;
-
-  }
-
-  public GetNumberFormat(address: ICellAddress): string|undefined {
-    const style = this.active_sheet.CellStyleData(address);
-    if (style && style.number_format) {
-      return NumberFormatCache.Get(style.number_format).toString();
-    }
   }
 
   public ResetMetadata(): void {
