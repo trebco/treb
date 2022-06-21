@@ -68,7 +68,7 @@ import {
   Command, CommandKey, CommandRecord,
   SetRangeCommand, FreezeCommand, UpdateBordersCommand,
   InsertRowsCommand, InsertColumnsCommand, SetNameCommand,
-  ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand, DataValidationCommand, DuplicateSheetCommand
+  ActivateSheetCommand, ShowSheetCommand, SheetSelection, DeleteSheetCommand, DataValidationCommand, DuplicateSheetCommand, ResizeRowsCommand, ResizeColumnsCommand, SelectCommand
 } from './grid_command';
 
 import { DataModel, ViewModel, MacroFunction, SerializedModel } from './data_model';
@@ -147,10 +147,6 @@ export class Grid extends GridBase {
     pointer?: boolean;
     address?: ICellAddress; // = { row: -1, column: -1 };
   } = {};
-
-  private batch = false;
-
-  private batch_events: GridEvent[] = [];
 
   /** are we editing? */
   private editing_state: EditingState = EditingState.NotEditing;
@@ -928,22 +924,11 @@ export class Grid extends GridBase {
 
   }
 
-  /* * pass through * /
-  public RealArea(area: Area): Area {
-    return this.active_sheet.RealArea(area);
-  }
-
-  / ** pass through * /
-  public CellRenderData(address: ICellAddress): Cell {
-    return this.active_sheet.CellData(address);
-  }
-  */
-
   /**
    * clear sheet, reset all data
    */
-  public Clear(): void {
-    this.ExecCommand({ key: CommandKey.Clear });
+  public Reset(): void {
+    this.ExecCommand({ key: CommandKey.Reset });
   }
 
   /**
@@ -995,7 +980,7 @@ export class Grid extends GridBase {
     // console.info(arr, end);
 
     this.ExecCommand([
-      { key: CommandKey.Clear },
+      { key: CommandKey.Reset },
       {
         key: CommandKey.SetRange,
         area: { start: { row: 0, column: 0 }, end },
@@ -1378,58 +1363,19 @@ export class Grid extends GridBase {
     
   }
 
-  /** new version for multiple sheets */
+  /** 
+   * UpdateSheets means "set these as the sheets, drop any old stuff".
+   * there's an implicit reset (in fact we may do that twice in some
+   * cases).
+   * 
+   */
   public UpdateSheets(data: LegacySerializedSheet[], render = false, activate_sheet?: number | string): void {
+
+    super.UpdateSheets(data, render, activate_sheet);
 
     // remove existing annotations from layout
 
     this.RemoveAnnotationNodes();
-
-    Sheet.Reset(); // reset ID generation
-
-    const sheets = data.map((sheet) => Sheet.FromJSON(sheet, this.model.theme_style_properties));
-
-    // ensure we have a sheets[0] so we can set active
-
-    if (sheets.length === 0) {
-      sheets.push(Sheet.Blank(this.model.theme_style_properties));
-    }
-
-    // now assign sheets
-
-    // this.model.sheets = sheets;
-    this.model.sheets.Assign(sheets);
-
-    this.active_sheet = sheets[0];
-
-    // possibly set an active sheet on load (shortcut)
-
-    if (activate_sheet) {
-
-      const sheet = this.model.sheets.Find(activate_sheet);
-      if (sheet) {
-        this.active_sheet = sheet;
-      }
-
-      /*
-      if (typeof activate_sheet === 'number') {
-        for (const sheet of this.model.sheets.list) {
-          if (activate_sheet === sheet.id) {
-            this.active_sheet = sheet;
-            break;
-          }
-        }
-      }
-      else if (typeof activate_sheet === 'string') {
-        for (const sheet of this.model.sheets.list) {
-          if (activate_sheet === sheet.name) {
-            this.active_sheet = sheet;
-            break;
-          }
-        }
-      }
-      */
-    }
 
     // selection
 
@@ -1455,19 +1401,11 @@ export class Grid extends GridBase {
         new Area(template.area.start, template.area.end), template.target);
     }
 
-    this.ResetMetadata(); // FIXME: ?
 
     // for this version, we want to add all annotations at once; we only
     // add annotations on the active sheet to the layout, but the rest are
     // also created. the intent here is to ensure that any dependent cells
     // (like MC results) are marked even before we open a particular sheet.
-
-    /*
-    const annotations = this.active_sheet.annotations;
-    for (const element of annotations) {
-      this.AddAnnotation(element, true);
-    }
-    */
 
     // otherwise layout of annotations won't work properly
     this.layout.ClearLayoutCaches();
@@ -1501,67 +1439,6 @@ export class Grid extends GridBase {
 
   }
 
-  /* * DEPRECATED * /
-  public UpdateSheet__(data: any, render = false): void {
-
-    if (typeof data === 'string') {
-      data = JSON.parse(data);
-    }
-
-    Sheet.FromJSON(data, this.theme_style_properties, this.active_sheet);
-    this.ClearSelection(this.primary_selection);
-
-    // this is the old version -- we still want to support it, but
-    // only for reading. it should have precedence? (...)
-
-    if ((data as any).primary_selection) {
-      const selection = ((data as any).primary_selection) as GridSelection;
-      if (!selection.empty) {
-        this.Select(this.primary_selection,
-          new Area(selection.area.start, selection.area.end), selection.target);
-      }
-    }
-
-    // the new version, as fallback
-
-    else if (!this.active_sheet.selection.empty) {
-      const template = this.active_sheet.selection;
-      this.Select(this.primary_selection,
-        new Area(template.area.start, template.area.end), template.target);
-    }
-
-
-    this.ResetMetadata();
-
-    // scrub, then add any sheet annotations. note the caller will
-    // still have to inflate these or do whatever step is necessary to
-    // render.
-
-    this.RemoveAnnotationNodes();
-
-    const annotations = (data as any).annotations;
-    if (annotations && Array.isArray(annotations)) {
-      for (const element of annotations) {
-        this.AddAnnotation(new Annotation(element), true);
-      }
-    }
-
-    // we do the tile rebuild just before the next paint, to prevent
-    // flashing. seems to be stable but needs more testing. note that
-    // if you call this with render = true, that will happen immediately,
-    // synchronously.
-
-    // no longer sending layout event here
-
-    this.QueueLayoutUpdate();
-
-    this.StyleDefaultFromTheme();
-
-    if (render) {
-      this.Repaint(false, false);
-    }
-  }
-  */
 
   /**
    * rebuild layout on a resize. we are not trapping resize events, clients
@@ -2553,83 +2430,10 @@ export class Grid extends GridBase {
 
 
   /**
-   * this breaks (or doesn't work) if the add_tab option is false; that's 
-   * fine, although we might want to make a distinction between UI add-tab 
-   * and API add-tab. And allow it from the API.
-   * 
-   * @param command 
-   * @returns 
+   * specialization for grid. note that we don't call superclass,
+   * so we need to do everything that method does as well.
    */
-  private DuplicateSheetInternal(command: DuplicateSheetCommand) {
-
-    if (!this.options.add_tab) {
-      console.warn('add tab option not set or false');
-      return;
-    }
-
-    const source = this.ResolveSheet(command);
-    const next_id = this.model.sheets.list.reduce((id, sheet) => Math.max(id, sheet.id), 0) + 1;
-
-    let insert_index = -1;
-    for (let i = 0; i < this.model.sheets.length; i++) {
-      if (this.model.sheets.list[i] === source) {
-        insert_index = i + 1;
-      }
-    }
-    
-    if (!source || insert_index < 0) {
-      throw new Error('source sheet not found');
-    }
-
-    // explicit insert index
-
-    if (typeof command.insert_before === 'number') {
-      insert_index = command.insert_before;
-    }
-    else if (typeof command.insert_before === 'string') {
-      const lc = command.insert_before.toLowerCase();
-      for (let i = 0; i < this.model.sheets.length; i++) {
-        if (this.model.sheets.list[i].name.toLowerCase() === lc) {
-          insert_index = i;
-          break;
-        }
-      }        
-    }
-
-    const options: SerializeOptions = {
-      rendered_values: true,
-    };
-
-    const clone = Sheet.FromJSON(source.toJSON(options), this.model.theme_style_properties);
-    
-    let name = command.new_name || source.name;
-    while (this.model.sheets.list.some((test) => test.name === name)) {
-      const match = name.match(/^(.*?)(\d+)$/);
-      if (match) {
-        name = match[1] + (Number(match[2]) + 1);
-      }
-      else {
-        name = name + '2';
-      }
-    }
-
-    clone.name = name;
-    clone.id = next_id;
-
-    // console.info('CLONE', clone.id, clone);
-
-    this.model.sheets.Splice(insert_index, 0, clone);
-
-    if (this.tab_bar) { this.tab_bar.Update(); }
-
-    return clone.id;
-
-  }
-
-  /**
-   *
-   */
-  private ActivateSheetInternal(command: ActivateSheetCommand) {
+  protected ActivateSheetInternal(command: ActivateSheetCommand) {
 
     const selecting_argument = this.SelectingArgument();
 
@@ -2747,49 +2551,6 @@ export class Grid extends GridBase {
   }
 
 
-  private ShowSheetInternal(command: ShowSheetCommand) {
-
-    const sheet = this.ResolveSheet(command);
-
-    // invalid
-    if (!sheet) { return; }
-
-    // not changed
-    if (sheet.visible === command.show) { return; }
-
-    // make sure at least one will be visible after the operation
-    if (!command.show) {
-
-      let count = 0;
-      for (const test of this.model.sheets.list) {
-        if (!sheet.visible || test === sheet) { count++; }
-      }
-      if (count >= this.model.sheets.length) {
-        throw new Error('can\'t hide all sheets');
-      }
-
-    }
-
-    // ok, set
-    sheet.visible = command.show;
-
-    // is this current?
-    if (sheet === this.active_sheet) {
-      for (let i = 0; i < this.model.sheets.length; i++) {
-        if (this.model.sheets.list[i] === this.active_sheet) {
-          this.ActivateSheetInternal({
-            key: CommandKey.ActivateSheet,
-            index: i + 1,
-          });
-          return;
-        }
-      }
-    }
-
-    // otherwise, just update tabs
-    if (this.tab_bar) { this.tab_bar.Update(); }
-
-  }
 
   /**
    * why is this not in layout? (...)
@@ -6432,109 +6193,6 @@ export class Grid extends GridBase {
 
   }
 
-  private SetValidationInternal(command: DataValidationCommand): void {
-
-    // find target
-
-    // let sheet: Sheet|undefined;
-    let cell: Cell|undefined;
-
-    const sheet = this.FindSheet(command.area);
-
-    /*
-    if (!command.area.sheet_id || command.area.sheet_id === this.active_sheet.id) {
-      sheet = this.active_sheet;
-    }
-    else {
-      for (const test of this.model.sheets) {
-        if (test.id === command.area.sheet_id) {
-          sheet = test;
-          break;
-        }
-      }
-    }
-    */
-
-    if (sheet) {
-      cell = sheet.cells.GetCell(command.area, true);
-    }
-
-    if (!cell) {
-      throw new Error('invalid cell in set validation');
-    }
-
-    if (command.range) {
-      cell.validation = {
-        type: ValidationType.Range,
-        area: command.range,
-        error: !!command.error,
-      };
-    }
-    else if (command.list) {
-      cell.validation = {
-        type: ValidationType.List,
-        list: JSON.parse(JSON.stringify(command.list)),
-        error: !!command.error,
-      }
-    }
-    else {
-      cell.validation = undefined;
-    }
-
-  }
-
-  /**
-   * get values from a range of data
-   * @param area 
-   */
-  private GetValidationRange(area: IArea): CellValue[]|undefined {
-
-    // let sheet: Sheet|undefined;
-    let list: CellValue[]|undefined;
-
-    const sheet = this.FindSheet(area);
-
-    /*
-    if (!area.start.sheet_id || area.start.sheet_id === this.active_sheet.id) {
-      sheet = this.active_sheet;
-    }
-    else {
-      for (const test of this.model.sheets) {
-        if (test.id === area.start.sheet_id) {
-          sheet = test;
-          break;
-        }
-      }
-    }
-    */
-
-    if (sheet) {
-      list = [];
-
-      // clamp to actual area to avoid screwing up sheet
-      // FIXME: what does that cause [problem with selections], why, and fix it
-
-      area = sheet.RealArea(new Area(area.start, area.end), true);
-
-      for (let row = area.start.row; row <= area.end.row; row++) {
-        for (let column = area.start.column; column <= area.end.column; column++) {
-          const cell = sheet.CellData({row, column});
-          if (cell && cell.formatted) {
-            if (typeof cell.formatted === 'string') {
-              list.push(cell.formatted);
-            }
-            else {
-              list.push(NumberFormat.FormatPartsAsText(cell.formatted));
-            }
-          }
-        }
-      }
-    }
-
-    return list;
-
-  }
-
   /**
    *
    */
@@ -7286,175 +6944,7 @@ export class Grid extends GridBase {
     return selections.filter((selection) => !selection.empty);
   }
 
-  private FreezeInternal(command: FreezeCommand) {
 
-    const sheet = this.FindSheet(command.sheet_id || this.active_sheet.id);
-
-    // default true, if we're on the active sheet
-    const highlight = (((typeof command.highlight_transition) === 'boolean')
-                        ? command.highlight_transition
-                        : true) && (sheet === this.active_sheet);
-
-    if (command.rows === sheet.freeze.rows &&
-      command.columns === sheet.freeze.columns) {
-      if (highlight) {
-        this.HighlightFreezeArea();
-      }
-      return;
-    }
-
-    sheet.freeze.rows = command.rows;
-    sheet.freeze.columns = command.columns;
-
-    // FIXME: should we do this via events? (...)
-
-    // we are sending an event via the exec command method that calls
-    // this method, so we are not relying on the side-effect event anymore
-
-    if (sheet === this.active_sheet) {
-
-      this.QueueLayoutUpdate();
-      this.Repaint();
-
-      if (highlight) {
-        this.HighlightFreezeArea();
-      }
-
-      if (command.rows || command.columns) {
-        this.layout.CloneFrozenAnnotations();
-      }
-      else {
-        this.layout.ClearFrozenAnnotations();
-      }
-
-    }
-    else {
-      this.pending_layout_update.add(sheet.id);
-    }
-
-  }
-
-  /**
-   * rename a sheet. this requires changing any formulae that refer to the
-   * old name to refer to the new name. if there are any references by ID
-   * those don't have to change.
-   *
-   * FIXME: can we do this using the dependency graph? (...)
-   */
-  private RenameSheetInternal(target: Sheet, name: string) {
-
-    // validate name... ?
-
-    if (!name || IllegalSheetNameRegex.test(name)) {
-      throw new Error('invalid sheet name');
-    }
-
-    // also can't have two sheets with the same name
-
-    const compare = name.toLowerCase();
-    for (const sheet of this.model.sheets.list) {
-      if (sheet !== target && sheet.name.toLowerCase() === compare) {
-        throw new Error('sheet name already exists');
-      }
-    }
-
-    // function will LC the name
-    // const old_name = target.name.toLowerCase();
-    const old_name = target.name;
-    target.name = name;
-
-    // need to update indexes
-    this.model.sheets.Assign(this.model.sheets.list);
-
-    this.RenameSheetReferences(this.model.sheets.list, old_name, name);
-
-  }
-
-  /**
-   * @returns true if we need a recalc, because references have broken.
-   */
-   protected DeleteSheetInternal(command: DeleteSheetCommand): boolean {
-
-    let is_active = false;
-    let index = -1;
-    let target_name = '';
-
-    let requires_recalc = false;
-
-    // remove from array. check if this is the active sheet
-
-    const named_sheet = command.name ? command.name.toLowerCase() : '';
-    const sheets = this.model.sheets.list.filter((sheet, i) => {
-      if (i === command.index || sheet.id === command.id || sheet.name.toLowerCase() === named_sheet) {
-        is_active = (sheet === this.active_sheet);
-
-        this.model.named_ranges.RemoveRangesForSheet(sheet.id);
-        target_name = sheet.name;
-
-        index = i;
-        return false;
-      }
-      return true;
-    });
-
-    // NOTE: we might want to remove references to this sheet. see
-    // how we patch references in insert columns/rows functions.
-
-    // actually note the logic we need is already in the rename sheet
-    // function; we just need to split it out from actually renaming the
-    // sheet, then we can use it
-
-    // renamesheetinternal
-
-    if (target_name) {
-      const count = this.RenameSheetReferences(sheets, target_name, '#REF');
-      if (count > 0) {
-        requires_recalc = true;
-      }
-    }
-    
-    // empty? create new, activate
-    // UPDATE: we also need to create if all remaining sheets are hidden
-
-    if (!sheets.length) {
-      sheets.push(Sheet.Blank(this.model.theme_style_properties));
-      index = 0;
-    }
-    else if (sheets.every(test => !test.visible)) {
-      // console.info('all remaining sheets are hidden!');
-      sheets.unshift(Sheet.Blank(this.model.theme_style_properties));
-      index = 0;
-    }
-    else {
-      if (index >= sheets.length) {
-        index = 0;
-      }
-      while (!sheets[index].visible) {
-        index++;
-      }
-    }
-
-    // this.model.sheets = sheets;
-    this.model.sheets.Assign(sheets);
-
-    // need to activate a new sheet? use the next one (now in the slot
-    // we just removed). this will roll over properly if we're at the end.
-
-    // UPDATE: we need to make sure that the target is not hidden, or we 
-    // can't activate it
-
-    if (is_active) {
-      // console.info('activate @', index);
-      this.ActivateSheetInternal({ key: CommandKey.ActivateSheet, index });
-    }
-
-    // FIXME: this is not necessary if we just called activate, right? (...)
-
-    if (this.tab_bar) { this.tab_bar.Update(); }
-
-    return requires_recalc;
-
-  }
 
   /**
    * FIXME: should be API method
@@ -7462,45 +6952,15 @@ export class Grid extends GridBase {
    *
    * @see InsertColumns for inline comments
    */
-  private InsertRowsInternal(command: InsertRowsCommand) { // before_row = 0, count = 1) {
+  protected InsertRowsInternal(command: InsertRowsCommand): boolean { // before_row = 0, count = 1) {
+
+    const result = super.InsertRowsInternal(command);
+
+    if (!result) {
+      return false;
+    }
 
     const target_sheet = this.FindSheet(command.sheet_id);
-
-    if (!target_sheet.InsertRows(command.before_row, command.count)){
-      this.Error(`You can't change part of an array.`);
-      return;
-    }
-
-    this.model.named_ranges.PatchNamedRanges(target_sheet.id, 0, 0, command.before_row, command.count);
-
-    const target_sheet_name = target_sheet.name.toLowerCase();
-
-    for (const sheet of this.model.sheets.list) {
-      const is_target = sheet === target_sheet;
-
-      sheet.cells.IterateAll((cell: Cell) => {
-        if (cell.ValueIsFormula()) {
-          const modified = this.PatchFormulasInternal(cell.value || '',
-            command.before_row, command.count, 0, 0,
-            target_sheet_name, is_target);
-          if (modified) {
-            cell.value = modified;
-          }
-        }
-      });
-
-      for (const annotation of sheet.annotations) {
-        if (annotation.formula) {
-          const modified = this.PatchFormulasInternal(annotation.formula || '',
-            command.before_row, command.count, 0, 0,
-            target_sheet_name, is_target);
-          if (modified) {
-            annotation.formula = modified;
-          }
-        }
-      }
-
-    }
 
     // see InsertColumnsInternal
 
@@ -7666,73 +7126,23 @@ export class Grid extends GridBase {
       this.pending_layout_update.add(target_sheet.id);
     }
 
+    return true;
+
   }
 
   /**
    * FIXME: should be API method
    * FIXME: need to handle annotations that are address-based
    */
-  private InsertColumnsInternal(command: InsertColumnsCommand) { // before_column = 0, count = 1) {
+  protected InsertColumnsInternal(command: InsertColumnsCommand): boolean {
+
+    const result = super.InsertColumnsInternal(command);
+
+    if (!result) {
+      return false;
+    }
 
     const target_sheet = this.FindSheet(command.sheet_id);
-
-    // FIXME: we need to get this error out earlier. before this call,
-    // in the call that generates the insert event. otherwise if we 
-    // have remotes, everyone will see the error -- we only want the 
-    // actual actor to see the error.
-
-    if (!target_sheet.InsertColumns(command.before_column, command.count)) {
-      this.Error(`You can't change part of an array.`);
-      return;
-    }
-    
-    this.model.named_ranges.PatchNamedRanges(target_sheet.id, command.before_column, command.count, 0, 0);
-
-    // FIXME: we need an event here? 
-
-    // A: caller sends a "structure" event after this call. that doesn't include
-    //    affected areas, though. need to think about whether structure event
-    //    triggers a recalc (probably should). we could track whether we've made
-    //    any modifications (and maybe also whether we now have any invalid 
-    //    references)
-
-    // patch all sheets
-
-    // you know we have a calculator that has backward-and-forward references.
-    // we could theoretically ask the calculator what needs to be changed.
-    //
-    // for the most part, we try to maintain separation between the display
-    // (this) and the calculator. we could ask, but this isn't terrible and 
-    // helps maintain that separation.
-
-    const target_sheet_name = target_sheet.name.toLowerCase();
-
-    for (const sheet of this.model.sheets.list) {
-      const is_target = sheet === target_sheet;
-
-      sheet.cells.IterateAll((cell: Cell) => {
-        if (cell.ValueIsFormula()) {
-          const modified = this.PatchFormulasInternal(cell.value || '', 0, 0,
-            command.before_column, command.count,
-            target_sheet_name, is_target);
-          if (modified) {
-            cell.value = modified;
-          }
-        }
-      });
-
-      for (const annotation of sheet.annotations) {
-        if (annotation.formula) {
-          const modified = this.PatchFormulasInternal(annotation.formula,
-            0, 0, command.before_column, command.count,
-            target_sheet_name, is_target);
-          if (modified) {
-            annotation.formula = modified;
-          }
-        }
-      }
-
-    }
 
     // FIXME: this is just not going to work for !active sheet. we 
     // need to think about how to handle this properly. TEMP: punting
@@ -7743,32 +7153,44 @@ export class Grid extends GridBase {
 
       const update_annotations_list: Annotation[] = [];
       const resize_annotations_list: Annotation[] = [];
+      const delete_annotations_list: Annotation[] = [];
 
-      if (command.count > 0) {
+      if (command.count > 0) { // insert
 
-        const start = this.layout.CellAddressToRectangle({
-          row: 0,
-          column: command.before_column,
-        });
-
-        const width = this.layout.default_column_width * command.count + 1; // ?
+        const first = command.before_column;
 
         for (const annotation of target_sheet.annotations) {
-          if (annotation.scaled_rect) {
+          if (annotation.layout) {
+            const [start, end, endx] = [
+              annotation.layout.tl.address.column, 
+              annotation.layout.br.address.column,
+              annotation.layout.br.offset.x,
+            ];
 
-            if (start.left >= annotation.scaled_rect.right) {
-              continue;
+            if (first <= start ) { 
+
+              // start case 1: starts to the left of the annotation (including exactly at the left)
+
+              // shift
+              annotation.layout.tl.address.column += command.count;
+              annotation.layout.br.address.column += command.count;
+
             }
-            else if (start.left <= annotation.scaled_rect.left) {
-              annotation.scaled_rect.left += (width - 1); // grid
+            else if (first < end || first === end && endx > 0) { 
+              
+              // start case 2: starts in the annotation, omitting the first column
+
+              annotation.layout.br.address.column += command.count;
+
+              // size changing
+              resize_annotations_list.push(annotation);
+
             }
             else {
-              annotation.scaled_rect.width += width;
-              resize_annotations_list.push(annotation);
-            }
 
-            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+              // do nothing
+              continue;
+            }
 
             update_annotations_list.push(annotation);
           }
@@ -7777,72 +7199,104 @@ export class Grid extends GridBase {
       }
       else if (command.count < 0) { // delete
 
-        let rect = this.layout.CellAddressToRectangle({
-          row: 0,
-          column: command.before_column,
-        });
+        // first and last column deleted
 
-        if (command.count < -1) {
-          rect = rect.Combine(this.layout.CellAddressToRectangle({
-            row: 0,
-            column: command.before_column - command.count - 1,
-          }));
-        }
+        const first = command.before_column;
+        const last = command.before_column - command.count - 1;
 
         for (const annotation of target_sheet.annotations) {
-          if (annotation.scaled_rect) {
+          if (annotation.layout) {
+            
+            // start and end column of the annotation. recall that in
+            // this layout, the annotation may extend into the (first,last) 
+            // column but not beyond it. the offset is _within_ the column.
 
-            if (annotation.scaled_rect.right <= rect.left) {
-              continue; // unaffected
+            const [start, end, endx] = [
+              annotation.layout.tl.address.column, 
+              annotation.layout.br.address.column,
+              annotation.layout.br.offset.x,
+            ];
+
+            if (first <= start ) { 
+
+              // start case 1: starts to the left of the annotation (including exactly at the left)
+
+              if (last < start) { 
+
+                // end case 1: ends before the annotation
+
+                // shift
+                annotation.layout.tl.address.column += command.count;
+                annotation.layout.br.address.column += command.count;
+
+              }
+              else if (last < end - 1 || (last === end -1 && endx > 0)) { 
+             
+                // end case 2: ends before the end of the annotation
+
+                // shift + cut
+                annotation.layout.tl.address.column = first;
+                annotation.layout.tl.offset.x = 0;
+                annotation.layout.br.address.column += command.count;
+
+                // size changing
+                resize_annotations_list.push(annotation);
+
+              }
+              else { 
+                
+                // end case 3: ends after the annotation
+
+                // drop the annotation
+                delete_annotations_list.push(annotation);
+                continue;
+                
+              }
+
             }
+            else if (first < end || first === end && endx > 0) { 
+              
+              // start case 2: starts in the annotation, omitting the first column
 
-            // affected are is entirely to the left of annotation: move only
-            if (annotation.scaled_rect.left >= rect.right - 1) { // grid
-              annotation.scaled_rect.left -= (rect.width);
+              if (last < end - 1 || (last === end -1 && endx > 0)) { 
+                
+                // end case 2: ends before the end of the annotation
+
+                // shorten
+                annotation.layout.br.address.column += command.count;
+
+                // size changing
+                resize_annotations_list.push(annotation);
+
+              }
+              else { 
+                
+                // end case 3: ends after the annotation
+
+                // clip
+                annotation.layout.br.address.column = first;
+                annotation.layout.br.offset.x = 0;
+
+                // size changing
+                resize_annotations_list.push(annotation);
+
+              }
+
             }
+            else { 
+              
+              // start case 3: starts after the annotation
 
-            // affected area is entirely underneath the annotation: size only
-            else if (annotation.scaled_rect.left <= rect.left && annotation.scaled_rect.right >= rect.right) {
-              annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - rect.width, 10);
-              resize_annotations_list.push(annotation);
+              // do nothing              
+             
+              continue;
+
             }
-
-            // affected area completely contains the annotation: do nothing, or delete? (...)
-            else if (annotation.scaled_rect.left >= rect.left && annotation.scaled_rect.right <= rect.right) {
-              // ...
-              continue; // do nothing, for now
-            }
-
-            // left edge: shift AND clip?
-            else if (annotation.scaled_rect.left >= rect.left && annotation.scaled_rect.right > rect.right) {
-              const shift = annotation.scaled_rect.left - rect.left + 1; // grid
-              const clip = rect.width - shift;
-              annotation.scaled_rect.left -= shift;
-              annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - clip, 10);
-              resize_annotations_list.push(annotation);
-            }
-
-            // right edge: clip, I guess
-            else if (annotation.scaled_rect.left < rect.left && annotation.scaled_rect.right <= rect.right) {
-              const clip = annotation.scaled_rect.right - rect.left;
-              annotation.scaled_rect.width = Math.max(annotation.scaled_rect.width - clip, 10);
-              resize_annotations_list.push(annotation);
-            }
-
-            else {
-              console.info('unhandled case');
-              // console.info("AR", annotation.rect, "R", rect);
-            }
-
-            // annotation.rect = annotation.scaled_rect.Scale(1/this.layout.scale);
-            annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
 
             update_annotations_list.push(annotation);
 
           }
-
         }
-
 
       }
 
@@ -7878,6 +7332,12 @@ export class Grid extends GridBase {
         }
       }
 
+      for (const annotation of delete_annotations_list) {
+        // this.RemoveAnnotation(annotation);
+        this.layout.RemoveAnnotation(annotation);
+        target_sheet.annotations = target_sheet.annotations.filter(test => test !== annotation);
+      }
+
       // note event is sent in exec command, not implicit here
 
       this.QueueLayoutUpdate();
@@ -7901,221 +7361,242 @@ export class Grid extends GridBase {
       this.pending_layout_update.add(target_sheet.id); 
     }
 
-  }
+    return true;
 
+  }
 
   /**
-   * set range, via command. returns affected area.
+   * specialization
    */
-  private SetRangeInternal(command: SetRangeCommand) {
+  protected ResetInternal() {
 
-    // language translation. this is _not_ the best place for this,
-    // because if we are using the command queue, the language might
-    // chnage. we need to do translation _before_ things go into the 
-    // queue.
+    // inherit non-UI reset stuff
+    super.ResetInternal();
 
-    // but that said, for the time being we can put it here.
+    // now do the UI bits
+    this.RemoveAnnotationNodes();
+    this.ClearSelection(this.primary_selection);
+    this.ScrollIntoView({ row: 0, column: 0 });
+    this.QueueLayoutUpdate(); // necessary? (...)
+    this.layout.HideNote();
 
-    if (Array.isArray(command.value)) {
-      for (const row of command.value) {
-        for (let i = 0; i < row.length; i++) {
-          const value = row[i];
-          if (typeof value === 'string' && value[0] === '=') {
-            row[i] = this.UntranslateFunction(value);
-          }
-        }
-      }
+  }
+
+  /**
+   * overload: see ResizeRowsInternal
+   */
+  protected ResizeColumnsInternal(command: ResizeColumnsCommand) {
+
+    const sheet = command.sheet_id ? this.FindSheet(command.sheet_id) : this.active_sheet;
+
+    // normalize
+
+    let column = command.column;
+    if (typeof column === 'undefined') {
+      column = [];
+      for (let i = 0; i < sheet.columns; i++) column.push(i);
     }
-    else if (command.value && typeof command.value === 'string' && command.value[0] === '=') {
-      command.value = this.UntranslateFunction(command.value);
-    }
+    if (typeof column === 'number') column = [column];
 
+    const auto = typeof command.width !== 'number';
+    const width = Math.round(command.width || 0 / this.scale)
 
-    // NOTE: apparently if we call SetRange with a single target
-    // and the array flag set, it gets translated to an area. which
-    // is OK, I guess, but there may be an unecessary branch in here.
-
-    const area = IsCellAddress(command.area)
-      ? new Area(command.area)
-      : new Area(command.area.start, command.area.end);
-
-    const sheet = this.FindSheet(area);
-
-    if (!area.start.sheet_id) { 
-      area.start.sheet_id = sheet.id;
-    }
-
-    if (!area.entire_row && !area.entire_column && (
-      area.end.row >= sheet.rows
-      || area.end.column >= sheet.columns)) {
-
-      // we have to call this because the 'set area' method calls RealArea
-      sheet.cells.EnsureCell(area.end);
-
-      // should we send a structure event here? we may be increasing the
-      // size, in which case we should send the event. even though no addresses
-      // change, there are new cells.
-
-      if (sheet === this.active_sheet) {
-        this.QueueLayoutUpdate();
+    if (auto) {
+      for (const entry of column) {
+        this.AutoSizeColumn(sheet, entry, false);
       }
-      
-    }
-
-    // originally we called sheet methods here, but all the sheet
-    // does is call methods on the cells object -- we can shortcut.
-
-    // is that a good idea? (...)
-
-    // at a minimum we can consolidate...
-
-    if (IsCellAddress(command.area)) {
-
-      // FIXME: should throw if we try to set part of an array
-
-      const cell = sheet.CellData(command.area);
-      if (cell.area && (cell.area.rows > 1 || cell.area.columns > 1)) {
-        this.Error(`You can't change part of an array.`);
-        return;
-      }
-
-      // single cell
-      // UPDATE: could be array
-
-      // type is value|value[][], pull out first value. at some point 
-      // we may have supported value[], or maybe they were passed in 
-      // accidentally, but check regardless.
-
-      // FIXME: no, that should throw (or otherwise error) (or fix the data?). 
-      // we can't handle errors all the way down the call stack.
-
-      let value = Array.isArray(command.value) ?
-        Array.isArray(command.value[0]) ? command.value[0][0] : command.value[0] : command.value;
-
-      // translate R1C1. in this case, we translate relative to the 
-      // target address, irrspective of the array flag. this is the
-      // easiest case?
-
-      // NOTE: as noted above (top of function), if a single cell target
-      // is set with the array flag, it may fall into the next branch. not 
-      // sure that makes much of a difference.
-
-      if (command.r1c1) {
-        value = this.TranslateR1C1(command.area, value);
-      }
-     
-      if (command.array) {
-
-        // what is the case for this? not saying it doesn't happen, just
-        // when is it useful?
-
-        // A: there is the case in Excel where there are different semantics
-        // for array calculation; something we mentioned in one of the kb
-        // articles, something about array functions... [FIXME: ref?]
-
-        sheet.SetArrayValue(area, value);
-      }
-      else {
-        sheet.SetCellValue(command.area, value);
-      }
-
-      return area;
     }
     else {
+      for (const entry of column) {
+        sheet.SetColumnWidth(entry, width);
+      }
+    }
 
-      // there are a couple of options here, from the methods that
-      // have accumulated in Sheet.
+    if (sheet === this.active_sheet) {
 
-      // SetArrayValue -- set data as an array
-      // SetAreaValues -- set values from data one-to-one
-      // SetAreaValue -- single value repeated in range
+      this.layout.UpdateTotalSize();
 
-      // FIXME: clean this up!
-
-      if (command.array) {
-
-        let value = Array.isArray(command.value) ?
-          Array.isArray(command.value[0]) ? command.value[0][0] : command.value[0] : command.value;
-        
-        if (command.r1c1) {
-          value = this.TranslateR1C1(area.start, value);
-        }
-
-        sheet.SetArrayValue(area, value);
+      if (this.layout.container
+        && this.layout.container.offsetWidth
+        && this.layout.container.offsetWidth > this.layout.total_width) {
+        this.UpdateLayout();
       }
       else {
-
-        // in this case, either value is a single value or it's a 2D array;
-        // and area is a range of unknown size. we do a 1-1 map from area
-        // member to data member. if the data is not the same shape, it just
-        // results in empty cells (if area is larger) or dropped data (if value
-        // is larger).
-
-        // so for the purposes of R1C1, we have to run the same loop that 
-        // happens internally in the Cells.SetArea routine. but I definitely
-        // don't want R1C1 to get all the way in there. 
-
-        // FIXME/TODO: we're doing this the naive way for now. it could be 
-        // optimized in several ways.
-
-        if (command.r1c1) {
-          if (Array.isArray(command.value)) {
-
-            // loop on DATA, since that's what we care about here. we can 
-            // expand data, since it won't spill in the next call (spill is
-            // handled earlier in the call stack).
-
-            for (let r = 0; r < command.value.length && r < area.rows; r++) {
-              if (!command.value[r]) {
-                command.value[r] = [];
-              }
-              const row = command.value[r];
-              for (let c = 0; c < row.length && c < area.columns; c++) {
-                const target: ICellAddress = { ...area.start, row: area.start.row + r, column: area.start.column + c };
-                row[c] = this.TranslateR1C1(target, row[c]);
-              }
-            }
-
-          }
-          else {
-
-            // only have to do this for strings
-            if (typeof command.value === 'string' && command.value[0] === '=') {
-
-              // we need to rebuild the value so it is an array, so that 
-              // relative addresses will be relative to the cell.
-
-              const value: CellValue[][] = [];
-
-              for (let r = 0; r < area.rows; r++) {
-                const row: CellValue[] = [];
-                for (let c = 0; c < area.columns; c++) {
-                  const target: ICellAddress = { ...area.start, row: area.start.row + r, column: area.start.column + c };
-                  row.push(this.TranslateR1C1(target, command.value));
-                }
-                value.push(row);
-              }
-
-              command.value = value;
-
-            }
-          }
-        }
-
-        sheet.SetAreaValues2(area, command.value);
+        this.layout.UpdateTileWidths(true);
+        this.render_tiles = this.layout.VisibleTiles();
+        this.Repaint(false, true); // repaint full tiles
       }
 
-      return area;
+      this.layout.UpdateAnnotation(this.active_sheet.annotations);
+      this.RenderSelections();
+
+    }
+    else {
+      this.pending_layout_update.add(sheet.id);
+    }
+  }
+
+  /**
+   * UI grid supports scale and auto-size, so we're overloading.
+   * @param command 
+   */
+  protected ResizeRowsInternal(command: ResizeRowsCommand) {
+
+    // this method is inconsistent for active sheet vs other sheets.
+    // for the active sheet, it uses the layout routine which incorporates
+    // scale. for other sheets, it calls sheet directly, which ignores scale.
+
+    // all the layout routine does is call the sheet routine (after adjusting
+    // for scale), so we could do that from here and simplify everything.
+    // scale is constant for all sheets (at least atm).
+
+    // NOTE: why do we scale the number? because we scale it the other way,
+    // if that makes sense. when we render we multiply height * scale.
+
+    // we're guaranteed this now, we should have a way to represent that...
+
+    const sheet = command.sheet_id ? this.FindSheet(command.sheet_id) : this.active_sheet;
+
+    // normalize rows -> array. undefined means all rows.
+
+    let row = command.row;
+    if (typeof row === 'undefined') {
+      row = [];
+      for (let i = 0; i < sheet.rows; i++) row.push(i);
+    }
+    if (typeof row === 'number') row = [row];
+
+    // allow shrink: this is default true, but optional
+
+    const shrink = (typeof command.shrink === 'boolean' ? command.shrink : true);
+
+    // scale height if provided
+
+    const auto = typeof command.height !== 'number';
+    const height = Math.round(command.height || 0 / this.scale);
+
+    // apply
+
+    if (auto) {
+      for (const entry of row) {
+        sheet.AutoSizeRow(entry, this.theme.grid_cell, shrink);
+      }
+    }
+    else {
+      for (const entry of row) {
+        sheet.SetRowHeight(entry, height);
+      }
+    }
+
+    if (sheet === this.active_sheet) {
+
+      this.layout.UpdateTotalSize();
+
+      if (this.layout.container
+        && this.layout.container.offsetHeight
+        && this.layout.container.offsetHeight > this.layout.total_height) {
+        this.UpdateLayout();
+      }
+      else {
+        this.layout.UpdateTileHeights(true);
+        this.render_tiles = this.layout.VisibleTiles();
+        this.Repaint(false, true); // repaint full tiles
+      }
+
+      this.layout.UpdateAnnotation(this.active_sheet.annotations);
+      this.RenderSelections();
+
+    }
+    else {
+      
+      // see below
+      this.pending_layout_update.add(sheet.id);
 
     }
 
   }
 
+  /**
+   * specialization
+   */
+  protected SelectInternal(command: SelectCommand) {
+
+    // case: empty selection
+    if (!command.area) {
+      this.ClearSelection(this.primary_selection);
+    }
+    else {
+      // activate sheet, if necessary
+      if (command.area.start.sheet_id && command.area.start.sheet_id !== this.active_sheet.id) {
+        this.ActivateSheetInternal({
+          key: CommandKey.ActivateSheet,
+          id: command.area.start.sheet_id,
+        });
+      }
+      this.Select(this.primary_selection, new Area(command.area.start, command.area.end));
+      this.RenderSelections();
+    }
+    
+  }
+
+  /**
+   * specialization. all the base class method does is set the sheet 
+   * fields, so we don't need to call it, we can do that.
+   * 
+   */
+  protected FreezeInternal(command: FreezeCommand) {
+
+    const sheet = this.FindSheet(command.sheet_id || this.active_sheet.id);
+
+    // default true, if we're on the active sheet
+    const highlight = (((typeof command.highlight_transition) === 'boolean')
+                        ? command.highlight_transition
+                        : true) && (sheet === this.active_sheet);
+
+    if (command.rows === sheet.freeze.rows &&
+      command.columns === sheet.freeze.columns) {
+      if (highlight) {
+        this.HighlightFreezeArea();
+      }
+      return;
+    }
+
+    sheet.freeze.rows = command.rows;
+    sheet.freeze.columns = command.columns;
+
+    // FIXME: should we do this via events? (...)
+
+    // we are sending an event via the exec command method that calls
+    // this method, so we are not relying on the side-effect event anymore
+
+    if (sheet === this.active_sheet) {
+
+      this.QueueLayoutUpdate();
+      this.Repaint();
+
+      if (highlight) {
+        this.HighlightFreezeArea();
+      }
+
+      if (command.rows || command.columns) {
+        this.layout.CloneFrozenAnnotations();
+      }
+      else {
+        this.layout.ClearFrozenAnnotations();
+      }
+
+    }
+    else {
+      this.pending_layout_update.add(sheet.id);
+    }
+
+  }
 
   //////////////////////////////////////////////////////////////////////////////
 
 
-  /**
+
+  /* *
    * pass all data/style/structure operations through a command mechanism.
    * this method should optimally act as a dispatcher, so try to minimize
    * inline code in favor of method calls.
@@ -8129,38 +7610,34 @@ export class Grid extends GridBase {
    * doesn't change existing behavior, but you can turn it off if the message
    * comes from a remote queue.
    * 
-   */
+   * /
   private ExecCommand(commands: Command | Command[], queue = true) {
 
-    const flags: UpdateFlags = {};
-
     // FIXME: support ephemeral commands (...)
-
-    let render_area: Area | undefined;
-    let data_area: Area | undefined;
-    let style_area: Area | undefined;
 
     // data and style events were triggered by the areas being set.
     // we are not necessarily setting them for offsheet changes, so
     // we need an explicit flag. this should be logically OR'ed with
     // the area existing (for purposes of sending an event).
 
-    let data_event = false;
-    let style_event = false;
+    // all flags/areas moved to this struct
 
-    let structure_event = false;
-    let structure_rebuild_required = false;
+    const flags: Partial<UpdateFlags> = {
+      pending: [],
+    };
 
     const events: GridEvent[] = [];
 
-    // this seems like the dumb way to do this... maybe?
-    // if (!Array.isArray(commands)) commands = [commands];
-
     // should we normalize always, or only if we're queueing?
     // it seems like it's useful here, then we can be a little
-    // sloppier in the actual handlers.
+    // sloppier in the actual handlers. after normalizing, any
+    // command that has an address/area (or sheet ID parameter)
+    // will have an explicit sheet ID.
 
     commands = this.NormalizeCommands(commands);
+
+    // FIXME: we should queue later, so we can remove any commands
+    // that fail... throw errors, and so on
 
     if (queue) {
       this.command_log.Publish({ command: commands, timestamp: new Date().getTime() });
@@ -8171,25 +7648,29 @@ export class Grid extends GridBase {
       // console.log(CommandKey[command.key], JSON.stringify(command));
 
       switch (command.key) {
+        case CommandKey.Reset:
+
+          // not sure how well this fits in with the command queue. it
+          // doesn't look like it sends any events, so what's the point?
+          // just to get a command log event?
+
+          // the problem is that load doesn't run through the queue, so
+          // even if you did a reset -> load we'd just get the reset part.
+
+          // ...
+
+          // OK, actually this is used in the CSV import routine. we need
+          // to support it until we get rid of that (it needs to move).
+          
+          this.ResetInternal();
+          break;
+
         case CommandKey.Clear:
           if (command.area) {
             const area = new Area(command.area.start, command.area.end);
-            // this.active_sheet.ClearArea(area, true);
             this.ClearAreaInternal(area);
-            data_area = Area.Join(area, data_area);
+            flags.data_area = Area.Join(area, flags.data_area);
             flags.formula = true;
-            // this.UpdateFormulaBarFormula();
-          }
-          else {
-            Sheet.Reset();
-            this.RemoveAnnotationNodes();
-            this.UpdateSheets([], true);
-            this.model.named_ranges.Reset();
-            this.model.macro_functions.clear(); //  = {};
-            this.ClearSelection(this.primary_selection);
-            this.ScrollIntoView({ row: 0, column: 0 });
-            this.QueueLayoutUpdate(); // necessary? (...)
-            this.layout.HideNote();
           }
           break;
 
@@ -8229,8 +7710,7 @@ export class Grid extends GridBase {
           // because no addresses change. (although we leave it in case someone
           // else sets it).)
 
-          structure_event = true;
-          // structure_rebuild_required = true;
+          flags.structure_event = true;
 
           break;
 
@@ -8247,15 +7727,15 @@ export class Grid extends GridBase {
             // idea because references to the secondary (non-head) merge 
             // cells will break.
 
-            structure_event = true;
-            structure_rebuild_required = true;
+            flags.structure_event = true;
+            flags.structure_rebuild_required = true;
 
             if (sheet === this.active_sheet) {
-              data_area = Area.Join(command.area, data_area);
-              render_area = Area.Join(command.area, render_area);
+              flags.data_area = Area.Join(command.area, flags.data_area);
+              flags.render_area = Area.Join(command.area, flags.render_area);
             }
             else {
-              data_event = true;
+              flags.data_event = true;
               this.pending_layout_update.add(sheet.id);
             }
           }
@@ -8293,16 +7773,16 @@ export class Grid extends GridBase {
             // see above
 
             if (sheet === this.active_sheet) {
-              render_area = Area.Join(command.area, render_area);
-              data_area = Area.Join(command.area, data_area);
+              flags.render_area = Area.Join(command.area, flags.render_area);
+              flags.data_area = Area.Join(command.area, flags.data_area);
             }
             else {
-              data_event = true;
+              flags.data_event = true;
               this.pending_layout_update.add(sheet.id);
             }
 
-            structure_event = true;
-            structure_rebuild_required = true;
+            flags.structure_event = true;
+            flags.structure_rebuild_required = true;
           }
           break;
 
@@ -8326,7 +7806,7 @@ export class Grid extends GridBase {
             }
 
             if (sheet === this.active_sheet) {
-              style_area = Area.Join(area, style_area);
+              flags.style_area = Area.Join(area, flags.style_area);
             
               // we can limit bleed handling to cases where it's necessary...
               // if we really wanted to optimize we could call invalidate on .left, .top, &c
@@ -8343,11 +7823,11 @@ export class Grid extends GridBase {
 
               }
 
-              render_area = Area.Join(area, render_area);
+              flags.render_area = Area.Join(area, flags.render_area);
               
             }
             else {
-              style_event = true;
+              flags.style_event = true;
             }
 
           }
@@ -8360,7 +7840,7 @@ export class Grid extends GridBase {
 
           this.SetValidationInternal(command);
           if (!command.area.sheet_id || command.area.sheet_id === this.active_sheet.id) {
-            render_area = Area.Join(new Area(command.area), render_area);
+            flags.render_area = Area.Join(new Area(command.area), flags.render_area);
           }
           break;
 
@@ -8408,8 +7888,8 @@ export class Grid extends GridBase {
               name: command.name,
             });
           }
-          structure_event = true;
-          structure_rebuild_required = true;
+          flags.structure_event = true;
+          flags.structure_rebuild_required = true;
           break;
 
         case CommandKey.UpdateBorders:
@@ -8422,11 +7902,11 @@ export class Grid extends GridBase {
             const area = this.ApplyBordersInternal(command);
 
             if (area.start.sheet_id === this.active_sheet.id) {
-              render_area = Area.Join(area, render_area);
-              style_area = Area.Join(area, style_area);
+              flags.render_area = Area.Join(area, flags.render_area);
+              flags.style_area = Area.Join(area, flags.style_area);
             }
             else {
-              style_event = true;
+              flags.style_event = true;
             }
 
           }
@@ -8438,7 +7918,8 @@ export class Grid extends GridBase {
           // when coediting, but it won't break anything. you can filter.
 
           this.ShowSheetInternal(command);
-          structure_event = true;
+          flags.sheets = true; // repaint tab bar
+          flags.structure_event = true;
           break;
 
         case CommandKey.ReorderSheet:
@@ -8464,8 +7945,8 @@ export class Grid extends GridBase {
             // this.model.sheets = sheets;
             this.model.sheets.Assign(sheets);
 
-            if (this.tab_bar) { this.tab_bar.Update(); }
-            structure_event = true;
+            flags.sheets = true;
+            flags.structure_event = true;
 
           }
           break;
@@ -8477,158 +7958,27 @@ export class Grid extends GridBase {
             const sheet = this.ResolveSheet(command);
             if (sheet) {
               this.RenameSheetInternal(sheet, command.new_name);
-              if (this.tab_bar) { this.tab_bar.Update(); }
-              structure_event = true;
+              flags.sheets = true;
+              flags.structure_event = true;
             }
           }
           break;
 
         case CommandKey.ResizeRows:
-          {
+
+          // moving this to a method so we can specialize: non-UI grid
+          // should not support autosize (it can't)
+
             // COEDITING: ok
 
-            const sheet = command.sheet_id ? this.FindSheet(command.sheet_id) : this.active_sheet;
-
-            let row = command.row;
-            if (typeof row === 'undefined') {
-              row = [];
-              for (let i = 0; i < sheet.rows; i++) row.push(i);
-            }
-
-            if (typeof row === 'number') row = [row];
-
-            if (sheet === this.active_sheet) {
-
-              if (typeof command.height === 'number') {
-                for (const entry of row) {
-                  this.layout.SetRowHeight(entry, command.height);
-                }
-              }
-              else {
-
-                // this is default true, but optional
-                const allow_shrink = (typeof command.shrink === 'boolean' ? command.shrink : true);
-                for (const entry of row) {
-                  this.active_sheet.AutoSizeRow(entry, this.theme.grid_cell, allow_shrink);
-                }
-              }
-
-              this.layout.UpdateTotalSize();
-
-              if (this.layout.container
-                && this.layout.container.offsetHeight
-                && this.layout.container.offsetHeight > this.layout.total_height) {
-                this.UpdateLayout();
-              }
-              else {
-                this.layout.UpdateTileHeights(true);
-                this.render_tiles = this.layout.VisibleTiles();
-                this.Repaint(false, true); // repaint full tiles
-              }
-
-              this.layout.UpdateAnnotation(this.active_sheet.annotations);
-              this.RenderSelections();
-
-            }
-            else {
-              if (typeof command.height === 'number') {
-                for (const entry of row) {
-                  sheet.SetRowHeight(entry, command.height);
-                }
-              }
-              else {
-
-                // this is default true, but optional
-                const allow_shrink = (typeof command.shrink === 'boolean' ? command.shrink : true);
-                for (const entry of row) {
-                  sheet.AutoSizeRow(entry, this.theme.grid_cell, allow_shrink);
-                }
-              }
-
-              // see below
-              this.pending_layout_update.add(sheet.id);
-
-            }
-
-            structure_event = true;
-
-          }
+          this.ResizeRowsInternal(command);
+          flags.structure_event = true;
           break;
 
         case CommandKey.ResizeColumns:
-          {
-            // COEDITING: ok
 
-            const sheet = command.sheet_id ? this.FindSheet(command.sheet_id) : this.active_sheet;
-
-            let column = command.column;
-
-            if (typeof column === 'undefined') {
-              column = [];
-              for (let i = 0; i < sheet.columns; i++) column.push(i);
-            }
-
-            if (typeof column === 'number') column = [column];
-
-            if (sheet === this.active_sheet) {
-
-              if (typeof command.width === 'number') {
-                for (const entry of column) {
-                  this.layout.SetColumnWidth(entry, command.width);
-                }
-              }
-              else {
-                for (const entry of column) {
-                  this.AutoSizeColumn(this.active_sheet, entry, false);
-                }
-              }
-
-              this.layout.UpdateTotalSize();
-
-              if (this.layout.container
-                && this.layout.container.offsetWidth
-                && this.layout.container.offsetWidth > this.layout.total_width) {
-                this.UpdateLayout();
-              }
-              else {
-                this.layout.UpdateTileWidths(true);
-                this.render_tiles = this.layout.VisibleTiles();
-                this.Repaint(false, true); // repaint full tiles
-              }
-
-              this.layout.UpdateAnnotation(this.active_sheet.annotations);
-              this.RenderSelections();
-
-            }
-            else {
-
-              // this works, but there's one issue: if there's an overflow,
-              // that is cached, and not unset here. we need some way to 
-              // indicate that the sheet requires a full repaint so when it
-              // is shown it updates properly.
-
-              // (that applies to both auto size and explicit size)
-
-              if (typeof command.width === 'number') {
-                for (const entry of column) {
-                  sheet.SetColumnWidth(entry, command.width);
-                }
-              }
-              else {
-                for (const entry of column) {
-                  this.AutoSizeColumn(sheet, entry, false);
-                }
-              }
-
-              // ok, use this set
-              this.pending_layout_update.add(sheet.id);
-
-
-            }
-
-            structure_event = true;
-
-          }
+          this.ResizeColumnsInternal(command);
+          flags.structure_event = true;
           break;
 
         case CommandKey.ShowHeaders:
@@ -8638,7 +7988,7 @@ export class Grid extends GridBase {
           // the grid class.
 
           this.active_sheet.SetHeaderSize(command.show ? undefined : 1, command.show ? undefined : 1);
-          this.QueueLayoutUpdate();
+          this.flags.layout = true;
           this.Repaint();
           break;
 
@@ -8647,8 +7997,8 @@ export class Grid extends GridBase {
           // COEDITING: annotations are broken
 
           this.InsertRowsInternal(command);
-          structure_event = true;
-          structure_rebuild_required = true;
+          flags.structure_event = true;
+          flags.structure_rebuild_required = true;
           break;
 
         case CommandKey.InsertColumns:
@@ -8656,8 +8006,8 @@ export class Grid extends GridBase {
           // COEDITING: annotations are broken
 
           this.InsertColumnsInternal(command);
-          structure_event = true;
-          structure_rebuild_required = true;
+          flags.structure_event = true;
+          flags.structure_rebuild_required = true;
           break;
 
         case CommandKey.SetLink:
@@ -8669,18 +8019,6 @@ export class Grid extends GridBase {
             // method for setting note (not sure why)
 
             const sheet = this.FindSheet(command.area);
-
-            /*
-            let sheet = this.active_sheet;
-            if (command.area.sheet_id) {
-              for (const test of this.model.sheets) {
-                if (test.id === command.area.sheet_id) {
-                  sheet = test;
-                  break;
-                }
-              }
-            }
-            */
 
             let cell = sheet.cells.GetCell(command.area, true);
             if (cell) {
@@ -8708,12 +8046,12 @@ export class Grid extends GridBase {
                 // treat this as style, because it affects painting but
                 // does not require calculation.
 
-                style_area = Area.Join(area, style_area);
-                render_area = Area.Join(area, render_area);
+                flags.style_area = Area.Join(area, flags.style_area);
+                flags.render_area = Area.Join(area, flags.render_area);
 
               }
               else {
-                style_event = true;
+                flags.style_event = true;
               }
 
             }
@@ -8728,20 +8066,21 @@ export class Grid extends GridBase {
             // area could be undefined if there's an error
             // (try to change part of an array)
 
-            const area = this.SetRangeInternal(command);
+            const area = this.SetRangeInternal(command, flags);
+
             if (area && area.start.sheet_id === this.active_sheet.id) {
               
-              data_area = Area.Join(area, data_area);
+              flags.data_area = Area.Join(area, flags.data_area);
 
               // normally we don't paint, we wait for the calculator to resolve
 
               if (this.options.repaint_on_cell_change) {
-                render_area = Area.Join(area, render_area);
+                flags.render_area = Area.Join(area, flags.render_area);
               }
 
             }
             else {
-              data_event = true;
+              flags.data_event = true;
             }
 
           }
@@ -8752,8 +8091,9 @@ export class Grid extends GridBase {
           // COEDITING: looks fine
 
           this.DeleteSheetInternal(command);
-          structure_event = true;
-          structure_rebuild_required = true;
+          flags.sheets = true;
+          flags.structure_event = true;
+          flags.structure_rebuild_required = true;
           break;
 
         case CommandKey.DuplicateSheet:
@@ -8761,8 +8101,8 @@ export class Grid extends GridBase {
           // FIXME: what happens to named ranges? we don't have sheet-local names...
 
           this.DuplicateSheetInternal(command);
-          structure_event = true;
-          structure_rebuild_required = true;
+          flags.structure_event = true;
+          flags.structure_rebuild_required = true;
           break;
 
         case CommandKey.AddSheet:
@@ -8780,7 +8120,7 @@ export class Grid extends GridBase {
                 id,
               });
             }
-            structure_event = true;
+            flags.structure_event = true;
             flags.sheets = true;
             flags.structure = true;
 
@@ -8798,31 +8138,35 @@ export class Grid extends GridBase {
 
     // consolidate events and merge areas
 
-    if (data_area) {
-      if (!data_area.start.sheet_id) {
-        data_area.SetSheetID(this.active_sheet.id);
+    if (flags.data_area) {
+      if (!flags.data_area.start.sheet_id) {
+        flags.data_area.SetSheetID(this.active_sheet.id);
       }
-      events.push({ type: 'data', area: data_area });
+      events.push({ type: 'data', area: flags.data_area });
     }
-    else if (data_event) {
+    else if (flags.data_event) {
       events.push({ type: 'data' });
     }
 
-    if (style_area) {
-      if (!style_area.start.sheet_id) {
-        style_area.SetSheetID(this.active_sheet.id);
+    if (flags.style_area) {
+      if (!flags.style_area.start.sheet_id) {
+        flags.style_area.SetSheetID(this.active_sheet.id);
       }
-      events.push({ type: 'style', area: style_area });
+      events.push({ type: 'style', area: flags.style_area });
     }
-    else if (style_event) {
+    else if (flags.style_event) {
       events.push({ type: 'style' });
     }
 
-    if (structure_event) {
+    if (flags.structure_event) {
       events.push({
         type: 'structure',
-        rebuild_required: structure_rebuild_required,
+        rebuild_required: flags.structure_rebuild_required,
       });
+    }
+
+    if (flags.layout) {
+      this.QueueLayoutUpdate();
     }
 
     if (flags.sheets && this.tab_bar) {
@@ -8838,10 +8182,45 @@ export class Grid extends GridBase {
     else {
       this.grid_events.Publish(events);
 
-      if (render_area) {
-        this.DelayedRender(false, render_area);
+      if (flags.render_area) {
+        this.DelayedRender(false, flags.render_area);
       }
     }
+
+  }
+  */
+
+  protected ExecCommand(commands: Command | Command[], queue = true) {
+
+    const flags = super.ExecCommand(commands, queue);
+
+    if (!this.batch) {
+      if (flags.render_area) {
+        this.DelayedRender(false, flags.render_area);
+      }
+    }
+
+    if (flags.repaint) {
+      this.Repaint();
+    }
+
+    for (const id of flags.pending || []) {
+      this.pending_layout_update.add(id);
+    }
+
+    if (flags.layout) {
+      this.QueueLayoutUpdate();
+    }
+
+    if (flags.sheets && this.tab_bar) {
+      this.tab_bar.Update();
+    }
+
+    if (flags.formula) {
+      this.UpdateFormulaBarFormula();
+    }
+
+    return flags;
 
   }
 

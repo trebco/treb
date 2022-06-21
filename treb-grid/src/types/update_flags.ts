@@ -1,4 +1,6 @@
 
+import type { Area } from 'treb-base-types';
+
 /**
  * trying to split data management from the grid, we are updating the
  * command queue so that (some/most) methods return hints as to what
@@ -25,5 +27,29 @@ export interface UpdateFlags {
    * formula -- we might need to update the formula bar
    */
   formula?: boolean;
+
+  /**
+   * layout is changing. use this as a proxy for the old "queue layout update"
+   */
+  layout?: boolean;
+
+  /** non-active sheets updated. we set flags to update layout on activate */
+  pending?: number[];
+
+  /** 
+   * this is only used by the setheaders command, which needs to come 
+   * out. so this should also come out.
+   */
+  repaint?: boolean;
+
+  data_event?: boolean;
+  style_event?: boolean;
+  structure_event?: boolean;
+  structure_rebuild_required?: boolean;
+
+  render_area?: Area;
+  data_area?: Area;
+  style_area?: Area;
+
 
 }

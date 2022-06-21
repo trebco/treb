@@ -63,3 +63,17 @@ every subsequent operation will be out of sync.
 Maybe remotes should set calculation -> manual (if that works) and then have
 some scheme for having the main instance broadcast calculated values (or deltas)
 
+# Update June 2022
+
+Everything in coediting works reasonably well, except (1) annotations aren't
+covered by the command log, and (2) using a leader client to calculate is too
+slow for follower clients.
+
+The first issue can be resolved (and annotations do generate events) but to
+solve the second issue I think we need to be able to calculate on the server,
+which requires some unwinding to get running in a node environment.
+
+ATM I'm splitting grid so we can have a "null" grid, with no UI, suitable for
+the server.
+
+

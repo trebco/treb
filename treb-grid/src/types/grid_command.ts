@@ -48,6 +48,7 @@ export enum CommandKey {
   ReorderSheet,
   ShowSheet,
   DataValidation,
+  Reset,
 }
 
 /** base type for sheet commands -- can select sheet by name, id or index */
@@ -251,11 +252,24 @@ export interface SetLinkCommand {
  * we could use infinite area as an indication it's a reset, but that's
  * not really the same thing -- that would be more like select all / clear.
  * 
+ * not sure why clear doubled as reset, except that it probably dated
+ * from before we had multiple sheets. we're now splitting so there's an
+ * explicit reset event.
+ * 
+ * now that we have a separate reset, clear requires an area. 
+ * 
  */
 export interface ClearCommand {
   key: CommandKey.Clear;
-  area?: IArea;
-  sheet_id?: number;
+  area: IArea;
+  // sheet_id?: number;
+}
+
+/**
+ * reset everything. 
+ */
+export interface ResetCommand {
+  key: CommandKey.Reset;
 }
 
 /**
@@ -350,6 +364,7 @@ export interface Ephemeral {
 export type Command =
   ( NullCommand
   | ClearCommand
+  | ResetCommand
   | SelectCommand
   | FreezeCommand
   | SetNoteCommand

@@ -2148,7 +2148,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     // API v1 OK
 
-    this.grid.Clear();
+    this.grid.Reset();
     this.ResetInternal();
     this.calculator.AttachModel();
     this.Publish({ type: 'reset' });
