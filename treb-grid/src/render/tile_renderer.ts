@@ -17,7 +17,7 @@ import { DataModel, ViewModel } from '../types/data_model';
 import { GridOptions } from '../types/grid_options';
 
 const BASELINE = 'bottom';
-const WK = /webkit/i.test(navigator?.userAgent || '') ? 1 : 0;
+const WK = /webkit/i.test(typeof navigator === 'undefined' ? '' : navigator?.userAgent || '') ? 1 : 0;
 
 interface FontSet {
   base: string,

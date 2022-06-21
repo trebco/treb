@@ -19,7 +19,8 @@ import {
   IsCellAddress, Localization, Style, ICellAddress, 
   Area, IArea, CellValue, Point,
   IsFlatData, IsFlatDataArray, Rectangle, IsComplex, 
-  ComplexToString, Complex, ExtendedUnion, IRectangle
+  ComplexToString, Complex, ExtendedUnion, IRectangle,
+  AddressReference, RangeReference,
 } from 'treb-base-types';
 
 import { EventSource, Yield } from 'treb-utils';
@@ -41,6 +42,13 @@ import { Chart, ChartFunctions } from 'treb-charts';
 import * as FileSaver from 'file-saver';
 
 // --- style -------------------------------------------------------------------
+
+// we moved grid style imports from grid -> here so we can better
+// support headless/server-side grid. if we build with esbuild they'd
+// disappear so we could move these back...
+
+import 'treb-grid/style/grid-layout.scss';
+import 'treb-grid/style/grid.scss';
 
 import '../style/embed.scss';
 
@@ -83,20 +91,6 @@ interface SemanticVersionComparison {
   match: number;
   level?: SemanticVersionElement;
 }
-
-// for updated API functions
-
-/**
- * type represents a reference passed in to API functions. it can be an
- * address object, or a string. 
- */
-export type AddressReference = string | ICellAddress;
-
-/**
- * type represents a reference passed in to API functions. it can be an
- * address object, an area (range) object, or a string. 
- */
-export type RangeReference = string | ICellAddress | IArea;
 
 /**
  * options for the LoadDocument method

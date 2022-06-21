@@ -170,9 +170,10 @@ export class NumberFormatCache {
 
 NumberFormatCache.InitCache();
 
+/*
 // DEV: expose objects to console
-
 if (process.env.NODE_ENV !== 'production') {
   (self as any).NumberFormatCache = NumberFormatCache;
   (self as any).NumberFormat = NumberFormat;
 }
+*/

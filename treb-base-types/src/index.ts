@@ -14,6 +14,7 @@ export * from './theme';
 export * from './color';
 export * from './layout';
 export * from './render_text';
+export * from './api_types';
 
 // import * as Style from './style';
 // export { Style };

@@ -413,7 +413,7 @@ export class ExpressionCalculator {
       const clone = JSON.parse(text_expr);
 
       for (let i = 0; i < upper_case_names.length; i++) {
-        names[upper_case_names[i]] = expr.args[i] || { type: 'missing' };
+        names[upper_case_names[i]] = expr.args[i] || { type: 'missing', id: 0 };
       }
 
       return this.CalculateExpression(this.RewriteMacro(clone, names) as ExtendedExpressionUnit);

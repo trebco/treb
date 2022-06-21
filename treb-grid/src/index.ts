@@ -1,5 +1,6 @@
 
 export { Grid } from './types/grid';
+export { GridBase } from './types/grid_base';
 export { Sheet } from './types/sheet';
 export { DataModel, MacroFunction, SerializedNamedExpression, SerializedModel } from './types/data_model';
 export * from './types/grid_events';

@@ -1,7 +1,7 @@
 
 
-const app_version = navigator.appVersion;
-const user_agent = navigator.userAgent;
+const app_version = typeof navigator === 'undefined' ? '' : navigator.appVersion;
+const user_agent = typeof navigator === 'undefined' ? '' : navigator.userAgent;
 
 // console.warn('using fake UA: ' + user_agent);
 

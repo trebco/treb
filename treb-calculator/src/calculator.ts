@@ -26,7 +26,7 @@ import { DataModel, Annotation, FunctionDescriptor, Sheet } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
 
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError } from './function-error';
-import { RangeReference } from 'treb-embed/src/embedded-spreadsheet-base';
+import { RangeReference } from 'treb-base-types';
 
 // import type { NotifierType, InternalNotifierType } from './notifier-types';
 

@@ -2030,7 +2030,7 @@ export class GridBase {
    * comes from a remote queue.
    * 
    */
-   protected ExecCommand(commands: Command | Command[], queue = true): UpdateFlags {
+   public ExecCommand(commands: Command | Command[], queue = true): UpdateFlags {
 
     // FIXME: support ephemeral commands (...)
 

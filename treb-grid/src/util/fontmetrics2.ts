@@ -9,7 +9,7 @@ export interface FontMetrics2 {
 
 export class FontMetricsFactory {
 
-  private canvas: HTMLCanvasElement;
+  private canvas!: HTMLCanvasElement;
 
   private cache: Record<string, FontMetrics2> = {};
 
@@ -26,7 +26,9 @@ export class FontMetricsFactory {
     // FIXME: test with a containing node? 
     //        (NOTE: that doesn't help)
 
-    this.canvas = document.createElement('canvas');
+    if (typeof document !== 'undefined') {
+      this.canvas = document.createElement('canvas');
+    }
 
     // FIXME: since this is prelude to drawing, couldn't we use
     // our drawing canvas to render? then we don't need to attach

@@ -79,6 +79,9 @@ export interface FullModelMessage {
   /** this is a response, from the leader */
   response?: boolean;
 
+  /** serialized document */
+  data?: any;
+
 }
 
 /**

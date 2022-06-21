@@ -1,5 +1,5 @@
 
-import { WSServer } from './server';
+import { WSServer } from './server2';
 
 let port = 9001;
 

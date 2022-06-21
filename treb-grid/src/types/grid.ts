@@ -47,7 +47,6 @@ import { TileRange, BaseLayout } from '../layout/base_layout';
 // now we can drop the conditional compilation as well...
 
 import { GridLayout } from '../layout/grid_layout';
-import '../../style/grid-layout.scss';
 
 import { GridSelection } from './grid_selection';
 import { OverlayEditor, OverlayEditorResult } from '../editors/overlay_editor';
@@ -80,7 +79,9 @@ import { DataModel, SerializedModel } from './data_model';
 import { DOMUtilities } from '../util/dom_utilities';
 import { GridBase } from './grid_base';
 
-import '../../style/grid.scss';
+// can we move style to embed? [TEMP]
+// import '../../style/grid-layout.scss';
+// import '../../style/grid.scss';
 
 interface ClipboardCellData {
   address: ICellAddress;
@@ -7367,7 +7368,7 @@ export class Grid extends GridBase {
 
   //////////////////////////////////////////////////////////////////////////////
 
-  protected ExecCommand(commands: Command | Command[], queue = true) {
+  public ExecCommand(commands: Command | Command[], queue = true) {
 
     const flags = super.ExecCommand(commands, queue);
 
