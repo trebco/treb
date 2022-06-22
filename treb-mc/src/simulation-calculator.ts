@@ -3,7 +3,7 @@
 
 import { Calculator } from 'treb-calculator';
 
-import type { ICellAddress } from 'treb-base-types';
+import type { Cells, ICellAddress } from 'treb-base-types';
 
 import type { DataModel } from 'treb-grid/src/types/data_model';
 import { GraphStatus } from 'treb-calculator/src/dag/graph';
@@ -132,6 +132,19 @@ export class MCCalculator extends Calculator {
     simulation_model.CorrelateDistributions();
     simulation_model.state = SimulationState.Simulation;
 
+    // create a flat list we can use to run through results cells.
+    // this should be faster (and better, type-wise) than iterating
+    // with for...in loops.
+
+    simulation_model.triples = [];
+    simulation_model.results.forEach((a,b) => {
+      a.forEach((c,d) => {
+        c.forEach((e, f) => {
+          simulation_model.triples.push([b, d, f]);
+        });
+      });
+    });
+
     return GraphStatus.OK; // result.status;
 
   }
@@ -167,46 +180,33 @@ export class MCCalculator extends Calculator {
     try {
       this.Recalculate();
 
-      // FIXME: we should pull out index pairs once, then refer
-      // to the list. while this probably isn't slow, it seems
-      // unecessary.
+      let cells: Cells|undefined;
+      let sheet_id = 0;
 
-      // tslint:disable-next-line:forin
-      for (const id in simulation_model.results) {
-
-        // we should validate this, but I don't want to do that on every
-        // trial... can we precheck against collected cells, before running?
-        // maybe in prep? (...)
-
-        const cells = this.model.sheets.Find(id)?.cells;
+      for (const [id, column, row] of simulation_model.triples) {
+        if (sheet_id !== id) {
+          sheet_id = id;
+          cells = this.model.sheets.Find(id)?.cells;
+        }
         if (cells) {
-          // const cells = this.cells_map[id];
+          const cell = cells.GetCell({row, column});
 
-          // tslint:disable-next-line:forin
-          for (const c in simulation_model.results[id]){
-            const column = simulation_model.results[id][c];
+          // it seems like this is a waste -- if the cell doesn't exist,
+          // we should remove it from the list (or not add it in the first
+          // place). that prevents it from getting tested every loop.
 
-            // tslint:disable-next-line:forin
-            for (const r in column){
-
-              const cell = cells.GetCell({row: Number(r), column: Number(c)});
-
-              // it seems like this is a waste -- if the cell doesn't exist,
-              // we should remove it from the list (or not add it in the first
-              // place). that prevents it from getting tested every loop.
-
-              if (cell){
-                const value = cell.GetValue();
-                switch (typeof value){
-                  case 'number': column[r][iteration] = value; break;
-                  case 'boolean': column[r][iteration] = value ? 1 : 0; break;
-                  default: column[r][iteration] = 0;
-                }
-              }
+          if (cell){
+            const value = cell.GetValue();
+            switch (typeof value){
+              case 'number': simulation_model.results[id][column][row][iteration] = value; break;
+              case 'boolean': simulation_model.results[id][column][row][iteration] = value ? 1 : 0; break;
+              default: simulation_model.results[id][column][row][iteration] = 0;
             }
           }
+
         }
       }
+
       return { status: GraphStatus.OK, reference: null };
     }
     catch (err){

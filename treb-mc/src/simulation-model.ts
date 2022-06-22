@@ -97,6 +97,12 @@ export class SimulationModel {
   
   public results: SimulationResultsData = []; 
   
+  /** 
+   * list of results as triple indexes: sheet, r, c. this way 
+   * we don't have to iterate through the sparse arrays every time.
+   */
+  public triples: Array<[number, number, number]> = [];
+
   public elapsed = 0;
   public trials = 0;
 
