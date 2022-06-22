@@ -1,21 +1,21 @@
 
 import { EmbeddedSpreadsheetBase } from '../../treb-embed/src/embedded-spreadsheet-base';
 import { MCCalculator } from './simulation-calculator';
-import { ResultContainer } from './pack-results';
-import { CalculationWorker, WorkerMessage } from './worker-types';
-import { ExtendedSerializeOptions } from './extended-serialize-options';
+import type { ResultContainer } from './pack-results';
+import type { CalculationWorker, WorkerMessage } from './worker-types';
+import type { ExtendedSerializeOptions } from './extended-serialize-options';
 import { Random } from 'riskampjs-mc';
 
 import { Localization, ICellAddress, IsCellAddress } from 'treb-base-types';
-import { MacroFunction, SerializedNamedExpression } from 'treb-grid';
-import { EmbeddedSheetEvent, CompositeEmbeddedSheetEvent, TREBDocument } from '../../treb-embed/src/types';
+import type { MacroFunction, SerializedNamedExpression } from 'treb-grid';
+import type { EmbeddedSheetEvent, CompositeEmbeddedSheetEvent, TREBDocument } from '../../treb-embed/src/types';
 
 import * as PackResults from './pack-results'; // <-- why direct?
 
 // config
 import { DialogType } from '../../treb-embed/src/progress-dialog';
-import { Calculator } from 'treb-calculator/src'; // <-- why direct?
-import { EmbeddedSpreadsheetOptions, RunSimulationOptions } from '../../treb-embed/src/options';
+import type { Calculator } from 'treb-calculator/src'; // <-- why direct?
+import type { EmbeddedSpreadsheetOptions, RunSimulationOptions } from '../../treb-embed/src/options';
 
 export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
 
@@ -234,9 +234,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
 
     if (this.grid.model.macro_functions) {
       macro_functions = [];
-      const keys = Object.keys(this.grid.model.macro_functions);
-      for (const key of keys) {
-        const macro_function = this.grid.model.macro_functions[key];
+      for (const macro_function of this.model.macro_functions.values()) {
         macro_functions.push(JSON.parse(JSON.stringify(macro_function)));
       }
     }
@@ -244,8 +242,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
     let named_expressions: SerializedNamedExpression[] | undefined;
     if (this.grid.model.named_expressions) {
       const expresssions: SerializedNamedExpression[] = [];
-      for (const name of Object.keys(this.grid.model.named_expressions)) {
-        const expr = this.grid.model.named_expressions[name];
+      for (const [name, expr] of this.model.named_expressions.entries()) {
         const rendered = this.parser.Render(expr, undefined, '');
         expresssions.push({ name, expression: rendered });
       }
@@ -266,7 +263,7 @@ export class EmbeddedSpreadsheet extends EmbeddedSpreadsheetBase<MCCalculator> {
         type: 'configure',
         seed: seed_buffer[i], // : Math.round(Random.Next() * 1e14),
         locale: Localization.locale,
-        sheets: this.grid.model.sheets.map((sheet) => {
+        sheets: this.grid.model.sheets.list.map((sheet) => {
           return sheet.toJSON({
             rendered_values: true, // has a different name, for some reason
             preserve_type: true,

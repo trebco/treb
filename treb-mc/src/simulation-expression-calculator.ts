@@ -3,14 +3,14 @@
 
 import { ExpressionCalculator, ExtendedExpressionUnit, UnionIsExpressionUnit } from 'treb-calculator/src/expression-calculator';
 import { ReturnType } from 'treb-calculator/src/descriptors';
-import { FunctionLibrary } from 'treb-calculator/src/function-library';
+import type { FunctionLibrary } from 'treb-calculator/src/function-library';
 import { NameError, ReferenceError } from 'treb-calculator/src/function-error';
 
 import { SimulationModel, SimulationState } from './simulation-model';
-import { MCCompositeFunctionDescriptor } from './descriptors';
+import type { MCCompositeFunctionDescriptor } from './descriptors';
 
 import { Cell, ICellAddress, ValueType, UnionValue, Area} from 'treb-base-types';
-import { Parser, UnitCall } from 'treb-parser';
+import type { Parser, UnitCall } from 'treb-parser';
 
 
 export class MCExpressionCalculator extends ExpressionCalculator {

@@ -1,5 +1,5 @@
 
-import { ArgumentDescriptor, CompositeFunctionDescriptor } from 'treb-calculator/src/descriptors';
+import type { ArgumentDescriptor, CompositeFunctionDescriptor } from 'treb-calculator/src/descriptors';
 
 export interface MCArgumentDescriptor extends ArgumentDescriptor {
 

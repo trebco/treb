@@ -3,10 +3,10 @@
 import { /*UnionOrArray,*/ ICellAddress, Cell, UnionValue, ValueType, GetValueType, ArrayUnion, CellValue } from 'treb-base-types';
 import * as Utils from 'treb-calculator/src/utilities';
 import { Matrix, CDMatrix, MC, Stats, Random } from 'riskampjs-mc';
-import { MCFunctionMap } from './descriptors';
+import type { MCFunctionMap } from './descriptors';
 import { DataError, ArgumentError, ValueError } from 'treb-calculator/src/function-error';
 import { Scale as CreateScale } from 'treb-utils';
-import { DataModel } from 'treb-grid';
+import type { DataModel } from 'treb-grid';
 import { Polynomial } from './polynomial/polynomial';
 
 export type SimulationResultsData =  Array<Float64Array|number[]>[][];
@@ -1064,7 +1064,7 @@ export class SimulationModel {
     let cell: Cell|undefined;
   
     if (this.address.sheet_id) {
-      for (const sheet of this.model?.sheets || []) {
+      for (const sheet of this.model?.sheets.list || []) {
         if (sheet.id === this.address.sheet_id) {
           if (sheet.cells.data[this.address.row]) {
             cell = sheet.cells.data[this.address.row][this.address.column];
@@ -1852,7 +1852,7 @@ export class SimulationModel {
     return { type:ValueType.number, value: this.elapsed / 1000 };
   }
 
-  public PolynomialRoots(coefficients: number[], offset_intercept = 0) {
+  public PolynomialRoots(coefficients: number[], offset_intercept = 0): UnionValue {
 
     coefficients = Utils.FlattenUnboxed(coefficients);
     if (offset_intercept) {
@@ -1879,7 +1879,7 @@ export class SimulationModel {
 
   }
 
-  public PolynomialRealRoots(coefficients: number[], offset_intercept = 0, min?: number, max?: number) {
+  public PolynomialRealRoots(coefficients: number[], offset_intercept = 0, min?: number, max?: number): UnionValue {
 
     // return { type: ValueType.undefined };
 
@@ -1917,7 +1917,7 @@ export class SimulationModel {
 
   }
 
-  public PolynomialApply(coefficients: number[][], x: number) {
+  public PolynomialApply(coefficients: number[][], x: number): UnionValue {
 
     // return { type: ValueType.undefined };
 
@@ -1929,12 +1929,12 @@ export class SimulationModel {
 
   }
 
-  public PolynomialFit(x: number[][], y: number[][], degree: number) {
+  public PolynomialFit(x: number[][], y: number[][], degree: number): UnionValue {
 
     const result = Polynomial.Fit(Utils.FlattenUnboxed(x), Utils.FlattenUnboxed(y), degree);
     // console.info({result, x, y});
 
-    const value = result.map(value => [{
+    const value: UnionValue[][] = result.map(value => [{
       type: ValueType.number,
       value,
     }]);
@@ -1988,7 +1988,7 @@ export class SimulationModel {
 
   }
 
-  public CountInRange(order: number[], min: number, max: number) {
+  public CountInRange(order: number[], min: number, max: number): UnionValue {
 
     if (this.state !== SimulationState.Null) {
       return { type: ValueType.number, value: 0 };
@@ -2038,7 +2038,7 @@ export class SimulationModel {
    * @returns how many times, expressed as a percentage, was the values cell
    * above the floor _when_ the order cell was within the target range.
    */
-  public IntervalInRange(order: number[], min: number, max: number, values: number[], floor = 0) {
+  public IntervalInRange(order: number[], min: number, max: number, values: number[], floor = 0): UnionValue {
 
     if (this.state !== SimulationState.Null) {
       return { type: ValueType.number, value: 0 };

@@ -1,9 +1,9 @@
 
-import { ICellAddress, IArea } from 'treb-base-types';
-import { MacroFunction } from 'treb-grid';
-import { SerializedNamedExpression } from 'treb-grid';
+import type { ICellAddress, IArea } from 'treb-base-types';
+import type { MacroFunction } from 'treb-grid';
+import type { SerializedNamedExpression } from 'treb-grid';
 
-import { ResultContainer } from './pack-results';
+import type { ResultContainer } from './pack-results';
 
 /*
 export interface TrialData {

@@ -1,5 +1,5 @@
 
-import { SerializeOptions } from 'treb-grid';
+import type { SerializeOptions } from 'treb-grid';
 
 export interface ExtendedSerializeOptions extends SerializeOptions {
 

@@ -3,7 +3,7 @@
  * worker for simulation
  */
 
-import { WorkerMessage } from './worker-types';
+import type { WorkerMessage } from './worker-types';
 import { Localization, ICellAddress } from 'treb-base-types';
 
 import { DataModel } from 'treb-grid/src/types/data_model';
@@ -86,19 +86,21 @@ export class WorkerImpl {
       }
       this.data_model.named_ranges.Deserialize(message.named_ranges); // implicit reset
 
-      this.data_model.macro_functions = {};
+      // this.data_model.macro_functions = {};
+      this.data_model.macro_functions.clear();
       if (message.macro_functions) {
         for (const macro_function of message.macro_functions) {
-          this.data_model.macro_functions[macro_function.name.toUpperCase()] = macro_function;
+          this.data_model.macro_functions.set(macro_function.name.toUpperCase(), macro_function);
         }
       }
 
-      this.data_model.named_expressions = {};
+      // this.data_model.named_expressions = {};
+      this.data_model.macro_functions.clear();
       if (message.named_expressions) {
         for (const pair of message.named_expressions) {
           const parse_result = this.calculator.parser.Parse(pair.expression);
           if (parse_result.valid && parse_result.expression) {
-            this.data_model.named_expressions[pair.name] = parse_result.expression;
+            this.data_model.named_expressions.set(pair.name, parse_result.expression);
           }
         }
       }

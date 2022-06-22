@@ -3,9 +3,9 @@
 
 import { Calculator } from 'treb-calculator';
 
-import { ICellAddress } from 'treb-base-types';
+import type { ICellAddress } from 'treb-base-types';
 
-import { DataModel } from 'treb-grid/src/types/data_model';
+import type { DataModel } from 'treb-grid/src/types/data_model';
 import { GraphStatus } from 'treb-calculator/src/dag/graph';
 
 import * as PackResults from './pack-results';
@@ -21,8 +21,8 @@ import * as Base64JS from 'base64-js';
 
 // testing (should remove)
 import * as z85 from 'z85-codec';
-import { TREBSimulationData } from '../../treb-embed/src/types';
-import { ExtendedSerializeOptions } from './extended-serialize-options';
+import type { TREBSimulationData } from '../../treb-embed/src/types';
+import type { ExtendedSerializeOptions } from './extended-serialize-options';
 
 
 export class MCCalculator extends Calculator {
@@ -92,13 +92,12 @@ export class MCCalculator extends Calculator {
           throw new Error('additional cell passed without sheet id');
         }
 
-        for (const sheet of this.model?.sheets || []) {
-          if (sheet.id === address.sheet_id) {
-            const cell = sheet.cells.GetCell(address, false);
-            if (cell) {
-              simulation_model.StoreCellResults(address);
-            }
-            break;
+        const sheet = this.model.sheets.Find(address.sheet_id);
+
+        if (sheet) {
+          const cell = sheet.cells.GetCell(address, false);
+          if (cell) {
+            simulation_model.StoreCellResults(address);
           }
         }
 
@@ -179,27 +178,30 @@ export class MCCalculator extends Calculator {
         // trial... can we precheck against collected cells, before running?
         // maybe in prep? (...)
 
-        const cells = this.cells_map[id];
-
-        // tslint:disable-next-line:forin
-        for (const c in simulation_model.results[id]){
-          const column = simulation_model.results[id][c];
+        const cells = this.model.sheets.Find(id)?.cells;
+        if (cells) {
+          // const cells = this.cells_map[id];
 
           // tslint:disable-next-line:forin
-          for (const r in column){
+          for (const c in simulation_model.results[id]){
+            const column = simulation_model.results[id][c];
 
-            const cell = cells.GetCell({row: Number(r), column: Number(c)});
+            // tslint:disable-next-line:forin
+            for (const r in column){
 
-            // it seems like this is a waste -- if the cell doesn't exist,
-            // we should remove it from the list (or not add it in the first
-            // place). that prevents it from getting tested every loop.
+              const cell = cells.GetCell({row: Number(r), column: Number(c)});
 
-            if (cell){
-              const value = cell.GetValue();
-              switch (typeof value){
-                case 'number': column[r][iteration] = value; break;
-                case 'boolean': column[r][iteration] = value ? 1 : 0; break;
-                default: column[r][iteration] = 0;
+              // it seems like this is a waste -- if the cell doesn't exist,
+              // we should remove it from the list (or not add it in the first
+              // place). that prevents it from getting tested every loop.
+
+              if (cell){
+                const value = cell.GetValue();
+                switch (typeof value){
+                  case 'number': column[r][iteration] = value; break;
+                  case 'boolean': column[r][iteration] = value ? 1 : 0; break;
+                  default: column[r][iteration] = 0;
+                }
               }
             }
           }
