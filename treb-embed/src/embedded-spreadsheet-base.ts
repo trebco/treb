@@ -967,7 +967,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * @internal
    */
   public static BuildPath(): void {
-    const tags = document.querySelectorAll('script');
+    const tags = (typeof document === 'undefined') ? [] : document.querySelectorAll('script');
 
     // FIXME: fragile!
     const default_script_name = process.env.BUILD_ENTRY_MAIN || '';
