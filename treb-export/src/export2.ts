@@ -403,8 +403,6 @@ export class Exporter {
       throw new Error('missing zip');
     }
 
-    console.info("SS", shared_strings);
-
     const dom: any = {
       sst: {
         a$: {
@@ -1711,7 +1709,6 @@ export class Exporter {
     if (!definedNames.definedName.length) {
       definedNames = undefined;
     }
-    console.info("DN", definedNames);
 
     const workbook_dom: any = {
       workbook: {
