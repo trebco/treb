@@ -7,7 +7,7 @@ import { Parser, ParseResult } from 'treb-parser';
 import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address, HyperlinkType } from './address-type';
 import { ImportedSheetData, AnchoredAnnotation, CellParseResult, ValueType, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, ValidationType } from 'treb-base-types/src';
 import { Sheet, VisibleState } from './workbook-sheet2';
-import { CellAnchor } from './drawing2/drawing2';
+import type { CellAnchor } from './drawing2/drawing2';
 import { XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';

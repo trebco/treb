@@ -1,5 +1,5 @@
 
-import JSZip from 'jszip';
+import type JSZip from 'jszip';
 // import * as xmlparser from 'fast-xml-parser';
 import { XMLParser } from 'fast-xml-parser';
 import { XMLUtils, XMLOptions, XMLOptions2 } from './xml-utils';
@@ -11,14 +11,14 @@ const xmlparser2 = new XMLParser(XMLOptions2);
 // import * as he from 'he';
 
 //import { Drawing, TwoCellAnchor, CellAnchor } from './drawing/drawing';
-import { TwoCellAnchor, CellAnchor } from './drawing2/drawing2';
+import type { TwoCellAnchor, CellAnchor } from './drawing2/drawing2';
 
 // import { ImportedSheetData, IArea } from 'treb-base-types/src';
 import { SharedStrings } from './shared-strings2';
 import { StyleCache } from './workbook-style2';
 import { Theme } from './workbook-theme2';
 import { Sheet, VisibleState } from './workbook-sheet2';
-import { RelationshipMap } from './relationship';
+import type { RelationshipMap } from './relationship';
 
 
 /*
@@ -68,6 +68,9 @@ export class Workbook {
 
   /** theme */
   public theme = new Theme();
+
+  /** defined names. these can be ranges or expressions. */
+  public defined_names: Record<string, string> = {};
 
   /** the workbook "rels" */
   public rels: RelationshipMap = {};
@@ -134,6 +137,17 @@ export class Workbook {
     // read workbook
     data = await this.zip.file('xl/workbook.xml')?.async('text') as string;
     xml = xmlparser2.parse(data);
+
+    // defined names
+    this.defined_names = {};
+    const defined_names = XMLUtils.FindAll(xml, 'workbook/definedNames/definedName');
+    for (const defined_name of defined_names) {
+      const name = defined_name.a$?.name;
+      const expression = defined_name.t$ || '';
+      if (name && expression) {
+        this.defined_names[name] = expression;
+      }
+    }
 
     const workbook_views = XMLUtils.FindAll(xml, 'workbook/bookViews/workbookView');
 
@@ -394,11 +408,13 @@ export class Workbook {
   }
 
   /** FIXME: accessor */
-  public GetNamedRanges(): void {
+  public GetNamedRanges(): Record<string, string> {
     
     // ... what does this do, not do, or what is it supposed to do?
     // note that this is called by the import routine, so it probably
     // expects to do something
+
+    return this.defined_names;
 
   }
 

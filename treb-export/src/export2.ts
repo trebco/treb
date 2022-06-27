@@ -14,10 +14,10 @@ import { PixelsToColumnWidth } from './column-width';
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`;
 
 import { template } from './template-2';
-import { SerializedSheet } from 'treb-grid';
+import type { SerializedSheet } from 'treb-grid';
 
 import { IArea, Area, ICellAddress, Cells, ValueType, CellValue, Style, DataValidation, ValidationType,
-         AnnotationLayout, Corner as LayoutCorner } from 'treb-base-types';
+         AnnotationLayout, Corner as LayoutCorner, ICellAddress2 } from 'treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
 import { XMLParser, XmlBuilderOptions, XMLBuilder } from 'fast-xml-parser';
@@ -29,11 +29,11 @@ import { Theme } from './workbook-theme2';
 import { RelationshipMap, AddRel } from './relationship';
 import { XMLOptions2 } from './xml-utils';
 
-import { Parser, UnitAddress, UnitRange, ExpressionUnit } from 'treb-parser';
+import { Parser, UnitAddress, UnitRange, ExpressionUnit, IllegalSheetNameRegex, QuotedSheetNameRegex } from 'treb-parser';
 
 // FIXME: move
 import { Chart, ChartOptions } from './drawing2/chart2';
-import { ImageOptions } from './drawing2/embedded-image';
+import type { ImageOptions } from './drawing2/embedded-image';
 import { Drawing, TwoCellAnchor } from './drawing2/drawing2';
 
 export class Exporter {
@@ -402,6 +402,8 @@ export class Exporter {
     if (!this.zip) {
       throw new Error('missing zip');
     }
+
+    console.info("SS", shared_strings);
 
     const dom: any = {
       sst: {
@@ -965,11 +967,10 @@ export class Exporter {
       sheet_data: SerializedSheet[];
       active_sheet?: number;
       named_ranges?: {[index: string]: IArea};
+      named_expressions?: Array<{ name: string, expression: string }>;
       decimal_mark: ','|'.';
     }): Promise<void> {
       
-    // console.info('source', source);
-
     // --- create a map --------------------------------------------------------
 
     // active_sheet, in source, is a sheet ID. we need to map
@@ -1640,6 +1641,8 @@ export class Exporter {
 
     }
 
+
+
     // these are workbook global so after all sheets are done
 
     await this.WriteSharedStrings(shared_strings);
@@ -1663,6 +1666,52 @@ export class Exporter {
     ));
 
     await this.WriteRels(workbook_rels, `xl/_rels/workbook.xml.rels`);
+
+    let definedNames: any = {definedName: []};
+    if (source.named_ranges) {
+      const keys = Object.keys(source.named_ranges);
+      for (const key of keys) {
+        let sheet_name = '';
+        const area = new Area(source.named_ranges[key].start, source.named_ranges[key].end);
+        area.start.absolute_column = area.start.absolute_row = true;
+        area.end.absolute_column = area.end.absolute_row = true;
+
+        if (area.start.sheet_id) {
+          for (const sheet of source.sheet_data) {
+            if (sheet.id === area.start.sheet_id) {
+              sheet_name = sheet.name || '';
+              break;
+            }
+          }
+        }
+
+        if (sheet_name) {
+          if (QuotedSheetNameRegex.test(sheet_name)) {
+            sheet_name = `'${sheet_name}'`;
+          }
+          sheet_name += '!';
+        }
+
+        // console.info({key, area, lx: area.spreadsheet_label, sheet_name });
+        definedNames.definedName.push({
+          a$: { name: key },
+          t$: sheet_name + area.spreadsheet_label,
+        });
+
+      }
+    }
+    if (source.named_expressions) {
+      for (const entry of source.named_expressions) {
+        definedNames.definedName.push({
+          a$: { name: entry.name },
+          t$: entry.expression,
+        });
+      }
+    }
+    if (!definedNames.definedName.length) {
+      definedNames = undefined;
+    }
+    console.info("DN", definedNames);
 
     const workbook_dom: any = {
       workbook: {
@@ -1701,7 +1750,8 @@ export class Exporter {
             }
             return { a$ };
           }),
-        }
+        },
+        definedNames,
       },
     };
 

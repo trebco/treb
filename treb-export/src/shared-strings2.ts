@@ -88,6 +88,10 @@ export class SharedStrings {
   /** find existing string or insert, and return index */
   public Ensure(text: string): number {
 
+    if (text[0] === '\'') {
+      text = text.substring(1);
+    }
+    
     let index = this.reverse[text];
     if (typeof index === 'number') {
       return index;

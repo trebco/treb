@@ -175,11 +175,6 @@ export class DataModel {
    */
   public theme_style_properties: Style.Properties = JSON.parse(JSON.stringify(Style.DefaultProperties));
 
-  // private _sheets: Sheet[] = [];
-
-
-
-
 }
 
 export interface ViewModel {

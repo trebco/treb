@@ -280,7 +280,9 @@ export class ExpressionCalculator {
       }
 
       if (!sheet) {
-        throw new Error('missing sheet [ac8]');
+        // throw new Error('missing sheet [ac8]');
+        console.error('missing sheet [ac8]');
+        return ReferenceError();
       }
 
       const cell_data = sheet.CellData(address);

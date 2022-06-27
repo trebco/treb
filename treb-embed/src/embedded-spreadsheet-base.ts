@@ -2145,6 +2145,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     this.grid.Reset();
     this.ResetInternal();
     this.calculator.AttachModel();
+    this.UpdateAC();
+
     this.Publish({ type: 'reset' });
   }
 
@@ -3421,6 +3423,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
             this.ResetInternal();
             this.grid.Update();
+            this.UpdateAC();
 
             // this one _is_ the grid cells
 
@@ -4552,11 +4555,35 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       model.named_ranges.Deserialize(named_range_data);
     }
 
+    // when importing named expressions, we have to make sure there's a
+    // sheet ID attached to each range/address. hopefully we have serialized
+    // it with a sheet name so we can look up.
+
     model.named_expressions.clear(); // = {};
     if (data.named_expressions) {
       for (const pair of data.named_expressions) {
         const parse_result = this.parser.Parse('' || pair.expression);
         if (parse_result.valid && parse_result.expression) {
+          this.parser.Walk(parse_result.expression, unit => {
+            if (unit.type === 'address' || unit.type === 'range') {
+              if (unit.type === 'range') {
+                unit = unit.start;
+              }
+              if (!unit.sheet_id) {
+                if (unit.sheet) {
+                  const sheet = this.model.sheets.Find(unit.sheet);
+                  if (sheet) {
+                    unit.sheet_id = sheet.id;
+                  }
+                }
+              }
+              if (!unit.sheet_id) {
+                unit.sheet_id = this.grid.active_sheet.id;
+              }
+              return false; // don't continue in ranges
+            }
+            return true;
+          });
           model.named_expressions.set(pair.name.toUpperCase(), parse_result.expression);
         }
       }
@@ -4576,6 +4603,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
       }
     }
+
+    this.UpdateAC();
 
   }
 

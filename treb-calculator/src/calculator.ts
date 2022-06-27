@@ -199,7 +199,7 @@ export class Calculator extends Graph {
         ],
         return_type: ReturnType.reference,
         volatile: true,
-        fn: ((reference: UnionValue, rows = 0, columns = 0, width = 1, height = 1): UnionValue => {
+        fn: ((reference: UnionValue, rows = 0, columns = 0, height = 1, width = 1): UnionValue => {
 
           if (!reference) {
             return ArgumentError();

@@ -13,7 +13,7 @@
 
 import { EventSource } from 'treb-utils';
 import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
-import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex } from 'treb-parser';
+import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex, QuotedSheetNameRegex } from 'treb-parser';
 import { Area, Style, IsCellAddress, ValidationType } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue } from 'treb-base-types';
 import { Sheet } from './sheet';
@@ -186,10 +186,23 @@ export class GridBase {
    * 
    */
    public SetAutocompleteFunctions(functions: FunctionDescriptor[]): void {
+
+    // why does iterable support forEach but not map? 
+
+    const expressions: FunctionDescriptor[] = [];
+    for (const name of this.model.named_expressions.keys()) {
+      expressions.push({
+        name, type: DescriptorType.Function,
+      });
+    }
+
     const consolidated = functions.slice(0).concat(
       this.model.named_ranges.List().map((named_range) => {
         return { name: named_range.name, type: DescriptorType.Token };
-      }));
+      }),
+      expressions,
+    );
+
     //this.autocomplete_matcher.SetFunctions(functions);
     this.autocomplete_matcher.SetFunctions(consolidated);
   }
@@ -237,10 +250,39 @@ export class GridBase {
       }
     }
 
+    // when serializing named expressions, we have to make sure
+    // that there's a sheet name in any address/range. 
+
     const named_expressions: SerializedNamedExpression[] = [];
     if (this.model.named_expressions) {
 
       for (const [name, expr] of this.model.named_expressions) {
+        this.parser.Walk(expr, unit => {
+          if (unit.type === 'address' || unit.type === 'range') {
+            const test = unit.type === 'range' ? unit.start : unit;
+
+            test.absolute_column = test.absolute_row = true;
+
+            if (!test.sheet) {
+              if (test.sheet_id) {
+                const sheet = this.model.sheets.Find(test.sheet_id);
+                if (sheet) {
+                  test.sheet = sheet.name;
+                }
+              }
+              if (!test.sheet) {
+                test.sheet = this.active_sheet.name;
+              }
+            }
+
+            if (unit.type === 'range') {
+              unit.end.absolute_column = unit.end.absolute_row = true;
+            }
+
+            return false;
+          }
+          return true;
+        });
         const rendered = this.parser.Render(expr, undefined, '');
         named_expressions.push({
           name, expression: rendered
@@ -325,6 +367,7 @@ export class GridBase {
     Sheet.Reset();
     this.UpdateSheets([], true);
     this.model.named_ranges.Reset();
+    this.model.named_expressions.clear();
     this.model.macro_functions.clear(); //  = {};
 
   }

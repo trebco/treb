@@ -980,6 +980,11 @@ export class Grid extends GridBase {
 
   /** 
    * this method is called after an XLSX import.
+   * 
+   * FIXME: should this not be in base? (...)
+   * 
+   * I suppose it's specific to an environment that _could_ import XLSX, 
+   * so it's not strictly speaking generic.
    */
   public FromImportData(
     import_data: {
@@ -1045,31 +1050,63 @@ export class Grid extends GridBase {
     }
 
     this.model.named_ranges.Reset();
+    this.model.named_expressions.clear();
 
     if (import_data.names) {
       for (const name of Object.keys(import_data.names)) {
+
+        const validated = this.model.named_ranges.ValidateNamed(name);
+        if (!validated) {
+          console.warn(`invalid name: ${name}`);
+          continue;
+        }
+
         const label = import_data.names[name];
         const parse_result = this.parser.Parse(label);
+
         if (parse_result.expression) {
           if (parse_result.expression.type === 'range') {
             const sheet_id = name_map[parse_result.expression.start.sheet || ''];
             if (sheet_id) {
               parse_result.expression.start.sheet_id = sheet_id;
-              this.model.named_ranges.SetName(name, new Area(parse_result.expression.start, parse_result.expression.end), false);
+              this.model.named_ranges.SetName(validated, new Area(parse_result.expression.start, parse_result.expression.end), false);
             }
           }
-          if (parse_result.expression.type === 'address') {
+          else if (parse_result.expression.type === 'address') {
             const sheet_id = name_map[parse_result.expression.sheet || ''];
             if (sheet_id) {
               parse_result.expression.sheet_id = sheet_id;
-              this.model.named_ranges.SetName(name, new Area(parse_result.expression), false);
+              this.model.named_ranges.SetName(validated, new Area(parse_result.expression), false);
             }
+          }
+          else {
+
+            // we need to map sheet names to sheet IDs in named
+            // expressions, if they have any addresses/references.
+
+            const expr = parse_result.expression;
+            this.parser.Walk(expr, unit => {
+              if (unit.type === 'address' || unit.type === 'range') {
+                if (unit.type === 'range') {
+                  unit = unit.start;
+                }
+                if (!unit.sheet_id) {
+                  unit.sheet_id = name_map[unit.sheet || ''] || 0; // default is bad here -- do we have an active sheet yet?
+                }
+                return false;
+              }
+              return true;
+            });
+            this.model.named_expressions.set(validated, expr);
           }
         }
 
       }
       this.model.named_ranges.RebuildList();
     }
+
+    // FIXME: do we need to rebuild autocomplete here (A: yes)
+    // ...
 
     // should already be added, right?
 
@@ -1832,9 +1869,12 @@ export class Grid extends GridBase {
    */
   public SetName(name: string, range?: ICellAddress | Area, expression?: string): void {
 
+    console.info('setname', name, range, expression);
+
     // validate/translate name first
 
     const validated = this.model.named_ranges.ValidateNamed(name);
+
     if (!validated) {
       throw new Error('invalid name');
     }
@@ -1847,15 +1887,20 @@ export class Grid extends GridBase {
     if (this.autocomplete_matcher) {
       for (const name of Object.keys(this.autocomplete_matcher.function_map)) {
         if (compare === name.toUpperCase()) {
-          const descriptor = this.autocomplete_matcher.function_map[name];
+          // const descriptor = this.autocomplete_matcher.function_map[name];
 
           // hmmm... we're not actually setting this type 
           // (DescriptorType.Function). it seems like we only 
           // set the _other_ type. sloppy.
 
-          if (descriptor.type !== DescriptorType.Token) {
-            throw new Error('invalid name');
+          if (range || expression) {
+            throw new Error('name already defined');
           }
+
+          //if (descriptor.type !== DescriptorType.Token) {
+          //  throw new Error('invalid name');
+          //}
+
           break; // since we can't have two with the same name
         }
       }
@@ -1887,7 +1932,33 @@ export class Grid extends GridBase {
     }
     else if (expression) {
       const parse_result = this.parser.Parse(expression);
-      if (parse_result.valid) {
+
+      // resolve sheet. otherwise we wind up with dangling
+      // references. NOTE: need to do this on import as well
+
+      if (parse_result.valid && parse_result.expression) {
+
+        this.parser.Walk(parse_result.expression, unit => {
+          if (unit.type === 'address' || unit.type === 'range') {
+            if (unit.type === 'range') {
+              unit = unit.start;
+            }
+            if (!unit.sheet_id) {
+              if (unit.sheet) {
+                const sheet = this.model.sheets.Find(unit.sheet);
+                if (sheet) {
+                  unit.sheet_id = sheet.id;
+                }
+              }
+            }
+            if (!unit.sheet_id) {
+              unit.sheet_id = this.active_sheet.id;
+            }
+            return false;
+          }
+          return true;
+        });
+
         command.expression = parse_result.expression;
       }
       else {
