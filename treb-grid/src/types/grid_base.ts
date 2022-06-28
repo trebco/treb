@@ -855,13 +855,42 @@ export class GridBase {
 
     // is this current?
     if (sheet === this.active_sheet) {
-      for (let i = 0; i < this.model.sheets.length; i++) {
-        if (this.model.sheets.list[i] === this.active_sheet) {
-          this.ActivateSheetInternal({
-            key: CommandKey.ActivateSheet,
-            index: i + 1,
-          });
-          return;
+
+      // this needs to check the visibility field, or else we'll throw
+      // when we call the activate method. given the above check we know
+      // that there's at least one visible sheet.
+
+      const list = this.model.sheets.list;
+
+      // first find the _next_ visible sheet...
+
+      for (let i = 0; i < list.length; i++) {
+        if (list[i] === this.active_sheet) {
+          for (let j = i + 1; j < list.length; j++) {
+            if (list[j].visible) {
+              this.ActivateSheetInternal({
+                key: CommandKey.ActivateSheet,
+                index: j,
+              });
+              return;
+            }
+          }
+
+          // if we got here, then we need to start again from the beginning
+
+          for (let j = 0; j< list.length; j++) {
+            if (list[j].visible) {
+              this.ActivateSheetInternal({
+                key: CommandKey.ActivateSheet,
+                index: j,
+              });
+              return;
+            }
+          }
+
+          // should not be possible
+          throw new Error('no visible sheet');
+
         }
       }
     }
