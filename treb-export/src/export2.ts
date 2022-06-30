@@ -54,8 +54,14 @@ export class Exporter {
 
     // attrValueProcessor: a => (typeof a === 'string') ? he.encode(a, { useNamedReferences: true }) : a,
 
-    attributeValueProcessor: (name: string, a: string) => (typeof a === 'string') ? 
-      a.replace(/"/g, '&quot;').replace(/'/g, '&apos;') : a,
+    // why is this double-encoding? is there arlready implicit encoding? (...)
+    // there must have been a reason we used it in the first place... but I don't know what that was.
+    // do we need to encode apostrophes?
+
+    //    attributeValueProcessor: (name: string, a: string) => (typeof a === 'string') ? 
+    //      a.replace(/"/g, '&quot;').replace(/'/g, '&apos;') : a,
+
+
 
   };
 
@@ -336,6 +342,7 @@ export class Exporter {
     // formats); everything else has a default 0 entry
 
     if (style_cache.number_formats.length) {
+
       dom.styleSheet.numFmts = {
         a$: { count: style_cache.number_formats.length },
         numFmt: style_cache.number_formats.map(format => {
@@ -347,6 +354,9 @@ export class Exporter {
           };
         }),
       };
+
+      // console.info(style_cache.number_formats);
+      // console.info(dom.styleSheet.numFmts);
 
     }
 
@@ -388,7 +398,8 @@ export class Exporter {
     //  tableStyles
     
     const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
-    // console.info(xml);
+    console.info(xml);
+    
     await this.zip?.file('xl/styles.xml', xml);
 
   }
