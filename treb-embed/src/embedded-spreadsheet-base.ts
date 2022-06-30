@@ -1178,8 +1178,6 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
   protected HandleToolbarEvent(event: ToolbarEvent): void {
 
-    console.info("E?", event);
-
     let updated_style: Style.Properties = {};
 
     const insert_annotation = (func: string) => {
