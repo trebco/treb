@@ -334,12 +334,17 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
   protected toolbar?: Toolbar;
 
+  /** caching selection state so we can refer to it if we need it */
+  protected selection_state?: SelectionState;
+
   /**
    * this is the current selection style, which we delta and apply when
    * there's a toolbar command. it seems like we're keeping this information
    * in two places, though, here and in the toolbar. could consolidate? (...)
+   * 
+   * UPDATE: use selection state, which will have the same information
    */
-  protected active_selection_style?: Style.Properties;
+  // protected active_selection_style?: Style.Properties;
 
   /** localized parser instance. we're sharing. */
   protected get parser(): Parser {
@@ -1173,6 +1178,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
   protected HandleToolbarEvent(event: ToolbarEvent): void {
 
+    console.info("E?", event);
+
     let updated_style: Style.Properties = {};
 
     const insert_annotation = (func: string) => {
@@ -1192,6 +1199,11 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       // updated style because we also want to resize rows, and
       // we want those things to be a single transaction.
 
+      // minor tweak: don't resize the row if the target cell is 
+      // merged, even if the resulting area is too small.
+
+      // not the right spot? who is using this message?
+
       const selection = this.grid.GetSelection();
       const area = this.grid.active_sheet.RealArea(selection.area);
 
@@ -1200,6 +1212,18 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
       for (let row = area.start.row; row <= area.end.row; row++) {
         rows.push(row);
       }
+
+      /*
+      console.info("TSS", this.selection_state);
+
+      if (this.selection_state?.merge) {
+        console.info('merge, not resizing row');
+      }
+      else {
+        this.grid.SetRowHeight(rows, undefined, false);
+      }
+      */
+
       this.grid.SetRowHeight(rows, undefined, false);
 
     }
@@ -1228,7 +1252,14 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
               for (let row = area.start.row; row <= area.end.row; row++) {
                 rows.push(row);
               }
-              this.grid.SetRowHeight(rows, undefined, false);
+
+              // tweak: don't resize row if merged, even if the merged
+              // area is too small
+
+              if (!this.selection_state?.merge) {
+                this.grid.SetRowHeight(rows, undefined, false);
+              }
+
             }
           }
           break;
@@ -1320,9 +1351,11 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
         case 'increase-decimal':
         case 'decrease-decimal':
-          if (this.active_selection_style) {
+          //if (this.active_selection_style) {
+          if (this.selection_state?.style) {
 
-            const format = NumberFormatCache.Get(this.active_selection_style.number_format || 'General');
+            //const format = NumberFormatCache.Get(this.active_selection_style.number_format || 'General');
+            const format = NumberFormatCache.Get(this.selection_state.style.number_format || 'General');
             if (format.date_format) { break; }
             const clone = new NumberFormat(format.pattern);
 
@@ -1356,7 +1389,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
                     // find the longer of the two, use that as base
 
-                    const f2 = NumberFormatCache.Get(this.active_selection_style.number_format || 'General', true);
+                    //const f2 = NumberFormatCache.Get(this.active_selection_style.number_format || 'General', true);
+                    const f2 = NumberFormatCache.Get(this.selection_state.style.number_format || 'General', true);
                     const real_parts = f2.BaseFormat(value.real);
                     const imaginary_parts = f2.BaseFormat(value.imaginary);
 
@@ -1410,15 +1444,20 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         case 'lock':
           updated_style = {
             locked:
-              this.active_selection_style ?
-                !this.active_selection_style.locked : true,
+              //this.active_selection_style ?
+              //  !this.active_selection_style.locked : true,
+              this.selection_state?.style ?
+                !this.selection_state.style.locked : true,
           };
           break;
 
         case 'wrap':
           updated_style = {
-            wrap: this.active_selection_style ?
-              !this.active_selection_style.wrap : true,
+            wrap: 
+              //this.active_selection_style ?
+              //  !this.active_selection_style.wrap : true,
+              this.selection_state?.style ?
+                !this.selection_state?.style.wrap : true,
           };
           break;
 
@@ -4304,15 +4343,16 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
         data = this.grid.active_sheet.CellData(data.merge_area.start);
       }
 
-      this.active_selection_style = data.style;
+      // this.active_selection_style = data.style;
       state.comment = data.note;
       state.style = data.style ? { ...data.style } : undefined;
 
     }
     else {
-      this.active_selection_style = {};
+      // this.active_selection_style = {};
     }
 
+    this.selection_state = state;
     this.toolbar?.UpdateState(state);
 
   }
