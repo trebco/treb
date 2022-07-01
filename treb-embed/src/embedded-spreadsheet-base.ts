@@ -6,7 +6,7 @@ import {
   SerializedModel, FreezePane, SerializedSheet,
   BorderConstants, SheetChangeEvent, GridOptions, 
   Sheet, GridSelection, CellEvent, FunctionDescriptor, 
-  DataModel, AnnotationViewData,
+  DataModel, AnnotationViewData, ErrorCode,
 } from 'treb-grid';
 
 import { 
@@ -732,8 +732,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
           case 'error':
             this.dialog?.ShowDialog({
               type: DialogType.error,
-              message: event.message,
-              title: event.title, // || 'Error',
+              ...this.TranslateGridError(event.code),
               timeout: 3000,
               close_box: true,
             });
@@ -1057,6 +1056,39 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
     // original
     this.grid.SetAutocompleteFunctions(list);
+
+  }
+
+  /**
+   * we moved error strings from grid, so we can (at some point) localize 
+   * them. returns a message and (optionally) a title for the dialog
+   */
+  protected TranslateGridError(code: ErrorCode): {
+      message: string,
+      title?: string,
+    } {
+
+    switch (code) {
+      case ErrorCode.None:
+        return {
+          message: `No error`, // why?
+        }
+
+      case ErrorCode.Array:
+        return {
+          message: `You can't change part of an array`,
+        }
+
+      case ErrorCode.DataValidation:
+        return {
+          message: `Invalid value (data validation)`,
+        }
+
+      default:
+        return {
+          message: `Unknown error (${code})`,
+        };
+    }
 
   }
 

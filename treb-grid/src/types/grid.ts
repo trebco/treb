@@ -52,11 +52,10 @@ import type { GridSelection } from './grid_selection';
 import { OverlayEditor, OverlayEditorResult } from '../editors/overlay_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
-import type { GridEvent } from './grid_events';
+import { ErrorCode, GridEvent } from './grid_events';
 import type { FreezePane, LegacySerializedSheet } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
 import type { GridOptions } from './grid_options';
-import { DescriptorType } from '../editors/autocomplete_matcher';
 import { BorderConstants } from './border_constants';
 import type { SerializeOptions } from './serialize_options';
 import { UA } from '../util/ua';
@@ -5086,25 +5085,19 @@ export class Grid extends GridBase {
 
     if (cell.area) {
       if ((!array && cell.area.count > 1) || !selection.area || !selection.area.Equals(cell.area)) {
-        // FIXME // this.Publish({type: 'grid-error', err: GridErrorType.ArrayChange, reference: selection.area });
-        this.Error(`You can't change part of an array.`);
+        this.Error(ErrorCode.Array);
         return;
       }
     }
     else if (array) {
       let existing_array = false;
-      // let reference: Area;
       this.active_sheet.cells.Apply(selection.area, (element: Cell) => {
         if (element.area) {
-          // column = column || 0;
-          // row = row || 0;
-          // reference = new Area({ column, row });
           existing_array = true;
         }
       }, false);
       if (existing_array) {
-        // FIXME // this.Publish({type: 'grid-error', err: GridErrorType.ArrayChange, reference });
-        this.Error(`You can't change part of an array.`);
+        this.Error(ErrorCode.Array);
         return;
       }
     }
@@ -5134,7 +5127,8 @@ export class Grid extends GridBase {
         }
         if (!match) {
           // removed in favor of error //this.layout.HighlightError(selection.target);
-          this.Error(`Invalid value (data validation)`);
+          // this.Error(`Invalid value (data validation)`);
+          this.Error(ErrorCode.DataValidation);
           return; 
         }
       }

@@ -1,7 +1,7 @@
 /**
- * grid-base is a superclass for grid that takes over all (most) of the 
- * data operations, leaving UI operations (painting and interacting) in
- * grid. 
+ * grid base is a superclass for grid that takes over all (most) of the 
+ * data operations, leaving UI operations (painting and interacting, plus
+ * layout) in the grid subclass. 
  * 
  * this is part of an effort to support running outside of the browser,
  * but still using the command log to handle deltas.
@@ -9,18 +9,21 @@
  * this turns out to be a little like the (old) layout where we had modern
  * and legacy layouts -- a lot of stuff can be reused, but a lot can't.
  * 
+ * calling this "grid" doesn't really make sense anymore, but we're not in
+ * a hurry to change it either.
+ * 
  */
 
 import { EventSource } from 'treb-utils';
 import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
-import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex, QuotedSheetNameRegex } from 'treb-parser';
+import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex } from 'treb-parser';
 import { Area, Style, IsCellAddress, ValidationType } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
 import { NumberFormat } from 'treb-format';
 
-import type { ErrorCode, GridEvent } from './grid_events';
+import { ErrorCode, GridEvent } from './grid_events';
 import type { CommandRecord, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
 import type { SerializeOptions } from './serialize_options';
@@ -649,7 +652,8 @@ export class GridBase {
 
       const cell = sheet.CellData(command.area);
       if (cell.area && (cell.area.rows > 1 || cell.area.columns > 1)) {
-        this.Error(`You can't change part of an array.`);
+        // this.Error(`You can't change part of an array.`);
+        this.Error(ErrorCode.Array);
         return;
       }
 
@@ -1507,7 +1511,8 @@ export class GridBase {
     });
 
     if (error) {
-      this.Error(`You can't change part of an array.`);
+      // this.Error(`You can't change part of an array.`);
+      this.Error(ErrorCode.Array);
     }
     else {
       this.active_sheet.ClearArea(area);
@@ -1517,11 +1522,15 @@ export class GridBase {
 
   /**
    * send an error message. subscriber can figure out how to communicate it
-   * to users. FIXME: use error constants?
+   * to users. 
    * 
+   * dropping strings, now we only allow error constants (via enum)
+   *  
    * @param message 
    */
-  protected Error(message: string|ErrorCode) {
+  protected Error(message: ErrorCode) {
+
+    /*
     console.info('Error', message);
     if (typeof message === 'string') {
       this.grid_events.Publish({
@@ -1535,6 +1544,13 @@ export class GridBase {
         code: message,
       });
     }
+    */
+
+    this.grid_events.Publish({
+      type: 'error',
+      code: message,
+    });
+  
   }
 
 
@@ -1650,7 +1666,8 @@ export class GridBase {
     const target_sheet = this.FindSheet(command.sheet_id);
 
     if (!target_sheet.InsertRows(command.before_row, command.count)){
-      this.Error(`You can't change part of an array.`);
+      // this.Error(`You can't change part of an array.`);
+      this.Error(ErrorCode.Array);
       return { error: true };
     }
 
@@ -1869,7 +1886,8 @@ export class GridBase {
     // actual actor to see the error.
 
     if (!target_sheet.InsertColumns(command.before_column, command.count)) {
-      this.Error(`You can't change part of an array.`);
+      // this.Error(`You can't change part of an array.`);
+      this.Error(ErrorCode.Array);
       return { error: true };
     }
     

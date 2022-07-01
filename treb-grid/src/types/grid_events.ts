@@ -6,11 +6,17 @@ import type { Area } from 'treb-base-types';
 
 export enum ErrorCode {
 
-  /** no error: zero */
+  /** no error: zero so it's falsy */
   None = 0,
+
+  /** placeholder for new errors */
+  Unknown,
 
   /** you can't change part of an array */
   Array,
+
+  /** invalid value (data validation) */
+  DataValidation,
 
 }
 
@@ -30,16 +36,12 @@ export interface GridAlternateSelectionEvent {
   selection: GridSelection;
 }
 
+/**
+ * we used to return strings here, changed to error codes for l10n
+ */
 export interface GridErrorEvent {
   type: 'error';
-  message?: string;
-  title?: string;
-
-  /** 
-   * adding coded errors for common types, so we can move text
-   * management (and l10n) somewhere else
-   */
-  code?: ErrorCode;
+  code: ErrorCode;
 }
 
 export interface StructureEvent {
