@@ -3,7 +3,9 @@
 
 import {
   Cell, ValueType, Cells, Style,
-  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, IsNestedRowArray, CellValue, ImportedSheetData, Complex, TextPartFlag, DimensionedQuantity, DimensionedQuantityUnion, IsCellAddress, IArea
+  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, 
+  IsNestedRowArray, CellValue, ImportedSheetData, Complex, 
+  DimensionedQuantity, IsCellAddress, IArea
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';

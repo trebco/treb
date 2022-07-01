@@ -2,44 +2,8 @@
 import * as ts from 'typescript';
 import * as fs from 'fs';
 import * as path from 'path';
-// import { config as config_data } from './api-config';
 
-interface Config {
-
-  /** root of declaration dir, relative to config file */
-  root: string;
-
-  /** starting point for docs, relative to root */
-  index: string;
-
-  /** output file relative to config file (or stdout) */
-  output?: string;
-
-  /** package.json for version information */
-  package: string;
-
-  /** drop these types, even if they're exported */
-  drop_types: string[];
-
-  /** keep variables of this type but change to any */
-  convert_to_any: string[];
-
-  /** exclude via jsdoc tags. typically "internal", we also use "mc" */
-  exclude_tags: string[];
-
-  /** drop generics */
-  drop_generics: string[];
-
-  /** rename types */
-  rename_types: Record<string, string>;
-
-  /** additional files to include. these will be concatenated to the generated output. */
-  include: string[];
-
-  /** turn enums into union types. this helps import. */
-  flatten_enums: boolean;
-
-}
+import type { Config, ReadTypeArgs } from './api-generator-types';
 
 let config_file = './api-config.json';
 for (let i = 0; i < process.argv.length; i++) {
@@ -103,6 +67,7 @@ const FlattenQualifiedName = (node: ts.QualifiedName): string[] => {
 
 };
 
+/*
 const FlattenEntityName = (name: ts.EntityName, base?: string): string => {
   if (ts.isIdentifier(name)) {
     return name.escapedText.toString() + (base ? '.' + base : ''); 
@@ -110,45 +75,7 @@ const FlattenEntityName = (name: ts.EntityName, base?: string): string => {
   base = name.right.escapedText.toString() + (base ? '.' + base : '');
   return FlattenEntityName(name.left, base);
 };
-
-
-interface ReadTypeArgs {
-     /** 
-     * types we are looking for. if this is missing, we will colllect
-     * all types that are exported and public (TODO: also not @internal) 
-     */
-      types?: string[],
-
-      /** dependencies, with target types */
-      recursive_targets: Record<string, string[]>,
-  
-      /** ... */
-      imported_types: Record<string, string>,
-  
-      /** 
-       * this has to change, because we may collect reference types
-       * from types which we don't actually want (the owner/parent).
-       * however, we don't know ahead of time because the (owner/parent)
-       * type may be referenced later...
-       * 
-       * so this is a map of who references it -> the reference. we 
-       * can collapse this list later once we decide what we actually want
-       * to keep.
-       * 
-       * actually let's keep both records...
-       */
-      referenced_type_map: Record<string, string[]>,
-
-      /** types we will need, from the imports (probably) */
-      referenced_types: Record<string, number>,
-
-      /** types we have resolved (we can stop looking for them) */
-      found_types: Record<string, string>,
-  
-      /** ... */
-      extra_types: Record<string, string>,
-
-}
+*/
 
 const GetDocTags = (node: ts.Node): string[] => {
   const tags = ts.getAllJSDocTags(node, (tag: ts.JSDocTag): tag is ts.JSDocTag => true);
@@ -215,7 +142,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
         // still need it.
 
         if ((!exported && !exported_module) || internal) {
-          if (ts.isIdentifier(node.name)) {
+          if (node.name && ts.isIdentifier(node.name)) {
             // console.info('dropping', node.name.escapedText.toString());
           }
           return undefined;
@@ -223,7 +150,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
 
         let name = '';
 
-        if (ts.isIdentifier(node.name)) {
+        if (node.name && ts.isIdentifier(node.name)) {
           name = node.name.escapedText.toString();
           // console.info('keeping', node.name.escapedText.toString());
         }
@@ -350,7 +277,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
           // UPDATE: convert to any -> handle return type 
 
           let return_type = node.type;
-          if (ts.isTypeReferenceNode(return_type)) {
+          if (return_type && ts.isTypeReferenceNode(return_type)) {
             if (ts.isIdentifier(return_type.typeName)) {
               const name = return_type.typeName.escapedText.toString();
               if (config.convert_to_any.includes(name)) {
@@ -367,7 +294,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
             node.questionToken,
             node.typeParameters,
             node.parameters.filter((test, index) => {
-              if (ts.isTypeReferenceNode(test.type)) {
+              if (test.type && ts.isTypeReferenceNode(test.type)) {
                 if (ts.isIdentifier(test.type.typeName)) {
                   const name = test.type.typeName.escapedText.toString();
                   if (config.drop_types.includes(name)) {
@@ -389,7 +316,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
               }
               return true;
             }).map(test => {
-              if (ts.isTypeReferenceNode(test.type)) {
+              if (test.type && ts.isTypeReferenceNode(test.type)) {
                 if (ts.isIdentifier(test.type.typeName)) {
                   const name = test.type.typeName.escapedText.toString();
                   if (config.convert_to_any.includes(name)) {
@@ -524,7 +451,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
 
         if (exported && !internal) {
 
-          if (ts.isIdentifier(node.name)) {
+          if (node.name && ts.isIdentifier(node.name)) {
             if (!AddFoundType(node.name.escapedText.toString(), node.getFullText())) {
               return undefined;
             }
@@ -664,7 +591,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
         }
 
         if (node.importClause && ts.isImportClause(node.importClause)) {
-          if (ts.isNamedImports(node.importClause.namedBindings)) {
+          if (node.importClause.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
             for (const element of node.importClause.namedBindings.elements) {
               const name = element.name.escapedText.toString();
               args.imported_types[name] = target;
@@ -910,20 +837,20 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
     if (!filtered || filtered.length) {
       for (const key of recursive) {
         const file_path = RelativeFilePath(key);
-        let sublist = args.recursive_targets[key];
+        let sublist: string[] | undefined = args.recursive_targets[key];
         let result: ReadTypeArgs;
 
         if (sublist.includes('*')) {
           sublist = filtered;
         }
         else {
-          sublist = sublist.filter(test => filtered.includes(test));
+          sublist = sublist.filter(test => (filtered||[]).includes(test));
         }
 
         // NOW filter on whether we've checked this path for this 
         // type before. if so, even if we missed, we can drop it.
 
-        sublist = sublist.filter(test => {
+        sublist = (sublist||[]).filter(test => {
           const composite = `${file_path}:${test}`;
           const check = lookups[composite];
           return typeof check === 'undefined';
@@ -957,7 +884,7 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
 
           }
 
-          filtered = filtered.filter(test => !resolved.includes(test));
+          filtered = (filtered || []).filter(test => !resolved.includes(test));
           if (!filtered.length) { break; }
         }
 

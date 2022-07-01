@@ -128,30 +128,6 @@ export interface EmbeddedSpreadsheetOptions {
   /** new option, better support for headless operations (default false) */
   headless?: boolean;
 
-  /** 
-   * max workers. workers is bounded by available cores, but you can request max < cores 
-   * @mc
-   */
-  max_workers?: number;
-
-  /** 
-   * default trials if you call RunSimulation without an explicit parameter 
-   * @mc
-   */
-  default_trials?: number;
-
-  /** 
-   * default screen updates, if you call RunSimulation without an explicit parameter 
-   * @mc
-   */
-  screen_updates?: boolean;
-
-  /** 
-   * default LHS, if you call RunSimulation without an explicit parameter 
-   * @mc
-   */
-  lhs?: boolean;
-
   /** max size for image, in bytes */
   max_file_size?: number;
 
@@ -170,7 +146,7 @@ export interface EmbeddedSpreadsheetOptions {
   /** target window for hyperlinks (default _blank); set false to disable hyperlinks altogether */
   hyperlinks?: string|false;
 
-  /** 
+  /* * 
    * support complex numbers. the meaning of this flag is changing -- the 
    * parser is going to always support complex numbers, but we might load 
    * a different set of functions if they're not expected to be used.
@@ -179,7 +155,7 @@ export interface EmbeddedSpreadsheetOptions {
    * @deprecated
    * @internal
    */
-  complex?: boolean;
+  // complex?: boolean;
 
   /** 
    * for rendering the imaginary number. this is intended to support 
@@ -212,23 +188,16 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   export: true,
   popout: true,
   tab_bar: 'auto',
-  max_workers: 1,
   resizable: true,
-  default_trials: 5000,
-  lhs: true,
   hyperlinks: '_blank',
   max_file_size: 1024 * 92,
-  complex: true,
-
   // imaginary_value: 'i',
 
   // I don't think false options need to be in default?
   // although it's nice to have a clear reference about defaults...
   
   dnd: false,
-  // fork: false,
   add_tab: false,
-  screen_updates: false,
   expand_formula_button: false,
   delete_tab: false,
   expand: false,
@@ -236,22 +205,6 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   spinner: false,
 
 };
-
-/** FIXME: move */
-export interface RunSimulationOptions {
-  trials: number;
-  lhs: boolean;
-  stepped: boolean;
-  additional_cells: ICellAddress[];
-  seed: number;
-  replay: boolean;
-
-  /** 
-   * this is added to support RAW, which may override the dialog 
-   * and has (potentially) different behavior
-   */
-  abort_on_dialog_close: boolean;
-}
 
 /* *
  * actual options requires the container node
@@ -271,14 +224,5 @@ export interface CreateSheetOptions extends EmbeddedSpreadsheetOptions {
 
   /** collapsed: start sidebar closed */
   collapsed?: boolean;
-
-  /** mc icon is now optional */
-  mc?: boolean;
-
-  /** formatting is optional, may change */
-  /** moved to sheet options */
-  // toolbar?: boolean | 'show' | 'compressed' | 'show-compressed';
-
-  load?: string;
 
 }
