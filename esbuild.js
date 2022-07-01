@@ -26,13 +26,6 @@ const version = {
   cookie: false,
 };
 
-/** 
- * include MC code. WIP 
- * 
- * note ATM this is default true, and the option turns it off. that's for
- * current backcompat. at some point this should switch.
- */
-let mc = true;
 
 /** clean outdir, jic */
 let clean = false;
@@ -75,9 +68,6 @@ for (let i = 0; i < process.argv.length; i++) {
   else if (process.argv[i] === '--metafile') {
     metafile = true;
   }
-  else if (process.argv[i] === '--nomc') {
-    mc = false;
-  }
   else if (/^-/.test(process.argv[i])){
     console.warn('Unrecognized option: ' + process.argv[i]);
   }
@@ -105,40 +95,26 @@ if (watch) {
   }
 }
 
-// --- for MC, rename keys in package ------------------------------------------
-
-if (mc) {
-  const tag_keys = Object.keys(package['build-entry-points']);
-  for (const key of tag_keys) {
-    package['build-entry-points'][key] = package['build-entry-points'][key].replace(/treb/, 'riskamp-web');
-  }
-}
-
 // ---- setup/data -------------------------------------------------------------
 
 /**
  * banner will be prepended to any and all output files
  * UPDATE: version specific
  */
-const banner = mc ?
-  `/*! RiskAMP web v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. https://web.riskamp.com/ */` :
+const banner = 
   `/*! TREB v${package.version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */` ;
 
 /**
  * entry points for module build, keyed by output file name
  */
  const module_entry = {
-  [package['build-entry-points']['main']]: mc ? './treb-mc/src/index-module-mc.ts' : './treb-embed/src/index-module.ts',
+  [package['build-entry-points']['main']]: './treb-embed/src/index-module.ts',
 };
 
 /**
  * entry points for regular build, keyed by output file name
  */
-const modern_entry = mc ? {
-  [package['build-entry-points']['main']]: './treb-mc/src/index-modern-mc.ts',
-  [package['build-entry-points']['export-worker'] + '-' + package.version]: './treb-export/src/export-worker/index-modern.ts',
-  [package['build-entry-points']['calculation-worker'] + '-' + package.version]: './treb-mc/src/calculation-worker/index-modern.ts',
-} : {
+const modern_entry = {
   [package['build-entry-points']['main']]: './treb-embed/src/index-modern.ts',
   [package['build-entry-points']['export-worker'] + '-' + package.version]: './treb-export/src/export-worker/index-modern.ts',
 };
@@ -222,7 +198,6 @@ const GenerateConfig = (version) => {
       'process.env.NODE_ENV': `"${version_str}"`,
       'process.env.BUILD_VERSION': `"${package.version}"`,
       'process.env.BUILD_NAME': `"${package.name}"`,
-      // 'process.env.MC': mc ? 'true' : 'false', // now implicit
       ...build_entry_replacements,
     },
     // entryPoints: modern_entry,
