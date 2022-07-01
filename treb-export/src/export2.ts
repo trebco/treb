@@ -398,7 +398,7 @@ export class Exporter {
     //  tableStyles
     
     const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
-    console.info(xml);
+    // console.info(xml);
     
     await this.zip?.file('xl/styles.xml', xml);
 
