@@ -1,5 +1,5 @@
 
-import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
+import { EmbeddedSpreadsheet } from './embedded-spreadsheet-base';
 import { CompositeSheet } from './composite-sheet';
 import type { CreateSheetOptions } from './options';
 
@@ -12,8 +12,8 @@ import type { CreateSheetOptions } from './options';
 //
 export const TREB = {
   version: process.env.BUILD_VERSION, // this is fake, it will get replaced
-  CreateSpreadsheet: (options: CreateSheetOptions): EmbeddedSpreadsheetBase => CompositeSheet.Create(EmbeddedSpreadsheetBase, options).sheet,
-  SetScriptPath: (path: string): void => { EmbeddedSpreadsheetBase.treb_base_path = path; },
+  CreateSpreadsheet: (options: CreateSheetOptions): EmbeddedSpreadsheet => CompositeSheet.Create(EmbeddedSpreadsheet, options).sheet,
+  SetScriptPath: (path: string): void => { EmbeddedSpreadsheet.treb_base_path = path; },
 };
 
 (() => {
@@ -22,7 +22,7 @@ export const TREB = {
 
   // EmbeddedSpreadsheetBase.treb_language = 'es6'; // load es6 modules
 
-  EmbeddedSpreadsheetBase.BuildPath();
+  EmbeddedSpreadsheet.BuildPath();
 
   // console.info('base path?', EmbeddedSpreadsheetBase.treb_base_path);
 

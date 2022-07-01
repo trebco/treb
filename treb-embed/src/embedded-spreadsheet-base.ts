@@ -190,7 +190,7 @@ export interface SheetScrollOptions {
 /**
  * embedded spreadsheet
  */
-export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> { 
+export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> { 
 
   /** @internal */
   public static treb_base_path = '';
@@ -361,11 +361,11 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
 
   // protected views: EmbeddedSpreadsheetBase[] = [];
   protected views: Array<{
-    view: EmbeddedSpreadsheetBase;
+    view: EmbeddedSpreadsheet;
     subscription?: number;
   }> = [];
 
-  protected focus_target: EmbeddedSpreadsheetBase = this;
+  protected focus_target: EmbeddedSpreadsheet = this;
 
   /**
    * export worker (no longer using worker-loader).
@@ -484,7 +484,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * @internal
    */
   constructor(
-      options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheetBase }, 
+      options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheet }, 
       type: (new (model: DataModel) => CalcType) = Calculator as (new (model: DataModel) => CalcType)) {
 
     // super();
@@ -1096,8 +1096,8 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    * this will need to get overloaded for subclasses so they can
    * create the correct type
    */
-  protected CreateView(): EmbeddedSpreadsheetBase {
-    return new EmbeddedSpreadsheetBase({
+  protected CreateView(): EmbeddedSpreadsheet {
+    return new EmbeddedSpreadsheet({
       ...this.options,
       global_name: undefined, // don't overwrite
       model: this,
@@ -4684,7 +4684,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
    */
   protected async LoadWorker(name: string): Promise<Worker> {
 
-    if (!EmbeddedSpreadsheetBase.treb_base_path) {
+    if (!EmbeddedSpreadsheet.treb_base_path) {
       console.warn('worker path is not set. it you are loading TREB in an ESM module, please either '
         + 'include the script in a document <script/> tag, or call the method TREB.SetScriptPath() to '
         + 'set the load path for workers (this should be the path to TREB script files).');
@@ -4694,7 +4694,7 @@ export class EmbeddedSpreadsheetBase<CalcType extends Calculator = Calculator> {
     if (!/\.js$/.test(name)) name += ('-' + process.env.BUILD_VERSION + '.js');
 
     let worker: Worker;
-    let treb_path = EmbeddedSpreadsheetBase.treb_base_path;
+    let treb_path = EmbeddedSpreadsheet.treb_base_path;
 
     if (treb_path) {
       if (!/\/$/.test(treb_path)) treb_path += '/';

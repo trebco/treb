@@ -4,13 +4,13 @@ import { AutoEmbedManager } from './auto-embed';
 import type { CreateSheetOptions, EmbeddedSpreadsheetOptions } from './options';
 import type { NumberFormatCache, ValueParser } from 'treb-format';
 import type { Complex, Localization } from 'treb-base-types';
-import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
+import { EmbeddedSpreadsheet } from './embedded-spreadsheet-base';
 import type { Util as ChartUtils, Chart } from 'treb-charts';
 
 interface TREBNamespace {
 
-  CreateEngine?: (options: EmbeddedSpreadsheetOptions) => EmbeddedSpreadsheetBase,
-  CreateSpreadsheet?: (options: CreateSheetOptions) => EmbeddedSpreadsheetBase,
+  CreateEngine?: (options: EmbeddedSpreadsheetOptions) => EmbeddedSpreadsheet,
+  CreateSpreadsheet?: (options: CreateSheetOptions) => EmbeddedSpreadsheet,
   version?: string,
   Format?: {
     format: (value: number, format: string) => string,
@@ -27,7 +27,7 @@ interface TREBNamespace {
 
   // new, tracking
 
-  instances?: EmbeddedSpreadsheetBase[],
+  instances?: EmbeddedSpreadsheet[],
 
 }
 
@@ -39,15 +39,15 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
   if (!(self as DecoratedGlobal).TREB) {
 
     // find path for worker loaders
-    EmbeddedSpreadsheetBase.BuildPath();
+    EmbeddedSpreadsheet.BuildPath();
 
-    const instances: EmbeddedSpreadsheetBase[] = [];
+    const instances: EmbeddedSpreadsheet[] = [];
 
     const value: TREBNamespace = {
       version: process.env.BUILD_VERSION, // this is fake, it will get replaced
       instances,
       CreateSpreadsheet: (options: CreateSheetOptions) => {
-        const composite = CompositeSheet.Create(EmbeddedSpreadsheetBase, options);
+        const composite = CompositeSheet.Create(EmbeddedSpreadsheet, options);
         instances.push(composite.sheet);
         return composite.sheet;
       },
@@ -57,8 +57,8 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
     // FIXME: does RAW depend on formatter? can't remember... put it 
     // back if necessary
 
-    if (EmbeddedSpreadsheetBase.enable_engine) {
-      value.CreateEngine = (options = {}) => new EmbeddedSpreadsheetBase(options);
+    if (EmbeddedSpreadsheet.enable_engine) {
+      value.CreateEngine = (options = {}) => new EmbeddedSpreadsheet(options);
     }
   
     // FIXME: writable and configurable default to false, you don't
@@ -73,7 +73,7 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
     AutoEmbedManager.Attach('data-treb', 
       (...args: any) => {
-        const composite = CompositeSheet.Create(EmbeddedSpreadsheetBase, args[0]);
+        const composite = CompositeSheet.Create(EmbeddedSpreadsheet, args[0]);
         instances.push(composite.sheet);
         return composite.sheet;
       });
@@ -84,4 +84,4 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
 // re-export
 
-export { EmbeddedSpreadsheetBase as EmbeddedSpreadsheet } from './embedded-spreadsheet-base';
+export { EmbeddedSpreadsheet as EmbeddedSpreadsheet } from './embedded-spreadsheet-base';

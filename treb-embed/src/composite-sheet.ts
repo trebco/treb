@@ -8,7 +8,7 @@ import type { Toolbar } from './toolbar';
 
 import '../style/composite-sheet.scss';
 import 'treb-base-types/style/resizable.css';
-import { EmbeddedSpreadsheetBase } from './embedded-spreadsheet-base';
+import { EmbeddedSpreadsheet } from './embedded-spreadsheet-base';
 import type { SerializeOptions } from 'treb-grid';
 
 const sidebar_open_class = 'sidebar-open';
@@ -40,7 +40,7 @@ interface IConstructor<T> {
 /**
  * sheet plus toolbar and sidebar (replacement for the old autoembed)
  */
-export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
+export class CompositeSheet<T extends EmbeddedSpreadsheet> {
 
   /** flag for svg injection */
   public static symbols_injected = false;
@@ -295,7 +295,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
    * UPDATE: providing access to the container so we can modify it... use
    * sparingly
    */
-  public static Create<T extends EmbeddedSpreadsheetBase>(base_type: IConstructor<T>, options: CreateSheetOptions): CompositeSheet<T> {
+  public static Create<T extends EmbeddedSpreadsheet>(base_type: IConstructor<T>, options: CreateSheetOptions): CompositeSheet<T> {
     return new CompositeSheet(base_type, options); // .sheet;
   }
 
@@ -363,7 +363,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheetBase> {
     */
 
     if (!/\.js$/.test(script_path)) script_path += '.js';
-    let treb_path = EmbeddedSpreadsheetBase.treb_base_path;
+    let treb_path = EmbeddedSpreadsheet.treb_base_path;
 
     if (treb_path) {
       if (!/\/$/.test(treb_path)) treb_path += '/';
