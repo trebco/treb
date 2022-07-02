@@ -2,11 +2,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const package = require('./package.json');
+const package = require('../package.json');
 const archiver = require('archiver');
 
 const dist_dir = 'build';
-const current_dir = path.resolve(__dirname, dist_dir, 'current');
+const current_dir = path.resolve(__dirname, '..', dist_dir, 'current');
 
 let name = '';
 for (let i = 0; i < process.argv.length; i++) {
@@ -30,7 +30,7 @@ const BuildZip = async () => {
 
   await new Promise((resolve, reject) => {
 
-    const output = fs.createWriteStream(path.resolve(__dirname, dist_dir, name + '-' + package.version + '.zip'));
+    const output = fs.createWriteStream(path.resolve(__dirname, '..', dist_dir, name + '-' + package.version + '.zip'));
     const archive = archiver('zip', {
       zlib: { level: 9 } // Sets the compression level.
     });

@@ -48,7 +48,7 @@
     "watch-cookie": "node esbuild.js --watch --cookie --dev",
     "build-cookie": "node esbuild.js --cookie",
     "update-icons": "node treb-embed/script/process-icons.js --filter unused --source treb-embed/icons/4 > treb-embed/src/generated/toolbar42.ts",
-    "release": "node esbuild.js --clean --modern --module && npm run tsc && npm run generate-api && node copy-distribution-files.js && node zip-package.js --name treb",
+    "release": "node esbuild.js --clean --modern --module && npm run tsc && npm run generate-api && node util/copy-distribution-files.js && node util/zip-package.js --name treb",
     "ws-server": "ts-node-dev --project treb-ws/server/tsconfig.json --respawn treb-ws/server/src/index.ts"
   },
   "build-entry-points": {

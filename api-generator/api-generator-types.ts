@@ -31,6 +31,9 @@ export interface Config {
   /** additional files to include. these will be concatenated to the generated output. */
   include: string[];
 
+  /** map declaration files directly (by prefix) */
+  map: Record<string, string>;
+
   /** turn enums into union types. this helps import. */
   flatten_enums: boolean;
 

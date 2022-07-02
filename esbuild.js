@@ -4,12 +4,12 @@ const esbuild = require('esbuild');
 const path = require('path');
 const sass_plugin = require('esbuild-sass-plugin');
 const package = require('./package.json');
-const template_compressor = require('./template-compressor-esbuild'); 
+const template_compressor = require('./util/template-compressor-esbuild'); 
 const fs = require('fs');
 const child_process = require('child_process');
 const postcss = require('postcss');
 const cssnano = require('cssnano');
-const license_plugin = require('./license-plugin-esbuild');
+const license_plugin = require('./util/license-plugin-esbuild');
 
 
 // ---- command line -----------------------------------------------------------

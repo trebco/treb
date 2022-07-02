@@ -24,6 +24,7 @@ let config: Config = {
   exclude_tags: [],
   rename_types: {},
   drop_generics: [],
+  map: {},
   include: [],
   flatten_enums: false,
 };
@@ -675,8 +676,12 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
   for (let i = 0; i < depth; i++) { depth_prefix += ' '; }
 
   const RelativeFilePath = (key: string): string => {
-
-    // console.info("RDP", key);
+    for (const prefix of Object.keys(config.map)) {
+      if (key.startsWith(prefix)) { // should === ?
+        const replaced = key.replace(prefix, config.map[prefix]);
+        return path.join(config_dir, replaced);
+      }
+    }
 
     if (key.startsWith('.')) {
       return path.join(path.dirname(file), key + '.d.ts');

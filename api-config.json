@@ -6,7 +6,7 @@
 
   "root": "./declaration",
 
-  "index": "treb-embed/src/embedded-spreadsheet-base.d.ts",
+  "index": "treb-embed/src/embedded-spreadsheet.d.ts",
 
   "include": [
     "api-generator/treb-global.d.ts"
