@@ -1,5 +1,5 @@
 
-import { EmbeddedSpreadsheet } from './embedded-spreadsheet-base';
+import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { CompositeSheet } from './composite-sheet';
 import type { CreateSheetOptions } from './options';
 

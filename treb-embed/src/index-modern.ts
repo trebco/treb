@@ -4,7 +4,7 @@ import { AutoEmbedManager } from './auto-embed';
 import type { CreateSheetOptions, EmbeddedSpreadsheetOptions } from './options';
 import type { NumberFormatCache, ValueParser } from 'treb-format';
 import type { Complex, Localization } from 'treb-base-types';
-import { EmbeddedSpreadsheet } from './embedded-spreadsheet-base';
+import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import type { Util as ChartUtils, Chart } from 'treb-charts';
 
 interface TREBNamespace {
@@ -84,4 +84,4 @@ type DecoratedGlobal = typeof self & { TREB?: TREBNamespace };
 
 // re-export
 
-export { EmbeddedSpreadsheet as EmbeddedSpreadsheet } from './embedded-spreadsheet-base';
+export { EmbeddedSpreadsheet as EmbeddedSpreadsheet } from './embedded-spreadsheet';

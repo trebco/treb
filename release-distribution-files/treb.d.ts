@@ -247,7 +247,9 @@ export declare class EmbeddedSpreadsheet {
     HideSheet(index?: number | string, hide?: boolean): void;
 
     /**
-     * Show or hide sheet.
+     * Show or hide sheet. This method is deprecated because it's ambiguous.
+     * To set a sheet's visibility, use `HideSheet`. To activate a sheet, use
+     * `ActivateSheet`.
      *
      * @param index - sheet name or index.
      *

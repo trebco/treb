@@ -2,7 +2,7 @@
 
 #
 # print a list of all --treb css vars used in any treb* directory. 
-# bash wizardry.
+# uses bash wizardry.
 #
 # of course you should be noting these when you create them. but
 # this is a useful check that we haven't missed anything.

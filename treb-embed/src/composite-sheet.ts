@@ -7,7 +7,7 @@ import type { Toolbar } from './toolbar';
 
 import '../style/composite-sheet.scss';
 import 'treb-base-types/style/resizable.css';
-import { EmbeddedSpreadsheet } from './embedded-spreadsheet-base';
+import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import type { SerializeOptions } from 'treb-grid';
 
 const sidebar_open_class = 'sidebar-open';

@@ -2,7 +2,7 @@
 TREB includes icons from [material design][1], used under the terms of the 
 [Apache license][2]; [font awesome][3], used under the terms of the
 [font awesome free license][4]; and [bootstrap icons][5], used under the terms
-of the [MIT license][6].
+of the [MIT license][6]. 
 
 Icons are property of their respective owners.
 

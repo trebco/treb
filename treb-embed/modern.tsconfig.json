@@ -14,7 +14,6 @@
   "exclude": [
     "src/API/api-v1.ts",
     "src/API/api-utils.ts",
-    "src/embedded-spreadsheet.ts",
     "src/index-modern-mc.ts",
     "src/index-module-mc.ts",
     "../treb-parser/test/**/*.ts",
