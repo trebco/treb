@@ -4,7 +4,8 @@ TREB includes icons from [material design][1], used under the terms of the
 [font awesome free license][4]; and [bootstrap icons][5], used under the terms
 of the [MIT license][6]. 
 
-Icons are property of their respective owners.
+Icons are property of their respective owners. The TREB icon (a leaf) is a 
+trademark of trebco, llc.
 
 [1]: https://material.io/resources/icons/
 [2]: https://www.apache.org/licenses/LICENSE-2.0.html
