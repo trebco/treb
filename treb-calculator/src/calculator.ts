@@ -2020,8 +2020,11 @@ export class Calculator extends Graph {
       // calculated first; so while the value doesn't change, it no 
       // longer === calculated.
 
+      // actually we do get here in the case of an array head with
+      // a constant value. so we should stop shouting about it.
+
       // this is just a constant?
-      console.warn('UNHANDLED CASE', cell);
+      // console.warn('UNHANDLED CASE', cell);
 
     }
 
