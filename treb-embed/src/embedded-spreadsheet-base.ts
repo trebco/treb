@@ -43,7 +43,7 @@ import * as FileSaver from 'file-saver';
 
 // --- style -------------------------------------------------------------------
 
-// we moved grid style imports from grid -> here so we can better
+// we moved grid style (sass) imports from grid -> here so we can better
 // support headless/server-side grid. if we build with esbuild they'd
 // disappear so we could move these back...
 
@@ -190,7 +190,7 @@ export interface SheetScrollOptions {
 /**
  * embedded spreadsheet
  */
-export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> { 
+export class EmbeddedSpreadsheet { 
 
   /** @internal */
   public static treb_base_path = '';
@@ -203,43 +203,6 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
 
   /** @internal */
   public static enable_formatter = false;
-
-  /* * 
-   * the data field is a proxy object that references spreadsheet data 
-   * directly. it's intended to simplify getting/setting values from the 
-   * sheet.
-   * 
-   * this field is EXPERIMENTAL and the semantics may change in future 
-   * versions. don't use it in production.
-   * 
-   * because this is a proxy, it will usually be slower than using the 
-   * GetRange and SetRange functions. the convenience of using the proxy
-   * may outweigh the extra cost.
-   * 
-   * to get/set data, use offsets for the row and column (in that order).
-   * row and column are zero-based. for example, to get the value in cell
-   * C7, use `sheet.data[6][2]` (row 6, column 2).
-   * 
-   * to set the value in that cell, just assign the value: `sheet.data[6][2] = 100`.
-   * 
-   * you can optionally also include a sheet name. if you don't use a sheet
-   * name the proxy will refer to the current active sheet.
-   * 
-   * `sheet.data['Sheet1'][2][2] = 10;`
-   * 
-   * both GetRange and SetRange take options that change the meaning of the
-   * function. for example, GetRange options has a field `formula` which 
-   * means "return the formula instead of the calculated value".
-   * 
-   * the proxy has an "options" field which is passed to GetRange/SetRange,
-   * so you can set options for getting and setting values.
-   * 
-   * `sheet.data.options.formula = true;`
-   * 
-   * @experimental
-   * @internal
-   */
-  // public data = CreateProxy(this);
 
   /**
    * this flag will be set on LoadDocument. the intent is to be able to
@@ -297,13 +260,9 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
   protected last_save_version = 0;
 
   /**
-   * calculator may be overloaded. the pattern we settled on is 
-   * the constructor affirmatively assigns it via a method. use that
-   * method to do the override.
-   * 
-   * @internal
+   * calculator instance. we may share this if we're in a split view.
    */
-  protected calculator: CalcType;
+  protected calculator: Calculator;
 
   /**
    */
@@ -337,15 +296,6 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
   /** caching selection state so we can refer to it if we need it */
   protected selection_state?: SelectionState;
 
-  /**
-   * this is the current selection style, which we delta and apply when
-   * there's a toolbar command. it seems like we're keeping this information
-   * in two places, though, here and in the toolbar. could consolidate? (...)
-   * 
-   * UPDATE: use selection state, which will have the same information
-   */
-  // protected active_selection_style?: Style.Properties;
-
   /** localized parser instance. we're sharing. */
   protected get parser(): Parser {
     return this.calculator.parser;
@@ -365,6 +315,7 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
     subscription?: number;
   }> = [];
 
+  /** focus target if we have multiple views */
   protected focus_target: EmbeddedSpreadsheet = this;
 
   /**
@@ -372,13 +323,6 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
    * export worker is loaded on demand, not by default.
    */
   protected export_worker?: Worker;
-
-  /* moved to calculator *
-   * keep track of what we've registered, for external libraries
-   * (currently charts), which is per sheet instance.
-   * /
-  protected registered_libraries: Record<string, boolean> = {};
-  */
 
   /**
    * undo pointer points to the next insert spot. that means that when
@@ -483,9 +427,7 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
    * 
    * @internal
    */
-  constructor(
-      options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheet }, 
-      type: (new (model: DataModel) => CalcType) = Calculator as (new (model: DataModel) => CalcType)) {
+  constructor(options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheet }) { 
 
     // super();
 
@@ -493,14 +435,6 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
     // support nested options, for that you need a proper merge
 
     this.options = { ...DefaultOptions, ...options };
-
-    // set these options ASAP, they are static to the relevant classes
-
-    /* option is deprecated
-    if (this.options.complex) {
-      // Parser.support_complex_numbers = true;
-    }
-    */
 
     if (typeof this.options.imaginary_value === 'string') {
       NumberFormat.imaginary_character = this.options.imaginary_value;
@@ -567,26 +501,6 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
       grid_options.initial_scale = this.options.scale;
     }
 
-    // what is happening here? this is dumb
-
-    //    if (typeof this.options.formula_bar !== 'undefined') {
-    //      grid_options.formula_bar = this.options.formula_bar;
-    //    }
-
-    //    if (this.options.expand_formula_button) {
-    //      grid_options.expand_formula_button = this.options.expand_formula_button;
-    //    }
-
-    // if (this.options.scrollbars) 
-    // {
-    //  console.info("TOS?", this.options.scrollbars, typeof this.options.scrollbars);
-    //  grid_options.scrollbars = !!this.options.scrollbars;
-    // }
-
-    //    if (typeof this.options.tab_bar !== 'undefined') {
-    //      grid_options.tab_bar = this.options.tab_bar;
-    //    }
-
     if (this.options.stats) {
       grid_options.stats = this.options.stats;
       grid_options.tab_bar = true; // implied
@@ -595,7 +509,7 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
     if (this.options.scale_control) {
 
       grid_options.scale_control = true;
-      grid_options.tab_bar = true; // implied, not auto
+      grid_options.tab_bar = true; // implied
 
       if (this.options.persist_scale) {
         if (this.options.persist_scale === true) {
@@ -633,39 +547,10 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
 
     if (options.model) {
       this.model = options.model.model;
-      this.calculator = options.model.calculator as CalcType;
+      this.calculator = options.model.calculator; // as CalcType;
     }
     else {
 
-      // so what broke recently was the concept of theme style 
-      // defaults being passed around, because we started creating
-      // sheets outside of grid.
-
-      // in the old model, grid would create sheets and would pass
-      // a readonly reference object for theme defaults that could
-      // be updated "live" and pass changes to sheets that referenced
-      // it. when we started creating sheets outside of grid (as part
-      // of the "split" project) we lost those references and the
-      // initial sheet would have junk styles.
-      
-      // for now I moved the default object to the model, and grid 
-      // now updates that, so we're back to where we were. but this all
-      // needs to get cleaned up.
-
-      /*
-      this.model = {
-        sheets: [],
-        named_ranges: new NamedRangeCollection(),
-        macro_functions: {},
-        named_expressions: {},
-        view_count: 0,
-
-        // create the initial object from style defaults, 
-        // but don't reference that object
-        
-        theme_style_properties: JSON.parse(JSON.stringify(Style.DefaultProperties)),
-      };
-      */
       this.model = new DataModel();
 
       // we need an initial sheet, now we're pointing to the model theme
@@ -674,8 +559,14 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
 
       this.model.sheets.Add(Sheet.Blank(this.model.theme_style_properties));
 
-      this.calculator = new type(this.model);
+      // create calculator instance
+
+      this.calculator = this.CreateCalculator(this.model);
+
     }
+
+    //this.extra_calculator = //new Calculator(this.model);
+    //  this.CreateCalculator(this.model);
 
     this.grid = new Grid(grid_options, this.parser, this.model);
 
@@ -1037,7 +928,7 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
    * update autocomplete functions. we're breaking this out into a 
    * separate method so we can better manage language translation.
    */
-  private UpdateAC(): void {
+  protected UpdateAC(): void {
 
     let list: FunctionDescriptor[] = this.calculator.SupportedFunctions();
 
@@ -1057,6 +948,13 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
     // original
     this.grid.SetAutocompleteFunctions(list);
 
+  }
+
+  /**
+   * initialize calculator instance
+   */
+  protected CreateCalculator(model: DataModel) {
+    return new Calculator(model);
   }
 
   /**
@@ -2490,7 +2388,6 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
       case SaveFileType.json:
       case SaveFileType.trebjson:
         data = this.SerializeDocument({
-          // preserve_simulation_data,
           ...additional_options,
         } as SerializeOptions);
         text = JSON.stringify(data, undefined, additional_options.pretty ? 2 : undefined);
@@ -2499,20 +2396,6 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
         break;
 
       default:
-
-        // special case: you pass in "gorge", and you want "gorge.treb".
-        // FIXME: why on earth would we want to support that?
-
-        /*
-        if (parts.length === 1) {
-          filename = parts[0] + '.treb';
-          data = this.SerializeDocument(preserve_simulation_data);
-          text = JSON.stringify(data, undefined, pretty ? 2 : undefined);
-        }
-        else {
-          throw new Error('invalid file type');
-        }
-        */
         throw new Error('invalid file type');
 
     }
@@ -2915,7 +2798,6 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
     }
 
     const json = JSON.stringify(this.SerializeDocument({
-      preserve_simulation_data: true,
       rendered_values: true,
       expand_arrays: true,
     } as SerializeOptions));
@@ -4133,12 +4015,13 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
         // else 
         {
 
-          const chart = new Chart();
+          const chart = this.CreateChart();
+          // const chart = new Chart();
           chart.Initialize(view.content_node);
 
-          if (this.calculator.RegisterLibrary('treb-charts', ChartFunctions)) {
-            this.UpdateAC();
-          }
+          //if (this.calculator.RegisterLibrary('treb-charts', ChartFunctions)) {
+          //  this.UpdateAC();
+          //}
 
           const update_chart = () => {
 
@@ -4224,8 +4107,10 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
         this.file_version = 1;
       }
 
+      // FIXME: use override to set this flag?
+
       const json = JSON.stringify(this.SerializeDocument({
-        preserve_simulation_data: false,
+        optimize: 'size',
         rendered_values: true,
         expand_arrays: true,
       } as SerializeOptions));
@@ -4274,7 +4159,7 @@ export class EmbeddedSpreadsheet<CalcType extends Calculator = Calculator> {
 
     if (!json) {
       json = JSON.stringify(this.SerializeDocument({
-        preserve_simulation_data: false,
+        optimize: 'size',
         rendered_values: true,
         expand_arrays: true,
       } as SerializeOptions));

@@ -47,9 +47,6 @@ import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionErro
  */
 export class Calculator extends Graph {
 
-  // FIXME: remove from calculator class
-  // protected readonly simulation_model = new SimulationModel();
-
   // FIXME: need a way to share/pass parser flags
 
   public readonly parser: Parser = new Parser();
@@ -66,7 +63,6 @@ export class Calculator extends Graph {
 
   // FIXME: why is this a separate class? [actually is this a composition issue?]
   protected expression_calculator = new ExpressionCalculator(
-      // this.simulation_model,
       this.library,
       this.parser);
 
@@ -808,17 +804,18 @@ export class Calculator extends Graph {
 
   }
 
-  /** 
+  /* * 
    * lookup in function library 
    * 
    * it seems like the only place this is called is within this class, 
    * so we could probably inline and drop this function
    * 
    * @deprecated
-   */
+   * /
   public GetFunction(name: string): ExtendedFunctionDescriptor {
     return this.library.Get(name);
   }
+  */
 
   /**
    * returns a list of available functions, for AC/tooltips
@@ -884,8 +881,6 @@ export class Calculator extends Graph {
 
   /**
    * dynamic extension
-   * TODO: support updating AC (need grid change, possibly call from EmbeddedSheet)
-   * FIXME: this is going to break in simulations (maybe not an issue?)
    */
   public RegisterFunction(map: FunctionMap): void {
 
@@ -921,8 +916,7 @@ export class Calculator extends Graph {
   }
 
   /**
-   * wrapper method for calculation. this should be used for 1-time
-   * calculations (i.e. not in a simulation).
+   * wrapper method for calculation
    */
   public Calculate(subset?: Area): void {
 
@@ -1188,35 +1182,6 @@ export class Calculator extends Graph {
     return flattened;
   }
 
-  /**
-   * get a list of cells that need metadata. this is for passing to
-   * the simulation as additional cells
-   */
-  public MetadataReferences(formula: string): ICellAddress[] {
-    const references: ICellAddress[] = [];
-    //if (!this.model) { return references; }
-
-    const parse_result = this.parser.Parse(formula);
-    if (parse_result.expression && parse_result.expression.type === 'call') {
-      const func = this.GetFunction(parse_result.expression.name);
-      if (!func || !func.arguments) { return references; }
-      for (let index = 0; index < func.arguments.length; index++ ){
-        const descriptor = func.arguments[index];
-        if (!descriptor || !descriptor.metadata) { continue; }
-
-        const arg = parse_result.expression.args[index];
-        if (!arg) { continue; }
-
-        const area = this.ResolveExpressionAddress(arg);
-
-        if (area) {
-          references.push(area.start);
-        }
-
-      }
-    }
-    return references;
-  }
 
   /* * remove all notifiers * /
   public RemoveNotifiers(): void {

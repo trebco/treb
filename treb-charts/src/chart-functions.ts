@@ -127,6 +127,7 @@ export const ChartFunctions: FunctionMap = {
     fn: Identity,
   },
 
+  /*
   'MC.Histogram': {
     arguments: [
       { name: 'Reference Cell', metadata: true },
@@ -143,6 +144,7 @@ export const ChartFunctions: FunctionMap = {
     ],
     fn: Identity,
   },
+  */
 
  'Scatter.Line': {
     arguments: [

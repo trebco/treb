@@ -1,6 +1,5 @@
 
 
-import { symbols } from './symbol-defs';
 import { CreateSheetOptions, DefaultOptions } from './options';
 import { composite, Resizable } from 'treb-utils';
 import { css } from 'treb-utils';
@@ -127,24 +126,8 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
     this.sidebar = document.createElement('div');
     this.sidebar.classList.add('embedded-spreadsheet-sidebar');
 
-    CompositeSheet.EnsureSymbols();
-
-    /*
-    // FIXME: could we move this somewhere better typed?
-
-    if (process.env.MC) {
-      if (this.options.mc) {
-        this.AddSidebarButton({
-          icon: 'treb-simulation-icon',
-          title: 'Run Simulation',
-          click: () => (this.sheet as any).RunSimulation(),
-        });
-      }
-    }
-    */
-
     this.AddSidebarButton({
-      icon: 'treb-reset-icon',
+      icon: 'treb-icon-reset',
       title: 'Recalculate',
       click: () => this.sheet.Recalculate(),
     });
@@ -155,7 +138,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
       this.toolbar_container.classList.add('toolbar-container');
 
       this.toolbar_button = this.AddSidebarButton({
-        icon: 'treb-toolbar-icon',
+        icon: 'treb-icon-toolbar',
         title: 'Show Toolbar',
         click: () => this.ToggleToolbar(),
       });
@@ -168,7 +151,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
 
     if (this.options.export) {
       this.AddSidebarButton({
-        icon: 'treb-export-icon',
+        icon: 'treb-icon-export',
         title: 'Download as XLSX',
         click: () => this.sheet.Export(),
       });
@@ -176,7 +159,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
 
     if (this.options.popout) {
       this.AddSidebarButton({
-        icon: 'treb-popout-icon',
+        icon: 'treb-icon-popout',
         title: 'Open in New Tab',
         click: () => this.Popout(),
       });
@@ -197,7 +180,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
     */
 
     this.AddSidebarButton({
-      icon: 'treb-about-icon',
+      icon: 'treb-icon-about',
       title: `What's This?`,
       click: () => // this.About(),
         this.sheet.About(),
@@ -208,7 +191,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
     this.sidebar.appendChild(spacer);
 
     this.AddSidebarButton({
-      icon: 'treb-chevron-right-icon',
+      icon: 'treb-icon-chevron-right',
       classes: 'smaller',
       title: 'Hide Sidebar',
       click: () => this.HideSidebar(),
@@ -217,7 +200,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
     container.appendChild(this.sidebar);
 
     const show_sidebar_button = this.AddSidebarButton({
-      icon: 'treb-chevron-left-icon',
+      icon: 'treb-icon-chevron-left',
       classes: ['smaller', 'show-sidebar-button'],
       title: 'Show Sidebar',
       click: () => this.ShowSidebar(),
@@ -243,47 +226,6 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
     }
 
     (options.container as DecoratedHTMLElement)._spreadsheet = this.sheet; // ?
-
-  }
-
-  /** 
-   * inject svg symbol defs (once)
-   *
-   * NOTE: we stopped using <use/> for the toolbar, because it (apparently)
-   * only supports single-color rendering. should we stop using it for the 
-   * sidebar as well? something to think about.
-   */
-   public static EnsureSymbols(): void {
-
-    if (this.symbols_injected) { return; }
-    this.symbols_injected = true;
-
-    const svg = document.createElementNS(SVGNS, 'svg');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.style.position = 'absolute';
-    svg.style.width = '0';
-    svg.style.height = '0';
-    svg.style.overflow = 'hidden';
-
-    const defs = document.createElementNS(SVGNS, 'defs');
-    svg.appendChild(defs);
-
-    for (const id of Object.keys(symbols)) {
-      const symbol = symbols[id];
-      const node = document.createElementNS(SVGNS, 'symbol');
-      node.setAttribute('id', id);
-      if (symbol.viewbox) {
-        node.setAttribute('viewBox', symbol.viewbox);
-      }
-      for (const path of symbol.paths || []) {
-        const path_node = document.createElementNS(SVGNS, 'path');
-        path_node.setAttribute('d', path);
-        node.appendChild(path_node);
-      }
-      defs.appendChild(node);
-    }
-
-    document.body.insertBefore(svg, document.body.firstChild || null);
 
   }
 
@@ -396,7 +338,6 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
     // FIXME: could we move this somewhere better typed?
 
     const document_data = JSON.stringify(this.sheet.SerializeDocument({
-      preserve_simulation_data: true, 
       rendered_values: true,
     } as SerializeOptions));
 
@@ -548,13 +489,21 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
 
     if (options.icon) {
 
+      // const div = document.createElement('div');
+      // div.classList.add('treb-icon', options.icon);
+      // button.appendChild(div);
+
+      button.classList.add('treb-icon', options.icon);
+
+      /*
       const svg = document.createElementNS(SVGNS, 'svg');
       button.appendChild(svg);
 
       const use = document.createElementNS(SVGNS, 'use');
       use.setAttributeNS(XLINKNS, 'href', '#' + options.icon);
       svg.appendChild(use);
-    
+      */
+
     }
 
     if (container) {

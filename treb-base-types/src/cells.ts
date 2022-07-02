@@ -908,8 +908,6 @@ export class Cells {
    * watch out for typed arrays, which do not satisfy Array.isArray
    * 
    * when would this function get a 1D typed array? can't figure that out.
-   * might have something to do with simulation data, but not sure.
-   * 
    * just drop for the time being.
    * 
    */

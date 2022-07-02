@@ -181,17 +181,7 @@ export class Grid extends GridBase {
   /** */
   private editing_annotation?: Annotation;
 
-  /**
-   * this should not be public -- clients should only interact with the API.
-   * so why is it public? we need to access it in the calculator (and in the
-   * calculator in the worker, for simulations).
-   *
-   * FIXME: find a solution for this.
-   */
-  //private get cells() {
-  //  return this.active_sheet.cells;
-  //}
-
+  /** */
   private grid_container?: HTMLElement;
 
   /** containing element, passed in */

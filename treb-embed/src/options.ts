@@ -225,4 +225,12 @@ export interface CreateSheetOptions extends EmbeddedSpreadsheetOptions {
   /** collapsed: start sidebar closed */
   collapsed?: boolean;
 
+  /** 
+   * optional callback function on create. we're not using this anymore, but
+   * leaving it in for backwards compatibility.
+   * 
+   * @internal
+   */
+  load?: string;
+
 }

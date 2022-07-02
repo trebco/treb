@@ -13,20 +13,23 @@
  */
 export interface SerializeOptions {
 
+  /** optimize for size */
+  optimize?: 'size'|'speed';
+
   /** include the rendered/calculated value in export */
   rendered_values?: boolean;
 
   /** 
-   * for simulation 
-   * @mc
+   * preserve cell type
+   * @internal
    */
   preserve_type?: boolean;
 
   /** 
-   * for simulation 
-   * @mc
+   * expand arrays so cells have individual values
+   * @internal
    */
-   expand_arrays?: boolean;
+  expand_arrays?: boolean;
 
   /** translate colors to xlsx-friendly values */
   export_colors?: boolean;

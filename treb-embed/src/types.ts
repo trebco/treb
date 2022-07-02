@@ -11,18 +11,6 @@ export enum SaveFileType {
   xlsx = 'xlsx',
 }
 
-export interface TREBSimulationData {
-  elapsed: number;
-  trials: number;
-
-  /** 
-   * add a flag to indicate we are saving data as 32-bit.
-   * implicit default is 64-bit.
-   */
-  bitness?: number;
-  encoding?: 'b64'|'z85';
-  results: any;
-}
 
 //
 // FIXME: bring back document_id, move dirty flag into this class;
@@ -39,7 +27,6 @@ export interface TREBDocument {
   sheet_data?: SerializedSheet|SerializedSheet[]; // NOTE: support old version, but it would be nice to drop
   decimal_mark?: '.' | ',';
   active_sheet?: number;
-  simulation_data?: TREBSimulationData; // MC specific
   rendered_values?: boolean;
   named_ranges?: {[index: string]: IArea};
   macro_functions?: MacroFunction[];
@@ -102,27 +89,6 @@ export interface DocumentChangeEvent {
   type: 'document-change';
 }
 
-export interface RunningSimulationEvent {
-  type: 'running-simulation';
-  trials?: number;
-}
-
-export interface SimulationAbortedEvent {
-  type: 'simulation-aborted';
-}
-
-export interface SimulationCompleteEvent {
-  type: 'simulation-complete';
-  elapsed: number;
-  trials: number;
-  // threads: number;
-}
-
-export interface SimulationProgressEvent {
-  type: 'simulation-progress';
-  progress: number;
-}
-
 /**
  * This event is sent when the spreadsheet selection changes. Use the 
  * `GetSelection` method to get the address of the current selection.
@@ -130,24 +96,6 @@ export interface SimulationProgressEvent {
 export interface SelectionEvent {
   type: 'selection';
 }
-
-/*
-export type EmbeddedSheetEvent
-  = DocumentChangeEvent
-  | DocumentResetEvent
-  | DocumentLoadEvent
-  | DataChangeEvent
-  | SelectionEvent
-  | ResizeEvent
-
-  // ...
-
-  | SimulationCompleteEvent
-  | SimulationProgressEvent
-  | RunningSimulationEvent
-  | SimulationAbortedEvent
-  ;
-*/
 
 /**
  * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
@@ -161,13 +109,4 @@ export type EmbeddedSheetEvent
   | SelectionEvent
   | ResizeEvent
   ;
-
-export type MCEmbeddedSheetEvent
- = SimulationCompleteEvent
- | SimulationProgressEvent
- | RunningSimulationEvent
- | SimulationAbortedEvent
- ;
-
-export type CompositeEmbeddedSheetEvent = EmbeddedSheetEvent|MCEmbeddedSheetEvent;
 

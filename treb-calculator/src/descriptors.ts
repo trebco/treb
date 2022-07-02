@@ -43,21 +43,10 @@ export interface ArgumentDescriptor {
 
   /**
    * similar to collector, this flag will return metadata about the cell
-   * argument: address, value, number format, simulation data, (...)
    *
    * supported in annotations only, not spreadsheet cells (atm)
    *
    * returns cell data type defined in chart (FIXME: move)
-   *
-   * {
-   *   address,
-   *   value: calculated value,
-   *   simulation_data: [],
-   *   format: number format
-   * }
-   *
-   * atm simulation data is only returned in null state (i.e. not during
-   * a simulation, or in prep state).
    */
   metadata?: boolean;
 
@@ -88,12 +77,6 @@ export interface CompositeFunctionDescriptor {
    * don't change
    */
   volatile?: boolean;
-
-  /**
-   * volatile during a simulation only
-   * FIXME: MC calculator only
-   */
-  // simulation_volatile?: boolean;
 
   /**
    * FIXME: we need to unify type with what's in the cell class

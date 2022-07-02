@@ -25,22 +25,8 @@ export interface CalloutType {
 export interface CellData {
   address: { row: number; column: number };
   value?: any;
-  simulation_data?: number[];
   format?: string;
 }
-
-/*
-export interface DataRange {
-  data: number[];
-  data2?: number[];
-  labels?: string[];
-  min: number;
-  max: number;
-  count: number;
-  scale: RangeScale;
-  scale2?: RangeScale;
-}
-*/
 
 export interface DonutSlice {
   index: number;

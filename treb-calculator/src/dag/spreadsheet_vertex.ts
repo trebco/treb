@@ -95,9 +95,6 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
     // OTOH that means maintaining the internal calculation part twice (or
     // adding a method call).
 
-    // especially for simulation, where we can determine ahead of time if
-    // there are any loops
-
     if (this.color === Color.white && this.LoopCheck()) {
 
       // console.info('LCB', `R${this.address?.row} C${this.address?.column}`, this);

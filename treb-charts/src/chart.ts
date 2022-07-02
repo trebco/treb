@@ -22,7 +22,7 @@ export class Chart {
 
   // always exists; default null type, no title
 
-  private chart_data: ChartData = {type: 'null'};
+  protected chart_data: ChartData = {type: 'null'};
 
   // not chart-specific, so leave outside (FIXME: layout options?)
 
@@ -45,6 +45,8 @@ export class Chart {
     const args: any[] = union?.value || [];
     
     switch (func.toLowerCase()) {
+
+      /*
       case 'mc.histogram':
         this.CreateHistogram(args);
         break;
@@ -52,6 +54,7 @@ export class Chart {
       case 'mc.correlation':
         this.CreateScatter(args);
         break;
+      */
 
       case 'column.chart':
         this.CreateColumnChart(args as [UnionValue?, UnionValue?, string?, string?], 'column');
@@ -859,286 +862,6 @@ export class Chart {
 
   }
 
-  public CreateScatter(args: any[]) {
-
-    // validate first 2 args
-
-    const union = [
-      args[0] as UnionValue,
-      args[1] as UnionValue,
-    ];
-    
-    if (!union[0] || union[0].type !== ValueType.object || !this.IsCellData(union[0].value)) {
-      console.warn('invalid args [0]', args);
-      this.Clear();
-      return;
-    }
-    if (!union[1] || union[1].type !== ValueType.object || !this.IsCellData(union[1].value)) {
-      console.warn('invalid args [1]', args);
-      this.Clear();
-      return;
-    }
-
-    const title = args[2] || '';
-
-    const A: CellData = union[0].value;
-    const B: CellData = union[1].value;
-
-    let x = (A.simulation_data || []).slice(0);
-    let y = (B.simulation_data || []).slice(0);
-
-    const min1 = Math.min.apply(0, x);
-    const max1 = Math.max.apply(0, x);
-    const range1 = max1 - min1;
-    x = x.map((value) => (value - min1) / range1);
-
-    const min2 = Math.min.apply(0, y);
-    const max2 = Math.max.apply(0, y);
-    const range2 = max2 - min2;
-    y = y.map((value) => (value - min2) / range2);
-
-    const count = Math.min(x.length, y.length);
-
-    this.chart_data = {
-      type: 'scatter', x, y, count, title,
-    };
-
-  }
-
-  /**
-   * updated MC histogram. this will not support IE11 (because of typed arrays)
-   * 
-   * [reference cell, title, ..., suggested bins = 12]
-   */
-  public CreateHistogram(args: any[]): void {
-   
-    const min: number[] = [];
-    const max: number[] = [];
-
-    const data: UnionValue[] = Array.isArray(args[0].value) ? args[0].value : [args[0]];
-
-    for (const union of data) {
-      if (!union || union.type !== ValueType.object || !this.IsCellData(union.value)) {
-        console.warn('invalid args [0]', args);
-        this.Clear();
-        return;
-      }
-
-      const data = union.value.simulation_data || [];
-      if (data.length) {
-        min.push(Math.min.apply(0, data));
-        max.push(Math.max.apply(0, data));
-      }
-    }
-
-    if (!min.length || !max.length) {
-      // console.info('no data');
-      this.Clear();
-      return;
-    }
-
-    let suggested_bins = 12;
-    if (typeof args[3] === 'number') {
-      suggested_bins = args[3];
-    }
-
-    const scale = Util.Scale(Math.min.apply(0, min), Math.max.apply(0, max), suggested_bins);
-    const label_values: number[] = [];
-
-    for (let i = 0; i <= scale.count; i++) {
-      label_values[i] = (scale.min + i * scale.step);
-    }
-
-    const series = data.map((union: UnionValue) => {
-     
-      const src: CellData = union.value; // args[0];
-      const data = src.simulation_data || [];
-
-      const bins: number[] = [];
-      for (let i = 0; i <= scale.count; i++) {
-        bins[i] = 0;
-      }
-  
-      for (const value of data) {
-        const bin = Math.round((value - scale.min) / scale.step);
-        bins[bin]++;
-      }
-
-      const format = NumberFormatCache.Get('#,##0');
-    
-      const values = bins.filter(value => value || value === 0) as number[];
-
-      const series: SeriesType = {
-        y: {
-          data: bins,
-          format: '#,##0',
-          labels: bins.map(value => (value === undefined) ? undefined : format.Format(value)),
-          range: {
-            min: Math.min.apply(0, values), 
-            max: Math.max.apply(0, values), 
-          },
-        },
-        x: {
-          data: [],
-          range: {
-            min: 0,
-            max: Math.max(0, bins.length - 1),
-          }
-        },
-      };
-
-      for (let i = 0; i < series.y.data.length; i++) { series.x.data.push(i); }
-
-      return series;
-
-    });
-
-    const common = this.CommonData(series);
-    const format = NumberFormatCache.Get(data[0].value?.format || 'General');
-    const category_labels = label_values.map(x => format.Format(x));
-
-    const title = args[1]?.toString() || undefined;
-
-    series[0].y.labels = (series[0].y.labels || []).map((label, index) => {
-      return category_labels[index] + ' ' +  label;
-    });
-
-    this.chart_data = {
-      type: 'column',
-      series2: series,
-      scale: common.y.scale,
-      title,
-      y_labels: common.y.labels, 
-      x_labels: category_labels, 
-      data_labels: true,
-    };
-
-  }
-
-  /* *
-   * create histogram.
-   *
-   * args: cell data, title, format-x, format-y, bins
-   * /
-  public OldCreateHistogram(args: any[]) { // data: number[]) {
-
-    // validate args (actually we only care about the first one)
-
-    const union = args[0] as UnionValue;
-    
-    if (!union || union.type !== ValueType.object || !this.IsCellData(union.value)) {
-      console.warn('invalid args [0]', args);
-      this.Clear();
-      return;
-    }
-
-    const src: CellData = union.value; // args[0];
-    const data: number[] = src.simulation_data || [];
-
-    const title = args[1] || '';
-
-    let suggested_bins = 8;
-    if (typeof args[4] === 'number' && args[4]) { suggested_bins = args[4]; }
-
-    // 2 loops?
-    const scale = Util.Scale(Math.min.apply(0, data), Math.max.apply(0, data), suggested_bins);
-
-    const bins: number[] = [];
-    const label_values: number[] = [];
-
-    for (let i = 0; i <= scale.count; i++) {
-      bins[i] = 0;
-      label_values[i] = (scale.min + i * scale.step);
-    }
-
-    for (const value of data) {
-      const bin = Math.round((value - scale.min) / scale.step);
-      bins[bin]++;
-    }
-
-    // FIXME: this should move to render
-    // NO, it should not: anything that is independent of size should
-    // be done here; render may be called more than once on resize/repaint.
-
-    let x_format: NumberFormat;
-    if (typeof args[2] === 'undefined' || args[2] === true) {
-      x_format = NumberFormatCache.Get(src.format || DEFAULT_FORMAT);
-    }
-    else if (typeof args[2] === 'string') {
-      x_format = NumberFormatCache.Get(args[2]);
-    }
-    else {
-      x_format = new NumberFormat('#,##0');
-      if (scale.scale < 0){
-        for (let i = 0; i >= scale.scale; i--) {
-          x_format.IncreaseDecimal();
-        }
-      }
-    }
-
-    let x_labels: string[] | undefined;
-
-    if (args[2] !== false) {
-      x_labels = x_format ? label_values.map((value) => {
-        const formatted = x_format.Format(value);
-        return formatted;
-      }) : [];
-    }
-
-    // this.data.data = bins;
-
-    const min = Math.min.apply(0, bins);
-    const max = Math.max.apply(0, bins);
-
-    // FIXME: this should change based on height, maybe? (...)
-    const bin_scale = Util.Scale(0, max, 8); // histogram force min = 0
-
-    // always get a y-format, we use it for titles as well as the axis
-
-    let y_format: NumberFormat;
-    if (typeof args[3] === 'string') {
-      y_format = NumberFormatCache.Get(args[3]);
-    }
-    else {
-      y_format = new NumberFormat('#,##0');
-      if (bin_scale.scale < 0){
-        for (let i = 0; i >= bin_scale.scale; i--) {
-          y_format.IncreaseDecimal();
-        }
-      }
-    }
-
-    let y_labels: string[] | undefined;
-
-    if (args[3] !== false) {
-      y_labels = [];
-      for (let i = 0; i <= bin_scale.count; i++) {
-        const y = bin_scale.min + i * bin_scale.step;
-        y_labels.push(y_format.Format(y));
-      }
-    }
-
-    const titles = bins.map((bin, index) =>
-      x_format.Format(label_values[index]) + ' : ' + y_format.Format(bin));
-
-    this.chart_data = {
-      type: 'histogram',
-      bins,
-      titles,
-      x_labels,
-      y_labels,
-      column_width: 0.8,
-      scale: bin_scale,
-      min,
-      max,
-      count: bins.length,
-      title,
-    };
-
-    // this.chart_type = ChartType.histogram;
-
-  }
-  */
 
   /** pass-through */
   public Resize() {

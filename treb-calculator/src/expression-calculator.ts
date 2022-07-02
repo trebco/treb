@@ -56,7 +56,6 @@ export class ExpressionCalculator {
     address: { row: -1, column: -1 },
     volatile: false,
     call_index: 0,
-    // name_stack: [],
   };
 
   /**
@@ -66,9 +65,7 @@ export class ExpressionCalculator {
    * =A(B())
    *
    * then when calculating A call index should be set to 1; and when
-   * calculating B, call index is 2. and so on. this is used for keeping
-   * track of data in the simulation model, where we may have per-distribution
-   * data (generally LHS fields or correlation blocks).
+   * calculating B, call index is 2. and so on. 
    */
   protected call_index = 0;
 
@@ -89,10 +86,8 @@ export class ExpressionCalculator {
   // --- public API -----------------------------------------------------------
 
   constructor(
-      // protected readonly simulation_model: SimulationModel,
-      protected readonly library: FunctionLibrary,
-      protected readonly parser: Parser) {
-  }
+    protected readonly library: FunctionLibrary,
+    protected readonly parser: Parser) {}
 
   public SetModel(model: DataModel): void {
 
