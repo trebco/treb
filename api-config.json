@@ -20,16 +20,8 @@
     "TREBDocument"
   ],
 
-  "rename_types": {
-    "EmbeddedSpreadsheetBase": "EmbeddedSpreadsheet"
-  },
-
-  "drop_generics": [
-    "EmbeddedSpreadsheetBase"
-  ],
-
   "exclude_tags": [
-    "internal", "mc"
+    "internal"
   ],
 
   "flatten_enums": true
