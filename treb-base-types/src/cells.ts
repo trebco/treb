@@ -1,4 +1,10 @@
 /**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
+
+/**
  * switched to row-major, seems to have no ill effects
  * (not sure if there are benefits yet either)
  */

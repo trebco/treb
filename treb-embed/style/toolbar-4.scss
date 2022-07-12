@@ -485,3 +485,33 @@ $swatch-width: 1.1em;
 
 
 }
+
+.treb-container {
+
+  .treb-toolbar-icon {
+
+    position: relative;
+    width: 18px;
+    height: 18px;
+
+    background: currentColor;
+
+    mask-position: center;
+    -webkit-mask-position: center;
+
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+
+    // background: #000;
+
+    mask-size: 16px 16px;
+    -webkit-mask-size: 16px 16px;
+
+    // mask-size: 32px 32px;
+    // -webkit-mask-size: 32px 32px;
+
+    // background-color: #555;
+
+  }
+
+}

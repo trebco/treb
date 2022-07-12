@@ -1,4 +1,10 @@
 /**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
+
+/**
  * base type, for common data (atm only ID). id is intended to support
  * a unique ID within the context of a single parse pass. (NOTE: in theory
  * you could use the 'position' field... although that's not present in

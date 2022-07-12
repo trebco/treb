@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue,
          ArrayUnion, IArea, IsCellAddress, FlatCellData} from 'treb-base-types';

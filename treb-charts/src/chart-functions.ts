@@ -1,20 +1,17 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { UnionValue, ValueType } from 'treb-base-types';
-
-// TYPE ONLY
-// type FunctionMap = import('../../treb-calculator/src/descriptors').FunctionMap;
 import type { FunctionMap } from 'treb-calculator/src/descriptors';
 
 /** 
- * we might as well do this properly, since we're in the 
- * middle of an overhaul anyway 
+ * function returns its arguments 
+ * 
+ * UPDATE: box this properly as "extended" type 
  */
-
-/* * function returns its arguments * /
-// const Identity = (...args: any[]) => (args as any) as UnionValue; // it's not
-*/
-
-/** box this properly as "extended" type */
 const Identity = (...args: any[]): UnionValue => {
   return {
     type: ValueType.object,
@@ -23,24 +20,17 @@ const Identity = (...args: any[]): UnionValue => {
   };
 };
 
-// export interface DecoratedArray<T> extends Array<T> {
-//  _type: string;
-// }
-
 /**
  * chart functions for registration
  */
 export const ChartFunctions: FunctionMap = {
 
   /* new: also helper */
-  'Group': {
+  Group: {
     arguments: [
       { name: 'Array...', metadata: true, },
     ],
     fn: (...args: any) => {
-      // (args as DecoratedArray<unknown>)._type = 'group';
-      // return args;
-
       return {
         type: ValueType.object,
         value: args,
@@ -56,7 +46,7 @@ export const ChartFunctions: FunctionMap = {
    * 
    * boxing properly as "extended" type
    */
-  'Series': {
+  Series: {
     arguments: [
       { name: 'Label' }, // , metadata: true, },
       { name: 'X', metadata: true, },
@@ -65,15 +55,11 @@ export const ChartFunctions: FunctionMap = {
       { name: 'subtype', },
     ],
     fn: (...args: any) => {
-      // (args as DecoratedArray<unknown>)._type = 'series';
-      // return args;
-
       return {
         type: ValueType.object,
         value: args,
         key: 'series',
       };
-
     }
 
   },
@@ -126,25 +112,6 @@ export const ChartFunctions: FunctionMap = {
     ],
     fn: Identity,
   },
-
-  /*
-  'MC.Histogram': {
-    arguments: [
-      { name: 'Reference Cell', metadata: true },
-      { name: 'Title' },
-    ],
-    fn: Identity,
-  },
-
-  'MC.Correlation': {
-    arguments: [
-      { name: 'Reference Cell 1', metadata: true },
-      { name: 'Reference Cell 2', metadata: true },
-      { name: 'Title' },
-    ],
-    fn: Identity,
-  },
-  */
 
  'Scatter.Line': {
     arguments: [

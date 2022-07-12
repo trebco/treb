@@ -1,4 +1,10 @@
 /**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
+
+/**
  * this is a (new) separate script for embedding spreadsheets with a 
  * single tag. it's not part of any module, it needs to be compiled 
  * manually and written to the "distribution" folder (in parent).

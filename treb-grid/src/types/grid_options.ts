@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import type { CellValue } from 'treb-base-types';
 import type { StatsEntry } from './tab_bar';

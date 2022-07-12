@@ -1,4 +1,8 @@
-
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 const app_version = typeof navigator === 'undefined' ? '' : navigator.appVersion;
 const user_agent = typeof navigator === 'undefined' ? '' : navigator.userAgent;

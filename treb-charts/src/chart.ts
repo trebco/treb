@@ -1,11 +1,14 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { NumberFormatCache } from 'treb-format';
 import { ChartRenderer, Metrics } from './renderer';
 import { Area } from './rectangle';
 import { Util } from './util';
 import { BarData, CellData, ChartData, DonutSlice, LegendLayout, LegendPosition, LegendStyle, SeriesType, SubSeries } from './chart-types';
-// import { DecoratedArray } from './chart-functions';
-// import { RangeScale } from 'treb-utils';
 import { ArrayUnion, ExtendedUnion, UnionValue, ValueType } from 'treb-base-types';
 
 require('../style/charts.scss');
@@ -13,9 +16,6 @@ require('../style/charts.scss');
 const DEFAULT_FORMAT = '#,##0.00'; // why not use "general", or whatever the usual default is?
 
 export class Chart {
-
-  /** function descriptors to register with the calculator */
-  // public static chart_functions = ChartFunctions;
 
   /** flag indicating we've registered at least once */
   public static functions_registered = false;
@@ -29,7 +29,6 @@ export class Chart {
   // FIXME: change depending on whether there are y-axis labels
   // FIXME: different for donut charts...
 
-  // private margin = { top: 0.025, left: 0.025, bottom: 0.025, right: 0.05 };
   private margin = { top: 0.025, left: 0.05, bottom: 0.025, right: 0.075 };
 
   constructor(
@@ -45,16 +44,6 @@ export class Chart {
     const args: any[] = union?.value || [];
     
     switch (func.toLowerCase()) {
-
-      /*
-      case 'mc.histogram':
-        this.CreateHistogram(args);
-        break;
-
-      case 'mc.correlation':
-        this.CreateScatter(args);
-        break;
-      */
 
       case 'column.chart':
         this.CreateColumnChart(args as [UnionValue?, UnionValue?, string?, string?], 'column');
@@ -215,7 +204,6 @@ export class Chart {
 
     // read [2] first, so we can default for [1] if necessary
 
-    // if (data[2] && Array.isArray(data[2])) {
     if (!!data[2] && (typeof data[2] === 'object') && data[2].type === ValueType.array) {
       const flat = Util.Flatten(data[2].value);
       series.y.data = flat.map(item => typeof item.value.value === 'number' ? item.value.value : undefined);
@@ -226,7 +214,6 @@ export class Chart {
       }
     }
 
-    // if (data[1] && Array.isArray(data[1])) {
     if (!!data[1] && (typeof data[1] === 'object') && data[1].type === ValueType.array) {
       const flat = Util.Flatten(data[1].value);
       series.x.data = flat.map(item => typeof item.value.value === 'number' ? item.value.value : undefined);
@@ -234,13 +221,6 @@ export class Chart {
         series.x.format = flat[0].value.format;
       }
     }
-
-    // UPDATE: no default for X (not yet, anyway)
-    /*
-    else {
-      series.x.data = series.y.data.map((row, i) => i);
-    }
-    */
 
     for (const subseries of [series.x, series.y]) {
 
@@ -319,15 +299,6 @@ export class Chart {
 
     }
 
-    /*
-    // no default (not yet)
-    series.x.data = flat.map((row, i) => i);
-    series.x.range = {
-      min: 0, 
-      max: flat.length - 1, 
-    };
-    */
-
     return series;
 
   }
@@ -344,7 +315,6 @@ export class Chart {
    * NOTE: (1) could be an array of boxed (union) values...
    * 
    */
-  //public TransformSeriesData(raw_data: any, default_x?: UnionValue[]): SeriesType[] {
   public TransformSeriesData(raw_data?: UnionValue, default_x?: UnionValue): SeriesType[] {
 
     if (!raw_data) { return []; }
@@ -376,33 +346,6 @@ export class Chart {
       list.push(this.ArrayToSeries(raw_data));
     }
 
-    /*
-    if (Array.isArray(raw_data)) {
-      const decorated = raw_data as DecoratedArray<any>;
-      if (decorated._type === 'group') {
-        for (const entry of decorated) {
-          if (Array.isArray(entry)) {
-            if ((entry as DecoratedArray<any>)._type === 'series') {
-              const series = this.ReadSeries(entry as DecoratedArray<any>)
-              list.push(series);
-            }
-            else {
-              const series = this.ArrayToSeries(entry);
-              list.push(series);
-            }
-          }
-        }
-      }
-      else if (decorated._type === 'series') {
-        const series = this.ReadSeries(decorated);
-        list.push(series);
-      }
-      else {
-        list.push(this.ArrayToSeries(decorated));
-      }
-    }
-    */
-
     // now we may or may not have X for each series, so we need
     // to patch. it's also possible (as with older chart functions)
     // that there's a common X -- not sure if we want to continue
@@ -417,7 +360,6 @@ export class Chart {
 
       const values = Util.Flatten(default_x.value);
 
-      // default_x = Util.Flatten(default_x);
       let format = '0.00###';
 
       if (values[0] && values[0].type === ValueType.object) { // UnionIs.Extended(values[0])) {
@@ -491,7 +433,6 @@ export class Chart {
 
     let legend: Array<{label: string, index?: number}>|undefined; // string[]|undefined;
     if (series.some(test => test.label && (test.label.length > 0))) {
-      // legend = series.map((entry, i) => entry.label || `Series ${i + 1}`);
       legend = series.map((entry, i) => ({
         label: entry.label || `Series ${i + 1}`,
         index: typeof entry.index === 'number' ? entry.index : i + 1,
@@ -564,17 +505,12 @@ export class Chart {
    */
   public CreateScatterChart(args: any[], style: 'plot'|'line' = 'plot'): void {
 
-    // console.info("CSC", args);
-    
     // FIXME: transform the data, then have this function
     // operate on clean data. that way the transform can
     // be reused (and the function can be reused without the
     // transform).
 
-    // const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0]) : [];
     const series: SeriesType[] = this.TransformSeriesData(args[0]);
-
-    // console.info('transformed', {series});
 
     const common = this.CommonData(series);
 
@@ -655,9 +591,6 @@ export class Chart {
    */
   public CreateLineChart(args: any[], type: 'line'|'area'): void { // |'bar'|'column') {
 
-    
-
-    // const series: SeriesType[] = Array.isArray(args[0]) ? this.TransformSeriesData(args[0], args[1]) : [];
     const series: SeriesType[] = this.TransformSeriesData(args[0], args[1]);
 
     const common = this.CommonData(series, 0, 0);
@@ -702,17 +635,6 @@ export class Chart {
    */
   public CreateDonut(args: [UnionValue?, UnionValue?, string?, string?, string?], pie_chart = false): void {
 
-    /*
-
-    // data -> number or undefined
-
-    let data = Util.Flatten(args[0]).map((x) => (typeof x === 'undefined') ? x : Number(x)) as number[];
-
-
-    */
-
-    //////////
-
     const raw_data = args[0]?.type === ValueType.array ? args[0].value : args[0];
 
     // we're now expecting this to be metadata (including value).
@@ -722,21 +644,6 @@ export class Chart {
     // we still need the aggregate for range, scale
     let data = flat.map((x) => (typeof x.value.value === 'number') ? x.value.value : undefined) as number[];
     
-    /*
-    // but now we're potentially splitting into series
-    let series: NumberOrUndefinedArray[];
-
-    if (Array.isArray(raw_data) && (raw_data as any)._type === 'series') {
-      series = raw_data.map(entry => {
-        return Util.Flatten(entry).map((x) => (typeof x.value === 'number') ? x.value : undefined) as number[];
-      });
-    }
-    else {
-      series = [data];
-    }
-    */
-
-    //////////
 
     // if labels are strings, just pass them in. if they're numbers then
     // use the format (we're collecting metadata for this field now)
@@ -832,21 +739,6 @@ export class Chart {
       }
     }
     
-    /*
-    const sort = (args[3] || '').toString().trim();
-
-    if (/^(asc|inc)/i.test(sort)) {
-      slices.sort((a, b) => {
-        return (a.value || 0) - (b.value || 0);
-      });
-    }
-    else if (/^(desc|dec)/i.test(sort)) {
-      slices.sort((a, b) => {
-        return (b.value || 0) - (a.value || 0);
-      });
-    }
-    */
-
     this.chart_data = {
       type: pie_chart ? 'pie' : 'donut',
       slices,
@@ -924,9 +816,6 @@ export class Chart {
       });
 
     }
-
-    // FIXME: for now this is used for histogram only, but it's probably
-    // applicable to some other types as well, so leave it here...
 
     if (this.chart_data.type === 'histogram'
         || this.chart_data.type === 'line'
@@ -1017,13 +906,6 @@ export class Chart {
           // undo, temp
           area.bottom += (max_x_height + chart_margin.bottom);
         }
-
-
-        /*
-        if (this.chart_data.type === 'column' && this.chart_data.histogram_offset) {
-          offset_tick = false;
-        }
-        */
 
         // render
         this.renderer.RenderXAxis(area, 
@@ -1366,12 +1248,6 @@ export class Chart {
           const height = Util.ApplyScale(this.chart_data.bins[i], area.height, this.chart_data.scale);
           const y = area.bottom - height;
           const bar_title = this.chart_data.titles ? this.chart_data.titles[i] : undefined;
-
-          /*
-          this.renderer.RenderRectangle(new Area(
-            x - .5, y - .5, x + width + .5, y + height,
-          ), 'chart-column-shadow', bar_title || undefined);
-          */
 
           this.renderer.RenderRectangle(new Area(
             x, y, x + width, y + height,

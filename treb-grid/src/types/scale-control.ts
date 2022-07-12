@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { DOMUtilities as DOM } from '../util/dom_utilities';
 import { NumberFormat, NumberFormatCache, ValueParser } from 'treb-format';

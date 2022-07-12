@@ -2,6 +2,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const querystring = require('querystring');
 
 const icon_cache = new Map();
 
@@ -41,8 +42,12 @@ const ResolveIcons = (icons, text) => {
 
   // eslint-disable-next-line no-cond-assign
   while (match = rex.exec(text)) {
-    // console.info(match[0]);
 
+    console.info(match[0]);
+    throw new Error('icon');
+
+    // console.info(match[0]);
+    /*
     let icon_path = path.join(dir, match[2]);
     if (!/\.svg/i.test(icon_path)) {
       icon_path += '.svg';
@@ -55,6 +60,26 @@ const ResolveIcons = (icons, text) => {
       const icon_text = fs.readFileSync(icon_path, {encoding: 'utf8'});
       icon_data = ParseIcon(icon_text);
       icon_cache.set(icon_path, icon_data);
+
+      const varname = '--treb-icon-' + path.basename(icon_path).replace(/\..*?$/, '');
+
+      let cooked = icon_text.replace(/<!--.*?-->/g, '');
+      // cooked = encodeURIComponent(cooked);
+      // cooked = querystring.escape(cooked);
+      cooked = cooked.replace(/"/g, '\'').replace(/[\n\r]+/g, ' ').replace(/</g, '%3C').replace(/>/g, '%3E');
+
+      if (/(?:wrap|bottom2)/.test(icon_path)) {
+        console.info(`// ${icon_path}`);
+        // console.info(icon_text);
+        console.info(varname + `: url("data:image/svg+xml,${cooked}");`);
+        console.info('');
+      }
+
+      / *
+      console.info(`// ${icon_path}`);
+      console.info(varname + `: url("data:image/svg+xml,${cooked}");`);
+      console.info('');
+      * /
     }
 
     let replacement = '';
@@ -65,7 +90,7 @@ const ResolveIcons = (icons, text) => {
 
     // console.info('x', icon_data);
     replacements.push({ source: match[0], replacement });
-
+  */
   }
 
   for (const pair of replacements) {
@@ -73,7 +98,7 @@ const ResolveIcons = (icons, text) => {
   }
 
   return text;
-
+ 
 };
 
 const Parser = (match, tag) => {

@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 export { Grid } from './types/grid';
 export { GridBase } from './types/grid_base';

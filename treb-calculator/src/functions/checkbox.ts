@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { RenderFunctionOptions, ClickFunctionOptions, ClickFunctionResult, Style, RenderFunctionResult } from 'treb-base-types';
 

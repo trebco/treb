@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { WebSocket, WebSocketServer } from 'ws';
 import { createServer } from 'https';

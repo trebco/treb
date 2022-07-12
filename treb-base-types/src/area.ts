@@ -1,4 +1,8 @@
-
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 /**
  * Structure represents a cell address. Note that row and column are 0-based.

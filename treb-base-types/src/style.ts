@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 // why is this a namespace? module is implicit... it's because of how
 // base types exports; we can't export * as Style, so we're stuck with

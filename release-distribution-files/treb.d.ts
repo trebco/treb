@@ -673,7 +673,25 @@ export interface FreezePane {
     rows: number;
     columns: number;
 }
+
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
+ 
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 export declare type BorderConstants = "none" | "all" | "outside" | "top" | "bottom" | "left" | "right" | "double-top" | "double-bottom";
+
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 /**
  * options for serializing data
@@ -696,6 +714,12 @@ export interface SerializeOptions {
     /** prune unused rows/columns */
     shrink?: boolean;
 }
+
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 /**
  * Structure represents a cell address. Note that row and column are 0-based.
@@ -725,6 +749,12 @@ export interface Point {
     y: number;
 }
 
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
+
 /** structure represents rectangle coordinates */
 export interface IRectangle {
     top: number;
@@ -732,6 +762,12 @@ export interface IRectangle {
     width: number;
     height: number;
 }
+
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 export declare namespace Style {
 
     /**
@@ -840,6 +876,12 @@ export declare namespace Style {
     }
 }
 export declare type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
+
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 /**
  * Complex number type

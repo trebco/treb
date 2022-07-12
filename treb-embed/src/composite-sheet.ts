@@ -1,4 +1,8 @@
-
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { CreateSheetOptions, DefaultOptions } from './options';
 import { composite, Resizable } from 'treb-utils';
@@ -80,6 +84,8 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
       throw new Error('missing container');
     }
   
+    container.classList.add('treb-container');
+
     this.options = {
       ...DefaultOptions,
       ...options
@@ -111,7 +117,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
       container.classList.add('sidebar-open');
     }
     if (this.options.toolbar === 'show' || this.options.toolbar === 'show-narrow') {
-      container.classList.add('toolbar-open');
+      container.classList.add(toolbar_open_class);
     }
 
     container.appendChild(this.inner_container);

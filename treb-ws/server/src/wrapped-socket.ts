@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { WebSocket } from 'ws';
 import { CalculationDataMessage, CommandLogMessage, FullModelMessage, LeaderAssignmentMessage } from './message-type';

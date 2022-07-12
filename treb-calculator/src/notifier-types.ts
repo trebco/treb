@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import type { LeafVertex } from './dag/leaf_vertex';
 import type { Area } from 'treb-base-types';

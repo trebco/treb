@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 /** calculated human-friendly scale for rendering axes */
 export interface RangeScale {

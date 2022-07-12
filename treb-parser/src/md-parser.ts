@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 // support for entities removed, as it adds a lot of bloat. we 
 // could easily support numbers (+hex), but html entities require

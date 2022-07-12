@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { NumberFormatSection } from './number_format_section';
 import { TextPartFlag, TextPart } from 'treb-base-types';

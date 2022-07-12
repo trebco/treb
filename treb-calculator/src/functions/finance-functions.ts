@@ -1,4 +1,8 @@
-
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import type { FunctionMap } from '../descriptors';
 import { CellValue, UnionValue, ValueType } from 'treb-base-types';

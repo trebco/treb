@@ -1,4 +1,10 @@
 /**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
+
+/**
  * this is a new version of the ICE that doubles as a key handler
  * for the grid; the aim is to support IME in ICE, which did not work
  * in our old scheme.

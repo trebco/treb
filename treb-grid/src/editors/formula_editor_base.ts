@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { Area, Cell, Theme, Rectangle, Localization } from 'treb-base-types';
 import { Yield, EventSource } from 'treb-utils';

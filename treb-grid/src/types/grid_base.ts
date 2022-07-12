@@ -1,4 +1,10 @@
 /**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
+
+/**
  * grid base is a superclass for grid that takes over all (most) of the 
  * data operations, leaving UI operations (painting and interacting, plus
  * layout) in the grid subclass. 

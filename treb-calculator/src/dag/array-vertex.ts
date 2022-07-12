@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import type { Vertex } from './vertex';
 import { GraphCallbacks, SpreadsheetVertexBase } from './spreadsheet_vertex_base';

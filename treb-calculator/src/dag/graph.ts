@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { Vertex, Color } from './vertex';
 import { SpreadsheetVertex  } from './spreadsheet_vertex';

@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { tmpl, composite, NodeModel } from 'treb-utils';
 import { Style, Localization, Area, Theme, Color } from 'treb-base-types';
@@ -103,34 +108,49 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       <div id='root' class='treb-toolbar'>
 
         <div class='group narrow'>
-          <button id='text-align' data-command='align-left' title='Align left'><icon>bootstrap/text-left</icon></button>
+          <button id='text-align' data-command='align-left' title='Align left'>
+            <div class='treb-toolbar-icon treb-icon-text-align-left'/>
+          </button>
 
           <button class='drop'></button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
-              <li><button id='align-left-drop' data-command='align-left' title='Align left', data-replace='text-align'><icon>bootstrap/text-left</icon></button></li>
-              <li><button id='align-center-drop' data-command='align-center' title='Align center', data-replace='text-align'><icon>bootstrap/text-center</icon></button></li>
-              <li><button id='align-right-drop' data-command='align-right' title='Align right', data-replace='text-align'><icon>bootstrap/text-right</icon></button></li>
+              <li><button id='align-left-drop' data-command='align-left' title='Align left', data-replace='text-align'>
+                <div class='treb-toolbar-icon treb-icon-text-align-left'/></button></li>
+              <li><button id='align-center-drop' data-command='align-center' title='Align center', data-replace='text-align'>
+                <div class='treb-toolbar-icon treb-icon-text-align-center'/></button></li>
+              <li><button id='align-right-drop' data-command='align-right' title='Align right', data-replace='text-align'>
+                <div class='treb-toolbar-icon treb-icon-text-align-right'/></button></li>
             </ul>
           </div>
         </div>
 
         <div class='group narrow'>
-          <button id='vertical-align' data-command='align-top' title='Align top'><icon>FA/light/arrow-up-to-line</icon></button>
+          <button id='vertical-align' data-command='align-top' title='Align top'>
+            <div class='treb-toolbar-icon treb-icon-text-align-top'/>  
+          </button>
 
           <button class='drop'></button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
-              <li><button id='align-top-drop' data-command='align-top' title='Align top', data-replace='vertical-align'><icon>FA/light/arrow-up-to-line</icon></button></li>
-              <li><button id='align-middle-drop' data-command='align-middle' title='Align middle', data-replace='vertical-align'><icon>FA/light/arrows-to-line</icon></button></li>
-              <li><button id='align-bottom-drop' data-command='align-bottom' title='Align bottom', data-replace='vertical-align'><icon>FA/light/arrow-down-to-line</icon></button></li>
+              <li><button id='align-top-drop' data-command='align-top' title='Align top', data-replace='vertical-align'>
+                <div class='treb-toolbar-icon treb-icon-text-align-top'/>
+              </button></li>
+              <li><button id='align-middle-drop' data-command='align-middle' title='Align middle', data-replace='vertical-align'>
+                <div class='treb-toolbar-icon treb-icon-text-align-middle'/>
+              </button></li>
+              <li><button id='align-bottom-drop' data-command='align-bottom' title='Align bottom', data-replace='vertical-align'>
+                <div class='treb-toolbar-icon treb-icon-text-align-bottom'/>
+              </button></li>
             </ul>
           </div>
         </div>
 
         ${options.file_menu ? `
         <div class='group wide'>
-          <button title='File options' class='drop-button'><icon>FA/light/save</icon></button>
+          <button title='File options' class='drop-button'>
+            <div class='treb-toolbar-icon treb-icon-save'/>
+          </button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
               <li><button class='text' data-command='reset'>New Document</button></li>
@@ -145,32 +165,46 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         ` : ''}
 
         <div class='group wide'>
-          <button id='align-left' title='Align left' data-command='align-left'><icon>bootstrap/text-left</icon></button>
-          <button id='align-center' title='Align center' data-command='align-center'><icon>bootstrap/text-center</icon></button>
-          <button id='align-right' title='Align right' data-command='align-right'><icon>bootstrap/text-right</icon></button>
+          <button id='align-left' title='Align left' data-command='align-left'>
+            <div class='treb-toolbar-icon treb-icon-text-align-left'/>
+          </button>
+          <button id='align-center' title='Align center' data-command='align-center'>
+            <div class='treb-toolbar-icon treb-icon-text-align-center'/>
+          </button>
+          <button id='align-right' title='Align right' data-command='align-right'>
+            <div class='treb-toolbar-icon treb-icon-text-align-right'/>
+          </button>
         </div>
 
         <div class='group wide'>
-          <button id='align-top' data-command='align-top' title='Align top'><icon>FA/light/arrow-up-to-line</icon></button>
-          <button id='align-middle' data-command='align-middle' title='Align middle'><icon>FA/light/arrows-to-line</icon></button>
-          <button id='align-bottom' data-command='align-bottom' title='Align bottom'><icon>FA/light/arrow-down-to-line</icon></button>
+          <button id='align-top' data-command='align-top' title='Align top'>
+            <div class='treb-toolbar-icon treb-icon-text-align-top'/>
+          </button>
+          <button id='align-middle' data-command='align-middle' title='Align middle'>
+            <div class='treb-toolbar-icon treb-icon-text-align-middle'/>
+          </button>
+          <button id='align-bottom' data-command='align-bottom' title='Align bottom'>
+            <div class='treb-toolbar-icon treb-icon-text-align-bottom'/>
+          </button>
         </div>
 
         <div class='group'>
 
           <button id='wrap' data-command='wrap' title='Wrap text'>
-            <icon>extra/wrap</icon>
+            <div class='treb-toolbar-icon treb-icon-wrap-text'/>
           </button>
 
           <button id='merge' data-command='merge' title='Merge cells'>
-            <icon class='zam active-icon'>FA/light/expand</icon>
-            <icon class='zam inactive-icon'>FA/light/compress</icon>
+            <div class='active-icon treb-toolbar-icon treb-icon-merge-cells'></div>
+            <div class='inactive-icon treb-toolbar-icon treb-icon-unmerge-cells'></div>
           </button>
           
-          <button id='lock' data-command='lock'><icon>FA/light/lock-keyhole</icon></button>
+          <button id='lock' data-command='lock'>
+            <div class='treb-toolbar-icon treb-icon-lock'/>
+          </button>
 
           <button id='comment' class='drop-button' title='Comment'>
-            <icon>FA/light/message</icon>
+            <div class='treb-toolbar-icon treb-icon-comment'/>
           </button>
 
           <div class='drop-menu' tabindex='-1'>
@@ -187,7 +221,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         <div class='group'>
           <button class='color-button' data-command='background-color' title='Background color'>
-            <icon>FA/light/fill-drip</icon>
+            <div class='treb-toolbar-icon treb-icon-fill-color'></div>
             <div id='background-color-bar' class='color-bar' ></div>
           </button>
           <button class='drop'></button>
@@ -196,7 +230,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
         <div class='group'>
           <button class='color-button' data-command='foreground-color' title='Text color'>
-            <icon>FA/light/font</icon>
+            <div class='treb-toolbar-icon treb-icon-text-color'></div>
             <div id='foreground-color-bar' class='color-bar' ></div>
           </button>
           <button class='drop'></button>
@@ -225,7 +259,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         ` : ''}
 
         <div class='group'>
-          <button id='update-border' data-command='border-bottom' title='Bottom border'><icon>FA/light/border-bottom</icon></button>
+          <button id='update-border' data-command='border-bottom' title='Bottom border'>
+            <div class='treb-toolbar-icon treb-icon-border-bottom'/>
+          </button>
 
           <button class='drop'>
           </button>
@@ -233,44 +269,44 @@ export class Toolbar extends EventSource<ToolbarEvent> {
             <ul>
               <li>
                 <button id='border-top' data-command='border-top' title='Top border' data-replace='update-border'>
-                  <icon>FA/light/border-top</icon>
+                  <div class='treb-toolbar-icon treb-icon-border-top'/>
                 </button>
               </li>        
               <li>
                 <button id='border-left' data-command='border-left' title='Left border' data-replace='update-border'>
-                  <icon>FA/light/border-left</icon>
+                  <div class='treb-toolbar-icon treb-icon-border-left'/>
                 </button>
               </li>        
               <li>
                 <button id='border-right' data-command='border-right' title='Right border' data-replace='update-border'>
-                  <icon>FA/light/border-right</icon>
+                  <div class='treb-toolbar-icon treb-icon-border-right'/>
                 </button>
               </li>        
               <li>
                 <button id='border-bottom' data-command='border-bottom' title='Bottom border' data-replace='update-border'>
-                  <icon>FA/light/border-bottom</icon>
+                  <div class='treb-toolbar-icon treb-icon-border-bottom'/>
                 </button>
               </li>        
 
               <li>
                 <button id='border-double-bottom' data-command='border-double-bottom' title='Double bottom border' data-replace='update-border'>
-                  <icon>extra/border-double-bottom2</icon>
+                  <div class='treb-toolbar-icon treb-icon-border-double-bottom'/>
                 </button>
               </li>        
 
               <li>
                 <button id='border-all' data-command='border-all' title='All borders' data-replace='update-border'>
-                  <icon>FA/light/border-all</icon>
+                  <div class='treb-toolbar-icon treb-icon-border-all'/>
                 </button>
               </li>        
               <li>
                 <button id='border-outside' data-command='border-outside' title='Outside borders' data-replace='update-border'>
-                  <icon>FA/light/border-outer</icon>
+                  <div class='treb-toolbar-icon treb-icon-border-outer'/>
                 </button>
               </li>        
               <li>
                 <button id='border-none' data-command='border-none' title='Remove borders' data-replace='update-border'>
-                  <icon>FA/light/border-none</icon>
+                  <div class='treb-toolbar-icon treb-icon-border-none'/>
                 </button>
               </li>        
 
@@ -278,7 +314,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
 
               <li>
                 <button id='border-color' class='color-button drop-button' data-position='horizontal' title='Border color'>
-                  <icon>FA/light/palette</icon>
+                  <div class='treb-toolbar-icon treb-icon-palette'></div>
                   <div id='border-color-bar' class='color-bar'></div>
                 </button>
 
@@ -292,7 +328,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         
         <div class='group'>
           <button id='layout' class='drop-button' title='Rows/columns'>
-            <icon>FA/light/ruler-triangle</icon>
+            <div class='treb-toolbar-icon treb-icon-layout'/>
           </button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
@@ -312,7 +348,9 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         </div>
 
         <div class='group'>
-          <button id='freeze' data-command='freeze'><icon>FA/light/snowflake</icon></button>
+          <button id='freeze' data-command='freeze'>
+          <div class='treb-toolbar-icon treb-icon-freeze'/>
+          </button>
         </div>
 
         <div class='group'>
@@ -335,20 +373,28 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         <div class='group'>
 
           <button id='insert-annotation' data-command='column-chart' title='Insert column chart'>
-            <icon class='symbol'>extra/column-chart</icon>
+            <div class='treb-toolbar-icon treb-icon-column-chart'/>
           </button>
 
           <button class='drop'></button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
-              <li><button title='Insert column chart' id='column-chart' data-command='column-chart' data-replace='insert-annotation'><icon class='symbol'>extra/column-chart</icon></button></li>
-              <li><button title='Insert donut chart' id='donut-chart' data-command='donut-chart' data-replace='insert-annotation'><icon class='symbol'>extra/donut-chart</icon></button></li>
-              <li><button title='Insert bar chart' id='bar-chart' data-command='bar-chart' data-replace='insert-annotation'><icon class='symbol'>extra/bar-chart</icon></button></li>
-              <li><button title='Insert line chart' id='line-chart' data-command='line-chart' data-replace='insert-annotation'><icon class='symbol'>extra/line-chart</icon></button></li>
+              <li><button title='Insert column chart' id='column-chart' data-command='column-chart' data-replace='insert-annotation'>
+                <div class='treb-toolbar-icon treb-icon-column-chart'/>
+              </button></li>
+              <li><button title='Insert donut chart' id='donut-chart' data-command='donut-chart' data-replace='insert-annotation'>
+                <div class='treb-toolbar-icon treb-icon-donut-chart'/>
+              </button></li>
+              <li><button title='Insert bar chart' id='bar-chart' data-command='bar-chart' data-replace='insert-annotation'>
+                <div class='treb-toolbar-icon treb-icon-bar-chart'/>
+              </button></li>
+              <li><button title='Insert line chart' id='line-chart' data-command='line-chart' data-replace='insert-annotation'>
+                <div class='treb-toolbar-icon treb-icon-line-chart'/>
+              </button></li>
               <hr/>
               <li>
                 <button id='insert-image' data-command='insert-image' title='Insert image' data-replace='insert-annotation'>
-                  <icon>FA/light/image</icon>
+                  <div class='treb-toolbar-icon treb-icon-image'/>
                 </button>
               </li>
             </ul>
@@ -358,7 +404,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         ${ options.toolbar_recalculate_button ? `
             <div class='group end-group'>
               <button data-command='recalculate' title='Recalculate'>
-                <icon>FA/light/arrows-rotate</icon>
+                <div class='treb-toolbar-icon treb-icon-recalculate'></div>
               </button>
             </div>
         ` : ``
@@ -375,7 +421,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
             <div class='new-color'>
               <input id='color-input' placeholder='New Color'>
               <button id='color-button'>
-                <icon>FA/light/check</icon>
+                <div class='treb-toolbar-icon treb-icon-check'></div>
               </button>
             </div>
           </div>

@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import type { DataModel, ViewModel } from './data_model';
 import { EventSource } from 'treb-utils';

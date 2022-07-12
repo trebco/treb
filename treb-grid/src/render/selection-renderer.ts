@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { Theme, Rectangle, ICellAddress } from 'treb-base-types';
 import type { BaseLayout } from '../layout/base_layout';

@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 import { SpreadsheetVertexBase, GraphCallbacks } from './spreadsheet_vertex_base';
 import { Cell, Box, ICellAddress, ValueType, UnionValue } from 'treb-base-types';
