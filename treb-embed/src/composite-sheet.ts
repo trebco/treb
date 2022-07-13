@@ -171,20 +171,6 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
       });
     }
 
-    /*
-    if (this.options.fork) {
-      this.AddSidebarButton({
-        icon: 'treb-fork-icon',
-        title: 'Fork and Edit',
-        click: () => {
-          const host = 'https://treb.app';
-          const new_window = window.open(host + '/edit?fork');
-          if (new_window) { this.sheet.PostDocument(new_window, host); }
-        }
-      });
-    }
-    */
-
     this.AddSidebarButton({
       icon: 'treb-icon-about',
       title: `What's This?`,

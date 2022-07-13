@@ -149,7 +149,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
         ${options.file_menu ? `
         <div class='group wide'>
           <button title='File options' class='drop-button'>
-            <div class='treb-toolbar-icon treb-icon-save'/>
+            <div class='treb-toolbar-icon treb-icon-file-menu'/>
           </button>
           <div class='drop-menu' tabindex='-1'>
             <ul>
@@ -195,8 +195,8 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           </button>
 
           <button id='merge' data-command='merge' title='Merge cells'>
-            <div class='active-icon treb-toolbar-icon treb-icon-merge-cells'></div>
-            <div class='inactive-icon treb-toolbar-icon treb-icon-unmerge-cells'></div>
+            <div class='active-icon treb-toolbar-icon treb-icon-unmerge-cells'></div>
+            <div class='inactive-icon treb-toolbar-icon treb-icon-merge-cells'></div>
           </button>
           
           <button id='lock' data-command='lock'>

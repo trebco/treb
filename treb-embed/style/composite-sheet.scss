@@ -1,3 +1,8 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 $transition_options: .2s ease-in-out;
 $sidebar_width: 40px;
@@ -186,8 +191,9 @@ $toolbar_height: 38px;
     mask-repeat: no-repeat;
     -webkit-mask-repeat: no-repeat;
 
-    mask-size: 24px 24px;
-    -webkit-mask-size: 24px 24px;
+//    --mask-size: 22px;
+//    mask-size: var(--mask-size) var(--mask-size);
+//    -webkit-mask-size: var(--mask-size) var(--mask-size);
   
     background: #ccc;
     transition: background 0.1s ease;

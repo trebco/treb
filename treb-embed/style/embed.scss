@@ -1,11 +1,15 @@
+/**
+ * This file is part of TREB.
+ * Copyright 2022 trebco, llc.
+ * info@treb.app
+ */
 
 // FIXME: should be @use? 
 
 @import 'dialog.scss';
 @import 'spinner.scss';
 @import 'dark-theme.scss';
-// @import 'icons.scss';
-@import 'treb-icons-3.scss';
+@import 'treb-icons.scss';
 
 /** 
  * switching to the treb-main class, so we can unify...
