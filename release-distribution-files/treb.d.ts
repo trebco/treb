@@ -1,4 +1,4 @@
-/*! API v21.0. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
+/*! API v21.1. Copyright 2018-2022 Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -675,22 +675,70 @@ export interface FreezePane {
 }
 
 /**
+ *
  * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ *
  * Copyright 2022 trebco, llc.
  * info@treb.app
+ *
  */
  
 /**
+ *
  * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ *
  * Copyright 2022 trebco, llc.
  * info@treb.app
+ *
  */
 export declare type BorderConstants = "none" | "all" | "outside" | "top" | "bottom" | "left" | "right" | "double-top" | "double-bottom";
 
 /**
+ *
  * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ *
  * Copyright 2022 trebco, llc.
  * info@treb.app
+ *
  */
 
 /**
@@ -716,9 +764,25 @@ export interface SerializeOptions {
 }
 
 /**
+ *
  * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ *
  * Copyright 2022 trebco, llc.
  * info@treb.app
+ *
  */
 
 /**
@@ -750,9 +814,25 @@ export interface Point {
 }
 
 /**
+ *
  * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ *
  * Copyright 2022 trebco, llc.
  * info@treb.app
+ *
  */
 
 /** structure represents rectangle coordinates */
@@ -764,9 +844,25 @@ export interface IRectangle {
 }
 
 /**
+ *
  * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ *
  * Copyright 2022 trebco, llc.
  * info@treb.app
+ *
  */
 export declare namespace Style {
 
@@ -878,9 +974,25 @@ export declare namespace Style {
 export declare type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
 /**
+ *
  * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with Foobar. If not, see <https://www.gnu.org/licenses/>.
+ *
  * Copyright 2022 trebco, llc.
  * info@treb.app
+ *
  */
 
 /**
