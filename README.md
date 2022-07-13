@@ -1,5 +1,7 @@
 # TREB
 
+<img alt="TREB logo (a leaf)" src="treb-logo.svg"></img>
+
 TREB is a spreadsheet component designed for embedding in web pages, 
 web apps, and blogs.
 
