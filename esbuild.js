@@ -227,7 +227,7 @@ const GenerateConfig = (version) => {
         version,
       }),
     ],
-    outdir,
+    outdir : version === 'module' ? path.join(outdir, 'esm') : outdir,
   };
 
   switch (version) {
@@ -263,7 +263,7 @@ const Run = async () => {
 
   if (clean) {
     await new Promise((resolve) => {
-      child_process.exec(`rm ${path.join(outdir, '*')}`, () => resolve());
+      child_process.exec(`rm -r ${path.join(outdir, '*')}`, () => resolve());
     });
   }
 
@@ -296,7 +296,7 @@ const Run = async () => {
   await fs.promises.mkdir(versioned_dir, { recursive: true });
 
   await new Promise((resolve) => {
-    child_process.exec(`cp ${path.join(outdir, '*')} ${versioned_dir}`, () => resolve());
+    child_process.exec(`cp -r ${path.join(outdir, '*')} ${versioned_dir}`, () => resolve());
   });
 
 };

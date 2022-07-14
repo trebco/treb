@@ -1,7 +1,8 @@
 {
   "name": "treb",
   "license": "LGPL",
-  "main": "../treb-bundle.mjs",
-  "typings": "../treb.d.ts",
-  "stylesheet": "../treb-bundle.css"
+  "main": "treb-bundle.mjs",
+  "type": "module",
+  "types": "treb.d.ts",
+  "stylesheet": "treb-bundle.css"
 }

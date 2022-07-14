@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "21.2.0",
+  "version": "21.2.1",
   "main": "dist/index.js",
   "dependencies": {
     "fast-xml-parser": "^4.0.7",
@@ -40,8 +40,8 @@
     "watch": "node esbuild.js --watch",
     "tsc": "tsc -b treb-embed/modern.tsconfig.json",
     "watch-tsc": "tsc -b treb-embed/modern.tsconfig.json -w ",
-    "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json && cp treb.d.ts release-distribution-files/",
-    "watch-api": "ts-node-dev --respawn api-generator/api-generator.ts --config api-config.json && cp treb.d.ts release-distribution-files/",
+    "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json && cp treb.d.ts release-distribution-files/ && cp treb.d.ts release-distribution-files/esm",
+    "watch-api": "ts-node-dev --respawn api-generator/api-generator.ts --config api-config.json && cp treb.d.ts release-distribution-files/ && cp treb.d.ts release-distribution-files/esm",
     "watch-modern": "node esbuild.js --watch --modern --dev",
     "watch-module": "node esbuild.js --watch --module --dev",
     "build-modern": "node esbuild.js --modern --embed-worker",
