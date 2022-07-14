@@ -7,6 +7,10 @@ web apps, and blogs.
 
 For more information and documentation see our website at [treb.app][1].
 
+## Download
+
+Download the latest release [from our website][5].
+
 ## License
 
 TREB is provided under the GNU Lesser General Public License. See the file [LICENSE.txt][3] for details. TREB is also available under a 
@@ -31,3 +35,5 @@ Icons remain the copyright of their individual owners.
 [2]: treb-embed/style/treb-icons.scss
 [3]: LICENSE.txt
 [4]: mailto:info@treb.app
+[5]: https://treb.app/download
+
