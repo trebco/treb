@@ -9,8 +9,8 @@ For usage information see
 https://treb.app/docs
 
 
-Structured Data, LLC  
-info@riskamp.com
+trebco, llc  
+info@treb.app
 
 
 
