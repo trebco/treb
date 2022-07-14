@@ -978,7 +978,7 @@ const Run = async () => {
   }
 
   if (api_version) {
-    const banner = `/*! API v${api_version}. Copyright 2018-${new Date().getFullYear()} Structured Data, LLC. All rights reserved. CC BY-ND: https://treb.app/license */`;
+    const banner = `/*! API v${api_version}. Copyright 2018-${new Date().getFullYear()} trebco, llc. All rights reserved. LGPL: https://treb.app/license */`;
     printed = banner + '\n' + printed;
   }
 
