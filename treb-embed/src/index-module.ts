@@ -24,7 +24,13 @@ import { EmbeddedSpreadsheet } from './embedded-spreadsheet';
 import { CompositeSheet } from './composite-sheet';
 import type { CreateSheetOptions } from './options';
 
-// non-mc version
+// support injecting worker as text (for blob). this will help with module 
+// import, although it will make the module quite a bit larger.
+
+const worker_text = process.env.WORKER_TEXT || '';
+if (worker_text) {
+  EmbeddedSpreadsheet.export_worker_text = worker_text;
+}
 
 //
 // this is export for MJS/ESM. in this case we don't run globals. note we

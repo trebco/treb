@@ -41,6 +41,9 @@ let license = false;
 /** write metafile (for dev) */
 let metafile = false;
 
+/** embed worker (for esm) */
+let embed_worker = false;
+
 for (let i = 0; i < process.argv.length; i++) {
   if (process.argv[i] === '--dev') {
     production = false;
@@ -54,6 +57,9 @@ for (let i = 0; i < process.argv.length; i++) {
   }
   else if (process.argv[i] === '--clean') {
     clean = true;
+  }
+  else if (process.argv[i] === '--embed-worker') {
+    embed_worker = true;
   }
   else if (process.argv[i] === '--modern') {
     version.modern = true;
@@ -170,6 +176,17 @@ const LoadPlugin = (options) => {
 
 const GenerateConfig = (version) => {
 
+  let worker_text = '';
+  if (version === 'module' && embed_worker) {
+    try {
+      worker_text = fs.readFileSync(`build/current/treb-export-worker-${package.version}.js`, {encoding: 'utf-8'});
+    }
+    catch (err) {
+      console.error('\n** embedding worker failed. make sure the worker for this version exists before building module.\n');
+      throw err;
+    }
+  }
+
   const config = {
 
     metafile: metafile||license, // only if necessary
@@ -185,6 +202,7 @@ const GenerateConfig = (version) => {
       css: banner,
     },  
     define: {
+      'process.env.WORKER_TEXT': worker_text ? JSON.stringify(worker_text) :`""`,
       'process.env.NODE_ENV': `"${version_str}"`,
       'process.env.BUILD_VERSION': `"${package.version}"`,
       'process.env.BUILD_NAME': `"${package.name}"`,
@@ -249,11 +267,6 @@ const Run = async () => {
     });
   }
 
-  if (version.module) {
-    console.info(`building module (${version_str})...`);
-    await esbuild.build(GenerateConfig('module'));
-  }
-  
   // modern version includes all support files
 
   if (version.modern) {
@@ -270,6 +283,13 @@ const Run = async () => {
         await fs.promises.writeFile(path.join(outdir, '3d_party.txt'), licenses, { encoding: 'utf8' });
       }
     }
+  }
+
+  // module must be after modern, if we are embedding worker
+
+  if (version.module) {
+    console.info(`building module (${version_str})...`);
+    await esbuild.build(GenerateConfig('module'));
   }
 
   const versioned_dir = path.join(outdir_parent, package.version);

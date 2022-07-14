@@ -217,6 +217,9 @@ export class EmbeddedSpreadsheet {
   public static treb_base_path = '';
 
   /** @internal */
+  public static export_worker_text = '';  
+
+  /** @internal */
   public static treb_embedded_script_path = '';
 
   /** @internal */
@@ -4591,6 +4594,22 @@ export class EmbeddedSpreadsheet {
    * loading in different directories (or different hosts?)
    */
   protected async LoadWorker(name: string): Promise<Worker> {
+
+    // for esm we now support embedding the worker as a blob
+    // (as text, actually); we can construct it from the text 
+    // as necessary.
+
+    if (EmbeddedSpreadsheet.export_worker_text) {
+      try {
+        const worker = new Worker(
+            URL.createObjectURL(new Blob([EmbeddedSpreadsheet.export_worker_text], { type: 'application/javascript' })));
+        return worker;
+      }
+      catch (err) {
+        console.info('embedded worker failed');
+        console.error(err);
+      }
+    }
 
     if (!EmbeddedSpreadsheet.treb_base_path) {
       console.warn('worker path is not set. it you are loading TREB in an ESM module, please either '

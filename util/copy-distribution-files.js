@@ -12,5 +12,5 @@ const distribution_dir = path.resolve(__dirname, '..', 'release-distribution-fil
 const current_dir = path.resolve(__dirname, '..', 'build', 'current');
 const build_dir = path.resolve(__dirname, '..', 'build', package.version);
 
-execSync('cp ' + distribution_dir + '/* ' + build_dir);
-execSync('cp ' + distribution_dir + '/* ' + current_dir);
+execSync('cp -r ' + distribution_dir + '/* ' + build_dir);
+execSync('cp -r ' + distribution_dir + '/* ' + current_dir);
