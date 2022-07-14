@@ -96,7 +96,7 @@ if (watch) {
  * banner will be prepended to any and all output files
  */
 const banner = 
-  `/*! TREB v${package.version}. Copyright 2018-${new Date().getFullYear()} trebco, llc. All rights reserved. CC BY-ND: https://treb.app/license */` ;
+  `/*! TREB v${package.version}. Copyright 2018-${new Date().getFullYear()} trebco, llc. All rights reserved. LGPL: https://treb.app/license */` ;
 
 /**
  * entry points for module build, keyed by output file name
