@@ -1,6 +1,6 @@
 {
   "name": "treb",
-  "version": "21.2.1",
+  "version": "21.2.2",
   "main": "dist/index.js",
   "dependencies": {
     "fast-xml-parser": "^4.0.7",
