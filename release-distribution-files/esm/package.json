@@ -1,7 +1,13 @@
 {
-  "name": "treb",
-  "license": "LGPL",
+  "name": "@trebco/treb",
+  "version": "",
+  "license": "LGPL-3.0-or-later",
+  "homepage": "https://treb.app",
   "main": "treb-bundle.mjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trebco/treb.git"
+  },
   "type": "module",
   "types": "treb.d.ts",
   "stylesheet": "treb-bundle.css"
