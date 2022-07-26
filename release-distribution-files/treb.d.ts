@@ -1022,6 +1022,9 @@ export interface EmbeddedSpreadsheetOptions {
 
     /** show a spinner for long-running operations */
     spinner?: boolean;
+
+    /** collapsed: start sidebar closed */
+    collapsed?: boolean;
 }
 export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file" | "local-storage" | "undo";
 

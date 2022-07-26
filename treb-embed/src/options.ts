@@ -193,6 +193,9 @@ export interface EmbeddedSpreadsheetOptions {
   /** show a spinner for long-running operations */
   spinner?: boolean;
 
+  /** collapsed: start sidebar closed */
+  collapsed?: boolean;
+  
 }
 
 /**
@@ -242,8 +245,6 @@ export interface CreateSheetOptions extends EmbeddedSpreadsheetOptions {
   /** icons */
   decorated?: boolean;
 
-  /** collapsed: start sidebar closed */
-  collapsed?: boolean;
 
   /** 
    * optional callback function on create. we're not using this anymore, but
