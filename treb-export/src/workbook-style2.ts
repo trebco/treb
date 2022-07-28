@@ -536,10 +536,9 @@ export class StyleCache {
         // const index = Theme.color_map[];
 
         // skipping 0, it's implicit
+        // no it is not (1 is implicit?)
 
-        if (font.color_theme) {
-          props.text = { theme: font.color_theme };
-        }
+        props.text = { theme: font.color_theme };
 
         /*
         // FIXME: update to theme
