@@ -131,7 +131,7 @@ export class SheetCollection {
   }
 
   /** not sure why this is private, makes it a little more complicated */
-  private UpdateIndexes(): void {
+  public UpdateIndexes(): void {
 
     this.names.clear();
     this.ids.clear();

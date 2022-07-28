@@ -998,7 +998,7 @@ export class Grid extends GridBase {
   public FromImportData(
     import_data: {
       sheets: ImportedSheetData[],
-      names?: Record<string, string>,
+      names?: Record<string, string|number>,
       active_tab?: number,
     },
     render = false,
@@ -1058,10 +1058,12 @@ export class Grid extends GridBase {
       name_map[sheet.name] = sheet.id;
     }
 
+    this.model.sheets.UpdateIndexes();
     this.model.named_ranges.Reset();
     this.model.named_expressions.clear();
 
     if (import_data.names) {
+      
       for (const name of Object.keys(import_data.names)) {
 
         const validated = this.model.named_ranges.ValidateNamed(name);
@@ -1071,45 +1073,49 @@ export class Grid extends GridBase {
         }
 
         const label = import_data.names[name];
-        const parse_result = this.parser.Parse(label);
+        if (typeof label === 'number') {
+          // console.info('dropping (temp)', name, label);
+        }
+        else {
+          const parse_result = this.parser.Parse(label);
 
-        if (parse_result.expression) {
-          if (parse_result.expression.type === 'range') {
-            const sheet_id = name_map[parse_result.expression.start.sheet || ''];
-            if (sheet_id) {
-              parse_result.expression.start.sheet_id = sheet_id;
-              this.model.named_ranges.SetName(validated, new Area(parse_result.expression.start, parse_result.expression.end), false);
-            }
-          }
-          else if (parse_result.expression.type === 'address') {
-            const sheet_id = name_map[parse_result.expression.sheet || ''];
-            if (sheet_id) {
-              parse_result.expression.sheet_id = sheet_id;
-              this.model.named_ranges.SetName(validated, new Area(parse_result.expression), false);
-            }
-          }
-          else {
-
-            // we need to map sheet names to sheet IDs in named
-            // expressions, if they have any addresses/references.
-
-            const expr = parse_result.expression;
-            this.parser.Walk(expr, unit => {
-              if (unit.type === 'address' || unit.type === 'range') {
-                if (unit.type === 'range') {
-                  unit = unit.start;
-                }
-                if (!unit.sheet_id) {
-                  unit.sheet_id = name_map[unit.sheet || ''] || 0; // default is bad here -- do we have an active sheet yet?
-                }
-                return false;
+          if (parse_result.expression) {
+            if (parse_result.expression.type === 'range') {
+              const sheet_id = name_map[parse_result.expression.start.sheet || ''];
+              if (sheet_id) {
+                parse_result.expression.start.sheet_id = sheet_id;
+                this.model.named_ranges.SetName(validated, new Area(parse_result.expression.start, parse_result.expression.end), false);
               }
-              return true;
-            });
-            this.model.named_expressions.set(validated, expr);
+            }
+            else if (parse_result.expression.type === 'address') {
+              const sheet_id = name_map[parse_result.expression.sheet || ''];
+              if (sheet_id) {
+                parse_result.expression.sheet_id = sheet_id;
+                this.model.named_ranges.SetName(validated, new Area(parse_result.expression), false);
+              }
+            }
+            else {
+
+              // we need to map sheet names to sheet IDs in named
+              // expressions, if they have any addresses/references.
+
+              const expr = parse_result.expression;
+              this.parser.Walk(expr, unit => {
+                if (unit.type === 'address' || unit.type === 'range') {
+                  if (unit.type === 'range') {
+                    unit = unit.start;
+                  }
+                  if (!unit.sheet_id) {
+                    unit.sheet_id = name_map[unit.sheet || ''] || 0; // default is bad here -- do we have an active sheet yet?
+                  }
+                  return false;
+                }
+                return true;
+              });
+              this.model.named_expressions.set(validated, expr);
+            }
           }
         }
-
       }
       this.model.named_ranges.RebuildList();
     }
