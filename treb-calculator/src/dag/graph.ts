@@ -299,7 +299,8 @@ export abstract class Graph implements GraphCallbacks {
     // do this conditionally so we avoid the slice if unecessary
 
     if (remove) {
-      dependencies = vertex.edges_in.slice(0);
+      // dependencies = vertex.edges_in.slice(0);
+      dependencies = Array.from(vertex.edges_in);
     }
 
     vertex.ClearDependencies();
@@ -397,7 +398,7 @@ export abstract class Graph implements GraphCallbacks {
             for (const vertex of l2) {
               if (vertex) {
                 // vertex.color = Color.white; 
-                vertex.color = vertex.edges_out.length ? Color.white : Color.black;
+                vertex.color = vertex.edges_out.size ? Color.white : Color.black;
               }
             }
           }
@@ -443,7 +444,7 @@ export abstract class Graph implements GraphCallbacks {
           if (l2) {
             for (const vertex of l2) {
               if (vertex) { 
-                vertex.color = vertex.edges_out.length ? Color.white : Color.black;
+                vertex.color = vertex.edges_out.size ? Color.white : Color.black;
                 list.push(vertex);
               }
             }

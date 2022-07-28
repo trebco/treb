@@ -335,6 +335,8 @@ export class ExpressionCalculator {
       }
 
       if (!sheet) {
+        // console.info({range, context: JSON.stringify(this.context.address)});
+        // console.info({arg});
         throw new Error('missing sheet [ac9]');
       }
 

@@ -47,16 +47,18 @@ export class Vertex {
   public color = Color.white; // for loop check
 
   /** dependencies */
-  public edges_in: Vertex[] = [];
+  // public edges_in: Vertex[] = [];
+  public edges_in: Set<Vertex> = new Set();
 
   /** dependents */
-  public edges_out: Vertex[] = [];
+  // public edges_out: Vertex[] = [];
+  public edges_out: Set<Vertex> = new Set();
 
   // --- accessors ---
 
-  get has_inbound_edges(): boolean { return this.edges_in.length > 0; }
+  get has_inbound_edges(): boolean { return this.edges_in.size > 0; }
 
-  get has_outbound_edges(): boolean { return this.edges_out.length > 0; }
+  get has_outbound_edges(): boolean { return this.edges_out.size > 0; }
 
   // --- cleanup operations ---
 
@@ -71,8 +73,10 @@ export class Vertex {
       edge.RemoveDependent(this);
     }
 
-    this.edges_out = [];
-    this.edges_in = [];
+    //this.edges_out = [];
+    this.edges_out.clear();
+    //this.edges_in = [];
+    this.edges_in.clear();
 
   }
 
@@ -85,7 +89,8 @@ export class Vertex {
       // edge.edges_out = edge.edges_out.filter(check => check !== this);      
 
     }
-    this.edges_in = [];
+    // this.edges_in = [];
+    this.edges_in.clear();
   }
 
   // --- basic node operations ---
@@ -93,12 +98,21 @@ export class Vertex {
   /** add a dependent. doesn't add if already in the list */
   public AddDependent(edge: Vertex): void {
     if (edge === this) return; // circular
+
+    if (this.edges_out.has(edge)) {
+      return;
+    }
+
+    /*
     for (const check of this.edges_out) {
       if (check === edge) {
         return;
       }
     }
-    this.edges_out.push(edge);
+    */
+
+    //this.edges_out.push(edge);
+    this.edges_out.add(edge);
   }
 
   /** remove a dependent */
@@ -127,30 +141,41 @@ export class Vertex {
     // seemed to work any better (not worse, either, but if there's no 
     // improvement we should use the native method).
 
+    /*
     for (let i = 0; i < this.edges_out.length; i++) {
       if (this.edges_out[i] === edge) {
         this.edges_out.splice(i, 1);
         return;
       }
     }
+    */
+   this.edges_out.delete(edge);
 
   }
 
   /** add a dependency. doesn't add if already in the list */
   public AddDependency(edge: Vertex): void {
     if (edge === this) return; // circular
+
+    /*
     for (const check of this.edges_in) {
       if (check === edge) {
         return;
       }
     }
+    */
+   if (this.edges_in.has(edge)){
+    return;
+   }
 
-    this.edges_in.push(edge);
+    //this.edges_in.push(edge);
+    this.edges_in.add(edge);
   }
 
   /** remove a dependency */
   public RemoveDependency(edge: Vertex): void {
-    this.edges_in = this.edges_in.filter((check) => check !== edge);
+    // this.edges_in = this.edges_in.filter((check) => check !== edge);
+    this.edges_in.delete(edge);
   }
 
   /** 
@@ -215,7 +240,8 @@ export class Vertex {
             return true; // found a loop
           }
 
-          if (edge.color === Color.white && edge.edges_out.length) {
+          // if (edge.color === Color.white && edge.edges_out.length) {
+          if (edge.color === Color.white && edge.edges_out.size) {
             stack.push(edge);
             complete = false;
 

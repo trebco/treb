@@ -143,7 +143,7 @@ export class ArrayVertex extends SpreadsheetVertexBase {
    */
   public RemoveDependent(edge: Vertex): void {
     super.RemoveDependent(edge);
-    if (!this.edges_out.length) {
+    if (!this.edges_out.size) {
       // console.info('removing dead array vertex');
       this.Reset();
       ArrayVertex.list = ArrayVertex.list.filter(test => test !== this);
@@ -164,7 +164,7 @@ export class ArrayVertex extends SpreadsheetVertexBase {
       // console.info('LC', this);
       this.dirty = false;
 
-      if (this.edges_in.length) {
+      if (this.edges_in.size) {
 
         // intuitively this seems like a good idea but I'm not sure
         // that it is actually necessary (TODO: check)

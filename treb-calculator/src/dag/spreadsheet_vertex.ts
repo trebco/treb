@@ -124,7 +124,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
         this.dirty = false;
 
-        if (this.edges_in.length) {
+        if (this.edges_in.size) {
 
           // console.info('set loop err', `R${this.address?.row} C${this.address?.column}`, this);
 
@@ -314,7 +314,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
     //     a useful optimization or not)
     // 
 
-    for (const edge of this.edges_out as SpreadsheetVertexBase[]){
+    for (const edge of this.edges_out as Set<SpreadsheetVertexBase>){
       // (edge as SpreadsheetVertex).Calculate(graph);
       if (edge.dirty) {
         graph.calculation_list.push(edge);

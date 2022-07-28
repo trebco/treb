@@ -81,7 +81,8 @@ export class LeafVertex extends SpreadsheetVertex {
   public UpdateState(): void {
 
     // FIXME: hash!
-    const state = JSON.stringify(this.edges_in.map((edge) => (edge as SpreadsheetVertex).result));
+    //const state = JSON.stringify(this.edges_in.map((edge) => (edge as SpreadsheetVertex).result));
+    const state = JSON.stringify(Array.from(this.edges_in).map((edge) => (edge as SpreadsheetVertex).result));
 
     if (state !== this.state_representation) {
       this.state_representation = state;

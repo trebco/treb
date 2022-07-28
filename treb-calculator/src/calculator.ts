@@ -1644,7 +1644,7 @@ export class Calculator extends Graph {
           // get a warning when it tries to calculate. still this is helpful
           // for debugging.
 
-          console.warn('invalid address in range');
+          console.warn('invalid address in range [9d]');
         }
         else {
           dependencies.addresses[unit.sheet_id + '!' + unit.label] = unit;
