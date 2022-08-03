@@ -23,7 +23,7 @@ $swatch-width: 1.1em;
 
 // TEMP TOP LEVEL
 
-.drop-menu {
+.treb-container .drop-menu {
 
   // position:fixed takes it out of the size calc on initial render, so the 
   // toobar doesn't get taller (which screws up scrolling). we can change the
@@ -94,7 +94,7 @@ $swatch-width: 1.1em;
   ul {
     margin: 0;
 
-    list-style-type: none;
+    list-style-type: none !important;
     padding-left: 0;
 
     li + li {
