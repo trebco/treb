@@ -41,6 +41,7 @@ import {
   Complex,
   IRectangle,
   IsComplex,
+  TextPartFlag,
 } from 'treb-base-types';
 
 import {
@@ -6267,7 +6268,19 @@ export class Grid extends GridBase {
       selection.empty = false;
 
       const cell_data= this.active_sheet.CellData(selection.target);
-      this.overlay_editor?.UpdateCaption(cell_data.formatted?.toString() || '');
+      let text = '';
+
+      if (cell_data.formatted) {
+        if (typeof cell_data.formatted === 'string') {
+          text = cell_data.formatted;
+        }
+        else {
+          text = cell_data.formatted.map(value =>
+            (value.flag === TextPartFlag.hidden || value.flag === TextPartFlag.formatting) ? '' : value.text).join('');
+        }
+      }
+
+      this.overlay_editor?.UpdateCaption(text);
       
     }
     else {
