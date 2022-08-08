@@ -469,7 +469,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
   */
 
   /** add sidebar button */
-  public AddSidebarButton(options: SidebarButtonOptions = {}, container = this.sidebar): HTMLDivElement {
+  public AddSidebarButton(options: SidebarButtonOptions = {}, container = this.sidebar): HTMLElement {
 
     const button = document.createElement('button');
     button.setAttribute('type', 'button');
