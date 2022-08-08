@@ -471,7 +471,8 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
   /** add sidebar button */
   public AddSidebarButton(options: SidebarButtonOptions = {}, container = this.sidebar): HTMLDivElement {
 
-    const button = document.createElement('div');
+    const button = document.createElement('button');
+    button.setAttribute('type', 'button');
     button.classList.add('sidebar-button');
 
     if (options.classes) {
