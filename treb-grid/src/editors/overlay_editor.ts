@@ -103,6 +103,8 @@ export class OverlayEditor extends FormulaEditorBase {
     this.edit_node.tabIndex = -1;
     this.edit_node.spellcheck = true; // default
 
+    this.edit_node.setAttribute('role', 'gridcell');
+
     if (UA.is_firefox) {
       this.edit_node.classList.add('firefox');
     }
@@ -213,7 +215,11 @@ export class OverlayEditor extends FormulaEditorBase {
   }
   */
 
-  public Focus(): void {
+  public UpdateCaption(text = ''): void {
+    this.edit_node.setAttribute('aria-label', text);
+  }
+
+  public Focus(text = ''): void {
 
     // we get unexpected scroll behavior if we focus on the overlay editor
     // when it is not already focused, and the grid is scrolled. that's because
@@ -226,6 +232,8 @@ export class OverlayEditor extends FormulaEditorBase {
     }
 
     this.edit_node.focus();
+    this.UpdateCaption(text);
+
   }
 
   /* TEMP (should be Hide() ?) */

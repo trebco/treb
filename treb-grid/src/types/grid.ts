@@ -1595,6 +1595,7 @@ export class Grid extends GridBase {
 
     const higher_level_container = document.createElement('div');
     higher_level_container.classList.add('treb-layout-master');
+    higher_level_container.setAttribute('role', 'grid');
     higher_level_container.appendChild(container);
     grid_container.appendChild(higher_level_container);
 
@@ -1810,14 +1811,14 @@ export class Grid extends GridBase {
    * focus on the container. you must call this method to get copying
    * to work properly (because it creates a selection)
    */
-  public Focus(): void {
+  public Focus(text = ''): void {
 
     // FIXME: cache a pointer
     if (UA.is_mobile) {
       this.container?.focus();
     }
     else {
-      this.overlay_editor?.Focus();
+      this.overlay_editor?.Focus(text);
     }
 
     // this.container?.focus();
@@ -6265,6 +6266,9 @@ export class Grid extends GridBase {
       }
       selection.empty = false;
 
+      const cell_data= this.active_sheet.CellData(selection.target);
+      this.overlay_editor?.UpdateCaption(cell_data.formatted?.toString() || '');
+      
     }
     else {
       selection.empty = true;
