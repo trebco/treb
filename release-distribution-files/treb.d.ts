@@ -1,4 +1,4 @@
-/*! API v21.4. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v21.5. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -606,13 +606,22 @@ export declare class EmbeddedSpreadsheet {
     ClearName(name: string): void;
 
     /**
-     * Create a named range.
+     * Create a named range or named expression. A named range refers to an
+     * address or range. A named expression can be a value or formula, basically
+     * anything you would type into a cell.
      *
-     * @param range leave undefined to use current selection
+     * @param value range, value or expression
+     *
+     * @remarks
+     *
+     * This function used to support passing `undefined` as the value,
+     * which meant "create a named range using current selection". We don't
+     * support that any more but you can accompilsh that with
+     * `sheet.DefineName("Name", sheet.GetSelection())`.
      *
      * @public
      */
-    DefineName(name: string, range?: RangeReference): void;
+    DefineName(name: string, value: RangeReference | CellValue): void;
 
     /**
      * Set or remove a link in a cell.
