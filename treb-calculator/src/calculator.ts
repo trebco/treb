@@ -1562,31 +1562,7 @@ export class Calculator extends Graph {
       relative_sheet_id: number,
       relative_sheet_name: string,
       dependencies: DependencyList = {addresses: {}, ranges: {}},
-      // sheet_name_map?: {[index: string]: number},
     ): DependencyList {
-
-    // does this get redone on every descent? dumb
-
-    /*
-    if (!sheet_name_map) {
-
-      sheet_name_map = {};
-
-      for (const sheet of this.model.sheets.list) {
-        sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
-      }
-
-      if (!relative_sheet_name) {
-        for (const sheet of this.model.sheets.list) {
-          if (sheet.id === relative_sheet_id) {
-            relative_sheet_name = sheet.name;
-            break;
-          }
-        }
-      }
-
-    }
-    */
 
     if (!relative_sheet_name) {
       const sheet = this.model.sheets.Find(relative_sheet_id);
@@ -1604,13 +1580,26 @@ export class Calculator extends Graph {
 
       case 'identifier':
         {
-          const resolved = this.NamedRangeToAddressUnit(unit);
-          if (resolved) {
-            if (resolved.type === 'address') {
-              dependencies.addresses[resolved.label] = resolved;
+          // update to handle named expressions. just descend into
+          // the expression as if it were inline.
+          
+          const normalized = unit.name.toUpperCase();
+
+          if (this.model.named_expressions.has(normalized)) {
+            const expr = this.model.named_expressions.get(normalized);
+            if (expr) {
+              this.RebuildDependencies(expr, relative_sheet_id, relative_sheet_name, dependencies);
             }
-            else {
-              dependencies.ranges[resolved.label] = resolved;
+          }
+          else {
+            const resolved = this.NamedRangeToAddressUnit(unit);
+            if (resolved) {
+              if (resolved.type === 'address') {
+                dependencies.addresses[resolved.label] = resolved;
+              }
+              else {
+                dependencies.ranges[resolved.label] = resolved;
+              }
             }
           }
         }

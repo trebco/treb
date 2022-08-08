@@ -66,6 +66,13 @@ export const IsCellAddress = (obj: any): obj is ICellAddress => {
     typeof obj.column !== 'undefined');
 };
 
+export const IsArea = (obj: any): obj is IArea => {
+  return (
+    typeof obj === 'object' &&
+    IsCellAddress(obj.start) &&
+    IsCellAddress(obj.end));
+};
+
 export interface Dimensions {
   rows: number;
   columns: number;

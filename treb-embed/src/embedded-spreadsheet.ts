@@ -40,7 +40,7 @@ import {
   Area, IArea, CellValue, Point,
   IsFlatData, IsFlatDataArray, Rectangle, IsComplex, 
   ComplexToString, Complex, ExtendedUnion, IRectangle,
-  AddressReference, RangeReference,
+  AddressReference, RangeReference, IsArea,
 } from 'treb-base-types';
 
 import { EventSource, Yield } from 'treb-utils';
@@ -3127,13 +3127,22 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
-   * Create a named range. 
+   * Create a named range or named expression. A named range refers to an
+   * address or range. A named expression can be a value or formula, basically
+   * anything you would type into a cell. 
    * 
-   * @param range leave undefined to use current selection
+   * @param value range, value or expression
+   * 
+   * @remarks 
+   * 
+   * This function used to support passing `undefined` as the value,
+   * which meant "create a named range using current selection". We don't
+   * support that any more but you can accompilsh that with 
+   * `sheet.DefineName("Name", sheet.GetSelection())`.
    * 
    * @public
    */
-  public DefineName(name: string, range?: RangeReference): void {
+  public DefineName(name: string, value: RangeReference|CellValue): void {
 
     // how can we unify named ranges and named expressions?
     //
@@ -3152,6 +3161,41 @@ export class EmbeddedSpreadsheet {
     // (4) if the argument is another kind of intrinsic type, we can
     //     set it as a named expression
 
+    if (typeof value === 'undefined' || value === null) {
+      throw new Error('invalid value (null or undefined)');
+    }
+
+    if (typeof value === 'object') {
+      if (IsCellAddress(value) || IsArea(value)) {
+        this.grid.SetName(name, this.calculator.ResolveArea(value, this.grid.active_sheet));
+        return;
+      }
+    }
+
+    if (typeof value === 'string') {
+
+      // kind of a shame we're parsing it twice, but I don't want to 
+      // change the internal grid method atm. FIXME?
+
+      const parse_result = this.parser.Parse(value);
+      if (!parse_result.expression) {
+        throw new Error('invalid expression');
+      }
+      switch (parse_result.expression.type) {
+        case 'address':
+        case 'range':
+          this.grid.SetName(name, this.calculator.ResolveArea(parse_result.expression, this.grid.active_sheet));
+          return;
+      }
+      this.grid.SetName(name, undefined, value);
+      
+    }
+    else {
+      this.grid.SetName(name, undefined, value.toString());
+    }
+    
+
+    /*
     // API v1 OK
 
     if (!range) {
@@ -3167,17 +3211,18 @@ export class EmbeddedSpreadsheet {
     // NOTE: AC is handled internally
 
     this.grid.SetName(name, this.calculator.ResolveArea(range, this.grid.active_sheet));
-
+    */
   }
 
-  /**
+  /* *
    * define a named expression
    * 
    * @internal
-   */
+   * /
   public DefineNamedExpression(name: string, expression: string): void {
     this.grid.SetName(name, undefined, expression);
   }
+  */
 
   /**
    * Set or remove a link in a cell. 

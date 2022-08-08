@@ -1886,7 +1886,7 @@ export class Grid extends GridBase {
    */
   public SetName(name: string, range?: ICellAddress | Area, expression?: string): void {
 
-    console.info('setname', name, range, expression);
+    // console.info('setname', name, range, expression);
 
     // validate/translate name first
 
@@ -1952,6 +1952,10 @@ export class Grid extends GridBase {
 
       // resolve sheet. otherwise we wind up with dangling
       // references. NOTE: need to do this on import as well
+
+      // FIXME: hmmm... I think I like the dangling reference?
+      // so if you define something as `=A1*2`, then it should
+      // resolve to the sheet you enter it into? 
 
       if (parse_result.valid && parse_result.expression) {
 
