@@ -280,6 +280,7 @@ $toolbar_height: 38px;
   z-index: 5;
   bottom: $sidebar_button_offset;
   right: 0px;
+  border-radius: 0; // !
   border-top-left-radius: 12px;
   border-bottom-left-radius: 12px;
   background: var(--treb-sidebar-button-background, #fff);
