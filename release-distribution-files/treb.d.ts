@@ -1,4 +1,4 @@
-/*! API v21.5. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v21.6. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -340,6 +340,16 @@ export declare class EmbeddedSpreadsheet {
      * @public
      */
     UnmergeCells(range?: RangeReference): void;
+
+    /**
+     * revert to the original version of this document. this is a new flow
+     * that requires options set for `storage_key` and `alternate_document`.
+     *
+     * the idea is that the localStorage version will control, unless you
+     * don't have one or you revert; in that case we will load the alternate
+     * document.
+     */
+    Revert(): void;
 
     /**
      * Export to XLSX file.
@@ -1034,6 +1044,11 @@ export interface EmbeddedSpreadsheetOptions {
 
     /** collapsed: start sidebar closed */
     collapsed?: boolean;
+
+    /**
+     * show the revert button. see the Revert method.
+     */
+    revert?: boolean;
 }
 export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file" | "local-storage" | "undo";
 
