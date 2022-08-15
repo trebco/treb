@@ -196,6 +196,11 @@ export interface EmbeddedSpreadsheetOptions {
   /** collapsed: start sidebar closed */
   collapsed?: boolean;
   
+  /**
+   * show the revert button. see the Revert method.
+   */
+  revert?: boolean;
+
 }
 
 /**
@@ -209,7 +214,7 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   scrollbars: true,
   headers: true,
   export: true,
-  popout: true,
+  popout: false,
   tab_bar: 'auto',
   resizable: true,
   hyperlinks: '_blank',

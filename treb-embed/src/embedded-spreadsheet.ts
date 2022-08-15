@@ -2037,6 +2037,51 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
+   * revert to the original version of this document. this is a new flow
+   * that requires options set for `storage_key` and `alternate_document`.
+   * 
+   * the idea is that the localStorage version will control, unless you 
+   * don't have one or you revert; in that case we will load the alternate
+   * document.
+   */
+  public Revert(): void {
+
+    if (this.options.alternate_document) {
+
+      /*
+      this.dialog?.ShowDialog({
+        title: `Reverting to original`,
+        close_box: true,
+        timeout: 3000,
+        type: DialogType.info,
+      });
+      */
+
+      this.LoadNetworkDocument(this.options.alternate_document);
+
+      // flush storage? what about mistakes? maybe we should 
+      // back it up somewhere? (...)
+
+      if (this.options.storage_key) {
+        this.SaveLocalStorage('reverted_backup');
+        localStorage.removeItem(this.options.storage_key);
+      }
+
+      return;
+    }
+
+    console.warn('to revert, there must be an alternate_document set in options');
+
+    this.dialog?.ShowDialog({
+      title: `Can't revert`,
+      close_box: true,
+      timeout: 3000,
+      type: DialogType.error,
+    });
+    
+  }
+
+  /**
    * Export to XLSX file. 
    * 
    * @remarks 

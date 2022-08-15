@@ -178,6 +178,14 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
       });
     }
 
+    if (this.options.revert) {
+      this.AddSidebarButton({
+        icon: 'treb-icon-revert',
+        title: 'Revert to original version',
+        click: () => this.sheet.Revert(),
+      });
+    }
+
     if (this.options.popout) {
       this.AddSidebarButton({
         icon: 'treb-icon-popout',
