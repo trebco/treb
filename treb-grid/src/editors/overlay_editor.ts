@@ -227,8 +227,14 @@ export class OverlayEditor extends FormulaEditorBase {
     // focus on it (but only in this case).
 
     if (this.edit_node !== document.activeElement) {
-      this.edit_container.style.top = `${this.container.scrollTop + 2}px`;
-      this.edit_container.style.left = `${this.container.scrollLeft + 2}px`;
+
+      // this was not correct, but should we add those 2 pixels back?
+
+      // this.edit_container.style.top = `${this.container.scrollTop + 2}px`;
+      // this.edit_container.style.left = `${this.container.scrollLeft + 2}px`;
+
+      this.edit_container.style.top = `${this.container.scrollTop + this.view.active_sheet.header_offset.y}px`;
+      this.edit_container.style.left = `${this.container.scrollLeft + this.view.active_sheet.header_offset.x}px`;
     }
 
     this.edit_node.focus();
