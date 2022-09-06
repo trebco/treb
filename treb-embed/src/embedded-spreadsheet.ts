@@ -2543,7 +2543,7 @@ export class EmbeddedSpreadsheet {
     // leave what was in the model? (...)
 
     options = {
-      scroll: {row: 0, column: 0},
+      // scroll: {row: 0, column: 0},
       flush: true,
       recalculate: false,
       ...options,
@@ -2614,7 +2614,7 @@ export class EmbeddedSpreadsheet {
     this.Publish({ type: 'load', source: options.source }); // FIXME: should not happen on undo...
     this.UpdateDocumentStyles();
     this.loaded = true;
-
+   
     if (options.scroll) {
       const scroll = options.scroll;
       Yield().then(() => this.ScrollTo(scroll));

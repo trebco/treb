@@ -218,6 +218,8 @@ export class Grid extends GridBase {
    */
   private tile_update_pending = false;
 
+  private scroll_offset_pending?: {x: number, y: number};
+
   /**
    * for coediting/remotes, we may make a structural change that requires
    * a full repaint of another sheet -- we won't be able to do that until
@@ -1443,7 +1445,11 @@ export class Grid extends GridBase {
 
     // no longer sending layout event here
 
-    this.QueueLayoutUpdate();
+    // we may need to update scroll after expanding the grid (especially
+    // if this is the first load), so temporarily cache the scroll target.
+    // use a clone, so we don't accidentally modify it.
+
+    this.QueueLayoutUpdate(JSON.parse(JSON.stringify(this.active_sheet.scroll_offset)));
 
     this.StyleDefaultFromTheme();
 
@@ -2607,6 +2613,7 @@ export class Grid extends GridBase {
     // FIXME: cache scroll position, too!
 
     this.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
+
     this.active_sheet.scroll_offset = this.layout.scroll_offset;
 
     // hold this for the event (later)
@@ -2751,8 +2758,16 @@ export class Grid extends GridBase {
    * FIXME: that makes no sense -- because rectangles will be calculated
    * incorrectly until the layout has been updated.
    */
-  private QueueLayoutUpdate() {
+  private QueueLayoutUpdate(scroll?: {x: number, y: number}) {
     this.tile_update_pending = true;
+
+    // don't step on existing pending scroll. we will explicitly
+    // clear after we use it.
+
+    if (scroll) {
+      this.scroll_offset_pending = scroll;
+    }
+
   }
 
   private HandleAddressLabelEvent(text?: string) {
@@ -3099,6 +3114,12 @@ export class Grid extends GridBase {
     if (this.tile_update_pending) {
       this.tile_update_pending = false;
       this.layout.UpdateTiles();
+
+      if (this.scroll_offset_pending) {
+        this.layout.scroll_offset = this.scroll_offset_pending;
+        this.scroll_offset_pending = undefined; // clear
+      }
+
       this.render_tiles = this.layout.VisibleTiles();
       this.layout.UpdateAnnotation(this.active_sheet.annotations);
 
