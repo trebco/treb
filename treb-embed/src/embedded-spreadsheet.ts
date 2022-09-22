@@ -341,6 +341,9 @@ export class EmbeddedSpreadsheet {
   /** focus target if we have multiple views */
   protected focus_target: EmbeddedSpreadsheet = this;
 
+  /** parent, if we are a split view child */
+  protected parent_view?: EmbeddedSpreadsheet;
+
   /**
    * export worker (no longer using worker-loader).
    * export worker is loaded on demand, not by default.
@@ -1018,11 +1021,13 @@ export class EmbeddedSpreadsheet {
    * create the correct type
    */
   protected CreateView(): EmbeddedSpreadsheet {
-    return new EmbeddedSpreadsheet({
+    const child = new EmbeddedSpreadsheet({
       ...this.options,
       global_name: undefined, // don't overwrite
       model: this,
     });
+    child.parent_view = this;
+    return child;
   }
 
   // --- public internal methods -----------------------------------------------
@@ -1111,6 +1116,7 @@ export class EmbeddedSpreadsheet {
           break;
         
         case 'load':
+        case 'reset':
           view.grid.EnsureActiveSheet(true); // force update of annotations
           view.UpdateAnnotations();
           view.grid.Update(true);
@@ -1435,12 +1441,11 @@ export class EmbeddedSpreadsheet {
         case 'reset':
           this.Reset();
           break;
+          
         case 'import-desktop':
           this.LoadLocalFile();
           break;
-        //case 'import-url':
-        //  this.ImportURL();
-        //  break;
+
         case 'save-json':
           this.SaveLocalFile();
           break;
@@ -2176,6 +2181,10 @@ export class EmbeddedSpreadsheet {
    * @public
    */
   public Reset(): void {
+    
+    if (this.parent_view) {
+      return this.parent_view.Reset();
+    }
 
     // API v1 OK
 
@@ -2486,6 +2495,10 @@ export class EmbeddedSpreadsheet {
    */
   public LoadCSV(csv: string, source?: LoadSource): void {
 
+    if (this.parent_view) {
+      return this.parent_view.LoadCSV(csv, source);
+    }
+
     // API v1 OK
 
     // TODO: add a 'user' or 'API' load source, and set that 
@@ -2521,6 +2534,10 @@ export class EmbeddedSpreadsheet {
    * 
    */
   public LoadDocument(data: TREBDocument, options: LoadDocumentOptions = {}): void {
+
+    if (this.parent_view) {
+      return this.parent_view.LoadDocument(data, options);
+    }
 
     // API v1 OK
 
@@ -2882,6 +2899,13 @@ export class EmbeddedSpreadsheet {
    * @public
    */
   public Undo(): void {
+
+    // this is half of the problem, we also need to manage views when
+    // we set undo states
+
+    if (this.parent_view) {
+      return this.parent_view.Undo();
+    }
 
     // API v1 OK
 
@@ -3460,6 +3484,10 @@ export class EmbeddedSpreadsheet {
    *
    */
    protected async ImportXLSX(data: string, source: LoadSource): Promise<Blob | void> {
+
+    if (this.parent_view) {
+      return this.parent_view.ImportXLSX(data, source);
+    }
 
     if (!this.export_worker) {
       const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
