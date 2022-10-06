@@ -70,7 +70,10 @@ export class Measurement {
       this.color_measurement_canvas.height = 1;
     }
 
-    const context = this.color_measurement_canvas.getContext('2d');
+    const context = this.color_measurement_canvas.getContext('2d', {
+      willReadFrequently: true,
+    });
+
     if (context) {
       context.fillStyle = '#fff';
       context.fillRect(0, 0, 1, 1);

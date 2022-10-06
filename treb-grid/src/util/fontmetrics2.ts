@@ -104,6 +104,8 @@ export class FontMetricsFactory {
       font = font.replace(target, value + 'px');
     }
 
+    // what's up with the double-access on context?
+
     let context = this.canvas.getContext('2d');
 
     if (!context) {
@@ -118,7 +120,10 @@ export class FontMetricsFactory {
     this.canvas.setAttribute('width', size.toString());
     this.canvas.setAttribute('height', size.toString());
     
-    context = this.canvas.getContext('2d');
+    context = this.canvas.getContext('2d', {
+      willReadFrequently: true,
+    });
+
     if (!context) {
       throw new Error('invalid context');
     }

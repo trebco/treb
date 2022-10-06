@@ -282,9 +282,11 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   // to be an rgb triple (I think?)
 
   const canvas = document.createElement('canvas');
+
   canvas.width = 3;
   canvas.height = 3;
-  const context = canvas.getContext('2d');
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  
   if (context) {
     theme.theme_colors_rgb= theme.theme_colors.map((color) => {
       context.fillStyle = color;
