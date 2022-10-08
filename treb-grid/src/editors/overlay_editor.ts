@@ -141,7 +141,16 @@ export class OverlayEditor extends FormulaEditorBase {
     //  this.edit_node.style.paddingBottom = `${self.devicePixelRatio}px`;
     //}
 
-    this.edit_node.addEventListener('input', () => {
+    let composing = false;
+
+    this.edit_node.addEventListener('compositionstart', () => composing = true);
+    this.edit_node.addEventListener('compositionend', () => composing = false);
+
+    this.edit_node.addEventListener('input', event => {
+
+      if (composing) {
+        return;
+      }
 
       // this is a new thing that popped up in chrome (actually edge).
       // not sure what's happening but this seems to clean it up.
@@ -155,11 +164,15 @@ export class OverlayEditor extends FormulaEditorBase {
       // should we dynamically add this when editing? (...)
       if (!this.editing) { return; }
 
-      //this.Reconstruct();
-      //this.UpdateSelectState();
+      this.Reconstruct();
+      this.UpdateSelectState();
     });
 
     this.edit_node.addEventListener('keyup', event => {
+
+      if (composing) {
+        return;
+      }
 
       // should we dynamically add this when editing? (...)
       if (!this.editing) { return; }

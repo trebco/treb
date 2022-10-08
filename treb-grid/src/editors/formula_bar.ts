@@ -203,6 +203,11 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.editor_node = DOMUtilities.CreateDiv('formula-editor', this.container_node);
     this.editor_node.setAttribute('contenteditable', 'true');
 
+    // flag for composing via IME. when this is set we don't want to 
+    // handle input events.
+
+    let composing = false;
+
     // 
     // change the default back. this was changed when we were trying to figure
     // out what was happening with IME, but it had nothing to do with spellcheck.
@@ -250,6 +255,8 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
       this.focused_ = true;
 
+      composing = false;
+
     });
 
     this.editor_node.addEventListener('focusout', () => {
@@ -276,10 +283,24 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.editor_node.addEventListener('keydown', (event) => this.FormulaKeyDown(event));
     this.editor_node.addEventListener('keyup', (event) => this.FormulaKeyUp(event));
 
+    this.editor_node.addEventListener('compositionstart', () => {
+      composing = true;
+    });
+
+    this.editor_node.addEventListener('compositionsend', () => {
+      composing = false;
+    });
+
     // IE11 doesn't support this event? (not on contenteditable, as it turns out)
     this.editor_node.addEventListener('input', () => {
+
+      if (composing) {
+        return;
+      }
+
       this.Reconstruct();
       this.UpdateSelectState();
+
     });
 
     if (this.options.expand_formula_button) {
