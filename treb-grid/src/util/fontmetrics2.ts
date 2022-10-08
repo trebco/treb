@@ -106,7 +106,9 @@ export class FontMetricsFactory {
 
     // what's up with the double-access on context?
 
-    let context = this.canvas.getContext('2d');
+    let context = this.canvas.getContext('2d', {
+      willReadFrequently: true,
+    });
 
     if (!context) {
       throw new Error('invalid context');

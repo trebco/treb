@@ -155,8 +155,8 @@ export class OverlayEditor extends FormulaEditorBase {
       // should we dynamically add this when editing? (...)
       if (!this.editing) { return; }
 
-      this.Reconstruct();
-      this.UpdateSelectState();
+      //this.Reconstruct();
+      //this.UpdateSelectState();
     });
 
     this.edit_node.addEventListener('keyup', event => {
