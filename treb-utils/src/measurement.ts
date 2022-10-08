@@ -80,7 +80,10 @@ export class Measurement {
 
       context.fillStyle = color;
       context.fillRect(0, 0, 1, 1);
-      cached = context.getImageData(0, 0, 1, 1).data;
+
+      // cached = context.getImageData(0, 0, 1, 1).data; // FIXME: should clone this
+      cached = new Uint8ClampedArray(context.getImageData(0, 0, 1, 1).data);
+
       this.color_cache[color] = cached;
       return cached;
     }
