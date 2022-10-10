@@ -5432,6 +5432,11 @@ export class Grid extends GridBase {
    */
   private NormalizeFormula(formula: string) {
     const parse_result = this.parser.Parse(formula);
+    
+    if (parse_result.error) {
+      console.warn(parse_result.error);
+    }
+
     if (parse_result && parse_result.expression) {
       this.parser.Walk(parse_result.expression, (unit) => {
         switch (unit.type) {

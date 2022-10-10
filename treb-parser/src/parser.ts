@@ -770,7 +770,7 @@ export class Parser {
             stream.push(operator);
           }
           else {
-            this.error = `unexpected character [1]: ${String.fromCharCode(unit)}, ${unit}`;
+            this.error = `unexpected character [1]: ${String.fromCharCode(unit)}, 0x${unit.toString(16)}`;
             this.valid = false;
             this.index++;
           }
