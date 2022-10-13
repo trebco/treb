@@ -1,4 +1,4 @@
-/*! API v21.6. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v21.7. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -342,12 +342,8 @@ export declare class EmbeddedSpreadsheet {
     UnmergeCells(range?: RangeReference): void;
 
     /**
-     * revert to the original version of this document. this is a new flow
-     * that requires options set for `storage_key` and `alternate_document`.
-     *
-     * the idea is that the localStorage version will control, unless you
-     * don't have one or you revert; in that case we will load the alternate
-     * document.
+     * revert to the network version of this document, if both `storage_key`
+     * and `network_document` are set.
      */
     Revert(): void;
 
@@ -949,7 +945,12 @@ export interface EmbeddedSpreadsheetOptions {
     /** fetch network document (URI) */
     network_document?: string;
 
-    /** load this document if the storage document isn't found (fallback) */
+    /**
+     * load this document if the storage document isn't found (fallback)
+     *
+     * @deprecated - this is superfluous, using network_document with
+     * storage_key is sufficient for this pattern.
+     */
     alternate_document?: string;
 
     /** freeze rows */
