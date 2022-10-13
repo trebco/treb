@@ -852,8 +852,11 @@ export class EmbeddedSpreadsheet {
     }
 
     // don't load if we are a split view
+    // UPDATE: don't load if we have a localStorage document. this is taking
+    // over the old alterante_document flow, because it doesn't make any sense
+    // otherwise. what would storage_key with document_name mean otherwise?
 
-    if (network_document && !options.model) {
+    if (network_document && !options.model && !data) {
       this.LoadNetworkDocument(network_document, this.options);
     }
 
@@ -2042,16 +2045,14 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
-   * revert to the original version of this document. this is a new flow
-   * that requires options set for `storage_key` and `alternate_document`.
-   * 
-   * the idea is that the localStorage version will control, unless you 
-   * don't have one or you revert; in that case we will load the alternate
-   * document.
+   * revert to the network version of this document, if both `storage_key` 
+   * and `network_document` are set.
    */
   public Revert(): void {
 
-    if (this.options.alternate_document) {
+    const canonical = this.options.alternate_document || this.options.network_document;
+
+    if (canonical) {
 
       /*
       this.dialog?.ShowDialog({
@@ -2062,7 +2063,7 @@ export class EmbeddedSpreadsheet {
       });
       */
 
-      this.LoadNetworkDocument(this.options.alternate_document);
+      this.LoadNetworkDocument(canonical);
 
       // flush storage? what about mistakes? maybe we should 
       // back it up somewhere? (...)
@@ -2075,10 +2076,10 @@ export class EmbeddedSpreadsheet {
       return;
     }
 
-    console.warn('to revert, there must be an alternate_document set in options');
+    console.warn('to revert, there must be a document set in options');
 
     this.dialog?.ShowDialog({
-      title: `Can't revert`,
+      title: `Can't revert -- no document is set in options`,
       close_box: true,
       timeout: 3000,
       type: DialogType.error,

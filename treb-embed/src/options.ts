@@ -89,7 +89,12 @@ export interface EmbeddedSpreadsheetOptions {
   /** fetch network document (URI) */
   network_document?: string;
 
-  /** load this document if the storage document isn't found (fallback) */
+  /** 
+   * load this document if the storage document isn't found (fallback) 
+   * 
+   * @deprecated - this is superfluous, using network_document with 
+   * storage_key is sufficient for this pattern.
+   */
   alternate_document?: string;
 
   /** freeze rows */
