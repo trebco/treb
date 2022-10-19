@@ -67,7 +67,16 @@ export class Exporter {
     textNodeName: 't$',
     ignoreAttributes: false,
     suppressEmptyNode: true,
-    tagValueProcessor: (name: string, a: string) => (typeof a === 'string') ? he.encode(a, { useNamedReferences: true}) : a,
+
+    tagValueProcessor: (name: string, a: string) => {
+     
+      // we were including unsafe symbols here, but that was 
+      // resulting in double-encoding. not sure why this is 
+      // here at all, unless we need it for unicode? in any
+      // event (atm) allowing unsafe symbols is sufficient
+
+      return (typeof a === 'string') ? he.encode(a, { useNamedReferences: true, allowUnsafeSymbols: true }) : a;
+    },
 
     // there's a "isAttributeValue" for decode, but no option for encode?
     // we only want to encode ' and "
@@ -741,7 +750,7 @@ export class Exporter {
       options: ChartOptions,
     }> = [];
 
-    const parse_series = (arg: ExpressionUnit, options: ChartOptions) => {
+    const parse_series = (arg: ExpressionUnit, options: ChartOptions, ref?: string) => {
 
       if (arg.type === 'range') {
         options.data.push(this.NormalizeAddress(arg, sheet_source));
@@ -750,7 +759,7 @@ export class Exporter {
         if (/group/i.test(arg.name)) {
           // recurse
           for (const value of (arg.args || [])) {
-            parse_series(value, options);
+            parse_series(value, options, ref ? ref + ` (recurse)` : undefined);
           }
         }
         else if (/series/i.test(arg.name)) {
@@ -784,7 +793,7 @@ export class Exporter {
             }
           }
           else {
-            console.info('invalid series missing Y')
+            console.info('invalid series missing Y', {y, arg, ref});
           }
 
         }
@@ -847,7 +856,7 @@ export class Exporter {
           if (parse_result.expression.args[0]) {
             const arg0 = parse_result.expression.args[0];
             if (type === 'scatter2' || type === 'bar' || type === 'column' || type === 'scatter') {
-              parse_series(arg0, options);
+              parse_series(arg0, options, sheet_source.name);
             }
             else if (arg0.type === 'range') {
               options.data.push(this.NormalizeAddress(arg0, sheet_source));
