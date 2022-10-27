@@ -108,7 +108,8 @@
     // our leaf gradient is currently #AD4500 - #D4D400
     // half-way is #C18D00 (not bad)
 
-    border-top-color: #B76900; // this is not half-way; it's 4/5 of the way.
+    // border-top-color: #B76900; // this is not half-way; it's 4/5 of the way.
+    border-top-color: rgb(0, 157, 255);
   }
 
   &.dialog-type-error {
