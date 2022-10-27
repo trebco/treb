@@ -48,7 +48,7 @@ import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
 // --- local -------------------------------------------------------------------
 
-import { ProgressDialog, DialogType } from './progress-dialog';
+import { Dialog, DialogType } from './progress-dialog';
 import { Spinner } from './spinner';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './options';
 import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent } from './types';
@@ -59,7 +59,7 @@ import { Chart, ChartFunctions } from 'treb-charts';
 
 // --- 3d party ----------------------------------------------------------------
 
-import * as FileSaver from 'file-saver';
+// import * as FileSaver from 'file-saver';
 
 // --- style -------------------------------------------------------------------
 
@@ -303,7 +303,7 @@ export class EmbeddedSpreadsheet {
    * dialog is assigned in the constructor, only if there's a containing
    * element (i.e. not when we're just using the engine)
    */
-  protected dialog?: ProgressDialog;
+  protected dialog?: Dialog;
 
   /** new spinner */
   protected spinner?: Spinner;
@@ -863,7 +863,7 @@ export class EmbeddedSpreadsheet {
     // create mask dialog
 
     if (container) {
-      this.dialog = new ProgressDialog(container);
+      this.dialog = new Dialog(container);
     }
 
     /*
@@ -2111,7 +2111,17 @@ export class EmbeddedSpreadsheet {
       }
 
       if (blob) {
-        FileSaver.saveAs(blob, filename + '.xlsx', { autoBom: false });
+
+        /*
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename + '.xlsx';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        // FileSaver.saveAs(blob, filename + '.xlsx', { autoBom: false });
+        */
+        this.SaveAs(blob, filename + '.xlsx');
+
         this.last_save_version = this.file_version; // even though it's an export, consider it clean
       }
 
@@ -2482,7 +2492,15 @@ export class EmbeddedSpreadsheet {
 
     if (text && filename) {
       const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      FileSaver.saveAs(blob, filename, { autoBom: false });
+      /*
+      // FileSaver.saveAs(blob, filename, { autoBom: false });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      */
+      this.SaveAs(blob, filename);
     }
 
   }
@@ -3476,6 +3494,22 @@ export class EmbeddedSpreadsheet {
   }
 
   // --- internal (protected) methods ------------------------------------------
+
+  /**
+   * replacement for (the great) FileSaver lib. we can now rely on all
+   * browsers to handle this properly (fingers crossed).
+   * 
+   * @param blob 
+   * @param filename 
+   */
+  protected SaveAs(blob: Blob, filename: string) {
+
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
 
   protected Publish(event: EmbeddedSheetEvent): void {
     this.events.Publish(event);

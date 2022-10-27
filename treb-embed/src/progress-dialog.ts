@@ -76,7 +76,7 @@ export type ResolutionFunction = () => void;
  * modal informational dialog that covers the embedded
  * spreadsheet. not fancy.
  */
-export class ProgressDialog {
+export class Dialog {
 
   // public static unique_id = Math.random().toString(36).substring(2, 15);
 
