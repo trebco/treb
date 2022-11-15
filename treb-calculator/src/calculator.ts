@@ -143,6 +143,10 @@ export class Calculator extends Graph {
 
           const data = Utilities.FlattenUnboxed(range);
 
+          // console.info({range, data});
+
+          // console.info({range});
+
           if (typeof criteria !== 'string') {
             criteria = '=' + (criteria || 0).toString();
           }
@@ -211,11 +215,14 @@ export class Calculator extends Graph {
         arguments: [{
           name: 'reference', description: 'Base reference', metadata: true, }, {
           name: 'rows', description: 'number of rows to offset' }, {
-          name: 'columns', description: 'number of columns to offset' },
+          name: 'columns', description: 'number of columns to offset' }, {
+          name: 'height', }, {
+          name: 'width', },
+
         ],
         return_type: ReturnType.reference,
         volatile: true,
-        fn: ((reference: UnionValue, rows = 0, columns = 0, height = 1, width = 1): UnionValue => {
+        fn: ((reference: UnionValue, rows = 0, columns = 0, height?: number, width?: number): UnionValue => {
 
           if (!reference) {
             return ArgumentError();
@@ -226,9 +233,28 @@ export class Calculator extends Graph {
           //  return ReferenceError;
           //}
 
+          if (reference.type === ValueType.array) {
+
+            // subset array. this is constructed, so we can take ownership
+            // and modify it, although it would be safer to copy. also, what's
+            // the cost of functional vs imperative loops these days?
+
+            const end_row = typeof height === 'number' ? (rows + height) : undefined;
+            const end_column = typeof width === 'number' ? (columns + width) : undefined;
+
+            const result: UnionValue = {
+              type: ValueType.array,
+              value: reference.value.slice(rows, end_row).map(row => row.slice(columns, end_column)),
+            };
+
+            return result;
+
+          }
+
           // we need a proper type for this... also it might be a range
-         
+
           if (!UnionIsMetadata(reference)) {
+            console.info('e2', {reference})
             return ReferenceError(); 
           }
 
@@ -238,6 +264,7 @@ export class Calculator extends Graph {
             true, rows, columns, width, height);
 
           if (!check_result) {
+            console.info('e1', {check_result})
             return ReferenceError();
           }
 

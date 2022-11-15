@@ -121,11 +121,11 @@ export const StatisticsFunctionLibrary: FunctionMap = {
         length += len;
 
         for (let i = 0; i < len; i++) {
-          mean.x += x[j][i];
-          mean.y += y[j][i];
+          mean.x += (x[j][i] || 0);
+          mean.y += (y[j][i] || 0);
 
-          data.x.push(x[j][i]);
-          data.y.push(y[j][i]);
+          data.x.push(x[j][i] || 0);
+          data.y.push(y[j][i] || 0);
         }
 
       }
