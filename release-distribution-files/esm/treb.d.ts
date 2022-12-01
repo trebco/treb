@@ -1,4 +1,4 @@
-/*! API v22.8. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v22.9. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -639,7 +639,8 @@ export declare class EmbeddedSpreadsheet {
     SetLink(address?: AddressReference, target?: string): void;
 
     /**
-     * Select a range.
+     * Select a range. This function will change sheets if your reference
+     * refers to a different sheet.
      *
      * @public
      */

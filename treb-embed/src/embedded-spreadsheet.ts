@@ -3341,17 +3341,21 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
-   * Select a range.
+   * Select a range. This function will change sheets if your reference
+   * refers to a different sheet.
    * 
    * @public
    */
   public Select(range: RangeReference): void {
 
-    // API v1 OK
+    const resolved = this.calculator.ResolveArea(range, this.grid.active_sheet);
+    if (resolved.start.sheet_id) {
+      if (resolved.start.sheet_id !== this.grid.active_sheet.id) {
+        this.grid.ActivateSheetID(resolved.start.sheet_id);
+      }
+    }    
+    this.grid.SelectRange(resolved);
 
-    // FIXME: what if the range is on another sheet? (...)
-
-    this.grid.SelectRange(this.calculator.ResolveArea(range, this.grid.active_sheet));
   }
 
   /** 
