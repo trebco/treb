@@ -3500,6 +3500,35 @@ export class EmbeddedSpreadsheet {
   // --- internal (protected) methods ------------------------------------------
 
   /**
+   * 
+   */
+  protected Unresolve(ref: ICellAddress|IArea, qualified = true): string {
+    
+    let range = '';
+    const area = IsCellAddress(ref) ? new Area(ref) : new Area(ref.start, ref.end);
+
+    if (area.count > 1) {
+      range = Area.CellAddressToLabel(area.start) + ':' + Area.CellAddressToLabel(area.end);
+    }
+    else {
+      range = Area.CellAddressToLabel(area.start);
+    }
+
+    if (!qualified) {
+      return range;
+    }
+
+    // is there a function to resolve sheet? actually, don't we know that
+    // the active selection must be on the active sheet? (...)
+
+    const sheet_id = area.start.sheet_id || this.grid.active_sheet.id;
+    const sheet_name = this.ResolveSheetName(sheet_id, true);
+
+    return sheet_name ? sheet_name + '!' + range : range;
+    
+  }
+
+  /**
    * replacement for (the great) FileSaver lib. we can now rely on all
    * browsers to handle this properly (fingers crossed).
    * 
