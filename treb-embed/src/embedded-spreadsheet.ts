@@ -3502,10 +3502,17 @@ export class EmbeddedSpreadsheet {
   /**
    * 
    */
-  protected Unresolve(ref: ICellAddress|IArea, qualified = true): string {
+  protected Unresolve(ref: ICellAddress|IArea, qualified = true, named = true): string {
     
     let range = '';
     const area = IsCellAddress(ref) ? new Area(ref) : new Area(ref.start, ref.end);
+
+    if (named) {
+      const named_range = this.model.named_ranges.MatchSelection(area);
+      if (named_range) {
+        return named_range;
+      }
+    }
 
     if (area.count > 1) {
       range = Area.CellAddressToLabel(area.start) + ':' + Area.CellAddressToLabel(area.end);
