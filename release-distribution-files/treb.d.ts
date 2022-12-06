@@ -1,4 +1,4 @@
-/*! API v22.10. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v22.11. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -545,9 +545,29 @@ export declare class EmbeddedSpreadsheet {
      * use sheet names when referring to cells, to avoid ambiguity. Otherwise
      * cell references will resolve to the active sheet.
      *
+     * By default, this function will evaluate the expression in the current
+     * locale, meaning it will use the current locale's decimal separator and
+     * argument separator.
+     *
+     * If you do not want that behavior, set the argument separator explicitly.
+     * That will force evaluation using either comma (,) or semicolon (;) as the
+     * argument separator.
+     *
+     * Decimal separator is implied by the argument separator. If you set the
+     * argument separator to comma, the decimal separator will be dot (.). If you
+     * set the argument separator to semicolon, the decimal separator will be
+     * comma (,). You cannot mix-and-match these characters.
+     *
+     * Since you may not know where the code is being executed at run-time,
+     * using consistent argument and decimal separators makes sense. However we
+     * are leaving the original behavior as default for backwards compatibility.
+     *
+     * @param expression: an expression in spreadsheet language
+     * @param argument_separator: comma or semicolon, or leave undefined to use current locale
+     *
      * @public
      */
-    Evaluate(expression: string): CellValue | CellValue[][];
+    Evaluate(expression: string, argument_separator?: ',' | ';'): CellValue | CellValue[][];
 
     /**
      * Returns the current selection, as a string address or range.

@@ -1122,9 +1122,29 @@ export class Calculator extends Graph {
   }
 
   /** moved from embedded sheet */
-  public Evaluate(expression: string, active_sheet?: Sheet) {
+  public Evaluate(expression: string, active_sheet?: Sheet, argument_separator?: ','|';') {
     
+    const current = this.parser.argument_separator;
+
+    if (argument_separator) {
+      if (argument_separator === ',') {
+        this.parser.argument_separator = ArgumentSeparatorType.Comma;
+        this.parser.decimal_mark = DecimalMarkType.Period;
+      }
+      else {
+        this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+        this.parser.decimal_mark = DecimalMarkType.Comma;
+      }
+    }
+
     const parse_result = this.parser.Parse(expression);
+
+    // reset
+
+    this.parser.argument_separator = current;
+    this.parser.decimal_mark = (current === ArgumentSeparatorType.Comma) ? DecimalMarkType.Period : DecimalMarkType.Comma;
+
+    // OK
 
     if (parse_result && parse_result.expression ){ 
 
