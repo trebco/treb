@@ -1146,7 +1146,7 @@ export class EmbeddedSpreadsheet {
       const selection = this.grid.GetSelection();
       if (selection && !selection.empty) {
         const label = selection.area.spreadsheet_label;
-        this.InsertAnnotation(`=${func}(${label},,"${label}")`);
+        this.InsertAnnotation(`=${func}(${label},,"${label}")`, undefined, undefined, ',');
       }
     };
 
@@ -1694,13 +1694,17 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
-   * Insert an annotation node. Usually this means inserting a chart.
+   * Insert an annotation node. Usually this means inserting a chart. Regarding
+   * the argument separator, see the Evaluate function.
    * 
    * @param formula - annotation formula. For charts, the chart formula.
    * @param type - annotation type. Defaults to `treb-chart`.
    * @param rect - coordinates, or a range reference for layout.
+   * 
+   * @param argument_separator - the argument separator to use when evaluating
+   * the function. defaults to current locale.
    */
-  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: IRectangle|RangeReference): void {
+  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: IRectangle|RangeReference, argument_separator?: ','|';'): void {
 
     let target: IRectangle | Partial<Area> | undefined;
 
@@ -1708,14 +1712,33 @@ export class EmbeddedSpreadsheet {
       target = Rectangle.IsRectangle(rect) ? rect : this.calculator.ResolveArea(rect, this.grid.active_sheet);
     }
 
-    /*
-    if (class_name) {
-      if (!/^[_\-a-zA-Z][\w_-]*$/.test(class_name)) {
-        throw new Error('invalid class name');
-      }
-    }
-    */
+    if (argument_separator && argument_separator !== this.parser.argument_separator) {
+      const current = {
+        argument_separator: this.parser.argument_separator, 
+        decimal_mark: this.parser.decimal_mark,
+      };
 
+      if (argument_separator === ',') {
+        this.parser.argument_separator = ArgumentSeparatorType.Comma;
+        this.parser.decimal_mark = DecimalMarkType.Period;
+      }
+      else {
+        this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+        this.parser.decimal_mark = DecimalMarkType.Comma;
+      }
+
+      const result = this.parser.Parse(formula);
+      
+      // reset
+      this.parser.argument_separator = current.argument_separator;
+      this.parser.decimal_mark = current.decimal_mark;
+
+      if (result.expression) {
+        formula = '=' + this.parser.Render(result.expression, undefined, '' );
+      }
+
+    }
+    
     const { x, y } = this.grid.GetScrollOffset();
     const scale = this.grid.scale || 1;
 
@@ -3061,8 +3084,8 @@ export class EmbeddedSpreadsheet {
    * using consistent argument and decimal separators makes sense. However we
    * are leaving the original behavior as default for backwards compatibility.
    * 
-   * @param expression: an expression in spreadsheet language
-   * @param argument_separator: comma or semicolon, or leave undefined to use current locale
+   * @param expression - an expression in spreadsheet language
+   * @param argument_separator - comma or semicolon, or leave undefined to use current locale
    * 
    * @public
    */
