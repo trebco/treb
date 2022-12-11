@@ -1,4 +1,4 @@
-/*! API v22.11. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v22.12. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -203,13 +203,17 @@ export declare class EmbeddedSpreadsheet {
     AddSheet(name?: string): void;
 
     /**
-     * Insert an annotation node. Usually this means inserting a chart.
+     * Insert an annotation node. Usually this means inserting a chart. Regarding
+     * the argument separator, see the Evaluate function.
      *
      * @param formula - annotation formula. For charts, the chart formula.
      * @param type - annotation type. Defaults to `treb-chart`.
      * @param rect - coordinates, or a range reference for layout.
+     *
+     * @param argument_separator - the argument separator to use when evaluating
+     * the function. defaults to current locale.
      */
-    InsertAnnotation(formula: string, type?: string, rect?: IRectangle | RangeReference): void;
+    InsertAnnotation(formula: string, type?: string, rect?: IRectangle | RangeReference, argument_separator?: ',' | ';'): void;
 
     /**
      * Insert an image. This method will open a file chooser and (if an image
@@ -562,8 +566,8 @@ export declare class EmbeddedSpreadsheet {
      * using consistent argument and decimal separators makes sense. However we
      * are leaving the original behavior as default for backwards compatibility.
      *
-     * @param expression: an expression in spreadsheet language
-     * @param argument_separator: comma or semicolon, or leave undefined to use current locale
+     * @param expression - an expression in spreadsheet language
+     * @param argument_separator - comma or semicolon, or leave undefined to use current locale
      *
      * @public
      */

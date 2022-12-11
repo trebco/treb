@@ -1,5 +1,5 @@
 {
   "name": "treb-parser",
-  "version": "16.0.0",
+  "version": "16.0.1",
   "main": "src/index.ts"
 }

@@ -51,6 +51,11 @@ export const ParseCSV = (text: string, delimiter = ','): string[][] => {
 
   for (let i = 0; i < length; i++ ){
     const char = text[i];
+
+    if (i === 0 && char.charCodeAt(0) === 0xfeff) {
+      continue;
+    }
+
     if (state === ParseState.default) {
       switch (char) {
         case delimiter:
