@@ -1,4 +1,4 @@
-/*! API v22.12. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v22.13. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -66,24 +66,6 @@ export interface GetRangeOptions {
      * returning strings. `formula` returns cell formulas instead of values.
      */
     type?: 'formatted' | 'formula';
-}
-
-/**
- * options for the SetRange method
- */
-export interface SetRangeOptions {
-
-    /** transpose rectangular array before inserting */
-    transpose?: boolean;
-
-    /** recycle values (R-style) */
-    recycle?: boolean;
-
-    /** apply as an array (as if you pressed ctrl+shift+enter) */
-    array?: boolean;
-
-    /** spill over */
-    spill?: boolean;
 }
 
 /**
@@ -549,29 +531,12 @@ export declare class EmbeddedSpreadsheet {
      * use sheet names when referring to cells, to avoid ambiguity. Otherwise
      * cell references will resolve to the active sheet.
      *
-     * By default, this function will evaluate the expression in the current
-     * locale, meaning it will use the current locale's decimal separator and
-     * argument separator.
-     *
-     * If you do not want that behavior, set the argument separator explicitly.
-     * That will force evaluation using either comma (,) or semicolon (;) as the
-     * argument separator.
-     *
-     * Decimal separator is implied by the argument separator. If you set the
-     * argument separator to comma, the decimal separator will be dot (.). If you
-     * set the argument separator to semicolon, the decimal separator will be
-     * comma (,). You cannot mix-and-match these characters.
-     *
-     * Since you may not know where the code is being executed at run-time,
-     * using consistent argument and decimal separators makes sense. However we
-     * are leaving the original behavior as default for backwards compatibility.
-     *
      * @param expression - an expression in spreadsheet language
-     * @param argument_separator - comma or semicolon, or leave undefined to use current locale
+     * @param options - options for parsing the passed function
      *
      * @public
      */
-    Evaluate(expression: string, argument_separator?: ',' | ';'): CellValue | CellValue[][];
+    Evaluate(expression: string, options?: EvaluateOptions): CellValue | CellValue[][];
 
     /**
      * Returns the current selection, as a string address or range.
@@ -735,6 +700,45 @@ export interface SerializeOptions {
 
     /** prune unused rows/columns */
     shrink?: boolean;
+}
+
+/**
+ * options for the SetRange method
+ */
+export interface SetRangeOptions {
+
+    /** transpose rectangular array before inserting */
+    transpose?: boolean;
+
+    /** recycle values (R-style) */
+    recycle?: boolean;
+
+    /** apply as an array (as if you pressed ctrl+shift+enter) */
+    array?: boolean;
+
+    /** spill over */
+    spill?: boolean;
+
+    /**
+     * argument separator to use when parsing the input formula. by default,
+     * parsing uses the current locale. that is not optimal, because you
+     * do not necessarily know ahead of time where a spreadsheet may be viewed.
+     *
+     * set this option to call SetRange with a consistent argument separator.
+     * the decimal separator is implied; if the argument separator is set to
+     * comma (',') the decimal mark will be a dot ('.'); and if the argument
+     * separator is set to semicolon (';') the decimal mark will be set to
+     * comma (','). you cannot mix and match these values.
+     *
+     * @see EvaluateOptions for more discussion of this option.
+     */
+    argument_separator?: ',' | ';';
+
+    /**
+     * allow R1C1-style references; these can be either
+     * direct (e.g. R2C4) or offset (e.g. R[-3]C[0]).
+     */
+    r1c1?: boolean;
 }
 
 /**
@@ -1130,4 +1134,19 @@ export interface DocumentChangeEvent {
  */
 export interface SelectionEvent {
     type: 'selection';
+}
+
+/**
+ * options for the evaluate function
+ */
+export interface EvaluateOptions {
+    argument_separator?: ',' | ';';
+
+    /**
+     * allow R1C1-style references. the Evaluate function cannot use
+     * offset references (e.g. R[-1]C[0]), so those will always fail.
+     * however it may be useful to use direct R1C1 references (e.g. R3C4),
+     * so we optionally support that behind this flag.
+     */
+    r1c1?: boolean;
 }

@@ -98,6 +98,7 @@ import type { DataModel, SerializedModel } from './data_model';
 
 import { DOMUtilities } from '../util/dom_utilities';
 import { GridBase } from './grid_base';
+import type { SetRangeOptions } from './set_range_options';
 
 // can we move style to embed? [TEMP]
 // import '../../style/grid-layout.scss';
@@ -2094,7 +2095,74 @@ export class Grid extends GridBase {
    * R1C1, just that we need to check for it and handle it. R1C1 is useful for
    * relative offsets.
    */
-  public SetRange(range: Area, data: CellValue|CellValue[]|CellValue[][], recycle = false, transpose = false, array = false, r1c1 = false): void {
+  public SetRange(
+      range: Area, 
+      data: CellValue|CellValue[]|CellValue[][], 
+      options: SetRangeOptions = {}) { // recycle = false, transpose = false, array = false, r1c1 = false): void {
+
+    const { recycle, transpose, array, r1c1 } = options;
+
+    // do a batch conversion if we have an explicit separator set
+
+    if (options.argument_separator) {
+
+      const current = {
+        argument_separator: this.parser.argument_separator,
+        decimal_mark: this.parser.decimal_mark,
+      }
+      let convert = false;
+
+      if (options.argument_separator === ',' && this.parser.argument_separator !== ArgumentSeparatorType.Comma) {
+        this.parser.argument_separator = ArgumentSeparatorType.Comma;
+        this.parser.decimal_mark = DecimalMarkType.Period;
+
+        convert = true;
+      }
+       
+      if (options.argument_separator === ';' && this.parser.argument_separator !== ArgumentSeparatorType.Semicolon) {
+        this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+        this.parser.decimal_mark = DecimalMarkType.Comma;
+
+        convert = true;
+      }
+
+      if (convert) {
+
+        const Convert = (value: CellValue): CellValue => {
+          if (typeof value === 'string' && value[0] === '=') {
+            const result = this.parser.Parse(value);
+            if (result.expression) {
+              value = '=' + this.parser.Render(result.expression, undefined, '', current.decimal_mark, current.argument_separator);
+            }
+          }
+          return value;
+        };
+
+        if (Array.isArray(data)) {
+          data = data.map(entry => {
+            if (Array.isArray(entry)) {
+              return entry.map(cell => {
+                return Convert(cell);
+              });
+            }
+            else {
+              return Convert(entry);
+            }
+          }) as CellValue|CellValue[]|CellValue[][];
+        }
+        else {
+          data = Convert(data);
+        }
+
+      }
+
+      // reset
+
+      this.parser.argument_separator = current.argument_separator;
+      this.parser.decimal_mark = current.decimal_mark;
+
+    }
+      
 
     // this is public so we need to (un)translate.
     data = this.UntranslateData(data);

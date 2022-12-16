@@ -47,7 +47,40 @@ import { LeafVertex } from './dag/leaf_vertex';
 
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError } from './function-error';
 
-// import type { NotifierType, InternalNotifierType } from './notifier-types';
+/**
+ * options for the evaluate function
+ */
+export interface EvaluateOptions {
+
+  /*
+   * By default, the Evaluate function will evaluate the expression in the 
+   * current locale, meaning it will use the current locale's decimal separator 
+   * and argument separator.
+   * 
+   * If you do not want that behavior, set the argument separator explicitly.
+   * That will force evaluation using either comma (,) or semicolon (;) as the
+   * argument separator.
+   * 
+   * Decimal separator is implied by the argument separator. If you set the 
+   * argument separator to comma, the decimal separator will be dot (.). If you
+   * set the argument separator to semicolon, the decimal separator will be
+   * comma (,). You cannot mix-and-match these characters.
+   * 
+   * Since you may not know where the code is being executed at run-time, 
+   * using consistent argument and decimal separators makes sense. However we
+   * are leaving the original behavior as default for backwards compatibility.  
+   */
+  argument_separator?: ','|';';
+
+  /** 
+   * allow R1C1-style references. the Evaluate function cannot use
+   * offset references (e.g. R[-1]C[0]), so those will always fail. 
+   * however it may be useful to use direct R1C1 references (e.g. R3C4),
+   * so we optionally support that behind this flag.
+   */
+  r1c1?: boolean;
+  
+}
 
 /**
  * Calculator now extends graph. there's a 1-1 relationship between the
@@ -1122,12 +1155,13 @@ export class Calculator extends Graph {
   }
 
   /** moved from embedded sheet */
-  public Evaluate(expression: string, active_sheet?: Sheet, argument_separator?: ','|';') {
+  public Evaluate(expression: string, active_sheet?: Sheet, options: EvaluateOptions = {}) {
     
     const current = this.parser.argument_separator;
+    const r1c1_state = this.parser.flags.r1c1;
 
-    if (argument_separator) {
-      if (argument_separator === ',') {
+    if (options.argument_separator) {
+      if (options.argument_separator === ',') {
         this.parser.argument_separator = ArgumentSeparatorType.Comma;
         this.parser.decimal_mark = DecimalMarkType.Period;
       }
@@ -1137,12 +1171,17 @@ export class Calculator extends Graph {
       }
     }
 
+    if (options.r1c1) {
+      this.parser.flags.r1c1 = options.r1c1;
+    }
+
     const parse_result = this.parser.Parse(expression);
 
     // reset
 
     this.parser.argument_separator = current;
     this.parser.decimal_mark = (current === ArgumentSeparatorType.Comma) ? DecimalMarkType.Period : DecimalMarkType.Comma;
+    this.parser.flags.r1c1 = r1c1_state;
 
     // OK
 
@@ -1150,11 +1189,25 @@ export class Calculator extends Graph {
 
       this.parser.Walk(parse_result.expression, (unit) => {
         if (unit.type === 'address' || unit.type === 'range') {
+
+          // don't allow offset references, even in R1C1
+          if (unit.type === 'address') {
+            if (unit.offset_column || unit.offset_row) {
+              throw new Error(`Evaluate does not support offset references`);
+            }
+          }
+          else {
+            if (unit.start.offset_column || unit.start.offset_row || unit.end.offset_column || unit.end.offset_row) {
+              throw new Error(`Evaluate does not support offset references`);
+            }
+          }
+
           this.ResolveSheetID(unit, undefined, active_sheet);
         }
         return true;
       });
 
+      // console.info({expression: parse_result.expression})
       const result = this.CalculateExpression(parse_result.expression);
 
       if (result.type === ValueType.array) {
