@@ -52,7 +52,7 @@ import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionErro
  */
 export interface EvaluateOptions {
 
-  /*
+  /**
    * By default, the Evaluate function will evaluate the expression in the 
    * current locale, meaning it will use the current locale's decimal separator 
    * and argument separator.

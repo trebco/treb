@@ -1140,6 +1140,25 @@ export interface SelectionEvent {
  * options for the evaluate function
  */
 export interface EvaluateOptions {
+
+    /**
+     * By default, the Evaluate function will evaluate the expression in the
+     * current locale, meaning it will use the current locale's decimal separator
+     * and argument separator.
+     *
+     * If you do not want that behavior, set the argument separator explicitly.
+     * That will force evaluation using either comma (,) or semicolon (;) as the
+     * argument separator.
+     *
+     * Decimal separator is implied by the argument separator. If you set the
+     * argument separator to comma, the decimal separator will be dot (.). If you
+     * set the argument separator to semicolon, the decimal separator will be
+     * comma (,). You cannot mix-and-match these characters.
+     *
+     * Since you may not know where the code is being executed at run-time,
+     * using consistent argument and decimal separators makes sense. However we
+     * are leaving the original behavior as default for backwards compatibility.
+     */
     argument_separator?: ',' | ';';
 
     /**
