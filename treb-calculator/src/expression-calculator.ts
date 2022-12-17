@@ -182,9 +182,12 @@ export class ExpressionCalculator {
     const cell = cells.GetCell(expr);
 
     // this is not an error, just a reference to an empty cell
+    // FIXME: should this be 0? probably
+
     if (!cell) {
       return () => { 
-        return { type: ValueType.undefined, value: undefined } 
+        // return { type: ValueType.undefined, value: undefined } 
+        return { type: ValueType.number, value: 0 };
       };
     }
 

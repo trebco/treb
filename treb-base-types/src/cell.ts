@@ -452,19 +452,38 @@ export class Cell {
     this.render_clean = [];
   }
 
-  /** sets calculated value and flushes cached value */
+  /** 
+   * sets calculated value and flushes cached value 
+   */
   public SetCalculatedValue(value: CellValue, type = GetValueType(value)): void {
-    if (this.calculated === value) return;
+
+    // is it possible to explicitly set a calculated value of undefined?
+    // that should be different from clearing. if the calculated value is
+    // undefined, we want to set it to 0.
+
+    if (value === undefined) {
+      value = 0;
+      type = ValueType.number;
+    }
+
+    if (this.calculated === value) {
+      return;
+    }
+
     this.calculated = value;
     this.calculated_type = type;
     this.formatted = this.rendered_type = undefined;
     this.render_clean = [];
   }
 
-  /**
+  /* *
    * composite method for setting value or error, based on value
-   */
+   * not used? (...)
+   * /
   public SetCalculatedValueOrError(value: any, type?: ValueType): void {
+
+    console.info("SCVE", value, type);
+
     if (typeof type === 'undefined') {
       if (typeof value === 'object' && value.error) {
         type = ValueType.error;
@@ -480,6 +499,7 @@ export class Cell {
     this.formatted = this.rendered_type = undefined;
     this.render_clean = [];
   }
+  */
 
   /**
    * get value -- calculation result (not formatted) or literal. for
@@ -565,7 +585,7 @@ export class Cell {
 
     if (this.type === ValueType.formula) {
       return {
-        type: ValueType.number, // but which type? (...)
+        type: ValueType.number,
         value: 0,
       }
     }

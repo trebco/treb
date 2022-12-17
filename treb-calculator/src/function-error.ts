@@ -32,6 +32,7 @@ export enum ErrorType {
   NotImpl =     'NOTIMPL',
   Div0 =        'DIV/0',
   NA =          'N/A',
+  Loop =        'LOOP', // circular reference
 }
 
 export interface FunctionError {

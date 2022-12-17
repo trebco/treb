@@ -23,6 +23,7 @@ import { SpreadsheetVertexBase, GraphCallbacks } from './spreadsheet_vertex_base
 import { Cell, Box, ICellAddress, ValueType, UnionValue } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
+import { ErrorType } from '../function-error';
 
 export enum SpreadsheetError {
   None,
@@ -136,7 +137,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
 
           if (this.reference && (
               this.array_head || this.reference.type === ValueType.formula )) {
-            this.reference.SetCalculationError('LOOP');
+            this.reference.SetCalculationError(ErrorType.Loop);
           }
           //this.reference?.SetCalculationError('LOOP');
 
