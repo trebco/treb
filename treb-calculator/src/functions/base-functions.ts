@@ -253,9 +253,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       
       // volatile: true, 
 
-      fn: (type: string, reference: UnionValue): UnionValue => {
-
-        // FIXME: array application? 
+      fn: Utils.ApplyAsArray2((type: string, reference: UnionValue): UnionValue => {
 
         if (!UnionIsMetadata(reference)) {
           return ReferenceError();
@@ -273,7 +271,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         return { type: ValueType.error, value: NotImplError.error };
 
-      },
+      }),
     },
 
     Year: {
