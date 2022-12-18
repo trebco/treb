@@ -206,7 +206,7 @@ $text-reference-color-5: rgb(254, 47, 1);
   .header-overlay {
 
     stroke: none;
-    color: var(--treb-selection-color-unfocused, $primary-selection-color-unfocused);
+    color: var(--treb-selection-color-unfocused, var(--treb-selection-color, $primary-selection-color));
 
     .overlay {
       fill: rgb(0, 0, 0); /* FIXME: use color? */
@@ -304,7 +304,7 @@ $text-reference-color-5: rgb(254, 47, 1);
      * not filled
      */
     .primary-selection {
-      color: var(--treb-selection-color-unfocused, $primary-selection-color-unfocused);
+      color: var(--treb-selection-color-unfocused, var(--treb-selection-color, $primary-selection-color));
       
       .nub {
         stroke: #fff; // <-- ? maybe grid background color?
