@@ -87,6 +87,92 @@ const inverse_normal = (q: number): number => {
 
 };
 
+/**
+ * alternate functions. these are used (atm) only for changing complex 
+ * behavior.
+ */
+export const AltFunctionLibrary: FunctionMap = {
+
+  Sqrt: {
+    description: 'Returns the square root of the argument',
+    arguments: [
+      {boxed: true},
+    ],
+    fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
+
+      if (ref.type === ValueType.complex) {
+        const value = ComplexPower(ref.value, {real: 0.5, imaginary: 0});
+        return ComplexOrReal(value);
+      }
+      else if (ref.type === ValueType.undefined || !ref.value) {
+        return {
+          type: ValueType.number, value: 0,
+        }
+      }
+      else if (ref.type === ValueType.number && ref.value < 0) {
+        const value = ComplexPower({real: ref.value, imaginary: 0}, {real: 0.5, imaginary: 0});
+        return {
+          type: ValueType.complex,
+          value,
+        }
+      }
+      else {
+        const value = Math.sqrt(ref.value);
+        if (isNaN(value)) {
+          return ValueError();
+        }
+        return { type: ValueType.number, value };
+      }
+    }),
+  },
+  
+  Power: {
+    description: 'Returns base raised to the given power',
+    arguments: [
+      { name: 'base', boxed: true, },
+      { name: 'exponent', boxed: true, }
+    ],
+    fn: Utils.ApplyAsArray2((base: UnionValue, exponent: UnionValue): UnionValue => {
+
+      // we're leaking complex numbers here because our functions are
+      // very slightly imprecise. I would like to stop doing that. assuming
+      // exponent is positive (and both arguments are real), there's no need 
+      // to use complex exponentiation.
+
+      // in the alternative we could update the epsilon on our ComplexOrReal
+      // function, but I would prefer not to do that if we don't have to.
+
+      if (base.type === ValueType.number && exponent.type === ValueType.number && Math.abs(exponent.value) >= 1) {
+        const value = Math.pow(base.value, exponent.value);
+        if (isNaN(value)) {
+          return ValueError();
+        }
+        return { type: ValueType.number, value };
+      }
+      
+      /*
+      if (base.type === ValueType.number) {
+        base = {
+          type: ValueType.complex,
+          value: { imaginary: 0, real: base.value },
+        };
+      }
+      */
+
+      const a = base.type === ValueType.complex ? base.value : 
+        { real: base.value || 0, imaginary: 0, };
+
+      const b = exponent.type === ValueType.complex ? exponent.value :
+        { real: exponent.value || 0, imaginary: 0, };
+
+      const value = ComplexPower(a, b);
+      return ComplexOrReal(value);
+
+    }),
+  },
+
+};
+
 // use a single, static object for base functions
 
 export const BaseFunctionLibrary: FunctionMap = {
@@ -952,6 +1038,8 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         // little bit torn on this. what should sqrt(-1) return? a complex 
         // number, or NaN? or should we control that with a flag? 
+
+        // UPDATE: now optional, see AltFunctionLibrary
 
         if (ref.type === ValueType.complex) {
           const value = ComplexPower(ref.value, {real: 0.5, imaginary: 0});

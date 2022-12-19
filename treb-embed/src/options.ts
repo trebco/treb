@@ -171,6 +171,24 @@ export interface EmbeddedSpreadsheetOptions {
   /** target window for hyperlinks (default _blank); set false to disable hyperlinks altogether */
   hyperlinks?: string|false;
 
+  /**
+   * enable handling complex numbers in function calculation. turning this
+   * off doesn't actually disable complex numbers. it means that functions 
+   * will not return complex numbers unless one of the arguments is complex.
+   * 
+   * for example, if complex numbers are off, `=SQRT(-1)` will return `#VALUE`.
+   * if complex numbers are on, `=SQRT(-1)` will return `i`.
+   * 
+   * even if complex numbers are off, however, `=SQRT(-1 + 0i)` will return 
+   * `i` because the argument is complex.
+   * 
+   * currently this behavior applies to `SQRT`, `POWER` and the exponentiation 
+   * operator `^`.
+   * 
+   * in version 22, this defaults to `off`.
+   */
+  complex?: 'on'|'off';
+
   /* * 
    * support complex numbers. the meaning of this flag is changing -- the 
    * parser is going to always support complex numbers, but we might load 
@@ -236,6 +254,7 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   expand: false,
   markdown: false,
   spinner: false,
+  complex: 'off',
 
 };
 

@@ -569,7 +569,7 @@ export class EmbeddedSpreadsheet {
 
       // create calculator instance
 
-      this.calculator = this.CreateCalculator(this.model);
+      this.calculator = this.CreateCalculator(this.model, options);
 
     }
 
@@ -964,8 +964,10 @@ export class EmbeddedSpreadsheet {
   /**
    * initialize calculator instance
    */
-  protected CreateCalculator(model: DataModel) {
-    return new Calculator(model);
+  protected CreateCalculator(model: DataModel, options: EmbeddedSpreadsheetOptions) {
+    return new Calculator(model, {
+      complex_numbers: options.complex
+    });
   }
 
   /**

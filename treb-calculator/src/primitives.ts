@@ -152,6 +152,56 @@ export const Subtract = (a: UnionValue, b: UnionValue): UnionValue => {
   return { value: x - y, type: ValueType.number };
 };
 
+/** 
+ * power function that only uses complex numbers if one of 
+ * the arguments is complex. this is intended to prevent complex
+ * numbers from leaking in to spreadsheets.
+ */
+const PowerGated = (a: UnionValue, b: UnionValue): UnionValue => {
+  const [x, y, z, c1, c2] = NumericTypes(a, b);
+  if (z) { return z; }
+
+  if (c1 && c2) {
+    return BoxComplex(ComplexLib.Power(c1.value, c2.value));
+  }
+
+  const value = Math.pow(x, y);
+  if (isNaN(value)) { return ValueError(); }
+
+  return { type: ValueType.number, value };
+  
+};
+
+/**
+ * power function that uses complex exponentiation if one of the arguments
+ * is complex, or if the exponent is < 1.
+ */
+const PowerComplex = (a: UnionValue, b: UnionValue): UnionValue => {
+
+  const [x, y, z, c1, c2] = NumericTypes(a, b);
+  if (z) { return z; }
+
+  // if one argument is complex, we will always get both as complex.
+  // so we don't need to re-test. for the same reason if exponent 
+  // is < 1 we will have to convert both.
+
+  if (c1 && c2) {
+    return BoxComplex(ComplexLib.Power(c1.value, c2.value));
+  }
+
+  if (Math.abs(y) < 1) {
+    return BoxComplex(ComplexLib.Power(
+      { real: x, imaginary: 0}, { real: y, imaginary: 0 }));
+  }
+
+  const value = Math.pow(x, y);
+  if (isNaN(value)) { return ValueError(); }
+
+  return { type: ValueType.number, value };
+
+};
+
+/*
 export const Power = (a: UnionValue, b: UnionValue): UnionValue => {
   const [x, y, z, c1, c2] = NumericTypes(a, b);
   if (z) { return z; }
@@ -166,6 +216,9 @@ export const Power = (a: UnionValue, b: UnionValue): UnionValue => {
   return { type: ValueType.number, value };
   
 };
+*/
+
+let Power = PowerGated;
 
 export const Multiply = (a: UnionValue, b: UnionValue): UnionValue => {
 
@@ -347,6 +400,10 @@ export const LessThanEqual = (a: UnionValue, b: UnionValue): UnionValue => {
 
   return { type: ValueType.boolean, value: a.value <= b.value };
 };
+
+export const UseComplex = () => {
+  Power = PowerComplex;
+}
 
 export const MapOperator = (operator: string) => {
   switch(operator) {

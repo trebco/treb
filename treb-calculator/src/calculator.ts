@@ -34,13 +34,15 @@ import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
 import { ExtendedFunctionDescriptor, FunctionMap, ReturnType } from './descriptors';
-import { BaseFunctionLibrary } from './functions/base-functions';
+import { AltFunctionLibrary, BaseFunctionLibrary } from './functions/base-functions';
 import { FinanceFunctionLibrary } from './functions/finance-functions';
 import { TextFunctionLibrary, TextFunctionAliases } from './functions/text-functions';
 import { InformationFunctionLibrary } from './functions/information-functions';
 import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './functions/statistics-functions';
 import { ComplexFunctionLibrary } from './functions/complex-functions';
 import { MatrixFunctionLibrary } from './functions/matrix-functions';
+
+import * as Primitives from './primitives';
 
 import type { DataModel, Annotation, FunctionDescriptor, Sheet } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
@@ -83,6 +85,25 @@ export interface EvaluateOptions {
 }
 
 /**
+ * we're providing a runtime option for how to handle complex numbers.
+ * we will need to pass that into the calculator when it's created to
+ * control which functions are loaded.
+ */
+export interface CalculatorOptions {
+
+  /**
+   * enable handling complex numbers in function calculation. 
+   * @see EmbeddedSpreadsheetOptions
+   */
+  complex_numbers: 'on'|'off';
+
+}
+
+const default_calculator_options: CalculatorOptions = {
+  complex_numbers: 'off',
+};
+
+/**
  * Calculator now extends graph. there's a 1-1 relationship between the
  * two, and we wind up passing a lot of operations from one to the other.
  * this also simplifies the callback structure, as we can use local methods.
@@ -122,9 +143,30 @@ export class Calculator extends Graph {
   /** the next calculation must do a full rebuild -- set on reset */
   protected full_rebuild_required = false;
 
-  constructor(protected readonly model: DataModel) {
+  constructor(protected readonly model: DataModel, calculator_options: Partial<CalculatorOptions> = {}) {
 
     super();
+
+    // at the moment options are only used here; in the future
+    // we may need to extend handling.
+
+    const options: CalculatorOptions = {
+      ...default_calculator_options, 
+      ...calculator_options,
+    };
+
+    if (options.complex_numbers === 'on') {
+
+      // complex number handling: we need to change SQRT, POWER and ^
+
+      for (const key of Object.keys(AltFunctionLibrary)) {
+        BaseFunctionLibrary[key] = AltFunctionLibrary[key];
+      }
+
+      Primitives.UseComplex();
+
+
+    }
 
     this.UpdateLocale(); // for parser
 
