@@ -189,7 +189,7 @@ const PowerComplex = (a: UnionValue, b: UnionValue): UnionValue => {
     return BoxComplex(ComplexLib.Power(c1.value, c2.value));
   }
 
-  if (Math.abs(y) < 1) {
+  if (x < 0 && y !== 0 && Math.abs(y) < 1) {
     return BoxComplex(ComplexLib.Power(
       { real: x, imaginary: 0}, { real: y, imaginary: 0 }));
   }

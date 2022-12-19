@@ -135,19 +135,23 @@ export const AltFunctionLibrary: FunctionMap = {
     fn: Utils.ApplyAsArray2((base: UnionValue, exponent: UnionValue): UnionValue => {
 
       // we're leaking complex numbers here because our functions are
-      // very slightly imprecise. I would like to stop doing that. assuming
-      // exponent is positive (and both arguments are real), there's no need 
-      // to use complex exponentiation.
-
+      // very slightly imprecise. I would like to stop doing that. try to
+      // use real math unless absolutely necessary.
+      
       // in the alternative we could update the epsilon on our ComplexOrReal
       // function, but I would prefer not to do that if we don't have to.
 
-      if (base.type === ValueType.number && exponent.type === ValueType.number && Math.abs(exponent.value) >= 1) {
-        const value = Math.pow(base.value, exponent.value);
-        if (isNaN(value)) {
-          return ValueError();
+      // so: if both arguments are real, and base is >= 0 we can use real math.
+      // also if exponent is either 0 or >= 1 we can use real math.
+
+      if (base.type === ValueType.number && exponent.type === ValueType.number) {
+        if (base.value >= 0 || exponent.value === 0 || Math.abs(exponent.value) >= 1) {
+          const value = Math.pow(base.value, exponent.value);
+          if (isNaN(value)) {
+            return ValueError();
+          }
+          return { type: ValueType.number, value };
         }
-        return { type: ValueType.number, value };
       }
       
       /*
