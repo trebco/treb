@@ -25,7 +25,7 @@ import {
   Cell, ValueType, Cells, Style,
   Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, 
   IsNestedRowArray, CellValue, ImportedSheetData, Complex, 
-  DimensionedQuantity, IsCellAddress, IArea
+  DimensionedQuantity, IsCellAddress, IArea, Table
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';
@@ -1097,6 +1097,51 @@ export class Sheet {
   }
 
   /**
+   * if this cell is part of a table, get row information -- is this
+   * an alternate row, is it the header, is it the last (visible) row
+   * 
+   * @param table 
+   * @param row 
+   * @returns 
+   */
+  public TableRow(table: Table, row: number): {
+    alternate?: boolean;
+    header?: boolean;
+    last?: boolean;
+  } {
+
+    const result = {
+      alternate: false, header: false, last: false,
+    }
+
+    let last = table.area.end.row;
+    for ( ; last >= table.area.start.row; last-- ) {
+      if (this.GetRowHeight(last)) {
+        result.last = (last === row);
+        break;
+      }
+    }
+
+    if (table.headers && row === table.area.start.row) {
+      return { header: true };
+    }
+
+    let start = table.area.start.row + (table.headers ? 1 : 0);
+    for ( ; start <= table.area.end.row; start++ ) {
+      if (!this.GetRowHeight(start)) {
+        continue;
+      }
+
+      result.alternate = !result.alternate;
+      if (start === row) {
+        break;
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * returns style properties for cells surrounding this cell, 
    * mapped like a number pad:
    * 
@@ -1155,6 +1200,16 @@ export class Sheet {
    * now have a case: fixing borders by checking neighboring cells. (testing).
    * 
    * switching from null to undefined as "missing" type
+   * 
+   * UPDATE: this is a convenient place to do table formatting. table 
+   * formatting is complicated because it's variable; it depends on row
+   * visibility so we can't cache it. this is a good spot because we're 
+   * already calling this function when doing border rendering; we can call 
+   * it separately, if necessary, when rendering cells.
+   * 
+   * table formats are applied on top of cell formats, after compositing,
+   * and we don't preserve the style.
+   * 
    */
   public CellStyleData(address: ICellAddress): Style.Properties | undefined {
 
@@ -1168,6 +1223,30 @@ export class Sheet {
     if (!cell.style) {
       const index = this.GetStyleIndex(this.CompositeStyleForCell(address));
       cell.style = this.style_map[index];
+    }
+
+    if (cell.table) {
+
+      const style = JSON.parse(JSON.stringify(cell.style));
+      const data = this.TableRow(cell.table, address.row);
+
+      if (data.header) {
+        style.fill = {text: 'limegreen'};
+        style.bold = true;
+        style.border_top = 1;
+        style.border_bottom = 1;
+        style.border_top_fill = { text: 'green' };
+        style.border_bottom_fill = { text: 'green' };
+      }
+      else if (data.alternate) {
+        style.fill = { text: 'palegreen' };
+      }
+      if (data.last) {
+        style.border_bottom = 1;
+        style.border_bottom_fill = {text: 'green'};
+      }
+
+      return style;
     }
 
     return cell.style;
@@ -1526,6 +1605,7 @@ export class Sheet {
 
     const merge_heads: Record<string, Area> = {};
     const array_heads: Record<string, Area> = {};
+    const table_heads: Record<string, Table> = {};
 
     // now grab arrays and merge heads that are below the new rows
     // this should include merges that span the new range
@@ -1534,6 +1614,9 @@ export class Sheet {
       for (let column = 0; column < this.cells.columns; column++) {
         const cell = this.cells.GetCell({ row, column }, false);
         if (cell) {
+          if (cell.table && !table_heads[cell.table.area.spreadsheet_label]) {
+            table_heads[cell.table.area.spreadsheet_label] = cell.table;
+          }
           if (cell.area && !array_heads[cell.area.spreadsheet_label]) {
             array_heads[cell.area.spreadsheet_label] = cell.area;
           }
@@ -1556,6 +1639,25 @@ export class Sheet {
         const cell = this.cells.GetCell(address, true);
         cell.area = patched;
       });
+    }
+
+    for (const key of Object.keys(table_heads)) {
+      const table = table_heads[key];
+
+      const patched_start = { row: table.area.start.row, column: table.area.start.column };
+      if (table.area.start.row >= before_row) patched_start.row += count;
+      const patched = new Area(
+        patched_start,
+        { row: table.area.end.row + count, column: table.area.end.column });
+      table.area = patched;
+
+      // we don't need to reset table for cells that already have it,
+      // but we do need to add it to new rows. could simplify. FIXME
+
+      patched.Iterate((address) => {
+          const cell = this.cells.GetCell(address, true);
+          cell.table = table;
+        });
     }
 
     for (const key of Object.keys(merge_heads)) {
@@ -1657,6 +1759,7 @@ export class Sheet {
 
     const merge_heads: Record<string, Area> = {};
     const array_heads: Record<string, Area> = {};
+    const table_heads: Record<string, Table> = {};
 
     // now grab arrays and merge heads that are below the new rows
     // this should include merges that span the new range
@@ -1665,6 +1768,9 @@ export class Sheet {
       for (let row = 0; row < this.cells.rows; row++) {
         const cell = this.cells.GetCell({ row, column }, false);
         if (cell) {
+          if (cell.table && !table_heads[cell.table.area.spreadsheet_label]) {
+            table_heads[cell.table.area.spreadsheet_label] = cell.table;
+          }
           if (cell.area && !array_heads[cell.area.spreadsheet_label]) {
             array_heads[cell.area.spreadsheet_label] = cell.area;
           }
@@ -1697,6 +1803,25 @@ export class Sheet {
         const cell = this.cells.GetCell(address, true);
         cell.merge_area = patched;
       });
+    }
+
+    for (const key of Object.keys(table_heads)) {
+      const table = table_heads[key];
+      const patched_start = { row: table.area.start.row, column: table.area.start.column };
+      if (table.area.start.column >= before_column) patched_start.column += count;
+      const patched = new Area(
+        patched_start,
+        { row: table.area.end.row, column: table.area.end.column + count });
+        
+      table.area = patched;
+
+      // we don't need to reset table for cells that already have it,
+      // but we do need to add it to new rows. could simplify. FIXME
+  
+      patched.Iterate((address) => {
+          const cell = this.cells.GetCell(address, true);
+          cell.table = table;
+        });
     }
 
     // column styles

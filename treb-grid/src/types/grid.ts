@@ -42,6 +42,8 @@ import {
   IRectangle,
   IsComplex,
   TextPartFlag,
+  Table,
+  TableSortType,
 } from 'treb-base-types';
 
 import {
@@ -104,6 +106,9 @@ import type { SetRangeOptions } from './set_range_options';
 // import '../../style/grid-layout.scss';
 // import '../../style/grid.scss';
 
+import type { ClipboardCellData } from './clipboard_data';
+
+/*
 interface ClipboardCellData {
   address: ICellAddress;
   data: CellValue;
@@ -111,6 +116,7 @@ interface ClipboardCellData {
   style?: Style.Properties;
   array?: {rows: number, columns: number};
 }
+*/
 
 interface DoubleClickData {
   timeout?: number;
@@ -2443,6 +2449,26 @@ export class Grid extends GridBase {
     });
   }
 
+  /**
+   * sort table. column is absolute.
+   */
+  public SortTable(table: Table, column: number, type: TableSortType = 'text', asc = true) {
+
+    //
+    // table typically has an actual area, while we want a plain
+    // object in the command queue for serialization purposes. not
+    // sure how we wound up with this situation, it's problematic.
+    // 
+
+    this.ExecCommand({
+      key: CommandKey.SortTable,
+      table: JSON.parse(JSON.stringify(table)), 
+      column,
+      type,
+      asc,
+    });
+    
+  }
 
   /**
    * scrolls so that the given cell is in the top-left (assuming that is
@@ -6764,6 +6790,10 @@ export class Grid extends GridBase {
       // const cells = this.active_sheet.cells;
       const tsv_data: CellValue[][] = [];
       const treb_data: ClipboardCellData[] = [];
+
+      // NOTE: we don't want to preserve table information when 
+      // copying/cutting. that should happen naturally here, just
+      // wanted to note it.
 
       // do this in row order, for tsv. we have to transpose one of them.
 

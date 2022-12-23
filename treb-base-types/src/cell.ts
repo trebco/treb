@@ -28,6 +28,35 @@ import { ValueType, GetValueType, Complex } from './value-type';
 import type { CellValue, UnionValue } from './union';
 import type { PreparedText } from './render_text';
 
+export type TableSortType = 'text'|'numeric';
+
+/**
+ * struct representing a table
+ */
+export interface Table {
+
+  /** table area */
+  area: Area;
+
+  /** 
+   * table has headers 
+   * NOTE: table has to have headers. we can remove this flag (TODO).
+   */
+  headers?: boolean;
+
+  /** 
+   * sort data. sorts are hard, meaning we actually move data around. 
+   * (not meaning difficult). we may keep track of the last sort so we 
+   * can toggle asc/desc, for example. atm this will not survive serialization.
+   */
+  sort?: {
+    column: number;
+    type: TableSortType;
+    asc: boolean;
+  }
+
+}
+
 export interface RenderFunctionOptions {
   height: number;
   width: number;
@@ -114,36 +143,6 @@ export type ClickFunction = (options: ClickFunctionOptions) => ClickFunctionResu
  * things that are NOT in the cell class:
  *  - raw per-cell style information. this is in a separate array (object).
  */
-
-/* *
- * I _think_ using enums is faster. I'm not actually sure about that, though.
- * it stands to reason that a single int compare is faster than a string
- * compare, but you never know with javascript. undefined preferred over null.
- * formula implies a string.
- *
- * undefined is 0 so we can test it as falsy.
- *
- * we're passing this type information out to calculators, so it needs
- * to have known values. DO NOT MODIFY EXISTING INDEXES, or at least be
- * aware of the implications. definitely do not change undefined => 0.
- * /
-export enum ValueType {
-  undefined = 0,
-
-  // formula is a string; we usually test the first character === '='
-  formula = 1,
-  string = 2,
-  number = 3,
-  boolean = 4,
-
-  // we don't actually use this type, it's here for matching only
-  object = 5,
-
-  // error is a STRING VALUE... object errors are layered on top? is that 
-  // correct? (...) it sort of makes sense... since we have separate typing
-  error = 6,
-}
-*/
 
 /**
  * validation TODO: date, number, boolean, &c
@@ -312,6 +311,9 @@ export class Cell {
    * if this cell is merged, pointer to the area
    */
   public merge_area?: Area;
+
+  /** this cell is part of a table */
+  public table?: Table;
 
   /**
    * opaque data for cell rendering, we can cache some data

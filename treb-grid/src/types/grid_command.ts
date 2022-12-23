@@ -19,7 +19,7 @@
  * 
  */
 
-import type { ICellAddress, IArea, Style, CellValue } from 'treb-base-types';
+import type { ICellAddress, IArea, Style, CellValue, Table, TableSortType } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import type { BorderConstants } from './border_constants';
 
@@ -69,6 +69,8 @@ export enum CommandKey {
   ShowSheet,
   DataValidation,
   Reset,
+  SortTable,
+
 }
 
 /** base type for sheet commands -- can select sheet by name, id or index */
@@ -100,6 +102,19 @@ export interface CommandBase {
 
 }
 */
+
+/**
+ * sort a table. sorts are hard, meaning we actually move data around.
+ * use copy/paste semantics for handling relative references (seems strange
+ * to me, but hey).
+ */
+export interface SortTableCommand {
+  key: CommandKey.SortTable,
+  table: Table,
+  column: number,
+  asc?: boolean;
+  type: TableSortType,
+}
 
 /**
  * resize row(s). undefined means "all rows". undefined height
@@ -392,6 +407,7 @@ export type Command =
   | SetNameCommand
   | AddSheetCommand
   | SetRangeCommand
+  | SortTableCommand
   | ShowSheetCommand
   | MergeCellsCommand
   | ResizeRowsCommand

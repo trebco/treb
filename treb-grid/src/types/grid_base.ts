@@ -38,14 +38,14 @@
 import { EventSource } from 'treb-utils';
 import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
 import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex } from 'treb-parser';
-import { Area, Style, IsCellAddress, ValidationType } from 'treb-base-types';
+import { Area, Style, IsCellAddress, ValidationType, ValueType } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
 import { NumberFormat } from 'treb-format';
 
 import { ErrorCode, GridEvent } from './grid_events';
-import type { CommandRecord, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand } from './grid_command';
+import type { CommandRecord, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
 import type { SerializeOptions } from './serialize_options';
 
@@ -57,6 +57,7 @@ import type { Command, ActivateSheetCommand,
 import type { UpdateFlags } from './update_flags';
 import type { LegacySerializedSheet } from './sheet_types';
 import type { Annotation } from './annotation';
+import type { ClipboardCellData } from './clipboard_data';
 
 export class GridBase {
 
@@ -591,6 +592,124 @@ export class GridBase {
   }
 
   /**
+   *
+   */
+  protected SortTableInternal(command: SortTableCommand): Area|undefined {
+
+    if (!command.table.area.start.sheet_id) {
+      throw new Error('table has invalid area');
+    }
+
+    const sheet = this.model.sheets.Find(command.table.area.start.sheet_id);
+
+    if (!sheet) {
+      throw new Error('invalid sheet in table area');
+    }
+
+    // I guess we're sorting on calculated value? seems weird.
+
+    const ranked: Array<{
+        row: number; 
+        text: string; 
+        number: number; 
+        data: ClipboardCellData[];
+      }> = [];
+
+    for (let row = command.table.area.start.row + 1; row <= command.table.area.end.row; row++) {
+
+      const row_data = {
+        row, 
+        number: 0,
+        text: '',
+        data: [] as ClipboardCellData[],
+      };
+
+      for (let column = command.table.area.start.column; column <= command.table.area.end.column; column++) {
+
+        const cd = sheet.CellData({row, column});
+
+        if (column === command.column) {
+
+          // we can precalculate the type for sorting
+
+          const value = cd.calculated_type ? cd.calculated : cd.value;
+          row_data.text = value?.toString() || '';
+          row_data.number = Number(value) || 0;
+
+        }
+
+        row_data.data.push({
+          address: {row, column},
+          data: cd.value,
+          type: cd.type,
+          style: cd.style,
+        });
+
+      }
+
+      ranked.push(row_data);
+
+    }
+
+    // console.info(ranked);
+
+    // rank
+
+    const invert = command.asc ? 1 : -1;
+
+    switch (command.type) {
+      case 'numeric':
+        ranked.sort((a, b) => (a.number - b.number) * invert);
+        break;
+
+      case 'text':
+      default:
+        ranked.sort((a, b) => a.text.localeCompare(b.text) * invert);
+        break;
+    }
+
+    // now apply the sort
+
+    const insert = {row: command.table.area.start.row + 1, column: command.table.area.start.column };
+
+    for (const entry of ranked) {
+      insert.column = command.table.area.start.column; // reset
+      for (const cell of entry.data) {
+        if (cell.type === ValueType.formula) {
+
+          let data = cell.data as string;
+          const offsets = { columns: 0, rows: insert.row - entry.row };
+          const parse_result = this.parser.Parse(data);
+          if (parse_result.expression) {
+            data = '=' + this.parser.Render(parse_result.expression, offsets, '');
+          }
+
+          sheet.SetCellValue(insert, data);
+        }
+        else {
+          sheet.SetCellValue(insert, cell.data);
+        }
+        sheet.UpdateCellStyle(insert, cell.style || {}, false);
+        insert.column++; // step
+      }
+      insert.row++; // step
+    }
+
+    // keep reference
+
+    command.table.sort = {
+      type: command.type,
+      asc: !!command.asc,
+      column: command.column,
+    };
+
+    // console.info(ordered);
+
+    return command.table.area;
+
+  }
+
+  /**
    * set range, via command. returns affected area.
    * 
    * Adding a flags parameter (in/out) to support indicating 
@@ -971,6 +1090,13 @@ export class GridBase {
           }
           break;
         */
+
+        // special case
+        case CommandKey.SortTable:
+          if (!command.table.area.start.sheet_id) {
+            command.table.area.start.sheet_id = id;
+          }
+          break;
 
         // field
         case CommandKey.ResizeRows:
@@ -2586,6 +2712,29 @@ export class GridBase {
             }
           }
           break;
+
+        case CommandKey.SortTable:
+          {
+            // console.info(command.table.area.spreadsheet_label);
+            const area = this.SortTableInternal(command);
+
+            if (area && area.start.sheet_id === this.active_sheet.id) {
+              
+              flags.data_area = Area.Join(area, flags.data_area);
+
+              // normally we don't paint, we wait for the calculator to resolve
+
+              if (this.options.repaint_on_cell_change) {
+                flags.render_area = Area.Join(area, flags.render_area);
+              }
+
+            }
+            else {
+              flags.data_event = true;
+            }
+          }
+          break;
+  
 
         case CommandKey.SetRange:
           {

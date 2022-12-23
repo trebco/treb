@@ -22,7 +22,7 @@
 import { TextPartFlag, ICellAddress, Style, ValueType, 
          PreparedText, RenderTextPart,
          Cell, Area, Size, Rectangle, 
-         Theme, ThemeColor, ThemeColor2 } from 'treb-base-types';
+         Theme, ThemeColor, ThemeColor2, Table } from 'treb-base-types';
 
 import type { Tile } from '../types/tile';
 import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
@@ -1302,7 +1302,11 @@ export class TileRenderer {
       return {};
     }
 
-    const style: Style.Properties = cell.style ? {...cell.style} : {};
+    let style: Style.Properties = cell.style ? {...cell.style} : {};
+
+    if (cell.table) {
+      style = this.view.active_sheet.CellStyleData(address) || {};
+    }
 
     if (cell.merge_area) {
 
@@ -1356,40 +1360,6 @@ export class TileRenderer {
 
       }
       else {
-
-        /*
-        // there are some unexpected or weird behaviors with borders and
-        // merge cells. atm the border is applied to the inner cell, but
-        // those cells (and thus the borders) are never rendered. we will
-        // render if we're on an edge and there's a border edge.
-
-        // I *think* we only have to worry about the back side (right/bottom)
-        // and not the front side... because if the front side has any borders,
-        // they'll be applied across all cells in the merge area (because
-        // width and height are increased)
-
-        const clone: Style.Properties = {};
-
-        if (style.border_bottom && address.row === cell.merge_area.end.row) {
-          clone.border_bottom = style.border_bottom;
-          clone.border_bottom_color = style.border_bottom_color;
-        }
-
-        if (style.border_right && address.column === cell.merge_area.end.column) {
-          clone.border_right = style.border_right;
-          clone.border_right_color = style.border_right_color;
-        }
-
-        console.info("MERGE ERBS");
-
-        // this paint call is OK (vis a vis the overflow buffer) because this
-        // cell will never overflow
-
-        if (clone.border_bottom || clone.border_right) {
-          this.RenderCellBorders2(address, context, clone, 0, 0, width, height);
-        }
-        */
-
         return {};
       }
     }

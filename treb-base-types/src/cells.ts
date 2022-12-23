@@ -25,7 +25,7 @@
  */
 
 import { Area, IArea, ICellAddress, IsCellAddress } from './area';
-import { Cell, DataValidation } from './cell';
+import { Cell, DataValidation, Table } from './cell';
 import { ValueType, GetValueType } from './value-type';
 import type { CellValue, UnionValue } from './union';
 import type { Style } from './style';
@@ -72,6 +72,7 @@ export interface BaseCellData {
   value: CellValue;
   style_ref?: number;
   calculated?: CellValue;
+  table?: Table;
   area?: IArea;
   merge_area?: IArea;
   validation?: DataValidation;
@@ -406,6 +407,8 @@ export class Cells {
     }
     */
 
+    const tables: Table[] = [];
+
     for (const obj of data) {
 
       if (!this.data[obj.row]) this.data[obj.row] = [];
@@ -452,6 +455,27 @@ export class Cells {
         }
       }
 
+      // collect tables, then apply them after reading all the cells.
+      // FIXME: why are we not doing this for merges? would be more 
+      // efficient, no?
+
+      if (obj.table) {
+        tables.push({
+          area: new Area(obj.table.area.start, obj.table.area.end),
+          headers: !!obj.table.headers,
+        });
+
+        /*
+        for ( let row = table.area.start.row; row <= table.area.end.row; row++){
+          for ( let column = table.area.start.column; column <= table.area.end.column; column++){
+            if (!this.data[row]) this.data[row] = [];
+            if (!this.data[row][column]) this.data[row][column] = new Cell();
+            this.data[row][column].table = table;
+          }
+        }
+        */
+      }
+
       if (obj.merge_area){
         const merge_area = new Area(obj.merge_area.start, obj.merge_area.end);
         for ( let row = merge_area.start.row; row <= merge_area.end.row; row++){
@@ -470,6 +494,16 @@ export class Cells {
       //  cell.locked = obj.locked;
       //}
 
+    }
+
+    for (const table of tables) {
+      for ( let row = table.area.start.row; row <= table.area.end.row; row++){
+        for ( let column = table.area.start.column; column <= table.area.end.column; column++){
+          if (!this.data[row]) this.data[row] = [];
+          if (!this.data[row][column]) this.data[row][column] = new Cell();
+          this.data[row][column].table = table;
+        }
+      }
     }
 
     this.rows_ = this.data.length;
@@ -532,6 +566,10 @@ export class Cells {
             && cell.area.start.row === row
             && cell.area.start.column === column;
 
+          const table_head = cell && cell.table
+            && cell.table.area.start.row === row
+            && cell.table.area.start.column === column;
+
           const is_empty = cell ? (cell.type === ValueType.string && !cell.value) : true;
 
           // NOTE: we added the check on calculated && calculated_value,
@@ -574,6 +612,9 @@ export class Cells {
               if (options.preserve_type || cell.calculated_type === ValueType.error) {
                 obj.calculated_type = cell.calculated_type;
               }
+            }
+            if (cell.table && table_head) {
+              obj.table = JSON.parse(JSON.stringify(cell.table));
             }
             if (cell.area && array_head) {
               obj.area = cell.area.toJSON();
