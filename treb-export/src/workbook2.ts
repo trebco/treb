@@ -75,6 +75,23 @@ export interface AnchoredChartDescription {
   anchor: TwoCellAnchor,
 }
 
+export interface TableDescription {
+  name: string;
+  display_name: string;
+  ref: string;
+  totals_row_shown: number; // number? it's 0 in the xml
+
+  rel?: string;
+  index?: number;
+  columns?: string[];
+
+  // auto filter?
+
+  // column names?
+
+  // style?
+
+}
 
 export class Workbook {
 
@@ -219,6 +236,26 @@ export class Workbook {
     // console.info("TS", this.sheets);
 
 
+  }
+
+  public async ReadTable(reference: string): Promise<TableDescription|undefined> {
+
+    const data = await this.zip.file(reference.replace(/^../, 'xl'))?.async('text') as string;
+
+    if (!data) {
+      return undefined;
+    }
+
+    const xml = xmlparser2.parse(data);
+
+    const table: TableDescription = {
+      name: xml.table?.a$?.name || '',
+      display_name: xml.table?.a$?.displayName || name,
+      ref: xml.table?.a$.ref || '',
+      totals_row_shown: Number(xml.table?.a$.totalsRowShown || '0') || 0,
+    };
+
+    return table;
   }
 
   public async ReadDrawing(reference: string): Promise<AnchoredChartDescription[] | undefined> {
