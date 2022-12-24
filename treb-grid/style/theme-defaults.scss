@@ -255,6 +255,48 @@ $text-reference-color-5: rgb(254, 47, 1);
 
   }
 
+  /**
+   * tables. table styling applies to row, plus footer. rows can be
+   * styled with top/bottom border and background color; footer just 
+   * allows bottom border. you can also set font properties (italic, 
+   * bold, underline, strike).
+   */
+  .treb-table {
+
+    &.header {
+      background-color: var(--treb-table-header-background, NavajoWhite);
+      border-top-color: var(--treb-table-header-border-top, DarkGoldenrod);
+      border-bottom-color: var(--treb-table-header-border-bottom, DarkGoldenrod);
+      font-weight: var(--treb-table-header-font-weight, 700);
+      font-style: var(--treb-table-header-font-style);
+      text-decoration: var(--treb-table-header-text-decoration);
+    }
+
+    &.row-odd {
+      background-color: var(--treb-table-odd-background, BlanchedAlmond);
+      border-top-color: var(--treb-table-odd-border-top);
+      border-bottom-color: var(--treb-table-odd-border-bottom);
+      font-weight: var(--treb-table-odd-font-weight);
+      font-style: var(--treb-table-odd-font-style);
+      text-decoration: var(--treb-table-odd-text-decoration);
+    }
+
+    &.row-even {
+      background-color: var(--treb-table-even-background);
+      border-top-color: var(--treb-table-even-border-top);
+      border-bottom-color: var(--treb-table-even-border-bottom);
+      font-weight: var(--treb-table-even-font-weight);
+      font-style: var(--treb-table-even-font-style);
+      text-decoration: var(--treb-table-even-text-decoration);
+    }
+
+    &.footer {
+      background-color: transparent;
+      border-bottom-color: var(--treb-table-footer-border-bottom, DarkGoldenrod);
+    }
+
+  } 
+
   /** 
    * selections
    */

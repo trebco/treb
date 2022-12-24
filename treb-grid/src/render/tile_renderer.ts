@@ -1035,7 +1035,7 @@ export class TileRenderer {
 
     // (moved to sheet, using numpad naming)
 
-    const numpad = this.view.active_sheet.SurroundingStyle(address);
+    const numpad = this.view.active_sheet.SurroundingStyle(address, this.theme.table);
     
 
     // --- start with fills ----------------------------------------------------
@@ -1305,7 +1305,7 @@ export class TileRenderer {
     let style: Style.Properties = cell.style ? {...cell.style} : {};
 
     if (cell.table) {
-      style = this.view.active_sheet.CellStyleData(address) || {};
+      style = this.view.active_sheet.CellStyleData(address, this.theme.table) || {};
     }
 
     if (cell.merge_area) {

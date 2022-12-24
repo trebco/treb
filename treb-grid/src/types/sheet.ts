@@ -25,7 +25,7 @@ import {
   Cell, ValueType, Cells, Style,
   Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, 
   IsNestedRowArray, CellValue, ImportedSheetData, Complex, 
-  DimensionedQuantity, IsCellAddress, IArea, Table
+  DimensionedQuantity, IsCellAddress, IArea, Table, TableStyles
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement } from 'treb-utils';
@@ -1157,7 +1157,7 @@ export class Sheet {
    * move it here so we can inline the next/previous loops.
    * 
    */
-  public SurroundingStyle(address: ICellAddress): Style.Properties[] {
+  public SurroundingStyle(address: ICellAddress, table?: TableStyles): Style.Properties[] {
     const map: Style.Properties[] = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
 
     // FIXME: what about merges? (...)
@@ -1174,22 +1174,22 @@ export class Sheet {
     for (; row_above >= 0 && this.row_height_[row_above] === 0; row_above--) { /* */ }
 
     if (column_left >= 0 && row_above >= 0) {
-      map[7] = this.CellStyleData({ row: row_above, column: column_left }) || {};
+      map[7] = this.CellStyleData({ row: row_above, column: column_left }, table) || {};
     }
 
     if (column_left >= 0) {
-      map[4] = this.CellStyleData({ row: address.row, column: column_left }) || {};
-      map[1] = this.CellStyleData({ row: row_below, column: column_left }) || {};
+      map[4] = this.CellStyleData({ row: address.row, column: column_left }, table) || {};
+      map[1] = this.CellStyleData({ row: row_below, column: column_left }, table) || {};
     }
 
     if (row_above >= 0) {
-      map[8] = this.CellStyleData({ row: row_above, column: address.column }) || {};
-      map[9] = this.CellStyleData({ row: row_above, column: column_right }) || {};
+      map[8] = this.CellStyleData({ row: row_above, column: address.column }, table) || {};
+      map[9] = this.CellStyleData({ row: row_above, column: column_right }, table) || {};
     }
 
-    map[6] = this.CellStyleData({ row: address.row, column: column_right }) || {};
-    map[2] = this.CellStyleData({ row: row_below, column: address.column }) || {};
-    map[3] = this.CellStyleData({ row: row_below, column: column_right }) || {};
+    map[6] = this.CellStyleData({ row: address.row, column: column_right }, table) || {};
+    map[2] = this.CellStyleData({ row: row_below, column: address.column }, table) || {};
+    map[3] = this.CellStyleData({ row: row_below, column: column_right }, table) || {};
 
     return map;
   }
@@ -1211,7 +1211,7 @@ export class Sheet {
    * and we don't preserve the style.
    * 
    */
-  public CellStyleData(address: ICellAddress): Style.Properties | undefined {
+  public CellStyleData(address: ICellAddress, table_styles?: TableStyles): Style.Properties | undefined {
 
     // don't create if it doesn't exist
     const cell = this.cells.GetCell(address);
@@ -1225,25 +1225,33 @@ export class Sheet {
       cell.style = this.style_map[index];
     }
 
-    if (cell.table) {
+    if (cell.table && table_styles) {
 
-      const style = JSON.parse(JSON.stringify(cell.style));
+      let style = JSON.parse(JSON.stringify(cell.style));
       const data = this.TableRow(cell.table, address.row);
 
       if (data.header) {
-        style.fill = {text: 'limegreen'};
-        style.bold = true;
-        style.border_top = 1;
-        style.border_bottom = 1;
-        style.border_top_fill = { text: 'green' };
-        style.border_bottom_fill = { text: 'green' };
+        if (table_styles.header) {  
+          style = Style.Composite([style, table_styles.header]);
+        }
       }
-      else if (data.alternate) {
-        style.fill = { text: 'palegreen' };
+      else {
+        if (data.alternate) {
+          if (table_styles.odd) {
+            style = Style.Composite([style, table_styles.odd]);           
+          }
+        }
+        else {
+          if (table_styles.even) {
+            style = Style.Composite([style, table_styles.even]);           
+          }
+        }
       }
+
       if (data.last) {
-        style.border_bottom = 1;
-        style.border_bottom_fill = {text: 'green'};
+        if (table_styles.footer) {
+          style = Style.Composite([style, table_styles.footer]);
+        }
       }
 
       return style;

@@ -47,6 +47,19 @@ import { Color } from './color';
  * spreadsheet cells.
  */
 
+/**
+ * table styles. table has four elements: headers (the first row in
+ * the table), odd and event rows, and the last row. we apply as delta
+ * to the current style. the first row after the header is row 1, hence
+ * odd. footer is usually just a bottom border.
+ */
+export interface TableStyles {
+  header?: Style.Properties;
+  odd?: Style.Properties;
+  even?: Style.Properties;
+  footer?: Style.Properties;
+}
+
 /** theme options - colors and fonts */
 export interface Theme {
 
@@ -91,10 +104,12 @@ export interface Theme {
    */
   tint_cache?: Record<number, string>[];
 
+  table?: TableStyles;
+
 }
 
 export const DefaultTheme: Theme = {
-  grid_color: 'red', // '#ccc',
+  grid_color: '#ccc',
   note_marker_color: '#d2c500',
 };
 
@@ -188,6 +203,58 @@ const ParseFontSize = (size: string): { value: number, unit: 'pt'|'px'|'em'|'%' 
   return { value, unit };
 };
 
+/**
+ * pull out styles we apply to tables, if they differ from the base.
+ * setting "initial" or "inherit" doesn't work to clear them (at least atm); 
+ * use "transparent" to unset.
+ */
+const TableStyleFromCSS = (base: CSSStyleDeclaration, style: CSSStyleDeclaration): Style.Properties => {
+
+  const props: Style.Properties = {};
+
+  if (style.borderTopColor !== base.borderTopColor) {
+    props.border_top = 1;
+    props.border_top_fill = { text: style.borderTopColor };
+  }
+
+  if (style.borderBottomColor !== base.borderBottomColor) {
+    props.border_bottom = 1;
+    props.border_bottom_fill = { text: style.borderBottomColor };
+  }
+
+  if (style.backgroundColor !== base.backgroundColor) {
+    props.fill = { text: style.backgroundColor };
+  }
+
+  if (style.fontWeight !== base.fontWeight) {
+    props.bold = /(?:700|bold)/.test(style.fontWeight);
+  }
+
+  if (style.fontStyle !== base.fontStyle) {
+    props.italic = /italic/.test(style.fontStyle);
+  }
+
+  if (style.textDecoration !== base.textDecoration) {
+    const style_underline = /underline/.test(style.textDecoration);
+    const base_underline = /underline/.test(base.textDecoration);
+
+    if (base_underline !== style_underline) {
+      props.underline = style_underline;
+    }
+
+    const style_strike = /line-through/.test(style.textDecoration);
+    const base_strike = /line-through/.test(base.textDecoration);
+
+    if (base_strike !== style_strike) {
+      props.strike = style_strike;
+    }
+
+  }
+  
+  return props;
+
+};
+
 // testing
 const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
 
@@ -259,6 +326,22 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   css = CSS('note-marker');
   theme.note_marker_color = css.backgroundColor;
 
+  // table. we need (maybe) a more generic method for pulling out some
+  // of these styles. for the time being we'll just pull out border colors, 
+  // background color, text color and font styles.
+
+  // comparing against root. perhaps we should be comparing against
+  // grid-cell? (...)
+
+  const root_css = CSS('');
+
+  theme.table = {
+    header: TableStyleFromCSS(root_css, CSS('treb-table header')),
+    odd: TableStyleFromCSS(root_css, CSS('treb-table row-odd')),
+    even: TableStyleFromCSS(root_css, CSS('treb-table row-even')),
+    footer: TableStyleFromCSS(root_css, CSS('treb-table footer')),
+  }
+ 
   // theme colors
   
   node.style.color='rgba(1,2,3,.4)'; // this is an attempt at a unique identifier
