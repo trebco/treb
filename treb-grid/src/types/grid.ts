@@ -3598,7 +3598,7 @@ export class Grid extends GridBase {
           this.ExecCommand({
             key: CommandKey.ResizeRows,
             row: rows,
-            height,
+            height: height / this.scale,
           });
 
           for (const { annotation } of move_annotation_list) {
@@ -3862,7 +3862,7 @@ export class Grid extends GridBase {
           this.ExecCommand({
             key: CommandKey.ResizeColumns,
             column: columns,
-            width,
+            width: width / this.scale,
           });
 
           for (const { annotation } of move_annotation_list) {
