@@ -38,7 +38,7 @@
 import { EventSource } from 'treb-utils';
 import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
 import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex } from 'treb-parser';
-import { Area, Style, IsCellAddress, ValidationType, ValueType } from 'treb-base-types';
+import { Area, Style, IsCellAddress, ValidationType, ValueType, Table } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
@@ -628,7 +628,9 @@ export class GridBase {
 
         const cd = sheet.CellData({row, column});
 
-        if (column === command.column) {
+        // sort column is relative to table
+
+        if (column === command.column + command.table.area.start.column) {
 
           // we can precalculate the type for sorting
 
@@ -705,7 +707,7 @@ export class GridBase {
 
     // console.info(ordered);
 
-    return command.table.area;
+    return new Area(command.table.area.start, command.table.area.end);
 
   }
 
@@ -1093,6 +1095,7 @@ export class GridBase {
 
         // special case
         case CommandKey.SortTable:
+        case CommandKey.RemoveTable:
           if (!command.table.area.start.sheet_id) {
             command.table.area.start.sheet_id = id;
           }
@@ -1121,6 +1124,7 @@ export class GridBase {
         case CommandKey.UpdateStyle:
         case CommandKey.SetName:
         case CommandKey.Select:
+        case CommandKey.InsertTable:
 
           if (command.area) {
             if (IsCellAddress(command.area)) {
@@ -2355,6 +2359,99 @@ export class GridBase {
           // else sets it).)
 
           flags.structure_event = true;
+
+          break;
+
+        case CommandKey.InsertTable:
+
+          // the most important thing here is validating that we can
+          // create the table in the target area.
+
+          {
+            const sheet = this.FindSheet(command.area);
+            const area = new Area(command.area.start, command.area.end);
+
+            // validate first
+
+            let valid = true;
+
+            validation_loop:
+            for (let row = area.start.row; row <= area.end.row; row++) {
+              for (let column = area.start.column; column <= area.end.column; column++) {
+                const cell = sheet.cells.GetCell({row, column}, false);
+                if (cell && (cell.area || cell.merge_area || cell.table)) {
+                  valid = false;
+                  break validation_loop;
+                }
+              }
+            }
+
+            if (valid) {
+
+              const table: Table = {
+                headers: true,
+                area: command.area,
+              };
+
+              for (let row = area.start.row; row <= area.end.row; row++) {
+                for (let column = area.start.column; column <= area.end.column; column++) {
+                  const cell = sheet.cells.GetCell({row, column}, true);
+                  cell.table = table;
+                }
+              }
+  
+              // force rerendering, we don't need to flush the values
+
+              sheet.Invalidate(new Area(table.area.start, table.area.end));
+
+              if (sheet === this.active_sheet) {
+                flags.style_area = Area.Join(area, flags.style_area);
+                flags.render_area = Area.Join(area, flags.render_area);
+
+              }
+              else {
+                flags.style_event = true;
+              }
+
+            }
+
+          }
+
+          break;
+
+
+        case CommandKey.RemoveTable:
+
+          // this is pretty easy, we can do it inline
+
+          {
+            const sheet = this.FindSheet(command.table.area);
+            const area = new Area(command.table.area.start, command.table.area.end);
+
+            for (let row = area.start.row; row <= area.end.row; row++) {
+              for (let column = area.start.column; column <= area.end.column; column++) {
+                const cell = sheet.cells.GetCell({row, column}, false);
+                if (cell) {
+                  cell.table = undefined;
+                }
+              }
+            }
+
+            // tables use nonstandard styling, we need to invalidate the sheet.
+            // for edges invalidate an extra cell around the table
+
+            const invalid = sheet.RealArea(area.Clone().Shift(-1, -1).Resize(area.rows + 2, area.columns + 2));
+            sheet.Invalidate(invalid);
+            
+            if (sheet === this.active_sheet) {
+              flags.style_area = Area.Join(area, flags.style_area);
+              flags.render_area = Area.Join(area, flags.render_area);
+            }
+            else {
+              flags.style_event = true;
+            }
+
+          }
 
           break;
 

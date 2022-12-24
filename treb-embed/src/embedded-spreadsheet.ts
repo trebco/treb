@@ -40,7 +40,7 @@ import {
   Area, IArea, CellValue, Point,
   IsFlatData, IsFlatDataArray, Rectangle, IsComplex, 
   ComplexToString, Complex, ExtendedUnion, IRectangle,
-  AddressReference, RangeReference, IsArea,
+  AddressReference, RangeReference, IsArea, TableSortOptions,
 } from 'treb-base-types';
 
 import { EventSource, Yield } from 'treb-utils';
@@ -1969,6 +1969,27 @@ export class EmbeddedSpreadsheet {
     }
 
     this.grid.InsertColumns(start_column, -count);    
+  }
+
+  /**
+   * sort a table. the cell reference can be anywhere in the table.
+   * if the reference is an area (range), we're going to look at the 
+   * top-left cell.
+   */
+  public SortTable(reference: RangeReference, options: Partial<TableSortOptions> = {}) {
+    let address = this.calculator.ResolveAddress(reference, this.grid.active_sheet);
+
+    if (!IsCellAddress(address)) {
+      address = address.start;
+    }
+
+    const table = this.grid.GetTableReference(address);
+    if (!table) {
+      throw new Error('invalid table reference');
+    }
+    
+    this.grid.SortTable(table, options);
+
   }
 
   /**

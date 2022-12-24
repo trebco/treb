@@ -35,6 +35,7 @@ export * from './color';
 export * from './layout';
 export * from './render_text';
 export * from './api_types';
+export * from './table';
 
 // import * as Style from './style';
 // export { Style };

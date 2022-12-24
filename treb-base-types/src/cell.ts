@@ -27,35 +27,7 @@ import type { TextPart } from './text_part';
 import { ValueType, GetValueType, Complex } from './value-type';
 import type { CellValue, UnionValue } from './union';
 import type { PreparedText } from './render_text';
-
-export type TableSortType = 'text'|'numeric';
-
-/**
- * struct representing a table
- */
-export interface Table {
-
-  /** table area */
-  area: Area;
-
-  /** 
-   * table has headers 
-   * NOTE: table has to have headers. we can remove this flag (TODO).
-   */
-  headers?: boolean;
-
-  /** 
-   * sort data. sorts are hard, meaning we actually move data around. 
-   * (not meaning difficult). we may keep track of the last sort so we 
-   * can toggle asc/desc, for example. atm this will not survive serialization.
-   */
-  sort?: {
-    column: number;
-    type: TableSortType;
-    asc: boolean;
-  }
-
-}
+import type { Table } from './table';
 
 export interface RenderFunctionOptions {
   height: number;

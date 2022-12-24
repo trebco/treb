@@ -70,6 +70,8 @@ export enum CommandKey {
   DataValidation,
   Reset,
   SortTable,
+  InsertTable,
+  RemoveTable,
 
 }
 
@@ -104,6 +106,22 @@ export interface CommandBase {
 */
 
 /**
+ * insert a table at the given location
+ */
+export interface InsertTableCommand {
+  key: CommandKey.InsertTable,
+  area: IArea,
+}
+
+/**
+ * remove the table
+ */
+export interface RemoveTableCommand {
+  key: CommandKey.RemoveTable,
+  table: Table,
+}
+
+/**
  * sort a table. sorts are hard, meaning we actually move data around.
  * use copy/paste semantics for handling relative references (seems strange
  * to me, but hey).
@@ -112,7 +130,7 @@ export interface SortTableCommand {
   key: CommandKey.SortTable,
   table: Table,
   column: number,
-  asc?: boolean;
+  asc: boolean;
   type: TableSortType,
 }
 
@@ -415,6 +433,8 @@ export type Command =
   | ShowHeadersCommand
   | DeleteSheetCommand
   | UpdateStyleCommand
+  | InsertTableCommand
+  | RemoveTableCommand
   | RenameSheetCommand
   | ReorderSheetCommand
   | UnmergeCellsCommand

@@ -25,7 +25,8 @@
  */
 
 import { Area, IArea, ICellAddress, IsCellAddress } from './area';
-import { Cell, DataValidation, Table } from './cell';
+import { Cell, DataValidation } from './cell';
+import type { Table } from './table';
 import { ValueType, GetValueType } from './value-type';
 import type { CellValue, UnionValue } from './union';
 import type { Style } from './style';
@@ -461,7 +462,7 @@ export class Cells {
 
       if (obj.table) {
         tables.push({
-          area: new Area(obj.table.area.start, obj.table.area.end),
+          area: obj.table.area,
           headers: !!obj.table.headers,
         });
 

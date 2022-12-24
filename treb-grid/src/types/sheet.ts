@@ -1622,9 +1622,13 @@ export class Sheet {
       for (let column = 0; column < this.cells.columns; column++) {
         const cell = this.cells.GetCell({ row, column }, false);
         if (cell) {
-          if (cell.table && !table_heads[cell.table.area.spreadsheet_label]) {
-            table_heads[cell.table.area.spreadsheet_label] = cell.table;
+          if (cell.table) {
+            const label = new Area(cell.table.area.start, cell.table.area.end).spreadsheet_label;
+            if (!table_heads[label]) {
+              table_heads[label] = cell.table;
+            }
           }
+
           if (cell.area && !array_heads[cell.area.spreadsheet_label]) {
             array_heads[cell.area.spreadsheet_label] = cell.area;
           }
@@ -1776,9 +1780,13 @@ export class Sheet {
       for (let row = 0; row < this.cells.rows; row++) {
         const cell = this.cells.GetCell({ row, column }, false);
         if (cell) {
-          if (cell.table && !table_heads[cell.table.area.spreadsheet_label]) {
-            table_heads[cell.table.area.spreadsheet_label] = cell.table;
+          if (cell.table) {
+            const label = new Area(cell.table.area.start, cell.table.area.end).spreadsheet_label;
+            if (!table_heads[label]) {
+              table_heads[label] = cell.table;
+            }
           }
+          
           if (cell.area && !array_heads[cell.area.spreadsheet_label]) {
             array_heads[cell.area.spreadsheet_label] = cell.area;
           }
