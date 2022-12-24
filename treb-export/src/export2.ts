@@ -37,7 +37,7 @@ import { template } from './template-2';
 import type { SerializedSheet } from 'treb-grid';
 
 import { IArea, Area, ICellAddress, Cells, ValueType, CellValue, Style, DataValidation, ValidationType,
-         AnnotationLayout, Corner as LayoutCorner, ICellAddress2 } from 'treb-base-types';
+         AnnotationLayout, Corner as LayoutCorner, ICellAddress2, Table } from 'treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
 import { XMLParser, XmlBuilderOptions, XMLBuilder } from 'fast-xml-parser';
@@ -55,6 +55,7 @@ import { Parser, UnitAddress, UnitRange, ExpressionUnit, IllegalSheetNameRegex, 
 import { Chart, ChartOptions } from './drawing2/chart2';
 import type { ImageOptions } from './drawing2/embedded-image';
 import { Drawing, TwoCellAnchor } from './drawing2/drawing2';
+import type { TableDescription } from './workbook2';
 
 export class Exporter {
 
@@ -62,12 +63,16 @@ export class Exporter {
 
   public xmloptions: Partial<XmlBuilderOptions> = {
     format: true,
-    //attrNodeName: 'a$',
     attributesGroupName: 'a$',
     textNodeName: 't$',
     ignoreAttributes: false,
     suppressEmptyNode: true,
 
+    // OK so now I am turning this off altogether. not sure why we
+    // were using it in the first place -- which is a problem, since
+    // there's probably something I don't know.
+
+    /*
     tagValueProcessor: (name: string, a: string) => {
      
       // we were including unsafe symbols here, but that was 
@@ -75,8 +80,11 @@ export class Exporter {
       // here at all, unless we need it for unicode? in any
       // event (atm) allowing unsafe symbols is sufficient
 
+      return a; // ?
+
       return (typeof a === 'string') ? he.encode(a, { useNamedReferences: true, allowUnsafeSymbols: true }) : a;
     },
+    */
 
     // there's a "isAttributeValue" for decode, but no option for encode?
     // we only want to encode ' and "
@@ -426,6 +434,8 @@ export class Exporter {
     //  dxfs
     //  tableStyles
     
+    // ------------
+
     const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
     // console.info(xml);
     
@@ -438,6 +448,8 @@ export class Exporter {
    * replace any existing shared strings file.
    */
   public async WriteSharedStrings(shared_strings: SharedStrings): Promise<void> {
+
+    // console.info({shared_strings});
 
     if (!this.zip) {
       throw new Error('missing zip');
@@ -457,6 +469,9 @@ export class Exporter {
     };
 
     const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
+
+    // console.info(xml);
+
     await this.zip?.file('xl/sharedStrings.xml', xml);
 
   }
@@ -1056,6 +1071,10 @@ export class Exporter {
 
     const drawings: Drawing[] = [];
 
+    // we need to keep track of tables in all sheets
+
+    const global_tables: TableDescription[] = [];
+
     // --- now sheets ----------------------------------------------------------
 
     for (let sheet_index = 0; sheet_index < source.sheet_data.length; sheet_index++) {
@@ -1124,6 +1143,11 @@ export class Exporter {
             },
           },
           drawing: {},
+          tableParts: {
+            a$: {
+              count: 0,
+            },
+          },
           extLst: {
             ext: {
               a$: {
@@ -1194,7 +1218,8 @@ export class Exporter {
       }> = [];
 
       const merges: Area[] = [];
-
+      const tables: TableDescription[] = [];
+      
       const validations: Array<{
         address: ICellAddress,
         validation: DataValidation,
@@ -1222,11 +1247,100 @@ export class Exporter {
             const cell = cells.data[r][c];
             if (cell) {
 
+              // create a table reference at the table head, we can ignore the rest
+
+              if (cell.table &&
+                  cell.table.area.start.row === r &&
+                  cell.table.area.start.column === c) {
+
+                const area = new Area(cell.table.area.start, cell.table.area.end);
+                const global_count = global_tables.length + 1;
+                const path = `../tables/table${global_count}.xml`;
+
+                // column names must match the text in the column. AND, they 
+                // have to be unique. case-insensitive unique! we are not (atm) 
+                // enforcing those rules, so we need to enforce them on export.
+                  
+                // also, values (and column headers) MUST BE STRINGS. 
+                
+                const columns: string[] = [];
+                for (let i = 0; i < area.columns; i++) {
+                  const header = cells.data[r][c + i];
+                  let value = '';
+
+                  if (header.type !== ValueType.string) {
+                    if (typeof header.calculated !== 'undefined') {
+                      value = (header.calculated).toString();
+                    }
+                    else if (typeof header.value !== 'undefined') {
+                      value = (header.value).toString();
+                    }
+
+                    header.type = ValueType.string;
+                    header.value = value;
+
+                  }
+                  else {
+                    value = (header.value as string) || '';
+                  }
+                 
+                  if (!value) {
+                    value = `Column${i + 1}`;
+                  }
+
+                  let proposed = value;
+                  let success = false;
+                  let index = 1;
+
+                  while (!success) {
+                    success = true;
+                    inner_loop:
+                    for (const check of columns) {
+                      if (check.toLowerCase() === proposed.toLowerCase()) {
+                        success = false;
+                        proposed = `${value}${++index}`;
+                        break inner_loop;
+                      }
+                    }
+                  }
+
+                  header.value = proposed;
+                  columns.push(proposed);
+
+                }
+
+                // console.info({columns});
+
+                const description: TableDescription = {
+                  rel: AddRel(
+                        sheet_rels, 
+                        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/table',
+                        path,
+                      ),
+                  index: global_count,
+                  ref: area.spreadsheet_label,
+                  name: `Table${global_count}`,
+                  display_name: `Table${global_count}`,
+                  totals_row_shown: 0,
+                  columns,
+                };
+
+                // this list is used to add tables on this sheet
+                tables.push(description);
+
+                // but we also need global references to create the files
+                global_tables.push(description);
+              }
+
+              // merges
+
               if (cell.merge_area && 
                   cell.merge_area.start.row === r &&
                   cell.merge_area.start.column === c) {
                 merges.push(new Area(cell.merge_area.start, cell.merge_area.end));
               }
+
+              // links
 
               if (cell.hyperlink) {
                 const rel = AddRel(sheet_rels, 
@@ -1490,7 +1604,82 @@ export class Exporter {
         delete dom.worksheet.dataValidations;
       }
 
-      // --- merges --------------------------------------------------------------
+      // --- tables ------------------------------------------------------------
+
+      if (tables.length) {
+        dom.worksheet.tableParts.a$.count = tables.length;
+        dom.worksheet.tableParts.tablePart = tables.map(table => {
+          return {
+            a$: { 
+              'r:id': table.rel || '',
+            }
+          };
+        });
+      }
+      else {
+        delete dom.worksheet.tableParts;
+      }
+
+      // const GUID = () => '{' + uuidv4().toUpperCase() + '}';
+
+      for (const table of tables) {
+
+        const table_dom = {
+          table: {
+            a$: {
+              xmlns: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
+              'xmlns:mc': 'http://schemas.openxmlformats.org/markup-compatibility/2006',
+              'mc:Ignorable': 'xr xr3',
+              'xmlns:xr': 'http://schemas.microsoft.com/office/spreadsheetml/2014/revision',
+              'xmlns:xr3': 'http://schemas.microsoft.com/office/spreadsheetml/2016/revision3',
+              id: table.index || 0, 
+              // 'xr:uid': '{676B775D-AA84-41B6-8450-8515A94D2D7B}',
+              name: table.name, 
+              displayName: table.display_name,
+              ref: table.ref,
+              // 'xr:uid': GUID(),
+            },
+
+            autoFilter: {
+              a$: {
+                ref: table.ref,
+                // 'xr:uid': GUID(),
+              },
+            },
+
+            tableColumns: {
+              a$: {
+                count: (table.columns || []).length,
+              },
+              tableColumn: (table.columns||[]).map((column, index) => ({
+                a$: {
+                  id: index + 1,
+                  // 'xr3:uid': GUID(),
+                  name: column || ('Column' + (index + 1)),
+                },
+              })),
+               
+            },
+
+            tableStyleInfo: {
+              a$: {
+                name: 'TableStyleMedium3', 
+                showFirstColumn: 0,
+                showLastColumn: 0,
+                showRowStripes: 1,
+                showColumnStripes: 0,
+              },
+            },
+
+          },
+        };
+
+        const xml = XMLDeclaration + this.xmlbuilder1.build(table_dom);
+        await this.zip?.file(`xl/tables/table${table.index}.xml`, xml);
+
+      }
+
+      // --- merges ------------------------------------------------------------
 
       if (merges.length) {
         dom.worksheet.mergeCells.a$.count = merges.length;
@@ -1504,7 +1693,7 @@ export class Exporter {
         delete dom.worksheet.mergeCells;
       }
 
-      // --- hyperlinks ----------------------------------------------------------
+      // --- hyperlinks --------------------------------------------------------
 
       if (hyperlinks.length) {
         dom.worksheet.hyperlinks.hyperlink = hyperlinks.map(link => {
@@ -1521,7 +1710,7 @@ export class Exporter {
         delete dom.worksheet.hyperlinks;
       }
 
-      // --- sparklines ----------------------------------------------------------
+      // --- sparklines --------------------------------------------------------
 
       if (sparklines.length) {
         dom.worksheet.extLst.ext['x14:sparklineGroups'] = {
@@ -1856,6 +2045,15 @@ export class Exporter {
           { a$: { PartName: '/xl/theme/theme1.xml', ContentType: 'application/vnd.openxmlformats-officedocument.theme+xml' }},
           { a$: { PartName: '/xl/styles.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml' }},
           { a$: { PartName: '/xl/sharedStrings.xml', ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml' }},
+
+          // tables
+          ...global_tables.map(table => {
+            return { a$: {
+              ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml',
+              PartName: `/xl/tables/table${table.index || 0}.xml`,
+            }};
+          }),
+
           { a$: { PartName: '/docProps/core.xml', ContentType: 'application/vnd.openxmlformats-package.core-properties+xml' }},
           { a$: { PartName: '/docProps/app.xml', ContentType: 'application/vnd.openxmlformats-officedocument.extended-properties+xml' }},
         

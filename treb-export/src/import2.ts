@@ -22,10 +22,10 @@
 //import * as JSZip from 'jszip';
 import JSZip from 'jszip';
 
-import { AnchoredChartDescription, ChartType, Workbook } from './workbook2';
+import { AnchoredChartDescription, ChartType, TableDescription, Workbook } from './workbook2';
 import { Parser, ParseResult } from 'treb-parser';
 import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address, HyperlinkType } from './address-type';
-import { ImportedSheetData, AnchoredAnnotation, CellParseResult, ValueType, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, ValidationType } from 'treb-base-types/src';
+import { ImportedSheetData, AnchoredAnnotation, CellParseResult, ValueType, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, ValidationType, IArea } from 'treb-base-types/src';
 import { Sheet, VisibleState } from './workbook-sheet2';
 import type { CellAnchor } from './drawing2/drawing2';
 import { XMLUtils } from './xml-utils';
@@ -571,8 +571,59 @@ export class Importer {
       }
     }
 
-     // annotations (charts)
+    // --- import tables -------------------------------------------------------
 
+    /*
+    const tables: Array<{
+      area: IArea,
+      description: TableDescription,
+    }> = [];
+    */
+
+    const table_references = FindAll('worksheet/tableParts/tablePart')
+    for (const child of table_references) {
+      const rel = child.a$ ? child.a$['r:id'] : undefined;
+      if (rel) {
+        let reference = '';
+
+        const relationship = sheet.rels[rel];
+        if (relationship) {
+          reference = relationship.target || '';
+          const description = await this.workbook.ReadTable(reference);
+          if (description) {
+            const ref = sheet.TranslateAddress(description.ref);
+            const area: IArea = is_address(ref) ? { 
+                start: { row: ref.row - 1, column: ref.col - 1}, 
+                end: { row: ref.row - 1, column: ref.col - 1},
+              } : { 
+                start: { row: ref.from.row - 1, column: ref.from.col - 1}, 
+                end: { row: ref.to.row - 1, column: ref.to.col - 1},
+              };
+
+            /*
+            tables.push({
+              description,
+              area,
+            })
+            */
+
+            for (const cell of data) {
+              if (cell.row === area.start.row && cell.column === area.start.column) {
+                cell.table = {
+                  area,
+                  headers: true,
+                };
+                break;
+              }
+            }
+
+          }
+
+        }
+      }
+    }
+
+    // --- import drawings -----------------------------------------------------
 
     // wip...
 

@@ -42,11 +42,9 @@
 
 
 import { AddressType, RangeType, is_range } from './address-type';
-import { SharedStrings } from './shared-strings2';
-// import { UnitCall } from 'treb-parser';
-import { Drawing } from './drawing2/drawing2';
-// import { ChartOptions } from './drawing2/chart2';
-import { RelationshipMap } from './relationship';
+import type { SharedStrings } from './shared-strings2';
+import type { Drawing } from './drawing2/drawing2';
+import type { RelationshipMap } from './relationship';
 
 export interface SheetOptions {
   name?: string;

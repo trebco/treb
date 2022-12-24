@@ -24,6 +24,7 @@ import type { ValueType } from './value-type';
 import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
 import type { DataValidation } from './cell';
+import type { Table } from './table';
 
 export interface CellParseResult {
   row: number,
@@ -37,6 +38,7 @@ export interface CellParseResult {
   validation?: DataValidation,
   merge_area?: IArea,
   area?: IArea,
+  table?: Table,
 }
 
 export interface AnchoredAnnotation {
