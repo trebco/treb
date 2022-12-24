@@ -34,6 +34,7 @@ import {
   UnitLiteral,
   UnitLiteralNumber,
   ParserFlags,
+  UnitStructuredReference,
 } from './parser-types';
 
 interface PrecedenceList {
@@ -88,7 +89,8 @@ const EXCLAMATION_MARK = 0x21;
 // const COLON = 0x3a; // became an operator
 const SEMICOLON = 0x3b;
 
-const HASH = 0x23; // #
+const HASH = 0x23;  // #
+const AT = 0x40;    // @
 
 const UC_A = 0x41;
 const LC_A = 0x61;
@@ -1737,6 +1739,13 @@ export class Parser {
       char === HASH || // new: only allowed in position 1, always an error
       char === SINGLE_QUOTE ||
       char === DOLLAR_SIGN ||
+
+      // we used to not allow square brackets to start tokens, because
+      // we only supported them for relative R1C1 references -- hence you'd
+      // need the R first. but we now allow them for "structured references".
+
+      char === OPEN_SQUARE_BRACKET ||
+      
       (char >= ACCENTED_RANGE_START && char <= ACCENTED_RANGE_END) // adding accented characters, needs some testing
     ) {
 
@@ -1881,13 +1890,26 @@ export class Parser {
    * to escape sheet names with spaces (which is a bad idea, but hey). this
    * should only be legal if the token starts with a single quote, and only
    * for one (closing) quote.
+   * 
+   * R1C1 relative notation uses square brackets, like =R2C[-1] or =R[-1]C[-2].
+   * that's pretty easy to see. there's also regular R1C1, like =R1C1.
+   * 
+   * "structured references" use square brackets. they can start with 
+   * square brackets -- in that case the table source is implicit (has to
+   * be in the table). otherwise they look like =TableName[@ColumnName]. that
+   * @ is optional and (I think) means don't spill.
+   * 
    */
   protected ConsumeToken(initial_char: number): ExpressionUnit {
     const token: number[] = [initial_char];
     const position = this.index;
 
     let single_quote = (initial_char === SINGLE_QUOTE);
-    let square_bracket = false; // this one can't be initial
+    let square_bracket = 0; // now balancing // false; // this one can't be initial
+
+    // this is a set-once flag for square brackets; it can 
+    // short-circuit the check for structured references. 
+    let braces = false; 
 
     for (++this.index; this.index < this.length; this.index++) {
       const char = this.data[this.index];
@@ -1902,20 +1924,54 @@ export class Parser {
         single_quote || // ((char === SINGLE_QUOTE || char === SPACE) && single_quote) ||
         (char >= ZERO && char <= NINE) // tokens can't start with a number, but this loop starts at index 1
 
+        // we now allow square brackets for structured references; 
+        // minus is still only allowed in R1C1 references, so keep
+        // that restriction
+
+        || char === OPEN_SQUARE_BRACKET
+        || (square_bracket > 0 && char === CLOSE_SQUARE_BRACKET)
+        || (char === MINUS && this.flags.r1c1 && (square_bracket === 1))
+
+        // the @ sign can appear after the first square bracket... 
+        // but only immediately? 
+
+        || (square_bracket > 0 && char === AT && this.data[this.index - 1] === OPEN_SQUARE_BRACKET)
+
+        // comma can appear in the first level. this is maybe an older
+        // syntax? it looks like `Table2[[#this row],[region]]
+
+        || (square_bracket === 1 && (char === COMMA || char === SPACE))
+
+        // structured references allow basically any character, if 
+        // it's in the SECOND bracket. not sure what's up with that.
+
+        || (square_bracket > 1)
+
+        // I think that's all the rules for structured references.
+
+        /*
+
         || (this.flags.r1c1 && (
           char === OPEN_SQUARE_BRACKET ||
           char === CLOSE_SQUARE_BRACKET ||
           (char === MINUS && square_bracket)
         ))
+        */
+
+        
+
 
       ) {
         token.push(char);
 
         if (char === OPEN_SQUARE_BRACKET) {
-          square_bracket = true;
+          // square_bracket = true;
+          square_bracket++;
+          braces = true;
         }
         if (char === CLOSE_SQUARE_BRACKET) {
-          square_bracket = false;
+          // square_bracket = false;
+          square_bracket--;
         }
 
         if (char === SINGLE_QUOTE) {
@@ -1944,6 +2000,24 @@ export class Parser {
         position,
       } as UnitIdentifier;
 
+    }
+
+    // check unbalanced square bracket as well, could be a runaway structured 
+    // reference
+
+    if (square_bracket) {
+
+      this.error = `unbalanced square bracket`;
+      this.error_position = position;
+      this.valid = false;
+
+      return {
+        type: 'identifier',
+        id: this.id_counter++,
+        name: str,
+        position,
+      } as UnitIdentifier;
+      
     }
 
     // special handling
@@ -1981,15 +2055,28 @@ export class Parser {
       };
     }
 
-    // check for address. in the case of a range, we'll see an address, the
-    // range operator, and a second address. that will be turned into a range
-    // later.
-
     if (this.flags.spreadsheet_semantics) {
+
+      // check for address. in the case of a range, we'll see an address, the
+      // range operator, and a second address. that will be turned into a range
+      // later.
+
       const address = this.ConsumeAddress(str, position);
       if (address) return address;
+
+      // check for structured reference, if we had square brackets
+
+      if (braces) {
+        const structured = this.ConsumeStructuredReference(str, position);
+        if (structured) {
+          return structured;
+        }
+      }
+
     }
  
+
+    
     const identifier: UnitIdentifier = {
       type: 'identifier',
       id: this.id_counter++,
@@ -2000,6 +2087,88 @@ export class Parser {
     this.full_reference_list.push(identifier);
 
     return identifier;
+  }
+
+  /**
+   * like ConsumeAddress, look for a structured reference.
+   */
+  protected ConsumeStructuredReference(token: string, position: number): UnitStructuredReference|undefined {
+
+    // structured references look something like
+    //
+    // [@Column1]
+    // [@[Column with spaces]]
+    // [[#This Row],[Column2]]
+    //
+    // @ means the same as [#This Row]. there are probably other things
+    // that use the # syntax, but I haven't seen them yet. 
+    //
+    // some observations: case is not matched for the "this row" text.
+    // I think that's true of column names as well, but that's not relevant
+    // at this stage. whitespace around that comma is ignored. I _think_
+    // whitespace around column names is also ignored, but spaces within
+    // a column name are OK, at least within the second set of brackets. 
+
+    const index = position;
+    const token_length = token.length;
+
+    let table = '';
+    let i = 0;
+
+    for (; i < token_length; i++) {
+      if (token[i] === '[') {
+        token = token.substring(i);
+        break;
+      }
+      table += token[i];
+    }
+
+    // after the table, must start and end with brackets
+
+    if (token[0] !== '[' || token[token.length - 1] !== ']') {
+      return undefined;
+    }
+
+    token = token.substring(1, token.length - 1);
+    const parts = token.split(',').map(part => part.trim());
+
+    let this_row = false;
+    let column = '';
+
+    if (parts.length > 2) {
+      return undefined; // ??
+    }
+    else if (parts.length === 2) {
+      if (/\[#this row\]/i.test(parts[0])) {
+        this_row = true;
+      }
+      column = parts[1];
+    }
+    else {
+      column = parts[0];      
+      if (column[0] === '@') {
+        this_row = true;
+        column = column.substring(1, column.length);
+      }
+    }
+
+    if (column[0] === '[' && column[column.length - 1] === ']') {
+      column = column.substring(1, column.length - 1);
+    }
+
+    const reference: UnitStructuredReference = {
+      type: 'structured-reference',
+      id: this.id_counter++,
+      position,
+      this_row,
+      column,
+      table,
+    };
+
+    console.info(reference);
+
+    return reference;
+
   }
 
   /**

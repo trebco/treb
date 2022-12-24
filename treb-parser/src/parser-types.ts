@@ -121,6 +121,17 @@ export interface UnitIdentifier extends BaseUnit {
 }
 
 /**
+ * "structured reference" for offset into named table
+ */
+export interface UnitStructuredReference extends BaseUnit {
+  type: 'structured-reference';
+  position: number;
+  table: string;
+  this_row: boolean;
+  column: string;
+}
+
+/**
  * expression unit representing a group of units; like parentheses in an
  * expression. intended to prevent precendence reordering of operations.
  */
@@ -240,7 +251,9 @@ export type BaseExpressionUnit =
 | UnitBinary
 | UnitUnary
 | UnitAddress
-| UnitRange;
+| UnitRange
+| UnitStructuredReference
+;
 
 /** 
  * discriminated union for type guards, all types
