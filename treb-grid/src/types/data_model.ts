@@ -20,10 +20,10 @@
  */
 
 import type { Sheet } from './sheet';
-import type { IArea } from 'treb-base-types';
+import type { IArea, ICellAddress, Table } from 'treb-base-types';
 import type { SerializedSheet } from './sheet_types';
 import { NamedRangeCollection } from './named_range';
-import type { ExpressionUnit } from 'treb-parser';
+import type { ExpressionUnit, UnitAddress, UnitStructuredReference, UnitRange } from 'treb-parser';
 import { Style } from 'treb-base-types';
 
 export interface MacroFunction {
@@ -195,6 +195,101 @@ export class DataModel {
    */
   public theme_style_properties: Style.Properties = JSON.parse(JSON.stringify(Style.DefaultProperties));
 
+  /**
+   * tables are global, because we need to reference them by name; and they
+   * need unique names, so we need to keep track of names. name matching is
+   * icase so we lc the names before inserting.
+   */
+  public tables: Map<string, Table> = new Map();
+
+  /**
+   * putting this here temporarily. it should probably move into a table
+   * manager class or something like that.
+   */
+  public ResolveStructuredReference(ref: UnitStructuredReference, context: ICellAddress): UnitAddress|UnitRange|undefined {
+
+    // get the table
+    const table = this.tables.get(ref.table.toLowerCase());
+    if (!table) {
+      return undefined; // table not found
+    }
+
+    // resolve the column
+    const reference_column = ref.column.toLowerCase();
+    let column = -1;
+
+    if (table.columns) { // FIXME: make this required
+      for (let i = 0; i < table.columns.length; i++) {
+        if (reference_column === table.columns[i]) {
+          column = table.area.start.column + i;
+          break;
+        }
+      }
+    }
+
+    if (column < 0) {
+      return undefined; // invalid column
+    }
+
+    // for row scope, make sure we're in a valid row.
+    
+    if (ref.scope === 'row') {
+
+      const row = context.row;
+      if (row < table.area.start.row || row > table.area.end.row) {
+        return undefined; // invalid row for "this row"
+      }
+
+      // OK, we can use this
+
+      return {
+        label: ref.label,
+        type: 'address',
+        row, 
+        column,
+        sheet_id: table.area.start.sheet_id,
+        id: ref.id,
+        position: ref.position,
+      };
+
+    }
+    else {
+
+      // the difference between 'all' and 'column' is the first row
+      // (FIXME: maybe the last row, if we have totals? not sure)
+
+      let row = table.area.start.row;
+      if (ref.scope === 'column') { row++; }
+
+      return {
+        label: ref.label,
+        type: 'range',
+        position: ref.position,
+        id: ref.id,
+        start: {
+          type: 'address',
+          row,
+          column,
+          sheet_id: table.area.start.sheet_id,
+          label: ref.label,
+          position: ref.position,
+          id: 0,
+        },
+        end: {
+          type: 'address',
+          row: table.area.end.row,
+          column,
+          label: ref.label,
+          position: ref.position,
+          id: 0,
+        },
+      }
+
+    }
+    
+    return undefined;
+  }
+  
 }
 
 export interface ViewModel {
@@ -212,6 +307,7 @@ export interface SerializedModel {
   active_sheet: number;
   named_ranges?: Record<string, IArea>;
   macro_functions?: MacroFunction[];
+  tables?: Table[];
   named_expressions?: SerializedNamedExpression[];
   decimal_mark?: ','|'.';
 }

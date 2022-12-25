@@ -31,14 +31,22 @@ export const DefaultTableSortOptions: TableSortOptions = {
  */
 export interface Table {
 
+  /** 
+   * table must have a name
+   */
+  name: string;
+
+  /**
+   * column names. these are the same (icase) as text in the first row
+   */
+
   /** table area */
   area: IArea;
 
   /** 
-   * table has headers 
-   * NOTE: table has to have headers. we can remove this flag (TODO).
+   * table column headers. normalize case before inserting.
    */
-  headers?: boolean;
+  columns?: string[];
 
   /** 
    * sort data. sorts are hard, meaning we actually move data around. 

@@ -39,6 +39,7 @@ export interface CellSerializationOptions {
   subset?: Area;
   preserve_empty_strings?: boolean;
   decorated_cells?: boolean;
+  tables?: boolean;
 
   /**
    * nest rows in columns, or vice-versa, depending on which is smaller.
@@ -462,8 +463,9 @@ export class Cells {
 
       if (obj.table) {
         tables.push({
+          name: obj.table.name,
           area: obj.table.area,
-          headers: !!obj.table.headers,
+          // TODO: columns
         });
 
         /*
@@ -615,7 +617,9 @@ export class Cells {
               }
             }
             if (cell.table && table_head) {
-              obj.table = JSON.parse(JSON.stringify(cell.table));
+              if (options.tables) {
+                obj.table = JSON.parse(JSON.stringify(cell.table));
+              }
             }
             if (cell.area && array_head) {
               obj.area = cell.area.toJSON();

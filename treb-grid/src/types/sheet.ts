@@ -1122,11 +1122,11 @@ export class Sheet {
       }
     }
 
-    if (table.headers && row === table.area.start.row) {
+    if (row === table.area.start.row) {
       return { header: true };
     }
 
-    let start = table.area.start.row + (table.headers ? 1 : 0);
+    let start = table.area.start.row + 1 ; // (table.headers ? 1 : 0);
     for ( ; start <= table.area.end.row; start++ ) {
       if (!this.GetRowHeight(start)) {
         continue;
@@ -1938,6 +1938,41 @@ export class Sheet {
     cell.Set(value);
   }
 
+  /** 
+   * FIXME: does not need to be in sheet 
+   *
+   * @param headers_only - only return tables if the cell is in the 
+   * header (first) row. useful if you only want to worry about headers. 
+   */
+  public TablesFromArea(area: IArea|ICellAddress, headers_only = false): Table[] {
+
+    if (IsCellAddress(area)) {
+      const cell = this.cells.GetCell(area, false);
+      if (cell?.table) {
+        if (!headers_only || (area.row === cell.table.area.start.row)) {
+          return [cell.table];
+        }
+      }
+      return [];
+    }
+
+    const set: Set<Table> = new Set();
+
+    for (let row = area.start.row; row <= area.end.row; row++) {
+      for (let column = area.start.column; column <= area.end.column; column++) {
+        const cell = this.cells.GetCell({row, column}, false);
+        if (cell?.table && !set.has(cell.table)) {
+          if (!headers_only || (row === cell.table.area.start.row)) {
+            set.add(cell.table);
+          }
+        }
+      }
+    }
+
+    return Array.from(set.values());
+
+  }
+
   /**
    * returns the area bounding actual content
    * (i.e. flattening "entire row/column/sheet")
@@ -2411,6 +2446,7 @@ export class Sheet {
       decorated_cells: !!options.decorated_cells,
       nested: true,
       cell_style_refs: cell_reference_map,
+      tables: !!options.tables,
     };
 
     // the rows/columns we export can be shrunk to the actual used area,

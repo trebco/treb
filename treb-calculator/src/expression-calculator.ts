@@ -27,7 +27,7 @@ import { Cell, ICellAddress, ValueType, GetValueType,
          UndefinedUnion,
          ComplexUnion } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
-         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity } from 'treb-parser';
+         UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
 import type { DataModel, MacroFunction, Sheet } from 'treb-grid';
 import { NameError, ReferenceError, ExpressionError, UnknownError } from './function-error';
 import { ReturnType } from './descriptors';
@@ -670,6 +670,37 @@ export class ExpressionCalculator {
 
   }
 
+  protected ResolveStructuredReference(expr: UnitStructuredReference): () => UnionValue {
+
+    // basically our approach here is to resolve the structured reference
+    // to a concrete reference. 
+    //
+    // if the structured reference changes, then it will get recalculated 
+    // (and hence rebuilt). if the table name or a referenced column name 
+    // changes, the cell will get rewritten so again, it will get recalculated.
+    //
+    // the case we have to worry about is if the table layout changes: if a
+    // column is added or removed. because in that case, our reference will
+    // be out of date but we won't be notified about it.
+    //
+    // so we will have to make sure that if a table layout changes, columns
+    // or rows added or deleted, then we invalidate the entire table. if we 
+    // do that this should all work out.
+
+    const resolved = this.data_model.ResolveStructuredReference(expr, this.context.address);
+    if (resolved) {
+      if (resolved.type === 'address') {
+        return this.CellFunction2(resolved);
+      }
+      else if(resolved.type === 'range') {
+        return () => this.CellFunction4(resolved.start, resolved.end);
+      }
+    }
+
+    return () => ReferenceError();
+
+  }
+
   protected ResolveDimensionedQuantity(): (exp: UnitDimensionedQuantity) => UnionValue {
 
     return (expr: UnitDimensionedQuantity): UnionValue => {
@@ -993,6 +1024,9 @@ export class ExpressionCalculator {
         const literal = {value: {real: expr.real, imaginary: expr.imaginary}, type: ValueType.complex } as ComplexUnion;
         return (expr.user_data = () => literal)();  // check
       }
+
+    case 'structured-reference':
+      return (expr.user_data = this.ResolveStructuredReference(expr))();
 
     case 'array':
       {

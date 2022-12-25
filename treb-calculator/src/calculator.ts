@@ -33,7 +33,7 @@ import { ExpressionCalculator, UnionIsMetadata } from './expression-calculator';
 import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
-import { ExtendedFunctionDescriptor, FunctionMap, ReturnType } from './descriptors';
+import { FunctionMap, ReturnType } from './descriptors';
 import { AltFunctionLibrary, BaseFunctionLibrary } from './functions/base-functions';
 import { FinanceFunctionLibrary } from './functions/finance-functions';
 import { TextFunctionLibrary, TextFunctionAliases } from './functions/text-functions';
@@ -1704,6 +1704,7 @@ export class Calculator extends Graph {
       relative_sheet_id: number,
       relative_sheet_name: string,
       dependencies: DependencyList = {addresses: {}, ranges: {}},
+      context_address: ICellAddress,
     ): DependencyList {
 
     if (!relative_sheet_name) {
@@ -1730,7 +1731,7 @@ export class Calculator extends Graph {
           if (this.model.named_expressions.has(normalized)) {
             const expr = this.model.named_expressions.get(normalized);
             if (expr) {
-              this.RebuildDependencies(expr, relative_sheet_id, relative_sheet_name, dependencies);
+              this.RebuildDependencies(expr, relative_sheet_id, relative_sheet_name, dependencies, context_address);
             }
           }
           else {
@@ -1745,6 +1746,72 @@ export class Calculator extends Graph {
             }
           }
         }
+        break;
+
+      case 'structured-reference':
+
+        // when building the graph, resolve the reference to the table.
+        // this is the same thing we do in expression-calculator, and
+        // we rely on the same rules to ensure that the reference either
+        // stays consitent, or gets rebuilt.
+
+        {
+          const resolved = this.model.ResolveStructuredReference(unit, context_address);
+          if (resolved) {
+            if (resolved.type === 'address') {
+              dependencies.addresses[resolved.sheet_id + '!' + resolved.label] = resolved;
+            }
+            else {
+              dependencies.ranges[resolved.label] = resolved;
+            }
+          }
+
+
+          const table = this.model.tables.get(unit.table.toLowerCase());
+          if (table) {
+
+            // see ResolveStructuredReference in expression calculator
+
+            const row = context_address.row; // "this row"
+            if (row < table.area.start.row || row > table.area.end.row) {
+              break;
+            }
+
+            const reference_column = unit.column.toLowerCase();
+            let column = -1;
+      
+            if (table.columns) { // FIXME: make this required
+              for (let i = 0; i < table.columns.length; i++) {
+                if (reference_column === table.columns[i]) {
+                  column = table.area.start.column + i;
+                  break;
+                }
+              }
+            }
+
+            if (column >= 0) {
+
+              // does using the original label here, instead of a sheet
+              // address as label, mean we potentially have multiple
+              // references to the same cell? probably...
+
+              const address: UnitAddress = {
+                label: unit.label,
+                type: 'address',
+                row, 
+                column,
+                sheet_id: table.area.start.sheet_id,
+                id: unit.id,
+                position: unit.position,
+              };
+        
+              dependencies.addresses[address.sheet_id + '!' + address.label] = address;
+
+            }
+
+          }
+        }
+
         break;
 
       case 'address':
@@ -1815,17 +1882,17 @@ export class Calculator extends Graph {
         break;
 
       case 'unary':
-        this.RebuildDependencies(unit.operand, relative_sheet_id, relative_sheet_name, dependencies);//, sheet_name_map);
+        this.RebuildDependencies(unit.operand, relative_sheet_id, relative_sheet_name, dependencies, context_address);//, sheet_name_map);
         break;
 
       case 'binary':
-        this.RebuildDependencies(unit.left, relative_sheet_id, relative_sheet_name, dependencies);//, sheet_name_map);
-        this.RebuildDependencies(unit.right, relative_sheet_id, relative_sheet_name, dependencies);//, sheet_name_map);
+        this.RebuildDependencies(unit.left, relative_sheet_id, relative_sheet_name, dependencies, context_address);//, sheet_name_map);
+        this.RebuildDependencies(unit.right, relative_sheet_id, relative_sheet_name, dependencies, context_address);//, sheet_name_map);
         break;
 
       case 'group':
         unit.elements.forEach((element) =>
-          this.RebuildDependencies(element, relative_sheet_id, relative_sheet_name, dependencies));//, sheet_name_map));
+          this.RebuildDependencies(element, relative_sheet_id, relative_sheet_name, dependencies, context_address));//, sheet_name_map));
         break;
 
       case 'call':
@@ -1846,13 +1913,13 @@ export class Calculator extends Graph {
                 // not tracking the dependency. to do that, we can recurse with
                 // a new (empty) dependency list, and just drop the new list
 
-                this.RebuildDependencies(args[index], relative_sheet_id, relative_sheet_name, undefined);//, sheet_name_map);
+                this.RebuildDependencies(args[index], relative_sheet_id, relative_sheet_name, undefined, context_address);//, sheet_name_map);
 
                 args[index] = { type: 'missing', id: -1 };
               }
             });
           }
-          args.forEach((arg) => this.RebuildDependencies(arg, relative_sheet_id, relative_sheet_name, dependencies));//, sheet_name_map));
+          args.forEach((arg) => this.RebuildDependencies(arg, relative_sheet_id, relative_sheet_name, dependencies, context_address));//, sheet_name_map));
 
         }
         break;
@@ -1875,6 +1942,8 @@ export class Calculator extends Graph {
           // this.model.active_sheet.name,
           context.id,
           context.name,
+          undefined,
+          {row: 0, column: 0}, // fake context
         );
 
       for (const key of Object.keys(dependencies.ranges)){
@@ -2070,7 +2139,7 @@ export class Calculator extends Graph {
 
         }
 
-        const dependencies = this.RebuildDependencies(parse_result.expression, address.sheet_id, ''); // cell.sheet_id);
+        const dependencies = this.RebuildDependencies(parse_result.expression, address.sheet_id, '', undefined, address); // cell.sheet_id);
 
         for (const key of Object.keys(dependencies.ranges)) {
           const unit = dependencies.ranges[key];

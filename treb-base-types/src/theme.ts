@@ -226,6 +226,10 @@ const TableStyleFromCSS = (base: CSSStyleDeclaration, style: CSSStyleDeclaration
     props.fill = { text: style.backgroundColor };
   }
 
+  if (style.color !== base.color) {
+    props.text = { text: style.color };
+  }
+
   if (style.fontWeight !== base.fontWeight) {
     props.bold = /(?:700|bold)/.test(style.fontWeight);
   }

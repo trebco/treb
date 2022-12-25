@@ -973,7 +973,7 @@ export class Exporter {
     if (!parse_result.expression) {
       console.warn('parsing function failed');
       console.warn(text);
-      return text.substr(1);
+      return text.substring(1);
     }
     else {
 
@@ -1011,7 +1011,10 @@ export class Exporter {
       // const x = this.parser.Render(parse_result.expression, undefined, '');
       // console.info("T", text, x);
 
-      return this.parser.Render(parse_result.expression, undefined, '');
+      const temp = this.parser.Render(parse_result.expression, undefined, '', undefined, undefined, undefined, true);
+      console.info({temp});
+
+      return this.parser.Render(parse_result.expression, undefined, '', undefined, undefined, undefined, true);
     }
    
   }
@@ -1663,7 +1666,7 @@ export class Exporter {
 
             tableStyleInfo: {
               a$: {
-                name: 'TableStyleMedium3', 
+                name: 'TableStyleMedium2', 
                 showFirstColumn: 0,
                 showLastColumn: 0,
                 showRowStripes: 1,

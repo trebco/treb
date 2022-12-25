@@ -611,7 +611,8 @@ export class Importer {
               if (cell.row === area.start.row && cell.column === area.start.column) {
                 cell.table = {
                   area,
-                  headers: true,
+                  name: description.name,
+                  // TODO: columns
                 };
                 break;
               }

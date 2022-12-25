@@ -247,9 +247,10 @@ export class Workbook {
     }
 
     const xml = xmlparser2.parse(data);
+    const name = xml.table?.a$?.name || '';
 
     const table: TableDescription = {
-      name: xml.table?.a$?.name || '',
+      name,
       display_name: xml.table?.a$?.displayName || name,
       ref: xml.table?.a$.ref || '',
       totals_row_shown: Number(xml.table?.a$.totalsRowShown || '0') || 0,

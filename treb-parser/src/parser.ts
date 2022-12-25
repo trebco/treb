@@ -333,6 +333,10 @@ export class Parser {
    * @param offset offset for addresses, used to offset relative addresses
    * (and ranges). this is for copy-and-paste or move operations.
    * @param missing string to represent missing values (can be '', for functions)
+   * 
+   * FIXME: we're accumulating too many arguments. need to switch to an 
+   * options object. do that after the structured reference stuff merges.
+   * 
    */
   public Render(
     unit: ExpressionUnit,
@@ -341,6 +345,8 @@ export class Parser {
     convert_decimal?: DecimalMarkType,
     convert_argument_separator?: ArgumentSeparatorType,
     convert_imaginary_number?: 'i'|'j',
+    long_structured_references?: boolean,
+
   ): string {
     // use default separator, unless we're explicitly converting.
 
@@ -553,6 +559,41 @@ export class Parser {
 
       case 'dimensioned':
         return this.Render(unit.expression) + ' ' + this.Render(unit.unit);
+
+      case 'structured-reference':
+
+        // not sure of the rules around one or two braces for the 
+        // column name... certainly spaces means you need at least one
+      
+        {
+          let column = unit.column;
+          if (/[^A-Za-z]/.test(column)) {
+            column = '[' + column + ']';
+          }
+
+          switch (unit.scope) {
+            case 'all':
+              return `${unit.table}[[#all],${column}]`;
+
+            case 'row':
+              if (long_structured_references) {
+                return `${unit.table}[[#this row],${column}]`;
+              }
+              else {
+                return `${unit.table}[@${column}]`;
+              }
+
+            case 'column':
+              return `${unit.table}[${column}]`;
+
+          }
+
+          // this is here in case we add a new scope in the future,
+          // so we remember to handle this case
+
+          throw new Error('unhandled scope in structured reference');
+
+        }
 
     }
 
@@ -2112,6 +2153,8 @@ export class Parser {
     const index = position;
     const token_length = token.length;
 
+    const label = token;
+
     let table = '';
     let i = 0;
 
@@ -2132,7 +2175,9 @@ export class Parser {
     token = token.substring(1, token.length - 1);
     const parts = token.split(',').map(part => part.trim());
 
-    let this_row = false;
+    let scope: 'row'|'all'|'column' = 'column';
+
+    // let this_row = false;
     let column = '';
 
     if (parts.length > 2) {
@@ -2140,14 +2185,17 @@ export class Parser {
     }
     else if (parts.length === 2) {
       if (/\[#this row\]/i.test(parts[0])) {
-        this_row = true;
+        scope = 'row';
+      }
+      else if (/\[#all\]/i.test(parts[0])) {
+        scope = 'all';
       }
       column = parts[1];
     }
     else {
       column = parts[0];      
       if (column[0] === '@') {
-        this_row = true;
+        scope = 'row';
         column = column.substring(1, column.length);
       }
     }
@@ -2159,13 +2207,14 @@ export class Parser {
     const reference: UnitStructuredReference = {
       type: 'structured-reference',
       id: this.id_counter++,
+      label,
       position,
-      this_row,
+      scope,
       column,
       table,
     };
 
-    console.info(reference);
+    // console.info(reference);
 
     return reference;
 

@@ -19,7 +19,7 @@
  * 
  */
 
-import type { IArea } from 'treb-base-types';
+import type { IArea, Table } from 'treb-base-types';
 import type { MacroFunction, SerializedNamedExpression, SerializedSheet } from 'treb-grid';
 
 export enum SaveFileType {
@@ -51,6 +51,7 @@ export interface TREBDocument {
   named_ranges?: {[index: string]: IArea};
   macro_functions?: MacroFunction[];
   named_expressions?: SerializedNamedExpression[];
+  tables?: Table[];
 }
 
 export interface ResizeEvent {

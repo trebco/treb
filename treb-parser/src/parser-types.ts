@@ -125,9 +125,15 @@ export interface UnitIdentifier extends BaseUnit {
  */
 export interface UnitStructuredReference extends BaseUnit {
   type: 'structured-reference';
+  label: string;
   position: number;
   table: string;
-  this_row: boolean;
+
+  /**
+   * row refers to "this row". "all" means all values, including the 
+   * header. "column" means all values except the header.
+   */
+  scope: 'row'|'all'|'column';
   column: string;
 }
 

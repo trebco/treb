@@ -260,6 +260,20 @@ export class GridBase {
 
     const sheet_data = this.model.sheets.list.map((sheet) => sheet.toJSON(options));
 
+    // OK, not serializing tables in cells anymore. old comment about this:
+    // 
+    // at the moment, tables are being serialized in cells. if we put them
+    // in here, then we have two records of the same data. that would be bad.
+    // I think this is probably the correct place, but if we put them here
+    // we need to stop serializing in cells. and I'm not sure that there are 
+    // not some side-effects to that. hopefully not, but (...)
+    // 
+
+    let tables: Table[] | undefined;
+    if (this.model.tables.size > 0) {
+      tables = Array.from(this.model.tables.values());
+    }
+
     // NOTE: moving into a structured object (the sheet data is also structured,
     // of course) but we are moving things out of sheet (just  named ranges atm))
 
@@ -322,6 +336,7 @@ export class GridBase {
         this.model.named_ranges.Serialize() :
         undefined,
       macro_functions,
+      tables,
       named_expressions: named_expressions.length ? named_expressions : undefined,
     };
 
@@ -394,6 +409,7 @@ export class GridBase {
     this.model.named_ranges.Reset();
     this.model.named_expressions.clear();
     this.model.macro_functions.clear(); //  = {};
+    this.model.tables.clear();
 
   }
 
@@ -712,42 +728,101 @@ export class GridBase {
   }
 
   /**
+   * update all columns of a table (collect column names). this
+   * method rebuilds all columns; that's probably unecessary in
+   * many cases, but we'll start here and we can drill down later.
+   * 
+   * we do two things here: we normalize column header values, and
+   * we collect them for table headers.
+   * 
+   * @param table 
+   */
+  protected UpdateTableColumns(table: Table): IArea {
+
+    if (!table.area.start.sheet_id) {
+      throw new Error('invalid area in table');
+    }
+
+    const sheet = this.model.sheets.Find(table.area.start.sheet_id);
+    if (!sheet) {
+      throw new Error('invalid sheet in table');
+    }
+
+    const columns: string[] = [];
+
+    const row = table.area.start.row;
+    const count = table.area.end.column - table.area.start.column + 1;
+
+    let column = table.area.start.column;
+    for (let i = 0; i < count; i++, column++) {
+
+      const header = sheet.CellData({row, column});
+      let value = '';
+
+      if (header.type !== ValueType.string) {
+        if (typeof header.calculated !== 'undefined') {
+          value = (header.calculated).toString();
+        }
+        else if (typeof header.value !== 'undefined') {
+          value = (header.value).toString();
+        }
+
+        header.Set(value, ValueType.string);
+
+      }
+      else {
+        value = (header.value as string) || '';
+      }
+     
+      if (!value) {
+        value = `Column${i + 1}`;
+      }
+
+      let proposed = value;
+      let success = false;
+      let index = 1;
+
+      while (!success) {
+        success = true;
+        inner_loop:
+        for (const check of columns) {
+          if (check.toLowerCase() === proposed.toLowerCase()) {
+            success = false;
+            proposed = `${value}${++index}`;
+            break inner_loop;
+          }
+        }
+      }
+
+      header.Set(proposed, ValueType.string);
+      columns.push(proposed.toLowerCase());
+
+    }
+
+    // TODO: this is good, and works, but we are going to have to
+    // look for structured references and update them if the column
+    // names change. 
+
+    table.columns = columns;
+
+    return {
+      start: { 
+        ...table.area.start,
+      }, end: {
+        row: table.area.start.row, 
+        column: table.area.end.column,
+      }
+    };
+
+  }
+
+  /**
    * set range, via command. returns affected area.
    * 
    * Adding a flags parameter (in/out) to support indicating 
    * that we need to update layout.
    */
   protected SetRangeInternal(command: SetRangeCommand, flags: UpdateFlags = {}): Area|undefined {
-
-    // language translation. this is _not_ the best place for this,
-    // because if we are using the command queue, the language might
-    // chnage. we need to do translation _before_ things go into the 
-    // queue.
-
-    // but that said, for the time being we can put it here.
-
-    // actually this won't work -- because if this is a remote, it won't 
-    // necessarily have the right language map. we need to translate before
-    // we get here.
-
-    // we need to find every place we call setrange (via command) and
-    // translate there -- in grid. this needs to move out of base.
-
-    /*
-    if (Array.isArray(command.value)) {
-      for (const row of command.value) {
-        for (let i = 0; i < row.length; i++) {
-          const value = row[i];
-          if (typeof value === 'string' && value[0] === '=') {
-            row[i] = this.UntranslateFunction(value);
-          }
-        }
-      }
-    }
-    else if (command.value && typeof command.value === 'string' && command.value[0] === '=') {
-      command.value = this.UntranslateFunction(command.value);
-    }
-    */
 
     // NOTE: apparently if we call SetRange with a single target
     // and the array flag set, it gets translated to an area. which
@@ -775,7 +850,6 @@ export class GridBase {
       // change, there are new cells.
 
       if (sheet === this.active_sheet) {
-        // this.QueueLayoutUpdate();
         flags.layout = true;
       }
       
@@ -794,7 +868,6 @@ export class GridBase {
 
       const cell = sheet.CellData(command.area);
       if (cell.area && (cell.area.rows > 1 || cell.area.columns > 1)) {
-        // this.Error(`You can't change part of an array.`);
         this.Error(ErrorCode.Array);
         return;
       }
@@ -2388,10 +2461,24 @@ export class GridBase {
 
             if (valid) {
 
+              // we need a name for the table. needs to be unique.
+
+              let index = this.model.tables.size + 1;
+              let name = '';
+
+              for (;;) {
+                name = `Table${index++}`;
+                if (!this.model.tables.has(name.toLowerCase())) {
+                  break;
+                }
+              }
+
               const table: Table = {
-                headers: true,
                 area: command.area,
+                name,
               };
+
+              this.model.tables.set(name.toLowerCase(), table);
 
               for (let row = area.start.row; row <= area.end.row; row++) {
                 for (let column = area.start.column; column <= area.end.column; column++) {
@@ -2400,6 +2487,8 @@ export class GridBase {
                 }
               }
   
+              this.UpdateTableColumns(table);
+
               // force rerendering, we don't need to flush the values
 
               sheet.Invalidate(new Area(table.area.start, table.area.end));
@@ -2436,6 +2525,11 @@ export class GridBase {
                 }
               }
             }
+
+            // drop from model
+
+            console.info('deleting...', command.table.name);
+            this.model.tables.delete(command.table.name.toLowerCase());
 
             // tables use nonstandard styling, we need to invalidate the sheet.
             // for edges invalidate an extra cell around the table
@@ -2842,6 +2936,14 @@ export class GridBase {
             // (try to change part of an array)
 
             const area = this.SetRangeInternal(command, flags);
+
+            if (area) {
+              const sheet = this.model.sheets.Find(area.start.sheet_id || this.active_sheet.id);
+              const tables = sheet?.TablesFromArea(area, true) || [];
+              for (const table of tables) {
+                this.UpdateTableColumns(table);
+              }
+            }
 
             if (area && area.start.sheet_id === this.active_sheet.id) {
               

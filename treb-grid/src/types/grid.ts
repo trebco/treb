@@ -1062,12 +1062,29 @@ export class Grid extends GridBase {
 
     this.ClearSelection(this.primary_selection);
 
+    this.model.tables.clear();
+
     // moved data import into sheet
 
     for (let i = 0; i < sheet_data.length; i++) {
       const sheet = this.model.sheets.list[i];
       sheet.ImportData(sheet_data[i]);
       name_map[sheet.name] = sheet.id;
+
+      // FIXME: list tables separately in import data so we don't have 
+      // to look at every cell
+      
+      for (const cell of sheet_data[i].cells) {
+        if (cell.table) {
+          cell.table.area.start.sheet_id = sheet.id;
+          this.model.tables.set(cell.table.name.toLowerCase(), cell.table);
+        }
+      }
+
+      for (const table of this.model.tables.values()) {
+        this.UpdateTableColumns(table);
+      }
+
     }
 
     this.model.sheets.UpdateIndexes();

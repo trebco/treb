@@ -2053,6 +2053,7 @@ export class EmbeddedSpreadsheet {
           expand_arrays: true,
           export_colors: true,
           decorated_cells: true,
+          tables: true,
         });
 
         // why do _we_ put this in, instead of the grid method? 
@@ -4746,10 +4747,31 @@ export class EmbeddedSpreadsheet {
       this.ConvertLocale(data);
     }
 
+    const model = this.grid.model;
+    model.tables.clear();
+    if (data.tables) {
+      for (const table of data.tables) {
+        model.tables.set(table.name.toLowerCase(), table);
+      }
+    }
+
     // why is it not complaining about this? (...)
 
     this.grid.UpdateSheets(sheets, undefined, override_sheet || data.active_sheet);
-    const model = this.grid.model;
+
+    for (const [name, table] of this.model.tables.entries()) {
+      if (table.area.start.sheet_id) {
+        const sheet = model.sheets.Find(table.area.start.sheet_id);
+        if (sheet) {
+          for (let row = table.area.start.row; row <= table.area.end.row; row++) {
+            for (let column = table.area.start.column; column <= table.area.end.column; column++) {
+              const cell = sheet.cells.GetCell({row, column}, true);
+              cell.table = table;
+            }
+          }
+        }
+      }
+    }
 
     model.document_name = data.name;
     model.user_data = data.user_data;

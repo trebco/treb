@@ -264,6 +264,42 @@ $text-reference-color-5: rgb(254, 47, 1);
   .treb-table {
 
     &.header {
+      background-color: var(--treb-table-header-background, #4472c4);
+      border-top-color: var(--treb-table-header-border-top, #8ea9db);
+      border-bottom-color: var(--treb-table-header-border-bottom, #8ea9db);
+      color: var(--treb-table-header-color, #fff);
+      font-weight: var(--treb-table-header-font-weight, 700);
+      font-style: var(--treb-table-header-font-style);
+      text-decoration: var(--treb-table-header-text-decoration);
+    }
+
+    &.row-odd {
+      background-color: var(--treb-table-odd-background, #d9e1f2);
+      border-top-color: var(--treb-table-odd-border-top, #8ea9db);
+      border-bottom-color: var(--treb-table-odd-border-bottom, #8ea9db);
+      color: var(--treb-table-odd-color);
+      font-weight: var(--treb-table-odd-font-weight);
+      font-style: var(--treb-table-odd-font-style);
+      text-decoration: var(--treb-table-odd-text-decoration);
+    }
+
+    &.row-even {
+      background-color: var(--treb-table-even-background);
+      border-top-color: var(--treb-table-even-border-top, #8ea9db);
+      border-bottom-color: var(--treb-table-even-border-bottom, #8ea9db);
+      color: var(--treb-table-even-color);
+      font-weight: var(--treb-table-even-font-weight);
+      font-style: var(--treb-table-even-font-style);
+      text-decoration: var(--treb-table-even-text-decoration);
+    }
+
+    &.footer {
+      background-color: transparent;
+      border-bottom-color: var(--treb-table-footer-border-bottom, #8ea9db);
+    }
+
+    /*
+    &.header {
       background-color: var(--treb-table-header-background, NavajoWhite);
       border-top-color: var(--treb-table-header-border-top, DarkGoldenrod);
       border-bottom-color: var(--treb-table-header-border-bottom, DarkGoldenrod);
@@ -294,6 +330,7 @@ $text-reference-color-5: rgb(254, 47, 1);
       background-color: transparent;
       border-bottom-color: var(--treb-table-footer-border-bottom, DarkGoldenrod);
     }
+    */
 
   } 
 

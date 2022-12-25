@@ -60,4 +60,10 @@ export interface SerializeOptions {
   /** prune unused rows/columns */
   shrink?: boolean;
 
+  /** 
+   * include tables. tables will be serialized in the model, so we can
+   * drop them from cells. but you can leave them in if that's useful.
+   */
+  tables?: boolean;
+
 }
