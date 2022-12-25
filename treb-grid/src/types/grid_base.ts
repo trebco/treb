@@ -322,7 +322,7 @@ export class GridBase {
           }
           return true;
         });
-        const rendered = this.parser.Render(expr, undefined, '');
+        const rendered = this.parser.Render(expr, { missing: '' });
         named_expressions.push({
           name, expression: rendered
         });
@@ -699,7 +699,7 @@ export class GridBase {
           const offsets = { columns: 0, rows: insert.row - entry.row };
           const parse_result = this.parser.Parse(data);
           if (parse_result.expression) {
-            data = '=' + this.parser.Render(parse_result.expression, offsets, '');
+            data = '=' + this.parser.Render(parse_result.expression, { offset: offsets, missing: ''});
           }
 
           sheet.SetCellValue(insert, data);
@@ -1422,7 +1422,7 @@ export class GridBase {
       });
 
       if (modified) {
-        return '=' + this.parser.Render(parsed.expression, undefined, '');
+        return '=' + this.parser.Render(parsed.expression, { missing: '' });
       }
     }
 
@@ -1462,7 +1462,7 @@ export class GridBase {
               return true; // continue walk
             });
             if (modified) {
-              cell.value = '=' + this.parser.Render(parsed.expression, undefined, '');
+              cell.value = '=' + this.parser.Render(parsed.expression, { missing: '' });
               changes++;
             }
           }
@@ -1485,7 +1485,7 @@ export class GridBase {
               return true; // continue walk
             });
             if (modified) {
-              annotation.formula = '=' + this.parser.Render(parsed.expression, undefined, '');
+              annotation.formula = '=' + this.parser.Render(parsed.expression, { missing: '' });
               changes++;
             }
           }

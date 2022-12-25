@@ -385,3 +385,13 @@ export interface ParserFlags {
   // complex_numbers: true,
 
 }
+
+export interface RenderOptions {
+  offset: { rows: number; columns: number };
+  missing: string;
+  convert_decimal: DecimalMarkType;
+  convert_argument_separator: ArgumentSeparatorType;
+  convert_imaginary_number: 'i'|'j';
+  long_structured_references: boolean;
+  table_name: string;
+}

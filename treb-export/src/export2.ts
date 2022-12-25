@@ -1019,7 +1019,10 @@ export class Exporter {
       console.info({temp});
       */
 
-      return this.parser.Render(parse_result.expression, undefined, '', undefined, undefined, undefined, true, table_name);
+      return this.parser.Render(parse_result.expression, {
+        missing: '', 
+        long_structured_references: true, 
+        table_name });
     }
    
   }

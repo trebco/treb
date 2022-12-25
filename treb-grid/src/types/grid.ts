@@ -2157,7 +2157,11 @@ export class Grid extends GridBase {
           if (typeof value === 'string' && value[0] === '=') {
             const result = this.parser.Parse(value);
             if (result.expression) {
-              value = '=' + this.parser.Render(result.expression, undefined, '', current.decimal_mark, current.argument_separator);
+              value = '=' + this.parser.Render(result.expression, {
+                missing: '', 
+                convert_decimal: current.decimal_mark, 
+                convert_argument_separator: current.argument_separator,
+              });
             }
           }
           return value;
@@ -2601,7 +2605,7 @@ export class Grid extends GridBase {
       });
 
       if (modified) {
-        return '=' + this.parser.Render(parse_result.expression, undefined, '');
+        return '=' + this.parser.Render(parse_result.expression, { missing: '' });
       }
     }
 
@@ -4647,7 +4651,8 @@ export class Grid extends GridBase {
 
         for (let row = start; row >= 0 && row < target_rows; row += step, offset += step, pattern_increment += pattern) {
           if (translate) {
-            data[row][column] = '=' + this.parser.Render(translate, { rows: offset, columns: 0 })
+            data[row][column] = '=' + this.parser.Render(translate, {
+              offset: { rows: offset, columns: 0 }});
           }
           else {
             const cell = cells[source_row][column];
@@ -5613,7 +5618,7 @@ export class Grid extends GridBase {
         }
         return true;
       });
-      formula = '=' + this.parser.Render(parse_result.expression, undefined, '');
+      formula = '=' + this.parser.Render(parse_result.expression, { missing: '' });
     }
     return formula;
   }
@@ -7039,7 +7044,7 @@ export class Grid extends GridBase {
                   }
                   return true;
                 });
-                composite.data.formula = '=' + this.parser.Render(parse_result.expression, undefined, '');
+                composite.data.formula = '=' + this.parser.Render(parse_result.expression, { missing: '' });
               }
             }
           }
@@ -7124,7 +7129,8 @@ export class Grid extends GridBase {
             if (cell_info.type === ValueType.formula) {
               const parse_result = this.parser.Parse(data as string);
               if (parse_result.expression) {
-                data = '=' + this.parser.Render(parse_result.expression, offsets, '');
+                data = '=' + this.parser.Render(parse_result.expression, {
+                  offset: offsets, missing: '' });
               }
             }
 

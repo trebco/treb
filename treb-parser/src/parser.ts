@@ -35,6 +35,7 @@ import {
   UnitLiteralNumber,
   ParserFlags,
   UnitStructuredReference,
+  RenderOptions,
 } from './parser-types';
 
 interface PrecedenceList {
@@ -340,6 +341,16 @@ export class Parser {
    */
   public Render(
     unit: ExpressionUnit,
+    options: Partial<RenderOptions> = {}): string {
+
+    // defaults
+
+    const offset = options.offset || {rows: 0, columns: 0};
+    const missing = options.missing || '(missing)';
+
+    // the rest are optional
+
+  /*
     offset: { rows: number; columns: number } = { rows: 0, columns: 0 },
     missing = '(missing)',
     convert_decimal?: DecimalMarkType,
@@ -349,6 +360,16 @@ export class Parser {
     table_name?: string,
 
   ): string {
+    */
+
+    const { 
+      convert_decimal, 
+      convert_argument_separator, 
+      convert_imaginary_number, 
+      long_structured_references, 
+      table_name 
+    } = options;
+
     // use default separator, unless we're explicitly converting.
 
     let separator = this.argument_separator + ' ';
@@ -399,44 +420,17 @@ export class Parser {
 
       case 'binary':
         return (
-          this.Render(
-            unit.left,
-            offset,
-            missing,
-            convert_decimal,
-            convert_argument_separator,
-            convert_imaginary_number,
-            long_structured_references,
-            table_name,
-          ) +
+          this.Render(unit.left, options) +
           ' ' +
           unit.operator +
           ' ' +
-          this.Render(
-            unit.right,
-            offset,
-            missing,
-            convert_decimal,
-            convert_argument_separator,
-            convert_imaginary_number,
-            long_structured_references,
-            table_name,
-          )
+          this.Render(unit.right, options)
         );
 
       case 'unary':
         return (
           unit.operator +
-          this.Render(
-            unit.operand,
-            offset,
-            missing,
-            convert_decimal,
-            convert_argument_separator,
-            convert_imaginary_number,
-            long_structured_references,
-            table_name,
-          )
+          this.Render(unit.operand, options)
         );
 
       case 'complex':
@@ -522,39 +516,13 @@ export class Parser {
           return (
             '(' +
             unit.elements
-              .map((x) =>
-                this.Render(
-                  x,
-                  offset,
-                  missing,
-                  convert_decimal,
-                  convert_argument_separator,
-                  convert_imaginary_number,
-                  long_structured_references,
-                  table_name,
-      
-                ),
-              )
-              .join(separator) +
+              .map((x) => this.Render(x, options)).join(separator) +
             ')'
           );
         }
         else {
           return unit.elements
-            .map((x) =>
-              this.Render(
-                x,
-                offset,
-                missing,
-                convert_decimal,
-                convert_argument_separator,
-                convert_imaginary_number,
-                long_structured_references,
-                table_name,
-    
-              ),
-            )
-            .join(separator);
+            .map((x) => this.Render(x, options)).join(separator);
         }
 
       case 'call':
@@ -563,19 +531,7 @@ export class Parser {
           '(' +
           unit.args
             .map((x) =>
-              this.Render(
-                x,
-                offset,
-                missing,
-                convert_decimal,
-                convert_argument_separator,
-                convert_imaginary_number,
-                long_structured_references,
-                table_name,
-    
-              ),
-            )
-            .join(separator) +
+              this.Render(x, options)).join(separator) +
           ')'
         );
 

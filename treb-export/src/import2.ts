@@ -169,7 +169,7 @@ export class Importer {
               }
               return true;
             });
-            value = '=' + this.parser.Render(parse_result.expression, undefined, '');
+            value = '=' + this.parser.Render(parse_result.expression, { missing: '' });
           }
 
           if (typeof element.f !== 'string') {
@@ -189,9 +189,12 @@ export class Importer {
           if (f) {
             if (f.parse_result.expression) {
               value = '=' + this.parser.Render(f.parse_result.expression, {
-                rows: address.row - 1 - f.row,
-                columns: address.col - 1 - f.column,
-              }, '');
+                offset: {
+                  rows: address.row - 1 - f.row,
+                  columns: address.col - 1 - f.column,
+                }, 
+                missing: ''
+              });
             }
             else value = f.formula;
           }

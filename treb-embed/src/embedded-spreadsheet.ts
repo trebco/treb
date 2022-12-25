@@ -1718,7 +1718,7 @@ export class EmbeddedSpreadsheet {
       this.parser.decimal_mark = current.decimal_mark;
 
       if (result.expression) {
-        formula = '=' + this.parser.Render(result.expression, undefined, '' );
+        formula = '=' + this.parser.Render(result.expression, { missing: '' });
       }
 
     }
@@ -4614,11 +4614,11 @@ export class EmbeddedSpreadsheet {
       const parse_result = parser.Parse(formula);
       if (!parse_result.expression) { return undefined; }
       return '=' + parser.Render(
-        parse_result.expression,
-        undefined,
-        '',
-        target_decimal_mark,
-        target_argument_separator);
+        parse_result.expression, { 
+          missing: '', 
+          convert_decimal: target_decimal_mark, 
+          convert_argument_separator: target_argument_separator,
+        });
     };
 
     if (data.macro_functions) {
