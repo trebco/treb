@@ -38,7 +38,7 @@
 import { EventSource } from 'treb-utils';
 import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
 import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex } from 'treb-parser';
-import { Area, Style, IsCellAddress, ValidationType, ValueType, Table } from 'treb-base-types';
+import { Area, Style, IsCellAddress, ValidationType, ValueType, Table, TableSortOptions, DefaultTableSortOptions } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
@@ -152,6 +152,85 @@ export class GridBase {
   }
 
   // --- API methods -----------------------------------------------------------
+
+  /**
+   * sort table. column is absolute.
+   */
+  public SortTable(table: Table, options: Partial<TableSortOptions> = {}) {
+
+    //
+    // table typically has an actual area, while we want a plain
+    // object in the command queue for serialization purposes. not
+    // sure how we wound up with this situation, it's problematic.
+    // 
+
+    this.ExecCommand({
+      key: CommandKey.SortTable,
+      table: JSON.parse(JSON.stringify(table)), 
+      ...DefaultTableSortOptions,
+      ...options,
+    });
+    
+  }
+
+  /**
+   * filter table. what this means is "show the rows that match the filter
+   * and hide the other rows". it doesn't actually change data, but it does
+   * show/hide rows which (now) has some data effects.
+   */
+  public FilterTable(table: Table, column: number, filter: (cell: Cell) => boolean) {
+
+    const command: Command[] = [];
+
+    if (!table.area.start.sheet_id) {
+      throw new Error('invalid table area');
+    }
+
+    const sheet = this.model.sheets.Find(table.area.start.sheet_id);
+    if (!sheet) {
+      throw new Error('invalid table sheet');
+    }
+
+    const show_rows: number[] = [];
+    const hide_rows: number[] = [];
+
+    column += table.area.start.column;
+    for (let row = table.area.start.row + 1; row <= table.area.end.row; row++) {
+      const cell = sheet.CellData({row, column});
+      const show = filter(cell);
+      const current = sheet.GetRowHeight(row);
+
+      if (show && !current) {
+        show_rows.push(row);
+      }
+      else if (!show && current) {
+        hide_rows.push(row);
+      }
+
+    }
+
+    if (show_rows) {
+      command.push({          
+        key: CommandKey.ResizeRows, 
+        sheet_id: sheet.id,
+        row: show_rows,
+        height: sheet.default_row_height,
+      });
+    }
+    if (hide_rows) {
+      command.push({
+        key: CommandKey.ResizeRows, 
+        sheet_id: sheet.id,
+        row: hide_rows,
+        height: 0,
+      });
+    }
+
+    if (command.length) {
+      this.ExecCommand(command);
+    }
+
+  }
 
   /**
    * UpdateSheets means "set these as the sheets, drop any old stuff". there's 
@@ -628,6 +707,9 @@ export class GridBase {
 
     // I guess we're sorting on calculated value? seems weird.
 
+    // NOTE: only sort hidden rows... what to do with !hidden rows? do they
+    // get sorted anyway? [A: no, leave them as-is]
+
     const ranked: Array<{
         row: number; 
         text: string; 
@@ -635,7 +717,20 @@ export class GridBase {
         data: ClipboardCellData[];
       }> = [];
 
+    // get a list of visible table rows. that will be our insert map at the end
+
+    const visible: number[] = [];
+
     for (let row = command.table.area.start.row + 1; row <= command.table.area.end.row; row++) {
+
+      const height = sheet.GetRowHeight(row);
+
+      if (height) {
+        visible.push(row);
+      }
+      else {
+        continue;
+      }
 
       const row_data = {
         row, 
@@ -673,7 +768,7 @@ export class GridBase {
 
     }
 
-    // console.info(ranked);
+    // console.info(visible, ranked);
 
     // rank
 
@@ -694,7 +789,11 @@ export class GridBase {
 
     const insert = {row: command.table.area.start.row + 1, column: command.table.area.start.column };
 
-    for (const entry of ranked) {
+    for (let i = 0; i < visible.length; i++) {
+
+      insert.row = visible[i];
+      const entry = ranked[i];
+
       insert.column = command.table.area.start.column; // reset
       for (const cell of entry.data) {
         if (cell.type === ValueType.formula) {
@@ -714,7 +813,7 @@ export class GridBase {
         sheet.UpdateCellStyle(insert, cell.style || {}, false);
         insert.column++; // step
       }
-      insert.row++; // step
+
     }
 
     // keep reference

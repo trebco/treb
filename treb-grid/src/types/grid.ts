@@ -2520,26 +2520,6 @@ export class Grid extends GridBase {
   }
 
   /**
-   * sort table. column is absolute.
-   */
-  public SortTable(table: Table, options: Partial<TableSortOptions> = {}) {
-
-    //
-    // table typically has an actual area, while we want a plain
-    // object in the command queue for serialization purposes. not
-    // sure how we wound up with this situation, it's problematic.
-    // 
-
-    this.ExecCommand({
-      key: CommandKey.SortTable,
-      table: JSON.parse(JSON.stringify(table)), 
-      ...DefaultTableSortOptions,
-      ...options,
-    });
-    
-  }
-
-  /**
    * scrolls so that the given cell is in the top-left (assuming that is
    * possible)
    */
@@ -7561,7 +7541,7 @@ export class Grid extends GridBase {
         const current = sheet.GetRowHeight(entry);
         if (!current) {
           // console.info('zero -> something via auto');
-          
+
           if (!updated) {
             updated = new Area({row: entry, column: Infinity, sheet_id: sheet.id});
           }
