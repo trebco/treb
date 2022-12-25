@@ -7560,7 +7560,8 @@ export class Grid extends GridBase {
       for (const entry of row) {
         const current = sheet.GetRowHeight(entry);
         if (!current) {
-          console.info('zero -> something via auto');
+          // console.info('zero -> something via auto');
+          
           if (!updated) {
             updated = new Area({row: entry, column: Infinity, sheet_id: sheet.id});
           }
@@ -7576,7 +7577,7 @@ export class Grid extends GridBase {
       for (const entry of row) {
         const current = sheet.GetRowHeight(entry);
         if ((!current && height) || (current && !height)) {
-          console.info('update,', current, height);
+          // console.info('update,', current, height);
 
           if (!updated) {
             updated = new Area({row: entry, column: Infinity, sheet_id: sheet.id});
