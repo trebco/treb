@@ -346,6 +346,7 @@ export class Parser {
     convert_argument_separator?: ArgumentSeparatorType,
     convert_imaginary_number?: 'i'|'j',
     long_structured_references?: boolean,
+    table_name?: string,
 
   ): string {
     // use default separator, unless we're explicitly converting.
@@ -404,6 +405,9 @@ export class Parser {
             missing,
             convert_decimal,
             convert_argument_separator,
+            convert_imaginary_number,
+            long_structured_references,
+            table_name,
           ) +
           ' ' +
           unit.operator +
@@ -414,6 +418,9 @@ export class Parser {
             missing,
             convert_decimal,
             convert_argument_separator,
+            convert_imaginary_number,
+            long_structured_references,
+            table_name,
           )
         );
 
@@ -426,6 +433,9 @@ export class Parser {
             missing,
             convert_decimal,
             convert_argument_separator,
+            convert_imaginary_number,
+            long_structured_references,
+            table_name,
           )
         );
 
@@ -519,6 +529,10 @@ export class Parser {
                   missing,
                   convert_decimal,
                   convert_argument_separator,
+                  convert_imaginary_number,
+                  long_structured_references,
+                  table_name,
+      
                 ),
               )
               .join(separator) +
@@ -534,6 +548,10 @@ export class Parser {
                 missing,
                 convert_decimal,
                 convert_argument_separator,
+                convert_imaginary_number,
+                long_structured_references,
+                table_name,
+    
               ),
             )
             .join(separator);
@@ -551,6 +569,10 @@ export class Parser {
                 missing,
                 convert_decimal,
                 convert_argument_separator,
+                convert_imaginary_number,
+                long_structured_references,
+                table_name,
+    
               ),
             )
             .join(separator) +
@@ -571,20 +593,28 @@ export class Parser {
             column = '[' + column + ']';
           }
 
+          let table = unit.table;
+
+          // console.info("RENDER SR", unit, table_name, long_structured_references);
+
+          if (!table && long_structured_references && table_name) {
+            table = table_name;
+          }
+
           switch (unit.scope) {
             case 'all':
-              return `${unit.table}[[#all],${column}]`;
+              return `${table}[[#all],${column}]`;
 
             case 'row':
               if (long_structured_references) {
-                return `${unit.table}[[#this row],${column}]`;
+                return `${table}[[#this row],${column}]`;
               }
               else {
-                return `${unit.table}[@${column}]`;
+                return `${table}[@${column}]`;
               }
 
             case 'column':
-              return `${unit.table}[${column}]`;
+              return `${table}[${column}]`;
 
           }
 
@@ -1790,8 +1820,6 @@ export class Parser {
       (char >= ACCENTED_RANGE_START && char <= ACCENTED_RANGE_END) // adding accented characters, needs some testing
     ) {
 
-      // FIXME: this only tests for ASCII tokens? (...)
-
       return this.ConsumeToken(char);
     }
 
@@ -1942,6 +1970,7 @@ export class Parser {
    * 
    */
   protected ConsumeToken(initial_char: number): ExpressionUnit {
+
     const token: number[] = [initial_char];
     const position = this.index;
 
@@ -1951,6 +1980,12 @@ export class Parser {
     // this is a set-once flag for square brackets; it can 
     // short-circuit the check for structured references. 
     let braces = false; 
+
+    // also watch first char
+    if (initial_char === OPEN_SQUARE_BRACKET) {
+      square_bracket = 1;
+      braces = true;
+    }
 
     for (++this.index; this.index < this.length; this.index++) {
       const char = this.data[this.index];

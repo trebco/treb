@@ -1656,12 +1656,13 @@ export class Sheet {
     for (const key of Object.keys(table_heads)) {
       const table = table_heads[key];
 
-      const patched_start = { row: table.area.start.row, column: table.area.start.column };
+      const patched_start = { ...table.area.start };
       if (table.area.start.row >= before_row) patched_start.row += count;
       const patched = new Area(
         patched_start,
         { row: table.area.end.row + count, column: table.area.end.column });
-      table.area = patched;
+
+      table.area = { start: patched.start, end: patched.end };
 
       // we don't need to reset table for cells that already have it,
       // but we do need to add it to new rows. could simplify. FIXME
@@ -1823,13 +1824,13 @@ export class Sheet {
 
     for (const key of Object.keys(table_heads)) {
       const table = table_heads[key];
-      const patched_start = { row: table.area.start.row, column: table.area.start.column };
+      const patched_start = { ...table.area.start };
       if (table.area.start.column >= before_column) patched_start.column += count;
       const patched = new Area(
         patched_start,
         { row: table.area.end.row, column: table.area.end.column + count });
         
-      table.area = patched;
+      table.area = { start: patched.start, end: patched.end };
 
       // we don't need to reset table for cells that already have it,
       // but we do need to add it to new rows. could simplify. FIXME

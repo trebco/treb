@@ -208,8 +208,22 @@ export class DataModel {
    */
   public ResolveStructuredReference(ref: UnitStructuredReference, context: ICellAddress): UnitAddress|UnitRange|undefined {
 
-    // get the table
-    const table = this.tables.get(ref.table.toLowerCase());
+    let table: Table|undefined;
+
+    // if there's no table specified, it means "I am in the table".
+    // in that case we need to find the table from the cell.
+
+    if (ref.table) {
+      table = this.tables.get(ref.table.toLowerCase());
+    }
+    else {
+      if (context.sheet_id) {
+        const sheet = this.sheets.Find(context.sheet_id);
+        const cell = sheet?.CellData(context);
+        table = cell?.table;
+      }
+    }
+
     if (!table) {
       return undefined; // table not found
     }

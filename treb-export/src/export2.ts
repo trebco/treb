@@ -37,7 +37,7 @@ import { template } from './template-2';
 import type { SerializedSheet } from 'treb-grid';
 
 import { IArea, Area, ICellAddress, Cells, ValueType, CellValue, Style, DataValidation, ValidationType,
-         AnnotationLayout, Corner as LayoutCorner, ICellAddress2, Table } from 'treb-base-types';
+         AnnotationLayout, Corner as LayoutCorner, ICellAddress2, Table, Cell } from 'treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
 import { XMLParser, XmlBuilderOptions, XMLBuilder } from 'fast-xml-parser';
@@ -960,7 +960,7 @@ export class Exporter {
 
   }
 
-  public FormulaText(text: string): string {
+  public FormulaText(text: string, context: Cell): string {
   
     // let mared = false;
 
@@ -1011,10 +1011,15 @@ export class Exporter {
       // const x = this.parser.Render(parse_result.expression, undefined, '');
       // console.info("T", text, x);
 
-      const temp = this.parser.Render(parse_result.expression, undefined, '', undefined, undefined, undefined, true);
-      console.info({temp});
+      const table_name = context.table?.name || '';
 
-      return this.parser.Render(parse_result.expression, undefined, '', undefined, undefined, undefined, true);
+      /*
+      console.info('tn', table_name);
+      const temp = this.parser.Render(parse_result.expression, undefined, '', undefined, undefined, undefined, true, table_name);
+      console.info({temp});
+      */
+
+      return this.parser.Render(parse_result.expression, undefined, '', undefined, undefined, undefined, true, table_name);
     }
    
   }
@@ -1395,7 +1400,7 @@ export class Exporter {
 
               switch (cell.type) {
                 case ValueType.formula:
-                  f = this.FormulaText(cell.value as string);
+                  f = this.FormulaText(cell.value as string, cell);
                   switch (cell.calculated_type) {
                     case ValueType.string:
                       v = cell.calculated;
