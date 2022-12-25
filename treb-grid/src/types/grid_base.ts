@@ -376,7 +376,7 @@ export class GridBase {
    * because it uses HTML. also non-ui doesn't really need to worry about 
    * scale... we should split.
    */
-  protected ResizeRowsInternal(command: ResizeRowsCommand) {
+  protected ResizeRowsInternal(command: ResizeRowsCommand): IArea|undefined {
 
     // we're guaranteed this now, we should have a way to represent that...
 
@@ -391,6 +391,8 @@ export class GridBase {
     }
     if (typeof row === 'number') row = [row];
 
+    // I guess this was intended to prevent auto-size, but what about 0? 
+
     if (command.height) {
       for (const entry of row) {
         sheet.SetRowHeight(entry, command.height);
@@ -399,6 +401,8 @@ export class GridBase {
     else {
       console.error('auto size not supported');
     }
+
+    return undefined;
 
   }
 
@@ -2813,10 +2817,34 @@ export class GridBase {
           // moving this to a method so we can specialize: non-UI grid
           // should not support autosize (it can't)
 
-            // COEDITING: ok
+          // this may impact the SUBTOTAL function. which is dumb, but
+          // there you go. so treat this as a data event for rows that
+          // change visibility one way or the other.
 
-          this.ResizeRowsInternal(command);
-          flags.structure_event = true;
+          // COEDITING: ok
+
+          {
+            const area = this.ResizeRowsInternal(command);
+            if (area) {
+              if (area.start.sheet_id === this.active_sheet.id) {
+                const real_area = this.active_sheet.RealArea(new Area(area.start, area.end));
+                flags.render_area = Area.Join(real_area, flags.render_area);
+                flags.data_area = Area.Join(real_area, flags.data_area);
+                flags.data_event = true;
+              }
+              else {
+                flags.data_event = true;
+                if (!flags.pending) {
+                  flags.pending = [];
+                }
+                if (area.start.sheet_id) {
+                  flags.pending.push(area.start.sheet_id);
+                }
+              }
+            }
+            flags.structure_event = true;
+          }
+
           break;
 
         case CommandKey.ResizeColumns:

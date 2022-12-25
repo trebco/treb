@@ -3616,6 +3616,12 @@ export class Grid extends GridBase {
 
           }
 
+          // TEMPORARILY undo what we just did... this is so the standard
+          // resize handling can trigger an event, otherwise it would disappear
+          // maybe it would be preferable to do that via a flag in the event?
+
+          this.layout.SetRowHeight(row, original_height);
+
           this.ExecCommand({
             key: CommandKey.ResizeRows,
             row: rows,
@@ -7511,7 +7517,9 @@ export class Grid extends GridBase {
    * UI grid supports scale and auto-size, so we're overloading.
    * @param command 
    */
-  protected ResizeRowsInternal(command: ResizeRowsCommand) {
+  protected ResizeRowsInternal(command: ResizeRowsCommand): IArea|undefined {
+
+    let updated: Area|undefined;
 
     // this method is inconsistent for active sheet vs other sheets.
     // for the active sheet, it uses the layout routine which incorporates
@@ -7550,11 +7558,33 @@ export class Grid extends GridBase {
 
     if (auto) {
       for (const entry of row) {
+        const current = sheet.GetRowHeight(entry);
+        if (!current) {
+          console.info('zero -> something via auto');
+          if (!updated) {
+            updated = new Area({row: entry, column: Infinity, sheet_id: sheet.id});
+          }
+          else {
+            updated.ConsumeAddress({row: entry, column: 1});
+          }
+        }
+
         sheet.AutoSizeRow(entry, this.theme.grid_cell, shrink);
       }
     }
     else {
       for (const entry of row) {
+        const current = sheet.GetRowHeight(entry);
+        if ((!current && height) || (current && !height)) {
+          console.info('update,', current, height);
+
+          if (!updated) {
+            updated = new Area({row: entry, column: Infinity, sheet_id: sheet.id});
+          }
+          else {
+            updated.ConsumeAddress({row: entry, column: 1});
+          }
+        }
         sheet.SetRowHeight(entry, height);
       }
     }
@@ -7584,6 +7614,8 @@ export class Grid extends GridBase {
       this.pending_layout_update.add(sheet.id);
 
     }
+
+    return updated ? { start: updated.start, end: updated.end } : undefined;
 
   }
 

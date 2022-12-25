@@ -25,7 +25,7 @@ import { ValueError, ArgumentError, NAError } from '../function-error';
 import { Complex, UnionValue, ValueType } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
 
-const Variance = (data: number[], sample = false) => {
+export const Variance = (data: number[], sample = false) => {
 
   const len = data.length;
   
@@ -55,7 +55,7 @@ const Variance = (data: number[], sample = false) => {
 
 export const StatisticsFunctionLibrary: FunctionMap = {
 
-  StDev: {
+  'StDev.P': {
     description: 'Returns the standard deviation of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
     fn: (...args: any[]): UnionValue => {
@@ -71,7 +71,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     },
   },
 
-  Var: {
+  'Var.P': {
     description: 'Returns the variance of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
     fn: (...args: any[]): UnionValue => {
@@ -345,6 +345,6 @@ export const StatisticsFunctionLibrary: FunctionMap = {
 
 export const StatisticsFunctionAliases: {[index: string]: string} = {
   Mean: 'Average',
-  'StDev.P': 'StDev',
-  'Var.P': 'Var',
+  'StDev': 'StDev.S',
+  'Var': 'Var.S',
 };

@@ -650,7 +650,6 @@ export class EmbeddedSpreadsheet {
 
           case 'data':
             {
-
               // because this is async (more than once), we can't expect the 
               // selection event to happen after the PushUndo call. we need
               // to preserve the current selection and pass it through.

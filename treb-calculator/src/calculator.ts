@@ -42,12 +42,14 @@ import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './function
 import { ComplexFunctionLibrary } from './functions/complex-functions';
 import { MatrixFunctionLibrary } from './functions/matrix-functions';
 
+import { Variance } from './functions/statistics-functions';
+
 import * as Primitives from './primitives';
 
 import type { DataModel, Annotation, FunctionDescriptor, Sheet } from 'treb-grid';
 import { LeafVertex } from './dag/leaf_vertex';
 
-import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError } from './function-error';
+import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError } from './function-error';
 
 /**
  * options for the evaluate function
@@ -193,6 +195,163 @@ export class Calculator extends Graph {
     // special functions... need reference to the graph (this)
 
     this.library.Register({
+
+      /**
+       * this function is here because it checks whether rows are hidden or 
+       * not. cell dependencies don't track that, so we need to do it here. 
+       * and it needs to be volatile. this is an ugly, ugly function.
+       */
+      Subtotal: {
+        arguments: [
+          { name: 'type' },
+          { name: 'range', metadata: true, }
+        ],
+        fn: (type: number, ...args: any[]): UnionValue => {
+
+          // validate, I guess
+
+          if (type > 100) { 
+            type -= 100; 
+          }
+
+          if (type < 1 || type > 11) {
+            return ArgumentError();
+          }
+
+          // any number of ranges are allowed, they will inherit
+          // the properties of the last argument so they will all
+          // return metadata
+
+          const flat = Utilities.FlattenBoxed(args);
+
+          // values is the set of values from the arguments that
+          // are numbers -- not strings, not errors -- and are not
+          // hidden. that last thing is the hard part.
+
+          // there's one other thing we care about which is non-empty,
+          // for COUNTA -- we can do that separately
+
+          const values: number[] = [];
+          let counta = 0;
+          let sum = 0;
+
+          let sheet: Sheet|undefined;
+
+          for (const entry of flat) {
+
+            // where is the metadata type? sigh
+
+            const address = (entry.value?.address) as UnitAddress;
+            if (!address) {
+              return ReferenceError();
+            }
+
+            if (!sheet || sheet.id !== address.sheet_id) {
+
+              if (!address.sheet_id) {
+                console.warn('invalid reference in metadata')
+                return ReferenceError();
+              }
+              
+              sheet = this.model.sheets.Find(address.sheet_id);
+              if (!sheet) {
+                console.warn('invalid sheet in metadata')
+                return ReferenceError();
+              }
+
+            }
+
+            const height = sheet.GetRowHeight(address.row);
+            if (!height) {
+              continue;
+            }
+
+            const entry_value = entry.value?.value;
+
+            // counta includes empty strings
+
+            if (typeof entry_value === 'undefined') {
+              continue;
+            }
+
+            counta++;
+
+            if (typeof entry_value === 'number') {
+              sum += entry_value;
+              values.push(entry_value);
+            }
+
+          }
+
+          let value = 0;
+
+          switch (type) {
+            case 1:   // average
+              if (values.length === 0) { return DivideByZeroError(); }
+              value = sum / values.length;
+              break;
+
+            case 2:   // count
+              value = values.length;
+              break;
+
+            case 3:   // counta
+              value = counta;
+              break;
+
+            case 4:   // max
+              if (values.length === 0) { return ValueError(); }
+              value = Math.max.apply(0, values);
+              break;
+
+            case 5:   // min
+              if (values.length === 0) { return ValueError(); }
+              value = Math.min.apply(0, values);
+              break;
+
+            case 6:   // product
+              if (values.length === 0) { return ValueError(); }
+              value = 1;
+              for (const entry of values) {
+                value *= entry;
+              }  
+              break;
+
+            case 7:   // stdev.s
+              if (values.length < 2) { return DivideByZeroError(); }
+              value = Math.sqrt(Variance(values, true));
+              break;
+
+            case 8:   // stdev.p
+              if (values.length === 0) { return DivideByZeroError(); }
+              value = Math.sqrt(Variance(values, false));
+              break;
+
+            case 9:   // sum
+              value = sum;
+              break;
+
+            case 10:  // var.s
+              if (values.length < 2) { return DivideByZeroError(); }
+              value = Variance(values, true);
+              break;
+
+            case 11:  // var.p
+              if (values.length === 0) { return DivideByZeroError(); }
+              value = Variance(values, false);
+              break;
+
+          }
+
+          // console.info({type, args, flat, values});
+
+          return {
+            type: ValueType.number,
+            value,
+          };
+
+        },
+      },
 
       /**
        * this function is here so it has access to the parser.

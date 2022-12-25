@@ -233,6 +233,20 @@ export class ExpressionCalculator {
       range = arg;
       break;
 
+    case 'structured-reference':
+      {
+        const resolved = this.data_model.ResolveStructuredReference(arg, this.context.address);
+        if (resolved) {
+          if (resolved.type === 'address') {
+            address = resolved;
+          }
+          else if (resolved.type === 'range') {
+            range = resolved;
+          }
+        }
+      }
+      break;
+
     case 'identifier':
       {
         const named_range = this.named_range_map[arg.name.toUpperCase()];
