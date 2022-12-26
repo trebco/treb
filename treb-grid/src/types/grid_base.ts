@@ -2085,6 +2085,87 @@ export class GridBase {
       return { error: true };
     }
 
+    // see InsertColumnsInternal re: tables. rows are less complicated,
+    // except that if you delete the header row we want to remove the 
+    // table entirely.
+
+    const tables = Array.from(this.model.tables.values());
+
+    for (const table of tables) {
+      if (table.area.start.sheet_id === command.sheet_id) {
+
+        if (command.count > 0) {
+          if (command.before_row <= table.area.start.row) {
+            // shift the table down
+
+            //console.info("shift table down");
+            table.area.start.row += command.count;
+            table.area.end.row += command.count;
+
+          }
+          else if (command.before_row <= table.area.end.row) {
+            // insert rows. we need to add references to 
+            // cells that have been inserted.
+
+            // console.info("insert table rows");
+            table.area.end.row += command.count;
+            for (let row = table.area.start.row; row <= table.area.end.row; row++) {
+              for (let column = table.area.start.column; column <= table.area.end.column; column++) {
+                const cell = target_sheet.CellData({row, column});
+                cell.table = table;
+              }
+            }
+
+          }
+        }
+        else {
+          if (command.before_row <= table.area.start.row) {
+            if (command.before_row - command.count <= table.area.start.row) {
+              // shift table up
+              
+              table.area.start.row += command.count;
+              table.area.end.row += command.count;
+
+            }
+            else if (command.before_row - command.count >= table.area.end.row) {
+              // remove the entire table
+              
+              this.model.tables.delete(table.name.toLowerCase());
+
+            }
+            else {
+
+              // assuming this will remove the header row, drop the table
+              // altogether. the alternative is to just not let you remove
+              // this row. but that should be handled before you get here;
+              // if you get here, and you want to delete the row, then the
+              // table will go.
+
+              this.model.tables.delete(table.name.toLowerCase());
+
+              for (let row = command.before_row; row <= table.area.end.row; row++) {
+                for (let column = table.area.start.column; column <= table.area.end.column; column++) {
+                  const cell = target_sheet.CellData({row, column});
+                  if (cell.table === table) {
+                    cell.table = undefined;
+                  }
+                }
+              }
+              
+            }
+          }
+          else if (command.before_row <= table.area.end.row) {
+            // remove table rows from the end. cap.
+
+            table.area.end.row = Math.max(0, table.area.end.row + command.count, command.before_row - 1);
+
+          }
+        }
+
+      }
+    }
+    
+
     this.model.named_ranges.PatchNamedRanges(target_sheet.id, 0, 0, command.before_row, command.count);
 
     const target_sheet_name = target_sheet.name.toLowerCase();
@@ -2305,6 +2386,87 @@ export class GridBase {
       return { error: true };
     }
     
+    // patch tables. we removed this from the sheet routine entirely,
+    // we need to rebuild any affected tables now.
+
+    // NOTE: we may drop tables, so we can't use a live iterator. or 
+    // is the iterator precomputed? not sure. let's flatten immediately jic.
+
+    const tables = Array.from(this.model.tables.values());
+
+    for (const table of tables) {
+      if (table.area.start.sheet_id === command.sheet_id) {
+
+        if (command.count > 0) {
+          if (command.before_column <= table.area.start.column) {
+            // shift the table to the right. update the table reference,
+            // we can skip updating headers as the columns haven't changed.
+
+            // console.info("shift table right");
+            table.area.start.column += command.count;
+            table.area.end.column += command.count;
+            
+          }
+          else if (command.before_column <= table.area.end.column) {
+            // insert columns -- we need to add references to new 
+            // cells, and update headers.
+
+            // console.info("insert table columns");
+            table.area.end.column += command.count;
+            for (let row = table.area.start.row; row <= table.area.end.row; row++) {
+              for (let column = table.area.start.column; column <= table.area.end.column; column++) {
+                const cell = target_sheet.CellData({row, column});
+                cell.table = table;
+              }
+            }
+            this.UpdateTableColumns(table);
+
+          }
+        }
+        else {
+          if (command.before_column <= table.area.start.column) {
+            if (command.before_column - command.count <= table.area.start.column) {
+              // shift table left. update the table reference, we can skip headers.
+
+              // console.info("shift table left");
+              table.area.start.column += command.count;
+              table.area.end.column += command.count;
+            
+            }
+            else if (command.before_column - command.count >= table.area.end.column ){
+              // remove entire table. cells are already removed, we can just
+              // drop the table from the model.
+
+              // console.info("remove table");
+              this.model.tables.delete(table.name.toLowerCase());
+
+            }
+            else {
+              // shift to the left, then remove table columns. cells are 
+              // already removed, so we don't need to touch cells; just 
+              // update the reference and column headers.
+
+              // console.info("remove table columns (1)");
+              table.area.start.column = command.before_column;
+              table.area.end.column += command.count;
+              this.UpdateTableColumns(table);
+
+            }
+          }
+          else if (command.before_column <= table.area.end.column) {
+            // remove table columns. as above. cap.
+
+            // console.info("remove table columns (2)");
+            table.area.end.column = Math.max(0, table.area.end.column + command.count, command.before_column - 1);
+            this.UpdateTableColumns(table);
+
+          }
+        }
+
+      }
+    }
+
+
     this.model.named_ranges.PatchNamedRanges(target_sheet.id, command.before_column, command.count, 0, 0);
 
     // FIXME: we need an event here? 

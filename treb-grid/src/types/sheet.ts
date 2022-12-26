@@ -1613,7 +1613,7 @@ export class Sheet {
 
     const merge_heads: Record<string, Area> = {};
     const array_heads: Record<string, Area> = {};
-    const table_heads: Record<string, Table> = {};
+    // const table_heads: Record<string, Table> = {};
 
     // now grab arrays and merge heads that are below the new rows
     // this should include merges that span the new range
@@ -1622,12 +1622,15 @@ export class Sheet {
       for (let column = 0; column < this.cells.columns; column++) {
         const cell = this.cells.GetCell({ row, column }, false);
         if (cell) {
+
+          /*
           if (cell.table) {
             const label = new Area(cell.table.area.start, cell.table.area.end).spreadsheet_label;
             if (!table_heads[label]) {
               table_heads[label] = cell.table;
             }
           }
+          */
 
           if (cell.area && !array_heads[cell.area.spreadsheet_label]) {
             array_heads[cell.area.spreadsheet_label] = cell.area;
@@ -1653,6 +1656,7 @@ export class Sheet {
       });
     }
 
+    /*
     for (const key of Object.keys(table_heads)) {
       const table = table_heads[key];
 
@@ -1672,6 +1676,7 @@ export class Sheet {
           cell.table = table;
         });
     }
+    */
 
     for (const key of Object.keys(merge_heads)) {
       const head = merge_heads[key];
@@ -1770,9 +1775,12 @@ export class Sheet {
     // now we have to fix arrays and merge heads. these lists will keep
     // track of the _new_ starting address.
 
+    // NOTE: tables are handled by the grid routine. for a time we were
+    // doing that here but it's easier to unify on the grid size, since
+    // we may need to update column headers or remove the model reference.
+
     const merge_heads: Record<string, Area> = {};
     const array_heads: Record<string, Area> = {};
-    const table_heads: Record<string, Table> = {};
 
     // now grab arrays and merge heads that are below the new rows
     // this should include merges that span the new range
@@ -1781,13 +1789,6 @@ export class Sheet {
       for (let row = 0; row < this.cells.rows; row++) {
         const cell = this.cells.GetCell({ row, column }, false);
         if (cell) {
-          if (cell.table) {
-            const label = new Area(cell.table.area.start, cell.table.area.end).spreadsheet_label;
-            if (!table_heads[label]) {
-              table_heads[label] = cell.table;
-            }
-          }
-          
           if (cell.area && !array_heads[cell.area.spreadsheet_label]) {
             array_heads[cell.area.spreadsheet_label] = cell.area;
           }
@@ -1820,25 +1821,6 @@ export class Sheet {
         const cell = this.cells.GetCell(address, true);
         cell.merge_area = patched;
       });
-    }
-
-    for (const key of Object.keys(table_heads)) {
-      const table = table_heads[key];
-      const patched_start = { ...table.area.start };
-      if (table.area.start.column >= before_column) patched_start.column += count;
-      const patched = new Area(
-        patched_start,
-        { row: table.area.end.row, column: table.area.end.column + count });
-        
-      table.area = { start: patched.start, end: patched.end };
-
-      // we don't need to reset table for cells that already have it,
-      // but we do need to add it to new rows. could simplify. FIXME
-  
-      patched.Iterate((address) => {
-          const cell = this.cells.GetCell(address, true);
-          cell.table = table;
-        });
     }
 
     // column styles
