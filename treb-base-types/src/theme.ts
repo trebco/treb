@@ -58,6 +58,7 @@ export interface TableStyles {
   odd?: Style.Properties;
   even?: Style.Properties;
   footer?: Style.Properties;
+  total?: Style.Properties;
 }
 
 /** theme options - colors and fonts */
@@ -215,11 +216,17 @@ const TableStyleFromCSS = (base: CSSStyleDeclaration, style: CSSStyleDeclaration
   if (style.borderTopColor !== base.borderTopColor) {
     props.border_top = 1;
     props.border_top_fill = { text: style.borderTopColor };
+    if (style.borderTopStyle === 'double') {
+      props.border_top = 2;
+    }
   }
 
   if (style.borderBottomColor !== base.borderBottomColor) {
     props.border_bottom = 1;
     props.border_bottom_fill = { text: style.borderBottomColor };
+    if (style.borderBottomStyle === 'double') {
+      props.border_bottom = 2;
+    }
   }
 
   if (style.backgroundColor !== base.backgroundColor) {
@@ -344,8 +351,11 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
     odd: TableStyleFromCSS(root_css, CSS('treb-table row-odd')),
     even: TableStyleFromCSS(root_css, CSS('treb-table row-even')),
     footer: TableStyleFromCSS(root_css, CSS('treb-table footer')),
+    total: TableStyleFromCSS(root_css, CSS('treb-table total')),
   }
  
+  // console.info(theme.table);
+
   // theme colors
   
   node.style.color='rgba(1,2,3,.4)'; // this is an attempt at a unique identifier

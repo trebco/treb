@@ -1238,10 +1238,6 @@ export class Exporter {
 
       // --
 
-
-
-      // --
-
       for (let r = 0; r < cells.data.length; r++ ) {
         if (cells.data[r] && cells.data[r].length) {  
 
@@ -1333,8 +1329,19 @@ export class Exporter {
                   name: `Table${global_count}`,
                   display_name: `Table${global_count}`,
                   totals_row_shown: 0,
+                  totals_row_count: cell.table?.totals_row? 1 : 0,
                   columns,
                 };
+
+                if (cell.table.totals_row) {
+                  const filter_area = new Area(area.start, {
+                    row: area.end.row - 1,
+                    column: area.end.column,
+                  });
+                  description.filterRef = filter_area.spreadsheet_label;                  
+                }
+
+                console.info({description});
 
                 // this list is used to add tables on this sheet
                 tables.push(description);
@@ -1635,6 +1642,11 @@ export class Exporter {
 
       for (const table of tables) {
 
+        const totals_attributes: { totalsRowCount?: number } = {};
+        if (table.totals_row_count) {
+          totals_attributes.totalsRowCount = 1;
+        }
+        
         const table_dom = {
           table: {
             a$: {
@@ -1647,13 +1659,14 @@ export class Exporter {
               // 'xr:uid': '{676B775D-AA84-41B6-8450-8515A94D2D7B}',
               name: table.name, 
               displayName: table.display_name,
+              ...totals_attributes,
               ref: table.ref,
               // 'xr:uid': GUID(),
             },
 
             autoFilter: {
               a$: {
-                ref: table.ref,
+                ref: table.filterRef || table.ref,
                 // 'xr:uid': GUID(),
               },
             },

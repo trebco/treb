@@ -48,6 +48,15 @@ export interface Table {
    */
   columns?: string[];
 
+  /**
+   * table has a totals row. this impacts layout and what's included
+   * in the range when you refer to a column. also on import/export, the
+   * AutoFilter element should exclude the totals row.
+   * 
+   * NOTE: xlsx actually uses an integer for this -- can it be > 1?
+   */
+  totals_row?: boolean;
+
   /** 
    * sort data. sorts are hard, meaning we actually move data around. 
    * (not meaning difficult). we may keep track of the last sort so we 

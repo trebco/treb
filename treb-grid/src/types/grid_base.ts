@@ -2156,6 +2156,11 @@ export class GridBase {
           }
           else if (command.before_row <= table.area.end.row) {
             // remove table rows from the end. cap.
+            // we may be removing the totals row -- in that case, update the table to reflect.
+            
+            if (command.before_row - command.count > table.area.end.row) {
+              table.totals_row = false;
+            }
 
             table.area.end.row = Math.max(0, table.area.end.row + command.count, command.before_row - 1);
 

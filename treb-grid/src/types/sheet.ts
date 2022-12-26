@@ -1108,22 +1108,35 @@ export class Sheet {
     alternate?: boolean;
     header?: boolean;
     last?: boolean;
+    totals?: boolean;
   } {
 
     const result = {
-      alternate: false, header: false, last: false,
+      alternate: false, 
+      header: (row === table.area.start.row), 
+      last: false, 
+      totals: (table.totals_row && row === table.area.end.row),
     }
 
-    let last = table.area.end.row;
-    for ( ; last >= table.area.start.row; last-- ) {
-      if (this.GetRowHeight(last)) {
-        result.last = (last === row);
-        break;
+    // can short circuit here
+
+    if (result.header || result.totals) {
+      return result;
+    }
+
+    // how we handle last row depends on totals. if we have a totals
+    // row, and it's visible, we don't need to do the "last row" thing.
+
+    const totals_visible = (table.totals_row && (this.GetRowHeight(table.area.end.row) > 0));
+
+    if (!totals_visible) {
+      let last = table.area.end.row;
+      for ( ; last >= table.area.start.row; last-- ) {
+        if (this.GetRowHeight(last)) {
+          result.last = (last === row);
+          break;
+        }
       }
-    }
-
-    if (row === table.area.start.row) {
-      return { header: true };
     }
 
     let start = table.area.start.row + 1 ; // (table.headers ? 1 : 0);
@@ -1233,6 +1246,13 @@ export class Sheet {
       if (data.header) {
         if (table_styles.header) {  
           style = Style.Composite([style, table_styles.header]);
+        }
+      }
+      else if (data.totals) {
+
+        // like headers, totals is outside of the alternating rows thing
+        if (table_styles.total) {
+          style = Style.Composite([style, table_styles.total]);
         }
       }
       else {

@@ -269,11 +269,18 @@ export class DataModel {
     }
     else {
 
-      // the difference between 'all' and 'column' is the first row
-      // (FIXME: maybe the last row, if we have totals? not sure)
+      // the difference between 'all' and 'column' is that 'all' includes
+      // the first (header) row and the last (totals) row, if we have one.
 
-      let row = table.area.start.row;
-      if (ref.scope === 'column') { row++; }
+      let start_row = table.area.start.row;
+      let end_row = table.area.end.row; 
+
+      if (ref.scope === 'column') { 
+        start_row++; // skip headers
+        if (table.totals_row) {
+          end_row--; // skip totals
+        }
+      }
 
       return {
         label: ref.label,
@@ -282,7 +289,7 @@ export class DataModel {
         id: ref.id,
         start: {
           type: 'address',
-          row,
+          row: start_row,
           column,
           sheet_id: table.area.start.sheet_id,
           label: ref.label,
@@ -291,7 +298,7 @@ export class DataModel {
         },
         end: {
           type: 'address',
-          row: table.area.end.row,
+          row: end_row,
           column,
           label: ref.label,
           position: ref.position,

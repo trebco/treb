@@ -463,9 +463,7 @@ export class Cells {
 
       if (obj.table) {
         tables.push({
-          name: obj.table.name,
-          area: obj.table.area,
-          // TODO: columns
+          ...obj.table,
         });
 
         /*

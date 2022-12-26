@@ -576,13 +576,6 @@ export class Importer {
 
     // --- import tables -------------------------------------------------------
 
-    /*
-    const tables: Array<{
-      area: IArea,
-      description: TableDescription,
-    }> = [];
-    */
-
     const table_references = FindAll('worksheet/tableParts/tablePart')
     for (const child of table_references) {
       const rel = child.a$ ? child.a$['r:id'] : undefined;
@@ -594,6 +587,9 @@ export class Importer {
           reference = relationship.target || '';
           const description = await this.workbook.ReadTable(reference);
           if (description) {
+
+            // console.info({description});
+
             const ref = sheet.TranslateAddress(description.ref);
             const area: IArea = is_address(ref) ? { 
                 start: { row: ref.row - 1, column: ref.col - 1}, 
@@ -603,19 +599,17 @@ export class Importer {
                 end: { row: ref.to.row - 1, column: ref.to.col - 1},
               };
 
-            /*
-            tables.push({
-              description,
-              area,
-            })
-            */
-
             for (const cell of data) {
               if (cell.row === area.start.row && cell.column === area.start.column) {
                 cell.table = {
                   area,
                   name: description.name,
-                  // TODO: columns
+                  totals_row: (!!description.totals_row_count),
+
+                  // NOTE: column headers are added on first load, we don't 
+                  // read them from here. not super efficient but we do it
+                  // that way for regular loads as well
+
                 };
                 break;
               }

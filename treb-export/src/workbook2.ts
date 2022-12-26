@@ -79,7 +79,10 @@ export interface TableDescription {
   name: string;
   display_name: string;
   ref: string;
-  totals_row_shown: number; // number? it's 0 in the xml
+  filterRef?: string;
+
+  totals_row_shown?: number; // number? it's 0 in the xml
+  totals_row_count?: number; // apparently when there _is_ a totals row, we have this attribute instead of the other one
 
   rel?: string;
   index?: number;
@@ -254,6 +257,7 @@ export class Workbook {
       display_name: xml.table?.a$?.displayName || name,
       ref: xml.table?.a$.ref || '',
       totals_row_shown: Number(xml.table?.a$.totalsRowShown || '0') || 0,
+      totals_row_count: Number(xml.table?.a$.totalsRowCount || '0') || 0,
     };
 
     return table;
