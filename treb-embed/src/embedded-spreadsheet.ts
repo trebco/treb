@@ -40,7 +40,7 @@ import {
   Area, IArea, CellValue, Point,
   IsFlatData, IsFlatDataArray, Rectangle, IsComplex, 
   ComplexToString, Complex, ExtendedUnion, IRectangle,
-  AddressReference, RangeReference, IsArea, TableSortOptions,
+  AddressReference, RangeReference, IsArea, TableSortOptions, Table,
 } from 'treb-base-types';
 
 import { EventSource, Yield } from 'treb-utils';
@@ -187,7 +187,10 @@ export interface SheetScrollOptions {
   smooth?: boolean;
 }
 
-///
+/**
+ * function type used for filtering tables
+ */
+export type TableFilterFunction = (value: CellValue, calculated_value: CellValue, style: Style.Properties) => boolean;
 
 /**
  * embedded spreadsheet
@@ -1971,18 +1974,50 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
-   * sort a table. the cell reference can be anywhere in the table.
-   * if the reference is an area (range), we're going to look at the 
-   * top-left cell.
+   * sort a table. the reference can be the table name, or a cell in the table.
+   * if the reference is an area (range), we're going to look at the top-left 
+   * cell.
+   * 
+   * this method uses a function to filter rows based on cell values. leave the
+   * function undefined to show all rows. this is a shortcut for "unfilter".
+   * 
+   * @param column - the column to sort on. values from this column will be
+   * passed to the filter function.
+   * 
+   * @param filter - a callback function to filter based on cell values. this
+   * will be called with the cell value (formula), the calculated value (if any),
+   * and the cell style. return false to hide the row, and true to show the row.
+   * if the filter parameter is omitted, all values will be shown.
+   * 
    */
-  public SortTable(reference: RangeReference, options: Partial<TableSortOptions> = {}) {
-    let address = this.calculator.ResolveAddress(reference, this.grid.active_sheet);
+  public FilterTable(reference: RangeReference, column = 0, filter?: TableFilterFunction) {
 
-    if (!IsCellAddress(address)) {
-      address = address.start;
+    const table = this.ResolveTable(reference);
+    
+    if (!table) {
+      throw new Error('invalid table reference');
     }
 
-    const table = this.grid.GetTableReference(address);
+    if (filter) {
+      this.grid.FilterTable(table, column, (cell) => {
+        return filter.call(0, cell.value, cell.calculated || undefined, JSON.parse(JSON.stringify(cell.style || {})));
+      });
+    }
+    else {
+      this.grid.FilterTable(table, 0, () => true);
+    }
+
+  }
+
+  /**
+   * sort a table. the reference can be the table name, or a cell in the table.
+   * if the reference is an area (range), we're going to look at the top-left 
+   * cell.
+   */
+  public SortTable(reference: RangeReference, options: Partial<TableSortOptions> = {}) {
+
+    const table = this.ResolveTable(reference);
+
     if (!table) {
       throw new Error('invalid table reference');
     }
@@ -3537,6 +3572,36 @@ export class EmbeddedSpreadsheet {
   }
 
   // --- internal (protected) methods ------------------------------------------
+
+  protected ResolveTable(reference: RangeReference): Table|undefined {
+
+    let table: Table|undefined = undefined;
+
+    if (typeof reference === 'string') {
+      const lc = reference.toLowerCase();
+      if (this.model.tables.has(lc)) {
+        table = this.model.tables.get(lc);
+      }
+    }
+
+    if (!table) {
+
+      let address = this.calculator.ResolveAddress(reference, this.grid.active_sheet);
+
+      if (!IsCellAddress(address)) {
+        address = address.start;
+      }
+
+      // why are we using a grid function for this? we should move 
+      // this to model (or a table manager class that's in model)
+
+      table = this.grid.GetTableReference(address);
+
+    }
+
+    return table;
+
+  }
 
   /**
    * 

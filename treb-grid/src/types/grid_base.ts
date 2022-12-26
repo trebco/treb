@@ -194,8 +194,10 @@ export class GridBase {
     const show_rows: number[] = [];
     const hide_rows: number[] = [];
 
+    const end = table.totals_row ? table.area.end.row - 1 : table.area.end.row;
+
     column += table.area.start.column;
-    for (let row = table.area.start.row + 1; row <= table.area.end.row; row++) {
+    for (let row = table.area.start.row + 1; row <= end; row++) {
       const cell = sheet.CellData({row, column});
       const show = filter(cell);
       const current = sheet.GetRowHeight(row);
@@ -721,7 +723,12 @@ export class GridBase {
 
     const visible: number[] = [];
 
-    for (let row = command.table.area.start.row + 1; row <= command.table.area.end.row; row++) {
+    let end = command.table.area.end.row;
+    if (command.table.totals_row) {
+      end--;
+    }
+
+    for (let row = command.table.area.start.row + 1; row <= end; row++) {
 
       const height = sheet.GetRowHeight(row);
 
