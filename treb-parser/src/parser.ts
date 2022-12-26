@@ -262,6 +262,7 @@ export class Parser {
       case 'complex':
       case 'identifier':
       case 'operator':
+      case 'structured-reference':
         func(unit);
         return;
 

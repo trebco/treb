@@ -851,6 +851,12 @@ export class GridBase {
       throw new Error('invalid sheet in table');
     }
 
+    // this can get called when a document is loaded, we might
+    // not have column names when we start. but if we do, we will
+    // need to keep the old ones so we can check deltas.
+
+    const current_columns = table.columns?.slice(0) || undefined;
+
     const columns: string[] = [];
 
     const row = table.area.start.row;
@@ -905,6 +911,87 @@ export class GridBase {
     // TODO: this is good, and works, but we are going to have to
     // look for structured references and update them if the column
     // names change. 
+
+    if (current_columns) {
+
+      // if we are inserting/removing columns, we're probably 
+      // not changing names at the same time. on remove, some
+      // references will break, but that's to be expected. on
+      // insert, new columns will get added but we don't have
+      // to change references.
+
+      if (current_columns.length === columns.length) {
+
+        const update: Map<string, string> = new Map();
+        for (let i = 0; i < current_columns.length; i++) {
+          const compare = current_columns[i].toLowerCase();
+          if (compare !== columns[i]) {
+            update.set(compare, columns[i]); // add old -> new
+          }
+        }
+
+        if (update.size) {
+
+          // OK, we need to update. we're iterating cells, then
+          // updates, so we don't accidentally oscillate if we have
+          // columns that swap names. going through once should 
+          // ensure that doesn't happen.
+
+          const table_name = table.name.toLowerCase();
+
+          for (const sheet of this.model.sheets.list) {
+
+            // there's an additional complication: we support anonymous
+            // tables, if the cell is in the table. so we also have to
+            // know the address. so we can't use the IterateAll method.
+
+            // duh, no we don't. if the cell is in the table it will have
+            // a reference.
+
+            sheet.cells.IterateAll(cell => {
+              if (cell.ValueIsFormula()) {
+                let updated_formula = false;
+                const parse_result = this.parser.Parse(cell.value);
+                if (parse_result.expression) {
+
+                  this.parser.Walk(parse_result.expression, (unit) => {
+                    if (unit.type === 'structured-reference') {
+
+                      if (unit.table.toLowerCase() === table_name || 
+                          (!unit.table && cell.table === table)) {
+                        
+                        // we may need to rewrite...
+                        for (const [key, value] of update.entries()) {
+                          if (unit.column.toLowerCase() === key) {
+
+                            // ok we need to update
+                            unit.column = value;
+                            updated_formula = true;
+
+                          }
+                        }
+
+                      }
+                    }
+                    return true;
+                  });
+                  if (updated_formula) {
+                    console.info('updating value');
+                    cell.value = '=' + this.parser.Render(parse_result.expression, {
+                      missing: '',
+                    });
+                  }
+                }
+              }
+            });
+
+          }
+        }
+
+
+      }
+
+    }
 
     table.columns = columns;
 
