@@ -1344,7 +1344,7 @@ export class Exporter {
                         }
                       }
                     }
-                    console.info({footer});
+                    // console.info({footer});
                   }
                 }
 
@@ -1374,7 +1374,7 @@ export class Exporter {
                   description.filterRef = filter_area.spreadsheet_label;                  
                 }
 
-                console.info({description});
+                // console.info({description});
 
                 // this list is used to add tables on this sheet
                 tables.push(description);
