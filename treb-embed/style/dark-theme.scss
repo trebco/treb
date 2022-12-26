@@ -75,13 +75,24 @@
 	--treb-ui-border-color: #666;
 	--treb-ui-color: #fff;
 
-	--treb-table-header-background: DarkSlateGray;
-	--treb-table-odd-background: rgb(36, 48, 48);
+	--treb-table-header-background: #334; // DarkSlateGray;
+	--treb-table-odd-background: #122;
 	--treb-table-header-font-weight: 700;
-	--treb-table-header-border-top: LightSlateGray;
-	--treb-table-header-border-bottom: LightSlateGray;
-	--treb-table-footer-border-bottom: LightSlateGray;
+
+	--treb-table-header-border-top: #889;
+	--treb-table-header-border-bottom: #889;
+	--treb-table-footer-border-bottom: #889;
+	--treb-table-odd-border-top: #889;
+	--treb-table-odd-border-bottom: #889;
+	--treb-table-even-border-top: #889;
+	--treb-table-even-border-bottom: #889;
+
+	--treb-table-total-border-top: #889;
+	--treb-table-total-border-bottom: #889;
 	
+	--treb-table-total-background: #334;
+	--treb-table-total-font-weight: 700;
+
 }
 
 .treb-dark-theme {

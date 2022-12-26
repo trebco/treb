@@ -294,6 +294,7 @@ $text-reference-color-5: rgb(254, 47, 1);
     }
 
     &.total {
+      background-color: var(--treb-table-total-background);
       border-top-style: var(--treb-table-total-border-style, double);
       border-top-color: var(--treb-table-total-border-top, #4472c4);
       border-bottom-color: var(--treb-table-total-border-bottom, #8ea9db);
