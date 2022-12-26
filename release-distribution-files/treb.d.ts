@@ -1,4 +1,4 @@
-/*! API v22.15. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v23.1. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -308,6 +308,13 @@ export declare class EmbeddedSpreadsheet {
      * selection will be deleted.
      */
     DeleteColumns(start_column?: number, count?: number): void;
+
+    /**
+     * sort a table. the cell reference can be anywhere in the table.
+     * if the reference is an area (range), we're going to look at the
+     * top-left cell.
+     */
+    SortTable(reference: RangeReference, options?: Partial<TableSortOptions>): void;
 
     /**
      * Merge cells in range.
@@ -700,6 +707,12 @@ export interface SerializeOptions {
 
     /** prune unused rows/columns */
     shrink?: boolean;
+
+    /**
+     * include tables. tables will be serialized in the model, so we can
+     * drop them from cells. but you can leave them in if that's useful.
+     */
+    tables?: boolean;
 }
 
 /**
@@ -908,6 +921,22 @@ export declare type AddressReference = string | ICellAddress;
  * address object, an area (range) object, or a string.
  */
 export declare type RangeReference = string | ICellAddress | IArea;
+export interface TableSortOptions {
+
+    /**
+     * when sorting, column is relative to the table (and 0-based). so the
+     * first column in the table is 0, regardless of where the table is in
+     * the spreadsheet. defaults to 0, if not specified.
+     */
+    column: number;
+
+    /** sort type. defaults to 'text'. */
+    type: TableSortType;
+
+    /** ascending sort. defaults to true. */
+    asc: boolean;
+}
+export declare type TableSortType = 'text' | 'numeric';
 
 /**
  * options for exporting CSV/TSV
