@@ -831,6 +831,24 @@ export class GridBase {
       column: command.column,
     };
 
+    // flush style in rows that don't change, to force repainting. this
+    // has to do with how table styles are overlaid on other styles; it's
+    // not optimal at the moment.
+    {
+
+      let row = command.table.area.start.row;
+      for (let column = command.table.area.start.column; column <= command.table.area.end.column; column++) {
+        sheet.cells.data[row][column]?.FlushStyle();
+      }
+      if (command.table.totals_row) {
+        row = command.table.area.end.row;
+        for (let column = command.table.area.start.column; column <= command.table.area.end.column; column++) {
+          sheet.cells.data[row][column]?.FlushStyle();
+        }
+      }
+      
+    }
+
     // console.info(ordered);
 
     return new Area(command.table.area.start, command.table.area.end);
