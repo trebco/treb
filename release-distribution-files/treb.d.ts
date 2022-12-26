@@ -92,6 +92,11 @@ export interface SheetScrollOptions {
 }
 
 /**
+ * function type used for filtering tables
+ */
+export declare type TableFilterFunction = (value: CellValue, calculated_value: CellValue, style: Style.Properties) => boolean;
+
+/**
  * embedded spreadsheet
  */
 export declare class EmbeddedSpreadsheet {
@@ -310,9 +315,28 @@ export declare class EmbeddedSpreadsheet {
     DeleteColumns(start_column?: number, count?: number): void;
 
     /**
-     * sort a table. the cell reference can be anywhere in the table.
-     * if the reference is an area (range), we're going to look at the
-     * top-left cell.
+     * sort a table. the reference can be the table name, or a cell in the table.
+     * if the reference is an area (range), we're going to look at the top-left
+     * cell.
+     *
+     * this method uses a function to filter rows based on cell values. leave the
+     * function undefined to show all rows. this is a shortcut for "unfilter".
+     *
+     * @param column - the column to sort on. values from this column will be
+     * passed to the filter function.
+     *
+     * @param filter - a callback function to filter based on cell values. this
+     * will be called with the cell value (formula), the calculated value (if any),
+     * and the cell style. return false to hide the row, and true to show the row.
+     * if the filter parameter is omitted, all values will be shown.
+     *
+     */
+    FilterTable(reference: RangeReference, column?: number, filter?: TableFilterFunction): void;
+
+    /**
+     * sort a table. the reference can be the table name, or a cell in the table.
+     * if the reference is an area (range), we're going to look at the top-left
+     * cell.
      */
     SortTable(reference: RangeReference, options?: Partial<TableSortOptions>): void;
 
