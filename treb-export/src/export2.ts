@@ -55,7 +55,7 @@ import { Parser, UnitAddress, UnitRange, ExpressionUnit, IllegalSheetNameRegex, 
 import { Chart, ChartOptions } from './drawing2/chart2';
 import type { ImageOptions } from './drawing2/embedded-image';
 import { Drawing, TwoCellAnchor } from './drawing2/drawing2';
-import type { TableDescription } from './workbook2';
+import type { TableDescription, TableFooterType } from './workbook2';
 
 export class Exporter {
 
@@ -1316,6 +1316,38 @@ export class Exporter {
 
                 }
 
+                let footers: TableFooterType[]|undefined = undefined;
+
+                if (cell.table.totals_row) {
+
+                  footers = [];
+
+                  for (let i = 0; i < area.columns; i++) {
+                    const footer = cells.data[area.end.row][area.start.column + i];
+                    if (footer.type) {
+                      if (footer.type === ValueType.formula) {
+                        footers[i] = {
+                          type: 'formula',
+                          value: (footer.value || '').toString().substring(1),
+                        }
+                      }
+                      else {
+
+                        if (footer.type !== ValueType.string) {
+                          footer.type = ValueType.string;
+                          footer.value = footer.value?.toString() || '';
+                        }
+
+                        footers[i] = {
+                          type: 'label',
+                          value: footer.value as string,
+                        }
+                      }
+                    }
+                    console.info({footer});
+                  }
+                }
+
                 // console.info({columns});
 
                 const description: TableDescription = {
@@ -1331,6 +1363,7 @@ export class Exporter {
                   totals_row_shown: 0,
                   totals_row_count: cell.table?.totals_row? 1 : 0,
                   columns,
+                  footers,
                 };
 
                 if (cell.table.totals_row) {
@@ -1647,6 +1680,48 @@ export class Exporter {
           totals_attributes.totalsRowCount = 1;
         }
         
+        const tableColumns: any = {
+          a$: {
+            count: (table.columns || []).length,
+          },
+          tableColumn: [],
+          /*
+          tableColumn: (table.columns||[]).map((column, index) => ({
+            a$: {
+              id: index + 1,
+              // 'xr3:uid': GUID(),
+              name: column || ('Column' + (index + 1)),
+            },
+          })),
+          */
+        };
+
+        if (table.columns) {
+          for (let i = 0; i < table.columns.length; i++) {
+            const column = table.columns[i];
+            const footer = (table.footers || [])[i];
+            const obj: any = {
+              a$: {
+                id: i + 1,
+                name: column || `Column${i + 1}`,
+              },
+            };
+            
+            if (footer) {
+              if (footer.type === 'label') {
+                obj.a$.totalsRowLabel = footer.value;
+              }
+              else if (footer.type === 'formula') {
+                obj.a$.totalsRowFunction = 'custom';
+                obj.totalsRowFormula = footer.value;
+              }
+            }
+
+            tableColumns.tableColumn.push(obj);
+
+          }
+        }
+
         const table_dom = {
           table: {
             a$: {
@@ -1671,19 +1746,7 @@ export class Exporter {
               },
             },
 
-            tableColumns: {
-              a$: {
-                count: (table.columns || []).length,
-              },
-              tableColumn: (table.columns||[]).map((column, index) => ({
-                a$: {
-                  id: index + 1,
-                  // 'xr3:uid': GUID(),
-                  name: column || ('Column' + (index + 1)),
-                },
-              })),
-               
-            },
+            tableColumns,
 
             tableStyleInfo: {
               a$: {

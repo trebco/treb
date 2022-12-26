@@ -75,6 +75,11 @@ export interface AnchoredChartDescription {
   anchor: TwoCellAnchor,
 }
 
+export interface TableFooterType {
+  type: 'label'|'formula';
+  value: string;
+}
+
 export interface TableDescription {
   name: string;
   display_name: string;
@@ -87,6 +92,7 @@ export interface TableDescription {
   rel?: string;
   index?: number;
   columns?: string[];
+  footers?: TableFooterType[];
 
   // auto filter?
 
