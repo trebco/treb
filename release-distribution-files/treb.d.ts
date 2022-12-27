@@ -315,7 +315,7 @@ export declare class EmbeddedSpreadsheet {
     DeleteColumns(start_column?: number, count?: number): void;
 
     /**
-     * sort a table. the reference can be the table name, or a cell in the table.
+     * filter a table. the reference can be the table name, or a cell in the table.
      * if the reference is an area (range), we're going to look at the top-left
      * cell.
      *

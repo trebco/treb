@@ -23,7 +23,7 @@ import { DOMUtilities } from '../util/dom_utilities';
 import type { DataModel, ViewModel } from '../types/data_model';
 
 import type { Tile } from '../types/tile';
-import { Style, Theme, Point, Extent, Size, Position, Area, ICellAddress, Rectangle, ThemeColor } from 'treb-base-types';
+import { Style, Theme, Point, Extent, Size, Position, Area, ICellAddress, Rectangle, ThemeColor, Table } from 'treb-base-types';
 
 import { MouseDrag } from '../types/drag_mask';
 import type { GridEvent } from '../types/grid_events';
@@ -173,6 +173,7 @@ export abstract class BaseLayout {
   // private error_highlight_timeout?: any;
 
   private note_node: HTMLDivElement;
+  private sort_button: HTMLButtonElement;
 
   private title_node: HTMLDivElement;
 
@@ -349,6 +350,8 @@ export abstract class BaseLayout {
     this.note_node = DOMUtilities.CreateDiv('treb-note');
     this.title_node = DOMUtilities.CreateDiv('treb-hover-title');
 
+    this.sort_button = DOMUtilities.Create<HTMLButtonElement>('button', 'treb-sort-button');
+
     this.HideNote();
 
   }
@@ -439,6 +442,49 @@ export abstract class BaseLayout {
 
     this.note_node.style.opacity = '0';
     this.note_node.style.pointerEvents = 'none';
+  }
+
+  public HideTableSortButton() {
+    this.sort_button.style.opacity = '0';
+    this.sort_button.style.pointerEvents = 'none';
+  }
+
+  public ShowTableSortButton(table: Table, column: number, address: ICellAddress): void {
+
+    if (!this.sort_button.parentElement) {
+      return;
+    }
+
+    let asc = true;
+
+    if (table.sort) {
+      if (table.sort.column === column) {
+        asc = !table.sort.asc;
+      }
+    }
+    
+    this.sort_button.style.opacity = '1';
+    this.sort_button.style.pointerEvents = 'initial';
+    this.sort_button.classList.remove('asc', 'desc');
+    this.sort_button.classList.add(asc ? 'asc' : 'desc');
+
+    this.sort_button.dataset.asc = asc.toString();
+    this.sort_button.dataset.table = table.name;
+    this.sort_button.dataset.column = column.toString();
+
+    const rect = this.OffsetCellAddressToRectangle(address).Shift(
+      this.header_size.width, this.header_size.height);
+
+    const button_size = this.sort_button.getBoundingClientRect();
+
+    // const container = this.sort_button.parentElement.getBoundingClientRect();
+    // const offset = { x: 8, y: 2 };
+
+    this.sort_button.style.left = (rect.right - button_size.width - button_size.width / 2) + 'px';
+
+    this.sort_button.style.top = 
+      (rect.top + (rect.height - button_size.height) / 2) + 'px';
+
   }
 
   /**
@@ -1003,6 +1049,7 @@ export abstract class BaseLayout {
   public Initialize(container: HTMLElement,
     scroll_callback: () => void,
     dropdown_callback: (value: CellValue) => void,
+    sort_callback: (table: string, column: number, asc: boolean) => void,
     scroll = true): void {
 
     if (!this.mask.parentElement) {
@@ -1029,6 +1076,30 @@ export abstract class BaseLayout {
 
     if (!this.note_node.parentElement) {
       container.appendChild(this.note_node);
+    }
+
+    if (!this.sort_button.parentElement) {
+      container.appendChild(this.sort_button);
+      this.sort_button.addEventListener('click', () => {
+
+        // console.info(this.sort_button.dataset);
+
+        sort_callback(
+          this.sort_button.dataset.table || '',
+          Number(this.sort_button.dataset.column || '0') || 0,
+          /true/i.test(this.sort_button.dataset.asc || ''));
+
+        this.sort_button.classList.remove('asc', 'desc');
+        if (this.sort_button.dataset.asc === 'true') {
+          this.sort_button.dataset.asc = 'false';
+          this.sort_button.classList.add('desc');
+        }
+        else {
+          this.sort_button.dataset.asc = 'true';
+          this.sort_button.classList.add('asc');
+        }
+
+      });
     }
 
     if (!this.title_node.parentElement) {

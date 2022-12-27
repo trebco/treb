@@ -192,6 +192,7 @@ export class Grid extends GridBase {
   private hover_data: {
     note?: boolean;
     link?: boolean;
+    table_header?: boolean;
     cell?: Cell;
     point?: {x: number, y: number};
     handler?: number;
@@ -1767,6 +1768,17 @@ export class Grid extends GridBase {
     this.layout.Initialize(container, 
         () => this.OnScroll(), 
         (value: CellValue) => this.OnDropdownSelect(value),
+        (name: string, column: number, asc: boolean) => {
+          // sort callback
+          // console.info('sort!', table, column, asc);
+          const table = this.model.tables.get(name.toLowerCase());
+          if (table) {
+            this.SortTable(table, {
+              column,
+              asc,
+            });
+          }
+        },
         this.options.scrollbars);
     this.selection_renderer.Initialize();
     this.layout.UpdateTiles();
@@ -3935,6 +3947,17 @@ export class Grid extends GridBase {
     // does this cell have a note?
 
     let cell = this.active_sheet.cells.GetCell(address, false);
+
+    if (cell?.table && cell.table.area.start.row === address.row) {
+      this.hover_data.table_header = true;
+      this.layout.ShowTableSortButton(cell.table, address.column - cell.table.area.start.column, address);
+    }
+    else {
+      if (this.hover_data.table_header) {
+        this.layout.HideTableSortButton();
+      }
+      this.hover_data.table_header = false;
+    }
 
     if (cell?.merge_area) {
       const area = cell.merge_area;

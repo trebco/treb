@@ -728,6 +728,11 @@ export class GridBase {
       end--;
     }
 
+    // for auto-sort
+
+    let text_count = 0;
+    let number_count = 0;
+
     for (let row = command.table.area.start.row + 1; row <= end; row++) {
 
       const height = sheet.GetRowHeight(row);
@@ -754,6 +759,14 @@ export class GridBase {
 
         if (column === command.column + command.table.area.start.column) {
 
+          const check_type = cd.calculated_type || cd.type;
+          if (check_type === ValueType.string) {
+            text_count++;
+          }
+          else if (check_type === ValueType.number) {
+            number_count++;
+          }
+
           // we can precalculate the type for sorting
 
           const value = cd.calculated_type ? cd.calculated : cd.value;
@@ -775,13 +788,25 @@ export class GridBase {
 
     }
 
+    // auto sort - default to text, unless we see more numbers
+
+    let sort_type = command.type;
+    if (sort_type === 'auto') {
+      if (number_count > text_count) {
+        sort_type = 'numeric';
+      }
+      else {
+        sort_type = 'text';
+      }
+    }
+
     // console.info(visible, ranked);
 
     // rank
 
     const invert = command.asc ? 1 : -1;
 
-    switch (command.type) {
+    switch (sort_type) {
       case 'numeric':
         ranked.sort((a, b) => (a.number - b.number) * invert);
         break;
