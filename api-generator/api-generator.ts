@@ -165,8 +165,9 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
                 
         if (ts.isClassDeclaration(node)) {
           if (config.drop_generics.includes(name)) {
+            
             const tmp = ts.factory.updateClassDeclaration(node, 
-              node.decorators,
+              // node.decorators,
               node.modifiers,
               node.name,
               [], // node.typeParameters,
@@ -182,7 +183,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
           if (config.flatten_enums) {
 
             const alias = ts.factory.createTypeAliasDeclaration(
-              node.decorators,
+              // node.decorators,
               node.modifiers,
               node.name,
               [], 
@@ -230,7 +231,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
           // drop any internals
 
           const tmp = ts.factory.updateInterfaceDeclaration(node,
-            node.decorators,
+            // node.decorators,
             node.modifiers,
             node.name,
             node.typeParameters,
@@ -288,7 +289,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
           }
 
           const tmp = ts.factory.updateMethodDeclaration(node,
-            node.decorators, 
+            // node.decorators, 
             node.modifiers,
             node.asteriskToken,
             node.name,
@@ -325,7 +326,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
                     // convert this type to any
 
                     return ts.factory.createParameterDeclaration(
-                      test.decorators, 
+                      // test.decorators, 
                       test.modifiers, 
                       test.dotDotDotToken,
                       test.name, 
@@ -463,7 +464,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
               const name = node.name?.escapedText;
               if (name && config.drop_generics.includes(name)) {
                 node = ts.factory.updateClassDeclaration(node, 
-                  node.decorators,
+                  // node.decorators,
                   node.modifiers,
                   node.name,
                   [], // node.typeParameters,
@@ -477,7 +478,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
               // drop any internals, so we don't reference types
     
               node = ts.factory.updateInterfaceDeclaration(node,
-                node.decorators,
+                // node.decorators,
                 node.modifiers,
                 node.name,
                 node.typeParameters,

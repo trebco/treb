@@ -94,7 +94,7 @@ export interface SheetScrollOptions {
 /**
  * function type used for filtering tables
  */
-export declare type TableFilterFunction = (value: CellValue, calculated_value: CellValue, style: Style.Properties) => boolean;
+export type TableFilterFunction = (value: CellValue, calculated_value: CellValue, style: Style.Properties) => boolean;
 
 /**
  * embedded spreadsheet
@@ -920,7 +920,7 @@ export declare namespace Style {
         locked?: boolean;
     }
 }
-export declare type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
+export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
 /**
  * Complex number type
@@ -938,13 +938,13 @@ export interface DimensionedQuantity {
  * type represents a reference passed in to API functions. it can be an
  * address object, or a string.
  */
-export declare type AddressReference = string | ICellAddress;
+export type AddressReference = string | ICellAddress;
 
 /**
  * type represents a reference passed in to API functions. it can be an
  * address object, an area (range) object, or a string.
  */
-export declare type RangeReference = string | ICellAddress | IArea;
+export type RangeReference = string | ICellAddress | IArea;
 export interface TableSortOptions {
 
     /**
@@ -964,7 +964,7 @@ export interface TableSortOptions {
     /** ascending sort. defaults to true. */
     asc: boolean;
 }
-export declare type TableSortType = 'text' | 'numeric' | 'auto';
+export type TableSortType = 'text' | 'numeric' | 'auto';
 
 /**
  * options for exporting CSV/TSV
@@ -1161,7 +1161,7 @@ export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file"
  * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
  * of the event.
  */
-export declare type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | DataChangeEvent | SelectionEvent | ResizeEvent;
+export type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | DataChangeEvent | SelectionEvent | ResizeEvent;
 export interface ResizeEvent {
     type: 'resize';
 }
