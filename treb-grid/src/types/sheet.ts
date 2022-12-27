@@ -904,7 +904,7 @@ export class Sheet {
    * https://github.com/microsoft/TypeScript/pull/30769
    * 
    */
-  public Delta<T>(A: T, B: T): Partial<T> {
+  public Delta<T extends object>(A: T, B: T): Partial<T> {
 
     const result: Partial<T> = {};
 
