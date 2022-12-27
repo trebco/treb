@@ -954,13 +954,17 @@ export interface TableSortOptions {
      */
     column: number;
 
-    /** sort type. defaults to 'text'. */
+    /**
+     * sort type. defaults to 'auto'. 'auto' looks at the values in the column,
+     * and uses text sort if there are more strings, or numeric if there are
+     * more numbers. if it's even, sorts as text.
+     */
     type: TableSortType;
 
     /** ascending sort. defaults to true. */
     asc: boolean;
 }
-export declare type TableSortType = 'text' | 'numeric';
+export declare type TableSortType = 'text' | 'numeric' | 'auto';
 
 /**
  * options for exporting CSV/TSV

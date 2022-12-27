@@ -456,17 +456,21 @@ export abstract class BaseLayout {
     }
 
     let asc = true;
+    let initial = false;
 
     if (table.sort) {
       if (table.sort.column === column) {
         asc = !table.sort.asc;
+        initial = true;
       }
     }
     
     this.sort_button.style.opacity = '1';
     this.sort_button.style.pointerEvents = 'initial';
     this.sort_button.classList.remove('asc', 'desc');
-    this.sort_button.classList.add(asc ? 'asc' : 'desc');
+    if (initial) {
+      this.sort_button.classList.add(asc ? 'asc' : 'desc');
+    }
 
     this.sort_button.dataset.asc = asc.toString();
     this.sort_button.dataset.table = table.name;

@@ -848,13 +848,18 @@ export class GridBase {
 
     }
 
-    // keep reference
+    // keep reference. we don't have the actual table, we have a copy.
+    // this is done because the command queue might be broadcast, so
+    // references won't work.
 
-    command.table.sort = {
-      type: command.type,
-      asc: !!command.asc,
-      column: command.column,
-    };
+    const ref = this.model.tables.get(command.table.name.toLowerCase());
+    if (ref) {
+      ref.sort = {
+        type: command.type,
+        asc: !!command.asc,
+        column: command.column,
+      };
+    }
 
     // flush style in rows that don't change, to force repainting. this
     // has to do with how table styles are overlaid on other styles; it's
