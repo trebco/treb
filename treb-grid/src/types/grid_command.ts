@@ -111,6 +111,9 @@ export interface CommandBase {
 export interface InsertTableCommand {
   key: CommandKey.InsertTable,
   area: IArea,
+
+  /** optionally include a totals row */
+  totals?: boolean,
 }
 
 /**

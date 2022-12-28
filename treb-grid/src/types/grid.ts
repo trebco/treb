@@ -2484,45 +2484,6 @@ export class Grid extends GridBase {
     });
   }
 
-  public RemoveTable(table: Table) {
-    this.ExecCommand({
-      key: CommandKey.RemoveTable,
-      table,
-    });
-  }
-
-  /**
-   * create a table in the given area. the area cannot contain any 
-   * merge cells, arrays, or be part of another table.
-   * 
-   * @param area 
-   */
-  public InsertTable(area: IArea) {
-
-    // we should validate here, so that we can throw.
-
-    if (!area.start.sheet_id) {
-      area.start.sheet_id = this.active_sheet.id;
-    }
-
-    const sheet = this.FindSheet(area);
-
-    for (let row = area.start.row; row <= area.end.row; row++) {
-      for (let column = area.start.column; column <= area.end.column; column++) {
-        const cell = sheet.cells.GetCell({row, column}, false);
-        if (cell && (cell.area || cell.merge_area || cell.table)) {
-          throw new Error('invalid area for table');
-        }
-      }
-    }
-
-    this.ExecCommand({
-      key: CommandKey.InsertTable,
-      area: JSON.parse(JSON.stringify(area)),
-    });
-
-  }
-
   /**
    * return the table (if any) at the given address
    */

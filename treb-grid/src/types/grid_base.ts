@@ -153,6 +153,51 @@ export class GridBase {
 
   // --- API methods -----------------------------------------------------------
 
+  /** remove a table. doesn't remove any data, just removes the overlay. */
+  public RemoveTable(table: Table) {
+    this.ExecCommand({
+      key: CommandKey.RemoveTable,
+      table,
+    });
+  }
+
+  /**
+   * create a table in the given area. the area cannot contain any 
+   * merge cells, arrays, or be part of another table. if you add a table
+   * with a totals row, we don't insert a new row -- allocate enough space
+   * when you create it.
+   * 
+   * @param area - the total area for the table, including headers and totals
+   * @param totals - set true to include a totals row. tables have different
+   * formatting and slightly different behavior when there's a totals row.
+   */
+  public InsertTable(area: IArea, totals = false) {
+
+    // we should validate here, so that we can throw.
+
+    if (!area.start.sheet_id) {
+      area.start.sheet_id = this.active_sheet.id;
+    }
+
+    const sheet = this.FindSheet(area);
+
+    for (let row = area.start.row; row <= area.end.row; row++) {
+      for (let column = area.start.column; column <= area.end.column; column++) {
+        const cell = sheet.cells.GetCell({row, column}, false);
+        if (cell && (cell.area || cell.merge_area || cell.table)) {
+          throw new Error('invalid area for table');
+        }
+      }
+    }
+
+    this.ExecCommand({
+      key: CommandKey.InsertTable,
+      area: JSON.parse(JSON.stringify(area)),
+      totals,
+    });
+
+  }
+
   /**
    * sort table. column is absolute.
    */
@@ -2889,6 +2934,10 @@ export class GridBase {
                 area: command.area,
                 name,
               };
+
+              if (command.totals) {
+                table.totals_row = true;
+              }
 
               this.model.tables.set(name.toLowerCase(), table);
 
