@@ -222,6 +222,11 @@ export class GridBase {
    * filter table. what this means is "show the rows that match the filter
    * and hide the other rows". it doesn't actually change data, but it does
    * show/hide rows which (now) has some data effects.
+   * 
+   * note that we don't pass the filter command through the command queue.
+   * it uses a callback, so that would not work. rather we filter first,
+   * then send hide/show row commands through the command queue. that will
+   * propagate updates.
    */
   public FilterTable(table: Table, column: number, filter: (cell: Cell) => boolean) {
 
