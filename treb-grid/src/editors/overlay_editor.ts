@@ -302,6 +302,8 @@ export class OverlayEditor extends FormulaEditorBase {
     });
 
     this.active_cell = cell;
+    this.target_address = {...gridselection.target};
+
     const style: Style.Properties = cell.style || {};
 
     this.edit_node.style.font = Style.Font(style, this.scale);

@@ -6511,6 +6511,10 @@ export class Grid extends GridBase {
       this.UpdateAddressLabel();
       this.UpdateFormulaBarFormula();
 
+      if (this.formula_bar) {
+        this.formula_bar.target_address = {...this.primary_selection.target};
+      }
+
       if (this.options.stats) {
         this.UpdateStats();
       }

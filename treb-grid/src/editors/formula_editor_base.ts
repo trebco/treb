@@ -19,7 +19,7 @@
  * 
  */
 
-import { Area, Cell, Theme, Rectangle, Localization } from 'treb-base-types';
+import { Area, Cell, Theme, Rectangle, Localization, ICellAddress } from 'treb-base-types';
 import { Yield, EventSource } from 'treb-utils';
 import type { Parser, UnitRange, UnitAddress, ParseResult, ExpressionUnit } from 'treb-parser';
 
@@ -121,8 +121,11 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
    */
   public active_cell?: Cell;
 
-  /** address of cell we're editing */
-  // public address: CellAddress;
+  /** 
+   * address of cell we're editing 
+   * why did this get removed? it would be helpful 
+   */
+  public target_address?: ICellAddress;
 
   /** area we're editing, for potential arrays */
   // public area: Area;
@@ -529,7 +532,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
       let label = '';
       let reference_index = 0;
 
-      const append_node = (start: number, text: string, type: string) => {
+      const append_node = (start: number, text: string, type: string, unit?: ExpressionUnit) => {
         const text_node = document.createTextNode(text);
         if (type === 'text') {
           fragment.appendChild(text_node);
@@ -542,6 +545,14 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
 
           if (type === 'address' || type === 'range') {
             span.classList.add(`highlight-${(this.reference_index_map[reference_index++] % 5) + 1}`);
+          }
+          else if (type === 'structured-reference') {
+            if (this.target_address && unit?.type === 'structured-reference') {
+              const reference = this.model.ResolveStructuredReference(unit, this.target_address);
+              if (reference) {
+                span.classList.add(`highlight-${(this.reference_index_map[reference_index++] % 5) + 1}`);
+              }
+            }
           }
           else if (type === 'identifier') {
             if (this.model.named_ranges.Get(text)) {
@@ -572,6 +583,7 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
             case 'range':
             case 'call':
             case 'identifier':
+            case 'structured-reference':
 
               // any leading text we have skipped, create a text node
               if (unit.position !== base - 1) {
@@ -589,11 +601,12 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
                 // text here, so we don't have to substring.
 
                 label = this.last_parse_string.substring(unit.position + 1, unit.position + unit.label.length + 1);
+
               }
 
               // label = (unit.type === 'call' || unit.type === 'identifier') ? unit.name : unit.label;
               
-              append_node(unit.position + 1, label, unit.type);
+              append_node(unit.position + 1, label, unit.type, unit);
 
               base = unit.position + label.length + 1;
               break;
@@ -699,6 +712,19 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
                 }
               }
               this.reference_list.push(unit);
+
+            }
+            else if (unit.type === 'structured-reference') {
+
+              if (this.target_address) {
+                const reference = this.model.ResolveStructuredReference(unit, this.target_address);
+                if (reference) {
+                  this.reference_list.push(reference);
+                }
+              }
+              else {
+                console.info('target address not set');
+              }
 
             }
             else {

@@ -245,7 +245,7 @@ export class Parser {
    * in the future we may pass in a list of names at parse time, and resolve
    * them; for now we are just listing names.
    */
-  protected full_reference_list: Array<UnitAddress | UnitRange | UnitIdentifier> = [];
+  protected full_reference_list: Array<UnitAddress | UnitRange | UnitIdentifier | UnitStructuredReference> = [];
 
   /**
    * recursive tree walk.
@@ -2207,6 +2207,8 @@ export class Parser {
     };
 
     // console.info(reference);
+
+    this.full_reference_list.push(reference);
 
     return reference;
 
