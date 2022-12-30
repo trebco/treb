@@ -462,6 +462,7 @@ export class EmbeddedSpreadsheet {
     // unload event, as parent will already have that set
 
     if (this.options.storage_key && !this.options.toll_initial_load && !options.model) {
+
       data = localStorage.getItem(this.options.storage_key) || undefined;
       if (data) {
         source = LoadSource.LOCAL_STORAGE;
@@ -471,12 +472,17 @@ export class EmbeddedSpreadsheet {
         network_document = this.options.alternate_document;
       }
 
+    }
+
+    // this one should not be done for a split view, but we should still
+    // do it if the toll flag is set, and storage key is set. 
+
+    if (this.options.storage_key && !options.model ) {
       window.addEventListener('beforeunload', () => {
         if (this.options.storage_key) {
           this.SaveLocalStorage(this.options.storage_key);
         }
       });
-
     }
 
     let container: HTMLElement | undefined;
