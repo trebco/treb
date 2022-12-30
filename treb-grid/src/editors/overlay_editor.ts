@@ -248,6 +248,7 @@ export class OverlayEditor extends FormulaEditorBase {
 
       this.edit_container.style.top = `${this.container.scrollTop + this.view.active_sheet.header_offset.y}px`;
       this.edit_container.style.left = `${this.container.scrollLeft + this.view.active_sheet.header_offset.x}px`;
+
     }
 
     this.edit_node.focus();
@@ -438,6 +439,7 @@ export class OverlayEditor extends FormulaEditorBase {
       // we probably do need to do this, but maybe not the next one
       this.last_reconstructed_text = '';
       this.Reconstruct();
+
     });
 
   }

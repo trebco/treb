@@ -856,17 +856,6 @@ export class EmbeddedSpreadsheet {
       this.dialog = new Dialog(container);
     }
 
-    /*
-    // testing dialog
-    requestAnimationFrame(() => {
-      this.dialog?.ShowDialog({
-        title: 'Dramatic error occurred',
-        message: 'Goon fahoon. Tacos the game!',
-        close_box: true,
-      });
-    });
-    */
-
   }
 
   /**
