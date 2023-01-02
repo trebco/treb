@@ -1,4 +1,4 @@
-/*! API v23.1. Copyright 2018-2022 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v23.1. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an

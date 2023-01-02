@@ -392,6 +392,12 @@ export class Parser {
     const decimal_rex =
       this.decimal_mark === DecimalMarkType.Comma ? /,/ : /\./;
 
+    // we need this for complex numbers, but I don't want to change the 
+    // original at the moment, just in case. we can run through that later.
+
+    const decimal_rex_g = 
+      this.decimal_mark === DecimalMarkType.Comma ? /,/g : /\./g;
+
     switch (unit.type) {
       case 'address':
         return this.AddressLabel(unit, offset);
@@ -439,18 +445,42 @@ export class Parser {
         // formatting complex value (note for searching)
         // this uses small regular "i"
 
-        // here we use "0i" for complex numbers without an imaginary
-        // component, to ensure that we don't change these into reals.
+        // as with literals, we want to preserve the original text,
+        // which might have slight precision differences from what
+        // we would render.
 
-        // this is a complex problem having to do with how we handle 
-        // exponentiation of reals, but for now leave this as is.
+        if (unit.text) {
+          if (convert_decimal) {
 
-        // we will drop 0 real values, and 1i/-1i are rendered as i/-i.
+            // we don't support grouping numbers for complex, so there's
+            // no need to handle grouping
 
-        {
+            const text = unit.text;
+            return text.replace(decimal_rex_g, decimal);
+
+          }
+          else {
+            return unit.text;
+          }
+        }
+        else {
+
+          // if we don't have the original text for whatever reason, format 
+          // and convert if necessary.
+
+          let imaginary_text = Math.abs(unit.imaginary).toString();
+          if (convert_decimal === DecimalMarkType.Comma || this.decimal_mark === DecimalMarkType.Comma) {
+            imaginary_text = imaginary_text.replace(/\./, ',');
+          }
+
           if (unit.real) {
-          const i = Math.abs(unit.imaginary);
-            return `${unit.real||0}${unit.imaginary < 0 ? ' - ' : ' + '}${i === 1 ? '' : i}i`;
+            let real_text = unit.real.toString();
+            if (convert_decimal === DecimalMarkType.Comma || this.decimal_mark === DecimalMarkType.Comma) {
+              real_text = real_text.replace(/\./, ',');
+            }
+  
+            const i = Math.abs(unit.imaginary);
+            return `${real_text}${unit.imaginary < 0 ? ' - ' : ' + '}${i === 1 ? '' : imaginary_text}i`;
           }
           else if (unit.imaginary === -1) {
             return `-i`;
@@ -459,7 +489,7 @@ export class Parser {
             return `i`;
           }
           else {
-            return `${unit.imaginary}i`;
+            return `${unit.imaginary < 0 ? '-' : ''}${imaginary_text}i`;
           }
 
         }
