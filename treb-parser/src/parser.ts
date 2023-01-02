@@ -347,7 +347,7 @@ export class Parser {
     // defaults
 
     const offset = options.offset || {rows: 0, columns: 0};
-    const missing = options.missing || '(missing)';
+    const missing = options.missing ?? '(missing)';
 
     // the rest are optional
 
