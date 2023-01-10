@@ -599,7 +599,10 @@ export class TileRenderer {
 
           if (tile.needs_full_repaint || !cell.render_clean[this.view.view_index]) {
 
-            const result = this.RenderCell(tile, cell, context, { row, column }, width, height, left, top);
+            const result = this.RenderCell(tile, cell, context, { row, column }, width, height, 
+                (tile.pixel_start.x + left), 
+                (tile.pixel_start.y + top));
+
             // render_list.push({row, column, cell});
 
             if (result.tile_overflow_right) {
@@ -1225,12 +1228,85 @@ export class TileRenderer {
 
   }
 
+  /**
+   * paint background image, offset and tiled.
+   */
+  protected PaintBackgroundImage(
+      context: CanvasRenderingContext2D, 
+      image: HTMLImageElement,
+      left: number,
+      top: number,
+      width: number,
+      height: number,
+      render_left = 0,
+      render_top = 0,
+      offset = 0) {
+
+    const scale = (this.layout.scale || 1) * this.layout.dpr;
+
+    const source_left = (left / scale) % image.width;
+    const source_top = (top / scale) % image.height;
+
+    const source_width = width / scale;
+    const source_height = height / scale;
+
+    const roll_x = (source_left + source_width) > image.width;
+    const roll_y = (source_top + source_height) > image.height;
+
+    if (roll_x) {
+      context.drawImage(image,
+        source_left - image.width,
+        source_top,
+        source_width, 
+        source_height, 
+        render_left, 
+        render_top, 
+        width - offset, 
+        height - offset);
+    }
+
+    if (roll_y) {
+      context.drawImage(image,
+        source_left,
+        source_top - image.height,
+        source_width,
+        source_height,
+        render_left, 
+        render_top, 
+        width - offset, 
+        height - offset);
+    }
+
+    if (roll_x && roll_y) {
+      context.drawImage(image,
+        source_left - image.width,
+        source_top - image.height,
+        source_width,
+        source_height,
+        render_left, 
+        render_top, 
+        width - offset, 
+        height - offset);
+    }
+
+    context.drawImage(image, 
+        source_left, 
+        source_top, 
+        source_width, 
+        source_height,
+        render_left, 
+        render_top, 
+        width - offset, 
+        height - offset);
+
+  }
+
   protected RenderCellBackground(
     note: boolean,
     address: ICellAddress,
     context: CanvasRenderingContext2D,
     style: Style.Properties,
-    width: number, height: number, left = 0, top = 0): void {
+    width: number, height: number, cell_left = 0, cell_top = 0): void {
 
     // so here we draw the background and the bottom and right grid edges.
     // fill is enclosed here, the border method has logic for border colors,
@@ -1240,15 +1316,13 @@ export class TileRenderer {
     context.fillRect(0, 0, width, height);
 
     if (this.theme.background_image) {
-
-      const scale = (this.layout.scale || 1) * this.layout.dpr;
-      context.drawImage(this.theme.background_image, 
-          left / scale, 
-          top / scale, 
-          width / scale, 
-          height / scale,
-        0, 0, width - 1, height - 1);
-
+      this.PaintBackgroundImage(
+            context, 
+            this.theme.background_image, 
+            cell_left, 
+            cell_top, 
+            width, 
+            height, 0, 0, 1);
     }
     else {
 
@@ -1718,14 +1792,16 @@ export class TileRenderer {
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
 
         if (this.theme.background_image) {
-          const scale = (this.layout.scale || 1) * this.layout.dpr;
-          context.drawImage(this.theme.background_image, 
-              (cell_left + element.background.left) / scale, 
-              (cell_top + element.background.top) / scale, 
-              element.background.width / scale, 
-              element.background.height / scale,
-              element.background.left, element.background.top,
-              element.background.width, element.background.height);
+          this.PaintBackgroundImage(
+                context, 
+                this.theme.background_image,
+                cell_left + element.background.left,
+                cell_top + element.background.top,
+                element.background.width,
+                element.background.height,
+                element.background.left,
+                element.background.top,
+                0 );
         }
         else {
           context.fillStyle = this.theme.grid_cell?.fill ? ThemeColor(this.theme, this.theme.grid_cell.fill) : '';
