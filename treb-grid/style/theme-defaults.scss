@@ -142,6 +142,10 @@ $text-reference-color-5: rgb(254, 47, 1);
     background:   var(--treb-grid-background,         #fff);
   }
 
+  .grid-background {
+    background-image: var(--treb-grid-background-image, none);
+  }
+
   /**
    * this is used for freeze-area highlights
    */
