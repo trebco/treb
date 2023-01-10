@@ -107,6 +107,9 @@ export interface Theme {
 
   table?: TableStyles;
 
+  /** tinkering */
+  background_image?: HTMLImageElement;
+
 }
 
 export const DefaultTheme: Theme = {
@@ -328,6 +331,15 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   theme.headers_grid_color = css.stroke;
   if (!theme.headers_grid_color || theme.headers_grid_color === 'none') {
     theme.headers_grid_color = theme.grid_color;
+  }
+
+  css = CSS('grid-background');
+  if (css.backgroundImage) {
+    const match = css.backgroundImage.match(/url\("*(.*?)"*\)/);
+    if (match) {
+      theme.background_image = new Image();
+      theme.background_image.src = match[1];
+    }
   }
 
   // this _is_ painted, but it doesn't necessarily need to be -- we

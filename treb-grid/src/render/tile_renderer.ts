@@ -599,7 +599,7 @@ export class TileRenderer {
 
           if (tile.needs_full_repaint || !cell.render_clean[this.view.view_index]) {
 
-            const result = this.RenderCell(tile, cell, context, { row, column }, width, height);
+            const result = this.RenderCell(tile, cell, context, { row, column }, width, height, left, top);
             // render_list.push({row, column, cell});
 
             if (result.tile_overflow_right) {
@@ -1230,7 +1230,7 @@ export class TileRenderer {
     address: ICellAddress,
     context: CanvasRenderingContext2D,
     style: Style.Properties,
-    width: number, height: number): void {
+    width: number, height: number, left = 0, top = 0): void {
 
     // so here we draw the background and the bottom and right grid edges.
     // fill is enclosed here, the border method has logic for border colors,
@@ -1239,15 +1239,31 @@ export class TileRenderer {
     context.fillStyle = this.theme.grid_color;
     context.fillRect(0, 0, width, height);
 
-    const fill = ThemeColor2(this.theme, style.fill);
-    if (fill) {
-      context.fillStyle = fill;
-      context.fillRect(0, 0, width - 1, height - 1);
+    if (this.theme.background_image) {
+
+      const scale = (this.layout.scale || 1) * this.layout.dpr;
+      context.drawImage(this.theme.background_image, 
+          left / scale, 
+          top / scale, 
+          width / scale, 
+          height / scale,
+        0, 0, width - 1, height - 1);
+
     }
     else {
-      context.fillStyle = ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
-      context.fillRect(0, 0, width - 1, height - 1);
+
+      const fill = ThemeColor2(this.theme, style.fill);
+      if (fill) {
+        context.fillStyle = fill;
+        context.fillRect(0, 0, width - 1, height - 1);
+      }
+      else {
+        context.fillStyle = ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        context.fillRect(0, 0, width - 1, height - 1);
+      }
+
     }
+
 
     // why is this here? (it's rendered as background, I guess)
 
@@ -1285,7 +1301,10 @@ export class TileRenderer {
     context: CanvasRenderingContext2D,
     address: ICellAddress,
     width: number,
-    height: number): RenderCellResult {
+    height: number,
+    cell_left = 0,
+    cell_top = 0,
+      ): RenderCellResult {
 
     const result: RenderCellResult = {};
 
@@ -1681,7 +1700,9 @@ export class TileRenderer {
 
     }
 
-    this.RenderCellBackground(!!cell.note, address, context, style, width, height);
+    this.RenderCellBackground(!!cell.note, address, context, style, width, height, cell_left, cell_top);
+
+    // Q: why are we doing this inline instead of using the background method?
 
     for (const element of overflow_backgrounds) {
 
@@ -1696,10 +1717,21 @@ export class TileRenderer {
         context.fillStyle = this.theme.grid_color || '';
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
 
-        context.fillStyle = this.theme.grid_cell?.fill ? ThemeColor(this.theme, this.theme.grid_cell.fill) : '';
-
-        context.fillRect(element.background.left, element.background.top,
-          element.background.width, element.background.height);
+        if (this.theme.background_image) {
+          const scale = (this.layout.scale || 1) * this.layout.dpr;
+          context.drawImage(this.theme.background_image, 
+              (cell_left + element.background.left) / scale, 
+              (cell_top + element.background.top) / scale, 
+              element.background.width / scale, 
+              element.background.height / scale,
+              element.background.left, element.background.top,
+              element.background.width, element.background.height);
+        }
+        else {
+          context.fillStyle = this.theme.grid_cell?.fill ? ThemeColor(this.theme, this.theme.grid_cell.fill) : '';
+          context.fillRect(element.background.left, element.background.top,
+            element.background.width, element.background.height);
+        }
       }
 
       if (element.cell.style) {
