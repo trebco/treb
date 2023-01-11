@@ -1660,8 +1660,15 @@ export class EmbeddedSpreadsheet {
   /**
    * Add a sheet, optionally named. 
    */
-  public AddSheet(name?: string): void {
+  public AddSheet(name?: string): number {
+
+    // we don't get the ID as a result of this function, because
+    // it uses the command queue which doesn't return values (although
+    // perhaps it could?) in any event, we'll get the ID separately.
+
     this.grid.AddSheet(name);
+
+    const sheet = this.model.sheets.list[this.model.sheets.list.length - 1];
 
     // before you do anything else you probably need to reset the calculator.
     // that was causing errors when adding sheet via the grid method and then
@@ -1672,6 +1679,11 @@ export class EmbeddedSpreadsheet {
     // do this now. the additional reset won't be a problem (?)
 
     this.calculator.Reset();
+
+    // return the ID
+
+    return sheet.id;
+
   }
 
   /**
