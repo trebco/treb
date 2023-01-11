@@ -187,7 +187,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * Add a sheet, optionally named.
      */
-    AddSheet(name?: string): void;
+    AddSheet(name?: string): number;
 
     /**
      * Insert an annotation node. Usually this means inserting a chart. Regarding
