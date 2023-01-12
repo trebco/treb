@@ -2007,7 +2007,7 @@ export class GridBase {
             console.warn('NOTE: R1C1 support is experimental. the semantics may change in the future.');
           }
 
-          value = '=' + this.parser.Render(result.expression);
+          value = '=' + this.parser.Render(result.expression, { missing: '' });
         }
       }
     }
