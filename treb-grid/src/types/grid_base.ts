@@ -767,6 +767,7 @@ export class GridBase {
         row: number; 
         text: string; 
         number: number; 
+        type: ValueType;
         data: ClipboardCellData[];
       }> = [];
 
@@ -799,6 +800,7 @@ export class GridBase {
         row, 
         number: 0,
         text: '',
+        type: ValueType.undefined,
         data: [] as ClipboardCellData[],
       };
 
@@ -823,6 +825,7 @@ export class GridBase {
           const value = cd.calculated_type ? cd.calculated : cd.value;
           row_data.text = value?.toString() || '';
           row_data.number = Number(value) || 0;
+          row_data.type = cd.calculated_type || cd.type;
 
         }
 
@@ -857,14 +860,33 @@ export class GridBase {
 
     const invert = command.asc ? 1 : -1;
 
+    console.info(sort_type);
+
     switch (sort_type) {
       case 'numeric':
-        ranked.sort((a, b) => (a.number - b.number) * invert);
+        ranked.sort((a, b) => {
+          if (a.type === ValueType.undefined) {
+            return ((b.type === ValueType.undefined) ? 0 : 1);
+          }
+          if (b.type === ValueType.undefined) {
+            return -1;
+          }
+          return (a.number - b.number) * invert;
+        });
         break;
 
       case 'text':
       default:
-        ranked.sort((a, b) => a.text.localeCompare(b.text) * invert);
+        ranked.sort((a, b) => {
+          if (a.type === ValueType.undefined) {
+            return ((b.type === ValueType.undefined) ? 0 : 1);
+          }
+          if (b.type === ValueType.undefined) {
+            return -1;
+          }
+
+          return a.text.localeCompare(b.text) * invert;
+        });
         break;
     }
 

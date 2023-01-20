@@ -4572,6 +4572,8 @@ export class Grid extends GridBase {
    * when you drag from the nub, we copy the contents of the original
    * selection into the new selection, but there are some special recycling
    * rules.
+   * 
+   * FIXME: expand tables
    */
   private RecycleNubArea(target_area: Area, source_area: Area) {
 
@@ -4604,6 +4606,32 @@ export class Grid extends GridBase {
           area: target_area,
         });
         return;
+    }
+
+    // special case: table. expand table. we MIGHT want to shift the 
+    // totals row, if there's a totals row. not sure atm.
+
+    if (cells[0][0].table && source_area.Equals(new Area(cells[0][0].table.area.start, cells[0][0].table.area.end))) {
+
+      const table = cells[0][0].table;
+      const sortable = table.sortable;
+      const totals = table.totals_row;
+
+      // remove the table, then re-insert, preserving flags
+
+      this.ExecCommand([{
+          key: CommandKey.RemoveTable,
+          table,
+        },
+        {
+          key: CommandKey.InsertTable,
+          area: target_area,
+          sortable,
+          totals,
+        },
+      ]);
+
+      return;
     }
 
     const data: CellValue[][] = [];
