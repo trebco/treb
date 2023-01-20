@@ -52,6 +52,72 @@ import { LeafVertex } from './dag/leaf_vertex';
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError } from './function-error';
 
 /**
+ * breaking this out so we can use it for export (TODO)
+ * 
+ * @param type 
+ * @returns 
+ */
+const TranslateSubtotalType = (type: string|number): number => {
+
+  if (typeof type === 'string') {
+    type = type.toUpperCase();
+    switch (type) {
+      case 'AVERAGE':
+      case 'MEAN':
+        type = 101;
+        break;
+
+      case 'COUNT':
+        type = 102;
+        break;
+
+      case 'COUNTA':
+        type = 103;
+        break;
+
+      case 'MAX':
+        type = 104;
+        break;
+
+      case 'MIN':
+        type = 105;
+        break;
+
+      case 'PRODUCT':
+        type = 106;
+        break;
+          
+      case 'STDEV':
+        type = 107;
+        break;
+
+      case 'STDEVP':
+        type = 108;
+        break;
+          
+      case 'SUM':
+        type = 109;
+        break;
+
+      case 'VAR':
+        type = 110;
+        break;
+
+      case 'VARP':
+        type = 111;
+        break;
+              
+      default:
+        type = 0;
+        break;
+    }
+  }
+  
+  return type;
+
+};
+
+/**
  * options for the evaluate function
  */
 export interface EvaluateOptions {
@@ -206,7 +272,9 @@ export class Calculator extends Graph {
           { name: 'type' },
           { name: 'range', metadata: true, }
         ],
-        fn: (type: number, ...args: any[]): UnionValue => {
+        fn: (type: number|string, ...args: any[]): UnionValue => {
+
+          type = TranslateSubtotalType(type);
 
           // validate, I guess
 
