@@ -49,15 +49,25 @@ import { Color } from './color';
 
 /**
  * table styles. table has four elements: headers (the first row in
- * the table), odd and event rows, and the last row. we apply as delta
+ * the table), odd and even rows, and the last row. we apply as delta
  * to the current style. the first row after the header is row 1, hence
  * odd. footer is usually just a bottom border.
+ * 
+ * FIXME: do we need the "footer" style? why not just use the row style,
+ * assuming that has the appropriate bottom border? (...)
+ * 
+ * I kind of like the idea of a proper table border, but we're applying
+ * it inconsistently: we have a footer, but not a consistent header (header
+ * only applies to title row) and no sides.
+ * 
+ * so we should drop footer, and (potentially) add a frame style.
+ * 
  */
 export interface TableStyles {
   header?: Style.Properties;
   odd?: Style.Properties;
   even?: Style.Properties;
-  footer?: Style.Properties;
+  // footer?: Style.Properties;
   total?: Style.Properties;
 }
 
@@ -366,7 +376,7 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
     header: TableStyleFromCSS(root_css, CSS('treb-table header')),
     odd: TableStyleFromCSS(root_css, CSS('treb-table row-odd')),
     even: TableStyleFromCSS(root_css, CSS('treb-table row-even')),
-    footer: TableStyleFromCSS(root_css, CSS('treb-table footer')),
+    // footer: TableStyleFromCSS(root_css, CSS('treb-table footer')),
     total: TableStyleFromCSS(root_css, CSS('treb-table total')),
   }
  

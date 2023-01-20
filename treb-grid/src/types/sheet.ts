@@ -1296,11 +1296,13 @@ export class Sheet {
         }
       }
 
+      /*
       if (data.last) {
         if (table_styles.footer) {
           style = Style.Composite([style, table_styles.footer]);
         }
       }
+      */
 
       return style;
     }
