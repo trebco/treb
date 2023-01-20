@@ -52,6 +52,7 @@ export interface TREBDocument {
   macro_functions?: MacroFunction[];
   named_expressions?: SerializedNamedExpression[];
   tables?: Table[];
+  shared_resources?: Record<string, string>;
 }
 
 export interface ResizeEvent {

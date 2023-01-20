@@ -25,10 +25,10 @@ import {
   Cell, ValueType, Cells, Style,
   Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, 
   IsNestedRowArray, CellValue, ImportedSheetData, Complex, 
-  DimensionedQuantity, IsCellAddress, IArea, Table, TableStyles
+  DimensionedQuantity, IsCellAddress, IArea, Table, TableStyles,
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
-import { Measurement } from 'treb-utils';
+import { Measurement, ValidateURI } from 'treb-utils';
 
 import type { TextPart } from 'treb-base-types';
 
@@ -704,29 +704,13 @@ export class Sheet {
     // load background image, if set
 
     if (this.background_image) {
-      try {
-        const url = new URL(this.background_image, document.location.href);
-
-        // we allow data: URIs plus same-origin (from host; we don't know
-        // what the document source was, if different).
-
-        // FIXME: parameterize this? 
-
-        if (url.protocol !== 'data') {
-          if (url.origin !== document.location.origin) {
-            console.warn('invalid URI for background image');
-            return;
-          }
-        }
-
+      const resource = ValidateURI(this.background_image);
+      if (resource) {
         this._image = document.createElement('img');
-        this._image.src = url.toString();
-
-      }
-      catch (e) {
-        console.error(e);
+        this._image.src = resource;
       }
 
+      // this._image = image_store.Get(this.background_image);
     }
   }
 

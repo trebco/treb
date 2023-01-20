@@ -66,4 +66,7 @@ export interface SerializeOptions {
    */
   tables?: boolean;
 
+  /** share resources (images, for now) to prevent writing data URIs more than once */
+  share_resources?: boolean;
+
 }

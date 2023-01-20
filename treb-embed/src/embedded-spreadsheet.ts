@@ -43,7 +43,7 @@ import {
   AddressReference, RangeReference, IsArea, TableSortOptions, Table,
 } from 'treb-base-types';
 
-import { EventSource, Yield } from 'treb-utils';
+import { EventSource, Yield, ValidateURI } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
 // --- local -------------------------------------------------------------------
@@ -2095,6 +2095,7 @@ export class EmbeddedSpreadsheet {
           export_colors: true,
           decorated_cells: true,
           tables: true,
+          share_resources: false,
         });
 
         // why do _we_ put this in, instead of the grid method? 
@@ -2899,10 +2900,15 @@ export class EmbeddedSpreadsheet {
     // API v1 OK
 
     // add default for shrink, which can be overridden w/ explicit false
+    // add default (true) for shared resources (FIXME: should remove for undo? ...)
 
-    const grid_data = this.grid.Serialize({
-      shrink: true, ...options,
-    });
+    options = {
+      share_resources: true,
+      shrink: true,
+      ...options,
+    };
+
+    const grid_data = this.grid.Serialize(options);
 
     // NOTE: these are not really env vars. we replace them at build time
     // via a webpack plugin. using the env syntax lets them look "real" at
@@ -2917,6 +2923,46 @@ export class EmbeddedSpreadsheet {
       decimal_mark: Localization.decimal_separator,
       ...grid_data,
     };
+
+    if (options.share_resources) {
+
+      let shared_id = 1;
+      const resources: Map<string, string> = new Map();
+      const sheets = Array.isArray(serialized.sheet_data) ? serialized.sheet_data : [serialized.sheet_data];
+
+      const Store = (source: string) => {
+        let id = resources.get(source);
+        if (!id) {
+          id = (shared_id++).toString();
+          resources.set(source, id);
+        }
+        return `resource:${id}`;
+      };
+
+      for (const sheet of sheets) {
+        
+        if (!sheet) { continue; }
+
+        if (sheet.background_image) {
+          sheet.background_image = Store(sheet.background_image);
+        }
+
+        for (const annotation of sheet.annotations || []) {
+          if (annotation.type === 'image' && annotation.data.src) {
+            annotation.data.src = Store(annotation.data.src);
+          }
+        }
+
+      }
+
+      const shared: Record<string, string> = {};
+      for (const [resource, key] of resources.entries()) {
+        shared[key] = resource;
+      }
+
+      serialized.shared_resources = shared;
+
+    }
 
     if (options.rendered_values) {
       serialized.rendered_values = true;
@@ -4408,13 +4454,29 @@ export class EmbeddedSpreadsheet {
 
       }
       else if (annotation.type === 'image') {
-        const img = document.createElement('img');
-        if (typeof annotation.data.src === 'string' && /^data:image/i.test(annotation.data.src)) {
-          img.setAttribute('src', annotation.data.src);
+        if (typeof annotation.data.src === 'string') {
+
+          const reference = ValidateURI(annotation.data.src);
+          if (reference) {
+ 
+            const img = document.createElement('img');
+            img.src = reference;
+
+            if (annotation.data.scale === 'fixed') {
+              img.style.position = 'relative';
+              img.style.left = '50%';
+              img.style.top = '50%';
+              img.style.transform = 'translate(-50%, -50%)';
+            }
+            else {
+              img.style.width = '100%';
+              img.style.height = '100%';
+            }
+
+            view.content_node.appendChild(img);
+          }
         }
-        img.style.width = '100%';
-        img.style.height = '100%';
-        view.content_node.appendChild(img);
+
       }
     }
   }
@@ -4807,6 +4869,30 @@ export class EmbeddedSpreadsheet {
       else {
         sheets.push(data.sheet_data);
       }
+    }
+
+    if (data.shared_resources) {
+
+      const shared = data.shared_resources;
+
+      const Unshare = (resource: string) => {
+        if (/^resource:/.test(resource)) {
+          return shared[resource.substring(9)] || '';
+        }
+        return resource;
+      }
+
+      for (const sheet of sheets) {
+        if (sheet.background_image) {
+          sheet.background_image = Unshare(sheet.background_image);
+        }
+        for (const annotation of sheet.annotations || []) {
+          if (annotation.type === 'image' && annotation.data.src) {
+            annotation.data.src = Unshare(annotation.data.src);
+          }
+        }
+      }
+
     }
 
     // FIXME: it's not necessary to call reset here unless the
