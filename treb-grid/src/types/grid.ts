@@ -4942,7 +4942,7 @@ export class Grid extends GridBase {
         case '/':
           event.stopPropagation();
           event.preventDefault();
-          this.SelectArray();
+          this.SelectArrayOrTable();
           break;
 
         default:
@@ -5124,19 +5124,28 @@ export class Grid extends GridBase {
 
   /**
    * select the array containing the current cell, if any. if there's no
-   * array, do nothing.
+   * array, do nothing. updated to support selecting tables as well as arrays.
    */
-  private SelectArray() {
+  private SelectArrayOrTable() {
+
     if (this.primary_selection.empty) {
       return;
     }
 
     const cell = this.active_sheet.CellData(this.primary_selection.target);
-    if (!cell || !cell.area) {
+
+    if (!cell || (!cell.area && !cell.table)) {
       return;
     }
 
-    this.Select(this.primary_selection, cell.area, cell.area.start);
+    if (cell.area) {
+      this.Select(this.primary_selection, cell.area, cell.area.start);
+    }
+    if (cell.table) {
+      const area = new Area(cell.table.area.start, cell.table.area.end);
+      this.Select(this.primary_selection, area, area.start);
+    }
+
     this.RenderSelections();
 
   }
