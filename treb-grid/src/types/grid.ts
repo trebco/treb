@@ -1159,6 +1159,10 @@ export class Grid extends GridBase {
       this.AddAnnotation(element, true);
     }
 
+    // handle any necessary activation tasks
+
+    this.ActivateSheetTasks();
+
     // no longer sending explicit layout event here
 
     this.QueueLayoutUpdate();
@@ -1465,6 +1469,10 @@ export class Grid extends GridBase {
       }
     }
 
+    // handle any necessary activation tasks
+
+    this.ActivateSheetTasks();
+
     // we do the tile rebuild just before the next paint, to prevent
     // flashing. seems to be stable but needs more testing. note that
     // if you call this with render = true, that will happen immediately,
@@ -1531,6 +1539,7 @@ export class Grid extends GridBase {
       const theme_properties = LoadThemeProperties(this.grid_container);
       composite = {...theme_properties};
 
+      /*
       if (composite?.background_image && !composite.background_image.complete) {
 
         // the image may not have loaded immediately -- in fact it usually 
@@ -1558,6 +1567,8 @@ export class Grid extends GridBase {
         RepaintLayout();
 
       }
+      */
+
     }
 
     // all this is super confusing, probably the result of theme going
@@ -2799,6 +2810,10 @@ export class Grid extends GridBase {
       this.AddAnnotation(element, true);
     }
 
+    // handle any necessary activation tasks
+
+    this.ActivateSheetTasks();
+    
     // we do the tile rebuild just before the next paint, to prevent
     // flashing. seems to be stable but needs more testing. note that
     // if you call this with render = true, that will happen immediately,
@@ -2845,6 +2860,40 @@ export class Grid extends GridBase {
 
   }
 
+  /**
+   * handle any tasks the sheet needs to do on activation
+   */
+  private ActivateSheetTasks() {
+
+    this.active_sheet.Activate();
+    
+    if (this.active_sheet.image && !this.active_sheet.image.complete) {
+
+      // the image may not have loaded immediately -- in fact it usually 
+      // won't, unless it's already in memory for some reason. schedule
+      // a repaint.
+
+      const image = this.active_sheet.image;
+
+      // limit so we don't do this forever
+      // can we do animationFrame or even promise.resolve?
+
+      let counter = 0;
+      const RepaintLayout = () => {
+        if (!image.complete) {
+          if (counter++ < 5) {
+            setTimeout(() => RepaintLayout(), 10);
+          }
+        }
+        else {
+          this.UpdateLayout();
+        }
+      };
+
+      RepaintLayout();
+
+    }
+  }
 
 
   /**

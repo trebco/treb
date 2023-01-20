@@ -1315,10 +1315,10 @@ export class TileRenderer {
     context.fillStyle = this.theme.grid_color;
     context.fillRect(0, 0, width, height);
 
-    if (this.theme.background_image) {
+    if (this.view.active_sheet.image) {
       this.PaintBackgroundImage(
             context, 
-            this.theme.background_image, 
+            this.view.active_sheet.image, 
             cell_left, 
             cell_top, 
             width, 
@@ -1791,10 +1791,10 @@ export class TileRenderer {
         context.fillStyle = this.theme.grid_color || '';
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
 
-        if (this.theme.background_image) {
+        if (this.view.active_sheet.image) {
           this.PaintBackgroundImage(
                 context, 
-                this.theme.background_image,
+                this.view.active_sheet.image,
                 cell_left + element.background.left,
                 cell_top + element.background.top,
                 element.background.width,

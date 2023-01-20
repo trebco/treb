@@ -139,6 +139,14 @@ export class Sheet {
 
   public name = Sheet.default_sheet_name;
 
+  public background_image?: string;
+
+  protected _image: HTMLImageElement|undefined = undefined;
+
+  public get image(): HTMLImageElement|undefined {
+    return this._image;
+  }
+
   /** internal ID */
   // tslint:disable-next-line: variable-name
   private id_: number;
@@ -340,6 +348,10 @@ export class Sheet {
     }
     if (source.name) {
       sheet.name = source.name;
+    }
+
+    if (source.background_image) {
+      sheet.background_image = source.background_image;
     }
 
     // FIXME: this should only be done on load (and possibly paste).
@@ -684,6 +696,38 @@ export class Sheet {
 
     return sheet;
 
+  }
+
+
+  public Activate() {
+
+    // load background image, if set
+
+    if (this.background_image) {
+      try {
+        const url = new URL(this.background_image, document.location.href);
+
+        // we allow data: URIs plus same-origin (from host; we don't know
+        // what the document source was, if different).
+
+        // FIXME: parameterize this? 
+
+        if (url.protocol !== 'data') {
+          if (url.origin !== document.location.origin) {
+            console.warn('invalid URI for background image');
+            return;
+          }
+        }
+
+        this._image = document.createElement('img');
+        this._image.src = url.toString();
+
+      }
+      catch (e) {
+        console.error(e);
+      }
+
+    }
   }
 
   /* *
@@ -2556,6 +2600,10 @@ export class Sheet {
 
     if (this.scroll_offset.x || this.scroll_offset.y) {
       result.scroll = this.scroll_offset;
+    }
+
+    if (this.background_image) {
+      result.background_image = this.background_image;
     }
 
     // moved to outer container (data model)

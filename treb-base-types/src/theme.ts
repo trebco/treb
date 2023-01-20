@@ -107,8 +107,10 @@ export interface Theme {
 
   table?: TableStyles;
 
-  /** tinkering */
+  /*
+  // tinkering 
   background_image?: HTMLImageElement;
+  */
 
 }
 
@@ -333,6 +335,7 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
     theme.headers_grid_color = theme.grid_color;
   }
 
+  /*
   css = CSS('grid-background');
   if (css.backgroundImage) {
     const match = css.backgroundImage.match(/url\("*(.*?)"*\)/);
@@ -341,6 +344,7 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
       theme.background_image.src = match[1];
     }
   }
+  */
 
   // this _is_ painted, but it doesn't necessarily need to be -- we
   // could use a node. that would require moving it around, though. 

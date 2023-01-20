@@ -83,6 +83,9 @@ export interface SerializedSheet {
 
   visible?: boolean;
 
+  /** testing */
+  background_image?: string;
+
 }
 
 /**
