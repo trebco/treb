@@ -14,11 +14,10 @@
  * You should have received a copy of the GNU General Public License along 
  * with TREB. If not, see <https://www.gnu.org/licenses/>. 
  *
- * Copyright 2022 trebco, llc. 
+ * Copyright 2022-2023 trebco, llc. 
  * info@treb.app
  * 
  */
-
 
 /**
  * options for the SetRange method
