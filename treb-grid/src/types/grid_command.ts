@@ -114,6 +114,13 @@ export interface InsertTableCommand {
 
   /** optionally include a totals row */
   totals?: boolean,
+
+  /** 
+   * sortable. defaults to true. you can optionally 
+   * disable sorting, if you want.
+   */
+  sortable?: boolean,
+
 }
 
 /**

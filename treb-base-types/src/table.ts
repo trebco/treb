@@ -83,6 +83,11 @@ export interface Table {
   totals_row?: boolean;
 
   /** 
+   * table is sortable. defaults to true. if false, disables UI sorting. 
+   */
+  sortable?: boolean;
+
+  /** 
    * sort data. sorts are hard, meaning we actually move data around. 
    * (not meaning difficult). we may keep track of the last sort so we 
    * can toggle asc/desc, for example. atm this will not survive serialization.

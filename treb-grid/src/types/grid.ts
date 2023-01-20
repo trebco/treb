@@ -3982,11 +3982,11 @@ export class Grid extends GridBase {
 
   private HoverCell(address: ICellAddress, event?: MouseEvent) {
 
-    // does this cell have a note?
-
     let cell = this.active_sheet.cells.GetCell(address, false);
 
-    if (cell?.table && cell.table.area.start.row === address.row) {
+    // check table. sortable can now be explicitly set (to false)
+
+    if (cell?.table && cell.table.area.start.row === address.row && cell.table.sortable !== false) {
       this.hover_data.table_header = true;
       this.layout.ShowTableSortButton(cell.table, address.column - cell.table.area.start.column, address);
     }
@@ -4003,6 +4003,8 @@ export class Grid extends GridBase {
       cell = this.active_sheet.cells.GetCell(address, false);
       address = { row: area.start.row, column: area.end.column };
     }
+
+    // does this cell have a note?
 
     // just FYI we have separate note/tooltip because if not you could
     // "mask" the one by using the other (whichever one was dominant).

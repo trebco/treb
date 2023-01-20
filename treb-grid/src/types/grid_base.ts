@@ -171,7 +171,7 @@ export class GridBase {
    * @param totals - set true to include a totals row. tables have different
    * formatting and slightly different behavior when there's a totals row.
    */
-  public InsertTable(area: IArea, totals = false) {
+  public InsertTable(area: IArea, totals = false, sortable: boolean|undefined = undefined) {
 
     // we should validate here, so that we can throw.
 
@@ -194,6 +194,7 @@ export class GridBase {
       key: CommandKey.InsertTable,
       area: JSON.parse(JSON.stringify(area)),
       totals,
+      sortable,
     });
 
   }
@@ -2938,6 +2939,7 @@ export class GridBase {
               const table: Table = {
                 area: command.area,
                 name,
+                sortable: command.sortable, // defaults to true if !present
               };
 
               if (command.totals) {
