@@ -185,6 +185,16 @@ export declare class EmbeddedSpreadsheet {
     GetSheetID(sheet: string | number): number | undefined;
 
     /**
+     * insert a table in the given range. optionally include a totals row.
+     * this method does not make any changes to content or layout. it just
+     * converts the range to a table.
+     *
+     * @param reference
+     */
+    InsertTable(range?: RangeReference, options?: InsertTableOptions): void;
+    RemoveTable(range?: RangeReference): void;
+
+    /**
      * Add a sheet, optionally named.
      */
     AddSheet(name?: string): number;
@@ -968,6 +978,78 @@ export interface TableSortOptions {
     asc: boolean;
 }
 export type TableSortType = 'text' | 'numeric' | 'auto';
+export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file" | "local-storage" | "undo";
+
+/**
+ * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
+ * of the event.
+ */
+export type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | DataChangeEvent | SelectionEvent | ResizeEvent;
+
+/**
+ * options when inserting a table into a sheet
+ */
+export interface InsertTableOptions {
+
+    /**
+     * include a totals/summation row. this impacts the layout and styling:
+     * totals row have a unique style and are not included when sorting.
+     */
+    totals_row?: boolean;
+
+    /**
+     * show a sort button in table headers. defaults to true.
+     */
+    sortable?: boolean;
+}
+export interface ResizeEvent {
+    type: 'resize';
+}
+export declare type LoadType = "treb" | "csv" | "xlsx";
+
+/**
+ * This event is sent when a document is loaded, and also on undo. The
+ * source field can help determine if it was triggered by an undo operation.
+ */
+export interface DocumentLoadEvent {
+    type: 'load';
+    source?: LoadSource;
+    file_type?: LoadType;
+}
+
+/**
+ * This event is sent when the document is reset.
+ *
+ **/
+export interface DocumentResetEvent {
+    type: 'reset';
+}
+
+/**
+ * This event is sent when data in the spreadsheet changes, but there are
+ * no structural or cell changes. For example, the `RAND` function returns
+ * a new value on every calculation, but the function itself does not change.
+ */
+export interface DataChangeEvent {
+    type: 'data';
+}
+
+/**
+ * This event is sent when the value of a cell changes, or when the document
+ * structure chages. Structure changes might be inserting/deleting rows or
+ * columns, or adding/removing a sheet.
+ */
+export interface DocumentChangeEvent {
+    type: 'document-change';
+}
+
+/**
+ * This event is sent when the spreadsheet selection changes. Use the
+ * `GetSelection` method to get the address of the current selection.
+ */
+export interface SelectionEvent {
+    type: 'selection';
+}
 
 /**
  * options for exporting CSV/TSV
@@ -1157,61 +1239,6 @@ export interface EmbeddedSpreadsheetOptions {
      * show the revert button. see the Revert method.
      */
     revert?: boolean;
-}
-export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file" | "local-storage" | "undo";
-
-/**
- * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
- * of the event.
- */
-export type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | DataChangeEvent | SelectionEvent | ResizeEvent;
-export interface ResizeEvent {
-    type: 'resize';
-}
-export declare type LoadType = "treb" | "csv" | "xlsx";
-
-/**
- * This event is sent when a document is loaded, and also on undo. The
- * source field can help determine if it was triggered by an undo operation.
- */
-export interface DocumentLoadEvent {
-    type: 'load';
-    source?: LoadSource;
-    file_type?: LoadType;
-}
-
-/**
- * This event is sent when the document is reset.
- *
- **/
-export interface DocumentResetEvent {
-    type: 'reset';
-}
-
-/**
- * This event is sent when data in the spreadsheet changes, but there are
- * no structural or cell changes. For example, the `RAND` function returns
- * a new value on every calculation, but the function itself does not change.
- */
-export interface DataChangeEvent {
-    type: 'data';
-}
-
-/**
- * This event is sent when the value of a cell changes, or when the document
- * structure chages. Structure changes might be inserting/deleting rows or
- * columns, or adding/removing a sheet.
- */
-export interface DocumentChangeEvent {
-    type: 'document-change';
-}
-
-/**
- * This event is sent when the spreadsheet selection changes. Use the
- * `GetSelection` method to get the address of the current selection.
- */
-export interface SelectionEvent {
-    type: 'selection';
 }
 
 /**

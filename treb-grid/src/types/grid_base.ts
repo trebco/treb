@@ -3016,7 +3016,7 @@ export class GridBase {
 
             // drop from model
 
-            console.info('deleting...', command.table.name);
+            // console.info('deleting...', command.table.name);
             this.model.tables.delete(command.table.name.toLowerCase());
 
             // tables use nonstandard styling, we need to invalidate the sheet.

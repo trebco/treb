@@ -51,7 +51,7 @@ import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 import { Dialog, DialogType } from './progress-dialog';
 import { Spinner } from './spinner';
 import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './options';
-import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent } from './types';
+import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent, InsertTableOptions } from './types';
 
 import type { LanguageModel, TranslatedFunctionDescriptor } from './language-model';
 import { SelectionState, Toolbar, ToolbarEvent } from './toolbar';
@@ -1655,6 +1655,25 @@ export class EmbeddedSpreadsheet {
     }
 
     return undefined;
+  }
+
+  /**
+   * insert a table in the given range. optionally include a totals row.
+   * this method does not make any changes to content or layout. it just 
+   * converts the range to a table.
+   * 
+   * @param reference 
+   */
+  public InsertTable(range?: RangeReference, options: InsertTableOptions = {}) {
+    const area = range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : this.GetSelectionReference().area;
+    this.grid.InsertTable(area, options.totals_row, options.sortable);
+  }
+
+  public RemoveTable(range?: RangeReference) {
+    const table = this.ResolveTable(range || this.GetSelectionReference().target);
+    if (table) {
+      this.grid.RemoveTable(table);
+    }
   }
 
   /**

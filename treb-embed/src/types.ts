@@ -132,3 +132,20 @@ export type EmbeddedSheetEvent
   | ResizeEvent
   ;
 
+/**
+ * options when inserting a table into a sheet
+ */
+export interface InsertTableOptions {
+
+  /** 
+   * include a totals/summation row. this impacts the layout and styling:
+   * totals row have a unique style and are not included when sorting.
+   */
+  totals_row?: boolean;
+
+  /** 
+   * show a sort button in table headers. defaults to true.
+   */
+  sortable?: boolean;
+  
+}
