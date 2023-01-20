@@ -860,8 +860,6 @@ export class GridBase {
 
     const invert = command.asc ? 1 : -1;
 
-    console.info(sort_type);
-
     switch (sort_type) {
       case 'numeric':
         ranked.sort((a, b) => {
