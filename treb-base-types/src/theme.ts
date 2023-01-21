@@ -48,17 +48,32 @@ import { Color } from './color';
  */
 
 /**
- * table styles. table has four elements: headers (the first row in
- * the table), odd and even rows, and the totals row (if present). we apply 
- * as delta to the current style. the first row after the header is row 1, 
- * hence odd.
+ * composite styling for tables.
+ * 
+ * @privateRemarks
  * 
  * we used to have a "footer", now removed. use borders on rows.
  */
 export interface TableTheme {
+
+  /** the first row in a table, showing column titles. */
   header?: Style.Properties;
+
+  /** 
+   * odd rows in the table. we count the title row as zero, so
+   * the first row in the table containing data is 1, hence odd.
+   */
   odd?: Style.Properties;
+
+  /**
+   * even rows in the table.
+   */
   even?: Style.Properties;
+
+  /**
+   * styling for the totals row, if included. this will be the last 
+   * row in the table. 
+   */
   total?: Style.Properties;
 }
 
@@ -489,7 +504,7 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   if (css.color) {
     theme.offset_dark = css.color;
   }
-  
+
   css = CSS('treb-offset-light');
   if (css.color) {
     theme.offset_light = css.color;
