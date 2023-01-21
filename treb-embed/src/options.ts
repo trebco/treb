@@ -144,6 +144,9 @@ export interface EmbeddedSpreadsheetOptions {
   /** font size in the toolbar */
   font_scale?: boolean;
 
+  /** show insert/remove table button in toolbar */
+  table_button?: boolean;
+
   /** chart menu in the toolbar */
   chart_menu?: boolean;
 

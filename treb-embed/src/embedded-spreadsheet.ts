@@ -40,7 +40,7 @@ import {
   Area, IArea, CellValue, Point,
   IsFlatData, IsFlatDataArray, Rectangle, IsComplex, 
   ComplexToString, Complex, ExtendedUnion, IRectangle,
-  AddressReference, RangeReference, IsArea, TableSortOptions, Table, ThemeColorTable,
+  AddressReference, RangeReference, IsArea, TableSortOptions, Table, ThemeColorTable, TableTheme,
 } from 'treb-base-types';
 
 import { EventSource, Yield, ValidateURI } from 'treb-utils';
@@ -1262,6 +1262,9 @@ export class EmbeddedSpreadsheet {
           }
           break;
 
+        case 'insert-table': this.InsertTable(); break;
+        case 'remove-table': this.RemoveTable(); break;
+
         // why are these calling grid methods? should we contain this in some way? (...)
 
         case 'insert-row': this.InsertRows(); break;
@@ -1681,6 +1684,25 @@ export class EmbeddedSpreadsheet {
     if (table) {
       this.grid.RemoveTable(table);
     }
+  }
+
+  public UpdateTableStyle(range?: RangeReference, theme: TableTheme|number = 4) {
+
+    const table = this.ResolveTable(range || this.GetSelectionReference().target);
+
+    if (table) {
+
+      if (typeof theme === 'number') {
+        theme = ThemeColorTable(theme);
+      }
+      table.theme = theme;
+
+      this.grid.active_sheet.FlushCellStyles();
+      this.grid.Update(true);
+
+      this.PushUndo();
+    }
+
   }
 
   /**
@@ -4665,9 +4687,11 @@ export class EmbeddedSpreadsheet {
     if (selection && !selection.empty) {
 
       state.selection = selection;
-      state.merge = false;
+      // state.merge = false;
+      // state.table = false;
       let data = this.grid.active_sheet.CellData(selection.target);
 
+      state.table = !!data.table;
       state.merge = !!data.merge_area;
       if (state.merge && data.merge_area && (
         data.merge_area.start.row !== selection.target.row ||

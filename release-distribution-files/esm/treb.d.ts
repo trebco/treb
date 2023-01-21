@@ -193,6 +193,7 @@ export declare class EmbeddedSpreadsheet {
      */
     InsertTable(range?: RangeReference, options?: InsertTableOptions): void;
     RemoveTable(range?: RangeReference): void;
+    UpdateTableStyle(range?: RangeReference, theme?: TableTheme | number): void;
 
     /**
      * Add a sheet, optionally named.
@@ -948,6 +949,33 @@ export interface DimensionedQuantity {
 }
 
 /**
+ * composite styling for tables.
+ *
+ **/
+export interface TableTheme {
+
+    /** the first row in a table, showing column titles. */
+    header?: Style.Properties;
+
+    /**
+     * odd rows in the table. we count the title row as zero, so
+     * the first row in the table containing data is 1, hence odd.
+     */
+    odd?: Style.Properties;
+
+    /**
+     * even rows in the table.
+     */
+    even?: Style.Properties;
+
+    /**
+     * styling for the totals row, if included. this will be the last
+     * row in the table.
+     */
+    total?: Style.Properties;
+}
+
+/**
  * type represents a reference passed in to API functions. it can be an
  * address object, or a string.
  */
@@ -994,6 +1022,7 @@ export interface InsertTableOptions {
     /**
      * include a totals/summation row. this impacts the layout and styling:
      * totals row have a unique style and are not included when sorting.
+     * defaults to true.
      */
     totals_row?: boolean;
 
@@ -1055,33 +1084,6 @@ export interface DocumentChangeEvent {
  */
 export interface SelectionEvent {
     type: 'selection';
-}
-
-/**
- * composite styling for tables.
- *
- **/
-export interface TableTheme {
-
-    /** the first row in a table, showing column titles. */
-    header?: Style.Properties;
-
-    /**
-     * odd rows in the table. we count the title row as zero, so
-     * the first row in the table containing data is 1, hence odd.
-     */
-    odd?: Style.Properties;
-
-    /**
-     * even rows in the table.
-     */
-    even?: Style.Properties;
-
-    /**
-     * styling for the totals row, if included. this will be the last
-     * row in the table.
-     */
-    total?: Style.Properties;
 }
 
 /**

@@ -36,6 +36,7 @@ import '../style/toolbar-4.scss';
 export interface SelectionState {
   style?: Style.Properties;
   merge?: boolean;
+  table?: boolean;
   frozen?: boolean;
   comment?: string;
   selection?: GridSelection;
@@ -232,6 +233,13 @@ export class Toolbar extends EventSource<ToolbarEvent> {
               </div>
             </div>
           </div>
+
+          ${options.table_button ? `
+          <button id='table' data-command='insert-table' title='Table'>
+            <div class='treb-toolbar-icon treb-icon-table' />
+          </button>
+          ` : ''}
+
         </div>
 
         <div class='group'>
@@ -997,6 +1005,20 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       merge.classList.remove('active');
       merge.dataset.command = 'merge';
       merge.setAttribute('title', 'Merge cells');
+    }
+    
+    const table = this.model.table;
+    if (table) {
+      if (state.table) {
+        table.classList.add('active');
+        table.dataset.command = 'remove-table';
+        table.setAttribute('title', 'Remove table');
+      }
+      else {
+        table.classList.remove('active');
+        table.dataset.command = 'insert-table';
+        table.setAttribute('title', 'Insert table');
+      }
     }
     
     // this is gated on an option, so it may not exist

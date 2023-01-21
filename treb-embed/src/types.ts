@@ -140,6 +140,7 @@ export interface InsertTableOptions {
   /** 
    * include a totals/summation row. this impacts the layout and styling:
    * totals row have a unique style and are not included when sorting.
+   * defaults to true.
    */
   totals_row?: boolean;
 

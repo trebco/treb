@@ -171,7 +171,7 @@ export class GridBase {
    * @param totals - set true to include a totals row. tables have different
    * formatting and slightly different behavior when there's a totals row.
    */
-  public InsertTable(area: IArea, totals = false, sortable: boolean|undefined = undefined, theme?: TableTheme) {
+  public InsertTable(area: IArea, totals = true, sortable: boolean|undefined = undefined, theme?: TableTheme) {
 
     // we should validate here, so that we can throw.
 
