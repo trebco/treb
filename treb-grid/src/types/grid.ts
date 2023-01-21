@@ -1804,22 +1804,30 @@ export class Grid extends GridBase {
 
     // create dom structure
 
-    this.layout.Initialize(container, 
-        () => this.OnScroll(), 
-        (value: CellValue) => this.OnDropdownSelect(value),
-        (name: string, column: number, asc: boolean) => {
-          // sort callback
-          // console.info('sort!', table, column, asc);
-          const table = this.model.tables.get(name.toLowerCase());
-          if (table) {
-            this.SortTable(table, {
-              column,
-              asc,
-            });
-          }
+    this.layout.Initialize(container, {
+
+          // scroll callback
+          scroll: () => this.OnScroll(), 
+
+          // dropdown callback
+          dropdown: (value: CellValue) => this.OnDropdownSelect(value),
+
+          // sort (table) callback
+          sort: (name: string, column: number, asc: boolean) => {
+            const table = this.model.tables.get(name.toLowerCase());
+            if (table) {
+              this.SortTable(table, {
+                column,
+                asc,
+              });
+            }
+          },
+
+          // focus callback
+          focus: () => this.Focus(),
         },
-        () => this.Focus(),
         this.options.scrollbars);
+        
     this.selection_renderer.Initialize();
     this.layout.UpdateTiles();
 

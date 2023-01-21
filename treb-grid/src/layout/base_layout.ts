@@ -1052,11 +1052,16 @@ export abstract class BaseLayout {
    * over to do some additional work post init, and renaming the subclass-specific
    * method (@see InitializeInternal).
    */
-  public Initialize(container: HTMLElement,
-    scroll_callback: () => void,
-    dropdown_callback: (value: CellValue) => void,
-    sort_callback: (table: string, column: number, asc: boolean) => void,
-    focus_callback: () => void,
+  public Initialize(container: HTMLElement, callbacks: {
+      scroll: () => void,
+      dropdown: (value: CellValue) => void,
+      sort: (table: string, column: number, asc: boolean) => void,
+      focus: () => void,
+    },
+    // scroll_callback: () => void,
+    // dropdown_callback: (value: CellValue) => void,
+    // sort_callback: (table: string, column: number, asc: boolean) => void,
+    // focus_callback: () => void,
     scroll = true): void {
 
     if (!this.mask.parentElement) {
@@ -1091,7 +1096,7 @@ export abstract class BaseLayout {
 
         // console.info(this.sort_button.dataset);
 
-        sort_callback(
+        callbacks.sort(
           this.sort_button.dataset.table || '',
           Number(this.sort_button.dataset.column || '0') || 0,
           /true/i.test(this.sort_button.dataset.asc || ''));
@@ -1106,7 +1111,7 @@ export abstract class BaseLayout {
           this.sort_button.classList.add('asc');
         }
 
-        focus_callback();
+        callbacks.focus();
 
       });
     }
@@ -1115,12 +1120,12 @@ export abstract class BaseLayout {
       container.appendChild(this.title_node);
     }
 
-    this.InitializeInternal(container, scroll_callback);
+    this.InitializeInternal(container, callbacks.scroll);
     if (!scroll && this.scroll_reference_node) {
       this.scroll_reference_node.style.overflow = 'hidden';
     }
 
-    this.dropdown_callback = dropdown_callback;
+    this.dropdown_callback = callbacks.dropdown;
 
     this.initialized = true;
 
