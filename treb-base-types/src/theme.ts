@@ -117,16 +117,21 @@ export interface Theme {
 
   table?: TableStyles;
 
-  /*
-  // tinkering 
-  background_image?: HTMLImageElement;
-  */
+  /**
+   * this is for tinting. we're experimenting with tinting towards black
+   * or white, as opposed to lightening/darkening colors. this should improve
+   * swapping themed colors.
+   * 
+   * how to derive this value? @see DeriveColorScheme
+   */
+  mode: 'light'|'dark';
 
 }
 
 export const DefaultTheme: Theme = {
   grid_color: '#ccc',
   note_marker_color: '#d2c500',
+  mode: 'light',
 };
 
 /**
@@ -140,8 +145,18 @@ export const ThemeColor = (theme: Theme, color?: Style.Color): string => {
 /**
  * we cache values in the theme object so that we can dump it when we 
  * reload or update the theme.
+ * 
+ * we're now inverting tint for dark themes. the idea is that if you
+ * are using a dark theme, it's more natural to go in that direction, and
+ * you can use the same foreground color.
+ * 
+ * because this is ephemeral it won't impact export.
  */
 const TintedColor = (theme: Theme, index: number, tint: number) => {
+
+  if (theme.mode === 'dark') {
+    tint = -tint; // invert;
+  }
 
   if (!theme.tint_cache) {
     theme.tint_cache = [];
@@ -163,7 +178,6 @@ const TintedColor = (theme: Theme, index: number, tint: number) => {
       tinted = Color.Darken(rgb[0], rgb[1], rgb[2], -tint * 100, true);
     }
     color = `rgb(${tinted.r},${tinted.g},${tinted.b})`;
-    // console.info(index, tint, color);
     theme.tint_cache[index][tint] = color;
 
   }
@@ -316,6 +330,39 @@ const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
   return style;
 }
 
+/**
+ * how to derive the light/dark theme? it's complicated, as it turns out.
+ * there's almost nothing we can do to reliably determine what theme
+ * is set. the best thing would be color-scheme, which affects (among other
+ * things) scrollbars, but that might be set to something like 'light dark'
+ * which is indeterminate.
+ * 
+ * so what we are going to do is check the grid foreground and background;
+ * if the foreground is lighter than the background, we're in dark mode.
+ * and vice-versa. 
+ * 
+ */
+const DeriveColorScheme = (theme: Theme, context: CanvasRenderingContext2D): 'light' | 'dark' => {
+
+  const foreground_color = theme.grid_cell?.text;
+  const background_color = theme.grid_cell?.fill;
+
+  // because these are rendered to a canvas, we know that A is 255
+
+  context.fillStyle = foreground_color?.text || '';
+  context.fillRect(0, 0, 3, 3);
+  const fg = Color.RGBToHSL(...(Array.from(context.getImageData(1, 1, 1, 1).data) as [number, number, number]));
+
+  context.fillStyle = background_color?.text || '';
+  context.fillRect(0, 0, 3, 3);
+  const bg = Color.RGBToHSL(...(Array.from(context.getImageData(1, 1, 1, 1).data) as [number, number, number]));
+
+  // console.info({fg, bg});
+  
+  return fg.l > bg.l ? 'dark' : 'light';
+
+}
+
 export const LoadThemeProperties = (container: HTMLElement): Theme => {
 
   const theme: Theme = JSON.parse(JSON.stringify(DefaultTheme));
@@ -409,9 +456,13 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   canvas.width = 3;
   canvas.height = 3;
   const context = canvas.getContext('2d', { willReadFrequently: true });
-  
+
   if (context) {
-    theme.theme_colors_rgb= theme.theme_colors.map((color) => {
+    theme.mode = DeriveColorScheme(theme, context);
+  }
+    
+  if (context) {
+    theme.theme_colors_rgb = theme.theme_colors.map((color) => {
       context.fillStyle = color;
       context.fillRect(0, 0, 3, 3);
       const imagedata = context.getImageData(1, 1, 1, 1);

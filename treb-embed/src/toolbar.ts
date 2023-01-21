@@ -1055,7 +1055,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
             let color = theme.theme_colors[i] || '#000';
             if (tint) {
               const scale = Math.round(Math.abs(tint) * 100);
-              const direction = tint > 0 ? 'lighter' : 'darker';
+              const direction = (theme.mode === 'dark' ? -tint : tint) > 0 ? 'lighter' : 'darker';
               color += ` (${scale}% ${direction})`
             }
             const bg = this.ResolveColor({ theme: i, tint }, {});
