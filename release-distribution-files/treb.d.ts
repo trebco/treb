@@ -1003,7 +1003,8 @@ export interface InsertTableOptions {
     sortable?: boolean;
 
     /**
-     *
+     * base theme color, or a set of styles for the table. useful values for
+     * theme color are accent colors 4 (the default), 5, 7 and 9.
      */
     theme?: number | TableTheme;
 }
