@@ -38,7 +38,7 @@
 import { EventSource } from 'treb-utils';
 import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
 import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex } from 'treb-parser';
-import { Area, Style, IsCellAddress, ValidationType, ValueType, Table, TableSortOptions, DefaultTableSortOptions, TableTheme, ThemeColorTable } from 'treb-base-types';
+import { Area, Style, IsCellAddress, ValidationType, ValueType, Table, TableSortOptions, DefaultTableSortOptions, TableTheme } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
@@ -188,10 +188,6 @@ export class GridBase {
           throw new Error('invalid area for table');
         }
       }
-    }
-
-    if (typeof theme === 'number') {
-      theme = ThemeColorTable(theme);
     }
 
     this.ExecCommand({

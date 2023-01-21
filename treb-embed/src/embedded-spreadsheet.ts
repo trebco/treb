@@ -40,7 +40,7 @@ import {
   Area, IArea, CellValue, Point,
   IsFlatData, IsFlatDataArray, Rectangle, IsComplex, 
   ComplexToString, Complex, ExtendedUnion, IRectangle,
-  AddressReference, RangeReference, IsArea, TableSortOptions, Table,
+  AddressReference, RangeReference, IsArea, TableSortOptions, Table, ThemeColorTable,
 } from 'treb-base-types';
 
 import { EventSource, Yield, ValidateURI } from 'treb-utils';
@@ -1666,7 +1666,14 @@ export class EmbeddedSpreadsheet {
    */
   public InsertTable(range?: RangeReference, options: InsertTableOptions = {}) {
     const area = range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : this.GetSelectionReference().area;
-    this.grid.InsertTable(area, options.totals_row, options.sortable, options.theme);
+
+    let theme = options.theme;
+    if (typeof theme === 'number') {
+      theme = ThemeColorTable(theme);
+    }
+
+    this.grid.InsertTable(area, options.totals_row, options.sortable, theme);
+    
   }
 
   public RemoveTable(range?: RangeReference) {
