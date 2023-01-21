@@ -1666,7 +1666,7 @@ export class EmbeddedSpreadsheet {
    */
   public InsertTable(range?: RangeReference, options: InsertTableOptions = {}) {
     const area = range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : this.GetSelectionReference().area;
-    this.grid.InsertTable(area, options.totals_row, options.sortable);
+    this.grid.InsertTable(area, options.totals_row, options.sortable, options.theme);
   }
 
   public RemoveTable(range?: RangeReference) {

@@ -1398,7 +1398,7 @@ export class TileRenderer {
     let style: Style.Properties = cell.style ? {...cell.style} : {};
 
     if (cell.table) {
-      style = this.view.active_sheet.CellStyleData(address, this.theme.table) || {};
+      style = this.view.active_sheet.CellStyleData(address, cell.table.theme || this.theme.table) || {};
     }
 
     if (cell.merge_area) {

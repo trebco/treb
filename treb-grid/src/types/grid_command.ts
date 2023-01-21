@@ -19,7 +19,7 @@
  * 
  */
 
-import type { ICellAddress, IArea, Style, CellValue, Table, TableSortType } from 'treb-base-types';
+import type { ICellAddress, IArea, Style, CellValue, Table, TableSortType, TableTheme } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import type { BorderConstants } from './border_constants';
 
@@ -120,6 +120,11 @@ export interface InsertTableCommand {
    * disable sorting, if you want.
    */
   sortable?: boolean,
+
+  /**
+   * optional theme
+   */
+  theme?: TableTheme,
 
 }
 

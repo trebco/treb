@@ -4625,6 +4625,7 @@ export class Grid extends GridBase {
       const table = cells[0][0].table;
       const sortable = table.sortable;
       const totals = table.totals_row;
+      const theme = table.theme;
 
       // remove the table, then re-insert, preserving flags
 
@@ -4637,6 +4638,7 @@ export class Grid extends GridBase {
           area: target_area,
           sortable,
           totals,
+          theme,
         },
       ]);
 

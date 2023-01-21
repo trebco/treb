@@ -49,25 +49,16 @@ import { Color } from './color';
 
 /**
  * table styles. table has four elements: headers (the first row in
- * the table), odd and even rows, and the last row. we apply as delta
- * to the current style. the first row after the header is row 1, hence
- * odd. footer is usually just a bottom border.
+ * the table), odd and even rows, and the totals row (if present). we apply 
+ * as delta to the current style. the first row after the header is row 1, 
+ * hence odd.
  * 
- * FIXME: do we need the "footer" style? why not just use the row style,
- * assuming that has the appropriate bottom border? (...)
- * 
- * I kind of like the idea of a proper table border, but we're applying
- * it inconsistently: we have a footer, but not a consistent header (header
- * only applies to title row) and no sides.
- * 
- * so we should drop footer, and (potentially) add a frame style.
- * 
+ * we used to have a "footer", now removed. use borders on rows.
  */
-export interface TableStyles {
+export interface TableTheme {
   header?: Style.Properties;
   odd?: Style.Properties;
   even?: Style.Properties;
-  // footer?: Style.Properties;
   total?: Style.Properties;
 }
 
@@ -115,7 +106,10 @@ export interface Theme {
    */
   tint_cache?: Record<number, string>[];
 
-  table?: TableStyles;
+  /**
+   * this is now default, but you can set explicitly per-table
+   */
+  table?: TableTheme;
 
   /**
    * this is for tinting. we're experimenting with tinting towards black
@@ -233,11 +227,11 @@ const ParseFontSize = (size: string): { value: number, unit: 'pt'|'px'|'em'|'%' 
   return { value, unit };
 };
 
-/**
+/* *
  * pull out styles we apply to tables, if they differ from the base.
  * setting "initial" or "inherit" doesn't work to clear them (at least atm); 
  * use "transparent" to unset.
- */
+ * /
 const TableStyleFromCSS = (base: CSSStyleDeclaration, style: CSSStyleDeclaration): Style.Properties => {
 
   const props: Style.Properties = {};
@@ -294,6 +288,7 @@ const TableStyleFromCSS = (base: CSSStyleDeclaration, style: CSSStyleDeclaration
   return props;
 
 };
+*/
 
 // testing
 const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
@@ -363,6 +358,42 @@ const DeriveColorScheme = (theme: Theme, context: CanvasRenderingContext2D): 'li
 
 }
 
+/**
+ * this is a shortcut for creating table formats based on theme colors.
+ * TODO: we might want to swap styles based on light/dark mode?
+ */
+export const ThemeColorTable = (theme_color: number, tint = .7): TableTheme => {
+
+  const borders: Style.Properties = {
+    border_top: 1,
+    border_top_fill: { theme: theme_color },
+    border_bottom: 1,
+    border_bottom_fill: { theme: theme_color },
+  };
+
+  return {
+    header: {
+      // text: { theme: theme.mode === 'dark' ? 1 : 0, },
+      text: { text: '#fff' },
+      fill: {theme: theme_color},
+      bold: true,
+      ...borders,
+    },
+    odd: {
+      fill: { theme: theme_color, tint },
+      ...borders,
+    },
+    even: {
+      ...borders,
+    },
+    total: {
+      ...borders,
+      border_top: 2,
+    },
+  }
+
+}
+
 export const LoadThemeProperties = (container: HTMLElement): Theme => {
 
   const theme: Theme = JSON.parse(JSON.stringify(DefaultTheme));
@@ -410,15 +441,12 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   css = CSS('note-marker');
   theme.note_marker_color = css.backgroundColor;
 
-  // table. we need (maybe) a more generic method for pulling out some
-  // of these styles. for the time being we'll just pull out border colors, 
-  // background color, text color and font styles.
+  // updating tables. we're now defining tables as Style.Properties
+  // directly. the aim is to use theme colors so we can have multiple
+  // table styles without too much fuss.
 
-  // comparing against root. perhaps we should be comparing against
-  // grid-cell? (...)
-
+  /*
   const root_css = CSS('');
-
   theme.table = {
     header: TableStyleFromCSS(root_css, CSS('treb-table header')),
     odd: TableStyleFromCSS(root_css, CSS('treb-table row-odd')),
@@ -426,6 +454,7 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
     // footer: TableStyleFromCSS(root_css, CSS('treb-table footer')),
     total: TableStyleFromCSS(root_css, CSS('treb-table total')),
   }
+  */
  
   // console.info(theme.table);
 
@@ -470,6 +499,8 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
     });
   }
   
+  theme.table = ThemeColorTable(4);
+
   // this is a little odd, since we have the check above for "existing element";
   // should we switch on that? or is that never used, and we can drop it? (...)
 

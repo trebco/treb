@@ -21,6 +21,7 @@
 
 
 import type { IArea } from './area';
+import type { TableTheme } from './theme';
 
 export type TableSortType = 'text'|'numeric'|'auto';
 
@@ -86,6 +87,11 @@ export interface Table {
    * table is sortable. defaults to true. if false, disables UI sorting. 
    */
   sortable?: boolean;
+
+  /**
+   * theme for table. we have a default, but you can set explicitly.
+   */
+  theme?: TableTheme;
 
   /** 
    * sort data. sorts are hard, meaning we actually move data around. 

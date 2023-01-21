@@ -19,7 +19,7 @@
  * 
  */
 
-import type { IArea, Table } from 'treb-base-types';
+import type { IArea, Table, TableTheme } from 'treb-base-types';
 import type { MacroFunction, SerializedNamedExpression, SerializedSheet } from 'treb-grid';
 
 export enum SaveFileType {
@@ -148,4 +148,9 @@ export interface InsertTableOptions {
    */
   sortable?: boolean;
   
+  /**
+   * 
+   */
+  theme?: number|TableTheme;
+
 }

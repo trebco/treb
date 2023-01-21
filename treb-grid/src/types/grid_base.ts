@@ -38,7 +38,7 @@
 import { EventSource } from 'treb-utils';
 import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
 import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex } from 'treb-parser';
-import { Area, Style, IsCellAddress, ValidationType, ValueType, Table, TableSortOptions, DefaultTableSortOptions } from 'treb-base-types';
+import { Area, Style, IsCellAddress, ValidationType, ValueType, Table, TableSortOptions, DefaultTableSortOptions, TableTheme, ThemeColorTable } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
@@ -171,7 +171,7 @@ export class GridBase {
    * @param totals - set true to include a totals row. tables have different
    * formatting and slightly different behavior when there's a totals row.
    */
-  public InsertTable(area: IArea, totals = false, sortable: boolean|undefined = undefined) {
+  public InsertTable(area: IArea, totals = false, sortable: boolean|undefined = undefined, theme?: TableTheme|number) {
 
     // we should validate here, so that we can throw.
 
@@ -190,11 +190,16 @@ export class GridBase {
       }
     }
 
+    if (typeof theme === 'number') {
+      theme = ThemeColorTable(theme);
+    }
+
     this.ExecCommand({
       key: CommandKey.InsertTable,
       area: JSON.parse(JSON.stringify(area)),
       totals,
       sortable,
+      theme,
     });
 
   }
@@ -2960,6 +2965,7 @@ export class GridBase {
                 area: command.area,
                 name,
                 sortable: command.sortable, // defaults to true if !present
+                theme: command.theme,
               };
 
               if (command.totals) {

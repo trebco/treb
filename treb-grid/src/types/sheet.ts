@@ -25,7 +25,7 @@ import {
   Cell, ValueType, Cells, Style,
   Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, 
   IsNestedRowArray, CellValue, ImportedSheetData, Complex, 
-  DimensionedQuantity, IsCellAddress, IArea, Table, TableStyles,
+  DimensionedQuantity, IsCellAddress, IArea, Table, TableTheme,
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement, ValidateURI } from 'treb-utils';
@@ -1198,7 +1198,7 @@ export class Sheet {
    * move it here so we can inline the next/previous loops.
    * 
    */
-  public SurroundingStyle(address: ICellAddress, table?: TableStyles): Style.Properties[] {
+  public SurroundingStyle(address: ICellAddress, table?: TableTheme): Style.Properties[] {
     const map: Style.Properties[] = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
 
     // FIXME: what about merges? (...)
@@ -1252,7 +1252,7 @@ export class Sheet {
    * and we don't preserve the style.
    * 
    */
-  public CellStyleData(address: ICellAddress, table_styles?: TableStyles): Style.Properties | undefined {
+  public CellStyleData(address: ICellAddress, default_table_theme?: TableTheme): Style.Properties | undefined {
 
     // don't create if it doesn't exist
     const cell = this.cells.GetCell(address);
@@ -1266,45 +1266,50 @@ export class Sheet {
       cell.style = this.style_map[index];
     }
 
-    if (cell.table && table_styles) {
+    if (cell.table) {
 
-      let style = JSON.parse(JSON.stringify(cell.style));
-      const data = this.TableRow(cell.table, address.row);
+      const table_theme = cell.table.theme || default_table_theme;
 
-      if (data.header) {
-        if (table_styles.header) {  
-          style = Style.Composite([style, table_styles.header]);
+      if (table_theme) {
+
+        let style = JSON.parse(JSON.stringify(cell.style));
+        const data = this.TableRow(cell.table, address.row);
+
+        if (data.header) {
+          if (table_theme.header) {  
+            style = Style.Composite([style, table_theme.header]);
+          }
         }
-      }
-      else if (data.totals) {
+        else if (data.totals) {
 
-        // like headers, totals is outside of the alternating rows thing
-        if (table_styles.total) {
-          style = Style.Composite([style, table_styles.total]);
-        }
-      }
-      else {
-        if (data.alternate) {
-          if (table_styles.odd) {
-            style = Style.Composite([style, table_styles.odd]);           
+          // like headers, totals is outside of the alternating rows thing
+          if (table_theme.total) {
+            style = Style.Composite([style, table_theme.total]);
           }
         }
         else {
-          if (table_styles.even) {
-            style = Style.Composite([style, table_styles.even]);           
+          if (data.alternate) {
+            if (table_theme.odd) {
+              style = Style.Composite([style, table_theme.odd]);           
+            }
+          }
+          else {
+            if (table_theme.even) {
+              style = Style.Composite([style, table_theme.even]);           
+            }
           }
         }
-      }
 
-      /*
-      if (data.last) {
-        if (table_styles.footer) {
-          style = Style.Composite([style, table_styles.footer]);
+        /*
+        if (data.last) {
+          if (table_styles.footer) {
+            style = Style.Composite([style, table_styles.footer]);
+          }
         }
-      }
-      */
+        */
 
-      return style;
+        return style;
+      }
     }
 
     return cell.style;
