@@ -1056,6 +1056,7 @@ export abstract class BaseLayout {
     scroll_callback: () => void,
     dropdown_callback: (value: CellValue) => void,
     sort_callback: (table: string, column: number, asc: boolean) => void,
+    focus_callback: () => void,
     scroll = true): void {
 
     if (!this.mask.parentElement) {
@@ -1104,6 +1105,8 @@ export abstract class BaseLayout {
           this.sort_button.dataset.asc = 'true';
           this.sort_button.classList.add('asc');
         }
+
+        focus_callback();
 
       });
     }

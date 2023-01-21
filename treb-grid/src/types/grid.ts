@@ -1818,6 +1818,7 @@ export class Grid extends GridBase {
             });
           }
         },
+        () => this.Focus(),
         this.options.scrollbars);
     this.selection_renderer.Initialize();
     this.layout.UpdateTiles();
