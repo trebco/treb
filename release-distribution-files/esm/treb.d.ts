@@ -1,4 +1,4 @@
-/*! API v23.5. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v23.6. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -1205,6 +1205,9 @@ export interface EmbeddedSpreadsheetOptions {
 
     /** font size in the toolbar */
     font_scale?: boolean;
+
+    /** show insert/remove table button in toolbar */
+    table_button?: boolean;
 
     /** chart menu in the toolbar */
     chart_menu?: boolean;
