@@ -1,4 +1,4 @@
-/*! API v23.4. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v23.5. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /** 
  * Global instance. In the base script, this object will be created as an
@@ -1001,6 +1001,11 @@ export interface InsertTableOptions {
      * show a sort button in table headers. defaults to true.
      */
     sortable?: boolean;
+
+    /**
+     *
+     */
+    theme?: number | TableTheme;
 }
 export interface ResizeEvent {
     type: 'resize';
@@ -1049,6 +1054,21 @@ export interface DocumentChangeEvent {
  */
 export interface SelectionEvent {
     type: 'selection';
+}
+
+/**
+ * table styles. table has four elements: headers (the first row in
+ * the table), odd and even rows, and the totals row (if present). we apply
+ * as delta to the current style. the first row after the header is row 1,
+ * hence odd.
+ *
+ * we used to have a "footer", now removed. use borders on rows.
+ */
+export interface TableTheme {
+    header?: Style.Properties;
+    odd?: Style.Properties;
+    even?: Style.Properties;
+    total?: Style.Properties;
 }
 
 /**

@@ -76,6 +76,9 @@ export namespace Style {
     tint?: number;
     text?: string;
 
+    /** @internal */
+    offset?: Color;
+
     /** @deprecated */
     none?: boolean;
   }

@@ -107,6 +107,11 @@ export interface Theme {
   tint_cache?: Record<number, string>[];
 
   /**
+   * cache for offset colors
+   */
+  offset_cache?: Record<string, string>;
+
+  /**
    * this is now default, but you can set explicitly per-table
    */
   table?: TableTheme;
@@ -120,12 +125,21 @@ export interface Theme {
    */
   mode: 'light'|'dark';
 
+  /** light color for offset (against dark background) */
+  offset_light: string;
+
+  /** dark color for offset (against light background) */
+  offset_dark: string;
+
 }
 
 export const DefaultTheme: Theme = {
   grid_color: '#ccc',
   note_marker_color: '#d2c500',
   mode: 'light',
+  offset_cache: {},
+  offset_light: '#fff',
+  offset_dark: '#000',
 };
 
 /**
@@ -182,9 +196,56 @@ const TintedColor = (theme: Theme, index: number, tint: number) => {
 
 /** 
  * this includes an implicit check for valid color, if a color 
- * can't be resolved it returns ''
+ * can't be resolved it returns ''. now supports offset colors. 
+ * offset returns a light color against a dark background, and
+ * vice versa. what constitutes a dark background is not entirely
+ * clear; atm using lightness = .65. 
  */
 export const ThemeColor2 = (theme: Theme, color?: Style.Color, default_index?: number): string => {
+
+  if (color?.offset) {
+
+    // don't do this
+    if (color.offset.offset) {
+      console.warn('invalid offset color'); 
+      return ''; 
+    }
+
+    const resolved = ThemeColor2(theme, color.offset);
+
+    // check cache
+    if (theme.offset_cache && theme.offset_cache[resolved]) {
+      return theme.offset_cache[resolved];
+    }
+
+    let offset = theme.offset_light;
+
+    if (resolved) {
+      // ok figure it out?
+      const match = resolved.match(/rgb\((\d+), (\d+), (\d+)\)/);
+      if (match) {
+        const hsl = Color.RGBToHSL(Number(match[1]), Number(match[2]), Number(match[3]));
+        // console.info('resolved', resolved, {hsl});
+        if (hsl.l > .65) {
+          offset = theme.offset_dark;
+        }
+      }
+      else {
+        // ...
+        console.warn(`can't offset against color`, resolved);
+      }
+
+      if (!theme.offset_cache) {
+        theme.offset_cache = {};
+      }
+      theme.offset_cache[resolved] = offset;
+    }
+    else {
+      console.warn(`can't resolve offset color`, color.offset);
+    }
+
+    return offset;
+  }
 
   // explicit color, or none
 
@@ -374,7 +435,8 @@ export const ThemeColorTable = (theme_color: number, tint = .7): TableTheme => {
   return {
     header: {
       // text: { theme: theme.mode === 'dark' ? 1 : 0, },
-      text: { text: '#fff' },
+      // text: { text: '#fff' },
+      text: { offset: {theme: theme_color} },
       fill: {theme: theme_color},
       bold: true,
       ...borders,
@@ -421,6 +483,16 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   theme.headers_grid_color = css.stroke;
   if (!theme.headers_grid_color || theme.headers_grid_color === 'none') {
     theme.headers_grid_color = theme.grid_color;
+  }
+
+  css = CSS('treb-offset-dark');
+  if (css.color) {
+    theme.offset_dark = css.color;
+  }
+  
+  css = CSS('treb-offset-light');
+  if (css.color) {
+    theme.offset_light = css.color;
   }
 
   /*

@@ -102,6 +102,18 @@ $text-reference-color-5: rgb(254, 47, 1);
 
   */
 
+  /* 
+   * offset colors. for some special cases (theme tables) we use offsets 
+   * against theme colors, selecting a color based on the lightness value 
+   * of another color.
+   */
+
+  /** offset dark is the DARK color applied against LIGHT backgrounds */
+  .treb-offset-dark { color: #000; }
+
+  /** offset light is the LIGHT color applied against DARK backgrounds */
+  .treb-offset-light { color: #fff; }
+
   /** 
    * highlight in the corner of a cell when there's a comment. this is painted.
    */
