@@ -2208,6 +2208,13 @@ export class GridBase {
 
     const target_sheet = this.FindSheet(command.sheet_id);
 
+    if (command.count === Infinity) {
+      command.count = 1; // ?
+    }
+    else if (command.count === -Infinity) {
+      command.count = -target_sheet.rows; // delete all
+    }
+    
     if (!target_sheet.InsertRows(command.before_row, command.count)){
       // this.Error(`You can't change part of an array.`);
       this.Error(ErrorCode.array);
@@ -2496,9 +2503,7 @@ export class GridBase {
   }
 
   /**
-   * when I moved this into the base class, I skipped dealing
-   * with annotations. we need to figure out how to update annotations
-   * without layout.
+   * 
    */
    protected InsertColumnsInternal(command: InsertColumnsCommand): {
         error?: boolean;
@@ -2508,6 +2513,16 @@ export class GridBase {
       } {
 
     const target_sheet = this.FindSheet(command.sheet_id);
+
+    // it seems like we never get an insert infinity. not sure why,
+    // but the UI is blocking that. we should handle it anyway jic
+    
+    if (command.count === Infinity) {
+      command.count = 1; // ?
+    }
+    else if (command.count === -Infinity) {
+      command.count = -target_sheet.columns; // delete all
+    }
 
     // FIXME: we need to get this error out earlier. before this call,
     // in the call that generates the insert event. otherwise if we 
