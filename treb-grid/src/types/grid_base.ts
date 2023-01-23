@@ -185,8 +185,9 @@ export class GridBase {
       for (let column = area.start.column; column <= area.end.column; column++) {
         const cell = sheet.cells.GetCell({row, column}, false);
         if (cell && (cell.area || cell.merge_area || cell.table)) {
-          this.Error(ErrorCode.InvalidAreaForTable);
           // throw new Error('invalid area for table');
+          this.Error(ErrorCode.invalid_area_for_table);
+          return;
         }
       }
     }
@@ -1186,7 +1187,7 @@ export class GridBase {
 
       const cell = sheet.CellData(command.area);
       if (cell.area && (cell.area.rows > 1 || cell.area.columns > 1)) {
-        this.Error(ErrorCode.Array);
+        this.Error(ErrorCode.array);
         return;
       }
 
@@ -2054,7 +2055,7 @@ export class GridBase {
 
     if (error) {
       // this.Error(`You can't change part of an array.`);
-      this.Error(ErrorCode.Array);
+      this.Error(ErrorCode.array);
     }
     else {
       this.active_sheet.ClearArea(area);
@@ -2209,7 +2210,7 @@ export class GridBase {
 
     if (!target_sheet.InsertRows(command.before_row, command.count)){
       // this.Error(`You can't change part of an array.`);
-      this.Error(ErrorCode.Array);
+      this.Error(ErrorCode.array);
       return { error: true };
     }
 
@@ -2515,7 +2516,7 @@ export class GridBase {
 
     if (!target_sheet.InsertColumns(command.before_column, command.count)) {
       // this.Error(`You can't change part of an array.`);
-      this.Error(ErrorCode.Array);
+      this.Error(ErrorCode.array);
       return { error: true };
     }
     

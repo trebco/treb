@@ -977,22 +977,22 @@ export class EmbeddedSpreadsheet {
     } {
 
     switch (code) {
-      case ErrorCode.None:
+      case ErrorCode.none:
         return {
           message: `No error`, // why?
         }
 
-      case ErrorCode.Array:
+      case ErrorCode.array:
         return {
           message: `You can't change part of an array`,
         }
 
-      case ErrorCode.InvalidAreaForTable:
+      case ErrorCode.invalid_area_for_table:
         return {
           message: `Invalid area for table`,
         }
 
-      case ErrorCode.DataValidation:
+      case ErrorCode.data_validation:
         return {
           message: `Invalid value (data validation)`,
         }

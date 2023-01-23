@@ -27,19 +27,19 @@ import type { Area } from 'treb-base-types';
 export enum ErrorCode {
 
   /** no error: zero so it's falsy */
-  None = 0,
+  none = 0,
 
   /** placeholder for new errors */
-  Unknown,
+  unknown,
 
   /** you can't change part of an array */
-  Array,
+  array,
 
   /** invalid value (data validation) */
-  DataValidation,
+  data_validation,
 
   /** invalid area for insert table: there's a merge, array or existing table within the range */
-  InvalidAreaForTable,
+  invalid_area_for_table,
 
 }
 

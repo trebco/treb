@@ -5389,7 +5389,7 @@ export class Grid extends GridBase {
 
     if (cell.area) {
       if ((!array && cell.area.count > 1) || !selection.area || !selection.area.Equals(cell.area)) {
-        this.Error(ErrorCode.Array);
+        this.Error(ErrorCode.array);
         return;
       }
     }
@@ -5401,7 +5401,7 @@ export class Grid extends GridBase {
         }
       }, false);
       if (existing_array) {
-        this.Error(ErrorCode.Array);
+        this.Error(ErrorCode.array);
         return;
       }
     }
@@ -5432,7 +5432,7 @@ export class Grid extends GridBase {
         if (!match) {
           // removed in favor of error //this.layout.HighlightError(selection.target);
           // this.Error(`Invalid value (data validation)`);
-          this.Error(ErrorCode.DataValidation);
+          this.Error(ErrorCode.data_validation);
           return; 
         }
       }
