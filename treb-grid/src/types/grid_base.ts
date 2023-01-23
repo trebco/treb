@@ -185,7 +185,8 @@ export class GridBase {
       for (let column = area.start.column; column <= area.end.column; column++) {
         const cell = sheet.cells.GetCell({row, column}, false);
         if (cell && (cell.area || cell.merge_area || cell.table)) {
-          throw new Error('invalid area for table');
+          this.Error(ErrorCode.InvalidAreaForTable);
+          // throw new Error('invalid area for table');
         }
       }
     }

@@ -38,6 +38,9 @@ export enum ErrorCode {
   /** invalid value (data validation) */
   DataValidation,
 
+  /** invalid area for insert table: there's a merge, array or existing table within the range */
+  InvalidAreaForTable,
+
 }
 
 export interface SheetChangeEvent {

@@ -987,6 +987,11 @@ export class EmbeddedSpreadsheet {
           message: `You can't change part of an array`,
         }
 
+      case ErrorCode.InvalidAreaForTable:
+        return {
+          message: `Invalid area for table`,
+        }
+
       case ErrorCode.DataValidation:
         return {
           message: `Invalid value (data validation)`,
