@@ -2043,22 +2043,58 @@ export class GridBase {
 
   protected ClearAreaInternal(area: Area) {
 
-    let error = false;
-    area = this.active_sheet.RealArea(area); // collapse
+    // updated to use sheet ID. not sure why this was still using
+    // active sheet without checking ID.
 
-    this.active_sheet.cells.Apply(area, (cell) => {
+    let sheet: Sheet|undefined;
+
+    if (area.start.sheet_id) {
+      sheet = this.model.sheets.Find(area.start.sheet_id);
+    }
+    else {
+      sheet = this.active_sheet;
+    }
+
+    if (!sheet) {
+      console.warn(`can't resolve sheet in ClearAreaInternal`);
+      return;
+    }
+
+    let error = false;
+    area = sheet.RealArea(area); // collapse
+
+    sheet.cells.Apply(area, (cell) => {
       if (cell.area && !area.ContainsArea(cell.area)) {
         // throw new Error('can\'t change part of an array');
         error = true;
       }
     });
 
+    // if the area completely encloses a table, delete the table
+    const table_keys = this.model.tables.keys();
+    for (const key of table_keys) {
+      const table = this.model.tables.get(key);
+      if (table && table.area.start.sheet_id === sheet.id) {
+        const table_area = new Area(table.area.start, table.area.end);
+        if (area.ContainsArea(table_area)) {
+          for (let row = table_area.start.row; row <= table_area.end.row; row++) {
+            for (let column = table_area.start.column; column <= table.area.end.column; column++) {
+              const cell = sheet.cells.GetCell({row, column}, false);
+              if (cell) {
+                cell.table = undefined;
+              }
+            }
+          }
+          this.model.tables.delete(key);
+        }
+      }
+    }
+    
     if (error) {
-      // this.Error(`You can't change part of an array.`);
-      this.Error(ErrorCode.array);
+      this.Error(ErrorCode.array); // `You can't change part of an array.`
     }
     else {
-      this.active_sheet.ClearArea(area);
+      sheet.ClearArea(area);
     }
     
   }
