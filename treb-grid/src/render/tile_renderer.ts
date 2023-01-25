@@ -1242,6 +1242,11 @@ export class TileRenderer {
       render_top = 0,
       offset = 0) {
 
+    // there's no explicit broken flag, but we can infer from size
+    if (!image.width || !image.height) {
+      return;
+    }
+
     const scale = (this.layout.scale || 1) * this.layout.dpr;
 
     const source_left = (left / scale) % image.width;
