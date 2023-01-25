@@ -1538,37 +1538,6 @@ export class Grid extends GridBase {
     if (this.grid_container) {
       const theme_properties = LoadThemeProperties(this.grid_container);
       composite = {...theme_properties};
-
-      /*
-      if (composite?.background_image && !composite.background_image.complete) {
-
-        // the image may not have loaded immediately -- in fact it usually 
-        // won't, unless it's already in memory for some reason. schedule
-        // a repaint.
-
-        const image = composite.background_image;
-
-        // limit so we don't do this forever
-        // can we do animationFrame or even promise.resolve?
-
-        let counter = 0;
-        const RepaintLayout = () => {
-          if (!image.complete) {
-            if (counter++ < 5) {
-              setTimeout(() => RepaintLayout(), 10);
-            }
-          }
-          else {
-            // console.info({counter})
-            this.UpdateLayout();
-          }
-        };
-
-        RepaintLayout();
-
-      }
-      */
-
     }
 
     // all this is super confusing, probably the result of theme going
