@@ -235,12 +235,36 @@ export class Toolbar extends EventSource<ToolbarEvent> {
           </div>
 
           ${options.table_button ? `
-          <button id='table' data-command='insert-table' title='Table'>
-            <div class='treb-toolbar-icon treb-icon-table' />
+
+          <button id='insert-table' data-command='insert-table' title='Table'>
+            <div class='treb-toolbar-icon treb-icon-table'/>
           </button>
+
           ` : ''}
 
         </div>
+
+
+
+          ${ /*options.table_button ? `
+          <div class='group'>
+            <button id='insert-table' data-command='insert-table' title='Table'>
+              <div class='treb-toolbar-icon treb-icon-table'/>
+            </button>
+            <button class='drop'>
+            </button>
+            <div class='drop-menu' tabindex='-1'>
+              <ul>
+                <li><button data-command='insert-table-color' title='Table'><div class='treb-toolbar-icon treb-icon-table'/></button></li>
+                <li><button data-command='insert-table-color' title='Table'><div class='treb-toolbar-icon treb-icon-table'/></button></li>
+                <li><button data-command='insert-table-color' title='Table'><div class='treb-toolbar-icon treb-icon-table'/></button></li>
+                <li><button data-command='insert-table-color' title='Table'><div class='treb-toolbar-icon treb-icon-table'/></button></li>
+              </ul>
+            </div>
+          </div>
+  ` : '' */ ''
+          }
+
 
         <div class='group'>
           <button class='color-button' data-command='background-color' title='Background color'>
@@ -1007,7 +1031,7 @@ export class Toolbar extends EventSource<ToolbarEvent> {
       merge.setAttribute('title', 'Merge cells');
     }
     
-    const table = this.model.table;
+    const table = this.model['insert-table'];
     if (table) {
       if (state.table) {
         table.classList.add('active');
@@ -1064,6 +1088,13 @@ export class Toolbar extends EventSource<ToolbarEvent> {
     let i = 0;
 
     if (theme.theme_colors) {
+
+      /*
+      if (this.model['insert-table']) {
+        console.info(theme.theme_colors);
+        this.model['insert-table'].style.color = theme.theme_colors[4];
+      }
+      */
 
       // UPDATE: one or the other, don't need both
 

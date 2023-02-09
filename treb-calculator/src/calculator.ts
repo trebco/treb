@@ -123,28 +123,14 @@ const TranslateSubtotalType = (type: string|number): number => {
 export interface EvaluateOptions {
 
   /**
-   * By default, the Evaluate function will evaluate the expression in the 
-   * current locale, meaning it will use the current locale's decimal separator 
-   * and argument separator.
-   * 
-   * If you do not want that behavior, set the argument separator explicitly.
-   * That will force evaluation using either comma (,) or semicolon (;) as the
-   * argument separator.
-   * 
-   * Decimal separator is implied by the argument separator. If you set the 
-   * argument separator to comma, the decimal separator will be dot (.). If you
-   * set the argument separator to semicolon, the decimal separator will be
-   * comma (,). You cannot mix-and-match these characters.
-   * 
-   * Since you may not know where the code is being executed at run-time, 
-   * using consistent argument and decimal separators makes sense. However we
-   * are leaving the original behavior as default for backwards compatibility.  
+   * argument separator to use when parsing input. set this option to 
+   * use a consistent argument separator independent of current locale.
    */
   argument_separator?: ','|';';
 
   /** 
    * allow R1C1-style references. the Evaluate function cannot use
-   * offset references (e.g. R[-1]C[0]), so those will always fail. 
+   * relative references (e.g. R[-1]C[0]), so those will always fail. 
    * however it may be useful to use direct R1C1 references (e.g. R3C4),
    * so we optionally support that behind this flag.
    */
