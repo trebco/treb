@@ -1637,11 +1637,32 @@ export class Exporter {
               },
             };
             if (validation.validation.type === ValidationType.Range) {
+
+              const range: UnitRange = {
+                id: 0,
+                type: 'range',
+                label: '', position: 0, 
+                start: 
+                  {...validation.validation.area.start, absolute_column: true, absolute_row: true, id: 0, label: '', position: 0, type: 'address', }, 
+                end: 
+                  {...validation.validation.area.end, absolute_column: true, absolute_row: true, id: 0, label: '', position: 0, type: 'address', }
+                ,
+              }
+
+              if (typeof validation.validation.area.start.sheet_id !== 'undefined') {
+                range.start.sheet = sheet_name_map[validation.validation.area.start.sheet_id];
+              }
+
+              /*
               const area = new Area(
                 {...validation.validation.area.start, absolute_column: true, absolute_row: true}, 
                 {...validation.validation.area.end, absolute_column: true, absolute_row: true},
               );
+
               entry.formula1 = `${area.spreadsheet_label}`;
+              */
+              entry.formula1 = this.parser.Render(range);
+
             }
             else if (validation.validation.type === ValidationType.List) {
               entry.formula1 = `"${validation.validation.list.join(',')}"`;
