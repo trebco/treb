@@ -176,13 +176,16 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
     // create layout. need a flex patch for chrome
 
-    const outer_node = DOMUtilities.CreateDiv('treb-formula-bar-container notranslate', container);
-    const inner_node = DOMUtilities.CreateDiv('treb-formula-bar', outer_node);
+    // const outer_node = DOMUtilities.CreateDiv('treb-formula-bar-container notranslate', container);
+    // const inner_node = DOMUtilities.CreateDiv('treb-formula-bar', outer_node);
+    const inner_node = container.querySelector('.treb-formula-bar') as HTMLElement;
 
     // this.node = DOMUtilities.CreateDiv('treb-formula-bar', container);
 
-    this.address_label_container = DOMUtilities.CreateDiv('address-label', inner_node);
-    this.address_label = DOMUtilities.CreateDiv('', this.address_label_container);
+    // this.address_label_container = DOMUtilities.CreateDiv('address-label', inner_node);
+    // this.address_label = DOMUtilities.CreateDiv('', this.address_label_container);
+    this.address_label_container = inner_node.querySelector('.address-label') as HTMLDivElement;
+    this.address_label = this.address_label_container.firstElementChild as HTMLDivElement;
 
     this.InitAddressLabel();
 
@@ -199,9 +202,19 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
     }
 
+    this.container_node = container.querySelector('.editor-container') as HTMLDivElement;
+    this.editor_node = this.container_node.querySelector('.formula-editor') as HTMLDivElement;
+
+    /*
     this.container_node = DOMUtilities.CreateDiv('editor-container', inner_node);
     this.editor_node = DOMUtilities.CreateDiv('formula-editor', this.container_node);
     this.editor_node.setAttribute('contenteditable', 'true');
+    */
+
+
+
+    // FIXME: regarding composing, we don't need a flag. there is a flag 
+    // on events. do this properly.
 
     // flag for composing via IME. when this is set we don't want to 
     // handle input events.

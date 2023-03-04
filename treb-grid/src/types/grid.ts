@@ -1619,7 +1619,7 @@ export class Grid extends GridBase {
     // using `.treb-main.treb-theme`. we have some extra classes we still 
     // need to clean up, though.
 
-    grid_container.classList.add('treb-main');
+    // grid_container.classList.add('treb-main');
 
     if (UA.is_windows) {
       grid_container.classList.add('treb-ua-windows');
@@ -1628,21 +1628,12 @@ export class Grid extends GridBase {
       grid_container.classList.add('treb-ua-osx');
     }
 
-    grid_container.classList.add('treb-theme');
-
     // this.ApplyTheme();
     this.UpdateTheme(true);
 
-    const container = document.createElement('div');
-
-    const higher_level_container = document.createElement('div');
-    higher_level_container.classList.add('treb-layout-master');
-    higher_level_container.setAttribute('role', 'grid');
-    higher_level_container.appendChild(container);
-    grid_container.appendChild(higher_level_container);
-
-    // grid_container.appendChild(container);
-
+    const higher_level_container = grid_container.querySelector('.treb-layout-master') as HTMLElement;
+    const container = higher_level_container.querySelector('div') as HTMLElement;
+    
     let autocomplete: Autocomplete | undefined;
 
     if (this.options.formula_bar) {
@@ -1654,7 +1645,7 @@ export class Grid extends GridBase {
 
     if (this.options.tab_bar) {
 
-      this.tab_bar = new TabBar(this.layout, this.model, this.view, this.options, this.theme, grid_container);
+      this.tab_bar = new TabBar(this.layout, this.model, this.view, this.options, grid_container);
       this.tab_bar.Subscribe((event) => {
         switch (event.type) {
           case 'cancel':

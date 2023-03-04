@@ -20,7 +20,7 @@
  */
 
 import {tmpl, NodeModel} from 'treb-utils'; 
-import '../style/icon.scss';
+// import '../style/icon.scss';
 
 /* *
  * colors, which can be controlled by the grid theme

@@ -23,12 +23,14 @@
 
   /* flex patch for chrome */
 
-  .treb-formula-bar-container {
+  // .treb-formula-bar-container {
 
-    display: block;
-    order: 1;
+  //  display: block;
+  //  order: 1;
 
     & .treb-formula-bar {
+
+      min-height: 3em; // FIXME
 
       display: flex;
       flex-direction: row;
@@ -186,6 +188,6 @@
         
       }
     }
-  }
+  // }
 
 }

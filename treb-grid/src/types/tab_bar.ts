@@ -25,7 +25,6 @@ import type { Sheet } from './sheet';
 import type { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import type { GridOptions } from './grid_options';
-import type { Theme } from 'treb-base-types';
 import { ScaleEvent, ScaleControl } from './scale-control';
 
 export interface ActivateSheetEvent {
@@ -56,7 +55,6 @@ export interface DeleteSheetEvent {
 export interface CancelEvent {
   type: 'cancel';
 }
-
 
 export type TabEvent
    = CancelEvent
@@ -90,11 +88,8 @@ export interface StatsEntry {
  */
 export class TabBar extends EventSource<TabEvent> {
 
-  private node?: HTMLElement;
-  private container?: HTMLElement;
-  // private scale_label?: HTMLElement;
-  // private scale = 1;
-
+  // private container?: HTMLElement;
+  private tab_container?: HTMLElement;
   private scale_control?: ScaleControl;
   private stats_panel?: HTMLDivElement;
 
@@ -102,7 +97,7 @@ export class TabBar extends EventSource<TabEvent> {
 
   private double_click_data: {
     index?: number;
-    timeout?: any;
+    timeout?: number;
   } = {};
 
   // tslint:disable-next-line: variable-name
@@ -112,17 +107,11 @@ export class TabBar extends EventSource<TabEvent> {
     return this._visible;
   }
 
-  /*
-  public set stats_text(value: string) {
-    if (this.stats_panel) {
-      this.stats_panel.innerText = value;
-    }
-  }
-  */
   public set stats_data(value: StatsEntry[]) {
     if (this.stats_panel) {
       this.stats_panel.innerText = ''; // clear
       for (const entry of value) {
+
         const label = document.createElement('span');
         label.classList.add('treb-stats-label');
         label.textContent = entry.label;
@@ -141,13 +130,64 @@ export class TabBar extends EventSource<TabEvent> {
       private model: DataModel,
       private view: ViewModel,
       private options: GridOptions,
-      private theme: Theme,
-      private grid_container: HTMLElement,
+      private container: HTMLElement,
     ) {
 
     super();
 
-    this.Init(grid_container);
+    // if we're here, show
+    this.container.classList.remove('treb-util-hidden');
+
+    this.tab_container = this.container.querySelector('.treb-spreadsheet-tabs') as HTMLDivElement;
+
+    this.container.addEventListener('click', event => {
+      const command = (event.target as HTMLElement)?.dataset.command;
+      if (command) {
+        event.stopPropagation();
+        event.preventDefault();
+        switch (command) {
+          case 'add-tab':
+            this.Publish({ type: 'add-sheet' });
+            break;
+
+          case 'delete-tab':
+            this.Publish({ type: 'delete-sheet' });
+            break;
+
+          default:
+            console.info('unhandled command', command);
+        }
+      }
+    });
+
+    /*
+    if (this.options.delete_tab) {
+      const tab = this.container.querySelector('.delete-tab') as HTMLElement;
+      tab.addEventListener('click', () => {
+        this.Publish({ type: 'delete-sheet' });
+      });
+    }
+
+    if (this.options.add_tab) {
+      const tab = this.container.querySelector('.add-tab') as HTMLAnchorElement;
+      tab.addEventListener('click', () => {
+        this.Publish({ type: 'add-sheet' });
+      });
+    }
+    */
+
+    if (this.options.stats) {
+      this.stats_panel = this.container.querySelector('.treb-stats-panel') as HTMLDivElement;
+    }
+
+    if (this.options.scale_control) {
+      const div = this.container.querySelector('.treb-scale-control') as HTMLDivElement;
+      this.scale_control = new ScaleControl(div);
+      this.scale_control.Subscribe((event: ScaleEvent) => {
+        this.Publish(event);
+      });
+      this.UpdateScale(this.options.initial_scale || 1); // so we only have to write the scaling routine once
+    }
 
   }
 
@@ -164,7 +204,7 @@ export class TabBar extends EventSource<TabEvent> {
       clearTimeout(this.double_click_data.timeout);
     }
     this.double_click_data.index = index;
-    this.double_click_data.timeout = setTimeout(() => {
+    this.double_click_data.timeout = window.setTimeout(() => {
       this.double_click_data.index = undefined;
       this.double_click_data.timeout = undefined;
     }, timeout);
@@ -183,51 +223,172 @@ export class TabBar extends EventSource<TabEvent> {
     this._visible = show;
 
     if (show) {
-      this.grid_container.classList.add('treb-tab-bar-layout');
-      this.grid_container.parentElement?.classList.add('has-tab-bar');
-      this.container.style.display = 'flex';
+      this.container.classList.remove('hidden');
     }
     else {
-      this.grid_container.classList.remove('treb-tab-bar-layout');
-      this.grid_container.parentElement?.classList.remove('has-tab-bar');
-      this.container.style.display = 'none';
+      this.container.classList.add('hidden');
     }
 
   }
-
-  /* nothing is painted 
-  public UpdateTheme(): void {
-
-    if (!this.node) { return; }
-
-    let font_size = this.theme.tab_bar_font_size || null;
-
-    if (typeof font_size === 'number') {
-      font_size = `${font_size}pt`;
-    }
-
-    this.node.style.fontFamily = this.theme.tab_bar_font_face || '';
-    this.node.style.fontSize = font_size || '';
-
-  }
-  */
 
   public SetActive(tab: HTMLElement, active: boolean): void {
     if (active) {
       tab.classList.add('selected');
-      // tab.style.color = this.theme.tab_bar_active_color || '';
-      // tab.style.background = this.theme.tab_bar_active_background || '';
     }
     else {
       tab.classList.remove('selected');
-      // tab.style.color = this.theme.tab_bar_color || '';
-      // tab.style.background = this.theme.tab_bar_background || '';
     }
   }
 
   /** change scale if we have a scale label */
   public UpdateScale(scale: number): void {
     this.scale_control?.UpdateScale(scale * 100);
+  }
+
+  public DoubleClickTab(event: MouseEvent, tab: HTMLElement, sheet: Sheet) {
+
+    tab.contentEditable = 'true';
+
+    // OK for shadow, seems to work as expected in all browsers
+    const selection = window.getSelection(); // OK for shadow
+
+    if (selection) {
+      selection.removeAllRanges();
+      const range = document.createRange();
+      range.selectNodeContents(tab);
+      selection.addRange(range);
+    }
+
+    tab.addEventListener('keydown', (inner_event: KeyboardEvent) => {
+      switch (inner_event.key) {
+        case 'Enter':
+          // const name = tab.innerText.trim();
+          this.Publish({ 
+            type: 'rename-sheet', 
+            name: tab.innerText.trim(), 
+            sheet,
+          });
+          break;
+
+        case 'Escape':
+          tab.innerText = sheet.name;
+          this.Publish({ type: 'cancel' });
+          this.Update();
+          break;
+
+        default:
+          return;
+      }
+      inner_event.stopPropagation();
+      inner_event.preventDefault();
+    });
+
+    tab.addEventListener('focusout', () => {
+      const name = tab.innerText.trim();
+      if (name !== sheet.name) {
+        this.Publish({ type: 'rename-sheet', name, sheet });
+      }
+      else {
+        this.Update();
+      }
+    });
+
+    tab.focus();
+
+  }
+
+  public MouseDownTab(event: MouseEvent, tab: HTMLElement, sheet: Sheet, index: number, tabs: HTMLElement[]) {
+
+    event.stopPropagation();
+    event.preventDefault();
+    
+    if (this.IsDoubleClick(index)) {
+      return; // seems to allow us to process double clicks normally...
+    }
+
+    this.Publish({ type: 'activate-sheet', sheet });
+
+    let rectangles = tabs.map((element) => element.getBoundingClientRect());
+
+    let order = index * 2 - 1;
+
+    // orginal
+    const left = rectangles[0].left;
+    const right = rectangles[rectangles.length - 1].right;
+    const top = rectangles[0].top;
+    const bottom = rectangles[0].bottom;
+
+    const min = -1;
+    const max = (rectangles.length - 1) * 2 + 1;
+
+    // see above re: dragging and activation. if the tabs aren't rebuilt,
+    // then the classes won't change.
+
+    for (const candidate of tabs) {
+      this.SetActive(candidate, candidate === tab);
+    }
+
+    this.dragging = true;
+
+    MouseDrag(this.layout.mask, [], (move_event) => {
+
+      const [x, y] = [move_event.clientX, move_event.clientY];
+      if (y > top && y < bottom) {
+        let new_order = order;
+        if (x < left) { new_order = min; }
+        else if (x > right) { new_order = max; }
+        else {
+          for (let i = 0; i < rectangles.length; i++) {
+            const rectangle = rectangles[i];
+            if (x >= rectangle.left && x <= rectangle.right) {
+              if (i !== index) {
+                if (x >= rectangle.left + rectangle.width / 2) {
+                  new_order = (i * 2) + 1;
+                }
+                else {
+                  new_order = (i * 2) - 1;
+                }
+              }
+              break;
+            }
+          }
+        }
+        if (new_order !== order) {
+          order = new_order;
+          tab.style.order = order.toString();
+          rectangles = tabs.map((element) => element.getBoundingClientRect());
+        }
+      }
+
+    }, () => {
+      let current = index;
+      let move_before = (order + 1) / 2;
+
+      // console.info('set false')
+      this.dragging = false;
+
+      // the indexes we have are visible tabs only, so we may need
+      // to adjust if there are hidden tabs in between.
+
+      for (let i = 0; i < this.model.sheets.length; i++) {
+        if (!this.model.sheets.list[i].visible) {
+          if (current >= i) { current++; }
+          if (move_before >= i) { move_before++; }
+        }
+      }
+
+      if ((current === move_before) ||
+          (current === 0 && move_before <= 0) ||
+          (current === tabs.length - 1 && move_before >= tabs.length - 1)) {
+
+        // didn't change
+      }
+      else {
+        this.Publish({type: 'reorder-sheet', index: current, move_before});
+      }
+    });
+
+
   }
 
   /**
@@ -245,16 +406,11 @@ export class TabBar extends EventSource<TabEvent> {
     // longer term it's a FIXME.
 
     if (this.dragging) {
-      // console.info('blocked!')
       return;
     }
 
-    if (!this.node) { return; }
-
     if (this.options.tab_bar === 'auto') {
-
       const visible_count = this.model.sheets.list.reduce((count, test) => test.visible ? count + 1 : count, 0);
-
       if (visible_count <= 1) {
         this.Show(false);
         return;
@@ -262,101 +418,14 @@ export class TabBar extends EventSource<TabEvent> {
       this.Show(true);
     }
 
-    this.grid_container.classList.add('treb-tab-bar-layout');
-    this.grid_container.parentElement?.classList.add('has-tab-bar');
-
-    const target = this.node;
+    if (!this.tab_container) {
+      return;
+    }
 
     // clear
-    // target.innerText = '';
+    this.tab_container.innerText = '';
 
-    let end_nodes = false;
-    const children = Array.prototype.map.call(target.children, (child) => child);
-    for (const child of children as HTMLElement[]) {
-      if (!child.dataset.preserve) {
-        target.removeChild(child);
-      }
-      else {
-        end_nodes = true;
-      }
-    }
-
-    if (!end_nodes) {
-      let div = document.createElement('div');
-      div.classList.add('tab-bar-spacer')
-      // div.style.order = '9998';
-      div.dataset.preserve = 'true';
-      target.appendChild(div);
-
-      div = document.createElement('div');
-      div.classList.add('tab-bar-end');
-      // div.style.order = '9999';
-      div.dataset.preserve = 'true';
-
-      if (this.options.stats) {
-        this.stats_panel = document.createElement('div');
-        this.stats_panel.classList.add('treb-stats-panel');
-        div.appendChild(this.stats_panel);
-      }
-
-      if (this.options.scale_control) {
-        this.scale_control = new ScaleControl(div);
-        this.scale_control.Subscribe((event: ScaleEvent) => {
-          this.Publish(event);
-        });
-        this.UpdateScale(this.options.initial_scale || 1); // so we only have to write the scaling routine once
-
-        /*
-        const node = document.createElement('div');
-        node.classList.add('treb-scale-control');
-
-        let button = document.createElement('button');
-        button.innerHTML = composite`
-          <svg viewBox='0 0 16 16'>
-            <path d='M4,8 h8'/>
-          </svg>
-        `;
-
-        button.title = 'Decrease scale';
-        button.addEventListener('click', () => this.Publish({ type: 'scale', action: 'decrease', }));
-        node.appendChild(button);
-
-        this.scale_label = document.createElement('div');
-        node.appendChild(this.scale_label);
-        this.UpdateScale(this.scale); // so we only have to write the scaling routine once
-
-        button = document.createElement('button');
-        button.innerHTML = composite`
-          <svg viewBox='0 0 16 16'>
-            <path d='M4,8 h8 M8,4 v8'/>
-          </svg>
-        `;
-
-        button.title = 'Increase scale';
-        button.addEventListener('click', () => this.Publish({ type: 'scale', action: 'increase', }));
-        node.appendChild(button);
-
-        div.appendChild(node);
-        */
-      }
- 
-
-      target.appendChild(div);
-    }
-
-    if (this.options.delete_tab) {
-      const tab = document.createElement('div');
-      tab.classList.add('delete-tab');
-      tab.innerHTML = `<svg viewbox='0 0 16 16'><path d='M4,4 L12,12 M12,4 L4,12'/></svg>`;
-      tab.style.order = (-1).toString();
-      tab.title = 'Delete current sheet';
-      tab.addEventListener('click', () => {
-        this.Publish({ type: 'delete-sheet' });
-      });
-      target.appendChild(tab);
-    }
-
-    // store tabs
+    // we need to pass the full array to the drag function, so collect them
     const tabs: HTMLElement[] = [];
 
     for (const sheet of this.model.sheets.list) {
@@ -364,156 +433,19 @@ export class TabBar extends EventSource<TabEvent> {
       if (!sheet.visible) { continue; }
 
       const index = tabs.length;
-
-      // IE11 won't fire events on an A element? or is that just because
-      // of the default display value? (actually I am setting display...)
-
-      // doesn't really matter what the element is, so default to something
-      // IE11 will support (sigh)
-
       const tab = document.createElement('div');
+
       tab.classList.add('tab');
       tab.style.order = (index * 2).toString();
 
       this.SetActive(tab, sheet === this.view.active_sheet);
 
-      const mousedown = (event: MouseEvent) => {
-        event.stopPropagation();
-        event.preventDefault();
-        
-        if (this.IsDoubleClick(index)) {
-          return; // seems to allow us to process double clicks normally...
-        }
+      const mousedown = (event: MouseEvent) => this.MouseDownTab(event, tab, sheet, index, tabs);
 
-        this.Publish({ type: 'activate-sheet', sheet });
-
-        let rectangles = tabs.map((element) => element.getBoundingClientRect());
-
-        let order = index * 2 - 1;
-
-        // orginal
-        const left = rectangles[0].left;
-        const right = rectangles[rectangles.length - 1].right;
-        const top = rectangles[0].top;
-        const bottom = rectangles[0].bottom;
-
-        const min = -1;
-        const max = (rectangles.length - 1) * 2 + 1;
-
-        // see above re: dragging and activation. if the tabs aren't rebuilt,
-        // then the classes won't change.
-
-        for (const candidate of tabs) {
-          this.SetActive(candidate, candidate === tab);
-        }
-
-        this.dragging = true;
-
-        MouseDrag(this.layout.mask, [], (move_event) => {
-
-          const [x, y] = [move_event.clientX, move_event.clientY];
-          if (y > top && y < bottom) {
-            let new_order = order;
-            if (x < left) { new_order = min; }
-            else if (x > right) { new_order = max; }
-            else {
-              for (let i = 0; i < rectangles.length; i++) {
-                const rectangle = rectangles[i];
-                if (x >= rectangle.left && x <= rectangle.right) {
-                  if (i !== index) {
-                    if (x >= rectangle.left + rectangle.width / 2) {
-                      new_order = (i * 2) + 1;
-                    }
-                    else {
-                      new_order = (i * 2) - 1;
-                    }
-                  }
-                  break;
-                }
-              }
-            }
-            if (new_order !== order) {
-              order = new_order;
-              tab.style.order = order.toString();
-              rectangles = tabs.map((element) => element.getBoundingClientRect());
-            }
-          }
-
-        }, () => {
-          let current = index;
-          let move_before = (order + 1) / 2;
-
-          // console.info('set false')
-          this.dragging = false;
-
-          // the indexes we have are visible tabs only, so we may need
-          // to adjust if there are hidden tabs in between.
-
-          for (let i = 0; i < this.model.sheets.length; i++) {
-            if (!this.model.sheets.list[i].visible) {
-              if (current >= i) { current++; }
-              if (move_before >= i) { move_before++; }
-            }
-          }
-
-          if ((current === move_before) ||
-              (current === 0 && move_before <= 0) ||
-              (current === tabs.length - 1 && move_before >= tabs.length - 1)) {
-
-            // didn't change
-          }
-          else {
-            this.Publish({type: 'reorder-sheet', index: current, move_before});
-          }
-        });
-
-      };
-
-      const doubleclick = () => {
+      const doubleclick = (event: MouseEvent) => {
         tab.removeEventListener('mousedown', mousedown);
         tab.removeEventListener('dblclick', doubleclick);
-        tab.contentEditable = 'true';
-
-        const selection = window.getSelection();
-        if (selection) {
-          selection.removeAllRanges();
-          const range = document.createRange();
-          range.selectNodeContents(tab);
-          selection.addRange(range);
-        }
-
-        tab.addEventListener('keydown', (inner_event: KeyboardEvent) => {
-          switch (inner_event.key) {
-            case 'Enter':
-              // const name = tab.innerText.trim();
-              this.Publish({ 
-                type: 'rename-sheet', 
-                name: tab.innerText.trim(), 
-                sheet 
-              });
-              break;
-
-            case 'Escape':
-              tab.innerText = sheet.name;
-              this.Publish({ type: 'cancel' });
-              break;
-
-            default:
-              return;
-          }
-          inner_event.stopPropagation();
-          inner_event.preventDefault();
-        });
-
-        tab.addEventListener('focusout', () => {
-          const name = tab.innerText.trim();
-          if (name !== sheet.name) {
-            this.Publish({ type: 'rename-sheet', name, sheet });
-          }
-        });
-
-        tab.focus();
-
+        this.DoubleClickTab(event, tab, sheet);
       };
 
       // you need the inner span for ellipsis, if we want that
@@ -524,72 +456,10 @@ export class TabBar extends EventSource<TabEvent> {
       tab.addEventListener('dblclick', doubleclick);
       tab.addEventListener('mousedown', mousedown);
 
-      target.appendChild(tab);
+      this.tab_container.appendChild(tab);
       tabs.push(tab);
 
     }
-
-    if (this.options.add_tab) {
-
-      const add_tab = document.createElement('a');
-      add_tab.classList.add('add-tab');
-      add_tab.style.order = (this.model.sheets.length * 2).toString();
-      add_tab.innerText = '+';
-      add_tab.title = 'Add sheet';
-      add_tab.addEventListener('click', () => {
-        this.Publish({ type: 'add-sheet' });
-      });
-
-      // add_tab.style.color = this.theme.tab_bar_color || '';
-      // add_tab.style.background = this.theme.tab_bar_background || '';
-
-      target.appendChild(add_tab);
-
-    }
-
-    /*
-    if (this.options.delete_tab) {
-
-      const spacer = document.createElement('div');
-      spacer.setAttribute('class', 'tab-bar-spacer');
-      spacer.style.order = (this.model.sheets.length * 2 + 1).toString();
-      target.appendChild(spacer);
-
-      const delete_tab = document.createElement('a');
-      delete_tab.classList.add('delete-tab');
-      delete_tab.style.order = (this.model.sheets.length * 2 + 2).toString();
-      delete_tab.innerText = 'Delete Sheet';
-      delete_tab.setAttribute('title', 'Delete Sheet');
-      delete_tab.addEventListener('click', () => {
-        this.Publish({ type: 'delete-sheet' });
-      });
-
-      // delete_tab.style.color = this.theme.tab_bar_color || '';
-      // delete_tab.style.background = this.theme.tab_bar_background || '';
-
-      target.appendChild(delete_tab);
-
-    }
-    */
-
-  }
-
-  /**
-   * initialize, build node structure
-   */
-  private Init(grid_container: HTMLElement) {
-
-    this.container = document.createElement('div');
-    this.container.classList.add('treb-tab-bar-container');
-    grid_container.appendChild(this.container);
-
-    this.node = document.createElement('div');
-    this.node.classList.add('treb-tab-bar');
-    this.container.appendChild(this.node);
-
-
-
-    // this.UpdateTheme();
 
   }
 

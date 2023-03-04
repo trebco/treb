@@ -67,10 +67,10 @@ import { Chart, ChartFunctions } from 'treb-charts';
 // support headless/server-side grid. if we build with esbuild they'd
 // disappear so we could move these back...
 
-import 'treb-grid/style/grid-layout.scss';
-import 'treb-grid/style/grid.scss';
+// import 'treb-grid/style/grid-layout.scss';
+// import 'treb-grid/style/grid.scss';
+// import '../style/embed.scss';
 
-import '../style/embed.scss';
 import type { SetRangeOptions } from 'treb-grid';
 
 /**
@@ -488,7 +488,7 @@ export class EmbeddedSpreadsheet {
     let container: HTMLElement | undefined;
 
     if (typeof this.options.container === 'string') {
-      container = document.getElementById(this.options.container) as HTMLElement;
+      container = document.querySelector(this.options.container) as HTMLElement;
     }
     else if (this.options.container) {
       container = this.options.container;
@@ -595,6 +595,8 @@ export class EmbeddedSpreadsheet {
 
     if (container) {
 
+      /*
+
       this.view = document.createElement('div');
       this.view.classList.add('treb-view');
 
@@ -605,6 +607,10 @@ export class EmbeddedSpreadsheet {
       this.node = document.createElement('div');
       this.view.appendChild(this.node);
       container.appendChild(this.view);
+
+      */
+
+      this.node = container;
 
       this.node.addEventListener('focusin', () => {
         this.focus_target = this;

@@ -23,11 +23,9 @@
  * tab bar falls under .treb-main, which is a flex column layout.
  */
 
-.treb-main {
+ .treb-main {
 
-  /* flex patch for chrome */
-
-  .treb-tab-bar-container {
+  .treb-spreadsheet-footer {
 
     /* 
      * NOTE: this is becoming flex/row/space-between so that RiskAMP web 
@@ -47,15 +45,9 @@
      * (...)
      */ 
 
-     /*
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-     */
+    // order: 3;
 
-    order: 3;
-
-    & .treb-tab-bar {
+    &, .treb-spreadsheet-tabs {
       display: flex;
       flex-direction: row;
       z-index: 1;
@@ -63,6 +55,12 @@
       height: 2.2em;
       color: var(--treb-ui-color, inherit);
     }
+
+    &.treb-util-hidden {
+      display: none;
+    }
+
+    align-items: center;
 
     /* tabs should be under tab bar? (...) */
 
@@ -90,7 +88,7 @@
 
     }
 
-    & .treb-scale-control-2 {
+    & .treb-scale-control {
       font-size: inherit;
       height: 2.2em;
       // padding: .25em .75em;
@@ -158,52 +156,6 @@
 
     }
 
-    /*
-    & .treb-scale-control {
-      font-size: inherit;
-      padding: .25em .75em;
-      padding: .25em 1em;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-
-      / *
-      opacity: .75;
-      transition: opacity .15s ease;
-      &:hover {
-        opacity: 1;
-      }
-      * /
-
-      & > div {
-        pointer-events: none;
-        min-width: 3.25em;
-        text-align: center;
-      }
-
-      & button {
-        font-size: inherit;
-        border-radius: 2px;
-        width: 1em;
-        height: 1em;
-        border: 1px solid currentColor;
-        background: transparent;
-        color: inherit;
-        margin: 0 .25em;
-        position: relative;
-        padding: 0;
-        line-height: 0;
-
-        & svg path {
-          stroke: currentColor;
-          stroke-width: 1px;
-        }
-
-      }
-
-    }
-      */
-
     & .delete-tab {
 
       font-size: inherit;
@@ -242,20 +194,14 @@
 
     }
 
-    & .tab-bar-spacer {
-      flex-grow: 1;
-      order: 9998;
-    }
-
-    & .tab-bar-end {
-      order: 9999;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-    }
-
     .treb-stats-panel {
-      > * + * {
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      // > * + * {
+      > * { 
         margin-left: .5em;
       }
 
@@ -266,18 +212,6 @@
         border-radius: 3px;
       }
     }
-
-    /*
-    .treb-stats-panel {
-      color: var(--treb-ui-color, #fff);
-    }
-    */
-
-    /*
-    & .treb-stats-panel {
-      font-size: .9em;
-    }
-    */
 
     /** don't overflow/ellipsis the add tab button */
 

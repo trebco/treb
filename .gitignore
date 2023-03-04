@@ -9,6 +9,8 @@ coverage
 temp
 etc
 
+build-element
+
 #
 # we might want to check this in once it stabilizes, 
 # although since it's generated it's not strictly

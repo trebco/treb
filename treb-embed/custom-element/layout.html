@@ -1,0 +1,63 @@
+
+<div class="treb-layout" toolbar>
+
+  <div class="treb-layout-header">
+    <button>T</button>
+    <button>o</button>
+    <button>o</button>
+    <button>l</button>
+    <button>b</button>
+    <button>a</button>
+    <button>r</button>
+  </div>
+
+  <div class="treb-layout-spreadsheet treb-main treb-theme">
+
+    <div class="treb-formula-bar notranslate spreadsheet-header">
+      <div class="address-label"><div></div></div>
+      <div class="editor-container">
+        <div class="formula-editor" contenteditable="true"></div>
+      </div>
+    </div>
+
+    <div class="treb-layout-resize-container">
+      <div class="treb-layout-master" role="grid">
+        <div class="treb-grid" tabindex="-1"></div>
+      </div>
+
+      <div class="treb-resize-handle"></div>
+    </div>
+
+    <div class="treb-spreadsheet-footer">
+
+      <div class="delete-tab" title="Delete current sheet" data-command="delete-tab">
+        <svg viewbox='0 0 16 16'><path d='M4,4 L12,12 M12,4 L4,12'/></svg>
+      </div>
+
+      <!-- list of tabs for sheets -->
+      <div class="treb-spreadsheet-tabs"></div>
+
+      <a class="add-tab" data-command="add-tab">+</a>
+
+      <div class="treb-util-flex-grow"></div>
+
+      <div class="treb-stats-panel"></div>
+
+      <!-- FIXME: declarative layout -->
+      <div class="treb-scale-control"></div>
+
+    </div>
+
+  </div>
+
+  <div class="treb-layout-sidebar treb-util-animate">
+    <button data-command="recalculate"></button>
+    <button data-command="toggle-toolbar"></button>
+    <button data-command="export-xlsx"></button>
+    <button data-command="revert"></button>
+    <button data-command="about"></button>
+  </div>
+
+  <button class="treb-toggle-sidebar-button"></button>
+
+</div>

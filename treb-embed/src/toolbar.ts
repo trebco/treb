@@ -28,7 +28,7 @@ import type { EmbeddedSpreadsheetOptions } from './options';
 import type { GridSelection } from 'treb-grid';
 import { ThemeColor2 } from 'treb-base-types';
 
-import '../style/toolbar-4.scss';
+// import '../style/toolbar-4.scss';
 
 /**
  * state that should be reflected in toolbar buttons/selections
