@@ -2,6 +2,12 @@ import { SpreadsheetConstructor } from './spreadsheet-constructor';
 import type { EmbeddedSpreadsheet } from '../src/embedded-spreadsheet';
 import type { EmbeddedSpreadsheetOptions } from '../src/options';
 
+declare global {   
+  interface HTMLElementTagNameMap {
+   'treb-spreadsheet': TREBElement;   
+ } 
+}
+
 /**
  * this is the custom element. we have a two-class structure because
  * we want to support (1) custom elements, (2) the API method, and 
@@ -11,7 +17,9 @@ import type { EmbeddedSpreadsheetOptions } from '../src/options';
 class TREBElement extends HTMLElement {
 
   /** access the embedded spreadshet object via the element */
-  public sheet?: EmbeddedSpreadsheet;
+  public get sheet(): EmbeddedSpreadsheet|undefined {
+    return this.instance.sheet;
+  }
 
   /** instance of the constructor class */
   protected instance: SpreadsheetConstructor;
@@ -23,7 +31,6 @@ class TREBElement extends HTMLElement {
 
   public connectedCallback() {
     this.instance.AttachElement();
-    this.sheet = this.instance.sheet;
   }
 
 }

@@ -21,45 +21,50 @@
 
 $tooltip-arrow-size: 4px;
 
-.treb-tooltip {
+.treb-layout {
 
-  display: none;
-  pointer-events: none;
-  position: fixed;
-  padding: 2px 10px;
-  border-radius: 2px;
-  box-shadow: $default-box-shadow;
-  z-index: $z-index-tooltip;
-  line-height: normal;
+  .treb-tooltip {
 
-  &.arrow-up {
-    &::after {
-      box-sizing: border-box;
-      position: absolute;
-      top: calc(-2 * $tooltip-arrow-size);
-      left: calc(50% - $tooltip-arrow-size);
-      width: calc(2 * $tooltip-arrow-size);
-      height: calc(2 * $tooltip-arrow-size);
-      overflow: hidden;
-      content: ' ';
-      border: $tooltip-arrow-size solid transparent;
-      border-bottom-color: inherit;
+    display: none;
+    pointer-events: none;
+    position: fixed;
+    padding: 2px 10px;
+    border-radius: 2px;
+    box-shadow: $default-box-shadow;
+    z-index: $z-index-tooltip;
+    line-height: normal;
+
+    &.arrow-up {
+      &::after {
+        box-sizing: border-box;
+        position: absolute;
+        top: calc(-2 * $tooltip-arrow-size);
+        left: calc(50% - $tooltip-arrow-size);
+        width: calc(2 * $tooltip-arrow-size);
+        height: calc(2 * $tooltip-arrow-size);
+        overflow: hidden;
+        content: ' ';
+        border: $tooltip-arrow-size solid transparent;
+        border-bottom-color: inherit;
+      }
     }
-  }
 
-  &.arrow-left {
-    &::after {
-      box-sizing: border-box;
-      position: absolute;
-      left: calc(-2 * $tooltip-arrow-size);
-      top: calc(50% - $tooltip-arrow-size);
-      width: calc(2 * $tooltip-arrow-size);
-      height: calc(2 * $tooltip-arrow-size);
-      overflow: hidden;
-      content: ' ';
-      border: $tooltip-arrow-size solid transparent;
-      border-right-color: inherit;
+    &.arrow-left {
+      &::after {
+        box-sizing: border-box;
+        position: absolute;
+        left: calc(-2 * $tooltip-arrow-size);
+        top: calc(50% - $tooltip-arrow-size);
+        width: calc(2 * $tooltip-arrow-size);
+        height: calc(2 * $tooltip-arrow-size);
+        overflow: hidden;
+        content: ' ';
+        border: $tooltip-arrow-size solid transparent;
+        border-right-color: inherit;
+      }
     }
+
   }
 
 }
+

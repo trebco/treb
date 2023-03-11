@@ -40,13 +40,13 @@ export class HeaderOverlay {
       private orientation: Orientation) {
 
     this.g = document.createElementNS(SVGNS, 'g');
-    this.g.setAttribute('class', 'header-overlay');
+    this.g.setAttribute('class', 'treb-header-overlay');
 
     this.overlay = document.createElementNS(SVGNS, 'rect');
-    this.overlay.setAttribute('class', 'overlay');
+    this.overlay.setAttribute('class', 'treb-overlay');
 
     this.highlight = document.createElementNS(SVGNS, 'rect');
-    this.highlight.setAttribute('class', 'highlight');
+    this.highlight.setAttribute('class', 'treb-highlight');
 
     this.g.style.display = 'none';
     this.g.appendChild(this.highlight);

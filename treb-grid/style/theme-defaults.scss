@@ -54,6 +54,8 @@ $text-reference-color-3: rgb(182, 109, 13);
 $text-reference-color-4: rgb(33, 118, 174);
 $text-reference-color-5: rgb(254, 47, 1);
 
+.treb-layout {
+
 /** 
  * move primary selection focus color to focus-within on the top-level 
  * node, and use a (new) unfocused selection color. name?
@@ -62,7 +64,7 @@ $text-reference-color-5: rgb(254, 47, 1);
  */
 .treb-container:focus-within {
   .treb-main {
-    .grid-selection .primary-selection, .header-overlay {
+    .treb-grid-selection .primary-selection, .treb-header-overlay {
       color: var(--treb-selection-color, $primary-selection-color);
     }
   } 
@@ -219,18 +221,18 @@ $text-reference-color-5: rgb(254, 47, 1);
   }
 
   /** header overlays (indicate selection) */
-  .header-overlay {
+  .treb-header-overlay {
 
     stroke: none;
     color: var(--treb-selection-color-unfocused, var(--treb-selection-color, $primary-selection-color));
 
-    .overlay {
+    .treb-overlay {
       fill: rgb(0, 0, 0); /* FIXME: use color? */
       stroke: none;
       opacity: 0.05;
     }
 
-    .highlight {
+    .treb-highlight {
       fill: currentColor;
     }
 
@@ -242,7 +244,7 @@ $text-reference-color-5: rgb(254, 47, 1);
    * be useful).
    */
 
-  .in-cell-editor, .formula-editor, .overlay-editor {
+  .treb-formula-editor, .treb-overlay-editor {
 
     /* span:nth-of-type(1n) { */
     span.highlight-1 {
@@ -326,7 +328,7 @@ $text-reference-color-5: rgb(254, 47, 1);
   /** 
    * selections
    */
-  .grid-selection, .frozen-selection {
+  .treb-grid-selection, .frozen-selection {
 
     /** common */
     .selection {
@@ -404,11 +406,11 @@ $text-reference-color-5: rgb(254, 47, 1);
 
     font-size: 14px; /* FIXME: could be relative? */
 
-    .tab, .add-tab {
+    .treb-spreadsheet-tabs > li, .treb-add-tab {
       background: var(--treb-tab-bar-tab-background, rgb(238, 238, 242));
       color: var(--treb-tab-bar-tab-color, var(--treb-ui-color, inherit));
 
-      &.selected {
+      &.treb-selected {
         background: var(--treb-tab-bar-active-tab-background, #fff);
         color: var(--treb-tab-bar-active-tab-color, var(--treb-ui-color, inherit));
       }
@@ -424,7 +426,7 @@ $text-reference-color-5: rgb(254, 47, 1);
    * should centralize here. TODO/WIP.
    */
   .treb-formula-bar {
-    .address-label, .editor-container {
+    .treb-address-label, .treb-editor-container {
       background: var(--treb-formula-bar-background, transparent);
       color: var(--treb-formula-bar-color, var(--treb-ui-color, inherit));
 
@@ -475,3 +477,6 @@ $text-reference-color-5: rgb(254, 47, 1);
   font-size: var(--treb-grid-font-size-osx, var(--treb-grid-font-size, 10pt)); // slightly smaller default
   font-family: var(--treb-grid-font-family-osx, var(--treb-grid-font-family, inherit));
 }
+
+}
+

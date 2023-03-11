@@ -25,8 +25,6 @@
  * run, but it will take a bit more work.
  */
 
-// import * as JSZip from 'jszip';
-import * as he from 'he';
 import JSZip from 'jszip';
 
 import { PixelsToColumnWidth } from './column-width';

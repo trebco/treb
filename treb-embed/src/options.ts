@@ -53,13 +53,22 @@ export interface EmbeddedSpreadsheetOptions {
   /** expandable grid */
   expand?: boolean;
 
-  /** key in localStorage for persisting document */
-  storage_key?: string;
+  /** 
+   * key in localStorage for persisting document. it's possible
+   * to set this to boolean `true`, in which case we will generate
+   * a storage key based on the page URI. 
+   * 
+   * this can be convenient for quickly setting up a document, but don't 
+   * use it if the page URI might change (the storage will get lost)
+   * or if there are multiple spreadsheets on the same page (they will
+   * overwrite each other).
+   */
+  storage_key?: string|boolean;
 
   /** don't load immediately (?) */
   toll_initial_load?: boolean;
 
-  /** show formula bar */
+  /** show formula bar. default true. */
   formula_bar?: boolean;
 
   /** expand formula bar */
@@ -80,8 +89,11 @@ export interface EmbeddedSpreadsheetOptions {
   /** fill container */
   auto_size?: boolean;
 
-  /** popout icon */
-  popout?: boolean;
+  /* * 
+   * popout icon 
+   * removed as of version 25
+   */
+  // popout?: boolean;
 
   /* * the old "fork and edit" button */
   // fork?: boolean;
@@ -89,13 +101,15 @@ export interface EmbeddedSpreadsheetOptions {
   /** fetch network document (URI) */
   network_document?: string;
 
-  /** 
+  /* * 
    * load this document if the storage document isn't found (fallback) 
    * 
    * @deprecated - this is superfluous, using network_document with 
    * storage_key is sufficient for this pattern.
+   * 
+   * removed as of version 25
    */
-  alternate_document?: string;
+  // alternate_document?: string;
 
   /** freeze rows */
   freeze_rows?: number;
@@ -213,7 +227,10 @@ export interface EmbeddedSpreadsheetOptions {
   /** support MD formatting for text */
   markdown?: boolean;
 
-  /** show tinted colors in toolbar color dropdowns */
+  /** 
+   * show tinted colors in toolbar color dropdowns. as of version 25
+   * this defaults to true (used to be false).
+   */
   tint_theme_colors?: boolean;
 
   /** show a spinner for long-running operations */
@@ -223,9 +240,10 @@ export interface EmbeddedSpreadsheetOptions {
   collapsed?: boolean;
   
   /**
-   * show the revert button. see the Revert method.
+   * show the revert button. see the Revert method. this was renamed
+   * from `revert` to avoid any ambiguity.
    */
-  revert?: boolean;
+  revert_button?: boolean;
 
 }
 
@@ -240,12 +258,14 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   scrollbars: true,
   headers: true,
   export: true,
-  popout: false,
+  // popout: false,
   tab_bar: 'auto',
   resizable: true,
   hyperlinks: '_blank',
   max_file_size: 1024 * 92,
   // imaginary_value: 'i',
+
+  tint_theme_colors: true,
 
   // I don't think false options need to be in default?
   // although it's nice to have a clear reference about defaults...

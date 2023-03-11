@@ -998,7 +998,11 @@ export class GridBase {
       let value = '';
 
       if (header.type !== ValueType.string) {
-        if (typeof header.calculated !== 'undefined') {
+        
+        if (typeof header.formatted !== 'undefined') {
+          value = (header.formatted).toString();
+        }
+        else if (typeof header.calculated !== 'undefined') {
           value = (header.calculated).toString();
         }
         else if (typeof header.value !== 'undefined') {
@@ -1861,10 +1865,10 @@ export class GridBase {
     const left: Style.Properties = { border_left: width };
     const right: Style.Properties = { border_right: width };
 
-    const clear_top: Style.Properties = { border_top: 0 };
-    const clear_bottom: Style.Properties = { border_bottom: 0 };
-    const clear_left: Style.Properties = { border_left: 0 };
-    const clear_right: Style.Properties = { border_right: 0 };
+    const clear_top: Style.Properties = { border_top: 0, border_top_fill: {} };
+    const clear_bottom: Style.Properties = { border_bottom: 0, border_bottom_fill: {} };
+    const clear_left: Style.Properties = { border_left: 0, border_left_fill: {} };
+    const clear_right: Style.Properties = { border_right: 0, border_right_fill: {} };
 
     // default to "none", which means "default"
 
@@ -1883,7 +1887,17 @@ export class GridBase {
       right.border_right_fill = {...command.color};
 
     }
+    else {
 
+      // otherwise we should be sure to clear any color
+
+      top.border_top_fill = {};
+      bottom.border_bottom_fill = {};
+      left.border_left_fill = {};
+      right.border_right_fill = {};
+
+    }
+    
     // inside all/none
     if (borders === BorderConstants.None || borders === BorderConstants.All) {
       sheet.UpdateAreaStyle(area, {

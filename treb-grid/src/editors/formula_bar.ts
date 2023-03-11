@@ -168,58 +168,23 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
     super(parser, theme, model, view, autocomplete);
 
-    /*
-    this.autocomplete = new Autocomplete({
-      theme: this.theme,
-    });
-    */
-
-    // create layout. need a flex patch for chrome
-
-    // const outer_node = DOMUtilities.CreateDiv('treb-formula-bar-container notranslate', container);
-    // const inner_node = DOMUtilities.CreateDiv('treb-formula-bar', outer_node);
     const inner_node = container.querySelector('.treb-formula-bar') as HTMLElement;
 
-    // this.node = DOMUtilities.CreateDiv('treb-formula-bar', container);
-
-    // this.address_label_container = DOMUtilities.CreateDiv('address-label', inner_node);
-    // this.address_label = DOMUtilities.CreateDiv('', this.address_label_container);
-    this.address_label_container = inner_node.querySelector('.address-label') as HTMLDivElement;
+    this.address_label_container = inner_node.querySelector('.treb-address-label') as HTMLDivElement;
     this.address_label = this.address_label_container.firstElementChild as HTMLDivElement;
 
     this.InitAddressLabel();
 
     if (this.options.insert_function_button) {
-
       this.button = DOMUtilities.Create<HTMLButtonElement>('button', 'formula-button', inner_node);
-      //const text1 = DOMUtilities.Create<HTMLSpanElement>('span', 'text-1', this.button);
-      //const text2 = DOMUtilities.Create<HTMLSpanElement>('span', 'text-2', this.button);
-
       this.button.addEventListener('click', () => {
         const formula: string = this.editor_node ? this.editor_node.textContent || '' : '';
         this.Publish({ type: 'formula-button', formula });
       });
-
     }
 
-    this.container_node = container.querySelector('.editor-container') as HTMLDivElement;
-    this.editor_node = this.container_node.querySelector('.formula-editor') as HTMLDivElement;
-
-    /*
-    this.container_node = DOMUtilities.CreateDiv('editor-container', inner_node);
-    this.editor_node = DOMUtilities.CreateDiv('formula-editor', this.container_node);
-    this.editor_node.setAttribute('contenteditable', 'true');
-    */
-
-
-
-    // FIXME: regarding composing, we don't need a flag. there is a flag 
-    // on events. do this properly.
-
-    // flag for composing via IME. when this is set we don't want to 
-    // handle input events.
-
-    let composing = false;
+    this.container_node = container.querySelector('.treb-editor-container') as HTMLDivElement;
+    this.editor_node = this.container_node.querySelector('.treb-formula-editor') as HTMLDivElement;
 
     // 
     // change the default back. this was changed when we were trying to figure
@@ -268,8 +233,6 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
       this.focused_ = true;
 
-      composing = false;
-
     });
 
     this.editor_node.addEventListener('focusout', () => {
@@ -296,18 +259,9 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.editor_node.addEventListener('keydown', (event) => this.FormulaKeyDown(event));
     this.editor_node.addEventListener('keyup', (event) => this.FormulaKeyUp(event));
 
-    this.editor_node.addEventListener('compositionstart', () => {
-      composing = true;
-    });
+    this.editor_node.addEventListener('input', (event: Event) => {
 
-    this.editor_node.addEventListener('compositionsend', () => {
-      composing = false;
-    });
-
-    // IE11 doesn't support this event? (not on contenteditable, as it turns out)
-    this.editor_node.addEventListener('input', () => {
-
-      if (composing) {
+      if (event instanceof InputEvent && event.isComposing) {
         return;
       }
 
@@ -328,10 +282,6 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
       });
     }
 
-    // this.drag_corner = Dom2.CreateDiv(this.container_node, 'drag-corner');
-    // this.drag_corner.addEventListener('mousedown', (event) => this.StartDrag(event));
-
-    // this.UpdateTheme();
   }
 
   public IsElement(element: HTMLElement): boolean {

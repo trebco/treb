@@ -178,7 +178,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
       });
     }
 
-    if (this.options.revert) {
+    if (this.options.revert_button) {
       this.AddSidebarButton({
         icon: 'treb-icon-revert',
         title: 'Revert to original version',
@@ -186,6 +186,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
       });
     }
 
+    /*
     if (this.options.popout) {
       this.AddSidebarButton({
         icon: 'treb-icon-popout',
@@ -193,6 +194,7 @@ export class CompositeSheet<T extends EmbeddedSpreadsheet> {
         click: () => this.Popout(),
       });
     }
+    */
 
     this.AddSidebarButton({
       icon: 'treb-icon-about',

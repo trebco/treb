@@ -19,156 +19,135 @@
  * 
  */
 
-.treb-embed-dialog {
+.treb-layout {
 
-  /* 
-  font-size: 14px;   
-  line-height: 28px;
-  */
-  line-height: 1.6em;
+  .treb-embed-dialog {
 
-  border: 1px solid var(--treb-dialog-border-color, var(--treb-ui-border-color, #999));
-  
-  border-top-width: 3px;
-  border-top-color: rgb(0, 157, 255);
-  border-top-color: rgb(158, 175, 185);
-  border-top-color: #999;
+    line-height: 1.6em;
 
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  position: relative;
+    border: 1px solid var(--treb-dialog-border-color, var(--treb-ui-border-color, #999));
 
-  & > * {
-    /* padding: 2px 12px; */
-    display: none;
-  }
+    border-top-width: 3px;
+    border-top-color: rgb(0, 157, 255);
+    border-top-color: rgb(158, 175, 185);
+    border-top-color: #999;
 
-  & > div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     position: relative;
-  }
 
-  /* middle: title, message and (maybe) progress bar */
-  & > *:nth-child(2) {
-    flex-grow: 1;
-    display: block;
-  }
+    padding: 1em;
+    background: var(--treb-dialog-background, #fff);
+    color: var(--treb-dialog-color, #000);
 
-  & > *:nth-child(2) {
-    padding: 2px 12px;
-    padding-right: 20px;
-  }
+    text-align: left;
+    border-radius: 3px;
 
-  & > .close-box {
-    position: absolute;
-    top: 0;
-    right: 0px;
-    padding: 0;
-    background: transparent;
-    border: 0;
+    & > * {
+      display: none;
+    }
 
-    & > svg {
-      fill: rgb(115, 130, 140);
-      width: 20px;
-      height: 20px;
-      cursor: default;
-      &:hover, &:active {
-        fill: rgb(4, 156, 251);
+    & > div {
+      position: relative;
+    }
+
+    /* middle: title, message and (maybe) progress bar */
+    &>*:nth-child(2) {
+      flex-grow: 1;
+      display: block;
+      padding: 2px 12px;
+      padding-right: 20px;
+    }
+
+    &>.treb-close-box {
+
+      position: absolute;
+      top: 0;
+      right: 0px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+
+      &>svg {
+
+        fill: rgb(115, 130, 140);
+        width: 20px;
+        height: 20px;
+        cursor: default;
+
+        &:hover,
+        &:active {
+          fill: rgb(4, 156, 251);
+        }
+      }
+
+      padding: 4px;
+
+    }
+
+    small {
+      font-size: .9em;
+      display: block;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+
+      &:hover,
+      &:active {
+        color: rgb(4, 156, 251);
       }
     }
 
-    padding: 4px;
-
-  }
-
-  .smaller {
-    font-size: .9em;
-  }
-
-  a {
-    text-decoration: none;
-    /* color: rgb(115, 130, 140); */
-    color: inherit;
-    
-    &:hover, &:active {
-      color: rgb(4, 156, 251);
+    &.dialog-type-success {
+      border-top-width: 3px;
+      border-top-color: rgb(68, 217, 38);
     }
-  }
 
-  &.dialog-type-success {
-    border-top-width: 3px;
-    border-top-color: rgb(68, 217, 38);
-  }
+    &.dialog-type-about {
+      border-top-width: 3px;
+      border-top-color: rgb(0, 157, 255);
+    }
 
-  &.dialog-type-about {
-    border-top-width: 3px;
-    // border-top-color: #52880b;
-    // border-top-color: #036ec1;
-    
-    // our leaf gradient is currently #AD4500 - #D4D400
-    // half-way is #C18D00 (not bad)
+    &.dialog-type-error {
+      border-top-width: 3px;
+      border-top-color: rgb(249, 47, 6);
+    }
 
-    // border-top-color: #B76900; // this is not half-way; it's 4/5 of the way.
-    border-top-color: rgb(0, 157, 255);
-  }
+    &.dialog-type-info {
+      border-top-width: 3px;
+      border-top-color: rgb(0, 157, 255);
+    }
 
-  &.dialog-type-error {
-    border-top-width: 3px;
-    border-top-color: rgb(249, 47, 6);
-  }
+    .treb-embed-dialog-title {
+      white-space: pre;
+    }
 
-  &.dialog-type-info {
-    border-top-width: 3px;
-    /*
-    border-top-color: rgb(153, 174, 189);
-    */
-    border-top-color: rgb(0, 157, 255);
-  }
+    .treb-embed-dialog-message {
+      white-space: pre;
+    }
 
-  padding: 1em;
-  background: var(--treb-dialog-background, #fff);
-  color: var(--treb-dialog-color, #000);
+    .treb-embed-progress-container {
+      position: relative;
+      border: 1px solid red;
+      width: 100%;
+      height: 6px;
+      border: 1px solid #ddd;
+      margin: auto;
+      margin-top: 1em;
+      margin-bottom: .5em;
+    }
 
-  text-align: left;
-  border-radius: 3px;
-  /* font-family: inherit; */
+    .treb-embed-progress-bar {
+      position: relative;
+      background: #52880b;
+      top: 0px;
+      left: 0px;
+      height: 100%;
+    }
 
-  /*
-  width: 60%;
-  max-width: 700px;
-  */
-
-  /* title */
-  .treb-embed-dialog-title {
-    white-space: pre;
-    /*
-    font-weight: 500;
-    */
-  }
-
-  /* text content */
-  .treb-embed-dialog-message {
-    white-space: pre;
-  }
-
-  .treb-embed-progress-container {
-    position: relative;
-    border: 1px solid red;
-    width: 100%;
-    height: 6px;
-    border: 1px solid #ddd;
-    margin: auto;
-    margin-top: 1em;
-    margin-bottom: .5em;
-  }
-
-  .treb-embed-progress-bar {
-    position: relative;
-    background: #52880b;
-    /* background: #8DD3C7; */
-    top: 0px;
-    left: 0px;
-    height: 100%;
   }
 
 }

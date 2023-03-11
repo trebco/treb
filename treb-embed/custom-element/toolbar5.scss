@@ -1,0 +1,168 @@
+
+// -----------------------------------------------------------------------------
+
+$button-width: 32px;
+$dropdown-button-width: 16px;
+
+$background-color: #fff;
+$background-hover: #f0f0f0;
+$border-color: #ccc;
+
+$menu-background: #fff;
+$menu-border-color: #ccc;
+$menu-item-hover-color: #eee;
+
+$box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4);
+$border-radius: 3px;
+
+$font-size: 14px;
+$split-font-size: 10px;
+
+.treb-layout {
+
+// -----------------------------------------------------------------------------
+
+  .treb-layout-header {
+
+    // background: pink;
+
+    overflow-x: scroll;
+    position: relative;
+
+    // hide scrollbars
+    // FIXME: util class
+
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { 
+      display: none;
+    }
+
+  }
+
+  .treb-toolbar {
+
+    width: 200%; // dev only
+  
+    // ----
+  
+    display: flex;
+    flex-direction: row;
+    gap: .5em;
+
+    & > .group {
+      display: flex;
+      flex-direction: row;
+      gap: 0;
+
+      & > button:first-child {
+        border-top-left-radius: $border-radius;
+        border-bottom-left-radius: $border-radius;
+      }
+
+      & > button:last-child {
+        border-top-right-radius: $border-radius;
+        border-bottom-right-radius: $border-radius;
+      }
+
+      & > button + button {
+        border-left-width: 0;
+      }
+
+    }
+
+    & > button, & > .group > button {
+      
+      width: $button-width;
+      height: $button-width;
+      background-color: $background-color;
+      border: 1px solid $border-color;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: background-color .125s ease;
+      // border-radius: $border-radius;
+
+      &[dropdown] {
+        width: $dropdown-button-width;
+        &::after {
+          box-sizing: content-box;
+          content: '';
+          position: absolute;
+          width: 0px;
+          height: 0px;
+          border: 5px solid transparent;
+          border-top-color: currentColor;
+          top: 18px; // FIXME: specify in ems
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+      }
+
+      &:hover {
+        background-color: $background-hover;
+      }
+
+      &[data-icon], &[data-command] {
+        &::before {
+          content: '';
+          display: block;
+          position: relative;
+          background: currentColor;
+          width: 20px;
+          height: 20px;
+          mask-position: center;
+          -webkit-mask-position: center;
+          mask-repeat: no-repeat;
+          -webkit-mask-repeat: no-repeat;
+          mask-image: var(--icon);
+          -webkit-mask-image: var(--icon);
+          mask-size: 16px 16px;
+          -webkit-mask-size: 16px 16px;
+        }
+      }
+
+    }
+
+    & > button {
+        border-radius: $border-radius;
+    }
+
+    /*
+    .menu {
+      position: fixed;
+      border: 1px solid $border-color;
+      border-radius: $border-radius;
+    }
+    */
+    
+  }
+
+  // ---------------------------------------------------------------------------
+
+  [data-icon=file-menu]{ --icon: var(--treb-icon-file-menu); }
+    
+  [data-command=justify-left] { --icon: var(--treb-icon-text-align-left); }
+  [data-command=justify-right] { --icon: var(--treb-icon-text-align-right); }
+  [data-command=justify-center] { --icon: var(--treb-icon-text-align-center); }
+
+  [data-command=align-top] { --icon: var(--treb-icon-text-align-top); }
+  [data-command=align-middle] { --icon: var(--treb-icon-text-align-middle); }
+  [data-command=align-bottom] { --icon: var(--treb-icon-text-align-bottom); }
+  [data-command=merge-cells] { --icon: var(--treb-icon-merge-cells); }
+  [data-command=unmerge-cells] { --icon: var(--treb-icon-unmerge-cells); }
+
+  [data-command=fill-color] { --icon: var(--treb-icon-fill-color); }
+  [data-command=text-color] { --icon: var(--treb-icon-text-color); }
+
+  [data-command=lock-cells] { --icon: var(--treb-icon-lock); }
+  [data-command=wrap-text] { --icon: var(--treb-icon-wrap-text); }
+  [data-command=comment] { --icon: var(--treb-icon-comment); }
+
+  .font-scale {
+    width: 4em;
+  }
+
+}

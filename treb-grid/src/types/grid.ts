@@ -6739,7 +6739,7 @@ export class Grid extends GridBase {
     return [];
   }
 
-  private UpdateStats() {
+  public UpdateStats() {
 
     if (this.tab_bar) {
       let data: StatsEntry[] = [];

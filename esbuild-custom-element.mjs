@@ -30,7 +30,7 @@ const html_minifier_options = {
  * passed at command line.
  */
 const options = {
-  version: 'production',
+  version: 'dev',
   watch: false,
   minify: true, 
 };

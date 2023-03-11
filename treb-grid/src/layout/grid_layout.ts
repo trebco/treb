@@ -31,68 +31,25 @@ export class GridLayout extends BaseLayout {
   constructor(model: DataModel, view: ViewModel){
     super(model, view);
 
-    /*
-    const nodes = tmpl`
-
-      <div id='column_header' class='top-header'>
-        <svg id='row_header_selection' class='frozen-selection frozen-selection-rows'></svg>
-      </div>
-
-      <div id='row_header' class='left-header'>
-        <svg id='column_header_selection' class='frozen-selection frozen-selection-columns'></svg>
-      </div>
-
-      <div id='corner' class='corner'>
-        <canvas id='corner_canvas'></canvas>
-        <svg id='corner_selection' class='frozen-selection'></svg>
-      </div>
-
-      <div id='contents' class='contents'>
-        <svg id='grid_selection' class='grid-selection'></svg>
-      </div>
-
-      <div id='annotation_container' class='annotation-container'></div>
-
-      <div id='grid_cover' class='tile-cover grid-cover'></div>
-      <div id='column_header_cover' class='tile-cover column-header-cover'></div>
-      <div id='row_header_cover' class='tile-cover row-header-cover'></div>
-
-    `;
-
-    this.column_header = nodes.column_header as HTMLDivElement;
-    this.row_header = nodes.row_header as HTMLDivElement;
-    this.corner = nodes.corner as HTMLDivElement;
-    this.corner_canvas = nodes.corner_canvas as HTMLCanvasElement;
-    this.contents = nodes.contents as HTMLDivElement;
-    this.grid_selection = (nodes.grid_selection as any) as SVGSVGElement;
-    this.row_header_selection = (nodes.row_header_selection as any) as SVGSVGElement;
-    this.column_header_selection = (nodes.column_header_selection as any) as SVGSVGElement;
-    this.corner_selection = (nodes.corner_selection as any) as SVGSVGElement;
-    this.annotation_container = nodes.annotation_container as HTMLDivElement;
-    this.grid_cover = nodes.grid_cover as HTMLDivElement;
-    this.column_header_cover = nodes.column_header_cover as HTMLDivElement;
-    this.row_header_cover = nodes.row_header_cover as HTMLDivElement;
-    */
-
     // nodes always exist
 
     // everything except the selection node and the mouse
     // mask needs to get attached to a container, when it's
     // available
 
-    this.column_header = DOMUtilities.CreateDiv('top-header');
-    this.row_header = DOMUtilities.CreateDiv('left-header');
+    this.column_header = DOMUtilities.CreateDiv('treb-top-header');
+    this.row_header = DOMUtilities.CreateDiv('treb-left-header');
     
-    this.corner = DOMUtilities.CreateDiv('corner');
+    this.corner = DOMUtilities.CreateDiv('treb-corner');
     this.corner_canvas = document.createElement('canvas');
     this.corner.appendChild(this.corner_canvas);
 
-    this.contents = DOMUtilities.CreateDiv('contents');
+    this.contents = DOMUtilities.CreateDiv('treb-contents');
     this.buffer_canvas = DOMUtilities.Create('canvas', 'treb-buffer-canvas', this.contents);
 
     // selection node attached to contents
     this.grid_selection = document.createElementNS(SVGNS, 'svg');
-    this.grid_selection.classList.add('grid-selection');
+    this.grid_selection.classList.add('treb-grid-selection');
     this.contents.appendChild(this.grid_selection);
 
     // selection node for frozen rows
@@ -116,11 +73,11 @@ export class GridLayout extends BaseLayout {
     this.corner_annotations = DOMUtilities.CreateDiv('frozen-annotation-container frozen-annotation-container-corner', this.corner);
 
 
-    this.annotation_container = DOMUtilities.CreateDiv('annotation-container');
+    this.annotation_container = DOMUtilities.CreateDiv('treb-annotation-container');
 
-    this.grid_cover = DOMUtilities.CreateDiv('tile-cover grid-cover');
-    this.column_header_cover = DOMUtilities.CreateDiv('tile-cover column-header-cover');
-    this.row_header_cover = DOMUtilities.CreateDiv('tile-cover row-header-cover');
+    this.grid_cover = DOMUtilities.CreateDiv('treb-tile-cover treb-grid-cover');
+    this.column_header_cover = DOMUtilities.CreateDiv('treb-tile-cover treb-column-header-cover');
+    this.row_header_cover = DOMUtilities.CreateDiv('treb-tile-cover treb-row-header-cover');
 
   }
 
@@ -128,7 +85,7 @@ export class GridLayout extends BaseLayout {
   public InitializeInternal(container: HTMLElement, scroll_callback: () => void): void {
 
     this.container = container;
-    this.container.classList.add('grid-layout');
+    this.container.classList.add('treb-grid-layout');
 
     this.scroll_reference_node = this.container;
 

@@ -1,14 +1,18 @@
 
+.treb-layout {
 
-.treb-util-flex-grow {
-  flex-grow: 1;
+  .treb-flex-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: .5em;
+  }
+
+  .treb-hidden {
+    display: none;
+  }
+
 }
 
-.treb-util-flex-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: .5em;
-}
 

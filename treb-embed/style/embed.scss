@@ -23,80 +23,98 @@
 
 @import 'dialog.scss';
 @import 'spinner.scss';
-@import 'dark-theme.scss';
-@import 'treb-icons.scss';
+// @import 'dark-theme.scss';
+// @import 'treb-icons.scss';
 
-/** 
- * switching to the treb-main class, so we can unify...
- */
+.treb-layout {
 
-.treb-main, .treb-embed-mask {
-  
-  font-family:
-    // -apple-system, 
-    BlinkMacSystemFont, 
-    "Segoe UI", 
-    Roboto, 
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    "Open Sans",
-    "Helvetica Neue", 
-    sans-serif;
+  /** 
+   * switching to the treb-main class, so we can unify...
+   */
 
-  font-style: normal;
-  font-weight: normal;
-  color: #333;
-  font-size: 12pt;
+  .treb-main,
+  .treb-dialog-mask {
 
-  box-sizing: border-box;
-  & * { box-sizing: border-box; }
+    font-family:
+      // -apple-system, 
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      Oxygen,
+      Ubuntu,
+      Cantarell,
+      "Open Sans",
+      "Helvetica Neue",
+      sans-serif;
 
-}
+    font-style: normal;
+    font-weight: normal;
+    color: #333;
+    font-size: 12pt;
 
-// this switched around, we now set class on the parent
-.masked .treb-main {
-  opacity: .6;
-}
+    box-sizing: border-box;
 
-.treb-main {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
+    & * {
+      box-sizing: border-box;
+    }
 
-  transition: opacity .2s ease;
+  }
+
 
   /*
+  // this switched around, we now set class on the parent
+  .treb-masked .treb-main {
+    opacity: .6;
+  }
+  */
+
+  .treb-main {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+
+    transition: opacity .2s ease;
+
+    /*
   &.masked {
     opacity: .6;
   }
   */
 
-}
+  }
 
-.treb-embed-mask {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  width: 100%;
-  height: 100%;
-  z-index: 1000;
-  /*
-  background: rgba(255, 255, 255, .5);
-  */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  transition: opacity .2s;  
-  pointer-events: none;
+  // this is a dialog class -- should go with dialog 
 
-  &.visible {
-    pointer-events: auto;
-    opacity: 1;
+  .treb-dialog-mask {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+
+    // background: rgba(255, 0, 0, .5); // dev
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity .2s;
+    pointer-events: none;
+
+    // we don't use display:none when hidden so we can fade 
+    // in. we could use visibility:hidden, though? 
+
+    /*
+    &.treb-visible {
+      pointer-events: auto;
+      opacity: 1;
+    }
+    */
+
   }
 
 }

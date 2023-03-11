@@ -22,20 +22,6 @@
 import {tmpl, NodeModel} from 'treb-utils'; 
 // import '../style/icon.scss';
 
-/* *
- * colors, which can be controlled by the grid theme
- * /
-export interface MaskDialogOptions {
-  background?: string;
-  border?: string;
-  text?: string;
-  mask?: string;
-  progress?: string;
-  fontSize?: string|number;
-  fontFamily?: string;
-}
-*/
-
 export enum DialogType {
   default = '', 
   info = 'info',
@@ -43,20 +29,16 @@ export enum DialogType {
   warning = 'warning',
   success = 'success',
   about = 'about',
-
   initial = 'initial',
 }
 
 export interface MessageDialogOptions {
   title?: string;
   message?: string;
-  // html?: string;
   icon?: string|boolean;
   close_box?: boolean;
   timeout?: number;
   type?: DialogType;
-  // progress?: number;
-  // progress_bar?: boolean;
 }
 
 export type ResolutionFunction = () => void;
@@ -78,9 +60,10 @@ export type ResolutionFunction = () => void;
  */
 export class Dialog {
 
-  // public static unique_id = Math.random().toString(36).substring(2, 15);
+  // private model: NodeModel;
+  private model: Record<string, HTMLElement> = {};
 
-  private model: NodeModel;
+  private layout_element: HTMLElement;
 
   // tslint:disable-next-line:variable-name
   private visible_ = false;
@@ -137,12 +120,6 @@ export class Dialog {
 
   }
 
-  /*
-  private set progress(value: number) {
-    this.progress_bar.style.width = `${value}%`;
-  }
-  */
-
   private event_handler = (event: KeyboardEvent) => {
     if (event.key === 'Escape' || event.key === 'Esc') {
       event.stopPropagation();
@@ -167,17 +144,11 @@ export class Dialog {
     // actually check that we can do that with CSS -- siblings FTW
 
     if (value) { 
-      // (this.parent_node.firstChild as HTMLElement)?.classList.add('masked');
-      this.parent_node.classList.add('masked');
-
-      this.model.mask.classList.add('visible'); 
+      this.layout_element?.setAttribute('dialog', '');
       window.addEventListener('keydown', this.event_handler);
     }
     else { 
-      // (this.parent_node.firstChild as HTMLElement)?.classList.remove('masked');
-      this.parent_node.classList.remove('masked');
-
-      this.model.mask.classList.remove('visible'); 
+      this.layout_element?.removeAttribute('dialog');
       window.removeEventListener('keydown', this.event_handler);
       const tmp = this.pending_dialog_resoltion.slice(0);
       this.pending_dialog_resoltion = [];
@@ -190,59 +161,45 @@ export class Dialog {
 
   }
 
-  constructor(private parent_node: HTMLElement) { // }, options: MaskDialogOptions = {}) {
+  constructor(parent_node: HTMLElement) { // }, options: MaskDialogOptions = {}) {
 
-    this.model = tmpl`
-      <div id='mask' class='treb-embed-mask'>
-        <div id='dialog' class='treb-embed-dialog'>
-          <div id='left'>
-            <a href='https://treb.app' target='_blank'>
-              <div class='treb-icon-64'></div>
-            </a>
-          </div>
-          <div id='middle'>
-            <div id='title' class='treb-embed-dialog-title'></div>
-            <div id='message' class='treb-embed-dialog-message'></div>
-            <div id='about' class='treb-embed-dialog-body'>
-              TREB version ${process.env.BUILD_VERSION}
-              ${process.env.NODE_ENV === 'production' ? '' : `<div class='smaller'>(development build)</div>`}
-              <div class='smaller'><a target=_blank href='https://treb.app'>http://treb.app</a></div>
-            </div>
-          </div>
-          <button type='button' title='Close dialog' id='close' class='close-box'>
-            <svg viewBox='0 0 16 16'>
-              <path d='M11.854 4.146a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708-.708l7-7a.5.5 0 0 1 .708 0z'/>
-              <path d='M4.146 4.146a.5.5 0 0 0 0 .708l7 7a.5.5 0 0 0 .708-.708l-7-7a.5.5 0 0 0-.708 0z'/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    `;
+    this.layout_element = parent_node.parentElement as HTMLElement;
 
-    this.model.close.addEventListener('click', (event) => {
+    const root = this.layout_element?.querySelector('.treb-dialog-mask') as HTMLElement;
+    if (root) {
+      const elements = root.querySelectorAll('[data-bind]') as NodeListOf<HTMLElement>;
+      for (const element of Array.from(elements)) {
+        const bind = element.dataset.bind;
+        if (bind) {
+          this.model[bind] = element;
+        }
+      }
+      // console.info({model: this.model});
+    }
+
+    if (this.model.about) {
+      const html: string[] = [`<div>TREB version ${process.env.BUILD_VERSION}`];
+      if (process.env.NODE_ENV !== 'production') {
+        html.push(`<small>(development build)</small>`);
+      }
+      html.push( `<small><a target=_blank href='https://treb.app'>http://treb.app</a></small>` )
+      this.model.about.innerHTML = html.join('\n');
+    }
+
+    this.model.close?.addEventListener('click', (event) => {
       event.stopPropagation();
       event.preventDefault();
       this.HideDialog();
     });
-  
-    parent_node.appendChild(this.model.mask);
+ 
 
-  }
-
-  private Div(class_name?: string, parent?: HTMLElement): HTMLDivElement {
-    const div = document.createElement('div');
-    if (class_name) { div.setAttribute('class', class_name); }
-    if (parent) { parent.appendChild(div); }
-    return div;
   }
 
   public Update(options: Partial<MessageDialogOptions>, delta = true): void {
-
     if (delta) {
       options = { ...this.options_, ... options};
     }
     this.options = options;
-
   }
 
   public HideDialog(): void {
@@ -250,7 +207,6 @@ export class Dialog {
   }
 
   public ShowDialog(options: Partial<MessageDialogOptions>): Promise<void> {
-
     return new Promise((resolve) => {
 
       this.pending_dialog_resoltion.push(resolve);
@@ -267,7 +223,6 @@ export class Dialog {
       }
 
     });
-
   }
 
 }

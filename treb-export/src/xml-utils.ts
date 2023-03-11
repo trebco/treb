@@ -19,14 +19,10 @@
  * 
  */
 
-import * as he from 'he';
-// import * as xmlparser from 'fast-xml-parser';
-import { X2jOptions } from 'fast-xml-parser';
+import { Unescape } from './unescape_xml';
+import type { X2jOptions } from 'fast-xml-parser';
 
-//export const XMLTagProcessor = (value: string, name: string): string => {
-export const XMLTagProcessor = (name: string, value: string): string => {
-  return he.decode(value);
-};
+export const XMLTagProcessor = (name: string, value: string): string => Unescape(value);
 
 export const XMLOptions: Partial<X2jOptions> = {
   ignoreAttributes: false,

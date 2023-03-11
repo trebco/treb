@@ -19,6 +19,8 @@
  * 
  */
 
+.treb-layout {
+
 .treb-main {
 
   /* flex patch for chrome */
@@ -42,7 +44,7 @@
       overflow-x: hidden; /* last ditch for IE11 */
       
       /** label for selection address */
-      .address-label {
+      .treb-address-label {
         
         width: 95px;
         min-width: 95px;
@@ -98,7 +100,7 @@
         }
       }
 
-      .editor-container {
+      .treb-editor-container {
         border: 1px solid var(--treb-formula-bar-border-color, var(--treb-ui-border-color, #ccc));;
         border-radius: 2px;
         flex-grow: 1;
@@ -120,16 +122,16 @@
       }
 
       &.expanded {
-        .editor-container {
+        .treb-editor-container {
           transition: height .1s ease-in-out;
           height: 4.5em;
-          .formula-editor {
+          .treb-formula-editor {
             overflow-y: auto;
           }
         }
       }
 
-      .formula-editor {
+      .treb-formula-editor {
         width: 100%;
         margin: 2px;
         outline: none;
@@ -191,3 +193,6 @@
   // }
 
 }
+
+}
+

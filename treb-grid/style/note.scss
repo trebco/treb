@@ -19,70 +19,74 @@
  * 
  */
 
-// are these exactly the same? clearly we copied-and-pasted
-// at first. seems like we could consolidate.
+.treb-layout {
 
-.treb-note {
+  // are these exactly the same? clearly we copied-and-pasted
+  // at first. seems like we could consolidate.
 
-  position: fixed;
-  padding: 7px 10px;
-  border-radius: 2px;
-  box-shadow: $default-box-shadow;
-  z-index: $z-index-note;
-  line-height: normal;
+  .treb-note {
 
-  top: 100px;
-  left: 100px;
+    position: fixed;
+    padding: 7px 10px;
+    border-radius: 2px;
+    box-shadow: $default-box-shadow;
+    z-index: $z-index-note;
+    line-height: normal;
 
-  max-width: 15em; /* which em? seems to be way too large */
-  min-width: 15em;
+    top: 100px;
+    left: 100px;
 
-  opacity: 0;
-  transition: opacity .2s;
+    max-width: 15em; /* which em? seems to be way too large */
+    min-width: 15em;
 
-  /* themeable properties */
+    opacity: 0;
+    transition: opacity .2s;
 
-  font-family: $font-stack;
+    /* themeable properties */
 
-  border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, #ddd));
-  color: var(--treb-note-color, #333);
-  background: var(--treb-note-background, #fff);
-  font-size: 10.5pt;
+    font-family: $font-stack;
 
-  white-space: pre-line;
+    border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, #ddd));
+    color: var(--treb-note-color, #333);
+    background: var(--treb-note-background, #fff);
+    font-size: 10.5pt;
 
-}
+    white-space: pre-line;
 
-.treb-hover-title {
+  }
 
-  position: fixed;
-  padding: 7px 10px;
-  border-radius: 2px;
-  box-shadow: $default-box-shadow;
-  z-index: $z-index-note;
-  line-height: normal;
+  .treb-hover-title {
 
-  top: 100px;
-  left: 100px;
+    position: fixed;
+    padding: 7px 10px;
+    border-radius: 2px;
+    box-shadow: $default-box-shadow;
+    z-index: $z-index-note;
+    line-height: normal;
 
-  /* max-width: 15em; / * which em? seems to be way too large */
-  min-width: 10em;
+    top: 100px;
+    left: 100px;
 
-  opacity: 0;
-  transition: opacity .2s;
+    /* max-width: 15em; / * which em? seems to be way too large */
+    min-width: 10em;
 
-  /* themeable properties */
+    opacity: 0;
+    transition: opacity .2s;
 
-  font-family: $font-stack; /* can't we inherit? ... */
+    /* themeable properties */
 
-  border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, #ddd));
-  color: var(--treb-note-color, #333);
-  background: var(--treb-note-background, #fff);
+    font-family: $font-stack; /* can't we inherit? ... */
 
-  font-size: 10.5pt;
+    border: 1px solid var(--treb-note-border-color, var(--treb-ui-border-color, #ddd));
+    color: var(--treb-note-color, #333);
+    background: var(--treb-note-background, #fff);
 
-  white-space: pre-line;
+    font-size: 10.5pt;
 
-  pointer-events: none;
+    white-space: pre-line;
+
+    pointer-events: none;
+
+  }
 
 }

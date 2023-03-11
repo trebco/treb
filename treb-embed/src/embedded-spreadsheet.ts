@@ -36,6 +36,7 @@ import {
 import { Calculator, EvaluateOptions, LeafVertex } from 'treb-calculator';
 
 import {
+  ThemeColor2,
   IsCellAddress, Localization, Style, ICellAddress, 
   Area, IArea, CellValue, Point,
   IsFlatData, IsFlatDataArray, Rectangle, IsComplex, 
@@ -54,7 +55,10 @@ import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './opt
 import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent, InsertTableOptions } from './types';
 
 import type { LanguageModel, TranslatedFunctionDescriptor } from './language-model';
-import { SelectionState, Toolbar, ToolbarEvent } from './toolbar';
+//import type { SelectionState, Toolbar, ToolbarEvent } from './toolbar';
+import type { SelectionState } from './toolbar';
+import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
+
 import { Chart, ChartFunctions } from 'treb-charts';
 
 // --- 3d party ----------------------------------------------------------------
@@ -72,6 +76,12 @@ import { Chart, ChartFunctions } from 'treb-charts';
 // import '../style/embed.scss';
 
 import type { SetRangeOptions } from 'treb-grid';
+
+// ---
+
+import export_worker_script from 'worker:../../treb-export/src/export-worker/index-modern.ts';
+
+// ---
 
 /**
  * options for saving files. we add the option for JSON formatting.
@@ -200,8 +210,8 @@ export class EmbeddedSpreadsheet {
   /** @internal */
   public static treb_base_path = '';
 
-  /** @internal */
-  public static export_worker_text = '';  
+  /* * @internal */
+  // public static export_worker_text = '';  
 
   /** @internal */
   public static treb_embedded_script_path = '';
@@ -228,6 +238,43 @@ export class EmbeddedSpreadsheet {
    * @internal
    */
   public toolbar_ctl?: ToolbarCtl;
+
+  /**
+   * this is a cache of number formats and colors used in the document. it's
+   * intended for an external toolbar.
+   * 
+   * FIXME: should we preferentially use Color objects? (...)
+   * 
+   * @internal
+   */
+  public document_styles: {
+    number_formats: string[], 
+    colors: string[],
+    theme_colors: Array<{ color: Style.Color, resolved: string, }>[] // FIXME: type
+  } = {
+    number_formats: [], colors: [], theme_colors: [],
+  };
+
+  /**
+   * this is a representation of selection state for an external toolbar.
+   * we also use it to manage state changes. this used to be internal only,
+   * now we are exposing it. we might want to only expose a copy via an
+   * accessor, but for now we'll just expose the actual object.
+   * 
+   * not sure why this was ever optional, we should just have an empty default
+   * 
+   * @internal
+   */
+  public selection_state: SelectionState = {};
+
+  /**
+   * this is our options object, EmbeddedSpreadsheetOptions but we 
+   * narrow the storage key type to a string|undefined (can be boolean 
+   * in the input).
+   * 
+   * @internal
+   */
+  public options: EmbeddedSpreadsheetOptions & { storage_key: string|undefined };
 
   /**
    * @internal
@@ -282,8 +329,6 @@ export class EmbeddedSpreadsheet {
    */
   protected model: DataModel;
 
-  protected options: EmbeddedSpreadsheetOptions;
-
   /**
    * dialog is assigned in the constructor, only if there's a containing
    * element (i.e. not when we're just using the engine)
@@ -299,10 +344,10 @@ export class EmbeddedSpreadsheet {
   /** file chooser operation */
   protected file_chooser_operation = FileChooserOperation.None;
 
-  protected toolbar?: Toolbar;
+  // protected toolbar?: Toolbar;
 
-  /** caching selection state so we can refer to it if we need it */
-  protected selection_state?: SelectionState;
+  /* * caching selection state so we can refer to it if we need it */
+  // protected selection_state?: SelectionState;
 
   /** localized parser instance. we're sharing. */
   protected get parser(): Parser {
@@ -445,13 +490,13 @@ export class EmbeddedSpreadsheet {
     // consolidate options w/ defaults. note that this does not
     // support nested options, for that you need a proper merge
 
-    this.options = { ...DefaultOptions, ...options };
+    this.options = { ...DefaultOptions, ...options, storage_key: this.ResolveStorageKey(options.storage_key) };
 
     if (typeof this.options.imaginary_value === 'string') {
       NumberFormat.imaginary_character = this.options.imaginary_value;
     }
 
-    let network_document = this.options.network_document;
+    const network_document = this.options.network_document;
 
     // optionally data from storage, with fallback
 
@@ -468,9 +513,11 @@ export class EmbeddedSpreadsheet {
         source = LoadSource.LOCAL_STORAGE;
       }
 
+      /*
       if (!data && this.options.alternate_document) {
         network_document = this.options.alternate_document;
       }
+      */
 
     }
 
@@ -1130,7 +1177,10 @@ export class EmbeddedSpreadsheet {
 
   }
 
-  protected HandleToolbarEvent(event: ToolbarEvent): void {
+  /**
+   * @internal
+   */
+  public HandleToolbarMessage(event: ToolbarMessage): void {
 
     let updated_style: Style.Properties = {};
 
@@ -1142,45 +1192,52 @@ export class EmbeddedSpreadsheet {
       }
     };
 
-    if (event.type === 'format') {
-      updated_style.number_format = event.format || 'General';
-    }
-    else if (event.type === 'font-size') {
+    if (/^border-/.test(event.command)) {
 
-      // NOTE we're doing this a little differently; not using
-      // updated style because we also want to resize rows, and
-      // we want those things to be a single transaction.
+      if (event.command === 'border-color') {
 
-      // minor tweak: don't resize the row if the target cell is 
-      // merged, even if the resulting area is too small.
+        try {
+          const color = // JSON.parse(event.data?.color || '{}') as Style.Color;
+            (event.data?.color) as Style.Color || {};
 
-      // not the right spot? who is using this message?
-
-      const selection = this.grid.GetSelection();
-      const area = this.grid.active_sheet.RealArea(selection.area);
-
-      this.grid.ApplyStyle(undefined, event.style, true);
-      const rows: number[] = [];
-      for (let row = area.start.row; row <= area.end.row; row++) {
-        rows.push(row);
-      }
-
-      /*
-      console.info("TSS", this.selection_state);
-
-      if (this.selection_state?.merge) {
-        console.info('merge, not resizing row');
+          updated_style.border_top_fill =
+            updated_style.border_bottom_fill =
+            updated_style.border_left_fill =
+            updated_style.border_right_fill = color;
+        }
+        catch (err) {
+          console.error(err);
+        }
       }
       else {
-        this.grid.SetRowHeight(rows, undefined, false);
-      }
-      */
+        let width = 1;
+        let command = event.command.substring(7) as BorderConstants;
+        const color = ((event as BorderToolbarMessage).data?.color) as Style.Color || {};
+        
+        if (event.command === 'border-double-bottom') {
+          command = BorderConstants.Bottom;
+          width = 2;
+        }
 
-      this.grid.SetRowHeight(rows, undefined, false);
+        this.grid.ApplyBorders2(
+          undefined,
+          command,
+          color, // event.data?.color || undefined,
+          width,
+        );
+      }
 
     }
-    else if (event.type === 'button') {
+    else {
       switch (event.command) {
+
+        case 'about':
+          this.About();
+          break;
+
+        case 'number-format':
+          updated_style.number_format = event.data?.format || 'General';
+          break;
 
         case 'font-scale':
 
@@ -1224,53 +1281,22 @@ export class EmbeddedSpreadsheet {
           this.SetNote(undefined, '');
           break;
 
-        case 'border':
-          {
-            let width = 1;
-            let border = (event.data?.border || '').replace(/^border-/, '');
+        case 'text-color':
+        case 'fill-color':
 
-            if (border === 'double-bottom') {
-              border = 'bottom';
-              width = 2;
+          try {
+            const color: Style.Color = event.data?.color || {};
+            if (event.command === 'text-color') {
+              updated_style.text = color;
             }
-
-            if (border) {
-              this.grid.ApplyBorders2(
-                undefined,
-                border,
-                event.data?.color || undefined,
-                width,
-              );
+            else if (event.command === 'fill-color') {
+              updated_style.fill = color;
             }
-
           }
-          break;
-
-        case 'color':
-        case 'background-color':
-        case 'foreground-color':
-        case 'border-color':
-
-          switch (event.data?.target) {
-            case 'border':
-              updated_style.border_top_fill =
-                updated_style.border_bottom_fill =
-                updated_style.border_left_fill =
-                updated_style.border_right_fill = event.data?.color || {};
-              break;
-            case 'foreground':
-
-              // empty would work here because it means "use default"; but
-              // if we set it explicitly, it can be removed on composite delta
-              updated_style.text = event.data?.color || { theme: 1 };
-
-              break;
-            case 'background':
-
-              // FIXME: theme colors
-              updated_style.fill = event.data?.color || {};
-              break;
+          catch (err) {
+            console.error(err);
           }
+
           break;
 
         case 'insert-table': this.InsertTable(); break;
@@ -1285,7 +1311,7 @@ export class EmbeddedSpreadsheet {
         case 'insert-sheet': this.grid.InsertSheet(); break;
         case 'delete-sheet': this.grid.DeleteSheet(); break;
 
-        case 'freeze':
+        case 'freeze-panes':
           {
             const freeze = this.grid.GetFreeze();
             if (freeze.rows || freeze.columns) {
@@ -1299,19 +1325,18 @@ export class EmbeddedSpreadsheet {
 
         case 'insert-image': this.InsertImage(); break;
 
-        case 'donut-chart': insert_annotation('Donut.Chart'); break;
-        case 'column-chart': insert_annotation('Column.Chart'); break;
-        case 'bar-chart': insert_annotation('Bar.Chart'); break;
-        case 'line-chart': insert_annotation('Line.Chart'); break;
+        case 'insert-donut-chart': insert_annotation('Donut.Chart'); break;
+        case 'insert-column-chart': insert_annotation('Column.Chart'); break;
+        case 'insert-bar-chart': insert_annotation('Bar.Chart'); break;
+        case 'insert-line-chart': insert_annotation('Line.Chart'); break;
 
-        case 'increase-decimal':
-        case 'decrease-decimal':
-          //if (this.active_selection_style) {
+        case 'increase-precision':
+        case 'decrease-precision':
           if (this.selection_state?.style) {
 
-            //const format = NumberFormatCache.Get(this.active_selection_style.number_format || 'General');
             const format = NumberFormatCache.Get(this.selection_state.style.number_format || 'General');
             if (format.date_format) { break; }
+
             const clone = new NumberFormat(format.pattern);
 
             // special case: from general, we want to go to a relative number...
@@ -1369,7 +1394,7 @@ export class EmbeddedSpreadsheet {
                 }
               }
 
-              if (event.command === 'increase-decimal') {
+              if (event.command === 'increase-precision') {
                 clone.SetDecimal(len + 1);
               }
               else {
@@ -1378,7 +1403,7 @@ export class EmbeddedSpreadsheet {
               
             }
             else {
-              if (event.command === 'increase-decimal') {
+              if (event.command === 'increase-precision' ) {
                 clone.IncreaseDecimal();
               }
               else {
@@ -1389,49 +1414,46 @@ export class EmbeddedSpreadsheet {
           }
           break;
 
-        case 'merge':
+        case 'merge-cells':
           this.grid.MergeCells();
           break
-        case 'unmerge':
+
+        case 'unmerge-cells':
           this.grid.UnmergeCells();
           break;
 
-        case 'lock':
+        case 'lock-cells':
           updated_style = {
-            locked:
-              //this.active_selection_style ?
-              //  !this.active_selection_style.locked : true,
-              this.selection_state?.style ?
-                !this.selection_state.style.locked : true,
+            locked: this.selection_state?.style ? !this.selection_state.style.locked : true,
           };
           break;
 
-        case 'wrap':
+        case 'wrap-text':
           updated_style = {
-            wrap: 
-              //this.active_selection_style ?
-              //  !this.active_selection_style.wrap : true,
-              this.selection_state?.style ?
-                !this.selection_state?.style.wrap : true,
+            wrap: this.selection_state?.style ? !this.selection_state?.style.wrap : true,
           };
           break;
 
-        case 'align-left':
+        case 'justify-left':
           updated_style = { horizontal_align: Style.HorizontalAlign.Left };
           break;
-        case 'align-center':
+
+        case 'justify-center':
           updated_style = { horizontal_align: Style.HorizontalAlign.Center };
           break;
-        case 'align-right':
+
+        case 'justify-right':
           updated_style = { horizontal_align: Style.HorizontalAlign.Right };
           break;
 
         case 'align-top':
           updated_style = { vertical_align: Style.VerticalAlign.Top };
           break;
+
         case 'align-middle':
           updated_style = { vertical_align: Style.VerticalAlign.Middle };
           break;
+
         case 'align-bottom':
           updated_style = { vertical_align: Style.VerticalAlign.Bottom };
           break;
@@ -1440,18 +1462,24 @@ export class EmbeddedSpreadsheet {
           this.Reset();
           break;
           
-        case 'import-desktop':
+        case 'import-file':
           this.LoadLocalFile();
           break;
 
         case 'save-json':
           this.SaveLocalFile();
           break;
-        case 'save-csv':
+
+        case 'save-csv': // FIXME: should be export
           this.SaveLocalFile(SaveFileType.csv);
           break;
+
         case 'export-xlsx':
           this.Export();
+          break;
+
+        case 'revert':
+          this.Revert();
           break;
 
         case 'recalculate':
@@ -1472,12 +1500,12 @@ export class EmbeddedSpreadsheet {
 
   }
 
-  /** 
+  /* * 
    * this is public because it's created by the composite sheet. 
    * FIXME: perhaps there's a better way to do that? via message passing? (...) 
    * 
    * @internal
-   */
+   * /
    public CreateToolbar(container: HTMLElement): Toolbar {
     this.toolbar = new Toolbar(container, this.options, this.grid.theme);
     this.toolbar.Subscribe(event => this.focus_target.HandleToolbarEvent(event));
@@ -1487,6 +1515,7 @@ export class EmbeddedSpreadsheet {
 
     return this.toolbar;
   }
+  */
 
   /** 
    * Create (and return) a Chart object.
@@ -1623,9 +1652,14 @@ export class EmbeddedSpreadsheet {
     // UPDATE: dropping override parameter (extra theme properties)
 
     this.grid.UpdateTheme(undefined);
+
+    /*
     if (this.toolbar) {
       this.toolbar.UpdateTheme(this.grid.theme);
     }
+    */
+
+    this.UpdateDocumentStyles();
 
   }
 
@@ -2130,8 +2164,9 @@ export class EmbeddedSpreadsheet {
   public async ExportBlob(): Promise<Blob> {
 
     if (!this.export_worker) {
-      const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
-      this.export_worker = await this.LoadWorker(worker_name);
+      // const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
+      // this.export_worker = await this.LoadWorker(worker_name);
+      this.export_worker = await this.LoadWorker('export');
     }
 
     return new Promise<Blob>((resolve, reject) => {
@@ -2180,7 +2215,8 @@ export class EmbeddedSpreadsheet {
    */
   public Revert(): void {
 
-    const canonical = this.options.alternate_document || this.options.network_document;
+    const canonical = // this.options.alternate_document || 
+      this.options.network_document;
 
     if (canonical) {
 
@@ -3055,6 +3091,9 @@ export class EmbeddedSpreadsheet {
     this.grid.Update(true); // , area);
     this.UpdateAnnotations();
     this.Publish({ type: 'data' });
+
+    this.grid.UpdateStats();
+
 
   }
 
@@ -4580,6 +4619,32 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
+   * if we have a boolean for a storage key, generate a (weak) hash
+   * based on document URI.
+   */
+  protected ResolveStorageKey(key?: string|boolean): string|undefined {
+
+    if (!key) { 
+      return undefined;
+    }
+
+    if (key === true) {
+      let hash = 0;
+      const data = document.location.href;
+      for (let i = 0, len = data.length; i < len; i++) {
+        hash = (hash << 5) - hash + data.charCodeAt(i);
+        hash |= 0; 
+      }
+
+      // console.info('resolved', Math.abs(hash).toString(16));
+
+      return Math.abs(hash).toString(16);
+    }
+
+    return key;
+  }
+
+  /**
    * 
    * @param json -- the serialized data is already calculated. that happens
    * when we are storing to localStorage as part of handling a change; since
@@ -4698,37 +4763,29 @@ export class EmbeddedSpreadsheet {
     if (selection && !selection.empty) {
 
       state.selection = selection;
-      // state.merge = false;
-      // state.table = false;
       let data = this.grid.active_sheet.CellData(selection.target);
 
       state.table = !!data.table;
       state.merge = !!data.merge_area;
+
       if (state.merge && data.merge_area && (
         data.merge_area.start.row !== selection.target.row ||
         data.merge_area.start.column !== selection.target.column)) {
         data = this.grid.active_sheet.CellData(data.merge_area.start);
       }
 
-      // this.active_selection_style = data.style;
       state.comment = data.note;
       state.style = data.style ? { ...data.style } : undefined;
+      state.relative_font_size = Style.RelativeFontSize(state.style || {}, this.grid.theme.grid_cell || {});
 
-    }
-    else {
-      // this.active_selection_style = {};
     }
 
     this.selection_state = state;
-    this.toolbar?.UpdateState(state);
+    // this.toolbar?.UpdateState(state);
 
   }
 
   protected UpdateDocumentStyles(update = true): void {
-
-    if (!this.toolbar) {
-      return;
-    }
 
     const number_format_map: Record<string, number> = {};
     const color_map: Record<string, number> = {};
@@ -4737,12 +4794,34 @@ export class EmbeddedSpreadsheet {
       sheet.NumberFormatsAndColors(color_map, number_format_map);
     }
 
+    this.document_styles.colors = Object.keys(color_map);
+    this.document_styles.number_formats = Object.keys(number_format_map);
+
+    // FIXME: this could probably be limited to theme changes, since that 
+    // happens less often than other things which trigger the update
+
+    this.document_styles.theme_colors = [];
+    const tints = [.50, .25, 0, -.25, -.50];
+    for (let i = 0; i < 10; i++) {
+      this.document_styles.theme_colors.push(tints.map(tint => {
+        const color: Style.Color = { theme: i, tint };
+        const resolved = ThemeColor2(this.grid.theme, color);
+        return { color, resolved };
+      }));
+    }
+
+    /*
+    if (!this.toolbar) {
+      return;
+    }
+
     this.toolbar.UpdateDocumentStyles(
       Object.keys(number_format_map),
       Object.keys(color_map),
       update);
 
     // console.info(number_format_map, color_map);
+    */
 
   }
 
@@ -5070,6 +5149,19 @@ export class EmbeddedSpreadsheet {
     // (as text, actually); we can construct it from the text 
     // as necessary.
 
+    if (export_worker_script) {
+      try {
+        const worker = new Worker(
+            URL.createObjectURL(new Blob([export_worker_script], { type: 'application/javascript' })));
+        return worker;
+      }
+      catch (err) {
+        console.info('embedded worker failed');
+        console.error(err);
+      }
+    }
+
+    /*
     if (EmbeddedSpreadsheet.export_worker_text) {
       try {
         const worker = new Worker(
@@ -5081,6 +5173,7 @@ export class EmbeddedSpreadsheet {
         console.error(err);
       }
     }
+    */
 
     if (!EmbeddedSpreadsheet.treb_base_path) {
       console.warn('worker path is not set. it you are loading TREB in an ESM module, please either '

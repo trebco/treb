@@ -58,13 +58,14 @@ export class OverlayEditor extends FormulaEditorBase {
   // we could add these back, always construct them, and then
   // just assign, that would get us around all the conditionals
 
-  public edit_node: HTMLElement;
+  public edit_node: HTMLElement & ElementContentEditable;
   public edit_container: HTMLElement;
 
   public edit_inset: HTMLElement;
   
   public scale = 1; // this should go into theme, since it tends to follow it
 
+  /** FIXME: shouldn't this be a lint error? did we drop that rule? */
   private _editing = false;
   
   public get editing(): boolean {
@@ -81,9 +82,6 @@ export class OverlayEditor extends FormulaEditorBase {
       else {
         this.edit_container.style.opacity = '0';
         this.edit_container.style.pointerEvents = 'none';
-        //if (UA.trident) {
-        //  this.edit_container.style.top = '-200px';
-        //}
       }
     }
   }
@@ -92,18 +90,8 @@ export class OverlayEditor extends FormulaEditorBase {
 
     super(parser, theme, model, view, autocomplete);
 
-    this.edit_container = document.createElement('div');
-    this.edit_container.classList.add('overlay-container');
-    this.edit_container.classList.add('notranslate');
-    this.edit_container.translate = false;
-
-    this.edit_node = document.createElement('div');
-    this.edit_node.classList.add('overlay-editor');
-    this.edit_node.contentEditable = 'true';
-    this.edit_node.tabIndex = -1;
-    this.edit_node.spellcheck = true; // default
-
-    this.edit_node.setAttribute('role', 'gridcell');
+    this.edit_container = container.querySelector('.treb-overlay-container') as HTMLElement;
+    this.edit_node = this.edit_container.querySelector('.treb-overlay-editor') as HTMLElement & ElementContentEditable;
 
     if (UA.is_firefox) {
       this.edit_node.classList.add('firefox');
@@ -141,14 +129,11 @@ export class OverlayEditor extends FormulaEditorBase {
     //  this.edit_node.style.paddingBottom = `${self.devicePixelRatio}px`;
     //}
 
-    let composing = false;
 
-    this.edit_node.addEventListener('compositionstart', () => composing = true);
-    this.edit_node.addEventListener('compositionend', () => composing = false);
 
-    this.edit_node.addEventListener('input', event => {
+    this.edit_node.addEventListener('input', (event: Event) => {
 
-      if (composing) {
+      if (event instanceof InputEvent && event.isComposing) {
         return;
       }
 
@@ -168,9 +153,9 @@ export class OverlayEditor extends FormulaEditorBase {
       this.UpdateSelectState();
     });
 
-    this.edit_node.addEventListener('keyup', event => {
+    this.edit_node.addEventListener('keyup', (event: KeyboardEvent) => {
 
-      if (composing) {
+      if (event.isComposing) {
         return;
       }
 
@@ -200,22 +185,19 @@ export class OverlayEditor extends FormulaEditorBase {
 
     });
 
-    this.edit_inset = document.createElement('div');
-    this.edit_inset.classList.add('overlay-inset');
-    
-    this.edit_container.appendChild(this.edit_node);
+    this.edit_inset = this.edit_container.querySelector('.treb-overlay-inset') as HTMLElement;
 
-    this.edit_container.appendChild(this.edit_inset);
-    this.edit_inset.appendChild(this.edit_node);
-
+    // this.edit_inset = document.createElement('div');
+    // this.edit_inset.classList.add('treb-overlay-inset');
+    // this.edit_container.appendChild(this.edit_node);
+    // this.edit_container.appendChild(this.edit_inset);
+    // this.edit_inset.appendChild(this.edit_node);
     // this.edit_container.appendChild(this.edit_node); // dropping inset
+    // container.appendChild(this.edit_container);
+    // this.edit_container.style.opacity = '0';
 
-    container.appendChild(this.edit_container);
-
-    this.edit_container.style.opacity = '0';
-
-    this.editor_node = this.edit_node as HTMLDivElement;
-    this.container_node = this.edit_container as HTMLDivElement;
+    this.editor_node = this.edit_node as HTMLDivElement;          // wtf is this?
+    this.container_node = this.edit_container as HTMLDivElement;  // wtf is this?
 
     this.ClearContents();
 
@@ -321,18 +303,15 @@ export class OverlayEditor extends FormulaEditorBase {
 
     switch (style.horizontal_align) {
       case Style.HorizontalAlign.Right:
+        this.edit_container.classList.remove('align-center', 'align-left');
         this.edit_container.classList.add('align-right');
-        this.edit_container.classList.remove('align-center');
-        this.edit_container.classList.remove('align-left');
         break;
       case Style.HorizontalAlign.Center:
-        this.edit_container.classList.remove('align-right');
+        this.edit_container.classList.remove('align-right', 'align-left');
         this.edit_container.classList.add('align-center');
-        this.edit_container.classList.remove('align-left');
         break;
       default:
-        this.edit_container.classList.remove('align-right');
-        this.edit_container.classList.remove('align-center');
+        this.edit_container.classList.remove('align-right', 'align-center');
         this.edit_container.classList.add('align-left');
         break;
     }

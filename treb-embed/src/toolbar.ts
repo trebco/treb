@@ -40,6 +40,7 @@ export interface SelectionState {
   frozen?: boolean;
   comment?: string;
   selection?: GridSelection;
+  relative_font_size?: number;
 }
 
 export interface ToolbarCancelEvent {

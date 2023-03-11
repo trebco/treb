@@ -1,0 +1,411 @@
+
+// -----------------------------------------------------------------------------
+
+$button-width: 32px;
+$dropdown-button-width: 16px;
+
+$background-color: #fff;
+$background-hover: #f0f0f0;
+$border-color: #ccc;
+
+$menu-background: #fff;
+$menu-border-color: #ccc;
+$menu-item-hover-color: #eee;
+
+$box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4);
+$border-radius: 3px;
+
+$font-size: 14px;
+$split-font-size: 10px;
+
+$swatch-size: 18px;
+
+.treb-layout {
+
+  .treb-layout-header {
+    
+    overflow: hidden;
+    position: relative;
+    overflow-x: scroll;
+
+    // hide scrollbars
+    // FIXME: util class
+
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { 
+      display: none;
+    }
+
+  }
+
+  .treb-toolbar {
+
+    // ----
+
+    display: flex;
+    flex-direction: row;
+    gap: .5em;
+
+    & > div {
+      display: flex;
+      flex-direction: row;
+    }
+
+    & > input, & > div > input {
+      height: $button-width;
+      background-color: $background-color;
+      border: 1px solid $border-color;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      padding-left: .5em;
+      padding-right: .5em;
+    }
+
+    & > .treb-menu > button {
+      border-radius: $border-radius;
+    }
+
+    & > .group, & > .treb-composite {
+
+      & > button + button, 
+      & > input + button, 
+      & > input + .treb-menu > button, 
+      & > button + .treb-menu > button,
+      & > .treb-menu + button {
+        border-left-width: 0px;
+      }
+
+      & > button:first-child, & > input:first-child {
+        border-top-left-radius: $border-radius;
+        border-bottom-left-radius: $border-radius;
+      }
+  
+      & > button:last-child, & > .treb-menu:last-child > button {
+        border-top-right-radius: $border-radius;
+        border-bottom-right-radius: $border-radius;
+      }
+  
+
+    }
+
+
+
+    & > button, & > div > button, .treb-menu > button, button[data-icon], .treb-icon-buttons > button {
+
+      width: $button-width;
+      height: $button-width;
+      background-color: $background-color;
+      border: 1px solid $border-color;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: background-color .125s ease;
+      // border-radius: $border-radius;
+
+      &[dropdown] {
+        width: $dropdown-button-width;
+        &::after {
+          box-sizing: content-box;
+          content: '';
+          position: absolute;
+          width: 0px;
+          height: 0px;
+          border: 5px solid transparent;
+          border-top-color: currentColor;
+          top: 18px; // FIXME: specify in ems
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+      }
+
+      &:hover, &.treb-active {
+        background-color: $background-hover;
+      }
+
+      &[data-color-bar]::after {
+        content: '';
+        box-sizing: border-box;
+        position: relative;
+        display: block;
+        width: 20px;
+        height: 6px;
+        border: 1px solid $border-color;
+        background: var(--treb-color-bar-color, var(--treb-default-color, red));
+      }
+
+      &[data-icon], &[data-command] {
+        &::before {
+          content: '';
+          display: block;
+          position: relative;
+          background: currentColor;
+          width: 20px;
+          height: 20px;
+          mask-position: center;
+          -webkit-mask-position: center;
+          mask-repeat: no-repeat;
+          -webkit-mask-repeat: no-repeat;
+          mask-image: var(--icon);
+          -webkit-mask-image: var(--icon);
+          mask-size: 16px 16px;
+          -webkit-mask-size: 16px 16px;
+        }
+      }
+
+    }
+
+    .treb-split {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+
+      button[data-command] {
+        &::before {
+          display: none;
+        }
+        font-size: 8pt;
+      }
+
+      & > button {
+        height: calc($button-width / 2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      & > button:first-child {
+        border-top-left-radius: $border-radius;      
+        border-top-right-radius: $border-radius;      
+      }
+
+      & > button:last-child {
+        border-top: 0;      
+        border-bottom-left-radius: $border-radius;      
+        border-bottom-right-radius: $border-radius;      
+      }
+
+    }
+
+    .treb-menu {
+
+      z-index: 999;
+
+      & > div {
+
+        display: none; 
+
+        margin-top: 1em;
+
+        flex-direction: column;
+        background: $background-color;
+        border: 1px solid $border-color;
+        border-radius: $border-radius;
+        position: fixed;
+        z-index: 20;
+        top: 48px;
+        box-shadow: $box-shadow;
+
+        button {
+          white-space: nowrap;
+          background: transparent;
+          border: 0;
+          text-align: left;
+          padding: .4em 1em;
+          margin: 3px 0;
+          transition: background-color .125s ease;
+
+          &:hover {
+            background: $background-hover;
+          }
+      
+        }
+
+        &.treb-icon-buttons {
+          & > button, & > .treb-menu > button {
+            padding: 0;
+          }
+          /*
+          padding-left: .5em;
+          padding-right: .5em;
+          */
+        }
+
+        & > .treb-separator {
+          background: $border-color;
+          height: 1px;
+          margin: 2px 0;
+
+        }
+
+      }
+
+      &:focus-within > div, &.visible > div {
+        display: flex;
+      }
+
+    }
+
+    // ---------------------------------------------------------------------------
+
+    [data-icon=file-menu]{ --icon: var(--treb-icon-file-menu); }
+    
+    [data-command=justify-left] { --icon: var(--treb-icon-text-align-left); }
+    [data-command=justify-right] { --icon: var(--treb-icon-text-align-right); }
+    [data-command=justify-center] { --icon: var(--treb-icon-text-align-center); }
+
+    [data-command=align-top] { --icon: var(--treb-icon-text-align-top); }
+    [data-command=align-middle] { --icon: var(--treb-icon-text-align-middle); }
+    [data-command=align-bottom] { --icon: var(--treb-icon-text-align-bottom); }
+    [data-command=merge-cells] { --icon: var(--treb-icon-merge-cells); }
+    [data-command=unmerge-cells] { --icon: var(--treb-icon-unmerge-cells); }
+
+    [data-command=fill-color] { --icon: var(--treb-icon-fill-color); }
+    [data-command=text-color] { --icon: var(--treb-icon-text-color); }
+
+    [data-command=lock-cells] { --icon: var(--treb-icon-lock); }
+    [data-command=wrap-text] { --icon: var(--treb-icon-wrap-text); }
+    [data-icon=comment] { --icon: var(--treb-icon-comment); }
+    [data-icon=table] { --icon: var(--treb-icon-table); }
+    
+    [data-icon=layout] { --icon: var(--treb-icon-layout); }
+    [data-command=freeze-panes] { --icon: var(--treb-icon-freeze); }
+    
+    [data-command=insert-column-chart] { --icon: var(--treb-icon-column-chart); }
+    [data-command=insert-donut-chart] { --icon: var(--treb-icon-donut-chart); }
+    [data-command=insert-bar-chart] { --icon: var(--treb-icon-bar-chart); }
+    [data-command=insert-line-chart] { --icon: var(--treb-icon-line-chart); }
+    [data-command=insert-image] { --icon: var(--treb-icon-image); }
+
+    [data-command=border-bottom] { --icon: var(--treb-icon-border-bottom); }
+    [data-command=border-left] { --icon: var(--treb-icon-border-left); }
+    [data-command=border-right] { --icon: var(--treb-icon-border-right); }
+    [data-command=border-top] { --icon: var(--treb-icon-border-top); }
+    [data-command=border-outside] { --icon: var(--treb-icon-border-outer); }
+    [data-command=border-all] { --icon: var(--treb-icon-border-all); }
+    [data-command=border-none] { --icon: var(--treb-icon-border-none); }
+    [data-command=border-double-bottom] { --icon: var(--treb-icon-border-double-bottom); }
+    [data-icon=palette] { --icon: var(--treb-icon-palette); } 
+
+    .treb-font-scale {
+      width: 4em;
+    }
+
+    .treb-number-format {
+      width: 8em;
+    }
+
+    .treb-color-chooser {
+
+      button[data-command=set-color] {
+        padding: 0;
+        display: flex;
+        align-items: center;
+        width: $button-width;
+        justify-content: center;
+      }
+
+      & > div {
+        padding: .75em .75em;
+      }
+
+      & > div + div {
+        padding-top: 0;
+      }
+      
+      & > div:last-child {
+        
+        display: flex;
+        flex-direction: row;
+        gap: .5em;
+        align-items: center;
+
+        input {
+          flex-grow: 1;
+          padding: 0 .5em;
+        }
+
+        input, button {
+          border: 1px solid $border-color;
+          border-radius: $border-radius;
+          height: $button-width;
+        }
+
+      }
+
+      .treb-swatches {
+
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: .5em;
+
+        button {
+          width: $swatch-size;
+          height: $swatch-size;
+          padding: 0;
+          margin: 0;
+          border: 1px solid $border-color;
+          border-radius: 2px;          
+        }
+
+        .treb-default-color {
+
+          --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path stroke-linecap='round' stroke='#000' d='M2,2 L14,14 M14,2 L2,14'/></svg>");
+
+          &::before {
+            opacity: .5;
+            content: '';
+            display: block;
+            position: relative;
+            background: currentColor;
+            width: 100%;
+            height: 100%;
+            mask-position: center;
+            -webkit-mask-position: center;
+            mask-repeat: no-repeat;
+            -webkit-mask-repeat: no-repeat;
+            mask-image: var(--icon);
+            -webkit-mask-image: var(--icon);
+            mask-size: 16px 16px;
+            -webkit-mask-size: 16px 16px;
+          }
+
+        }
+
+      }
+    }
+
+    .treb-comment-box {
+      textarea {
+        font: inherit;
+        resize: both;
+        border: 1px solid $border-color;
+        padding: .25em;
+        line-height: 1.5;
+        margin: .5em;
+        height: 10em;
+      }
+
+      textarea + div {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: .5em;
+        padding: 0 0 .5em 0;
+
+        button {
+          border: 1px solid $border-color;
+          border-radius: $border-radius;
+        }
+
+      }
+
+    }
+
+  }
+
+}
+

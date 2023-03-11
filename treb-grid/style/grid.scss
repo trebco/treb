@@ -30,14 +30,7 @@
 @import 'autocomplete.scss';
 @import 'formula-bar.scss';
 @import 'tab-bar.scss';
-@import 'in-cell-editor.scss';
-// @import 'overlay-editor.scss';
 @import 'overlay-editor-2.scss';
-
-/*
-@import 'legacy-layout.scss';
-@import 'grid-layout.scss';
-*/
 
 @import 'theme-container.scss';
 @import 'theme-defaults.scss';
@@ -49,6 +42,8 @@
  *
  * preclude? you mean prevent? (...)
  */
+
+.treb-layout {
 
 /** container and style root */
 .treb-main {
@@ -128,13 +123,13 @@
     }
 
     /** covers for canvas nodes to intercept events */
-    .tile-cover {
+    .treb-tile-cover {
       background: transparent;
       position: relative;
       z-index: $z-index-tile-cover;
 
       /** specific layout for column header cover */
-      &.column-header-cover {
+      &.treb-column-header-cover {
 
         /** style is attached when mousing over a column boundary */
         &.resize {
@@ -144,7 +139,7 @@
       }
 
       /** specific layout for row header cover */
-      &.row-header-cover {
+      &.treb-row-header-cover {
 
         /** style is attached when mousing over a row boundary */
         &.resize {
@@ -155,7 +150,7 @@
 
     }
 
-    .annotation-container, .frozen-annotation-container {
+    .treb-annotation-container, .frozen-annotation-container {
       position: absolute;
       top: 0px;
       left: 0px;
@@ -226,7 +221,7 @@
     }
 
     /** selection stacks over the grid but under the cover */
-    .grid-selection {
+    .treb-grid-selection {
       background: transparent;
       position: absolute;
       z-index: $z-index-grid-selection;
@@ -273,7 +268,7 @@
      * and in the case of both frozen rows and columns, the fixed bit is
      * rendered to the corner.
      */
-    .corner {
+    .treb-corner {
 
       top: 0px;
       left: 0px;
@@ -289,21 +284,21 @@
     }
 
     /** contains row header tiles */
-    .left-header {
+    .treb-left-header {
       left: 0px;
       z-index: $z-index-headers;
       pointer-events: none;
     }
 
     /** contains column header tiles */
-    .top-header {
+    .treb-top-header {
       top: 0px;
       z-index: $z-index-headers;
       pointer-events: none;
     }
 
     /** contains main grid tiles */
-    .contents {
+    .treb-contents {
       height: 2000px;
       width: 2000px;
     }
@@ -311,4 +306,7 @@
   }
 
 }
+
+}
+
 

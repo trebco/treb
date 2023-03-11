@@ -136,7 +136,7 @@ export class TabBar extends EventSource<TabEvent> {
     super();
 
     // if we're here, show
-    this.container.classList.remove('treb-util-hidden');
+    this.container.classList.remove('treb-hidden');
 
     this.tab_container = this.container.querySelector('.treb-spreadsheet-tabs') as HTMLDivElement;
 
@@ -159,22 +159,6 @@ export class TabBar extends EventSource<TabEvent> {
         }
       }
     });
-
-    /*
-    if (this.options.delete_tab) {
-      const tab = this.container.querySelector('.delete-tab') as HTMLElement;
-      tab.addEventListener('click', () => {
-        this.Publish({ type: 'delete-sheet' });
-      });
-    }
-
-    if (this.options.add_tab) {
-      const tab = this.container.querySelector('.add-tab') as HTMLAnchorElement;
-      tab.addEventListener('click', () => {
-        this.Publish({ type: 'add-sheet' });
-      });
-    }
-    */
 
     if (this.options.stats) {
       this.stats_panel = this.container.querySelector('.treb-stats-panel') as HTMLDivElement;
@@ -233,10 +217,10 @@ export class TabBar extends EventSource<TabEvent> {
 
   public SetActive(tab: HTMLElement, active: boolean): void {
     if (active) {
-      tab.classList.add('selected');
+      tab.classList.add('treb-selected');
     }
     else {
-      tab.classList.remove('selected');
+      tab.classList.remove('treb-selected');
     }
   }
 
@@ -433,10 +417,12 @@ export class TabBar extends EventSource<TabEvent> {
       if (!sheet.visible) { continue; }
 
       const index = tabs.length;
-      const tab = document.createElement('div');
+      // const tab = document.createElement('div');
+      const tab = document.createElement('li');
 
-      tab.classList.add('tab');
+      // tab.classList.add('tab');
       tab.style.order = (index * 2).toString();
+      tab.role = 'tab';
 
       this.SetActive(tab, sheet === this.view.active_sheet);
 

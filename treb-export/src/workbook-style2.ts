@@ -27,7 +27,7 @@ import { Theme } from './workbook-theme2';
 import { NumberFormatCache } from 'treb-format';
 import { XMLUtils } from './xml-utils';
 
-import * as he from 'he';
+import { Unescape } from './unescape_xml';
 
 export interface Font {
   size?: number;
@@ -1133,12 +1133,10 @@ export class StyleCache {
 
     let composite = FindAll('styleSheet/numFmts/numFmt');
 
-    this.number_formats = composite.map(element => {
-      return {
+    this.number_formats = composite.map(element => ({
         id: Number(element.a$?.numFmtId || 0),
-        format: he.decode(element.a$?.formatCode || ''),
-      };
-    });
+        format: Unescape(element.a$?.formatCode || ''),
+      }));
 
     // ---
 

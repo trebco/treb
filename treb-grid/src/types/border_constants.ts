@@ -29,6 +29,6 @@ export enum BorderConstants {
   Bottom = 'bottom',
   Left = 'left',
   Right = 'right',
-  DoubleTop = 'double-top',
-  DoubleBottom = 'double-bottom',
+  // DoubleTop = 'double-top',
+  // DoubleBottom = 'double-bottom',
 }

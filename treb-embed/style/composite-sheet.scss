@@ -1,3 +1,6 @@
+DO NOT INCLUDE THIS FILE
+
+
 /*
  * This file is part of TREB.
  *
@@ -88,7 +91,7 @@ $toolbar_height: 38px;
 /**
  * mask the sidebar (via opacity) if the dialog is showing
  */
-.sidebar-open .masked ~ .embedded-spreadsheet-sidebar {
+.sidebar-open .treb-masked ~ .embedded-spreadsheet-sidebar {
   opacity: .6;
   pointer-events: none;
 }
@@ -133,7 +136,7 @@ $toolbar_height: 38px;
 /**
  * mask the toolbar (via opacity) if the dialog is showing
  */
-.toolbar-open .masked + .toolbar-container {
+.toolbar-open .treb-masked + .toolbar-container {
   pointer-events: none;
   opacity: .6;
 }
