@@ -4,20 +4,19 @@
 $button-width: 32px;
 $dropdown-button-width: 16px;
 
-$background-color: #fff;
-$background-hover: #f0f0f0;
-$border-color: #ccc;
+$background-color: var(--treb-toolbar-button-background, transparent);
+$background-hover: var(--treb-toolbar-hover-button-background, #f3f4f6);
+$border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, rgb(209, 213, 219)));
 
-$menu-background: #fff;
-$menu-border-color: #ccc;
-$menu-item-hover-color: #eee;
+$menu-background: var(--treb-toolbar-button-background, #fff);
+$menu-border-color: var(--treb-toolbar-border-color, var(--treb-ui-border-color, rgb(209, 213, 219)));
+$menu-item-hover-color: var(--treb-toolbar-hover-button-background, #f3f4f6);
 
 $box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4);
 $border-radius: 3px;
 
 $font-size: 14px;
 $split-font-size: 10px;
-
 $swatch-size: 18px;
 
 .treb-layout {
@@ -40,6 +39,9 @@ $swatch-size: 18px;
   }
 
   .treb-toolbar {
+
+    color: var(--treb-toolbar-color, var(--treb-ui-color, #333));
+    font-size: $font-size;
 
     // ----
 
@@ -66,7 +68,7 @@ $swatch-size: 18px;
       border-radius: $border-radius;
     }
 
-    & > .group, & > .treb-composite {
+    & > .group, & > [composite] {
 
       & > button + button, 
       & > input + button, 
@@ -102,7 +104,12 @@ $swatch-size: 18px;
       align-items: center;
       justify-content: center;
       position: relative;
-      transition: background-color .125s ease;
+
+      // the problem with this transition is that it gets applied
+      // to separate items in sequence and we get kind of a wave
+      // or cascade effect. is it possible to synchronize them?
+
+      transition: background-color .1s ease;
       // border-radius: $border-radius;
 
       &[dropdown] {
@@ -121,7 +128,7 @@ $swatch-size: 18px;
         }
       }
 
-      &:hover, &.treb-active {
+      &:hover, &[active] {
         background-color: $background-hover;
       }
 
@@ -133,7 +140,7 @@ $swatch-size: 18px;
         width: 20px;
         height: 6px;
         border: 1px solid $border-color;
-        background: var(--treb-color-bar-color, var(--treb-default-color, red));
+        background: var(--treb-color-bar-color, var(--treb-default-color, unset));
       }
 
       &[data-icon], &[data-command] {
@@ -150,8 +157,8 @@ $swatch-size: 18px;
           -webkit-mask-repeat: no-repeat;
           mask-image: var(--icon);
           -webkit-mask-image: var(--icon);
-          mask-size: 16px 16px;
-          -webkit-mask-size: 16px 16px;
+          mask-size: var(--icon-size, 16px 16px);
+          -webkit-mask-size: var(--icon-size, 16px 16px);
         }
       }
 
@@ -166,7 +173,7 @@ $swatch-size: 18px;
         &::before {
           display: none;
         }
-        font-size: 8pt;
+        font-size: $split-font-size;
       }
 
       & > button {
@@ -191,16 +198,16 @@ $swatch-size: 18px;
 
     .treb-menu {
 
-      z-index: 999;
+      z-index: 999; // FIXME: NO
 
       & > div {
 
         display: none; 
 
-        margin-top: 1em;
+        margin-top: .5em;
 
         flex-direction: column;
-        background: $background-color;
+        background: $menu-background;
         border: 1px solid $border-color;
         border-radius: $border-radius;
         position: fixed;
@@ -288,6 +295,11 @@ $swatch-size: 18px;
     [data-command=border-none] { --icon: var(--treb-icon-border-none); }
     [data-command=border-double-bottom] { --icon: var(--treb-icon-border-double-bottom); }
     [data-icon=palette] { --icon: var(--treb-icon-palette); } 
+
+    [data-command=recalculate] { 
+      --icon: var(--treb-icon-recalculate); 
+      --icon-size: 20px 20px;
+    } 
 
     .treb-font-scale {
       width: 4em;

@@ -49,10 +49,12 @@ export class ScaleControl extends EventSource<ScaleEvent> {
     super();
 
     this.format = NumberFormatCache.Get('0.0');
-    const div = DOM.CreateDiv('treb-scale-control-2', container);
 
-    this.input = DOM.Create('input', 'treb-scale-input', div);
-    const popup = DOM.CreateDiv('treb-slider-container', div);
+    // not sure what this extra div was for, we don't need it
+    // const div = DOM.CreateDiv('treb-scale-control-2', container);
+
+    this.input = DOM.Create('input', 'treb-scale-input', /* div */ container);
+    const popup = DOM.CreateDiv('treb-slider-container', /* div */ container);
 
     /*
     this.input.addEventListener('keyup', (event) => {
@@ -66,6 +68,9 @@ export class ScaleControl extends EventSource<ScaleEvent> {
     });
     */
 
+    // is this for some x-browser issue? or did we just not 
+    // know which event to use and this is old junk?
+
     this.input.addEventListener('keypress', (event) => {
       switch (event.key) {
         case 'ArrowUp':
@@ -76,6 +81,8 @@ export class ScaleControl extends EventSource<ScaleEvent> {
           break;
       }
     })
+
+    // this is the one we want
 
     this.input.addEventListener('keydown', (event) => {
       switch (event.key) {
@@ -105,6 +112,9 @@ export class ScaleControl extends EventSource<ScaleEvent> {
       event.preventDefault();
 
     });
+
+    // select text on click
+    this.input.addEventListener('focusin', () => this.input.select());
 
     this.input.addEventListener('change', () => {
 
@@ -139,7 +149,7 @@ export class ScaleControl extends EventSource<ScaleEvent> {
       this.UpdateScale(Number(this.slider.value), true);
     });
 
-    div.addEventListener('wheel', (event: WheelEvent) => {
+    /* div */ container.addEventListener('wheel', (event: WheelEvent) => {
       event.stopPropagation();
       event.preventDefault();
       this.Tick(event.deltaY)

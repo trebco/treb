@@ -1,0 +1,20 @@
+
+@import 'layout.scss';
+
+/**
+ * default styles for custom element. we basically want 
+ * it to act like a div.
+ */
+treb-spreadsheet {
+  display: block;
+  position: relative;
+}
+
+/**
+ * if we don't find a height/width on the element when it's 
+ * created, we will add this class to set a default size.
+ */
+.treb-default-size {
+  width: 800px;
+  height: 550px;
+}

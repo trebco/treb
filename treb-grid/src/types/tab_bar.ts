@@ -125,19 +125,29 @@ export class TabBar extends EventSource<TabEvent> {
     }
   }
 
+  private container: HTMLElement;
+
   constructor(
       private layout: BaseLayout,
       private model: DataModel,
       private view: ViewModel,
       private options: GridOptions,
-      private container: HTMLElement,
+      // private container: HTMLElement,
+      view_node: HTMLElement,
     ) {
 
     super();
 
-    // if we're here, show
-    this.container.classList.remove('treb-hidden');
+    this.container = view_node.querySelector('.treb-spreadsheet-footer') as HTMLElement;
+    if (!this.container) {
+      throw new Error('missing container for tab bar');
+    }
 
+    // if we're here, we have a tab bar. show unless we're on auto
+    if (options.tab_bar !== 'auto') {
+      this.container.removeAttribute('hidden');
+    }
+    
     this.tab_container = this.container.querySelector('.treb-spreadsheet-tabs') as HTMLDivElement;
 
     this.container.addEventListener('click', event => {
@@ -207,20 +217,22 @@ export class TabBar extends EventSource<TabEvent> {
     this._visible = show;
 
     if (show) {
-      this.container.classList.remove('hidden');
+      this.container.removeAttribute('hidden');
     }
     else {
-      this.container.classList.add('hidden');
+      this.container.setAttribute('hidden', '');
     }
 
   }
 
   public SetActive(tab: HTMLElement, active: boolean): void {
     if (active) {
-      tab.classList.add('treb-selected');
+      // tab.classList.add('treb-selected');
+      tab.setAttribute('selected', '');
     }
     else {
-      tab.classList.remove('treb-selected');
+      // tab.classList.remove('treb-selected');
+      tab.removeAttribute('selected');
     }
   }
 

@@ -24,6 +24,7 @@
  */
 
 @mixin dark {
+
   --treb-autocomplete-background: #333;
 	--treb-autocomplete-border-color: #fff;
 	--treb-autocomplete-entry-color: #fff;
@@ -92,6 +93,13 @@
 	
 	--treb-table-total-background: #334;
 	--treb-table-total-font-weight: 700;
+
+	// ---
+
+	--treb-color-scheme: dark;
+	--treb-resize-handle-color: lightblue;
+	--treb-resize-frame-color: lightblue;
+	--treb-formula-bar-locked-background: #234;
 
 }
 

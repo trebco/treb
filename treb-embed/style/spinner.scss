@@ -38,7 +38,6 @@
     visibility: collapse;
 
     &.visible {
-      // display: flex;
       opacity: 1;
       transition: visibility 0s, opacity 1s ease;
       visibility: visible;

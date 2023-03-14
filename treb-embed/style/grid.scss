@@ -19,9 +19,13 @@
  * 
  */
 
+// sass vars only
+
 @import 'z-index.scss';
-@import 'font-stack.scss';
 @import 'defaults.scss';
+
+// clean, no imports (but use sass vars)
+
 @import 'mouse-mask.scss';
 @import 'note.scss';
 @import 'table.scss';
@@ -30,48 +34,31 @@
 @import 'autocomplete.scss';
 @import 'formula-bar.scss';
 @import 'tab-bar.scss';
-@import 'overlay-editor-2.scss';
-
-@import 'theme-container.scss';
-@import 'theme-defaults.scss';
-
-
-/*
- * NOTE: grid layout uses explicit properties (grid-start-row, &c)
- * to preclude less from turning compound properties (1/2) into division
- *
- * preclude? you mean prevent? (...)
- */
+@import 'overlay-editor.scss';
 
 .treb-layout {
 
-/** container and style root */
-.treb-main {
 
-  // --treb-grid-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  line-height: normal;
-  text-align: left;
-
-  * {
-    box-sizing: border-box;
+  /* 
+    * new: we need the rendering buffer to inherit font size. so 
+    * we add it as a child of contents, but it's not displayed.
+    * still seems to paint OK.
+    */
+  .treb-buffer-canvas {
+    position: absolute;
+    display: none;
   }
 
-  .treb-layout-master {
-    flex-grow: 1;
-    order: 2;
+  .treb-spreadsheet-body {
+
+    grid-area: 2/1/3/2;
+
     position: relative;
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
     overflow: hidden;
     display: flex;
     position: relative;
-
-    // box-shadow: var(--treb-grid-shadow, 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1));
-  
 
   }
 
@@ -85,17 +72,94 @@
     -webkit-tap-highlight-color: transparent;
     outline: none;
 
+    // --- merging from old (split) layout ---
+
+    display: grid;
+    grid-template-columns: 100px auto;
+    grid-template-rows: 20px auto;
+
+
+    .tile-cover {
+
+      /** specific layout for main grid cover */
+      &.grid-cover {
+        grid-area: 2/2/3/3;
+      }
+
+      /** specific layout for column header cover */
+      &.column-header-cover {
+        grid-area: 1/2/2/3;
+        position: -webkit-sticky;
+        position: sticky;
+        top: 0px;
+      }
+
+      /** specific layout for row header cover */
+      &.row-header-cover {
+        grid-area: 2/1/3/2;
+        position: -webkit-sticky;
+        position: sticky;
+        left: 0px;
+      }
+    }
+
+    /** selection stacks over the grid but under the cover */
+    .treb-grid-selection {
+      grid-area: 1/1/2/2;
+    }
+
+    /** corner node to cover headers as they scroll across/down */
+    .treb-corner {
+      grid-area: 1/1/2/2;
+      position: -webkit-sticky;
+      position: sticky;
+    }
+
+    /** contains row header tiles */
+    .treb-left-header {
+      grid-area: 2/1/3/2;
+      position: -webkit-sticky;
+      position: sticky;
+      display: grid;
+      grid-template-columns: auto;
+      grid-template-rows: auto;
+    }
+
+    /** contains column header tiles */
+    .treb-top-header {
+      grid-area: 1/2/2/3;
+      position: -webkit-sticky;
+      position: sticky;
+      display: grid;
+      grid-template-columns: auto;
+      grid-template-rows: auto;
+    }
+
+    /** contains main grid tiles */
+    .treb-contents {
+      grid-area: 2/2/3/3;
+      display: grid;
+      grid-template-columns: auto;
+      grid-template-rows: auto;
+    }
+
+
+    // ---
+
     &.safari {
+
+      // WTF is this stuff?
 
       &::-webkit-scrollbar {
         -webkit-appearance: none;
         width: 7px;
         height: 7px;
       }
+
       &::-webkit-scrollbar-thumb {
         border-radius: 4px;
-        background-color: rgba(0,0,0,.25);
-        -webkit-box-shadow: 0 0 1px rgba(255,255,255,.5);
+        background-color: rgba(0, 0, 0, .25);
+        -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
       }
 
     }
@@ -123,34 +187,37 @@
     }
 
     /** covers for canvas nodes to intercept events */
-    .treb-tile-cover {
+    .tile-cover {
       background: transparent;
       position: relative;
       z-index: $z-index-tile-cover;
 
       /** specific layout for column header cover */
-      &.treb-column-header-cover {
+      &.column-header-cover {
 
         /** style is attached when mousing over a column boundary */
         &.resize {
           cursor: col-resize;
         }
+
         z-index: $z-index-header-tile-cover;
       }
 
       /** specific layout for row header cover */
-      &.treb-row-header-cover {
+      &.row-header-cover {
 
         /** style is attached when mousing over a row boundary */
         &.resize {
           cursor: row-resize;
         }
+
         z-index: $z-index-header-tile-cover;
       }
 
     }
 
-    .treb-annotation-container, .frozen-annotation-container {
+    .treb-annotation-container,
+    .frozen-annotation-container {
       position: absolute;
       top: 0px;
       left: 0px;
@@ -162,7 +229,7 @@
         background: rgba(255, 255, 255, .5);
         border: 1px solid #999;
         z-index: 1;
-        
+
         .annotation-content {
           position: absolute;
           top: 0px;
@@ -197,7 +264,9 @@
           min-width: 14px;
         }
 
-        &:focus, &.retain-focus, &.clone-focus {
+        &:focus,
+        &.retain-focus,
+        &.clone-focus {
           // outline: 2px solid lightblue;
           // box-shadow: 0 0 0 3px #0ea5e954;
           box-shadow: 0px 0px 0px 3px rgba(14, 165, 233, 0.33); // IE can't handle RGBA hex
@@ -225,19 +294,19 @@
       background: transparent;
       position: absolute;
       z-index: $z-index-grid-selection;
-      -moz-transform: scale(1); /* firefox anti-blur */
+      -moz-transform: scale(1); // firefox anti-blur
     }
 
     /** separate selection node for frozen rows/columns (needs different stacking) */
     .frozen-selection {
-      
+
       /* background: transparent; */
       transition: background .33s;
 
       position: absolute;
       z-index: $z-index-frozen-selection;
-      overflow: hidden; /* needed for IE11 (put in legacy?) */
-      -moz-transform: scale(1); /* firefox anti-blur */
+      overflow: hidden; // needed for IE11 (put in legacy?) 
+      -moz-transform: scale(1); // firefox anti-blur
       pointer-events: none;
 
       &.frozen-selection-rows {
@@ -249,7 +318,7 @@
       }
 
     }
-    
+
     /** separate annotation node for frozen row/column/corner */
     .frozen-annotation-container {
 
@@ -306,7 +375,3 @@
   }
 
 }
-
-}
-
-

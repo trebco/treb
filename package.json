@@ -48,10 +48,5 @@
     "update-icons": "node treb-embed/script/process-icons.js --filter unused --source treb-embed/icons/4 > treb-embed/src/generated/toolbar42.ts",
     "release": "node esbuild.js --clean --modern --module --embed-worker && npm run tsc && npm run generate-api && node util/copy-distribution-files.js && node util/zip-package.js --name treb",
     "ws-server": "ts-node-dev --project treb-ws/server/tsconfig.json --respawn treb-ws/server/src/index.ts"
-  },
-  "build-entry-points": {
-    "main": "treb-bundle",
-    "calculation-worker": "treb-worker",
-    "export-worker": "treb-export-worker"
   }
 }

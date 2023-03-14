@@ -1343,6 +1343,11 @@ export class TileRenderer {
 
     }
 
+    // the next call actually paints background, if we have a background color
+
+    this.RenderCellBorders(address, context, style, 0, 0, width, height);
+
+    // so we need to draw the note icon after that
 
     // why is this here? (it's rendered as background, I guess)
 
@@ -1363,8 +1368,6 @@ export class TileRenderer {
       context.lineTo(width - offset_x, offset_y);
       context.fill();
     }
-
-    this.RenderCellBorders(address, context, style, 0, 0, width, height);
 
   }
 

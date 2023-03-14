@@ -38,20 +38,6 @@
  * UPDATE: back to sass, but still using this file (compiles fine)
  */
 
-/**
- * vars. note that we can't use css variables (because IE11), so for the time
- * being we are using sass-style variables (but with postcss)
- */
-
-$font-stack: // "-apple-system",
-  "BlinkMacSystemFont",
-  "Segoe UI",
-  "Roboto",
-  "Oxygen-Sans",
-  "Ubuntu",
-  "Cantarell",
-  "Helvetica Neue",
-  "sans-serif";
 
 /* container style */
 .treb-chart {
@@ -64,7 +50,6 @@ $font-stack: // "-apple-system",
 
   background: var(--treb-chart-background, #fff);
 
-  .nroken {}
   .series-1  { color: var(--treb-chart-color-series-1,  #80B1D3); }
   .series-2  { color: var(--treb-chart-color-series-2,  #8DD3C7); }
   .series-3  { color: var(--treb-chart-color-series-3,  #BEBADA); }
@@ -77,11 +62,6 @@ $font-stack: // "-apple-system",
   .series-10 { color: var(--treb-chart-color-series-10, #CCEBC5); }
   .series-11 { color: var(--treb-chart-color-series-11, #FFED6F); }
   .series-12 { color: var(--treb-chart-color-series-12, #FFFFB3); }
-
-  /* default font */
-  /*
-  font-family: $font-stack;
-  */
 
   /* chart title, at top or bottom */
   .chart-title {

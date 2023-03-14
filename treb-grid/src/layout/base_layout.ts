@@ -1879,25 +1879,27 @@ export abstract class BaseLayout {
       throw ('unexpected missing total size');
     }
 
-    // console.info('total size:', total_width, ', ', total_height);
+    //  console.info(`${rows} rows; total size: ${total_width} x ${total_height}`);
 
     if (!total_height) total_height = this.default_row_height * rows;
     if (!total_width) total_width = this.default_column_width * columns;
 
-    if (this.container.offsetWidth > total_width) {
-
+    if (this.container.clientWidth > total_width + this.header_size.width) {
       const add_columns = Math.ceil((this.container.offsetWidth - total_width) /
         this.default_column_width);
+
       total_width += add_columns * this.default_column_width;
       columns += add_columns;
-
     }
 
     this.last_column = columns;
 
-    if (this.container.offsetHeight > total_height) {
+    // FIXME: header size should be scaled?
+
+    if (this.container.clientHeight > total_height + this.header_size.height) {
       const add_rows = Math.ceil((this.container.offsetHeight - total_height) /
         this.default_row_height);
+
       total_height += add_rows * this.default_row_height;
       rows += add_rows;
     }

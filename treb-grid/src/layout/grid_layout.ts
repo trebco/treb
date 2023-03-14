@@ -26,6 +26,11 @@ import type { DataModel, ViewModel } from '../types/data_model';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
+/**
+ * we used to have two layouts, this one and a legacy layout for IE11.
+ * since we dropped that one we could merge this with the base layout
+ * class (not strictly necessary, but would be cleaner & easier to follow).
+ */
 export class GridLayout extends BaseLayout {
 
   constructor(model: DataModel, view: ViewModel){
@@ -75,9 +80,9 @@ export class GridLayout extends BaseLayout {
 
     this.annotation_container = DOMUtilities.CreateDiv('treb-annotation-container');
 
-    this.grid_cover = DOMUtilities.CreateDiv('treb-tile-cover treb-grid-cover');
-    this.column_header_cover = DOMUtilities.CreateDiv('treb-tile-cover treb-column-header-cover');
-    this.row_header_cover = DOMUtilities.CreateDiv('treb-tile-cover treb-row-header-cover');
+    this.grid_cover = DOMUtilities.CreateDiv('tile-cover grid-cover');
+    this.column_header_cover = DOMUtilities.CreateDiv('tile-cover column-header-cover');
+    this.row_header_cover = DOMUtilities.CreateDiv('tile-cover row-header-cover');
 
   }
 
@@ -85,7 +90,7 @@ export class GridLayout extends BaseLayout {
   public InitializeInternal(container: HTMLElement, scroll_callback: () => void): void {
 
     this.container = container;
-    this.container.classList.add('treb-grid-layout');
+    // this.container.classList.add('treb-grid-layout');
 
     this.scroll_reference_node = this.container;
 

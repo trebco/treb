@@ -1,0 +1,177 @@
+
+  <div class="treb-menu" title="File menu" file-menu>
+    <div>
+      <button data-command="reset">New document</button>
+      <div class="treb-separator"></div>
+      <button data-command="import-file">Open file...</button>
+      <button data-command="save-json">Save JSON</button>
+      <div class="treb-separator"></div>
+      <button data-command="export-xlsx">Export XLSX</button>
+    </div>
+    <button data-icon="file-menu"></button>
+  </div>
+
+  <div composite narrow>
+    <button data-command="justify-left" data-target="justify" title="Left-align text"></button>
+    <div class="treb-menu">
+      <div class="treb-icon-buttons" data-replace="justify">
+        <button data-command="justify-left" title="Left-align text"></button>
+        <button data-command="justify-center" title="Center-align text"></button>
+        <button data-command="justify-right" title="Right-align text"></button>
+      </div>
+      <button dropdown></button>
+    </div>
+  </div>
+
+  <div composite narrow>
+    <button data-command="align-top" data-target="align" title="Align to top"></button>
+    <div class="treb-menu">
+      <div class="treb-icon-buttons" data-replace="align">
+        <button data-command="align-top" title="Align to top"></button>
+        <button data-command="align-middle" title="Align to middle"></button>
+        <button data-command="align-bottom" title="Align to bottom"></button>
+      </div>
+      <button dropdown></button>
+    </div>
+  </div>
+
+  <div class="group" wide>
+    <button data-command="justify-left" title="Left-align text"></button>
+    <button data-command="justify-center" title="Center-align text"></button>
+    <button data-command="justify-right" title="Right-align text"></button>
+  </div>
+
+  <div class="group" wide>
+    <button data-command="align-top" title="Align to top"></button>
+    <button data-command="align-middle" title="Align to middle"></button>
+    <button data-command="align-bottom" title="Align to bottom"></button>
+  </div>
+
+  <div class="group">
+    <button data-command="wrap-text" title="Wrap text"></button>
+    <button data-command="merge-cells" data-id="merge" data-title="Merge cells" data-active-title="Unmerge cells"></button>
+    <button data-command="lock-cells" data-title="Lock cells" data-active-title="Unlock cells"></button>
+    <button data-command="freeze-panes" data-title="Freeze panes" data-active-title="Unfreeze panes" freeze-button></button>
+    <button data-command="insert-table" data-icon="table" data-title="Insert table" data-active-title="Remove table" table-button></button>
+    <div class="treb-menu">
+      <div class="treb-comment-box">
+        <textarea></textarea>
+        <div>
+          <button data-command="clear-comment">Clear</button>
+          <button data-command="update-comment">Save</button>
+        </div>
+      </div>
+      <button data-icon="comment" data-title="Comment" data-active-title="Update comment"></button>
+    </div>
+  </div>
+
+  <div composite>
+    <button data-command="fill-color" data-color-bar="fill" data-color="{}" title="Fill color"></button>
+    <div class="treb-menu treb-color-menu" data-color-command="fill-color" data-replace-color="fill">
+      <div class="treb-color-chooser">
+        <div class="treb-caption">Theme colors</div>
+        <div class="treb-swatches"></div>
+        <div class="treb-caption">Other colors</div>
+        <div class="treb-swatches"></div>
+        <div>
+          <input placeholder="New color" class="treb-color-input">
+          <button data-command="set-color" data-color="">
+            <!-- source: bootstrap-icons-1.8.3/check2.svg -->
+            <svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='currentColor' viewBox='0 0 16 16'>
+              <path d='M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z'/> 
+            </svg>
+          </button>
+        </div>
+      </div>
+      <button dropdown></button>
+    </div>
+  </div>
+
+  <div composite>
+    <button data-command="text-color" data-color-bar="text" data-color="{}" title="Text color"></button>
+    <div class="treb-menu treb-color-menu" data-color-command="text-color" data-replace-color="text">
+      <button dropdown></button>
+    </div>
+  </div>
+
+  <div composite>
+    <button data-command="border-bottom" data-target="border" title="Bottom border"></button>
+    <div class="treb-menu">
+      <div class="treb-icon-buttons" data-replace="border">
+        <button data-command="border-top" title="Top border"></button>        
+        <button data-command="border-left" title="Left border"></button>        
+        <button data-command="border-right" title="Right border"></button>        
+        <button data-command="border-bottom" title="Bottom border"></button>        
+        <button data-command="border-double-bottom" title="Double bottom border"></button>        
+        <button data-command="border-outside" title="Outside borders"></button>        
+        <button data-command="border-all" title="All borders"></button>        
+        <button data-command="border-none" title="Clear borders"></button>        
+        <div class="treb-separator"></div>
+        <div class="treb-menu treb-color-menu treb-submenu" data-color-command="border-color" data-replace-color="border" title="Border color">
+          <button data-icon="palette" data-color-bar="border" data-color="{}"></button>
+        </div>
+      </div>
+      <button dropdown></button>
+    </div>
+  </div>
+
+  <div composite font-scale>
+    <input class="treb-font-scale" title="Font scale">
+    <div class="treb-menu">
+      <div>
+        <button data-command="font-scale" data-scale="0.8">0.80</button>
+        <button data-command="font-scale" data-scale="0.9">0.90</button>
+        <button data-command="font-scale" data-scale="1.0">1.00</button>
+        <button data-command="font-scale" data-scale="1.1">1.10</button>
+        <button data-command="font-scale" data-scale="1.2">1.20</button>
+        <button data-command="font-scale" data-scale="1.5">1.50</button>
+        <button data-command="font-scale" data-scale="2.0">2.00</button>
+      </div>
+      <button dropdown></button>
+    </div>
+  </div>
+
+  <div class="treb-menu">
+    <div>
+      <button data-command="insert-row">Insert row</button>
+      <button data-command="insert-column">Insert column</button>
+      <button data-command="delete-row">Delete row</button>
+      <button data-command="delete-column">Delete column</button>
+      <div class="treb-separator" add-remove-sheet></div>
+      <button data-command="insert-sheet" add-remove-sheet>Add sheet</button>
+      <button data-command="delete-sheet" add-remove-sheet>Delete sheet</button>
+    </div>
+    <button data-icon="layout" title="Rows & columns"></button>
+  </div>
+
+  <div composite>
+    <input class="treb-number-format" title="Number format">
+    <div class="treb-menu">
+      <div class="treb-number-format-menu">
+
+      </div>
+      <button dropdown></button>
+    </div>
+  </div>
+
+  <div class="treb-split">
+    <button data-command="decrease-precision" title="Decrease precision"></button>
+    <button data-command="increase-precision" title="Increase precision"></button>
+  </div>
+
+  <div composite chart-menu>
+    <button data-command="insert-column-chart" data-target="annotation" title="Insert column chart"></button>
+    <div class="treb-menu">
+      <div class="treb-icon-buttons" data-replace="annotation">
+        <button data-command="insert-column-chart" title="Insert column chart"></button>
+        <button data-command="insert-donut-chart" title="Insert donut chart"></button>
+        <button data-command="insert-bar-chart" title="Insert bar chart"></button>
+        <button data-command="insert-line-chart" title="Insert line chart"></button>
+        <div class="treb-separator"></div>
+        <button data-command="insert-image" title="Insert image"></button>
+      </div>
+      <button dropdown></button>
+    </div>
+  </div>
+
+  <button data-command="recalculate" title="Recalculate" recalculate-button></button>

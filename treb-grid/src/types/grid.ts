@@ -213,7 +213,7 @@ export class Grid extends GridBase {
   private editing_annotation?: Annotation;
 
   /** */
-  private grid_container?: HTMLElement;
+  private view_node?: HTMLElement;
 
   /** containing element, passed in */
   private container?: HTMLElement;
@@ -1535,8 +1535,8 @@ export class Grid extends GridBase {
 
     let composite: Theme = JSON.parse(JSON.stringify(DefaultTheme));
 
-    if (this.grid_container) {
-      const theme_properties = LoadThemeProperties(this.grid_container);
+    if (this.view_node) {
+      const theme_properties = LoadThemeProperties(this.view_node);
       composite = {...theme_properties};
     }
 
@@ -1598,17 +1598,19 @@ export class Grid extends GridBase {
   }
 
   /**
-   *
    * @param container html container element
-   * @param sheet_data optional sheet (serialized, as json or object)
-   *
-   * no one is using the sheet_data parameter atm, so we are removing
-   * it; it might come back, but if it does use a load method (don't inline)
-   *
    */
-  public Initialize(grid_container: HTMLElement, toll_initial_render = false): void {
+  public Initialize(view_node: HTMLElement, toll_initial_render = false): void {
 
-    this.grid_container = grid_container;
+    // grid no longer has access to the outer container, it just has 
+    // the "view" container. so we need to move things like UA classes
+    // outside of this class. we should move theme parsing as well, so
+    // we don't do that twice if we have two views.
+
+    // going to rename to clarify.
+
+
+    this.view_node = view_node;
 
     // so here we want the class list to read
     //
@@ -1621,6 +1623,8 @@ export class Grid extends GridBase {
 
     // grid_container.classList.add('treb-main');
 
+    /* MOVE
+
     if (UA.is_windows) {
       grid_container.classList.add('treb-ua-windows');
     }
@@ -1628,24 +1632,28 @@ export class Grid extends GridBase {
       grid_container.classList.add('treb-ua-osx');
     }
 
+    */
+
+    // MOVE
+
     // this.ApplyTheme();
     this.UpdateTheme(true);
 
-    const higher_level_container = grid_container.querySelector('.treb-layout-master') as HTMLElement;
+    const higher_level_container = view_node.querySelector('.treb-spreadsheet-body') as HTMLElement;
     const container = higher_level_container.querySelector('div') as HTMLElement;
-    
+
     let autocomplete: Autocomplete | undefined;
 
     if (this.options.formula_bar) {
       if (!autocomplete) {
         autocomplete = new Autocomplete({ theme: this.theme, container });
       }
-      this.InitFormulaBar(grid_container, autocomplete);
+      this.InitFormulaBar(view_node, autocomplete);
     }
 
     if (this.options.tab_bar) {
 
-      this.tab_bar = new TabBar(this.layout, this.model, this.view, this.options, grid_container);
+      this.tab_bar = new TabBar(this.layout, this.model, this.view, this.options, view_node);
       this.tab_bar.Subscribe((event) => {
         switch (event.type) {
           case 'cancel':
@@ -1655,33 +1663,6 @@ export class Grid extends GridBase {
             {
               let scale = this.layout.scale;
 
-              /*
-              // RiskAMP web used 5% increments above 100% and 2.5% below...
-              // that worked well, but it does require the decimal point 
-              // which (IMO) looks messy
-
-              switch (event.action) {
-                case 'increase':
-                  if (scale >= 1) { 
-                    scale += 0.05;
-                  }
-                  else { 
-                    scale += 0.025;
-                  } 
-                  break;
-                case 'decrease':
-                  if (scale >= 1.05) {
-                    scale -= 0.05;
-                  }
-                  else {
-                    scale -= 0.025;
-                  }
-                  break;
-                default:
-                  scale = event.action;
-              }
-              */
-
               scale = Math.round(event.value * 1000) / 1000;
               scale = Math.min(2, Math.max(scale, .5));
 
@@ -1689,7 +1670,6 @@ export class Grid extends GridBase {
                 localStorage.setItem(this.options.persist_scale_key, JSON.stringify({scale}));
               }
 
-              // this.UpdateScale(scale);
               this.scale = scale;
 
               if (event.keep_focus) { 
@@ -5868,7 +5848,7 @@ export class Grid extends GridBase {
 
     // locked: can't edit! note we have to do the merge check first
 
-    if (cell.style?.locked) { // if (cell.locked) {
+    if (cell.style?.locked) { 
       console.info('cell is locked for editing');
       return;
     }
@@ -6279,33 +6259,6 @@ export class Grid extends GridBase {
           address.column = this.StepVisibleColumns(address.column, delta.columns);
         }
 
-        // NOTE: this is bounding.
-        // FIXME: option to expand the sheet by selecting out of bounds.
-
-        /*
-        if (address.row >= this.active_sheet.rows && this.options.expand) {
-          let row = this.active_sheet.rows;
-          while (address.row >= row) { row += 8; }
-          this.active_sheet.cells.EnsureRow(row);
-          expanded = true;
-        }
-        if (address.column >= this.active_sheet.columns && this.options.expand) {
-          let column = this.active_sheet.columns;
-          while (address.column >= column) { column += 8; }
-          this.active_sheet.cells.EnsureColumn(column);
-          expanded = true;
-        }
-
-        if (expanded) {
-          // console.info("expanded!");
-          this.layout.UpdateTiles();
-          this.layout.UpdateContentsSize();
-          this.Repaint(true, true);
-
-          render = true;
-        }
-        */
-
         if (this.EnsureAddress(address)) { render = true; }
 
 
@@ -6600,7 +6553,6 @@ export class Grid extends GridBase {
         }
       }
 
-      // const locked = data.style && data.style.locked;
       this.formula_bar.editable = !data.style?.locked;
       const value = this.NormalizeCellValue(data);
 

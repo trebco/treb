@@ -22,9 +22,10 @@
 .treb-layout {
 
   /**
-  * event mask for mouse drag. this is added to body, 
-  * outside of the node structure.
-  */
+   * event mask for mouse drag. currently this is added _within_ node 
+   * structure, although it covers the whole viewport. we should share
+   * with the mouse mask we are using for resize.
+   */
   .treb-mouse-mask {
     position: fixed;
     top: 0px;

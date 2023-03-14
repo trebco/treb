@@ -491,9 +491,6 @@ export class Cells {
       if (obj.validation) {
         cell.validation = obj.validation;
       }
-      //if (obj.locked) {
-      //  cell.locked = obj.locked;
-      //}
 
     }
 
@@ -590,6 +587,7 @@ export class Cells {
           if (cell && (!is_empty || options.preserve_empty_strings) &&
               (merge_head || cell.type || (cell.calculated_type && options.expand_arrays) ||
                 (cell.calculated_type && options.calculated_value) ||
+                (cell.note) ||
                 (cell.validation) ||
                 (options.decorated_cells && cell.style &&
                   ( cell.style.fill || cell.style.border_bottom ||
@@ -628,9 +626,6 @@ export class Cells {
             if (cell.validation) {
               obj.validation = cell.validation; // safe? 
             }
-            //if (cell.locked) {
-            //  obj.locked = cell.locked; // d'oh
-            //}
 
             if (options.cell_style_refs &&
                 options.cell_style_refs[column] &&

@@ -161,6 +161,9 @@ export interface EmbeddedSpreadsheetOptions {
   /** show insert/remove table button in toolbar */
   table_button?: boolean;
 
+  /** show freeze button in toolbar */
+  freeze_button?: boolean;
+
   /** chart menu in the toolbar */
   chart_menu?: boolean;
 
@@ -258,11 +261,12 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   scrollbars: true,
   headers: true,
   export: true,
-  // popout: false,
   tab_bar: 'auto',
   resizable: true,
   hyperlinks: '_blank',
   max_file_size: 1024 * 92,
+
+  // popout: false,
   // imaginary_value: 'i',
 
   tint_theme_colors: true,
@@ -274,7 +278,12 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   add_tab: false,
   expand_formula_button: false,
   delete_tab: false,
-  expand: false,
+
+  // changing default value for expand -> false, it might be
+  // useful to disable it but the common expectation is that 
+  // spreadsheets can grow.
+
+  expand: true,
   markdown: false,
   spinner: false,
   complex: 'off',

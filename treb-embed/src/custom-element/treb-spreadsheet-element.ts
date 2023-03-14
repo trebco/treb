@@ -1,6 +1,8 @@
+
 import { SpreadsheetConstructor } from './spreadsheet-constructor';
-import type { EmbeddedSpreadsheet } from '../src/embedded-spreadsheet';
-import type { EmbeddedSpreadsheetOptions } from '../src/options';
+import type { EmbeddedSpreadsheet } from '../embedded-spreadsheet';
+
+export { TREB } from './treb-global';
 
 declare global {   
   interface HTMLElementTagNameMap {
@@ -35,21 +37,7 @@ class TREBElement extends HTMLElement {
 
 }
 
-customElements.define('treb-spreadsheet', TREBElement);
+if (typeof customElements !== 'undefined') {
+  customElements.define('treb-spreadsheet', TREBElement);
+}
 
-/** FIXME: switch to class (and move to its own file) */
-export const TREB = {
-
-  version: process.env.BUILD_VERSION,
-
-  /**
-   * matches the old API
-   */
-  CreateSpreadsheet: (options: EmbeddedSpreadsheetOptions) => {
-    const container = options.container;
-    const instance = new SpreadsheetConstructor(container);
-    instance.AttachElement();
-    return instance;
-  },
-
-};

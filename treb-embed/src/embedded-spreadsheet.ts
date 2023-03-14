@@ -26,7 +26,7 @@ import {
   SerializedModel, FreezePane, SerializedSheet,
   BorderConstants, SheetChangeEvent, GridOptions, 
   Sheet, GridSelection, CellEvent, FunctionDescriptor, 
-  DataModel, AnnotationViewData, ErrorCode,
+  DataModel, AnnotationViewData, ErrorCode, UA
 } from 'treb-grid';
 
 import { 
@@ -55,8 +55,7 @@ import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './opt
 import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent, InsertTableOptions } from './types';
 
 import type { LanguageModel, TranslatedFunctionDescriptor } from './language-model';
-//import type { SelectionState, Toolbar, ToolbarEvent } from './toolbar';
-import type { SelectionState } from './toolbar';
+import type { SelectionState } from './selection-state';
 import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
 
 import { Chart, ChartFunctions } from 'treb-charts';
@@ -360,8 +359,6 @@ export class EmbeddedSpreadsheet {
   /** for destruction */
   protected key_listener?: (event: KeyboardEvent) => void;
 
-  protected node?: HTMLElement;
-
   // protected views: EmbeddedSpreadsheetBase[] = [];
   protected views: Array<{
     view: EmbeddedSpreadsheet;
@@ -642,25 +639,43 @@ export class EmbeddedSpreadsheet {
 
     if (container) {
 
-      /*
+      // if this is the first one, update UA classes (used to be in grid)
 
-      this.view = document.createElement('div');
-      this.view.classList.add('treb-view');
+      if (!this.parent_view) {
 
-      // we used to set a class on this node, but grid will set 
-      // "treb-main treb-theme" and some other stuff, we can use those
-      // as necessary
+        // FIXME: pass in the layout node so we don't have to reacharound
+          
+        if (UA.is_windows) {
+          container.parentElement?.classList.add('treb-ua-windows');
+        }
+        else if (UA.is_mac) {
+          container.parentElement?.classList.add('treb-ua-osx');
+        }
+      }
+      
+      // container is "treb-views", which contains individual "treb-view" 
+      // elements. but we don't add a default; rather we use a template
 
-      this.node = document.createElement('div');
-      this.view.appendChild(this.node);
-      container.appendChild(this.view);
+      const template = container.querySelector('.treb-view-template') as HTMLTemplateElement;
+      this.view = template.content.firstElementChild?.cloneNode(true) as HTMLElement;
 
-      */
+      // this is a little weird but we're inserting at the front. the 
+      // reason for this is that we only want to use one resize handle,
+      // the original one, and we want that to be at the right-hand side.
 
-      this.node = container;
+      // we could work around this, really we're just being lazy.
 
-      this.node.addEventListener('focusin', () => {
-        this.focus_target = this;
+      container.prepend(this.view);
+
+      
+      // this.node = container;
+      // this.node = this.view;
+
+      this.view.addEventListener('focusin', () => {
+        if (this.focus_target !== this) {
+          this.Publish({ type: 'focus-view' });
+          this.focus_target = this;
+        }
       });
 
       // handle key. TODO: move undo to grid (makes more sense)
@@ -674,14 +689,16 @@ export class EmbeddedSpreadsheet {
 
       const toll_initial_render = !!(data || this.options.network_document);
 
-      this.grid.Initialize(this.node, toll_initial_render);
+      // const view = container.querySelector('.treb-view') as HTMLElement;
+
+      this.grid.Initialize(this.view, toll_initial_render);
 
       // dnd
 
       if (this.options.dnd) {
-        this.node.addEventListener('dragenter', (event) => this.HandleDrag(event));
-        this.node.addEventListener('dragover', (event) => this.HandleDrag(event));
-        this.node.addEventListener('drop', (event) => this.HandleDrop(event));
+        this.view.addEventListener('dragenter', (event) => this.HandleDrag(event));
+        this.view.addEventListener('dragover', (event) => this.HandleDrag(event));
+        this.view.addEventListener('drop', (event) => this.HandleDrop(event));
       }
 
       // set up grid events
@@ -1105,7 +1122,10 @@ export class EmbeddedSpreadsheet {
       }            
 
       // in case other view was focused
-      this.node?.focus();
+      this.view?.focus();
+
+      // usually this results in us getting larger, we may need to update
+      this.Resize();
 
     }
   }
@@ -1122,8 +1142,11 @@ export class EmbeddedSpreadsheet {
     const view = this.CreateView();
     view.grid.EnsureActiveSheet(true);
 
-    view.node?.addEventListener('focusin', () => {
-      this.focus_target = view;
+    view.view?.addEventListener('focusin', () => {
+      if (this.focus_target !== view) {
+        this.Publish({ type: 'focus-view' });
+        this.focus_target = view;
+      }
     });
 
     view.grid.grid_events.Subscribe(event => {
@@ -1182,6 +1205,13 @@ export class EmbeddedSpreadsheet {
    */
   public HandleToolbarMessage(event: ToolbarMessage): void {
 
+    // for multiple views, route toolbar command to focused view
+
+    if (this.focus_target !== this) {
+      this.focus_target.HandleToolbarMessage(event)
+      return;
+    }
+
     let updated_style: Style.Properties = {};
 
     const insert_annotation = (func: string) => {
@@ -1197,13 +1227,10 @@ export class EmbeddedSpreadsheet {
       if (event.command === 'border-color') {
 
         try {
-          const color = // JSON.parse(event.data?.color || '{}') as Style.Color;
-            (event.data?.color) as Style.Color || {};
-
           updated_style.border_top_fill =
             updated_style.border_bottom_fill =
             updated_style.border_left_fill =
-            updated_style.border_right_fill = color;
+            updated_style.border_right_fill = event.color || {};
         }
         catch (err) {
           console.error(err);
@@ -1212,7 +1239,6 @@ export class EmbeddedSpreadsheet {
       else {
         let width = 1;
         let command = event.command.substring(7) as BorderConstants;
-        const color = ((event as BorderToolbarMessage).data?.color) as Style.Color || {};
         
         if (event.command === 'border-double-bottom') {
           command = BorderConstants.Bottom;
@@ -1222,7 +1248,7 @@ export class EmbeddedSpreadsheet {
         this.grid.ApplyBorders2(
           undefined,
           command,
-          color, // event.data?.color || undefined,
+          ((event as BorderToolbarMessage).color) || {},
           width,
         );
       }
@@ -1236,7 +1262,7 @@ export class EmbeddedSpreadsheet {
           break;
 
         case 'number-format':
-          updated_style.number_format = event.data?.format || 'General';
+          updated_style.number_format = event.format || 'General';
           break;
 
         case 'font-scale':
@@ -1248,7 +1274,7 @@ export class EmbeddedSpreadsheet {
           {
             const selection = this.grid.GetSelection();
             const area = this.grid.active_sheet.RealArea(selection.area);
-            const scale = Number(event.data?.scale || 1);
+            const scale = Number(event.scale || 1);
 
             if (scale && !isNaN(scale)) {
               this.grid.ApplyStyle(undefined, {
@@ -1274,7 +1300,7 @@ export class EmbeddedSpreadsheet {
           break;
 
         case 'update-comment':
-          this.SetNote(undefined, event.data?.comment || '');
+          this.SetNote(undefined, event.comment || '');
           break;
 
         case 'clear-comment':
@@ -1285,7 +1311,7 @@ export class EmbeddedSpreadsheet {
         case 'fill-color':
 
           try {
-            const color: Style.Color = event.data?.color || {};
+            const color: Style.Color = event.color || {};
             if (event.command === 'text-color') {
               updated_style.text = color;
             }
@@ -1486,6 +1512,18 @@ export class EmbeddedSpreadsheet {
           this.Recalculate();
           break;
 
+        case 'toggle-toolbar':
+        case 'show-toolbar':
+        case 'hide-toolbar':
+          this.ShowToolbar(event.command === 'toggle-toolbar' ? undefined : event.command === 'show-toolbar');
+          break;
+
+        case 'toggle-sidebar':
+        case 'show-sidebar':
+        case 'hide-sidebar':
+          this.ShowSidebar(event.command === 'toggle-sidebar' ? undefined : event.command === 'show-sidebar');
+          break;
+
         default:
           console.info('unhandled', event.command);
           break;
@@ -1498,6 +1536,50 @@ export class EmbeddedSpreadsheet {
 
     this.Focus();
 
+  }
+
+  /** 
+   * @internal 
+   * 
+   * @param show - true or false to show/hide, or leave undefined to toggle
+   */
+  public ShowToolbar(show?: boolean) {
+    if (this.options.toolbar && this.options.container instanceof HTMLElement) {
+      const layout = this.options.container.parentElement;
+      if (layout) {
+        if (show === undefined) {
+          show = !layout.hasAttribute('toolbar');
+        }
+        if (show) {
+          layout.setAttribute('toolbar', '');
+        }
+        else {
+          layout.removeAttribute('toolbar');
+        }
+      }
+    }
+  }
+
+  /** 
+   * @internal 
+   *
+   * @param show - true or false to show/hide, or leave undefined to toggle
+   */
+  public ShowSidebar(show?: boolean) {
+    if (this.options.toolbar && this.options.container instanceof HTMLElement) {
+      const layout = this.options.container.parentElement; 
+      if (layout) {
+        if (show === undefined) {
+          show = layout.hasAttribute('collapsed');
+        }
+        if (show) {
+          layout.removeAttribute('collapsed');
+        }
+        else {
+          layout.setAttribute('collapsed', '');
+        }
+      }
+    }
   }
 
   /* * 
@@ -2348,6 +2430,11 @@ export class EmbeddedSpreadsheet {
     // API v1 OK
 
     this.grid.UpdateLayout();
+
+    for (const entry of this.views) {
+      entry.view.grid.UpdateLayout();
+    }
+    
     this.Publish({ type: 'resize' });
   }
 

@@ -887,7 +887,6 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
     // (debugging...)
 
     if (!UA.is_firefox) {
-      // this.Reconstruct(true);
       this.Reconstruct();
     }
 

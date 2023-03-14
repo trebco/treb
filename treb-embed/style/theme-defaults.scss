@@ -63,15 +63,14 @@ $text-reference-color-5: rgb(254, 47, 1);
  * this has to be as specific as the inside version
  */
 .treb-container:focus-within {
-  .treb-main {
+  // .treb-main {
     .treb-grid-selection .primary-selection, .treb-header-overlay {
       color: var(--treb-selection-color, $primary-selection-color);
     }
-  } 
+  // } 
 
 }
 
-.treb-main {
 
   /* 
   
@@ -244,7 +243,7 @@ $text-reference-color-5: rgb(254, 47, 1);
    * be useful).
    */
 
-  .treb-formula-editor, .treb-overlay-editor {
+  .treb-editor-container > div, .treb-overlay-editor {
 
     /* span:nth-of-type(1n) { */
     span.highlight-1 {
@@ -272,58 +271,6 @@ $text-reference-color-5: rgb(254, 47, 1);
     }
 
   }
-
-  /**
-   * tables. table styling applies to row, plus footer. rows can be
-   * styled with top/bottom border and background color; footer just 
-   * allows bottom border. you can also set font properties (italic, 
-   * bold, underline, strike).
-   * /
-  .treb-table {
-
-    &.header {
-      background-color: var(--treb-table-header-background, #4472c4);
-      border-top-color: var(--treb-table-header-border-top, #8ea9db);
-      border-bottom-color: var(--treb-table-header-border-bottom, #8ea9db);
-      color: var(--treb-table-header-color, #fff);
-      font-weight: var(--treb-table-header-font-weight, 700);
-      font-style: var(--treb-table-header-font-style);
-      text-decoration: var(--treb-table-header-text-decoration);
-    }
-
-    &.row-odd {
-      background-color: var(--treb-table-odd-background, #d9e1f2);
-      border-top-color: var(--treb-table-odd-border-top, #8ea9db);
-      border-bottom-color: var(--treb-table-odd-border-bottom, #8ea9db);
-      color: var(--treb-table-odd-color);
-      font-weight: var(--treb-table-odd-font-weight);
-      font-style: var(--treb-table-odd-font-style);
-      text-decoration: var(--treb-table-odd-text-decoration);
-    }
-
-    &.row-even {
-      background-color: var(--treb-table-even-background);
-      border-top-color: var(--treb-table-even-border-top, #8ea9db);
-      border-bottom-color: var(--treb-table-even-border-bottom, #8ea9db);
-      color: var(--treb-table-even-color);
-      font-weight: var(--treb-table-even-font-weight);
-      font-style: var(--treb-table-even-font-style);
-      text-decoration: var(--treb-table-even-text-decoration);
-    }
-
-    &.total {
-      background-color: var(--treb-table-total-background);
-      border-top-style: var(--treb-table-total-border-style, double);
-      border-top-color: var(--treb-table-total-border-top, #4472c4);
-      border-bottom-color: var(--treb-table-total-border-bottom, #8ea9db);
-      color: var(--treb-table-total-color);
-      font-weight: var(--treb-table-total-font-weight, 700);
-      font-style: var(--treb-table-total-font-style);
-      text-decoration: var(--treb-table-total-text-decoration);
-    }
-
-  } 
-  */
 
   /** 
    * selections
@@ -410,7 +357,7 @@ $text-reference-color-5: rgb(254, 47, 1);
       background: var(--treb-tab-bar-tab-background, rgb(238, 238, 242));
       color: var(--treb-tab-bar-tab-color, var(--treb-ui-color, inherit));
 
-      &.treb-selected {
+      &[selected] {
         background: var(--treb-tab-bar-active-tab-background, #fff);
         color: var(--treb-tab-bar-active-tab-color, var(--treb-ui-color, inherit));
       }
@@ -430,8 +377,8 @@ $text-reference-color-5: rgb(254, 47, 1);
       background: var(--treb-formula-bar-background, transparent);
       color: var(--treb-formula-bar-color, var(--treb-ui-color, inherit));
 
-      &.locked {
-        background: rgb(238, 244, 252);
+      &[locked] {
+        background: var(--treb-formula-bar-locked-background, rgb(238, 244, 252));
         position: relative;
 
         &:after {
@@ -439,8 +386,8 @@ $text-reference-color-5: rgb(254, 47, 1);
           right: 2px;
           top: 2px;
           content: '';
-          width: 11px;
-          height: 11px;
+          width: 12px;
+          height: 12px;
           opacity: .4;
 
           /**
@@ -452,7 +399,22 @@ $text-reference-color-5: rgb(254, 47, 1);
            *
            * FIXME: this makes theming the lock icon impossible. use a node.
            */
-          background-image: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M416 224H400V144C400 65 335 0 256 0S112 65 112 144V224H96C61 224 32 253 32 288V448C32 483 61 512 96 512H416C451 512 480 483 480 448V288C480 253 451 224 416 224ZM176 144C176 100 212 64 256 64S336 100 336 144V224H176V144Z' fill='currentColor'/%3E%3C/svg%3E");
+          // background-image: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M416 224H400V144C400 65 335 0 256 0S112 65 112 144V224H96C61 224 32 253 32 288V448C32 483 61 512 96 512H416C451 512 480 483 480 448V288C480 253 451 224 416 224ZM176 144C176 100 212 64 256 64S336 100 336 144V224H176V144Z' fill='currentColor'/%3E%3C/svg%3E");
+
+          --icon: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath d='M416 224H400V144C400 65 335 0 256 0S112 65 112 144V224H96C61 224 32 253 32 288V448C32 483 61 512 96 512H416C451 512 480 483 480 448V288C480 253 451 224 416 224ZM176 144C176 100 212 64 256 64S336 100 336 144V224H176V144Z' fill='currentColor'/%3E%3C/svg%3E");
+
+          background: var(--treb-formula-bar-lock-icon-color, currentColor);
+          mask-position: center;
+          -webkit-mask-position: center;
+          mask-repeat: no-repeat;
+          -webkit-mask-repeat: no-repeat;
+          mask-image: var(--icon);
+          -webkit-mask-image: var(--icon);
+          mask-size: 12px 12px;
+          -webkit-mask-size: 12px 12px;
+
+          
+
         }
 
       }
@@ -461,7 +423,7 @@ $text-reference-color-5: rgb(254, 47, 1);
 
   }
 
-}
+
 
 /**
  * special override for windows, using calibri (which is too small).

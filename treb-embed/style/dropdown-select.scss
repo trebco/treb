@@ -33,7 +33,6 @@
     border-radius: 2px;
 
     box-shadow: $default-box-shadow;
-    
     z-index: $z-index-dropdown-caret;
 
     & path {
@@ -85,10 +84,9 @@
   }
 
   /**
-  * FIXME: this should move, it's used in dropdowns but it is
-  *        more general (shoudl be used for all errors)
-  */
-
+   * FIXME: this should move, it's used in dropdowns but it 
+   * is more general (should be used for all errors)
+   */
   .treb-error-highlight {
     transition: opacity 0.15s ease-in-out;
     background: rgba(255, 0, 0, .25);

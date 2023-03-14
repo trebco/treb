@@ -1,14 +1,15 @@
 
-import { EmbeddedSpreadsheet } from '../src/embedded-spreadsheet';
-import type { EmbeddedSpreadsheetOptions } from '../src/options';
+import { EmbeddedSpreadsheet } from '../embedded-spreadsheet';
+import type { EmbeddedSpreadsheetOptions } from '../options';
 
-import css from './layout.scss';
-import html from './layout.html';
-import toolbar_html from './toolbar-layout.html';
+import css from '../../style/treb-spreadsheet-element.scss';
+import html from '../../markup/layout.html';
+import toolbar_html from '../../markup/toolbar.html';
+
 import { NumberFormatCache } from 'treb-format';
 import { Style, Color } from 'treb-base-types';
 import { Measurement } from 'treb-utils';
-import type { ToolbarMessage } from '../src/toolbar-message';
+import type { ToolbarMessage } from '../toolbar-message';
 
 interface ElementOptions {
   data: Record<string, string>;
@@ -101,11 +102,37 @@ export class SpreadsheetConstructor {
       if (!SpreadsheetConstructor.stylesheets_attached) {
         const style = document.createElement('style');
         style.textContent = css;
-        document.head.appendChild(style);
+        document.head.prepend(style);
         SpreadsheetConstructor.stylesheets_attached = true;
       }
 
     }
+
+  }
+
+  /** 
+   * coerce an attribute value into a more useful type. for attributes,
+   * having no value implies "true". false should be explicitly set as
+   * "false"; we don't, atm, support falsy values like '0' (that would be 
+   * coerced to a number).
+   */
+  public CoerceAttributeValue(value: string|null): number|boolean|string {
+
+    if (value === null || value.toString().toLowerCase() === 'true' || value === '') {
+      return true;
+    }
+    else if (value.toLowerCase() === 'false') {
+      return false;
+    }
+    else {
+      const test = Number(value);
+      if (!isNaN(test)) {
+        return test;
+      }
+    }
+
+    // default to string, if it was null default to empty string (no nulls)
+    return value || '';
 
   }
 
@@ -114,40 +141,77 @@ export class SpreadsheetConstructor {
    * semantics but at the moment we'll translate hyphen-separated-options
    * to our standard snake_case_options.
    * 
+   * we also support the old-style data-options
+   * 
    * @returns 
    */
   public ParseOptionAttributes(): Partial<EmbeddedSpreadsheetOptions> {
 
-    const options: Partial<EmbeddedSpreadsheetOptions> = {};
+    const attribute_options: Record<string, string|boolean|number> = {};
 
     if (this.root) {
 
       const names = this.root.getAttributeNames();
-      // console.info({names});
 
       for (let name of names) {
-        let value: string|boolean|number|null = this.root.getAttribute(name);
-        if (value === null || value.toString().toLowerCase() === 'true' || value === '') {
-          value = true;
-        }
-        else if (value.toLowerCase() === 'false') {
-          value = false;
-        }
-        else {
-          const test = Number(value);
-          if (!isNaN(test)) {
-            value = test;
-          }
+
+        switch (name) {
+
+          // skip
+          case 'class':
+          case 'style':
+          case 'id':
+            continue;
+
+          // old-style options (in two flavors). old-style options are
+          // comma-delimited an in the form `key=value`, or just `key`
+          // for boolean true.
+
+          case 'data-options':
+          case 'options':
+            {
+              // in this case use the original name, which should 
+              // be in snake_case (for backcompat)
+
+              const value = this.root.getAttribute(name) || '';
+              const elements = value.split(',');
+              console.info(elements);
+
+              for (const element of elements) {
+                const parts = element.split(/=/);
+                if (parts.length === 1) {
+                  attribute_options[parts[0]] = true;
+                }
+                else {
+                  attribute_options[parts[0]] = this.CoerceAttributeValue(parts[1]);
+                }
+              }
+
+            }
+            continue;
+
+          // old style (not handling though)
+          case 'data-treb':
+            continue; 
+
+          // special case
+          case 'document':
+            continue;
+
         }
 
+        // attrtibute options are in kebab-case while our internal
+        // options are still in snake_case.
+
         name = name.replace(/-/g, '_');
-        (options as any)[name] = value;
+        attribute_options[name] = this.CoerceAttributeValue(this.root.getAttribute(name));
+
       }
     }
     
-    // console.info({options});
-
-    return options;
+    return {
+      ...attribute_options
+    } as Partial<EmbeddedSpreadsheetOptions>;
 
   }
   
@@ -158,18 +222,28 @@ export class SpreadsheetConstructor {
    */
   public AttachElement(options: EmbeddedSpreadsheetOptions = {}) {
 
-    let container: HTMLElement|undefined;
-
-    if (this.root) {
-      this.root.innerHTML = html;
-      container = this.root.querySelector('.treb-layout-spreadsheet') as HTMLElement;
-    }
-
     options = {
       ...this.ParseOptionAttributes(),
       ...options,
-      container,
     };
+
+    if (this.root) {
+
+      // set a default size if the node does not have width or height.
+      // we do this with a class, so it's easier to override if desired.
+      // could we use vars? (...)
+
+      if (!options.headless) {
+        const rect = this.root.getBoundingClientRect();
+        if (!rect.width || !rect.height) {
+          this.root.classList.add('treb-default-size');
+        }
+      }
+
+      this.root.innerHTML = html;
+      options.container = this.root.querySelector('.treb-layout-spreadsheet') as HTMLElement;
+
+    }
 
     // set a local variable so we don't have to keep testing the member
 
@@ -183,12 +257,20 @@ export class SpreadsheetConstructor {
       return; // the rest is UI setup
     }
 
+    // --- not headless (headful?) ---------------------------------------------
+
     const root = this.root; // for async/callback functions
 
     // call our internal resize method when the node is resized
+    // (primary instance will handle views)
+
+    // why are we doing this here? ... because this is layout? dunno
 
     const resizeObserver = new ResizeObserver(() => sheet.Resize());
     resizeObserver.observe(root);
+
+    // const resizeObserver = new ResizeObserver(() => sheet.Resize());
+    // resizeObserver.observe(root);
 
     // handle sidebar collapse
 
@@ -220,7 +302,7 @@ export class SpreadsheetConstructor {
 
     // --- set initial state before enabling transitions -----------------------
 
-    if (sheet.options.toolbar === 'show') {
+    if (sheet.options.toolbar === 'show' || sheet.options.toolbar === 'show-narrow') {
       this.layout_element?.setAttribute('toolbar', '');
     }
     if (sheet.options.collapsed) {
@@ -259,8 +341,10 @@ export class SpreadsheetConstructor {
       }
     });
 
-    this.AttachToolbar(sheet, root);
-   
+    if (sheet.options.toolbar) {
+      this.AttachToolbar(sheet, root);
+    }
+
     // --- hide/remove ---------------------------------------------------------
 
     // compare conditional items against options. not sure which way we're 
@@ -268,15 +352,35 @@ export class SpreadsheetConstructor {
     // I'm going to do this the verbose way.
 
     const conditional_map: Record<string, boolean> = {
-      'file-menu': !!sheet.options.file_menu,
+      // 'file-menu': !!sheet.options.file_menu,
       'table-button': !!sheet.options.table_button,
-      'chart-menu': !!sheet.options.chart_menu,
-      'font-scale': !!sheet.options.font_scale,
+      // 'chart-menu': !!sheet.options.chart_menu,
+      // 'font-scale': !!sheet.options.font_scale,
+      'revert': !!sheet.options.revert_button,
+      'toolbar': !!sheet.options.toolbar,
+      'export': !!sheet.options.export,
+
+      // the following won't work as expected in split, because this
+      // code won't be run when the new view is created -- do something
+      // else
+      
+      // resize should actually work because we're hiding new view 
+      // resize handles via positioning
+
+      'resize': !!sheet.options.resizable,
+
+      // add-tab and delete-tab will still work for the menu
+
       'add-tab': !!sheet.options.add_tab,
       'delete-tab': !!sheet.options.delete_tab,
-      'stats': !!sheet.options.stats,
-      'revert': !!sheet.options.revert_button,
-      'resize': !!sheet.options.resizable,
+
+      // we actually don't want to remove stats if it's not in use, because
+      // we need it for layout
+      // 'stats': !!sheet.options.stats,
+
+      // scale control is not (yet) declarative, so this isn't effective anyway
+      // 'scale-control': !!sheet.options.scale_control,
+
     }
 
     for (const [key, value] of Object.entries(conditional_map)) {
@@ -290,103 +394,116 @@ export class SpreadsheetConstructor {
 
     // --- resize --------------------------------------------------------------
 
-    const size = { width: 0, height: 0 };
-    const position = { x: 0, y: 0 };
-    const delta = { x: 0, y: 0 };
+    if (sheet.options.resizable) {
 
-    const resize_container = root.querySelector('.treb-layout-resize-container');
+      const size = { width: 0, height: 0 };
+      const position = { x: 0, y: 0 };
+      const delta = { x: 0, y: 0 };
 
-    let mask: HTMLElement|undefined;
-    let resizer: HTMLElement|undefined;
+      // const resize_container = root.querySelector('.treb-layout-resize-container');
+      const views = root.querySelector('.treb-views');
 
-    const resize_handle = this.root.querySelector('.treb-resize-handle') as HTMLElement;
+      let mask: HTMLElement|undefined;
+      let resizer: HTMLElement|undefined;
 
-    /** mouse up handler added to mask (when created) */
-    const mouse_up = () => finish();
+      const resize_handle = this.root.querySelector('.treb-layout-resize-handle') as HTMLElement;
 
-    /** mouse move handler added to mask (when created) */
-    const mouse_move = ((event: MouseEvent) => {
-      if (event.buttons === 0) {
-        finish();
-      }
-      else {
-        delta.x = event.screenX - position.x;
-        delta.y = event.screenY - position.y;
-        if (resizer) {
-          resizer.style.width = (size.width + delta.x) + 'px';
-          resizer.style.height = (size.height + delta.y) + 'px';
+      // mouse up handler added to mask (when created)
+      const mouse_up = () => finish();
+
+      // mouse move handler added to mask (when created)
+      const mouse_move = ((event: MouseEvent) => {
+        if (event.buttons === 0) {
+          finish();
         }
-      }
-    });
+        else {
+          delta.x = event.screenX - position.x;
+          delta.y = event.screenY - position.y;
+          if (resizer) {
+            resizer.style.width = (size.width + delta.x) + 'px';
+            resizer.style.height = (size.height + delta.y) + 'px';
+          }
+        }
+      });
 
-    /** clean up mask and layout rectangle */
-    const finish = () => {
+      // clean up mask and layout rectangle
+      const finish = () => {
 
-      // resize_handle.classList.remove('retain-opacity'); // we're not using this anymore
+        // resize_handle.classList.remove('retain-opacity'); // we're not using this anymore
 
-      if (delta.x || delta.y) {
-        const rect = root.getBoundingClientRect();
-        root.style.width = (rect.width + delta.x) + 'px';
-        root.style.height = (rect.height + delta.y) + 'px';
-      }
+        if (delta.x || delta.y) {
+          const rect = root.getBoundingClientRect();
+          root.style.width = (rect.width + delta.x) + 'px';
+          root.style.height = (rect.height + delta.y) + 'px';
+        }
 
-      if (mask) {
-        mask.removeEventListener('mouseup', mouse_up);
-        mask.removeEventListener('mousemove', mouse_move);
-        mask.parentElement?.removeChild(mask);
-        mask = undefined;
-      }
+        if (mask) {
+          mask.removeEventListener('mouseup', mouse_up);
+          mask.removeEventListener('mousemove', mouse_move);
+          mask.parentElement?.removeChild(mask);
+          mask = undefined;
+        }
 
-      resizer?.parentElement?.removeChild(resizer);
-      resizer = undefined;
+        resizer?.parentElement?.removeChild(resizer);
+        resizer = undefined;
 
-    };
+      };
 
-    resize_handle.addEventListener('mousedown', (event: MouseEvent) => {
+      resize_handle.addEventListener('mousedown', (event: MouseEvent) => {
 
-      event.stopPropagation();
-      event.preventDefault();
+        event.stopPropagation();
+        event.preventDefault();
 
-      resizer = Element<HTMLDivElement>('div', document.body, { classes: 'treb-resize-rect' });
+        resizer = Element<HTMLDivElement>('div', document.body, { classes: 'treb-resize-rect' });
 
-      // resizer = document.createElement('div') as HTMLElement;
-      // resizer.classList.add('treb-resize-rect');
-      // document.body.appendChild(resizer);
+        mask = Element<HTMLDivElement>('div', document.body, { 
+          classes: 'treb-resize-mask', 
+          style: 'cursor: nw-resize;',
+        });
 
-      // mask = document.createElement('div') as HTMLElement;
-      // mask.classList.add('treb-resize-mask');
-      // mask.style.cursor = 'nw-resize';
-      // document.body.appendChild(mask);
+        mask.addEventListener('mouseup', mouse_up);
+        mask.addEventListener('mousemove', mouse_move);
 
-      mask = Element<HTMLDivElement>('div', document.body, { classes: 'treb-resize-mask', style: 'cursor: nw-resize;' });
+        // resize_handle.classList.add('retain-opacity'); // we're not using this anymore
+                
+        position.x = event.screenX;
+        position.y = event.screenY;
 
-      mask.addEventListener('mouseup', mouse_up);
-      mask.addEventListener('mousemove', mouse_move);
+        delta.x = 0;
+        delta.y = 0;
 
-      // resize_handle.classList.add('retain-opacity'); // we're not using this anymore
-              
-      position.x = event.screenX;
-      position.y = event.screenY;
+        const layouts = views?.querySelectorAll('.treb-spreadsheet-body');
+        const rects = Array.from(layouts||[]).map(element => element.getBoundingClientRect());
+        if (rects.length) {
 
-      delta.x = 0;
-      delta.y = 0;
+          const composite: { top: number, left: number, right: number, bottom: number } = 
+            JSON.parse(JSON.stringify(rects.shift()));
 
-      if (resize_container) {
+          for (const rect of rects) {
+            composite.top = Math.min(rect.top, composite.top);
+            composite.left = Math.min(rect.left, composite.left);
+            composite.right = Math.max(rect.right, composite.right);
+            composite.bottom = Math.max(rect.bottom, composite.bottom);
+          }
 
-        const rect = resize_container.getBoundingClientRect();
+          const width = composite.right - composite.left;
+          const height = composite.bottom - composite.top;
 
-        resizer.style.top = (rect.top) + 'px';
-        resizer.style.left = (rect.left) + 'px';
-        resizer.style.width = (rect.width) + 'px';
-        resizer.style.height = (rect.height) + 'px';
+          resizer.style.top = (composite.top) + 'px';
+          resizer.style.left = (composite.left) + 'px';
 
-        size.width = rect.width;
-        size.height = rect.height;
-      }
-   
-    });
+          resizer.style.width = (width) + 'px';
+          resizer.style.height = (height) + 'px';
 
-  }
+          size.width = width;
+          size.height = height;
+        }
+    
+      });
+
+    }
+
+  } 
 
   public ToggleToolbar() {
 
@@ -400,7 +517,6 @@ export class SpreadsheetConstructor {
       else {
         this.layout_element.setAttribute('toolbar', '');
       }
-
     }
       
   }
@@ -415,15 +531,22 @@ export class SpreadsheetConstructor {
 
     for (const [key, value] of Object.entries(this.toolbar_controls)) {
       if (value) {
-        value.classList.remove('treb-active');
-      }
-      else {
-        console.info('missing?', key);
+        // value.classList.remove('treb-active');
+        value.removeAttribute('active');
+        if (value.dataset.title) {
+          value.title = value.dataset.title;
+        } 
       }
     }
 
     const Activate = (element?: HTMLElement) => {
-      element?.classList.add('treb-active');
+      if (element) {
+        // element.classList.add('treb-active');
+        element.setAttribute('active', '');
+        if (element.dataset.activeTitle) {
+          element.title = element.dataset.activeTitle;
+        }
+      }
     };
 
     if (state.comment) {
@@ -525,7 +648,8 @@ export class SpreadsheetConstructor {
             const style = `background: ${entry.resolved};`;
             let title = themes[j] || themes[4];
             if (entry.color.tint) {
-              title += ` (${Math.abs(entry.color.tint) * 100}% ${ entry.color.tint > 0 ? 'lighter' : 'darker'})`;
+              // title += ` (${Math.abs(entry.color.tint) * 100}% ${ entry.color.tint > 0 ? 'lighter' : 'darker'})`;
+              title += ` (${(entry.color.tint > 0 ? '+' : '') + (entry.color.tint) * 100}%)`;
             }
             else {
               
@@ -603,13 +727,32 @@ export class SpreadsheetConstructor {
 
     const separator = document.createElement('div');
     separator.classList.add('separator');
-    fragment.append(separator);
 
+    fragment.append(separator);
     fragment.append(...date_formats.map(format => Button(format)));
 
     format_menu.textContent = '';
     format_menu.append(fragment);
     
+  }
+
+  /**
+   * replace a given template with its contents.
+   */
+  public ReplaceTemplate(root: HTMLElement, selector: string, remove = true) {
+    const template = root.querySelector(selector) as HTMLTemplateElement;
+    if (template && template.parentElement) {
+      console.info(template, template.parentElement);
+      for (const child of Array.from(template.content.children)) {
+        template.parentElement.insertBefore(child, template);
+      }
+      if (remove) {
+        template.parentElement.removeChild(template);
+      }
+    }
+    else {
+      console.warn('template not found', selector);
+    }
   }
 
   public AttachToolbar(sheet: EmbeddedSpreadsheet, root: HTMLElement) {
@@ -621,6 +764,47 @@ export class SpreadsheetConstructor {
     
     toolbar.innerHTML = toolbar_html;
 
+    // adjust toolbar based on options
+
+    const remove: Array<Element|null> = [];
+
+    // wide or narrow menu
+    if (sheet.options.toolbar === 'narrow' || sheet.options.toolbar === 'show-narrow') {
+      remove.push(...Array.from(toolbar.querySelectorAll('[wide]')));
+    }
+    else {
+      remove.push(...Array.from(toolbar.querySelectorAll('[narrow]')));
+    }
+
+    // optional toolbar items
+    if (!sheet.options.file_menu) {
+      remove.push(toolbar.querySelector('[file-menu]'));
+    }
+    if (!sheet.options.font_scale) {
+      remove.push(toolbar.querySelector('[font-scale]'));
+    }
+    if (!sheet.options.chart_menu) {
+      remove.push(toolbar.querySelector('[chart-menu]'));
+    }
+    if (!sheet.options.freeze_button) {
+      remove.push(toolbar.querySelector('[freeze-button]'));
+    }
+    if (!sheet.options.table_button) {
+      remove.push(toolbar.querySelector('[table-button]'));
+    }
+    if (!sheet.options.add_tab && !sheet.options.delete_tab) {
+      remove.push(...Array.from(toolbar.querySelectorAll('[add-remove-sheet]')));
+    }
+    if (!sheet.options.toolbar_recalculate_button) {
+      remove.push(toolbar.querySelector('[recalculate-button]'));
+    }
+
+    for (const element of remove) {
+      if (element) {
+        element.parentElement?.removeChild(element);
+      }
+    }
+
     const color_chooser = toolbar.querySelector('.treb-color-chooser') as HTMLElement;
     const comment_box = toolbar.querySelector('.treb-comment-box textarea') as HTMLTextAreaElement;
 
@@ -628,13 +812,16 @@ export class SpreadsheetConstructor {
     
     for (const [key, value] of Object.entries({
 
-        'top': '[data-command=align-top]',
-        'middle': '[data-command=align-middle]',
-        'bottom': '[data-command=align-bottom]',
+        // for align/justify make sure we are collecting the wide 
+        // versions. narrow versions don't highlight.
 
-        'left': '[data-command=justify-left]',
-        'right': '[data-command=justify-right]',
-        'center': '[data-command=justify-center]',
+        'top': '[wide] [data-command=align-top]',
+        'middle': '[wide] [data-command=align-middle]',
+        'bottom': '[wide] [data-command=align-bottom]',
+
+        'left': '[wide] [data-command=justify-left]',
+        'right': '[wide] [data-command=justify-right]',
+        'center': '[wide] [data-command=justify-center]',
 
         'wrap': '[data-command=wrap-text]',
         'merge': '[data-id=merge]',
@@ -649,11 +836,13 @@ export class SpreadsheetConstructor {
       })) {
 
       const element = toolbar.querySelector(value) as HTMLElement;
-      if (!element) {
+      if (element) {
+        this.toolbar_controls[key] = element;
+      }
+      else {
         console.warn('missing toolbar element', value);
       }
 
-      this.toolbar_controls[key] = element;
     }
 
     const swatch_lists = color_chooser.querySelectorAll('.treb-swatches');
@@ -679,7 +868,9 @@ export class SpreadsheetConstructor {
       }
     });
 
-    for (const entry of ['border', 'annotation']) {
+    // why are we not just getting all? (...)
+
+    for (const entry of ['border', 'annotation', 'align', 'justify']) {
       this.replace_targets[entry] = toolbar.querySelector(`[data-target=${entry}`) as HTMLElement;
     }
 
@@ -693,10 +884,22 @@ export class SpreadsheetConstructor {
     toolbar.addEventListener('click', event => {
 
       const target = event.target as HTMLElement;
-      const data: {
+
+      // the toolbar message used to take "data" for historical 
+      // reasdons, now it takes inline properties. we can be a little
+      // more precise about this, although we'll have to update if 
+      // we add any new data types.
+
+      const props: {
         comment?: string;
         color?: Style.Color;
-      } = {};
+        format?: string;
+        scale?: string;
+      } = {
+        format: target.dataset.format,
+        scale: target.dataset.scale,
+      };
+
       let command = target?.dataset.command;
 
       if (command) {
@@ -707,12 +910,13 @@ export class SpreadsheetConstructor {
           const replace_target = this.replace_targets[replace];
           if (replace_target) {
             replace_target.dataset.command = command;
+            replace_target.title = target.title || '';
           }
         }
 
         // for borders, if we have a cached border color add that to the event data
         if (/^border-/.test(command)) {
-          data.color = this.border_color || {};
+          props.color = this.border_color || {};
         }
 
         switch (command) {
@@ -722,9 +926,9 @@ export class SpreadsheetConstructor {
             command = color_chooser.dataset.colorCommand || '';
 
             // convert string to color
-            data.color = {};
+            props.color = {};
             try {
-              data.color = JSON.parse(target.dataset.color || '{}');
+              props.color = JSON.parse(target.dataset.color || '{}');
             }
             catch (err) {
               console.error(err);
@@ -732,7 +936,7 @@ export class SpreadsheetConstructor {
 
             // cache for later
             if (command === 'border-color') {
-              this.border_color = data.color;
+              this.border_color = props.color;
             }
 
             // update color bar
@@ -747,16 +951,74 @@ export class SpreadsheetConstructor {
             break;
 
           case 'update-comment':
-            data.comment = comment_box.value;
+            props.comment = comment_box.value;
             break;
         }
 
         sheet.HandleToolbarMessage({
           command,
-          data: {...target.dataset, ...data},
+          ...props,
         } as ToolbarMessage);
       }
 
+    });
+
+    // common
+
+    const CreateInputHandler = (selector: string, handler: (value: string) => boolean) => {
+      const input = toolbar.querySelector(selector) as HTMLInputElement;
+      if (input) {
+        let cached_value = '';
+        input.addEventListener('focusin', () => cached_value = input.value);
+        input.addEventListener('keydown', event => {
+          switch (event.key) {
+            case 'Escape':
+              input.value = cached_value;
+              sheet.Focus();
+              break;
+
+            case 'Enter':
+              if (!handler(input.value)) {
+                input.value = cached_value;
+                sheet.Focus();
+              }
+              break;
+              
+            default:
+              return;
+          }
+
+          event.stopPropagation();
+          event.preventDefault();
+
+        });
+      }
+    };
+
+    // number format input 
+
+    CreateInputHandler('input.treb-number-format', (format: string) => {
+      if (!format) { return false; }
+      sheet.HandleToolbarMessage({
+        command: 'number-format',
+        format,
+      })
+      return true;
+    });
+
+    // font scale input
+
+    CreateInputHandler('input.treb-font-scale', (value: string) => {
+      const scale = Number(value);
+      if (!scale || isNaN(scale)) {
+        console.warn('invalid scale value');
+        return false;
+      }
+      sheet.HandleToolbarMessage({
+        command: 'font-scale',
+        scale,
+      });
+      return true;
     });
 
     // color chooser
@@ -803,14 +1065,44 @@ export class SpreadsheetConstructor {
 
     scroller.addEventListener('scroll', () => sheet.Focus());
 
+    // we set up a key listener for the escape key when menus are open, we
+    // need to remove it if focus goes out of the toolbar
+
+    let handlers_attached = false;
+
+    const escape_handler = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        event.preventDefault();
+        Promise.resolve().then(() => sheet.Focus());
+      }
+    };
+
+    const focusout_handler = (event: FocusEvent) => {
+      if (handlers_attached) {
+        if (event.relatedTarget instanceof Node && toolbar.contains(event.relatedTarget)) {
+          return;
+        }
+        toolbar.removeEventListener('keydown', escape_handler);
+        toolbar.removeEventListener('focusout', focusout_handler);
+        handlers_attached = false;
+      }
+    };
+
     // positioning on focusin will catch keyboard and mouse navigation
 
-    root.addEventListener('focusin', event => {
+    toolbar.addEventListener('focusin', event => {
 
       const target = event.target as HTMLElement;
       const parent = target?.parentElement;
 
       if (parent?.classList.contains('treb-menu')) {
+
+        if (!handlers_attached) {
+          toolbar.addEventListener('focusout', focusout_handler);
+          toolbar.addEventListener('keydown', escape_handler);
+          handlers_attached = true;
+        }
 
         // we're sharing the color chooser, drop it in to 
         // the target if this is a color menu
@@ -833,7 +1125,7 @@ export class SpreadsheetConstructor {
 
         const group = parent.parentElement;
 
-        if (group?.classList.contains('treb-composite')) {
+        if (group?.hasAttribute('composite')) {
           const element = group.firstElementChild as HTMLElement;
           const rect = element.getBoundingClientRect();
           left = rect.left;
@@ -854,7 +1146,7 @@ export class SpreadsheetConstructor {
 
         }
         else {
-          menu.style.top = ''; // inherit
+          menu.style.top = target_rect.bottom + 'px';
 
           // right-align if we would overflow the toolbar
 
@@ -865,6 +1157,11 @@ export class SpreadsheetConstructor {
             menu.style.left = left + 'px';
           }
 
+        }
+
+        const focus = menu.querySelector('textarea, input') as HTMLElement;
+        if (focus) {
+          requestAnimationFrame(() => focus.focus());
         }
 
       }
@@ -882,6 +1179,11 @@ export class SpreadsheetConstructor {
 
       sheet.Subscribe(event => {
         switch (event.type) {
+
+          // need to do something with this
+          case 'focus-view':
+            break;
+
           case 'data':
           case 'document-change':
           case 'load':

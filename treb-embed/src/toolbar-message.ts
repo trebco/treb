@@ -9,23 +9,17 @@ import type { Style } from 'treb-base-types';
 
 export interface SetColorToolbarMessage {
   command: 'fill-color'|'text-color'|'border-color';
-  data?: {
-    color?: Style.Color
-  }
+  color?: Style.Color
 }
 
 export interface CommentToolbarMessage {
   command: 'update-comment'|'clear-comment';
-  data?: {
-    comment?: string;
-  }
+  comment?: string;
 }
 
 export interface BorderToolbarMessage {
   command: 'border-top'|'border-bottom'|'border-left'|'border-right'|'border-all'|'border-outside'|'border-none'|'border-double-bottom';
-  data?: {
-    color?: Style.Color;
-  }
+  color?: Style.Color;
 }
 
 export interface AnnotationToolbarMessage {
@@ -58,16 +52,12 @@ export interface JustifyToolbarMessage {
 
 export interface FontScaleToolbarMessage {
   command: 'font-scale';
-  data?: {
-    scale?: number;
-  }
+  scale?: number;
 }
 
 export interface NumberFormatToolbarMessage {
   command: 'number-format';
-  data?: {
-    format?: string;
-  }
+  format?: string;
 }
 
 export interface TableToolbarMessage {
@@ -82,10 +72,15 @@ export interface StyleToolbarMessage {
   command: 'wrap-text'|'lock-cells';
 }
 
+export interface UIToolbarMessage {
+  command: 'toggle-toolbar'|'show-toolbar'|'hide-toolbar'|'toggle-sidebar'|'show-sidebar'|'hide-sidebar';
+}
+
 export type ToolbarMessage 
   = SetColorToolbarMessage 
   | CommentToolbarMessage 
   | IOToolbarMessage
+  | UIToolbarMessage
   | MergeToolbarMessage
   | BorderToolbarMessage
   | LayoutToolbarMessage

@@ -136,22 +136,14 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   /** toggle editable property: supports locked cells */
   public set editable(editable: boolean) {
     if (!this.editor_node || !this.container_node) return;
-    this.editor_node.setAttribute('contenteditable', editable.toString());
 
-    if (!editable) {
-      this.container_node.classList.add('locked');
-
-      // this.container_node.style.backgroundColor =
-      //  this.theme.formula_bar_locked_background_color ||
-      //  this.theme.formula_bar_background_color ||
-      //  '';
+    if (editable) {
+      this.editor_node.setAttribute('contenteditable', 'true'); // is that required?
+      this.container_node.removeAttribute('locked');
     }
     else {
-      // this.container_node.style.backgroundColor =
-      //  this.theme.formula_bar_background_color || '';
-
-      this.container_node.classList.remove('locked');
-
+      this.editor_node.removeAttribute('contenteditable');
+      this.container_node.setAttribute('locked', '');
     }
 
   }
@@ -169,6 +161,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     super(parser, theme, model, view, autocomplete);
 
     const inner_node = container.querySelector('.treb-formula-bar') as HTMLElement;
+    inner_node.removeAttribute('hidden');
 
     this.address_label_container = inner_node.querySelector('.treb-address-label') as HTMLDivElement;
     this.address_label = this.address_label_container.firstElementChild as HTMLDivElement;
@@ -184,7 +177,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     }
 
     this.container_node = container.querySelector('.treb-editor-container') as HTMLDivElement;
-    this.editor_node = this.container_node.querySelector('.treb-formula-editor') as HTMLDivElement;
+    this.editor_node = this.container_node.firstElementChild as HTMLDivElement;
 
     // 
     // change the default back. this was changed when we were trying to figure
@@ -278,7 +271,13 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
         if (this.editor_node) {
           this.editor_node.scrollTop = 0;
         }
-        inner_node.classList.toggle('expanded');
+        // inner_node.classList.toggle('expanded');
+        if (inner_node.hasAttribute('expanded')) {
+          inner_node.removeAttribute('expanded');
+        }
+        else {
+          inner_node.setAttribute('expanded', '');
+        }
       });
     }
 

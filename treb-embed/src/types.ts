@@ -120,6 +120,16 @@ export interface SelectionEvent {
 }
 
 /**
+ * This event is sent when the focused view changes, if you have more
+ * than one view.
+ * 
+ * @internal
+ */
+export interface FocusViewEvent {
+  type: 'focus-view';
+}
+
+/**
  * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
  * of the event.
  */
@@ -128,6 +138,7 @@ export type EmbeddedSheetEvent
   | DocumentResetEvent
   | DocumentLoadEvent
   | DataChangeEvent
+  | FocusViewEvent
   | SelectionEvent
   | ResizeEvent
   ;

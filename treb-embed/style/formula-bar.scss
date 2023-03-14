@@ -21,31 +21,29 @@
 
 .treb-layout {
 
-.treb-main {
+    .treb-formula-bar {
 
-  /* flex patch for chrome */
-
-  // .treb-formula-bar-container {
-
-  //  display: block;
-  //  order: 1;
-
-    & .treb-formula-bar {
-
-      min-height: 3em; // FIXME
+      grid-area: 1/1/2/2;
+      
+      // min-height: 3em; // FIXME
 
       display: flex;
       flex-direction: row;
       text-align: left;
 
-      padding: 6px 2px;
+      &[hidden] {
+        display: none;
+      }
+
+      padding: 0px 2px 12px 2px; // FIXME: use ems?
 
       max-width: 100%;
-      overflow-x: hidden; /* last ditch for IE11 */
-      
+      overflow-x: hidden;
+      /* last ditch for IE11 */
+
       /** label for selection address */
       .treb-address-label {
-        
+
         width: 95px;
         min-width: 95px;
 
@@ -60,7 +58,7 @@
 
         margin-right: 6px;
 
-        & > div {
+        &>div {
           outline: none;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -90,21 +88,18 @@
         }
       }
 
-      &.expanded {
+      &[expanded] {
         .expand-button::after {
-          // border-top-color: transparent;
-          // border-bottom-color: #999;
-          // top: -12px;
           transform: rotate(180deg) translateY(6px);
-          // top: -12px;
         }
       }
 
       .treb-editor-container {
-        border: 1px solid var(--treb-formula-bar-border-color, var(--treb-ui-border-color, #ccc));;
+        border: 1px solid var(--treb-formula-bar-border-color, var(--treb-ui-border-color, #ccc));
+        
         border-radius: 2px;
         flex-grow: 1;
-        
+
         height: 1.75em;
 
         display: flex;
@@ -112,26 +107,20 @@
         flex-direction: column;
         justify-content: center;
 
-
-        /* moved to theme
-         &.locked {
-          background: blue;
-        }
-        */
-
       }
 
-      &.expanded {
+      &[expanded] {
         .treb-editor-container {
           transition: height .1s ease-in-out;
           height: 4.5em;
-          .treb-formula-editor {
+
+          &>div {
             overflow-y: auto;
           }
         }
       }
 
-      .treb-formula-editor {
+      .treb-editor-container>div {
         width: 100%;
         margin: 2px;
         outline: none;
@@ -142,10 +131,14 @@
          * 1.35 is better on safari, seems like a wash on windows.
          * can we browser-limit this? (...)
          */
-        line-height: 1.35; /* normal; */
+        line-height: 1.35;
+        /* normal; */
 
-        flex-grow: 1; /* keeps content at the top */
+        flex-grow: 1;
+        /* keeps content at the top */
         min-height: 1em;
+
+
 
         /* I don't like this, let's figure out a better way w/ wrapping */
 
@@ -176,23 +169,25 @@
 
         .text-1 {
           font-style: italic;
+
           &:after {
             content: 'f';
           }
+
           padding-right: .1em;
         }
+
         .text-2 {
           font-size: .7em;
+
           &:after {
             content: '(x)';
           }
         }
-        
+
       }
     }
-  // }
+
+  
 
 }
-
-}
-

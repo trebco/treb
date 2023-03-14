@@ -20,6 +20,7 @@ const html_minifier_options = {
  * @typedef {Object} Options
  * @property {'dev'|'production'} version
  * @property {boolean} watch
+ * @property {boolean} verbose - log all plugin inputs. helpful for dev/debug.
  * @property {boolean} minify - separate from dev/production, in case we need to test
  */
 
@@ -30,9 +31,10 @@ const html_minifier_options = {
  * passed at command line.
  */
 const options = {
-  version: 'dev',
+  version: 'production',
   watch: false,
   minify: true, 
+  verbose: false,
 };
 
 /**
@@ -90,6 +92,22 @@ const FormatSize = (size) => {
  * inlining the worker build. this works out well with one limitation:
  * at the moment, we're not caching the build for watching. OTOH esbuild 
  * is so fast it doesn't really matter at the moment.
+ * 
+ * if you import a worker script like this 
+ * ```
+ * import worker_script from 'worker:path/to/worker.ts';
+ * ```
+ * the plugin will compile the target (with esbuild) and then return the 
+ * compiled script as a string. the child build will inherit the minify 
+ * option from the parent build.
+ * 
+ * you can then use it in the containing script by creating a worker:
+ * ```
+ * const worker = new Worker(URL.createObjectURL(new Blob([worker_script], { type: 'application/javascript' })));
+ * ```
+ * 
+ * this might cause problems with CSP. if so, we'll sort that out separately.
+ * 
  */
 const worker_plugin = {
   name: 'worker',
@@ -110,10 +128,14 @@ const worker_plugin = {
     // with the assumption that esbuild will eventually have a solution
     // for inlining workers, we might want to use a more distinctive 
     // namespace that has less possibility of collision in the future.
+    // of course if that happens we will probably use the native version,
+    // so maybe it doesn't matter.
 
     build.onLoad({ filter: /./, namespace: 'worker' }, async(args) => {
 
-      // console.info('worker:', args.path); // dev. FIXME: add a parameter to enable this
+      if (options.verbose) {
+        console.info('worker:', args.path);
+      }
 
       try {
 
@@ -142,7 +164,9 @@ const worker_plugin = {
 
         });
 
-        console.info('  worker build size: ' + FormatSize(result.outputFiles[0].text.length));
+        if (options.verbose) {
+          console.info('  worker build size: ' + FormatSize(result.outputFiles[0].text.length));
+        }
 
         // here's where we use that name as a key
 
@@ -190,7 +214,9 @@ const html_plugin = {
   setup(build) {
     build.onLoad({ filter: /\.html$/ }, async (args) => {
 
-      // console.info('html:', args.path); // dev. FIXME: add a parameter to enable this
+      if (options.verbose) {
+        console.info('html:', args.path);
+      }
 
       const text = await fs.readFile(args.path, 'utf8');
       return {
@@ -211,7 +237,9 @@ const sass_plugin = {
   setup(build) {
     build.onLoad({ filter: /\.scss$/ }, async (args) => {
 
-       console.info('sass:', args.path); // dev. FIXME: add a parameter to enable this
+      if (options.verbose) {
+        console.info('sass:', args.path);
+      }
 
       try {
 
@@ -265,15 +293,18 @@ for (let i = 0; i < process.argv.length; i++) {
   if (process.argv[i] === '--watch') {
     options.watch = true;
   }
+  if (process.argv[i] === '--verbose') {
+    options.verbose = true;
+  }
 }
 
 /** @type esbuild.BuildOptions */
 const build_options = {
   entryPoints: [
-    'treb-embed/custom-element/treb-spreadsheet-element.ts',
+    'treb-embed/src/custom-element/treb-spreadsheet-element.ts',
   ],
   bundle: true,
-  outfile: 'build-element/script/treb-spreadsheet.mjs',
+  outfile: 'build-element/treb-spreadsheet.mjs',
   outExtension: { '.js': '.mjs' },
   minify: options.minify,
   metafile: true,
