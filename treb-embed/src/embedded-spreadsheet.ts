@@ -2246,8 +2246,6 @@ export class EmbeddedSpreadsheet {
   public async ExportBlob(): Promise<Blob> {
 
     if (!this.export_worker) {
-      // const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
-      // this.export_worker = await this.LoadWorker(worker_name);
       this.export_worker = await this.LoadWorker('export');
     }
 
@@ -2419,9 +2417,10 @@ export class EmbeddedSpreadsheet {
    * 
    * @remarks 
    * 
-   * Call this method when the container is resized. It's not necessary
-   * if the resize is triggered by our resize handle, only if the container
-   * is resized externally.
+   * This method should be called when the container is resized, to 
+   * trigger an update to layout. It should be called automatically 
+   * by a resize observer set in the containing tag class, but you 
+   * can call it manually if necessary.
    * 
    * @public
    */
@@ -3907,8 +3906,7 @@ export class EmbeddedSpreadsheet {
     }
 
     if (!this.export_worker) {
-      const worker_name = process.env.BUILD_ENTRY_EXPORT_WORKER || '';
-      this.export_worker = await this.LoadWorker(worker_name);
+      this.export_worker = await this.LoadWorker('export');
     }
 
     // this originally returned a Promise<Blob> but the actual
