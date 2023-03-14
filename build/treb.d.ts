@@ -1,4 +1,4 @@
-/*! API v25.0.0-rc1. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v25.0.0-rc2. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -41,15 +41,20 @@ export interface EmbeddedSpreadsheetOptions {
     /** allow drag-and-drop files */
     dnd?: boolean;
 
-    /** expandable grid */
+    /**
+     * expandable grid. if this option is false, the grid will always
+     * stay the same size -- if you keep pressing down arrow, it won't
+     * grow. defaults to true.
+     */
     expand?: boolean;
 
     /**
-     * key in localStorage for persisting document. it's possible
-     * to set this to boolean `true`, in which case we will generate
-     * a storage key based on the page URI.
+     * key in localStorage for persisting document.
      *
-     * this can be convenient for quickly setting up a document, but don't
+     * it's possible to set this to boolean `true`, in which case we will
+     * generate a storage key based on the page URI.
+     *
+     * that can be convenient for quickly setting up a document, but don't
      * use it if the page URI might change (the storage will get lost)
      * or if there are multiple spreadsheets on the same page (they will
      * overwrite each other).
@@ -77,10 +82,16 @@ export interface EmbeddedSpreadsheetOptions {
     /** export to xlsx, now optional */
     export?: boolean;
 
-    /** fill container */
-    auto_size?: boolean;
+    /**
+     * fetch network document. this is a replacement for the old
+     * (deprecated) option `network_document`.
+     */
+    document?: string;
 
-    /** fetch network document (URI) */
+    /**
+     * fetch network document (URI)
+     * @deprecated - use `document`
+     */
     network_document?: string;
 
     /** freeze rows */
@@ -120,29 +131,35 @@ export interface EmbeddedSpreadsheetOptions {
     prompt_save?: boolean;
 
     /**
-     * toolbar display option
+     * toolbar display option. true or false means include/don't include
+     * the toolbar (and the toolbar button). setting to "narrow" means
+     * include the toolbar, but use a narrow version (it compresses the
+     * align/justify groups).
+     *
+     * the toolbar usually starts hidden. if you set this option to "show",
+     * it will start visible. same for "show-narrow".
      */
     toolbar?: boolean | 'show' | 'narrow' | 'show-narrow';
 
-    /** file options in the toolbar */
+    /** include the file menu in the toolbar */
     file_menu?: boolean;
 
-    /** font size in the toolbar */
+    /** include the font scale control in the toolbar */
     font_scale?: boolean;
 
-    /** show insert/remove table button in toolbar */
+    /** include the insert/remove table button in the toolbar */
     table_button?: boolean;
 
-    /** show freeze button in toolbar */
+    /** include the freeze button in the toolbar */
     freeze_button?: boolean;
 
-    /** chart menu in the toolbar */
+    /** include the chart menu in the toolbar */
     chart_menu?: boolean;
 
-    /** recalculate button in the toolbar */
+    /** include a recalculate button in the toolbar */
     toolbar_recalculate_button?: boolean;
 
-    /** new option, better support for headless operations (default false) */
+    /** better support for headless operations (default false) */
     headless?: boolean;
 
     /** max size for image, in bytes */
@@ -151,16 +168,24 @@ export interface EmbeddedSpreadsheetOptions {
     /** initial scale */
     scale?: number;
 
-    /** show scale buttons */
+    /**
+     * show scale control (slider) under the spreadsheet.
+     */
     scale_control?: boolean;
 
-    /** show stats panel */
+    /**
+     * show the stats panel under the spreadsheet.
+     */
     stats?: boolean;
 
-    /** save/load scale. this can optionally have a string key to disambiguate */
+    /**
+     * save/load scale. this can optionally have a string key to disambiguate
+     */
     persist_scale?: boolean | string;
 
-    /** target window for hyperlinks (default _blank); set false to disable hyperlinks altogether */
+    /**
+     * target window for hyperlinks (default _blank); set false to disable hyperlinks altogether
+     */
     hyperlinks?: string | false;
 
     /**
@@ -185,10 +210,16 @@ export interface EmbeddedSpreadsheetOptions {
      * for rendering the imaginary number. this is intended to support
      * switching to a different character for rendering, or adding a leading
      * space/half-space/hair-space.
+     *
+     * this _does_not_ change how you enter imaginary numbers, you still have
+     * to use `i` (lower-case ascii i).
      */
     imaginary_value?: string;
 
-    /** support MD formatting for text */
+    /**
+     * support markdown formatting for text in cells and comments. at the
+     * moment we only support bold, italic, and strike text.
+     */
     markdown?: boolean;
 
     /**
@@ -197,15 +228,19 @@ export interface EmbeddedSpreadsheetOptions {
      */
     tint_theme_colors?: boolean;
 
-    /** show a spinner for long-running operations */
+    /**
+     * show a spinner for long-running operations
+     */
     spinner?: boolean;
 
-    /** collapsed: start sidebar closed */
+    /**
+     * start with sidebar closed. defaults to false.
+     */
     collapsed?: boolean;
 
     /**
-     * show the revert button. see the Revert method. this was renamed
-     * from `revert` to avoid any ambiguity.
+     * show the revert button in the sidebar. see the `Revert` method. this
+     * was renamed from `revert` to avoid any ambiguity.
      */
     revert_button?: boolean;
 }
@@ -526,9 +561,10 @@ export declare class EmbeddedSpreadsheet {
      *
      * @remarks
      *
-     * Call this method when the container is resized. It's not necessary
-     * if the resize is triggered by our resize handle, only if the container
-     * is resized externally.
+     * This method should be called when the container is resized, to
+     * trigger an update to layout. It should be called automatically
+     * by a resize observer set in the containing tag class, but you
+     * can call it manually if necessary.
      *
      * @public
      */

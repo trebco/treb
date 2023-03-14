@@ -493,7 +493,14 @@ export class EmbeddedSpreadsheet {
       NumberFormat.imaginary_character = this.options.imaginary_value;
     }
 
-    const network_document = this.options.network_document;
+    if (this.options.network_document) {
+      console.warn('the option `network_document` is deprecated. please use `document` instead.');
+      if (!this.options.document) { 
+        this.options.document = this.options.network_document;
+      }
+    }
+
+    const network_document = this.options.document;
 
     // optionally data from storage, with fallback
 
@@ -504,18 +511,10 @@ export class EmbeddedSpreadsheet {
     // unload event, as parent will already have that set
 
     if (this.options.storage_key && !this.options.toll_initial_load && !options.model) {
-
       data = localStorage.getItem(this.options.storage_key) || undefined;
       if (data) {
         source = LoadSource.LOCAL_STORAGE;
       }
-
-      /*
-      if (!data && this.options.alternate_document) {
-        network_document = this.options.alternate_document;
-      }
-      */
-
     }
 
     // this one should not be done for a split view, but we should still
@@ -687,7 +686,7 @@ export class EmbeddedSpreadsheet {
       this.key_listener = this.HandleKeyDown.bind(this);
       container.addEventListener('keydown', this.key_listener);
 
-      const toll_initial_render = !!(data || this.options.network_document);
+      const toll_initial_render = !!(data || this.options.document);
 
       // const view = container.querySelector('.treb-view') as HTMLElement;
 
@@ -883,7 +882,7 @@ export class EmbeddedSpreadsheet {
 
     // optionally scroll grid on create (async -- why?)
 
-    if (this.options.scroll && !this.options.network_document) {
+    if (this.options.scroll && !this.options.document) {
       const address = this.options.scroll;
       requestAnimationFrame(() => {
         this.ScrollTo(address);
@@ -2295,8 +2294,7 @@ export class EmbeddedSpreadsheet {
    */
   public Revert(): void {
 
-    const canonical = // this.options.alternate_document || 
-      this.options.network_document;
+    const canonical = this.options.document;
 
     if (canonical) {
 

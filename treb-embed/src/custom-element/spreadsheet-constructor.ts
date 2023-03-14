@@ -163,7 +163,7 @@ export class SpreadsheetConstructor {
    */
   public ParseOptionAttributes(): Partial<EmbeddedSpreadsheetOptions> {
 
-    const attribute_options: Record<string, string|boolean|number> = {};
+    const attribute_options: Record<string, string|boolean|number|undefined> = {};
 
     if (this.root) {
 
@@ -211,7 +211,8 @@ export class SpreadsheetConstructor {
             continue; 
 
           // special case
-          case 'document':
+          case 'src':
+            attribute_options.document = this.root.getAttribute('src') || undefined;
             continue;
 
         }
