@@ -1,6 +1,6 @@
 {
   "name": "@trebco/treb",
-  "version": "24.7.2",
+  "version": "25.0.0-rc1",
   "main": "build/treb-spreadsheet.mjs",
   "types": "build/treb.d.ts",
   "type": "module",
@@ -37,7 +37,7 @@
     "rebuild-tsc": "tsc -b --force treb-embed/modern.tsconfig.json",
     "watch-tsc": "tsc -b treb-embed/modern.tsconfig.json -w",
     "watch-api": "ts-node-dev --respawn api-generator/api-generator.ts --config api-config.json",
-    "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json && cp treb.d.ts build/",
+    "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json",
     "release": "npm run rebuild-tsc && npm run build && npm run generate-api"
   }
 }
