@@ -11,7 +11,7 @@ web apps, and blogs.
 
 To add a spreadsheet to your web page, first add the script file
 ```
-<script type="module" defer src="treb-spreadsheet-element.mjs"></script>
+<script type="module" defer src="https://unpkg.com/@trebco/treb@next"></script>
 ```
 then use the custom element in your page
 ```
