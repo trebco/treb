@@ -904,6 +904,7 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
   */
 
   const recursive = Object.keys(args.recursive_targets);
+  // console.info({recursive});
 
   if (recursive.length) {
 
@@ -932,6 +933,7 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
           sublist = filtered;
         }
         else if (filtered) {
+          // console.info({sublist, filtered})
           sublist = sublist.filter(test => (filtered||[]).includes(test));
         }
         else {
@@ -981,13 +983,16 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
 
           }
 
-          filtered = (filtered || []).filter(test => !resolved.includes(test));
-          if (!filtered.length) { break; }
+          if (filtered) {
+            filtered = (filtered || []).filter(test => !resolved.includes(test));
+            if (!filtered.length) { break; }
+          }
         }
 
       }
 
     }
+
   }
   
   for (const key of keys) {
