@@ -23,7 +23,11 @@ import { ValueType, Complex, GetValueType, DimensionedQuantity } from './value-t
 
 export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
-/** utility method */
+/** 
+ * utility method 
+ * 
+ * @internal
+ */
 export const Is2DArray = <T>(obj: undefined|T|T[]|T[][]): obj is T[][] => {
   return !!obj && Array.isArray(obj) && Array.isArray(obj[0]);
 }
@@ -104,7 +108,11 @@ export type UnionValue
 //  return { type: ValueType.undefined, value: undefined };
 //};
 
-/** shortcut, although this is wasteful */
+/** 
+ * shortcut, although this is wasteful 
+ * 
+ * @internal
+ */
 export const Box = (value: unknown, type?: ValueType): UnionValue => { 
   
   // FIXME: type properly... instead of the GetValueType call
@@ -127,6 +135,8 @@ export const Box = (value: unknown, type?: ValueType): UnionValue => {
 /**
  * box a complex value in a union, potentially switching to a real if
  * there's no imaginary component.
+ * 
+ * @internal
  */
 export const ComplexOrReal = (value: Complex): ComplexUnion|NumberUnion => {
   if (value.imaginary) {

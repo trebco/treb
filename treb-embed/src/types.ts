@@ -122,8 +122,6 @@ export interface SelectionEvent {
 /**
  * This event is sent when the focused view changes, if you have more
  * than one view.
- * 
- * @internal
  */
 export interface FocusViewEvent {
   type: 'focus-view';

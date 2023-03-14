@@ -1,5 +1,5 @@
 {
-  "extends": "../modern.tsproject.json",
+  "extends": "../tsproject.json",
   "references": [
     { "path": "../treb-grid/modern.tsconfig.json" },
     { "path": "../treb-utils/modern.tsconfig.json" }

@@ -28,7 +28,7 @@ const html_minifier_options = {
  * @type {Options}
  * 
  * defaults to production, we will update from any options 
- * passed at command line.
+ * passed at command line. 
  */
 const options = {
   version: 'production',
@@ -98,8 +98,8 @@ const FormatSize = (size) => {
  * import worker_script from 'worker:path/to/worker.ts';
  * ```
  * the plugin will compile the target (with esbuild) and then return the 
- * compiled script as a string. the child build will inherit the minify 
- * option from the parent build.
+ * compiled script as a string. the child build inherits minify settings 
+ * from the parent build.
  * 
  * you can then use it in the containing script by creating a worker:
  * ```
@@ -301,7 +301,7 @@ for (let i = 0; i < process.argv.length; i++) {
 /** @type esbuild.BuildOptions */
 const build_options = {
   entryPoints: [
-    'treb-embed/src/custom-element/treb-spreadsheet-element.ts',
+    'treb-embed/src/custom-element/treb-global.ts',
   ],
   bundle: true,
   outfile: 'build-element/treb-spreadsheet.mjs',

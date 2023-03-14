@@ -120,4 +120,5 @@ class ColorFunctions {
 
 }
 
+/** @internal */
 export const Color = new ColorFunctions();

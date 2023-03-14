@@ -1,5 +1,5 @@
 {
-  "extends": "../modern.tsproject.json",
+  "extends": "../tsproject.json",
   "include": [
     "../package.json",
     "src/**/*.ts",

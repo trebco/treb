@@ -53,7 +53,7 @@ const Element = <T extends HTMLElement>(tag: string, parent?: HTMLElement|Docume
   return element;
 }
 
-
+/** @internal */
 export class SpreadsheetConstructor {
 
   /** container, if any */

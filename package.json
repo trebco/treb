@@ -1,8 +1,9 @@
 {
   "name": "treb",
-  "version": "24.5.0",
+  "version": "24.5.1",
   "main": "dist/index.js",
   "devDependencies": {
+    "@types/html-minifier": "^4.0.2",
     "@types/node": "^18.0.1",
     "@typescript-eslint/eslint-plugin": "^5.30.4",
     "@typescript-eslint/parser": "^5.30.4",
@@ -30,7 +31,10 @@
     "dev": "node esbuild-custom-element.mjs --dev",
     "watch": "node --watch esbuild-custom-element.mjs --watch --dev",
     "tsc": "tsc -b treb-embed/modern.tsconfig.json",
-    "watch-tsc": "tsc -b treb-embed/modern.tsconfig.json -w"
+    "rebuild-tsc": "tsc -b --force treb-embed/modern.tsconfig.json",
+    "watch-tsc": "tsc -b treb-embed/modern.tsconfig.json -w",
+    "watch-api": "ts-node-dev --respawn api-generator/api-generator.ts --config api-config.json",
+    "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json"
   },
   "old_scripts": {
     "build": "node esbuild.js",

@@ -113,14 +113,17 @@ export type SerializedCellData = FlatCellData[]|NestedRowData[]|NestedColumnData
 
 // some type guards for the various data types
 
+/** @internal */
 export const IsFlatData = (test: FlatCellData|NestedCellData): test is FlatCellData => {
   return !(test as NestedCellData).cells;
 }
 
+/** @internal */
 export const IsFlatDataArray = (test: FlatCellData[]|NestedCellData[]): test is FlatCellData[] => {
   return (!!test[0]) && IsFlatData(test[0]);
 };
 
+/** @internal */
 export const IsNestedRowArray = (test: NestedRowData[]|NestedColumnData[]): test is NestedRowData[] => {
   return (!!test[0]) && ((test[0] as NestedRowData).row !== undefined);
 };

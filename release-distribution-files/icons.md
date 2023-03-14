@@ -1,5 +1,5 @@
 
-TREB includes icons [font awesome][1], used under the terms of the
+TREB includes icons from [font awesome][1], used under the terms of the
 [font awesome free license][2]; and [bootstrap icons][3], used under the terms
 of the [MIT license][4]. 
 

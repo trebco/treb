@@ -58,6 +58,8 @@ export interface IArea {
 /**
  * type guard function
  * FIXME: is there a naming convention for these?
+ * 
+ * @internal
  */
 export const IsCellAddress = (obj: any): obj is ICellAddress => {
   return (
@@ -66,6 +68,7 @@ export const IsCellAddress = (obj: any): obj is ICellAddress => {
     typeof obj.column !== 'undefined');
 };
 
+/** @internal */
 export const IsArea = (obj: any): obj is IArea => {
   return (
     typeof obj === 'object' &&

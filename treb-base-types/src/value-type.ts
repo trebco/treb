@@ -30,6 +30,11 @@ export interface Complex {
   imaginary: number,
 }
 
+/** 
+ * typeguard
+ * 
+ * @internal
+ */
 export const IsComplex = (value: unknown): value is Complex => {
   return (typeof value === 'object')
           && (!!value)
@@ -37,6 +42,9 @@ export const IsComplex = (value: unknown): value is Complex => {
           && (typeof (value as Complex).imaginary === 'number');
 };
 
+/**
+ * @internal
+ */
 export const ComplexToString = (value: Complex): string => {
   if (value.real) {
     if (value.imaginary) {
@@ -64,6 +72,11 @@ export interface DimensionedQuantity {
   unit: string;
 }
 
+/**
+ * typeguard
+ *
+ * @internal
+ */
 export const IsDimensionedQuantity = (value: unknown): value is DimensionedQuantity => {
   return (typeof value === 'object')
           && (!!value)
@@ -112,6 +125,7 @@ export enum ValueType {
 
 }
 
+/** @internal */
 export const GetValueType = (value: unknown): ValueType => {
 
   switch (typeof value){

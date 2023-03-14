@@ -46,6 +46,7 @@ export interface TableSortOptions {
 
 }
 
+/** @internal */
 export const DefaultTableSortOptions: TableSortOptions = {
   column: 0,
   type: 'auto',

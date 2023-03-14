@@ -433,9 +433,19 @@ function CollectDependencyTransformer<T extends ts.Node>(
   return context => {
     const visit: ts.Visitor = node => {
 
+      const modifiers = ts.canHaveModifiers(node) ? (ts.getModifiers(node) || []).map(member => {
+        return ts.SyntaxKind[member.kind];
+      }) : [];
+
+      /*
       const modifiers = (node.modifiers || []).map(member => {
         return ts.SyntaxKind[member.kind];
       });
+
+      if (modifiers.length) {
+        console.info({modifiers, modifiers2});
+      }
+      */
 
       const tags = GetDocTags(node);
 
@@ -443,7 +453,42 @@ function CollectDependencyTransformer<T extends ts.Node>(
         tags.some(test => config.exclude_tags.includes(test));
 
       const exported = modifiers.includes('ExportKeyword');
+      const declared = modifiers.includes('DeclareKeyword');
       const is_public = !(modifiers.includes('ProtectedKeyword') || modifiers.includes('PrivateKeyword'));
+
+      /*
+      if ((node as any).name && ts.isIdentifier((node as any).name)) {
+        const name = (node as any).name.escapedText.toString();
+        if (/treb/i.test(name)) {
+          console.info(name, node.kind, ts.SyntaxKind[node.kind] );
+        }
+      }
+      */
+
+      /*
+      if ((node as any).name && ts.isIdentifier((node as any).name)) {
+        const name = (node as any).name.escapedText.toString();
+        if (/trebglobal$/i.test(name)) {
+          console.info({name, exported, internal, modifiers});
+          console.info(node);
+          console.info('');
+        }
+      }
+      */
+
+      /*
+      if (exported && declared) {
+        if ((node as any).name && ts.isIdentifier((node as any).name)) {
+          const name = (node as any).name.escapedText.toString();
+          //if (/treb$/i.test(name)) {
+            console.info({name, exported, internal, modifiers});
+            // console.info(node);
+            // console.info('');
+          //}
+        }
+  
+      }
+      */
 
       if (ts.isModuleDeclaration(node)
         || ts.isClassDeclaration(node)
@@ -454,6 +499,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
         if (exported && !internal) {
 
           if (node.name && ts.isIdentifier(node.name)) {
+
             if (!AddFoundType(node.name.escapedText.toString(), node.getFullText())) {
               return undefined;
             }
@@ -510,6 +556,25 @@ function CollectDependencyTransformer<T extends ts.Node>(
           return undefined; // do not recurse
         }
 
+      }
+
+      else if (ts.isVariableStatement(node)) {
+        if (exported && !internal) {
+
+          // the type will be found, so we don't have to worry about that.
+          // should we be concerned with invalid/removed types? (...)
+
+          // we may see this more than once, if a file is included by 
+          // other files. is there a better way to identify variables?
+          // maybe we should affirmatively declare exports with a tag
+
+          const text = node.getFullText();
+          args.exported_variables.push(text);
+
+        }
+        else {
+          return undefined; // end
+        }
       }
 
       else if (ts.isExpressionWithTypeArguments(node)) {
@@ -606,7 +671,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
       }
       else if (ts.isExportDeclaration(node)) {
 
-          // this is export {A} from 'B', or export * from 'C'.
+        // this is export {A} from 'B', or export * from 'C'.
 
         if (node.moduleSpecifier) {
           let target = node.moduleSpecifier.getText();
@@ -624,6 +689,7 @@ function CollectDependencyTransformer<T extends ts.Node>(
               //  args.recursive_targets[target].push(element.name.escapedText.toString());
               //}
               targets.push(name);
+              AddReferencedType(name, 4);
             }
           }
           else {
@@ -632,6 +698,8 @@ function CollectDependencyTransformer<T extends ts.Node>(
             // args.recursive_targets[target].push(...args.types);
             targets.push('*');
           }
+
+          // console.info(targets);
 
           args.recursive_targets[target] = targets;
 
@@ -651,8 +719,13 @@ let invoke = 0;
 
 const lookups: Record<string, boolean|string> = {};
 const master: Record<string, string> = {};
+const exported_variables: string[] = [];
+
+let var_index = 0;
 
 const ReadTypes = async (file: string, types?: string[], origination = 'C', depth = 0, stack: string[] = []): Promise<ReadTypeArgs> => {
+
+  // console.info('read types:', file, types);
 
   if (stack.includes(file)) {
     console.info(file, stack);
@@ -706,6 +779,7 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
     referenced_type_map: {},
     imported_types: {},
     extra_types: {},
+    exported_variables: [],
   };
 
   const text = await fs.promises.readFile(file, { encoding: 'utf8' });
@@ -821,10 +895,13 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
     }
   }
 
-  // console.info(file);
-  // console.info('want:', types ? types : 'all');
-  // console.info('found:', found);
-  // console.info('');
+  /*
+  console.info('file:', file);
+  console.info('want:', types ? types : 'all');
+  console.info('found:', found);
+  console.info('recursive:', args.recursive_targets);
+  console.info('');
+  */
 
   const recursive = Object.keys(args.recursive_targets);
 
@@ -840,18 +917,28 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
       }
     }
 
+    // console.info({types, found, filtered});
+
     if (!filtered || filtered.length) {
       for (const key of recursive) {
         const file_path = RelativeFilePath(key);
+
         let sublist: string[] | undefined = args.recursive_targets[key];
         let result: ReadTypeArgs;
+
+        // console.info(0, {file_path, key, sublist, filtered});
 
         if (sublist.includes('*')) {
           sublist = filtered;
         }
-        else {
+        else if (filtered) {
           sublist = sublist.filter(test => (filtered||[]).includes(test));
         }
+        else {
+          // console.info("using sublist without filter:", sublist);
+        }
+
+        // console.info(1, {file_path, key, sublist});
 
         // NOW filter on whether we've checked this path for this 
         // type before. if so, even if we missed, we can drop it.
@@ -862,9 +949,13 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
           return typeof check === 'undefined';
         });
 
+        // console.info(2, {sublist});
+
         if (sublist.length) {
           result = await ReadTypes(file_path, sublist, 'X', depth + 1, [...stack, file]);
           const resolved = Object.keys(result.found_types);
+
+          // console.info({resolved});
 
           // if we found a type in a child that we were looking for, we can
           // point our record (which should be false) to the child record
@@ -911,6 +1002,14 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
     master[key] = args.found_types[key];
   }
 
+  for (const statement of args.exported_variables) {
+    if (!exported_variables.includes(statement)) {
+      master[`__variable_${var_index++}`] = statement;
+      // console.info(statement);
+      exported_variables.push(statement);
+    }
+  }
+
   // console.info(file, Object.keys(mapped).join(', '));
 
   /*
@@ -939,6 +1038,8 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
     // if (2>1) throw new Error('ending after 1st import')
 
   }
+
+  // console.info("ARGS", args, '\n');
 
   return args;
   
@@ -990,6 +1091,25 @@ const Run = async () => {
   // the end of the world.
 
   printed = printed.replace(/(\s*\*)\s*@privateRemarks[\s\S]*?((?: @|\*\/))/g, '$1$2');
+
+  // 
+  // attempting to clean up... this somewhat confusing regexp
+  // is intended to convert
+  //
+  // /**
+  //  * build version
+  //  *
+  //  **/
+  // version: string;
+  //
+  // (caused by removing @privateRemarks) to
+  //
+  // /**
+  //  * build version
+  //  */
+  // version: string;
+  //
+  printed = printed.replace(/(\*\n[ ]+)\*\*\//g, '*/')
 
   if (config.output) {
     await fs.promises.writeFile(config.output, printed, {encoding: 'utf8'});

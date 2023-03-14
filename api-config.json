@@ -6,12 +6,12 @@
 
   "root": "./declaration",
 
-  "index": "treb-embed/src/embedded-spreadsheet.d.ts",
+  "index": "treb-embed/src/custom-element/treb-global.d.ts",
 
   "include": [
-    "api-generator/treb-global.d.ts"
+    "treb-embed/src/custom-element/global.d.ts"
   ],
-  
+
   "drop_types": [
     "GridEvent"
   ],

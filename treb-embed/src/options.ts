@@ -253,6 +253,8 @@ export interface EmbeddedSpreadsheetOptions {
 /**
  * default options. some of these are unecessary but we're being
  * explicit here just to be clear that these are intentional.
+ * 
+ * @internal
  */
 export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   formula_bar: true,

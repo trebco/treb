@@ -148,6 +148,9 @@ export interface Theme {
 
 }
 
+/**
+ * @internal
+ */
 export const DefaultTheme: Theme = {
   grid_color: '#ccc',
   note_marker_color: '#d2c500',
@@ -160,6 +163,7 @@ export const DefaultTheme: Theme = {
 /**
  * now just a wrapper, we should remove
  * @deprecated
+ * @internal
  */
 export const ThemeColor = (theme: Theme, color?: Style.Color): string => {
   return ThemeColor2(theme, color, 0);
@@ -215,6 +219,8 @@ const TintedColor = (theme: Theme, index: number, tint: number) => {
  * offset returns a light color against a dark background, and
  * vice versa. what constitutes a dark background is not entirely
  * clear; atm using lightness = .65. 
+ * 
+ * @internal
  */
 export const ThemeColor2 = (theme: Theme, color?: Style.Color, default_index?: number): string => {
 
@@ -437,6 +443,8 @@ const DeriveColorScheme = (theme: Theme, context: CanvasRenderingContext2D): 'li
 /**
  * this is a shortcut for creating table formats based on theme colors.
  * TODO: we might want to swap styles based on light/dark mode?
+ * 
+ * @internal
  */
 export const ThemeColorTable = (theme_color: number, tint = .7): TableTheme => {
 
@@ -471,6 +479,9 @@ export const ThemeColorTable = (theme_color: number, tint = .7): TableTheme => {
 
 }
 
+/**
+ * @internal
+ */
 export const LoadThemeProperties = (container: HTMLElement): Theme => {
 
   const theme: Theme = JSON.parse(JSON.stringify(DefaultTheme));
