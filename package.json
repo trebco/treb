@@ -1,6 +1,12 @@
 {
   "name": "@trebco/treb",
-  "version": "25.0.0-rc1",
+  "version": "25.0.1-rc1",
+  "license": "LGPL-3.0-or-later",
+  "homepage": "https://treb.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trebco/treb.git"
+  },
   "main": "build/treb-spreadsheet.mjs",
   "types": "build/treb.d.ts",
   "type": "module",
