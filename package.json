@@ -1,10 +1,12 @@
 {
-  "name": "treb",
-  "version": "24.5.1",
-  "main": "dist/index.js",
+  "name": "@trebco/treb",
+  "version": "24.7.1",
+  "main": "build/treb-spreadsheet.mjs",
+  "types": "build/treb.d.ts",
+  "type": "module",
   "devDependencies": {
     "@types/html-minifier": "^4.0.2",
-    "@types/node": "^18.0.1",
+    "@types/node": "^18.15.3",
     "@typescript-eslint/eslint-plugin": "^5.30.4",
     "@typescript-eslint/parser": "^5.30.4",
     "archiver": "^5.3.0",
@@ -29,28 +31,12 @@
   "scripts": {
     "build": "node esbuild-custom-element.mjs",
     "dev": "node esbuild-custom-element.mjs --dev",
+    "clean": "rm -fr build dist declaration",
     "watch": "node --watch esbuild-custom-element.mjs --watch --dev",
     "tsc": "tsc -b treb-embed/modern.tsconfig.json",
     "rebuild-tsc": "tsc -b --force treb-embed/modern.tsconfig.json",
     "watch-tsc": "tsc -b treb-embed/modern.tsconfig.json -w",
     "watch-api": "ts-node-dev --respawn api-generator/api-generator.ts --config api-config.json",
-    "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json"
-  },
-  "old_scripts": {
-    "build": "node esbuild.js",
-    "dev": "node esbuild.js --dev",
-    "watch": "node esbuild.js --watch",
-    "tsc": "tsc -b treb-embed/modern.tsconfig.json",
-    "watch-tsc": "tsc -b treb-embed/modern.tsconfig.json -w ",
-    "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json && cp treb.d.ts release-distribution-files/ && cp treb.d.ts release-distribution-files/esm",
-    "watch-api": "ts-node-dev --respawn api-generator/api-generator.ts --config api-config.json && cp treb.d.ts release-distribution-files/ && cp treb.d.ts release-distribution-files/esm",
-    "watch-modern": "node esbuild.js --watch --modern --dev",
-    "watch-module": "node esbuild.js --watch --module --dev",
-    "build-modern": "node esbuild.js --modern --embed-worker",
-    "watch-cookie": "node esbuild.js --watch --cookie --dev",
-    "build-cookie": "node esbuild.js --cookie",
-    "update-icons": "node treb-embed/script/process-icons.js --filter unused --source treb-embed/icons/4 > treb-embed/src/generated/toolbar42.ts",
-    "release": "node esbuild.js --clean --modern --module --embed-worker && npm run tsc && npm run generate-api && node util/copy-distribution-files.js && node util/zip-package.js --name treb",
-    "ws-server": "ts-node-dev --project treb-ws/server/tsconfig.json --respawn treb-ws/server/src/index.ts"
+    "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json && cp treb.d.ts build/"
   }
 }

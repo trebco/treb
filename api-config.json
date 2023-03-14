@@ -2,11 +2,11 @@
 
   "package": "./package.json",
 
-  "output": "./treb.d.ts",
+  "output": "./build/treb.d.ts",
 
   "root": "./declaration",
 
-  "index": "treb-embed/src/custom-element/treb-global.d.ts",
+  "index": "treb-embed/src/index.d.ts",
 
   "include": [
     "treb-embed/src/custom-element/global.d.ts"

@@ -245,6 +245,8 @@ const sass_plugin = {
 
         const result = await sass.compile(args.path, {
           loadPaths: ['.'],
+          // charset: false,
+          // style: 'compressed',
         });
         const files = (result.loadedUrls || []).map(url => url.pathname);
         
@@ -301,10 +303,13 @@ for (let i = 0; i < process.argv.length; i++) {
 /** @type esbuild.BuildOptions */
 const build_options = {
   entryPoints: [
-    'treb-embed/src/custom-element/treb-global.ts',
+    'treb-embed/src/index.ts',
   ],
+  banner: { 
+    js: `/*! TREB v${pkg.version}. Copyright 2018-${new Date().getFullYear()} trebco, llc. All rights reserved. LGPL: https://treb.app/license */`
+  },
   bundle: true,
-  outfile: 'build-element/treb-spreadsheet.mjs',
+  outfile: 'build/treb-spreadsheet.mjs',
   outExtension: { '.js': '.mjs' },
   minify: options.minify,
   metafile: true,

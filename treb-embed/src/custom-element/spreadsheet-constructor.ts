@@ -19,7 +19,7 @@ interface ElementOptions {
   classes: string|string[];
 }
 
-const Element = <T extends HTMLElement>(tag: string, parent?: HTMLElement|DocumentFragment, options: Partial<ElementOptions> = {}): T => {
+const Element = <T extends HTMLElement>(tag: string, parent?: HTMLElement|DocumentFragment, options: Partial<ElementOptions> = {}, attrs: Record<string, string> = {}): T => {
   const element = document.createElement(tag) as T;
   if (options.classes) {
 
@@ -47,6 +47,11 @@ const Element = <T extends HTMLElement>(tag: string, parent?: HTMLElement|Docume
       element.dataset[key] = value;
     }
   }
+
+  for (const [key, value] of Object.entries(attrs)) {
+    element.setAttribute(key, value);
+  }
+
   if (parent) {
     parent.appendChild(element);
   }
@@ -61,11 +66,6 @@ export class SpreadsheetConstructor {
 
   /** spreadsheet instance */
   public sheet?: EmbeddedSpreadsheet
-
-  /** inject styles (once) */
-  public static stylesheets_attached = false;
-
-  // 
 
   /** current border color. will be applied to new borders. */
   protected border_color?: Style.Color;
@@ -96,15 +96,31 @@ export class SpreadsheetConstructor {
       root = document.querySelector(root) as HTMLElement;
     }
 
-    if (root instanceof HTMLElement) {
+    // there's a possibility this could be running in a node environment. 
+    // in that case (wihtout a shim) HTMLElement will not exist, so we can't
+    // check type.
+
+    if (typeof HTMLElement !== 'undefined' && root instanceof HTMLElement) {
       this.root = root;
 
+      const style_node = document.head.querySelector('style[treb-stylesheet]');
+      if (!style_node) {
+        const style = document.createElement('style');
+        style.setAttribute('treb-stylesheet', '');
+        style.textContent = css;
+        document.head.prepend(style);
+      }
+      else {
+      }
+
+      /*
       if (!SpreadsheetConstructor.stylesheets_attached) {
         const style = document.createElement('style');
         style.textContent = css;
         document.head.prepend(style);
         SpreadsheetConstructor.stylesheets_attached = true;
       }
+      */
 
     }
 
@@ -175,7 +191,7 @@ export class SpreadsheetConstructor {
 
               const value = this.root.getAttribute(name) || '';
               const elements = value.split(',');
-              console.info(elements);
+              // console.info(elements);
 
               for (const element of elements) {
                 const parts = element.split(/=/);
@@ -249,7 +265,7 @@ export class SpreadsheetConstructor {
 
     const sheet = new EmbeddedSpreadsheet(options);
 
-    console.info(sheet.options);
+    // console.info(sheet.options);
 
     this.sheet = sheet;
 
@@ -308,19 +324,8 @@ export class SpreadsheetConstructor {
     if (sheet.options.collapsed) {
       this.layout_element?.setAttribute('collapsed', '');
     }
-    
-    // --- animated ------------------------------------------------------------
 
-    // we swap "animate" for "animated", which has some transition applied. we
-    // do this so initial state gets set without transitions.
-
-    const animate = Array.from(root.querySelectorAll('.treb-animate'));
-    Promise.resolve().then(() => {
-      for (const element of animate) {
-        element.classList.remove('treb-animate');
-        element.classList.add('treb-animated');
-      }
-    });
+    // --- toolbar/sidebar -----------------------------------------------------
     
     const sidebar = root.querySelector('.treb-layout-sidebar');
     sidebar?.addEventListener('click', event => {
@@ -502,6 +507,11 @@ export class SpreadsheetConstructor {
       });
 
     }
+
+    // --- animated ------------------------------------------------------------
+
+    // requestAnimationFrame(() => {
+    setTimeout(() => this.layout_element?.setAttribute('animate', ''), 250);
 
   } 
 
@@ -725,10 +735,7 @@ export class SpreadsheetConstructor {
     const fragment = document.createDocumentFragment();
     fragment.append(...number_formats.map(format => Button(format)));
 
-    const separator = document.createElement('div');
-    separator.classList.add('separator');
-
-    fragment.append(separator);
+    fragment.append(Element<HTMLDivElement>('div', undefined, {}, {separator: ''}));
     fragment.append(...date_formats.map(format => Button(format)));
 
     format_menu.textContent = '';
@@ -742,7 +749,7 @@ export class SpreadsheetConstructor {
   public ReplaceTemplate(root: HTMLElement, selector: string, remove = true) {
     const template = root.querySelector(selector) as HTMLTemplateElement;
     if (template && template.parentElement) {
-      console.info(template, template.parentElement);
+      // console.info(template, template.parentElement);
       for (const child of Array.from(template.content.children)) {
         template.parentElement.insertBefore(child, template);
       }
@@ -840,7 +847,7 @@ export class SpreadsheetConstructor {
         this.toolbar_controls[key] = element;
       }
       else {
-        console.warn('missing toolbar element', value);
+        // console.warn('missing toolbar element', value);
       }
 
     }
@@ -901,6 +908,7 @@ export class SpreadsheetConstructor {
       };
 
       let command = target?.dataset.command;
+      // console.info(command);
 
       if (command) {
 
@@ -920,6 +928,17 @@ export class SpreadsheetConstructor {
         }
 
         switch (command) {
+          case 'text-color':
+          case 'fill-color':
+            props.color = {};
+            try {
+              props.color = JSON.parse(target.dataset.color || '{}');
+            }
+            catch (err) {
+              console.error(err);
+            }
+            break;
+
           case 'set-color':
 
             // swap command
@@ -1108,6 +1127,8 @@ export class SpreadsheetConstructor {
         // the target if this is a color menu
 
         if (parent.dataset.colorCommand) {
+          color_chooser.querySelector('.treb-default-color')?.setAttribute('title', parent.dataset.defaultColorText || 'Default color');
+
           parent.appendChild(color_chooser);
           color_chooser.dataset.colorCommand = parent.dataset.colorCommand;
           color_chooser.dataset.target = parent.dataset.replaceColor || '';

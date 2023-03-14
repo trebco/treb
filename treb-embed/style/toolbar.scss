@@ -240,7 +240,7 @@ $swatch-size: 18px;
           */
         }
 
-        & > .treb-separator {
+        & > [separator] {
           background: $border-color;
           height: 1px;
           margin: 2px 0;
@@ -362,30 +362,23 @@ $swatch-size: 18px;
           border-radius: 2px;          
         }
 
-        .treb-default-color {
-
-          --icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path stroke-linecap='round' stroke='#000' d='M2,2 L14,14 M14,2 L2,14'/></svg>");
-
-          &::before {
-            opacity: .5;
-            content: '';
-            display: block;
-            position: relative;
-            background: currentColor;
-            width: 100%;
-            height: 100%;
-            mask-position: center;
-            -webkit-mask-position: center;
-            mask-repeat: no-repeat;
-            -webkit-mask-repeat: no-repeat;
-            mask-image: var(--icon);
-            -webkit-mask-image: var(--icon);
-            mask-size: 16px 16px;
-            -webkit-mask-size: 16px 16px;
-          }
-
+        .treb-default-color::before {
+          opacity: .7;
+          content: '';
+          display: block;
+          position: relative;
+          background: currentColor;
+          width: 100%;
+          height: 100%;
+          mask-position: center;
+          -webkit-mask-position: center;
+          mask-repeat: no-repeat;
+          -webkit-mask-repeat: no-repeat;
+          mask-image: var(--treb-icon-x);
+          -webkit-mask-image: var(--treb-icon-x);
+          mask-size: 24px 24px;
+          -webkit-mask-size: 24px 24px;
         }
-
       }
     }
 

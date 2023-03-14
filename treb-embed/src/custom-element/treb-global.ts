@@ -2,10 +2,6 @@
 import { SpreadsheetConstructor } from './spreadsheet-constructor';
 import type { EmbeddedSpreadsheetOptions } from '../options';
 import type { EmbeddedSpreadsheet } from '../embedded-spreadsheet';
-import { TREBElement } from './treb-spreadsheet-element';
-
-// re-export for generated types
-export { TREBElement } from './treb-spreadsheet-element';
 
 /**
  * API class for creating spreadsheets. this is intended as a singleton,
@@ -34,7 +30,7 @@ export class TREBGlobal {
   public CreateSpreadsheet(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet {
     const container = options.container;
     const instance = new SpreadsheetConstructor(container);
-    instance.AttachElement();
+    instance.AttachElement(options);
     if (!instance.sheet) {
       throw new Error('construction failed');
     }

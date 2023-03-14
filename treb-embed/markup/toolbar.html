@@ -2,10 +2,10 @@
   <div class="treb-menu" title="File menu" file-menu>
     <div>
       <button data-command="reset">New document</button>
-      <div class="treb-separator"></div>
+      <div separator></div>
       <button data-command="import-file">Open file...</button>
       <button data-command="save-json">Save JSON</button>
-      <div class="treb-separator"></div>
+      <div separator></div>
       <button data-command="export-xlsx">Export XLSX</button>
     </div>
     <button data-icon="file-menu"></button>
@@ -67,7 +67,7 @@
 
   <div composite>
     <button data-command="fill-color" data-color-bar="fill" data-color="{}" title="Fill color"></button>
-    <div class="treb-menu treb-color-menu" data-color-command="fill-color" data-replace-color="fill">
+    <div class="treb-menu treb-color-menu" data-color-command="fill-color" data-replace-color="fill" data-default-color-text="No fill">
       <div class="treb-color-chooser">
         <div class="treb-caption">Theme colors</div>
         <div class="treb-swatches"></div>
@@ -89,7 +89,7 @@
 
   <div composite>
     <button data-command="text-color" data-color-bar="text" data-color="{}" title="Text color"></button>
-    <div class="treb-menu treb-color-menu" data-color-command="text-color" data-replace-color="text">
+    <div class="treb-menu treb-color-menu" data-color-command="text-color" data-replace-color="text" data-default-color-text="Default text color">
       <button dropdown></button>
     </div>
   </div>
@@ -106,8 +106,8 @@
         <button data-command="border-outside" title="Outside borders"></button>        
         <button data-command="border-all" title="All borders"></button>        
         <button data-command="border-none" title="Clear borders"></button>        
-        <div class="treb-separator"></div>
-        <div class="treb-menu treb-color-menu treb-submenu" data-color-command="border-color" data-replace-color="border" title="Border color">
+        <div separator></div>
+        <div class="treb-menu treb-color-menu treb-submenu" data-color-command="border-color" data-replace-color="border" title="Border color" data-default-color-text="Default border color">
           <button data-icon="palette" data-color-bar="border" data-color="{}"></button>
         </div>
       </div>
@@ -137,7 +137,7 @@
       <button data-command="insert-column">Insert column</button>
       <button data-command="delete-row">Delete row</button>
       <button data-command="delete-column">Delete column</button>
-      <div class="treb-separator" add-remove-sheet></div>
+      <div separator add-remove-sheet></div>
       <button data-command="insert-sheet" add-remove-sheet>Add sheet</button>
       <button data-command="delete-sheet" add-remove-sheet>Delete sheet</button>
     </div>
@@ -147,9 +147,7 @@
   <div composite>
     <input class="treb-number-format" title="Number format">
     <div class="treb-menu">
-      <div class="treb-number-format-menu">
-
-      </div>
+      <div class="treb-number-format-menu"></div>
       <button dropdown></button>
     </div>
   </div>
@@ -167,7 +165,7 @@
         <button data-command="insert-donut-chart" title="Insert donut chart"></button>
         <button data-command="insert-bar-chart" title="Insert bar chart"></button>
         <button data-command="insert-line-chart" title="Insert line chart"></button>
-        <div class="treb-separator"></div>
+        <div separator></div>
         <button data-command="insert-image" title="Insert image"></button>
       </div>
       <button dropdown></button>
