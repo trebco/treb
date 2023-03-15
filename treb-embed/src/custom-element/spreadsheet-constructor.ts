@@ -1083,7 +1083,19 @@ export class SpreadsheetConstructor {
     // if you scroll the toolbar. we could track scrolling, but it makes 
     // as much sense to just close any open menu.
 
-    scroller.addEventListener('scroll', () => sheet.Focus());
+    // firefox thinks this is a "scroll linked posiitoning effect". that's
+    // not 100% wrong but it's an absurd thing to flag for that warning.
+
+    if (/firefox/i.test(navigator.userAgent)) {
+      scroller.addEventListener('scroll', () => {
+        if (document.activeElement instanceof HTMLElement ) {
+          document.activeElement.blur();
+        }
+      });
+    }
+    else {
+      scroller.addEventListener('scroll', () => sheet.Focus());
+    }
 
     // we set up a key listener for the escape key when menus are open, we
     // need to remove it if focus goes out of the toolbar

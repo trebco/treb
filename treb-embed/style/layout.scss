@@ -54,6 +54,9 @@
    * it looks like there might be something similar happening on firefox
    * because we lost the cursor (again -- what do they have against cursors?)
    * needs some investigating.
+   * 
+   * [update] turns out it's exactly the same thing, but with a -moz prefix.
+   * weird how that works.
    *
    *===========================================================================*/
 
@@ -86,10 +89,11 @@
   }
 
   /**
-   * fix for chrome (webkit?) 
+   * fix for chrome (webkit?) and also firefox
    */
   [contenteditable] {
     -webkit-user-modify: read-write;
+    -moz-user-modify: read-write;
   }
 
   // ---------------------------------------------------------------------------
@@ -169,8 +173,10 @@
     display: flex;
     flex-direction: row;
     gap: 1em;
-    overflow: hidden;
     transition: opacity .2s ease;
+
+    // why was this here?
+    // overflow: hidden;
 
     // FIXME: move up (or not needed?)
     // line-height: normal;
@@ -184,9 +190,11 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
-    overflow: hidden;
     flex: 1 1 0px;
-      
+
+    // why was this here?
+    // overflow: hidden;
+
     .treb-spreadsheet-body {
       box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4);
     }

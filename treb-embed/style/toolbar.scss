@@ -105,11 +105,9 @@ $swatch-size: 18px;
       justify-content: center;
       position: relative;
 
-      // the problem with this transition is that it gets applied
-      // to separate items in sequence and we get kind of a wave
-      // or cascade effect. is it possible to synchronize them?
+      // removing this transition because it lags when toggling light/dark mode 
 
-      transition: background-color .1s ease;
+      // transition: background-color .1s ease;
       // border-radius: $border-radius;
 
       &[dropdown] {
