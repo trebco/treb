@@ -50,12 +50,8 @@
    * why it does not. in any event the fix _seems_ to be setting that property 
    * on contenteditable elements. I say _seems_ because it is working, but we 
    * should keep an eye out for stability issues. 
-   *
-   * it looks like there might be something similar happening on firefox
-   * because we lost the cursor (again -- what do they have against cursors?)
-   * needs some investigating.
    * 
-   * [update] turns out it's exactly the same thing, but with a -moz prefix.
+   * [update] firefox has the same issue, same fix but with a -moz prefix.
    * weird how that works.
    *
    *===========================================================================*/
@@ -195,8 +191,19 @@
     // why was this here?
     // overflow: hidden;
 
-    .treb-spreadsheet-body {
+    .treb-spreadsheet-backdrop {
+      grid-row: 2;
+      grid-column: 1;
+      z-index: 2;
       box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4);
+    }
+
+    .treb-spreadsheet-body {
+      z-index: 4;
+    }
+
+    .treb-spreadsheet-footer {
+      z-index: 3;
     }
 
     .treb-layout-resize-handle {
