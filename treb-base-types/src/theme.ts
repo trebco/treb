@@ -480,10 +480,17 @@ export const ThemeColorTable = (theme_color: number, tint = .7): TableTheme => {
 }
 
 /**
+ * for stuff that's painted, we wamt to get the corresponding CSS value.
+ * we now set everything via CSS variables, but using the node structure
+ * allows us to read calculated values, especially when there are cascades.
+ * 
+ * I keep trying to change this to just read CSS variables, but that does
+ * not do the same thing.
+ * 
  * @internal
  */
 export const LoadThemeProperties = (container: HTMLElement): Theme => {
-
+    
   const theme: Theme = JSON.parse(JSON.stringify(DefaultTheme));
 
   const Append = (parent: HTMLElement, classes: string): HTMLDivElement => {
@@ -601,6 +608,9 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
 
   // this is a little odd, since we have the check above for "existing element";
   // should we switch on that? or is that never used, and we can drop it? (...)
+
+  // console.info(node);
+  // console.info(theme);
 
   (node.parentElement as Element)?.removeChild(node);
 

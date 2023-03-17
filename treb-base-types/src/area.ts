@@ -61,19 +61,23 @@ export interface IArea {
  * 
  * @internal
  */
-export const IsCellAddress = (obj: any): obj is ICellAddress => {
+export const IsCellAddress = (obj: unknown): obj is ICellAddress => {
   return (
-    typeof obj === 'object' &&
-    typeof obj.row !== 'undefined' &&
-    typeof obj.column !== 'undefined');
+    obj !== null 
+    && typeof obj === 'object' 
+    && 'row' in obj 
+    && 'column' in obj);
 };
 
 /** @internal */
-export const IsArea = (obj: any): obj is IArea => {
+export const IsArea = (obj: unknown): obj is IArea => {
   return (
-    typeof obj === 'object' &&
-    IsCellAddress(obj.start) &&
-    IsCellAddress(obj.end));
+    obj !== null 
+    && typeof obj === 'object' 
+    && 'start' in obj 
+    && IsCellAddress(obj.start) 
+    && 'end' in obj 
+    && IsCellAddress(obj.end));
 };
 
 export interface Dimensions {

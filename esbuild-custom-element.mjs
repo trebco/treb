@@ -55,7 +55,13 @@ const NotifyPlugin = (label) => {
       });
       build.onEnd(result => {
         if (!result.errors.length) {
-          console.info(`${label ? `${label} ` : ''}build complete @ ${new Date().toLocaleTimeString()}`);
+          
+          const keys = Object.keys(result.metafile?.outputs||{});
+          const bytes = keys.length ? result.metafile?.outputs[keys[0]]?.bytes : 0;
+          const size = bytes ? `; build size: ${FormatSize(bytes)}` : '';
+
+          console.info(`${label ? `${label} ` : ''}build complete @ ${new Date().toLocaleTimeString()}${size}`);
+          // console.info(result.metafile);
         }
         if (!label) {
           console.info('');
@@ -70,7 +76,7 @@ const NotifyPlugin = (label) => {
  * @param {number} size - size in bytes
  * @returns {string} - size as a human readable string
  */
-const FormatSize = (size) => {
+const FormatSize = (size, precision = 1) => {
 
   const units = ['B', 'KB', 'MB'];
   let index = 0;
@@ -82,7 +88,7 @@ const FormatSize = (size) => {
     }
   }
 
-  return `${size.toFixed(1)} ${units[index]}`;
+  return `${size.toFixed(2)} ${units[index]}`;
 
 };
 

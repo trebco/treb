@@ -15,11 +15,10 @@ $menu-item-hover-color: var(--treb-toolbar-hover-button-background, #f3f4f6);
 $box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .4);
 $border-radius: 3px;
 
-$font-size: 14px;
 $split-font-size: 10px;
 $swatch-size: 18px;
 
-.treb-layout {
+.treb-main {
 
   .treb-layout-header {
     
@@ -41,13 +40,13 @@ $swatch-size: 18px;
   .treb-toolbar {
 
     color: var(--treb-toolbar-color, var(--treb-ui-color, #333));
-    font-size: $font-size;
+    font-size: var(--treb-toolbar-font-size, inherit);
 
     // ----
 
     display: flex;
     flex-direction: row;
-    gap: .5em;
+    gap: .5rem;
 
     & > div {
       display: flex;
@@ -120,7 +119,7 @@ $swatch-size: 18px;
           height: 0px;
           border: 5px solid transparent;
           border-top-color: currentColor;
-          top: 18px; // FIXME: specify in ems
+          top: 18px; // FIXME: specify in ems // NO
           left: 50%;
           transform: translate(-50%, -50%);
         }
@@ -196,13 +195,21 @@ $swatch-size: 18px;
 
     .treb-menu {
 
-      z-index: 999; // FIXME: NO
+      // on Safari, we need to make these menus focus targets, so we can 
+      // use :focus-within. they will get a tabIndex. we will preferentially 
+      // focus on buttons within the menus, but there will be flashes where 
+      // focus is visible on the menu itself, so to reduce jitter we remove
+      // the outline.
+
+      outline: none;
+
+      // ---
 
       & > div {
 
         display: none; 
 
-        margin-top: .5em;
+        margin-top: .5rem;
 
         flex-direction: column;
         background: $menu-background;
@@ -218,7 +225,7 @@ $swatch-size: 18px;
           background: transparent;
           border: 0;
           text-align: left;
-          padding: .4em 1em;
+          padding: .4rem 1rem;
           margin: 3px 0;
           transition: background-color .125s ease;
 
@@ -232,10 +239,6 @@ $swatch-size: 18px;
           & > button, & > .treb-menu > button {
             padding: 0;
           }
-          /*
-          padding-left: .5em;
-          padding-right: .5em;
-          */
         }
 
         & > [separator] {
@@ -318,7 +321,7 @@ $swatch-size: 18px;
       }
 
       & > div {
-        padding: .75em .75em;
+        padding: .75rem .75rem;
       }
 
       & > div + div {
@@ -329,12 +332,12 @@ $swatch-size: 18px;
         
         display: flex;
         flex-direction: row;
-        gap: .5em;
+        gap: .5rem;
         align-items: center;
 
         input {
           flex-grow: 1;
-          padding: 0 .5em;
+          padding: 0 .5rem;
         }
 
         input, button {
@@ -349,7 +352,7 @@ $swatch-size: 18px;
 
         display: grid;
         grid-template-columns: repeat(10, 1fr);
-        gap: .5em;
+        gap: .5rem;
 
         button {
           width: $swatch-size;
@@ -385,10 +388,10 @@ $swatch-size: 18px;
         font: inherit;
         resize: both;
         border: 1px solid $border-color;
-        padding: .25em;
+        padding: .25rem;
         line-height: 1.5;
-        margin: .5em;
-        height: 10em;
+        margin: .5rem;
+        height: 10rem;
       }
 
       textarea + div {
@@ -396,8 +399,8 @@ $swatch-size: 18px;
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        gap: .5em;
-        padding: 0 0 .5em 0;
+        gap: .5rem;
+        padding: 0 0 .5rem 0;
 
         button {
           border: 1px solid $border-color;

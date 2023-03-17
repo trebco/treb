@@ -1609,30 +1609,7 @@ export class Grid extends GridBase {
 
     // going to rename to clarify.
 
-
     this.view_node = view_node;
-
-    // so here we want the class list to read
-    //
-    // ... treb-main [treb-ua-windows] treb-theme ...
-    //
-    // our internal styles will be scoped to `.treb-main` and optionally
-    // `.treb-main.treb-ua-windows`; then you should be able to override
-    // using `.treb-main.treb-theme`. we have some extra classes we still 
-    // need to clean up, though.
-
-    // grid_container.classList.add('treb-main');
-
-    /* MOVE
-
-    if (UA.is_windows) {
-      grid_container.classList.add('treb-ua-windows');
-    }
-    else if (UA.is_mac) {
-      grid_container.classList.add('treb-ua-osx');
-    }
-
-    */
 
     // MOVE
 
@@ -6696,15 +6673,15 @@ export class Grid extends GridBase {
     if (this.tab_bar) {
       let data: StatsEntry[] = [];
 
+      // why does this get tested on every call? just set the function
+
       if (typeof this.options.stats === 'function') {
         if (!this.primary_selection.empty) {
-          // text = this.options.stats.call(undefined, this.GetRange(this.primary_selection.area));
           data = this.options.stats.call(undefined, this.GetRange(this.primary_selection.area));
         }
       }
       else {
         if (!this.primary_selection.empty && this.primary_selection.area.count > 1) {
-          // text = this.RenderStats(this.GetRange(this.primary_selection.area));
           data = this.RenderStats(this.GetRange(this.primary_selection.area));
         }
       }

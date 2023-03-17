@@ -291,7 +291,7 @@ export class SpreadsheetConstructor {
 
     // handle sidebar collapse
 
-    this.layout_element = root.querySelector('.treb-layout') as HTMLElement;
+    this.layout_element = root.querySelector('.treb-main') as HTMLElement;
     const button = root.querySelector('.treb-toggle-sidebar-button');
 
     if (button && this.layout_element) {
@@ -909,7 +909,6 @@ export class SpreadsheetConstructor {
       };
 
       let command = target?.dataset.command;
-      // console.info(command);
 
       if (command) {
 
@@ -1121,14 +1120,32 @@ export class SpreadsheetConstructor {
       }
     };
 
-    // positioning on focusin will catch keyboard and mouse navigation
+    const PositionMenu = (event: FocusEvent|MouseEvent) => {
 
-    toolbar.addEventListener('focusin', event => {
+      // FIXME: because these are situational, move the 
+      // lookups/checks outside of this function into the 
+      // event handlers
 
-      const target = event.target as HTMLElement;
-      const parent = target?.parentElement;
+      let target = event.target as HTMLElement;
+      let parent = target?.parentElement;
 
-      if (parent?.classList.contains('treb-menu')) {
+      if (target?.classList.contains('treb-menu')) {
+        parent = target;
+        for (const child of Array.from(parent.children)) {
+          if (child.tagName === 'BUTTON') {
+            target = child as HTMLElement;
+            break;
+          }
+        }
+      }
+      else if (!parent?.classList.contains('treb-menu')) {
+        return;
+      }
+
+      // if (parent?.classList.contains('treb-menu')) 
+      if (target && parent) {
+
+        // console.info('positioning');
 
         if (!handlers_attached) {
           toolbar.addEventListener('focusout', focusout_handler);
@@ -1193,14 +1210,15 @@ export class SpreadsheetConstructor {
 
         }
 
-        const focus = menu.querySelector('textarea, input') as HTMLElement;
+        // const focus = menu.querySelector('textarea, input') as HTMLElement;
+        const focus = menu.querySelector('textarea') as HTMLElement;
         if (focus) {
           requestAnimationFrame(() => focus.focus());
         }
 
       }
 
-    });
+    };
 
     const format_menu = this.root?.querySelector('.treb-number-format-menu') as HTMLElement;
     if (format_menu) {
@@ -1232,6 +1250,33 @@ export class SpreadsheetConstructor {
         }
       });
 
+    }
+
+    const safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    // positioning on focusin will catch keyboard and mouse navigation
+    // ...but this won't work on safari. ...
+
+    toolbar.addEventListener('focusin', event => {
+      PositionMenu(event);
+    });
+
+    // safari disables focus on buttons for some reason. you can override
+    // that, but does anyone do that? also, what about osx?
+    //
+    // for safari, we'll position on mousedown. this will result in some 
+    // extra calls to the position routine but that shouldn't be too 
+    // bad. we also need to remove focus on the menu elements we're adding
+    // tab indexes to.
+
+    if(safari) {
+      const elements = Array.from(toolbar.querySelectorAll('.treb-menu') as NodeListOf<HTMLElement>);
+      for (const element of elements) {
+        element.tabIndex = 0;
+      }
+      toolbar.addEventListener('mousedown', event => {
+        PositionMenu(event);
+      });  
     }
 
   }

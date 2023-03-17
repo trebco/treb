@@ -1,26 +1,14 @@
 
-// legacy
-
 @import './grid.scss';
 @import './theme-defaults.scss';
 @import './dark-theme.scss';
-
-// not scoped to treb-layout, but has its own scope; also, 
-// no imports & relatively clean
-
 @import 'treb-charts/style/charts.scss';
-
-// relatively clean, also no imports
-
 @import './dialog.scss';
 @import './spinner.scss';
-
-// local, new (or scrubbed)
-
 @import './treb-icons.scss';
 @import './toolbar.scss';
 
-.treb-layout {
+.treb-main {
 
   /*============================================================================
    *
@@ -65,7 +53,7 @@
     // more specific about what we unset in order to avoid any 
     // unexpected side effects.
 
-    all: revert;
+    // all: revert;
     box-sizing: border-box;
 
   }
@@ -100,13 +88,8 @@
 
   font-style: normal;
   font-weight: normal;
-  // color: #333;
   color: inherit;
-  font-size: 12pt;
-
-  // FIXME: use stack, var
-  // font: 14px sans-serif;
-  // color: #333;
+  font-size: 14px; // ?
 
   height: 100%;
   width: 100%;
@@ -254,21 +237,24 @@
 
   .treb-layout-sidebar {
 
+    // we're using fixed sizes for buttons, but then ems for spacing.
+    // that is not good.
+
     grid-row: 2;
     grid-column: 2;
 
-    padding-top: 1em;
+    padding-top: 1rem;
     grid-row: 2;
     grid-column: 2;
     display: flex;
     flex-direction: column;
-    gap: .75em;
+    gap: .75rem;
     justify-content: flex-start;
     overflow: hidden;
     width: 2.5rem;
 
-    padding-top: 3em;
-    width: 3em;
+    padding-top: 3rem;
+    width: 3rem;
 
     align-items: center;
 
@@ -375,36 +361,6 @@
     }
 
   }
-
-  /*
-  .treb-resize-handle {
-
-    // FIXME: use the stack, but (at least firefox) needs a z-index on this
-    z-index: 20;
-
-    border: .5rem solid var(--treb-resize-handle-color, blue);
-    border-top-color: transparent;
-    border-left-color: transparent;
-    position: absolute;
-    bottom: 0px;
-    right: 0px;
-    cursor: nw-resize;
-  
-    // the opacity change is just annoying, don't bother
-    / *
-    opacity: .35;
-    transition: opacity var(--treb-resize-transition, .1s ease-in-out);
-    &:hover, &.retain-opacity {
-      opacity: 1;
-    }
-    * /
-  
-    &.disabled {
-      display: none;
-    }
-  
-  }
-  */
 
 }
 
