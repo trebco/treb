@@ -1,4 +1,4 @@
-/*! API v25.0.0-rc3. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v25.0. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
