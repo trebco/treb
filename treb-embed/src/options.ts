@@ -201,17 +201,9 @@ export interface EmbeddedSpreadsheetOptions {
    * enable handling complex numbers in function calculation. turning this
    * off doesn't actually disable complex numbers. it means that functions 
    * will not return complex numbers unless one of the arguments is complex.
+   * @see https://docs.treb.app/en/complex-numbers
    * 
-   * for example, if complex numbers are off, `=SQRT(-1)` will return `#VALUE`.
-   * if complex numbers are on, `=SQRT(-1)` will return `i`.
-   * 
-   * even if complex numbers are off, however, `=SQRT(-1 + 0i)` will return 
-   * `i` because the argument is complex.
-   * 
-   * currently this behavior applies to `SQRT`, `POWER` and the exponentiation 
-   * operator `^`.
-   * 
-   * in version 22, this defaults to `off`.
+   * in version 25, complex defaults to `off`.
    */
   complex?: 'on'|'off';
 
