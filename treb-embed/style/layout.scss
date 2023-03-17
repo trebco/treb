@@ -183,10 +183,12 @@
 
     .treb-spreadsheet-body {
       z-index: 4;
+      position: relative;
     }
 
     .treb-spreadsheet-footer {
-      z-index: 3;
+      z-index: 5;
+      position: relative;
     }
 
     .treb-layout-resize-handle {
