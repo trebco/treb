@@ -23,6 +23,7 @@ const html_minifier_options = {
  * @property {boolean} verbose - log all plugin inputs. helpful for dev/debug.
  * @property {boolean} minify - separate from dev/production, in case we need to test
  * @property {boolean} xlsx_support - import/export xlsx files
+ * @property {string} output_filename - generated filename. we enforce the directory.
  */
 
 /** 
@@ -37,6 +38,7 @@ const options = {
   minify: true, 
   verbose: false,
   xlsx_support: true,
+  output_filename: 'treb-spreadsheet.mjs',
 };
 
 /**
@@ -309,6 +311,9 @@ for (let i = 0; i < process.argv.length; i++) {
   if (process.argv[i] === '--no-xlsx') {
     options.xlsx_support = false;
   }
+  if (process.argv[i] === '--output-filename') {
+    options.output_filename = process.argv[++i];
+  }
 }
 
 /** @type esbuild.BuildOptions */
@@ -320,7 +325,7 @@ const build_options = {
     js: `/*! TREB v${pkg.version}. Copyright 2018-${new Date().getFullYear()} trebco, llc. All rights reserved. LGPL: https://treb.app/license */`
   },
   bundle: true,
-  outfile: 'build/treb-spreadsheet.mjs',
+  outfile: 'build/' + options.output_filename,
   outExtension: { '.js': '.mjs' },
   minify: options.minify,
   metafile: true,

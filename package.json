@@ -36,6 +36,7 @@
   },
   "scripts": {
     "build": "node esbuild-custom-element.mjs",
+    "build-light": "node esbuild-custom-element.mjs --no-xlsx --output-filename treb-spreadsheet-light.mjs",
     "dev": "node esbuild-custom-element.mjs --dev",
     "clean": "rm -fr build dist declaration",
     "watch": "node --watch esbuild-custom-element.mjs --watch --dev",
