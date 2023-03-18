@@ -258,47 +258,47 @@ $swatch-size: 18px;
 
     // ---------------------------------------------------------------------------
 
-    [data-icon=file-menu]{ --icon: var(--treb-icon-file-menu); }
+    [data-icon=file-menu]{ --icon: var(--icon-file-menu); }
     
-    [data-command=justify-left] { --icon: var(--treb-icon-text-align-left); }
-    [data-command=justify-right] { --icon: var(--treb-icon-text-align-right); }
-    [data-command=justify-center] { --icon: var(--treb-icon-text-align-center); }
+    [data-command=justify-left] { --icon: var(--icon-text-align-left); }
+    [data-command=justify-right] { --icon: var(--icon-text-align-right); }
+    [data-command=justify-center] { --icon: var(--icon-text-align-center); }
 
-    [data-command=align-top] { --icon: var(--treb-icon-text-align-top); }
-    [data-command=align-middle] { --icon: var(--treb-icon-text-align-middle); }
-    [data-command=align-bottom] { --icon: var(--treb-icon-text-align-bottom); }
-    [data-command=merge-cells] { --icon: var(--treb-icon-merge-cells); }
-    [data-command=unmerge-cells] { --icon: var(--treb-icon-unmerge-cells); }
+    [data-command=align-top] { --icon: var(--icon-text-align-top); }
+    [data-command=align-middle] { --icon: var(--icon-text-align-middle); }
+    [data-command=align-bottom] { --icon: var(--icon-text-align-bottom); }
+    [data-command=merge-cells] { --icon: var(--icon-merge-cells); }
+    [data-command=unmerge-cells] { --icon: var(--icon-unmerge-cells); }
 
-    [data-command=fill-color] { --icon: var(--treb-icon-fill-color); }
-    [data-command=text-color] { --icon: var(--treb-icon-text-color); }
+    [data-command=fill-color] { --icon: var(--icon-fill-color); }
+    [data-command=text-color] { --icon: var(--icon-text-color); }
 
-    [data-command=lock-cells] { --icon: var(--treb-icon-lock); }
-    [data-command=wrap-text] { --icon: var(--treb-icon-wrap-text); }
-    [data-icon=comment] { --icon: var(--treb-icon-comment); }
-    [data-icon=table] { --icon: var(--treb-icon-table); }
+    [data-command=lock-cells] { --icon: var(--icon-lock); }
+    [data-command=wrap-text] { --icon: var(--icon-wrap-text); }
+    [data-icon=comment] { --icon: var(--icon-comment); }
+    [data-icon=table] { --icon: var(--icon-table); }
     
-    [data-icon=layout] { --icon: var(--treb-icon-layout); }
-    [data-command=freeze-panes] { --icon: var(--treb-icon-freeze); }
+    [data-icon=layout] { --icon: var(--icon-layout); }
+    [data-command=freeze-panes] { --icon: var(--icon-freeze); }
     
-    [data-command=insert-column-chart] { --icon: var(--treb-icon-column-chart); }
-    [data-command=insert-donut-chart] { --icon: var(--treb-icon-donut-chart); }
-    [data-command=insert-bar-chart] { --icon: var(--treb-icon-bar-chart); }
-    [data-command=insert-line-chart] { --icon: var(--treb-icon-line-chart); }
-    [data-command=insert-image] { --icon: var(--treb-icon-image); }
+    [data-command=insert-column-chart] { --icon: var(--icon-column-chart); }
+    [data-command=insert-donut-chart] { --icon: var(--icon-donut-chart); }
+    [data-command=insert-bar-chart] { --icon: var(--icon-bar-chart); }
+    [data-command=insert-line-chart] { --icon: var(--icon-line-chart); }
+    [data-command=insert-image] { --icon: var(--icon-image); }
 
-    [data-command=border-bottom] { --icon: var(--treb-icon-border-bottom); }
-    [data-command=border-left] { --icon: var(--treb-icon-border-left); }
-    [data-command=border-right] { --icon: var(--treb-icon-border-right); }
-    [data-command=border-top] { --icon: var(--treb-icon-border-top); }
-    [data-command=border-outside] { --icon: var(--treb-icon-border-outer); }
-    [data-command=border-all] { --icon: var(--treb-icon-border-all); }
-    [data-command=border-none] { --icon: var(--treb-icon-border-none); }
-    [data-command=border-double-bottom] { --icon: var(--treb-icon-border-double-bottom); }
-    [data-icon=palette] { --icon: var(--treb-icon-palette); } 
+    [data-command=border-bottom] { --icon: var(--icon-border-bottom); }
+    [data-command=border-left] { --icon: var(--icon-border-left); }
+    [data-command=border-right] { --icon: var(--icon-border-right); }
+    [data-command=border-top] { --icon: var(--icon-border-top); }
+    [data-command=border-outside] { --icon: var(--icon-border-outer); }
+    [data-command=border-all] { --icon: var(--icon-border-all); }
+    [data-command=border-none] { --icon: var(--icon-border-none); }
+    [data-command=border-double-bottom] { --icon: var(--icon-border-double-bottom); }
+    [data-icon=palette] { --icon: var(--icon-palette); } 
 
     [data-command=recalculate] { 
-      --icon: var(--treb-icon-recalculate); 
+      --icon: var(--icon-recalculate); 
       --icon-size: 20px 20px;
     } 
 
@@ -375,8 +375,8 @@ $swatch-size: 18px;
           -webkit-mask-position: center;
           mask-repeat: no-repeat;
           -webkit-mask-repeat: no-repeat;
-          mask-image: var(--treb-icon-x);
-          -webkit-mask-image: var(--treb-icon-x);
+          mask-image: var(--icon-x);
+          -webkit-mask-image: var(--icon-x);
           mask-size: 24px 24px;
           -webkit-mask-size: 24px 24px;
         }

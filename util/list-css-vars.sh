@@ -22,24 +22,21 @@ unique=($(
     fi
   done | sort -u))
 
-## dump uniques
-#for i in ${unique[@]}; do
-#  echo $i
-#done;
+# remove icons (--treb-icon-, --treb-sidebar-icon)
+unique=(${unique[@]//*icon*})
 
 # update: dump as JSON. this is beyond my bashing skills, 
 # have to have an empty string
 
 # update2: OK I can do it, but it's ugly
 
-FIRST=1
-printf "[\n"
+# update3: a little cleaner, but we still set that 
+# variable on every pass of the loop
+
+PREFIX="[\n"
 for i in ${unique[@]}; do
-  if [[ $FIRST -ne 1 ]]; then
-    printf ",\n";
-  fi;
-  printf '\t"%s"' $i
-  FIRST=0
+  printf "${PREFIX}\t\"%s\"" $i
+  PREFIX=",\n";
 done;
 printf "\n]\n"
 

@@ -276,8 +276,8 @@
         border-top-right-radius: 0px;
         border-bottom-right-radius: 0px;
         &::after {
-          mask-image: var(--treb-sidebar-icon-chevron-left);
-          -webkit-mask-image: var(--treb-sidebar-icon-chevron-left);
+          mask-image: var(--icon-chevron-left);
+          -webkit-mask-image: var(--icon-chevron-left);
         }
         background: var(--treb-toolbar-button-background, #fff);
     
@@ -303,8 +303,8 @@
       mask-repeat: no-repeat;
       -webkit-mask-repeat: no-repeat;
       transition: background-color 0.1s ease;
-      mask-image: var(--treb-mask-image);
-      -webkit-mask-image: var(--treb-mask-image);
+      mask-image: var(--icon);
+      -webkit-mask-image: var(--icon);
     }
   
     &:hover::after {
@@ -312,23 +312,23 @@
     }
 
     &[data-command=recalculate] {
-      --treb-mask-image: var(--treb-sidebar-icon-reset);
+      --icon: var(--icon-reset);
     }
 
     &[data-command=toggle-toolbar] {
-      --treb-mask-image: var(--treb-sidebar-icon-toolbar);
+      --icon: var(--icon-toolbar);
     }
 
     &[data-command=revert] {
-      --treb-mask-image: var(--treb-sidebar-icon-revert);
+      --icon: var(--icon-revert);
     }
 
     &[data-command=export-xlsx] {
-      --treb-mask-image: var(--treb-sidebar-icon-export);
+      --icon: var(--icon-export);
     }
 
     &[data-command=about] {
-      --treb-mask-image: var(--treb-sidebar-icon-about);
+      --icon: var(--icon-about);
     }
    
   }
@@ -358,8 +358,8 @@
     &::after {
       height: 12px;
       width: 12px;
-      mask-image: var(--treb-sidebar-icon-chevron-right);
-      -webkit-mask-image: var(--treb-sidebar-icon-chevron-right);
+      mask-image: var(--icon-chevron-right);
+      -webkit-mask-image: var(--icon-chevron-right);
     }
 
   }
