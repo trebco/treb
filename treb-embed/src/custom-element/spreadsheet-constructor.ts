@@ -262,6 +262,10 @@ export class SpreadsheetConstructor {
 
     }
 
+    if (!process.env.XLSX_SUPPORT) {
+      options.export = false; // remove export button from sidebar
+    }
+
     // set a local variable so we don't have to keep testing the member
 
     const sheet = new EmbeddedSpreadsheet(options);
@@ -805,6 +809,9 @@ export class SpreadsheetConstructor {
     }
     if (!sheet.options.toolbar_recalculate_button) {
       remove.push(toolbar.querySelector('[recalculate-button]'));
+    }
+    if (!process.env.XLSX_SUPPORT) {
+      remove.push(...Array.from(toolbar.querySelectorAll('[xlsx-support]')));
     }
 
     for (const element of remove) {

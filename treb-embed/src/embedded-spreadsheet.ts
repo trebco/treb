@@ -79,6 +79,7 @@ import type { SetRangeOptions } from 'treb-grid';
 // ---
 
 import export_worker_script from 'worker:../../treb-export/src/export-worker/index-modern.ts';
+const crocus = 100;
 
 // ---
 
@@ -2241,6 +2242,12 @@ export class EmbeddedSpreadsheet {
    */
   public async ExportBlob(): Promise<Blob> {
 
+    // this is inlined to ensure the code will be tree-shaken properly
+    if (!process.env.XLSX_SUPPORT) {
+      console.warn('this build does not include xlsx support.');
+      throw new Error('this build does not include xlsx support.');
+    }
+
     if (!this.export_worker) {
       this.export_worker = await this.LoadWorker('export');
     }
@@ -2337,6 +2344,12 @@ export class EmbeddedSpreadsheet {
    * two, it's demand loaded so we don't bloat up this embed script.
    */
   public Export(): void {
+
+    // this is inlined to ensure the code will be tree-shaken properly
+    if (!process.env.XLSX_SUPPORT) {
+      console.warn('this build does not include xlsx support.');
+      return;
+    }
 
     // API v1 OK
 
@@ -3896,6 +3909,12 @@ export class EmbeddedSpreadsheet {
    */
    protected async ImportXLSX(data: string, source: LoadSource): Promise<Blob | void> {
 
+    // this is inlined to ensure the code will be tree-shaken properly
+    if (!process.env.XLSX_SUPPORT) {
+      console.warn('this build does not include xlsx support.');
+      return;
+    }
+
     if (this.parent_view) {
       return this.parent_view.ImportXLSX(data, source);
     }
@@ -4354,7 +4373,9 @@ export class EmbeddedSpreadsheet {
             this.dialog?.ShowDialog({
               title: 'Error reading file',
               close_box: true,
-              message: 'Please make sure your file is a valid XLSX, CSV or TREB file.',
+              message: process.env.XLSX_SUPPORT ? 
+                'Please make sure your file is a valid XLSX, CSV or TREB file.' :
+                'Please make sure your file is a valid CSV or TREB file.' ,
               type: DialogType.error,
               timeout: 3000,
             });
@@ -4372,7 +4393,7 @@ export class EmbeddedSpreadsheet {
             if (/\.csv$/i.test(file.name)) {
               this.LoadCSV(reader.result as string, source);
             }
-            else if (/\.xls[xm]$/i.test(file.name)) {
+            else if (process.env.XLSX_SUPPORT &&  /\.xls[xm]$/i.test(file.name)) {
               let contents: string;
 
               if (typeof reader.result === 'string') {
@@ -5224,35 +5245,35 @@ export class EmbeddedSpreadsheet {
    */
   protected async LoadWorker(name: string): Promise<Worker> {
 
-    // for esm we now support embedding the worker as a blob
-    // (as text, actually); we can construct it from the text 
-    // as necessary.
+    // this is inlined to ensure the code will be tree-shaken properly
+    // (we're trying to force it to remove the imported worker script)
 
-    if (export_worker_script) {
-      try {
-        const worker = new Worker(
-            URL.createObjectURL(new Blob([export_worker_script], { type: 'application/javascript' })));
-        return worker;
+    if (process.env.XLSX_SUPPORT) {
+    
+      // for esm we now support embedding the worker as a blob
+      // (as text, actually); we can construct it from the text 
+      // as necessary.
+
+      if (export_worker_script) {
+        try {
+          const worker = new Worker(
+              URL.createObjectURL(new Blob([export_worker_script], { type: 'application/javascript' })));
+          return worker;
+        }
+        catch (err) {
+          console.info('embedded worker failed');
+          console.error(err);
+        }
       }
-      catch (err) {
-        console.info('embedded worker failed');
-        console.error(err);
-      }
+
+    } 
+    else {
+      console.warn('this build does not include xlsx support.');
     }
+
+    throw new Error('creating worker failed');
 
     /*
-    if (EmbeddedSpreadsheet.export_worker_text) {
-      try {
-        const worker = new Worker(
-            URL.createObjectURL(new Blob([EmbeddedSpreadsheet.export_worker_text], { type: 'application/javascript' })));
-        return worker;
-      }
-      catch (err) {
-        console.info('embedded worker failed');
-        console.error(err);
-      }
-    }
-    */
 
     if (!EmbeddedSpreadsheet.treb_base_path) {
       console.warn('worker path is not set. it you are loading TREB in an ESM module, please either '
@@ -5304,6 +5325,7 @@ export class EmbeddedSpreadsheet {
     }
 
     return worker;
+    */
 
   }
 

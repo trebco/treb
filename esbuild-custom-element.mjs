@@ -22,6 +22,7 @@ const html_minifier_options = {
  * @property {boolean} watch
  * @property {boolean} verbose - log all plugin inputs. helpful for dev/debug.
  * @property {boolean} minify - separate from dev/production, in case we need to test
+ * @property {boolean} xlsx_support - import/export xlsx files
  */
 
 /** 
@@ -35,6 +36,7 @@ const options = {
   watch: false,
   minify: true, 
   verbose: false,
+  xlsx_support: true,
 };
 
 /**
@@ -58,7 +60,7 @@ const NotifyPlugin = (label) => {
           
           const keys = Object.keys(result.metafile?.outputs||{});
           const bytes = keys.length ? result.metafile?.outputs[keys[0]]?.bytes : 0;
-          const size = bytes ? `; build size: ${FormatSize(bytes)}` : '';
+          const size = bytes ? `; build size: ${FormatSize(bytes, 2)}` : '';
 
           console.info(`${label ? `${label} ` : ''}build complete @ ${new Date().toLocaleTimeString()}${size}`);
           // console.info(result.metafile);
@@ -88,7 +90,7 @@ const FormatSize = (size, precision = 1) => {
     }
   }
 
-  return `${size.toFixed(2)} ${units[index]}`;
+  return `${size.toFixed(precision)} ${units[index]}`;
 
 };
 
@@ -304,6 +306,9 @@ for (let i = 0; i < process.argv.length; i++) {
   if (process.argv[i] === '--verbose') {
     options.verbose = true;
   }
+  if (process.argv[i] === '--no-xlsx') {
+    options.xlsx_support = false;
+  }
 }
 
 /** @type esbuild.BuildOptions */
@@ -321,6 +326,7 @@ const build_options = {
   metafile: true,
   format: 'esm',
   define: {
+    'process.env.XLSX_SUPPORT': `${options.xlsx_support}`,
     'process.env.NODE_ENV': `"${options.version}"`,
     'process.env.BUILD_VERSION': `"${pkg.version}"`,
     'process.env.BUILD_NAME': `"${pkg.name}"`,

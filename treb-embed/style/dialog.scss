@@ -53,6 +53,7 @@
 
     line-height: 1.6em;
 
+    font-size: var(--treb-dialog-font-size, 16px);
     border: 1px solid var(--treb-dialog-border-color, var(--treb-ui-border-color, #999));
 
     border-top-width: 3px;
