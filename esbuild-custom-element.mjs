@@ -325,7 +325,7 @@ const build_options = {
     js: `/*! TREB v${pkg.version}. Copyright 2018-${new Date().getFullYear()} trebco, llc. All rights reserved. LGPL: https://treb.app/license */`
   },
   bundle: true,
-  outfile: 'build/' + options.output_filename,
+  outfile: 'dist/' + options.output_filename,
   outExtension: { '.js': '.mjs' },
   minify: options.minify,
   metafile: true,

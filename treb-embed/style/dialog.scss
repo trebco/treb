@@ -55,6 +55,7 @@
 
     font-size: var(--treb-dialog-font-size, 16px);
     border: 1px solid var(--treb-dialog-border-color, var(--treb-ui-border-color, #999));
+    box-shadow: 0 4px 6px -4px rgba(0, 0, 0, .3);
 
     border-top-width: 3px;
     border-top-color: rgb(0, 157, 255);

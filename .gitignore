@@ -1,13 +1,11 @@
 node_modules
 declaration
-dist
+build
 .vscode
 coverage
 
 temp
 etc
-
-build-element
 
 #
 # we might want to check this in once it stabilizes, 

@@ -7,7 +7,7 @@
     "strict": true,
     "composite": true,
     "baseUrl": "./",
-    "outDir": "./dist",
+    "outDir": "./build",
     "experimentalDecorators": true,
     "downlevelIteration": true,
     "sourceMap": true,

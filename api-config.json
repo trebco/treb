@@ -2,7 +2,7 @@
 
   "package": "./package.json",
 
-  "output": "./build/treb.d.ts",
+  "output": "./dist/treb.d.ts",
 
   "root": "./declaration",
 
