@@ -552,6 +552,63 @@ export class GridBase {
 
   }
 
+  /**
+   * check if we can paste into the target area(s). this will
+   * return false if the areas contain locked cells, or part of
+   * an array or merge but not the whole array or merge.
+   * 
+   * @param areas 
+   * @returns 
+   */
+  protected ValidatePasteAreas(areas: Area[]): boolean {
+    for (const area of areas) {
+
+      let sheet: Sheet|undefined = this.active_sheet;
+      if (area.start.sheet_id && area.start.sheet_id !== sheet.id) {
+        sheet = this.model.sheets.Find(area.start.sheet_id);
+      }
+      if (!sheet) {
+        return false;
+      }
+
+      let valid = true;
+
+      sheet.cells.Apply2(area, cell => {
+        if (cell.style?.locked)  {
+          console.info('invalid: locked cells');
+          valid = false;
+        }
+        if (cell.merge_area) {
+          if (!area.Contains(cell.merge_area.start) || !area.Contains(cell.merge_area.end)) {
+            console.info('invalid: merge area');
+            valid = false;
+          }
+        }
+        if (cell.area) {
+          if (!area.Contains(cell.area.start) || !area.Contains(cell.area.end)) {
+            console.info('invalid: array');
+            valid = false;
+          }
+        }
+        /* ok for paste
+        if (cell.table) {
+          if (!area.Contains(cell.table.area.start) || !area.Contains(cell.table.area.end)) {
+            console.info('invalid: table');
+            valid = false;
+          }
+        }
+        */
+        return valid;
+      });
+
+      if (!valid) {
+        return false;
+      }
+
+    }
+    return true;
+  }
+
   protected SetValidationInternal(command: DataValidationCommand): void {
 
     let cell: Cell|undefined;

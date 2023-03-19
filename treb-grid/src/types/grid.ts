@@ -7084,6 +7084,11 @@ export class Grid extends GridBase {
           area.Resize(paste_areas[0].rows, paste_areas[0].columns);
         }
 
+        if (!this.ValidatePasteAreas(paste_areas)) {
+          this.Error(ErrorCode.invalid_area_for_paste);
+          return;
+        }
+
         // paste in, offsetting for the paste area. this part loops
         // when recycling, so that the offsets are corrected
 
@@ -7215,6 +7220,11 @@ export class Grid extends GridBase {
         area.Resize(paste_areas[0].rows, paste_areas[0].columns);
       }
 
+      if (!this.ValidatePasteAreas(paste_areas)) {
+        this.Error(ErrorCode.invalid_area_for_paste);
+        return;
+      }
+      
       for (const paste_area of paste_areas) {
         //for (let r = 0; r < lines.length; r++) {
         for (let r = 0; r < source.length; r++) {

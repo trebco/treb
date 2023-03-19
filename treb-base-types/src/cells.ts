@@ -924,6 +924,7 @@ export class Cells {
 
   /**
    * apply function to address/area
+   * @deprecated - use Apply2
    */
   public Apply(area: Area|ICellAddress, f: (cell: Cell, c?: number, r?: number) => void, create_missing_cells = false): void {
 
@@ -958,6 +959,56 @@ export class Cells {
           const row = this.data[r];
           for ( let c = start.column; c <= end.column; c++ ){
             if (row[c]) f(row[c], c, r);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * apply function to address/area
+   * 
+   * this version lets you abort by returning false from the callback function
+   */
+  public Apply2(area: Area|ICellAddress, func: (cell: Cell, c?: number, r?: number) => boolean, create_missing_cells = false): void {
+
+    // allow single address
+    if (IsCellAddress(area)) {
+      area = new Area(area);
+    }
+
+    // why not just cap? (...)
+    if (area.entire_column || area.entire_row) {
+      throw new Error(`don't iterate infinite cells`);
+    }
+    
+    // these are accessors so we don't want them in the loop
+    const start = area.start;
+    const end = area.end;
+
+    if (create_missing_cells){
+      for ( let r = start.row; r <= end.row; r++ ){
+        if (!this.data[r]) this.data[r] = [];
+        const row = this.data[r];
+        for ( let c = start.column; c <= end.column; c++ ){
+          if (!row[c]) row[c] = new Cell();
+          if (!func(row[c], c, r)) {
+            return;
+          }
+        }
+      }
+    }
+    else {
+      // we can loop over indexes that don't exist, just check for existence
+      for ( let r = start.row; r <= end.row; r++ ){
+        if (this.data[r]){
+          const row = this.data[r];
+          for ( let c = start.column; c <= end.column; c++ ){
+            if (row[c]) {
+              if (!func(row[c], c, r)) {
+                return;
+              }
+            }
           }
         }
       }

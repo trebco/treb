@@ -41,6 +41,9 @@ export enum ErrorCode {
   /** invalid area for insert table: there's a merge, array or existing table within the range */
   invalid_area_for_table,
 
+  /** invalid area for paste, same as invalid area for table */
+  invalid_area_for_paste,
+
 }
 
 export interface SheetChangeEvent {

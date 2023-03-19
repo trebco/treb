@@ -1054,6 +1054,11 @@ export class EmbeddedSpreadsheet {
           message: `You can't change part of an array`,
         }
 
+      case ErrorCode.invalid_area_for_paste:
+        return {
+          message: 'Invalid area for paste',
+        }
+
       case ErrorCode.invalid_area_for_table:
         return {
           message: `Invalid area for table`,
