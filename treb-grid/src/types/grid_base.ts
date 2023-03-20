@@ -37,12 +37,12 @@
 
 import { EventSource } from 'treb-utils';
 import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
-import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex } from 'treb-parser';
-import { Area, Style, IsCellAddress, ValidationType, ValueType, Table, TableSortOptions, DefaultTableSortOptions, TableTheme } from 'treb-base-types';
+import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex, ParseCSV, ArgumentSeparatorType, DecimalMarkType } from 'treb-parser';
+import { Area, Style, IsCellAddress, ValidationType, ValueType, Table, TableSortOptions, DefaultTableSortOptions, TableTheme, Complex } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue } from 'treb-base-types';
 import { Sheet } from './sheet';
 import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
-import { NumberFormat } from 'treb-format';
+import { NumberFormat, ValueParser } from 'treb-format';
 
 import { ErrorCode, GridEvent } from './grid_events';
 import type { CommandRecord, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
@@ -55,7 +55,7 @@ import { CommandKey } from './grid_command';
 import type { Command, ActivateSheetCommand, 
                DeleteSheetCommand, UpdateBordersCommand, SheetSelection } from './grid_command';
 import type { UpdateFlags } from './update_flags';
-import type { LegacySerializedSheet } from './sheet_types';
+import type { FreezePane, LegacySerializedSheet } from './sheet_types';
 import type { Annotation } from './annotation';
 import type { ClipboardCellData } from './clipboard_data';
 
@@ -203,6 +203,176 @@ export class GridBase {
   }
 
   /**
+   * activate sheet, by name or index number
+   * @param sheet number (index into the array) or string (name)
+   */
+  public ActivateSheet(sheet: number | string): void {
+
+    const index = (typeof sheet === 'number') ? sheet : undefined;
+    const name = (typeof sheet === 'string') ? sheet : undefined;
+
+    this.ExecCommand({
+      key: CommandKey.ActivateSheet,
+      index,
+      name,
+    });
+
+  }
+
+  /**
+   * activate sheet, by ID
+   */
+  public ActivateSheetID(id: number): void {
+    this.ExecCommand({
+      key: CommandKey.ActivateSheet,
+      id,
+    });
+  }
+
+  /**
+   * duplicate sheet by index or (omitting index) the current active sheet
+   */
+  public DuplicateSheet(index?: number, name?: string, insert_before?: number|string): void {
+
+    const command: DuplicateSheetCommand = {
+      key: CommandKey.DuplicateSheet,
+      new_name: name,
+      insert_before,
+    };
+
+    if (typeof index === 'undefined') {
+      command.id = this.active_sheet.id;
+    }
+    else {
+      command.index = index;
+    }
+
+    this.ExecCommand(command);
+
+  }
+
+  public AddSheet(name?: string): void {
+    this.ExecCommand({
+      key: CommandKey.AddSheet,
+      name,
+      show: true,
+    });
+  }
+
+  /**
+   * delete sheet, by index or (omitting index) the current active sheet
+   */
+  public DeleteSheet(index?: number): void {
+
+    if (typeof index === 'undefined') {
+      if (!this.model.sheets.list.some((sheet, i) => {
+        if (sheet === this.active_sheet) {
+          index = i;
+          return true;
+        }
+        return false;
+      })) {
+        throw new Error('invalid index');
+      }
+    }
+
+    this.ExecCommand({
+      key: CommandKey.DeleteSheet,
+      index,
+    });
+
+  }
+
+  /** insert sheet at the given index (or current index) */
+  public InsertSheet(index?: number, name?: string): void {
+
+    if (typeof index === 'undefined') {
+      if (!this.model.sheets.list.some((sheet, i) => {
+        if (sheet === this.active_sheet) {
+          index = i + 1;
+          return true;
+        }
+        return false;
+      })) {
+        throw new Error('invalid index');
+      }
+    }
+
+    this.ExecCommand({
+      key: CommandKey.AddSheet,
+      insert_index: index,
+      name,
+      show: true,
+    });
+
+  }
+
+  public DeleteSheetID(id: number): void {
+    this.ExecCommand({
+      key: CommandKey.DeleteSheet,
+      id,
+    });
+  }
+
+  /**
+   * clear sheet, reset all data
+   */
+  public Reset(): void {
+    this.ExecCommand({ key: CommandKey.Reset });
+  }
+
+  /**
+   * set hyperlink, like set note
+   */
+  public SetLink(address: ICellAddress, reference?: string): void {
+
+    /*
+    if (!address) {
+      if (this.primary_selection.empty) return;
+      address = this.primary_selection.target;
+    }
+    */
+
+    this.ExecCommand({
+      key: CommandKey.SetLink,
+      area: address,
+      reference,
+    });
+
+  }
+
+  public ShowAll(): void {
+
+    // obviously there are better ways to do this, but this
+    // will use the execcommand system and _should_ only fire
+    // a single event (FIXME: check)
+
+    const commands: ShowSheetCommand[] = [];
+    for (let index = 0; index < this.model.sheets.length; index++) {
+      commands.push({
+        key: CommandKey.ShowSheet,
+        index,
+        show: true,
+      });
+    }
+    this.ExecCommand(commands);
+  }
+
+  public ShowSheet(index: number|string = 0, show = true): void {
+
+    const command: ShowSheetCommand = {
+      key: CommandKey.ShowSheet,
+      show,
+    };
+
+    if (typeof index === 'string') { command.name = index; }
+    else { command.index = index; }
+
+    this.ExecCommand(command);
+    
+  }
+
+  /**
    * sort table. column is absolute.
    */
   public SortTable(table: Table, options: Partial<TableSortOptions> = {}) {
@@ -220,6 +390,170 @@ export class GridBase {
       ...options,
     });
     
+  }
+  
+  /** return freeze area */
+  public GetFreeze(): FreezePane {
+    return { ...this.active_sheet.freeze };
+  }
+
+  /**
+   * insert rows(s) at some specific point
+   */
+  public InsertRows(before_row = 0, count = 1): void {
+    this.ExecCommand({
+      key: CommandKey.InsertRows,
+      before_row,
+      count,
+    });
+  }
+
+  /**
+   * return the table (if any) at the given address
+   */
+  public GetTableReference(address: ICellAddress): Table|undefined {
+    const sheet = this.model.sheets.Find(address.sheet_id || this.active_sheet.id);
+    return sheet?.CellData(address).table || undefined;
+  }
+
+
+  /**
+   * reset sheet, set data from CSV
+   *
+   * FIXME: this is problematic, because it runs around the exec command
+   * system. however it doesn't seem like a good candidate for a separate
+   * command. it should maybe move to the import class? (...)
+   *
+   * one problem with that is that import is really, really heavy (jszip).
+   * it seems wasteful to require all that just to import csv.
+   */
+  public FromCSV(text: string): void {
+
+    // CSV assumes dot-decimal, correct? if we want to use the
+    // parser we will have to check (and set/reset) the separator
+
+    const toggle_separator = this.parser.decimal_mark === DecimalMarkType.Comma;
+
+    if (toggle_separator) {
+      // swap
+      this.parser.argument_separator = ArgumentSeparatorType.Comma;
+      this.parser.decimal_mark = DecimalMarkType.Period;
+    }
+
+    const records = ParseCSV(text);
+    const arr = records.map((record) =>
+      record.map((field) => {
+        if (field) {
+          const tmp = this.parser.Parse(field);
+          if (tmp.expression?.type === 'complex') {
+            return tmp.expression as Complex;
+          }
+        }
+        return ValueParser.TryParse(field).value;
+      }));
+
+    if (toggle_separator) {
+      // reset
+      this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+      this.parser.decimal_mark = DecimalMarkType.Comma;
+    }
+  
+    const end = {
+      row: Math.max(0, arr.length - 1),
+      column: arr.reduce((max, row) => Math.max(max, Math.max(0, row.length - 1)), 0),
+    };
+
+    // NOTE: SetRange here does not need to be translated, because
+    // we're not expecting spreadsheet functions in the CSV. CSV should
+    // be data only. Famous last words.
+    
+    this.ExecCommand([
+      { key: CommandKey.Reset },
+      {
+        key: CommandKey.SetRange,
+        area: { start: { row: 0, column: 0 }, end },
+        value: arr,
+      },
+
+      // we took this out because the data may require a layout update
+      // (rebuilding tiles); in that case, this will be duplicative. maybe
+      // should use setTimeout or some sort of queue...
+
+      // { key: CommandKey.ResizeColumns }, // auto
+    ]);
+
+  }
+
+
+  /**
+   * insert column(s) at some specific point
+   */
+  public InsertColumns(before_column = 0, count = 1): void {
+    this.ExecCommand({
+      key: CommandKey.InsertColumns,
+      before_column,
+      count,
+    });
+  }
+
+  /** move sheet (X) before sheet (Y) */
+  public ReorderSheet(index: number, move_before: number): void {
+    this.ExecCommand({
+      key: CommandKey.ReorderSheet,
+      index,
+      move_before,
+    });
+  }
+
+  /**
+   * rename active sheet
+   */
+  public RenameSheet(sheet: Sheet, name: string): void {
+    this.ExecCommand({
+      key: CommandKey.RenameSheet,
+      new_name: name,
+      id: sheet.id,
+    });
+  }
+
+  /**
+   * freeze rows or columns. set to 0 (or call with no arguments) to un-freeze.
+   *
+   * highglight is shown by default, but we can hide it(mostly for document load)
+   */
+  public Freeze(rows = 0, columns = 0, highlight_transition = true): void {
+    this.ExecCommand({
+      key: CommandKey.Freeze,
+      rows,
+      columns,
+      highlight_transition,
+    });
+  }
+
+  /**
+   * API method
+   */
+  public SetRowHeight(row?: number | number[], height?: number, shrink = true): void {
+    this.ExecCommand({
+      key: CommandKey.ResizeRows,
+      row,
+      height,
+      shrink,
+    });
+  }
+
+  /**
+   * API method
+   *
+   * @param column column, columns, or undefined means all columns
+   * @param width target width, or undefined means auto-size
+   */
+  public SetColumnWidth(column?: number | number[], width = 0): void {
+    this.ExecCommand({
+      key: CommandKey.ResizeColumns,
+      column,
+      width,
+    });
   }
 
   /**

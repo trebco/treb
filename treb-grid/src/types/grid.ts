@@ -42,17 +42,15 @@ import {
   IRectangle,
   IsComplex,
   TextPartFlag,
-  Table,
-  TableSortType,
-  TableSortOptions,
-  DefaultTableSortOptions,
 } from 'treb-base-types';
 
 import {
-  Parser, DecimalMarkType, ExpressionUnit, ArgumentSeparatorType, 
-  ParseCSV,
+  Parser, 
+  DecimalMarkType, 
+  ExpressionUnit, 
+  ArgumentSeparatorType, 
   QuotedSheetNameRegex, 
-  MDParser
+  MDParser,
 } from 'treb-parser';
 
 import { Yield, SerializeHTML } from 'treb-utils';
@@ -93,8 +91,8 @@ import {
   Command, CommandKey,
   SetRangeCommand, FreezeCommand,
   InsertRowsCommand, InsertColumnsCommand, SetNameCommand,
-  ActivateSheetCommand, ShowSheetCommand, DataValidationCommand, 
-  DuplicateSheetCommand, ResizeRowsCommand, ResizeColumnsCommand, 
+  ActivateSheetCommand, DataValidationCommand, 
+  ResizeRowsCommand, ResizeColumnsCommand, 
   SelectCommand
 } from './grid_command';
 
@@ -103,22 +101,7 @@ import type { DataModel, SerializedModel } from './data_model';
 import { DOMUtilities } from '../util/dom_utilities';
 import { GridBase } from './grid_base';
 import type { SetRangeOptions } from './set_range_options';
-
-// can we move style to embed? [TEMP]
-// import '../../style/grid-layout.scss';
-// import '../../style/grid.scss';
-
 import type { ClipboardCellData } from './clipboard_data';
-
-/*
-interface ClipboardCellData {
-  address: ICellAddress;
-  data: CellValue;
-  type: ValueType;
-  style?: Style.Properties;
-  array?: {rows: number, columns: number};
-}
-*/
 
 interface DoubleClickData {
   timeout?: number;
@@ -323,19 +306,6 @@ export class Grid extends GridBase {
   private nub_select_flag = false;
 
   /**
-   * current mouse move cell
-   */
-  // private hover_cell: ICellAddress = { row: -1, column: -1 };
-
-  /**
-   * flag indicating we're showing a note, so we can stop
-   */
-  // private hover_note_visible = false;
-
-  /** same for title/link info */
-  // private hover_tracking_link = false;
-
-  /**
    * additional selections that are rendered but not otherwise used.
    * this array is now readonly, so we can bind it to the selection
    * renderer (we do this with the primary selection as well)
@@ -365,19 +335,9 @@ export class Grid extends GridBase {
   /** */
   private selection_renderer: SelectionRenderer;
 
-  // FIXME: move
+  // FIXME: move [why?]
 
-  // private tab_bar?: HTMLElement;
   private tab_bar?: TabBar;
-
-  /**
-   * replacement for global style default properties.
-   * FIXME: move (model?)
-   *
-   * SEE comment in sheet class
-   */
-  //private readonly theme_style_properties: Style.Properties =
-  //  Style.Composite([Style.DefaultProperties]);
 
   // --- constructor -----------------------------------------------------------
 
@@ -488,24 +448,6 @@ export class Grid extends GridBase {
 
   }
 
-  /**
-   * set hyperlink, like set note
-   */
-  public SetLink(address?: ICellAddress, reference?: string): void {
-
-    if (!address) {
-      if (this.primary_selection.empty) return;
-      address = this.primary_selection.target;
-    }
-
-    this.ExecCommand({
-      key: CommandKey.SetLink,
-      area: address,
-      reference,
-    });
-
-  }
-
   /** find an annotation, given a node */
   public FindAnnotation(node: HTMLElement): Annotation|undefined {
     for (const annotation of this.active_sheet.annotations) {
@@ -582,31 +524,6 @@ export class Grid extends GridBase {
     }
     return annotation;
   }
-
-  /*
-  public UpdateScale(scale = 1): void {
-    
-    this.layout.scale = scale;
-    this.UpdateLayout();
-    this.UpdateAnnotationLayout();
-    this.layout.UpdateAnnotation(this.active_sheet.annotations);
-    this.layout.ApplyTheme(this.theme);
-    this.overlay_editor?.UpdateTheme(scale);
-    this.tab_bar?.UpdateScale(scale);
-
-    this.grid_events.Publish({
-      type: 'scale', 
-      scale,
-    });
-
-    for (const sheet of this.model.sheets.list) {
-      for (const annotation of sheet.annotations) {
-        annotation.dirty = true;
-      }
-    }
-
-  }
-  */
 
   /** placeholder */
   public UpdateAnnotationLayout(): void {
@@ -861,11 +778,6 @@ export class Grid extends GridBase {
       if (annotation === this.active_sheet.annotations[i]) {
         this.active_sheet.annotations.splice(i, 1);
 
-        /*
-        if (annotation.node && annotation.node.parentElement) {
-          annotation.node.parentElement.removeChild(annotation.node);
-        }
-        */
         this.layout.RemoveAnnotation(annotation);
 
         this.grid_events.Publish({
@@ -908,80 +820,6 @@ export class Grid extends GridBase {
     // now call the base class serialization method
 
     return super.Serialize(options);
-
-  }
-
-  /**
-   * clear sheet, reset all data
-   */
-  public Reset(): void {
-    this.ExecCommand({ key: CommandKey.Reset });
-  }
-
-  /**
-   * reset sheet, set data from CSV
-   *
-   * FIXME: this is problematic, because it runs around the exec command
-   * system. however it doesn't seem like a good candidate for a separate
-   * command. it should maybe move to the import class? (...)
-   *
-   * one problem with that is that import is really, really heavy (jszip).
-   * it seems wasteful to require all that just to import csv.
-   */
-  public FromCSV(text: string): void {
-
-    // CSV assumes dot-decimal, correct? if we want to use the
-    // parser we will have to check (and set/reset) the separator
-
-    const toggle_separator = this.parser.decimal_mark === DecimalMarkType.Comma;
-
-    if (toggle_separator) {
-      // swap
-      this.parser.argument_separator = ArgumentSeparatorType.Comma;
-      this.parser.decimal_mark = DecimalMarkType.Period;
-    }
-
-    const records = ParseCSV(text);
-    const arr = records.map((record) =>
-      record.map((field) => {
-        if (field) {
-          const tmp = this.parser.Parse(field);
-          if (tmp.expression?.type === 'complex') {
-            return tmp.expression as Complex;
-          }
-        }
-        return ValueParser.TryParse(field).value;
-      }));
-
-    if (toggle_separator) {
-      // reset
-      this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-      this.parser.decimal_mark = DecimalMarkType.Comma;
-    }
-  
-    const end = {
-      row: Math.max(0, arr.length - 1),
-      column: arr.reduce((max, row) => Math.max(max, Math.max(0, row.length - 1)), 0),
-    };
-
-    // NOTE: SetRange here does not need to be translated, because
-    // we're not expecting spreadsheet functions in the CSV. CSV should
-    // be data only. Famous last words.
-    
-    this.ExecCommand([
-      { key: CommandKey.Reset },
-      {
-        key: CommandKey.SetRange,
-        area: { start: { row: 0, column: 0 }, end },
-        value: arr,
-      },
-
-      // we took this out because the data may require a layout update
-      // (rebuilding tiles); in that case, this will be duplicative. maybe
-      // should use setTimeout or some sort of queue...
-
-      // { key: CommandKey.ResizeColumns }, // auto
-    ]);
 
   }
 
@@ -1179,65 +1017,6 @@ export class Grid extends GridBase {
 
   }
 
-  /* *
-   * why does this not take the composite object? (...)
-   * A: it's used for xlsx import. still, we could wrap it.
-   * /
-  public FromData(
-    cell_data: any[],
-    column_widths: number[],
-    row_heights: number[],
-    styles: Style.Properties[],
-    render = false): void {
-
-    this.RemoveAnnotationNodes();
-
-    this.UpdateSheets([Sheet.Blank(this.theme_style_properties).toJSON()], true);
-
-    // FIXME: are there named ranges in the data? (...)
-
-    this.model.named_ranges.Reset();
-    this.model.macro_functions = {};
-
-    this.ClearSelection(this.primary_selection);
-
-    this.cells.FromJSON(cell_data);
-
-    // 0 is implicitly just a general style
-
-    const cs = (this.active_sheet as any).cell_style;
-    for (const info of cell_data) {
-      if (info.style_ref) {
-        if (!cs[info.column]) cs[info.column] = [];
-        cs[info.column][info.row] = styles[info.style_ref];
-      }
-    }
-
-    for (let i = 0; i < column_widths.length; i++) {
-      if (typeof column_widths[i] !== 'undefined') {
-        this.active_sheet.SetColumnWidth(i, column_widths[i]);
-      }
-    }
-
-    for (let i = 0; i < row_heights.length; i++) {
-      if (typeof row_heights[i] !== 'undefined') {
-        this.active_sheet.SetRowHeight(i, row_heights[i]);
-      }
-    }
-
-    // no longer sending explicit layout event here
-
-    this.QueueLayoutUpdate();
-
-    this.StyleDefaultFromTheme();
-
-    if (render) {
-      this.Repaint(false, false); // true, true);
-    }
-
-  }
-  */
-
   /**
    * This function is called via Shift+PageUp/PageDown. We need
    * to update to account for hidden sheets, which can't be activated.
@@ -1270,149 +1049,6 @@ export class Grid extends GridBase {
         return;
       }
     }
-    
-  }
-
-  /** insert sheet at the given index (or current index) */
-  public InsertSheet(index?: number, name?: string): void {
-
-    if (typeof index === 'undefined') {
-      if (!this.model.sheets.list.some((sheet, i) => {
-        if (sheet === this.active_sheet) {
-          index = i + 1;
-          return true;
-        }
-        return false;
-      })) {
-        throw new Error('invalid index');
-      }
-    }
-
-    this.ExecCommand({
-      key: CommandKey.AddSheet,
-      insert_index: index,
-      name,
-      show: true,
-    });
-
-  }
-
-  public DeleteSheetID(id: number): void {
-    this.ExecCommand({
-      key: CommandKey.DeleteSheet,
-      id,
-    });
-  }
-
-  /**
-   * delete sheet, by index or (omitting index) the current active sheet
-   */
-  public DeleteSheet(index?: number): void {
-
-    if (typeof index === 'undefined') {
-      if (!this.model.sheets.list.some((sheet, i) => {
-        if (sheet === this.active_sheet) {
-          index = i;
-          return true;
-        }
-        return false;
-      })) {
-        throw new Error('invalid index');
-      }
-    }
-
-    this.ExecCommand({
-      key: CommandKey.DeleteSheet,
-      index,
-    });
-
-  }
-
-  /**
-   * duplicate sheet by index or (omitting index) the current active sheet
-   */
-  public DuplicateSheet(index?: number, name?: string, insert_before?: number|string): void {
-
-    const command: DuplicateSheetCommand = {
-      key: CommandKey.DuplicateSheet,
-      new_name: name,
-      insert_before,
-    };
-
-    if (typeof index === 'undefined') {
-      command.id = this.active_sheet.id;
-    }
-    else {
-      command.index = index;
-    }
-
-    this.ExecCommand(command);
-
-  }
-
-  public AddSheet(name?: string): void {
-    this.ExecCommand({
-      key: CommandKey.AddSheet,
-      name,
-      show: true,
-    });
-  }
-
-  /**
-   * activate sheet, by name or index number
-   * @param sheet number (index into the array) or string (name)
-   */
-  public ActivateSheet(sheet: number | string): void {
-
-    const index = (typeof sheet === 'number') ? sheet : undefined;
-    const name = (typeof sheet === 'string') ? sheet : undefined;
-
-    this.ExecCommand({
-      key: CommandKey.ActivateSheet,
-      index,
-      name,
-    });
-
-  }
-
-  /**
-   * activate sheet, by ID
-   */
-  public ActivateSheetID(id: number): void {
-    this.ExecCommand({
-      key: CommandKey.ActivateSheet,
-      id,
-    });
-  }
-
-  public ShowAll(): void {
-
-    // obviously there are better ways to do this, but this
-    // will use the execcommand system and _should_ only fire
-    // a single event (FIXME: check)
-
-    const commands: ShowSheetCommand[] = [];
-    for (let index = 0; index < this.model.sheets.length; index++) {
-      commands.push({
-        key: CommandKey.ShowSheet,
-        index,
-        show: true,
-      });
-    }
-    this.ExecCommand(commands);
-  }
-
-  public ShowSheet(index: number|string = 0, show = true): void {
-
-    const command: ShowSheetCommand = {
-      key: CommandKey.ShowSheet,
-      show,
-    };
-
-    if (typeof index === 'string') { command.name = index; }
-    else { command.index = index; }
-
-    this.ExecCommand(command);
     
   }
 
@@ -1511,16 +1147,6 @@ export class Grid extends GridBase {
     this.render_tiles = this.layout.VisibleTiles();
     this.Repaint(true);
   }
-
-  /* *
-   * splitting the old UpdateTheme, since that is becoming more
-   * important for post-constructor theme updates, and the name applies
-   * more to that function than to what we do at startup.
-   * /
-  public ApplyTheme(): void {
-    this.UpdateTheme(true);
-  }
-  */
 
   /**
    * @param initial first call, from the grid Initialize() method
@@ -2236,32 +1862,6 @@ export class Grid extends GridBase {
   }
 
   /**
-   * API method
-   */
-  public SetRowHeight(row?: number | number[], height?: number, shrink = true): void {
-    this.ExecCommand({
-      key: CommandKey.ResizeRows,
-      row,
-      height,
-      shrink,
-    });
-  }
-
-  /**
-   * API method
-   *
-   * @param column column, columns, or undefined means all columns
-   * @param width target width, or undefined means auto-size
-   */
-  public SetColumnWidth(column?: number | number[], width = 0): void {
-    this.ExecCommand({
-      key: CommandKey.ResizeColumns,
-      column,
-      width,
-    });
-  }
-
-  /**
    * applies the given style properties to the passed array, or to the
    * current primary selection
    *
@@ -2306,14 +1906,14 @@ export class Grid extends GridBase {
     this.DelayedRender(force, area);
   }
 
-  /**
+  /* *
    * API method
    *
    * @param area
    * @param borders
    * @param color
    * @param width
-   */
+   * /
   public ApplyBorders(area?: Area, borders: BorderConstants = BorderConstants.None, color?: string, width = 1): void {
 
     if (!area) {
@@ -2334,6 +1934,7 @@ export class Grid extends GridBase {
     });
 
   }
+  */
 
   /** updated API method, probably change the name */
   public ApplyBorders2(area?: Area, borders: BorderConstants = BorderConstants.None, color?: Style.Color, width = 1): void {
@@ -2357,24 +1958,6 @@ export class Grid extends GridBase {
 
   }
 
-  /** return freeze area */
-  public GetFreeze(): FreezePane {
-    return { ...this.active_sheet.freeze };
-  }
-
-  /**
-   * freeze rows or columns. set to 0 (or call with no arguments) to un-freeze.
-   *
-   * highglight is shown by default, but we can hide it(mostly for document load)
-   */
-  public Freeze(rows = 0, columns = 0, highlight_transition = true): void {
-    this.ExecCommand({
-      key: CommandKey.Freeze,
-      rows,
-      columns,
-      highlight_transition,
-    });
-  }
 
   /**
    * batch updates. returns all the events that _would_ have been sent.
@@ -2396,66 +1979,7 @@ export class Grid extends GridBase {
     return events;
   }
 
-  /**
-   * insert column(s) at some specific point
-   */
-  public InsertColumns(before_column = 0, count = 1): void {
-    this.ExecCommand({
-      key: CommandKey.InsertColumns,
-      before_column,
-      count,
-    });
-  }
 
-  /** move sheet (X) before sheet (Y) */
-  public ReorderSheet(index: number, move_before: number): void {
-    this.ExecCommand({
-      key: CommandKey.ReorderSheet,
-      index,
-      move_before,
-    });
-  }
-
-  /**
-   * rename active sheet
-   */
-  public RenameSheet(sheet: Sheet, name: string): void {
-    this.ExecCommand({
-      key: CommandKey.RenameSheet,
-      new_name: name,
-      id: sheet.id,
-    });
-  }
-
-  /* *
-   * insert row at cursor
-   * /
-  public InsertRow(): void {
-    if (this.primary_selection.empty) { return; }
-    const area = this.primary_selection.area;
-    const before_row = area.entire_column ? 0 : area.start.row;
-    this.InsertRows(before_row, 1);
-  }
-  */
-
-  /**
-   * insert rows(s) at some specific point
-   */
-  public InsertRows(before_row = 0, count = 1): void {
-    this.ExecCommand({
-      key: CommandKey.InsertRows,
-      before_row,
-      count,
-    });
-  }
-
-  /**
-   * return the table (if any) at the given address
-   */
-  public GetTableReference(address: ICellAddress): Table|undefined {
-    const sheet = this.model.sheets.Find(address.sheet_id || this.active_sheet.id);
-    return sheet?.CellData(address).table || undefined;
-  }
 
   /**
    * scrolls so that the given cell is in the top-left (assuming that is
@@ -2828,44 +2352,17 @@ export class Grid extends GridBase {
    */
   private HighlightFreezeArea() {
 
-      for (const node of [
+    for (const node of [
         this.layout.corner_selection,
         this.layout.row_header_selection,
         this.layout.column_header_selection]) {
 
-        // in IE11 SVG nodes don't have classList
-
-        // const base_class = node.getAttribute('class') || '';
-
-        //if (UA.trident) {
-        //  node.setAttribute('class', base_class + ' highlight-area');
-        //}
-        //else {
-          node.classList.add('highlight-area');
-        //}
-
-        /*
-        node.style.transition = 'background .33s, border-bottom-color .33s, border-right-color .33s';
-        node.style.background = this.theme.frozen_highlight_overlay;
-
-        if (this.theme.frozen_highlight_border) {
-          node.style.borderBottomColor = this.theme.frozen_highlight_border;
-          node.style.borderRightColor = this.theme.frozen_highlight_border;
-        }
-        */
-
-        setTimeout(() => {
-          //if (UA.trident) {
-          //  node.setAttribute('class', base_class);
-          //}
-          //else {
-            node.classList.remove('highlight-area');
-          //}
-          // node.style.background = 'transparent';
-          // node.style.borderBottomColor = 'transparent';
-          // node.style.borderRightColor = 'transparent';
-        }, 400);
-      }
+      node.classList.add('highlight-area');
+      setTimeout(() => {
+        node.classList.remove('highlight-area');
+      }, 400);
+      
+    }
 
   }
 

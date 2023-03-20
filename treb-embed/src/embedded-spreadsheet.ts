@@ -867,16 +867,12 @@ export class EmbeddedSpreadsheet {
 
     this.FlushUndo();
 
-    // FIXME: this is deprecated [what?]
-    // [this is now a file property, not an option]
+    // why is this outside of the container test? there should be
+    // no reason to do this when headless
 
-    // if (options.freeze_rows || options.freeze_columns) {
-    //  this.grid.Freeze(options.freeze_rows || 0, options.freeze_columns || 0);
-    // }
-
-    // if (typeof options.show_headers !== 'undefined') {
     this.grid.ShowHeaders(this.options.headers);
-    // }
+
+    // again, this should be gated on container
 
     // optionally scroll grid on create (async -- why?)
 
@@ -3489,7 +3485,7 @@ export class EmbeddedSpreadsheet {
 
     // still for now we can take advantage of that and skip the check.
 
-    this.grid.ApplyBorders(range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : undefined, borders, undefined, width);
+    this.grid.ApplyBorders2(range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : undefined, borders, {}, width);
 
   }
 
