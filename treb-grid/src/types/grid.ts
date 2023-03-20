@@ -460,7 +460,7 @@ export class Grid extends GridBase {
    * @param target new parameter allows setting annotation as rect or as
    * cell range
    */
-  public CreateAnnotation(properties: unknown = {}, add_to_sheet = true, offset = false, target?: Partial<Area>|IRectangle): Annotation {
+  public CreateAnnotation(properties: Partial<Annotation> = {}, add_to_sheet = true, offset = false, target?: Partial<Area>|IRectangle): Annotation {
     const annotation = new Annotation(properties as Partial<Annotation>);
 
     if (offset) {

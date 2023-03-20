@@ -78,8 +78,18 @@ export interface ViewData {
 
 }
 
+/**
+ * why is this a class? it doesn't do anything.
+ * FIXME: -> interface
+ */
 export class Annotation {
 
+  /** 
+   * the key field is used to identify and coordinate annotations when we 
+   * have freeze panes. when an annotation crosses a freeze pane, we need
+   * two copies of the rendered node so that we can scroll. we use the key
+   * to match the frozen/unfrozen instances.
+   */
   public get key(): number { return this.key_; }
 
   /** coordinates, in sheet space */
@@ -105,15 +115,6 @@ export class Annotation {
   /** also opaque data, but not serialized. */
   public temp: any = {};
 
-  /* * flag indicating we have inflated this. not serialized */
-  // public inflated = false;
-
-  /* * if function exists, will be called when the annotation is resized */
-  // public resize_callback?: () => void;
-
-  /* * if function exists, will be called when the annotation needs to update */
-  // public update_callback?: () => void;
-
   /** annotation can be resized. this is advisory, for UI */
   public resizable = true;
 
@@ -131,12 +132,6 @@ export class Annotation {
 
   /** resize when resizing/inserting rows/columns */
   public resize_with_cells = true;
-
-  /* * layout node, obviously not serialized */
-  // public node?: HTMLDivElement;
-
-  /* * content node */
-  // public content_node?: HTMLDivElement;
 
   public view: ViewData[] = [];
 
