@@ -26,12 +26,20 @@ import { NamedRangeCollection } from './named_range';
 import type { ExpressionUnit, UnitAddress, UnitStructuredReference, UnitRange } from 'treb-parser';
 import { Style } from 'treb-base-types';
 
-export interface MacroFunction {
+export interface SerializedMacroFunction {
   name: string;
   function_def: string;
   argument_names?: string[];
   // argument_default_values?: any[]; // <- new
   description?: string;
+}
+
+/**
+ * we define this as extending the serialized version, rather
+ * than taking out the parameter, so we can make that def public
+ * in the API types.
+ */
+export interface MacroFunction extends SerializedMacroFunction {
   expression?: ExpressionUnit;
 }
 

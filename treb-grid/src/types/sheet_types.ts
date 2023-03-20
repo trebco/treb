@@ -57,21 +57,25 @@ export interface SerializedSheet {
   cell_style_refs?: Style.Properties[]; // old 
   styles?: Style.Properties[];          // new
 
-  // row_style: Style.Properties[];
-  // column_style: Style.Properties[];
-  // row_style: Array<Style.Properties|number>;
-  // column_style: Array<Style.Properties|number>;
   row_style: Record<number, Style.Properties|number>;
   column_style: Record<number, Style.Properties|number>;
 
+  /** 
+   * @deprecated - no one uses this anymore and it's weird 
+   */
   row_pattern?: Style.Properties[];
 
   default_row_height?: number;
   default_column_width?: number;
 
-  row_height?: {[index: number]: number};
-  column_width?: {[index: number]: number};
-  named_ranges?: {[index: string]: IArea};
+  row_height?: Record<number, number>;
+  column_width?: Record<number, number>;
+  named_ranges?: Record<string, IArea>;
+
+  // row_height?: {[index: number]: number};
+  // column_width?: {[index: number]: number};
+  // named_ranges?: {[index: string]: IArea};
+
   freeze?: FreezePane;
 
   id?: number;

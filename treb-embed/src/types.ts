@@ -20,7 +20,8 @@
  */
 
 import type { IArea, Table, TableTheme } from 'treb-base-types';
-import type { MacroFunction, SerializedNamedExpression, SerializedSheet } from 'treb-grid';
+import type { SerializedNamedExpression, SerializedSheet } from 'treb-grid';
+import type { SerializedMacroFunction } from 'treb-grid/src/types/data_model';
 
 export enum SaveFileType {
   json = 'json',
@@ -38,6 +39,12 @@ export enum SaveFileType {
 // and so on
 //
 
+/**
+ * we're not exporting this type in the public API because there are so many 
+ * nested types that aren't used anywhere else (in public functions). 
+ * 
+ * I would like to do it, though, that `any` looks bad in the  public API.
+ */
 export interface TREBDocument {
   app: string;
   version: string;
@@ -48,8 +55,11 @@ export interface TREBDocument {
   decimal_mark?: '.' | ',';
   active_sheet?: number;
   rendered_values?: boolean;
-  named_ranges?: {[index: string]: IArea};
-  macro_functions?: MacroFunction[];
+  
+  // named_ranges?: {[index: string]: IArea};
+  named_ranges?: Record<string, IArea>;
+
+  macro_functions?: SerializedMacroFunction[];
   named_expressions?: SerializedNamedExpression[];
   tables?: Table[];
   shared_resources?: Record<string, string>;

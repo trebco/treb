@@ -281,16 +281,6 @@ export class Grid extends GridBase {
     empty: true,
   };
 
-  /* *
-   * this selection is for highlighting only
-   * /
-  private readonly highlight_selection: GridSelection = {
-    target: { row: 0, column: 0 },
-    area: new Area({ row: 0, column: 0 }),
-    empty: true,
-  };
-  */
-
   /**
    * active selection when selecting arguments (while editing)
    */

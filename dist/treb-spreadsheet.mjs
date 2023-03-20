@@ -15943,15 +15943,6 @@ var Grid = class extends GridBase {
       area: new Area({ row: 0, column: 0 }),
       empty: true
     };
-    /* *
-     * this selection is for highlighting only
-     * /
-    private readonly highlight_selection: GridSelection = {
-      target: { row: 0, column: 0 },
-      area: new Area({ row: 0, column: 0 }),
-      empty: true,
-    };
-    */
     /**
      * active selection when selecting arguments (while editing)
      */
@@ -19474,22 +19465,6 @@ var Grid = class extends GridBase {
     this.additional_selections.splice(index);
     if (render)
       this.RenderSelections(false);
-  }
-  /**
-   * add an additional selection to the list. don't add it if already
-   * on the list (don't stack).
-   *
-   * we now support empty selections (hiding) in the case of references
-   * to other sheets. if we don't do that, the colors get out of sync.
-   */
-  AddAdditionalSelection(target, area) {
-    const label = area.spreadsheet_label;
-    if (this.additional_selections.some((test) => {
-      return test.area.spreadsheet_label === label;
-    }))
-      return false;
-    this.additional_selections.push({ target, area });
-    return true;
   }
   /** remove all additonla (argument) selections */
   ClearAdditionalSelections() {
