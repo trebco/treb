@@ -22,6 +22,7 @@ module.exports = {
       }
     ],
     'camelcase': 'off',
+    '@typescript-eslint/no-unsafe-declaration-merging': 'error',
     '@typescript-eslint/camelcase': 'off',     
     // '@typescript-eslint/explicit-function-return-type': 'off',     
     '@typescript-eslint/quotes': [
