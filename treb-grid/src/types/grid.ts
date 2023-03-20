@@ -5846,22 +5846,6 @@ export class Grid extends GridBase {
 
   }
 
-  /**
-   * add an additional selection to the list. don't add it if already
-   * on the list (don't stack).
-   *
-   * we now support empty selections (hiding) in the case of references
-   * to other sheets. if we don't do that, the colors get out of sync.
-   */
-  private AddAdditionalSelection(target: ICellAddress, area: Area): boolean {
-    const label = area.spreadsheet_label;
-    if (this.additional_selections.some((test) => {
-      return (test.area.spreadsheet_label === label);
-    })) return false;
-    this.additional_selections.push({ target, area });
-    return true;
-  }
-
   /** remove all additonla (argument) selections */
   private ClearAdditionalSelections() {
 
@@ -6258,11 +6242,6 @@ export class Grid extends GridBase {
 
     // mouse down events for selection
     this.layout.grid_cover.addEventListener('mousedown', (event) => this.MouseDown_Grid(event));
-    //this.layout.grid_cover.addEventListener('mouseup', () => {
-    // // console.info('cfu', this.capture);
-    //  this.Focus();
-    //})
-
     this.layout.column_header_cover.addEventListener('mousedown', (event) => this.MouseDown_ColumnHeader(event));
     this.layout.row_header_cover.addEventListener('mousedown', (event) => this.MouseDown_RowHeader(event));
 
@@ -6277,12 +6256,6 @@ export class Grid extends GridBase {
     // this.container.addEventListener('keydown', (event) => this.KeyDown(event));
     this.overlay_editor?.edit_node.addEventListener('keydown', (event) => this.OverlayKeyDown(event));
 
-    /*
-    this.container.addEventListener('compositionstart', (event) => {
-      console.info('composition start!');
-    });
-    */
-
     // select all?
     this.layout.corner.addEventListener('dblclick', () => {
       this.SelectAll();
@@ -6291,6 +6264,7 @@ export class Grid extends GridBase {
     // this is for resize: we want to repaint on scale events. we should
     // probably not do this synchronously, because scale changes are usually
     // repeated.
+
     window.addEventListener('resize', () => {
       const update = this.layout.UpdateDPR();
       if (update) {
@@ -6625,14 +6599,6 @@ export class Grid extends GridBase {
                   offset: offsets, missing: '' });
               }
             }
-
-            /*
-            const cell = this.model.sheet.cells.GetCell(target_address, true);
-            if (cell) {
-              cell.Set(data);
-              this.model.sheet.UpdateCellStyle(target_address, cell_info.style, false, true);
-            }
-            */
 
             if (cell_info.array) {
 
