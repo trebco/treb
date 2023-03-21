@@ -21,6 +21,9 @@
 
 // --- imports -----------------------------------------------------------------
 
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
+/// <reference path="./content-types.d.ts" />
+
 import type {
   GridEvent, SerializeOptions, Annotation,
   SerializedModel, FreezePane, SerializedSheet,
@@ -67,8 +70,6 @@ import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
 
 import { Chart, ChartFunctions } from 'treb-charts';
 import type { SetRangeOptions } from 'treb-grid';
-
-import './content-types'; // force vsc to read types
 
 // --- worker ------------------------------------------------------------------
 
