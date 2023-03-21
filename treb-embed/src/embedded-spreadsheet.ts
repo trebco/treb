@@ -66,24 +66,11 @@ import type { SelectionState } from './selection-state';
 import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
 
 import { Chart, ChartFunctions } from 'treb-charts';
+import type { SetRangeOptions } from 'treb-grid';
 
 import './content-types'; // force vsc to read types
 
-// --- 3d party ----------------------------------------------------------------
-
-// import * as FileSaver from 'file-saver';
-
-// --- style -------------------------------------------------------------------
-
-// we moved grid style (sass) imports from grid -> here so we can better
-// support headless/server-side grid. if we build with esbuild they'd
-// disappear so we could move these back...
-
-// import 'treb-grid/style/grid-layout.scss';
-// import 'treb-grid/style/grid.scss';
-// import '../style/embed.scss';
-
-import type { SetRangeOptions } from 'treb-grid';
+// --- worker ------------------------------------------------------------------
 
 /**
  * note the clumsy URI-like syntax. if typescript can see that the thing
@@ -97,6 +84,8 @@ import type { SetRangeOptions } from 'treb-grid';
  * some junk value.
  */
 import export_worker_script from 'worker://../../treb-export/src/export-worker/index-modern.ts';
+
+// --- types -------------------------------------------------------------------
 
 /**
  * options for saving files. we add the option for JSON formatting.
@@ -696,9 +685,8 @@ export class EmbeddedSpreadsheet {
       // to the current view. this can lead to strange behavior depending
       // on which window you're in. needs some thought.
 
-      // this.key_listener = this.HandleKeyDown.bind(this);
-      // container.addEventListener('keydown', this.key_listener);
-      container.addEventListener('keydown', event => this.HandleKeyDown(event));
+      this.key_listener = (event) => this.HandleKeyDown(event);
+      container.addEventListener('keydown', this.key_listener);
 
       const toll_initial_render = !!(data || this.options.document);
 

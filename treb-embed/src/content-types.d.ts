@@ -16,9 +16,3 @@ declare module 'worker:*' {
   const text: string;
   export default text;
 }
-
-/** workers imported as text */
-declare module '*!worker' {
-  const text: string;
-  export default text;
-}
