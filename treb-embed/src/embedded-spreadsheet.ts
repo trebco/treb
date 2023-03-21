@@ -67,6 +67,8 @@ import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
 
 import { Chart, ChartFunctions } from 'treb-charts';
 
+import './content-types'; // force vsc to read types
+
 // --- 3d party ----------------------------------------------------------------
 
 // import * as FileSaver from 'file-saver';
@@ -86,7 +88,13 @@ import type { SetRangeOptions } from 'treb-grid';
 /**
  * note the clumsy URI-like syntax. if typescript can see that the thing
  * is a ts file, even if we have a prefix and a type defined for that 
- * prefix, it will still try to read it. this is not a great solution.
+ * prefix, it will still try to read it. 
+ * 
+ * this is not a great solution. I was thinking about letting ts read it.
+ * That won't impact esbuild, and it has the helpful side effect of type 
+ * checking the worker when we run tsc. but it doesn't like the .ts extension.
+ * also it actually tries to import the file, which means you have to export
+ * some junk value.
  */
 import export_worker_script from 'worker://../../treb-export/src/export-worker/index-modern.ts';
 
@@ -688,8 +696,9 @@ export class EmbeddedSpreadsheet {
       // to the current view. this can lead to strange behavior depending
       // on which window you're in. needs some thought.
 
-      this.key_listener = this.HandleKeyDown.bind(this);
-      container.addEventListener('keydown', this.key_listener);
+      // this.key_listener = this.HandleKeyDown.bind(this);
+      // container.addEventListener('keydown', this.key_listener);
+      container.addEventListener('keydown', event => this.HandleKeyDown(event));
 
       const toll_initial_render = !!(data || this.options.document);
 

@@ -9,7 +9,8 @@
     "../treb-format/**/*.ts",
     "../treb-parser/**/*.ts",
     "../treb-calculator/**/*.ts",
-    "../treb-base-types/**/*.ts"
+    "../treb-base-types/**/*.ts",
+    "../treb-export/**/*.ts"
   ],
   "exclude": [
     "src/custom-element/global.d.ts",

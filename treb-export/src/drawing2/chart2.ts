@@ -21,7 +21,7 @@
 
 // import * as ElementTree from 'elementtree';
 // import { Element, ElementTree as Tree } from 'elementtree';
-import { UnitAddress, UnitRange, UnitLiteral, ExpressionUnit } from 'treb-parser';
+import type { UnitAddress, UnitRange, UnitLiteral, ExpressionUnit } from 'treb-parser';
 
 import { static_title, ref_title, chart_template } from './chart-template-components2';
 import { column_json, column_series } from './column-chart-template2';
@@ -41,7 +41,7 @@ import { scatter_series as scatter2_series } from './scatter2-chart-template';
 // import { v4 as uuidv4 } from 'uuid';
 
 import { Localization } from 'treb-base-types';
-import { RelationshipMap } from '../relationship';
+import type { RelationshipMap } from '../relationship';
 
 export interface ChartOptions {
   type: 'donut'|'column'|'bar'|'scatter'|'scatter2';

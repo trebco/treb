@@ -36,7 +36,7 @@ import type { SerializedSheet } from 'treb-grid';
 
 import type { IArea, ICellAddress, CellValue, DataValidation,
          AnnotationLayout, Corner as LayoutCorner, Cell } from 'treb-base-types';
-import { Area, Cells, ValueType, Style, ValidationType, ICellAddress2, Table } from 'treb-base-types';
+import { Area, Cells, ValueType, Style, ValidationType } from 'treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
 import type { XmlBuilderOptions} from 'fast-xml-parser';
@@ -52,7 +52,7 @@ import { AddRel } from './relationship';
 import { XMLOptions2 } from './xml-utils';
 
 import type { UnitAddress, UnitRange, ExpressionUnit} from 'treb-parser';
-import { Parser, IllegalSheetNameRegex, QuotedSheetNameRegex } from 'treb-parser';
+import { Parser, QuotedSheetNameRegex } from 'treb-parser';
 
 // FIXME: move
 import type { ChartOptions } from './drawing2/chart2';

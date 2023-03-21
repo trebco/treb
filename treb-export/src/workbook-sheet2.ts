@@ -41,7 +41,8 @@
  */
 
 
-import { AddressType, RangeType, is_range } from './address-type';
+import type { AddressType, RangeType} from './address-type';
+import { is_range } from './address-type';
 import type { SharedStrings } from './shared-strings2';
 import type { Drawing } from './drawing2/drawing2';
 import type { RelationshipMap } from './relationship';

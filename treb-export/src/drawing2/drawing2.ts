@@ -19,10 +19,12 @@
  * 
  */
 
-import { EmbeddedImage, ImageOptions } from './embedded-image';
-import { Chart, ChartOptions} from './chart2';
-import { RelationshipMap, AddRel } from '../relationship';
-import { Corner } from 'treb-base-types/src';
+import type { ImageOptions } from './embedded-image';
+import { EmbeddedImage } from './embedded-image';
+import type { ChartOptions} from './chart2';
+import { Chart} from './chart2';
+import type { RelationshipMap} from '../relationship';
+import { AddRel } from '../relationship';
 
 const pixel_offset = 9525;
 
