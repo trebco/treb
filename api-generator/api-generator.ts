@@ -118,10 +118,13 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
    */
   let exported_module = false;
 
-  return context => {
-    const visit: ts.Visitor = node => {
+  return (context: ts.TransformationContext) => {
 
-      const modifiers = (node.modifiers || []).map(member => {
+    const visit: ts.Visitor = (node: ts.Node): ts.Node|undefined => {
+
+      // FIXME: not sure what this was before
+
+      const modifiers = ((node as any).modifiers || []).map(member => {
         return ts.SyntaxKind[member.kind];
       });
 
@@ -211,7 +214,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
                 })
               ));
 
-            if ((node as any).jsDoc) {
+            if ((node as any).jsDoc && (node as any).jsDoc[0]) {
 
               const source_text = node.getSourceFile().text;
               const jsDoc: ts.JSDoc[] = (node as any).jsDoc;
@@ -361,8 +364,10 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
       }
 
       return ts.visitEachChild(node, child => visit(child), context);
-    }
-    return node => ts.visitNode(node, visit);
+    };
+
+    return (node: T) => ts.visitEachChild(node, visit, context);    
+
   };
 
 }
@@ -430,22 +435,17 @@ function CollectDependencyTransformer<T extends ts.Node>(
 
   };
 
-  return context => {
-    const visit: ts.Visitor = node => {
+  return (context: ts.TransformationContext) => {
+
+    const visitor: ts.Visitor = (node: ts.Node) => {
+      return node;
+    }
+
+    const visit: ts.Visitor = (node: ts.Node) => {
 
       const modifiers = ts.canHaveModifiers(node) ? (ts.getModifiers(node) || []).map(member => {
         return ts.SyntaxKind[member.kind];
       }) : [];
-
-      /*
-      const modifiers = (node.modifiers || []).map(member => {
-        return ts.SyntaxKind[member.kind];
-      });
-
-      if (modifiers.length) {
-        console.info({modifiers, modifiers2});
-      }
-      */
 
       const tags = GetDocTags(node);
 
@@ -455,40 +455,6 @@ function CollectDependencyTransformer<T extends ts.Node>(
       const exported = modifiers.includes('ExportKeyword');
       const declared = modifiers.includes('DeclareKeyword');
       const is_public = !(modifiers.includes('ProtectedKeyword') || modifiers.includes('PrivateKeyword'));
-
-      /*
-      if ((node as any).name && ts.isIdentifier((node as any).name)) {
-        const name = (node as any).name.escapedText.toString();
-        if (/treb/i.test(name)) {
-          console.info(name, node.kind, ts.SyntaxKind[node.kind] );
-        }
-      }
-      */
-
-      /*
-      if ((node as any).name && ts.isIdentifier((node as any).name)) {
-        const name = (node as any).name.escapedText.toString();
-        if (/trebglobal$/i.test(name)) {
-          console.info({name, exported, internal, modifiers});
-          console.info(node);
-          console.info('');
-        }
-      }
-      */
-
-      /*
-      if (exported && declared) {
-        if ((node as any).name && ts.isIdentifier((node as any).name)) {
-          const name = (node as any).name.escapedText.toString();
-          //if (/treb$/i.test(name)) {
-            console.info({name, exported, internal, modifiers});
-            // console.info(node);
-            // console.info('');
-          //}
-        }
-  
-      }
-      */
 
       if (ts.isModuleDeclaration(node)
         || ts.isClassDeclaration(node)
@@ -709,9 +675,12 @@ function CollectDependencyTransformer<T extends ts.Node>(
 
       }
 
-      return ts.visitEachChild(node, child => visit(child), context);
-    }
-    return node => ts.visitNode(node, visit);
+      return ts.visitEachChild(node, visit, context);
+    };
+
+    return node => ts.visitEachChild(node, visit, context);
+
+
   }
 }
 
