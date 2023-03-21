@@ -124,7 +124,7 @@ function CleanTransformer<T extends ts.Node>(): ts.TransformerFactory<T> {
 
       // FIXME: not sure what this was before
 
-      const modifiers = ((node as any).modifiers || []).map(member => {
+      const modifiers = ((node as any).modifiers || []).map((member: ts.Node) => {
         return ts.SyntaxKind[member.kind];
       });
 
@@ -719,6 +719,7 @@ const ReadTypes = async (file: string, types?: string[], origination = 'C', dept
   for (let i = 0; i < depth; i++) { depth_prefix += ' '; }
 
   const RelativeFilePath = (key: string): string => {
+    
     for (const prefix of Object.keys(config.map)) {
       if (key.startsWith(prefix)) { // should === ?
         const replaced = key.replace(prefix, config.map[prefix]);
