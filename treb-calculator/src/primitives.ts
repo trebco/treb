@@ -19,7 +19,8 @@
  * 
  */
 
-import { Complex, IsComplex, UnionValue, ValueType } from 'treb-base-types';
+import type { Complex, UnionValue} from 'treb-base-types';
+import { ValueType } from 'treb-base-types';
 import { DivideByZeroError, ValueError } from './function-error';
 
 import * as ComplexLib from './complex-math';

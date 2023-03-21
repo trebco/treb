@@ -19,9 +19,6 @@
  * 
  */
 
-import {tmpl, NodeModel} from 'treb-utils'; 
-// import '../style/icon.scss';
-
 export enum DialogType {
   default = '', 
   info = 'info',

@@ -23,7 +23,8 @@ import { DOMUtilities } from '../util/dom_utilities';
 import type { DataModel, ViewModel } from '../types/data_model';
 
 import type { Tile } from '../types/tile';
-import { Style, Theme, Point, Extent, Size, Position, Area, ICellAddress, Rectangle, ThemeColor, Table } from 'treb-base-types';
+import type { Theme, Point, Extent, Size, Position, ICellAddress, Table } from 'treb-base-types';
+import { Style, Area, Rectangle, ThemeColor } from 'treb-base-types';
 
 import { MouseDrag } from '../types/drag_mask';
 import type { GridEvent } from '../types/grid_events';
@@ -39,7 +40,8 @@ import type { GridEvent } from '../types/grid_events';
 // define area as a generic, then define it on some arbitrary value. that would
 // force separation of all the functions between the two types (I think)
 
-import { Area as TileRange, CellValue, AnnotationLayout, Corner } from 'treb-base-types';
+import type { CellValue, AnnotationLayout, Corner } from 'treb-base-types';
+import { Area as TileRange } from 'treb-base-types';
 import type { Annotation } from '../types/annotation';
 
 export { Area as TileRange } from 'treb-base-types';

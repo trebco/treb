@@ -24,7 +24,8 @@
 import type { Area, IArea } from './area';
 import type { Style } from './style';
 import type { TextPart } from './text_part';
-import { ValueType, GetValueType, Complex } from './value-type';
+import type { Complex } from './value-type';
+import { ValueType, GetValueType } from './value-type';
 import type { CellValue, UnionValue } from './union';
 import type { PreparedText } from './render_text';
 import type { Table } from './table';

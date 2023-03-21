@@ -20,7 +20,7 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import { CellValue, UnionValue, ValueType } from 'treb-base-types';
+import { type CellValue, type UnionValue, ValueType } from 'treb-base-types';
 import { FlattenUnboxed } from '../utilities';
 
 // use a single, static object for base functions

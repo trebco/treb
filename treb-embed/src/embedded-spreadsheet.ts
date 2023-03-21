@@ -21,27 +21,34 @@
 
 // --- imports -----------------------------------------------------------------
 
-import {
-  Grid, GridEvent, SerializeOptions, Annotation,
+import type {
+  GridEvent, SerializeOptions, Annotation,
   SerializedModel, FreezePane, SerializedSheet,
-  BorderConstants, SheetChangeEvent, GridOptions, 
-  Sheet, GridSelection, CellEvent, FunctionDescriptor, 
-  DataModel, AnnotationViewData, ErrorCode, UA
+  SheetChangeEvent, GridOptions, 
+  GridSelection, CellEvent, FunctionDescriptor, 
+  AnnotationViewData, 
+} from 'treb-grid';
+
+import {
+  DataModel, Grid, BorderConstants, Sheet, ErrorCode, UA
 } from 'treb-grid';
 
 import { 
   Parser, DecimalMarkType, 
   ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 
-import { Calculator, EvaluateOptions, LeafVertex } from 'treb-calculator';
+import { Calculator, type EvaluateOptions, type LeafVertex } from 'treb-calculator';
+
+import type {
+  ICellAddress, 
+  IArea, CellValue, Point,
+  Complex, ExtendedUnion, IRectangle,
+  AddressReference, RangeReference, TableSortOptions, Table, TableTheme,
+} from 'treb-base-types';
 
 import {
-  ThemeColor2,
-  IsCellAddress, Localization, Style, ICellAddress, 
-  Area, IArea, CellValue, Point,
-  IsFlatData, IsFlatDataArray, Rectangle, IsComplex, 
-  ComplexToString, Complex, ExtendedUnion, IRectangle,
-  AddressReference, RangeReference, IsArea, TableSortOptions, Table, ThemeColorTable, TableTheme,
+  IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, 
+  Localization, Style, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, 
 } from 'treb-base-types';
 
 import { EventSource, Yield, ValidateURI } from 'treb-utils';
@@ -51,8 +58,8 @@ import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
 import { Dialog, DialogType } from './progress-dialog';
 import { Spinner } from './spinner';
-import { EmbeddedSpreadsheetOptions, DefaultOptions, ExportOptions } from './options';
-import { TREBDocument, SaveFileType, LoadSource, EmbeddedSheetEvent, InsertTableOptions } from './types';
+import { type EmbeddedSpreadsheetOptions, DefaultOptions, type ExportOptions } from './options';
+import { type TREBDocument, SaveFileType, LoadSource, type EmbeddedSheetEvent, type InsertTableOptions } from './types';
 
 import type { LanguageModel, TranslatedFunctionDescriptor } from './language-model';
 import type { SelectionState } from './selection-state';
@@ -76,12 +83,12 @@ import { Chart, ChartFunctions } from 'treb-charts';
 
 import type { SetRangeOptions } from 'treb-grid';
 
-// ---
-
-import export_worker_script from 'worker:../../treb-export/src/export-worker/index-modern.ts';
-const crocus = 100;
-
-// ---
+/**
+ * note the clumsy URI-like syntax. if typescript can see that the thing
+ * is a ts file, even if we have a prefix and a type defined for that 
+ * prefix, it will still try to read it. this is not a great solution.
+ */
+import export_worker_script from 'worker://../../treb-export/src/export-worker/index-modern.ts';
 
 /**
  * options for saving files. we add the option for JSON formatting.

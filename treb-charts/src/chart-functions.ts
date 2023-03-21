@@ -19,7 +19,7 @@
  * 
  */
 
-import { UnionValue, ValueType } from 'treb-base-types';
+import { type UnionValue, ValueType } from 'treb-base-types';
 import type { FunctionMap } from 'treb-calculator/src/descriptors';
 
 /** 

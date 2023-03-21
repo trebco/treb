@@ -24,8 +24,10 @@
  * (not sure if there are benefits yet either)
  */
 
-import { Area, IArea, ICellAddress, IsCellAddress } from './area';
-import { Cell, DataValidation } from './cell';
+import type { IArea, ICellAddress} from './area';
+import { Area, IsCellAddress } from './area';
+import type { DataValidation } from './cell';
+import { Cell } from './cell';
 import type { Table } from './table';
 import { ValueType, GetValueType } from './value-type';
 import type { CellValue, UnionValue } from './union';

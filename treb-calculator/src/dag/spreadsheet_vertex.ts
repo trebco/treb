@@ -19,8 +19,10 @@
  * 
  */
 
-import { SpreadsheetVertexBase, GraphCallbacks } from './spreadsheet_vertex_base';
-import { Cell, Box, ICellAddress, ValueType, UnionValue } from 'treb-base-types';
+import type { GraphCallbacks } from './spreadsheet_vertex_base';
+import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
+import type { Cell, ICellAddress, UnionValue } from 'treb-base-types';
+import { Box, ValueType } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
 import { ErrorType } from '../function-error';

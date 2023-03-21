@@ -54,6 +54,9 @@ module.exports = {
 
     'grouped-accessor-pairs': ['error', 'getBeforeSet'],
     
+    '@typescript-eslint/consistent-type-imports': 'error',
+    // '@typescript-eslint/consistent-type-exports': 'error',
+
   }
 
   /*

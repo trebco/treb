@@ -19,13 +19,15 @@
  * 
  */
 
-import { Area, Cell, Theme, Rectangle, Localization, ICellAddress } from 'treb-base-types';
+import type { Cell, Theme, ICellAddress } from 'treb-base-types';
+import { Area, Rectangle, Localization } from 'treb-base-types';
 import { Yield, EventSource } from 'treb-utils';
 import type { Parser, UnitRange, UnitAddress, ParseResult, ExpressionUnit } from 'treb-parser';
 
 import type { GridSelection } from '../types/grid_selection';
 import type { Autocomplete, AutocompleteResult } from './autocomplete';
-import { AutocompleteExecResult, AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
+import type { AutocompleteExecResult, AutocompleteMatcher} from './autocomplete_matcher';
+import { DescriptorType } from './autocomplete_matcher';
 
 import type { DataModel, ViewModel } from '../types/data_model';
 import { UA } from '../util/ua';

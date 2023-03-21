@@ -110,8 +110,6 @@ export class SpreadsheetConstructor {
         style.textContent = css;
         document.head.prepend(style);
       }
-      else {
-      }
 
       /*
       if (!SpreadsheetConstructor.stylesheets_attached) {
@@ -268,19 +266,15 @@ export class SpreadsheetConstructor {
 
     // set a local variable so we don't have to keep testing the member
 
-    const sheet = new EmbeddedSpreadsheet(options);
+    this.sheet = new EmbeddedSpreadsheet(options);
 
-    // console.info(sheet.options);
-
-    this.sheet = sheet;
-
-    if (!this.root) {
-      return; // the rest is UI setup
+    if (this.root) {
+      this.CreateLayout(this.sheet, this.root);
     }
 
-    // --- not headless (headful?) ---------------------------------------------
+  }
 
-    const root = this.root; // for async/callback functions
+  public CreateLayout(sheet: EmbeddedSpreadsheet, root: HTMLElement) {
 
     // call our internal resize method when the node is resized
     // (primary instance will handle views)
@@ -416,7 +410,7 @@ export class SpreadsheetConstructor {
       let mask: HTMLElement|undefined;
       let resizer: HTMLElement|undefined;
 
-      const resize_handle = this.root.querySelector('.treb-layout-resize-handle') as HTMLElement;
+      const resize_handle = root.querySelector('.treb-layout-resize-handle') as HTMLElement;
 
       // mouse up handler added to mask (when created)
       const mouse_up = () => finish();

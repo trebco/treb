@@ -22,11 +22,16 @@
 //import * as JSZip from 'jszip';
 import JSZip from 'jszip';
 
-import { AnchoredChartDescription, ChartType, TableDescription, Workbook } from './workbook2';
-import { Parser, ParseResult } from 'treb-parser';
-import { is_range, RangeType, ShiftRange, InRange, AddressType, is_address, HyperlinkType } from './address-type';
-import { ImportedSheetData, AnchoredAnnotation, CellParseResult, ValueType, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, ValidationType, IArea } from 'treb-base-types/src';
-import { Sheet, VisibleState } from './workbook-sheet2';
+import type { AnchoredChartDescription} from './workbook2';
+import { ChartType, Workbook } from './workbook2';
+import type { ParseResult } from 'treb-parser';
+import { Parser } from 'treb-parser';
+import type { RangeType, AddressType, HyperlinkType } from './address-type';
+import { is_range, ShiftRange, InRange, is_address } from './address-type';
+import type { ImportedSheetData, AnchoredAnnotation, CellParseResult, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, IArea } from 'treb-base-types/src';
+import { ValueType, ValidationType } from 'treb-base-types/src';
+import type { Sheet} from './workbook-sheet2';
+import { VisibleState } from './workbook-sheet2';
 import type { CellAnchor } from './drawing2/drawing2';
 import { XMLUtils } from './xml-utils';
 

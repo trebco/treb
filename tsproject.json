@@ -16,7 +16,7 @@
     "rootDir": ".",
     "importHelpers": true,
     "noEmitHelpers": true,
-    "importsNotUsedAsValues": "error",
+    "verbatimModuleSyntax": true,
     "lib": [
       "dom", "es2015"
     ],

@@ -21,7 +21,8 @@
 
 import type { FunctionMap } from '../descriptors';
 import { NumberFormatCache, ValueParser } from 'treb-format';
-import { Localization, UnionValue, ValueType } from 'treb-base-types';
+import type { UnionValue} from 'treb-base-types';
+import { Localization, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
 import { ArgumentError, ValueError } from '../function-error';
 

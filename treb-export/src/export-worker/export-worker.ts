@@ -19,9 +19,7 @@
  * 
  */
 
-// import { Importer } from '../import';
-// import { Exporter } from '../export';
-import type { ImportedSheetData, IArea } from 'treb-base-types/src';
+import type { ImportedSheetData } from 'treb-base-types/src';
 
 import { Exporter } from '../export2';
 import { Importer } from '../import2';

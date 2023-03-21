@@ -20,11 +20,14 @@
  */
 
 import { NumberFormatCache } from 'treb-format';
-import { ChartRenderer, Metrics } from './renderer';
+import type { Metrics } from './renderer';
+import { ChartRenderer } from './renderer';
 import { Area } from './rectangle';
 import { Util } from './util';
-import { BarData, CellData, ChartData, DonutSlice, LegendLayout, LegendPosition, LegendStyle, SeriesType, SubSeries } from './chart-types';
-import { ArrayUnion, ExtendedUnion, UnionValue, ValueType } from 'treb-base-types';
+import type { BarData, CellData, ChartData, DonutSlice, SeriesType, SubSeries } from './chart-types';
+import { LegendLayout, LegendPosition, LegendStyle } from './chart-types';
+import type { ArrayUnion, ExtendedUnion, UnionValue} from 'treb-base-types';
+import { ValueType } from 'treb-base-types';
 
 // require('../style/charts.scss');
 

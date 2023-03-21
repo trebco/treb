@@ -25,7 +25,7 @@ import type { Sheet } from './sheet';
 import type { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import type { GridOptions } from './grid_options';
-import { ScaleEvent, ScaleControl } from './scale-control';
+import { type ScaleEvent, ScaleControl } from './scale-control';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';

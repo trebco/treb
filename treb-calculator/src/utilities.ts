@@ -19,7 +19,8 @@
  * 
  */
 
-import { ArrayUnion, UnionValue, ValueType } from 'treb-base-types';
+import type { ArrayUnion, UnionValue} from 'treb-base-types';
+import { ValueType } from 'treb-base-types';
 
 export const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -195,8 +196,6 @@ export const ApplyArrayFunc = (base: (...args: any[]) => any) => {
 export const ApplyAsArray = (base: (a: any, ...rest: any[]) => UnionValue) => {
   return (a: any, ...rest: any[]): UnionValue => {
     if (Array.isArray(a)) {
-
-      console.info("AAA 71823");
 
       return {
         type: ValueType.array,

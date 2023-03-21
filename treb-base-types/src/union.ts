@@ -19,7 +19,8 @@
  * 
  */
 
-import { ValueType, Complex, GetValueType, DimensionedQuantity } from './value-type';
+import type { Complex, DimensionedQuantity } from './value-type';
+import { ValueType, GetValueType } from './value-type';
 
 export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 

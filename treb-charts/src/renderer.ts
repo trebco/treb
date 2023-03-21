@@ -19,8 +19,10 @@
  * 
  */
 
-import { Area, Size, Point } from './rectangle';
-import { DonutSlice, LegendLayout, LegendOptions, LegendPosition, LegendStyle } from './chart-types';
+import type { Size, Point } from './rectangle';
+import { Area } from './rectangle';
+import type { DonutSlice, LegendOptions} from './chart-types';
+import { LegendLayout, LegendPosition, LegendStyle } from './chart-types';
 import type { RangeScale } from 'treb-utils';
 
 const SVGNS = 'http://www.w3.org/2000/svg';

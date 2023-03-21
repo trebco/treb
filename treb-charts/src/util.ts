@@ -19,7 +19,8 @@
  * 
  */
 
-import { RangeScale, Scale } from 'treb-utils';
+import type { RangeScale} from 'treb-utils';
+import { Scale } from 'treb-utils';
 
 /* * calculated human-friendly scale for rendering axes * /
 export interface RangeScale {

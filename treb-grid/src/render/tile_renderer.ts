@@ -19,14 +19,16 @@
  * 
  */
 
-import { TextPartFlag, ICellAddress, Style, ValueType, 
+import type { ICellAddress, 
          PreparedText, RenderTextPart,
-         Cell, Area, Size, Rectangle, 
-         Theme, ThemeColor, ThemeColor2, Table } from 'treb-base-types';
+         Cell, Size, 
+         Theme} from 'treb-base-types';
+import { TextPartFlag, Style, ValueType, Area, Rectangle, ThemeColor, ThemeColor2 } from 'treb-base-types';
 
 import type { Tile } from '../types/tile';
 import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
-import { FormattedString, MDParser } from 'treb-parser';
+import type { FormattedString} from 'treb-parser';
+import { MDParser } from 'treb-parser';
 import type { BaseLayout, TileRange } from '../layout/base_layout';
 import type { DataModel, ViewModel } from '../types/data_model';
 import type { GridOptions } from '../types/grid_options';

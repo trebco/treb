@@ -19,49 +19,54 @@
  * 
  */
 
-import {
-  Area, 
+import type { 
   Cell, 
   Theme, 
-  Style, 
   IArea, 
-  Extent, 
-  Is2DArray,
+  Extent,
   CellValue, 
+  ICellAddress,
+  ImportedSheetData,
+  Complex,
+  IRectangle} from 'treb-base-types';
+  
+import {
+  Area, 
+  Style, 
+  Is2DArray, 
   Rectangle, 
   ValueType, 
   Localization, 
-  ICellAddress, 
   IsCellAddress, 
-  ValidationType,
-  ImportedSheetData, 
+  ValidationType, 
   LoadThemeProperties,
   DefaultTheme,
   ComplexToString,
-  Complex,
-  IRectangle,
   IsComplex,
   TextPartFlag,
 } from 'treb-base-types';
 
-import {
+import type {
   Parser, 
+  ExpressionUnit} from 'treb-parser';
+import { 
   DecimalMarkType, 
-  ExpressionUnit, 
   ArgumentSeparatorType, 
   QuotedSheetNameRegex, 
   MDParser,
 } from 'treb-parser';
 
 import { Yield, SerializeHTML } from 'treb-utils';
-import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat, ParseResult as ParseResult2 } from 'treb-format';
+import type { ParseResult as ParseResult2 } from 'treb-format';
+import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
 import { TabBar } from './tab_bar';
 import type { StatsEntry } from './tab_bar';
 
 import { Sheet } from './sheet';
-import { TileRange, BaseLayout } from '../layout/base_layout';
+import type { BaseLayout } from '../layout/base_layout';
+import { TileRange } from '../layout/base_layout';
 
 // this was conditional compilation. we're dropping as we no longer support IE11.
 // import { CreateLayout } from '@grid-conditional/layout_manager';
@@ -75,8 +80,9 @@ import type { GridSelection } from './grid_selection';
 import { OverlayEditor, OverlayEditorResult } from '../editors/overlay_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
-import { ErrorCode, GridEvent } from './grid_events';
-import type { FreezePane, LegacySerializedSheet } from './sheet_types';
+import type { GridEvent } from './grid_events';
+import { ErrorCode } from './grid_events';
+import type { LegacySerializedSheet } from './sheet_types';
 import { FormulaBar } from '../editors/formula_bar';
 import type { GridOptions } from './grid_options';
 import { BorderConstants } from './border_constants';
@@ -87,13 +93,15 @@ import { Autocomplete } from '../editors/autocomplete';
 
 import { MouseDrag } from './drag_mask';
 
-import {
-  Command, CommandKey,
+import type {
+  Command,
   SetRangeCommand, FreezeCommand,
   InsertRowsCommand, InsertColumnsCommand, SetNameCommand,
   ActivateSheetCommand, DataValidationCommand, 
   ResizeRowsCommand, ResizeColumnsCommand, 
   SelectCommand
+} from './grid_command';
+import { CommandKey
 } from './grid_command';
 
 import type { DataModel, SerializedModel } from './data_model';

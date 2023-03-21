@@ -19,7 +19,7 @@
  * 
  */
 
-import { IArea, Area } from 'treb-base-types';
+import { type IArea, Area } from 'treb-base-types';
 
 /**
  * I want to repurpose named ranges (a little) to allow either values or 

@@ -21,22 +21,23 @@
 
 // --- treb imports -----------------------------------------------------------
 
-import {
-  Cell, ValueType, Cells, Style,
-  Area, ICellAddress, CellSerializationOptions, IsFlatDataArray, 
-  IsNestedRowArray, CellValue, ImportedSheetData, Complex, 
-  DimensionedQuantity, IsCellAddress, IArea, Table, TableTheme,
+import { ValueType, Cells, Style,
+  Area, IsFlatDataArray, 
+  IsNestedRowArray, IsCellAddress
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement, ValidateURI } from 'treb-utils';
 
-import type { TextPart } from 'treb-base-types';
+import type { TextPart ,
+  Cell, ICellAddress, CellSerializationOptions, CellValue, ImportedSheetData, Complex, 
+  DimensionedQuantity, IArea, Table, TableTheme} from 'treb-base-types';
 
 // --- local imports ----------------------------------------------------------
 
 import type { FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
 import type { SerializeOptions } from './serialize_options';
-import { CreateSelection, GridSelection } from './grid_selection';
+import type { GridSelection } from './grid_selection';
+import { CreateSelection } from './grid_selection';
 import { Annotation } from './annotation';
 
 // --- constants --------------------------------------------------------------

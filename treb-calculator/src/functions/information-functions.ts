@@ -20,7 +20,7 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import { UnionValue, ValueType } from 'treb-base-types';
+import { type UnionValue, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
 
 export const InformationFunctionLibrary: FunctionMap = {

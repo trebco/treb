@@ -28,7 +28,8 @@
  * and get layout working properly. 
  */
 
-import { Style, Theme, CellValue, Rectangle, ThemeColor2, Cell } from 'treb-base-types';
+import type { Theme, CellValue, Rectangle, Cell } from 'treb-base-types';
+import { Style, ThemeColor2 } from 'treb-base-types';
 import { Yield } from 'treb-utils';
 import type { Parser } from 'treb-parser';
 import type { GridSelection } from '../types/grid_selection';

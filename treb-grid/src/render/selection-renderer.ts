@@ -19,9 +19,11 @@
  * 
  */
 
-import { Theme, Rectangle, ICellAddress } from 'treb-base-types';
+import type { Theme, ICellAddress } from 'treb-base-types';
+import { Rectangle } from 'treb-base-types';
 import type { BaseLayout } from '../layout/base_layout';
-import { SVGSelectionBlock, SelectionOffset } from './svg_selection_block';
+import type { SelectionOffset } from './svg_selection_block';
+import { SVGSelectionBlock } from './svg_selection_block';
 import type { GridSelection } from '../types/grid_selection';
 import { HeaderOverlay, Orientation } from './svg_header_overlay';
 import type { DataModel, ViewModel } from '../types/data_model';

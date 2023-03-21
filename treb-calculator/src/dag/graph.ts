@@ -19,12 +19,14 @@
  * 
  */
 
-import { Vertex, Color } from './vertex';
+import type { Vertex} from './vertex';
+import { Color } from './vertex';
 import { SpreadsheetVertex  } from './spreadsheet_vertex';
 import { ArrayVertex  } from './array-vertex';
 import type { SpreadsheetVertexBase, CalculationResult, GraphCallbacks } from './spreadsheet_vertex_base';
 import type { LeafVertex } from './leaf_vertex';
-import { ICellAddress, ICellAddress2, Area, IArea, UnionValue } from 'treb-base-types';
+import type { ICellAddress, ICellAddress2, IArea, UnionValue } from 'treb-base-types';
+import { Area } from 'treb-base-types';
 import type { DataModel } from 'treb-grid';
 
 // FIXME: this is a bad habit if you're testing on falsy for OK.

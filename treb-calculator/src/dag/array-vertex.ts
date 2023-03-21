@@ -20,7 +20,7 @@
  */
 
 import type { Vertex } from './vertex';
-import { GraphCallbacks, SpreadsheetVertexBase } from './spreadsheet_vertex_base';
+import { type GraphCallbacks, SpreadsheetVertexBase } from './spreadsheet_vertex_base';
 import type { Area, ICellAddress2 } from 'treb-base-types';
 import type { SpreadsheetVertex } from './spreadsheet_vertex';
 import { Color } from './vertex';

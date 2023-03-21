@@ -19,7 +19,7 @@
  * 
  */
 
-import {
+import type {
   ExpressionUnit,
   UnitAddress,
   UnitIdentifier,
@@ -29,13 +29,14 @@ import {
   UnitUnary,
   DependencyList,
   ParseResult,
-  ArgumentSeparatorType,
-  DecimalMarkType,
   UnitLiteral,
   UnitLiteralNumber,
   ParserFlags,
   UnitStructuredReference,
-  RenderOptions,
+  RenderOptions} from './parser-types';
+import {
+  ArgumentSeparatorType,
+  DecimalMarkType
 } from './parser-types';
 
 interface PrecedenceList {

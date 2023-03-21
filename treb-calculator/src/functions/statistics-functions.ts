@@ -22,7 +22,7 @@
 import type { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ValueError, ArgumentError, NAError } from '../function-error';
-import { Complex, UnionValue, ValueType } from 'treb-base-types';
+import { type Complex, type UnionValue, ValueType } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
 
 export const Variance = (data: number[], sample = false) => {

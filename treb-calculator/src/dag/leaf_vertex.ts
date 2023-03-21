@@ -21,7 +21,8 @@
 
 import type { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
-import { Vertex, Color } from './vertex';
+import type { Vertex} from './vertex';
+import { Color } from './vertex';
 
 /**
  * second specialization of vertex: this class is for non-cell elements

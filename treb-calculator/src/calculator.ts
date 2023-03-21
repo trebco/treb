@@ -19,11 +19,13 @@
  * 
  */
 
-import { Localization, Cell, Area, ICellAddress, ICellAddress2, ValueType, UnionValue,
-         ArrayUnion, IArea, IsCellAddress, FlatCellData} from 'treb-base-types';
+import type { Cell, ICellAddress, ICellAddress2, UnionValue,
+         ArrayUnion, IArea, FlatCellData} from 'treb-base-types';
+import { Localization, Area, ValueType, IsCellAddress} from 'treb-base-types';
          
-import { Parser, ExpressionUnit, DependencyList, UnitRange,
-         DecimalMarkType, ArgumentSeparatorType, UnitAddress, UnitIdentifier } from 'treb-parser';
+import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier } from 'treb-parser';
+import { Parser,
+         DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 
 import { Graph } from './dag/graph';
 import type { SpreadsheetVertex } from './dag/spreadsheet_vertex';
@@ -33,7 +35,8 @@ import { ExpressionCalculator, UnionIsMetadata } from './expression-calculator';
 import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
-import { FunctionMap, ReturnType } from './descriptors';
+import type { FunctionMap} from './descriptors';
+import { ReturnType } from './descriptors';
 import { AltFunctionLibrary, BaseFunctionLibrary } from './functions/base-functions';
 import { FinanceFunctionLibrary } from './functions/finance-functions';
 import { TextFunctionLibrary, TextFunctionAliases } from './functions/text-functions';

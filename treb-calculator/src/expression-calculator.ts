@@ -20,12 +20,13 @@
  */
 
 import type { FunctionLibrary } from './function-library';
-import { Cell, ICellAddress, ValueType, GetValueType,
+import type { Cell, ICellAddress,
          Area, UnionValue, CellValue,
          ArrayUnion,
          NumberUnion,
          UndefinedUnion,
          ComplexUnion } from 'treb-base-types';
+import { ValueType, GetValueType } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
 import type { DataModel, MacroFunction, Sheet } from 'treb-grid';

@@ -37,14 +37,17 @@
 
 import { EventSource } from 'treb-utils';
 import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
-import { Parser, type ExpressionUnit, UnitAddress, IllegalSheetNameRegex, ParseCSV, ArgumentSeparatorType, DecimalMarkType } from 'treb-parser';
-import { Area, Style, IsCellAddress, ValidationType, ValueType, Table, TableSortOptions, DefaultTableSortOptions, TableTheme, Complex } from 'treb-base-types';
-import type { ICellAddress, IArea, Cell, CellValue } from 'treb-base-types';
+import type { Parser, UnitAddress} from 'treb-parser';
+import { type ExpressionUnit, IllegalSheetNameRegex, ParseCSV, ArgumentSeparatorType, DecimalMarkType } from 'treb-parser';
+import { Area, IsCellAddress, ValidationType, ValueType, DefaultTableSortOptions } from 'treb-base-types';
+import type { ICellAddress, IArea, Cell, CellValue , Style, Table, TableSortOptions, TableTheme, Complex } from 'treb-base-types';
 import { Sheet } from './sheet';
-import { AutocompleteMatcher, FunctionDescriptor, DescriptorType } from '../editors/autocomplete_matcher';
+import type { FunctionDescriptor} from '../editors/autocomplete_matcher';
+import { AutocompleteMatcher, DescriptorType } from '../editors/autocomplete_matcher';
 import { NumberFormat, ValueParser } from 'treb-format';
 
-import { ErrorCode, GridEvent } from './grid_events';
+import type { GridEvent } from './grid_events';
+import { ErrorCode } from './grid_events';
 import type { CommandRecord, DataValidationCommand, DuplicateSheetCommand, FreezeCommand, InsertColumnsCommand, InsertRowsCommand, ResizeColumnsCommand, ResizeRowsCommand, SelectCommand, SetRangeCommand, ShowSheetCommand, SortTableCommand } from './grid_command';
 import { DefaultGridOptions, type GridOptions } from './grid_options';
 import type { SerializeOptions } from './serialize_options';

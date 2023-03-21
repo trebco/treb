@@ -13,7 +13,6 @@
   ],
   "exclude": [
     "src/custom-element/global.d.ts",
-
     "src/API/api-v1.ts",
     "src/API/api-utils.ts",
     "src/index-modern-mc.ts",

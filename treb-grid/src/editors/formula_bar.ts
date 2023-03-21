@@ -23,7 +23,8 @@ import { Yield } from 'treb-utils';
 
 import { DOMUtilities } from '../util/dom_utilities';
 import type { Theme } from 'treb-base-types';
-import { FormulaEditorBase, FormulaEditorEvent } from './formula_editor_base';
+import type { FormulaEditorEvent } from './formula_editor_base';
+import { FormulaEditorBase } from './formula_editor_base';
 import type { GridOptions } from '../types/grid_options';
 import type { Autocomplete } from './autocomplete';
 import type { DataModel, ViewModel } from '../types/data_model';
