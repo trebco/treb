@@ -458,9 +458,11 @@ export class SpreadsheetConstructor {
         event.stopPropagation();
         event.preventDefault();
 
-        resizer = Element<HTMLDivElement>('div', document.body, { classes: 'treb-resize-rect' });
+        const resize_parent = root.querySelector('.treb-main') as HTMLElement; // was document.body
 
-        mask = Element<HTMLDivElement>('div', document.body, { 
+        resizer = Element<HTMLDivElement>('div', resize_parent, { classes: 'treb-resize-rect' });
+
+        mask = Element<HTMLDivElement>('div', resize_parent, { 
           classes: 'treb-resize-mask', 
           style: 'cursor: nw-resize;',
         });

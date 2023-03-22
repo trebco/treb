@@ -1912,12 +1912,15 @@ export class EmbeddedSpreadsheet {
     
     const { x, y } = this.grid.GetScrollOffset();
     const scale = this.grid.scale || 1;
+    const auto_size = { width: 301, height: 301 };
+
+    // we're not sizing this very well at scale, because scale is stepped. FIXME
 
     this.grid.CreateAnnotation({
       type,
       formula,
       // class_name,
-    }, undefined, undefined, target || { top: y / scale + 30, left: x / scale + 30, width: 300, height: 300 });
+    }, undefined, undefined, target || { top: y / scale + 30, left: x / scale + 30, ...auto_size });
 
   }
 
