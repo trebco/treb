@@ -53,7 +53,7 @@
     // more specific about what we unset in order to avoid any 
     // unexpected side effects.
 
-    // all: revert;
+    all: revert;
     box-sizing: border-box;
 
   }
@@ -286,7 +286,7 @@
 
   .treb-layout-sidebar > button, .treb-toggle-sidebar-button {
 
-    all: initial;
+    // all: initial;
     padding: 0;
     margin: 0;
     border: 0;
@@ -376,7 +376,7 @@
   // OK, but then we can't scope properly. so no.
 
   .treb-resize-rect {
-    all: initial;
+    // all: initial;
     z-index: 9998; // ugh
     position: fixed;
     top: 0px;
@@ -388,7 +388,7 @@
   }
 
   .treb-resize-mask {
-    all: initial;
+    // all: initial;
     z-index: 9999; // ugh
     position: fixed;
     top: 0px;
