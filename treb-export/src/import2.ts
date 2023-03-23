@@ -37,6 +37,7 @@ import { XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';
 import { ColumnWidthToPixels } from './column-width';
+import type { AnnotationType } from 'treb-grid';
 
 interface SharedFormula {
   row: number;
@@ -697,7 +698,7 @@ export class Importer {
           br: AnchorToCorner(descriptor.anchor.to),
         };
 
-        let type: string|undefined;
+        let type: AnnotationType|undefined;
         const args: Array<string|undefined> = [];
         let func = '';        
         const series = descriptor.chart?.series;

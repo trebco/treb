@@ -29,7 +29,8 @@ import type {
   SerializedModel, FreezePane, SerializedSheet,
   SheetChangeEvent, GridOptions, 
   GridSelection, CellEvent, FunctionDescriptor, 
-  AnnotationViewData, 
+  AnnotationViewData,
+  AnnotationType, 
 } from 'treb-grid';
 
 import {
@@ -1891,7 +1892,7 @@ export class EmbeddedSpreadsheet {
    * @param argument_separator - the argument separator to use when evaluating
    * the function. defaults to current locale.
    */
-  public InsertAnnotation(formula: string, type = 'treb-chart', rect?: IRectangle|RangeReference, argument_separator?: ','|';'): void {
+  public InsertAnnotation(formula: string, type: AnnotationType = 'treb-chart', rect?: IRectangle|RangeReference, argument_separator?: ','|';'): void {
 
     let target: IRectangle | Partial<Area> | undefined;
 
@@ -3171,7 +3172,7 @@ export class EmbeddedSpreadsheet {
         }
 
         for (const annotation of sheet.annotations || []) {
-          if (annotation.type === 'image' && annotation.data.src) {
+          if (annotation.type === 'image' && annotation.data?.src) {
             annotation.data.src = Store(annotation.data.src);
           }
         }
@@ -4350,15 +4351,20 @@ export class EmbeddedSpreadsheet {
             const annotation = this.grid.CreateAnnotation({
               type: 'image',
               formula: '',
+              data: {
+                scale: '',
+                src: contents,
+                original_size: { width: img.width || 300, height: img.height || 300 },
+              },
             }, undefined, undefined, {
               top: 30,
               left: 30,
               width: img.width || 300,
-              height: img.height || 300
+              height: img.height || 300,
             });
 
-            annotation.data.src = contents;
-            annotation.data.original_size = { width: img.width || 300, height: img.height || 300 };
+            // annotation.data.src = contents;
+            // annotation.data.original_size = { width: img.width || 300, height: img.height || 300 };
 
           }
 
@@ -4613,9 +4619,12 @@ export class EmbeddedSpreadsheet {
       annotation.dirty = false;
     }
 
-    if (view.content_node && annotation.data) {
+    // why was this testing for data? that would always exist on an annotation
+    // instance (but not in our new data type). maybe some legacy thing? 
 
-      if (annotation.type === 'treb-chart') {
+    if (view.content_node ) { // && annotation.annotation_data.data) {
+
+      if (annotation.data.type === 'treb-chart') {
 
         // if (!(self as any).TREB || !(self as any).TREB.CreateChart2) {
         //    console.warn('missing chart library');
@@ -4633,8 +4642,8 @@ export class EmbeddedSpreadsheet {
 
           const update_chart = () => {
 
-            if (annotation.formula) {
-              const parse_result = this.parser.Parse(annotation.formula);
+            if (annotation.data.formula) {
+              const parse_result = this.parser.Parse(annotation.data.formula);
               if (parse_result &&
                 parse_result.expression &&
                 parse_result.expression.type === 'call') {
@@ -4686,16 +4695,16 @@ export class EmbeddedSpreadsheet {
         }
 
       }
-      else if (annotation.type === 'image') {
-        if (typeof annotation.data.src === 'string') {
+      else if (annotation.data.type === 'image') {
+        if (typeof annotation.data.data?.src === 'string') {
 
-          const reference = ValidateURI(annotation.data.src);
+          const reference = ValidateURI(annotation.data.data.src);
           if (reference) {
  
             const img = document.createElement('img');
             img.src = reference;
 
-            if (annotation.data.scale === 'fixed') {
+            if (annotation.data.data.scale === 'fixed') {
               img.style.position = 'relative';
               img.style.left = '50%';
               img.style.top = '50%';
@@ -5044,7 +5053,7 @@ export class EmbeddedSpreadsheet {
       for (const sheet_data of sheets) {
 
         if (sheet_data.annotations) {
-          for (const annotation of (sheet_data.annotations as Annotation[])) {
+          for (const annotation of (sheet_data.annotations)) {
             if (annotation.formula) {
               const translated = translate(annotation.formula);
               if (translated) {
@@ -5161,7 +5170,7 @@ export class EmbeddedSpreadsheet {
           sheet.background_image = Unshare(sheet.background_image);
         }
         for (const annotation of sheet.annotations || []) {
-          if (annotation.type === 'image' && annotation.data.src) {
+          if (annotation.type === 'image' && annotation.data?.src) {
             annotation.data.src = Unshare(annotation.data.src);
           }
         }

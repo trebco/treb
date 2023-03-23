@@ -1,4 +1,4 @@
-/*! API v25.5. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v25.6. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -367,7 +367,7 @@ export declare class EmbeddedSpreadsheet {
      * @param argument_separator - the argument separator to use when evaluating
      * the function. defaults to current locale.
      */
-    InsertAnnotation(formula: string, type?: string, rect?: IRectangle | RangeReference, argument_separator?: ',' | ';'): void;
+    InsertAnnotation(formula: string, type?: AnnotationType, rect?: IRectangle | RangeReference, argument_separator?: ',' | ';'): void;
 
     /**
      * Insert an image. This method will open a file chooser and (if an image
@@ -952,6 +952,7 @@ export interface FreezePane {
     rows: number;
     columns: number;
 }
+export type AnnotationType = 'treb-chart' | 'image' | 'external';
 export declare type BorderConstants = "none" | "all" | "outside" | "top" | "bottom" | "left" | "right";
 
 /**

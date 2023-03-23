@@ -2512,12 +2512,12 @@ export class Sheet {
     // push out for annotations
 
     for (const annotation of this.annotations) {
-      if (!annotation.extent) {
+      if (!annotation.data.extent) {
         this.CalculateAnnotationExtent(annotation);
       }
-      if (annotation.extent) {
-        rows = Math.max(rows, annotation.extent.row + 1);
-        columns = Math.max(columns, annotation.extent.column + 1);
+      if (annotation.data.extent) {
+        rows = Math.max(rows, annotation.data.extent.row + 1);
+        columns = Math.max(columns, annotation.data.extent.column + 1);
       }
     }
 
@@ -2769,22 +2769,22 @@ export class Sheet {
     // at some point, we just need to make sure that happens before this
     // is called
 
-    if (annotation.layout) {
-      annotation.extent = { ...annotation.layout.br.address };
+    if (annotation.data.layout) {
+      annotation.data.extent = { ...annotation.data.layout.br.address };
       return;
     }
 
     // 1000 here is just sanity check, it might be larger
     const sanity = 1000;
 
-    annotation.extent = { row: 0, column: 0 };
+    annotation.data.extent = { row: 0, column: 0 };
 
     let right = annotation.rect?.right;
     if (right && this.default_column_width) { // also sanity check
       for (let i = 0; right >= 0 && i < sanity; i++) {
         right -= this.GetColumnWidth(i); // FIXME: check // it's ok, rect is scaled to unit
         if (right < 0) {
-          annotation.extent.column = i;
+          annotation.data.extent.column = i;
           break;
         }
       }
@@ -2795,7 +2795,7 @@ export class Sheet {
       for (let i = 0; bottom >= 0 && i < sanity; i++) {
         bottom -= this.GetRowHeight(i); // FIXME: check // it's ok, rect is scaled to unit
         if (bottom < 0) {
-          annotation.extent.row = i;
+          annotation.data.extent.row = i;
           break;
         }
       }

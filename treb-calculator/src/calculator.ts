@@ -1774,13 +1774,13 @@ export class Calculator extends Graph {
     }
 
     for (const entry of list) {
-      if (entry.formula) {
+      if (entry.data.formula) {
         if (!entry.temp.vertex) {
           entry.temp.vertex = new LeafVertex();
         }
         const vertex = entry.temp.vertex as LeafVertex;
         this.AddLeafVertex(vertex);
-        this.UpdateLeafVertex(vertex, entry.formula, context);
+        this.UpdateLeafVertex(vertex, entry.data.formula, context);
       }
     }
 

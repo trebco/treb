@@ -35,7 +35,7 @@ import { template } from './template-2';
 import type { SerializedSheet } from 'treb-grid';
 
 import type { IArea, ICellAddress, CellValue, DataValidation,
-         AnnotationLayout, Corner as LayoutCorner, Cell } from 'treb-base-types';
+         AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle } from 'treb-base-types';
 import { Area, Cells, ValueType, Style, ValidationType } from 'treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
@@ -61,6 +61,7 @@ import type { ImageOptions } from './drawing2/embedded-image';
 import type { TwoCellAnchor } from './drawing2/drawing2';
 import { Drawing } from './drawing2/drawing2';
 import type { TableDescription, TableFooterType } from './workbook2';
+import type { AnnotationData } from 'treb-grid/src/types/annotation';
 
 export class Exporter {
 
@@ -651,17 +652,17 @@ export class Exporter {
    * the target units are.
    */
   public AnnotationRectToAnchor(
-      annotation_rect: { 
-        left: number; 
-        top: number; 
-        width: number; 
-        height: number; 
-      }, 
+      src_rect: Partial<Rectangle>, 
       sheet: SerializedSheet): TwoCellAnchor {
     
     const anchor: TwoCellAnchor = {
       from: {row: -1, column: -1},
       to: {row: -1, column: -1},
+    };
+
+    const annotation_rect = {
+      top: 0, left: 0, width: 301, height: 301,
+      ...src_rect,
     };
 
     const rect = {
@@ -706,7 +707,7 @@ export class Exporter {
 
     const images: Array<{ anchor: TwoCellAnchor, options: ImageOptions }> = [];
 
-    for (const annotation of sheet_source.annotations || []) {
+    for (const annotation of (sheet_source.annotations as Array<AnnotationData & {rect?: Partial<Rectangle>}>) || []) {
       if (annotation.type === 'image' && annotation.data?.src) {
 
         // this is (should be) a data URI in base64. at least (atm) 
@@ -940,9 +941,14 @@ export class Exporter {
             }
           }
 
-          if (annotation.rect) {
+          // FIXME: fix this type (this happened when we switched from annotation
+          // class to a data interface)
+
+          const rect = (annotation as AnnotationData & { rect?: Partial<Rectangle>}).rect;
+
+          if (rect) {
             charts.push({
-              anchor: this.AnnotationRectToAnchor(annotation.rect, sheet_source), options});
+              anchor: this.AnnotationRectToAnchor(rect, sheet_source), options});
             // sheet.AddChart(this.AnnotationRectToAnchor(annotation.rect, sheet_source), options);
           }
           else if (annotation.layout) {

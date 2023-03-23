@@ -2188,9 +2188,9 @@ export class GridBase {
 
       // annotations
       for (const annotation of sheet.annotations) {
-        if (annotation.formula) {
+        if (annotation.data.formula) {
           let modified = false;
-          const parsed = this.parser.Parse(annotation.formula || '');
+          const parsed = this.parser.Parse(annotation.data.formula || '');
           if (parsed.expression) {
             this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
               if (element.type === 'address') {
@@ -2202,7 +2202,7 @@ export class GridBase {
               return true; // continue walk
             });
             if (modified) {
-              annotation.formula = '=' + this.parser.Render(parsed.expression, { missing: '' });
+              annotation.data.formula = '=' + this.parser.Render(parsed.expression, { missing: '' });
               changes++;
             }
           }
@@ -2770,12 +2770,12 @@ export class GridBase {
       });
 
       for (const annotation of sheet.annotations) {
-        if (annotation.formula) {
-          const modified = this.PatchFormulasInternal(annotation.formula || '',
+        if (annotation.data.formula) {
+          const modified = this.PatchFormulasInternal(annotation.data.formula || '',
             command.before_row, command.count, 0, 0,
             target_sheet_name, is_target);
           if (modified) {
-            annotation.formula = modified;
+            annotation.data.formula = modified;
           }
         }
       }
@@ -2794,11 +2794,11 @@ export class GridBase {
       const first = command.before_row;
 
       for (const annotation of target_sheet.annotations) {
-        if (annotation.layout) {
+        if (annotation.data.layout) {
           const [start, end, endy] = [
-            annotation.layout.tl.address.row, 
-            annotation.layout.br.address.row,
-            annotation.layout.br.offset.y,
+            annotation.data.layout.tl.address.row, 
+            annotation.data.layout.br.address.row,
+            annotation.data.layout.br.offset.y,
           ];
 
           if (first <= start ) { 
@@ -2806,15 +2806,15 @@ export class GridBase {
             // start case 1: starts above the annotation (including exactly at the top)
 
             // shift
-            annotation.layout.tl.address.row += command.count;
-            annotation.layout.br.address.row += command.count;
+            annotation.data.layout.tl.address.row += command.count;
+            annotation.data.layout.br.address.row += command.count;
 
           }
           else if (first < end || first === end && endy > 0) { 
             
             // start case 2: starts in the annotation, omitting the first row
 
-            annotation.layout.br.address.row += command.count;
+            annotation.data.layout.br.address.row += command.count;
 
             // size changing
             resize_annotations_list.push(annotation);
@@ -2839,16 +2839,16 @@ export class GridBase {
       const last = command.before_row - command.count - 1;
 
       for (const annotation of target_sheet.annotations) {
-        if (annotation.layout) {
+        if (annotation.data.layout) {
           
           // start and end row of the annotation. recall that in
           // this layout, the annotation may extend into the (first,last) 
           // row but not beyond it. the offset is _within_ the row.
 
           const [start, end, endy] = [
-            annotation.layout.tl.address.row, 
-            annotation.layout.br.address.row,
-            annotation.layout.br.offset.y,
+            annotation.data.layout.tl.address.row, 
+            annotation.data.layout.br.address.row,
+            annotation.data.layout.br.offset.y,
           ];
 
           if (first <= start ) { 
@@ -2860,8 +2860,8 @@ export class GridBase {
               // end case 1: ends before the annotation
 
               // shift
-              annotation.layout.tl.address.row += command.count;
-              annotation.layout.br.address.row += command.count;
+              annotation.data.layout.tl.address.row += command.count;
+              annotation.data.layout.br.address.row += command.count;
 
             }
             else if (last < end - 1 || (last === end -1 && endy > 0)) { 
@@ -2869,9 +2869,9 @@ export class GridBase {
               // end case 2: ends before the end of the annotation
 
               // shift + cut
-              annotation.layout.tl.address.row = first;
-              annotation.layout.tl.offset.y = 0;
-              annotation.layout.br.address.row += command.count;
+              annotation.data.layout.tl.address.row = first;
+              annotation.data.layout.tl.offset.y = 0;
+              annotation.data.layout.br.address.row += command.count;
 
               // size changing
               resize_annotations_list.push(annotation);
@@ -2897,7 +2897,7 @@ export class GridBase {
               // end case 2: ends before the end of the annotation
 
               // shorten
-              annotation.layout.br.address.row += command.count;
+              annotation.data.layout.br.address.row += command.count;
 
               // size changing
               resize_annotations_list.push(annotation);
@@ -2908,8 +2908,8 @@ export class GridBase {
               // end case 3: ends after the annotation
 
               // clip
-              annotation.layout.br.address.row = first;
-              annotation.layout.br.offset.y = 0;
+              annotation.data.layout.br.address.row = first;
+              annotation.data.layout.br.offset.y = 0;
 
               // size changing
               resize_annotations_list.push(annotation);
@@ -3096,12 +3096,12 @@ export class GridBase {
       });
 
       for (const annotation of sheet.annotations) {
-        if (annotation.formula) {
-          const modified = this.PatchFormulasInternal(annotation.formula,
+        if (annotation.data.formula) {
+          const modified = this.PatchFormulasInternal(annotation.data.formula,
             0, 0, command.before_column, command.count,
             target_sheet_name, is_target);
           if (modified) {
-            annotation.formula = modified;
+            annotation.data.formula = modified;
           }
         }
       }
@@ -3119,11 +3119,11 @@ export class GridBase {
       const first = command.before_column;
 
       for (const annotation of target_sheet.annotations) {
-        if (annotation.layout) {
+        if (annotation.data.layout) {
           const [start, end, endx] = [
-            annotation.layout.tl.address.column, 
-            annotation.layout.br.address.column,
-            annotation.layout.br.offset.x,
+            annotation.data.layout.tl.address.column, 
+            annotation.data.layout.br.address.column,
+            annotation.data.layout.br.offset.x,
           ];
 
           if (first <= start ) { 
@@ -3131,15 +3131,15 @@ export class GridBase {
             // start case 1: starts to the left of the annotation (including exactly at the left)
 
             // shift
-            annotation.layout.tl.address.column += command.count;
-            annotation.layout.br.address.column += command.count;
+            annotation.data.layout.tl.address.column += command.count;
+            annotation.data.layout.br.address.column += command.count;
 
           }
           else if (first < end || first === end && endx > 0) { 
             
             // start case 2: starts in the annotation, omitting the first column
 
-            annotation.layout.br.address.column += command.count;
+            annotation.data.layout.br.address.column += command.count;
 
             // size changing
             resize_annotations_list.push(annotation);
@@ -3164,16 +3164,16 @@ export class GridBase {
       const last = command.before_column - command.count - 1;
 
       for (const annotation of target_sheet.annotations) {
-        if (annotation.layout) {
+        if (annotation.data.layout) {
           
           // start and end column of the annotation. recall that in
           // this layout, the annotation may extend into the (first,last) 
           // column but not beyond it. the offset is _within_ the column.
 
           const [start, end, endx] = [
-            annotation.layout.tl.address.column, 
-            annotation.layout.br.address.column,
-            annotation.layout.br.offset.x,
+            annotation.data.layout.tl.address.column, 
+            annotation.data.layout.br.address.column,
+            annotation.data.layout.br.offset.x,
           ];
 
           if (first <= start ) { 
@@ -3185,8 +3185,8 @@ export class GridBase {
               // end case 1: ends before the annotation
 
               // shift
-              annotation.layout.tl.address.column += command.count;
-              annotation.layout.br.address.column += command.count;
+              annotation.data.layout.tl.address.column += command.count;
+              annotation.data.layout.br.address.column += command.count;
 
             }
             else if (last < end - 1 || (last === end -1 && endx > 0)) { 
@@ -3194,9 +3194,9 @@ export class GridBase {
               // end case 2: ends before the end of the annotation
 
               // shift + cut
-              annotation.layout.tl.address.column = first;
-              annotation.layout.tl.offset.x = 0;
-              annotation.layout.br.address.column += command.count;
+              annotation.data.layout.tl.address.column = first;
+              annotation.data.layout.tl.offset.x = 0;
+              annotation.data.layout.br.address.column += command.count;
 
               // size changing
               resize_annotations_list.push(annotation);
@@ -3222,7 +3222,7 @@ export class GridBase {
               // end case 2: ends before the end of the annotation
 
               // shorten
-              annotation.layout.br.address.column += command.count;
+              annotation.data.layout.br.address.column += command.count;
 
               // size changing
               resize_annotations_list.push(annotation);
@@ -3233,8 +3233,8 @@ export class GridBase {
               // end case 3: ends after the annotation
 
               // clip
-              annotation.layout.br.address.column = first;
-              annotation.layout.br.offset.x = 0;
+              annotation.data.layout.br.address.column = first;
+              annotation.data.layout.br.offset.x = 0;
 
               // size changing
               resize_annotations_list.push(annotation);

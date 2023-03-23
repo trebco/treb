@@ -672,21 +672,21 @@ export abstract class BaseLayout {
         // be persisted (assuming it's saved). eventually this should
         // be superfluous...
 
-        if (annotation.rect && !annotation.layout) {
+        if (annotation.rect && !annotation.data.layout) {
 
           // this is breaking on freeze when the spreadsheet is scrolled because
           // the top-left uses the freeze panes. stop doing that.
 
           annotation.scaled_rect = annotation.rect.Scale(this.scale);
-          annotation.layout = this.RectToAnnotationLayout(annotation.scaled_rect);
+          annotation.data.layout = this.RectToAnnotationLayout(annotation.scaled_rect);
         }
 
 
         // FIXME: merge cells? [...]
 
-        if (annotation.layout) {
+        if (annotation.data.layout) {
 
-          const rect = this.AnnotationLayoutToRect(annotation.layout);
+          const rect = this.AnnotationLayoutToRect(annotation.data.layout);
           rect.ApplyStyle(view.node);
 
           // NOTE: we still set the scaled rect, because that's used in 
@@ -949,9 +949,9 @@ export abstract class BaseLayout {
           }
 
         }, () => {
-          annotation.extent = undefined; // reset
+          annotation.data.extent = undefined; // reset
           // annotation.rect = rect.Scale(1/this.scale);
-          annotation.layout = this.RectToAnnotationLayout(rect);
+          annotation.data.layout = this.RectToAnnotationLayout(rect);
           // this.grid_events.Publish({ type: 'annotation', annotation, event: 'move' });
           resolve({ type: 'annotation', annotation, event: 'move' })
         });
@@ -969,11 +969,14 @@ export abstract class BaseLayout {
         node.focus();
 
         let aspect = 0;
-        if (annotation.data?.original_size
-          && annotation.data.original_size.width
-          && annotation.data.original_size.height) {
-          aspect = annotation.data.original_size.width /
-            annotation.data.original_size.height;
+        if (annotation.data.type === 'image') {
+          if (annotation.data.data
+            && annotation.data.data.original_size
+            && annotation.data.data.original_size.width
+            && annotation.data.data.original_size.height) {
+            aspect = annotation.data.data.original_size.width /
+              annotation.data.data.original_size.height;
+          }
         }
 
         const bounds = node.getBoundingClientRect();
@@ -1029,9 +1032,9 @@ export abstract class BaseLayout {
           }
 
         }, () => {
-          annotation.extent = undefined; // reset
+          annotation.data.extent = undefined; // reset
           // annotation.rect = rect.Scale(1/this.scale);
-          annotation.layout = this.RectToAnnotationLayout(rect);
+          annotation.data.layout = this.RectToAnnotationLayout(rect);
 
           // this.grid_events.Publish({ type: 'annotation', annotation, event: 'resize' });
           resolve({ type: 'annotation', annotation, event: 'resize' });

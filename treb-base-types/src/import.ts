@@ -25,6 +25,7 @@ import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
 import type { DataValidation } from './cell';
 import type { Table } from './table';
+import type { AnnotationType } from 'treb-grid';
 
 export interface CellParseResult {
   row: number,
@@ -43,7 +44,7 @@ export interface CellParseResult {
 
 export interface AnchoredAnnotation {
   layout: AnnotationLayout;
-  type?: string;
+  type?: AnnotationType;
   formula?: string;
 }
 

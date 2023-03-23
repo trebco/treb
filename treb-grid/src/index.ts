@@ -38,3 +38,4 @@ export type { SerializeOptions } from './types/serialize_options';
 export type { FunctionDescriptor, ArgumentDescriptor } from './editors/autocomplete_matcher';
 export { UA } from './util/ua';
 export type { SetRangeOptions } from './types/set_range_options';
+export type { AnnotationData, AnnotationType } from './types/annotation';

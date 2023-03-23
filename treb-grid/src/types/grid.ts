@@ -88,7 +88,7 @@ import type { GridOptions } from './grid_options';
 import { BorderConstants } from './border_constants';
 import type { SerializeOptions } from './serialize_options';
 import { UA } from '../util/ua';
-import { Annotation } from './annotation';
+import { Annotation, type AnnotationData } from './annotation';
 import { Autocomplete } from '../editors/autocomplete';
 
 import { MouseDrag } from './drag_mask';
@@ -468,21 +468,21 @@ export class Grid extends GridBase {
    * @param target new parameter allows setting annotation as rect or as
    * cell range
    */
-  public CreateAnnotation(properties: Partial<Annotation> = {}, add_to_sheet = true, offset = false, target?: Partial<Area>|IRectangle): Annotation {
-    const annotation = new Annotation(properties as Partial<Annotation>);
+  public CreateAnnotation(properties: Partial<AnnotationData> = {}, add_to_sheet = true, offset = false, target?: Partial<Area>|IRectangle): Annotation {
+    const annotation = new Annotation(properties);
 
     if (offset) {
 
       // to offset, we have to have layout (or at least scaled rect)
-      if (!annotation.layout && annotation.scaled_rect) {
-        annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+      if (!annotation.data.layout && annotation.scaled_rect) {
+        annotation.data.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
       }
 
-      if (!annotation.layout) {
+      if (!annotation.data.layout) {
         console.warn(`can't offset annotation without layout`);
       }
       else {
-        let target_rect = this.layout.AnnotationLayoutToRect(annotation.layout).Shift(20, 20);
+        let target_rect = this.layout.AnnotationLayoutToRect(annotation.data.layout).Shift(20, 20);
         let recheck = true;
         while (recheck) {
           recheck = false;
@@ -495,19 +495,19 @@ export class Grid extends GridBase {
             }
           }
         }
-        annotation.layout = this.layout.RectToAnnotationLayout(target_rect);
+        annotation.data.layout = this.layout.RectToAnnotationLayout(target_rect);
       }
     }
 
     if (target) {
       if (Rectangle.IsRectangle(target)) {
         // console.info('creating from rectangle,', target);
-        annotation.layout = undefined;
+        annotation.data.layout = undefined;
         annotation.rect = Rectangle.Create(target);
       }
       else if (target.start) {
         annotation.rect = undefined;
-        annotation.layout = this.layout.AddressToAnnotationLayout(target.start, target.end||target.start);
+        annotation.data.layout = this.layout.AddressToAnnotationLayout(target.start, target.end||target.start);
       }
     }
     
@@ -569,8 +569,8 @@ export class Grid extends GridBase {
               this.grid_events.Publish(event);
             }
 
-            if (annotation.layout) {
-              this.EnsureAddress(annotation.layout.br.address, 1);
+            if (annotation.data.layout) {
+              this.EnsureAddress(annotation.data.layout.br.address, 1);
             }
 
           });
@@ -710,11 +710,11 @@ export class Grid extends GridBase {
               element.style.left = (rect.left) + 'px';
             }
 
-            annotation.extent = undefined; // reset
+            annotation.data.extent = undefined; // reset
             this.grid_events.Publish({ type: 'annotation', event: 'move', annotation });
 
             // annotation.rect = rect.Scale(1/this.layout.scale);
-            annotation.layout = this.layout.RectToAnnotationLayout(rect);
+            annotation.data.layout = this.layout.RectToAnnotationLayout(rect);
 
           }
 
@@ -730,8 +730,8 @@ export class Grid extends GridBase {
 
     if (add_to_layout) {
       this.layout.AddAnnotation(annotation);
-      if (annotation.layout) {
-        this.EnsureAddress(annotation.layout.br.address, 1);
+      if (annotation.data.layout) {
+        this.EnsureAddress(annotation.data.layout.br.address, 1);
       }
     }
     else {
@@ -2560,7 +2560,7 @@ export class Grid extends GridBase {
             const annotation = this.editing_annotation;
             this.ClearAdditionalSelections();
             this.ClearSelection(this.active_selection);
-            annotation.formula = event.value ? this.FixFormula(event.value) : '';
+            annotation.data.formula = event.value ? this.FixFormula(event.value) : '';
             const node = this.editing_annotation.view[this.view_index]?.node;
             if (node) {
               node.focus();
@@ -2784,10 +2784,10 @@ export class Grid extends GridBase {
     const start = this.render_tiles.start;
     const end = this.render_tiles.end;
 
-    const row_list = [];
+    const row_list: number[] = [];
     for (let row = start.row; row <= end.row; row++) row_list.push(row);
 
-    const column_list = [];
+    const column_list: number[] = [];
     for (let column = start.column; column <= end.column; column++) column_list.push(column);
 
     // FIXME: multiple tiles
@@ -2959,11 +2959,11 @@ export class Grid extends GridBase {
         const node = annotation.view[this.view_index]?.node;
         if (node) { nodes.push(node); }
 
-        if (y <= annotation.scaled_rect.top && annotation.move_with_cells) {
+        if (y <= annotation.scaled_rect.top && annotation.data.move_with_cells) {
           move_annotation_list.push({ annotation, y: annotation.scaled_rect.top, nodes });
         }
 
-        else if (y > annotation.scaled_rect.top && annotation.resize_with_cells) {
+        else if (y > annotation.scaled_rect.top && annotation.data.resize_with_cells) {
           size_annotation_list.push({ annotation, height: annotation.scaled_rect.height, nodes });
         }
 
@@ -3081,13 +3081,13 @@ export class Grid extends GridBase {
 
           for (const { annotation } of move_annotation_list) {
             if (annotation.scaled_rect) {
-              annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+              annotation.data.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
             }
           }
 
           for (const { annotation } of size_annotation_list) {
             if (annotation.scaled_rect) {
-              annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+              annotation.data.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
             }
             const view = annotation.view[this.view_index];
             if (view && view.resize_callback) {
@@ -3233,10 +3233,10 @@ export class Grid extends GridBase {
         const node = annotation.view[this.view_index]?.node;
         if (node) { nodes.push(node); }
 
-        if (x <= annotation.scaled_rect.left && annotation.move_with_cells) {
+        if (x <= annotation.scaled_rect.left && annotation.data.move_with_cells) {
           move_annotation_list.push({ annotation, x: annotation.scaled_rect.left, nodes });
         }
-        else if (x > annotation.scaled_rect.left && annotation.resize_with_cells) {
+        else if (x > annotation.scaled_rect.left && annotation.data.resize_with_cells) {
           size_annotation_list.push({ annotation, width: annotation.scaled_rect.width, nodes });
         }
       }
@@ -3345,13 +3345,13 @@ export class Grid extends GridBase {
 
           for (const { annotation } of move_annotation_list) {
             if (annotation.scaled_rect) {
-              annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+              annotation.data.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
             }
           }
 
           for (const { annotation } of size_annotation_list) {
             if (annotation.scaled_rect) {
-              annotation.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
+              annotation.data.layout = this.layout.RectToAnnotationLayout(annotation.scaled_rect);
             }
             const view = annotation.view[this.view_index];
             if (view && view.resize_callback) {
@@ -5868,8 +5868,8 @@ export class Grid extends GridBase {
   private HideGridSelection() {
     this.UpdateAddressLabel(undefined, '');
 
-    const formula = (this.selected_annotation && this.selected_annotation.formula) ?
-      this.selected_annotation.formula : '';
+    const formula = (this.selected_annotation && this.selected_annotation.data.formula) ?
+      this.selected_annotation.data.formula : '';
 
     this.UpdateFormulaBarFormula(formula);
     this.layout.ShowSelections(false);

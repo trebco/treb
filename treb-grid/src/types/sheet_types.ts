@@ -20,7 +20,7 @@
  */
 
 import type { IArea, SerializedCellData, Style } from 'treb-base-types';
-import type { Annotation } from './annotation';
+import type { Annotation, AnnotationData } from './annotation';
 import type { GridSelection } from './grid_selection';
 
 export interface UpdateHints {
@@ -82,7 +82,7 @@ export interface SerializedSheet {
   name?: string;
 
   selection: GridSelection;
-  annotations?: Partial<Annotation>[];
+  annotations?: Partial<AnnotationData>[]; // Partial<Annotation>[];
   scroll?: ScrollOffset;
 
   visible?: boolean;

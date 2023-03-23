@@ -79,11 +79,105 @@ export interface ViewData {
 
 }
 
+export interface ImageAnnotationData {
+  src: string;
+  scale: string;
+  original_size: { 
+    width: number; 
+    height: number;
+  };
+}
+
+export type AnnotationType = 'treb-chart'|'image'|'external';
+
+/**
+ * splitting persisted data from the annotation class. that class might
+ * disappear in the future in favor of just a type. this interface should
+ * fully match the old Partial<Annotation> we used before. note that we 
+ * used to define values for all members, but they may now be undefined
+ * because the Annotation class as a Partial instance of this data.
+ * 
+ * conceptually annotation was originally intended to support types other
+ * than our own charts and images, but no one ever used it. so we could 
+ * lock down the `type` field if we wanted to. or perhaps have an `external`
+ * type with opaque data. TODO.
+ * 
+ */
+export interface AnnotationDataBase {
+
+  /** the new layout, persisted and takes preference over the old one */
+  layout?: AnnotationLayout;
+
+  /** 
+   * the old layout used rectangles, and we need to keep support for
+   * that. this is not the layout rectangle. this rectangle is just
+   * for serialization/deserialization. the actual rectangle is maintained
+   * in the Annotation class.
+   */
+  rect?: Partial<Rectangle>;
+
+  /** annotation can be resized. this is advisory, for UI */
+  resizable: boolean;
+
+  /** annotation can be moved. this is advisory, for UI */
+  movable: boolean;
+
+  /** annotation can be removed/deleted. this is advisory, for UI */
+  removable: boolean;
+
+  /** annotation can be selected. this is advisory, for UI */
+  selectable: boolean;
+
+  /** move when resizing/inserting rows/columns */
+  move_with_cells: boolean;
+
+  /** resize when resizing/inserting rows/columns */
+  resize_with_cells: boolean;
+
+  /**
+   * optional formula. the formula will be updated on structure events
+   * (insert/delete row/column).
+   */
+  formula: string;
+
+  /** 
+   * extent, useful for exporting. we could probably serialize this,
+   * just be sure to clear it when layout changes so it will be
+   * recalculated.
+   * 
+   * the idea is to know the bottom/right row/column of the annotation,
+   * so when we preserve/restore the sheet we don't trim those rows/columns.
+   * they don't need any data, but it just looks bad. we can do this 
+   * dynamically but since it won't change all that often, we might 
+   * as well precalculate.
+   */
+  extent: ICellAddress;
+
+}
+
+export interface AnnotationImageData extends AnnotationDataBase {
+  type: 'image';
+  data: ImageAnnotationData;
+}
+
+export interface AnnotationChartData extends AnnotationDataBase {
+  type: 'treb-chart';
+}
+
+export interface AnnotationExternalData extends AnnotationDataBase {
+  type: 'external';
+  data: Record<string, string>;
+}
+
+export type AnnotationData = AnnotationChartData | AnnotationImageData | AnnotationExternalData;
+
 /**
  * why is this a class? it doesn't do anything.
  * FIXME: -> interface
  */
 export class Annotation {
+
+  public data: Partial<AnnotationData> = {};
 
   /** 
    * the key field is used to identify and coordinate annotations when we 
@@ -101,38 +195,8 @@ export class Annotation {
   /** display coordinates, possibly scaled. not persisted. */
   public scaled_rect?: Rectangle;
 
-  /** the new layout, persisted and takes preference over the old one */
-  public layout?: AnnotationLayout;
-
-  /** opaque data. this is serialized, so it's persistent data */
-  public data: any = {};
-
-  // opaque string which will be added to the class of any containing node 
-  // public class_name?: string;
-
-  /** type, for filtering. ensure a value */
-  public type = '';
-
   /** also opaque data, but not serialized. */
   public temp: any = {};
-
-  /** annotation can be resized. this is advisory, for UI */
-  public resizable = true;
-
-  /** annotation can be moved. this is advisory, for UI */
-  public movable = true;
-
-  /** annotation can be removed/deleted. this is advisory, for UI */
-  public removable = true;
-
-  /** annotation can be selected. this is advisory, for UI */
-  public selectable = true;
-
-  /** move when resizing/inserting rows/columns */
-  public move_with_cells = true;
-
-  /** resize when resizing/inserting rows/columns */
-  public resize_with_cells = true;
 
   public view: ViewData[] = [];
 
@@ -142,71 +206,35 @@ export class Annotation {
    */
   public dirty?: boolean;
 
-  /**
-   * optional formula. the formula will be updated on structure events
-   * (insert/delete row/column).
-   */
-  public formula = '';
-
-  /** 
-   * extent, useful for exporting. we could probably serialize this,
-   * just be sure to clear it when layout changes so it will be
-   * recalculated.
-   * 
-   * the idea is to know the bottom/right row/column of the annotation,
-   * so when we preserve/restore the sheet we don't trim those rows/columns.
-   * they don't need any data, but it just looks bad. we can do this 
-   * dynamically but since it won't change all that often, we might 
-   * as well precalculate.
-   */
-  public extent?: ICellAddress;
-
   private key_ = (key_generator++);
 
   /**
-   * constructor takes a property bag (from json, generally). note that
-   * if you are iterating keys on `this`, there has to be an initial value
-   * or the key won't exist.
+   * constructor takes persisted data
    */
-  constructor(opts: Partial<Annotation>&{rect?: Partial<Rectangle>} = {}) {
-    for (const key of Object.keys(this) as Array<keyof Annotation>){
-      if (key !== 'layout' // && key !== 'rect' 
-          && opts[key]) { // key !== 'cell_address' && opts[key]) {
-        (this as any)[key] = opts[key];
-      }
-    }
-
-    if (opts.layout) {
-      this.layout = JSON.parse(JSON.stringify(opts.layout));
-    }
+  constructor(opts: Partial<AnnotationData> = {}) {
+    this.data = JSON.parse(JSON.stringify(opts)); // why clone?
     if (opts.rect) {
       this.rect = Rectangle.Create(opts.rect);
     }
   }
 
   /**
-   * serialization method drops node and trims
+   * serialization just returns persisted data, plus we update the 
+   * rectangle. 
+   * 
+   * anyone serializing annotations should just be fetching the data
+   * object, but we're leaving this in place because we can't trace 
+   * it back using tooling. that's a real drawback of toJSON, we 
+   * should stop using it.
+   * 
+   * although as long as we need to support `rect` here, it's not bad
+   * that we do it this way. perhaps change the function name, and 
+   * call it directly?
+   * 
    */
-  public toJSON(): Partial<Annotation> {
-    const result: Partial<Annotation> = {}; // { rect: this.rect };
-
-    if (this.data) result.data = this.data;
-    if (this.formula) result.formula = this.formula;
-    if (this.type) result.type = this.type;
-    // if (this.class_name) result.class_name = this.class_name;
-
-    if (!this.resizable) result.resizable = this.resizable;
-    if (!this.movable) result.movable = this.movable;
-    if (!this.removable) result.removable = this.removable;
-    if (!this.selectable) result.selectable = this.selectable;
-
-    if (!this.move_with_cells) result.move_with_cells = this.move_with_cells;
-    if (!this.resize_with_cells) result.resize_with_cells = this.resize_with_cells;
-
-    if (this.layout) result.layout = this.layout;
-    if (this.extent) result.extent = this.extent;
-
-    return result;
+  public toJSON(): Partial<AnnotationData> {
+    return {
+      ...this.data, rect: this.rect };
   }
 
 }
