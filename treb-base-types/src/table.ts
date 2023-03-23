@@ -63,10 +63,6 @@ export interface Table {
    */
   name: string;
 
-  /**
-   * column names. these are the same (icase) as text in the first row
-   */
-
   /** table area */
   area: IArea;
 
