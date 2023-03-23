@@ -20,6 +20,7 @@
  */
 
 import type { ICellAddress } from 'treb-base-types';
+import type { TREBDocument } from './types';
 
 /**
  * options for exporting CSV/TSV
@@ -96,6 +97,16 @@ export interface EmbeddedSpreadsheetOptions {
    * (deprecated) option `network_document`.
    */
   document?: string;
+
+  /**
+   * @internal - testing
+   * 
+   * load document directly from data. obeys the same rules as `document` 
+   * regarding local storage and revert. if you provide both document and
+   * inline_document we will show a warning, but inline_document will take
+   * precedence.
+   */
+  inline_document?: TREBDocument;
 
   /** 
    * fetch network document (URI) 

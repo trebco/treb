@@ -1,4 +1,4 @@
-/*! API v25.4. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v25.5. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -1210,7 +1210,7 @@ export interface TableSortOptions {
     asc: boolean;
 }
 export type TableSortType = 'text' | 'numeric' | 'auto';
-export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file" | "local-storage" | "undo";
+export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file" | "local-storage" | "inline-document" | "undo";
 
 /**
  * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field

@@ -506,11 +506,15 @@ export class EmbeddedSpreadsheet {
       }
     }
 
+    if (this.options.document && this.options.inline_document) {
+      console.warn('both document and inline-document are provided');
+    }
+
     const network_document = this.options.document;
 
     // optionally data from storage, with fallback
 
-    let data: string | undefined;
+    let data: string | undefined | TREBDocument;
     let source: LoadSource | undefined;
 
     // don't load if we're a split view. we can also skip the 
@@ -521,6 +525,14 @@ export class EmbeddedSpreadsheet {
       if (data) {
         source = LoadSource.LOCAL_STORAGE;
       }
+    }
+
+    // if we have an inline document, and there was nothing in local storage,
+    // load the inline document now. not for splits.
+
+    if (!data && !this.options.toll_initial_load && !options.model && options.inline_document) {
+      data = options.inline_document;
+      source = LoadSource.INLINE_DOCUMENT;
     }
 
     // this one should not be done for a split view, but we should still
@@ -858,8 +870,12 @@ export class EmbeddedSpreadsheet {
     // FIXME: this should yield so we can subscribe to events before the initial load
 
     if (data) {
-      this.LoadDocument(JSON.parse(data), 
-        { recalculate: !!this.options.recalculate, source});
+      if (typeof data === 'string') {
+        data = JSON.parse(data);
+      }
+      if (data) {
+        this.LoadDocument(data as TREBDocument, { recalculate: !!this.options.recalculate, source});
+      }
     }
     else if (!network_document) {
 
@@ -2306,6 +2322,15 @@ export class EmbeddedSpreadsheet {
    * and `network_document` are set.
    */
   public Revert(): void {
+
+    if (this.options.inline_document) {
+      this.LoadDocument(this.options.inline_document);
+      if (this.options.storage_key) {
+        this.SaveLocalStorage('reverted_backup');
+        localStorage.removeItem(this.options.storage_key);
+      }
+      return;
+    }
 
     const canonical = this.options.document;
 

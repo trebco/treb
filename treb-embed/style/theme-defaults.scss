@@ -182,9 +182,14 @@ $text-reference-color-5: rgb(254, 47, 1);
     background: var(--treb-grid-background, #fff);
   }
 
+  /* 
+   * we stopped using this in favor of sheet backgrounds. although
+   * there's a case to be made for the static background as well.
+   *
   .grid-background {
     background-image: var(--treb-grid-background-image, none);
   }
+  */
 
   /**
    * this is used for freeze-area highlights

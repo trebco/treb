@@ -208,6 +208,10 @@ export class SpreadsheetConstructor {
           case 'data-treb':
             continue; 
 
+          // has special handling as an attribute
+          case 'inline-document':
+            continue;
+
           // special case
           case 'src':
             attribute_options.document = this.root.getAttribute('src') || undefined;
@@ -252,6 +256,49 @@ export class SpreadsheetConstructor {
         const rect = this.root.getBoundingClientRect();
         if (!rect.width || !rect.height) {
           this.root.classList.add('treb-default-size');
+        }
+      }
+
+      // inline-document means look in the tag contents for a script 
+      // element, and use that. the script must have type "application/json",
+      // and if it has a name, the name must match the value of the 
+      // inline-document attribute.
+      //
+      // so either 
+      //
+      // <treb-spreadsheet inline-document>
+      //   <script type="application/json">{ ... }</script>
+      // </treb-spreadsheet>
+      //
+      // or 
+      //
+      // <treb-spreadsheet inline-document="xyz">
+      //   <script type="application/json" name="xyz">{ ... }</script>
+      // </treb-spreadsheet>
+
+      if (this.root.hasAttribute('inline-document')) {
+        const inline_name = this.root.getAttribute('inline-document') || '';
+        for (const element of Array.from(this.root.children)) {
+          if (element instanceof HTMLScriptElement) {
+            if (element.type === 'application/json') {
+              const name = element.getAttribute('name') || '';
+              if (name === inline_name) {
+                const content = element.textContent;
+                if (content) {
+                  try {
+                    options.inline_document = JSON.parse(content);
+                  }
+                  catch (err) {
+                    console.error(err);
+                  }
+                }
+                break;
+              }
+            }
+          }
+        }
+        if (!options.inline_document) {
+          console.warn('inline document failed');
         }
       }
 

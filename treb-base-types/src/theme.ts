@@ -528,17 +528,6 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
     theme.offset_light = css.color;
   }
 
-  /*
-  css = CSS('grid-background');
-  if (css.backgroundImage) {
-    const match = css.backgroundImage.match(/url\("*(.*?)"*\)/);
-    if (match) {
-      theme.background_image = new Image();
-      theme.background_image.src = match[1];
-    }
-  }
-  */
-
   // this _is_ painted, but it doesn't necessarily need to be -- we
   // could use a node. that would require moving it around, though. 
   // let's leave it for now.
