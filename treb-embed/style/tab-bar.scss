@@ -21,6 +21,10 @@
 
 .treb-main {
 
+  .treb-mouse-mask .ghost-tab {
+    position: fixed;
+  }
+
   .treb-spreadsheet-footer {
 
     grid-area: 3/1/4/2;

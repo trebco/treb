@@ -1069,8 +1069,11 @@ export abstract class BaseLayout {
     // focus_callback: () => void,
     scroll = true): void {
 
+    // this is getting stuck under the toolbar... we need better z-stacking
+    // and this needs to be higher up in the node list
+
     if (!this.mask.parentElement) {
-      container.appendChild(this.mask);
+      container.parentElement?.parentElement?.appendChild(this.mask);
     }
 
     //if (!this.error_highlight.parentElement) {

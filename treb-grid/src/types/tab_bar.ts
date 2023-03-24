@@ -326,9 +326,27 @@ export class TabBar extends EventSource<TabEvent> {
 
     this.dragging = true;
 
+    // ghost is a good idea but we need to delay it, because 
+    // it starts to flicker if you just click a tab to select
+    // it (or double click to rename)
+
+    /*
+    const ghost = document.createElement('div');
+    ghost.classList.add('ghost-tab');
+    ghost.appendChild(tab.cloneNode(true));
+    ghost.style.top = '-1000px';
+    this.layout.mask.appendChild(ghost);
+    */
+
     MouseDrag(this.layout.mask, [], (move_event) => {
 
       const [x, y] = [move_event.clientX, move_event.clientY];
+
+      /*
+      ghost.style.top = `${y}px`;
+      ghost.style.left = `${x}px`;
+      */
+
       if (y > top && y < bottom) {
         let new_order = order;
         if (x < left) { new_order = min; }
@@ -359,6 +377,10 @@ export class TabBar extends EventSource<TabEvent> {
     }, () => {
       let current = index;
       let move_before = (order + 1) / 2;
+
+      /*
+      this.layout.mask.removeChild(ghost);
+      */
 
       // console.info('set false')
       this.dragging = false;
