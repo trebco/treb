@@ -47,6 +47,12 @@
   all: revert;
   box-sizing: border-box;
 
+  // text-align does not revert? it should be covered by all...
+  // or is the problem that there's no initial value? (although 
+  // unset does not work either)
+  
+  text-align: start;
+
   div, button, input, ul, ol, li, a, textarea {
 
     // maybe this is being too aggressive. we could be a little 

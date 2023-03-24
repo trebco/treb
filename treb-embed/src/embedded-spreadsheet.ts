@@ -1513,11 +1513,11 @@ export class EmbeddedSpreadsheet {
           break;
 
         case 'save-json':
-          this.SaveLocalFile();
+          this.SaveToDesktop();
           break;
 
         case 'save-csv': // FIXME: should be export
-          this.SaveLocalFile(SaveFileType.csv);
+          this.SaveToDesktop(SaveFileType.csv);
           break;
 
         case 'export-xlsx':
@@ -2723,14 +2723,25 @@ export class EmbeddedSpreadsheet {
 
   }
 
-  /** 
-   * Save the current document to a desktop file. 
+  /**
+   * @deprecated - use SaveToDesktop
    * 
-   * @param filename Filename or extension to use the document name.
-   * 
-   * @public
+   * @param filename 
+   * @param additional_options 
    */
   public SaveLocalFile(
+      filename: string = SaveFileType.trebjson,
+      additional_options: SaveOptions = {}): void {
+    this.SaveToDesktop(filename, additional_options);
+  }
+
+  /** 
+   * Save the current document to a desktop file. This is the new version
+   * of the method, renamed from SaveLocalFile.
+   * 
+   * @param filename Filename or extension to use the document name.
+   */
+  public SaveToDesktop(
     filename: string = SaveFileType.trebjson,
     additional_options: SaveOptions = {}): void {
 

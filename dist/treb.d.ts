@@ -603,13 +603,20 @@ export declare class EmbeddedSpreadsheet {
     ExportDelimited(options?: ExportOptions): string;
 
     /**
-     * Save the current document to a desktop file.
+     * @deprecated - use SaveToDesktop
      *
-     * @param filename Filename or extension to use the document name.
-     *
-     * @public
+     * @param filename
+     * @param additional_options
      */
     SaveLocalFile(filename?: string, additional_options?: SaveOptions): void;
+
+    /**
+     * Save the current document to a desktop file. This is the new version
+     * of the method, renamed from SaveLocalFile.
+     *
+     * @param filename Filename or extension to use the document name.
+     */
+    SaveToDesktop(filename?: string, additional_options?: SaveOptions): void;
 
     /**
      * Load CSV from string. This is used internally when loading network
