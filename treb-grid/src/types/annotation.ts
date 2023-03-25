@@ -155,6 +155,15 @@ export interface AnnotationDataBase {
 
 }
 
+const default_annotation_data: Partial<AnnotationDataBase> = {
+  move_with_cells: true,
+  resize_with_cells: true,
+  movable: true,
+  resizable: true,
+  removable: true,
+  selectable: true,
+};
+
 export interface AnnotationImageData extends AnnotationDataBase {
   type: 'image';
   data: ImageAnnotationData;
@@ -177,7 +186,9 @@ export type AnnotationData = AnnotationChartData | AnnotationImageData | Annotat
  */
 export class Annotation {
 
-  public data: Partial<AnnotationData> = {};
+  public data: Partial<AnnotationData> = {
+    ...default_annotation_data
+  };
 
   /** 
    * the key field is used to identify and coordinate annotations when we 
@@ -212,7 +223,10 @@ export class Annotation {
    * constructor takes persisted data
    */
   constructor(opts: Partial<AnnotationData> = {}) {
-    this.data = JSON.parse(JSON.stringify(opts)); // why clone?
+    this.data = {
+      ...default_annotation_data,
+      ...JSON.parse(JSON.stringify(opts))
+    }; // why clone?
     if (opts.rect) {
       this.rect = Rectangle.Create(opts.rect);
     }
