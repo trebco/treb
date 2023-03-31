@@ -423,7 +423,7 @@ export class SpreadsheetConstructor {
       // add-tab and delete-tab will still work for the menu
 
       'add-tab': !!sheet.options.add_tab,
-      'delete-tab': !!sheet.options.delete_tab,
+      'delete-tab': (!!sheet.options.delete_tab || !!sheet.options.add_tab),
 
       // we actually don't want to remove stats if it's not in use, because
       // we need it for layout

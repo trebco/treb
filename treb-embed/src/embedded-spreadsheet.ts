@@ -571,7 +571,7 @@ export class EmbeddedSpreadsheet {
       expand_formula_button: this.options.expand_formula_button,
       tab_bar: this.options.tab_bar,
       add_tab: this.options.add_tab,
-      delete_tab: this.options.delete_tab,
+      // delete_tab: this.options.delete_tab,
       expand: this.options.expand,
 
     };

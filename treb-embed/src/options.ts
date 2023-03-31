@@ -132,10 +132,15 @@ export interface EmbeddedSpreadsheetOptions {
   /** show tab bar (multi sheet) */
   tab_bar?: boolean|'auto';
 
-  /** allow add tab */
+  /** 
+   * allow add/delete tab 
+   */
   add_tab?: boolean;
 
-  /** show delete tab */
+  /** 
+   * show delete tab 
+   * @deprecated - implied by add_tab 
+   */
   delete_tab?: boolean;
 
   /** set a reference in global (self) */
@@ -287,7 +292,7 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   dnd: false,
   add_tab: false,
   expand_formula_button: false,
-  delete_tab: false,
+  // delete_tab: false,
 
   // changing default value for expand -> false, it might be
   // useful to disable it but the common expectation is that 

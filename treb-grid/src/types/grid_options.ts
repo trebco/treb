@@ -57,8 +57,8 @@ export interface GridOptions {
   /** allow add tab */
   add_tab?: boolean;
 
-  /** show delete tab in the tab bar */
-  delete_tab?: boolean;
+  /* * show delete tab in the tab bar */
+  // delete_tab?: boolean;
 
   /** show the "insert function" button. requires formula bar. */
   insert_function_button?: boolean;

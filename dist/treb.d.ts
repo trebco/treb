@@ -112,10 +112,15 @@ export interface EmbeddedSpreadsheetOptions {
     /** show tab bar (multi sheet) */
     tab_bar?: boolean | 'auto';
 
-    /** allow add tab */
+    /**
+     * allow add/delete tab
+     */
     add_tab?: boolean;
 
-    /** show delete tab */
+    /**
+     * show delete tab
+     * @deprecated - implied by add_tab
+     */
     delete_tab?: boolean;
 
     /** set a reference in global (self) */

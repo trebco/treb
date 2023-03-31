@@ -35,7 +35,6 @@
   --treb-chart-grid-color: #976;
   --treb-chart-text-color: #fff;
   --treb-dialog-background: #000;
-  --treb-dialog-border-color: #fff;
   --treb-dialog-color: #fff;
   --treb-dropdown-background: #000;
   --treb-dropdown-border-color: #fff;
@@ -51,14 +50,14 @@
   --treb-grid-header-background: #444;
   --treb-grid-header-grid-color: #000;
   --treb-note-background: #333;
-  --treb-note-border-color: #fff;
+  --treb-note-border-color: #aaa;
   --treb-note-color: #fff;
   --treb-note-marker-color: pink;
   --treb-resize-tooltip-background: #fff;
   --treb-resize-tooltip-color: #000;
   --treb-scale-slider-accent-color: #fff;
   --treb-scale-slider-background: #333;
-  --treb-scale-slider-border-color: #fff;
+  --treb-scale-slider-border-color: #aaa;
   --treb-selection-color: yellow;
   --treb-selection-fill-opacity: .2;
   --treb-sidebar-button-background: #000;
@@ -72,7 +71,6 @@
   --treb-toolbar-active-button-background: #555;
   --treb-toolbar-button-background: #000;
   --treb-toolbar-hover-button-background: #444;
-  --treb-ui-border-color: #666;
   --treb-ui-color: #fff;
   --treb-table-header-background: #334; // DarkSlateGray;
   --treb-table-odd-background: #122;
@@ -101,8 +99,14 @@
   --treb-tab-bar-active-tab-background: field;
   --treb-tab-bar-tab-background: transparent;
   --treb-tab-bar-tab-border-color: #444;
-  --treb-toolbar-border-color: #333;
+  --treb-ui-border-color: #aaa;
+
+  // we should split toolbar buttons and menus
+
   --treb-toolbar-button-background: rgb(86,86,86);
+  --treb-toolbar-button-background: rgb(33,33,33);
+  --treb-toolbar-border-color: rgb(67,67,67);
+
   --treb-toolbar-color: rgb(221,221,221);
   
 
