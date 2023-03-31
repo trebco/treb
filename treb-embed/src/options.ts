@@ -60,16 +60,21 @@ export interface EmbeddedSpreadsheetOptions {
 
   /** 
    * key in localStorage for persisting document. 
-   * 
-   * it's possible to set this to boolean `true`, in which case we will 
-   * generate a storage key based on the page URI. 
-   * 
-   * that can be convenient for quickly setting up a document, but don't 
-   * use it if the page URI might change (the storage will get lost)
-   * or if there are multiple spreadsheets on the same page (they will
-   * overwrite each other).
+   * @deprecated - this was renamed to local_storage for clarity. if both
+   * storage_key and local_storage are set we will use the value in local_storage.
    */
   storage_key?: string|boolean;
+
+  /**
+   * persist user changes to document in browser localStorage.
+   * 
+   * if set to a string, the value is used as the storage key.
+   * 
+   * if set to `true`, we will generate a storage key based on the page URI. 
+   * don't do that if you have multiple spreadsheets on a single page, or 
+   * they will overwrite each other.
+   */
+  local_storage?: string|boolean;
 
   /** don't load immediately (?) */
   toll_initial_load?: boolean;

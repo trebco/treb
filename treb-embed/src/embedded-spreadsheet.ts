@@ -280,7 +280,7 @@ export class EmbeddedSpreadsheet {
    * 
    * @internal
    */
-  public options: EmbeddedSpreadsheetOptions & { storage_key: string|undefined };
+  public options: EmbeddedSpreadsheetOptions & { local_storage: string|undefined };
 
   /**
    * @internal
@@ -491,10 +491,16 @@ export class EmbeddedSpreadsheet {
 
     // super();
 
+    // we renamed this option, default to the new name
+
+    if (options.storage_key && !options.local_storage) {
+      options.local_storage = options.storage_key;
+    }
+
     // consolidate options w/ defaults. note that this does not
     // support nested options, for that you need a proper merge
 
-    this.options = { ...DefaultOptions, ...options, storage_key: this.ResolveStorageKey(options.storage_key, 'document') };
+    this.options = { ...DefaultOptions, ...options, local_storage: this.ResolveStorageKey(options.local_storage, 'document') };
 
     if (typeof this.options.imaginary_value === 'string') {
       NumberFormat.imaginary_character = this.options.imaginary_value;
@@ -521,8 +527,8 @@ export class EmbeddedSpreadsheet {
     // don't load if we're a split view. we can also skip the 
     // unload event, as parent will already have that set
 
-    if (this.options.storage_key && !this.options.toll_initial_load && !options.model) {
-      data = localStorage.getItem(this.options.storage_key) || undefined;
+    if (this.options.local_storage && !this.options.toll_initial_load && !options.model) {
+      data = localStorage.getItem(this.options.local_storage) || undefined;
       if (data) {
         source = LoadSource.LOCAL_STORAGE;
       }
@@ -539,10 +545,10 @@ export class EmbeddedSpreadsheet {
     // this one should not be done for a split view, but we should still
     // do it if the toll flag is set, and storage key is set. 
 
-    if (this.options.storage_key && !options.model ) {
+    if (this.options.local_storage && !options.model ) {
       window.addEventListener('beforeunload', () => {
-        if (this.options.storage_key) {
-          this.SaveLocalStorage(this.options.storage_key);
+        if (this.options.local_storage) {
+          this.SaveLocalStorage(this.options.local_storage);
         }
       });
     }
@@ -927,9 +933,9 @@ export class EmbeddedSpreadsheet {
     }
 
     // don't load if we are a split view
-    // UPDATE: don't load if we have a localStorage document. this is taking
-    // over the old alterante_document flow, because it doesn't make any sense
-    // otherwise. what would storage_key with document_name mean otherwise?
+    // UPDATE: don't load if we have a local_storage document. this is taking
+    // over the old alternate_document flow, because it doesn't make any sense
+    // otherwise. what would local_storage with document_name mean otherwise?
 
     if (network_document && !options.model && !data) {
       this.LoadNetworkDocument(network_document, this.options);
@@ -2319,16 +2325,16 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
-   * revert to the network version of this document, if both `storage_key` 
+   * revert to the network version of this document, if both `local_storage` 
    * and `network_document` are set.
    */
   public Revert(): void {
 
     if (this.options.inline_document) {
       this.LoadDocument(this.options.inline_document);
-      if (this.options.storage_key) {
+      if (this.options.local_storage) {
         this.SaveLocalStorage('reverted_backup');
-        localStorage.removeItem(this.options.storage_key);
+        localStorage.removeItem(this.options.local_storage);
       }
       return;
     }
@@ -2351,9 +2357,9 @@ export class EmbeddedSpreadsheet {
       // flush storage? what about mistakes? maybe we should 
       // back it up somewhere? (...)
 
-      if (this.options.storage_key) {
+      if (this.options.local_storage) {
         this.SaveLocalStorage('reverted_backup');
-        localStorage.removeItem(this.options.storage_key);
+        localStorage.removeItem(this.options.local_storage);
       }
 
       return;
@@ -2514,7 +2520,7 @@ export class EmbeddedSpreadsheet {
     // FIXME: this is weird, why do we have a method for this, why
     // does it modify the key, and so on
 
-    this.options.storage_key = key;
+    this.options.local_storage = key;
     const json = localStorage.getItem(key);
 
     if (json) {
@@ -3243,7 +3249,7 @@ export class EmbeddedSpreadsheet {
    * @param key optional storage key. if omitted, the method will use
    * the key from local options (set at create time).
    */
-  public SaveLocalStorage(key = this.options.storage_key): void {
+  public SaveLocalStorage(key = this.options.local_storage): void {
 
     // API v1 OK
 
@@ -4761,8 +4767,8 @@ export class EmbeddedSpreadsheet {
 
       // console.info(json);
 
-      if (this.options.storage_key) {
-        localStorage.setItem(this.options.storage_key, json);
+      if (this.options.local_storage) {
+        localStorage.setItem(this.options.local_storage, json);
       }
       if (this.options.undo) {
         this.PushUndo(json, undo_selection, false);
