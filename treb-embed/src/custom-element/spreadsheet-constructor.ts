@@ -282,7 +282,9 @@ export class SpreadsheetConstructor {
           if (element instanceof HTMLScriptElement) {
             if (element.type === 'application/json') {
               const name = element.getAttribute('name') || '';
-              if (name === inline_name) {
+
+              // add special case for aggressive clients/wrappers
+              if (name === inline_name || !name && inline_name === 'true') {
                 const content = element.textContent;
                 if (content) {
                   try {
