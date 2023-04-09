@@ -2054,7 +2054,6 @@ export class Grid extends GridBase {
   }
 
   protected RenameSheetInternal(target: Sheet, name: string) {
-    console.info("RIS");
     super.RenameSheetInternal(target, name);
     this.tab_bar?.Update();
 
