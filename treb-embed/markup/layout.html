@@ -94,16 +94,16 @@
             add/remove tab should both be buttons, or at least have tabindexes 
           -->
   
-          <!-- why is this a div (...and see below) -->
-          <div class="treb-delete-tab" title="Delete current sheet" data-command="delete-tab" data-conditional="delete-tab">
-            <svg viewbox='0 0 16 16'><path d='M4,4 L12,12 M12,4 L4,12'/></svg>
-          </div>
+          <!-- converted to button, more appropriate -->
+          <button class="treb-delete-tab" title="Delete current sheet" data-command="delete-tab" data-conditional="delete-tab">
+            <svg tabindex="-1" viewbox='0 0 16 16'><path d='M4,4 L12,12 M12,4 L4,12'/></svg>
+          </button>
   
           <!-- list of tabs for sheets -->
           <ol class="treb-spreadsheet-tabs" role="tablist"></ol>
   
-          <!-- ...and why is this an anchor? -->
-          <a class="treb-add-tab" data-command="add-tab" data-conditional="add-tab" title="Add sheet">+</a>
+          <!-- converted to button, more appropriate -->
+          <button class="treb-add-tab" data-command="add-tab" data-conditional="add-tab" title="Add sheet">+</button>
   
           <!-- 
             we removed the junk node with "flex grow" to split the layout, in

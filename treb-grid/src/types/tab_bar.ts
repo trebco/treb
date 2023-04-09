@@ -453,6 +453,7 @@ export class TabBar extends EventSource<TabEvent> {
       const index = tabs.length;
       // const tab = document.createElement('div');
       const tab = document.createElement('li');
+      tab.setAttribute('tabindex', '0');
 
       // tab.classList.add('tab');
       tab.style.order = (index * 2).toString();

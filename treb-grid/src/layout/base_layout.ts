@@ -354,7 +354,7 @@ export abstract class BaseLayout {
 
     this.sort_button = DOMUtilities.Create<HTMLButtonElement>(
       'button', 
-      'treb-sort-button', undefined, undefined, { title: 'Sort table'});
+      'treb-sort-button', undefined, undefined, { title: 'Sort table', tabindex: '-1'});
 
     this.HideNote();
 
@@ -451,6 +451,7 @@ export abstract class BaseLayout {
   public HideTableSortButton() {
     this.sort_button.style.opacity = '0';
     this.sort_button.style.pointerEvents = 'none';
+    this.sort_button.setAttribute('tabindex', '-1');
   }
 
   public ShowTableSortButton(table: Table, column: number, address: ICellAddress): void {
@@ -469,6 +470,7 @@ export abstract class BaseLayout {
       }
     }
     
+    this.sort_button.setAttribute('tabindex', '0  ');
     this.sort_button.style.opacity = '1';
     this.sort_button.style.pointerEvents = 'initial';
     this.sort_button.classList.remove('asc', 'desc');

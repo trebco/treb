@@ -2053,6 +2053,13 @@ export class Grid extends GridBase {
 
   }
 
+  protected RenameSheetInternal(target: Sheet, name: string) {
+    console.info("RIS");
+    super.RenameSheetInternal(target, name);
+    this.tab_bar?.Update();
+
+  }
+
   /**
    * translate function from common (english) -> local language. this could
    * be inlined (assuming it's only called in one place), but we are breaking
