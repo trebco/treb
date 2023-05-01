@@ -228,6 +228,9 @@ export class EmbeddedSpreadsheet {
   /** @internal */
   public static enable_formatter = false;
 
+  /** @internal */
+  public static one_time_warnings: Record<string, boolean> = {};
+
   /**
    * this flag will be set on LoadDocument. the intent is to be able to
    * know if you have loaded a network document, which may happen before you
@@ -865,7 +868,10 @@ export class EmbeddedSpreadsheet {
 
     }
     else {
-      console.info('not initializing grid; don\'t call UI functions');
+      if (!EmbeddedSpreadsheet.one_time_warnings.headless) {
+        EmbeddedSpreadsheet.one_time_warnings.headless = true;
+        console.info('not initializing grid; don\'t call UI functions');
+      }
       this.grid.headless = true; // ensure
     }
 
