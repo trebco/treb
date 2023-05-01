@@ -81,7 +81,13 @@ export interface ViewData {
 
 export interface ImageAnnotationData {
   src: string;
-  scale: string;
+
+  /**
+   * @privateRemarks
+   * why is this a string?
+   */
+  scale: string; 
+  
   original_size: { 
     width: number; 
     height: number;

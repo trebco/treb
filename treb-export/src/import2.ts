@@ -478,6 +478,7 @@ export class Importer {
     // data (and row heights)
 
     const row_heights: number[] = [];
+    const outline: number[] = [];
 
     const rows = FindAll('worksheet/sheetData/row');
 
@@ -489,6 +490,12 @@ export class Importer {
         const num = Number(row.a$.ht);
         if (!isNaN(num)) {
           height = Math.round(num * 4 / 3); // seems to be the excel unit -> pixel ratio
+        }
+      }
+      if (row.a$?.outlineLevel) {
+        const num = Number(row.a$.outlineLevel);
+        if (!isNaN(num)) {
+          outline[row_index - 1] = num;
         }
       }
 
@@ -866,6 +873,10 @@ export class Importer {
       annotations,
       styles: this.workbook?.style_cache?.CellXfToStyles() || [],
     };
+
+    if (outline.length) {
+      result.outline = outline;
+    }
 
     if (sheet.visible_state === VisibleState.hidden || sheet.visible_state === VisibleState.very_hidden) {
       result.hidden = true;

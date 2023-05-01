@@ -66,6 +66,9 @@ export interface ImportedSheetData {
   // new
   annotations?: AnchoredAnnotation[];
 
+  // new
+  outline?: number[];
+
   hidden?: boolean;
 
 }

@@ -148,6 +148,13 @@ export class Sheet {
     return this._image;
   }
 
+  /**
+   * @internal
+   * 
+   * testing, not serialized atm
+   */
+  public outline: number[] | undefined;
+
   /** internal ID */
   // tslint:disable-next-line: variable-name
   private id_: number;
@@ -2685,6 +2692,10 @@ export class Sheet {
   public ImportData(data: ImportedSheetData): void {
 
     const styles = data.styles;
+
+    if (data.outline) {
+      this.outline = data.outline;
+    }
 
     // adding sheet style...
 
