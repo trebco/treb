@@ -653,7 +653,11 @@ export class EmbeddedSpreadsheet {
     //this.extra_calculator = //new Calculator(this.model);
     //  this.CreateCalculator(this.model);
 
-    this.grid = new Grid(grid_options, this.parser, this.model);
+    // update: tell the grid if we don't want to initialize the DOM,
+    // if we don't have a container. that's distinct (at the moment)
+    // from headless, which is a state that can change.
+
+    this.grid = new Grid(grid_options, this.parser, this.model, undefined, !!container);
 
     if (this.options.headless) {
       this.grid.headless = true; // FIXME: move into grid options
@@ -870,9 +874,9 @@ export class EmbeddedSpreadsheet {
     else {
       if (!EmbeddedSpreadsheet.one_time_warnings.headless) {
         EmbeddedSpreadsheet.one_time_warnings.headless = true;
-        console.info('not initializing grid; don\'t call UI functions');
+        console.info('not initializing layout; don\'t call UI functions');
       }
-      this.grid.headless = true; // ensure
+      // this.grid.headless = true; // ensure
     }
 
     // moved up so we can share parser w/ grid

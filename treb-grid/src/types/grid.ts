@@ -65,6 +65,7 @@ import { TabBar } from './tab_bar';
 import type { StatsEntry } from './tab_bar';
 
 import { Sheet } from './sheet';
+import { MockLayout } from '../layout/mock-layout';
 import type { BaseLayout } from '../layout/base_layout';
 import { TileRange } from '../layout/base_layout';
 
@@ -328,10 +329,10 @@ export class Grid extends GridBase {
   private render_token = 0;
 
   /** */
-  private tile_renderer: TileRenderer;
+  private tile_renderer?: TileRenderer;
 
   /** */
-  private selection_renderer: SelectionRenderer;
+  private selection_renderer?: SelectionRenderer;
 
   // FIXME: move [why?]
 
@@ -346,7 +347,8 @@ export class Grid extends GridBase {
     options: GridOptions = {}, 
     parser: Parser,
     model: DataModel,
-    theme: Theme = DefaultTheme) {
+    theme: Theme = DefaultTheme,
+    initialze_dom = true ) {
 
     super(options, parser, model);  
 
@@ -355,6 +357,12 @@ export class Grid extends GridBase {
     // set properties here, we will update in initialize()
 
     this.theme = JSON.parse(JSON.stringify(theme));
+
+    if (!initialze_dom) {
+      this.headless = true;
+      this.layout = new MockLayout(this.model, this.view);
+      return;
+    }
 
     this.layout = new GridLayout(this.model, this.view);
 
@@ -1225,6 +1233,10 @@ export class Grid extends GridBase {
    * @param container html container element
    */
   public Initialize(view_node: HTMLElement, toll_initial_render = false): void {
+
+    if (!this.tile_renderer || !this.selection_renderer) {
+      return;
+    }
 
     // grid no longer has access to the outer container, it just has 
     // the "view" container. so we need to move things like UA classes
@@ -2125,6 +2137,10 @@ export class Grid extends GridBase {
 
   private AutoSizeColumn(sheet: Sheet, column: number, allow_shrink = true): void {
 
+    if (!this.tile_renderer) {
+      return;
+    }
+
     // const context = Sheet.measurement_canvas.getContext('2d');
     // if (!context) return;
 
@@ -2729,7 +2745,7 @@ export class Grid extends GridBase {
 
   private Repaint(force = false, full_tile = false, force_headers = false) {
 
-    if (this.headless) { return; }
+    if (this.headless || !this.tile_renderer) { return; }
 
     if (this.tile_update_pending) {
       this.tile_update_pending = false;
@@ -3496,6 +3512,10 @@ export class Grid extends GridBase {
 
     event.stopPropagation();
     event.preventDefault();
+
+    if (!this.selection_renderer) {
+      return;
+    }
 
     // needed for legacy
 
@@ -4616,7 +4636,7 @@ export class Grid extends GridBase {
     const show_primary_selection = this.hide_selection ? false :
       (!this.editing_state) || (this.editing_cell.sheet_id === this.active_sheet.id);
   
-    this.selection_renderer.RenderSelections(show_primary_selection, rerender);
+    this.selection_renderer?.RenderSelections(show_primary_selection, rerender);
   }
 
   /**
@@ -6876,7 +6896,7 @@ export class Grid extends GridBase {
       // columns. we should be able to fix this, or we can just flush
       // all overflows and force them to get recreated.
 
-      this.tile_renderer.FlushOverflows();
+      this.tile_renderer?.FlushOverflows();
 
       // note event is sent in exec command, not implicit here
 

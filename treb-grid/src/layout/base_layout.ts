@@ -151,7 +151,7 @@ export abstract class BaseLayout {
     this.scroll_reference_node.scrollTop = offset.y;
   }
 
-  protected dropdown_caret: SVGSVGElement;
+  protected dropdown_caret!: SVGSVGElement;
 
   /** we have to disable mock selection for IE or it breaks key handling */
   private trident = ((typeof navigator !== 'undefined') &&
@@ -162,9 +162,9 @@ export abstract class BaseLayout {
 
   private tooltip_state?: 'up' | 'left';
 
-  private tooltip: HTMLDivElement;
+  private tooltip!: HTMLDivElement;
 
-  private dropdown_list: HTMLDivElement;
+  private dropdown_list!: HTMLDivElement;
   private dropdown_caret_visible = false;
   private dropdown_callback?: (value: CellValue) => void;
   private dropdown_selected?: HTMLElement;
@@ -174,10 +174,9 @@ export abstract class BaseLayout {
   // private error_highlight: HTMLDivElement;
   // private error_highlight_timeout?: any;
 
-  private note_node: HTMLDivElement;
-  private sort_button: HTMLButtonElement;
-
-  private title_node: HTMLDivElement;
+  private note_node!: HTMLDivElement;
+  private sort_button!: HTMLButtonElement;
+  private title_node!: HTMLDivElement;
 
   private row_cache: number[] = [];
   private column_cache: number[] = [];
@@ -188,7 +187,11 @@ export abstract class BaseLayout {
   private initialized = false;
 
 
-  constructor(protected model: DataModel, protected view: ViewModel) {
+  constructor(protected model: DataModel, protected view: ViewModel, mock = false) {
+
+    if (mock) {
+      return;
+    }
 
     // now attaching to node... no longer global
     // actually if we are not in a web component, we might as well
