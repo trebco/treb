@@ -196,7 +196,7 @@ export class MDParser {
         const followed_by_punctuation = following && following.type === 'text' && /^[^\w\d]/.test(following.text);
 
         token.left_flanking = ((!followed_by_whitespace) && ((!followed_by_punctuation) || preceded_by_whitespace));
-        token.right_flanking = ((!preceded_by_whitespace) && ((!preceded_by_punctuation) || followed_by_whitespace));
+        token.right_flanking = ((!preceded_by_whitespace) && ((!preceded_by_punctuation) || (followed_by_whitespace || followed_by_punctuation)));
 
       }
     }
