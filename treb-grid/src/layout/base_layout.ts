@@ -122,7 +122,7 @@ export abstract class BaseLayout {
    * an event we can trap for that. it might be necessary to test this
    * periodically.
    */
-  public dpr = Math.max(1, self.devicePixelRatio || 1);
+  public dpr = 1; // Math.max(1, self.devicePixelRatio || 1);
 
   /** separate scale, user-controlled (testing...) */
   public scale = 1;
@@ -192,6 +192,8 @@ export abstract class BaseLayout {
     if (mock) {
       return;
     }
+
+    this.dpr = Math.max(1, self.devicePixelRatio || 1);
 
     // now attaching to node... no longer global
     // actually if we are not in a web component, we might as well
