@@ -75,17 +75,11 @@ import type { SetRangeOptions } from 'treb-grid';
 // --- worker ------------------------------------------------------------------
 
 /**
- * note the clumsy URI-like syntax. if typescript can see that the thing
- * is a ts file, even if we have a prefix and a type defined for that 
- * prefix, it will still try to read it. 
- * 
- * this is not a great solution. I was thinking about letting ts read it.
- * That won't impact esbuild, and it has the helpful side effect of type 
- * checking the worker when we run tsc. but it doesn't like the .ts extension.
- * also it actually tries to import the file, which means you have to export
- * some junk value.
+ * import the worker as a script file. tsc will read this on typecheck but 
+ * that's actually to the good; when we build with esbuild we will inline
+ * the script so we can run it as a worker.
  */
-import export_worker_script from 'worker://../../treb-export/src/export-worker/index-modern.ts';
+import * as export_worker_script from 'worker:../../treb-export/src/export-worker/index.worker';
 
 // --- types -------------------------------------------------------------------
 
@@ -2813,7 +2807,7 @@ export class EmbeddedSpreadsheet {
     }
 
     if (text && filename) {
-      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const blob = new Blob([text as any], { type: 'text/plain;charset=utf-8' });
       /*
       // FileSaver.saveAs(blob, filename, { autoBom: false });
       const a = document.createElement('a');
@@ -5327,7 +5321,7 @@ export class EmbeddedSpreadsheet {
       if (export_worker_script) {
         try {
           const worker = new Worker(
-              URL.createObjectURL(new Blob([export_worker_script], { type: 'application/javascript' })));
+              URL.createObjectURL(new Blob([(export_worker_script as any).default], { type: 'application/javascript' })));
           return worker;
         }
         catch (err) {

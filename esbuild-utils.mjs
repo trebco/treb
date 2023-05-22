@@ -99,8 +99,8 @@ export const WorkerPlugin = (options) => ({
   name: 'worker',
   setup(build) {
 
-    build.onResolve({ filter: /^worker:\/\//}, async (args) => {
-      args.path = args.path.substring(9);
+    build.onResolve({ filter: /^worker:/}, async (args) => {
+      args.path = args.path.substring(7);
       const result = await build.resolve(args.path, {
         kind: args.kind,
         resolveDir: args.resolveDir,

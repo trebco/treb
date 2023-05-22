@@ -21,3 +21,12 @@
 
 import './export-worker';
 
+/**
+ * default export so tsc will allow us to import it. we use a string
+ * because when actually running (via the esbuild build) it will be 
+ * the code as text. HOWEVER, this will break if we actually try to 
+ * run it in a browser, so we need to clean it up in the compiler.
+ */
+// export default '';
+
+
