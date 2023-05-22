@@ -81,16 +81,24 @@ export const FormatSize = (size, precision = 1) => {
  * 
  * if you import a worker script like this 
  * ```
- * import worker_script from 'worker://path/to/worker.ts';
+ * import * as worker_script from 'worker:path/to/worker';
  * ```
  * the plugin will compile the target (with esbuild) and then return the 
  * compiled script as a string. the child build inherits minify settings 
  * from the parent build.
  * 
+ * note the `import *` syntax; we can't just import the script, because
+ * tsc will complain about a missing default export (and you can't have 
+ * a default export, or it will break when it runs).
+ * 
  * you can then use it in the containing script by creating a worker:
  * ```
- * const worker = new Worker(URL.createObjectURL(new Blob([worker_script], { type: 'application/javascript' })));
+ * const worker = new Worker(URL.createObjectURL(new Blob([(worker_script as any).default], { type: 'application/javascript' })));
  * ```
+ * 
+ * here we have to use `any`, for the time being, because when tsc reads
+ * this it will note (correctly) that there's no default. but for our 
+ * esbuild import, we will have a default string.
  * 
  * this might cause problems with CSP. if so, we'll sort that out separately.
  * 
