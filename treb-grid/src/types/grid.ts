@@ -805,7 +805,9 @@ export class Grid extends GridBase {
    * be wiped from the model.
    */
   public RemoveAnnotationNodes(): void {
-    this.layout.RemoveAnnotationNodes();
+    if (!this.headless) {
+      this.layout.RemoveAnnotationNodes();
+    }
   }
 
   /**
