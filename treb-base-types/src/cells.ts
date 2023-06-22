@@ -371,7 +371,7 @@ export class Cells {
   public SerializedTypeToValueType(type?: SerializedValueType|ValueType): ValueType|undefined {
 
     if (!type) {
-      return ValueType.undefined;
+      return undefined;
     }
 
     if (typeof type === 'number') {
