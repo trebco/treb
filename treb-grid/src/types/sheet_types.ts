@@ -44,47 +44,83 @@ export interface ScrollOffset {
 
 export interface SerializedSheet {
 
-  // version: string;
-  // data: any; // FIXME
+  /** cell data */
   data: SerializedCellData;
 
+  /** top-level sheet style, if any */
   sheet_style: Style.Properties;
+
+  /** row count */
   rows: number;
+
+  /** column count */
   columns: number;
+
+  /**
+   * cell styles is for empty cells that have styling
+   */
   cell_styles: Array<{row: number; column: number; ref: number, rows?: number}>;
 
-  /** @deprecated */
+  /** 
+   * @deprecated use `styles` instead
+   */
   cell_style_refs?: Style.Properties[]; // old 
-  styles?: Style.Properties[];          // new
 
+  /** 
+   * new implementation 
+   */
+  styles?: Style.Properties[];
+
+  /**
+   * per-row styles
+   */
   row_style: Record<number, Style.Properties|number>;
+
+  /**
+   * per-column styles
+   */
   column_style: Record<number, Style.Properties|number>;
 
   /** 
-   * @deprecated - no one uses this anymore and it's weird 
+   * @deprecated no one uses this anymore and it's weird 
    */
   row_pattern?: Style.Properties[];
 
+  /** default for new rows */
   default_row_height?: number;
+
+  /** default for new columns */
   default_column_width?: number;
 
+  /** list of row heights. we use a Record instead of an array because it's sparse */
   row_height?: Record<number, number>;
-  column_width?: Record<number, number>;
-  named_ranges?: Record<string, IArea>;
 
-  // row_height?: {[index: number]: number};
-  // column_width?: {[index: number]: number};
-  // named_ranges?: {[index: string]: IArea};
+  /** list of column widths. we use a Record instead of an array because it's sparse */
+  column_width?: Record<number, number>;
+
+  /** 
+   * @deprecated these were moved to the containing document
+   */
+  named_ranges?: Record<string, IArea>;
 
   freeze?: FreezePane;
 
+  /** sheet ID, for serializing references */
   id?: number;
+
+  /** sheet name */
   name?: string;
 
+  /** current active selection */
   selection: GridSelection;
+
+  /**  */
   annotations?: Partial<AnnotationData>[]; // Partial<Annotation>[];
+
+  /** current scroll position */
   scroll?: ScrollOffset;
 
+  /** visible flag. we only support visible/hidden */
   visible?: boolean;
 
   /** testing */

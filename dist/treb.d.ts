@@ -1,4 +1,4 @@
-/*! API v25.9. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v26.0. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -647,7 +647,7 @@ export declare class EmbeddedSpreadsheet {
     /**
      * unserialize document from data.
      */
-    LoadDocument(data: any, options?: LoadDocumentOptions): void;
+    LoadDocument(data: TREBDocument, options?: LoadDocumentOptions): void;
 
     /**
      * Set note (comment) in cell.
@@ -690,7 +690,7 @@ export declare class EmbeddedSpreadsheet {
      *
      * @public
      */
-    SerializeDocument(options?: SerializeOptions): any;
+    SerializeDocument(options?: SerializeOptions): TREBDocument;
 
     /**
      * Recalculate sheet.
@@ -1172,6 +1172,27 @@ export interface DimensionedQuantity {
 }
 
 /**
+ * this is the list of value types. internally, we use an enum. I don't
+ * want to change that, at least not at the moment, but that presents a
+ * problem for exporting types.
+ *
+ * we'll switch to string types for import/export, although we still support
+ * importing the old numeric enum types for backwards compatibility.
+ */
+export declare const ValueTypeList: readonly [
+    "undefined",
+    "formula",
+    "string",
+    "number",
+    "boolean",
+    "object",
+    "error",
+    "complex",
+    "array",
+    "dimensioned_quantity"
+];
+
+/**
  * composite styling for tables.
  */
 export interface TableTheme {
@@ -1228,6 +1249,69 @@ export interface TableSortOptions {
     asc: boolean;
 }
 export type TableSortType = 'text' | 'numeric' | 'auto';
+
+/**
+ * we're not exporting this type in the public API because there are so many
+ * nested types that aren't used anywhere else (in public functions).
+ *
+ * I would like to do it, though, that `any` looks bad in the  public API.
+ */
+export interface TREBDocument {
+
+    /** app name, as identifier */
+    app: string;
+
+    /** app version. we'll warn if you use a file from a newer version */
+    version: string;
+
+    /**
+     * revision number. this is a value that increments on any document change,
+     * useful for checking if a document is "dirty".
+     */
+    revision?: number;
+
+    /** document name */
+    name?: string;
+
+    /**
+     * opaque user data. we don't read or parse this, but applications can
+     * use it to store arbitrary data.
+     */
+    user_data?: any;
+
+    /**
+     * per-sheet data. this should be an array, but for historical reasons
+     * we still support a single sheet outside of an array.
+     */
+    sheet_data?: SerializedSheet | SerializedSheet[];
+
+    /** document decimal mark */
+    decimal_mark?: '.' | ',';
+
+    /** active sheet. if unset we'll show the first un-hidden sheet */
+    active_sheet?: number;
+
+    /**
+     * this document includes rendered calculated values. using this lets the
+     * app show a document faster, without requiring an initial calculation.
+     */
+    rendered_values?: boolean;
+
+    /** document named ranges */
+    named_ranges?: Record<string, IArea>;
+
+    /** document named expressions */
+    named_expressions?: SerializedNamedExpression[];
+
+    /** document macro functions */
+    macro_functions?: SerializedMacroFunction[];
+
+    /** document tables */
+    tables?: Table[];
+
+    /** document shared resources (usually images) */
+    shared_resources?: Record<string, string>;
+}
 export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file" | "local-storage" | "inline-document" | "undo";
 
 /**
@@ -1313,6 +1397,539 @@ export interface SelectionEvent {
  */
 export interface FocusViewEvent {
     type: 'focus-view';
+}
+export interface SerializedNamedExpression {
+    name: string;
+    expression: string;
+}
+export interface SerializedSheet {
+
+    /** cell data */
+    data: SerializedCellData;
+
+    /** top-level sheet style, if any */
+    sheet_style: Style.Properties;
+
+    /** row count */
+    rows: number;
+
+    /** column count */
+    columns: number;
+
+    /**
+     * cell styles is for empty cells that have styling
+     */
+    cell_styles: Array<{
+        row: number;
+        column: number;
+        ref: number;
+        rows?: number;
+    }>;
+
+    /**
+     * @deprecated use `styles` instead
+     */
+    cell_style_refs?: Style.Properties[];
+
+    /**
+     * new implementation
+     */
+    styles?: Style.Properties[];
+
+    /**
+     * per-row styles
+     */
+    row_style: Record<number, Style.Properties | number>;
+
+    /**
+     * per-column styles
+     */
+    column_style: Record<number, Style.Properties | number>;
+
+    /**
+     * @deprecated no one uses this anymore and it's weird
+     */
+    row_pattern?: Style.Properties[];
+
+    /** default for new rows */
+    default_row_height?: number;
+
+    /** default for new columns */
+    default_column_width?: number;
+
+    /** list of row heights. we use a Record instead of an array because it's sparse */
+    row_height?: Record<number, number>;
+
+    /** list of column widths. we use a Record instead of an array because it's sparse */
+    column_width?: Record<number, number>;
+
+    /**
+     * @deprecated these were moved to the containing document
+     */
+    named_ranges?: Record<string, IArea>;
+    freeze?: FreezePane;
+
+    /** sheet ID, for serializing references */
+    id?: number;
+
+    /** sheet name */
+    name?: string;
+
+    /** current active selection */
+    selection: GridSelection;
+
+    /**  */
+    annotations?: Partial<AnnotationData>[];
+
+    /** current scroll position */
+    scroll?: ScrollOffset;
+
+    /** visible flag. we only support visible/hidden */
+    visible?: boolean;
+
+    /** testing */
+    background_image?: string;
+}
+export interface ScrollOffset {
+    x: number;
+    y: number;
+}
+export type SerializedCellData = FlatCellData[] | NestedRowData[] | NestedColumnData[];
+export interface BaseCellData {
+    value: CellValue;
+    style_ref?: number;
+    calculated?: CellValue;
+    table?: Table;
+    area?: IArea;
+    merge_area?: IArea;
+    validation?: DataValidation;
+    calculated_type?: SerializedValueType;
+    note?: string;
+    hyperlink?: string;
+    type?: SerializedValueType;
+    sheet_id?: number;
+}
+export interface FlatCellData extends BaseCellData {
+    row: number;
+    column: number;
+}
+export interface NestedCellData {
+    cells: BaseCellData[];
+}
+export interface NestedRowData extends NestedCellData {
+    row: number;
+    cells: Array<{
+        column: number;
+    } & BaseCellData>;
+}
+export interface NestedColumnData extends NestedCellData {
+    column: number;
+    cells: Array<{
+        row: number;
+    } & BaseCellData>;
+}
+
+/**
+ * struct representing a table
+ */
+export interface Table {
+
+    /**
+     * table must have a name
+     */
+    name: string;
+
+    /** table area */
+    area: IArea;
+
+    /**
+     * table column headers. normalize case before inserting.
+     */
+    columns?: string[];
+
+    /**
+     * table has a totals row. this impacts layout and what's included
+     * in the range when you refer to a column. also on import/export, the
+     * AutoFilter element should exclude the totals row.
+     *
+     * NOTE: xlsx actually uses an integer for this -- can it be > 1?
+     */
+    totals_row?: boolean;
+
+    /**
+     * table is sortable. defaults to true. if false, disables UI sorting.
+     */
+    sortable?: boolean;
+
+    /**
+     * theme for table. we have a default, but you can set explicitly.
+     */
+    theme?: TableTheme;
+
+    /**
+     * sort data. sorts are hard, meaning we actually move data around.
+     * (not meaning difficult). we may keep track of the last sort so we
+     * can toggle asc/desc, for example. atm this will not survive serialization.
+     */
+    sort?: {
+        column: number;
+        type: TableSortType;
+        asc: boolean;
+    };
+}
+export type DataValidation = DataValidationList | DataValidationRange | DataValidationNumber | DataValidationDate | DataValidationBoolean;
+export interface DataValidationBase {
+    error?: boolean;
+}
+export interface DataValidationRange extends DataValidationBase {
+    type: 'range';
+    area: IArea;
+}
+export interface DataValidationList extends DataValidationBase {
+    type: 'list';
+    list: CellValue[];
+}
+export interface DataValidationDate extends DataValidationBase {
+    type: 'date';
+}
+export interface DataValidationNumber extends DataValidationBase {
+    type: 'number';
+}
+export interface DataValidationBoolean extends DataValidationBase {
+    type: 'boolean';
+}
+
+/**
+ * string types for import/export
+ */
+export type SerializedValueType = typeof ValueTypeList[number];
+
+/**
+ * FIXME: this is broken. we treat this as a simple javascript object,
+ * cloning and creating via JSON, but area is a class instance.
+ *
+ * that means cloned objects won't work properly (if anyone is relying on
+ * that object).
+ */
+export interface GridSelection {
+
+    /** target or main cell in the selection */
+    target: ICellAddress;
+
+    /** selection area */
+    area: Area;
+
+    /** there is nothing selected, even though this object exists */
+    empty?: boolean;
+
+    /** for cacheing addtional selections. optimally don't serialize */
+    rendered?: boolean;
+}
+
+/**
+ * create an empty selection
+ */
+export declare const CreateSelection: () => GridSelection;
+export declare const CloneSelection: (rhs: GridSelection) => GridSelection;
+
+/**
+ * class represents a rectangular area on a sheet. can be a range,
+ * single cell, entire row/column, or entire sheet.
+ *
+ * "entire" row/column/sheet is represented with an infinity in the
+ * start/end value for row/column/both, so watch out on loops. the
+ * sheet class has a method for reducing infinite ranges to actual
+ * populated ranges.
+ */
+export declare class Area implements IArea {
+
+    /**
+     *
+     * @param start
+     * @param end
+     * @param normalize: calls the normalize function
+     */
+    constructor(start: ICellAddress, end?: ICellAddress, normalize?: boolean);
+    static FromColumn(column: number): Area;
+    static FromRow(row: number): Area;
+    static ColumnToLabel(c: number): string;
+    static CellAddressToLabel(address: ICellAddress, sheet_id?: boolean): string;
+
+    /**
+     * merge two areas and return a new area.
+     * UPDATE to support arbitrary arguments
+     */
+    static Join(base: IArea, ...args: Array<IArea | undefined>): Area;
+
+    /**
+     * creates an area that expands the original area in all directions
+     * (except at the top/left edges)
+     */
+    static Bleed(area: IArea, length?: number): Area;
+
+    /** accessor returns a _copy_ of the start address */
+    get start(): ICellAddress;
+
+    /** accessor */
+    set start(value: ICellAddress);
+
+    /** accessor returns a _copy_ of the end address */
+    get end(): ICellAddress;
+
+    /** accessor */
+    set end(value: ICellAddress);
+
+    /** returns number of rows, possibly infinity */
+    get rows(): number;
+
+    /** returns number of columns, possibly infinity */
+    get columns(): number;
+
+    /** returns number of cells, possibly infinity */
+    get count(): number;
+
+    /** returns flag indicating this is the entire sheet, usually after "select all" */
+    get entire_sheet(): boolean;
+
+    /** returns flag indicating this range includes infinite rows */
+    get entire_column(): boolean;
+
+    /** returns flag indicating this range includes infinite columns */
+    get entire_row(): boolean;
+    PatchNull(address: ICellAddress): ICellAddress;
+    SetSheetID(id: number): void;
+    Normalize(): void;
+
+    /** returns the top-left cell in the area */
+    TopLeft(): ICellAddress;
+
+    /** returns the bottom-right cell in the area */
+    BottomRight(): ICellAddress;
+    ContainsRow(row: number): boolean;
+    ContainsColumn(column: number): boolean;
+    Contains(address: ICellAddress): boolean;
+
+    /**
+     * returns true if this area completely contains the argument area
+     * (also if areas are ===, as a side effect). note that this returns
+     * true if A contains B, but not vice-versa
+     */
+    ContainsArea(area: Area): boolean;
+
+    /**
+     * returns true if there's an intersection. note that this won't work
+     * if there are infinities -- needs real area ?
+     */
+    Intersects(area: Area): boolean;
+    Equals(area: Area): boolean;
+    Clone(): Area;
+    Array(): ICellAddress[];
+    get left(): Area;
+    get right(): Area;
+    get top(): Area;
+    get bottom(): Area;
+
+    /** shifts range in place */
+    Shift(rows: number, columns: number): Area;
+
+    /** Resizes range in place so that it includes the given address */
+    ConsumeAddress(addr: ICellAddress): void;
+
+    /** Resizes range in place so that it includes the given area (merge) */
+    ConsumeArea(area: IArea): void;
+
+    /** resizes range in place (updates end) */
+    Resize(rows: number, columns: number): Area;
+    Iterate(f: (...args: any[]) => any): void;
+
+    /**
+     * returns the range in A1-style spreadsheet addressing. if the
+     * entire sheet is selected, returns nothing (there's no way to
+     * express that in A1 notation). returns the row numbers for entire
+     * columns and vice-versa for rows.
+     */
+    get spreadsheet_label(): string;
+
+    /**
+     * FIXME: is this different than what would be returned if
+     * we just used the default json serializer? (...)
+     *
+     * NOTE: we could return just the start if size === 1. if
+     * you pass an undefined to the Area class ctor it will reuse
+     * the start.
+     *
+     */
+    toJSON(): any;
+}
+export type AnnotationData = AnnotationChartData | AnnotationImageData | AnnotationExternalData;
+export interface ImageAnnotationData {
+    src: string;
+
+    /**/
+    scale: string;
+    original_size: {
+        width: number;
+        height: number;
+    };
+}
+
+/**
+ * splitting persisted data from the annotation class. that class might
+ * disappear in the future in favor of just a type. this interface should
+ * fully match the old Partial<Annotation> we used before. note that we
+ * used to define values for all members, but they may now be undefined
+ * because the Annotation class as a Partial instance of this data.
+ *
+ * conceptually annotation was originally intended to support types other
+ * than our own charts and images, but no one ever used it. so we could
+ * lock down the `type` field if we wanted to. or perhaps have an `external`
+ * type with opaque data. TODO.
+ *
+ */
+export interface AnnotationDataBase {
+
+    /** the new layout, persisted and takes preference over the old one */
+    layout?: AnnotationLayout;
+
+    /**
+     * the old layout used rectangles, and we need to keep support for
+     * that. this is not the layout rectangle. this rectangle is just
+     * for serialization/deserialization. the actual rectangle is maintained
+     * in the Annotation class.
+     */
+    rect?: Partial<Rectangle>;
+
+    /** annotation can be resized. this is advisory, for UI */
+    resizable: boolean;
+
+    /** annotation can be moved. this is advisory, for UI */
+    movable: boolean;
+
+    /** annotation can be removed/deleted. this is advisory, for UI */
+    removable: boolean;
+
+    /** annotation can be selected. this is advisory, for UI */
+    selectable: boolean;
+
+    /** move when resizing/inserting rows/columns */
+    move_with_cells: boolean;
+
+    /** resize when resizing/inserting rows/columns */
+    resize_with_cells: boolean;
+
+    /**
+     * optional formula. the formula will be updated on structure events
+     * (insert/delete row/column).
+     */
+    formula: string;
+
+    /**
+     * extent, useful for exporting. we could probably serialize this,
+     * just be sure to clear it when layout changes so it will be
+     * recalculated.
+     *
+     * the idea is to know the bottom/right row/column of the annotation,
+     * so when we preserve/restore the sheet we don't trim those rows/columns.
+     * they don't need any data, but it just looks bad. we can do this
+     * dynamically but since it won't change all that often, we might
+     * as well precalculate.
+     */
+    extent: ICellAddress;
+}
+export interface AnnotationImageData extends AnnotationDataBase {
+    type: 'image';
+    data: ImageAnnotationData;
+}
+export interface AnnotationChartData extends AnnotationDataBase {
+    type: 'treb-chart';
+}
+export interface AnnotationExternalData extends AnnotationDataBase {
+    type: 'external';
+    data: Record<string, string>;
+}
+export declare class Rectangle implements IRectangle {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    get right(): number;
+    get bottom(): number;
+
+    /**
+     * create a rectangle from an object that looks
+     * like a rectangle, probably a serialized object
+     */
+    static Create(obj: Partial<Rectangle>): Rectangle;
+    static IsRectangle(obj: unknown): obj is IRectangle;
+    constructor(left?: number, top?: number, width?: number, height?: number);
+
+    /** returns a new rect shifted from this one by (x,y) */
+    Shift(x?: number, y?: number): Rectangle;
+    Scale(scale_x?: number, scale_y?: number): Rectangle;
+
+    /** returns a new rect expanded from this one by (x,y) */
+    Expand(x?: number, y?: number): Rectangle;
+
+    /** returns a new rectangle that combines this rectangle with the argument */
+    Combine(rect: Rectangle): Rectangle;
+    CheckEdges(x: number, y: number, border?: number): number;
+
+    /**
+     * check if rectangle contains the given coordinates, optionally with
+     * some added padding
+     */
+    Contains(x: number, y: number, padding?: number): boolean;
+
+    /** convenience method for canvas */
+    ContextFill(context: CanvasRenderingContext2D): void;
+
+    /** convenience method for canvas */
+    ContextStroke(context: CanvasRenderingContext2D): void;
+
+    /** clamp coordinate to rectangle */
+    Clamp(x: number, y: number): {
+        x: number;
+        y: number;
+    };
+
+    /** convenience method for html element style */
+    ApplyStyle(element: HTMLElement): void;
+    toJSON(): {
+        top: number;
+        left: number;
+        width: number;
+        height: number;
+    };
+}
+
+/**
+ * represents the layout of an annotation, reference to the sheet
+ */
+export interface AnnotationLayout {
+    tl: Corner;
+    br: Corner;
+}
+
+/**
+ * offset from corner, as % of cell
+ */
+export interface AddressOffset {
+    x: number;
+    y: number;
+}
+
+/**
+ * represents one corner of a layout rectangle
+ */
+export interface Corner {
+    address: ICellAddress;
+    offset: AddressOffset;
+}
+export interface SerializedMacroFunction {
+    name: string;
+    function_def: string;
+    argument_names?: string[];
+    description?: string;
 }
 
 /**

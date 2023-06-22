@@ -29,7 +29,7 @@ import { Area, IsCellAddress } from './area';
 import type { DataValidation } from './cell';
 import { Cell } from './cell';
 import type { Table } from './table';
-import { ValueType, GetValueType } from './value-type';
+import { type SerializedValueType, ValueType, GetValueType, ValueTypeList } from './value-type';
 import type { CellValue, UnionValue } from './union';
 import type { Style } from './style';
 
@@ -80,10 +80,10 @@ export interface BaseCellData {
   area?: IArea;
   merge_area?: IArea;
   validation?: DataValidation;
-  calculated_type?: ValueType;
+  calculated_type?: SerializedValueType; //  ValueType;
   note?: string;
   hyperlink?: string;
-  type?: ValueType;
+  type?: SerializedValueType; // ValueType;
   sheet_id?: number;
   // locked?: boolean;
 }
@@ -131,6 +131,17 @@ export const IsNestedRowArray = (test: NestedRowData[]|NestedColumnData[]): test
 };
 
 // ...
+
+
+/** 
+ * this is the reverse map, i.e. type => number 
+ * FIXME: why is this getting exported by the API generator?
+ * FIXME: I get why it's dynamic, but for practical purposes why not just 
+ * create a static map?
+ */
+const ValueTypeMap = 
+  ValueTypeList.map((key, index) => ({ [key]: index })).reduce((set, value) => ({...set, ...value}), {}) as Record<SerializedValueType, ValueType>;
+
 
 /**
  * collection of cells, basically a wrapper around an
@@ -357,6 +368,53 @@ export class Cells {
     this.columns_ = columns;
   }
 
+  public SerializedTypeToValueType(type?: SerializedValueType|ValueType): ValueType|undefined {
+
+    if (!type) {
+      return ValueType.undefined;
+    }
+
+    if (typeof type === 'number') {
+      return type as ValueType;
+    }
+
+    return ValueTypeMap[type] || undefined;
+
+  }
+
+  public ValueTypeToSerializedType(type?: ValueType): SerializedValueType|undefined {
+    return type ? ValueTypeList[type] : undefined;
+  }
+
+  /**
+   * this method is used for importing legacy data validation types. in those
+   * those we used a numeric enum. we're just dropping that altogether (c.f.
+   * ValueType, which we're keeping) so we need to translate for backcompat. 
+   * it's ugly, but it gets us to a better place. we can probably drop at some
+   * point in the future.
+   * 
+   * export enum ValidationType {
+   *   List = 'list',
+   *   Date = 'date',
+   *   Range = 'range',
+   *   Number = 'number',
+   *   Boolean = 'boolean',
+   * }
+   * 
+   */
+  public ImportDataValidation(value: DataValidation): DataValidation|undefined {
+
+    if (typeof (value as any).type === 'number') {
+      const types = ['list', 'date', 'range', 'number', 'boolean'];
+      (value as any).type = types[(value as any).type];
+      if (!value.type) {
+        return undefined;
+      }
+    }
+
+    return value;
+  }
+
   /**
    * UPDATE: adding optional style refs, for export
    */
@@ -423,7 +481,7 @@ export class Cells {
       if (typeof obj.calculated !== 'undefined') {
         // cell.calculated = obj.calculated;
         // cell.calculated_type = obj.calculated_type;
-        cell.SetCalculatedValue(obj.calculated, obj.calculated_type);
+        cell.SetCalculatedValue(obj.calculated, this.SerializedTypeToValueType(obj.calculated_type));
       }
 
       if (style_refs) {
@@ -494,7 +552,13 @@ export class Cells {
       }
 
       if (obj.validation) {
-        cell.validation = obj.validation;
+
+        // the old type used a numeric enum. we just dropped that in favor
+        // of a string enum, so we can export it as a type. but for backwards
+        // compatibility we still need to think about the numeric enum.
+
+        cell.validation = this.ImportDataValidation(obj.validation);
+
       }
 
     }
@@ -606,7 +670,9 @@ export class Cells {
               obj.hyperlink = cell.hyperlink;
             }
 
-            if (options.preserve_type) obj.type = cell.type;
+            if (options.preserve_type) {
+              obj.type = this.ValueTypeToSerializedType(cell.type);
+            }
             if (options.sheet_id) obj.sheet_id = options.sheet_id;
             if (options.calculated_value &&
                 typeof cell.calculated !== 'undefined') { // && cell.calculated_type !== ValueType.error) {
@@ -614,7 +680,7 @@ export class Cells {
 
               // always preserve error type, because we can't infer
               if (options.preserve_type || cell.calculated_type === ValueType.error) {
-                obj.calculated_type = cell.calculated_type;
+                obj.calculated_type = this.ValueTypeToSerializedType(cell.calculated_type);
               }
             }
             if (cell.table && table_head) {

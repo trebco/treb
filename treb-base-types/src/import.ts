@@ -20,7 +20,7 @@
  */
 
 import type { Style } from './style';
-import type { ValueType } from './value-type';
+import type { SerializedValueType, ValueType } from './value-type';
 import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
 import type { DataValidation } from './cell';
@@ -30,10 +30,10 @@ import type { AnnotationType } from 'treb-grid';
 export interface CellParseResult {
   row: number,
   column: number,
-  type: ValueType,
+  type: SerializedValueType; // ValueType,
   value: number|string|undefined|boolean,
   calculated?: number|string|undefined|boolean,
-  calculated_type?: ValueType,
+  calculated_type?: SerializedValueType; // ValueType,
   style_ref?: number,
   hyperlink?: string,
   validation?: DataValidation,

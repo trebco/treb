@@ -46,23 +46,61 @@ export enum SaveFileType {
  * I would like to do it, though, that `any` looks bad in the  public API.
  */
 export interface TREBDocument {
+
+  /** app name, as identifier */
   app: string;
+
+  /** app version. we'll warn if you use a file from a newer version */
   version: string;
+
+  /** 
+   * revision number. this is a value that increments on any document change,
+   * useful for checking if a document is "dirty".
+   */
   revision?: number;
+
+  /** document name */
   name?: string;
+
+  /** 
+   * opaque user data. we don't read or parse this, but applications can
+   * use it to store arbitrary data.
+   */
   user_data?: any;
-  sheet_data?: SerializedSheet|SerializedSheet[]; // NOTE: support old version, but it would be nice to drop
+
+  /**
+   * per-sheet data. this should be an array, but for historical reasons
+   * we still support a single sheet outside of an array.
+   */
+  sheet_data?: SerializedSheet|SerializedSheet[];
+
+  /** document decimal mark */
   decimal_mark?: '.' | ',';
+
+  /** active sheet. if unset we'll show the first un-hidden sheet */
   active_sheet?: number;
+  
+  /** 
+   * this document includes rendered calculated values. using this lets the
+   * app show a document faster, without requiring an initial calculation.
+   */
   rendered_values?: boolean;
   
-  // named_ranges?: {[index: string]: IArea};
+  /** document named ranges */
   named_ranges?: Record<string, IArea>;
 
-  macro_functions?: SerializedMacroFunction[];
+  /** document named expressions */
   named_expressions?: SerializedNamedExpression[];
+
+  /** document macro functions */
+  macro_functions?: SerializedMacroFunction[];
+
+  /** document tables */
   tables?: Table[];
+
+  /** document shared resources (usually images) */
   shared_resources?: Record<string, string>;
+
 }
 
 export interface ResizeEvent {

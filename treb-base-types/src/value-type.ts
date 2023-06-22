@@ -84,12 +84,44 @@ export const IsDimensionedQuantity = (value: unknown): value is DimensionedQuant
           && (typeof (value as DimensionedQuantity).unit === 'string');
 };
 
+/** 
+ * this is the list of value types. internally, we use an enum. I don't 
+ * want to change that, at least not at the moment, but that presents a
+ * problem for exporting types.
+ * 
+ * we'll switch to string types for import/export, although we still support
+ * importing the old numeric enum types for backwards compatibility.
+ */
+export const ValueTypeList = [
+  'undefined',
+  'formula',
+  'string',
+  'number',
+  'boolean',
+  'object',
+  'error',
+  'complex',
+  'array',
+  'dimensioned_quantity',
+] as const;
+
 /**
- * I _think_ using enums is faster. I'm not actually sure about that, though.
- * it stands to reason that a single int compare is faster than a string
- * compare, but you never know with javascript. undefined preferred over null.
- * formula implies a string.
- *
+ * string types for import/export
+ */
+export type SerializedValueType = typeof ValueTypeList[number];
+
+/**
+ * this enum goes back a long way and is pretty ingrained, so I don't 
+ * want to change it (at least not right now). but if we're exporting types, 
+ * using enums is a problem.
+ * 
+ * what we will do is keep the enum internally but switch the exported type
+ * to a string. the problem then becomes keeping the types matched up 
+ * properly. I can't arrive at a good way of doing that automatically. 
+ * 
+ * old comments:
+ * ---
+ * 
  * undefined is 0 so we can test it as falsy.
  *
  * we're passing this type information out to calculators, so it needs

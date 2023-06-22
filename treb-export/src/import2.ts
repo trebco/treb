@@ -29,7 +29,7 @@ import { Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
 import { is_range, ShiftRange, InRange, is_address } from './address-type';
 import type { ImportedSheetData, AnchoredAnnotation, CellParseResult, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, IArea } from 'treb-base-types/src';
-import { ValueType, ValidationType } from 'treb-base-types/src';
+import { type ValueType, ValidationType, type SerializedValueType } from 'treb-base-types/src';
 import type { Sheet} from './workbook-sheet2';
 import { VisibleState } from './workbook-sheet2';
 import type { CellAnchor } from './drawing2/drawing2';
@@ -119,11 +119,13 @@ export class Importer {
     // console.info(element);
 
     let value: undefined | number | boolean | string;
-    let type: ValueType = ValueType.undefined;
+    // let type: ValueType = ValueType.undefined;
+    let type: SerializedValueType = 'undefined';
 
     let calculated_value: undefined | number | boolean | string;
-    let calculated_type: ValueType = ValueType.undefined;
-
+    // let calculated_type: ValueType = ValueType.undefined;
+    let calculated_type: SerializedValueType = 'undefined';
+    
     // QUESTIONS:
     //
     // 1. is v always a value, or can it be an object?
@@ -147,7 +149,7 @@ export class Importer {
     // console.info(address, 'e', element, 'm', mapped);
 
     if (element.a$?.t && element.a$.t === 's') {
-      type = ValueType.string;
+      type = 'string'; // ValueType.string;
       if (typeof element.v !== undefined) {
         const index = Number(element.v);
         if (!isNaN(index) && sheet.shared_strings) {
@@ -158,7 +160,7 @@ export class Importer {
     }
     else {
       if (typeof element.f !== 'undefined') {
-        type = ValueType.formula;
+        type = 'formula'; // ValueType.formula;
 
         const formula = (typeof element.f === 'string' ? element.f : element.f.t$) || '';
 
@@ -219,11 +221,11 @@ export class Importer {
         if (typeof element.v !== 'undefined') {
           const num = Number(element.v.toString());
           if (!isNaN(num)) {
-            calculated_type = ValueType.number;
+            calculated_type = 'number'; // ValueType.number;
             calculated_value = num;
           }
           else {
-            calculated_type = ValueType.string;
+            calculated_type = 'string'; // ValueType.string;
             calculated_value = element.v.toString();
           }
         }
@@ -232,11 +234,11 @@ export class Importer {
       else if (typeof element.v !== 'undefined') {
         const num = Number(element.v.toString());
         if (!isNaN(num)) {
-          type = ValueType.number;
+          type = 'number'; // ValueType.number;
           value = num;
         }
         else {
-          type = ValueType.string;
+          type = 'string'; // ValueType.string;
           value = element.v.toString();
         }
       }
@@ -254,7 +256,7 @@ export class Importer {
         calculated_type = type;
         calculated_value = value;
         value = undefined;
-        type = ValueType.undefined;
+        type = 'undefined'; // ValueType.undefined;
       }
     }
 
@@ -833,11 +835,16 @@ export class Importer {
 
           if (is_address(translated)) {
 
-            const result = {
+            const result: {
+              row: number;
+              column: number;
+              value: string;
+              type: SerializedValueType;
+            } = {
               row: translated.row - 1, 
               column: translated.col - 1,
               value: constructed_function, 
-              type: ValueType.formula,
+              type: 'formula', // ValueType.formula,
             };
 
             let matched = false;
@@ -845,7 +852,7 @@ export class Importer {
             for (const element of data) {
               if (element.row === result.row && element.column === result.column) {
                 matched = true;
-                element.type = ValueType.formula;
+                element.type = 'formula'; // ValueType.formula;
                 element.value = constructed_function;
                 break;
               }

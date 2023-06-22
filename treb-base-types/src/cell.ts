@@ -100,7 +100,7 @@ export interface ClickFunctionResult {
 export type ClickFunction = (options: ClickFunctionOptions) => ClickFunctionResult;
 
 
-/**
+/*
  * restructuring from the old system, which had lots of separate arrays for
  * things. for the most part I think having a single array (or object) with
  * objects will be more useful (if not necessarily more efficient). the
@@ -121,11 +121,11 @@ export type ClickFunction = (options: ClickFunctionOptions) => ClickFunctionResu
  * validation TODO: date, number, boolean, &c
  */
 export enum ValidationType {
-  List,
-  Date,
-  Range,
-  Number,
-  Boolean,
+  List = 'list',
+  Date = 'date',
+  Range = 'range',
+  Number = 'number',
+  Boolean = 'boolean',
 }
 
 export interface DataValidationBase {
@@ -133,25 +133,25 @@ export interface DataValidationBase {
 }
 
 export interface DataValidationRange extends DataValidationBase {
-  type: ValidationType.Range;
+  type: 'range'; // ValidationType.Range;
   area: IArea;
 }
 
 export interface DataValidationList extends DataValidationBase {
-  type: ValidationType.List;
+  type: 'list'; // ValidationType.List;
   list: CellValue[];
 }
 
 export interface DataValidationDate extends DataValidationBase {
-  type: ValidationType.Date;
+  type: 'date'; // ValidationType.Date;
 }
 
 export interface DataValidationNumber extends DataValidationBase {
-  type: ValidationType.Number;
+  type: 'number'; // ValidationType.Number;
 }
 
 export interface DataValidationBoolean extends DataValidationBase {
-  type: ValidationType.Boolean;
+  type: 'boolean'; // ValidationType.Boolean;
 }
 
 export type DataValidation 
