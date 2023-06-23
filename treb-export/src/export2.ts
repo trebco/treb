@@ -510,6 +510,66 @@ export class Exporter {
   }
   */
 
+  /**
+   * FIXME: we might not always need this. 
+   */
+  public SheetStyle(sheet: SerializedSheet, style_cache: StyleCache) {
+
+    if (!sheet.sheet_style) {
+      return 0;
+    }
+
+    const options = style_cache.StyleOptionsFromProperties(sheet.sheet_style);
+    return style_cache.EnsureStyle(options);
+    
+  }
+
+  public RowStyle(sheet: SerializedSheet, style_cache: StyleCache, row: number) {
+
+    const cell_style_refs = sheet.styles || sheet.cell_style_refs || [];
+    const list: Style.Properties[] = [sheet.sheet_style];
+
+    if (sheet.row_style) {
+      let style = sheet.row_style[row];
+      if (typeof style === 'number') {
+        style = cell_style_refs[style];
+        if (style) {
+          list.push(style); 
+        }
+      }
+      else if (style) {
+        list.push(style); 
+      }
+    }
+
+    const options = style_cache.StyleOptionsFromProperties(Style.Composite(list));
+    return style_cache.EnsureStyle(options);
+
+  }
+
+  public ColumnStyle(sheet: SerializedSheet, style_cache: StyleCache, column: number) {
+
+    const cell_style_refs = sheet.styles || sheet.cell_style_refs || [];
+    const list: Style.Properties[] = [sheet.sheet_style];
+
+    if (sheet.column_style) {
+      let style = sheet.column_style[column];
+      if (typeof style === 'number') {
+        style = cell_style_refs[style];
+        if (style) {
+          list.push(style); 
+        }
+      }
+      else if (style) {
+        list.push(style); 
+      }
+    }
+
+    const options = style_cache.StyleOptionsFromProperties(Style.Composite(list));
+    return style_cache.EnsureStyle(options);
+
+  }
+
   public StyleFromCell(sheet: SerializedSheet, style_cache: StyleCache, row: number, column: number, style: Style.Properties = {}) {
 
     //if (row === 2 && column === 5)
@@ -1205,6 +1265,8 @@ export class Exporter {
       const cells = new Cells();
       cells.FromJSON(sheet.data, cell_style_refs);
 
+      // console.info({ss: sheet.sheet_style, sheet});
+
       // these are cells with style but no contents
 
       for (const entry of sheet.cell_styles) {
@@ -1249,7 +1311,20 @@ export class Exporter {
 
       // --
 
+      // 
+      // this is a map of column number -> column style. we need this 
+      // for two things: (1) so we can skip cells that are empty, but
+      // have a style from the column; and (2) so we can create the list
+      // of columns, including styles.
+      //
+      const column_style_map: number[] = [];
+
+      const sheet_style = this.SheetStyle(sheet, style_cache);
+
       for (let r = 0; r < cells.data.length; r++ ) {
+
+        const row_style = this.RowStyle(sheet, style_cache, r);
+
         if (cells.data[r] && cells.data[r].length) {  
 
           // push out the extent (reversed)
@@ -1262,6 +1337,11 @@ export class Exporter {
           const row: any = [];
 
           for (let c = 0; c < cells.data[r].length; c++) {
+
+            if (!column_style_map[c]) {
+              column_style_map[c] = this.ColumnStyle(sheet, style_cache, c);
+            }
+
             const cell = cells.data[r][c];
             if (cell) {
 
@@ -1447,6 +1527,17 @@ export class Exporter {
               // s is style, index into the style table 
               const s: number|undefined = this.StyleFromCell(sheet, style_cache, r, c, cell.style);
 
+              if (cell.type === ValueType.undefined) {
+
+                // you can skip if (1) there's a row style, and style === row style;
+                // (2) there's a column style, no row style, and style === column style
+
+                if ((row_style && s === row_style) || 
+                    (!row_style && (column_style_map[c] && s === column_style_map[c]))) {
+                  continue; // can skip
+                }
+              }
+
               // v (child element) is the value
               let v: CellValue = undefined;
               let t: string|undefined;
@@ -1516,7 +1607,13 @@ export class Exporter {
                 element.a$.t = t;
               }
               if (s !== undefined) {
+
+                // we could skip this if it's equal to row style,
+                // or there is no row style and it's equal to column style
+                // or there is no column style and it's equal to sheet style
+
                 element.a$.s = s;
+
               }
               if (f !== undefined) {
                 element.f = f;              
@@ -1530,11 +1627,12 @@ export class Exporter {
             }
           }
 
-          if (row.length) {
+          if (row.length || (row_style && row_style !== sheet_style)) {
+
             const row_data: any = {
               a$: {
                 r: r + 1,
-                spans: `${span.start + 1}:${span.end + 1}`,
+                spans: `${span.start + 1}:${span.end + 1}`, // this works out to 0:0 for an empty row, will that work?
               },
               c: row,
             };
@@ -1544,6 +1642,11 @@ export class Exporter {
               
               row_data.a$.customHeight = 1;
               row_data.a$.ht = sheet.row_height[r] * 3 / 4;
+            }
+
+            if (row_style && row_style !== sheet_style) {
+              row_data.a$.s = row_style;
+              row_data.a$.customFormat = 1;
             }
 
             sheet_data.row.push(row_data);
@@ -1562,6 +1665,10 @@ export class Exporter {
         width?: number;
         index: number;
       }> = [];
+
+      // we only need to include column style if it's !== sheet style,
+      // because we'll have a default entry for columns that have the 
+      // sheet style. this is only for columns that are different.
 
       if (sheet.default_column_width) {
         dom.worksheet.sheetFormatPr.a$.defaultColWidth = // sheet.default_column_width * one_hundred_pixels / 100;
@@ -1582,7 +1689,14 @@ export class Exporter {
 
         }
 
+        let style = column_style_map[c];
+        if (style && style !== sheet_style) {
+          entry.style = style;
+        }
+
+        /*
         let style = sheet.column_style[c];
+       
         if (typeof style === 'number') {
           style = cell_style_refs[style];
           if (style) {
@@ -1592,6 +1706,7 @@ export class Exporter {
         else if (style) {
           entry.style = style_cache.EnsureStyle(style_cache.StyleOptionsFromProperties(style));
         }
+        */
 
         //if (sheet.column_style[c]) {
         //  entry.style = style_cache.EnsureStyle(style_cache.StyleOptionsFromProperties(sheet.column_style[c]));
@@ -1605,8 +1720,73 @@ export class Exporter {
       // we're short-cutting here, these should be arranged in blocks if
       // there's overlap. not sure how much of an issue that is though.
       
-      if (column_entries.length) {
-        for (const entry of column_entries) {
+      if (column_entries.length || sheet_style) {
+
+        const filled: any[] = [];
+        const default_column_width = PixelsToColumnWidth(sheet.default_column_width || 90);
+
+        // FIXME: can merge these two branches
+
+        { // if (sheet_style) {
+
+          let start_index = 0;
+          for (const entry of column_entries) {
+            if (!entry) { continue; }
+
+            // fill with defaults
+
+            if (sheet_style && (entry.index > start_index + 1)) {
+              filled.push({
+                a$: {
+                  min: start_index + 1,
+                  max: entry.index,
+                  style: sheet_style,
+                  width: default_column_width,
+                },
+              });
+            }
+
+            const a$: any = { 
+              min: entry.index + 1, 
+              max: entry.index + 1,
+            };
+            if (entry.style === undefined) {
+              a$.style = sheet_style;
+            }
+            else {
+              a$.style = entry.style;
+            }
+            if (entry.width !== undefined) {
+              a$.width = entry.width;
+              a$.customWidth = 1;
+            }
+            else {
+              a$.width = default_column_width;
+            }
+
+            filled.push({a$});
+
+            start_index = entry.index;
+            
+          }
+
+          if (sheet_style && (start_index < 16384)) { // OK, sure why not
+            filled.push({
+              a$: {
+                min: start_index + 1,
+                max: 16384,
+                style: sheet_style,
+                width: default_column_width,
+              },
+            });
+          }
+
+          dom.worksheet.cols.col = filled;
+
+        }
+
+        /*
+        else {
           dom.worksheet.cols.col = column_entries.map(entry => {
             const a$: any = { 
               min: entry.index + 1, 
@@ -1621,12 +1801,15 @@ export class Exporter {
             }
             else {
               a$.width = // (sheet.default_column_width || 100) / 100 * one_hundred_pixels;
-                PixelsToColumnWidth(sheet.default_column_width || 90);
+                default_column_width; // PixelsToColumnWidth(sheet.default_column_width || 90);
             }
             return {a$};
           });
         }
+        console.info({cols: dom.worksheet.cols});
+      */
       }
+
       else {
         delete dom.worksheet.cols;
       }
