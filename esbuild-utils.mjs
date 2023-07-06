@@ -5,7 +5,7 @@ import * as esbuild from 'esbuild';
 import { promises as fs } from 'fs';
 import { minify } from 'html-minifier';
 import path from 'path';
-import sass from 'sass';
+import * as sass from 'sass';
 import cssnano from 'cssnano';
 import postcss from 'postcss';
 
