@@ -19,7 +19,7 @@
  * 
  */
 
-import type { ICellAddress, AnnotationLayout } from 'treb-base-types';
+import type { ICellAddress, AnnotationLayout, IRectangle } from 'treb-base-types';
 import { Rectangle } from 'treb-base-types';
 
 /**
@@ -120,7 +120,7 @@ export interface AnnotationDataBase {
    * for serialization/deserialization. the actual rectangle is maintained
    * in the Annotation class.
    */
-  rect?: Partial<Rectangle>;
+  rect?: Partial<IRectangle>;
 
   /** annotation can be resized. this is advisory, for UI */
   resizable: boolean;
