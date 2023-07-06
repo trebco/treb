@@ -21,7 +21,7 @@
 
 import type { IArea, SerializedCellData, Style } from 'treb-base-types';
 import type { Annotation, AnnotationData } from './annotation';
-import type { GridSelection } from './grid_selection';
+import type { GridSelection, SerializedGridSelection } from './grid_selection';
 
 export interface UpdateHints {
   data?: boolean;
@@ -112,7 +112,7 @@ export interface SerializedSheet {
   name?: string;
 
   /** current active selection */
-  selection: GridSelection;
+  selection: SerializedGridSelection;
 
   /**  */
   annotations?: Partial<AnnotationData>[]; // Partial<Annotation>[];

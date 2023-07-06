@@ -19,7 +19,7 @@
  * 
  */
 
-import { Area, type ICellAddress } from 'treb-base-types';
+import { Area, type IArea, type ICellAddress } from 'treb-base-types';
 
 /**
  * FIXME: this is broken. we treat this as a simple javascript object,
@@ -45,7 +45,29 @@ export interface GridSelection {
 }
 
 /**
+ * temporarily splitting into a serialized version that uses IArea instead
+ * of Area. we should do this for the actual selection type, but it breaks
+ * too many things atm to do that immediately. TODO/FIXME.
+ */
+export interface SerializedGridSelection {
+
+  /** target or main cell in the selection */
+  target: ICellAddress;
+
+  /** selection area */
+  area: IArea;
+
+  /** there is nothing selected, even though this object exists */
+  empty?: boolean;
+
+  /** for cacheing addtional selections. optimally don't serialize */
+  rendered?: boolean;
+
+}
+
+/**
  * create an empty selection
+ * @internal
  */
 export const CreateSelection = (): GridSelection => {
   return {
@@ -55,6 +77,9 @@ export const CreateSelection = (): GridSelection => {
   };
 };
 
+/**
+ * @internal
+ */
 export const CloneSelection = (rhs: GridSelection): GridSelection => {
   return JSON.parse(JSON.stringify(rhs));
 };
