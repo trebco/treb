@@ -1,12 +1,12 @@
 
 import type { GridSelection } from 'treb-grid';
-import type { Style } from 'treb-base-types';
+import type { CellStyle } from 'treb-base-types';
 
 /**
  * state that should be reflected in toolbar buttons/selections
  */
 export interface SelectionState {
-  style?: Style.Properties;
+  style?: CellStyle;
   merge?: boolean;
   table?: boolean;
   frozen?: boolean;

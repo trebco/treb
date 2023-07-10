@@ -91,6 +91,9 @@ export const IsDimensionedQuantity = (value: unknown): value is DimensionedQuant
  * 
  * we'll switch to string types for import/export, although we still support
  * importing the old numeric enum types for backwards compatibility.
+ * 
+ * @internal
+ * 
  */
 export const ValueTypeList = [
   'undefined',
@@ -107,8 +110,24 @@ export const ValueTypeList = [
 
 /**
  * string types for import/export
+ * 
+ * @internalRemarks
+ * 
+ * temporarily switching to literal, see what happens to API
+ * 
  */
-export type SerializedValueType = typeof ValueTypeList[number];
+export type SerializedValueType = // typeof ValueTypeList[number];
+  'undefined' |
+  'formula' |
+  'string' |
+  'number' |
+  'boolean' |
+  'object' |
+  'error' |
+  'complex' |
+  'array' |
+  'dimensioned_quantity' ;
+
 
 /**
  * this enum goes back a long way and is pretty ingrained, so I don't 

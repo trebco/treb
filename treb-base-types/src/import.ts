@@ -19,7 +19,7 @@
  * 
  */
 
-import type { Style } from './style';
+import type { CellStyle } from './style';
 import type { SerializedValueType, ValueType } from './value-type';
 import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
@@ -57,7 +57,7 @@ export interface ImportedSheetData {
   default_column_width: number;
   column_widths: number[];
   row_heights: number[];
-  styles: Style.Properties[];
+  styles: CellStyle[];
 
   // optional, for backcompat
   sheet_style?: number;

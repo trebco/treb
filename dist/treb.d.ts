@@ -1,4 +1,4 @@
-/*! API v26.0. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v27.0. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -806,7 +806,7 @@ export declare class EmbeddedSpreadsheet {
      *
      * @public
      */
-    ApplyStyle(range?: RangeReference, style?: Style.Properties, delta?: boolean): void;
+    ApplyStyle(range?: RangeReference, style?: CellStyle, delta?: boolean): void;
 
     /**
      * Remove a named range (removes the name, not the range).
@@ -865,7 +865,7 @@ export declare class EmbeddedSpreadsheet {
      * @param apply_theme - include theme defaults when returning style
      *
      */
-    GetStyle(range?: RangeReference, apply_theme?: boolean): Style.Properties | Style.Properties[][] | undefined;
+    GetStyle(range?: RangeReference, apply_theme?: boolean): CellStyle | CellStyle[][] | undefined;
 
     /**
      * Set data in range.
@@ -964,7 +964,7 @@ export interface SheetScrollOptions {
 /**
  * function type used for filtering tables
  */
-export type TableFilterFunction = (value: CellValue, calculated_value: CellValue, style: Style.Properties) => boolean;
+export type TableFilterFunction = (value: CellValue, calculated_value: CellValue, style: CellStyle) => boolean;
 export interface FreezePane {
     rows: number;
     columns: number;
@@ -1052,110 +1052,113 @@ export interface IRectangle {
     width: number;
     height: number;
 }
-export declare namespace Style {
+
+/**
+ * style properties applied to a single cell, row, column, or sheet.
+ * when rendering a cell, we composite all styles that might apply.
+ */
+export interface CellStyle {
+
+    /** horizontal align defaults to left */
+    horizontal_align?: HorizontalAlign;
+
+    /** vertical align defaults to bottom */
+    vertical_align?: VerticalAlign;
+
+    /** representation for NaN */
+    nan?: string;
+
+    /** number format, either a symbolic name like "General" or a format string */
+    number_format?: string;
+
+    /** wrap text */
+    wrap?: boolean;
 
     /**
-         * horizontal align constants
-         */ type HorizontalAlign = "" | "left" | "center" | "right";
-
-    /**
-         * vertical align constants
-         */ type VerticalAlign = "" | "top" | "bottom" | "middle";
-
-    /** composite font size */
-    interface FontSize {
-        unit: 'pt' | 'px' | 'em' | '%';
-        value: number;
-    }
-
-    /**
-     * color is either a theme color (theme index plus tint), or CSS text
+     * font size. we recommend using relative font sizes (either % or em)
+     * which will be relative to the theme font size.
      */
-    interface Color {
-        theme?: number;
-        tint?: number;
-        text?: string;
+    font_size?: FontSize;
 
-        /** @deprecated */
-        none?: boolean;
-    }
+    /** font face. this can be a comma-delimited list, like CSS */
+    font_face?: string;
+
+    /** flag */
+    bold?: boolean;
+
+    /** flag */
+    italic?: boolean;
+
+    /** flag */
+    underline?: boolean;
+
+    /** flag */
+    strike?: boolean;
+
+    /** border weight */
+    border_top?: number;
+
+    /** border weight */
+    border_right?: number;
+
+    /** border weight */
+    border_left?: number;
+
+    /** border weight */
+    border_bottom?: number;
+
+    /** text color */
+    text?: Color;
+
+    /** background color */
+    fill?: Color;
+
+    /** border color */
+    border_top_fill?: Color;
+
+    /** border color */
+    border_left_fill?: Color;
+
+    /** border color */
+    border_right_fill?: Color;
+
+    /** border color */
+    border_bottom_fill?: Color;
 
     /**
-     * style properties applied to a cell.
+     * cell is locked for editing
      */
-    interface Properties {
+    locked?: boolean;
+}
 
-        /** horizontal align defaults to left */
-        horizontal_align?: HorizontalAlign;
+/** horizontal align constants for cell style */
+export type HorizontalAlign = '' | 'left' | 'center' | 'right';
 
-        /** vertical align defaults to bottom */
-        vertical_align?: VerticalAlign;
+/** vertical align constants for cell style */
+export type VerticalAlign = '' | 'top' | 'bottom' | 'middle';
 
-        /** representation for NaN */
-        nan?: string;
+/**
+ * font size for cell style. we generally prefer relative sizes
+ * (percent or em) because they are relative to the default theme
+ * size, which might be different on different platforms.
+ */
+export interface FontSize {
+    unit: 'pt' | 'px' | 'em' | '%';
+    value: number;
+}
 
-        /** number format, either a symbolic name like "General" or a format string */
-        number_format?: string;
+/**
+ * color for cell style. color is used for foreground, background and
+ * borders in the cell style. can be either a theme color (theme index
+ * plus tint), or CSS text.
+ */
+export interface Color {
+    theme?: number;
+    tint?: number;
+    text?: string;
 
-        /** wrap text */
-        wrap?: boolean;
-
-        /**
-         * font size. we recommend using relative font sizes (either % or em)
-         * which will be relative to the theme font size.
-         */
-        font_size?: FontSize;
-
-        /** font face. this can be a comma-delimited list, like CSS */
-        font_face?: string;
-
-        /** flag */
-        bold?: boolean;
-
-        /** flag */
-        italic?: boolean;
-
-        /** flag */
-        underline?: boolean;
-
-        /** flag */
-        strike?: boolean;
-
-        /** border weight */
-        border_top?: number;
-
-        /** border weight */
-        border_right?: number;
-
-        /** border weight */
-        border_left?: number;
-
-        /** border weight */
-        border_bottom?: number;
-
-        /** text color */
-        text?: Color;
-
-        /** background color */
-        fill?: Color;
-
-        /** border color */
-        border_top_fill?: Color;
-
-        /** border color */
-        border_left_fill?: Color;
-
-        /** border color */
-        border_right_fill?: Color;
-
-        /** border color */
-        border_bottom_fill?: Color;
-
-        /**
-         * cell is locked for editing
-         */
-        locked?: boolean;
-    }
+    /** @deprecated */
+    none?: boolean;
 }
 export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
@@ -1172,50 +1175,29 @@ export interface DimensionedQuantity {
 }
 
 /**
- * this is the list of value types. internally, we use an enum. I don't
- * want to change that, at least not at the moment, but that presents a
- * problem for exporting types.
- *
- * we'll switch to string types for import/export, although we still support
- * importing the old numeric enum types for backwards compatibility.
- */
-export declare const ValueTypeList: readonly [
-    "undefined",
-    "formula",
-    "string",
-    "number",
-    "boolean",
-    "object",
-    "error",
-    "complex",
-    "array",
-    "dimensioned_quantity"
-];
-
-/**
  * composite styling for tables.
  */
 export interface TableTheme {
 
     /** the first row in a table, showing column titles. */
-    header?: Style.Properties;
+    header?: CellStyle;
 
     /**
      * odd rows in the table. we count the title row as zero, so
      * the first row in the table containing data is 1, hence odd.
      */
-    odd?: Style.Properties;
+    odd?: CellStyle;
 
     /**
      * even rows in the table.
      */
-    even?: Style.Properties;
+    even?: CellStyle;
 
     /**
      * styling for the totals row, if included. this will be the last
      * row in the table.
      */
-    total?: Style.Properties;
+    total?: CellStyle;
 }
 
 /**
@@ -1251,10 +1233,10 @@ export interface TableSortOptions {
 export type TableSortType = 'text' | 'numeric' | 'auto';
 
 /**
- * we're not exporting this type in the public API because there are so many
- * nested types that aren't used anywhere else (in public functions).
- *
- * I would like to do it, though, that `any` looks bad in the  public API.
+ * this is the document type used by TREB. it has a lot of small variations
+ * for historical reasons and backwards compatibility. usually it's preferable
+ * to let TREB create and manage these documents rather than creating them
+ * manually.
  */
 export interface TREBDocument {
 
@@ -1408,7 +1390,7 @@ export interface SerializedSheet {
     data: SerializedCellData;
 
     /** top-level sheet style, if any */
-    sheet_style: Style.Properties;
+    sheet_style: CellStyle;
 
     /** row count */
     rows: number;
@@ -1419,37 +1401,32 @@ export interface SerializedSheet {
     /**
      * cell styles is for empty cells that have styling
      */
-    cell_styles: Array<{
-        row: number;
-        column: number;
-        ref: number;
-        rows?: number;
-    }>;
+    cell_styles: CellStyleRecord[];
 
     /**
      * @deprecated use `styles` instead
      */
-    cell_style_refs?: Style.Properties[];
+    cell_style_refs?: CellStyle[];
 
     /**
      * new implementation
      */
-    styles?: Style.Properties[];
+    styles?: CellStyle[];
 
     /**
      * per-row styles
      */
-    row_style: Record<number, Style.Properties | number>;
+    row_style: Record<number, CellStyle | number>;
 
     /**
      * per-column styles
      */
-    column_style: Record<number, Style.Properties | number>;
+    column_style: Record<number, CellStyle | number>;
 
     /**
      * @deprecated no one uses this anymore and it's weird
      */
-    row_pattern?: Style.Properties[];
+    row_pattern?: CellStyle[];
 
     /** default for new rows */
     default_row_height?: number;
@@ -1476,7 +1453,7 @@ export interface SerializedSheet {
     name?: string;
 
     /** current active selection */
-    selection: GridSelection;
+    selection: SerializedGridSelection;
 
     /**  */
     annotations?: Partial<AnnotationData>[];
@@ -1494,7 +1471,13 @@ export interface ScrollOffset {
     x: number;
     y: number;
 }
-export type SerializedCellData = FlatCellData[] | NestedRowData[] | NestedColumnData[];
+export interface CellStyleRecord {
+    row: number;
+    column: number;
+    ref: number;
+    rows?: number;
+}
+export type SerializedCellData = CellDataWithAddress[] | NestedRowData[] | NestedColumnData[];
 export interface BaseCellData {
     value: CellValue;
     style_ref?: number;
@@ -1509,24 +1492,43 @@ export interface BaseCellData {
     type?: SerializedValueType;
     sheet_id?: number;
 }
-export interface FlatCellData extends BaseCellData {
+
+/**
+ * this type is for serialized data that includes the row and column
+ * in each cell. this was the original serialized data type, and is
+ * still supported. current serialization will group data into rows or
+ * columns, whichever results in a smaller overall serialized representation.
+ */
+export interface CellDataWithAddress extends BaseCellData {
     row: number;
     column: number;
 }
 export interface NestedCellData {
     cells: BaseCellData[];
 }
+
+/**
+ * this type is for serialized data that is grouped by row, with each
+ * cell referencing a column in the spreadsheet.
+ */
+export interface CellDataWithColumn extends BaseCellData {
+    column: number;
+}
 export interface NestedRowData extends NestedCellData {
     row: number;
-    cells: Array<{
-        column: number;
-    } & BaseCellData>;
+    cells: CellDataWithColumn[];
+}
+
+/**
+ * this type is for serialized data that is grouped by column, with each
+ * cell referencing a row in the spreadsheet.
+ */
+export interface CellDataWithRow extends BaseCellData {
+    row: number;
 }
 export interface NestedColumnData extends NestedCellData {
     column: number;
-    cells: Array<{
-        row: number;
-    } & BaseCellData>;
+    cells: CellDataWithRow[];
 }
 
 /**
@@ -1571,11 +1573,7 @@ export interface Table {
      * (not meaning difficult). we may keep track of the last sort so we
      * can toggle asc/desc, for example. atm this will not survive serialization.
      */
-    sort?: {
-        column: number;
-        type: TableSortType;
-        asc: boolean;
-    };
+    sort?: TableSortOptions;
 }
 export type DataValidation = DataValidationList | DataValidationRange | DataValidationNumber | DataValidationDate | DataValidationBoolean;
 export interface DataValidationBase {
@@ -1601,23 +1599,27 @@ export interface DataValidationBoolean extends DataValidationBase {
 
 /**
  * string types for import/export
+ *
+ * @internalRemarks
+ *
+ * temporarily switching to literal, see what happens to API
+ *
  */
-export type SerializedValueType = typeof ValueTypeList[number];
+export type SerializedValueType = // typeof ValueTypeList[number];
+'undefined' | 'formula' | 'string' | 'number' | 'boolean' | 'object' | 'error' | 'complex' | 'array' | 'dimensioned_quantity';
 
 /**
- * FIXME: this is broken. we treat this as a simple javascript object,
- * cloning and creating via JSON, but area is a class instance.
- *
- * that means cloned objects won't work properly (if anyone is relying on
- * that object).
+ * temporarily splitting into a serialized version that uses IArea instead
+ * of Area. we should do this for the actual selection type, but it breaks
+ * too many things atm to do that immediately. TODO/FIXME.
  */
-export interface GridSelection {
+export interface SerializedGridSelection {
 
     /** target or main cell in the selection */
     target: ICellAddress;
 
     /** selection area */
-    area: Area;
+    area: IArea;
 
     /** there is nothing selected, even though this object exists */
     empty?: boolean;
@@ -1625,152 +1627,17 @@ export interface GridSelection {
     /** for cacheing addtional selections. optimally don't serialize */
     rendered?: boolean;
 }
-
-/**
- * create an empty selection
- */
-export declare const CreateSelection: () => GridSelection;
-export declare const CloneSelection: (rhs: GridSelection) => GridSelection;
-
-/**
- * class represents a rectangular area on a sheet. can be a range,
- * single cell, entire row/column, or entire sheet.
- *
- * "entire" row/column/sheet is represented with an infinity in the
- * start/end value for row/column/both, so watch out on loops. the
- * sheet class has a method for reducing infinite ranges to actual
- * populated ranges.
- */
-export declare class Area implements IArea {
-
-    /**
-     *
-     * @param start
-     * @param end
-     * @param normalize: calls the normalize function
-     */
-    constructor(start: ICellAddress, end?: ICellAddress, normalize?: boolean);
-    static FromColumn(column: number): Area;
-    static FromRow(row: number): Area;
-    static ColumnToLabel(c: number): string;
-    static CellAddressToLabel(address: ICellAddress, sheet_id?: boolean): string;
-
-    /**
-     * merge two areas and return a new area.
-     * UPDATE to support arbitrary arguments
-     */
-    static Join(base: IArea, ...args: Array<IArea | undefined>): Area;
-
-    /**
-     * creates an area that expands the original area in all directions
-     * (except at the top/left edges)
-     */
-    static Bleed(area: IArea, length?: number): Area;
-
-    /** accessor returns a _copy_ of the start address */
-    get start(): ICellAddress;
-
-    /** accessor */
-    set start(value: ICellAddress);
-
-    /** accessor returns a _copy_ of the end address */
-    get end(): ICellAddress;
-
-    /** accessor */
-    set end(value: ICellAddress);
-
-    /** returns number of rows, possibly infinity */
-    get rows(): number;
-
-    /** returns number of columns, possibly infinity */
-    get columns(): number;
-
-    /** returns number of cells, possibly infinity */
-    get count(): number;
-
-    /** returns flag indicating this is the entire sheet, usually after "select all" */
-    get entire_sheet(): boolean;
-
-    /** returns flag indicating this range includes infinite rows */
-    get entire_column(): boolean;
-
-    /** returns flag indicating this range includes infinite columns */
-    get entire_row(): boolean;
-    PatchNull(address: ICellAddress): ICellAddress;
-    SetSheetID(id: number): void;
-    Normalize(): void;
-
-    /** returns the top-left cell in the area */
-    TopLeft(): ICellAddress;
-
-    /** returns the bottom-right cell in the area */
-    BottomRight(): ICellAddress;
-    ContainsRow(row: number): boolean;
-    ContainsColumn(column: number): boolean;
-    Contains(address: ICellAddress): boolean;
-
-    /**
-     * returns true if this area completely contains the argument area
-     * (also if areas are ===, as a side effect). note that this returns
-     * true if A contains B, but not vice-versa
-     */
-    ContainsArea(area: Area): boolean;
-
-    /**
-     * returns true if there's an intersection. note that this won't work
-     * if there are infinities -- needs real area ?
-     */
-    Intersects(area: Area): boolean;
-    Equals(area: Area): boolean;
-    Clone(): Area;
-    Array(): ICellAddress[];
-    get left(): Area;
-    get right(): Area;
-    get top(): Area;
-    get bottom(): Area;
-
-    /** shifts range in place */
-    Shift(rows: number, columns: number): Area;
-
-    /** Resizes range in place so that it includes the given address */
-    ConsumeAddress(addr: ICellAddress): void;
-
-    /** Resizes range in place so that it includes the given area (merge) */
-    ConsumeArea(area: IArea): void;
-
-    /** resizes range in place (updates end) */
-    Resize(rows: number, columns: number): Area;
-    Iterate(f: (...args: any[]) => any): void;
-
-    /**
-     * returns the range in A1-style spreadsheet addressing. if the
-     * entire sheet is selected, returns nothing (there's no way to
-     * express that in A1 notation). returns the row numbers for entire
-     * columns and vice-versa for rows.
-     */
-    get spreadsheet_label(): string;
-
-    /**
-     * FIXME: is this different than what would be returned if
-     * we just used the default json serializer? (...)
-     *
-     * NOTE: we could return just the start if size === 1. if
-     * you pass an undefined to the Area class ctor it will reuse
-     * the start.
-     *
-     */
-    toJSON(): any;
-}
 export type AnnotationData = AnnotationChartData | AnnotationImageData | AnnotationExternalData;
+export interface ImageSize {
+    width: number;
+    height: number;
+}
 export interface ImageAnnotationData {
     src: string;
 
     /**/
     scale: string;
-    original_size: {
-        width: number;
-        height: number;
-    };
+    original_size: ImageSize;
 }
 
 /**
@@ -1797,7 +1664,7 @@ export interface AnnotationDataBase {
      * for serialization/deserialization. the actual rectangle is maintained
      * in the Annotation class.
      */
-    rect?: Partial<Rectangle>;
+    rect?: Partial<IRectangle>;
 
     /** annotation can be resized. this is advisory, for UI */
     resizable: boolean;
@@ -1846,60 +1713,6 @@ export interface AnnotationChartData extends AnnotationDataBase {
 export interface AnnotationExternalData extends AnnotationDataBase {
     type: 'external';
     data: Record<string, string>;
-}
-export declare class Rectangle implements IRectangle {
-    left: number;
-    top: number;
-    width: number;
-    height: number;
-    get right(): number;
-    get bottom(): number;
-
-    /**
-     * create a rectangle from an object that looks
-     * like a rectangle, probably a serialized object
-     */
-    static Create(obj: Partial<Rectangle>): Rectangle;
-    static IsRectangle(obj: unknown): obj is IRectangle;
-    constructor(left?: number, top?: number, width?: number, height?: number);
-
-    /** returns a new rect shifted from this one by (x,y) */
-    Shift(x?: number, y?: number): Rectangle;
-    Scale(scale_x?: number, scale_y?: number): Rectangle;
-
-    /** returns a new rect expanded from this one by (x,y) */
-    Expand(x?: number, y?: number): Rectangle;
-
-    /** returns a new rectangle that combines this rectangle with the argument */
-    Combine(rect: Rectangle): Rectangle;
-    CheckEdges(x: number, y: number, border?: number): number;
-
-    /**
-     * check if rectangle contains the given coordinates, optionally with
-     * some added padding
-     */
-    Contains(x: number, y: number, padding?: number): boolean;
-
-    /** convenience method for canvas */
-    ContextFill(context: CanvasRenderingContext2D): void;
-
-    /** convenience method for canvas */
-    ContextStroke(context: CanvasRenderingContext2D): void;
-
-    /** clamp coordinate to rectangle */
-    Clamp(x: number, y: number): {
-        x: number;
-        y: number;
-    };
-
-    /** convenience method for html element style */
-    ApplyStyle(element: HTMLElement): void;
-    toJSON(): {
-        top: number;
-        left: number;
-        width: number;
-        height: number;
-    };
 }
 
 /**

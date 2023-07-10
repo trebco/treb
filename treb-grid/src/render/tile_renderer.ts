@@ -22,6 +22,7 @@
 import type { ICellAddress, 
          PreparedText, RenderTextPart,
          Cell, Size, 
+         CellStyle,
          Theme} from 'treb-base-types';
 import { TextPartFlag, Style, ValueType, Area, Rectangle, ThemeColor, ThemeColor2 } from 'treb-base-types';
 
@@ -711,7 +712,7 @@ export class TileRenderer {
                      cell_width: number /*, override_text?: string*/ ): PreparedText {
 
     const strings: RenderTextPart[] = [];
-    const style: Style.Properties = cell.style || {};
+    const style: CellStyle = cell.style || {};
 
     let pad_entry: RenderTextPart | undefined;
     let composite_width = 0;
@@ -982,7 +983,7 @@ export class TileRenderer {
 
   }
 
-  protected ResolveColors(style: Style.Properties): Style.Properties {
+  protected ResolveColors(style: CellStyle): CellStyle {
 
     const resolved = {...style};
     resolved.text = { text: ThemeColor2(this.theme, style.text, 1) };
@@ -996,7 +997,7 @@ export class TileRenderer {
   protected RenderCellBorders(
     address: ICellAddress,
     context: CanvasRenderingContext2D,
-    style: Style.Properties,
+    style: CellStyle,
     left = 0, top = 0, width = 0, height = 0): void {
 
     // cell borders is one of those things that seems simple, even trivial, 
@@ -1312,7 +1313,7 @@ export class TileRenderer {
     note: boolean,
     address: ICellAddress,
     context: CanvasRenderingContext2D,
-    style: Style.Properties,
+    style: CellStyle,
     width: number, height: number, cell_left = 0, cell_top = 0): void {
 
     // so here we draw the background and the bottom and right grid edges.
@@ -1405,7 +1406,7 @@ export class TileRenderer {
       return {};
     }
 
-    let style: Style.Properties = cell.style ? {...cell.style} : {};
+    let style: CellStyle = cell.style ? {...cell.style} : {};
 
     if (cell.table) {
       style = this.view.active_sheet.CellStyleData(address, cell.table.theme || this.theme.table) || {};
@@ -1616,7 +1617,7 @@ export class TileRenderer {
 
     let horizontal_align = style.horizontal_align;
     if (!horizontal_align) {
-      horizontal_align = is_number ? Style.HorizontalAlign.Right : Style.HorizontalAlign.Left;
+      horizontal_align = is_number ? 'right' : 'left'; // Style.HorizontalAlign.Right : Style.HorizontalAlign.Left;
     }
 
     // NOTE: text rendering options (align, baseline) are set globally
@@ -1649,10 +1650,10 @@ export class TileRenderer {
         let overflow_pixels_left = 0;
         let overflow_pixels_right = 0;
 
-        if (horizontal_align === Style.HorizontalAlign.Center) {
+        if (horizontal_align === 'center' /* Style.HorizontalAlign.Center */ ) {
           overflow_pixels_left = overflow_pixels_right = delta / 2;
         }
-        else if (horizontal_align === Style.HorizontalAlign.Right) {
+        else if (horizontal_align === 'right' /* Style.HorizontalAlign.Right */ ) {
           overflow_pixels_left = delta;
         }
         else {
@@ -1884,10 +1885,10 @@ export class TileRenderer {
     let original_baseline = Math.round(height - 2 - (m2.block * line_height * (line_count - 1)) + WK); // switched baseline to "bottom"
 
     switch (style.vertical_align) {
-      case Style.VerticalAlign.Top:
+      case 'top': // Style.VerticalAlign.Top:
         original_baseline = Math.round(m2.block * line_height) + 1;
         break;
-      case Style.VerticalAlign.Middle:
+      case 'middle': // Style.VerticalAlign.Middle:
         original_baseline = Math.round((height - text_height) / 2 + m2.block * line_height);
         break;
     }
@@ -1905,10 +1906,10 @@ export class TileRenderer {
       for (let i = 0; i < count; i++) { text += '#'; }
       const text_width = context.measureText(text).width;
 
-      if (horizontal_align === Style.HorizontalAlign.Center) {
+      if (horizontal_align === 'center' /* Style.HorizontalAlign.Center */ ) {
         left = Math.round((width - text_width) / 2);
       }
-      else if (horizontal_align === Style.HorizontalAlign.Right) {
+      else if (horizontal_align === 'right' /* Style.HorizontalAlign.Right */ ) {
         left = width - this.cell_edge_buffer - text_width;
       }
 
@@ -1931,10 +1932,10 @@ export class TileRenderer {
         let line_width = 0;
         for (const part of line) { line_width += part.width; }
 
-        if (horizontal_align === Style.HorizontalAlign.Center) {
+        if (horizontal_align === 'center' /* Style.HorizontalAlign.Center */ ) {
           left = Math.round((width - line_width) / 2);
         }
-        else if (horizontal_align === Style.HorizontalAlign.Right) {
+        else if (horizontal_align === 'right' /* Style.HorizontalAlign.Right */ ) {
           left = width - this.cell_edge_buffer - line_width;
         }
 

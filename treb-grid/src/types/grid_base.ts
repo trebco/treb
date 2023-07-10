@@ -40,7 +40,7 @@ import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpressi
 import type { Parser, UnitAddress} from 'treb-parser';
 import { type ExpressionUnit, IllegalSheetNameRegex, ParseCSV, ArgumentSeparatorType, DecimalMarkType } from 'treb-parser';
 import { Area, IsCellAddress, ValidationType, ValueType, DefaultTableSortOptions } from 'treb-base-types';
-import type { ICellAddress, IArea, Cell, CellValue , Style, Table, TableSortOptions, TableTheme, Complex } from 'treb-base-types';
+import type { ICellAddress, IArea, Cell, CellValue , Style, CellStyle, Table, TableSortOptions, TableTheme, Complex } from 'treb-base-types';
 import { Sheet } from './sheet';
 import type { FunctionDescriptor} from '../editors/autocomplete_matcher';
 import { AutocompleteMatcher, DescriptorType } from '../editors/autocomplete_matcher';
@@ -2254,15 +2254,15 @@ export class GridBase {
     }
     */
 
-    const top: Style.Properties = { border_top: width };
-    const bottom: Style.Properties = { border_bottom: width };
-    const left: Style.Properties = { border_left: width };
-    const right: Style.Properties = { border_right: width };
+    const top: CellStyle = { border_top: width };
+    const bottom: CellStyle = { border_bottom: width };
+    const left: CellStyle = { border_left: width };
+    const right: CellStyle = { border_right: width };
 
-    const clear_top: Style.Properties = { border_top: 0, border_top_fill: {} };
-    const clear_bottom: Style.Properties = { border_bottom: 0, border_bottom_fill: {} };
-    const clear_left: Style.Properties = { border_left: 0, border_left_fill: {} };
-    const clear_right: Style.Properties = { border_right: 0, border_right_fill: {} };
+    const clear_top: CellStyle = { border_top: 0, border_top_fill: {} };
+    const clear_bottom: CellStyle = { border_bottom: 0, border_bottom_fill: {} };
+    const clear_left: CellStyle = { border_left: 0, border_left_fill: {} };
+    const clear_right: CellStyle = { border_right: 0, border_right_fill: {} };
 
     // default to "none", which means "default"
 

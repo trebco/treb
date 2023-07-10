@@ -22,7 +22,7 @@
 // import { Parser } from 'treb-parser';
 
 import type { Area, IArea } from './area';
-import type { Style } from './style';
+import type { Style, CellStyle } from './style';
 import type { TextPart } from './text_part';
 import type { Complex } from './value-type';
 import { ValueType, GetValueType } from './value-type';
@@ -35,7 +35,7 @@ export interface RenderFunctionOptions {
   width: number;
   context: CanvasRenderingContext2D;
   cell: Cell;
-  style: Style.Properties;
+  style: CellStyle;
   scale?: number;
 }
 
@@ -275,7 +275,7 @@ export class Cell {
   // data (FIXME: if style is an object, this would just be a pointer, so
   // why not just use a reference?)
   // style:number = 0;
-  public style?: Style.Properties;
+  public style?: CellStyle;
 
   /** if this cell is part of an array, pointer to the area. */
   public area?: Area;

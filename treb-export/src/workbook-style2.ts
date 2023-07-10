@@ -22,7 +22,7 @@
 // import * as ElementTree from 'elementtree';
 // import { Element, ElementTree as Tree } from 'elementtree';
 
-import { Style } from 'treb-base-types';
+import { type CompositeBorderEdge, Style, type CellStyle, type PropertyKeys } from 'treb-base-types';
 import { Theme } from './workbook-theme2';
 import { NumberFormatCache } from 'treb-format';
 import { XMLUtils } from './xml-utils';
@@ -237,12 +237,12 @@ export class StyleCache {
 
   /// 
 
-  public StyleOptionsFromProperties(source: Style.Properties): StyleOptions {
+  public StyleOptionsFromProperties(source: CellStyle): StyleOptions {
 
-    const composite: Style.Properties = // Style.Composite(list);
+    const composite: CellStyle = // Style.Composite(list);
       JSON.parse(JSON.stringify(source));
 
-    for (const key of Object.keys(composite) as Style.PropertyKeys[]) {
+    for (const key of Object.keys(composite) as PropertyKeys[]) {
       if (composite[key] === 'none') {
         delete composite[key];
       }
@@ -297,7 +297,7 @@ export class StyleCache {
       }
     }
 
-    const TranslateBorder = (src: Style.CompositeBorderEdge, dest: BorderEdge) => {
+    const TranslateBorder = (src: CompositeBorderEdge, dest: BorderEdge) => {
       if (src.width) {
         dest.style = 'thin';
         if (src.color.text) {
@@ -399,22 +399,22 @@ export class StyleCache {
     // leave blank for bottom, default
 
     switch (composite.vertical_align) {
-      case Style.VerticalAlign.Top:
+      case 'top': // Style.VerticalAlign.Top:
         options.vertical_alignment = 'top';
         break;
-      case Style.VerticalAlign.Middle:
+      case 'middle': // Style.VerticalAlign.Middle:
         options.vertical_alignment = 'center';
         break;
     }
 
     switch (composite.horizontal_align) {
-      case Style.HorizontalAlign.Center:
+      case 'center': // Style.HorizontalAlign.Center:
         options.horizontal_alignment = 'center';
         break;
-      case Style.HorizontalAlign.Left:
+      case 'left': // Style.HorizontalAlign.Left:
         options.horizontal_alignment = 'left';
         break;
-      case Style.HorizontalAlign.Right:
+      case 'right': // Style.HorizontalAlign.Right:
         options.horizontal_alignment = 'right';
         break;
     }
@@ -446,9 +446,9 @@ export class StyleCache {
 
   ///
 
-  public CellXfToStyle(xf: CellXf): Style.Properties {
+  public CellXfToStyle(xf: CellXf): CellStyle {
 
-    const props: Style.Properties = {};
+    const props: CellStyle = {};
 
     // number format
 
@@ -625,25 +625,25 @@ export class StyleCache {
 
     switch (xf.horizontal_alignment) {
       case 'center':
-        props.horizontal_align = Style.HorizontalAlign.Center;
+        props.horizontal_align = 'center'; // Style.HorizontalAlign.Center;
         break;
       case 'right':
-        props.horizontal_align = Style.HorizontalAlign.Right;
+        props.horizontal_align = 'right'; // Style.HorizontalAlign.Right;
         break;
       case 'left':
-        props.horizontal_align = Style.HorizontalAlign.Left;
+        props.horizontal_align = 'left'; // Style.HorizontalAlign.Left;
         break;
     }
 
     switch (xf.vertical_alignment) {
       case 'center':
-        props.vertical_align = Style.VerticalAlign.Middle;
+        props.vertical_align = 'middle'; // Style.VerticalAlign.Middle;
         break;
       case 'top':
-        props.vertical_align = Style.VerticalAlign.Top;
+        props.vertical_align = 'top'; // Style.VerticalAlign.Top;
         break;
       case 'bottom':
-        props.vertical_align = Style.VerticalAlign.Bottom;
+        props.vertical_align = 'bottom'; // Style.VerticalAlign.Bottom;
         break;
     }
 
@@ -674,7 +674,7 @@ export class StyleCache {
   }
 
   /** map all cell xfs to styles; retain order */
-  public CellXfToStyles(): Style.Properties[] {
+  public CellXfToStyles(): CellStyle[] {
     return this.cell_xfs.map((xf) => this.CellXfToStyle(xf));
   }
 

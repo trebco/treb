@@ -29,7 +29,7 @@
  */
 
 import type { Theme, CellValue, Rectangle, Cell } from 'treb-base-types';
-import { Style, ThemeColor2 } from 'treb-base-types';
+import { Style, ThemeColor2, type CellStyle } from 'treb-base-types';
 import { Yield } from 'treb-utils';
 import type { Parser } from 'treb-parser';
 import type { GridSelection } from '../types/grid_selection';
@@ -288,7 +288,7 @@ export class OverlayEditor extends FormulaEditorBase {
     this.active_cell = cell;
     this.target_address = {...gridselection.target};
 
-    const style: Style.Properties = cell.style || {};
+    const style: CellStyle = cell.style || {};
 
     this.edit_node.style.font = Style.Font(style, this.scale);
     this.edit_node.style.color = ThemeColor2(this.theme, style.text, 1);
@@ -303,11 +303,11 @@ export class OverlayEditor extends FormulaEditorBase {
     //  until v[x]? I think that may have been years ago...)
 
     switch (style.horizontal_align) {
-      case Style.HorizontalAlign.Right:
+      case 'right': // Style.HorizontalAlign.Right:
         this.edit_container.classList.remove('align-center', 'align-left');
         this.edit_container.classList.add('align-right');
         break;
-      case Style.HorizontalAlign.Center:
+      case 'center': // Style.HorizontalAlign.Center:
         this.edit_container.classList.remove('align-right', 'align-left');
         this.edit_container.classList.add('align-center');
         break;

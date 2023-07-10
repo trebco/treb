@@ -95,11 +95,12 @@ export interface Table {
    * (not meaning difficult). we may keep track of the last sort so we 
    * can toggle asc/desc, for example. atm this will not survive serialization.
    */
-  sort?: {
+  sort?: TableSortOptions; 
+  /* {
     column: number;
     type: TableSortType;
     asc: boolean;
-  }
+  } */
 
 }
 

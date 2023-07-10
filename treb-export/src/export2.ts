@@ -34,7 +34,7 @@ const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\
 import { template } from './template-2';
 import type { SerializedSheet } from 'treb-grid';
 
-import type { IArea, ICellAddress, CellValue, DataValidation,
+import type { IArea, ICellAddress, CellValue, DataValidation, CellStyle,
          AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle } from 'treb-base-types';
 import { Area, Cells, ValueType, Style, ValidationType } from 'treb-base-types';
 
@@ -527,7 +527,7 @@ export class Exporter {
   public RowStyle(sheet: SerializedSheet, style_cache: StyleCache, row: number) {
 
     const cell_style_refs = sheet.styles || sheet.cell_style_refs || [];
-    const list: Style.Properties[] = [sheet.sheet_style];
+    const list: CellStyle[] = [sheet.sheet_style];
 
     if (sheet.row_style) {
       let style = sheet.row_style[row];
@@ -550,7 +550,7 @@ export class Exporter {
   public ColumnStyle(sheet: SerializedSheet, style_cache: StyleCache, column: number) {
 
     const cell_style_refs = sheet.styles || sheet.cell_style_refs || [];
-    const list: Style.Properties[] = [sheet.sheet_style];
+    const list: CellStyle[] = [sheet.sheet_style];
 
     if (sheet.column_style) {
       let style = sheet.column_style[column];
@@ -570,14 +570,14 @@ export class Exporter {
 
   }
 
-  public StyleFromCell(sheet: SerializedSheet, style_cache: StyleCache, row: number, column: number, style: Style.Properties = {}) {
+  public StyleFromCell(sheet: SerializedSheet, style_cache: StyleCache, row: number, column: number, style: CellStyle = {}) {
 
     //if (row === 2 && column === 5)
     //  console.info("SFC", JSON.stringify(style, undefined, 2));
 
     const cell_style_refs = sheet.styles || sheet.cell_style_refs || [];
 
-    const list: Style.Properties[] = [sheet.sheet_style];
+    const list: CellStyle[] = [sheet.sheet_style];
 
     if (sheet.row_pattern && sheet.row_pattern.length) {
       list.push(sheet.row_pattern[row % sheet.row_pattern.length]);
@@ -1298,7 +1298,7 @@ export class Exporter {
       const sparklines: Array<{
         address: ICellAddress,
         formula: string,
-        style?: Style.Properties,
+        style?: CellStyle,
       }> = [];
 
       const merges: Area[] = [];

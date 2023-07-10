@@ -19,8 +19,8 @@
  * 
  */
 
-import type { Style } from './style';
-import { Color } from './color';
+import type { Color, CellStyle } from './style';
+import { ColorFunctions } from './color';
 
 /*
  * so this is a little strange. we use CSS to populate a theme object,
@@ -57,34 +57,34 @@ import { Color } from './color';
 export interface TableTheme {
 
   /** the first row in a table, showing column titles. */
-  header?: Style.Properties;
+  header?: CellStyle;
 
   /** 
    * odd rows in the table. we count the title row as zero, so
    * the first row in the table containing data is 1, hence odd.
    */
-  odd?: Style.Properties;
+  odd?: CellStyle;
 
   /**
    * even rows in the table.
    */
-  even?: Style.Properties;
+  even?: CellStyle;
 
   /**
    * styling for the totals row, if included. this will be the last 
    * row in the table. 
    */
-  total?: Style.Properties;
+  total?: CellStyle;
 }
 
 /** theme options - colors and fonts */
 export interface Theme {
 
   /** grid headers (composite) */
-  headers?: Style.Properties;
+  headers?: CellStyle;
 
   /** grid cell defaults (composite: size, font face, color, background) */
-  grid_cell?: Style.Properties;
+  grid_cell?: CellStyle;
 
   /** gridlines color */
   grid_color: string;
@@ -165,7 +165,7 @@ export const DefaultTheme: Theme = {
  * @deprecated
  * @internal
  */
-export const ThemeColor = (theme: Theme, color?: Style.Color): string => {
+export const ThemeColor = (theme: Theme, color?: Color): string => {
   return ThemeColor2(theme, color, 0);
 };
 
@@ -199,10 +199,10 @@ const TintedColor = (theme: Theme, index: number, tint: number) => {
     const rgb = (theme.theme_colors_rgb ? theme.theme_colors_rgb[index] : [0, 0, 0]) || [0, 0, 0];
     let tinted: {r: number, g: number, b: number};
     if (tint > 0) {
-      tinted = Color.Lighten(rgb[0], rgb[1], rgb[2], tint * 100, true);
+      tinted = ColorFunctions.Lighten(rgb[0], rgb[1], rgb[2], tint * 100, true);
     }
     else {
-      tinted = Color.Darken(rgb[0], rgb[1], rgb[2], -tint * 100, true);
+      tinted = ColorFunctions.Darken(rgb[0], rgb[1], rgb[2], -tint * 100, true);
     }
     color = `rgb(${tinted.r},${tinted.g},${tinted.b})`;
     theme.tint_cache[index][tint] = color;
@@ -222,7 +222,7 @@ const TintedColor = (theme: Theme, index: number, tint: number) => {
  * 
  * @internal
  */
-export const ThemeColor2 = (theme: Theme, color?: Style.Color, default_index?: number): string => {
+export const ThemeColor2 = (theme: Theme, color?: Color, default_index?: number): string => {
 
   if (color?.offset) {
 
@@ -245,7 +245,7 @@ export const ThemeColor2 = (theme: Theme, color?: Style.Color, default_index?: n
       // ok figure it out?
       const match = resolved.match(/rgb\((\d+), (\d+), (\d+)\)/);
       if (match) {
-        const hsl = Color.RGBToHSL(Number(match[1]), Number(match[2]), Number(match[3]));
+        const hsl = ColorFunctions.RGBToHSL(Number(match[1]), Number(match[2]), Number(match[3]));
         // console.info('resolved', resolved, {hsl});
         if (hsl.l > .65) {
           offset = theme.offset_dark;
@@ -373,11 +373,11 @@ const TableStyleFromCSS = (base: CSSStyleDeclaration, style: CSSStyleDeclaration
 */
 
 // testing
-const StyleFromCSS = (css: CSSStyleDeclaration): Style.Properties => {
+const StyleFromCSS = (css: CSSStyleDeclaration): CellStyle => {
 
   const { value, unit } = ParseFontSize(css.fontSize||'');
 
-  const style: Style.Properties = {
+  const style: CellStyle = {
     fill: { text: css.backgroundColor }, // || 'none',
     text: { text: css.color },
     font_size: {
@@ -428,11 +428,11 @@ const DeriveColorScheme = (theme: Theme, context: CanvasRenderingContext2D): 'li
 
   context.fillStyle = foreground_color?.text || '';
   context.fillRect(0, 0, 3, 3);
-  const fg = Color.RGBToHSL(...(Array.from(context.getImageData(1, 1, 1, 1).data) as [number, number, number]));
+  const fg = ColorFunctions.RGBToHSL(...(Array.from(context.getImageData(1, 1, 1, 1).data) as [number, number, number]));
 
   context.fillStyle = background_color?.text || '';
   context.fillRect(0, 0, 3, 3);
-  const bg = Color.RGBToHSL(...(Array.from(context.getImageData(1, 1, 1, 1).data) as [number, number, number]));
+  const bg = ColorFunctions.RGBToHSL(...(Array.from(context.getImageData(1, 1, 1, 1).data) as [number, number, number]));
 
   // console.info({fg, bg});
   
@@ -448,7 +448,7 @@ const DeriveColorScheme = (theme: Theme, context: CanvasRenderingContext2D): 'li
  */
 export const ThemeColorTable = (theme_color: number, tint = .7): TableTheme => {
 
-  const borders: Style.Properties = {
+  const borders: CellStyle = {
     border_top: 1,
     border_top_fill: { theme: theme_color },
     border_bottom: 1,

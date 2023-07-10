@@ -31,7 +31,7 @@ import { Cell } from './cell';
 import type { Table } from './table';
 import { type SerializedValueType, ValueType, GetValueType, ValueTypeList } from './value-type';
 import type { CellValue, UnionValue } from './union';
-import type { Style } from './style';
+import type { Style, CellStyle } from './style';
 
 export interface CellSerializationOptions {
   preserve_type?: boolean;
@@ -88,7 +88,13 @@ export interface BaseCellData {
   // locked?: boolean;
 }
 
-export interface FlatCellData extends BaseCellData {
+/**
+ * this type is for serialized data that includes the row and column
+ * in each cell. this was the original serialized data type, and is
+ * still supported. current serialization will group data into rows or
+ * columns, whichever results in a smaller overall serialized representation.
+ */
+export interface CellDataWithAddress extends BaseCellData {
   row: number;
   column: number;
 }
@@ -97,31 +103,43 @@ export interface NestedCellData {
   cells: BaseCellData[];
 }
 
+/**
+ * this type is for serialized data that is grouped by row, with each
+ * cell referencing a column in the spreadsheet. 
+ */
+export interface CellDataWithColumn extends BaseCellData {
+  column: number;
+}
+
 export interface NestedRowData extends NestedCellData {
   row: number;
-  cells: Array<{
-    column: number;
-  } & BaseCellData>;
+  cells: CellDataWithColumn[];
+}
+
+/**
+ * this type is for serialized data that is grouped by column, with each
+ * cell referencing a row in the spreadsheet. 
+ */
+export interface CellDataWithRow extends BaseCellData {
+  row: number;
 }
 
 export interface NestedColumnData extends NestedCellData {
   column: number;
-  cells: Array<{
-    row: number;
-  } & BaseCellData>;
+  cells: CellDataWithRow[];
 }
 
-export type SerializedCellData = FlatCellData[]|NestedRowData[]|NestedColumnData[];
+export type SerializedCellData = CellDataWithAddress[]|NestedRowData[]|NestedColumnData[];
 
 // some type guards for the various data types
 
 /** @internal */
-export const IsFlatData = (test: FlatCellData|NestedCellData): test is FlatCellData => {
+export const IsFlatData = (test: CellDataWithAddress|NestedCellData): test is CellDataWithAddress => {
   return !(test as NestedCellData).cells;
 }
 
 /** @internal */
-export const IsFlatDataArray = (test: FlatCellData[]|NestedCellData[]): test is FlatCellData[] => {
+export const IsFlatDataArray = (test: CellDataWithAddress[]|NestedCellData[]): test is CellDataWithAddress[] => {
   return (!!test[0]) && IsFlatData(test[0]);
 };
 
@@ -418,7 +436,7 @@ export class Cells {
   /**
    * UPDATE: adding optional style refs, for export
    */
-  public FromJSON(data: SerializedCellData = [], style_refs?: Style.Properties[]): void {
+  public FromJSON(data: SerializedCellData = [], style_refs?: CellStyle[]): void {
 
     this.data = [];
 
@@ -428,7 +446,7 @@ export class Cells {
 
     if (!IsFlatDataArray(data)) {
 
-      const new_data: FlatCellData[] = [];
+      const new_data: CellDataWithAddress[] = [];
 
       if (IsNestedRowArray(data)) {
         for (const block of data) {
@@ -595,7 +613,7 @@ export class Cells {
       end_row = options.subset.end.row;
     }
 
-    const data: FlatCellData[] = [];
+    const data: CellDataWithAddress[] = [];
 
     let last_row = -1;
     let last_col = -1;
@@ -662,7 +680,7 @@ export class Cells {
                   ( cell.style.fill || cell.style.border_bottom ||
                     cell.style.border_top || cell.style.border_left || cell.style.border_right)))){
 
-            const obj: FlatCellData = { row, column, value: cell.value };
+            const obj: CellDataWithAddress = { row, column, value: cell.value };
             if (cell.note) {
               obj.note = cell.note;
             }

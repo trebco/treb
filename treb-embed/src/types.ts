@@ -40,10 +40,10 @@ export enum SaveFileType {
 //
 
 /**
- * we're not exporting this type in the public API because there are so many 
- * nested types that aren't used anywhere else (in public functions). 
- * 
- * I would like to do it, though, that `any` looks bad in the  public API.
+ * this is the document type used by TREB. it has a lot of small variations 
+ * for historical reasons and backwards compatibility. usually it's preferable 
+ * to let TREB create and manage these documents rather than creating them
+ * manually.
  */
 export interface TREBDocument {
 

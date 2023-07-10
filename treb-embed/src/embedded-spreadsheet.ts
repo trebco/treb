@@ -51,8 +51,8 @@ import type {
 } from 'treb-base-types';
 
 import {
-  IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, 
-  Localization, Style, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, 
+  IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
+  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, 
 } from 'treb-base-types';
 
 import { EventSource, Yield, ValidateURI } from 'treb-utils';
@@ -200,7 +200,7 @@ export interface SheetScrollOptions {
 /**
  * function type used for filtering tables
  */
-export type TableFilterFunction = (value: CellValue, calculated_value: CellValue, style: Style.Properties) => boolean;
+export type TableFilterFunction = (value: CellValue, calculated_value: CellValue, style: CellStyle) => boolean;
 
 /**
  * embedded spreadsheet
@@ -253,7 +253,7 @@ export class EmbeddedSpreadsheet {
   public document_styles: {
     number_formats: string[], 
     colors: string[],
-    theme_colors: Array<{ color: Style.Color, resolved: string, }>[] // FIXME: type
+    theme_colors: Array<{ color: Color, resolved: string, }>[] // FIXME: type
   } = {
     number_formats: [], colors: [], theme_colors: [],
   };
@@ -1242,7 +1242,7 @@ export class EmbeddedSpreadsheet {
       return;
     }
 
-    let updated_style: Style.Properties = {};
+    let updated_style: CellStyle = {};
 
     const insert_annotation = (func: string) => {
       const selection = this.grid.GetSelection();
@@ -1341,7 +1341,7 @@ export class EmbeddedSpreadsheet {
         case 'fill-color':
 
           try {
-            const color: Style.Color = event.color || {};
+            const color: Color = event.color || {};
             if (event.command === 'text-color') {
               updated_style.text = color;
             }
@@ -1491,27 +1491,27 @@ export class EmbeddedSpreadsheet {
           break;
 
         case 'justify-left':
-          updated_style = { horizontal_align: Style.HorizontalAlign.Left };
+          updated_style = { horizontal_align: 'left' };
           break;
 
         case 'justify-center':
-          updated_style = { horizontal_align: Style.HorizontalAlign.Center };
+          updated_style = { horizontal_align: 'center' };
           break;
 
         case 'justify-right':
-          updated_style = { horizontal_align: Style.HorizontalAlign.Right };
+          updated_style = { horizontal_align: 'right' };
           break;
 
         case 'align-top':
-          updated_style = { vertical_align: Style.VerticalAlign.Top };
+          updated_style = { vertical_align: 'top' };
           break;
 
         case 'align-middle':
-          updated_style = { vertical_align: Style.VerticalAlign.Middle };
+          updated_style = { vertical_align: 'middle' };
           break;
 
         case 'align-bottom':
-          updated_style = { vertical_align: Style.VerticalAlign.Bottom };
+          updated_style = { vertical_align: 'bottom' };
           break;
 
         case 'reset':
@@ -3556,7 +3556,7 @@ export class EmbeddedSpreadsheet {
    * 
    * @public
    */
-  public ApplyStyle(range?: RangeReference, style: Style.Properties = {}, delta = true): void {
+  public ApplyStyle(range?: RangeReference, style: CellStyle = {}, delta = true): void {
 
     // ditto re: grid method taking undefined target
 
@@ -3776,7 +3776,7 @@ export class EmbeddedSpreadsheet {
    * @param apply_theme - include theme defaults when returning style
    * 
    */
-  public GetStyle(range?: RangeReference, apply_theme = false): Style.Properties|Style.Properties[][]|undefined {
+  public GetStyle(range?: RangeReference, apply_theme = false): CellStyle|CellStyle[][]|undefined {
 
     // API v1 OK
 
@@ -4968,7 +4968,7 @@ export class EmbeddedSpreadsheet {
     const tints = [.50, .25, 0, -.25, -.50];
     for (let i = 0; i < 10; i++) {
       this.document_styles.theme_colors.push(tints.map(tint => {
-        const color: Style.Color = { theme: i, tint };
+        const color: Color = { theme: i, tint };
         const resolved = ThemeColor2(this.grid.theme, color);
         return { color, resolved };
       }));

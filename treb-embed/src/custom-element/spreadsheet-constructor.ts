@@ -7,7 +7,7 @@ import html from '../../markup/layout.html';
 import toolbar_html from '../../markup/toolbar.html';
 
 import { NumberFormatCache } from 'treb-format';
-import { Style, Color } from 'treb-base-types';
+import { ColorFunctions, type Color } from 'treb-base-types';
 import { Measurement } from 'treb-utils';
 import type { ToolbarMessage } from '../toolbar-message';
 
@@ -68,7 +68,7 @@ export class SpreadsheetConstructor {
   public sheet?: EmbeddedSpreadsheet
 
   /** current border color. will be applied to new borders. */
-  protected border_color?: Style.Color;
+  protected border_color?: Color;
 
   /** color bar elements, since we update them frequently */
   protected color_bar_elements: Record<string, HTMLElement> = {};
@@ -662,25 +662,25 @@ export class SpreadsheetConstructor {
     }
 
     switch (state.style?.horizontal_align) {
-      case Style.HorizontalAlign.Left:
+      case 'left':
         Activate(this.toolbar_controls.left);
         break;  
-      case Style.HorizontalAlign.Center:
+      case 'center':
         Activate(this.toolbar_controls.center);
         break;
-      case Style.HorizontalAlign.Right:
+      case 'right':
         Activate(this.toolbar_controls.right);
         break;
     }
     
     switch (state.style?.vertical_align) {
-      case Style.VerticalAlign.Top:
+      case 'top':
         Activate(this.toolbar_controls.top);
         break;  
-      case Style.VerticalAlign.Middle:
+      case 'middle':
         Activate(this.toolbar_controls.middle);
         break;
-      case Style.VerticalAlign.Bottom:  
+      case 'bottom':  
         Activate(this.toolbar_controls.bottom);
         break;
     }
@@ -952,7 +952,7 @@ export class SpreadsheetConstructor {
 
       const props: {
         comment?: string;
-        color?: Style.Color;
+        color?: Color;
         format?: string;
         scale?: string;
       } = {
@@ -1108,7 +1108,7 @@ export class SpreadsheetConstructor {
       // this is a check for "did it resolve properly"
       const resolved = color_button.style.backgroundColor || '#fff';
       const bytes = Measurement.MeasureColor(resolved);
-      const hsl = Color.RGBToHSL(bytes[0], bytes[1], bytes[2]);
+      const hsl = ColorFunctions.RGBToHSL(bytes[0], bytes[1], bytes[2]);
 
       // light or dark based on background
       color_button.style.color = (hsl.l > .5) ? '#000' : '#fff';

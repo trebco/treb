@@ -30,7 +30,7 @@
  */
 
 
-import type { Cell, Style } from 'treb-base-types';
+import type { Cell, Style, CellStyle } from 'treb-base-types';
 
 export interface SparklineRenderOptions {
   context: CanvasRenderingContext2D;
@@ -104,7 +104,7 @@ export class Sparkline {
 
   }
 
-  protected static SparklineCommon(cell: Cell, style: Style.Properties): {
+  protected static SparklineCommon(cell: Cell, style: CellStyle): {
       values: Array<number|undefined>,
       colors: string[],
     } {
@@ -140,7 +140,7 @@ export class Sparkline {
       height: number,
       context: CanvasRenderingContext2D,
       cell: Cell,
-      style: Style.Properties,
+      style: CellStyle,
     ): void {
 
     const {values, colors} = this.SparklineCommon(cell, style);
@@ -220,7 +220,7 @@ export class Sparkline {
       height: number,
       context: CanvasRenderingContext2D,
       cell: Cell,
-      style: Style.Properties,
+      style: CellStyle,
     ): void {
 
     const {values, colors} = this.SparklineCommon(cell, style);

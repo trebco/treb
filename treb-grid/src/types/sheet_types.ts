@@ -19,7 +19,7 @@
  * 
  */
 
-import type { IArea, SerializedCellData, Style } from 'treb-base-types';
+import type { IArea, SerializedCellData, Style, CellStyle } from 'treb-base-types';
 import type { Annotation, AnnotationData } from './annotation';
 import type { GridSelection, SerializedGridSelection } from './grid_selection';
 
@@ -42,13 +42,20 @@ export interface ScrollOffset {
   y: number;
 }
 
+export interface CellStyleRecord {
+  row: number;
+  column: number;
+  ref: number;
+  rows?: number;
+}
+
 export interface SerializedSheet {
 
   /** cell data */
   data: SerializedCellData;
 
   /** top-level sheet style, if any */
-  sheet_style: Style.Properties;
+  sheet_style: CellStyle;
 
   /** row count */
   rows: number;
@@ -59,32 +66,32 @@ export interface SerializedSheet {
   /**
    * cell styles is for empty cells that have styling
    */
-  cell_styles: Array<{row: number; column: number; ref: number, rows?: number}>;
+  cell_styles: CellStyleRecord[]; // Array<{row: number; column: number; ref: number, rows?: number}>;
 
   /** 
    * @deprecated use `styles` instead
    */
-  cell_style_refs?: Style.Properties[]; // old 
+  cell_style_refs?: CellStyle[]; // old 
 
   /** 
    * new implementation 
    */
-  styles?: Style.Properties[];
+  styles?: CellStyle[];
 
   /**
    * per-row styles
    */
-  row_style: Record<number, Style.Properties|number>;
+  row_style: Record<number, CellStyle|number>;
 
   /**
    * per-column styles
    */
-  column_style: Record<number, Style.Properties|number>;
+  column_style: Record<number, CellStyle|number>;
 
   /** 
    * @deprecated no one uses this anymore and it's weird 
    */
-  row_pattern?: Style.Properties[];
+  row_pattern?: CellStyle[];
 
   /** default for new rows */
   default_row_height?: number;

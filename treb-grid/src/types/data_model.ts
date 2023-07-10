@@ -20,7 +20,7 @@
  */
 
 import type { Sheet } from './sheet';
-import type { IArea, ICellAddress, Table } from 'treb-base-types';
+import type { IArea, ICellAddress, Table, CellStyle } from 'treb-base-types';
 import type { SerializedSheet } from './sheet_types';
 import { NamedRangeCollection } from './named_range';
 import type { ExpressionUnit, UnitAddress, UnitStructuredReference, UnitRange } from 'treb-parser';
@@ -200,7 +200,7 @@ export class DataModel {
    * base style properties moved to model, so we can have a single
    * and consistent reference.
    */
-  public theme_style_properties: Style.Properties = JSON.parse(JSON.stringify(Style.DefaultProperties));
+  public theme_style_properties: CellStyle = JSON.parse(JSON.stringify(Style.DefaultProperties));
 
   /**
    * tables are global, because we need to reference them by name; and they

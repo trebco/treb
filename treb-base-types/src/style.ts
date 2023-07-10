@@ -19,189 +19,160 @@
  * 
  */
 
-// why is this a namespace? module is implicit... it's because of how
-// base types exports; we can't export * as Style, so we're stuck with
-// the namespace (or you could add an intermediate file and import ->
-// export, but that just seems like unecessary complexity and still kludgy).
+const empty_json = JSON.stringify({}); // we could probably hard-code this
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace Style {
+/** horizontal align constants for cell style */
+export type HorizontalAlign = '' | 'left' | 'center' | 'right';
 
-  const empty_json = JSON.stringify({}); // we could probably hard-code this
+/** vertical align constants for cell style */
+export type VerticalAlign = '' | 'top' | 'bottom' | 'middle';
 
-  /** 
-   * horizontal align constants
-   */
-  export enum HorizontalAlign {
-    None = '',
-    Left = 'left', 
-    Center = 'center',
-    Right = 'right',
-  }
+/** 
+ * font size for cell style. we generally prefer relative sizes
+ * (percent or em) because they are relative to the default theme
+ * size, which might be different on different platforms.
+ */
+export interface FontSize {
+  unit: 'pt'|'px'|'em'|'%';
+  value: number;
+}
 
-  /** 
-   * vertical align constants
-   * 
-   * @privateRemarks
-   * 
-   * horizontal alignment was (none), left, center, right.
-   * vertical aligment was (none), top, bottom, middle.
-   * 
-   * not sure why these were not symmetrical, but having strings makes it 
-   * easier to manage.
-   */
-  export enum VerticalAlign {
-    None = '',
-    Top = 'top',
-    Bottom = 'bottom',
-    Middle = 'middle',
-  }
+/** 
+ * color for cell style. color is used for foreground, background and 
+ * borders in the cell style. can be either a theme color (theme index 
+ * plus tint), or CSS text.
+ * 
+ * @privateRemarks
+ * FIXME: this should be a union type. we do a lot of if switching anyway.
+ */
+export interface Color {
 
-  /** composite font size */
-  export interface FontSize {
-    unit: 'pt'|'px'|'em'|'%';
-    value: number;
-  }
-
-  /** 
-   * color is either a theme color (theme index plus tint), or CSS text 
-   * 
-   * @privateRemarks
-   * 
-   * FIXME: this should be a union type
-   */
-  export interface Color {
-
-    theme?: number;
-    tint?: number;
-    text?: string;
-
-    /** @internal */
-    offset?: Color;
-
-    /** @deprecated */
-    none?: boolean;
-  }
+  theme?: number;
+  tint?: number;
+  text?: string;
 
   /** @internal */
-  export interface CompositeBorderEdge {
-    width: number;
-    color: Color;
-  }
+  offset?: Color;
 
-  /** @internal */
-  export interface CompositeBorder {
-    top: CompositeBorderEdge,
-    left: CompositeBorderEdge,
-    right: CompositeBorderEdge,
-    bottom: CompositeBorderEdge,
-  }
+  /** @deprecated */
+  none?: boolean;
+}
+
+/** @internal */
+export interface CompositeBorderEdge {
+  width: number;
+  color: Color;
+}
+
+/** @internal */
+export interface CompositeBorder {
+  top: CompositeBorderEdge,
+  left: CompositeBorderEdge,
+  right: CompositeBorderEdge,
+  bottom: CompositeBorderEdge,
+}
+
+
+/**
+ * style properties applied to a single cell, row, column, or sheet.
+ * when rendering a cell, we composite all styles that might apply.
+ */
+export interface CellStyle {
+
+  /** horizontal align defaults to left */
+  horizontal_align?: HorizontalAlign;
+
+  /** vertical align defaults to bottom */
+  vertical_align?: VerticalAlign;
+
+  /** representation for NaN */
+  nan?: string;
+
+  /** number format, either a symbolic name like "General" or a format string */
+  number_format?: string;
+
+  /** wrap text */
+  wrap?: boolean;
+
+  /** 
+   * font size. we recommend using relative font sizes (either % or em)
+   * which will be relative to the theme font size.
+   */
+  font_size?: FontSize;
+
+  /** font face. this can be a comma-delimited list, like CSS */
+  font_face?: string;
+
+  /** flag */
+  bold?: boolean; // FIXME: switch to weight
+
+  /** flag */
+  italic?: boolean;
+
+  /** flag */
+  underline?: boolean;
+
+  /** flag */
+  strike?: boolean;
+  
+  /** border weight */
+  border_top?: number;
+
+  /** border weight */
+  border_right?: number;
+
+  /** border weight */
+  border_left?: number;
+
+  /** border weight */
+  border_bottom?: number;
+
+  /** text color */
+  text?: Color;
+
+  /** background color */
+  fill?: Color;
+
+  /** border color */
+  border_top_fill?: Color;
+
+  /** border color */
+  border_left_fill?: Color;
+
+  /** border color */
+  border_right_fill?: Color;
+
+  /** border color */
+  border_bottom_fill?: Color;
 
   /**
-   * style properties applied to a cell.
+   * cell is locked for editing
+   * 
+   * @privateRemarks
+   * 
+   * this should properly be in cell, not style -- but we keep 
+   * it here so it can cascade like other styles.
+   * 
    */
-  export interface Properties {
+  locked?: boolean;
 
-    /** horizontal align defaults to left */
-    horizontal_align?: HorizontalAlign;
+}
 
-    /** vertical align defaults to bottom */
-    vertical_align?: VerticalAlign;
+/** @internal */
+export type PropertyKeys = keyof CellStyle;
 
-    /** representation for NaN */
-    nan?: string;
-
-    /** number format, either a symbolic name like "General" or a format string */
-    number_format?: string;
-
-    /** wrap text */
-    wrap?: boolean;
-
-    /** 
-     * font size. we recommend using relative font sizes (either % or em)
-     * which will be relative to the theme font size.
-     */
-    font_size?: FontSize;
-
-    /** font face. this can be a comma-delimited list, like CSS */
-    font_face?: string;
-
-    /** flag */
-    bold?: boolean; // FIXME: switch to weight
-
-    /** flag */
-    italic?: boolean;
-
-    /** flag */
-    underline?: boolean;
-
-    /** flag */
-    strike?: boolean;
-
-    // font_weight?: number;
-    
-    /** border weight */
-    border_top?: number;
-
-    /** border weight */
-    border_right?: number;
-
-    /** border weight */
-    border_left?: number;
-
-    /** border weight */
-    border_bottom?: number;
-
-    // COLORS. there's a new thing with colors where we need to
-    // be able to clear them, in a merge operation. these should
-    // perhaps be an object, but for the time being for colors,
-    // "" in a merge means "remove this property".
-
-    // background?: string;
-    // text_color?: string;
-    
-    //border_top_color?: string;
-    //border_left_color?: string;
-    //border_right_color?: string;
-    //border_bottom_color?: string;
-
-    // changing colors to support styles... starting with text
-
-    /** text color */
-    text?: Color;
-
-    /** background color */
-    fill?: Color;
-
-    /** border color */
-    border_top_fill?: Color;
-
-    /** border color */
-    border_left_fill?: Color;
-
-    /** border color */
-    border_right_fill?: Color;
-
-    /** border color */
-    border_bottom_fill?: Color;
-
-    // NEW
-    // FIXME: change name to editable, default true? (...)
-
-    // this is not properly in style -- should be in cell
-
-    // UPDATE: whether it's appropriate or not, style is a better place
-    // because it can cascade
-
-    /**
-     * cell is locked for editing
-     */
-    locked?: boolean;
-
-  }
-
-  /** @internal */
-  export type PropertyKeys = keyof Style.Properties;
+/** 
+ * (finally) removing the old namespace. we keep this object around for
+ * some internal methods, but all the types have moved to the top-level
+ * of this module and need to be imported separately. 
+ * 
+ * we could theoretically build a backcompat module that re-exports all
+ * the types, but it's probably not necessary -- most updates will just
+ * require a find-and-replace (plus adding some imports).
+ * 
+ * @internal 
+ */
+export const Style = {
 
   /**
    * note that there are no default colors; those should be set
@@ -211,47 +182,29 @@ export namespace Style {
    * 
    * @internal
    */
-  export const DefaultProperties: Properties = {
-    horizontal_align: HorizontalAlign.None,
-    vertical_align: VerticalAlign.None,
+  DefaultProperties: {
+
+    horizontal_align: '',
+    vertical_align: '',
     number_format: 'General', // '0.######',   // use symbolic, e.g. "general"
     nan: 'NaN',
-    // font_size: 10,              // should have units
 
     font_size: { unit: 'pt', value: 10.5 },
     font_face: 'sans-serif',
-
-    /*
-    // font_size_value: 10,
-    // font_size_unit: 'pt',
-    font_size: {
-      unit: 'em', value: 1,
-    },
-
-    font_face: 'times new roman',       // switch to something generic "sans serif"
-    */
 
     bold: false,           // drop "font_"
     italic: false,         // ...
     underline: false,      // ...
     strike: false,         // 
-    // background: 'none',
 
-    // text_color: 'none',
-    // text: 'theme',
-    // text_theme: 0,
     text: { theme: 1 },
-
-    // border_top_color: 'none',
-    // border_left_color: 'none',
-    // border_right_color: 'none',
-    // border_bottom_color: 'none',
     
     border_top: 0,               // adding defaults so these prune propery
     border_left: 0,
     border_right: 0,
     border_bottom: 0,
-  };
+
+  } as CellStyle,
 
   /**
    * this is a utility function for callers that use borders, to
@@ -259,7 +212,7 @@ export namespace Style {
    * 
    * @internal
    */
-  export const CompositeBorders = (style: Properties): CompositeBorder => {
+  CompositeBorders: (style: CellStyle): CompositeBorder => {
     return {
       top: {
         width: style.border_top || 0,
@@ -278,17 +231,7 @@ export namespace Style {
         color: style.border_bottom_fill || {},
       },
     };
-  };
-
-  /* *
-   * this version of merge is used to support explicit deletes, via
-   * "undefined" properties. we use a trick via JSON to skip iterating
-   * properties (I believe this is faster, but have not tested).
-   * /
-  export const Merge2 = (dest: Properties, src: Properties): Properties => {
-    return JSON.parse(JSON.stringify({...dest, ...src}));
-  }
-  */
+  },
 
   /**
    * merge. returns a new object, does not update dest in place.
@@ -297,80 +240,33 @@ export namespace Style {
    * 
    * @internal
    */
-  export const Merge = (dest: Properties, src: Properties, delta = true): Properties => {
-    const properties: Properties = delta ? {...dest, ...src} : {...src};
+  Merge: (dest: CellStyle, src: CellStyle, delta = true): CellStyle => {
+    const properties: CellStyle = delta ? {...dest, ...src} : {...src};
     return JSON.parse(JSON.stringify(properties));
-  };
+  },
 
   /** @internal */
-  export const Composite = (list: Properties[]): Properties => {
+  Composite: (list: CellStyle[]): CellStyle => {
     return JSON.parse(JSON.stringify(list.reduce((composite, item) => ({...composite, ...item}), {})));
-  };
+  },
 
   /** @internal */
-  export const Empty = (style: Properties): boolean => {
+  Empty: (style: CellStyle): boolean => {
     return JSON.stringify(style) === empty_json;
-  };
+  },
 
-  /** @internal */
-  export const ValidColor = (color?: Color): boolean => {
+  /** 
+   * this looks like a type guard, we should switch to a union
+   * type and then add real type guards
+   * 
+   * @internal 
+   */
+  ValidColor: (color?: Color): boolean => {
     return !!(color && (!color.none) && (color.text || color.theme || color.theme === 0));
-  };
-
-  /*
-  export const Prune = (style: Properties): void => {
-
-    // text default is theme 0, so we can remove that if we see it. 
-    // same for borders, we can group
-
-    if (style.text && !style.text.text && !style.text.theme) {
-      style.text = undefined;
-    }
-
-    if (style.border_top_fill && !style.border_top_fill.text && !style.border_top_fill.theme) {
-      style.border_top_fill = undefined;
-    }
-
-    if (style.border_left_fill && !style.border_left_fill.text && !style.border_left_fill.theme) {
-      style.border_left_fill = undefined;
-    }
-
-    if (style.border_right_fill && !style.border_right_fill.text && !style.border_right_fill.theme) {
-      style.border_right_fill = undefined;
-    }
-
-    if (style.border_bottom_fill && !style.border_bottom_fill.text && !style.border_bottom_fill.theme) {
-      style.border_bottom_fill = undefined;
-    }
-
-    // background has no default, so check for 0
-    if (style.fill && !style.fill.text && !style.fill.theme && style.fill.theme !== 0) {
-      style.fill = undefined;
-    }
-
-  };
-  */
- 
-  /* *
-   * overlay. will always put defaults at the bottom.
-   * /
-  export const Composite = (list: Properties[]) => {
-    return list.reduce((composite, item) => ({...composite, ...item}),
-      {...DefaultProperties});
-  };
-
-  / * *
-   * modify default properties. useful for theming.
-   * /
-  export const UpdateDefaultProperties = (opts: Properties) => {
-    DefaultProperties = {
-      ...DefaultProperties, ...opts,
-    };
-  };
-  */
+  },
 
   /** @internal */
-  export const ParseFontSize = (text = '', default_unit = 'em'): Properties => {
+   ParseFontSize: (text = '', default_unit = 'em'): CellStyle => {
     const match = text.match(/(-*[\d.]+)\s*(\S*)/);
 
     if (match) {
@@ -388,7 +284,7 @@ export namespace Style {
     }
 
     return {};
-  };
+  },
 
   /**
    * returns the font size of the properties argument as a ratio of the 
@@ -405,7 +301,7 @@ export namespace Style {
    * 
    * @internal
    */
-  export const RelativeFontSize = (properties: Properties, base: Properties): number => {
+  RelativeFontSize: (properties: CellStyle, base: CellStyle): number => {
 
     // we can assume (I think) that base will be either points or px; 
     // there's no case where it should be relative. in fact, let's treat
@@ -455,10 +351,10 @@ export namespace Style {
 
     return props_pt / base_pt;
     
-  };
+  },
 
   /** @internal */
-  export const FontSize = (properties: Properties, prefer_points = true): string => {
+  FontSize: (properties: CellStyle, prefer_points = true): string => {
 
     const value = properties.font_size?.value;
 
@@ -482,34 +378,15 @@ export namespace Style {
     }
 
     return '';
-  };
+  },
 
   /**
    * returns a string representation suitable for canvas (or style)
-   * 
-   * @internal
    */
-  export const Font = (properties: Properties, scale = 1) => {
-
-    /*
-    let font_size = properties.font_size;
-    if (typeof font_size === 'number') {
-      font_size = (font_size * scale) + 'pt';
-    }
-    else if (font_size && scale !== 1) {
-      const font_parts = font_size.match(/^([\d\.]+)(\D*)$/);
-      if (font_parts) {
-        font_size = (Number(font_parts[1]) * scale) + font_parts[2];
-      }
-    }
-    */
+  Font: (properties: CellStyle, scale = 1) => {
 
     const parts: string[] = [];
 
-    //if (properties.font_weight) {
-    //  parts.push(properties.font_weight.toString());
-    //}
-    //else 
     if (properties.bold) {
       parts.push('bold');
     }
@@ -524,22 +401,7 @@ export namespace Style {
     parts.push(properties.font_face || '');
 
     return parts.join(' ');
-
-    /*
-    // console.info("FS", font_size);
-
-    if (properties.font_weight) {
-      return (properties.font_weight + ' ')
-        + (properties.font_italic ? 'italic ' : '')
-        + font_size + ' ' + properties.font_face;
-    }
-    else {
-      return (properties.font_bold ? 'bold ' : '')
-        + (properties.font_italic ? 'italic ' : '')
-        + font_size + ' ' + properties.font_face;
-    }
-    */
    
-  };
+  },
 
-}
+};

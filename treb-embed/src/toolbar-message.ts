@@ -1,5 +1,5 @@
 
-import type { Style } from 'treb-base-types';
+import type { Style, Color } from 'treb-base-types';
 
 /* 
  * this is an attempt to lock down toolbar commands, and better 
@@ -9,7 +9,7 @@ import type { Style } from 'treb-base-types';
 
 export interface SetColorToolbarMessage {
   command: 'fill-color'|'text-color'|'border-color';
-  color?: Style.Color
+  color?: Color
 }
 
 export interface CommentToolbarMessage {
@@ -19,7 +19,7 @@ export interface CommentToolbarMessage {
 
 export interface BorderToolbarMessage {
   command: 'border-top'|'border-bottom'|'border-left'|'border-right'|'border-all'|'border-outside'|'border-none'|'border-double-bottom';
-  color?: Style.Color;
+  color?: Color;
 }
 
 export interface AnnotationToolbarMessage {

@@ -20,7 +20,7 @@
  */
 
 import type { Cell, ICellAddress, ICellAddress2, UnionValue,
-         ArrayUnion, IArea, FlatCellData} from 'treb-base-types';
+         ArrayUnion, IArea, CellDataWithAddress} from 'treb-base-types';
 import { Localization, Area, ValueType, IsCellAddress} from 'treb-base-types';
          
 import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier } from 'treb-parser';
@@ -855,10 +855,10 @@ export class Calculator extends Graph {
    * so the leader does the calculation and then we broadcast calculated
    * values to followers.
    */
-  public ExportCalculatedValues(): Record<number, FlatCellData[]> {
+  public ExportCalculatedValues(): Record<number, CellDataWithAddress[]> {
     const data: any = {};
     for (const sheet of this.model.sheets.list) {
-      const calculated = sheet.cells.toJSON({calculated_value: true}).data as FlatCellData[];
+      const calculated = sheet.cells.toJSON({calculated_value: true}).data as CellDataWithAddress[];
       data[sheet.id] = calculated.filter(test => test.calculated !== undefined);
     }
     return data;
@@ -874,7 +874,7 @@ export class Calculator extends Graph {
    * note that we're checking for list mismatch in one direction but not the 
    * other direction. should probably check both.
    */
-  public ApplyCalculatedValues(data: Record<number, FlatCellData[]>): void {
+  public ApplyCalculatedValues(data: Record<number, CellDataWithAddress[]>): void {
     for (const sheet of this.model.sheets.list) {
       const cells = data[sheet.id];
       if (!cells) {

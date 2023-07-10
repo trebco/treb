@@ -21,7 +21,10 @@
 
 // --- treb imports -----------------------------------------------------------
 
-import { ValueType, Cells, Style,
+import { ValueType, Cells, Style, 
+  type CellStyle, 
+  type PropertyKeys,
+  type Color,
   Area, IsFlatDataArray, 
   IsNestedRowArray, IsCellAddress
 } from 'treb-base-types';
@@ -30,7 +33,7 @@ import { Measurement, ValidateURI } from 'treb-utils';
 
 import type { TextPart ,
   Cell, ICellAddress, CellSerializationOptions, CellValue, ImportedSheetData, Complex, 
-  DimensionedQuantity, IArea, Table, TableTheme} from 'treb-base-types';
+  DimensionedQuantity, IArea, Table, TableTheme, HorizontalAlign, VerticalAlign} from 'treb-base-types';
 
 // --- local imports ----------------------------------------------------------
 
@@ -54,7 +57,7 @@ interface CellStyleRef {
   row: number;
   column: number;
   ref?: number;
-  style?: Style.Properties;
+  style?: CellStyle;
   rows?: number;
 }
 
@@ -93,7 +96,7 @@ export class Sheet {
    * because it's a reference, it should be constant.
    * FIXME: move to model...
    */
-  public readonly default_style_properties: Style.Properties;
+  public readonly default_style_properties: CellStyle;
 
   /* moved from grid */
   public annotations: Annotation[] = [];
@@ -188,7 +191,7 @@ export class Sheet {
   // we cache composite styles so we don't wind up with objects
   // for every cell, when all we need is a single reference.
 
-  private style_map: Style.Properties[] = [];
+  private style_map: CellStyle[] = [];
 
   // we use json for comparison. it should be faster than the alternative
   // (even if that doesn't make sense).
@@ -202,13 +205,13 @@ export class Sheet {
   // there's a default at the bottom that gets applied to everything.
   // (in Style). above that, we have the sheet style
 
-  private sheet_style: Style.Properties = {};
+  private sheet_style: CellStyle = {};
 
   // then individual (applied) row and column styles (indexed by row/column)
 
-  private row_styles: Record<number, Style.Properties> = {};
+  private row_styles: Record<number, CellStyle> = {};
 
-  private column_styles: Record<number, Style.Properties> = {};
+  private column_styles: Record<number, CellStyle> = {};
 
   /* 
   we used to have "alternate row" styles. it's clumsy, but it is a nice
@@ -218,12 +221,12 @@ export class Sheet {
   just rows atm, not columns.
   */
 
-  private row_pattern: Style.Properties[] = [];
+  private row_pattern: CellStyle[] = [];
 
   // and finally any cell-specific styles. [FIXME: this is sparse]
   // [why FIXME? sparse is OK in js]
 
-  private cell_style: Style.Properties[][] = [];
+  private cell_style: CellStyle[][] = [];
 
   // --- accessors ------------------------------------------------------------
 
@@ -251,7 +254,7 @@ export class Sheet {
   /**
    * constructor is now protected. use a factory method (Blank or FromJSON).
    */
-  protected constructor(theme_style_properties: Style.Properties) {
+  protected constructor(theme_style_properties: CellStyle) {
 
     this.default_style_properties = theme_style_properties;
 
@@ -275,7 +278,7 @@ export class Sheet {
   /**
    * factory method creates a new sheet
    */
-  public static Blank(style_defaults: Style.Properties, name?: string, rows = 30, columns = 20): Sheet {
+  public static Blank(style_defaults: CellStyle, name?: string, rows = 30, columns = 20): Sheet {
 
     const sheet = new Sheet(style_defaults);
 
@@ -293,24 +296,24 @@ export class Sheet {
    * update old-style alignment constants to the new symbolic values.
    * updates in place.
    */
-  public static UpdateStyle(properties: Style.Properties) {
+  public static UpdateStyle(properties: CellStyle) {
 
     if (typeof properties.horizontal_align === 'number') {
-      const members = [
-        Style.HorizontalAlign.None,
-        Style.HorizontalAlign.Left,
-        Style.HorizontalAlign.Center,
-        Style.HorizontalAlign.Right,
+      const members: HorizontalAlign[] = [
+        '',       // Style.HorizontalAlign.None,
+        'left',   // Style.HorizontalAlign.Left,
+        'center', // Style.HorizontalAlign.Center,
+        'right',  // Style.HorizontalAlign.Right,
       ]
       properties.horizontal_align = members[properties.horizontal_align] || undefined;
     }
 
     if (typeof properties.vertical_align === 'number') {
-      const members = [
-        Style.VerticalAlign.None,
-        Style.VerticalAlign.Top,
-        Style.VerticalAlign.Bottom,
-        Style.VerticalAlign.Middle,
+      const members: VerticalAlign[] = [
+        '',       // Style.VerticalAlign.None,
+        'top',    // Style.VerticalAlign.Top,
+        'bottom', // Style.VerticalAlign.Bottom,
+        'middle', // Style.VerticalAlign.Middle,
       ]
       properties.vertical_align = members[properties.vertical_align] || undefined;
     }
@@ -326,7 +329,7 @@ export class Sheet {
    * @param hints UpdateHints supports partial deserialization/replacement
    * if we know there are only minor changes (as part of undo/redo, probably)
    */
-  public static FromJSON(json: string | Partial<SerializedSheet>, style_defaults: Style.Properties, sheet?: Sheet): Sheet {
+  public static FromJSON(json: string | Partial<SerializedSheet>, style_defaults: CellStyle, sheet?: Sheet): Sheet {
 
     const source: SerializedSheet = (typeof json === 'string') ?
       JSON.parse(json) : json as SerializedSheet;
@@ -366,14 +369,14 @@ export class Sheet {
     // we don't need to do it on every parse, which also happens on 
     // undo and some other things.
 
-    const patch_style = (style: Style.Properties) => {
+    const patch_style = (style: CellStyle) => {
 
       // this part is for back compat with older color schemes, it 
       // could theoretically come out if we don't care (or maybe have a tool)
 
       // UPDATE for updated font properties
 
-      const ref = (style as Style.Properties & {
+      const ref = (style as CellStyle & {
         text_color?: string;
         background?: string;
         border_top_color?: string;
@@ -597,7 +600,7 @@ export class Sheet {
     sheet.column_styles = {};
     sheet.row_styles = {};
 
-    const MapStyles = (source_list: Record<number, number | Style.Properties>, target_list: Record<number, Style.Properties>) => {
+    const MapStyles = (source_list: Record<number, number | CellStyle>, target_list: Record<number, CellStyle>) => {
 
       for (const key of Object.keys(source_list)) {
         const index = Number(key);
@@ -788,7 +791,7 @@ export class Sheet {
    * canvas won't work if there's no DOM but it's OK if this method fails in
    * that case; the only question is will it break if it's running headless?
    */
-  public StyleFontSize(style: Style.Properties, default_properties: Style.Properties = {}): number {
+  public StyleFontSize(style: CellStyle, default_properties: CellStyle = {}): number {
 
     let font_height = (style.font_size?.value || 0);
 
@@ -933,7 +936,7 @@ export class Sheet {
    * property values from B.
    * 
    * this is the function I could never get to work inline for 
-   * Style.Properties -- not sure why it works better with a generic 
+   * CellStyle -- not sure why it works better with a generic 
    * function (although the partial here is new, so maybe it's that?)
    *
    * seems to be related to
@@ -993,7 +996,7 @@ export class Sheet {
    * @param delta merge with existing properties (we will win conflicts)
    * @param inline this is part of another operation, don't do any undo/state updates
    */
-  public UpdateCellStyle(address: ICellAddress, properties: Style.Properties, delta = true): void {
+  public UpdateCellStyle(address: ICellAddress, properties: CellStyle, delta = true): void {
 
     // so what this is doing is constructing two merge stacks: one including
     // the cell style, and one without. any deltas among the two are the cell
@@ -1066,7 +1069,7 @@ export class Sheet {
    * @param delta
    * @param render LEGACY PARAMETER NOT USED
    */
-  public UpdateAreaStyle(area?: Area, style: Style.Properties = {}, delta = true): void {
+  public UpdateAreaStyle(area?: Area, style: CellStyle = {}, delta = true): void {
 
     if (!area) return;
 
@@ -1206,8 +1209,8 @@ export class Sheet {
    * move it here so we can inline the next/previous loops.
    * 
    */
-  public SurroundingStyle(address: ICellAddress, table?: TableTheme): Style.Properties[] {
-    const map: Style.Properties[] = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
+  public SurroundingStyle(address: ICellAddress, table?: TableTheme): CellStyle[] {
+    const map: CellStyle[] = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}];
 
     // FIXME: what about merges? (...)
 
@@ -1260,7 +1263,7 @@ export class Sheet {
    * and we don't preserve the style.
    * 
    */
-  public CellStyleData(address: ICellAddress, default_table_theme?: TableTheme): Style.Properties | undefined {
+  public CellStyleData(address: ICellAddress, default_table_theme?: TableTheme): CellStyle | undefined {
 
     // don't create if it doesn't exist
     const cell = this.cells.GetCell(address);
@@ -1328,7 +1331,7 @@ export class Sheet {
    * accessor to get cell style without row pattern -- for cut/copy
    * @param address 
    */
-  public GetCopyStyle(address: ICellAddress): Style.Properties {
+  public GetCopyStyle(address: ICellAddress): CellStyle {
     return this.CompositeStyleForCell(address, true, false);
   }
 
@@ -1526,7 +1529,7 @@ export class Sheet {
    * UPDATE: since the only caller calls with inline = true, removing 
    * parameter, test, and extra behavior.
    */
-  public AutoSizeRow(row: number, default_properties: Style.Properties = {}, allow_shrink = true): void {
+  public AutoSizeRow(row: number, default_properties: CellStyle = {}, allow_shrink = true): void {
 
     let height = this.default_row_height;
     const padding = 9; // 9?
@@ -1607,7 +1610,7 @@ export class Sheet {
   */
 
   /** returns the style properties for a given style index */
-  public GetStyle(index: number): Style.Properties {
+  public GetStyle(index: number): CellStyle {
     return this.style_map[index];
   }
 
@@ -1757,7 +1760,7 @@ export class Sheet {
     // row styles
 
     const row_keys = Object.keys(this.row_styles);
-    const new_row_style: Record<number, Style.Properties> = {};
+    const new_row_style: Record<number, CellStyle> = {};
 
     row_keys.forEach((key) => {
       const index = Number(key);
@@ -1786,7 +1789,7 @@ export class Sheet {
 
       if (column && column.length >= before_row) {
         // eslint-disable-next-line prefer-spread
-        column.splice.apply(column, args as [number, number, Style.Properties]);
+        column.splice.apply(column, args as [number, number, CellStyle]);
       }
     });
 
@@ -1889,7 +1892,7 @@ export class Sheet {
     // column styles
 
     const column_keys = Object.keys(this.column_styles);
-    const new_column_style: Record<number, Style.Properties> = {};
+    const new_column_style: Record<number, CellStyle> = {};
 
     column_keys.forEach((key) => {
       const index = Number(key);
@@ -1913,7 +1916,7 @@ export class Sheet {
     }
 
     // eslint-disable-next-line prefer-spread
-    this.cell_style.splice.apply(this.cell_style, args as [number, number, Style.Properties[]]);
+    this.cell_style.splice.apply(this.cell_style, args as [number, number, CellStyle[]]);
 
     // row heights
 
@@ -2067,7 +2070,7 @@ export class Sheet {
    * to style (for API access). there was an old GetCellStyle function
    * for rendering, but that's been removed (control+F for info).
    */
-  public GetCellStyle(area: ICellAddress|IArea, apply_theme = false): Style.Properties|Style.Properties[][] {
+  public GetCellStyle(area: ICellAddress|IArea, apply_theme = false): CellStyle|CellStyle[][] {
 
     if (IsCellAddress(area)) {
       return this.CompositeStyleForCell(area, true, false, apply_theme);
@@ -2077,10 +2080,10 @@ export class Sheet {
       return this.CompositeStyleForCell(area.start, true, false, apply_theme);
     }
 
-    const result: Style.Properties[][] = [];
+    const result: CellStyle[][] = [];
 
     for (let r = area.start.row; r <= area.end.row; r++) {
-      const row: Style.Properties[] = [];
+      const row: CellStyle[] = [];
       for (let c = area.start.column; c <= area.end.column; c++) {
         // const cell = this.CellData({row: r, column: c});
         // row.push(cell.style || {});
@@ -2153,7 +2156,7 @@ export class Sheet {
     number_format_map: Record<string, number>,
   ): void {
 
-    const parse = (style: Style.Properties) => {
+    const parse = (style: CellStyle) => {
 
       if (style.number_format) {
         number_format_map[style.number_format] = 1;
@@ -2346,7 +2349,7 @@ export class Sheet {
     /**
      * this assumes that "empty" style is at index 0
      */
-    const StyleToRef = (style: Style.Properties) => {
+    const StyleToRef = (style: CellStyle) => {
 
       const style_as_json = JSON.stringify(style);
       if (style_as_json === empty_json) {
@@ -2377,11 +2380,11 @@ export class Sheet {
     // using records (objects) converts keys to strings, which is sloppy.
 
 
-    // const column_style: Array<number|Style.Properties> = [];
-    // const row_style: Array<number|Style.Properties> = [];
+    // const column_style: Array<number|CellStyle> = [];
+    // const row_style: Array<number|CellStyle> = [];
 
-    const column_style: Record<number, Style.Properties | number> = {};
-    const row_style: Record<number, Style.Properties | number> = {};
+    const column_style: Record<number, CellStyle | number> = {};
+    const row_style: Record<number, CellStyle | number> = {};
 
     for (const key of Object.keys(this.column_styles)) {
       const index = Number(key);
@@ -2417,8 +2420,8 @@ export class Sheet {
       return undefined;
     }
 
-    const translate_border_fill = (color: Style.Color = {}, default_color: Style.Color = {}) => {
-      const result: Style.Color = {
+    const translate_border_fill = (color: Color = {}, default_color: Color = {}) => {
+      const result: Color = {
         ...default_color,
         ...color,
       };
@@ -2434,7 +2437,7 @@ export class Sheet {
 
     // translate, if necessary
     if (options.export_colors) {
-      const style_list: Style.Properties[] = [];
+      const style_list: CellStyle[] = [];
       for (const group of [
         //row_style, column_style, // these are moved -> csr (which should be renamed)
         cell_style_refs, [sheet_style], row_pattern]) {
@@ -2446,7 +2449,7 @@ export class Sheet {
         }
       }
 
-      for (const style of style_list as Style.Properties[]) {
+      for (const style of style_list as CellStyle[]) {
 
         // don't set "undefined" overrides. also, was this broken 
         // wrt all the defaults from top? probably
@@ -2854,14 +2857,14 @@ export class Sheet {
    * expect that the unbold style will control. instead of explicitly setting
    * the cell style, we go up the chain and remove any matching properties.
    */
-  private UpdateSheetStyle(properties: Style.Properties, delta = true) {
+  private UpdateSheetStyle(properties: CellStyle, delta = true) {
 
     this.sheet_style = Style.Merge(this.sheet_style, properties, delta);
 
     // reverse-override...
 
     // const keys = Object.keys(properties);
-    const keys = Object.keys(properties) as Style.PropertyKeys[];
+    const keys = Object.keys(properties) as PropertyKeys[];
     // const keys = Object.keys(this.sheet_style) as Style.PropertyKeys[];
 
     for (const style_column of this.cell_style) {
@@ -2895,7 +2898,7 @@ export class Sheet {
    * there's an overriding column property (columns have priority), we will
    * need to update the cell property to match the desired output.
    */
-  private UpdateRowStyle(row: number, properties: Style.Properties, delta = true) {
+  private UpdateRowStyle(row: number, properties: CellStyle, delta = true) {
 
     this.row_styles[row] = Style.Merge(this.row_styles[row] || {}, properties, delta);
 
@@ -2903,7 +2906,7 @@ export class Sheet {
     // (we can do this in-place)
 
     // const keys = Object.keys(properties);
-    const keys = Object.keys(properties) as Style.PropertyKeys[];
+    const keys = Object.keys(properties) as PropertyKeys[];
     // const keys = Object.keys(this.row_styles[row]) as Style.PropertyKeys[];
 
     for (const column of this.cell_style) {
@@ -2952,7 +2955,7 @@ export class Sheet {
     for (let i = 0; i < this.cells.columns; i++) {
       if (this.column_styles[i]) {
         const column_style = this.column_styles[i];
-        const overrides: Style.Properties = this.cell_style[i] ? this.cell_style[i][row] || {} : {};
+        const overrides: CellStyle = this.cell_style[i] ? this.cell_style[i][row] || {} : {};
 
         for (const key of keys) {
           if (typeof column_style[key] !== 'undefined') {
@@ -2998,7 +3001,7 @@ export class Sheet {
   /**
    * updates column properties. reverse-overrides cells (@see UpdateSheetStyle).
    */
-  private UpdateColumnStyle(column: number, properties: Style.Properties, delta = true) {
+  private UpdateColumnStyle(column: number, properties: CellStyle, delta = true) {
 
     this.column_styles[column] = Style.Merge(this.column_styles[column] || {}, properties, delta);
 
@@ -3028,7 +3031,7 @@ export class Sheet {
 
     // reverse-override... I think we only need to override _cell_ values.
 
-    const keys = Object.keys(properties) as Style.PropertyKeys[];
+    const keys = Object.keys(properties) as PropertyKeys[];
     // const keys = Object.keys(this.column_styles[column]) as Style.PropertyKeys[];
 
     if (this.cell_style[column]) {
@@ -3057,7 +3060,7 @@ export class Sheet {
   private CompositeStyleForCell(address: ICellAddress, apply_cell_style = true, apply_row_pattern = true, apply_default = true) {
 
     const { row, column } = address;
-    const stack: Style.Properties[] = [];
+    const stack: CellStyle[] = [];
     
     if (apply_default) {
       stack.push(this.default_style_properties);
@@ -3088,7 +3091,7 @@ export class Sheet {
   /**
    * can we use the rendered JSON as a key, instead? 
    */
-  private GetStyleIndex(style: Style.Properties) {
+  private GetStyleIndex(style: CellStyle) {
 
     const json = JSON.stringify(style);
 

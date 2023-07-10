@@ -79,6 +79,11 @@ export interface ViewData {
 
 }
 
+export interface ImageSize {
+  width: number; 
+  height: number;
+}
+
 export interface ImageAnnotationData {
   src: string;
 
@@ -88,10 +93,8 @@ export interface ImageAnnotationData {
    */
   scale: string; 
   
-  original_size: { 
-    width: number; 
-    height: number;
-  };
+  original_size: ImageSize;
+  
 }
 
 export type AnnotationType = 'treb-chart'|'image'|'external';

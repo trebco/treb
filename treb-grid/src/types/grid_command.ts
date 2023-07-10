@@ -19,7 +19,7 @@
  * 
  */
 
-import type { ICellAddress, IArea, Style, CellValue, Table, TableSortType, TableTheme } from 'treb-base-types';
+import type { ICellAddress, IArea, Style, CellStyle, Color, CellValue, Table, TableSortType, TableTheme } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import type { BorderConstants } from './border_constants';
 
@@ -268,7 +268,7 @@ export interface UpdateBordersCommand {
   area: IArea;
   borders: BorderConstants;
   // color?: string; // pending
-  color?: Style.Color;
+  color?: Color;
 
   /** defaults to one. optional for the case of "none" (remove borders) */
   width?: number;
@@ -278,7 +278,7 @@ export interface UpdateBordersCommand {
 export interface UpdateStyleCommand {
   key: CommandKey.UpdateStyle;
   area: IArea|ICellAddress;
-  style: Style.Properties;
+  style: CellStyle;
   delta?: boolean;
 }
 

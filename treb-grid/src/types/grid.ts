@@ -28,6 +28,8 @@ import type {
   ICellAddress,
   ImportedSheetData,
   Complex,
+  Color,
+  CellStyle,
   IRectangle} from 'treb-base-types';
   
 import {
@@ -1670,7 +1672,7 @@ export class Grid extends GridBase {
    * @param range 
    * @returns 
    */
-  public GetRangeStyle(range: ICellAddress|IArea, apply_theme = false): Style.Properties|Style.Properties[][]|undefined {
+  public GetRangeStyle(range: ICellAddress|IArea, apply_theme = false): CellStyle|CellStyle[][]|undefined {
 
     let sheet_id = 0;
 
@@ -1879,7 +1881,7 @@ export class Grid extends GridBase {
    *
    * API method
    */
-  public ApplyStyle(area?: Area, properties: Style.Properties = {}, delta = true): void {
+  public ApplyStyle(area?: Area, properties: CellStyle = {}, delta = true): void {
 
     if (!area) {
       if (this.primary_selection.empty) {
@@ -1949,7 +1951,7 @@ export class Grid extends GridBase {
   */
 
   /** updated API method, probably change the name */
-  public ApplyBorders2(area?: Area, borders: BorderConstants = BorderConstants.None, color?: Style.Color, width = 1): void {
+  public ApplyBorders2(area?: Area, borders: BorderConstants = BorderConstants.None, color?: Color, width = 1): void {
 
     if (!area) {
       if (this.primary_selection.empty) { return; }
@@ -4086,7 +4088,7 @@ export class Grid extends GridBase {
     }
 
     const data: CellValue[][] = [];
-    let style: Style.Properties[][] = [];
+    let style: CellStyle[][] = [];
 
     let source_columns = source_area.columns;
     let target_rows = target_area.rows;
@@ -4453,8 +4455,8 @@ export class Grid extends GridBase {
       }
       else {
 
-        const applied_style: Style.Properties = {};
-        const selected_style: Style.Properties =
+        const applied_style: CellStyle = {};
+        const selected_style: CellStyle =
           this.primary_selection.empty ? {} :
             this.active_sheet.CellData(this.primary_selection.target).style || {};
 
@@ -4932,7 +4934,7 @@ export class Grid extends GridBase {
               if (this.active_sheet.HasCellStyle({ ...address })) {
                 const test = this.active_sheet.CellData({ ...address });
                 if (test.style && test.style.number_format) {
-                  const style: Style.Properties = {
+                  const style: CellStyle = {
                     number_format: test.style.number_format,
                   };
                   // if (array) this.model.sheet.UpdateAreaStyle(selection.area, style, true, true);

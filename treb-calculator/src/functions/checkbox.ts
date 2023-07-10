@@ -40,22 +40,22 @@ export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResul
   
     if (cell.style) {
       switch (cell.style.vertical_align) {
-        case Style.VerticalAlign.Top:
+        case 'top': // Style.VerticalAlign.Top:
           box.y = offset;
           break;
   
-        case Style.VerticalAlign.Middle:
+        case 'middle': // Style.VerticalAlign.Middle:
           box.y = Math.round((height - scaled) / 2);
           break;
     
       }
   
       switch (cell.style.horizontal_align) {
-        case Style.HorizontalAlign.Right:
+        case 'right': // Style.HorizontalAlign.Right:
           box.x = Math.round(width - offset - scaled);
           break;
   
-        case Style.HorizontalAlign.Center:
+        case 'center': // Style.HorizontalAlign.Center:
           box.x = Math.round((width - scaled) / 2);
           break;
   
@@ -87,11 +87,11 @@ export const RenderCheckbox = (options: RenderFunctionOptions): RenderFunctionRe
 
   if (cell.style) {
     switch (cell.style.vertical_align) {
-      case Style.VerticalAlign.Top:
+      case 'top': // Style.VerticalAlign.Top:
         y = offset;
         break;
 
-      case Style.VerticalAlign.Middle:
+      case 'middle': // Style.VerticalAlign.Middle:
         y = // Math.round
           ((height - scaled) / 2);
         break;
@@ -99,12 +99,12 @@ export const RenderCheckbox = (options: RenderFunctionOptions): RenderFunctionRe
     }
 
     switch (cell.style.horizontal_align) {
-      case Style.HorizontalAlign.Right:
+      case 'right': // Style.HorizontalAlign.Right:
         x = // Math.round
           (width - offset - scaled);
         break;
 
-      case Style.HorizontalAlign.Center:
+      case 'center': // Style.HorizontalAlign.Center:
         x = // Math.round
           ((width - scaled) / 2);
         break;
