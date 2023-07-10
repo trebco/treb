@@ -8,7 +8,13 @@
 @import './treb-icons.scss';
 @import './toolbar.scss';
 
-.treb-main {
+/*
+ * switching to a double-selector to increase specificity. the particular
+ * issue we were running into was some general :where ... :is selectors that 
+ * were breaking into our styles. this is not optimal but it does prevent
+ * at least inadvertent overrides.
+ */
+.treb-main.treb-main {
 
   /*============================================================================
    *
@@ -58,7 +64,7 @@
 
   font-family: var(--treb-default-font, system-ui, $font-stack);
 
-  div, button, input, ul, ol, li, a, textarea {
+  div, button, input, ul, ol, li, a, textarea, svg {
 
     // maybe this is being too aggressive. we could be a little 
     // more specific about what we unset in order to avoid any 
@@ -70,6 +76,11 @@
     font-family: var(--treb-default-font, system-ui, $font-stack);
 
   }
+
+  // addressing some specific problems... increased specificity
+
+  // &.treb-main svg { all: revert; }
+  // &.treb-main div { margin: revert; }
 
   /**
    * this is kind of a global property but we don't actually want
