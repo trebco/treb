@@ -38,6 +38,13 @@
  * UPDATE: back to sass, but still using this file (compiles fine)
  */
 
+ .treb-main.treb-main .treb-chart, .treb-chart {
+
+  // this was getting lost by the new higher-specificity reset
+  background: var(--treb-chart-background, #fff);
+
+}
+
 
 /* container style */
 .treb-chart {
@@ -48,7 +55,7 @@
    * of times we have to define the same colors.
    */
 
-  background: var(--treb-chart-background, #fff);
+  // moved // background: var(--treb-chart-background, #fff);
 
   .series-1  { color: var(--treb-chart-color-series-1,  #80B1D3); }
   .series-2  { color: var(--treb-chart-color-series-2,  #8DD3C7); }
