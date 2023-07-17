@@ -811,6 +811,33 @@ export class Calculator extends Graph {
         },
       },
 
+
+  /** not sure when this one appeared, but it's what I was looking for */
+      FormulaText: {
+        description: 'Returns a formula as a string',
+        arguments: [
+          { name: 'reference', description: 'Cell reference', metadata: true, },
+        ],
+        fn: Utilities.ApplyAsArray((reference: UnionValue): UnionValue => {
+
+          if (!UnionIsMetadata(reference)) {
+            return ReferenceError();
+          }
+
+          const sheet = this.model.sheets.Find(reference.value?.address?.sheet_id || 0);
+          if (sheet) {
+            const cell = sheet.cells.GetCell(reference.value.address, false);
+            return { 
+              type: ValueType.string, 
+              value: cell?.value?.toString() || '',
+            };
+          }
+          
+          return ReferenceError();
+
+        }),
+      },
+
       /**
        * this should be in the 'information' library but it needs reference
        * to the underlying cell (unresolved)
