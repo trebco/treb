@@ -2410,17 +2410,7 @@ export class EmbeddedSpreadsheet {
       }
 
       if (blob) {
-
-        /*
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename + '.xlsx';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        // FileSaver.saveAs(blob, filename + '.xlsx', { autoBom: false });
-        */
         this.SaveAs(blob, filename + '.xlsx');
-
         this.last_save_version = this.file_version; // even though it's an export, consider it clean
       }
 
