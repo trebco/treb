@@ -887,6 +887,9 @@ export class EmbeddedSpreadsheet {
       if (data) {
         this.LoadDocument(data as TREBDocument, { recalculate: !!this.options.recalculate, source});
       }
+      else {
+        this.UpdateDocumentStyles();
+      }
     }
     else if (!network_document) {
 
@@ -894,6 +897,7 @@ export class EmbeddedSpreadsheet {
       // and the calculator, which would otherwise happen on document load
 
       this.calculator.RebuildClean(true);
+      this.UpdateDocumentStyles();
 
     }
 
