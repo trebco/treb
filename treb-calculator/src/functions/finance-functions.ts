@@ -23,6 +23,8 @@ import type { FunctionMap } from '../descriptors';
 import { type CellValue, type UnionValue, ValueType } from 'treb-base-types';
 import { FlattenUnboxed } from '../utilities';
 
+import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError } from '../function-error';
+
 // use a single, static object for base functions
 
 /**
@@ -112,6 +114,127 @@ export const FinanceFunctionLibrary: FunctionMap = {
         type: ValueType.number, value: result,
       }
     }
+  },
+
+  XIRR: {
+    arguments: [
+      { name: 'Values', },
+      { name: 'Dates', },
+      { name: 'Guess', default: .1 },
+    ],
+    fn: (input_values: CellValue[], input_dates: CellValue[], guess = .1): UnionValue => {
+
+      input_values = FlattenUnboxed(input_values);
+      input_dates = FlattenUnboxed(input_dates);
+
+      // some validation...
+
+      if (input_values.length !== input_dates.length) {
+        return ArgumentError();
+      }
+
+      let positive = 0;
+      let negative = 0;
+
+      const values: number[] = [];
+
+      for (const value of input_values) {
+        if (typeof value !== 'number') {
+          // console.info('value not number', value);
+          return ArgumentError();
+        }
+        if (value > 0) { positive++; }
+        if (value < 0) { negative++; }
+
+        values.push(value);
+      }
+
+      if (positive <= 0 || negative <= 0) {
+        // console.info('invalid -/+ count', positive, negative);
+        return ArgumentError();
+      }
+
+      const dates: number[] = [];
+
+      //
+      // "Numbers in dates are truncated to integers."
+      //
+      // https://support.microsoft.com/en-gb/office/xirr-function-de1242ec-6477-445b-b11b-a303ad9adc9d
+      //
+      // what does that mean? rounded? floored? going to assume the latter...
+
+      for (const date of input_dates) {
+        if (typeof date !== 'number') {
+          return ArgumentError();
+        }
+        dates.push(Math.floor(date));
+      }
+
+      const start = dates[0];
+      for (const date of dates) {
+        if (date < start) {
+          return ArgumentError(); 
+        }
+      }
+
+      // per the above reference link we have max steps = 100 and 
+      // resolution threshold = 1e-8 ("0.000001 percent")
+
+      const step = .1; // initial step
+
+      const bounds = [
+        {found: false, value: 0},
+        {found: false, value: 0},
+      ];
+
+      const count = values.length;
+
+      for (let i = 0; i < 100; i++) {
+
+        // calculate npv
+        let npv = 0;
+        
+        for (let j = 0; j < count; j++) { 
+          npv += (values[j] || 0) / Math.pow((1 + guess), (dates[j] - dates[0]) / 365);
+        }
+
+        if (Math.abs(npv) <= 1e-6) { // resolution
+          // console.info(`** found in ${i + 1} steps`)
+          return {
+            type: ValueType.number,
+            value: guess,
+          }
+        }
+
+        // search space is unbounded, unfortunately. we can expand exponentially
+        // until we have bounds, at which point it's a standard bounded binary search
+
+        // ...or we can expand linearly, using a reasonable initial step size?
+
+        if (npv > 0) {
+          bounds[0].value = bounds[0].found ? Math.max(bounds[0].value, guess) : guess;
+          bounds[0].found = true;
+          if (!bounds[1].found) {
+            guess += step;
+            continue;
+          }
+        }
+        else {
+          bounds[1].value = bounds[1].found ? Math.min(bounds[1].value, guess) : guess;
+          bounds[1].found = true;
+          if (!bounds[0].found) {
+            guess -= step;
+            continue;
+          }
+        }
+
+        guess = bounds[0].value + (bounds[1].value - bounds[0].value) / 2;
+
+      }
+      
+      return ValueError();
+
+    },
   },
 
   IRR: {
