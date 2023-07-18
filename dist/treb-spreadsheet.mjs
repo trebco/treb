@@ -24716,7 +24716,48 @@ var FinanceFunctionLibrary = {
       };
     }
   },
+  XNPV: {
+    description: "returns the NPV of a nonperiodic stream of payments at a given rate",
+    arguments: [
+      { name: "Discount rate" },
+      { name: "Values" },
+      { name: "Dates" }
+    ],
+    fn: (rate, input_values, input_dates) => {
+      if (typeof rate !== "number") {
+        return ArgumentError();
+      }
+      input_values = FlattenUnboxed(input_values);
+      input_dates = FlattenUnboxed(input_dates);
+      if (input_values.length !== input_dates.length) {
+        return ArgumentError();
+      }
+      const values = [];
+      for (const value of input_values) {
+        if (typeof value !== "number") {
+          return ArgumentError();
+        }
+        values.push(value);
+      }
+      const dates = [];
+      for (const date of input_dates) {
+        if (typeof date !== "number") {
+          return ArgumentError();
+        }
+        dates.push(Math.floor(date));
+      }
+      let npv = 0;
+      for (let j = 0; j < values.length; j++) {
+        npv += (values[j] || 0) / Math.pow(1 + rate, (dates[j] - dates[0]) / 365);
+      }
+      return {
+        type: 3 /* number */,
+        value: npv
+      };
+    }
+  },
   XIRR: {
+    description: "returns the internal rate of return of a nonperiodic stream of payments",
     arguments: [
       { name: "Values" },
       { name: "Dates" },

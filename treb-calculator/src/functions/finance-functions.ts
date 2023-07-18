@@ -116,7 +116,69 @@ export const FinanceFunctionLibrary: FunctionMap = {
     }
   },
 
+  XNPV: {
+    description: 'returns the NPV of a nonperiodic stream of payments at a given rate',
+    arguments: [
+      { name: 'Discount rate', },
+      { name: 'Values', },
+      { name: 'Dates', },
+    ],
+    fn: (rate: UnionValue, input_values: CellValue[], input_dates: CellValue[]): UnionValue => {
+
+      if (typeof rate !== 'number') {
+        return ArgumentError();
+      }
+
+      input_values = FlattenUnboxed(input_values);
+      input_dates = FlattenUnboxed(input_dates);
+
+      // some validation...
+
+      if (input_values.length !== input_dates.length) {
+        return ArgumentError();
+      }
+
+      const values: number[] = [];
+
+      for (const value of input_values) {
+        if (typeof value !== 'number') {
+          return ArgumentError();
+        }
+        values.push(value);
+      }
+
+      const dates: number[] = [];
+
+      //
+      // "Numbers in dates are truncated to integers."
+      //
+      // https://support.microsoft.com/en-gb/office/xirr-function-de1242ec-6477-445b-b11b-a303ad9adc9d
+      //
+      // what does that mean? rounded? floored? going to assume the latter...
+
+      for (const date of input_dates) {
+        if (typeof date !== 'number') {
+          return ArgumentError();
+        }
+        dates.push(Math.floor(date));
+      }
+
+      let npv = 0;
+
+      for (let j = 0; j < values.length; j++) { 
+        npv += (values[j] || 0) / Math.pow((1 + rate), (dates[j] - dates[0]) / 365);
+      }
+
+      return {
+        type: ValueType.number,
+        value: npv,
+      };
+
+    }
+  },
+
   XIRR: {
+    description: 'returns the internal rate of return of a nonperiodic stream of payments',
     arguments: [
       { name: 'Values', },
       { name: 'Dates', },
@@ -193,7 +255,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
 
         // calculate npv
         let npv = 0;
-        
+
         for (let j = 0; j < count; j++) { 
           npv += (values[j] || 0) / Math.pow((1 + guess), (dates[j] - dates[0]) / 365);
         }
