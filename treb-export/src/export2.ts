@@ -796,13 +796,13 @@ export class Exporter {
             case 'png':
             case 'gif':
 
-              if (annotation.rect) {
-                images.push({
-                  anchor: this.AnnotationRectToAnchor(annotation.rect, sheet_source), options});
-              }
-              else if (annotation.layout) {
+              if (annotation.layout) {
                 images.push({
                   anchor: this.AnnotationLayoutToAnchor(annotation.layout, sheet_source), options});
+              }
+              else if (annotation.rect) {
+                images.push({
+                  anchor: this.AnnotationRectToAnchor(annotation.rect, sheet_source), options});
               }
               else {
                 console.warn('annotation missing layout');
@@ -1006,15 +1006,15 @@ export class Exporter {
 
           const rect = (annotation as AnnotationData & { rect?: Partial<Rectangle>}).rect;
 
-          if (rect) {
-            charts.push({
-              anchor: this.AnnotationRectToAnchor(rect, sheet_source), options});
-            // sheet.AddChart(this.AnnotationRectToAnchor(annotation.rect, sheet_source), options);
-          }
-          else if (annotation.layout) {
+          if (annotation.layout) {
             charts.push({
               anchor: this.AnnotationLayoutToAnchor(annotation.layout, sheet_source), options});
             // sheet.AddChart(this.AnnotationLayoutToAnchor(annotation.layout, sheet_source), options);
+          }
+          else if (rect) {
+            charts.push({
+              anchor: this.AnnotationRectToAnchor(rect, sheet_source), options});
+            // sheet.AddChart(this.AnnotationRectToAnchor(annotation.rect, sheet_source), options);
           }
           else {
             console.warn('annotation missing layout');
