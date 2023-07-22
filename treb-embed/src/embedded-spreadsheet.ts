@@ -479,6 +479,13 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
+   * returns the names of all sheets in the current document
+   */
+  public get sheet_names() {
+    return this.model.sheets.list.map(sheet => sheet.name);
+  }
+
+  /**
    * constructor takes spreadsheet options. type should be implicit, either
    * the default (here) or a subclass
    * 
@@ -3708,18 +3715,24 @@ export class EmbeddedSpreadsheet {
 
   /**
    * Select a range. This function will change sheets if your reference
-   * refers to a different sheet.
+   * refers to a different sheet. if the argument is undefined or falsy
+   * it will remove the selection (set to no selection).
    * 
    * @public
    */
-  public Select(range: RangeReference): void {
+  public Select(range?: RangeReference): void {
 
-    const resolved = this.calculator.ResolveArea(range, this.grid.active_sheet);
-    if (resolved.start.sheet_id) {
-      if (resolved.start.sheet_id !== this.grid.active_sheet.id) {
-        this.grid.ActivateSheetID(resolved.start.sheet_id);
-      }
-    }    
+    let resolved: Area|undefined = undefined; 
+
+    if (!!range) {
+      resolved = this.calculator.ResolveArea(range, this.grid.active_sheet);
+      if (resolved.start.sheet_id) {
+        if (resolved.start.sheet_id !== this.grid.active_sheet.id) {
+          this.grid.ActivateSheetID(resolved.start.sheet_id);
+        }
+      }    
+    }
+
     this.grid.SelectRange(resolved);
 
   }

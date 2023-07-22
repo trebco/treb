@@ -1,4 +1,4 @@
-/*! API v27.2. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v27.3. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -305,6 +305,11 @@ export declare class EmbeddedSpreadsheet {
      * last-saved revision of the document.
      */
     get dirty(): boolean;
+
+    /**
+     * returns the names of all sheets in the current document
+     */
+    get sheet_names(): string[];
 
     /**
      * Use this function to batch multiple document changes. Essentially the
@@ -844,11 +849,12 @@ export declare class EmbeddedSpreadsheet {
 
     /**
      * Select a range. This function will change sheets if your reference
-     * refers to a different sheet.
+     * refers to a different sheet. if the argument is undefined or falsy
+     * it will remove the selection (set to no selection).
      *
      * @public
      */
-    Select(range: RangeReference): void;
+    Select(range?: RangeReference): void;
 
     /**
      *
