@@ -1,4 +1,4 @@
-/*! API v27.3. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v27.4. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -745,6 +745,16 @@ export declare class EmbeddedSpreadsheet {
      * @public
      */
     Resolve(reference: string): ICellAddress | IArea | undefined;
+
+    /**
+     * Convert an address/range object to a string. this is a convenience
+     * function for composing formulas.
+     *
+     * @param ref sheet reference as a string or structured object
+     * @param [qualified=true] include sheet names
+     * @param [named=true] resolve to named ranges, where applicable
+     */
+    Unresolve(ref: RangeReference, qualified?: boolean, named?: boolean): string;
 
     /**
      * Evaluate an arbitrary expression in the spreadsheet. You should generally

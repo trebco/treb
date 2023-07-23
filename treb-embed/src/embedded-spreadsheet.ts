@@ -3405,6 +3405,55 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
+   * Convert an address/range object to a string. this is a convenience
+   * function for composing formulas.
+   * 
+   * @param ref sheet reference as a string or structured object
+   * @param [qualified=true] include sheet names
+   * @param [named=true] resolve to named ranges, where applicable
+   */
+  public Unresolve(ref: RangeReference, qualified = true, named = true): string {
+
+    if (typeof ref === 'string') {
+      const resolved = this.Resolve(ref);
+      if (!resolved) { 
+        throw new Error('invalid reference'); 
+      }
+      ref = resolved;
+    }
+
+    let range = '';
+    const area = IsCellAddress(ref) ? new Area(ref) : new Area(ref.start, ref.end);
+
+    if (named) {
+      const named_range = this.model.named_ranges.MatchSelection(area);
+      if (named_range) {
+        return named_range;
+      }
+    }
+
+    if (area.count > 1) {
+      range = Area.CellAddressToLabel(area.start) + ':' + Area.CellAddressToLabel(area.end);
+    }
+    else {
+      range = Area.CellAddressToLabel(area.start);
+    }
+
+    if (!qualified) {
+      return range;
+    }
+
+    // is there a function to resolve sheet? actually, don't we know that
+    // the active selection must be on the active sheet? (...)
+
+    const sheet_id = area.start.sheet_id || this.grid.active_sheet.id;
+    const sheet_name = this.ResolveSheetName(sheet_id, true);
+
+    return sheet_name ? sheet_name + '!' + range : range;
+    
+  }
+  
+  /**
    * Evaluate an arbitrary expression in the spreadsheet. You should generally
    * use sheet names when referring to cells, to avoid ambiguity. Otherwise
    * cell references will resolve to the active sheet.
@@ -3909,42 +3958,6 @@ export class EmbeddedSpreadsheet {
 
     return table;
 
-  }
-
-  /**
-   * 
-   */
-  protected Unresolve(ref: ICellAddress|IArea, qualified = true, named = true): string {
-    
-    let range = '';
-    const area = IsCellAddress(ref) ? new Area(ref) : new Area(ref.start, ref.end);
-
-    if (named) {
-      const named_range = this.model.named_ranges.MatchSelection(area);
-      if (named_range) {
-        return named_range;
-      }
-    }
-
-    if (area.count > 1) {
-      range = Area.CellAddressToLabel(area.start) + ':' + Area.CellAddressToLabel(area.end);
-    }
-    else {
-      range = Area.CellAddressToLabel(area.start);
-    }
-
-    if (!qualified) {
-      return range;
-    }
-
-    // is there a function to resolve sheet? actually, don't we know that
-    // the active selection must be on the active sheet? (...)
-
-    const sheet_id = area.start.sheet_id || this.grid.active_sheet.id;
-    const sheet_name = this.ResolveSheetName(sheet_id, true);
-
-    return sheet_name ? sheet_name + '!' + range : range;
-    
   }
 
   /**
