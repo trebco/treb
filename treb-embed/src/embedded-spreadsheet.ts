@@ -31,6 +31,7 @@ import type {
   GridSelection, CellEvent, FunctionDescriptor, 
   AnnotationViewData,
   AnnotationType, 
+  ExternalEditorType,
 } from 'treb-grid';
 
 import {
@@ -1169,6 +1170,15 @@ export class EmbeddedSpreadsheet {
       this.Resize();
 
     }
+  }
+
+  /**
+   * set or remove an external editor. external editor is an interface used
+   * to support outside tooling by highlighting a list of arguments and 
+   * responding to selection.
+   */
+  public ExternalEditor(editor?: Partial<ExternalEditorType>) {
+    this.grid.ExternalEditor(editor);
   }
 
   /**

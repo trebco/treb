@@ -114,6 +114,8 @@ import { GridBase } from './grid_base';
 import type { SetRangeOptions } from './set_range_options';
 import type { ClipboardCellData } from './clipboard_data';
 
+import type { ExternalEditorType } from './external_editor';
+
 interface DoubleClickData {
   timeout?: number;
   address?: ICellAddress;
@@ -124,6 +126,7 @@ enum EditingState {
   CellEditor = 1,
   FormulaBar = 2,
 }
+
 
 export class Grid extends GridBase {
 
@@ -262,6 +265,13 @@ export class Grid extends GridBase {
   private RESIZE_PIXEL_BUFFER = 5;
 
   private select_argument = false; // temp, WIP
+
+  /**
+   * not sure what select_argument was for (possibly outside client), but
+   * we're formalizing the concept of external selection to support outside
+   * tooling.
+   */
+  private external_editor: Partial<ExternalEditorType> | undefined;
 
   /**
    * flag indicating we're resizing, or hovering over a resize.
@@ -1643,6 +1653,32 @@ export class Grid extends GridBase {
     this.Select(this.primary_selection, new Area({ row: Infinity, column: Infinity }), undefined, true);
     this.RenderSelections();
   }
+
+  /**
+   * set or remove external editor. this is not an accessor because I don't
+   * want to have to use a duplicate internal field, it's clumsy and this
+   * class isn't public-facing so it's not super important.
+   */
+  public ExternalEditor(external_editor: Partial<ExternalEditorType>|undefined) {
+
+    this.external_editor = external_editor;
+
+    if (external_editor) {
+      if (external_editor.dependencies) {
+
+        // FIXME: this is getting messy and we're doing it twice, consolidate
+
+        this.HighlightDependencies(external_editor.dependencies.filter(
+          <T>(entry: T|undefined): entry is T => !!entry).map(reference => 
+            IsCellAddress(reference) ? new Area(reference) : new Area(reference.start, reference.end)));
+      }
+    }
+    else {
+      this.ClearAdditionalSelections();
+    }
+
+  } 
+
 
   /** API method */
   public SelectRange(range?: Area): void {
@@ -3984,6 +4020,9 @@ export class Grid extends GridBase {
         if (this.overlay_editor?.editing) {
           // ...
         }
+        else if (this.external_editor) {
+          // ...
+        }
         else if (this.select_argument) {
           // ...
         }
@@ -4265,11 +4304,24 @@ export class Grid extends GridBase {
 
     }
 
+    // the external editor should just handle normal select events
+    // for now, we might update that in the future.
+
     if (this.overlay_editor?.editing && this.overlay_editor.selecting) {
       this.overlay_editor.InsertReference(label, 0);
     }
     else if (this.formula_bar && this.formula_bar.selecting) {
       this.formula_bar.InsertReference(label, 0);
+    }
+    else if (this.external_editor) {
+      if (this.external_editor.update) {
+        const result = this.external_editor.update.call(0, label);
+        if (result && Array.isArray(result)) {
+          this.HighlightDependencies(
+            result.filter(<T>(entry: T|undefined): entry is T => !!entry).map(reference => 
+             IsCellAddress(reference) ? new Area(reference) : new Area(reference.start, reference.end)));
+        }
+      }
     }
     else if (this.select_argument) {
       this.grid_events.Publish({
@@ -4288,6 +4340,7 @@ export class Grid extends GridBase {
   private SelectingArgument() {
     return (this.overlay_editor?.editing && this.overlay_editor?.selecting)
       || (this.formula_bar && this.formula_bar.selecting)
+      || (this.external_editor)
       || (this.select_argument);
   }
 

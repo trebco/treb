@@ -1,4 +1,4 @@
-/*! API v27.4. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v27.5. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -310,6 +310,13 @@ export declare class EmbeddedSpreadsheet {
      * returns the names of all sheets in the current document
      */
     get sheet_names(): string[];
+
+    /**
+     * set or remove an external editor. external editor is an interface used
+     * to support outside tooling by highlighting a list of arguments and
+     * responding to selection.
+     */
+    ExternalEditor(editor?: Partial<ExternalEditorType>): void;
 
     /**
      * Use this function to batch multiple document changes. Essentially the
@@ -1048,6 +1055,28 @@ export interface SetRangeOptions {
      */
     r1c1?: boolean;
 }
+export interface ExternalEditorType {
+
+    /**
+     * list of dependencies to highlight. we support undefined entries in
+     * this list so you can use the result of `EmbeddedSpreadsheet.Resolve`,
+     * which may return undefined.
+     */
+    dependencies: DependencyList;
+
+    /**
+     * this callback will be called when the selection changes in the
+     * spreadsheet and this external editor is active. return an updated
+     * list of dependencies to highlight.
+     *
+     * NOTE: this is currently synchronous, but don't rely on that. it
+     * might switch to async in the future depending on how it works in
+     * practice.
+     */
+    update: ExternalEditorCallback;
+}
+export type DependencyList = Array<IArea | ICellAddress | undefined>;
+export type ExternalEditorCallback = (selection?: string) => DependencyList | undefined;
 
 /**
  * Structure represents a 2d range of cells.

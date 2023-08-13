@@ -39,3 +39,4 @@ export type { FunctionDescriptor, ArgumentDescriptor } from './editors/autocompl
 export { UA } from './util/ua';
 export type { SetRangeOptions } from './types/set_range_options';
 export type { AnnotationData, AnnotationType } from './types/annotation';
+export type { ExternalEditorType, DependencyList, ExternalEditorCallback } from './types/external_editor';
