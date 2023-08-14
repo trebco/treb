@@ -1675,6 +1675,7 @@ export class Grid extends GridBase {
     }
     else {
       this.ClearAdditionalSelections();
+      this.RenderSelections(true);
     }
 
   } 
@@ -4276,8 +4277,6 @@ export class Grid extends GridBase {
     // if this is a single merged block, we want to insert it as the
     // root cell and not the range.
 
-    // let label = selection.area.spreadsheet_label;
-
     const data = this.active_sheet.CellData(selection.area.start);
     const target = new Area(data.merge_area ? data.merge_area.start : selection.target);
 
@@ -4285,13 +4284,12 @@ export class Grid extends GridBase {
 
     if (!label) {
 
-      // label = Area.CellAddressToLabel(target.start);
       label = selection.area.spreadsheet_label;
       if (data.merge_area && data.merge_area.Equals(selection.area)) {
         label = Area.CellAddressToLabel(data.merge_area.start);
       }
 
-      if (this.active_sheet.id !== this.editing_cell.sheet_id) {
+      if (this.external_editor || this.active_sheet.id !== this.editing_cell.sheet_id) {
         const name = this.active_sheet.name;
 
         if (QuotedSheetNameRegex.test(name)) {
