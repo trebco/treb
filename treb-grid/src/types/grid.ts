@@ -60,7 +60,7 @@ import {
 
 import { Yield, SerializeHTML } from 'treb-utils';
 import type { ParseResult as ParseResult2 } from 'treb-format';
-import { NumberFormatCache, LotusDate, ValueParser, Hints, NumberFormat } from 'treb-format';
+import { NumberFormatCache, LotusDate, ValueParser, type Hints, NumberFormat } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
 
 import { TabBar } from './tab_bar';
@@ -5012,7 +5012,7 @@ export class Grid extends GridBase {
                     if (!/%/.test(found_number_format)) {
                       break;
                     }
-                    
+
                   }
                 }
               }
@@ -5071,7 +5071,7 @@ export class Grid extends GridBase {
       // const text = value.toString();
 
       let number_format = '';
-      const hints = parse_result.hints || Hints.None;
+      const hints: Hints = parse_result.hints || {};
 
       // be stricter about number format. don't implicitly /change/
       // the number format (you can /set/, but don't /change/). 
@@ -5082,24 +5082,19 @@ export class Grid extends GridBase {
 
       if (!cell.style || !cell.style.number_format || NumberFormatCache.Equals(cell.style.number_format, 'General')) {
 
-        // tslint:disable-next-line:no-bitwise
-        if (hints & Hints.Date) {
+        if (hints.Date) {
           number_format = 'Short Date';
         }
-        // tslint:disable-next-line:no-bitwise
-        else if (hints & Hints.Exponential) {
+        else if (hints.Exponential) {
           number_format = 'Exponential';
         }
-        // tslint:disable-next-line:no-bitwise
-        else if (hints & Hints.Percent) {
+        else if (hints.Percent) {
           number_format = 'Percent';
         }
-        // tslint:disable-next-line:no-bitwise
-        else if (hints & Hints.Currency) {
+        else if (hints.Currency) {
           number_format = 'Currency';
         }
-        // tslint:disable-next-line:no-bitwise
-        else if ((hints & Hints.Grouping) || (hints & Hints.Parens)) {
+        else if (hints.Grouping || hints.Parens) {
           number_format = 'Accounting';
         }
 

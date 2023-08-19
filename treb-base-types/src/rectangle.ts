@@ -81,6 +81,10 @@ export class Rectangle implements IRectangle {
     );
   }
 
+  /*
+   * removing this method as part of cleaning up bitwise flags.
+   * if you need this method, rewrite it to use explicit flags.
+   *
   public CheckEdges(x: number, y: number, border = 16): number{
 
     let edge = 0;
@@ -99,6 +103,7 @@ export class Rectangle implements IRectangle {
 
     return edge;
   }
+  */
 
   /**
    * check if rectangle contains the given coordinates, optionally with

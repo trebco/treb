@@ -35,7 +35,7 @@ import { UnlotusDate } from './format';
 
 // tslint:disable:no-bitwise
 
-/** hints is a bitfield */
+/* * hints is a bitfield * /
 export enum Hints {
   None =        0x00,
   Nan =         0x01,
@@ -46,6 +46,18 @@ export enum Hints {
   Parens =      0x20,
   Date =        0x40,
   Time =        0x80,
+}
+*/
+
+export interface Hints {
+  Nan?: boolean;
+  Exponential?: boolean;
+  Percent?: boolean;
+  Currency?: boolean;
+  Grouping?: boolean;
+  Parens?: boolean;
+  Date?: boolean;
+  Time?: boolean;
 }
 
 /**
@@ -222,7 +234,7 @@ class ValueParserType {
    */
   public TryParse(text = ''): ParseResult {
 
-    let hints: Hints = Hints.None;
+    let hints: Hints = {}; // Hints.None;
 
     // starts with SINGLE quote mark. express string.
     if (text[0] === '\'') return { value: text, type: ValueType.string };
@@ -233,7 +245,11 @@ class ValueParserType {
     // we test if the conversion returns NaN, which usually means
     // it's not a number -- unless the string is actually NaN, which
     // is something we want to preserve.
-    if ( text === 'NaN' ) return { value: NaN, type: ValueType.number, hints: Hints.Nan };
+    if ( text === 'NaN' ) return { 
+      value: NaN, 
+      type: ValueType.number, 
+      hints: { Nan: true },
+    };
 
     let x = text.trim();
     // x = x.replace(/^[\$£€]/, '').trim();
@@ -241,25 +257,29 @@ class ValueParserType {
     const currency = x.match(/^[$](.*?)$/);
     if (currency) {
       x = currency[1];
-      hints |= Hints.Currency;
+      // hints |= Hints.Currency;
+      hints.Currency = true;
     }
 
     const parens = x.match(/^\((.*?)\)$/);
     if (parens) {
       x = parens[1];
-      hints |= Hints.Parens;
+      // hints |= Hints.Parens;
+      hints.Parens = true;
     }
 
     const pct = x.match(/^(.*?)%\s*$/);
     if (pct) {
       x = pct[1];
-      hints |= Hints.Percent;
+      // hints |= Hints.Percent;
+      hints.Percent = true;
     }
 
     if (Localization.decimal_separator === '.'){
       if (/,/.test(x)) {
         x = x.replace(/,/g, '');
-        hints |= Hints.Grouping;
+        // hints |= Hints.Grouping;
+        hints.Grouping = true;
       }
     }
     else {
@@ -295,10 +315,10 @@ class ValueParserType {
         const year = check.getUTCFullYear();
 
         if (year >= (this_year - 200) && year <= (this_year + 200)) {
-          hints = Hints.Date;
+          hints = { Date: true };
 
           if (check.getHours() || check.getMinutes() || check.getSeconds()) {
-            hints |= Hints.Time;
+            hints.Time = true;
           }
 
           return {
@@ -328,7 +348,7 @@ class ValueParserType {
       
     }
 
-    if (/e/.test(text)) hints |= Hints.Exponential;
+    if (/e/.test(text)) hints.Exponential = true;
     return { value: num, type: ValueType.number, hints };
 
   }
