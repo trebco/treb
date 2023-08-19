@@ -4962,6 +4962,12 @@ export class Grid extends GridBase {
             if (!cell.style || !cell.style.number_format || NumberFormatCache.Equals(cell.style.number_format, 'General')) {
               const func = formula_parse_result.expression.name.toLowerCase();
               let number_format: string|undefined;
+
+              // FIXME: these should be defined on the functions themselves,
+              // so we don't have to maintain a list. that also implies we
+              // need the list of functions, which we don't have atm? maybe
+              // through the AC instance? (...)
+
               switch (func) {
                 case 'today':
                   number_format = 'Short Date';
@@ -4979,25 +4985,51 @@ export class Grid extends GridBase {
             }
           }
           if (formula_parse_result.dependencies) {
+
+            // this was set up to just use the first format we found. 
+            // updating to change priority -- if the first one is a 
+            // percentage formula, look for another one before using
+            // the percentage. this is almost always what you want.
+
+            let found_number_format: string|undefined = undefined;
+
             const list = formula_parse_result.dependencies;
             for (const key of Object.keys(list.addresses)) {
               const address = list.addresses[key];
               if (this.active_sheet.HasCellStyle({ ...address })) {
+
+                // FIXME: this should not be active_sheet
+
                 const test = this.active_sheet.CellData({ ...address });
                 if (test.style && test.style.number_format) {
-                  const style: CellStyle = {
-                    number_format: test.style.number_format,
-                  };
-                  // if (array) this.model.sheet.UpdateAreaStyle(selection.area, style, true, true);
-                  // else this.model.sheet.UpdateCellStyle(target, style, true, true);
-                  commands.push({
-                    key: CommandKey.UpdateStyle,
-                    area: array ? selection.area : target, style, delta: true
-                  });
+                  if (!found_number_format || /%/.test(found_number_format)) {
+
+                    // convert to a string format if it's symbolic. that
+                    // is purely so we can check for a %. FIXME: I don't 
+                    // like the name of this method (Translate)
+
+                    found_number_format = NumberFormatCache.Translate(test.style.number_format);
+                    if (!/%/.test(found_number_format)) {
+                      break;
+                    }
+                    
+                  }
                 }
-                break;
               }
             }
+
+            if (found_number_format) {
+
+              const style: CellStyle = {
+                number_format: found_number_format,
+              };
+
+              commands.push({
+                key: CommandKey.UpdateStyle,
+                area: array ? selection.area : target, style, delta: true
+              });
+            }
+
           }
         }
       }
