@@ -394,6 +394,9 @@ export class TileRenderer {
   public RenderColumnLabels(context: CanvasRenderingContext2D, column: number, end: number) {
 
     const header_y = this.layout.header_offset.y;
+    if (header_y <= 1) {
+      return;
+    }
 
     context.fillStyle = ThemeColor2(this.theme, this.theme.headers?.text, 0);
 
@@ -418,7 +421,10 @@ export class TileRenderer {
   public RenderRowLabels(context: CanvasRenderingContext2D, row: number, end: number, block: number) {
 
     const header_x = this.layout.header_offset.x;
-
+    if (header_x <= 1) {
+      return;
+    }
+    
     context.fillStyle = ThemeColor2(this.theme, this.theme.headers?.text, 0);
     
     context.beginPath();
