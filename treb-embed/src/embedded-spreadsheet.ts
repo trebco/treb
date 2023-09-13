@@ -659,7 +659,7 @@ export class EmbeddedSpreadsheet {
     // if we don't have a container. that's distinct (at the moment)
     // from headless, which is a state that can change.
 
-    this.grid = new Grid(grid_options, this.parser, this.model, undefined, !!container);
+    this.grid = new Grid(grid_options, this.model, undefined, !!container);
 
     if (this.options.headless) {
       this.grid.headless = true; // FIXME: move into grid options
