@@ -726,13 +726,15 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
       // for some reason this is too aggressive, it's happening when
       // we _should_ have a selection
 
-      if (node === this.editor_node) {
+      /*
+      if (node === this.editor_node && node === document.activeElement) {
         const substr = this.SubstringToCaret(node);
         const substr2 = this.SubstringToCaret(node, true);
         if (text.length && substr === '' && substr2 === '') {
-          // this.SelectAll(node);
+          this.SelectAll(node);
         }
       }
+      */
 
       return; // we may still want to update colors (TODO)
     }
