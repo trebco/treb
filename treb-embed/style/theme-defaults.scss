@@ -31,26 +31,42 @@
 $primary-selection-color: #4caaf1;
 $primary-selection-color-unfocused: #acc0cf;
 
-
+/*
 $alternate-selection-color-1: rgb(251, 177, 60);
-//$alternate-selection-color-2: rgb(87, 184, 255);
 $alternate-selection-color-2: rgb(64, 192, 64);
 $alternate-selection-color-3: rgb(182, 109, 13);
 $alternate-selection-color-4: rgb(33, 118, 174);
 $alternate-selection-color-5: rgb(254, 104, 71);
 
-/**
+/ * *
  * slightly darkening colors for text highlighting
  * algo: convert to HSL; if L > .5, regenerate with L = .5; back to RGB (why?)
- */
+ * /
 $text-reference-color-1: rgb(250, 155, 5);
-//$text-reference-color-2: rgb(0, 147, 255);
 $text-reference-color-2: rgb(58, 173, 58);
 $text-reference-color-3: rgb(182, 109, 13);
 $text-reference-color-4: rgb(33, 118, 174);
 $text-reference-color-5: rgb(254, 47, 1);
+*/
 
 .treb-main.treb-main {
+
+  --alternate-selection-color-1: rgb(251, 177, 60);
+  --alternate-selection-color-2: rgb(64, 192, 64);
+  --alternate-selection-color-3: rgb(182, 109, 13);
+  --alternate-selection-color-4: rgb(33, 118, 174);
+  --alternate-selection-color-5: rgb(254, 104, 71);
+  
+  /**
+   * slightly darkening colors for text highlighting
+   * algo: convert to HSL; if L > .5, regenerate with L = .5; back to RGB (why?)
+   */
+  --text-reference-color-1: rgb(224, 138, 0);
+  --text-reference-color-2: rgb(58, 173, 58);
+  --text-reference-color-3: rgb(182, 109, 13);
+  --text-reference-color-4: rgb(33, 118, 174);
+  --text-reference-color-5: rgb(254, 47, 1);
+  
 
   /** 
    * move primary selection focus color to focus-within on the top-level 
@@ -286,27 +302,31 @@ $text-reference-color-5: rgb(254, 47, 1);
 
     /* span:nth-of-type(1n) { */
     span.highlight-1 {
-      color: $text-reference-color-1;
+      color: var(--text-reference-color-1);
     }
 
     /* span:nth-of-type(2n) { */
     span.highlight-2 {
-      color: $text-reference-color-2;
+      // color: $text-reference-color-2;
+      color: var(--text-reference-color-2);
     }
 
     /* span:nth-of-type(3n) { */
     span.highlight-3 {
-      color: $text-reference-color-3;
+      // color: $text-reference-color-3;
+      color: var(--text-reference-color-3);
     }
 
     /* span:nth-of-type(4n) { */
     span.highlight-4 {
-      color: $text-reference-color-4;
+      // color: $text-reference-color-4;
+      color: var(--text-reference-color-4);
     }
 
     /* span:nth-of-type(5n) { */
     span.highlight-5 {
-      color: $text-reference-color-5;
+      // color: $text-reference-color-5;
+      color: var(--text-reference-color-5);
     }
 
   }
@@ -339,23 +359,28 @@ $text-reference-color-5: rgb(254, 47, 1);
     }
 
     .alternate-selection:nth-of-type(1n) {
-      color: $alternate-selection-color-1;
+      // color: $alternate-selection-color-1;
+      color: var(--alternate-selection-color-1);
     }
 
     .alternate-selection:nth-of-type(2n) {
-      color: $alternate-selection-color-2;
+      // color: $alternate-selection-color-2;
+      color: var(--alternate-selection-color-2);
     }
 
     .alternate-selection:nth-of-type(3n) {
-      color: $alternate-selection-color-3;
+      // color: $alternate-selection-color-3;
+      color: var(--alternate-selection-color-3);
     }
 
     .alternate-selection:nth-of-type(4n) {
-      color: $alternate-selection-color-4;
+      // color: $alternate-selection-color-4;
+      color: var(--alternate-selection-color-4);
     }
 
     .alternate-selection:nth-of-type(5n) {
-      color: $alternate-selection-color-5;
+      // color: $alternate-selection-color-5;
+      color: var(--alternate-selection-color-5);
     }
 
     /** 

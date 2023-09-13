@@ -114,7 +114,9 @@ import { GridBase } from './grid_base';
 import type { SetRangeOptions } from './set_range_options';
 import type { ClipboardCellData } from './clipboard_data';
 
-import type { ExternalEditorType } from './external_editor';
+import type { ExternalEditorConfig } from './external_editor';
+// import { ExternalEditorManager } from '../editors/external_editor_manager';
+import { Editor2 as ExternalEditorManager } from '../editors/editor2';
 
 interface DoubleClickData {
   timeout?: number;
@@ -271,7 +273,9 @@ export class Grid extends GridBase {
    * we're formalizing the concept of external selection to support outside
    * tooling.
    */
-  private external_editor: Partial<ExternalEditorType> | undefined;
+  private external_editor?: Partial<ExternalEditorConfig>;
+
+  private external_editor_manager?: ExternalEditorManager;
 
   /**
    * flag indicating we're resizing, or hovering over a resize.
@@ -1659,21 +1663,47 @@ export class Grid extends GridBase {
    * want to have to use a duplicate internal field, it's clumsy and this
    * class isn't public-facing so it's not super important.
    */
-  public ExternalEditor(external_editor: Partial<ExternalEditorType>|undefined) {
+  public ExternalEditor(config: Partial<ExternalEditorConfig>|undefined) {
 
-    this.external_editor = external_editor;
+    this.external_editor = config;
 
-    if (external_editor) {
-      if (external_editor.dependencies) {
+    if (config) {
 
-        // FIXME: this is getting messy and we're doing it twice, consolidate
+      const areas: Area[] = (config.dependencies || []).filter(
+        <T>(test: T|undefined): test is T => !!test).map(reference => 
+          IsCellAddress(reference) ? new Area(reference) : new Area(reference.start, reference.end));
 
-        this.HighlightDependencies(external_editor.dependencies.filter(
-          <T>(entry: T|undefined): entry is T => !!entry).map(reference => 
-            IsCellAddress(reference) ? new Area(reference) : new Area(reference.start, reference.end)));
+      if (config.edit || config.format?.length) {
+
+        if (!this.external_editor_manager) {
+          const manager = new ExternalEditorManager(this.parser, this.theme, this.model, this.view);
+          this.external_editor_manager = manager;
+
+          // should this persist, or should we only subscribe when we're active? (...)
+          // in theory, at least, it won't send any events unless something changes
+
+          manager.Subscribe(event => this.HighlightDependencies(manager.dependencies));
+        }
+
+        this.external_editor_manager.AttachNode(config.edit, config.format);
+ 
+      }
+      else {
+        if (this.external_editor_manager) {
+          this.external_editor_manager.Reset();
+        }
+      }
+
+      if (config.dependencies) {
+        this.HighlightDependencies(areas);
       }
     }
     else {
+
+      if (this.external_editor_manager) {
+        this.external_editor_manager.Reset();
+      }
+
       this.ClearAdditionalSelections();
       this.RenderSelections(true);
     }
@@ -3732,7 +3762,7 @@ export class Grid extends GridBase {
       this.ClearAdditionalSelections();
     }
 
-    if (!selecting_argument || !this.formula_bar?.selecting) {
+    if (!selecting_argument || (!this.formula_bar?.selecting && !this.external_editor_manager?.selecting)) {
 
       // not sure why this breaks the formula bar handler
 
@@ -4022,6 +4052,9 @@ export class Grid extends GridBase {
           // ...
         }
         else if (this.external_editor) {
+          if (this.external_editor.edit && this.external_editor_manager) {
+            this.external_editor_manager.FocusEditor();
+          }
           // ...
         }
         else if (this.select_argument) {
@@ -4312,6 +4345,12 @@ export class Grid extends GridBase {
       this.formula_bar.InsertReference(label, 0);
     }
     else if (this.external_editor) {
+
+      if (this.external_editor.edit && this.external_editor_manager) {
+        this.external_editor.edit.focus();
+        this.external_editor_manager.InsertReference(label, 0);
+      }
+
       if (this.external_editor.update) {
         const result = this.external_editor.update.call(0, label);
         if (result && Array.isArray(result)) {
@@ -4335,10 +4374,10 @@ export class Grid extends GridBase {
    *
    * FIXME: why is this not an accessor?
    */
-  private SelectingArgument() {
+  private SelectingArgument(): boolean {
     return (this.overlay_editor?.editing && this.overlay_editor?.selecting)
       || (this.formula_bar && this.formula_bar.selecting)
-      || (this.external_editor)
+      || (!!this.external_editor)
       || (this.select_argument);
   }
 

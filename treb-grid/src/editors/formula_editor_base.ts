@@ -652,8 +652,11 @@ export abstract class FormulaEditorBase<E = FormulaEditorEvent> extends EventSou
       const range = document.createRange();
       const selection = window.getSelection();
       if (selection) {
-        range.setStart(selection_target_node, selection_offset);
-        range.setEnd(selection_target_node, selection_offset);
+
+        const offset = Math.min(selection_offset, selection_target_node.textContent?.length || 0);
+
+        range.setStart(selection_target_node, offset);
+        range.setEnd(selection_target_node, offset);
         range.collapse(true);
         selection.removeAllRanges();
         selection.addRange(range);
