@@ -49,7 +49,7 @@ interface NodeDescriptor {
   edit?: boolean;
 }
 
-export class Editor2 extends EventSource<Editor2UpdateEvent> {
+export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2UpdateEvent> {
 
   protected static readonly FormulaChars = ('$^&*(-+={[<>/~%' + Localization.argument_separator).split(''); // FIXME: i18n
 
@@ -67,13 +67,13 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
    * editing any cell, but just formatting. this one sends events and is 
    * the target for inserting addresses.
    */
-  public editor_node?: HTMLElement;
+  protected editor_node?: HTMLElement;
 
   /**
    * all nodes that are involved with this editor. we format all of them,
    * and if you edit one we might switch the colors as the references change.
    */
-  public nodes: NodeDescriptor[] = [];
+  protected nodes: NodeDescriptor[] = [];
 
   /** 
    * address of cell we're editing, if we're editing a cell
@@ -85,7 +85,7 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
    * if we switch the formula bar to inherit from this class, it should
    * be false.
    */
-  public assume_formula = false;
+  protected assume_formula = false;
 
   /**
    * this has changed -- we don't have an internal field. instead we'll 
@@ -146,12 +146,12 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
    * add an event listener to the node. these are stored so we can remove
    * them later if the node is disconnected.
    */
-  public RegisterListener<K extends keyof HTMLElementEventMap>(key: K, handler: (event: HTMLElementEventMap[K]) => any) {
+  protected RegisterListener<K extends keyof HTMLElementEventMap>(key: K, handler: (event: HTMLElementEventMap[K]) => any) {
     this.editor_node?.addEventListener(key, handler);
     this.listeners.set(key, handler as GenericEventListener);
   }
 
-  public SelectAll(node: HTMLElement) {
+  protected SelectAll(node: HTMLElement) {
     const selection = window.getSelection();
     const range = document.createRange();
     range.selectNode(node);
@@ -159,7 +159,7 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
     selection?.addRange(range);
   }
 
-  public SetCaret(
+  protected SetCaret(
       start: { node: ChildNode, offset: number }, 
       end?: { node: ChildNode, offset: number }) {
 
@@ -385,6 +385,16 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
     // since this will proabbly get called multiple times when you
     // switch between fields.
 
+    // there's a particular case where this is breaking. an external
+    // application is setting the text in the contenteditable element.
+    // if the text is different, this will work properly. but if the 
+    // text is the same, it breaks, because we're matching against the 
+    // text and not the rendered html.
+
+    // there are a bunch of ways we could address this but the only one
+    // that is comprehensive for us to do it would be to compare the 
+    // generated html. or perhaps there's a shortcut? (...)
+
     let descriptors: NodeDescriptor[] = [];
 
     let edit_found = false;
@@ -395,16 +405,30 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
           return { ...check, node, edit };
         }
       }
+      edit_found = edit_found || edit;
       return { node, edit };
     });
 
-    if (!edit_found && target) {
+    if (target && !edit_found) {
+      // console.info('need to add edit');
       descriptors.push({
         node: target, edit: true, 
-      })
+      });
     }
 
     this.nodes = descriptors;
+
+    // check if we need to flush these (see above). 
+
+    for (const descriptor of this.nodes) {
+      if (descriptor.node.dataset.formatted_text === descriptor.node.textContent) {
+        const test = descriptor.node.innerHTML.length;
+        if (Number(descriptor.node.dataset.check || 0) !== test) {
+          descriptor.node.dataset.formatted_text = ''; // flush
+        }
+      }
+    }
+
 
     // if we're not preserving them, but the reference list is still
     // attached, we can use that (now that we moved the resolver). 
@@ -414,8 +438,11 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
     // NOTE: this is probably not useful anymore since we're preserving
     // the references above. could cut.
 
+    // seems like we still need it, but not entirely clear why (...)
+
     for (const entry of this.nodes) {
       if (entry.node.dataset.references && !entry.references) {
+
         try {
           const references = JSON.parse(entry.node.dataset.references);
           if (Array.isArray(references)) {
@@ -471,7 +498,7 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
      
     }
 
-    this.UpdateColors(); // will send an event
+    this.UpdateColors(true); // always send an event, just in case
 
   }
 
@@ -481,7 +508,7 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
    * we moved the event in here, so it will get sent when
    * colors actually change.
    */
-  public UpdateColors() {
+  protected UpdateColors(force_event = false) {
 
     // create a map of canonical label -> area 
 
@@ -505,10 +532,6 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
 
     // console.info({map, indexes});
 
-    // dependencies is just the single list
-
-    this.composite_dependencies = Array.from(map.values());
-
     // now apply colors to nodes
 
     for (const entry of this.nodes) {
@@ -518,7 +541,25 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
           node.dataset.highlightIndex = (typeof index === 'number') ? (index % 5 + 1).toString() : '?';
         }
       }
+
+      // this is a check for flushing text when we re-attach.
+      // @see AttachNode
+
+      entry.node.dataset.check = entry.node.innerHTML.length.toString();
+
     }    
+
+    // dependencies is just the single list
+    
+    const list = Array.from(map.values());
+
+    if (!force_event) { 
+      if (JSON.stringify(this.composite_dependencies) === JSON.stringify(list)) {
+        return;
+      }
+    }
+
+    this.composite_dependencies = list;
 
     this.Publish({ type: 'update' });
 
@@ -534,7 +575,7 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
    * @param parse_result 
    * @returns 
    */
-  public UpdateDependencies(node: HTMLElement, parse_result: ParseResult, options: Partial<UpdateTextOptions> = {}) {
+  protected UpdateDependencies(node: HTMLElement, parse_result: ParseResult, options: Partial<UpdateTextOptions> = {}) {
 
     const reference_list: Array<UnitRange|UnitAddress> = [];
 
@@ -653,7 +694,7 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
     
   }
 
-  public UpdateReferences(node: HTMLElement, references: Area[], options: Partial<UpdateTextOptions> = {}) {
+  protected UpdateReferences(node: HTMLElement, references: Area[], options: Partial<UpdateTextOptions> = {}) {
 
     node.dataset.references = JSON.stringify(references.map(entry => this.model.AddressToLabel(entry)));
 
@@ -673,7 +714,7 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
    * throwing it away every time.
    * 
    */
-  public UpdateText(
+  protected UpdateText(
       node: HTMLElement, 
       options: Partial<UpdateTextOptions> = {}) {
 
@@ -899,7 +940,7 @@ export class Editor2 extends EventSource<Editor2UpdateEvent> {
    */
   protected SubstringToCaret(node: HTMLElement, start = false): string {
 
-    if (node !== this.editor_node) {
+    if (node !== this.editor_node || node !== document.activeElement) {
       return '';
     }
 
