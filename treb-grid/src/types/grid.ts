@@ -86,7 +86,9 @@ import { TileRenderer } from '../render/tile_renderer';
 import type { GridEvent } from './grid_events';
 import { ErrorCode } from './grid_events';
 import type { LegacySerializedSheet } from './sheet_types';
-import { FormulaBar } from '../editors/formula_bar';
+// import { FormulaBar } from '../editors/formula_bar';
+import { FormulaBar } from '../editors/formula_bar2';
+
 import type { GridOptions } from './grid_options';
 import { BorderConstants } from './border_constants';
 import type { SerializeOptions } from './serialize_options';
@@ -361,12 +363,11 @@ export class Grid extends GridBase {
    */
   constructor(
     options: GridOptions = {}, 
-    parser: Parser,
     model: DataModel,
     theme: Theme = DefaultTheme,
     initialze_dom = true ) {
 
-    super(options, parser, model);  
+    super(options, model);  
 
     this.decimal_separator_code = Localization.decimal_separator.charCodeAt(0);
 
@@ -1676,7 +1677,7 @@ export class Grid extends GridBase {
       if (config.edit || config.format?.length) {
 
         if (!this.external_editor_manager) {
-          const manager = new ExternalEditorManager(this.parser, this.theme, this.model, this.view);
+          const manager = new ExternalEditorManager(this.model, this.view);
           this.external_editor_manager = manager;
 
           // should this persist, or should we only subscribe when we're active? (...)

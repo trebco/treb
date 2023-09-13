@@ -300,6 +300,12 @@ $text-reference-color-5: rgb(254, 47, 1);
   .treb-editor-container>div,
   .treb-overlay-editor {
 
+    [data-highlight-index="1"] { color: var(--text-reference-color-1); }
+    [data-highlight-index="2"] { color: var(--text-reference-color-2); }
+    [data-highlight-index="3"] { color: var(--text-reference-color-3); }
+    [data-highlight-index="4"] { color: var(--text-reference-color-4); }
+    [data-highlight-index="5"] { color: var(--text-reference-color-5); }
+
     /* span:nth-of-type(1n) { */
     span.highlight-1 {
       color: var(--text-reference-color-1);

@@ -1,33 +1,46 @@
+/*
+ * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the 
+ * terms of the GNU General Public License as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any 
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY 
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along 
+ * with TREB. If not, see <https://www.gnu.org/licenses/>. 
+ *
+ * Copyright 2022-2023 trebco, llc. 
+ * info@treb.app
+ * 
+ */
+
 /**
  * attempting (at least partial) rewrite of editor. better support of 
  * external editors, and a little cleaner behavior for context highlighting.
  * 
- * looks pretty good atm, some updates needed:
+ * I didn't want to handle spellcheck, but we're setting a flag reflecting
+ * whether it's a formula; so we probably should do it. 
  * 
- * - AC
- * - colors
- * - deps
+ * we are specifically NOT handling the following:
  * 
- *   we need to support additional non-local deps, for external editor. this
- *   is so the colors will line up correctly if there are multiple editors.
+ * - enter key
  * 
- * - toggle spellcheck
- * 
- *   I don't really want this class to toggle spellcheck, but we probably 
- *   should just because the old class did it and we need to be as compatible 
- *   as possible.
- * 
- * - handle return (enter)?
- * - rewriting for array formulas (see the old class for what I mean)
+ * subclasses or callers can handle those.
  * 
  */
 
-import { Area, type IArea, type ICellAddress, IsCellAddress, Localization, type Theme } from 'treb-base-types';
+import { Area, type IArea, type ICellAddress, IsCellAddress, Localization, type Theme, Rectangle } from 'treb-base-types';
 import type { ExpressionUnit, ParseResult, UnitAddress, UnitRange } from 'treb-parser';
 import { Parser, QuotedSheetNameRegex } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
-import type { Autocomplete } from './autocomplete';
+import type { Autocomplete, AutocompleteResult } from './autocomplete';
 import { EventSource } from 'treb-utils';
+import { type AutocompleteExecResult, AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
 
 export interface UpdateTextOptions {
   rewrite_addresses: boolean;
@@ -41,6 +54,7 @@ type GenericEventListener = (event: Event) => any;
 
 export interface Editor2UpdateEvent {
   type: 'update';
+  dependencies?: Area[];
 }
 
 interface NodeDescriptor {
@@ -53,14 +67,20 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
 
   protected static readonly FormulaChars = ('$^&*(-+={[<>/~%' + Localization.argument_separator).split(''); // FIXME: i18n
 
+  /** matcher. passed in by owner. should move to constructor arguments */
+  public autocomplete_matcher?: AutocompleteMatcher;
+ 
+  /** the containing node, used for layout */
+  protected container_node?: HTMLDivElement;
+
   /**
    * we used to have more than once listener so this made more sense. atm
    * we only listen for `input` events, so we could simplify.
    */
   private listeners: Map<Partial<keyof HTMLElementEventMap>, GenericEventListener> = new Map();
 
-  /** node used for counting characters */
-  private measurement_node: HTMLDivElement;
+  /* * node used for counting characters * /
+  // private measurement_node: HTMLDivElement;
 
   /** 
    * this is the node we are currently editing. it's possible we are not 
@@ -88,6 +108,11 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
   protected assume_formula = false;
 
   /**
+   * this flag indicates we're editing a formula, which starts with `=`.
+   */
+  protected text_formula = false;
+
+  /**
    * this has changed -- we don't have an internal field. instead we'll 
    * check when called. it's slightly more expensive but should be 
    * relatively rare.
@@ -98,12 +123,60 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
       return true; // always selecting
     }
 
-    if (this.editor_node) {
-      const text = this.SubstringToCaret(this.editor_node);
+    if (!this.text_formula) {
+      return false;
+    }
+
+    // FIXME: also if you change the selection. our insert routine
+    // handles that but this will return false. the test is "is the 
+    // cursor in or at the end of a reference?"
+
+    if (this.editor_node && this.editor_node === document.activeElement) {
+
+      const selection = window.getSelection();
+      const count = selection?.rangeCount;
+
+      if (count) {
+
+        const range = selection?.getRangeAt(0);
+        const element = range?.endContainer instanceof HTMLElement ? range.endContainer :
+          range.endContainer?.parentElement;
+
+        // this is a reference, assume we're selecting (we will replace)
+        if (element?.dataset.reference !== undefined) {
+          return true;
+        }
+
+        // we may be able to use the selection directly
+        /*
+        if (range?.endContainer instanceof Text) {
+          const str = (range.endContainer.textContent?.substring(0, range.endOffset) || '').trim();
+          if (str.length && Editor2.FormulaChars.includes(str[str.length - 1])) {
+            return true;
+          }
+        }
+        */
+
+        // start, not end
+
+        if (range?.startContainer instanceof Text) {
+          const str = (range.startContainer.textContent?.substring(0, range.startOffset) || '').trim();
+          if (str.length && Editor2.FormulaChars.includes(str[str.length - 1])) {
+            return true;
+          }
+        }
+        else {
+          console.info("mark 21", range);
+        }
+
+      }
+
+      const text = this.SubstringToCaret2(this.editor_node)[1].trim();
       if (text.length) {
         const char = text[text.length - 1];
         return Editor2.FormulaChars.includes(char);
       }
+
     }
 
     return false;
@@ -117,18 +190,20 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
     return this.composite_dependencies;
   }
 
+  /** reference to model parser */
+  public parser: Parser;
+
   constructor( 
-      public parser: Parser, 
-      public theme: Theme,
+      // public parser: Parser, 
+      // public theme: Theme,
       public model: DataModel,
       public view: ViewModel,
       public autocomplete?: Autocomplete ){
 
     super();
 
-    // ...
-
-    this.measurement_node = document.createElement('div');
+    this.parser = model.parser;
+    // this.measurement_node = document.createElement('div');
 
   }
 
@@ -243,19 +318,28 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
       // first case: range selected
       if (!range.collapsed && range.startOffset < range.endOffset) {
 
+        const substrings = this.SubstringToCaret2(this.editor_node);
+
+        /*
         // console.info('case 1');
 
         const substring_1 = this.SubstringToCaret(this.editor_node, true);
         const substring_2 = this.SubstringToCaret(this.editor_node, false);
 
-        this.editor_node.textContent = substring_1 + reference + text.substring(substring_2.length);
+        const test = this.SubstringToCaret2(this.editor_node);
+        console.info(
+          (test[0] === substring_1 && test[1] === substring_2) ? 'GOOD' : 'BAD',
+          { test, substring_1, substring_2 });
+        */
+
+        this.editor_node.textContent = substrings[0] + reference + text.substring(substrings[1].length);
 
         this.SetCaret({
           node: this.editor_node, 
-          offset: substring_1.length,
+          offset: substrings[0].length,
         }, {
           node: this.editor_node,
-          offset: substring_1.length + reference.length
+          offset: substrings[0].length + reference.length
         });
 
       }
@@ -284,7 +368,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
           // probably depends on what's immediately preceding the caret.
           // UPDATE: what about following the caret?
 
-          const substring = this.SubstringToCaret(this.editor_node, false);
+          const substring = this.SubstringToCaret2(this.editor_node)[1];
 
           let leader = '';
           let trailer = '';
@@ -424,7 +508,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
       if (descriptor.node.dataset.formatted_text === descriptor.node.textContent) {
         const test = descriptor.node.innerHTML.length;
         if (Number(descriptor.node.dataset.check || 0) !== test) {
-          descriptor.node.dataset.formatted_text = ''; // flush
+          descriptor.node.dataset.formatted_text = undefined; // flush
         }
       }
     }
@@ -455,14 +539,6 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
         }
       }
     }
-
-    // temp reset
-
-    /*
-    for (const entry of this.support) {
-      entry.node.dataset.formatted_text = '';
-    }
-    */
 
     // if we're switching, clean up first
 
@@ -561,7 +637,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
 
     this.composite_dependencies = list;
 
-    this.Publish({ type: 'update' });
+    this.Publish({ type: 'update', dependencies: this.composite_dependencies });
 
   }
 
@@ -720,6 +796,21 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
 
     const text = node.textContent || '';
 
+    // set this flag so we can use it in `get selected()`
+    
+    this.text_formula = text[0] === '=';
+
+    if (this.editor_node && !this.assume_formula) {
+      this.editor_node.spellcheck = !(this.text_formula);
+    }
+
+    // this is a short-circuit so we don't format the same text twice. 
+    // but there are some problems when you assign the same text over,
+    // especially if the text is empty.
+    //
+    // to unset this field make sure to set it to `undefined` instead 
+    // of any empty string, so it will expressly not match an empty string. 
+
     if (text === node.dataset.formatted_text) {
 
       // fix selection behavior for tabbing
@@ -736,19 +827,27 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
       }
       */
 
-      return; // we may still want to update colors (TODO)
+      // is there a case where we'd want to autocomplete here? (...)
+
+      return; 
+
     }
 
     // I wonder if this should be done asynchronously... we generally 
     // have pretty short strings, so maybe not a big deal
 
+    /*
     const substr = this.SubstringToCaret(node);
     const substr2 = this.SubstringToCaret(node, true);
-    
+    const test = this.SubstringToCaret2(node);
+    */
+
+    const [substring_start, substring_end] = this.SubstringToCaret2(node);
+
     // console.info({text, substr, substr2});
 
-    let caret_start = substr2.length;
-    let caret_end = substr.length;
+    let caret_start = substring_start.length;
+    let caret_end = substring_end.length;
 
     // this is a little hacky
     if (caret_start === 0 && caret_end === 0) {
@@ -930,16 +1029,275 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
 
     node.dataset.formatted_text = text;
 
+    // 
+
+    const matcher = this.autocomplete_matcher;
+    if (matcher) {
+      Promise.resolve().then(() => {
+        const exec_result = matcher.Exec({ text, cursor: substring_end.length });
+        const node = 
+          this.NodeAtIndex(exec_result.completions?.length ? 
+                (exec_result.position || 0) :
+                (exec_result.function_position || 0));
+        this.Autocomplete(exec_result, node);
+      });
+    }
+
+  }
+
+  protected NodeAtIndex(index: number): Node|undefined {
+    const children = this.editor_node?.childNodes || [];
+    for (let i = 0; i < children.length; i++) {
+      const len = children[i].textContent?.length || 0;
+      if (len > index) {
+        return children[i];
+      }
+      index -= len;
+    }
+    return undefined;
+  }
+
+  protected AcceptAutocomplete(ac_result: AutocompleteResult) {
+
+    if (!this.editor_node) return;
+
+    let type = DescriptorType.Function;
+    if (ac_result.data && ac_result.data.completions) {
+      for (const completion of ac_result.data.completions) {
+        if (completion.name.toLowerCase() === ac_result.value?.toLowerCase()) {
+          type = completion.type || DescriptorType.Function;
+          break;
+        }
+      }
+    }
+
+    // since this only happens when typing, we know that there's a single
+    // cursor position, and it's in a text node. can we use that reduction to
+    // simplify how we insert? it's probably unecessary to highlight...
+    //
+    // at least in the case of functions. if we're inserting a named reference,
+    // then we do need to highlight. so.
+
+    const start = ac_result.data?.position || 0;
+    const end = start + (ac_result.data?.token?.length || 0);
+
+    const insertion = (type === DescriptorType.Token) ? ac_result.value : ac_result.value + '(';
+
+    const text = this.editor_node.textContent || '';
+    let adjusted = text.substring(0, start) + insertion;
+    let caret = adjusted.length;
+    adjusted += text.substring(end);
+
+    this.editor_node.textContent = adjusted;
+    this.SetCaret({node: this.editor_node, offset: caret});
+    
+    /*
+    let selection = window.getSelection();
+    if (!selection) throw new Error('error getting selection');
+
+    let range = selection.getRangeAt(0);
+    const preCaretRange = range.cloneRange();
+    const tmp = document.createElement('div');
+
+    preCaretRange.selectNodeContents(this.editor_node);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+    tmp.appendChild(preCaretRange.cloneContents());
+
+    const str = (tmp.textContent || '').substr(0, ac_result.data ? ac_result.data.position : 0) + ac_result.value;
+    //const insert = (type === DescriptorType.Token) ? str + ' ' : str + '(';
+    const insert = (type === DescriptorType.Token) ? str : str + '(';
+
+    // this is destroying nodes, we should be setting html here
+
+        this.editor_node.textContent = insert;
+
+    */
+
+    this.autocomplete?.Hide();
+
+    this.UpdateText(this.editor_node);
+    this.UpdateColors();
+
+    /*
+    selection = window.getSelection();
+    range = document.createRange();
+    if (this.editor_node?.lastChild) {
+      range.setStartAfter(this.editor_node.lastChild);
+    }
+    range.collapse(true);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    this.selecting_ = true;
+
+    if (ac_result.click){
+      this.UpdateSelectState();
+    }
+    */
+
+
+  }
+
+  /** called when there's AC data to display (or tooltip) */
+  protected Autocomplete(data: AutocompleteExecResult, target_node?: Node): void {
+
+    if (!this.container_node || !this.autocomplete) {
+      return;
+    }
+
+    let client_rect: DOMRect;
+    if (target_node?.nodeType === Node.ELEMENT_NODE) {
+      client_rect = (target_node as Element).getBoundingClientRect();
+    }
+    else {
+      client_rect = this.container_node.getBoundingClientRect();
+    }
+
+    // console.info({target_node, client_rect});
+
+    const rect = new Rectangle(
+      Math.round(client_rect.left),
+      Math.round(client_rect.top),
+      client_rect.width, client_rect.height);
+
+    this.autocomplete.Show(this.AcceptAutocomplete.bind(this), data, rect);
+
   }
 
   /**
+   * this version gets substrings to both selection points.
+   * 
+   * @param node 
+   * @returns [substring to start of selection, substring to end of selection]
+   */
+  protected SubstringToCaret2(node: HTMLElement): [string, string] {
+
+    const result: [string, string] = ['', ''];
+
+    if (node !== document.activeElement || node !== this.editor_node) {
+      return result;
+    }
+    
+    // is there a way to do this without recursing? (...)
+    // how about string concat instead of array join, it's faster in 
+    // chrome (!)
+
+    let complete = [ false, false ];
+
+    const Consume = (element: Node, range: Range) => {
+
+      if (element === range.startContainer) {
+        result[0] += (element.textContent || '').substring(0, range.startOffset);
+        complete[0] = true;
+      }
+      if (element === range.endContainer) {
+        result[1] += (element.textContent || '').substring(0, range.endOffset);
+        complete[1] = true;
+      }
+
+      if (complete[0] && complete[1]) {
+        return;
+      }
+
+      if (element instanceof Text) {
+        const text = element.textContent || '';
+        if (!complete[0]) {
+          result[0] += text;
+        }
+        if (!complete[1]) {
+          result[1] += text;
+        }
+      }
+      else if (element.hasChildNodes()) {
+        for (const child of Array.from(element.childNodes)) {
+          Consume(child, range);
+          if (complete[0] && complete[1]) {
+            return;
+          }
+        }
+      }
+    };
+
+    const selection = window.getSelection();
+    if (selection?.rangeCount ?? 0 > 0) {
+      const range = selection?.getRangeAt(0);
+      if (range) {
+        Consume(node, range);
+      }
+    }
+
+    return result;
+  }
+
+  /* *
+   * get text up to the selection. optionally use the start of the 
+   * selection. new version does not require cloning, we can drop the 
+   * measurement node.
+   * 
+   * @param node 
+   * @param start 
+   * @returns 
+   * /
+  protected SubstringToCaret(node: HTMLElement, start = false): string {
+
+    if (node !== document.activeElement) {
+      return '';
+    }
+
+    // is there a way to do this without recursing? (...)
+    // how about string concat instead of array join, it's faster in chrome (!)
+
+    const Consume = (element: Node, target: Node, offset: number, parts: string[]): boolean => {
+      if (element === target) {
+        parts.push((element.textContent || '').substring(0, offset));
+        return false;
+      }
+      else if (element instanceof Text) {
+        parts.push(element.textContent || '');
+        return true;
+      }
+      else if (element.hasChildNodes()) {
+        for (const child of element.childNodes) {
+          const result = Consume(child, target, offset, parts);
+          if (!result) { 
+            return false; 
+          }
+        }
+        return true;
+      }
+      return false;
+    };
+
+    const selection = window.getSelection();
+    if (selection?.rangeCount ?? 0 > 0) {
+
+      const range = selection?.getRangeAt(0);
+      if (range) {
+        let [target, offset] = start ? 
+            [range.startContainer, range.startOffset] : 
+            [range.endContainer, range.endOffset];
+
+        const parts: string[] = [];
+        Consume(node, target, offset, parts);
+        return parts.join('');
+
+      }
+
+    }
+    
+    return '';
+
+  }
+  */
+
+  /* *
    * we've been carrying this function around for a while. is this
    * still the best way to do this in 2023? (...)
    * 
    * get text substring to caret position, irrespective of node structure
    * 
    * @param start - use the start of the selection instead of the end
-   */
+   * /
   protected SubstringToCaret(node: HTMLElement, start = false): string {
 
     if (node !== this.editor_node || node !== document.activeElement) {
@@ -972,8 +1330,19 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
     this.measurement_node.textContent = '';
     this.measurement_node.appendChild(preCaretRange.cloneContents());
 
-    return this.measurement_node.textContent || '';
+    const result = this.measurement_node.textContent || '';
+    const result2 = this.SubstringToCaret2(node, start);
+
+    // console.info('X', result === result2, {result, result2});
+    if (result !== result2) {
+      throw new Error('mismatch');
+    }
+
+    return result;
+
+    // return this.measurement_node.textContent || '';
 
   }
+  */
 
 }

@@ -428,7 +428,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
         this.Publish({
           type: 'commit',
-          selection: this.selection,
+          // selection: this.selection,
           value: text,
           event,
           array,

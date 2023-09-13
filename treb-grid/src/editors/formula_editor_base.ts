@@ -35,7 +35,7 @@ import { UA } from '../util/ua';
 /** event on commit, either enter or tab */
 export interface FormulaEditorCommitEvent {
   type: 'commit';
-  selection?: GridSelection;
+  // selection?: GridSelection;
   value?: string;
 
   /**

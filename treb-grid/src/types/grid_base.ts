@@ -132,7 +132,6 @@ export class GridBase {
 
   constructor(
     options: GridOptions = {},
-    parser: Parser,
     model: DataModel) {
 
     this.model = model;
@@ -144,7 +143,7 @@ export class GridBase {
 
     // shared parser
 
-    this.parser = parser;
+    this.parser = model.parser;
 
     // apply default options, meaning that you need to explicitly set/unset
     // in order to change behavior. FIXME: this is ok for flat structure, but
