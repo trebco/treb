@@ -23,8 +23,8 @@ import type { Sheet } from './sheet';
 import type { IArea, ICellAddress, Table, CellStyle } from 'treb-base-types';
 import type { SerializedSheet } from './sheet_types';
 import { NamedRangeCollection } from './named_range';
-import type { ExpressionUnit, UnitAddress, UnitStructuredReference, UnitRange } from 'treb-parser';
-import { Style } from 'treb-base-types';
+import { type ExpressionUnit, type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex } from 'treb-parser';
+import { Area, IsCellAddress, Style } from 'treb-base-types';
 
 export interface SerializedMacroFunction {
   name: string;
@@ -158,6 +158,8 @@ export class SheetCollection {
  * FIXME: this should move out of the grid module, grid should be focused on view
  */
 export class DataModel {
+
+  public readonly parser: Parser = new Parser();
 
   /** document metadata */
   public document_name?: string;
@@ -317,7 +319,132 @@ export class DataModel {
     
     return undefined;
   }
-  
+
+  /**
+   * return an address label for this address (single cell or range)
+   * 
+   * @param address 
+   * @param active_sheet 
+   */
+  public AddressToLabel(address: ICellAddress|IArea, active_sheet?: Sheet) {
+
+    const start = IsCellAddress(address) ? address : address.start;
+    const parts = IsCellAddress(address) ? 
+      [Area.CellAddressToLabel(address)] : 
+      [Area.CellAddressToLabel(address.start), Area.CellAddressToLabel(address.end)];
+
+    const sheet = this.sheets.Find(start.sheet_id || 0);
+    const name = (sheet?.name) ? 
+        (QuotedSheetNameRegex.test(sheet.name) ? `'${sheet.name}'` : sheet.name) : '';
+    
+    return name + (name ? '!' : '') + (parts[0] === parts[1] ? parts[0] : parts.join(':'));
+    
+  }
+
+  // --- resolution api, moved from calculator ---------------------------------
+
+  /**
+   * returns false if the sheet cannot be resolved, which probably
+   * means the name changed (that's the case we are working on with
+   * this fix).
+   */
+  public ResolveSheetID(expr: UnitAddress|UnitRange, context?: ICellAddress, active_sheet?: Sheet): boolean {
+
+    const target = expr.type === 'address' ? expr : expr.start;
+
+    if (target.sheet_id) {
+      return true;
+    }
+
+    if (target.sheet) {
+      const sheet = this.sheets.Find(target.sheet);
+      if (sheet) {
+        target.sheet_id = sheet.id;
+        return true;
+      }
+
+      /*
+      const lc = target.sheet.toLowerCase();
+      for (const sheet of this.model.sheets.list) {
+        if (sheet.name.toLowerCase() === lc) {
+          target.sheet_id = sheet.id;
+          return true;
+        }
+      }
+      */
+    }
+    else if (context?.sheet_id) {
+      target.sheet_id = context.sheet_id;
+      return true;
+    }
+    else if (active_sheet?.id) {
+      target.sheet_id = active_sheet.id;
+      return true;
+    }
+
+    return false; // the error
+
+  }
+
+  /** wrapper method ensures it always returns an Area (instance, not interface) */
+  public ResolveArea(address: string|ICellAddress|IArea, active_sheet: Sheet): Area {
+    const resolved = this.ResolveAddress(address, active_sheet);
+    return IsCellAddress(resolved) ? new Area(resolved) : new Area(resolved.start, resolved.end);
+  }
+
+  /** 
+   * moved from embedded sheet. also modified to preserve ranges, so it
+   * might return a range (area). if you are expecting the old behavior
+   * you need to check (perhaps we could have a wrapper, or make it optional?)
+   * 
+   * Q: why does this not go in grid? or model? (...)
+   * Q: why are we not preserving absoute/relative? (...)
+   * 
+   */
+  public ResolveAddress(address: string|ICellAddress|IArea, active_sheet: Sheet): ICellAddress|IArea {
+    
+    if (typeof address === 'string') {
+      const parse_result = this.parser.Parse(address);
+      if (parse_result.expression && parse_result.expression.type === 'address') {
+        this.ResolveSheetID(parse_result.expression, undefined, active_sheet);
+        return {
+          row: parse_result.expression.row,
+          column: parse_result.expression.column,
+          sheet_id: parse_result.expression.sheet_id,
+        };
+      }
+      else if (parse_result.expression && parse_result.expression.type === 'range') {
+        this.ResolveSheetID(parse_result.expression, undefined, active_sheet);
+        return {
+          start: {
+            row: parse_result.expression.start.row,
+            column: parse_result.expression.start.column,
+            sheet_id: parse_result.expression.start.sheet_id,
+          },
+          end: {
+            row: parse_result.expression.end.row,
+            column: parse_result.expression.end.column,
+          }
+        };
+      }
+      else if (parse_result.expression && parse_result.expression.type === 'identifier') {
+
+        // is named range guaranteed to have a sheet ID? (I think yes...)
+
+        const named_range = this.named_ranges.Get(parse_result.expression.name);
+        if (named_range) {
+          return named_range;
+        }
+      }
+
+      return { row: 0, column: 0 }; // default for string types -- broken
+
+    }
+
+    return address; // already range or address
+
+  }
+
 }
 
 export interface ViewModel {

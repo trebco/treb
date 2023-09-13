@@ -180,7 +180,11 @@ export class Calculator extends Graph {
 
   // FIXME: need a way to share/pass parser flags
 
-  public readonly parser: Parser = new Parser();
+  // public readonly parser: Parser = new Parser();
+  /** localized parser instance. we're sharing. */
+  protected get parser(): Parser {
+    return this.model.parser;
+  }
 
   protected readonly library = new FunctionLibrary();
 
@@ -192,10 +196,14 @@ export class Calculator extends Graph {
   // protected graph: Graph = new Graph(); // |null = null;
   // protected status: GraphStatus = GraphStatus.OK;
 
+  /*
   // FIXME: why is this a separate class? [actually is this a composition issue?]
   protected expression_calculator = new ExpressionCalculator(
       this.library,
       this.parser);
+    */
+
+  protected expression_calculator: ExpressionCalculator;
 
   /** the next calculation must do a full rebuild -- set on reset */
   protected full_rebuild_required = false;
@@ -203,6 +211,9 @@ export class Calculator extends Graph {
   constructor(protected readonly model: DataModel, calculator_options: Partial<CalculatorOptions> = {}) {
 
     super();
+
+    this.expression_calculator = new ExpressionCalculator(this.library, this.parser);
+
 
     // at the moment options are only used here; in the future
     // we may need to extend handling.
@@ -1380,64 +1391,6 @@ export class Calculator extends Graph {
     return map;
   }
 
-  /** wrapper method ensures it always returns an Area (instance, not interface) */
-  public ResolveArea(address: string|ICellAddress|IArea, active_sheet: Sheet): Area {
-    const resolved = this.ResolveAddress(address, active_sheet);
-    return IsCellAddress(resolved) ? new Area(resolved) : new Area(resolved.start, resolved.end);
-  }
-
-  /** 
-   * moved from embedded sheet. also modified to preserve ranges, so it
-   * might return a range (area). if you are expecting the old behavior
-   * you need to check (perhaps we could have a wrapper, or make it optional?)
-   * 
-   * Q: why does this not go in grid? or model? (...)
-   * Q: why are we not preserving absoute/relative? (...)
-   * 
-   */
-   public ResolveAddress(address: string|ICellAddress|IArea, active_sheet: Sheet): ICellAddress|IArea {
-    
-    if (typeof address === 'string') {
-      const parse_result = this.parser.Parse(address);
-      if (parse_result.expression && parse_result.expression.type === 'address') {
-        this.ResolveSheetID(parse_result.expression, undefined, active_sheet);
-        return {
-          row: parse_result.expression.row,
-          column: parse_result.expression.column,
-          sheet_id: parse_result.expression.sheet_id,
-        };
-      }
-      else if (parse_result.expression && parse_result.expression.type === 'range') {
-        this.ResolveSheetID(parse_result.expression, undefined, active_sheet);
-        return {
-          start: {
-            row: parse_result.expression.start.row,
-            column: parse_result.expression.start.column,
-            sheet_id: parse_result.expression.start.sheet_id,
-          },
-          end: {
-            row: parse_result.expression.end.row,
-            column: parse_result.expression.end.column,
-          }
-        };
-      }
-      else if (parse_result.expression && parse_result.expression.type === 'identifier') {
-
-        // is named range guaranteed to have a sheet ID? (I think yes...)
-
-        const named_range = this.model.named_ranges.Get(parse_result.expression.name);
-        if (named_range) {
-          return named_range;
-        }
-      }
-
-      return { row: 0, column: 0 }; // default for string types -- broken
-
-    }
-
-    return address; // already range or address
-
-  }
 
   /** moved from embedded sheet */
   public Evaluate(expression: string, active_sheet?: Sheet, options: EvaluateOptions = {}) {
@@ -1487,7 +1440,7 @@ export class Calculator extends Graph {
             }
           }
 
-          this.ResolveSheetID(unit, undefined, active_sheet);
+          this.model.ResolveSheetID(unit, undefined, active_sheet);
         }
         return true;
       });
@@ -1813,48 +1766,6 @@ export class Calculator extends Graph {
 
   }
 
-  /**
-   * returns false if the sheet cannot be resolved, which probably
-   * means the name changed (that's the case we are working on with
-   * this fix).
-   */
-  public ResolveSheetID(expr: UnitAddress|UnitRange, context?: ICellAddress, active_sheet?: Sheet): boolean {
-
-    const target = expr.type === 'address' ? expr : expr.start;
-
-    if (target.sheet_id) {
-      return true;
-    }
-
-    if (target.sheet) {
-      const sheet = this.model.sheets.Find(target.sheet);
-      if (sheet) {
-        target.sheet_id = sheet.id;
-        return true;
-      }
-
-      /*
-      const lc = target.sheet.toLowerCase();
-      for (const sheet of this.model.sheets.list) {
-        if (sheet.name.toLowerCase() === lc) {
-          target.sheet_id = sheet.id;
-          return true;
-        }
-      }
-      */
-    }
-    else if (context?.sheet_id) {
-      target.sheet_id = context.sheet_id;
-      return true;
-    }
-    else if (active_sheet?.id) {
-      target.sheet_id = active_sheet.id;
-      return true;
-    }
-
-    return false; // the error
-
-  }
 
   // --- protected -------------------------------------------------------------
 
@@ -1866,13 +1777,13 @@ export class Calculator extends Graph {
 
     switch (expr.type) {
       case 'address':
-        if (this.ResolveSheetID(expr, context)) {
+        if (this.model.ResolveSheetID(expr, context)) {
           return new Area(expr);
         }
         break;
 
       case 'range':
-        if (this.ResolveSheetID(expr, context)) {
+        if (this.model.ResolveSheetID(expr, context)) {
           return new Area(expr.start, expr.end);
         }
         break;

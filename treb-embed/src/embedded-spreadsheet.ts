@@ -31,7 +31,7 @@ import type {
   GridSelection, CellEvent, FunctionDescriptor, 
   AnnotationViewData,
   AnnotationType, 
-  ExternalEditorType,
+  ExternalEditorConfig,
 } from 'treb-grid';
 
 import {
@@ -355,7 +355,7 @@ export class EmbeddedSpreadsheet {
 
   /** localized parser instance. we're sharing. */
   protected get parser(): Parser {
-    return this.calculator.parser;
+    return this.model.parser;
   }
 
   /** for destruction */
@@ -1177,8 +1177,8 @@ export class EmbeddedSpreadsheet {
    * to support outside tooling by highlighting a list of arguments and 
    * responding to selection.
    */
-  public ExternalEditor(editor?: Partial<ExternalEditorType>) {
-    this.grid.ExternalEditor(editor);
+  public ExternalEditor(config?: Partial<ExternalEditorConfig>) {
+    this.grid.ExternalEditor(config);
   }
 
   /**
@@ -1846,7 +1846,7 @@ export class EmbeddedSpreadsheet {
    * @param reference 
    */
   public InsertTable(range?: RangeReference, options: InsertTableOptions = {}) {
-    const area = range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : this.GetSelectionReference().area;
+    const area = range ? this.model.ResolveArea(range, this.grid.active_sheet) : this.GetSelectionReference().area;
 
     let theme = options.theme;
     if (typeof theme === 'number') {
@@ -1928,7 +1928,7 @@ export class EmbeddedSpreadsheet {
     let target: IRectangle | Partial<Area> | undefined;
 
     if (rect) {
-      target = Rectangle.IsRectangle(rect) ? rect : this.calculator.ResolveArea(rect, this.grid.active_sheet);
+      target = Rectangle.IsRectangle(rect) ? rect : this.model.ResolveArea(rect, this.grid.active_sheet);
     }
 
     if (argument_separator && argument_separator !== this.parser.argument_separator) {
@@ -2273,7 +2273,7 @@ export class EmbeddedSpreadsheet {
 
     // API v1 OK
 
-    this.grid.MergeCells(range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : undefined);
+    this.grid.MergeCells(range ? this.model.ResolveArea(range, this.grid.active_sheet) : undefined);
   }
 
   /**
@@ -2287,7 +2287,7 @@ export class EmbeddedSpreadsheet {
 
     // API v1 OK
 
-    this.grid.UnmergeCells(range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : undefined);
+    this.grid.UnmergeCells(range ? this.model.ResolveArea(range, this.grid.active_sheet) : undefined);
   }
 
   /** 
@@ -2996,7 +2996,7 @@ export class EmbeddedSpreadsheet {
     // API v1 OK
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address, this.grid.active_sheet);
+      const reference = this.model.ResolveAddress(address, this.grid.active_sheet);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
@@ -3016,7 +3016,7 @@ export class EmbeddedSpreadsheet {
   public SetValidation(address: AddressReference, validation?: RangeReference|CellValue[], error?: boolean) {
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address, this.grid.active_sheet);
+      const reference = this.model.ResolveAddress(address, this.grid.active_sheet);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
@@ -3024,7 +3024,7 @@ export class EmbeddedSpreadsheet {
       this.grid.SetValidation(address, validation, error);
     }
     else {
-      const range = this.calculator.ResolveArea(validation, this.grid.active_sheet);
+      const range = this.model.ResolveArea(validation, this.grid.active_sheet);
       this.grid.SetValidation(address, range, error);
     }
 
@@ -3034,7 +3034,7 @@ export class EmbeddedSpreadsheet {
   public RemoveValidation(address: AddressReference) {
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address);
+      const reference = this.model.ResolveAddress(address);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
@@ -3045,7 +3045,7 @@ export class EmbeddedSpreadsheet {
   public SetValidationList(address: AddressReference, list: CellValue[]) {
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address);
+      const reference = this.model.ResolveAddress(address);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
@@ -3056,11 +3056,11 @@ export class EmbeddedSpreadsheet {
   public SetValidationRange(address: AddressReference, range: RangeReference) {
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address);
+      const reference = this.model.ResolveAddress(address);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
-    range = this.calculator.ResolveArea(range);
+    range = this.model.ResolveArea(range);
     this.grid.SetValidation(address, range);
 
   }
@@ -3364,7 +3364,7 @@ export class EmbeddedSpreadsheet {
     // API v1 OK
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address, this.grid.active_sheet);
+      const reference = this.model.ResolveAddress(address, this.grid.active_sheet);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
@@ -3404,7 +3404,7 @@ export class EmbeddedSpreadsheet {
     // FIXME: we're using the sheet EnsureAddress method, but that should
     // move either in here or into some sort of helper class
 
-    const result = this.calculator.ResolveAddress(reference, this.grid.active_sheet);
+    const result = this.model.ResolveAddress(reference, this.grid.active_sheet);
 
     if (IsCellAddress(result)) {
       return result.sheet_id ? result : undefined;
@@ -3600,7 +3600,7 @@ export class EmbeddedSpreadsheet {
 
     // still for now we can take advantage of that and skip the check.
 
-    this.grid.ApplyBorders2(range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : undefined, borders, {}, width);
+    this.grid.ApplyBorders2(range ? this.model.ResolveArea(range, this.grid.active_sheet) : undefined, borders, {}, width);
 
   }
 
@@ -3623,7 +3623,7 @@ export class EmbeddedSpreadsheet {
     // translate old-style alignment constants (UPDATE: moved to grid)
 
     this.grid.ApplyStyle(
-      range ? this.calculator.ResolveArea(range, this.grid.active_sheet) : undefined, style, delta);
+      range ? this.model.ResolveArea(range, this.grid.active_sheet) : undefined, style, delta);
   }
 
   /**
@@ -3687,7 +3687,7 @@ export class EmbeddedSpreadsheet {
 
     if (typeof value === 'object') {
       if (IsCellAddress(value) || IsArea(value)) {
-        this.grid.SetName(name, this.calculator.ResolveArea(value, this.grid.active_sheet));
+        this.grid.SetName(name, this.model.ResolveArea(value, this.grid.active_sheet));
         return;
       }
     }
@@ -3704,7 +3704,7 @@ export class EmbeddedSpreadsheet {
       switch (parse_result.expression.type) {
         case 'address':
         case 'range':
-          this.grid.SetName(name, this.calculator.ResolveArea(parse_result.expression, this.grid.active_sheet));
+          this.grid.SetName(name, this.model.ResolveArea(parse_result.expression, this.grid.active_sheet));
           return;
       }
       this.grid.SetName(name, undefined, value);
@@ -3730,7 +3730,7 @@ export class EmbeddedSpreadsheet {
 
     // NOTE: AC is handled internally
 
-    this.grid.SetName(name, this.calculator.ResolveArea(range, this.grid.active_sheet));
+    this.grid.SetName(name, this.model.ResolveArea(range, this.grid.active_sheet));
     */
   }
 
@@ -3756,7 +3756,7 @@ export class EmbeddedSpreadsheet {
     // API v1 OK
 
     if (typeof address === 'string') {
-      const reference = this.calculator.ResolveAddress(address, this.grid.active_sheet);
+      const reference = this.model.ResolveAddress(address, this.grid.active_sheet);
       address = IsCellAddress(reference) ? reference : reference.start;
     }
 
@@ -3784,7 +3784,7 @@ export class EmbeddedSpreadsheet {
     let resolved: Area|undefined = undefined; 
 
     if (!!range) {
-      resolved = this.calculator.ResolveArea(range, this.grid.active_sheet);
+      resolved = this.model.ResolveArea(range, this.grid.active_sheet);
       if (resolved.start.sheet_id) {
         if (resolved.start.sheet_id !== this.grid.active_sheet.id) {
           this.grid.ActivateSheetID(resolved.start.sheet_id);
@@ -3826,7 +3826,7 @@ export class EmbeddedSpreadsheet {
       }
     }
 
-    return this.grid.GetRange(this.calculator.ResolveAddress(range, this.grid.active_sheet), options.type);
+    return this.grid.GetRange(this.model.ResolveAddress(range, this.grid.active_sheet), options.type);
 
   }
 
@@ -3855,7 +3855,7 @@ export class EmbeddedSpreadsheet {
 
     if (!range) { return undefined; }
 
-    return this.grid.GetRangeStyle(this.calculator.ResolveAddress(range, this.grid.active_sheet), apply_theme);
+    return this.grid.GetRangeStyle(this.model.ResolveAddress(range, this.grid.active_sheet), apply_theme);
     
   }
 
@@ -3884,7 +3884,7 @@ export class EmbeddedSpreadsheet {
     }
 
     if (range) {
-      const area = this.calculator.ResolveArea(range, this.grid.active_sheet);
+      const area = this.model.ResolveArea(range, this.grid.active_sheet);
 
       if (options.spill && Array.isArray(data)) {
         const rows = data.length;
@@ -3953,7 +3953,7 @@ export class EmbeddedSpreadsheet {
 
     if (!table) {
 
-      let address = this.calculator.ResolveAddress(reference, this.grid.active_sheet);
+      let address = this.model.ResolveAddress(reference, this.grid.active_sheet);
 
       if (!IsCellAddress(address)) {
         address = address.start;
@@ -4703,7 +4703,7 @@ export class EmbeddedSpreadsheet {
 
                 this.parser.Walk(parse_result.expression, (unit) => {
                   if (unit.type === 'address' || unit.type === 'range') {
-                    this.calculator.ResolveSheetID(unit, undefined, this.grid.active_sheet);
+                    this.model.ResolveSheetID(unit, undefined, this.grid.active_sheet);
                   }
                   return true;
                 });
