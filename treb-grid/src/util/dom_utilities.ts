@@ -22,12 +22,44 @@
 export class DOMUtilities {
 
   /** creates a div and assigns class name/names */
-  public static CreateDiv(classes = '', parent?: HTMLElement, scope?: string){
-    return this.Create<HTMLDivElement>('div', classes, parent, scope);
+  public static CreateDiv(classes = '', parent?: HTMLElement, scope?: string): HTMLDivElement {
+    return this.Create('div', classes, parent, scope);
   }
 
-  /** generic element constructor. shame we need the tag AND the type. */
-  public static Create<E extends HTMLElement>(tag = '', classes = '', parent?: HTMLElement, scope?: string, attrs?: Record<string, string>){
+  /** better typing */
+  public static Create<K extends keyof HTMLElementTagNameMap>(
+      tag: K, 
+      class_name = '', 
+      parent?: HTMLElement, 
+      scope?: string, 
+      attrs?: Record<string, string>): HTMLElementTagNameMap[K] {
+ 
+    const element = document.createElement(tag);
+
+    if (class_name) {
+      element.className = class_name;
+    }
+
+    if (scope) {
+      element.setAttribute(scope, ''); // scope?
+    }
+
+    if (attrs) {
+      const keys = Object.keys(attrs);
+      for (const key of keys) {
+        element.setAttribute(key, attrs[key]);
+      }
+    }
+
+    if (parent) {
+      parent.appendChild(element);
+    }
+    
+    return element;
+  }
+
+  /* * generic element constructor. shame we need the tag AND the type. * /
+  public static Create1<E extends HTMLElement>(tag = '', classes = '', parent?: HTMLElement, scope?: string, attrs?: Record<string, string>){
     const element = document.createElement(tag) as E;
     if (classes) element.setAttribute('class', classes);
     if (scope) element.setAttribute(scope, '');
@@ -40,5 +72,6 @@ export class DOMUtilities {
     if (parent) parent.appendChild(element);
     return element;
   }
+  */
 
 }

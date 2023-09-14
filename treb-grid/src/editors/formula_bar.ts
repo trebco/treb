@@ -170,7 +170,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     this.InitAddressLabel();
 
     if (this.options.insert_function_button) {
-      this.button = DOMUtilities.Create<HTMLButtonElement>('button', 'formula-button', inner_node);
+      this.button = DOMUtilities.Create('button', 'formula-button', inner_node);
       this.button.addEventListener('click', () => {
         const formula: string = this.editor_node ? this.editor_node.textContent || '' : '';
         this.Publish({ type: 'formula-button', formula });
@@ -265,7 +265,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     });
 
     if (this.options.expand_formula_button) {
-      this.expand_button = DOMUtilities.Create<HTMLButtonElement>('button', 'expand-button', inner_node);
+      this.expand_button = DOMUtilities.Create('button', 'expand-button', inner_node);
       this.expand_button.addEventListener('click', (event: MouseEvent) => {
         event.stopPropagation();
         event.preventDefault();

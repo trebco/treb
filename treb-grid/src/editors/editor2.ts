@@ -34,7 +34,7 @@
  * 
  */
 
-import { Area, type IArea, type ICellAddress, IsCellAddress, Localization, type Theme, Rectangle } from 'treb-base-types';
+import { Area, type IArea, type ICellAddress, IsCellAddress, Localization, type Theme, Rectangle, type Cell } from 'treb-base-types';
 import type { ExpressionUnit, ParseResult, UnitAddress, UnitRange } from 'treb-parser';
 import { Parser, QuotedSheetNameRegex } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
@@ -52,46 +52,136 @@ export interface UpdateTextOptions {
 
 type GenericEventListener = (event: Event) => any;
 
+// ----------------
+
+/*
 export interface Editor2UpdateEvent {
   type: 'update';
   dependencies?: Area[];
 }
+*/
 
-interface NodeDescriptor {
-  node: HTMLElement;
-  references?: Area[];
-  edit?: boolean;
+/** event on commit, either enter or tab */
+export interface FormulaEditorCommitEvent {
+  type: 'commit';
+
+  // selection?: GridSelection; // I think this is no longer used? can we drop?
+  value?: string;
+
+  /**
+   * true if commiting an array. note that if the cell _is_ an array,
+   * and you commit as !array, that should be an error.
+   */
+  array?: boolean;
+
+  /**
+   * for the formula editor, the event won't bubble so we can't handle
+   * it with the normal event handler -- so use the passed event to
+   */
+  event?: KeyboardEvent;
 }
 
-export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2UpdateEvent> {
+/** event on discard -- escape */
+export interface FormulaEditorDiscardEvent {
+  type: 'discard';
+}
+
+/** event on end select state, reset selection */
+export interface FormulaEditorEndSelectionEvent {
+  type: 'end-selection';
+}
+
+/** event on text update: need to update sheet dependencies */
+export interface FormulaEditorUpdateEvent {
+  type: 'update';
+  text?: string;
+  cell?: Cell;
+  dependencies?: Area[];
+}
+
+// export interface FormulaEditorAutocompleteEvent {
+//  type: 'autocomplete';
+//  text?: string;
+//  cursor?: number;
+// }
+
+/*
+export interface RetainFocusEvent {
+  type: 'retain-focus';
+  focus: boolean;
+}
+*/
+
+export interface StartEditingEvent {
+  type: 'start-editing';
+  editor?: string;
+}
+
+export interface StopEditingEvent {
+  type: 'stop-editing';
+  editor?: string;
+}
+
+/** discriminated union */
+export type FormulaEditorEvent
+  = // RetainFocusEvent
+  | StopEditingEvent
+  | StartEditingEvent
+  | FormulaEditorUpdateEvent
+  | FormulaEditorCommitEvent
+  | FormulaEditorDiscardEvent
+  | FormulaEditorEndSelectionEvent
+  ;
+
+
+// -----------------
+
+export interface NodeDescriptor {
+
+  /** the contenteditable node */
+  node: HTMLElement;
+
+  /** list of references in this node */
+  references?: Area[];
+
+  /** listeners we attached, so we can clean up */
+  listeners?: Map<Partial<keyof HTMLElementEventMap>, GenericEventListener>;
+
+  /** last-known text, to avoid unecessary styling */
+  formatted_text?: string;
+
+  /** check (not sure if we still need this) length of html content */
+  check?: number;
+
+}
+
+export class Editor2<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorEvent> {
 
   protected static readonly FormulaChars = ('$^&*(-+={[<>/~%' + Localization.argument_separator).split(''); // FIXME: i18n
+
+  /**
+   * the current edit cell. in the event we're editing a merged or
+   * array cell, this might be different than the actual target address.
+   */
+  public active_cell?: Cell;
 
   /** matcher. passed in by owner. should move to constructor arguments */
   public autocomplete_matcher?: AutocompleteMatcher;
  
   /** the containing node, used for layout */
-  protected container_node?: HTMLDivElement;
-
-  /**
-   * we used to have more than once listener so this made more sense. atm
-   * we only listen for `input` events, so we could simplify.
-   */
-  private listeners: Map<Partial<keyof HTMLElementEventMap>, GenericEventListener> = new Map();
-
-  /* * node used for counting characters * /
-  // private measurement_node: HTMLDivElement;
+  protected container_node?: HTMLElement;
 
   /** 
    * this is the node we are currently editing. it's possible we are not 
    * editing any cell, but just formatting. this one sends events and is 
    * the target for inserting addresses.
    */
-  protected editor_node?: HTMLElement;
+  protected active_editor?: NodeDescriptor;
 
   /**
    * all nodes that are involved with this editor. we format all of them,
-   * and if you edit one we might switch the colors as the references change.
+   * and if you edit one we might switch the colors in the others as 
+   * references change.
    */
   protected nodes: NodeDescriptor[] = [];
 
@@ -131,7 +221,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
     // handles that but this will return false. the test is "is the 
     // cursor in or at the end of a reference?"
 
-    if (this.editor_node && this.editor_node === document.activeElement) {
+    if (this.active_editor && this.active_editor.node === document.activeElement) {
 
       const selection = window.getSelection();
       const count = selection?.rangeCount;
@@ -171,7 +261,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
 
       }
 
-      const text = this.SubstringToCaret2(this.editor_node)[1].trim();
+      const text = this.SubstringToCaret2(this.active_editor.node)[1].trim();
       if (text.length) {
         const char = text[text.length - 1];
         return Editor2.FormulaChars.includes(char);
@@ -194,8 +284,6 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
   public parser: Parser;
 
   constructor( 
-      // public parser: Parser, 
-      // public theme: Theme,
       public model: DataModel,
       public view: ViewModel,
       public autocomplete?: Autocomplete ){
@@ -208,22 +296,27 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
   }
 
   public Reset() {
-    this.AttachNode();
+    this.AttachNodes();
   }
 
   public FocusEditor(): void {
-    if (this.editor_node) {
-      this.editor_node.focus();
+    if (this.active_editor) {
+      this.active_editor.node.focus();
     }
   }
 
   /**
    * add an event listener to the node. these are stored so we can remove
-   * them later if the node is disconnected.
+   * them later if the node is disconnected. 
+   * 
+   * listeners moved to node descriptors so we can have multiple sets.
    */
-  protected RegisterListener<K extends keyof HTMLElementEventMap>(key: K, handler: (event: HTMLElementEventMap[K]) => any) {
-    this.editor_node?.addEventListener(key, handler);
-    this.listeners.set(key, handler as GenericEventListener);
+  protected RegisterListener<K extends keyof HTMLElementEventMap>(descriptor: NodeDescriptor, key: K, handler: (event: HTMLElementEventMap[K]) => any) {
+    descriptor.node.addEventListener(key, handler);
+    if (!descriptor.listeners) {
+      descriptor.listeners = new Map();
+    }
+    descriptor.listeners.set(key, handler as GenericEventListener);
   }
 
   protected SelectAll(node: HTMLElement) {
@@ -277,7 +370,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
    */
   public InsertReference(reference: string, id?: number) {
 
-    if (!this.editor_node) {
+    if (!this.active_editor) {
       return;
     }
 
@@ -292,7 +385,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
     }
 
     let range = selection.getRangeAt(0);
-    const text = this.editor_node.textContent || '';
+    const text = this.active_editor.node.textContent || '';
 
     // so what we are doing here depends on where the caret is.
     // if the caret is in a reference (address, range, &c) then
@@ -318,7 +411,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
       // first case: range selected
       if (!range.collapsed && range.startOffset < range.endOffset) {
 
-        const substrings = this.SubstringToCaret2(this.editor_node);
+        const substrings = this.SubstringToCaret2(this.active_editor.node);
 
         /*
         // console.info('case 1');
@@ -332,13 +425,13 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
           { test, substring_1, substring_2 });
         */
 
-        this.editor_node.textContent = substrings[0] + reference + text.substring(substrings[1].length);
+        this.active_editor.node.textContent = substrings[0] + reference + text.substring(substrings[1].length);
 
         this.SetCaret({
-          node: this.editor_node, 
+          node: this.active_editor.node, 
           offset: substrings[0].length,
         }, {
-          node: this.editor_node,
+          node: this.active_editor.node,
           offset: substrings[0].length + reference.length
         });
 
@@ -368,7 +461,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
           // probably depends on what's immediately preceding the caret.
           // UPDATE: what about following the caret?
 
-          const substring = this.SubstringToCaret2(this.editor_node)[1];
+          const substring = this.SubstringToCaret2(this.active_editor.node)[1];
 
           let leader = '';
           let trailer = '';
@@ -403,9 +496,9 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
           }
           */
 
-          this.editor_node.textContent = substring + leader + reference + text.substring(substring.length);
+          this.active_editor.node.textContent = substring + leader + reference + text.substring(substring.length);
           this.SetCaret({
-            node: this.editor_node, 
+            node: this.active_editor.node, 
             offset: substring.length + reference.length + leader.length,
           });
 
@@ -436,7 +529,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
 
     // there may be some cases where we don't need to do this
 
-    this.UpdateText(this.editor_node)
+    this.UpdateText(this.active_editor)
     this.UpdateColors();
 
     // this does not raise an input event. probably because we're calling
@@ -449,7 +542,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
     // make sure to do this after updating so we have a current list of 
     // references attached to the node
 
-    this.editor_node.dispatchEvent(new Event('input', {
+    this.active_editor.node.dispatchEvent(new Event('input', {
       bubbles: true,
       cancelable: true,
     }));
@@ -457,62 +550,100 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
   }
 
   /**
-   * attach to a node. this node must be `contenteditable`. it should have
-   * `display: block`, there are contenteditable issues with some others
-   * (definitely problems with flex; not sure about inline).
+   * attach to a set of nodes (one is fine). 
+   * 
+   * update modifying how this works. we will now watch focus ourselves.
    */
-  public AttachNode(target?: HTMLElement, nodes: HTMLElement[] = [], assume_formula = true) {
+  public AttachNodes(nodes: HTMLElement[] = [], assume_formula = true) {
 
     this.assume_formula = assume_formula;
 
     // try to preserve any nodes/descriptors we've already "cooked",
-    // since this will proabbly get called multiple times when you
-    // switch between fields.
+    // since this may get called multiple times when you switch between 
+    // fields.
 
-    // there's a particular case where this is breaking. an external
-    // application is setting the text in the contenteditable element.
-    // if the text is different, this will work properly. but if the 
-    // text is the same, it breaks, because we're matching against the 
-    // text and not the rendered html.
-
-    // there are a bunch of ways we could address this but the only one
-    // that is comprehensive for us to do it would be to compare the 
-    // generated html. or perhaps there's a shortcut? (...)
+    // (that's less true than before, but still might happen).
 
     let descriptors: NodeDescriptor[] = [];
 
-    let edit_found = false;
     descriptors = nodes.map(node => {
-      const edit = (target === node);
-      for (const check of this.nodes) {
-        if (check.node === node) {
-          return { ...check, node, edit };
+      for (const compare of this.nodes) {
+        if (compare.node === node) {
+          return compare;
         }
       }
-      edit_found = edit_found || edit;
-      return { node, edit };
+      return { node }; // not found, return a new one
     });
 
-    if (target && !edit_found) {
-      // console.info('need to add edit');
-      descriptors.push({
-        node: target, edit: true, 
-      });
+    // we should probably clean up here. if there's overlap we will just 
+    // add a new one. note that we're looping over the *old* set here, 
+    // so don't try to optimize by moving this into another loop.
+
+    for (const descriptor of this.nodes) {
+      if (descriptor.listeners) {
+        for (const [key, value] of descriptor.listeners.entries()) {
+          descriptor.node.removeEventListener(key, value);
+        }
+        descriptor.listeners.clear();
+      }
     }
 
     this.nodes = descriptors;
-
-    // check if we need to flush these (see above). 
-
+    
+    
     for (const descriptor of this.nodes) {
-      if (descriptor.node.dataset.formatted_text === descriptor.node.textContent) {
+
+      // check if we need to flush the cached text 
+
+      if (descriptor.formatted_text === descriptor.node.textContent) {
         const test = descriptor.node.innerHTML.length;
-        if (Number(descriptor.node.dataset.check || 0) !== test) {
-          descriptor.node.dataset.formatted_text = undefined; // flush
+        if (descriptor.check !== test) {
+          descriptor.formatted_text = undefined; // flush
         }
       }
+
+      // if it's already focused, set as active
+
+      if (document.activeElement === descriptor.node) {
+        this.active_editor = descriptor;
+      }
+
+      // format
+
+      this.UpdateText(descriptor, { toll_events: true });
+
+      // add listeners
+
+      this.RegisterListener(descriptor, 'focusin', () => {
+        // console.info('focusin');
+        this.active_editor = descriptor;
+      });
+
+      this.RegisterListener(descriptor, 'focusout', () => {
+        // console.info('focusout');
+        this.active_editor = undefined;
+      });
+
+      this.RegisterListener(descriptor, 'input', (event: Event) => {
+
+        // we're filtering on trusted here because we send an event.
+        // but when we send that event we also trigger an update.
+        // so... why not just run through the event handler? 
+
+        if (event.isTrusted) {
+          this.UpdateText(descriptor);
+          this.UpdateColors(); // will send a local event
+        }
+
+      });
+
+
     }
 
+    this.UpdateColors(true); // always send an event, just in case
+
+
+    /* dropping, see what happens 
 
     // if we're not preserving them, but the reference list is still
     // attached, we can use that (now that we moved the resolver). 
@@ -540,49 +671,19 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
       }
     }
 
-    // if we're switching, clean up first
-
-    if (this.editor_node && this.editor_node !== target) {
-      for (const [key, value] of this.listeners.entries()) {
-        this.editor_node.removeEventListener(key, value);
-      }
-    }
-    this.listeners.clear();
-
-    this.editor_node = target;
-
-    for (const entry of this.nodes) {
-      this.UpdateText(entry.node, { toll_events: true });
-    }
-
-    if (target) {
-
-      // add listeners
-
-      this.RegisterListener('input', (event: Event) => {
-
-        // we send an extra event when we insert a reference.
-        // so filter that out. this might cause problems for other
-        // callers -- could we use a different filter?
-
-        if (event.isTrusted) {
-          this.UpdateText(target);
-          this.UpdateColors(); // will send a local event
-        }
-
-      });
-     
-    }
-
-    this.UpdateColors(true); // always send an event, just in case
+    */
 
   }
 
   /**
-   * add or update color classes to all highlight nodes. 
+   * this method does three things:
    * 
-   * we moved the event in here, so it will get sent when
-   * colors actually change.
+   * (1) builds a flat list of references across all nodes
+   * (2) applies colors to formatted references
+   * (3) sends an event (if necessary, or forced)
+   * 
+   * that's fine, but it needs a new name.
+   * 
    */
   protected UpdateColors(force_event = false) {
 
@@ -621,7 +722,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
       // this is a check for flushing text when we re-attach.
       // @see AttachNode
 
-      entry.node.dataset.check = entry.node.innerHTML.length.toString();
+      entry.check = entry.node.innerHTML.length;
 
     }    
 
@@ -642,16 +743,18 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
   }
 
   /**
-   * get a list of all references in the text (actually in the parse
-   * result, since we have that). returns a map of references -> index
-   * numbers for highlighting.
+   * get a list of all references in the text (actually in the parse result, 
+   * since we have that). stores the list in the node descriptor (and in 
+   * the node dataset).
    * 
-   * as a side-effect this method stores a flattened list of references.
+   * returns a list of the references in parse result mapped to normalized
+   * address labels. those can be used to identify identical references when 
+   * we highlight later.
    * 
    * @param parse_result 
    * @returns 
    */
-  protected UpdateDependencies(node: HTMLElement, parse_result: ParseResult, options: Partial<UpdateTextOptions> = {}) {
+  protected UpdateDependencies(descriptor: NodeDescriptor, parse_result: ParseResult) {
 
     const reference_list: Array<UnitRange|UnitAddress> = [];
 
@@ -731,8 +834,13 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
     // how could this ever be out of order? (...)
     reference_list.sort((a, b) => a.position - b.position);
 
+    // flat list, unique
     const references: Area[] = [];
+
+    // set for matching
     const list: Set<string> = new Set();
+
+    // for the result, map of reference to normalized address label
     const map: Map<ExpressionUnit, string> = new Map();
 
     for (const entry of reference_list) {
@@ -741,16 +849,6 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
       const area = IsCellAddress(entry) ? 
           new Area(entry) : 
           new Area(entry.start, entry.end);
-
-      /*
-      const start = IsCellAddress(entry) ? entry : entry.start;
-      if (!start.sheet) {
-        start.sheet = this.model.sheets.Find(start.sheet_id || 0)?.name;
-      }
-
-
-      const label = this.parser.Render(entry);
-      */
 
       // add to references once
 
@@ -764,23 +862,23 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
 
     }
 
-    this.UpdateReferences(node, references);
+    this.UpdateReferences(descriptor, references);
 
     return map;
     
   }
 
-  protected UpdateReferences(node: HTMLElement, references: Area[], options: Partial<UpdateTextOptions> = {}) {
-
-    node.dataset.references = JSON.stringify(references.map(entry => this.model.AddressToLabel(entry)));
-
-    for (const entry of this.nodes) {
-      if (entry.node === node) {
-        entry.references = references;
-        break;
-      }
-    }
-
+  /**
+   * store the set of references, and store in the node dataset for 
+   * external clients.
+   * 
+   * @param descriptor 
+   * @param references 
+   * @param options 
+   */
+  protected UpdateReferences(descriptor: NodeDescriptor, references: Area[] = []) {
+    descriptor.node.dataset.references = JSON.stringify(references.map(entry => this.model.AddressToLabel(entry)));
+    descriptor.references = references;
   }
 
   /**
@@ -791,17 +889,19 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
    * 
    */
   protected UpdateText(
-      node: HTMLElement, 
+      // node: HTMLElement, 
+      descriptor: NodeDescriptor,
       options: Partial<UpdateTextOptions> = {}) {
 
+    const node = descriptor.node;
     const text = node.textContent || '';
 
     // set this flag so we can use it in `get selected()`
     
     this.text_formula = text[0] === '=';
 
-    if (this.editor_node && !this.assume_formula) {
-      this.editor_node.spellcheck = !(this.text_formula);
+    if (this.active_editor && !this.assume_formula) {
+      this.active_editor.node.spellcheck = !(this.text_formula);
     }
 
     // this is a short-circuit so we don't format the same text twice. 
@@ -811,7 +911,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
     // to unset this field make sure to set it to `undefined` instead 
     // of any empty string, so it will expressly not match an empty string. 
 
-    if (text === node.dataset.formatted_text) {
+    if (text === descriptor.formatted_text) {
 
       // fix selection behavior for tabbing
       // for some reason this is too aggressive, it's happening when
@@ -836,12 +936,6 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
     // I wonder if this should be done asynchronously... we generally 
     // have pretty short strings, so maybe not a big deal
 
-    /*
-    const substr = this.SubstringToCaret(node);
-    const substr2 = this.SubstringToCaret(node, true);
-    const test = this.SubstringToCaret2(node);
-    */
-
     const [substring_start, substring_end] = this.SubstringToCaret2(node);
 
     // console.info({text, substr, substr2});
@@ -855,14 +949,14 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
     }
 
     if (!text) {
-      this.UpdateReferences(node, [], options);
+      this.UpdateReferences(descriptor); // flush
     }
     else {
       const parse_result = this.parser.Parse(text);
 
       if (parse_result.expression) {
 
-        const indexes = this.UpdateDependencies(node, parse_result, options);
+        const normalized_labels = this.UpdateDependencies(descriptor, parse_result);
         
         // the parser will drop a leading = character, so be
         // sure to add that back if necessary
@@ -901,6 +995,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
           }
 
           if (type !== 'text') {
+
             const span = document.createElement('span');
 
             if (reference) {
@@ -910,6 +1005,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
             span.className = type;
             span.appendChild(text_node);
             fragment.appendChild(span);
+
           }
           else {
             fragment.appendChild(text_node);
@@ -954,7 +1050,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
             case 'address':
             case 'range':
             case 'structured-reference':
-              reference = indexes.get(unit) || '???';
+              reference = normalized_labels.get(unit) || '???';
 
               /*
               {
@@ -1012,12 +1108,14 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
         node.textContent = '';
         node.appendChild(fragment);
 
-        if (selection_start && !options.format_only && node === this.editor_node) {
-
-          // console.info('setting selection');
-
+        if (selection_start && !options.format_only && node === this.active_editor?.node) {
           this.SetCaret(selection_start, selection_end);
-          (selection_end || selection_start).node.parentElement?.scrollIntoView();
+
+          // we were doing this for the external editor, and it was useful
+          // because those editors don't grow. but it makes the spreadsheet
+          // scroll when it's used in the ICE/overlay. maybe a flag?
+
+          // (selection_end || selection_start).node.parentElement?.scrollIntoView();
   
         }
 
@@ -1027,7 +1125,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
       }
     }
 
-    node.dataset.formatted_text = text;
+    descriptor.formatted_text = text;
 
     // 
 
@@ -1046,7 +1144,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
   }
 
   protected NodeAtIndex(index: number): Node|undefined {
-    const children = this.editor_node?.childNodes || [];
+    const children = this.active_editor?.node.childNodes || [];
     for (let i = 0; i < children.length; i++) {
       const len = children[i].textContent?.length || 0;
       if (len > index) {
@@ -1059,7 +1157,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
 
   protected AcceptAutocomplete(ac_result: AutocompleteResult) {
 
-    if (!this.editor_node) return;
+    if (!this.active_editor) return;
 
     let type = DescriptorType.Function;
     if (ac_result.data && ac_result.data.completions) {
@@ -1083,58 +1181,18 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
 
     const insertion = (type === DescriptorType.Token) ? ac_result.value : ac_result.value + '(';
 
-    const text = this.editor_node.textContent || '';
+    const text = this.active_editor.node.textContent || '';
     let adjusted = text.substring(0, start) + insertion;
     let caret = adjusted.length;
     adjusted += text.substring(end);
 
-    this.editor_node.textContent = adjusted;
-    this.SetCaret({node: this.editor_node, offset: caret});
+    this.active_editor.node.textContent = adjusted;
+    this.SetCaret({node: this.active_editor.node, offset: caret});
     
-    /*
-    let selection = window.getSelection();
-    if (!selection) throw new Error('error getting selection');
-
-    let range = selection.getRangeAt(0);
-    const preCaretRange = range.cloneRange();
-    const tmp = document.createElement('div');
-
-    preCaretRange.selectNodeContents(this.editor_node);
-    preCaretRange.setEnd(range.endContainer, range.endOffset);
-    tmp.appendChild(preCaretRange.cloneContents());
-
-    const str = (tmp.textContent || '').substr(0, ac_result.data ? ac_result.data.position : 0) + ac_result.value;
-    //const insert = (type === DescriptorType.Token) ? str + ' ' : str + '(';
-    const insert = (type === DescriptorType.Token) ? str : str + '(';
-
-    // this is destroying nodes, we should be setting html here
-
-        this.editor_node.textContent = insert;
-
-    */
-
     this.autocomplete?.Hide();
 
-    this.UpdateText(this.editor_node);
+    this.UpdateText(this.active_editor);
     this.UpdateColors();
-
-    /*
-    selection = window.getSelection();
-    range = document.createRange();
-    if (this.editor_node?.lastChild) {
-      range.setStartAfter(this.editor_node.lastChild);
-    }
-    range.collapse(true);
-    selection?.removeAllRanges();
-    selection?.addRange(range);
-
-    this.selecting_ = true;
-
-    if (ac_result.click){
-      this.UpdateSelectState();
-    }
-    */
-
 
   }
 
@@ -1174,7 +1232,7 @@ export class Editor2<E = Editor2UpdateEvent> extends EventSource<E|Editor2Update
 
     const result: [string, string] = ['', ''];
 
-    if (node !== document.activeElement || node !== this.editor_node) {
+    if (node !== document.activeElement || node !== this.active_editor?.node) {
       return result;
     }
     

@@ -20,85 +20,12 @@
  */
 
 import type { Area, Cell, Theme } from 'treb-base-types';
-import { Editor2, type Editor2UpdateEvent } from './editor2';
+import { Editor2, type NodeDescriptor, type FormulaEditorEvent } from './editor2';
 import { Parser } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
 import type { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
 import { DOMUtilities } from '../util/dom_utilities';
-
-// --- from base ---
-
-/** event on commit, either enter or tab */
-export interface FormulaEditorCommitEvent {
-  type: 'commit';
-  // selection?: GridSelection; // I think this is no longer used? can we drop?
-  value?: string;
-
-  /**
-   * true if commiting an array. note that if the cell _is_ an array,
-   * and you commit as !array, that should be an error.
-   */
-  array?: boolean;
-
-  /**
-   * for the formula editor, the event won't bubble so we can't handle
-   * it with the normal event handler -- so use the passed event to
-   */
-  event?: KeyboardEvent;
-}
-
-/** event on discard -- escape */
-export interface FormulaEditorDiscardEvent {
-  type: 'discard';
-}
-
-/** event on end select state, reset selection */
-export interface FormulaEditorEndSelectionEvent {
-  type: 'end-selection';
-}
-
-/** event on text update: need to update sheet dependencies */
-export interface FormulaEditorUpdateEvent {
-  type: 'update';
-  text?: string;
-  cell?: Cell;
-  dependencies?: Area[];
-}
-
-// export interface FormulaEditorAutocompleteEvent {
-//  type: 'autocomplete';
-//  text?: string;
-//  cursor?: number;
-// }
-
-/*
-export interface RetainFocusEvent {
-  type: 'retain-focus';
-  focus: boolean;
-}
-*/
-
-export interface StartEditingEvent {
-  type: 'start-editing';
-  editor?: string;
-}
-
-export interface StopEditingEvent {
-  type: 'stop-editing';
-  editor?: string;
-}
-
-/** discriminated union */
-export type FormulaEditorEvent
-  = // RetainFocusEvent
-  | StopEditingEvent
-  | StartEditingEvent
-  | FormulaEditorUpdateEvent
-  | FormulaEditorCommitEvent
-  | FormulaEditorDiscardEvent
-  | FormulaEditorEndSelectionEvent
-  ;
 
 // --- from formula_bar ---
 
@@ -118,25 +45,15 @@ export interface AddressLabelEvent {
 }
 
 export type FormulaBar2Event
-  = FormulaEditorEvent
-  | FormulaButtonEvent
+  = FormulaButtonEvent
   | FormulaBarResizeEvent
   | AddressLabelEvent
   ;
 
 // ---
 
-export class FormulaBar extends Editor2<FormulaBar2Event|Editor2UpdateEvent> {
+export class FormulaBar extends Editor2<FormulaBar2Event|FormulaEditorEvent> {
 
-  // ---
-
-  /**
-   * the current edit cell. in the event we're editing a merged or
-   * array cell, this might be different than the actual target address.
-   */
-  public active_cell?: Cell;
-
-  // ---
 
   /** is the _editor_ currently focused */
   // tslint:disable-next-line:variable-name
@@ -157,28 +74,29 @@ export class FormulaBar extends Editor2<FormulaBar2Event|Editor2UpdateEvent> {
   /** */
   private expand_button!: HTMLButtonElement;
 
-  /** corner for resizing formula editor */
-  private drag_corner!: HTMLDivElement;
+  /* * corner for resizing formula editor * /
+  private drag_corner!: HTMLDivElement; 
 
-  /** for math */
+  / * * for math * /
   private lines = 1;
 
   private last_formula = '';
+  */
 
   private label_update_timer = 0;
 
   /** get formula text */
   public get formula(): string {
-    return this.editor_node ? this.editor_node.textContent || '' : '';
+    return this.active_editor ? this.active_editor.node.textContent || '' : '';
   }
 
   /** set formula text */
   public set formula(text: string) {
-    if (this.editor_node) {
-      this.editor_node.textContent = text;
-      this.editor_node.dataset.formatted_text = undefined;
+    if (this.active_editor) {
+      this.active_editor.node.textContent = text;
+      this.active_editor.formatted_text = undefined;
     }
-    this.last_formula = text;
+    // this.last_formula = text;
   }
 
   /** get address label text */
@@ -220,23 +138,23 @@ export class FormulaBar extends Editor2<FormulaBar2Event|Editor2UpdateEvent> {
 
   /** toggle editable property: supports locked cells */
   public set editable(editable: boolean) {
-    if (!this.editor_node || !this.container_node) return;
+    if (!this.active_editor || !this.container_node) return;
 
     if (editable) {
-      this.editor_node.setAttribute('contenteditable', 'true'); // is that required?
+      this.active_editor.node.setAttribute('contenteditable', 'true'); // is that required?
       this.container_node.removeAttribute('locked');
     }
     else {
-      this.editor_node.removeAttribute('contenteditable');
+      this.active_editor.node.removeAttribute('contenteditable');
       this.container_node.setAttribute('locked', '');
     }
 
   }
 
   constructor(
-    private container: HTMLElement,
-    parser: Parser,
-    theme: Theme,
+    container: HTMLElement,
+    // parser: Parser,
+    // theme: Theme,
     model: DataModel,
     view: ViewModel,
     private options: GridOptions,
@@ -244,8 +162,6 @@ export class FormulaBar extends Editor2<FormulaBar2Event|Editor2UpdateEvent> {
     ) {
 
     super(model, view, autocomplete);
-
-      console.info("FB2");
 
     const inner_node = container.querySelector('.treb-formula-bar') as HTMLElement;
     inner_node.removeAttribute('hidden');
@@ -256,36 +172,33 @@ export class FormulaBar extends Editor2<FormulaBar2Event|Editor2UpdateEvent> {
     this.InitAddressLabel();
 
     if (this.options.insert_function_button) {
-      this.button = DOMUtilities.Create<HTMLButtonElement>('button', 'formula-button', inner_node);
+      this.button = DOMUtilities.Create('button', 'formula-button', inner_node);
       this.button.addEventListener('click', () => {
-        const formula: string = this.editor_node ? this.editor_node.textContent || '' : '';
+        const formula: string = this.active_editor ? this.active_editor.node.textContent || '' : '';
         this.Publish({ type: 'formula-button', formula });
       });
     }
 
     this.container_node = container.querySelector('.treb-editor-container') as HTMLDivElement;
-    this.editor_node = this.container_node.firstElementChild as HTMLDivElement;
+    const target = this.container_node.firstElementChild as HTMLDivElement;
+    const descriptor: NodeDescriptor = {
+      node: target,
+    };
+
+    this.active_editor = descriptor;
+    this.nodes = [ descriptor ];
 
     // ------------------
 
-    const target = this.editor_node;
     if (target) {
-
-      this.nodes = [
-        {
-          node: target,
-          edit: true,
-        }
-      ]
-
-      this.RegisterListener('input', (event: Event) => {
+      this.RegisterListener(descriptor, 'input', (event: Event) => {
 
         // we send an extra event when we insert a reference.
         // so filter that out. this might cause problems for other
         // callers -- could we use a different filter?
 
         if (event.isTrusted) {
-          this.UpdateText(target);
+          this.UpdateText(descriptor);
           this.UpdateColors(); // will send a local event
         }
 
@@ -298,29 +211,29 @@ export class FormulaBar extends Editor2<FormulaBar2Event|Editor2UpdateEvent> {
     // change the default back. this was changed when we were trying to figure
     // out what was happening with IME, but it had nothing to do with spellcheck.
     //
-    this.editor_node.spellcheck = false; // change the default back
+    this.active_editor.node.spellcheck = false; // change the default back
 
-    this.RegisterListener('focusin', () => {
+    this.RegisterListener(descriptor, 'focusin', () => {
 
       // this.editor_node.addEventListener('focusin', () => {
 
       // can't happen
-      if (!this.editor_node) { return; }
+      if (!this.active_editor) { return; }
 
       // console.info('focus in');
 
-      let text = this.editor_node.textContent || '';
+      let text = this.active_editor.node.textContent || '';
 
       if (text[0] === '{' && text[text.length - 1] === '}') {
         text = text.substring(1, text.length - 1);
-        this.editor_node.textContent = text;
-        this.editor_node.dataset.formatted_text = undefined; // why do we clear this here? 
+        this.active_editor.node.textContent = text;
+        this.active_editor.formatted_text = undefined; // why do we clear this here? 
       }
 
       // not here // this.editor_node.spellcheck = (text[0] !== '='); // true except for functions
       this.autocomplete?.ResetBlock();
 
-      this.UpdateText(this.editor_node);
+      this.UpdateText(this.active_editor);
       this.UpdateColors();
 
       this.Publish([
@@ -332,7 +245,7 @@ export class FormulaBar extends Editor2<FormulaBar2Event|Editor2UpdateEvent> {
 
     });
 
-    this.RegisterListener('focusout', (event: FocusEvent) => {
+    this.RegisterListener(descriptor, 'focusout', (event: FocusEvent) => {
 
       if (this.selecting) {
         console.info('focusout, but selecting...');
@@ -347,22 +260,22 @@ export class FormulaBar extends Editor2<FormulaBar2Event|Editor2UpdateEvent> {
 
       this.focused_ = false;
 
-      if (this.editor_node) {
-        this.editor_node.spellcheck = false; // for firefox
+      if (this.active_editor) {
+        this.active_editor.node.spellcheck = false; // for firefox
       }
 
     });
 
-    this.RegisterListener('keydown', this.FormulaKeyDown.bind(this));
-    this.RegisterListener('keyup', this.FormulaKeyUp.bind(this));
+    this.RegisterListener(descriptor, 'keydown', this.FormulaKeyDown.bind(this));
+    this.RegisterListener(descriptor, 'keyup', this.FormulaKeyUp.bind(this));
 
     if (this.options.expand_formula_button) {
-      this.expand_button = DOMUtilities.Create<HTMLButtonElement>('button', 'expand-button', inner_node);
+      this.expand_button = DOMUtilities.Create('button', 'expand-button', inner_node);
       this.expand_button.addEventListener('click', (event: MouseEvent) => {
         event.stopPropagation();
         event.preventDefault();
-        if (this.editor_node) {
-          this.editor_node.scrollTop = 0;
+        if (this.active_editor) {
+          this.active_editor.node.scrollTop = 0;
         }
         if (inner_node.hasAttribute('expanded')) {
           inner_node.removeAttribute('expanded');
@@ -376,7 +289,7 @@ export class FormulaBar extends Editor2<FormulaBar2Event|Editor2UpdateEvent> {
   }
 
   public IsElement(element: HTMLElement): boolean {
-    return element === this.editor_node;
+    return element === this.active_editor?.node;
   }
 
   public InitAddressLabel() {
@@ -503,8 +416,8 @@ export class FormulaBar extends Editor2<FormulaBar2Event|Editor2UpdateEvent> {
         // I think we use this nontstandard routine so that we preserve
         // newlines? not sure. would like to see the motivation for it.
 
-        const text = (this.editor_node ? 
-          this.GetTextContent(this.editor_node).join('') : '').trim();
+        const text = (this.active_editor ? 
+          this.GetTextContent(this.active_editor.node).join('') : '').trim();
 
         this.Publish({
           type: 'commit',

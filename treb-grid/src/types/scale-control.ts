@@ -137,7 +137,7 @@ export class ScaleControl extends EventSource<ScaleEvent> {
 
     });
 
-    this.slider = DOM.Create<HTMLInputElement>('input', undefined, popup, undefined, {
+    this.slider = DOM.Create('input', undefined, popup, undefined, {
       type: 'range',
       min: '50',
       max: '200',

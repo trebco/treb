@@ -80,7 +80,7 @@ import { TileRange } from '../layout/base_layout';
 import { GridLayout } from '../layout/grid_layout';
 
 import type { GridSelection } from './grid_selection';
-import { OverlayEditor, OverlayEditorResult } from '../editors/overlay_editor';
+import { OverlayEditor } from '../editors/overlay_editor2';
 
 import { TileRenderer } from '../render/tile_renderer';
 import type { GridEvent } from './grid_events';
@@ -152,7 +152,7 @@ export class Grid extends GridBase {
       this.UpdateAnnotationLayout();
       this.layout.UpdateAnnotation(this.active_sheet.annotations);
       this.layout.ApplyTheme(this.theme);
-      this.overlay_editor?.UpdateTheme(value);
+      this.overlay_editor?.UpdateScale(value);
       this.tab_bar?.UpdateScale(value);
   
       this.grid_events.Publish({
@@ -1239,7 +1239,7 @@ export class Grid extends GridBase {
       this.UpdateLayout(); // in case we have changed font size
       // this.selection_renderer.Flush();
 
-      this.overlay_editor?.UpdateTheme(this.layout.scale);
+      this.overlay_editor?.UpdateScale(this.layout.scale);
 
       // if (this.formula_bar) this.formula_bar.UpdateTheme();
 
@@ -1674,7 +1674,8 @@ export class Grid extends GridBase {
         <T>(test: T|undefined): test is T => !!test).map(reference => 
           IsCellAddress(reference) ? new Area(reference) : new Area(reference.start, reference.end));
 
-      if (config.edit || config.format?.length) {
+      // if (config.edit || config.format?.length) {
+      if (config.nodes?.length) {
 
         if (!this.external_editor_manager) {
           const manager = new ExternalEditorManager(this.model, this.view);
@@ -1686,7 +1687,7 @@ export class Grid extends GridBase {
           manager.Subscribe(event => this.HighlightDependencies(manager.dependencies));
         }
 
-        this.external_editor_manager.AttachNode(config.edit, config.format);
+        this.external_editor_manager.AttachNodes(config.nodes);
  
       }
       else {
@@ -2565,8 +2566,8 @@ export class Grid extends GridBase {
 
     this.formula_bar = new FormulaBar(
       grid_container,
-      this.parser,
-      this.theme,
+      // this.parser,
+      // this.theme,
       this.model,
       this.view,
       this.options, autocomplete);
@@ -2742,13 +2743,12 @@ export class Grid extends GridBase {
 
     this.overlay_editor = new OverlayEditor(
         this.container,
-        this.parser,
         this.theme,
         this.model,
         this.view,
         autocomplete);
 
-    this.overlay_editor.UpdateTheme(this.layout.scale);
+    this.overlay_editor.UpdateScale(this.layout.scale);
     this.overlay_editor.autocomplete_matcher = this.autocomplete_matcher;
 
     this.overlay_editor.Subscribe(event => {
@@ -2776,7 +2776,11 @@ export class Grid extends GridBase {
           break;
 
         case 'end-selection':
+        case 'reset-selection':
           this.ClearSelection(this.active_selection);
+          if (this.overlay_editor?.target_address?.sheet_id && this.active_sheet.id !== this.overlay_editor.target_address.sheet_id) {
+            this.ActivateSheetID(this.overlay_editor.target_address.sheet_id);
+          }
           this.DelayedRender();
           break;
 
@@ -4053,7 +4057,11 @@ export class Grid extends GridBase {
           // ...
         }
         else if (this.external_editor) {
-          if (this.external_editor.edit && this.external_editor_manager) {
+
+          // FIXME: we need a flag or something here insteaf of testing
+          // whether there are nodes
+
+          if (this.external_editor.nodes?.length && this.external_editor_manager) {
             this.external_editor_manager.FocusEditor();
           }
           // ...
@@ -4347,8 +4355,9 @@ export class Grid extends GridBase {
     }
     else if (this.external_editor) {
 
-      if (this.external_editor.edit && this.external_editor_manager) {
-        this.external_editor.edit.focus();
+      if (this.external_editor && this.external_editor_manager) {
+        // this.external_editor.edit.focus();
+        this.external_editor_manager.FocusEditor();
         this.external_editor_manager.InsertReference(label, 0);
       }
 
@@ -4411,16 +4420,16 @@ export class Grid extends GridBase {
       editor_open = true;
       const result = this.overlay_editor.HandleKeyDown(event);
       switch (result) {
-        case OverlayEditorResult.handled:
+        case 'handled':
           return;
 
-        case OverlayEditorResult.discard:
+        case 'discard':
           this.editing_state = EditingState.NotEditing;
           this.DismissEditor();
           this.DelayedRender();
           return;
 
-        case OverlayEditorResult.commit:
+        case 'commit':
 
           // FIXME: unify this (to the extent possible) w/ the other editor
 

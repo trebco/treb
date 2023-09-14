@@ -357,7 +357,7 @@ export abstract class BaseLayout {
     this.note_node = DOMUtilities.CreateDiv('treb-note');
     this.title_node = DOMUtilities.CreateDiv('treb-hover-title');
 
-    this.sort_button = DOMUtilities.Create<HTMLButtonElement>(
+    this.sort_button = DOMUtilities.Create(
       'button', 
       'treb-sort-button', undefined, undefined, { title: 'Sort table', tabindex: '-1'});
 

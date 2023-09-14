@@ -127,6 +127,8 @@
         overflow-y: hidden;
         overflow-x: hidden;
 
+        white-space: pre-wrap;
+
         /** 
          * 1.35 is better on safari, seems like a wash on windows.
          * can we browser-limit this? (...)
