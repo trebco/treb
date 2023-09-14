@@ -1688,7 +1688,7 @@ export class Grid extends GridBase {
           editor.Subscribe(event => this.HighlightDependencies(editor.dependencies));
         }
 
-        this.external_editor.AttachNodes(config.nodes);
+        this.external_editor.AttachNodes(config.nodes, config.assume_formula ?? true);
  
       }
       else {

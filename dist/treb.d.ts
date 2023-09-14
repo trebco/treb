@@ -1082,6 +1082,12 @@ export interface ExternalEditorConfig {
      * an editor is focused.
      */
     nodes: HTMLElement[];
+
+    /**
+     * assume that we're editing a formula. does not require leading `=`.
+     * defaults to `true` for historical reasons.
+     */
+    assume_formula?: boolean;
 }
 export type DependencyList = Array<IArea | ICellAddress | undefined>;
 export type ExternalEditorCallback = (selection?: string) => DependencyList | undefined;

@@ -4,6 +4,8 @@ import type { IArea, ICellAddress } from 'treb-base-types';
 export type DependencyList = Array<IArea|ICellAddress|undefined>;
 export type ExternalEditorCallback = (selection?: string) => DependencyList|undefined;
 
+// FIXME: if you want to keep the old interface, split into to separate types
+
 export interface ExternalEditorConfig {
 
   // --- old interface ---------------------------------------------------------
@@ -35,5 +37,11 @@ export interface ExternalEditorConfig {
    * an editor is focused.
    */
   nodes: HTMLElement[];
+
+  /** 
+   * assume that we're editing a formula. does not require leading `=`.
+   * defaults to `true` for historical reasons.
+   */
+  assume_formula?: boolean;
 
 }
