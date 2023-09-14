@@ -337,26 +337,7 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
       const value_length = value_string.length;
       this.edit_node.textContent = value_string;
 
-      // monkey with selection
-
-      const range = document.createRange();
-      const selection = window.getSelection();
-
-      if (!selection) throw new Error('invalid selection object');
-
-      if (this.edit_node.lastChild){
-        if (percent) {
-          range.setStart(this.edit_node.lastChild, value_length - 1);
-          range.setEnd(this.edit_node.lastChild, value_length - 1);
-        }
-        else {
-          range.setStartAfter(this.edit_node.lastChild);
-        }
-      }
-
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
+      this.SetCaret({ node: this.edit_node, offset: value_length - (percent ? 1 : 0) })
 
       // event moved below
 
