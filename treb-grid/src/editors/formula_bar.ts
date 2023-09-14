@@ -19,16 +19,15 @@
  * 
  */
 
-import { Yield } from 'treb-utils';
-
-import { DOMUtilities } from '../util/dom_utilities';
-import type { Theme } from 'treb-base-types';
-import type { FormulaEditorEvent } from './formula_editor_base';
-import { FormulaEditorBase } from './formula_editor_base';
-import type { GridOptions } from '../types/grid_options';
-import type { Autocomplete } from './autocomplete';
+import type { Area, Cell, Theme } from 'treb-base-types';
+import { Editor, type NodeDescriptor, type FormulaEditorEvent } from './editor';
+import { Parser } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
-import type { Parser } from 'treb-parser';
+import type { GridOptions } from '../types/grid_options';
+import { Autocomplete } from './autocomplete';
+import { DOMUtilities } from '../util/dom_utilities';
+
+// --- from formula_bar ---
 
 export interface FormulaBarResizeEvent {
   type: 'formula-bar-resize';
@@ -46,13 +45,15 @@ export interface AddressLabelEvent {
 }
 
 export type FormulaBar2Event
-  = FormulaEditorEvent
-  | FormulaButtonEvent
+  = FormulaButtonEvent
   | FormulaBarResizeEvent
   | AddressLabelEvent
   ;
 
-export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
+// ---
+
+export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
+
 
   /** is the _editor_ currently focused */
   // tslint:disable-next-line:variable-name
@@ -73,28 +74,29 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   /** */
   private expand_button!: HTMLButtonElement;
 
-  /** corner for resizing formula editor */
-  private drag_corner!: HTMLDivElement;
+  /* * corner for resizing formula editor * /
+  private drag_corner!: HTMLDivElement; 
 
-  /** for math */
+  / * * for math * /
   private lines = 1;
 
   private last_formula = '';
+  */
 
   private label_update_timer = 0;
 
   /** get formula text */
   public get formula(): string {
-    return this.editor_node ? this.editor_node.textContent || '' : '';
+    return this.active_editor ? this.active_editor.node.textContent || '' : '';
   }
 
   /** set formula text */
   public set formula(text: string) {
-    if (this.editor_node) {
-      this.editor_node.textContent = text;
-      this.last_reconstructed_text = '';
+    if (this.active_editor) {
+      this.active_editor.node.textContent = text;
+      this.active_editor.formatted_text = undefined;
     }
-    this.last_formula = text;
+    // this.last_formula = text;
   }
 
   /** get address label text */
@@ -136,30 +138,30 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
   /** toggle editable property: supports locked cells */
   public set editable(editable: boolean) {
-    if (!this.editor_node || !this.container_node) return;
+    if (!this.active_editor || !this.container_node) return;
 
     if (editable) {
-      this.editor_node.setAttribute('contenteditable', 'true'); // is that required?
+      this.active_editor.node.setAttribute('contenteditable', 'true'); // is that required?
       this.container_node.removeAttribute('locked');
     }
     else {
-      this.editor_node.removeAttribute('contenteditable');
+      this.active_editor.node.removeAttribute('contenteditable');
       this.container_node.setAttribute('locked', '');
     }
 
   }
 
   constructor(
-    private container: HTMLElement,
-    parser: Parser,
-    theme: Theme,
+    container: HTMLElement,
+    // parser: Parser,
+    // theme: Theme,
     model: DataModel,
     view: ViewModel,
     private options: GridOptions,
     autocomplete: Autocomplete,
     ) {
 
-    super(parser, theme, model, view, autocomplete);
+    super(model, view, autocomplete);
 
     const inner_node = container.querySelector('.treb-formula-bar') as HTMLElement;
     inner_node.removeAttribute('hidden');
@@ -172,64 +174,78 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     if (this.options.insert_function_button) {
       this.button = DOMUtilities.Create('button', 'formula-button', inner_node);
       this.button.addEventListener('click', () => {
-        const formula: string = this.editor_node ? this.editor_node.textContent || '' : '';
+        const formula: string = this.active_editor ? this.active_editor.node.textContent || '' : '';
         this.Publish({ type: 'formula-button', formula });
       });
     }
 
     this.container_node = container.querySelector('.treb-editor-container') as HTMLDivElement;
-    this.editor_node = this.container_node.firstElementChild as HTMLDivElement;
+    const target = this.container_node.firstElementChild as HTMLDivElement;
+    const descriptor: NodeDescriptor = {
+      node: target,
+    };
+
+    this.active_editor = descriptor;
+    this.nodes = [ descriptor ];
+
+    // ------------------
+
+    if (target) {
+      this.RegisterListener(descriptor, 'input', (event: Event) => {
+
+        // we send an extra event when we insert a reference.
+        // so filter that out. this might cause problems for other
+        // callers -- could we use a different filter?
+
+        if (event.isTrusted) {
+          this.UpdateText(descriptor);
+          this.UpdateColors(); // will send a local event
+        }
+
+      });
+    }
+
+    // ------------------
 
     // 
     // change the default back. this was changed when we were trying to figure
     // out what was happening with IME, but it had nothing to do with spellcheck.
     //
-    this.editor_node.spellcheck = false; // change the default back
+    this.active_editor.node.spellcheck = false; // change the default back
 
-    this.editor_node.addEventListener('focusin', () => {
+    this.RegisterListener(descriptor, 'focusin', () => {
+
+      // this.editor_node.addEventListener('focusin', () => {
 
       // can't happen
-      if (!this.editor_node) { return; }
+      if (!this.active_editor) { return; }
 
       // console.info('focus in');
 
-      let text = this.editor_node.textContent || '';
+      let text = this.active_editor.node.textContent || '';
 
       if (text[0] === '{' && text[text.length - 1] === '}') {
-        text = text.substr(1, text.length - 2);
-        this.editor_node.textContent = text;
-        this.last_reconstructed_text = '';
+        text = text.substring(1, text.length - 1);
+        this.active_editor.node.textContent = text;
+        this.active_editor.formatted_text = undefined; // why do we clear this here? 
       }
 
-      this.editor_node.spellcheck = (text[0] !== '='); // true except for functions
+      // not here // this.editor_node.spellcheck = (text[0] !== '='); // true except for functions
+      this.autocomplete?.ResetBlock();
 
-      this.autocomplete.ResetBlock();
-
-      /*
-      const fragment = this.Reconstruct();
-      if (fragment && this.editor_node) {
-        this.editor_node.textContent = '';
-        this.editor_node.appendChild(fragment);
-      }
-      */
-      Yield().then(() => {
-        // this.Reconstruct(true);
-        this.Reconstruct();
-      });
-
-      const dependencies = this.ListDependencies();
+      this.UpdateText(this.active_editor);
+      this.UpdateColors();
 
       this.Publish([
         { type: 'start-editing', editor: 'formula-bar' },
-        { type: 'update', text, cell: this.active_cell, dependencies },
-        // { type: 'retain-focus', focus: true },
+        { type: 'update', text, cell: this.active_cell, dependencies: this.composite_dependencies },
       ]);
 
       this.focused_ = true;
 
     });
 
-    this.editor_node.addEventListener('focusout', () => {
+    this.RegisterListener(descriptor, 'focusout', (event: FocusEvent) => {
 
       if (this.selecting) {
         console.info('focusout, but selecting...');
@@ -237,42 +253,30 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
       // console.info('focus out');
 
-      this.autocomplete.Hide();
+      this.autocomplete?.Hide();
       this.Publish([
         { type: 'stop-editing' },
-        // { type: 'retain-focus', focus: false },
       ]);
+
       this.focused_ = false;
 
-      if (this.editor_node) {
-        this.editor_node.spellcheck = false; // for firefox
+      if (this.active_editor) {
+        this.active_editor.node.spellcheck = false; // for firefox
       }
 
     });
 
-    this.editor_node.addEventListener('keydown', (event) => this.FormulaKeyDown(event));
-    this.editor_node.addEventListener('keyup', (event) => this.FormulaKeyUp(event));
-
-    this.editor_node.addEventListener('input', (event: Event) => {
-
-      if (event instanceof InputEvent && event.isComposing) {
-        return;
-      }
-
-      this.Reconstruct();
-      this.UpdateSelectState();
-
-    });
+    this.RegisterListener(descriptor, 'keydown', this.FormulaKeyDown.bind(this));
+    this.RegisterListener(descriptor, 'keyup', this.FormulaKeyUp.bind(this));
 
     if (this.options.expand_formula_button) {
       this.expand_button = DOMUtilities.Create('button', 'expand-button', inner_node);
       this.expand_button.addEventListener('click', (event: MouseEvent) => {
         event.stopPropagation();
         event.preventDefault();
-        if (this.editor_node) {
-          this.editor_node.scrollTop = 0;
+        if (this.active_editor) {
+          this.active_editor.node.scrollTop = 0;
         }
-        // inner_node.classList.toggle('expanded');
         if (inner_node.hasAttribute('expanded')) {
           inner_node.removeAttribute('expanded');
         }
@@ -285,7 +289,7 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
   }
 
   public IsElement(element: HTMLElement): boolean {
-    return element === this.editor_node;
+    return element === this.active_editor?.node;
   }
 
   public InitAddressLabel() {
@@ -322,6 +326,11 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     });
 
     this.address_label.addEventListener('keydown', (event) => {
+
+      if (event.isComposing) {
+        return;
+      }
+
       switch (event.key) {
           
         case 'Enter':
@@ -343,49 +352,6 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
     });
 
   }
-
-  /**
-   * focuses the formula editor. this is intended to be called after a
-   * range selection, so we can continue editing.
-   */
-  public FocusEditor(): void {
-    if (this.editor_node) {
-      this.editor_node.focus();
-    }
-  }
-
-  /*
-  public UpdateTheme(): void {
-
-    let font_size = this.theme.formula_bar_font_size || null;
-
-    if (typeof font_size === 'number') {
-      font_size = `${font_size}pt`;
-    }
-
-    // all these are applied to the container; font is then inherited.
-
-    this.address_label_container.style.fontFamily = this.theme.formula_bar_font_face || '';
-    this.address_label_container.style.fontSize = font_size || '';
-    this.address_label_container.style.fontWeight = '400'; // FIXME
-    
-    this.address_label_container.style.backgroundColor = this.theme.formula_bar_background_color || '';
-    this.address_label_container.style.color = this.theme.formula_bar_color || '';
-
-    if (this.container_node) {
-      this.container_node.style.fontFamily = this.theme.formula_bar_font_face || '';
-      this.container_node.style.fontSize = font_size || '';
-      this.container_node.style.fontWeight = '400'; // FIXME
-      this.container_node.style.backgroundColor = this.theme.formula_bar_background_color || '';
-      this.container_node.style.color = this.theme.formula_bar_color || '';
-    }
-
-    if (this.autocomplete) {
-      this.autocomplete.UpdateTheme();
-    }
-
-  }
-  */
 
   private GetTextContent(node: Node) {
 
@@ -410,21 +376,48 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
   }
 
+
+
+  private FormulaKeyUp(event: KeyboardEvent){
+
+    if (event.isComposing) {
+      return;
+    }
+
+    if (this.autocomplete) {
+      const ac_result = this.autocomplete.HandleKey('keyup', event);
+      if (ac_result.handled) {
+        return;
+      }
+      // this.FlushReference();
+    }
+
+  }
+
   private FormulaKeyDown(event: KeyboardEvent){
 
-    const ac_result = this.autocomplete.HandleKey('keydown', event);
-    if (ac_result.accept) this.AcceptAutocomplete(ac_result);
-    if (ac_result.handled) return;
+    if (event.isComposing) {
+      return;
+    }
+
+    if (this.autocomplete) {
+      const ac_result = this.autocomplete.HandleKey('keydown', event);
+      if (ac_result.accept) this.AcceptAutocomplete(ac_result);
+      if (ac_result.handled) return;
+    }
 
     switch (event.key){
     case 'Enter':
     case 'Tab':
       {
-        this.selecting_ = false;
+        // this.selecting_ = false;
         const array = (event.key === 'Enter' && event.ctrlKey && event.shiftKey);
 
-        const text = (this.editor_node ? 
-          this.GetTextContent(this.editor_node).join('') : '').trim();
+        // I think we use this nontstandard routine so that we preserve
+        // newlines? not sure. would like to see the motivation for it.
+
+        const text = (this.active_editor ? 
+          this.GetTextContent(this.active_editor.node).join('') : '').trim();
 
         this.Publish({
           type: 'commit',
@@ -433,15 +426,16 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
           event,
           array,
         });
-        this.FlushReference();
+
+        // this.FlushReference();
       }
       break;
 
     case 'Escape':
     case 'Esc':
-      this.selecting_ = false;
+      // this.selecting_ = false;
       this.Publish({ type: 'discard' });
-      this.FlushReference();
+      // this.FlushReference();
       break;
       
     default:
@@ -453,22 +447,4 @@ export class FormulaBar extends FormulaEditorBase<FormulaBar2Event> {
 
   }
 
-  private FormulaKeyUp(event: KeyboardEvent){
-
-    const ac_result = this.autocomplete.HandleKey('keyup', event);
-    if (ac_result.handled) return;
-    this.FlushReference();
-
-    // because there are no input events, we have to try this one -- note
-    // we still won't capture pastes, FIXME (add handlers?)
-
-    //if (this.trident) {
-    //  this.UpdateSelectState();
-    //  this.Reconstruct();
-    //}
-
-  }
-
-
 }
-

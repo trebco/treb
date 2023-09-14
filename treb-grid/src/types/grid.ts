@@ -80,14 +80,14 @@ import { TileRange } from '../layout/base_layout';
 import { GridLayout } from '../layout/grid_layout';
 
 import type { GridSelection } from './grid_selection';
-import { OverlayEditor } from '../editors/overlay_editor2';
+import { OverlayEditor } from '../editors/overlay_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
 import type { GridEvent } from './grid_events';
 import { ErrorCode } from './grid_events';
 import type { LegacySerializedSheet } from './sheet_types';
 // import { FormulaBar } from '../editors/formula_bar';
-import { FormulaBar } from '../editors/formula_bar2';
+import { FormulaBar } from '../editors/formula_bar';
 
 import type { GridOptions } from './grid_options';
 import { BorderConstants } from './border_constants';
@@ -116,9 +116,8 @@ import { GridBase } from './grid_base';
 import type { SetRangeOptions } from './set_range_options';
 import type { ClipboardCellData } from './clipboard_data';
 
-import type { ExternalEditorConfig } from './external_editor';
-// import { ExternalEditorManager } from '../editors/external_editor_manager';
-import { Editor2 as ExternalEditorManager } from '../editors/editor2';
+import type { ExternalEditorConfig } from './external_editor_config';
+import { Editor } from '../editors/editor';
 
 interface DoubleClickData {
   timeout?: number;
@@ -268,16 +267,18 @@ export class Grid extends GridBase {
 
   private RESIZE_PIXEL_BUFFER = 5;
 
-  private select_argument = false; // temp, WIP
+  /**
+   * formalizing the concept of external selection to support outside tooling.
+   * 
+   * FIXME: stop testing on this field. we need a better way to figure out
+   * if the external editor is active.
+   */
+  private external_editor_config?: Partial<ExternalEditorConfig>;
 
   /**
-   * not sure what select_argument was for (possibly outside client), but
-   * we're formalizing the concept of external selection to support outside
-   * tooling.
+   * support for external editor. created on demand.
    */
-  private external_editor?: Partial<ExternalEditorConfig>;
-
-  private external_editor_manager?: ExternalEditorManager;
+  private external_editor?: Editor;
 
   /**
    * flag indicating we're resizing, or hovering over a resize.
@@ -1666,7 +1667,7 @@ export class Grid extends GridBase {
    */
   public ExternalEditor(config: Partial<ExternalEditorConfig>|undefined) {
 
-    this.external_editor = config;
+    this.external_editor_config = config;
 
     if (config) {
 
@@ -1677,22 +1678,22 @@ export class Grid extends GridBase {
       // if (config.edit || config.format?.length) {
       if (config.nodes?.length) {
 
-        if (!this.external_editor_manager) {
-          const manager = new ExternalEditorManager(this.model, this.view);
-          this.external_editor_manager = manager;
+        if (!this.external_editor) {
+          const editor = new Editor(this.model, this.view);
+          this.external_editor = editor;
 
           // should this persist, or should we only subscribe when we're active? (...)
           // in theory, at least, it won't send any events unless something changes
 
-          manager.Subscribe(event => this.HighlightDependencies(manager.dependencies));
+          editor.Subscribe(event => this.HighlightDependencies(editor.dependencies));
         }
 
-        this.external_editor_manager.AttachNodes(config.nodes);
+        this.external_editor.AttachNodes(config.nodes);
  
       }
       else {
-        if (this.external_editor_manager) {
-          this.external_editor_manager.Reset();
+        if (this.external_editor) {
+          this.external_editor.Reset();
         }
       }
 
@@ -1702,8 +1703,8 @@ export class Grid extends GridBase {
     }
     else {
 
-      if (this.external_editor_manager) {
-        this.external_editor_manager.Reset();
+      if (this.external_editor) {
+        this.external_editor.Reset();
       }
 
       this.ClearAdditionalSelections();
@@ -3767,7 +3768,7 @@ export class Grid extends GridBase {
       this.ClearAdditionalSelections();
     }
 
-    if (!selecting_argument || (!this.formula_bar?.selecting && !this.external_editor_manager?.selecting)) {
+    if (!selecting_argument || (!this.formula_bar?.selecting && !this.external_editor?.selecting)) {
 
       // not sure why this breaks the formula bar handler
 
@@ -4056,17 +4057,14 @@ export class Grid extends GridBase {
         if (this.overlay_editor?.editing) {
           // ...
         }
-        else if (this.external_editor) {
+        else if (this.external_editor_config) {
 
           // FIXME: we need a flag or something here insteaf of testing
           // whether there are nodes
 
-          if (this.external_editor.nodes?.length && this.external_editor_manager) {
-            this.external_editor_manager.FocusEditor();
+          if (this.external_editor_config.nodes?.length && this.external_editor) {
+            this.external_editor.FocusEditor();
           }
-          // ...
-        }
-        else if (this.select_argument) {
           // ...
         }
         else if (this.formula_bar) {
@@ -4331,7 +4329,7 @@ export class Grid extends GridBase {
         label = Area.CellAddressToLabel(data.merge_area.start);
       }
 
-      if (this.external_editor || this.active_sheet.id !== this.editing_cell.sheet_id) {
+      if (this.external_editor_config || this.active_sheet.id !== this.editing_cell.sheet_id) {
         const name = this.active_sheet.name;
 
         if (QuotedSheetNameRegex.test(name)) {
@@ -4353,16 +4351,16 @@ export class Grid extends GridBase {
     else if (this.formula_bar && this.formula_bar.selecting) {
       this.formula_bar.InsertReference(label, 0);
     }
-    else if (this.external_editor) {
+    else if (this.external_editor_config) {
 
-      if (this.external_editor && this.external_editor_manager) {
+      if (this.external_editor_config && this.external_editor) {
         // this.external_editor.edit.focus();
-        this.external_editor_manager.FocusEditor();
-        this.external_editor_manager.InsertReference(label, 0);
+        this.external_editor.FocusEditor();
+        this.external_editor.InsertReference(label, 0);
       }
 
-      if (this.external_editor.update) {
-        const result = this.external_editor.update.call(0, label);
+      if (this.external_editor_config.update) {
+        const result = this.external_editor_config.update.call(0, label);
         if (result && Array.isArray(result)) {
           this.HighlightDependencies(
             result.filter(<T>(entry: T|undefined): entry is T => !!entry).map(reference => 
@@ -4370,12 +4368,14 @@ export class Grid extends GridBase {
         }
       }
     }
+    /*
     else if (this.select_argument) {
       this.grid_events.Publish({
         type: 'alternate-selection',
         selection: this.active_selection,
       });
     }
+    */
   }
 
   /**
@@ -4387,8 +4387,8 @@ export class Grid extends GridBase {
   private SelectingArgument(): boolean {
     return (this.overlay_editor?.editing && this.overlay_editor?.selecting)
       || (this.formula_bar && this.formula_bar.selecting)
-      || (!!this.external_editor)
-      || (this.select_argument);
+      || (!!this.external_editor_config);
+      // || (this.select_argument);
   }
 
   /**

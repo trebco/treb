@@ -19,80 +19,115 @@
  * 
  */
 
-/**
- * this is a new version of the ICE that doubles as a key handler
- * for the grid; the aim is to support IME in ICE, which did not work
- * in our old scheme.
- * 
- * update: trying to clean up the node structure, remove one node,
- * and get layout working properly. 
- */
-
-import type { Theme, CellValue, Rectangle, Cell } from 'treb-base-types';
-import { Style, ThemeColor2, type CellStyle } from 'treb-base-types';
-import { Yield } from 'treb-utils';
-import type { Parser } from 'treb-parser';
-import type { GridSelection } from '../types/grid_selection';
-import { FormulaEditorBase } from './formula_editor_base';
-import type { Autocomplete } from './autocomplete';
-import type { DataModel, ViewModel } from '../types/data_model';
+import { Editor, type NodeDescriptor } from './editor';
+import { Area, Cell, type CellStyle, type CellValue, Rectangle, Style, type Theme, ThemeColor2 } from 'treb-base-types';
+import { DataModel, type ViewModel } from '../types/data_model';
+import { Autocomplete } from './autocomplete';
 import { UA } from '../util/ua';
+import type { GridSelection } from '../types/grid_selection';
+
+export type OverlayEditorResult = 'handled' | 'commit' | 'discard';
 
 /**
- * new return type for key event handler, has some additional state
+ * but when to send it?
  */
-export enum OverlayEditorResult {
-  not_handled = 0,
-  handled = 1,
-  commit = 2,
-  discard = 3,
+export interface ResetSelectionEvent {
+  type: 'reset-selection';
 }
 
-/** legacy */
-// const support_cloned_events = (typeof KeyboardEvent === 'function');
+export class OverlayEditor extends Editor<ResetSelectionEvent> {
 
-/** legacy */
-// const use_create_text_range = (typeof ((document?.body as any)?.createTextRange) === 'function');
+  // --- do we actually need this? ---------------------------------------------
 
-export class OverlayEditor extends FormulaEditorBase {
+  /**
+   * selection being edited. note that this is private rather than protected
+   * in an effort to prevent subclasses from accidentally using shallow copies
+   */
+  private internal_selection: GridSelection = {
+    target: { row: 0, column: 0 },
+    area: new Area({ row: 0, column: 0 }),
+  };
 
-  // we could add these back, always construct them, and then
-  // just assign, that would get us around all the conditionals
+  /** accessor for selection */
+  public get selection(){ return this.internal_selection; }
 
+  /** set selection, deep copy */
+  public set selection(rhs: GridSelection){
+    if (!rhs){
+      const zero = {row: 0, column: 0};
+      this.internal_selection = {target: zero, area: new Area(zero)};
+    }
+    else {
+      const target = rhs.target || rhs.area.start;
+      this.internal_selection = {
+        target: {row: target.row, column: target.column},
+        area: new Area(rhs.area.start, rhs.area.end),
+      };
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+
+  /**
+   * this is a flag used to indicate when we need to reset the selection.
+   * the issue has to do with selecting cells via arrow keys; if you do
+   * that twice, the second time the selection starts on the cell you 
+   * selected the first time. so we want to fix that.
+   * 
+   * I guess that used to work with an 'end-selection' event (although it
+   * didn't change the sheet) but that doesn't happen anymore because 
+   * selecting state is determined dynamically now.
+   */
+  public reset_selection = false;
+
+  /** we could use the descriptor reference */
   public edit_node: HTMLElement & ElementContentEditable;
-  public edit_container: HTMLElement;
 
+  /** narrowing from superclass */
+  public container_node: HTMLElement;
+
+  /** special node for ICE */
   public edit_inset: HTMLElement;
   
   public scale = 1; // this should go into theme, since it tends to follow it
 
-  /** FIXME: shouldn't this be a lint error? did we drop that rule? */
-  private _editing = false;
-  
+  /** shadow property */
+  private internal_editing = false;
+
+  /** accessor */
   public get editing(): boolean {
-    return this._editing;
+    return this.internal_editing;
   }
 
-  public set editing(state: boolean) {
-    if (this._editing !== state) {
-      this._editing = state;
+  /**
+   * this is only set one time for each state, so it would be more
+   * efficient to inline it unless that's going to change
+   */
+  protected set editing(state: boolean) {
+    if (this.internal_editing !== state) {
+      this.internal_editing = state;
       if (state) {
-        this.edit_container.style.opacity = '1';
-        this.edit_container.style.pointerEvents = 'initial';
+        this.container_node.style.opacity = '1';
+        this.container_node.style.pointerEvents = 'initial';
       }
       else {
-        this.edit_container.style.opacity = '0';
-        this.edit_container.style.pointerEvents = 'none';
+        this.container_node.style.opacity = '0';
+        this.container_node.style.pointerEvents = 'none';
       }
     }
   }
 
-  constructor(private container: HTMLElement, parser: Parser, theme: Theme, model: DataModel, view: ViewModel, autocomplete: Autocomplete) {
+  constructor(
+      private container: HTMLElement, 
+      private theme: Theme, 
+      model: DataModel, 
+      view: ViewModel, 
+      autocomplete: Autocomplete) {
 
-    super(parser, theme, model, view, autocomplete);
+    super(model, view, autocomplete);
 
-    this.edit_container = container.querySelector('.treb-overlay-container') as HTMLElement;
-    this.edit_node = this.edit_container.querySelector('.treb-overlay-editor') as HTMLElement & ElementContentEditable;
+    this.container_node = container.querySelector('.treb-overlay-container') as HTMLElement;
+    this.edit_node = this.container_node.querySelector('.treb-overlay-editor') as HTMLElement & ElementContentEditable;
 
     if (UA.is_firefox) {
       this.edit_node.classList.add('firefox');
@@ -101,41 +136,27 @@ export class OverlayEditor extends FormulaEditorBase {
     // attempting to cancel "auto" keyboard on ios
     this.edit_node.inputMode = 'none';
 
-    //
-    // so clearly I am doing this when rendering, not sure how it
-    // happens, but we're offsetting by this much. checked on mac
-    // (dpr = 2) and windows (dpr = 1, dpr = 1.5). 1 is the default.
-    // 
-    // NOTE that there's a `resolution` media query, not implemented in safari
-    //
-    // https://bugs.webkit.org/show_bug.cgi?id=78087
-    //
-    // and another nonstandard -webkit-max-device-pixel-ratio, which seems
-    // to be in all modern browsers (possibly with -moz prefix in ffx). OTOH 
-    // this is not complicated and only called on construct, so probably fine,
-    // if somewhat obscure.
-    //
+    //// 
 
-    // NOTE: it's not that simple (see linux). it has something to do with
-    // measuring the font. we probably need to figure out exactly what we are
-    // doing in the renderer, and do that. which also means it might be cell
-    // specific if there are font face/size changes. also we can get it to
-    // offset incorrectly on windows with some fonts (I'm looking at you, comic 
-    // sans)
+    const descriptor: NodeDescriptor = { node: this.edit_node };
+    this.nodes = [ descriptor ];
+    this.active_editor = descriptor;
 
-    // although it probably still has something to do with dpr, maybe that's 
-    // a factor...
-
-    //if (self.devicePixelRatio && self.devicePixelRatio > 1) {
-    //  this.edit_node.style.paddingBottom = `${self.devicePixelRatio}px`;
-    //}
-
-
-
-    this.edit_node.addEventListener('input', (event: Event) => {
+    this.RegisterListener(descriptor, 'input', (event: Event) => {
 
       if (event instanceof InputEvent && event.isComposing) {
         return;
+      }
+
+      if (!event.isTrusted) {
+        this.reset_selection = true; // this is a hack, and unreliable (but works for now)
+        return;
+      }
+
+      if (this.reset_selection) {
+        this.Publish({
+          type: 'reset-selection',
+        });
       }
 
       // this is a new thing that popped up in chrome (actually edge).
@@ -147,69 +168,35 @@ export class OverlayEditor extends FormulaEditorBase {
         this.edit_node.removeChild(first_child);
       }
       
-      // should we dynamically add this when editing? (...)
-      if (!this.editing) { return; }
-
-      this.Reconstruct();
-      this.UpdateSelectState();
-    });
-
-    this.edit_node.addEventListener('keyup', (event: KeyboardEvent) => {
-
-      if (event.isComposing) {
-        return;
+      if (!this.editing) { 
+        return; 
       }
 
-      // should we dynamically add this when editing? (...)
-      if (!this.editing) { return; }
-
-      const ac = this.autocomplete.HandleKey('keyup', event);
-      if (ac.handled) {
-        return;
-      }
-
-      if (this.selecting_){
-        switch (event.key){
-        case 'ArrowUp':
-        case 'ArrowDown':
-        case 'ArrowLeft':
-        case 'ArrowRight':
-        case 'Shift':       // also selection modifiers
-        case 'Control':     // ...
-          return;
-        }
-      }
-
-      // clear node. new ones will be created as necessary.
-      this.FlushReference();
-      this.UpdateSelectState(true);
+      this.UpdateText(descriptor);
+      this.UpdateColors();
 
     });
 
-    this.edit_inset = this.edit_container.querySelector('.treb-overlay-inset') as HTMLElement;
+    this.RegisterListener(descriptor, 'keyup', (event: KeyboardEvent) => {
 
-    // this.edit_inset = document.createElement('div');
-    // this.edit_inset.classList.add('treb-overlay-inset');
-    // this.edit_container.appendChild(this.edit_node);
-    // this.edit_container.appendChild(this.edit_inset);
-    // this.edit_inset.appendChild(this.edit_node);
-    // this.edit_container.appendChild(this.edit_node); // dropping inset
-    // container.appendChild(this.edit_container);
-    // this.edit_container.style.opacity = '0';
+      if (event.isComposing || !this.editing) {
+        return;
+      }
 
-    this.editor_node = this.edit_node as HTMLDivElement;          // wtf is this?
-    this.container_node = this.edit_container as HTMLDivElement;  // wtf is this?
+      // we're not doing anything with the result? (...)
+
+      if (this.autocomplete && this.autocomplete.HandleKey('keyup', event).handled) {
+        return;
+      }
+
+    });
+
+    this.edit_inset = this.container_node.querySelector('.treb-overlay-inset') as HTMLElement;
+    // this.container_node = this.container_node ;  // wtf is this?
 
     this.ClearContents();
 
   }
-
-  /* * this is here only for compatibility with the old ICE; not sure if we need it * /
-  public HandleMouseEvent(event: MouseEvent): boolean {
-
-    return false;
-  }
-  */
 
   public UpdateCaption(text = ''): void {
     this.edit_node.setAttribute('aria-label', text);
@@ -229,8 +216,8 @@ export class OverlayEditor extends FormulaEditorBase {
       // this.edit_container.style.top = `${this.container.scrollTop + 2}px`;
       // this.edit_container.style.left = `${this.container.scrollLeft + 2}px`;
 
-      this.edit_container.style.top = `${this.container.scrollTop + this.view.active_sheet.header_offset.y}px`;
-      this.edit_container.style.left = `${this.container.scrollLeft + this.view.active_sheet.header_offset.x}px`;
+      this.container_node.style.top = `${this.container.scrollTop + this.view.active_sheet.header_offset.y}px`;
+      this.container_node.style.left = `${this.container.scrollLeft + this.view.active_sheet.header_offset.x}px`;
 
     }
 
@@ -242,12 +229,13 @@ export class OverlayEditor extends FormulaEditorBase {
   /* TEMP (should be Hide() ?) */
   public CloseEditor(): void {
     this.editing = false;
+    this.reset_selection = false;
 
     // this (all) should go into the set visible accessor? (...)
 
     this.ClearContents();
     this.edit_node.spellcheck = true; // default
-    this.autocomplete.Hide();
+    this.autocomplete?.Hide();
 
     this.active_cell = undefined;
 
@@ -278,6 +266,14 @@ export class OverlayEditor extends FormulaEditorBase {
 
   }
 
+  // ---------------------------------------------------------------------------
+
+  /**
+   * start editing. I'm not sure why we're passing the selection around, 
+   * but I don't want to take it out until I can answer that question.
+   * 
+   * something to do with keyboard selection? (which needs to be fixed)?
+   */
   public Edit(gridselection: GridSelection, rect: Rectangle, cell: Cell, value?: CellValue, event?: Event): void {
 
     this.Publish({ 
@@ -287,14 +283,13 @@ export class OverlayEditor extends FormulaEditorBase {
 
     this.active_cell = cell;
     this.target_address = {...gridselection.target};
+    this.reset_selection = false;
 
     const style: CellStyle = cell.style || {};
 
     this.edit_node.style.font = Style.Font(style, this.scale);
     this.edit_node.style.color = ThemeColor2(this.theme, style.text, 1);
-    
     this.edit_inset.style.backgroundColor = ThemeColor2(this.theme, style.fill, 0);
-    // this.edit_container.style.backgroundColor = ThemeColor2(this.theme, style.fill, 0);
 
     // NOTE: now that we dropped support for IE11, we can probably 
     // remove more than one class at the same time.
@@ -304,16 +299,16 @@ export class OverlayEditor extends FormulaEditorBase {
 
     switch (style.horizontal_align) {
       case 'right': // Style.HorizontalAlign.Right:
-        this.edit_container.classList.remove('align-center', 'align-left');
-        this.edit_container.classList.add('align-right');
+        this.container_node.classList.remove('align-center', 'align-left');
+        this.container_node.classList.add('align-right');
         break;
       case 'center': // Style.HorizontalAlign.Center:
-        this.edit_container.classList.remove('align-right', 'align-left');
-        this.edit_container.classList.add('align-center');
+        this.container_node.classList.remove('align-right', 'align-left');
+        this.container_node.classList.add('align-center');
         break;
       default:
-        this.edit_container.classList.remove('align-right', 'align-center');
-        this.edit_container.classList.add('align-left');
+        this.container_node.classList.remove('align-right', 'align-center');
+        this.container_node.classList.add('align-left');
         break;
     }
 
@@ -333,8 +328,7 @@ export class OverlayEditor extends FormulaEditorBase {
       this.edit_node.spellcheck = false;
     }
 
-    this.autocomplete.ResetBlock();
-    this.FlushReference();
+    this.autocomplete?.ResetBlock();
     this.selection = gridselection;
 
     if (typeof value !== 'undefined') {
@@ -343,142 +337,94 @@ export class OverlayEditor extends FormulaEditorBase {
       const value_length = value_string.length;
       this.edit_node.textContent = value_string;
 
-      // legacy
+      // monkey with selection
 
-      /*
-      if (use_create_text_range) {
+      const range = document.createRange();
+      const selection = window.getSelection();
 
-        Yield().then(() => {
-          const r = (document.body as any).createTextRange();
-          r.moveToElementText(this.editor_node);
+      if (!selection) throw new Error('invalid selection object');
 
-          // the weird logic here is as follows: move to the end, unless
-          // it's a percent; in which case move to just before the % sign;
-          // unless, in the special case of overtyping a %, don't do anything.
-          // it works (the last case) because this is called via a yield. IE
-          // will somehow end up doing the right thing in this case.
-
-          if (percent) {
-            if (value_length > 1) {
-              r.moveStart('character', value_length);
-              r.move('character', -1);
-              r.select();
-            }
-          }
-          else {
-            r.moveStart('character', value_length);
-            r.select();
-          }
-
-        });
-      }
-      else 
-      */
-      {
-
-        const range = document.createRange();
-        const selection = window.getSelection();
-
-        if (!selection) throw new Error('invalid selection object');
-
-        if (this.edit_node.lastChild){
-          if (percent) {
-            range.setStart(this.edit_node.lastChild, value_length - 1);
-            range.setEnd(this.edit_node.lastChild, value_length - 1);
-          }
-          else {
-            range.setStartAfter(this.edit_node.lastChild);
-          }
+      if (this.edit_node.lastChild){
+        if (percent) {
+          range.setStart(this.edit_node.lastChild, value_length - 1);
+          range.setEnd(this.edit_node.lastChild, value_length - 1);
         }
-
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
-
+        else {
+          range.setStartAfter(this.edit_node.lastChild);
+        }
       }
 
-      if (!event) {
-        const dependencies = this.ListDependencies();
-        this.Publish({type: 'update', text: value.toString(), dependencies});
-      }
+      range.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(range);
 
-    }
-    else {
-
-      // FIXME: mozilla junk? check old ICE
+      // event moved below
 
     }
 
-    rect.ApplyStyle(this.edit_container);
+    rect.ApplyStyle(this.container_node);
     this.editing = true;
 
-    // I'm not sure we need to do this...
+    Promise.resolve().then(() => {
 
-    Yield().then(() => {
+      if (this.active_editor) {
+        this.active_editor.formatted_text = undefined; // necessary? (...)
+        this.UpdateText(this.active_editor);
+        this.UpdateColors();
+      }
 
-      // we probably do need to do this, but maybe not the next one
-      this.last_reconstructed_text = '';
-      this.Reconstruct();
+      // not sure about these two tests, they're from the old version
+
+      if (!event && value !== undefined) {
+        this.Publish({type: 'update', text: value.toString(), dependencies: this.composite_dependencies});
+      }
 
     });
 
   }
 
   /**
-   * we probably need more state in the return value to move stuff from
-   * the async handler to directly in the sync handler -- we no longer need
-   * to redispatch events, because we're in the same event stream
+   * check if we want to handle this key. we have some special cases (tab, 
+   * enter, escape) where we do take some action but we also let the 
+   * spreadsheet handle the key. for those we have some additional return
+   * values.
+   * 
+   * NOTE this is *not* added as an event handler -- it's called by the grid
    * 
    * @param event 
    * @returns 
    */
-  public HandleKeyDown(event: KeyboardEvent): OverlayEditorResult {
+  public HandleKeyDown(event: KeyboardEvent): OverlayEditorResult|undefined {
+
+    // skip keys if we're not editing
 
     if (!this.editing) {
-      return OverlayEditorResult.not_handled;
+      return undefined; // not handled
     }
 
     // pass through to autocomplete
 
-    const ac = this.autocomplete.HandleKey('keydown', event);
+    if (this.autocomplete) {
+      const ac = this.autocomplete.HandleKey('keydown', event);
 
-    if (ac.accept){
-      this.AcceptAutocomplete(ac);
-    }
-    if (ac.handled) {
-      return OverlayEditorResult.handled;
+      if (ac.accept){
+        this.AcceptAutocomplete(ac);
+      }
+
+      if (ac.handled) {
+        return 'handled';
+      }
     }
 
     switch (event.key) {
 
       case 'Enter':
       case 'Tab':
-      {
-        /*
-        // we're going to trap this event, and then re-send it, as we do with
-        // the formula bar editor. this is so that the grid can send the data
-        // event before the selection event, to better support undo.
-
-        const value = this.edit_node.textContent || undefined;
-        const array = (event.key === 'Enter' && event.ctrlKey && event.shiftKey);
-        this.Publish({type: 'commit', value, selection: this.selection, array, event});
-        */
-
-        this.selecting_ = false;
-
-        // do this so we don't tab-switch-focus
-        // event.stopPropagation();
-        // event.preventDefault();
-
-        return OverlayEditorResult.commit; 
-      }
+        return 'commit'; 
 
       case 'Escape':
       case 'Esc':
-
-        // this.Publish({type: 'discard'});
-        this.selecting_ = false;
-        return OverlayEditorResult.discard;
+        return 'discard';
 
       case 'ArrowUp':
       case 'ArrowDown':
@@ -488,25 +434,23 @@ export class OverlayEditor extends FormulaEditorBase {
       case 'Down':
       case 'Left':
       case 'Right':
-        return this.selecting_ ? OverlayEditorResult.not_handled : OverlayEditorResult.handled;
+        return this.selecting ? undefined : 'handled';
 
     }
 
-    // for all other keys, we consume the key if we're in edit mode; otherwise
-    // return false and let the calling routine (in grid) handle the key
-
-    // return this.editing;
-
-    return OverlayEditorResult.handled; // always true because we test at the top
+     return 'handled'; // we will consume
 
   }
 
-  // --- from old ICE ----------------------------------------------------------
+  public UpdateScale(scale: number): void {
 
-  public UpdateTheme(scale: number): void {
+    // we're not changing in place, so this won't affect any open editors...
+    // I think there's a case where you change scale without focusing (using
+    // the mouse wheel) which might result in incorrect rendering... TODO/FIXME
+
     this.scale = scale;
+
   }
+
 
 }
-
-

@@ -30,9 +30,9 @@ export interface ExternalEditorConfig {
 
   /**  
    * a list of nodes that will serve as editors. when you attach, we will do
-   * an initial pass of context highlighting. we will also highlight on text
-   * changes and if an editor is focused and you make a selection in the 
-   * spreadsheet, we'll insert it.
+   * an initial pass of context highlighting. we highlight on text changes 
+   * and insert references if you make a selection in the spreadsheet while
+   * an editor is focused.
    */
   nodes: HTMLElement[];
 

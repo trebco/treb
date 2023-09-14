@@ -155,7 +155,7 @@ export interface NodeDescriptor {
 
 }
 
-export class Editor2<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorEvent> {
+export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorEvent> {
 
   protected static readonly FormulaChars = ('$^&*(-+={[<>/~%' + Localization.argument_separator).split(''); // FIXME: i18n
 
@@ -251,7 +251,7 @@ export class Editor2<E = FormulaEditorEvent> extends EventSource<E|FormulaEditor
 
         if (range?.startContainer instanceof Text) {
           const str = (range.startContainer.textContent?.substring(0, range.startOffset) || '').trim();
-          if (str.length && Editor2.FormulaChars.includes(str[str.length - 1])) {
+          if (str.length && Editor.FormulaChars.includes(str[str.length - 1])) {
             return true;
           }
         }
@@ -264,7 +264,7 @@ export class Editor2<E = FormulaEditorEvent> extends EventSource<E|FormulaEditor
       const text = this.SubstringToCaret2(this.active_editor.node)[1].trim();
       if (text.length) {
         const char = text[text.length - 1];
-        return Editor2.FormulaChars.includes(char);
+        return Editor.FormulaChars.includes(char);
       }
 
     }
@@ -469,7 +469,7 @@ export class Editor2<E = FormulaEditorEvent> extends EventSource<E|FormulaEditor
           let trimmed = substring.trim();
           if (trimmed.length) {
             const char = trimmed[trimmed.length - 1];
-            if (!Editor2.FormulaChars.includes(char)) {
+            if (!Editor.FormulaChars.includes(char)) {
               if (substring.length === trimmed.length) {
                 leader = ' +';
               }
