@@ -117,7 +117,7 @@ import type { SetRangeOptions } from './set_range_options';
 import type { ClipboardCellData } from './clipboard_data';
 
 import type { ExternalEditorConfig } from './external_editor_config';
-import { Editor } from '../editors/editor';
+import { ExternalEditor } from '../editors/external_editor';
 
 interface DoubleClickData {
   timeout?: number;
@@ -278,7 +278,7 @@ export class Grid extends GridBase {
   /**
    * support for external editor. created on demand.
    */
-  private external_editor?: Editor;
+  private external_editor?: ExternalEditor;
 
   /**
    * flag indicating we're resizing, or hovering over a resize.
@@ -1675,11 +1675,10 @@ export class Grid extends GridBase {
         <T>(test: T|undefined): test is T => !!test).map(reference => 
           IsCellAddress(reference) ? new Area(reference) : new Area(reference.start, reference.end));
 
-      // if (config.edit || config.format?.length) {
       if (config.nodes?.length) {
 
         if (!this.external_editor) {
-          const editor = new Editor(this.model, this.view);
+          const editor = new ExternalEditor(this.model, this.view);
           this.external_editor = editor;
 
           // should this persist, or should we only subscribe when we're active? (...)
@@ -1700,6 +1699,7 @@ export class Grid extends GridBase {
       if (config.dependencies) {
         this.HighlightDependencies(areas);
       }
+
     }
     else {
 
@@ -4059,13 +4059,17 @@ export class Grid extends GridBase {
         }
         else if (this.external_editor_config) {
 
-          // FIXME: we need a flag or something here insteaf of testing
-          // whether there are nodes
+          // there are two possible cases: either an update function
+          // or a full-on editor. we should probably test for both?
 
-          if (this.external_editor_config.nodes?.length && this.external_editor) {
+          if (this.external_editor?.active) {
             this.external_editor.FocusEditor();
           }
-          // ...
+          if (this.external_editor_config.update) {
+            // not necessary?
+            // console.info('call update?');
+          }
+
         }
         else if (this.formula_bar) {
           this.formula_bar.FocusEditor();
@@ -4353,8 +4357,7 @@ export class Grid extends GridBase {
     }
     else if (this.external_editor_config) {
 
-      if (this.external_editor_config && this.external_editor) {
-        // this.external_editor.edit.focus();
+      if (this.external_editor?.active) {
         this.external_editor.FocusEditor();
         this.external_editor.InsertReference(label, 0);
       }
