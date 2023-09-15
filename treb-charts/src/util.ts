@@ -38,7 +38,7 @@ export class Util {
    * given a passed range, find the best scale range. count is just a
    * suggestion -- we try to get as close as possible.
    */
-  public static Scale(min: number, max: number, count = 6.5): RangeScale {
+  public static Scale(min: number, max: number, count = 6.5, limit_count?: boolean, discrete?: boolean): RangeScale {
 
     /*
     const range = max - min;
@@ -71,7 +71,7 @@ export class Util {
 
     return { scale, step, count, min, max };
     */
-    return Scale(min, max, count);
+    return Scale(min, max, count, limit_count, discrete);
     
   }
 
