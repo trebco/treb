@@ -24,7 +24,7 @@ import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
 import type { UnionValue, 
          RenderFunctionResult, RenderFunctionOptions, Complex } from 'treb-base-types';
-import { Box, ValueType, GetValueType, ComplexOrReal } from 'treb-base-types';
+import { Box, ValueType, GetValueType, ComplexOrReal, IsComplex } from 'treb-base-types';
 import { Sparkline } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -427,7 +427,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       description: 'Counts cells that contain numbers',
       fn: (...args: unknown[]): UnionValue => {
         return Box(Utils.FlattenUnboxed(args).reduce((a: number, b: unknown) => {
-          if (typeof b === 'number') return a + 1;
+          if (typeof b === 'number' || IsComplex(b)) return a + 1;
           return a;
         }, 0));
       },
