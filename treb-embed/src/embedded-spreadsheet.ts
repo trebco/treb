@@ -81,6 +81,7 @@ import type { SetRangeOptions } from 'treb-grid';
  * the script so we can run it as a worker.
  */
 import * as export_worker_script from 'worker:../../treb-export/src/export-worker/index.worker';
+import { ConditionalFormat } from 'treb-grid/src/types/conditional-format';
 
 // --- types -------------------------------------------------------------------
 
@@ -1250,6 +1251,74 @@ export class EmbeddedSpreadsheet {
     });
 
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+  //
+  // conditional formatting API (WIP)
+  //
+
+  /**
+   * list conditional formats. uses the active sheet by default, or pass a 
+   * sheet name or id.
+   * 
+   * @internal
+   */
+  public ListConditionalFormats(sheet?: number|string) {
+
+    const target = (typeof sheet === 'undefined') ? 
+      this.grid.active_sheet :
+      this.model.sheets.Find(sheet);
+
+    return target?.conditional_formats || [];
+      
+  }
+
+  /**
+   * add a conditional format
+   * 
+   * @internal
+   */
+  public AddConditionalFormat(target_range: RangeReference|undefined, format: ConditionalFormat) {
+
+    if (target_range === undefined) {
+      target_range = this.GetSelectionReference().area;
+    }
+
+    const resolved = this.model.ResolveArea(target_range, this.grid.active_sheet);
+    const sheet = this.model.sheets.Find(resolved.start.sheet_id||0);
+    
+    if (!sheet) {
+      throw new Error('invalid reference');
+    }
+
+    sheet.conditional_formats.push(format);
+
+    // call update if it's the current sheet
+    this.ApplyConditionalFormats(sheet, sheet === this.grid.active_sheet);
+
+  }
+
+  /**
+   * remove conditional format
+   * 
+   * @internal
+   */
+  public RemoveConditionalFormat(format: ConditionalFormat) {
+    const area = format.area;
+    const sheet = area.start.sheet_id ? this.model.sheets.Find(area.start.sheet_id) : this.grid.active_sheet;
+
+    if (!sheet) {
+      throw new Error('invalid reference in format');
+    }
+
+    sheet.conditional_formats = sheet.conditional_formats.filter(test => test !== format);
+
+    // call update if it's the current sheet
+    this.ApplyConditionalFormats(sheet, sheet === this.grid.active_sheet);
+
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
 
   /**
    * @internal
@@ -2954,11 +3023,11 @@ export class EmbeddedSpreadsheet {
     // FIXME: optional? parameter? (...)
 
     if (data.rendered_values && !options.recalculate) {
-      this.grid.Update();
       this.calculator.RebuildClean(true);
+      this.ApplyConditionalFormats(this.grid.active_sheet, false);
+      this.grid.Update();
     }
     else {
-      // console.info('load recalc');
       this.Recalculate();
     }
 
@@ -2982,6 +3051,8 @@ export class EmbeddedSpreadsheet {
       const scroll = options.scroll;
       Yield().then(() => this.ScrollTo(scroll));
     }
+
+    console.info("mark2");
 
   }
 
@@ -3248,6 +3319,7 @@ export class EmbeddedSpreadsheet {
     }
 
     this.calculator.Calculate(area);
+    this.ApplyConditionalFormats(this.grid.active_sheet, false);
 
     this.grid.Update(true); // , area);
     this.UpdateAnnotations();
@@ -3939,6 +4011,57 @@ export class EmbeddedSpreadsheet {
   }
 
   // --- internal (protected) methods ------------------------------------------
+
+  /**
+   * 
+   */
+  protected ApplyConditionalFormats(sheet: Sheet, call_update: boolean) {
+
+    // const sheet = this.grid.active_sheet;
+    const areas: IArea[] = [];
+
+    if (sheet.conditional_formats) {
+
+      // sheet.FlushConditionalFormatCache();
+
+      for (const entry of sheet.conditional_formats) {
+        if (entry.type === 'expression') {
+
+          // FIXME: if these expressions were passed to the calculator
+          // (along with the rest of the sheet) we could determine if 
+          // they were dirty, which would reduce the set of updates.
+
+          // we would still have to account for conditional formats that
+          // were added or removed, but that's a different problem
+
+          let result = this.Evaluate(entry.expression);
+          if (Array.isArray(result)) {
+            result = result[0][0];
+          }
+
+          const applied = !!result;
+          if (applied !== (entry.applied||false)) {
+            areas.push(entry.area);
+          }
+
+          // if (applied) {
+          //  sheet.ApplyConditionalFormatCache(entry);
+          //}
+
+          entry.applied = applied;
+
+        }
+      }
+
+      sheet.ApplyConditionalFormats();
+
+    }
+
+    if (call_update) {
+      this.grid.Update(true, areas);
+    }
+
+  }
 
   protected ResolveTable(reference: RangeReference): Table|undefined {
 

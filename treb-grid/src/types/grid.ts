@@ -1986,7 +1986,7 @@ export class Grid extends GridBase {
   }
 
   /** repaint after an external event (calculation) */
-  public Update(force = false, area?: Area): void {
+  public Update(force = false, area?: IArea|IArea[]): void {
     this.DelayedRender(force, area);
   }
 
@@ -2794,7 +2794,7 @@ export class Grid extends GridBase {
 
 
 
-  private DelayedRender(force = false, area?: Area, full_tile = false) {
+  private DelayedRender(force = false, area?: IArea|IArea[], full_tile = false) {
 
     // if area is passed, set dirty before calling repaint
 

@@ -22,6 +22,7 @@
 import type { IArea, SerializedCellData, Style, CellStyle } from 'treb-base-types';
 import type { Annotation, AnnotationData } from './annotation';
 import type { GridSelection, SerializedGridSelection } from './grid_selection';
+import { ConditionalFormatList } from './conditional-format';
 
 export interface UpdateHints {
   data?: boolean;
@@ -67,6 +68,9 @@ export interface SerializedSheet {
    * cell styles is for empty cells that have styling
    */
   cell_styles: CellStyleRecord[]; // Array<{row: number; column: number; ref: number, rows?: number}>;
+
+  /** @internal */
+  conditional_formats?: ConditionalFormatList;
 
   /** 
    * @deprecated use `styles` instead

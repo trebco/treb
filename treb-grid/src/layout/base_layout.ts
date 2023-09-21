@@ -23,7 +23,7 @@ import { DOMUtilities } from '../util/dom_utilities';
 import type { DataModel, ViewModel } from '../types/data_model';
 
 import type { Tile } from '../types/tile';
-import type { Theme, Point, Extent, Size, Position, ICellAddress, Table } from 'treb-base-types';
+import type { Theme, Point, Extent, Size, Position, ICellAddress, Table, IArea } from 'treb-base-types';
 import { Style, Area, Rectangle, ThemeColor } from 'treb-base-types';
 
 import { MouseDrag } from '../types/drag_mask';
@@ -2160,25 +2160,33 @@ export abstract class BaseLayout {
     }
   }
 
-  public DirtyArea(area: Area): void {
+  public DirtyArea(areas: IArea|IArea[]): void {
 
     if (!this.initialized) return;
 
-    const start = { row: 0, column: 0 };
-    const end = { row: this.grid_tiles[0].length - 1, column: this.grid_tiles.length - 1 };
+    if (!Array.isArray(areas)) {
+      areas = [areas];
+    }
 
-    if (area.start.column !== Infinity) {
-      start.column = end.column = this.TileIndexForColumn(area.start.column);
-      if (area.end.column !== area.start.column) end.column = this.TileIndexForColumn(area.end.column);
-    }
-    if (area.start.row !== Infinity) {
-      start.row = end.row = this.TileIndexForRow(area.start.row);
-      if (area.end.row !== area.start.row) end.row = this.TileIndexForRow(area.end.row);
-    }
-    for (let column = start.column; column <= end.column; column++) {
-      for (let row = start.row; row <= end.row; row++) {
-        this.grid_tiles[column][row].dirty = true;
+    for (const area of areas) {
+
+      const start = { row: 0, column: 0 };
+      const end = { row: this.grid_tiles[0].length - 1, column: this.grid_tiles.length - 1 };
+
+      if (area.start.column !== Infinity) {
+        start.column = end.column = this.TileIndexForColumn(area.start.column);
+        if (area.end.column !== area.start.column) end.column = this.TileIndexForColumn(area.end.column);
       }
+      if (area.start.row !== Infinity) {
+        start.row = end.row = this.TileIndexForRow(area.start.row);
+        if (area.end.row !== area.start.row) end.row = this.TileIndexForRow(area.end.row);
+      }
+      for (let column = start.column; column <= end.column; column++) {
+        for (let row = start.row; row <= end.row; row++) {
+          this.grid_tiles[column][row].dirty = true;
+        }
+      }
+
     }
 
   }

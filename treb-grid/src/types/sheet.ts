@@ -42,6 +42,7 @@ import type { SerializeOptions } from './serialize_options';
 import type { GridSelection } from './grid_selection';
 import { CreateSelection } from './grid_selection';
 import { Annotation } from './annotation';
+import { ConditionalFormat, ConditionalFormatList } from './conditional-format';
 
 // --- constants --------------------------------------------------------------
 
@@ -153,6 +154,11 @@ export class Sheet {
 
   /**
    * @internal
+   */
+  public conditional_formats: ConditionalFormatList = [];
+
+  /**
+   * @internal
    * 
    * testing, not serialized atm
    */
@@ -227,6 +233,19 @@ export class Sheet {
   // [why FIXME? sparse is OK in js]
 
   private cell_style: CellStyle[][] = [];
+
+  /**
+   * applied conditional formats are stored them in this array;
+   * they will be stacked on top of cell style when rendering.
+   * conditional formats have top priority. [FIXME: what about tables?]
+   */
+  private conditional_format_cache: CellStyle[][][] = [];
+
+  /**
+   * this is a list of cells we formatted on the last pass, so we can 
+   * compare when applying conditional formats .
+   */
+  private conditional_format_checklist: number[][] = [];
 
   // --- accessors ------------------------------------------------------------
 
@@ -350,6 +369,10 @@ export class Sheet {
     }
     if (source.default_row_height) {
       sheet.default_row_height = source.default_row_height;
+    }
+
+    if (source.conditional_formats) {
+      sheet.conditional_formats = source.conditional_formats;
     }
 
     // persist ID, name
@@ -2069,6 +2092,8 @@ export class Sheet {
    * this is a new GetCellStyle function, used for external access
    * to style (for API access). there was an old GetCellStyle function
    * for rendering, but that's been removed (control+F for info).
+   * 
+   * Q: does this include conditional formatting? (...)
    */
   public GetCellStyle(area: ICellAddress|IArea, apply_theme = false): CellStyle|CellStyle[][] {
 
@@ -2580,6 +2605,8 @@ export class Sheet {
       row_style,
       column_style,
 
+      conditional_formats: this.conditional_formats.length ? this.conditional_formats.map(format => ({...format, applied: format.applied||undefined})) : undefined,
+
       row_pattern: row_pattern.length ? row_pattern : undefined,
 
       // why are these serialized? (...) export!
@@ -2976,28 +3003,6 @@ export class Sheet {
 
   }
 
-  /* *
-   * styles are applied as a stack, 
-   * 
-   * sheet
-   * row pattern
-   * row
-   * column
-   * cell
-   * 
-   * there are some cases where we wind up with overridden but matching
-   * styles that are duplicative. they can be removed, although it's not 
-   * necessarily useful to do it in real time -- we can do it on load/save
-   * or perhaps on idle.
-   * 
-   * /
-  private FlattenStyles() {
-
-    this.CompositeStyleForCell
-
-  }
-  */
-
   /**
    * updates column properties. reverse-overrides cells (@see UpdateSheetStyle).
    */
@@ -3050,6 +3055,142 @@ export class Sheet {
   }
 
   /**
+   * flush the cache and the checklist. flush cell styles at the same
+   * time. this should be called when adding/removing a conditional format.
+   * optionally apply active formats again.
+   * 
+   * is this actually necessary? what's the use case? (...)
+   * 
+   */
+  public FlushConditionalFormats(reapply = false) {
+
+    for (const [row, column] of this.conditional_format_checklist) {
+      this.CellData({row, column}).FlushStyle();
+    }
+
+    this.conditional_format_checklist = [];
+    this.conditional_format_cache = [];
+
+    if (reapply) {
+      this.ApplyConditionalFormats();
+    }
+
+  }
+
+  /**
+   * this version combines flushing the cache with building it, using
+   * the application flag in the format objects. 
+   * 
+   * this function was set up to support comparing the two lists and
+   * only flushing style if necessary; but that turns out to be so 
+   * much additional work that I'm not sure it's preferable to just 
+   * repainting. need to test.
+   * 
+   */
+  public ApplyConditionalFormats() {
+
+    const temp: CellStyle[][][] = [];
+    const checklist: number[][] = [...this.conditional_format_checklist];
+
+    this.conditional_format_checklist = []; // flush
+
+    for (const format of this.conditional_formats) {
+      if (format.applied) {
+        const area = format.area;
+        for (let row = area.start.row; row <= area.end.row; row++) {
+          if (!temp[row]) {
+            temp[row] = [];
+          }
+          for (let column = area.start.column; column <= area.end.column; column++) {
+            if (!temp[row][column]) {
+              temp[row][column] = [];
+            }
+            temp[row][column].push(format.style);
+            checklist.push([row, column]);
+            this.conditional_format_checklist.push([row, column]);
+          }
+        }
+      }
+    }
+
+    for (const [row, column] of checklist) {
+      const a = temp[row]?.[column];
+      const b = this.conditional_format_cache[row]?.[column];
+
+      if ((!!a && !b) || (!a && !!b) || (a && b && ((a.length !== b.length) || (JSON.stringify(a) !== JSON.stringify(b))))) {
+        this.CellData({row, column}).FlushStyle();
+      }
+
+    }
+
+    this.conditional_format_cache = temp;
+
+  }
+
+  /*
+  public ApplyConditionalFormats() {
+
+    this.FlushConditionalFormatCache();
+
+    for (const entry of this.conditional_formats) {
+
+      console.info({entry});
+
+      if (entry.applied) {
+        this.ApplyConditionalFormatCache(entry);
+      }
+    }
+
+  }
+
+  public FlushConditionalFormatCache() {
+
+    // FIXME: need to flush any styles that are set, unless they match;
+    // perhaps we should use an alternate cache so we can compare? TODO/FIXME
+
+    for (const [row, row_data] of this.conditional_format_cache.entries()) {
+      if (row_data) {
+        for (const [column, column_data] of row_data.entries()) {
+          if (column_data) {
+
+            this.CellData({row, column}).FlushStyle();
+
+          }
+        }
+      }
+    }
+
+    this.conditional_format_cache = [];
+
+  }
+
+  public ApplyConditionalFormatCache(format: ConditionalFormat) {
+    
+    for (let row = format.area.start.row; row <= format.area.end.row; row++ ) {
+      for (let column = format.area.start.column; column <= format.area.end.column; column++ ) {
+        if (!this.conditional_format_cache[row]) {
+          this.conditional_format_cache[row] = [];
+        }
+        if (!this.conditional_format_cache[row][column]) {
+          this.conditional_format_cache[row][column] = [];
+        }
+        this.conditional_format_cache[row][column].push(format.style);
+        this.CellData({row, column}).FlushStyle();
+
+      }
+    }
+
+  }
+  */
+
+  private ConditionalFormatForCell(address: ICellAddress): CellStyle[] {
+    if (this.conditional_format_cache[address.row]) {
+      return this.conditional_format_cache[address.row][address.column] || [];
+    }
+    return [];
+  }
+
+  /**
    * generates the composite style for the given cell. this
    * should only be used to generate a cache of styles (Q: really? PERF?)
    *
@@ -3084,6 +3225,8 @@ export class Sheet {
       && this.cell_style[column][row]) {
       stack.push(this.cell_style[column][row]);
     }
+
+    stack.push(...this.ConditionalFormatForCell(address));
 
     return Style.Composite(stack);
   }
