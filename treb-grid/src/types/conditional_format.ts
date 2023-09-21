@@ -13,20 +13,49 @@ export interface ConditionalFormatExpression {
   options?: EvaluateOptions;
 }
 
-export interface ConditionalFormatColorRange {
-  type: 'gradient';
-  area: IArea;
+export interface ConditionalFormatGradientOptions {
 
   /** property defaults to fill */
   property?: 'fill'|'text';
 
+  /** gradient stops, required */
   stops: Array<{ value: number, color: Color }>;
-
+  
   /** min and max are optional. if not provided, we use the min/max of the range of data. */
   min?: number;
-
+  
   /** min and max are optional. if not provided, we use the min/max of the range of data. */
   max?: number;
+
+}
+
+//
+// need to figure out the pattern that lets us write the list only once
+//
+
+export const StandardGradientTypes = ['red-green', 'green-red'] as const;
+export type StandardGradient = typeof StandardGradientTypes[number];
+
+export const StandardGradientsList: { 
+  [K in StandardGradient]: ConditionalFormatGradientOptions; 
+} = {
+  'red-green': {
+    stops: [
+      { value: 0, color: { theme: 5, tint: .5 }}, 
+      { value: 1, color: { theme: 9, tint: .5 }}, 
+    ],
+  },
+  'green-red': {
+    stops: [
+      { value: 0, color: { theme: 9, tint: .5 }}, 
+      { value: 1, color: { theme: 5, tint: .5 }}, 
+    ],
+  },
+} ; 
+
+export interface ConditionalFormatGradient extends ConditionalFormatGradientOptions {
+  type: 'gradient';
+  area: IArea;
 
   internal?: {
     gradient: Gradient;
@@ -43,7 +72,7 @@ export interface ConditionalFormatColorRange {
  */
 export type ConditionalFormat = { applied?: boolean, internal?: unknown } & (
     ConditionalFormatExpression |
-    ConditionalFormatColorRange
+    ConditionalFormatGradient
   );
 
 /**

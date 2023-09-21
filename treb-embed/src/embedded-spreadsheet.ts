@@ -32,10 +32,16 @@ import type {
   AnnotationViewData,
   AnnotationType, 
   ExternalEditorConfig,
+  ConditionalFormatGradientOptions,
+  ConditionalFormat, 
+  ConditionalFormatGradient, 
+  ConditionalFormatExpression,
+  StandardGradient,
 } from 'treb-grid';
 
 import {
-  DataModel, Grid, BorderConstants, Sheet, ErrorCode, UA
+  DataModel, Grid, BorderConstants, Sheet, ErrorCode, UA,
+  StandardGradientsList,
 } from 'treb-grid';
 
 import { 
@@ -60,7 +66,6 @@ import {
 import { EventSource, Yield, ValidateURI } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
-import type { ConditionalFormat, ConditionalFormatColorRange, ConditionalFormatExpression } from 'treb-grid';
 
 
 // --- local -------------------------------------------------------------------
@@ -1279,7 +1284,7 @@ export class EmbeddedSpreadsheet {
   /**
    * @internal
    */
-  public ConditionalFormatGradient(range: RangeReference|undefined, stops: GradientStop[], min?: number, max?: number, property: 'text'|'fill' = 'fill'): ConditionalFormat {
+  public ConditionalFormatGradient(range: RangeReference|undefined, options: ConditionalFormatGradientOptions|StandardGradient): ConditionalFormat {
 
     if (range === undefined) {
       const ref = this.GetSelectionReference();
@@ -1291,14 +1296,13 @@ export class EmbeddedSpreadsheet {
     
     const area = this.model.ResolveArea(range, this.grid.active_sheet);
 
-    const format: ConditionalFormatColorRange = {
-      type: 'gradient',
-      stops,
-      area,
-      min, 
-      max,
-      property,
-    };
+    const format: ConditionalFormatGradient = (typeof options === 'object') ?
+      {
+        type: 'gradient', area, ...options,
+      } :
+      {
+        type: 'gradient', area, ...StandardGradientsList[options]
+      };
 
     this.AddConditionalFormat(format);
     return format;
