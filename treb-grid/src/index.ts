@@ -40,3 +40,4 @@ export { UA } from './util/ua';
 export type { SetRangeOptions } from './types/set_range_options';
 export type { AnnotationData, AnnotationType } from './types/annotation';
 export type { ExternalEditorConfig, DependencyList, ExternalEditorCallback } from './types/external_editor_config';
+export * from './types/conditional_format';

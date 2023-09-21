@@ -22,7 +22,7 @@
 import type { IArea, SerializedCellData, Style, CellStyle } from 'treb-base-types';
 import type { Annotation, AnnotationData } from './annotation';
 import type { GridSelection, SerializedGridSelection } from './grid_selection';
-import { ConditionalFormatList } from './conditional-format';
+import type { ConditionalFormatList } from './conditional_format';
 
 export interface UpdateHints {
   data?: boolean;

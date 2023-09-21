@@ -42,7 +42,7 @@ import type { SerializeOptions } from './serialize_options';
 import type { GridSelection } from './grid_selection';
 import { CreateSelection } from './grid_selection';
 import { Annotation } from './annotation';
-import { ConditionalFormat, ConditionalFormatList } from './conditional-format';
+import type { ConditionalFormatList } from './conditional_format';
 
 // --- constants --------------------------------------------------------------
 

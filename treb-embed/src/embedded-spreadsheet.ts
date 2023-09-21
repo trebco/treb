@@ -60,6 +60,9 @@ import {
 import { EventSource, Yield, ValidateURI } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
+import type { ConditionalFormat, ConditionalFormatColorRange, ConditionalFormatExpression } from 'treb-grid';
+
+
 // --- local -------------------------------------------------------------------
 
 import { Dialog, DialogType } from './progress-dialog';
@@ -82,7 +85,6 @@ import type { SetRangeOptions } from 'treb-grid';
  * the script so we can run it as a worker.
  */
 import * as export_worker_script from 'worker:../../treb-export/src/export-worker/index.worker';
-import { ConditionalFormat, ConditionalFormatColorRange, ConditionalFormatExpression } from 'treb-grid/src/types/conditional-format';
 
 // --- types -------------------------------------------------------------------
 
@@ -1995,7 +1997,7 @@ export class EmbeddedSpreadsheet {
           this.grid.Update(true);
         }
       }
-      
+
     }
 
 

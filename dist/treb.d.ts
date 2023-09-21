@@ -1,4 +1,4 @@
-/*! API v27.7. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v27.8. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -1292,6 +1292,26 @@ export interface TableSortOptions {
 export type TableSortType = 'text' | 'numeric' | 'auto';
 
 /**
+ * options for the evaluate function
+ */
+export interface EvaluateOptions {
+
+    /**
+     * argument separator to use when parsing input. set this option to
+     * use a consistent argument separator independent of current locale.
+     */
+    argument_separator?: ',' | ';';
+
+    /**
+     * allow R1C1-style references. the Evaluate function cannot use
+     * relative references (e.g. R[-1]C[0]), so those will always fail.
+     * however it may be useful to use direct R1C1 references (e.g. R3C4),
+     * so we optionally support that behind this flag.
+     */
+    r1c1?: boolean;
+}
+
+/**
  * this is the document type used by TREB. it has a lot of small variations
  * for historical reasons and backwards compatibility. usually it's preferable
  * to let TREB create and manage these documents rather than creating them
@@ -1820,24 +1840,4 @@ export interface ExportOptions {
 
     /** use number formats when exporting numbers */
     formatted?: boolean;
-}
-
-/**
- * options for the evaluate function
- */
-export interface EvaluateOptions {
-
-    /**
-     * argument separator to use when parsing input. set this option to
-     * use a consistent argument separator independent of current locale.
-     */
-    argument_separator?: ',' | ';';
-
-    /**
-     * allow R1C1-style references. the Evaluate function cannot use
-     * relative references (e.g. R[-1]C[0]), so those will always fail.
-     * however it may be useful to use direct R1C1 references (e.g. R3C4),
-     * so we optionally support that behind this flag.
-     */
-    r1c1?: boolean;
 }

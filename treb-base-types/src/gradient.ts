@@ -1,7 +1,7 @@
 
 import { Measurement } from 'treb-utils';
-import { Color } from './style';
-import { Theme, ThemeColor2 } from './theme';
+import { type Color } from './style';
+import { type Theme, ThemeColor2 } from './theme';
 import { ColorFunctions } from './color';
 
 export interface GradientStop {
