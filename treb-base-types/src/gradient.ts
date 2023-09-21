@@ -95,7 +95,3 @@ export class Gradient {
   }
 
 }
-
-if (typeof window !== 'undefined') {
-  (window as any).Gradient = Gradient;
-}
