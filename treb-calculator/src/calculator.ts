@@ -19,7 +19,7 @@
  * 
  */
 
-import type { Cell, ICellAddress, ICellAddress2, UnionValue,
+import type { Cell, ICellAddress, ICellAddress2, UnionValue, EvaluateOptions,
          ArrayUnion, IArea, CellDataWithAddress} from 'treb-base-types';
 import { Localization, Area, ValueType, IsCellAddress} from 'treb-base-types';
          
@@ -119,27 +119,6 @@ const TranslateSubtotalType = (type: string|number): number => {
   return type;
 
 };
-
-/**
- * options for the evaluate function
- */
-export interface EvaluateOptions {
-
-  /**
-   * argument separator to use when parsing input. set this option to 
-   * use a consistent argument separator independent of current locale.
-   */
-  argument_separator?: ','|';';
-
-  /** 
-   * allow R1C1-style references. the Evaluate function cannot use
-   * relative references (e.g. R[-1]C[0]), so those will always fail. 
-   * however it may be useful to use direct R1C1 references (e.g. R3C4),
-   * so we optionally support that behind this flag.
-   */
-  r1c1?: boolean;
-  
-}
 
 /**
  * we're providing a runtime option for how to handle complex numbers.

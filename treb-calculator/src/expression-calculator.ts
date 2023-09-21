@@ -821,7 +821,7 @@ export class ExpressionCalculator {
     const value: UnionValue[][] = [];
 
     for (let c = 0; c < columns; c++) {
-      const col = [];
+      const col: UnionValue[] = [];
       for (let r = 0; r < rows; r++ ) {
         col[r] = fn(left_values[c][r], right_values[c][r]);
       }

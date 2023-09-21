@@ -1,5 +1,5 @@
 
-import { CellStyle, IArea } from 'treb-base-types';
+import type { CellStyle, EvaluateOptions, IArea, Color, Gradient } from 'treb-base-types';
 
 /** 
  * conditional format predicated on an expression. if the expression 
@@ -10,13 +10,41 @@ export interface ConditionalFormatExpression {
   area: IArea;
   style: CellStyle;
   expression: string;
+  options?: EvaluateOptions;
+}
+
+export interface ConditionalFormatColorRange {
+  type: 'gradient';
+  area: IArea;
+
+  /** property defaults to fill */
+  property?: 'fill'|'text';
+
+  stops: Array<{ value: number, color: Color }>;
+
+  /** min and max are optional. if not provided, we use the min/max of the range of data. */
+  min?: number;
+
+  /** min and max are optional. if not provided, we use the min/max of the range of data. */
+  max?: number;
+
+  internal?: {
+    gradient: Gradient;
+    min: number;
+    max: number;
+    range: number;
+  }
 }
 
 /** 
  * union, plus we're adding a state used to track application.
- * that state should not be serialized (or should it? ...)
+ * that state is serialized if it's true. 
+ * we also add an internal field that will be type-specific, and not serialized.
  */
-export type ConditionalFormat = ConditionalFormatExpression & { applied?: boolean };
+export type ConditionalFormat = { applied?: boolean, internal?: unknown } & (
+    ConditionalFormatExpression |
+    ConditionalFormatColorRange
+  );
 
 /**
  * the list of formats, in reverse order of precedence. as a starting

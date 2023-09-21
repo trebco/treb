@@ -36,6 +36,8 @@ export * from './layout';
 export * from './render_text';
 export * from './api_types';
 export * from './table';
+export * from './gradient';
+export * from './evaluate-options';
 
 // import * as Style from './style';
 // export { Style };

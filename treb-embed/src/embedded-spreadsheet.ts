@@ -42,18 +42,19 @@ import {
   Parser, DecimalMarkType, 
   ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 
-import { Calculator, type EvaluateOptions, type LeafVertex } from 'treb-calculator';
+import { Calculator, type LeafVertex } from 'treb-calculator';
 
 import type {
   ICellAddress, 
+  EvaluateOptions,
   IArea, CellValue, Point,
   Complex, ExtendedUnion, IRectangle,
-  AddressReference, RangeReference, TableSortOptions, Table, TableTheme,
+  AddressReference, RangeReference, TableSortOptions, Table, TableTheme, GradientStop,
 } from 'treb-base-types';
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
-  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, 
+  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, 
 } from 'treb-base-types';
 
 import { EventSource, Yield, ValidateURI } from 'treb-utils';
@@ -81,7 +82,7 @@ import type { SetRangeOptions } from 'treb-grid';
  * the script so we can run it as a worker.
  */
 import * as export_worker_script from 'worker:../../treb-export/src/export-worker/index.worker';
-import { ConditionalFormat } from 'treb-grid/src/types/conditional-format';
+import { ConditionalFormat, ConditionalFormatColorRange, ConditionalFormatExpression } from 'treb-grid/src/types/conditional-format';
 
 // --- types -------------------------------------------------------------------
 
@@ -1274,27 +1275,81 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
+   * @internal
+   */
+  public ConditionalFormatGradient(range: RangeReference|undefined, stops: GradientStop[], min?: number, max?: number, property: 'text'|'fill' = 'fill'): ConditionalFormat {
+
+    if (range === undefined) {
+      const ref = this.GetSelectionReference();
+      if (ref.empty) {
+        throw new Error('invalid range (no selection)');
+      }
+      range = ref.area;
+    }
+    
+    const area = this.model.ResolveArea(range, this.grid.active_sheet);
+
+    const format: ConditionalFormatColorRange = {
+      type: 'gradient',
+      stops,
+      area,
+      min, 
+      max,
+      property,
+    };
+
+    this.AddConditionalFormat(format);
+    return format;
+
+  }
+
+  /**
+   * @internal
+   */
+  public ConditionalFormatExpression(range: RangeReference|undefined, style: CellStyle, expression: string, options?: EvaluateOptions): ConditionalFormat {
+
+    if (range === undefined) {
+      const ref = this.GetSelectionReference();
+      if (ref.empty) {
+        throw new Error('invalid range (no selection)');
+      }
+      range = ref.area;
+    }
+    
+    const area = this.model.ResolveArea(range, this.grid.active_sheet);
+
+    const format: ConditionalFormatExpression = {
+      type: 'expression',
+      area,
+      expression, 
+      options,
+      style,
+    };
+    
+    this.AddConditionalFormat(format);
+    return format;
+
+  }
+
+  /**
    * add a conditional format
    * 
    * @internal
    */
-  public AddConditionalFormat(target_range: RangeReference|undefined, format: ConditionalFormat) {
+  public AddConditionalFormat(format: ConditionalFormat) {
 
-    if (target_range === undefined) {
-      target_range = this.GetSelectionReference().area;
-    }
-
-    const resolved = this.model.ResolveArea(target_range, this.grid.active_sheet);
-    const sheet = this.model.sheets.Find(resolved.start.sheet_id||0);
+    const sheet = this.model.sheets.Find(format.area.start.sheet_id||0);
     
     if (!sheet) {
-      throw new Error('invalid reference');
+      throw new Error('invalid reference in format');
     }
 
     sheet.conditional_formats.push(format);
 
     // call update if it's the current sheet
     this.ApplyConditionalFormats(sheet, sheet === this.grid.active_sheet);
+
+    this.PushUndo();
 
   }
 
@@ -1311,10 +1366,73 @@ export class EmbeddedSpreadsheet {
       throw new Error('invalid reference in format');
     }
 
-    sheet.conditional_formats = sheet.conditional_formats.filter(test => test !== format);
+    let count = 0;
+    sheet.conditional_formats = sheet.conditional_formats.filter(test => {
+      if (test === format) {
+        count++;
+        return false;
+      }
+      return true;
+    });
 
-    // call update if it's the current sheet
-    this.ApplyConditionalFormats(sheet, sheet === this.grid.active_sheet);
+    // we want to call update if it's the current sheet,
+    // but we want a full repaint
+
+    this.ApplyConditionalFormats(sheet, false);
+
+    if (sheet === this.grid.active_sheet) {
+      this.grid.Update(true);
+    }
+
+    if (count) {
+      this.PushUndo();
+    }
+
+  }
+
+  /**
+   * clear conditional formats from the target range (or currently selected
+   * range). we operate on format objects, meaning we'll remove the whole
+   * format object rather than clip the area.
+   * 
+   * @internal
+   */
+  public RemoveConditionalFormats(range?: RangeReference) {
+
+    if (range === undefined) {
+      const ref = this.GetSelectionReference();
+      if (ref.empty) {
+        throw new Error('invalid range (no selection)');
+      }
+      range = ref.area;
+    }
+    const area = this.model.ResolveArea(range, this.grid.active_sheet);
+    const sheet = area.start.sheet_id ? this.model.sheets.Find(area.start.sheet_id) : this.grid.active_sheet;
+
+    if (sheet) {
+      let count = 0;
+
+      sheet.conditional_formats = sheet.conditional_formats.filter(test => {
+        const compare = new Area(test.area.start, test.area.end);
+        if (compare.Intersects(area)) {
+          count++;
+          return false;
+        }
+        return true;
+      });
+
+      if (count) {
+        this.ApplyConditionalFormats(sheet, false);
+    
+        if (sheet === this.grid.active_sheet) {
+          this.grid.Update(true);
+        }
+
+        this.PushUndo();
+      }
+
+    }
+
 
   }
 
@@ -1862,6 +1980,24 @@ export class EmbeddedSpreadsheet {
     */
 
     this.UpdateDocumentStyles();
+
+    // we need to flush conditional formats that use theme colors
+
+    for (const sheet of this.model.sheets.list) {
+
+      for (const format of sheet.conditional_formats) {
+        format.internal = undefined;
+      }
+
+      if (sheet.conditional_formats.length) {
+        this.ApplyConditionalFormats(sheet, false);
+        if (sheet === this.grid.active_sheet) {
+          this.grid.Update(true);
+        }
+      }
+      
+    }
+
 
   }
 
@@ -3052,8 +3188,6 @@ export class EmbeddedSpreadsheet {
       Yield().then(() => this.ScrollTo(scroll));
     }
 
-    console.info("mark2");
-
   }
 
   /**
@@ -4025,7 +4159,31 @@ export class EmbeddedSpreadsheet {
       // sheet.FlushConditionalFormatCache();
 
       for (const entry of sheet.conditional_formats) {
-        if (entry.type === 'expression') {
+        if (entry.type === 'gradient') {
+
+          if (!entry.internal) {
+            entry.internal = { 
+              gradient: new Gradient(entry.stops, this.grid.theme),
+              min: entry.min ?? 0,
+              max: entry.max ?? 1,
+              range: 1,
+            };
+          }
+
+          if (typeof entry.min === 'undefined') {
+            const min = this.Evaluate(`MIN(${this.Unresolve(entry.area)})`) as CellValue;
+            entry.internal.min = Number(min) || 0;
+          }
+
+          if (typeof entry.max === 'undefined') {
+            const max = this.Evaluate(`MAX(${this.Unresolve(entry.area)})`) as CellValue;
+            entry.internal.max = Number(max) || 1;
+          }
+
+          entry.internal.range = entry.internal.max - entry.internal.min;
+
+        }
+        else if (entry.type === 'expression') {
 
           // FIXME: if these expressions were passed to the calculator
           // (along with the rest of the sheet) we could determine if 
@@ -4034,7 +4192,7 @@ export class EmbeddedSpreadsheet {
           // we would still have to account for conditional formats that
           // were added or removed, but that's a different problem
 
-          let result = this.Evaluate(entry.expression);
+          let result = this.Evaluate(entry.expression, entry.options);
           if (Array.isArray(result)) {
             result = result[0][0];
           }

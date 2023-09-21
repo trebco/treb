@@ -239,7 +239,7 @@ export class TileRenderer {
    */
   public OverflowDirty(full_tile = false): void {
 
-    const mutated = [];
+    const mutated: OverflowRecord[] = [];
 
     for (const overflow of this.overflow_areas) {
       const row = overflow.area.start.row;
@@ -1341,6 +1341,7 @@ export class TileRenderer {
     else {
 
       const fill = ThemeColor2(this.theme, style.fill);
+
       if (fill) {
         context.fillStyle = fill;
         context.fillRect(0, 0, width - 1, height - 1);

@@ -1033,7 +1033,7 @@ export class Sheet {
 
     // testing
     // const underlying = this.CompositeStyleForCell(address, false);
-    const underlying = this.CompositeStyleForCell(address, false, false);
+    const underlying = this.CompositeStyleForCell(address, false, false, undefined, false);
 
     const merged = Style.Composite([
       this.default_style_properties,
@@ -2605,7 +2605,7 @@ export class Sheet {
       row_style,
       column_style,
 
-      conditional_formats: this.conditional_formats.length ? this.conditional_formats.map(format => ({...format, applied: format.applied||undefined})) : undefined,
+      conditional_formats: this.conditional_formats.length ? this.conditional_formats.map(format => ({...format, applied: format.applied||undefined, internal: undefined })) : undefined,
 
       row_pattern: row_pattern.length ? row_pattern : undefined,
 
@@ -3054,14 +3054,14 @@ export class Sheet {
 
   }
 
-  /**
+  /* *
    * flush the cache and the checklist. flush cell styles at the same
    * time. this should be called when adding/removing a conditional format.
    * optionally apply active formats again.
    * 
    * is this actually necessary? what's the use case? (...)
    * 
-   */
+   * /
   public FlushConditionalFormats(reapply = false) {
 
     for (const [row, column] of this.conditional_format_checklist) {
@@ -3076,6 +3076,7 @@ export class Sheet {
     }
 
   }
+  */
 
   /**
    * this version combines flushing the cache with building it, using
@@ -3095,19 +3096,49 @@ export class Sheet {
     this.conditional_format_checklist = []; // flush
 
     for (const format of this.conditional_formats) {
-      if (format.applied) {
-        const area = format.area;
-        for (let row = area.start.row; row <= area.end.row; row++) {
-          if (!temp[row]) {
-            temp[row] = [];
-          }
-          for (let column = area.start.column; column <= area.end.column; column++) {
-            if (!temp[row][column]) {
-              temp[row][column] = [];
+      if (format.type === 'gradient') {
+        if (format.internal) {
+          const area = format.area;
+          for (let row = area.start.row; row <= area.end.row; row++) {
+            if (!temp[row]) {
+              temp[row] = [];
             }
-            temp[row][column].push(format.style);
-            checklist.push([row, column]);
-            this.conditional_format_checklist.push([row, column]);
+            for (let column = area.start.column; column <= area.end.column; column++) {
+              if (!temp[row][column]) {
+                temp[row][column] = [];
+              }
+
+              const celldata = this.CellData({row, column});
+              if (celldata.rendered_type === ValueType.number) {
+                const value = celldata.calculated_type === ValueType.number ? 
+                  (celldata.calculated as number) : (celldata.value as number);
+                
+                const property: 'fill'|'text' = format.property ?? 'fill';
+                const style: CellStyle = { [property]: format.internal.gradient.Interpolate((value - format.internal.min) / (format.internal.range))};
+
+                temp[row][column].push(style);
+                checklist.push([row, column]);
+                this.conditional_format_checklist.push([row, column]);
+              }
+            }
+          }
+        }
+      }
+      if (format.type === 'expression') {
+        if (format.applied) {
+          const area = format.area;
+          for (let row = area.start.row; row <= area.end.row; row++) {
+            if (!temp[row]) {
+              temp[row] = [];
+            }
+            for (let column = area.start.column; column <= area.end.column; column++) {
+              if (!temp[row][column]) {
+                temp[row][column] = [];
+              }
+              temp[row][column].push(format.style);
+              checklist.push([row, column]);
+              this.conditional_format_checklist.push([row, column]);
+            }
           }
         }
       }
@@ -3198,7 +3229,12 @@ export class Sheet {
    * want to check what happens if the cell style is not applied; if nothing 
    * happens, then we can drop the cell style (or the property in the style).
    */
-  private CompositeStyleForCell(address: ICellAddress, apply_cell_style = true, apply_row_pattern = true, apply_default = true) {
+  private CompositeStyleForCell(
+        address: ICellAddress, 
+        apply_cell_style = true, 
+        apply_row_pattern = true, 
+        apply_default = true,
+        apply_conditional = true, ) {
 
     const { row, column } = address;
     const stack: CellStyle[] = [];
@@ -3226,7 +3262,9 @@ export class Sheet {
       stack.push(this.cell_style[column][row]);
     }
 
-    stack.push(...this.ConditionalFormatForCell(address));
+    if (apply_conditional) {
+      stack.push(...this.ConditionalFormatForCell(address));
+    }
 
     return Style.Composite(stack);
   }
