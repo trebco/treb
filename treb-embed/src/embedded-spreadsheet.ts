@@ -4447,6 +4447,8 @@ export class EmbeddedSpreadsheet {
 
     this.UpdateAnnotations();
 
+    this.ApplyConditionalFormats(event.activate, true);
+
   }
 
   protected HandleDrag(event: DragEvent): void {
