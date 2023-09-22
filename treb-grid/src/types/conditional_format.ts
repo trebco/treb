@@ -1,5 +1,5 @@
 
-import type { CellStyle, EvaluateOptions, IArea, Color, Gradient } from 'treb-base-types';
+import type { CellStyle, EvaluateOptions, IArea, Color, Gradient, GradientStop } from 'treb-base-types';
 
 /** 
  * conditional format predicated on an expression. if the expression 
@@ -29,29 +29,21 @@ export interface ConditionalFormatGradientOptions {
 
 }
 
-//
-// need to figure out the pattern that lets us write the list only once
-//
-
-export const StandardGradientTypes = ['red-green', 'green-red'] as const;
-export type StandardGradient = typeof StandardGradientTypes[number];
-
-export const StandardGradientsList: { 
-  [K in StandardGradient]: ConditionalFormatGradientOptions; 
-} = {
+export const StandardGradientsList = {
   'red-green': {
     stops: [
       { value: 0, color: { theme: 5, tint: .5 }}, 
       { value: 1, color: { theme: 9, tint: .5 }}, 
-    ],
+    ] as GradientStop[],
   },
   'green-red': {
     stops: [
       { value: 0, color: { theme: 9, tint: .5 }}, 
       { value: 1, color: { theme: 5, tint: .5 }}, 
-    ],
+    ] as GradientStop[],
   },
-} ; 
+} as const; 
+export type StandardGradient = keyof typeof StandardGradientsList;
 
 export interface ConditionalFormatGradient extends ConditionalFormatGradientOptions {
   type: 'gradient';
