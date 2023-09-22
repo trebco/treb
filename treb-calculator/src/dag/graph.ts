@@ -61,7 +61,8 @@ export abstract class Graph implements GraphCallbacks {
   public loop_hint?: string;
 
   // special
-  public leaf_vertices: LeafVertex[] = [];
+  // public leaf_vertices: LeafVertex[] = [];
+  public leaf_vertices: Set<LeafVertex> = new Set();
 
   /** lock down access */
   private dirty_list: SpreadsheetVertexBase[] = [];
@@ -102,7 +103,7 @@ export abstract class Graph implements GraphCallbacks {
     this.dirty_list = [];
     this.volatile_list = [];
     this.vertices = [[]];
-    this.leaf_vertices = [];
+    this.leaf_vertices.clear(); 
     // this.cells_map = {};
 
     /** array vertex maintains its own list */
@@ -812,28 +813,12 @@ export abstract class Graph implements GraphCallbacks {
    * managing and maintaining these vertices: we only need references.
    */
   public AddLeafVertex(vertex: LeafVertex): void {
-
-    // ... don't add more than once. this is expensive but
-    // the list should (generally speaking) be short, so not
-    // a serious problem atm
-
-    /*
-    if (this.leaf_vertices.some((test) => test === vertex)) {
-      return;
-    }
-    */
-   for (const test of this.leaf_vertices) {
-     if (test === vertex) {
-       return;
-     }
-   }
-
-    this.leaf_vertices.push(vertex);
+    this.leaf_vertices.add(vertex); 
   }
 
-  /** removes vertex, by match */
+  /** removes vertex */
   public RemoveLeafVertex(vertex: LeafVertex): void {
-    this.leaf_vertices = this.leaf_vertices.filter((test) => test !== vertex);
+    this.leaf_vertices.delete(vertex);
   }
 
   /**

@@ -1,5 +1,5 @@
 
-import type { CellStyle, EvaluateOptions, IArea, Color, Gradient, GradientStop } from 'treb-base-types';
+import type { CellStyle, EvaluateOptions, IArea, Color, Gradient, GradientStop, UnionValue } from 'treb-base-types';
 
 export interface CondifionalFormatExpressionOptions {
   style: CellStyle;
@@ -14,6 +14,12 @@ export interface CondifionalFormatExpressionOptions {
 export interface ConditionalFormatExpression extends CondifionalFormatExpressionOptions {
   type: 'expression';
   area: IArea;
+
+  /** @internal */
+  internal?: {
+    vertex?: { result: UnionValue }; // temp
+  };
+
 }
 
 export interface ConditionalFormatGradientOptions {
@@ -52,12 +58,13 @@ export interface ConditionalFormatGradient extends ConditionalFormatGradientOpti
   type: 'gradient';
   area: IArea;
 
+  /** @internal */
   internal?: {
     gradient: Gradient;
     min: number;
     max: number;
     range: number;
-  }
+  };
 }
 
 /** 
