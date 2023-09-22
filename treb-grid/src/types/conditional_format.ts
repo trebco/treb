@@ -1,16 +1,19 @@
 
 import type { CellStyle, EvaluateOptions, IArea, Color, Gradient, GradientStop } from 'treb-base-types';
 
+export interface CondifionalFormatExpressionOptions {
+  style: CellStyle;
+  expression: string;
+  options?: EvaluateOptions;
+}
+
 /** 
  * conditional format predicated on an expression. if the expression 
  * evaluates to true, we apply the style. otherwise no.
  */
-export interface ConditionalFormatExpression {
+export interface ConditionalFormatExpression extends CondifionalFormatExpressionOptions {
   type: 'expression';
   area: IArea;
-  style: CellStyle;
-  expression: string;
-  options?: EvaluateOptions;
 }
 
 export interface ConditionalFormatGradientOptions {

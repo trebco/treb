@@ -37,6 +37,7 @@ import type {
   ConditionalFormatGradient, 
   ConditionalFormatExpression,
   StandardGradient,
+  CondifionalFormatExpressionOptions,
 } from 'treb-grid';
 
 import {
@@ -1312,7 +1313,7 @@ export class EmbeddedSpreadsheet {
   /**
    * @internal
    */
-  public ConditionalFormatExpression(range: RangeReference|undefined, style: CellStyle, expression: string, options?: EvaluateOptions): ConditionalFormat {
+  public ConditionalFormatExpression(range: RangeReference|undefined, options: CondifionalFormatExpressionOptions): ConditionalFormat {
 
     if (range === undefined) {
       const ref = this.GetSelectionReference();
@@ -1327,9 +1328,7 @@ export class EmbeddedSpreadsheet {
     const format: ConditionalFormatExpression = {
       type: 'expression',
       area,
-      expression, 
-      options,
-      style,
+      ...options,
     };
     
     this.AddConditionalFormat(format);
