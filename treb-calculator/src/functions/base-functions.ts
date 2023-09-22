@@ -1126,7 +1126,80 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: (...args: unknown[]): UnionValue => {
         return { type: ValueType.object, value: args, key: 'sparkline-data' };
       },
+    },
+
+    /*
+    'Gradient': {
+      arguments: [
+        { name: 'range', boxed: true },
+      ],
+      fn: (area: UnionValue): UnionValue => {
+
+        const tmp = Utils.FlattenBoxed([area]);
+
+        let sum = 0;
+        let count = 0;
+        let min = 0; 
+        let max = 0;
+
+        for (const ref of tmp as UnionValue[]) {
+          if (ref.type === ValueType.error) {
+            return ref;
+          }
+          if (ref.type === ValueType.number) {
+            if (count === 0) {
+              min = ref.value;
+              max = ref.value;
+            }
+            else {
+              min = Math.min(min, ref.value);
+              max = Math.max(max, ref.value);
+            }
+            count++;
+          }
+        }
+
+        let range = max - min;
+
+        let rows = 1;
+        let columns = 1;
+
+        if (area.type === ValueType.array) {
+
+          rows = area.value.length;
+          columns = area.value[0]?.length || 0;
+
+          const result: UnionValue[][] = [];
+          for (let r = 0; r < rows; r++) {
+            const row: UnionValue[] = [];
+            for (let c = 0; c < columns; c++) {
+              const src = area.value[r][c];
+              if (src.type === ValueType.number) {
+                let calc = 0;
+                if (range > 0) {
+                  calc = (src.value - min) / range;
+                }
+                row.push({ type: ValueType.number, value: calc });
+              }
+              else {
+                row.push({ type: ValueType.undefined });
+              }
+
+            }
+            result.push(row);
+          }
+  
+          return { type: ValueType.array, value: result };
+  
+
+        }
+        else {
+          return ArgumentError();
+        }
+  
+      },
     }
+    */
 
 };
 

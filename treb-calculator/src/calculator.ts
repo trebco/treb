@@ -49,10 +49,12 @@ import { Variance } from './functions/statistics-functions';
 
 import * as Primitives from './primitives';
 
-import type { DataModel, Annotation, FunctionDescriptor, Sheet } from 'treb-grid';
-import { LeafVertex } from './dag/leaf_vertex';
+import type { DataModel, Annotation, FunctionDescriptor, Sheet, ConditionalFormat } from 'treb-grid';
+import { LeafVertex } from './dag/graph';
 
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError } from './function-error';
+import { StateLeafVertex } from './dag/state_leaf_vertex';
+import { CalculationLeafVertex } from './dag/calculation_leaf_vertex';
 
 /**
  * breaking this out so we can use it for export (TODO)
@@ -1288,6 +1290,7 @@ export class Calculator extends Graph {
     if (this.full_rebuild_required) {
       subset = undefined;
       this.UpdateAnnotations();
+      this.UpdateConditionals();
       // this.UpdateNotifiers();
       this.full_rebuild_required = false; // unset
     }
@@ -1479,6 +1482,7 @@ export class Calculator extends Graph {
     // add leaf vertices for annotations
 
     this.UpdateAnnotations(); // all
+    this.UpdateConditionals();
 
     // and notifiers
 
@@ -1701,6 +1705,55 @@ export class Calculator extends Graph {
   }
   */
 
+  public RemoveConditional(conditional: ConditionalFormat): void {
+    if (conditional.type === 'expression') {
+      const vertex = conditional.internal?.vertex as LeafVertex;
+      if (vertex) {
+        vertex.Reset();
+        this.RemoveLeafVertex(vertex);
+      }
+    }
+  }
+
+  public UpdateConditionals(list?: ConditionalFormat|ConditionalFormat[], context?: Sheet): void {
+
+    if (!list) {
+      for (const sheet of this.model.sheets.list) {
+        if (sheet.conditional_formats?.length) {
+          this.UpdateConditionals(sheet.conditional_formats, sheet);
+        }
+      }
+      return;
+    }
+
+    if (!context) {
+      throw new Error('invalid call to update conditionals without context');
+    }
+
+    if (list && !Array.isArray(list)) {
+      list = [list];
+    }
+
+    for (const entry of list) {
+      if (entry.type === 'expression') {
+        if (!entry.internal) {
+          entry.internal = {};
+        }
+        if (!entry.internal.vertex) {
+          entry.internal.vertex = new CalculationLeafVertex();
+
+          // set initial state based on current state
+          entry.internal.vertex.result = { type: ValueType.boolean, value: !!entry.applied };
+
+        }
+        const vertex = entry.internal.vertex as LeafVertex;
+        this.AddLeafVertex(vertex);
+        this.UpdateLeafVertex(vertex, entry.expression, context);
+      }
+    }
+
+  }
+
   public RemoveAnnotation(annotation: Annotation): void {
     const vertex = (annotation.temp.vertex as LeafVertex);
     if (!vertex) { return; }
@@ -1735,7 +1788,7 @@ export class Calculator extends Graph {
     for (const entry of list) {
       if (entry.data.formula) {
         if (!entry.temp.vertex) {
-          entry.temp.vertex = new LeafVertex();
+          entry.temp.vertex = new StateLeafVertex();
         }
         const vertex = entry.temp.vertex as LeafVertex;
         this.AddLeafVertex(vertex);

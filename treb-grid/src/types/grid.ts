@@ -1720,15 +1720,16 @@ export class Grid extends GridBase {
     this.RenderSelections();
   }
 
-  /**
+  /* *
    * FIXME: who uses this? anyone?
-   */
+   * /
   public GetNumberFormat(address: ICellAddress): string|undefined {
     const style = this.active_sheet.CellStyleData(address);
     if (style && style.number_format) {
       return NumberFormatCache.Get(style.number_format).toString();
     }
   }
+  */
 
   /**
    * I can't figure out a way in typescript to overload the GetRange function 

@@ -244,8 +244,10 @@ export class Sheet {
   /**
    * this is a list of cells we formatted on the last pass, so we can 
    * compare when applying conditional formats .
+   * 
+   * update: using areas
    */
-  private conditional_format_checklist: number[][] = [];
+  private conditional_format_checklist: IArea[] = [];
 
   // --- accessors ------------------------------------------------------------
 
@@ -1071,7 +1073,8 @@ export class Sheet {
     this.cell_style[column][row] = composite; // merged;
 
     // targeted flush
-    this.CellData(address).FlushStyle();
+    // this.CellData(address).FlushStyle();
+    this.BleedFlush({start: address, end: address});
 
   }
 
@@ -1355,7 +1358,7 @@ export class Sheet {
    * @param address 
    */
   public GetCopyStyle(address: ICellAddress): CellStyle {
-    return this.CompositeStyleForCell(address, true, false);
+    return this.CompositeStyleForCell(address, true, false, undefined, false);
   }
 
   /**
@@ -3078,6 +3081,20 @@ export class Sheet {
   }
   */
 
+  public BleedFlush(area: IArea) {
+
+    let rows = [Math.max(0, area.start.row - 1), area.end.row + 1];
+    let cols = [Math.max(0, area.start.column - 1), area.end.column + 1];
+
+    for (let row = rows[0]; row <= rows[1]; row++) {
+      for (let column = cols[0]; column <= cols[1]; column++) {
+        // const cell = this.cells.EnsureCell({row, column});
+        this.cells.GetCell({row, column}, false)?.FlushStyle();
+      }
+    }
+    
+  }
+
   /**
    * this version combines flushing the cache with building it, using
    * the application flag in the format objects. 
@@ -3091,14 +3108,16 @@ export class Sheet {
   public ApplyConditionalFormats() {
 
     const temp: CellStyle[][][] = [];
-    const checklist: number[][] = [...this.conditional_format_checklist];
+    const checklist: IArea[] = [...this.conditional_format_checklist];
 
     this.conditional_format_checklist = []; // flush
 
     for (const format of this.conditional_formats) {
       if (format.type === 'gradient') {
-        if (format.internal) {
-          const area = format.area;
+        if (format.internal && format.internal.range) {
+
+          const area = JSON.parse(JSON.stringify(format.area)); // clone
+
           for (let row = area.start.row; row <= area.end.row; row++) {
             if (!temp[row]) {
               temp[row] = [];
@@ -3117,16 +3136,22 @@ export class Sheet {
                 const style: CellStyle = { [property]: format.internal.gradient.Interpolate((value - format.internal.min) / (format.internal.range))};
 
                 temp[row][column].push(style);
-                checklist.push([row, column]);
-                this.conditional_format_checklist.push([row, column]);
+
+                // checklist.push([row, column]);
+                // this.conditional_format_checklist.push([row, column]);
               }
             }
           }
+
+          checklist.push(area);
+          this.conditional_format_checklist.push(area);
+
         }
       }
       if (format.type === 'expression') {
         if (format.applied) {
-          const area = format.area;
+
+          const area = JSON.parse(JSON.stringify(format.area));
           for (let row = area.start.row; row <= area.end.row; row++) {
             if (!temp[row]) {
               temp[row] = [];
@@ -3136,22 +3161,34 @@ export class Sheet {
                 temp[row][column] = [];
               }
               temp[row][column].push(format.style);
-              checklist.push([row, column]);
-              this.conditional_format_checklist.push([row, column]);
+              // checklist.push([row, column]);
+              // this.conditional_format_checklist.push([row, column]);
             }
           }
+
+          checklist.push(area);
+          this.conditional_format_checklist.push(area);
+
         }
       }
     }
 
+    /*
     for (const [row, column] of checklist) {
+
       const a = temp[row]?.[column];
       const b = this.conditional_format_cache[row]?.[column];
 
       if ((!!a && !b) || (!a && !!b) || (a && b && ((a.length !== b.length) || (JSON.stringify(a) !== JSON.stringify(b))))) {
-        this.CellData({row, column}).FlushStyle();
+        // this.CellData({row, column}).FlushStyle();
+        this.BleedFlush({row, column});
       }
 
+    }
+    */
+
+    for (const area of checklist) {
+      this.BleedFlush(area);
     }
 
     this.conditional_format_cache = temp;

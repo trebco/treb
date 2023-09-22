@@ -40,12 +40,12 @@ import { Color } from './vertex';
  * have both leaf- and spreadsheet-vertex extend that.
  *
  */
-export class LeafVertex extends SpreadsheetVertex {
+export class StateLeafVertex extends SpreadsheetVertex {
 
-  public static type = 'leaf-vertex';
+  public static type = 'state-leaf-vertex';
 
   public state_id = 0;
-  public type = LeafVertex.type; // for type guard
+  public type = StateLeafVertex.type; // for type guard
   
   /**
    * leaf vertex defaults to black (i.e. tested) because leaf nodes cannot have 

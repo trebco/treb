@@ -61,7 +61,7 @@ import type {
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
-  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, 
+  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, ValueType, 
 } from 'treb-base-types';
 
 import { EventSource, Yield, ValidateURI } from 'treb-utils';
@@ -91,6 +91,7 @@ import type { SetRangeOptions } from 'treb-grid';
  * the script so we can run it as a worker.
  */
 import * as export_worker_script from 'worker:../../treb-export/src/export-worker/index.worker';
+import { StateLeafVertex } from 'treb-calculator/src/dag/state_leaf_vertex';
 
 // --- types -------------------------------------------------------------------
 
@@ -1351,6 +1352,8 @@ export class EmbeddedSpreadsheet {
 
     sheet.conditional_formats.push(format);
 
+    this.calculator.UpdateConditionals(format, sheet);
+
     // call update if it's the current sheet
     this.ApplyConditionalFormats(sheet, sheet === this.grid.active_sheet);
 
@@ -1375,6 +1378,7 @@ export class EmbeddedSpreadsheet {
     sheet.conditional_formats = sheet.conditional_formats.filter(test => {
       if (test === format) {
         count++;
+        this.calculator.RemoveConditional(test);
         return false;
       }
       return true;
@@ -1421,6 +1425,7 @@ export class EmbeddedSpreadsheet {
         const compare = new Area(test.area.start, test.area.end);
         if (compare.Intersects(area)) {
           count++;
+          this.calculator.RemoveConditional(test);
           return false;
         }
         return true;
@@ -4175,6 +4180,11 @@ export class EmbeddedSpreadsheet {
             };
           }
 
+          // this definitely shouldn't be here. it could be in sheet
+          // (although that's less flexible) or we could use a function,
+          // like the expression type. that would also reduce unecessary
+          // calculation.
+
           if (typeof entry.min === 'undefined') {
             const min = this.Evaluate(`MIN(${this.Unresolve(entry.area)})`) as CellValue;
             entry.internal.min = Number(min) || 0;
@@ -4190,6 +4200,8 @@ export class EmbeddedSpreadsheet {
         }
         else if (entry.type === 'expression') {
 
+          /*
+
           // FIXME: if these expressions were passed to the calculator
           // (along with the rest of the sheet) we could determine if 
           // they were dirty, which would reduce the set of updates.
@@ -4202,16 +4214,38 @@ export class EmbeddedSpreadsheet {
             result = result[0][0];
           }
 
+          console.info("calc result", {A: entry.internal?.vertex?.result, B: result});
+
           const applied = !!result;
-          if (applied !== (entry.applied||false)) {
-            areas.push(entry.area);
+
+          */
+
+          const result = entry?.internal?.vertex?.result;
+
+          if (result) {
+
+            let applied = false;
+
+            switch (result.type) {
+              case ValueType.boolean:
+              case ValueType.number:
+                applied = !!result.value;
+                break;
+
+              // other types?
+              // ... not atm
+
+            }
+
+
+            if (applied !== (entry.applied||false)) {
+              areas.push(entry.area);
+            }
+
+            entry.applied = applied;
+
           }
 
-          // if (applied) {
-          //  sheet.ApplyConditionalFormatCache(entry);
-          //}
-
-          entry.applied = applied;
 
         }
       }
@@ -4450,6 +4484,7 @@ export class EmbeddedSpreadsheet {
 
     this.UpdateAnnotations();
 
+    this.calculator.UpdateConditionals();
     this.ApplyConditionalFormats(event.activate, true);
 
   }
@@ -4844,7 +4879,7 @@ export class EmbeddedSpreadsheet {
   protected UpdateAnnotations(): void {
     for (const annotation of this.grid.active_sheet.annotations) {
       if (annotation.temp.vertex) {
-        const vertex = annotation.temp.vertex as LeafVertex;
+        const vertex = annotation.temp.vertex as StateLeafVertex;
         if (vertex.state_id !== annotation.temp.state) {
           annotation.temp.state = vertex.state_id;
 

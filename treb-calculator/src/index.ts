@@ -24,4 +24,4 @@ export * from './calculator';
 
 // for annotations that have dependencies
 
-export {LeafVertex} from './dag/leaf_vertex';
+export {LeafVertex} from './dag/graph';
