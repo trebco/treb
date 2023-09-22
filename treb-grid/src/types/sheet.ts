@@ -3148,6 +3148,26 @@ export class Sheet {
 
         }
       }
+      if (format.type === 'cell-match') {
+        const area = JSON.parse(JSON.stringify(format.area));
+        const result = format.internal?.vertex?.result;
+
+        if (result?.type === ValueType.array) {
+          for (let row = area.start.row; row <= area.end.row; row++) {
+            for (let column = area.start.column; column <= area.end.column; column++) {
+              const value = result.value[column - area.start.column][row - area.start.row];
+              if (value.value) {
+                if (!temp[row]) { temp[row] = []; }
+                if (!temp[row][column] ) { temp[row][column] = []; }
+                temp[row][column].push(format.style);
+              }
+            }
+          }
+        }
+
+        checklist.push(area);
+        this.conditional_format_checklist.push(area);
+      }
       if (format.type === 'expression') {
         if (format.applied) {
 
