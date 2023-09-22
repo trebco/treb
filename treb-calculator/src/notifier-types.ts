@@ -19,7 +19,7 @@
  * 
  */
 
-import type { LeafVertex } from './dag/leaf_vertex';
+import type { LeafVertex } from './dag/graph';
 import type { Area } from 'treb-base-types';
 
 export interface NotifierType {

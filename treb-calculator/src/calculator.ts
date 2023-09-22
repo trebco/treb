@@ -50,7 +50,7 @@ import { Variance } from './functions/statistics-functions';
 import * as Primitives from './primitives';
 
 import type { DataModel, Annotation, FunctionDescriptor, Sheet, ConditionalFormat } from 'treb-grid';
-import { LeafVertex } from './dag/graph';
+import type { LeafVertex } from './dag/graph';
 
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError } from './function-error';
 import { StateLeafVertex } from './dag/state_leaf_vertex';

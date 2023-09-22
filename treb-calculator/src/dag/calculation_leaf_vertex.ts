@@ -23,7 +23,6 @@ import type { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
 import type { Vertex} from './vertex';
 import { Color } from './vertex';
-import { ICellAddress } from 'treb-base-types';
 
 /**
  * adding a new leaf vertex type that actually does a calculation;

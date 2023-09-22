@@ -1331,8 +1331,16 @@ export class EmbeddedSpreadsheet {
       area,
       ...options,
     };
+
+    // we need to calculate the formula once, to get an initial state
+    let result = this.Evaluate(options.expression, options.options);
+
+    if (Array.isArray(result)) {
+      result = result[0][0];
+    }
+    const applied = !!result;
     
-    this.AddConditionalFormat(format);
+    this.AddConditionalFormat({...format, applied });
     return format;
 
   }
