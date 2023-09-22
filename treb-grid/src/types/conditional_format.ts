@@ -12,6 +12,7 @@ export interface CondifionalFormatExpressionOptions {
  * evaluates to true, we apply the style. otherwise no.
  */
 export interface ConditionalFormatExpression extends CondifionalFormatExpressionOptions {
+  
   type: 'expression';
   area: IArea;
 
@@ -67,6 +68,22 @@ export interface ConditionalFormatGradient extends ConditionalFormatGradientOpti
   };
 }
 
+export interface ConditionalFormatCellMatchOptions {
+  style: CellStyle;
+  expression: string;
+  options?: EvaluateOptions;
+}
+
+export interface ConditionalFormatCellMatch extends ConditionalFormatCellMatchOptions {
+  type: 'cell-match';
+  area: IArea;
+
+  /** @internal */
+  internal?: {
+    vertex?: { result: UnionValue }; // temp
+  };
+}
+
 /** 
  * union, plus we're adding a state used to track application.
  * that state is serialized if it's true. 
@@ -74,6 +91,7 @@ export interface ConditionalFormatGradient extends ConditionalFormatGradientOpti
  */
 export type ConditionalFormat = { applied?: boolean, internal?: unknown } & (
     ConditionalFormatExpression |
+    ConditionalFormatCellMatch |
     ConditionalFormatGradient
   );
 

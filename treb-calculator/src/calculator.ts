@@ -20,12 +20,12 @@
  */
 
 import type { Cell, ICellAddress, ICellAddress2, UnionValue, EvaluateOptions,
-         ArrayUnion, IArea, CellDataWithAddress} from 'treb-base-types';
+         ArrayUnion, IArea, CellDataWithAddress, CellValue} from 'treb-base-types';
 import { Localization, Area, ValueType, IsCellAddress} from 'treb-base-types';
          
 import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier } from 'treb-parser';
 import { Parser,
-         DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
+         DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 
 import { Graph } from './dag/graph';
 import type { SpreadsheetVertex } from './dag/spreadsheet_vertex';
@@ -1373,9 +1373,11 @@ export class Calculator extends Graph {
     return map;
   }
 
+  public Evaluate(expression: string, active_sheet?: Sheet, options?: EvaluateOptions, raw_result?: false): CellValue|CellValue[][];
+  public Evaluate(expression: string, active_sheet?: Sheet, options?: EvaluateOptions, raw_result?: true): UnionValue;
 
   /** moved from embedded sheet */
-  public Evaluate(expression: string, active_sheet?: Sheet, options: EvaluateOptions = {}) {
+  public Evaluate(expression: string, active_sheet?: Sheet, options: EvaluateOptions = {}, raw_result = false) {
     
     const current = this.parser.argument_separator;
     const r1c1_state = this.parser.flags.r1c1;
@@ -1429,6 +1431,9 @@ export class Calculator extends Graph {
 
       // console.info({expression: parse_result.expression})
       const result = this.CalculateExpression(parse_result.expression);
+      if (raw_result) {
+        return result;
+      }
 
       if (result.type === ValueType.array) {
         return result.value.map(row => row.map(value => value.value));
@@ -1705,6 +1710,53 @@ export class Calculator extends Graph {
   }
   */
 
+  public Unresolve(ref: IArea|ICellAddress, context: Sheet, qualified = true, named = true) {
+    
+    let range = '';
+    const area = IsCellAddress(ref) ? new Area(ref) : new Area(ref.start, ref.end);
+
+    if (named) {
+      const named_range = this.model.named_ranges.MatchSelection(area);
+      if (named_range) {
+        return named_range;
+      }
+    }
+
+    if (area.count > 1) {
+      range = Area.CellAddressToLabel(area.start) + ':' + Area.CellAddressToLabel(area.end);
+    }
+    else {
+      range = Area.CellAddressToLabel(area.start);
+    }
+
+    if (!qualified) {
+      return range;
+    }
+
+    // is there a function to resolve sheet? actually, don't we know that
+    // the active selection must be on the active sheet? (...)
+
+    const sheet_id = area.start.sheet_id || context?.id;
+    const sheet_name = this.ResolveSheetName(sheet_id, true);
+
+    return sheet_name ? sheet_name + '!' + range : range;
+
+  }
+
+  /**
+   * 
+   */
+  public ResolveSheetName(id: number, quote = false): string | undefined {
+    const sheet = this.model.sheets.Find(id);
+    if (sheet) {
+      if (quote && QuotedSheetNameRegex.test(sheet.name)) {
+        return `'${sheet.name}'`;
+      }
+      return sheet.name;
+    }
+    return undefined;
+  }
+
   public RemoveConditional(conditional: ConditionalFormat): void {
     if (conditional.type === 'expression') {
       const vertex = conditional.internal?.vertex as LeafVertex;
@@ -1735,7 +1787,57 @@ export class Calculator extends Graph {
     }
 
     for (const entry of list) {
-      if (entry.type === 'expression') {
+
+      let expression = '';
+
+      switch (entry.type) {
+        case 'cell-match':
+          expression = this.Unresolve(entry.area, context, true, false) + ' ' + entry.expression;
+          break;
+
+        case 'expression':
+          expression = entry.expression;
+          break;
+
+        default:
+          continue;
+      }
+
+      if (!expression) {
+        continue; // FIXME: warn?
+      }
+
+      // console.info({type: entry.type, expression});
+
+      if (!entry.internal) {
+        entry.internal = {};
+      }
+      if (!entry.internal.vertex) {
+        entry.internal.vertex = new CalculationLeafVertex();
+
+        // first pass, run the calculation
+        const check = this.Evaluate(expression, context, entry.options, true);
+        entry.internal.vertex.result = check;
+
+      }
+
+      const vertex = entry.internal.vertex as LeafVertex;
+      this.AddLeafVertex(vertex);
+      this.UpdateLeafVertex(vertex, expression, context);
+
+      /*
+      if (entry.type === 'cell-match') {
+        if (!entry.internal) {
+          entry.internal = {};
+        }
+        if (!entry.internal.vertex) {
+          entry.internal.vertex = new CalculationLeafVertex();
+        }
+        const vertex = entry.internal.vertex as LeafVertex;
+        this.AddLeafVertex(vertex);
+        this.UpdateLeafVertex(vertex, entry.expression, context);
+      }
+      else if (entry.type === 'expression') {
         if (!entry.internal) {
           entry.internal = {};
         }
@@ -1750,6 +1852,8 @@ export class Calculator extends Graph {
         this.AddLeafVertex(vertex);
         this.UpdateLeafVertex(vertex, entry.expression, context);
       }
+      */
+
     }
 
   }

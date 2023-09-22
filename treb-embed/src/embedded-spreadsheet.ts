@@ -38,6 +38,8 @@ import type {
   ConditionalFormatExpression,
   StandardGradient,
   CondifionalFormatExpressionOptions,
+  ConditionalFormatCellMatchOptions,
+  ConditionalFormatCellMatch,
 } from 'treb-grid';
 
 import {
@@ -1311,6 +1313,37 @@ export class EmbeddedSpreadsheet {
 
   }
 
+  /** @internal */
+  public ConditionalFormatCellMatch(range: RangeReference|undefined, options: ConditionalFormatCellMatchOptions): ConditionalFormat {
+
+    if (range === undefined) {
+      const ref = this.GetSelectionReference();
+      if (ref.empty) {
+        throw new Error('invalid range (no selection)');
+      }
+      range = ref.area;
+    }
+    
+    const area = this.model.ResolveArea(range, this.grid.active_sheet);
+
+    const format: ConditionalFormatCellMatch = {
+      type: 'cell-match',
+      area,
+      ...options,
+    };
+
+    // we need to calculate the formula once, to get an initial state
+    // update: internal
+    // let result = this.Evaluate(this.Unresolve(area, true, false) + ' ' + options.expression, options.options);
+
+    // ... apply ...
+
+    this.AddConditionalFormat(format);
+    return format;
+
+
+  }
+
   /**
    * @internal
    */
@@ -1332,6 +1365,7 @@ export class EmbeddedSpreadsheet {
       ...options,
     };
 
+    /*
     // we need to calculate the formula once, to get an initial state
     let result = this.Evaluate(options.expression, options.options);
 
@@ -1341,6 +1375,10 @@ export class EmbeddedSpreadsheet {
     const applied = !!result;
     
     this.AddConditionalFormat({...format, applied });
+    */
+
+    this.AddConditionalFormat(format);
+
     return format;
 
   }
@@ -3656,6 +3694,9 @@ export class EmbeddedSpreadsheet {
       ref = resolved;
     }
 
+    return this.calculator.Unresolve(ref, this.grid.active_sheet, qualified, named);
+
+    /*
     let range = '';
     const area = IsCellAddress(ref) ? new Area(ref) : new Area(ref.start, ref.end);
 
@@ -3681,10 +3722,11 @@ export class EmbeddedSpreadsheet {
     // the active selection must be on the active sheet? (...)
 
     const sheet_id = area.start.sheet_id || this.grid.active_sheet.id;
-    const sheet_name = this.ResolveSheetName(sheet_id, true);
+    const sheet_name = this.calculator.ResolveSheetName(sheet_id, true);
 
     return sheet_name ? sheet_name + '!' + range : range;
-    
+    */
+
   }
   
   /**
@@ -3706,7 +3748,7 @@ export class EmbeddedSpreadsheet {
 
     return this.calculator.Evaluate(
         expression, this.grid.active_sheet, options);
-
+   
   }
 
   /**
@@ -3746,7 +3788,7 @@ export class EmbeddedSpreadsheet {
     // the active selection must be on the active sheet? (...)
 
     const sheet_id = ref.area.start.sheet_id || this.grid.active_sheet.id;
-    const sheet_name = this.ResolveSheetName(sheet_id, true);
+    const sheet_name = this.calculator.ResolveSheetName(sheet_id, true);
 
     return sheet_name ? sheet_name + '!' + range : range;
 
@@ -4205,6 +4247,9 @@ export class EmbeddedSpreadsheet {
 
           entry.internal.range = entry.internal.max - entry.internal.min;
 
+        }
+        else if (entry.type === 'cell-match') {
+          // console.info(entry.internal?.vertex?.result);
         }
         else if (entry.type === 'expression') {
 
@@ -5767,35 +5812,5 @@ export class EmbeddedSpreadsheet {
     }
   }
 
-  /**
-   * this is only used in one place, can we just inline?
-   * [A: seems like it might be useful, though]
-   * 
-   * @param id 
-   * @param quote 
-   * @returns 
-   */
-  protected ResolveSheetName(id: number, quote = false): string | undefined {
-    const sheet = this.model.sheets.Find(id);
-    if (sheet) {
-      if (quote && QuotedSheetNameRegex.test(sheet.name)) {
-        return `'${sheet.name}'`;
-      }
-      return sheet.name;
-    }
-
-    /*
-    for (const sheet of this.grid.model.sheets) {
-      if (sheet.id === id) {
-        if (quote && QuotedSheetNameRegex.test(sheet.name)) {
-          return `'${sheet.name}'`;
-        }
-        return sheet.name;
-      }
-    }
-    */
-
-    return undefined;
-  }
 
 }
