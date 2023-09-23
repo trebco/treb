@@ -3200,7 +3200,6 @@ export class Sheet {
           this.conditional_format_checklist.push(area);
 
         }
-
       }
       else if (format.type === 'cell-match' || format.type === 'expression') {
         const area = JSON.parse(JSON.stringify(format.area));

@@ -4257,6 +4257,34 @@ export class EmbeddedSpreadsheet {
           }
 
           entry.internal.range = entry.internal.max - entry.internal.min;
+<<<<<<< HEAD
+=======
+
+        }
+        else if (entry.type === 'cell-match') {
+          // console.info(entry.internal?.vertex?.result);
+        }
+        else if (entry.type === 'expression') {
+
+          /*
+
+          // FIXME: if these expressions were passed to the calculator
+          // (along with the rest of the sheet) we could determine if 
+          // they were dirty, which would reduce the set of updates.
+
+          // we would still have to account for conditional formats that
+          // were added or removed, but that's a different problem
+
+          let result = this.Evaluate(entry.expression, entry.options);
+          if (Array.isArray(result)) {
+            result = result[0][0];
+          }
+
+          console.info("calc result", {A: entry.internal?.vertex?.result, B: result});
+
+          const applied = !!result;
+
+>>>>>>> refs/remotes/origin/main
           */
 
         }

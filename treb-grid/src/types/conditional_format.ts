@@ -88,6 +88,22 @@ export interface ConditionalFormatCellMatch extends ConditionalFormatCellMatchOp
   };
 }
 
+export interface ConditionalFormatCellMatchOptions {
+  style: CellStyle;
+  expression: string;
+  options?: EvaluateOptions;
+}
+
+export interface ConditionalFormatCellMatch extends ConditionalFormatCellMatchOptions {
+  type: 'cell-match';
+  area: IArea;
+
+  /** @internal */
+  internal?: {
+    vertex?: VertexPlaceholder;
+  };
+}
+
 /** 
  * union, plus we're adding a state used to track application.
  * that state is serialized if it's true. 
