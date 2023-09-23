@@ -61,6 +61,7 @@ import type { UpdateFlags } from './update_flags';
 import type { FreezePane, LegacySerializedSheet } from './sheet_types';
 import type { Annotation } from './annotation';
 import type { ClipboardCellData } from './clipboard_data';
+import type { ConditionalFormat } from './conditional_format';
 
 export class GridBase {
 
@@ -2146,6 +2147,29 @@ export class GridBase {
 
   }
 
+  protected PatchExpressionSheetName(expression: string, old_name: string, name: string): string|undefined {
+
+    let modified = false;
+    const parsed = this.parser.Parse(expression || '');
+    if (parsed.expression) {
+      this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
+        if (element.type === 'address') {
+          if (element.sheet && element.sheet.toLowerCase() === old_name) {
+            element.sheet = name;
+            modified = true;
+          }
+        }
+        return true; // continue walk
+      });
+      if (modified) {
+        return '=' + this.parser.Render(parsed.expression, { missing: '' });
+      }
+    }
+
+    return undefined;
+
+  }
+
   /**
    * splitting this logic into a new function so we can reuse it 
    * for invalidating broken references. generally we'll call this
@@ -2165,45 +2189,39 @@ export class GridBase {
       // cells
       sheet.cells.IterateAll((cell: Cell) => {
         if (cell.ValueIsFormula()) {
-          let modified = false;
-          const parsed = this.parser.Parse(cell.value || '');
-          if (parsed.expression) {
-            this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
-              if (element.type === 'address') {
-                if (element.sheet && element.sheet.toLowerCase() === old_name) {
-                  element.sheet = name;
-                  modified = true;
-                }
-              }
-              return true; // continue walk
-            });
-            if (modified) {
-              cell.value = '=' + this.parser.Render(parsed.expression, { missing: '' });
-              changes++;
-            }
-          }
+          const updated = this.PatchExpressionSheetName(cell.value||'', old_name, name);
+          if (updated) {
+            cell.value = updated;
+            changes++;
+          }          
         }
       });
+
+      // conditionals
+      if (sheet.conditional_formats?.length) {
+        for (const format of sheet.conditional_formats) {
+          switch (format.type) {
+            case 'cell-match':
+            case 'expression':
+              {
+                const updated = this.PatchExpressionSheetName(format.expression, old_name, name);
+                if (updated) {
+                  format.expression = updated;
+                  changes++;
+                }
+              }
+              break;
+          }
+        }
+      }
 
       // annotations
       for (const annotation of sheet.annotations) {
         if (annotation.data.formula) {
-          let modified = false;
-          const parsed = this.parser.Parse(annotation.data.formula || '');
-          if (parsed.expression) {
-            this.parser.Walk(parsed.expression, (element: ExpressionUnit) => {
-              if (element.type === 'address') {
-                if (element.sheet && element.sheet.toLowerCase() === old_name) {
-                  element.sheet = name;
-                  modified = true;
-                }
-              }
-              return true; // continue walk
-            });
-            if (modified) {
-              annotation.data.formula = '=' + this.parser.Render(parsed.expression, { missing: '' });
-              changes++;
-            }
+          const updated = this.PatchExpressionSheetName(annotation.data.formula, old_name, name);
+          if (updated) {
+            annotation.data.formula = updated;
+            changes++;
           }
         }
       }
@@ -2634,7 +2652,125 @@ export class GridBase {
 
   }
 
-  
+  /**
+   * patch an expression for insert/delete row/column operations.
+   * FIXME: should move, maybe to parser? (...)
+   * 
+   * @returns the updated expression, or `undefined` if no changes were made.
+   */
+  protected PatchExpression(sheet: Sheet, expression: string, 
+      before_column: number, column_count: number, before_row: number, row_count: number) {
+
+    let count = 0;
+    const parse_result = this.parser.Parse(expression);
+    if (parse_result.expression) {
+
+      this.parser.Walk(parse_result.expression, unit => {
+        if (unit.type === 'range') {
+          if (!unit.start.sheet || (unit.start.sheet.toLowerCase() === sheet.name.toLowerCase())) {
+            const updated = Area.PatchArea(unit, before_column, column_count, before_row, row_count);
+            if (updated) {
+              unit.start.row = updated.start.row;
+              unit.start.column = updated.start.column;
+              unit.end.row = updated.end.row;
+              unit.end.column = updated.end.column;
+            }
+            else {
+
+              // FIXME: maybe have options for this? we don't really have a 
+              // good way to replace nodes atm
+              unit.start.row = unit.end.row = unit.start.column = unit.end.column = -1;
+
+            }
+          }
+          count++;
+          return false;
+        }
+        else if (unit.type === 'address') {
+          const updated = Area.PatchArea({start: unit, end: unit}, before_column, column_count, before_row, row_count);
+          if (updated) {
+            unit.row = updated.start.row;
+            unit.column = updated.start.column;
+          }
+          else {
+
+            // see above
+            unit.row = unit.column = -1;
+          }
+          count++;
+          return false;
+        }
+        return true;
+      });
+
+      if (count) {
+        const rendered = this.parser.Render(parse_result.expression, {
+          missing: '',
+        });
+        // console.info("FROM", expression, "TO", rendered);
+        return rendered;
+      }
+
+    }
+
+    return undefined;
+
+  }
+
+  /**
+   * patch sheet conditionals for insert/delete row/column operations.
+   * some of them may be deleted.
+   */
+  protected PatchConditionals(sheet: Sheet, before_column: number, column_count: number, before_row: number, row_count: number) {
+
+    if (sheet.conditional_formats?.length) {
+
+      const delete_list: ConditionalFormat[] = [];
+      for (const format of sheet.conditional_formats) {
+
+        // first adjust the format area 
+
+        const updated = Area.PatchArea(format.area, before_column, column_count, before_row, row_count);
+        if (updated) {
+          format.area = JSON.parse(JSON.stringify(updated));
+        }
+        else {
+          delete_list.push(format);
+          continue; // don't bother with formula
+        }
+
+        // next update the formula, if necessary. what do we do if the
+        // area has disappeared? should be a #REF error, not sure we 
+        // can encode that properly
+
+        switch (format.type) {
+          case 'expression':
+          case 'cell-match':
+            {
+              const updated = this.PatchExpression(
+                  sheet, 
+                  format.expression, 
+                  before_column, 
+                  column_count, 
+                  before_row, 
+                  row_count);
+
+              if (updated) {
+                format.expression = updated;
+              }
+            }
+            break;
+        }
+
+      }
+
+      if (delete_list.length) {
+        sheet.conditional_formats = sheet.conditional_formats.filter(test => !delete_list.includes(test));
+      }
+
+    }
+
+  }
 
   /**
    * FIXME: should be API method
@@ -2663,6 +2799,9 @@ export class GridBase {
       this.Error(ErrorCode.array);
       return { error: true };
     }
+
+    // conditionals
+    this.PatchConditionals(target_sheet, 0, 0, command.before_row, command.count);
 
     // see InsertColumnsInternal re: tables. rows are less complicated,
     // except that if you delete the header row we want to remove the 
@@ -2978,6 +3117,9 @@ export class GridBase {
       return { error: true };
     }
     
+    // conditionals
+    this.PatchConditionals(target_sheet, command.before_column, command.count, 0, 0);
+
     // patch tables. we removed this from the sheet routine entirely,
     // we need to rebuild any affected tables now.
 

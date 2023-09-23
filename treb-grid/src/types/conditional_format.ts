@@ -89,7 +89,7 @@ export interface ConditionalFormatCellMatch extends ConditionalFormatCellMatchOp
  * that state is serialized if it's true. 
  * we also add an internal field that will be type-specific, and not serialized.
  */
-export type ConditionalFormat = { applied?: boolean, internal?: unknown } & (
+export type ConditionalFormat = { internal?: unknown } & (
     ConditionalFormatExpression |
     ConditionalFormatCellMatch |
     ConditionalFormatGradient

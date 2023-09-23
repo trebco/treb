@@ -4219,6 +4219,9 @@ export class EmbeddedSpreadsheet {
       // sheet.FlushConditionalFormatCache();
 
       for (const entry of sheet.conditional_formats) {
+
+        areas.push(entry.area);
+
         if (entry.type === 'gradient') {
 
           if (!entry.internal) {
@@ -4248,59 +4251,12 @@ export class EmbeddedSpreadsheet {
           entry.internal.range = entry.internal.max - entry.internal.min;
 
         }
+        /*
         else if (entry.type === 'cell-match') {
-          // console.info(entry.internal?.vertex?.result);
         }
         else if (entry.type === 'expression') {
-
-          /*
-
-          // FIXME: if these expressions were passed to the calculator
-          // (along with the rest of the sheet) we could determine if 
-          // they were dirty, which would reduce the set of updates.
-
-          // we would still have to account for conditional formats that
-          // were added or removed, but that's a different problem
-
-          let result = this.Evaluate(entry.expression, entry.options);
-          if (Array.isArray(result)) {
-            result = result[0][0];
-          }
-
-          console.info("calc result", {A: entry.internal?.vertex?.result, B: result});
-
-          const applied = !!result;
-
-          */
-
-          const result = entry?.internal?.vertex?.result;
-
-          if (result) {
-
-            let applied = false;
-
-            switch (result.type) {
-              case ValueType.boolean:
-              case ValueType.number:
-                applied = !!result.value;
-                break;
-
-              // other types?
-              // ... not atm
-
-            }
-
-
-            if (applied !== (entry.applied||false)) {
-              areas.push(entry.area);
-            }
-
-            entry.applied = applied;
-
-          }
-
-
         }
+        */
       }
 
       sheet.ApplyConditionalFormats();

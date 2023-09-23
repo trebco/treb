@@ -197,7 +197,183 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
       });
   }
 
+  /**
+   * adjust an area in response to an insert/delete operation.
+   * I noticed we were doing this in several places. moved here to unify.
+   * 
+   * @param source - the starting area. we'll create a new object to return
+   * (we will not mutate in place)
+   * @param before_column - insert point
+   * @param column_count - positive for insert, negative for delete
+   * @param before_row - insert point
+   * @param column_row - positive for insert, negative for delete
+   */
+  public static PatchArea(source: IArea, before_column: number, column_count: number, before_row: number, row_count: number): Area | false {
 
+    let area = new Area(source.start, source.end);
+    const sheet_id = source.start.sheet_id;
+
+    if (column_count && before_column <= area.end.column) {
+
+      /*
+      // (1) we are before the insert point, not affected
+
+      if (before_column > range.end.column) {
+        continue;
+      }
+      */
+
+      if (column_count > 0) {
+
+        // (2) it's an insert and we are past the insert point:
+        //     increment [start] and [end] by [count]
+
+        if (before_column <= area.start.column) {
+          area.Shift(0, column_count);
+        }
+
+        // (3) it's an insert and we contain the insert point:
+        //     increment [end] by [count]
+
+        else if (before_column > area.start.column && before_column <= area.end.column) {
+          area.ConsumeAddress({row: area.end.row, column: area.end.column + column_count});
+        }
+
+        else {
+          console.warn(`AA X case 1`, before_column, column_count, JSON.stringify(area));
+        }
+
+      }
+      else if (column_count < 0) {
+
+        // (4) it's a delete and we are past the delete point (before+count):
+        //     decrement [start] and [end] by [count]
+
+        if (before_column - column_count <= area.start.column) {
+          area.Shift(0, column_count);
+        }
+
+        // (5) it's a delete and contains the entire range
+
+        else if (before_column <= area.start.column && before_column - column_count > area.end.column) {
+
+          // we can actually just return at this point
+          return false;
+
+        }
+
+        // (6) it's a delete and contains part of the range. clip the range.
+
+        else if (before_column <= area.start.column) {
+          const last_column = before_column - column_count - 1;
+          area = new Area({
+            row: area.start.row, column: last_column + 1 + column_count, sheet_id }, {
+              row: area.end.row, column: area.end.column + column_count });
+        }
+
+        else if (before_column <= area.end.column) {
+          const last_column = before_column - column_count - 1;
+
+          if (last_column >= area.end.column) {
+            area = new Area({
+              row: area.start.row, column: area.start.column, sheet_id }, {
+                row: area.end.row, column: before_column - 1 });
+          }
+          else {
+            area = new Area({
+              row: area.start.row, column: area.start.column, sheet_id }, {
+                row: area.end.row, column: area.start.column + area.columns + column_count - 1});
+          }
+
+        }
+
+        else {
+          console.warn(`AA X case 2`, before_column, column_count, JSON.stringify(area));
+        }
+
+      }
+    }
+
+    if (row_count && before_row <= area.end.row) {
+
+      /*
+      // (1) we are before the insert point, not affected
+
+      if (before_column > range.end.column) {
+        continue;
+      }
+      */
+
+      if (row_count > 0) {
+
+        // (2) it's an insert and we are past the insert point:
+        //     increment [start] and [end] by [count]
+
+        if (before_row <= area.start.row) {
+          area.Shift(row_count, 0);
+        }
+
+        // (3) it's an insert and we contain the insert point:
+        //     increment [end] by [count]
+
+        else if (before_row > area.start.row && before_row <= area.end.row) {
+          area.ConsumeAddress({row: area.end.row + row_count, column: area.end.column});
+        }
+
+        else {
+          console.warn(`AA X case 3`, before_row, row_count, JSON.stringify(area));
+        }
+
+      }
+      else if (row_count < 0) {
+
+        // (4) it's a delete and we are past the delete point (before+count):
+        //     decrement [start] and [end] by [count]
+
+        if (before_row - row_count <= area.start.row) {
+          area.Shift(row_count, 0);
+        }
+
+        // (5) it's a delete and contains the entire range
+
+        else if (before_row <= area.start.row && before_row - row_count > area.end.row) {
+          return false;
+        }
+
+        // (6) it's a delete and contains part of the range. clip the range.
+
+        else if (before_row <= area.start.row) {
+          const last_row = before_row - row_count - 1;
+          area = new Area({
+            column: area.start.column, row: last_row + 1 + row_count, sheet_id }, {
+              column: area.end.column, row: area.end.row + row_count });
+        }
+
+        else if (before_row <= area.end.row) {
+          const last_row = before_row - row_count - 1;
+          if (last_row >= area.end.row) {
+            area = new Area({
+              column: area.start.column, row: area.start.row, sheet_id }, {
+                column: area.end.column, row: before_row - 1 });
+          }
+          else {
+            area = new Area({
+              column: area.start.column, row: area.start.row, sheet_id }, {
+                column: area.end.column, row: area.start.row + area.rows + row_count - 1 });
+          }
+
+        }
+
+        else {
+          console.warn(`AA X case 4`, before_row, row_count, JSON.stringify(area));
+        }
+
+      }
+    }
+
+    return area;
+
+  }
 
   /** accessor returns a _copy_ of the start address */
   public get start(): ICellAddress {

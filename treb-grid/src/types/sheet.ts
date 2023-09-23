@@ -2608,7 +2608,7 @@ export class Sheet {
       row_style,
       column_style,
 
-      conditional_formats: this.conditional_formats.length ? this.conditional_formats.map(format => ({...format, applied: format.applied||undefined, internal: undefined })) : undefined,
+      conditional_formats: this.conditional_formats.length ? this.conditional_formats.map(format => ({...format, internal: undefined })) : undefined,
 
       row_pattern: row_pattern.length ? row_pattern : undefined,
 
@@ -3148,26 +3148,45 @@ export class Sheet {
 
         }
       }
-      if (format.type === 'cell-match') {
+      if (format.type === 'cell-match' || format.type === 'expression') {
         const area = JSON.parse(JSON.stringify(format.area));
         const result = format.internal?.vertex?.result;
 
-        if (result?.type === ValueType.array) {
-          for (let row = area.start.row; row <= area.end.row; row++) {
-            for (let column = area.start.column; column <= area.end.column; column++) {
-              const value = result.value[column - area.start.column][row - area.start.row];
-              if (value.value) {
-                if (!temp[row]) { temp[row] = []; }
-                if (!temp[row][column] ) { temp[row][column] = []; }
-                temp[row][column].push(format.style);
+        if (result) {
+
+          if (result.type === ValueType.array) {
+            for (let row = area.start.row; row <= area.end.row; row++) {
+              for (let column = area.start.column; column <= area.end.column; column++) {
+                const value = result.value[column - area.start.column][row - area.start.row];
+                if ((value.type === ValueType.boolean || value.type === ValueType.number) && !!value.value) {
+                  if (!temp[row]) { temp[row] = []; }
+                  if (!temp[row][column] ) { temp[row][column] = []; }
+                  temp[row][column].push(format.style);
+                }
               }
             }
           }
+          else {
+            if (result.type === ValueType.boolean || result.type === ValueType.number) {
+              if(!!result.value) {
+                for (let row = area.start.row; row <= area.end.row; row++) {
+                  if (!temp[row]) { temp[row] = []; }
+                  for (let column = area.start.column; column <= area.end.column; column++) {
+                      if (!temp[row][column] ) { temp[row][column] = []; }
+                      temp[row][column].push(format.style);
+                  }
+                }
+              }
+            }
+          }
+  
+          checklist.push(area);
+          this.conditional_format_checklist.push(area);
+ 
         }
 
-        checklist.push(area);
-        this.conditional_format_checklist.push(area);
       }
+      /*
       if (format.type === 'expression') {
         if (format.applied) {
 
@@ -3191,6 +3210,7 @@ export class Sheet {
 
         }
       }
+      */
     }
 
     /*

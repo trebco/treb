@@ -2793,8 +2793,6 @@ export class Grid extends GridBase {
 
   }
 
-
-
   private DelayedRender(force = false, area?: IArea|IArea[], full_tile = false) {
 
     // if area is passed, set dirty before calling repaint
