@@ -3130,6 +3130,8 @@ export class Sheet {
 
     if (!updated) {
 
+      console.info('no updates');
+
       // that should save 90% of the calculation, we'll still do 
       // unecessary work but it's a step in the right direction.
 

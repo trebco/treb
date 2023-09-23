@@ -1799,6 +1799,17 @@ export class Calculator extends Graph {
           expression = entry.expression;
           break;
 
+        case 'gradient':
+          expression = `=Gradient(${
+            [
+              this.Unresolve(entry.area, context, true, false),
+              entry.min ?? '',
+              entry.max ?? '',
+
+            ].join(this.parser.argument_separator)
+          })`;
+          break;
+
         default:
           continue;
       }
@@ -1815,9 +1826,15 @@ export class Calculator extends Graph {
       if (!entry.internal.vertex) {
         entry.internal.vertex = new CalculationLeafVertex();
 
+        let options: EvaluateOptions|undefined;
+        if (entry.type !== 'gradient') {
+          options = entry.options;
+        }
+
         // first pass, run the calculation
-        const check = this.Evaluate(expression, context, entry.options, true);
+        const check = this.Evaluate(expression, context, options, true);
         entry.internal.vertex.result = check;
+        entry.internal.vertex.updated = true;
 
       }
 
