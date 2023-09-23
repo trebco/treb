@@ -2038,22 +2038,17 @@ export class EmbeddedSpreadsheet {
     this.UpdateDocumentStyles();
 
     // we need to flush conditional formats that use theme colors
+    // (I guess we're just flushing everybody?)
 
     for (const sheet of this.model.sheets.list) {
-
       for (const format of sheet.conditional_formats) {
         format.internal = undefined;
       }
-
-      if (sheet.conditional_formats.length) {
-        this.ApplyConditionalFormats(sheet, false);
-        if (sheet === this.grid.active_sheet) {
-          this.grid.Update(true);
-        }
-      }
-
     }
 
+    this.calculator.UpdateConditionals();
+    this.ApplyConditionalFormats(this.grid.active_sheet, false);
+    this.grid.Update(true);
 
   }
 
@@ -4215,85 +4210,25 @@ export class EmbeddedSpreadsheet {
     const areas: IArea[] = [];
 
     if (sheet.conditional_formats) {
-
-      // sheet.FlushConditionalFormatCache();
-
       for (const entry of sheet.conditional_formats) {
-
         areas.push(entry.area);
 
-        if (entry.type === 'gradient') {
+        // NOTE: we're (optionally) adding the gradient here, instead
+        // of when it's created, because we might want to flush this
+        // from time to time. specifically, because gradient might use
+        // theme colors, we need to flush it when the theme is updated.
 
+        // so don't move it, even though it is tempting. or rewrite to 
+        // update on theme changes.
+
+        if (entry.type === 'gradient') {
           if (!entry.internal) {
             entry.internal = {};
           }
           if (!entry.internal.gradient) {
             entry.internal.gradient = new Gradient(entry.stops, this.grid.theme);
           }
-
-          /*
-          if (!entry.internal) {
-            entry.internal = { 
-              gradient: new Gradient(entry.stops, this.grid.theme),
-              min: entry.min ?? 0,
-              max: entry.max ?? 1,
-              range: 1,
-            };
-          }
-
-          // this definitely shouldn't be here. it could be in sheet
-          // (although that's less flexible) or we could use a function,
-          // like the expression type. that would also reduce unecessary
-          // calculation.
-
-          if (typeof entry.min === 'undefined') {
-            const min = this.Evaluate(`MIN(${this.Unresolve(entry.area)})`) as CellValue;
-            entry.internal.min = Number(min) || 0;
-          }
-
-          if (typeof entry.max === 'undefined') {
-            const max = this.Evaluate(`MAX(${this.Unresolve(entry.area)})`) as CellValue;
-            entry.internal.max = Number(max) || 1;
-          }
-
-          entry.internal.range = entry.internal.max - entry.internal.min;
-<<<<<<< HEAD
-=======
-
         }
-        else if (entry.type === 'cell-match') {
-          // console.info(entry.internal?.vertex?.result);
-        }
-        else if (entry.type === 'expression') {
-
-          /*
-
-          // FIXME: if these expressions were passed to the calculator
-          // (along with the rest of the sheet) we could determine if 
-          // they were dirty, which would reduce the set of updates.
-
-          // we would still have to account for conditional formats that
-          // were added or removed, but that's a different problem
-
-          let result = this.Evaluate(entry.expression, entry.options);
-          if (Array.isArray(result)) {
-            result = result[0][0];
-          }
-
-          console.info("calc result", {A: entry.internal?.vertex?.result, B: result});
-
-          const applied = !!result;
-
->>>>>>> refs/remotes/origin/main
-          */
-
-        }
-        /*
-        else if (entry.type === 'cell-match') {
-        }
-        else if (entry.type === 'expression') {
-        }
-        */
       }
 
       sheet.ApplyConditionalFormats();
