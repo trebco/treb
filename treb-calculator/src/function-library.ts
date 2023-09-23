@@ -80,9 +80,12 @@ export class FunctionLibrary {
   }
 
   /** get a list, for AC services */
-  public List() {
+  public List(filter_internal = true) {
     const list: ExtendedFunctionMap = {};
     for (const key of Object.keys(this.functions)) {
+      if (filter_internal && this.functions[key].visibility === 'internal') {
+        continue;
+      }
       list[key] = this.functions[key];
     }
     return list;

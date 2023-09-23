@@ -3102,10 +3102,44 @@ export class Sheet {
    * this function was set up to support comparing the two lists and
    * only flushing style if necessary; but that turns out to be so 
    * much additional work that I'm not sure it's preferable to just 
-   * repainting. need to test.
+   * repaint. need to test.
+   * 
+   * ...we're also probably looping unecessarily. since we're using
+   * those leaf nodes we can probably check if the state changed, and
+   * it not, skip the loop pass. I think we'd need to identify or map
+   * the applications though (meaning use a stack that matches the list
+   * of formats). or you could even recheck everything if one of them 
+   * changed, you'd still probably save a lot in cases where nothing
+   * changed.
    * 
    */
   public ApplyConditionalFormats() {
+
+    // we're not doing any pruning at the moment, so this is doing
+    // a lot of unecessary looping -- we could start with one big
+    // global check
+
+    let updated = false;
+
+    for (const format of this.conditional_formats) {
+      if (format.internal?.vertex?.updated) {
+        updated = true;
+        break;
+      }
+    }
+
+    if (!updated) {
+
+      // that should save 90% of the calculation, we'll still do 
+      // unecessary work but it's a step in the right direction.
+
+      // note that this flag doesn't necessarily indicate anything
+      // has changed -- it will get set if you do a global recalc,
+      // because that marks everything as dirty. still a good step
+      // though.
+
+      return;
+    }
 
     const temp: CellStyle[][][] = [];
     const checklist: IArea[] = [...this.conditional_format_checklist];
@@ -3113,32 +3147,51 @@ export class Sheet {
     this.conditional_format_checklist = []; // flush
 
     for (const format of this.conditional_formats) {
+
+      if (format.internal?.vertex?.updated) {
+
+        // console.info('updated');
+
+        format.internal.vertex.updated = false;
+      }
+
+      // NOTE: if you go backwards, then you can short-circuit if a format 
+      // is already set. except then if you want to support "stop" rules, 
+      // that won't work. 
+      //
+      // although you might still want to go backwards as it's easier to 
+      // apply stop rules in reverse (why? because if you are going backwards,
+      // you can just drop everything on the stack when you see a 
+      // stop rule. if you go forwards, you need some sort of indicator 
+      // or flag).
+
       if (format.type === 'gradient') {
-        if (format.internal && format.internal.range) {
+        const area = JSON.parse(JSON.stringify(format.area));
+        const result = format.internal?.vertex?.result;
 
-          const area = JSON.parse(JSON.stringify(format.area)); // clone
+        if (result && format.internal?.gradient) {
+          const property: 'fill'|'text' = format.property ?? 'fill';
 
-          for (let row = area.start.row; row <= area.end.row; row++) {
-            if (!temp[row]) {
-              temp[row] = [];
-            }
-            for (let column = area.start.column; column <= area.end.column; column++) {
-              if (!temp[row][column]) {
-                temp[row][column] = [];
+          if (result.type === ValueType.array) {
+            for (let row = area.start.row; row <= area.end.row; row++) {
+              for (let column = area.start.column; column <= area.end.column; column++) {
+                const value = result.value[column - area.start.column][row - area.start.row];
+                if (value.type === ValueType.number) {
+                  if (!temp[row]) { temp[row] = []; }
+                  if (!temp[row][column] ) { temp[row][column] = []; }
+                  const color = format.internal.gradient.Interpolate(value.value);
+                  temp[row][column].push({ [property]: color});
+                }
               }
-
-              const celldata = this.CellData({row, column});
-              if (celldata.rendered_type === ValueType.number) {
-                const value = celldata.calculated_type === ValueType.number ? 
-                  (celldata.calculated as number) : (celldata.value as number);
-                
-                const property: 'fill'|'text' = format.property ?? 'fill';
-                const style: CellStyle = { [property]: format.internal.gradient.Interpolate((value - format.internal.min) / (format.internal.range))};
-
-                temp[row][column].push(style);
-
-                // checklist.push([row, column]);
-                // this.conditional_format_checklist.push([row, column]);
+            }
+          }
+          else if (result.type === ValueType.number) {
+            const color = format.internal.gradient.Interpolate(result.value);
+            for (let row = area.start.row; row <= area.end.row; row++) {
+              if (!temp[row]) { temp[row] = []; }
+              for (let column = area.start.column; column <= area.end.column; column++) {
+                if (!temp[row][column] ) { temp[row][column] = []; }
+                temp[row][column].push({ [property]: color});
               }
             }
           }
@@ -3147,8 +3200,9 @@ export class Sheet {
           this.conditional_format_checklist.push(area);
 
         }
+
       }
-      if (format.type === 'cell-match' || format.type === 'expression') {
+      else if (format.type === 'cell-match' || format.type === 'expression') {
         const area = JSON.parse(JSON.stringify(format.area));
         const result = format.internal?.vertex?.result;
 
@@ -3186,46 +3240,8 @@ export class Sheet {
         }
 
       }
-      /*
-      if (format.type === 'expression') {
-        if (format.applied) {
-
-          const area = JSON.parse(JSON.stringify(format.area));
-          for (let row = area.start.row; row <= area.end.row; row++) {
-            if (!temp[row]) {
-              temp[row] = [];
-            }
-            for (let column = area.start.column; column <= area.end.column; column++) {
-              if (!temp[row][column]) {
-                temp[row][column] = [];
-              }
-              temp[row][column].push(format.style);
-              // checklist.push([row, column]);
-              // this.conditional_format_checklist.push([row, column]);
-            }
-          }
-
-          checklist.push(area);
-          this.conditional_format_checklist.push(area);
-
-        }
-      }
-      */
+   
     }
-
-    /*
-    for (const [row, column] of checklist) {
-
-      const a = temp[row]?.[column];
-      const b = this.conditional_format_cache[row]?.[column];
-
-      if ((!!a && !b) || (!a && !!b) || (a && b && ((a.length !== b.length) || (JSON.stringify(a) !== JSON.stringify(b))))) {
-        // this.CellData({row, column}).FlushStyle();
-        this.BleedFlush({row, column});
-      }
-
-    }
-    */
 
     for (const area of checklist) {
       this.BleedFlush(area);

@@ -1128,12 +1128,14 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
-    /*
     'Gradient': {
       arguments: [
         { name: 'range', boxed: true },
+        { name: 'min', },
+        { name: 'max', },
       ],
-      fn: (area: UnionValue): UnionValue => {
+      visibility: 'internal',
+      fn: (area: UnionValue, static_min?: number, static_max?: number): UnionValue => {
 
         const tmp = Utils.FlattenBoxed([area]);
 
@@ -1157,6 +1159,13 @@ export const BaseFunctionLibrary: FunctionMap = {
             }
             count++;
           }
+        }
+
+        if (typeof static_max === 'number') {
+          max = static_max;
+        }
+        if (typeof static_min === 'number') {
+          min = static_min;
         }
 
         let range = max - min;
@@ -1199,7 +1208,6 @@ export const BaseFunctionLibrary: FunctionMap = {
   
       },
     }
-    */
 
 };
 

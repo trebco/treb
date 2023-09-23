@@ -40,7 +40,7 @@ import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpressi
 import type { Parser, UnitAddress} from 'treb-parser';
 import { type ExpressionUnit, IllegalSheetNameRegex, ParseCSV, ArgumentSeparatorType, DecimalMarkType } from 'treb-parser';
 import { Area, IsCellAddress, ValidationType, ValueType, DefaultTableSortOptions } from 'treb-base-types';
-import type { ICellAddress, IArea, Cell, CellValue , Style, CellStyle, Table, TableSortOptions, TableTheme, Complex } from 'treb-base-types';
+import type { ICellAddress, IArea, Cell, CellValue , Style, CellStyle, Table, TableSortOptions, TableTheme, Complex, PatchOptions as PatchAreaOptions } from 'treb-base-types';
 import { Sheet } from './sheet';
 import type { FunctionDescriptor} from '../editors/autocomplete_matcher';
 import { AutocompleteMatcher, DescriptorType } from '../editors/autocomplete_matcher';
@@ -62,6 +62,10 @@ import type { FreezePane, LegacySerializedSheet } from './sheet_types';
 import type { Annotation } from './annotation';
 import type { ClipboardCellData } from './clipboard_data';
 import type { ConditionalFormat } from './conditional_format';
+
+interface PatchOptions extends PatchAreaOptions {
+  sheet: Sheet;
+}
 
 export class GridBase {
 
@@ -2656,10 +2660,12 @@ export class GridBase {
    * patch an expression for insert/delete row/column operations.
    * FIXME: should move, maybe to parser? (...)
    * 
+   * NOTE: did I write this twice? we only need one. check which one is better.
+   * @see PatchFormulasInternal
+   * 
    * @returns the updated expression, or `undefined` if no changes were made.
    */
-  protected PatchExpression(sheet: Sheet, expression: string, 
-      before_column: number, column_count: number, before_row: number, row_count: number) {
+  protected PatchExpression(expression: string, options: PatchOptions) { 
 
     let count = 0;
     const parse_result = this.parser.Parse(expression);
@@ -2667,8 +2673,8 @@ export class GridBase {
 
       this.parser.Walk(parse_result.expression, unit => {
         if (unit.type === 'range') {
-          if (!unit.start.sheet || (unit.start.sheet.toLowerCase() === sheet.name.toLowerCase())) {
-            const updated = Area.PatchArea(unit, before_column, column_count, before_row, row_count);
+          if (!unit.start.sheet || (unit.start.sheet.toLowerCase() === options.sheet.name.toLowerCase())) {
+            const updated = Area.PatchArea(unit, options);
             if (updated) {
               unit.start.row = updated.start.row;
               unit.start.column = updated.start.column;
@@ -2687,7 +2693,7 @@ export class GridBase {
           return false;
         }
         else if (unit.type === 'address') {
-          const updated = Area.PatchArea({start: unit, end: unit}, before_column, column_count, before_row, row_count);
+          const updated = Area.PatchArea({start: unit, end: unit}, options);
           if (updated) {
             unit.row = updated.start.row;
             unit.column = updated.start.column;
@@ -2721,21 +2727,21 @@ export class GridBase {
    * patch sheet conditionals for insert/delete row/column operations.
    * some of them may be deleted.
    */
-  protected PatchConditionals(sheet: Sheet, before_column: number, column_count: number, before_row: number, row_count: number) {
+  protected PatchConditionals(options: PatchOptions) {
 
-    if (sheet.conditional_formats?.length) {
+    if (options.sheet.conditional_formats?.length) {
 
-      const delete_list: ConditionalFormat[] = [];
-      for (const format of sheet.conditional_formats) {
+      const delete_list: Set<ConditionalFormat> = new Set();
+      for (const format of options.sheet.conditional_formats) {
 
         // first adjust the format area 
 
-        const updated = Area.PatchArea(format.area, before_column, column_count, before_row, row_count);
+        const updated = Area.PatchArea(format.area, options);
         if (updated) {
           format.area = JSON.parse(JSON.stringify(updated));
         }
         else {
-          delete_list.push(format);
+          delete_list.add(format);
           continue; // don't bother with formula
         }
 
@@ -2747,13 +2753,7 @@ export class GridBase {
           case 'expression':
           case 'cell-match':
             {
-              const updated = this.PatchExpression(
-                  sheet, 
-                  format.expression, 
-                  before_column, 
-                  column_count, 
-                  before_row, 
-                  row_count);
+              const updated = this.PatchExpression(format.expression, options);
 
               if (updated) {
                 format.expression = updated;
@@ -2764,8 +2764,8 @@ export class GridBase {
 
       }
 
-      if (delete_list.length) {
-        sheet.conditional_formats = sheet.conditional_formats.filter(test => !delete_list.includes(test));
+      if (delete_list.size) {
+        options.sheet.conditional_formats = options.sheet.conditional_formats.filter(test => !delete_list.has(test));
       }
 
     }
@@ -2801,7 +2801,13 @@ export class GridBase {
     }
 
     // conditionals
-    this.PatchConditionals(target_sheet, 0, 0, command.before_row, command.count);
+    this.PatchConditionals({
+        sheet: target_sheet, 
+        before_column: 0, 
+        column_count: 0, 
+        before_row: command.before_row, 
+        row_count: command.count
+      });
 
     // see InsertColumnsInternal re: tables. rows are less complicated,
     // except that if you delete the header row we want to remove the 
@@ -3118,7 +3124,12 @@ export class GridBase {
     }
     
     // conditionals
-    this.PatchConditionals(target_sheet, command.before_column, command.count, 0, 0);
+    this.PatchConditionals({
+      sheet: target_sheet, 
+      before_column: command.before_column, 
+      column_count: command.count, 
+      before_row: 0, 
+      row_count: 0 });
 
     // patch tables. we removed this from the sheet routine entirely,
     // we need to rebuild any affected tables now.

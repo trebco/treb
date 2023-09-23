@@ -1,6 +1,11 @@
 
 import type { CellStyle, EvaluateOptions, IArea, Color, Gradient, GradientStop, UnionValue } from 'treb-base-types';
 
+interface VertexPlaceholder {
+  result: UnionValue;
+  updated: boolean;
+} 
+
 export interface CondifionalFormatExpressionOptions {
   style: CellStyle;
   expression: string;
@@ -18,7 +23,7 @@ export interface ConditionalFormatExpression extends CondifionalFormatExpression
 
   /** @internal */
   internal?: {
-    vertex?: { result: UnionValue }; // temp
+    vertex?: VertexPlaceholder;
   };
 
 }
@@ -38,6 +43,7 @@ export interface ConditionalFormatGradientOptions {
   max?: number;
 
 }
+
 
 export const StandardGradientsList = {
   'red-green': {
@@ -61,10 +67,8 @@ export interface ConditionalFormatGradient extends ConditionalFormatGradientOpti
 
   /** @internal */
   internal?: {
-    gradient: Gradient;
-    min: number;
-    max: number;
-    range: number;
+    gradient?: Gradient;
+    vertex?: VertexPlaceholder;
   };
 }
 
@@ -80,7 +84,7 @@ export interface ConditionalFormatCellMatch extends ConditionalFormatCellMatchOp
 
   /** @internal */
   internal?: {
-    vertex?: { result: UnionValue }; // temp
+    vertex?: VertexPlaceholder;
   };
 }
 
@@ -88,6 +92,9 @@ export interface ConditionalFormatCellMatch extends ConditionalFormatCellMatchOp
  * union, plus we're adding a state used to track application.
  * that state is serialized if it's true. 
  * we also add an internal field that will be type-specific, and not serialized.
+ * 
+ * ...everybody has a vertex now, we could standardize it
+ * 
  */
 export type ConditionalFormat = { internal?: unknown } & (
     ConditionalFormatExpression |

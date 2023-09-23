@@ -42,6 +42,17 @@ export class CalculationLeafVertex extends SpreadsheetVertex {
   
   public address = { row: -1, column: -1 }; // fake address
 
+  /** 
+   * flag, to reduce unecessary application. work in progress. this
+   * indicates that we reached the calculation step. that means either
+   * (1) dependencies changed, or (2) we were marked dirty in some global
+   * operation, probably a full-recalc. 
+   * 
+   * (2) is a waste but we're still going to save some cycles here. if you
+   * want you could add a state check like the other leaf vertex.
+   */
+  public updated = false;
+
   /**
    * leaf vertex defaults to black (i.e. tested) because leaf nodes cannot have 
    * outbound edges. it is still possible to change this, because it's a property 
@@ -70,6 +81,10 @@ export class CalculationLeafVertex extends SpreadsheetVertex {
 
     this.result = result.value;
     this.dirty = false;
+
+    // set flag
+
+    this.updated = true;
 
     // we are not allowed to have edges out, so nothing to do
 

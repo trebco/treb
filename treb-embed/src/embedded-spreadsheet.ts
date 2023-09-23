@@ -4225,6 +4225,14 @@ export class EmbeddedSpreadsheet {
         if (entry.type === 'gradient') {
 
           if (!entry.internal) {
+            entry.internal = {};
+          }
+          if (!entry.internal.gradient) {
+            entry.internal.gradient = new Gradient(entry.stops, this.grid.theme);
+          }
+
+          /*
+          if (!entry.internal) {
             entry.internal = { 
               gradient: new Gradient(entry.stops, this.grid.theme),
               min: entry.min ?? 0,
@@ -4249,6 +4257,7 @@ export class EmbeddedSpreadsheet {
           }
 
           entry.internal.range = entry.internal.max - entry.internal.min;
+          */
 
         }
         /*

@@ -55,6 +55,13 @@ export interface IArea {
   end: ICellAddress;
 }
 
+export interface PatchOptions {
+  before_column: number;
+  column_count: number;
+  before_row: number;
+  row_count: number;
+}
+
 /**
  * type guard function
  * FIXME: is there a naming convention for these?
@@ -203,12 +210,10 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
    * 
    * @param source - the starting area. we'll create a new object to return
    * (we will not mutate in place)
-   * @param before_column - insert point
-   * @param column_count - positive for insert, negative for delete
-   * @param before_row - insert point
-   * @param column_row - positive for insert, negative for delete
    */
-  public static PatchArea(source: IArea, before_column: number, column_count: number, before_row: number, row_count: number): Area | false {
+  public static PatchArea(source: IArea, options: PatchOptions): Area | false {
+
+    const { before_column, column_count, before_row, row_count } = options;
 
     let area = new Area(source.start, source.end);
     const sheet_id = source.start.sheet_id;

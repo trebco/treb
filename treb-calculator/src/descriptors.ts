@@ -112,10 +112,17 @@ export interface CompositeFunctionDescriptor {
   fn: (...args: any[]) => UnionValue; // UnionOrArray; // |UnitAddress|UnitRange;
 
   /**
-   * for the future. some functions should not be available in
-   * spreadsheet cells (charts, basically)
+   * limited visibility
+   * 
+   * internal functions do not show up in the spreadsheet. we have an 
+   * annotation value which should be usef in the future but it's not 
+   * implemented yet.
+   * 
+   * should we allow these functions to be used, and just not tooltip them;
+   * or block them entirely? for now we'll do the former as it's helpful to 
+   * defug.
    */
-  visibility?: string;
+  visibility?: 'internal'|'annotation';
 
   /**
    * for the future
