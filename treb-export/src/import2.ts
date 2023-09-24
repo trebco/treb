@@ -348,6 +348,25 @@ export class Importer {
     };
 
     switch (rule.a$.type) {
+      case 'duplicateValues':
+      case 'uniqueValues':
+
+        let style = {};
+
+        if (rule.a$.dxfId) {
+          const index = Number(rule.a$.dxfId);
+          if (!isNaN(index)) {
+            style = this.workbook?.style_cache.dxf_styles[index] || {};
+          }
+        }
+
+        return {
+          type: 'duplicate-values',
+          area,
+          style,
+          unique: (rule.a$.type === 'uniqueValues'),
+        };
+
       case 'cellIs':
         if (rule.a$.operator && rule.formula) {
           let style = {};

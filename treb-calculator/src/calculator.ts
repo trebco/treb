@@ -1799,6 +1799,15 @@ export class Calculator extends Graph {
           expression = entry.expression;
           break;
 
+        case 'duplicate-values':
+          expression = `UniqueValues(${
+            this.Unresolve(entry.area, context, true, false)
+          })`;
+          if (!entry.unique) {
+            expression = `NOT(${expression})`;
+          }
+          break;
+
         case 'gradient':
           expression = `=Gradient(${
             [
@@ -1827,7 +1836,7 @@ export class Calculator extends Graph {
         entry.internal.vertex = new CalculationLeafVertex();
 
         let options: EvaluateOptions|undefined;
-        if (entry.type !== 'gradient') {
+        if (entry.type !== 'gradient' && entry.type !== 'duplicate-values') {
           options = entry.options;
         }
 

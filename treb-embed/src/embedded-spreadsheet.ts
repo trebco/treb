@@ -32,6 +32,8 @@ import type {
   AnnotationViewData,
   AnnotationType, 
   ExternalEditorConfig,
+  ConditionalFormatDuplicateValuesOptions,
+  ConditionalFormatDuplicateValues,
   ConditionalFormatGradientOptions,
   ConditionalFormat, 
   ConditionalFormatGradient, 
@@ -1285,6 +1287,25 @@ export class EmbeddedSpreadsheet {
       
   }
 
+  /** @internal */
+  public ConditionalFormatDuplicateValues(range: RangeReference|undefined, options: ConditionalFormatDuplicateValuesOptions): ConditionalFormat {
+       
+    if (range === undefined) {
+      const ref = this.GetSelectionReference();
+      if (ref.empty) {
+        throw new Error('invalid range (no selection)');
+      }
+      range = ref.area;
+    }
+    
+    return this.AddConditionalFormat({
+        type: 'duplicate-values',
+        area: this.model.ResolveArea(range, this.grid.active_sheet),
+        ...options,
+      });
+
+  }
+
   /**
    * @internal
    */
@@ -1404,6 +1425,9 @@ export class EmbeddedSpreadsheet {
     this.ApplyConditionalFormats(sheet, sheet === this.grid.active_sheet);
 
     this.PushUndo();
+
+    // fluent
+    return format;
 
   }
 

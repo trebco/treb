@@ -3222,7 +3222,10 @@ export class Sheet {
 
         }
       }
-      else if (format.type === 'cell-match' || format.type === 'expression') {
+      else {
+
+        // handle types expression, cell-match and duplicate-values
+
         const area = JSON.parse(JSON.stringify(format.area));
         const result = format.internal?.vertex?.result;
 

@@ -180,10 +180,10 @@ export const UndefinedToEmptyString = (args: any[]): any[] => {
 export const ApplyArrayFunc = (base: (...args: any[]) => any) => {
   return (a: any) => {
     if (Array.isArray(a)) {
-      const tmp = [];
+      const tmp: any[] = [];
       const rows = a[0].length;
       for (let c = 0; c < a.length; c++) {
-        const col = [];
+        const col: any[] = [];
         for (let r = 0; r < rows; r++) col[r] = base(a[c][r]);
         tmp.push(col);
       }

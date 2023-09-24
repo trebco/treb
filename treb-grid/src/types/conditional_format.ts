@@ -125,6 +125,25 @@ export interface ConditionalFormatCellMatch extends ConditionalFormatCellMatchOp
   };
 }
 
+export interface ConditionalFormatDuplicateValuesOptions {
+  style: CellStyle;
+
+  /** true to highlight unique cells, false to highlight duplicates. defaults to false. */
+  unique?: boolean;
+}
+
+export interface ConditionalFormatDuplicateValues extends ConditionalFormatDuplicateValuesOptions {
+
+  type: 'duplicate-values';
+  area: IArea;
+
+  /** @internal */
+  internal?: {
+    vertex?: VertexPlaceholder;
+  };
+
+}
+
 /** 
  * union, plus we're adding a state used to track application.
  * that state is serialized if it's true. 
@@ -134,6 +153,7 @@ export interface ConditionalFormatCellMatch extends ConditionalFormatCellMatchOp
  * 
  */
 export type ConditionalFormat = { internal?: unknown } & (
+    ConditionalFormatDuplicateValues |
     ConditionalFormatExpression |
     ConditionalFormatCellMatch |
     ConditionalFormatGradient
