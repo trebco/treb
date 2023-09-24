@@ -33,6 +33,9 @@ export interface ConditionalFormatGradientOptions {
   /** property defaults to fill */
   property?: 'fill'|'text';
 
+  /** defaults to HSL */
+  color_space?: 'HSL'|'RGB';
+
   /** gradient stops, required */
   stops: Array<{ value: number, color: Color }>;
   

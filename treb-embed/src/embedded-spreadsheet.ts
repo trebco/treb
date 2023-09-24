@@ -4226,7 +4226,7 @@ export class EmbeddedSpreadsheet {
             entry.internal = {};
           }
           if (!entry.internal.gradient) {
-            entry.internal.gradient = new Gradient(entry.stops, this.grid.theme);
+            entry.internal.gradient = new Gradient(entry.stops, this.grid.theme, entry.color_space);
           }
         }
       }
