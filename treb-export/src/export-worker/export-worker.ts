@@ -40,19 +40,6 @@ const ExportSheets = async (data: any) => {
     ctx.postMessage({ status: 'complete', blob: corrected });
   }
 
-  /*
-  if (data.sheet) {
-    await exporter.Init();
-    await exporter.ExportSheets(data.sheet);
-    const blob = await exporter.AsBlob(1);
-
-    // correct the mime type for firefox
-    const corrected = (blob as Blob).slice(0, (blob as Blob).size,
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-
-    ctx.postMessage({ status: 'complete', blob: corrected });
-  }
-  */
 };
 
 const ImportSheet = async (data: any) => {

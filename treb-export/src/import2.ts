@@ -23,7 +23,7 @@
 import JSZip from 'jszip';
 
 import type { AnchoredChartDescription} from './workbook2';
-import { ChartType, Workbook } from './workbook2';
+import { ChartType, ConditionalFormatOperators, Workbook } from './workbook2';
 import type { ParseResult } from 'treb-parser';
 import { Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
@@ -337,15 +337,7 @@ export class Importer {
   public ParseConditionalFormat(address: RangeType|AddressType, rule: any): ConditionalFormat|undefined {
 
     const area = this.AddressToArea(address);
-
-    const operators: Record<string, string> = {
-      greaterThan: '>',
-      greaterThanOrEquals: '>=',
-      lessThan: '<',
-      lessThanOrEquals: '<=',
-      equal: '=',
-      notEqual: '<>',
-    };
+    const operators = ConditionalFormatOperators;
 
     switch (rule.a$.type) {
       case 'duplicateValues':

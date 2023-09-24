@@ -4240,7 +4240,7 @@ export class EmbeddedSpreadsheet {
     // const sheet = this.grid.active_sheet;
     const areas: IArea[] = [];
 
-    if (sheet.conditional_formats.length) {
+    if (sheet.conditional_formats.length || sheet.flush_conditional_formats) {
 
       for (const entry of sheet.conditional_formats) {
         areas.push(entry.area);

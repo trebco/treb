@@ -60,7 +60,7 @@ import { Chart } from './drawing2/chart2';
 import type { ImageOptions } from './drawing2/embedded-image';
 import type { TwoCellAnchor } from './drawing2/drawing2';
 import { Drawing } from './drawing2/drawing2';
-import type { TableDescription, TableFooterType } from './workbook2';
+import { ConditionalFormatOperators, type TableDescription, type TableFooterType } from './workbook2';
 import type { AnnotationData } from 'treb-grid/src/types/annotation';
 
 export class Exporter {
@@ -433,11 +433,67 @@ export class Exporter {
       };
     }
 
+    if (style_cache.dxf_styles.length) {
+      const dxf: any[] = [];
+      for (const style of style_cache.dxf_styles) {
+        const entry: any = {};
+        if (style.text || style.bold || style.italic || style.underline) {
+          const font: any = {};
+          if (style.text) {
+            font.color = { a$: {}};
+            if (style.text.text) {
+              font.color.a$.rgb = `FF` + style.text.text.substring(1);
+            }
+            else if (style.text.theme) {
+              font.color.a$.theme = style.text.theme;
+              if (style.text.tint) {
+                font.color.a$.tint = style.text.tint;
+              }
+            }
+          }
+          if (style.bold) {
+            font.b = {};
+          }
+          if (style.italic) {
+            font.i = {};
+          }
+          if (style.underline) {
+            font.u = {};
+          }
+          if (style.strike) {
+            font.strike = {};
+          }
+          entry.font = font;
+        }
+        if (style.fill) {
+          const color: any = { a$: {}};
+          if (style.fill.text) {
+            color.a$.rgb = `FF` + style.fill.text.substring(1);
+          }
+          else if (style.fill.theme) {
+            color.a$.theme = style.fill.theme;
+            if (style.fill.tint) {
+              color.a$.tint = style.fill.tint;
+            }
+          }
+          entry.fill = { patternFill: { bgColor: color }};
+        }
+        dxf.push(entry);
+      }
+
+      if (dxf.length) {
+        dom.styleSheet.dxfs = {
+          a$: { count: dxf.length },
+          dxf,
+        };
+      }
+
+    }
+
     // not used:
     //
     //  cellStyleXfs
     //  cellStyles
-    //  dxfs
     //  tableStyles
     
     // ------------
@@ -1981,6 +2037,129 @@ export class Exporter {
 
       }
 
+      // --- conditional formats -----------------------------------------------
+
+      if (sheet.conditional_formats?.length) {
+        const conditionalFormatting: any[] = [];
+        let priority_index = 1;
+
+        const reverse_operator_map: Record<string, string> = {};
+        const operator_list: string[] = Object.entries(ConditionalFormatOperators).map(entry => {
+          reverse_operator_map[entry[1]] = entry[0]; 
+          return entry[1];
+        });
+        
+        operator_list.sort((a, b) => b.length - a.length);
+
+        for (const format of sheet.conditional_formats) {
+
+          let dxf_index = 0;
+
+          if (format.type !== 'gradient') {
+
+            // these are zero-based? I thought everything in there 
+            // was 1-based. [A: yes, these are indexed from 0].
+
+            dxf_index = style_cache.dxf_styles.length;
+            style_cache.dxf_styles.push(format.style);
+
+          }
+
+          switch (format.type) {
+            case 'cell-match':
+              {
+                let operator = '';
+                let formula = '';
+
+                for (const test of operator_list) {
+                  if (new RegExp('^' + test + '\\s').test(format.expression)) {
+                    operator = reverse_operator_map[test];
+                    formula = format.expression.substring(test.length).trim();
+                    break;
+                  }
+                }
+                if (operator) {
+
+                  conditionalFormatting.push({
+                    a$: { sqref: new Area(format.area.start, format.area.end).spreadsheet_label },
+                    cfRule: {
+                      a$: { type: 'cellIs', dxfId: dxf_index, operator, priority: priority_index++ },
+                      formula,
+                    }
+                  });
+                }
+              }
+              break;
+
+            case 'expression':
+              conditionalFormatting.push({
+                a$: { sqref: new Area(format.area.start, format.area.end).spreadsheet_label },
+                cfRule: {
+                  a$: { type: 'expression', dxfId: dxf_index, priority: priority_index++ },
+                  formula: format.expression,
+                }
+              });
+              break;
+
+            case 'duplicate-values':
+              conditionalFormatting.push({
+                a$: { sqref: new Area(format.area.start, format.area.end).spreadsheet_label },
+                cfRule: {
+                  a$: { type: format.unique ? 'uniqueValues' : 'duplicateValues', dxfId: dxf_index, priority: priority_index++ },
+                }
+              });
+              break;
+
+            case 'gradient':
+              {
+                let cfvo: any[] = [];
+                let color: any[] = [];
+
+                for (const stop of format.stops) {
+                  if (stop.value === 0) {
+                    cfvo.push({ a$: { type: 'min' }}); 
+                  }
+                  else if (stop.value === 1) {
+                    cfvo.push({ a$: { type: 'max' }}); 
+                  }
+                  else {
+                    cfvo.push({ a$: { type: 'percentile', val: stop.value * 100 }}); 
+                  }
+                  const stop_color: any = { a$: {}};
+                  if (stop.color.text) {
+                    stop_color.a$.rgb = 'FF' + stop.color.text.substring(1);
+                  }
+                  else if (stop.color.theme) {
+                    stop_color.a$.theme = stop.color.theme;
+                    stop_color.a$.tint = stop.color.tint || undefined;
+                  }
+                  color.push(stop_color);
+                }
+
+                const generated = {
+                  a$: { sqref: new Area(format.area.start, format.area.end).spreadsheet_label },
+                  cfRule: {
+                    a$: { type: 'colorScale', priority: priority_index++ },
+                    colorScale: {
+                      cfvo,
+                      color,
+                    }
+                  } 
+                };
+
+                conditionalFormatting.push(generated);
+
+              }
+              break;
+          }
+        }
+
+        if (conditionalFormatting.length) {
+          dom.worksheet.conditionalFormatting = (conditionalFormatting.length > 1) ? conditionalFormatting : conditionalFormatting[0];
+        }
+        
+      }
+
       // --- merges ------------------------------------------------------------
 
       if (merges.length) {
@@ -2151,6 +2330,12 @@ export class Exporter {
       else {
         delete dom.worksheet.drawing;
       }
+
+      // --- move page margins -------------------------------------------------
+
+      const margins = dom.worksheet.pageMargins;
+      delete dom.worksheet.pageMargins;
+      dom.worksheet.pageMargins = margins;
 
       // --- end? --------------------------------------------------------------
 

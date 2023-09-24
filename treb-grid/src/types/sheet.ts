@@ -152,7 +152,7 @@ export class Sheet {
    * set this flag when we need to update conditional formats even
    * if they are not dirty (generally when one is deleted)
    */
-  protected flush_conditional_formats = false;
+  public flush_conditional_formats = false;
 
   public get image(): HTMLImageElement|undefined {
     return this._image;
@@ -2592,6 +2592,13 @@ export class Sheet {
 
     const cell_styles = this.CompressCellStyles(cell_reference_map);
 
+    // if we serialize this when it has Area values (instead of IArea) it
+    // will export incorrectly. is that an issue anywhere else? (...)
+
+    const conditional_formats = this.conditional_formats.length ? 
+      JSON.parse(JSON.stringify(this.conditional_formats.map(format => ({...format, internal: undefined })))) : 
+      undefined;
+
     const result: SerializedSheet = {
 
       // not used atm, but in the event we need to gate
@@ -2614,7 +2621,7 @@ export class Sheet {
       row_style,
       column_style,
 
-      conditional_formats: this.conditional_formats.length ? this.conditional_formats.map(format => ({...format, internal: undefined })) : undefined,
+      conditional_formats,
 
       row_pattern: row_pattern.length ? row_pattern : undefined,
 

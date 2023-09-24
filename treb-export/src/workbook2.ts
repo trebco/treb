@@ -54,6 +54,15 @@ const XMLTypeMap = {
 };
 */
 
+export const ConditionalFormatOperators: Record<string, string> = {
+  greaterThan: '>',
+  greaterThanOrEquals: '>=',
+  lessThan: '<',
+  lessThanOrEquals: '<=',
+  equal: '=',
+  notEqual: '<>',
+};
+
 export enum ChartType {
   Unknown = 0, Column, Bar, Line, Scatter, Donut, Pie
 }
