@@ -25,7 +25,7 @@ import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
 import type { DataValidation } from './cell';
 import type { Table } from './table';
-import type { AnnotationType } from 'treb-grid';
+import type { AnnotationType, ConditionalFormat } from 'treb-grid';
 
 export interface CellParseResult {
   row: number,
@@ -58,6 +58,7 @@ export interface ImportedSheetData {
   column_widths: number[];
   row_heights: number[];
   styles: CellStyle[];
+  conditional_formats: ConditionalFormat[];
 
   // optional, for backcompat
   sheet_style?: number;

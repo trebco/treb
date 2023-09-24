@@ -1430,6 +1430,10 @@ export class EmbeddedSpreadsheet {
       return true;
     });
 
+    if (count) {
+      sheet.FlushConditionalFormats();
+    }
+
     // we want to call update if it's the current sheet,
     // but we want a full repaint
 
@@ -1478,6 +1482,9 @@ export class EmbeddedSpreadsheet {
       });
 
       if (count) {
+
+        sheet.FlushConditionalFormats();
+
         this.ApplyConditionalFormats(sheet, false);
     
         if (sheet === this.grid.active_sheet) {
@@ -4209,7 +4216,8 @@ export class EmbeddedSpreadsheet {
     // const sheet = this.grid.active_sheet;
     const areas: IArea[] = [];
 
-    if (sheet.conditional_formats) {
+    if (sheet.conditional_formats.length) {
+
       for (const entry of sheet.conditional_formats) {
         areas.push(entry.area);
 
@@ -4345,6 +4353,11 @@ export class EmbeddedSpreadsheet {
 
             this.InflateAnnotations();
 
+            // and conditional formats
+
+            this.calculator.UpdateConditionals();
+            this.ApplyConditionalFormats(this.grid.active_sheet, false);
+            
           }
           else {
             return reject('unknown error (missing data)');

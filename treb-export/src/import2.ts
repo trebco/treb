@@ -28,7 +28,7 @@ import type { ParseResult } from 'treb-parser';
 import { Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
 import { is_range, ShiftRange, InRange, is_address } from './address-type';
-import type { ImportedSheetData, AnchoredAnnotation, CellParseResult, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, IArea } from 'treb-base-types/src';
+import type { ImportedSheetData, AnchoredAnnotation, CellParseResult, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, IArea, GradientStop, Color } from 'treb-base-types/src';
 import { type ValueType, ValidationType, type SerializedValueType } from 'treb-base-types/src';
 import type { Sheet} from './workbook-sheet2';
 import { VisibleState } from './workbook-sheet2';
@@ -37,7 +37,7 @@ import { XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';
 import { ColumnWidthToPixels } from './column-width';
-import type { AnnotationType } from 'treb-grid';
+import type { AnnotationType, ConditionalFormat } from 'treb-grid';
 
 interface SharedFormula {
   row: number;
@@ -320,6 +320,141 @@ export class Importer {
 
   }
 
+  public AddressToArea(address: RangeType|AddressType): IArea {
+
+    const area: IArea = is_address(address) ? {
+      start: { row: address.row - 1, column: address.col - 1 },
+      end: { row: address.row - 1, column: address.col - 1 },
+    } : {
+      start: { row: address.from.row - 1, column: address.from.col - 1 },
+      end: { row: address.to.row - 1, column: address.to.col - 1 },
+    };
+
+    return area;
+
+  }
+
+  public ParseConditionalFormat(address: RangeType|AddressType, rule: any): ConditionalFormat|undefined {
+
+    const area = this.AddressToArea(address);
+
+    const operators = {
+      greaterThan: '>',
+      greaterThanOrEquals: '>=',
+      lessThan: '<',
+      lessThanOrEquals: '<=',
+      equal: '=',
+      notEqual: '<>',
+    };
+
+    switch (rule.a$.type) {
+      case 'cellIs':
+        if (rule.a$.operator && rule.formula) {
+          let style = {};
+
+          if (rule.a$.dxfId) {
+            const index = Number(rule.a$.dxfId);
+            if (!isNaN(index)) {
+              style = this.workbook?.style_cache.dxf_styles[index] || {};
+            }
+          }
+
+          const rule_operator = rule.a$.operator;
+          const operator = (typeof rule_operator === 'string') ? rule_operator : '';
+
+          if (!operator) {
+            console.info('unhandled cellIs operator:', rule.a$.operator);
+          }
+          else {
+            return {
+              type: 'cell-match',
+              expression: operator + ' ' + rule.formula,
+              area,
+              style,
+            };
+          }
+
+        }
+        break;
+
+      case 'expression':
+        if (rule.formula) {
+          let style = {};
+          
+          if (rule.a$.dxfId) {
+            const index = Number(rule.a$.dxfId);
+            if (!isNaN(index)) {
+              style = this.workbook?.style_cache.dxf_styles[index] || {};
+            }
+          }
+
+          return {
+            type: 'expression',
+            expression: rule.formula,
+            area,
+            style,
+          };
+
+        }
+        break;
+
+      case 'colorScale':
+        if (rule.colorScale && Array.isArray(rule.colorScale.cfvo) && Array.isArray(rule.colorScale.color)) {
+
+          const stops: GradientStop[] = [];
+          for (const [index, entry] of rule.colorScale.cfvo.entries()) {
+            let value = 0;
+            let color: Color = {};
+
+            const color_element = rule.colorScale.color[index];
+            if (color_element.a$.rgb) {
+              color.text = '#' + color_element.a$.rgb.substring(2);
+            } 
+            else if (color_element.a$.theme) {
+              color.theme = Number(color_element.a$.theme) || 0;
+              if (color_element.a$.tint) {
+                color.tint = Math.round(color_element.a$.tint * 1000) / 1000;
+              }
+            }           
+
+            switch (entry.a$.type) {
+              case 'min':
+                value = 0;
+                break;
+
+              case 'max':
+                value = 1;
+                break;
+
+              case 'percentile':
+                value = (Number(entry.a$.val) || 0) / 100;
+                break;
+            }
+
+            stops.push({ color, value });
+
+          }
+
+          return {
+            type: 'gradient',
+            stops,
+            color_space: 'RGB',
+            area,
+          };
+
+        }
+        else {
+          console.info('unexpected colorScale', {rule});
+        }
+        break;
+
+      default:
+        console.info('unhandled cf type:', {rule});
+    }
+
+    return undefined;
+  }
+
   public async GetSheet(index = 0): Promise<ImportedSheetData> {
 
     if (!this.workbook) {
@@ -337,6 +472,7 @@ export class Importer {
     const shared_formulae: {[index: string]: SharedFormula} = {};
     const arrays: RangeType[] = [];
     const merges: RangeType[] = [];
+    const conditional_formats: ConditionalFormat[] = [];
     const links: HyperlinkType[] = [];
     const validations: Array<{
       address: ICellAddress,
@@ -344,8 +480,26 @@ export class Importer {
     }> = [];
     const annotations: AnchoredAnnotation[] = [];
 
-    const FindAll = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
+    const FindAll: (path: string) => any[] = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
 
+    // conditionals 
+
+    const conditional_formatting = FindAll('worksheet/conditionalFormatting');
+    for (const element of conditional_formatting) {
+      if (element.a$?.sqref ){
+        const area = sheet.TranslateAddress(element.a$.sqref);
+        if (element.cfRule) {
+          const rules = Array.isArray(element.cfRule) ? element.cfRule : [element.cfRule];
+          for (const rule of rules) {
+            const format = this.ParseConditionalFormat(area, rule);
+            if (format) {
+              conditional_formats.push(format);
+            }
+          }
+        }
+      }
+    }
+    
     // merges
 
     const merge_cells = FindAll('worksheet/mergeCells/mergeCell');
@@ -878,6 +1032,7 @@ export class Importer {
       column_widths,
       row_heights,
       annotations,
+      conditional_formats,
       styles: this.workbook?.style_cache?.CellXfToStyles() || [],
     };
 

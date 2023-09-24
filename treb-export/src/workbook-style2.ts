@@ -22,7 +22,7 @@
 // import * as ElementTree from 'elementtree';
 // import { Element, ElementTree as Tree } from 'elementtree';
 
-import { type CompositeBorderEdge, Style, type CellStyle, type PropertyKeys } from 'treb-base-types';
+import { type CompositeBorderEdge, Style, type CellStyle, type PropertyKeys, type Color } from 'treb-base-types';
 import { Theme } from './workbook-theme2';
 import { NumberFormatCache } from 'treb-format';
 import { XMLUtils } from './xml-utils';
@@ -202,6 +202,7 @@ export class StyleCache {
   public fills: Fill[] = [];
   public number_formats: NumberFormat[] = [];
   public base_number_format_id = 200; // ?
+  public dxf_styles: CellStyle[] = [];
 
   // public dom?: Tree;
 
@@ -1197,9 +1198,7 @@ export class StyleCache {
 
     // ---
 
-    composite = FindAll('styleSheet/fills/fill');
-
-    this.fills = composite.map(element => {
+    const ParseFill = (element: any) => {
 
       const fill: Fill = { pattern_type: 'none' };
       if (element.patternFill) {
@@ -1236,13 +1235,15 @@ export class StyleCache {
 
       return fill;
 
-    });
+    };
+
+    composite = FindAll('styleSheet/fills/fill');
+
+    this.fills = composite.map(ParseFill);
 
     // ---
 
-    composite = FindAll('styleSheet/fonts/font');
-
-    this.fonts = composite.map(element => {
+    const ParseFont = (element: any) => {
 
       const font: Font = {};
 
@@ -1278,7 +1279,54 @@ export class StyleCache {
 
       return font;
 
+    };
+
+    composite = FindAll('styleSheet/fonts/font');
+    this.fonts = composite.map(ParseFont);
+
+    // dxfs (differential formats) are inline. because reasons? not sure
+    // what's allowed in there, atm we're just looking at font color and 
+    // background color.
+
+    const ParseDXFColor = (element: any) => {
+      const color: Color = {};
+      if (element.a$.rgb) {
+        color.text = '#' + element.a$.rgb.substring(2);
+      }
+      else if (element.a$.theme) {
+        color.theme = Number(element.a$.theme) || 0;
+        if (element.a$.tint) {
+          color.tint = Math.round(element.a$.tint * 1000) / 1000;
+        }
+      }
+      return color;
+    };
+
+    const dxfs = FindAll('styleSheet/dxfs/dxf');
+    this.dxf_styles = dxfs.map(dxf => {
+
+      const style: CellStyle = {};
+
+      // dxf fonts are different too? this is irritating
+
+      if (dxf.font) {
+        style.bold = !!dxf.font.b;
+        style.italic = !!dxf.font.i && dxf.font.i.a$.val !== '0';
+      }
+
+      // dxfs fills are different? anyway we can't reuse the above code for fill, just grab the color
+     
+      if (dxf.font?.color?.a$) {
+        style.text = ParseDXFColor(dxf.font.color);
+      }
+      if (dxf.fill?.patternFill?.bgColor?.a$) {
+        style.fill = ParseDXFColor(dxf.fill.patternFill.bgColor);
+      }
+
+      return style;
     });
+
+    // console.info({dxfs: this.dxf_styles});
 
   }
 

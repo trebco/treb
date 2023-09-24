@@ -180,7 +180,7 @@ export class Workbook {
     xml = xmlparser2.parse(data);
     this.style_cache.FromXML(xml, this.theme);
 
-    console.info({c: this.style_cache});
+    // console.info({c: this.style_cache});
 
     // read workbook
     data = await this.zip.file('xl/workbook.xml')?.async('text') as string;

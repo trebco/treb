@@ -148,6 +148,12 @@ export class Sheet {
 
   protected _image: HTMLImageElement|undefined = undefined;
 
+  /**
+   * set this flag when we need to update conditional formats even
+   * if they are not dirty (generally when one is deleted)
+   */
+  protected flush_conditional_formats = false;
+
   public get image(): HTMLImageElement|undefined {
     return this._image;
   }
@@ -2793,6 +2799,10 @@ export class Sheet {
       this.annotations.push(new Annotation(annotation));
     }
 
+    for (const format of data.conditional_formats || []) {
+      this.conditional_formats.push(format);
+    }
+
     if (data.hidden) {
       this.visible = false;
     }
@@ -3095,6 +3105,10 @@ export class Sheet {
     
   }
 
+  public FlushConditionalFormats() {
+    this.flush_conditional_formats = true;
+  }
+
   /**
    * this version combines flushing the cache with building it, using
    * the application flag in the format objects. 
@@ -3119,7 +3133,10 @@ export class Sheet {
     // a lot of unecessary looping -- we could start with one big
     // global check
 
-    let updated = false;
+    // ...we need to account for the case where a format is removed,
+    // in that case we will need to update. flag?
+
+    let updated = this.flush_conditional_formats; // maybe required
 
     for (const format of this.conditional_formats) {
       if (format.internal?.vertex?.updated) {
@@ -3142,6 +3159,8 @@ export class Sheet {
 
       return;
     }
+
+    this.flush_conditional_formats = false; // unset
 
     const temp: CellStyle[][][] = [];
     const checklist: IArea[] = [...this.conditional_format_checklist];

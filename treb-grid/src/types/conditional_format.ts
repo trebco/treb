@@ -50,14 +50,32 @@ export interface ConditionalFormatGradientOptions {
 
 export const StandardGradientsList = {
   'red-green': {
+    color_space: 'RGB',
     stops: [
       { value: 0, color: { theme: 5, tint: .5 }}, 
       { value: 1, color: { theme: 9, tint: .5 }}, 
     ] as GradientStop[],
   },
+  'red-yellow-green': {
+    color_space: 'RGB',
+    stops: [
+      { value: 0, color: { theme: 5, tint: .5 }}, 
+      { value: 0.5, color: { theme: 7, tint: .5 }}, 
+      { value: 1, color: { theme: 9, tint: .5 }}, 
+    ] as GradientStop[],
+  },
   'green-red': {
+    color_space: 'RGB',
     stops: [
       { value: 0, color: { theme: 9, tint: .5 }}, 
+      { value: 1, color: { theme: 5, tint: .5 }}, 
+    ] as GradientStop[],
+  },
+  'green-yellow-red': {
+    color_space: 'RGB',
+    stops: [
+      { value: 0, color: { theme: 9, tint: .5 }}, 
+      { value: 0.5, color: { theme: 7, tint: .5 }}, 
       { value: 1, color: { theme: 5, tint: .5 }}, 
     ] as GradientStop[],
   },

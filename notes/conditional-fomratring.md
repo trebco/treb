@@ -5,7 +5,8 @@ conditional formatting TODO list
  - run through the command queue
 
  - dragging selection knob should expand conditional formats
-   (if you have the whole thing selected)
+   (if you have the whole thing selected). at the moment it
+   seems to be hard-copying the format, which is bad.
 
 ---
 
