@@ -338,7 +338,7 @@ export class Importer {
 
     const area = this.AddressToArea(address);
 
-    const operators = {
+    const operators: Record<string, string> = {
       greaterThan: '>',
       greaterThanOrEquals: '>=',
       lessThan: '<',
@@ -359,8 +359,7 @@ export class Importer {
             }
           }
 
-          const rule_operator = rule.a$.operator;
-          const operator = (typeof rule_operator === 'string') ? rule_operator : '';
+          const operator = operators[rule.a$.operator || ''];
 
           if (!operator) {
             console.info('unhandled cellIs operator:', rule.a$.operator);
