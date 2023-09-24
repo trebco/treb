@@ -21,7 +21,7 @@
 
 import type { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
+import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError, NameError } from '../function-error';
 import type { UnionValue, 
          RenderFunctionResult, RenderFunctionOptions, Complex } from 'treb-base-types';
 import { Box, ValueType, GetValueType, ComplexOrReal, IsComplex } from 'treb-base-types';
@@ -456,7 +456,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Not: {
-      fn: (...args: unknown[]): UnionValue => {
+      fn: Utils.ApplyAsArray((...args: unknown[]): UnionValue => {
         if (args.length === 0) {
           return ArgumentError();
         }
@@ -464,7 +464,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           return Box(!args[0]);
         }
         return Box(true);
-      }
+      })
     },
 
     If: {
@@ -1128,7 +1128,87 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
-    'Gradient': {
+    UniqueValues: {
+      arguments: [
+        { name: 'range', boxed: true },
+      ],
+      visibility: 'internal',
+      fn: (area: UnionValue): UnionValue => {
+
+        if (area.type === ValueType.array) {
+
+          const cols = area.value.length;
+          const rows = area.value[0]?.length;
+
+          // how is uniqueness defined in this context? (...)
+
+          const Normalize = (cell?: UnionValue): string|number|boolean => {
+
+            if (!cell) {
+              return '';
+            }
+            else switch (cell.type) {
+            case ValueType.string:
+            case ValueType.number:
+            case ValueType.boolean:
+              return cell.value;
+
+            case ValueType.undefined:
+              return '';
+
+            default:
+              console.info("check", cell, cell.value)
+              return cell.value?.toString() || '';
+            }
+
+          };
+
+          const set: Set<number|string|boolean> = new Set();
+          const duplicates: Set<number|string|boolean> = new Set();
+
+          for (const column of area.value) {
+            for (const cell of column) {
+              const normalized = Normalize(cell);
+              if (set.has(normalized)) {
+                duplicates.add(normalized);
+              }
+              else {
+                set.add(normalized);
+              }
+            }
+          }
+
+          const result: UnionValue[][] = [];
+          for (const column of area.value) {
+            const column_result: UnionValue[] = [];
+            for (const cell of column) {
+              const value = Normalize(cell);
+              column_result.push({
+                type: ValueType.boolean,
+                value: !duplicates.has(value),
+              });
+            }
+            result.push(column_result);
+          }
+
+          return {
+            type: ValueType.array,
+            value: result,
+          };
+
+        }
+
+        // if it's not an array, by definition it's unique
+
+        return {
+          type: ValueType.boolean,
+          value: true,
+        }
+
+      },
+    },
+
+    Gradient: {
       arguments: [
         { name: 'range', boxed: true },
         { name: 'min', },
