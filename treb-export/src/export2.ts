@@ -642,6 +642,9 @@ export class Exporter {
     // is this backwards, vis a vis our rendering? I think it might be...
     // YES: should be row pattern -> row -> column -> cell [corrected]
 
+    // FIXME: can't we just ask the sheet? (A: no, because we don't have 
+    // an actual sheet, although we could?)
+
     // if (sheet.row_style && sheet.row_style[row]) {
     //  list.push(sheet.row_style[row]);
     // }
@@ -1270,6 +1273,7 @@ export class Exporter {
           },
           dataValidations: {},
           hyperlinks: {},
+          conditionalFormatting: {},
           pageMargins: {
             a$: {
               left: 0.7,
@@ -2157,7 +2161,13 @@ export class Exporter {
         if (conditionalFormatting.length) {
           dom.worksheet.conditionalFormatting = (conditionalFormatting.length > 1) ? conditionalFormatting : conditionalFormatting[0];
         }
-        
+        else {
+          delete dom.worksheet.conditionalFormatting;
+        }
+
+      }
+      else {
+        delete dom.worksheet.conditionalFormatting;
       }
 
       // --- merges ------------------------------------------------------------
@@ -2333,9 +2343,9 @@ export class Exporter {
 
       // --- move page margins -------------------------------------------------
 
-      const margins = dom.worksheet.pageMargins;
-      delete dom.worksheet.pageMargins;
-      dom.worksheet.pageMargins = margins;
+      // const margins = dom.worksheet.pageMargins;
+      // delete dom.worksheet.pageMargins;
+      // dom.worksheet.pageMargins = margins;
 
       // --- end? --------------------------------------------------------------
 

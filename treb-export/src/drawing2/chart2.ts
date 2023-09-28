@@ -169,7 +169,11 @@ export class Chart {
         }
       }
 
-      series['c:spPr']['a:ln']['a:solidFill']['a:schemeClr'].a$['val'] = `accent${i+1}`;
+      // "accent7" will break 
+
+      if (i < 6) {
+        series['c:spPr']['a:ln']['a:solidFill']['a:schemeClr'].a$['val'] = `accent${i+1}`;
+      }
 
       series['c:yVal']['c:numRef']['c:f'] = this.options.data[i]?.label;
 
@@ -255,7 +259,12 @@ export class Chart {
 
         series['c:idx'] = { a$: { val: i.toString() }};
         series['c:order'] = { a$: { val: i.toString() }};
-        series['c:spPr']['a:solidFill']['a:schemeClr'].a$['val'] = `accent${i+1}`;
+
+        // "accent7" will break 
+
+        if (i < 6) {
+          series['c:spPr']['a:solidFill']['a:schemeClr'].a$['val'] = `accent${i+1}`;
+        }
 
         if (!i && this.options.labels) {
           series['c:cat'] = {

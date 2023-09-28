@@ -424,17 +424,18 @@ export class StyleCache {
       fill.pattern_type = 'solid';
       if (composite.fill.text) {
         fill.fg_color = { argb: composite.fill.text };  
+        options.fill = fill;
       }
       else if (typeof composite.fill.theme === 'number') {
         fill.fg_color = { theme: composite.fill.theme };
         if (composite.fill.tint) {
           fill.fg_color.tint = composite.fill.tint;
         }
+        options.fill = fill;
       }
       else {
-        fill.fg_color = { theme: 1 };
+        // fill.fg_color = { theme: 1 };
       }
-      options.fill = fill;
     }
 
     if (composite.wrap) {
