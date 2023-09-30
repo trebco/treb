@@ -2206,19 +2206,29 @@ export class EmbeddedSpreadsheet {
    * @param formula - annotation formula. For charts, the chart formula.
    * @param type - annotation type. Defaults to `treb-chart`.
    * @param rect - coordinates, or a range reference for layout.
-   * 
-   * @param argument_separator - the argument separator to use when evaluating
-   * the function. defaults to current locale.
+   * @param options - evaluate options. because this function used to take 
+   *  the argument separator, we allow that to be passed directly, but this
+   *  is deprecated. new code should use the options object.
    */
-  public InsertAnnotation(formula: string, type: AnnotationType = 'treb-chart', rect?: IRectangle|RangeReference, argument_separator?: ','|';'): void {
+  public InsertAnnotation(formula: string, type: AnnotationType = 'treb-chart', rect?: IRectangle|RangeReference, options?: EvaluateOptions|','|';'): void {
 
     let target: IRectangle | Partial<Area> | undefined;
+    let argument_separator: ','|';'|undefined = undefined;
+    let r1c1 = false;
+
+    if (typeof options === 'object') {
+      argument_separator = options.argument_separator;
+      r1c1 = !!options.r1c1;
+    }
+    else if (options === ',' || options === ';') {
+      argument_separator = options;
+    }
 
     if (rect) {
       target = Rectangle.IsRectangle(rect) ? rect : this.model.ResolveArea(rect, this.grid.active_sheet);
     }
 
-    if (argument_separator && argument_separator !== this.parser.argument_separator) {
+    if (argument_separator && argument_separator !== this.parser.argument_separator || r1c1) {
       const current = {
         argument_separator: this.parser.argument_separator, 
         decimal_mark: this.parser.decimal_mark,
@@ -2233,11 +2243,17 @@ export class EmbeddedSpreadsheet {
         this.parser.decimal_mark = DecimalMarkType.Comma;
       }
 
+      const r1c1_state = this.parser.flags.r1c1;
+      if (r1c1) {
+        this.parser.flags.r1c1 = r1c1;
+      }
+
       const result = this.parser.Parse(formula);
       
       // reset
       this.parser.argument_separator = current.argument_separator;
       this.parser.decimal_mark = current.decimal_mark;
+      this.parser.flags.r1c1 = r1c1_state;
 
       if (result.expression) {
         formula = '=' + this.parser.Render(result.expression, { missing: '' });

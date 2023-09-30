@@ -1,4 +1,4 @@
-/*! API v27.9. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v27.10. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -385,11 +385,11 @@ export declare class EmbeddedSpreadsheet {
      * @param formula - annotation formula. For charts, the chart formula.
      * @param type - annotation type. Defaults to `treb-chart`.
      * @param rect - coordinates, or a range reference for layout.
-     *
-     * @param argument_separator - the argument separator to use when evaluating
-     * the function. defaults to current locale.
+     * @param options - evaluate options. because this function used to take
+     *  the argument separator, we allow that to be passed directly, but this
+     *  is deprecated. new code should use the options object.
      */
-    InsertAnnotation(formula: string, type?: AnnotationType, rect?: IRectangle | RangeReference, argument_separator?: ',' | ';'): void;
+    InsertAnnotation(formula: string, type?: AnnotationType, rect?: IRectangle | RangeReference, options?: EvaluateOptions | ',' | ';'): void;
 
     /**
      * Insert an image. This method will open a file chooser and (if an image

@@ -262,6 +262,9 @@ export class Grid extends GridBase {
   /** new key capture overlay/ICE */
   private overlay_editor?: OverlayEditor;
 
+  /** moving autocomplete to a class field */
+  private autocomplete?: Autocomplete;
+
   /** formula bar editor (optional) */
   private formula_bar?: FormulaBar;
 
@@ -1275,13 +1278,13 @@ export class Grid extends GridBase {
     const higher_level_container = view_node.querySelector('.treb-spreadsheet-body') as HTMLElement;
     const container = higher_level_container.querySelector('div') as HTMLElement;
 
-    let autocomplete: Autocomplete | undefined;
+    // let autocomplete: Autocomplete | undefined;
 
     if (this.options.formula_bar) {
-      if (!autocomplete) {
-        autocomplete = new Autocomplete({ theme: this.theme, container });
+      if (!this.autocomplete) {
+        this.autocomplete = new Autocomplete({ theme: this.theme, container });
       }
-      this.InitFormulaBar(view_node, autocomplete);
+      this.InitFormulaBar(view_node, this.autocomplete);
     }
 
     if (this.options.tab_bar) {
@@ -1408,10 +1411,10 @@ export class Grid extends GridBase {
 
     // Sheet.sheet_events.Subscribe(this.HandleSheetEvent.bind(this));
 
-    if (!autocomplete) {
-      autocomplete = new Autocomplete({ theme: this.theme, container });
+    if (!this.autocomplete) {
+      this.autocomplete = new Autocomplete({ theme: this.theme, container });
     }
-    this.InitOverlayEditor(autocomplete);
+    this.InitOverlayEditor(this.autocomplete);
 
     this.AttachListeners();
 
@@ -3763,6 +3766,17 @@ export class Grid extends GridBase {
 
     const selecting_argument = this.SelectingArgument();
     
+    /*
+    let blocking_tooltip = false;
+    if (selecting_argument) {
+      if (this.autocomplete?.tooltip_visible) {
+        this.autocomplete.SetBlock();
+        this.autocomplete.Hide();
+        blocking_tooltip = true;
+      }
+    }
+    */
+
     if (!selecting_argument && this.additional_selections.length) {
       this.ClearAdditionalSelections();
     }
@@ -4051,6 +4065,12 @@ export class Grid extends GridBase {
     }, () => {
       // console.info('end');
       this.UpdateAddressLabel();
+
+      /*
+      if (blocking_tooltip) {
+        this.autocomplete?.ResetBlock();
+      }
+      */
 
       if (selecting_argument) {
         if (this.overlay_editor?.editing) {

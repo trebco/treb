@@ -912,6 +912,8 @@ export class TileRenderer {
               line_width = test;
               words.shift();
 
+              max_width = Math.max(max_width, line_width);
+
             }
 
             // trim the last word, then insert a row (we're relying on the 
@@ -919,6 +921,8 @@ export class TileRenderer {
 
             last.text = last.text.trim();
             last.width = last.trimmed;
+
+            max_width = Math.max(max_width, last.width);
 
             strings.push(line2.map((metric) => {
               return {
@@ -928,11 +932,11 @@ export class TileRenderer {
                 text: metric.text, 
               };
             }));
-            
+
           }
 
         }
-
+        
       }
       else {
 

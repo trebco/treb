@@ -173,6 +173,10 @@ export class Autocomplete {
     this.active_element = undefined;
   }
 
+  public SetBlock(): void {
+    this.block = true;
+  }
+
   public ResetBlock(): void {
     this.block = false;
   }
