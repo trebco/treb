@@ -2452,6 +2452,7 @@ export class GridBase {
         });
         if (transformed) {
 
+          /*
           if (!this.flags.warned_r1c1) {
 
             // 1-time warning
@@ -2459,6 +2460,7 @@ export class GridBase {
             this.flags.warned_r1c1 = true;
             console.warn('NOTE: R1C1 support is experimental. the semantics may change in the future.');
           }
+          */
 
           value = '=' + this.parser.Render(result.expression, { missing: '' });
         }
