@@ -58,20 +58,4 @@ export class DOMUtilities {
     return element;
   }
 
-  /* * generic element constructor. shame we need the tag AND the type. * /
-  public static Create1<E extends HTMLElement>(tag = '', classes = '', parent?: HTMLElement, scope?: string, attrs?: Record<string, string>){
-    const element = document.createElement(tag) as E;
-    if (classes) element.setAttribute('class', classes);
-    if (scope) element.setAttribute(scope, '');
-    if (attrs) {
-      const keys = Object.keys(attrs);
-      for (const key of keys) {
-        element.setAttribute(key, attrs[key]);
-      }
-    }
-    if (parent) parent.appendChild(element);
-    return element;
-  }
-  */
-
 }

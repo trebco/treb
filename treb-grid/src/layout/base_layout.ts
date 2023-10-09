@@ -203,10 +203,8 @@ export abstract class BaseLayout {
     // contexts; the mask will be under the next sheet. so either
     // global in body, or instance local.
 
-    this.mask = // document.querySelector('.treb-mouse-mask'); // ||
-      DOMUtilities.CreateDiv('treb-mouse-mask');
-    this.tooltip = // document.querySelector('.treb-tooltip'); // ||
-      DOMUtilities.CreateDiv('treb-tooltip');
+    this.mask = DOMUtilities.CreateDiv('treb-mouse-mask');
+    this.tooltip = DOMUtilities.CreateDiv('treb-tooltip');
 
     // this.error_highlight = DOMUtilities.CreateDiv('treb-error-highlight');
 

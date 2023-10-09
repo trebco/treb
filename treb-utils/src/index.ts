@@ -28,4 +28,3 @@ export * from './measurement';
 export * from './serialize_html';
 export * from './validate_uri';
 export * from './scale';
-export * from './template';
