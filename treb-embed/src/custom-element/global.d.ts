@@ -5,7 +5,9 @@
 declare global {
   interface HTMLElementTagNameMap {
     'treb-spreadsheet': HTMLElement & {
-      sheet: EmbeddedSpreadsheet|undefined;
+      instance: {
+        sheet: EmbeddedSpreadsheet | undefined;
+      } | undefined;
     };
   }
 }
