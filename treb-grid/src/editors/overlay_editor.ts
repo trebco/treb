@@ -328,6 +328,11 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
       this.edit_node.spellcheck = false;
     }
 
+    // move the rect before monkeying with the selection, otherwise we
+    // get jumpy scrolling behavior in scrolled contexts.
+
+    rect.ApplyStyle(this.container_node);
+
     this.autocomplete?.ResetBlock();
     this.selection = gridselection;
 
@@ -343,7 +348,6 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
 
     }
 
-    rect.ApplyStyle(this.container_node);
     this.editing = true;
 
     Promise.resolve().then(() => {
