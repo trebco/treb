@@ -1113,6 +1113,35 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     const Consume = (element: Node, range: Range) => {
 
+      // it only seems to happen in firefox, but sometimes we'll get 
+      // a non-text node that is the start container and endcontainer.
+      //
+      // in that case we need to interpret the endOffset as nodes, not 
+      // characters. that's what's causing the firefox issues. I guess
+      // that applies to startoffset as well? 
+
+      // not sure if this is bugged or what but when we hit this case,
+      // it's always "all the text in there" regardless of the offsets.
+      // not sure what the offsets are even referring to, since we get
+      // offsets > the number of child nodes. is this a bug in firefox?
+
+      if (element === range.startContainer && element === range.endContainer && !(element instanceof Text)) {
+
+        /*
+        if (range.startOffset !== 0 || range.endOffset !== 0) {
+          console.info("warn offset", range.startOffset, range.endOffset);
+          console.info(element);
+        }
+        */
+
+        complete[0] = complete[1] = true;
+
+        result[0] += element.textContent;
+        result[1] += element.textContent;
+
+        return;
+      }
+
       if (element === range.startContainer) {
         result[0] += (element.textContent || '').substring(0, range.startOffset);
         complete[0] = true;
