@@ -90,6 +90,15 @@
       white-space: nowrap;
       position: relative;
       // -webkit-user-modify: read-write;
+
+      // this fixes the firefox issue (firefox removing spaces), but 
+      // I'm not sure if it will cause other problems. for the overlay
+      // editor we're trapping CR, so it shouldn't be a typing problem --
+      // it might be an issue on paste though. also need to check safari
+      // with pre here.
+
+      white-space: pre; 
+
     }
 
     /** fix for firefox layout bug */

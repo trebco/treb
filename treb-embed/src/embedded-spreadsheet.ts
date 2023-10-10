@@ -565,12 +565,33 @@ export class EmbeddedSpreadsheet {
     // this one should not be done for a split view, but we should still
     // do it if the toll flag is set, and storage key is set. 
 
+    // FIXME: shouldn't this gate on dirty? (...)
+    // ALSO: check if we can use a different event. see
+    //
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event#usage_notes
+    //
+    // and, including the alternatives:
+    //
+    // https://developer.mozilla.org/en-US/docs/Web/API/Window/unload_event
+    //
+
     if (this.options.local_storage && !options.model ) {
+
+      window.addEventListener('visibilitychange', event => {
+        if (document.visibilityState === 'hidden') {
+          if (this.options.local_storage && this.dirty) {
+            this.SaveLocalStorage(this.options.local_storage);
+          }
+        }
+      });
+
+      /*
       window.addEventListener('beforeunload', () => {
-        if (this.options.local_storage) {
+        if (this.options.local_storage && this.dirty) {
           this.SaveLocalStorage(this.options.local_storage);
         }
       });
+      */
     }
 
     let container: HTMLElement | undefined;
@@ -5077,9 +5098,27 @@ export class EmbeddedSpreadsheet {
 
       // console.info(json);
 
+      // why are we saving this here? and should we not route
+      // through the method? I guess the question should be, is
+      // the visibilitychange handler not sufficient to save the
+      // file? (...)
+
+      // I would prefer to just save once, on visibilitychange -> hidden.
+      // the problem is that this method gets called on "data" events,
+      // which should not trigger saving. we could check the flag?
+
+      // if this does come back, (1) use a method -- maybe split the 
+      // SaveLocalStorage method in two, and call the inner half (because
+      // we've already serialized); and (2) gate on dirty.
+
+      // but for the time being we're removing it.
+
+      /*
       if (this.options.local_storage) {
         localStorage.setItem(this.options.local_storage, json);
       }
+      */
+
       if (this.options.undo) {
         this.PushUndo(json, undo_selection, false);
       }
