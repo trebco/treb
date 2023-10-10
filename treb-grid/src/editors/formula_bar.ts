@@ -25,7 +25,7 @@ import { Parser } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
 import type { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
-import { DOMUtilities } from '../util/dom_utilities';
+import { DOMUtilities } from 'treb-base-types';
 
 // --- from formula_bar ---
 

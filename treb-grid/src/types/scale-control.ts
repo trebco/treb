@@ -19,7 +19,7 @@
  * 
  */
 
-import { DOMUtilities as DOM } from '../util/dom_utilities';
+import { DOMUtilities as DOM } from 'treb-base-types';
 import { NumberFormat, NumberFormatCache, ValueParser } from 'treb-format';
 import { ValueType } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
@@ -54,7 +54,7 @@ export class ScaleControl extends EventSource<ScaleEvent> {
     // const div = DOM.CreateDiv('treb-scale-control-2', container);
 
     this.input = DOM.Create('input', 'treb-scale-input', /* div */ container);
-    const popup = DOM.CreateDiv('treb-slider-container', /* div */ container);
+    const popup = DOM.Div('treb-slider-container', /* div */ container);
 
     /*
     this.input.addEventListener('keyup', (event) => {

@@ -21,10 +21,9 @@
 
 import { BaseLayout } from './base_layout';
 import type { Tile } from '../types/tile';
-import { DOMUtilities } from '../util/dom_utilities';
+import { DOMUtilities } from 'treb-base-types';
 import type { DataModel, ViewModel } from '../types/data_model';
 
-const SVGNS = 'http://www.w3.org/2000/svg';
 
 /**
  * we used to have two layouts, this one and a legacy layout for IE11.
@@ -42,47 +41,37 @@ export class GridLayout extends BaseLayout {
     // mask needs to get attached to a container, when it's
     // available
 
-    this.column_header = DOMUtilities.CreateDiv('treb-top-header');
-    this.row_header = DOMUtilities.CreateDiv('treb-left-header');
+    this.column_header = DOMUtilities.Div('treb-top-header');
+    this.row_header = DOMUtilities.Div('treb-left-header');
     
-    this.corner = DOMUtilities.CreateDiv('treb-corner');
-    this.corner_canvas = document.createElement('canvas');
+    this.corner = DOMUtilities.Div('treb-corner');
+    this.corner_canvas = DOMUtilities.Create('canvas');
     this.corner.appendChild(this.corner_canvas);
 
-    this.contents = DOMUtilities.CreateDiv('treb-contents');
+    this.contents = DOMUtilities.Div('treb-contents');
     this.buffer_canvas = DOMUtilities.Create('canvas', 'treb-buffer-canvas', this.contents);
 
     // selection node attached to contents
-    this.grid_selection = document.createElementNS(SVGNS, 'svg');
-    this.grid_selection.classList.add('treb-grid-selection');
-    this.contents.appendChild(this.grid_selection);
+    this.grid_selection = DOMUtilities.SVG('svg', 'treb-grid-selection', this.contents);
 
     // selection node for frozen rows
-    this.row_header_selection = document.createElementNS(SVGNS, 'svg');
-    this.row_header_selection.classList.add('frozen-selection');
-    this.row_header_selection.classList.add('frozen-selection-rows');
-    this.column_header.appendChild(this.row_header_selection);
-    this.row_header_annotations = DOMUtilities.CreateDiv('frozen-annotation-container frozen-annotation-container-rows', this.column_header);
+    this.row_header_selection = DOMUtilities.SVG('svg', ['frozen-selection', 'frozen-selection-rows'], this.column_header);
+    this.row_header_annotations = DOMUtilities.Div('frozen-annotation-container frozen-annotation-container-rows', this.column_header);
 
     // ...columns
-    this.column_header_selection = document.createElementNS(SVGNS, 'svg');
-    this.column_header_selection.classList.add('frozen-selection');
-    this.column_header_selection.classList.add('frozen-selection-columns');
-    this.row_header.appendChild(this.column_header_selection);
-    this.column_header_annotations = DOMUtilities.CreateDiv('frozen-annotation-container frozen-annotation-container-columns', this.row_header);
+    this.column_header_selection = DOMUtilities.SVG('svg', ['frozen-selection', 'frozen-selection-columns'], this.row_header);
+    this.column_header_annotations = DOMUtilities.Div('frozen-annotation-container frozen-annotation-container-columns', this.row_header);
 
     // ...corner
-    this.corner_selection = document.createElementNS(SVGNS, 'svg');
-    this.corner_selection.classList.add('frozen-selection');
-    this.corner.appendChild(this.corner_selection);
-    this.corner_annotations = DOMUtilities.CreateDiv('frozen-annotation-container frozen-annotation-container-corner', this.corner);
+    this.corner_selection = DOMUtilities.SVG('svg', 'frozen-selection', this.corner);
+    this.corner_annotations = DOMUtilities.Div('frozen-annotation-container frozen-annotation-container-corner', this.corner);
 
 
-    this.annotation_container = DOMUtilities.CreateDiv('treb-annotation-container');
+    this.annotation_container = DOMUtilities.Div('treb-annotation-container');
 
-    this.grid_cover = DOMUtilities.CreateDiv('tile-cover grid-cover');
-    this.column_header_cover = DOMUtilities.CreateDiv('tile-cover column-header-cover');
-    this.row_header_cover = DOMUtilities.CreateDiv('tile-cover row-header-cover');
+    this.grid_cover = DOMUtilities.Div('tile-cover grid-cover');
+    this.column_header_cover = DOMUtilities.Div('tile-cover column-header-cover');
+    this.row_header_cover = DOMUtilities.Div('tile-cover row-header-cover');
 
   }
 

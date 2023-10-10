@@ -20,7 +20,7 @@
  */
 
 import type { Theme, ICellAddress } from 'treb-base-types';
-import { Rectangle } from 'treb-base-types';
+import { DOMUtilities, Rectangle } from 'treb-base-types';
 import type { BaseLayout } from '../layout/base_layout';
 import type { SelectionOffset } from './svg_selection_block';
 import { SVGSelectionBlock } from './svg_selection_block';
@@ -302,8 +302,7 @@ export class SelectionRenderer {
 
         let group: SVGElement = node.querySelector('.alternate-selections') as SVGElement;
         if (!group) {
-          group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          group.setAttribute('class', 'alternate-selections');
+          group = DOMUtilities.SVG('g', 'alternate-selections');
           node.appendChild(group);
         }
         group?.appendChild(selection_block.g);

@@ -34,7 +34,7 @@
  * 
  */
 
-import { Area, type IArea, type ICellAddress, IsCellAddress, Localization, type Theme, Rectangle, type Cell } from 'treb-base-types';
+import { Area, type IArea, type ICellAddress, IsCellAddress, Localization, type Theme, Rectangle, type Cell, DOMUtilities } from 'treb-base-types';
 import type { ExpressionUnit, ParseResult, UnitAddress, UnitRange } from 'treb-parser';
 import { Parser, QuotedSheetNameRegex } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
@@ -291,7 +291,6 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
     super();
 
     this.parser = model.parser;
-    // this.measurement_node = document.createElement('div');
 
   }
 
@@ -866,13 +865,13 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
           if (type !== 'text') {
 
-            const span = document.createElement('span');
+            const span = DOMUtilities.Create('span', type);
 
             if (reference) {
               span.dataset.reference = reference;
             }
 
-            span.className = type;
+            // span.className = type;
             span.appendChild(text_node);
             fragment.appendChild(span);
 

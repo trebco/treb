@@ -19,9 +19,7 @@
  * 
  */
 
-import type { Theme } from 'treb-base-types';
-
-const SVGNS = 'http://www.w3.org/2000/svg';
+import { DOMUtilities, type Theme } from 'treb-base-types';
 
 export enum Orientation {
   Horizontal,
@@ -39,14 +37,9 @@ export class HeaderOverlay {
       private container: SVGElement,
       private orientation: Orientation) {
 
-    this.g = document.createElementNS(SVGNS, 'g');
-    this.g.setAttribute('class', 'treb-header-overlay');
-
-    this.overlay = document.createElementNS(SVGNS, 'rect');
-    this.overlay.setAttribute('class', 'treb-overlay');
-
-    this.highlight = document.createElementNS(SVGNS, 'rect');
-    this.highlight.setAttribute('class', 'treb-highlight');
+    this.g = DOMUtilities.SVG('g', 'treb-header-overlay');
+    this.overlay = DOMUtilities.SVG('rect', 'treb-overlay');
+    this.highlight = DOMUtilities.SVG('rect', 'treb-highlight');
 
     this.g.style.display = 'none';
     this.g.appendChild(this.highlight);

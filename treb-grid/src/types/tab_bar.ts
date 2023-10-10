@@ -26,6 +26,7 @@ import type { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import type { GridOptions } from './grid_options';
 import { type ScaleEvent, ScaleControl } from './scale-control';
+import { DOMUtilities } from 'treb-base-types';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';
@@ -112,15 +113,11 @@ export class TabBar extends EventSource<TabEvent> {
       this.stats_panel.innerText = ''; // clear
       for (const entry of value) {
 
-        const label = document.createElement('span');
-        label.classList.add('treb-stats-label');
+        const label = DOMUtilities.Create('span', 'treb-stats-label', this.stats_panel);
         label.textContent = entry.label;
-        this.stats_panel.appendChild(label);
 
-        const figure = document.createElement('span');
-        figure.classList.add('treb-stats-value');
+        const figure = DOMUtilities.Create('span', 'treb-stats-value', this.stats_panel);
         figure.textContent = entry.value;
-        this.stats_panel.appendChild(figure);
       }
     }
   }
@@ -451,8 +448,7 @@ export class TabBar extends EventSource<TabEvent> {
       if (!sheet.visible) { continue; }
 
       const index = tabs.length;
-      // const tab = document.createElement('div');
-      const tab = document.createElement('li');
+      const tab = DOMUtilities.Create('li');
       tab.setAttribute('tabindex', '0');
 
       // tab.classList.add('tab');

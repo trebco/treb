@@ -19,7 +19,7 @@
  * 
  */
 
-import { DOMUtilities } from '../util/dom_utilities';
+import { DOMUtilities } from 'treb-base-types';
 import type { DataModel, ViewModel } from '../types/data_model';
 
 import type { Tile } from '../types/tile';
@@ -45,8 +45,6 @@ import { Area as TileRange } from 'treb-base-types';
 import type { Annotation } from '../types/annotation';
 
 export { Area as TileRange } from 'treb-base-types';
-
-const SVGNS = 'http://www.w3.org/2000/svg';
 
 export interface TooltipOptions {
   up?: true;
@@ -203,17 +201,16 @@ export abstract class BaseLayout {
     // contexts; the mask will be under the next sheet. so either
     // global in body, or instance local.
 
-    this.mask = DOMUtilities.CreateDiv('treb-mouse-mask');
-    this.tooltip = DOMUtilities.CreateDiv('treb-tooltip');
+    this.mask = DOMUtilities.Div('treb-mouse-mask');
+    this.tooltip = DOMUtilities.Div('treb-tooltip');
 
     // this.error_highlight = DOMUtilities.CreateDiv('treb-error-highlight');
 
-    this.dropdown_caret = document.createElementNS(SVGNS, 'svg') as SVGSVGElement;
-    this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
+    this.dropdown_caret = DOMUtilities.SVG('svg', 'treb-dropdown-caret');
     this.dropdown_caret.setAttribute('viewBox', '0 0 24 24');
     this.dropdown_caret.tabIndex = -1;
 
-    const caret = document.createElementNS(SVGNS, 'path');
+    const caret =DOMUtilities.SVG('path');
     caret.setAttribute('d', 'M5,7 L12,17 L19,7');
     this.dropdown_caret.appendChild(caret);
 
@@ -250,7 +247,7 @@ export abstract class BaseLayout {
     });
     */
 
-    this.dropdown_list = DOMUtilities.CreateDiv('treb-dropdown-list');
+    this.dropdown_list = DOMUtilities.Div('treb-dropdown-list');
     this.dropdown_list.setAttribute('tabindex', '-1'); // focusable
 
     // this.dropdown_caret.addEventListener('keydown', (event) => {
@@ -349,11 +346,11 @@ export abstract class BaseLayout {
       this.dropdown_selected = target as HTMLElement;
     });
 
-    this.mock_selection = DOMUtilities.CreateDiv('mock-selection-node');
+    this.mock_selection = DOMUtilities.Div('mock-selection-node');
     this.mock_selection.innerHTML = '&nbsp;';
 
-    this.note_node = DOMUtilities.CreateDiv('treb-note');
-    this.title_node = DOMUtilities.CreateDiv('treb-hover-title');
+    this.note_node = DOMUtilities.Div('treb-note');
+    this.title_node = DOMUtilities.Div('treb-hover-title');
 
     this.sort_button = DOMUtilities.Create(
       'button', 
@@ -1197,7 +1194,7 @@ export abstract class BaseLayout {
     parent: HTMLElement,
     mark_dirty = true): Tile {
 
-    const tile = document.createElement('canvas') as Tile;
+    const tile = DOMUtilities.Create('canvas') as Tile;
     tile.setAttribute('class', classes);
     tile.logical_size = size;
     tile.width = size.width * this.dpr;
@@ -1406,7 +1403,7 @@ export abstract class BaseLayout {
 
     this.dropdown_list.textContent = '';
     for (const value of list) {
-      const entry = DOMUtilities.CreateDiv(undefined, this.dropdown_list);
+      const entry = DOMUtilities.Div(undefined, this.dropdown_list);
       if (current === value) {
         this.dropdown_selected = entry;
         entry.classList.add('selected');

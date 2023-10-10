@@ -1,4 +1,4 @@
-/*! API v27.10. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v27.11. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -6,7 +6,9 @@
 declare global {
   interface HTMLElementTagNameMap {
     'treb-spreadsheet': HTMLElement & {
-      sheet: EmbeddedSpreadsheet|undefined;
+      instance: {
+        sheet: EmbeddedSpreadsheet | undefined;
+      } | undefined;
     };
   }
 }

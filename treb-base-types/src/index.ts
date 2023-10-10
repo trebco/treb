@@ -38,6 +38,7 @@ export * from './api_types';
 export * from './table';
 export * from './gradient';
 export * from './evaluate-options';
+export * from './dom-utilities';
 
 // import * as Style from './style';
 // export { Style };

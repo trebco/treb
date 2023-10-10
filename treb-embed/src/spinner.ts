@@ -19,16 +19,16 @@
  * 
  */
 
+import { DOMUtilities } from 'treb-base-types';
+
 export class Spinner {
 
   private node: HTMLDivElement;
   private visible = false;
 
   constructor(public container: HTMLElement) {
-    this.node = document.createElement('div');
-    this.node.classList.add('treb-spinner');
+    this.node = DOMUtilities.Div('treb-spinner', container);
     this.node.innerHTML = `<div><div></div><div></div><div></div><div></div></div>`;
-    container.appendChild(this.node);
   }
 
   public Show(): void {

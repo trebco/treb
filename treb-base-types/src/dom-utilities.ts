@@ -19,25 +19,50 @@
  * 
  */
 
+const SVGNS = 'http://www.w3.org/2000/svg';
+
 export class DOMUtilities {
 
   /** creates a div and assigns class name/names */
-  public static CreateDiv(classes = '', parent?: HTMLElement, scope?: string): HTMLDivElement {
+  public static Div(classes?: string|string[], parent?: HTMLElement, scope?: string): HTMLDivElement {
     return this.Create('div', classes, parent, scope);
+  }
+
+  public static ClassNames(element: HTMLElement|SVGElement, classes: string|string[]) {
+    element.classList.add(...(Array.isArray(classes) ? classes : [classes]).reduce((arr: string[], entry) => [...arr, ...entry.split(/\s+/g)], []));
+  }
+
+  public static SVG<K extends keyof SVGElementTagNameMap>(
+      tag: K, 
+      classes?: string|string[],
+      parent?: HTMLElement|SVGElement
+    ): SVGElementTagNameMap[K] {
+
+    const element = document.createElementNS(SVGNS, tag);
+
+    if (classes) {
+      this.ClassNames(element, classes);
+    }
+
+    if (parent) {
+      parent.appendChild(element);
+    }
+
+    return element;
   }
 
   /** better typing */
   public static Create<K extends keyof HTMLElementTagNameMap>(
       tag: K, 
-      class_name = '', 
+      classes?: string|string[], 
       parent?: HTMLElement, 
       scope?: string, 
       attrs?: Record<string, string>): HTMLElementTagNameMap[K] {
  
     const element = document.createElement(tag);
 
-    if (class_name) {
-      element.className = class_name;
+    if (classes) {
+      this.ClassNames(element, classes);
     }
 
     if (scope) {

@@ -99,10 +99,7 @@ export class TileRenderer {
     protected view: ViewModel,
     protected options: GridOptions, ) {
 
-    // this.buffer_canvas = document.createElement('canvas');
-
     this.buffer_canvas = layout.buffer_canvas;
-
     this.buffer_canvas.width = this.buffer_canvas_size.width;
     this.buffer_canvas.height = this.buffer_canvas_size.height;
     

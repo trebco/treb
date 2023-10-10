@@ -65,7 +65,7 @@ import type {
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
-  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, ValueType, 
+  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, ValueType, DOMUtilities, 
 } from 'treb-base-types';
 
 import { EventSource, Yield, ValidateURI } from 'treb-utils';
@@ -3122,14 +3122,6 @@ export class EmbeddedSpreadsheet {
 
     if (text && filename) {
       const blob = new Blob([text as any], { type: 'text/plain;charset=utf-8' });
-      /*
-      // FileSaver.saveAs(blob, filename, { autoBom: false });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(a.href);
-      */
       this.SaveAs(blob, filename);
     }
 
@@ -4328,7 +4320,7 @@ export class EmbeddedSpreadsheet {
    */
   protected SaveAs(blob: Blob, filename: string) {
 
-    const a = document.createElement('a');
+    const a = DOMUtilities.Create('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
     a.click();
@@ -4453,7 +4445,7 @@ export class EmbeddedSpreadsheet {
             return;
           }
 
-          const a = document.createElement('a');
+          const a = DOMUtilities.Create('a');
           a.setAttribute('target', this.options.hyperlinks);
           a.setAttribute('href', data);
           a.setAttribute('noreferrer', 'true');
@@ -4594,7 +4586,7 @@ export class EmbeddedSpreadsheet {
   protected SelectFile2(accept: string, operation: FileChooserOperation) {
 
     if (!this.file_chooser) {
-      this.file_chooser = document.createElement('input');
+      this.file_chooser = DOMUtilities.Create('input');
       this.file_chooser.type = 'file';
 
       const file_chooser = this.file_chooser;      
@@ -4626,79 +4618,6 @@ export class EmbeddedSpreadsheet {
     this.file_chooser.click();
 
   }
-
-  /* *
-   * show file chooser and resolve with the selected file, or undefined
-   * /
-  protected SelectFile(accept?: string): Promise<File | undefined> {
-
-    return new Promise((resolve) => {
-
-      const file_chooser = document.createElement('input');
-      file_chooser.type = 'file';
-
-      if (accept) {
-        file_chooser.accept = accept;
-      }
-
-      // so the thing here is there is no way to trap a "cancel" event
-      // from the file chooser. if you are waiting on a promise, that will
-      // just get orphaned forever. 
-
-      // it's not the end of the world, really, to leave a few of these 
-      // dangling, but this should allow it to clean up.
-
-      // the concept is that since file chooser is modal, there will never
-      // be a focus event until the modal is closed. unfortunately the focus
-      // event comes _before_ any input or change event from the file input,
-      // so we have to wait.
-
-      // tested Cr, FF, IE11
-      // update: works in Safari, although oddly not if you call the API
-      // function from the console. not sure if that's a browserstack thing.
-
-      // eslint-disable-next-line prefer-const
-      let finalize: (file?: File) => void;
-      let timeout: NodeJS.Timeout|undefined;
-
-      // if you get a focus event, allow some reasonable time for the 
-      // corresponding change event. realistically this should be immediate,
-      // but as long as there's not a lot of logic waiting on a cancel, it 
-      // doesn't really matter.
-
-      const window_focus = () => {
-
-        // prevent this from accidentally being called more than once
-        window.removeEventListener('focus', window_focus);
-        timeout = setTimeout(finalize, 250);
-      }
-
-      const change_handler = () => {
-        if (timeout) {
-          clearTimeout(timeout);
-          timeout = undefined; // necessary?
-        }
-        finalize(file_chooser.files ? file_chooser.files[0] : undefined);
-      }
-
-      // our finalize method cleans up and resolves
-
-      finalize = (file?: File) => {
-        file_chooser.removeEventListener('change', change_handler);
-        window.removeEventListener('focus', window_focus);
-        resolve(file);
-      };
-
-      file_chooser.addEventListener('change', change_handler);
-      window.addEventListener('focus', window_focus);
-
-      file_chooser.click();
-
-
-    });
-
-  }
-  */
 
   /**
    * Insert an image. This method will open a file chooser and (if an image
@@ -4744,7 +4663,7 @@ export class EmbeddedSpreadsheet {
               }
             }
 
-            const img = document.createElement('img');
+            const img = DOMUtilities.Create('img');
             img.src = contents;
 
             // this is to let the browser figure out the image size.
@@ -5109,7 +5028,7 @@ export class EmbeddedSpreadsheet {
           const reference = ValidateURI(annotation.data.data.src);
           if (reference) {
  
-            const img = document.createElement('img');
+            const img = DOMUtilities.Create('img');
             img.src = reference;
 
             if (annotation.data.data.scale === 'fixed') {

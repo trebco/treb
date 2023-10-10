@@ -19,8 +19,11 @@ interface ElementOptions {
   classes: string|string[];
 }
 
-const Element = <T extends HTMLElement>(tag: string, parent?: HTMLElement|DocumentFragment, options: Partial<ElementOptions> = {}, attrs: Record<string, string> = {}): T => {
-  const element = document.createElement(tag) as T;
+/**
+ * FIXME: unify this with DOMUtils
+ */
+const Element = <K extends keyof HTMLElementTagNameMap>(tag: K, parent?: HTMLElement|DocumentFragment, options: Partial<ElementOptions> = {}, attrs: Record<string, string> = {}): HTMLElementTagNameMap[K] => {
+  const element = document.createElement(tag);
   if (options.classes) {
 
     // you can't use an array destructure in a ternary expression? TIL
@@ -105,20 +108,11 @@ export class SpreadsheetConstructor {
 
       const style_node = document.head.querySelector('style[treb-stylesheet]');
       if (!style_node) {
-        const style = document.createElement('style');
+        const style = Element('style');
         style.setAttribute('treb-stylesheet', '');
         style.textContent = css;
         document.head.prepend(style);
       }
-
-      /*
-      if (!SpreadsheetConstructor.stylesheets_attached) {
-        const style = document.createElement('style');
-        style.textContent = css;
-        document.head.prepend(style);
-        SpreadsheetConstructor.stylesheets_attached = true;
-      }
-      */
 
     }
 
@@ -509,9 +503,9 @@ export class SpreadsheetConstructor {
 
         const resize_parent = root.querySelector('.treb-main') as HTMLElement; // was document.body
 
-        resizer = Element<HTMLDivElement>('div', resize_parent, { classes: 'treb-resize-rect' });
+        resizer = Element('div', resize_parent, { classes: 'treb-resize-rect' });
 
-        mask = Element<HTMLDivElement>('div', resize_parent, { 
+        mask = Element('div', resize_parent, { 
           classes: 'treb-resize-mask', 
           style: 'cursor: nw-resize;',
         });
@@ -724,7 +718,7 @@ export class SpreadsheetConstructor {
               }
 
             }
-            Element<HTMLButtonElement>('button', fragment, { style, title, data: { command: 'set-color', color: JSON.stringify(entry.color) } });
+            Element('button', fragment, { style, title, data: { command: 'set-color', color: JSON.stringify(entry.color) } });
           }
         }
 
@@ -733,7 +727,7 @@ export class SpreadsheetConstructor {
       this.swatch_lists.theme?.replaceChildren(fragment);
 
       fragment = document.createDocumentFragment();
-      Element<HTMLButtonElement>('button', fragment, { 
+      Element('button', fragment, { 
         classes: 'treb-default-color',
         title: 'Default color', 
         data: { command: 'set-color', color: JSON.stringify({}) },
@@ -748,7 +742,7 @@ export class SpreadsheetConstructor {
 
       for (const text of [...colors, ...additional_colors]) {
         const style = `background: ${text.toLowerCase()};`;
-        Element<HTMLButtonElement>('button', fragment, { style, title: text, data: { command: 'set-color', color: JSON.stringify({text: text.toLowerCase()})}});
+        Element('button', fragment, { style, title: text, data: { command: 'set-color', color: JSON.stringify({text: text.toLowerCase()})}});
       }
 
       this.swatch_lists.other?.replaceChildren(fragment);
@@ -777,7 +771,7 @@ export class SpreadsheetConstructor {
     }
 
     const Button = (format: string) => {
-      return Element<HTMLButtonElement>('button', undefined, {
+      return Element('button', undefined, {
         text: format, data: { format, command: 'number-format' },
       });
     };
@@ -785,7 +779,7 @@ export class SpreadsheetConstructor {
     const fragment = document.createDocumentFragment();
     fragment.append(...number_formats.map(format => Button(format)));
 
-    fragment.append(Element<HTMLDivElement>('div', undefined, {}, {separator: ''}));
+    fragment.append(Element('div', undefined, {}, {separator: ''}));
     fragment.append(...date_formats.map(format => Button(format)));
 
     format_menu.textContent = '';

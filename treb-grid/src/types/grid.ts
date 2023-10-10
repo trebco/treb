@@ -111,7 +111,7 @@ import { CommandKey
 
 import type { DataModel, SerializedModel } from './data_model';
 
-import { DOMUtilities } from '../util/dom_utilities';
+import { DOMUtilities } from 'treb-base-types';
 import { GridBase } from './grid_base';
 import type { SetRangeOptions } from './set_range_options';
 import type { ClipboardCellData } from './clipboard_data';
@@ -571,13 +571,13 @@ export class Grid extends GridBase {
 
       // FIXME: why is this not in layout? it is layout.
 
-      view.node = document.createElement('div');
+      view.node = DOMUtilities.Div();
       view.node.dataset.scale = this.layout.scale.toString();
       view.node.style.fontSize = `${10 * this.layout.scale}pt`;
 
-      view.content_node = DOMUtilities.CreateDiv('annotation-content', view.node);
-      const move_target = DOMUtilities.CreateDiv('annotation-move-target', view.node);
-      const resize_target = DOMUtilities.CreateDiv('annotation-resize-target', view.node);
+      view.content_node = DOMUtilities.Div('annotation-content', view.node);
+      const move_target = DOMUtilities.Div('annotation-move-target', view.node);
+      const resize_target = DOMUtilities.Div('annotation-resize-target', view.node);
 
       if (view.node) {
         const node = view.node;
@@ -2698,35 +2698,6 @@ export class Grid extends GridBase {
 
             this.OverlayKeyDown(event.event);
 
-            /*
-            let cloned_event: KeyboardEvent;
-            if (UA.trident) {
-              cloned_event = document.createEvent('KeyboardEvent');
-              const modifiers = [];
-              if (event.event.ctrlKey) modifiers.push('Control');
-              if (event.event.altKey) modifiers.push('Alt');
-              if (event.event.shiftKey) modifiers.push('Shift');
-
-              // have to mask type for trident
-              (cloned_event as any).initKeyboardEvent(
-                event.event.type,
-                false,
-                false,
-                event.event.view,
-                event.event.key,
-                event.event.location,
-                modifiers.join(' '),
-                event.event.repeat,
-                Localization.locale);
-            }
-            else {
-              cloned_event = new KeyboardEvent(event.event.type, event.event);
-            }
-
-            if (cloned_event && this.container) {
-              this.container.dispatchEvent(cloned_event);
-            }
-            */
           }
           break;
 

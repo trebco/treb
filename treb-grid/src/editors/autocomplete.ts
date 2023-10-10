@@ -19,7 +19,7 @@
  * 
  */
 
-import { DOMUtilities } from '../util/dom_utilities';
+import { DOMUtilities } from 'treb-base-types';
 import type { Theme, Rectangle } from 'treb-base-types';
 import type { AutocompleteExecResult, DescriptorType } from './autocomplete_matcher';
 
@@ -76,7 +76,7 @@ export class Autocomplete {
 
     // this.scope = 'AC' + Math.round(Math.random() * Math.pow(10, 10)).toString(16);
 
-    this.completion_list = DOMUtilities.CreateDiv(
+    this.completion_list = DOMUtilities.Div(
       'treb-cell-editor-ac-list treb-autocomplete',
       options.container || document.body,
       ); // this.scope);
@@ -87,7 +87,7 @@ export class Autocomplete {
 
     this.completion_list.addEventListener('mousemove', (event) => this.ListMouseMove(event));
 
-    this.tooltip = DOMUtilities.CreateDiv('treb-cell-editor-ac-tooltip treb-autocomplete-tooltip',
+    this.tooltip = DOMUtilities.Div('treb-cell-editor-ac-tooltip treb-autocomplete-tooltip',
       options.container || document.body,
       ); // this.scope);
 

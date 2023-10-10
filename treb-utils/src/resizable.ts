@@ -19,6 +19,8 @@
  * 
  */
 
+import { DOMUtilities } from 'treb-base-types';
+
 /**
  * support for resizable node, drag handle, drag rect, mask
  * FIXME: make this composable (decorator?)
@@ -56,16 +58,14 @@ export class Resizable {
       layout_reference?: HTMLElement;
    }): void {
 
-    const resize_handle = document.createElement('div');
-    resize_handle.classList.add('treb-embed-resize-handle');
+    const resize_handle = DOMUtilities.Div('treb-embed-resize-handle');
 
     (options.layout_reference || options.container).appendChild(resize_handle);
 
     if (!Resizable.resize_mask) {
       let mask = document.querySelector('.treb-embed-mouse-mask');
       if (!mask) {
-        mask = document.createElement('div');
-        mask.classList.add('treb-embed-mouse-mask');
+        mask = DOMUtilities.Div('treb-embed-mouse-mask');
         document.body.appendChild(mask);
       }
       Resizable.resize_mask = mask as HTMLElement;
@@ -74,8 +74,7 @@ export class Resizable {
     if (!Resizable.resize_rect) {
       let rect = document.querySelector('.treb-embed-resize-rect');
       if (!rect) {
-        rect = document.createElement('div');
-        rect.classList.add('treb-embed-resize-rect');
+        rect = DOMUtilities.Div('treb-embed-resize-rect');
         Resizable.resize_mask.appendChild(rect);
       }
       Resizable.resize_rect = rect as HTMLElement;

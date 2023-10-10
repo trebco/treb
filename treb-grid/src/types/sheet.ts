@@ -26,7 +26,7 @@ import { ValueType, Cells, Style,
   type PropertyKeys,
   type Color,
   Area, IsFlatDataArray, 
-  IsNestedRowArray, IsCellAddress
+  IsNestedRowArray, IsCellAddress, DOMUtilities
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement, ValidateURI } from 'treb-utils';
@@ -748,7 +748,7 @@ export class Sheet {
     if (this.background_image) {
       const resource = ValidateURI(this.background_image);
       if (resource) {
-        this._image = document.createElement('img');
+        this._image = DOMUtilities.Create('img');
         this._image.src = resource;
       }
 

@@ -19,7 +19,7 @@
  * 
  */
 
-import type { Theme, Rectangle } from 'treb-base-types';
+import { type Theme, type Rectangle, DOMUtilities } from 'treb-base-types';
 
 /**
  * the original selections -- a canvas overlaid over the tile canvases --
@@ -29,8 +29,6 @@ import type { Theme, Rectangle } from 'treb-base-types';
  * this class wraps up some of the svg-specific stuff, particularly setting
  * attributes.
  */
-
-const SVGNS = 'http://www.w3.org/2000/svg';
 
 export interface SelectionOffset {
   x: number;
@@ -48,11 +46,10 @@ export class SVGSelectionBlock {
                private theme: Theme,
                private offset: SelectionOffset = {x: 0, y: 0}) {
 
-    this.g = document.createElementNS(SVGNS, 'g');
+    this.g = DOMUtilities.SVG('g');
     this.g.setAttribute('transform', `translate(${offset.x}, ${offset.y})`);
     
-    this.outline = document.createElementNS(SVGNS, 'rect');
-    this.outline.setAttribute('class', 'outline');
+    this.outline = DOMUtilities.SVG('rect', 'outline');
 
     if (primary) {
 
@@ -61,11 +58,8 @@ export class SVGSelectionBlock {
       // primary selections have a separate fill, plus the nub. separate
       // fill because the "target" is unfilled.
 
-      this.fill = document.createElementNS(SVGNS, 'path');
-      this.fill.setAttribute('class', 'fill');
-
-      this.nub = document.createElementNS(SVGNS, 'rect');
-      this.nub.setAttribute('class', 'nub');
+      this.fill = DOMUtilities.SVG('path', 'fill');
+      this.nub = DOMUtilities.SVG('rect', 'nub');
 
       this.g.appendChild(this.fill);
       this.g.appendChild(this.outline);
@@ -81,8 +75,7 @@ export class SVGSelectionBlock {
       // and use currentColor, but we can't set opacity separately so we
       // need another node. which is a waste, but ergonomics ftw!
 
-      this.fill = document.createElementNS(SVGNS, 'rect');
-      this.fill.setAttribute('class', 'fill');
+      this.fill = DOMUtilities.SVG('rect', 'fill');
 
       // this.SetThemeColor(0);
       // if (theme.additional_selection_line_dash_array) {
