@@ -828,6 +828,7 @@ export class EmbeddedSpreadsheet {
 
           case 'scale':
             this.RebuildAllAnnotations();
+            this.events.Publish({ type: 'view-change' });
             break;
 
           case 'annotation':

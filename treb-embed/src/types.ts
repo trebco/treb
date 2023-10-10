@@ -123,6 +123,20 @@ export enum LoadType {
 }
 
 /**
+ * This event is sent when the view changes -- at the moment, that only
+ * means the view scale has been changed. We might use it in the future
+ * for other things.
+ * 
+ * @privateRemarks
+ * not sure if this should be combined with resize -- the only reason it's
+ * not is because resize implies some structural/layout changes that require
+ * changing the document, but scale does not. open to suggestions though.
+ */
+export interface ViewChangeEvent {
+  type: 'view-change';
+}
+
+/**
  * This event is sent when a document is loaded, and also on undo. The 
  * source field can help determine if it was triggered by an undo operation.
  */
