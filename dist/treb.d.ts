@@ -1381,7 +1381,7 @@ export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file"
  * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
  * of the event.
  */
-export type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | DataChangeEvent | FocusViewEvent | SelectionEvent | ResizeEvent;
+export type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | ViewChangeEvent | DataChangeEvent | FocusViewEvent | SelectionEvent | ResizeEvent;
 
 /**
  * options when inserting a table into a sheet
@@ -1410,6 +1410,15 @@ export interface ResizeEvent {
     type: 'resize';
 }
 export declare type LoadType = "treb" | "csv" | "xlsx";
+
+/**
+ * This event is sent when the view changes -- at the moment, that only
+ * means the view scale has been changed. We might use it in the future
+ * for other things.
+ */
+export interface ViewChangeEvent {
+    type: 'view-change';
+}
 
 /**
  * This event is sent when a document is loaded, and also on undo. The

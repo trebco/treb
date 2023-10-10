@@ -198,6 +198,7 @@ export type EmbeddedSheetEvent
   = DocumentChangeEvent
   | DocumentResetEvent
   | DocumentLoadEvent
+  | ViewChangeEvent
   | DataChangeEvent
   | FocusViewEvent
   | SelectionEvent

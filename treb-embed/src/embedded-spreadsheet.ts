@@ -308,7 +308,8 @@ export class EmbeddedSpreadsheet {
   /** loaded language model, if any */
   protected language_model?: LanguageModel;
 
-  protected events = new EventSource<{type: string}>();
+  /** FIXME: fix type (needs to be extensible) */
+  protected events = new EventSource<{ type: string }>();
 
   /** 
    * automatic/manual 
