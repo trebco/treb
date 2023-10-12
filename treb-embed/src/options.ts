@@ -94,6 +94,9 @@ export interface EmbeddedSpreadsheetOptions {
   /** add resizable wrapper */
   resizable?: boolean;
 
+  /** even if we allow resizing, constrain width. this is to support fixed width columns. */
+  constrain_width?: boolean;
+
   /** export to xlsx, now optional */
   export?: boolean;
 

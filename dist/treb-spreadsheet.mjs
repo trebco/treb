@@ -38598,7 +38598,9 @@ var SpreadsheetConstructor = class {
       const finish = () => {
         if (delta.x || delta.y) {
           const rect = root.getBoundingClientRect();
-          root.style.width = rect.width + delta.x + "px";
+          if (!sheet.options.constrain_width) {
+            root.style.width = rect.width + delta.x + "px";
+          }
           root.style.height = rect.height + delta.y + "px";
         }
         if (mask) {
