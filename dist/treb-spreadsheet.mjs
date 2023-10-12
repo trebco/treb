@@ -1,4 +1,4 @@
-/*! TREB v27.12.2. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! TREB v27.12.3. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 var __defProp = Object.defineProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -2262,6 +2262,16 @@ var DOMUtilities = class {
       }
       if (options.html) {
         element.innerHTML = options.html;
+      }
+      if (options.events) {
+        for (const [key, value] of Object.entries(options.events)) {
+          element.addEventListener(key, value);
+        }
+      }
+      if (options.style) {
+        for (const [key, value] of Object.entries(options.style)) {
+          element.style[key] = value;
+        }
       }
     }
     if (parent) {
@@ -6784,59 +6794,56 @@ var ScaleControl = class extends EventSource {
     super();
     this.container = container;
     this.format = NumberFormatCache.Get("0.0");
-    this.input = DOMUtilities.Create(
-      "input",
-      "treb-scale-input",
-      /* div */
-      container
-    );
-    const popup = DOMUtilities.Div(
-      "treb-slider-container",
-      /* div */
-      container
-    );
-    this.input.addEventListener("keypress", (event) => {
-      switch (event.key) {
-        case "ArrowUp":
-        case "ArrowDown":
+    this.input = DOMUtilities.Create("input", "treb-scale-input", container, {
+      events: {
+        // is this for some x-browser issue? or did we just not 
+        // know which event to use and this is old junk?
+        keypress: (event) => {
+          switch (event.key) {
+            case "ArrowUp":
+            case "ArrowDown":
+              event.stopPropagation();
+              event.preventDefault();
+              console.info("mark?");
+              break;
+          }
+        },
+        keydown: (event) => {
+          switch (event.key) {
+            case "Enter":
+              this.input.blur();
+              break;
+            case "ArrowUp":
+              this.Tick(-1);
+              break;
+            case "ArrowDown":
+              this.Tick(1);
+              break;
+            case "Escape":
+              this.input.value = this.format.Format(this.scale) + "%";
+              this.input.blur();
+              break;
+            default:
+              return;
+          }
           event.stopPropagation();
           event.preventDefault();
-          console.info("mark?");
-          break;
+        },
+        // select text on click
+        focusin: () => this.input.select(),
+        change: () => {
+          let text = this.input.value;
+          text = text.replace(/%/g, "");
+          const value = ValueParser.TryParse(text);
+          if (value.type === 3 /* number */) {
+            this.UpdateScale(Number(value.value), true);
+          } else {
+            this.input.value = this.format.Format(this.scale) + "%";
+          }
+        }
       }
     });
-    this.input.addEventListener("keydown", (event) => {
-      switch (event.key) {
-        case "Enter":
-          this.input.blur();
-          break;
-        case "ArrowUp":
-          this.Tick(-1);
-          break;
-        case "ArrowDown":
-          this.Tick(1);
-          break;
-        case "Escape":
-          this.input.value = this.format.Format(this.scale) + "%";
-          this.input.blur();
-          break;
-        default:
-          return;
-      }
-      event.stopPropagation();
-      event.preventDefault();
-    });
-    this.input.addEventListener("focusin", () => this.input.select());
-    this.input.addEventListener("change", () => {
-      let text = this.input.value;
-      text = text.replace(/%/g, "");
-      const value = ValueParser.TryParse(text);
-      if (value.type === 3 /* number */) {
-        this.UpdateScale(Number(value.value), true);
-      } else {
-        this.input.value = this.format.Format(this.scale) + "%";
-      }
-    });
+    const popup = DOMUtilities.Div("treb-slider-container", container);
     this.slider = DOMUtilities.Create("input", void 0, popup, {
       attrs: {
         type: "range",
@@ -6844,10 +6851,10 @@ var ScaleControl = class extends EventSource {
         max: "200",
         value: "100",
         step: "2.5"
+      },
+      events: {
+        input: () => this.UpdateScale(Number(this.slider.value), true)
       }
-    });
-    this.slider.addEventListener("input", () => {
-      this.UpdateScale(Number(this.slider.value), true);
     });
     container.addEventListener("wheel", (event) => {
       event.stopPropagation();
@@ -13971,17 +13978,20 @@ var FormulaBar = class extends Editor {
     this.RegisterListener(descriptor, "keydown", this.FormulaKeyDown.bind(this));
     this.RegisterListener(descriptor, "keyup", this.FormulaKeyUp.bind(this));
     if (this.options.expand_formula_button) {
-      this.expand_button = DOMUtilities.Create("button", "expand-button", inner_node);
-      this.expand_button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        event.preventDefault();
-        if (this.active_editor) {
-          this.active_editor.node.scrollTop = 0;
-        }
-        if (inner_node.hasAttribute("expanded")) {
-          inner_node.removeAttribute("expanded");
-        } else {
-          inner_node.setAttribute("expanded", "");
+      this.expand_button = DOMUtilities.Create("button", "expand-button", inner_node, {
+        events: {
+          click: (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            if (this.active_editor) {
+              this.active_editor.node.scrollTop = 0;
+            }
+            if (inner_node.hasAttribute("expanded")) {
+              inner_node.removeAttribute("expanded");
+            } else {
+              inner_node.setAttribute("expanded", "");
+            }
+          }
         }
       });
     }
@@ -14178,10 +14188,14 @@ var Autocomplete = class {
     this.options = options;
     this.completion_list = DOMUtilities.Div(
       "treb-cell-editor-ac-list treb-autocomplete",
-      options.container || document.body
+      options.container || document.body,
+      {
+        events: {
+          mousedown: (event) => this.ListMouseDown(event),
+          mousemove: (event) => this.ListMouseMove(event)
+        }
+      }
     );
-    this.completion_list.addEventListener("mousedown", (event) => this.ListMouseDown(event));
-    this.completion_list.addEventListener("mousemove", (event) => this.ListMouseMove(event));
     this.tooltip = DOMUtilities.Div(
       "treb-cell-editor-ac-tooltip treb-autocomplete-tooltip",
       options.container || document.body
@@ -17404,131 +17418,131 @@ var Grid = class extends GridBase {
       annotation.view[this.view_index] = view;
     }
     if (!view.node) {
-      view.node = DOMUtilities.Div();
-      view.node.dataset.scale = this.layout.scale.toString();
-      view.node.style.fontSize = `${10 * this.layout.scale}pt`;
-      view.content_node = DOMUtilities.Div("annotation-content", view.node);
-      const move_target = DOMUtilities.Div("annotation-move-target", view.node);
-      const resize_target = DOMUtilities.Div("annotation-resize-target", view.node);
-      if (view.node) {
-        const node = view.node;
-        node.setAttribute("tabindex", "-1");
-        node.addEventListener("mousedown", (event) => {
-          if (event.button !== 0) {
-            return;
-          }
-          this.layout.AnnotationMouseDown(annotation, node, event, move_target, resize_target).then((event2) => {
-            if (event2) {
-              this.grid_events.Publish(event2);
-            }
-            if (annotation.data.layout) {
-              this.EnsureAddress(annotation.data.layout.br.address, 1);
-            }
-          });
-        });
-        node.addEventListener("focusin", () => {
-          for (const element of this.layout.GetFrozenAnnotations(annotation)) {
-            element.classList.add("clone-focus");
-          }
-          this.selected_annotation = annotation;
-          this.primary_selection.empty = true;
-          this.primary_selection.target = { row: -1, column: -1, sheet_id: this.active_sheet.id };
-          this.HideGridSelection();
-        });
-        node.addEventListener("focusout", (event) => {
-          for (const element of this.layout.GetFrozenAnnotations(annotation)) {
-            element.classList.remove("clone-focus");
-          }
-          if (this.formula_bar && this.formula_bar.IsElement(event.relatedTarget)) {
-            this.primary_selection.empty = true;
-            this.RenderSelections();
-            this.editing_annotation = annotation;
-            this.layout.ShowSelections(true);
-          } else {
-            if (this.selected_annotation === annotation) {
-              this.selected_annotation = void 0;
-            }
-            this.ShowGridSelection();
-          }
-        });
-        node.addEventListener("keydown", (event) => {
-          const rect = annotation.scaled_rect;
-          if (!rect) {
-            console.info("missing scaled rect!");
-            return;
-          }
-          const elements = [node, ...this.layout.GetFrozenAnnotations(annotation)];
-          const target = { x: rect.left, y: rect.top };
-          switch (event.key) {
-            case "ArrowUp":
-            case "Up":
-              if (event.ctrlKey) {
-                if (this.layout.AnnotationLayoutOrder(annotation, 1)) {
-                  this.grid_events.Publish({ type: "annotation", event: "move", annotation });
-                }
-                node.focus();
-              } else {
-                target.y--;
-              }
-              break;
-            case "ArrowLeft":
-            case "Left":
-              if (event.ctrlKey) {
-                return;
-              } else {
-                target.x--;
-              }
-              break;
-            case "ArrowRight":
-            case "Right":
-              if (event.ctrlKey) {
-                return;
-              } else {
-                target.x++;
-              }
-              break;
-            case "ArrowDown":
-            case "Down":
-              if (event.ctrlKey) {
-                if (this.layout.AnnotationLayoutOrder(annotation, -1)) {
-                  this.grid_events.Publish({ type: "annotation", event: "move", annotation });
-                }
-                node.focus();
-              } else {
-                target.y++;
-              }
-              break;
-            case "Escape":
-            case "Esc":
-              this.Focus();
-              break;
-            case "Delete":
-            case "Del":
-              this.Focus();
-              this.RemoveAnnotation(annotation);
-              break;
-            default:
+      const node = DOMUtilities.Div("annotation", void 0, {
+        data: { scale: this.layout.scale.toString() },
+        style: { fontSize: `${10 * this.layout.scale}pt` },
+        attrs: { tabindex: "-1" },
+        events: {
+          mousedown: (event) => {
+            if (event.button !== 0) {
               return;
-          }
-          event.stopPropagation();
-          event.preventDefault();
-          target.x = Math.max(target.x, 0);
-          target.y = Math.max(target.y, 0);
-          if (rect.left !== target.x || rect.top !== target.y) {
-            rect.left = Math.round(target.x);
-            rect.top = Math.round(target.y);
-            for (const element of elements) {
-              element.style.top = rect.top + "px";
-              element.style.left = rect.left + "px";
             }
-            annotation.data.extent = void 0;
-            this.grid_events.Publish({ type: "annotation", event: "move", annotation });
-            annotation.data.layout = this.layout.RectToAnnotationLayout(rect);
+            this.layout.AnnotationMouseDown(annotation, node, event, move_target, resize_target).then((event2) => {
+              if (event2) {
+                this.grid_events.Publish(event2);
+              }
+              if (annotation.data.layout) {
+                this.EnsureAddress(annotation.data.layout.br.address, 1);
+              }
+            });
+          },
+          focusin: () => {
+            for (const element of this.layout.GetFrozenAnnotations(annotation)) {
+              element.classList.add("clone-focus");
+            }
+            this.selected_annotation = annotation;
+            this.primary_selection.empty = true;
+            this.primary_selection.target = { row: -1, column: -1, sheet_id: this.active_sheet.id };
+            this.HideGridSelection();
+          },
+          focusout: (event) => {
+            for (const element of this.layout.GetFrozenAnnotations(annotation)) {
+              element.classList.remove("clone-focus");
+            }
+            if (this.formula_bar && this.formula_bar.IsElement(event.relatedTarget)) {
+              this.primary_selection.empty = true;
+              this.RenderSelections();
+              this.editing_annotation = annotation;
+              this.layout.ShowSelections(true);
+            } else {
+              if (this.selected_annotation === annotation) {
+                this.selected_annotation = void 0;
+              }
+              this.ShowGridSelection();
+            }
           }
-        });
-      }
+        }
+      });
+      view.node = node;
+      view.content_node = DOMUtilities.Div("annotation-content", node);
+      const move_target = DOMUtilities.Div("annotation-move-target", node);
+      const resize_target = DOMUtilities.Div("annotation-resize-target", node);
+      node.addEventListener("keydown", (event) => {
+        const rect = annotation.scaled_rect;
+        if (!rect) {
+          console.info("missing scaled rect!");
+          return;
+        }
+        const elements = [node, ...this.layout.GetFrozenAnnotations(annotation)];
+        const target = { x: rect.left, y: rect.top };
+        switch (event.key) {
+          case "ArrowUp":
+          case "Up":
+            if (event.ctrlKey) {
+              if (this.layout.AnnotationLayoutOrder(annotation, 1)) {
+                this.grid_events.Publish({ type: "annotation", event: "move", annotation });
+              }
+              node.focus();
+            } else {
+              target.y--;
+            }
+            break;
+          case "ArrowLeft":
+          case "Left":
+            if (event.ctrlKey) {
+              return;
+            } else {
+              target.x--;
+            }
+            break;
+          case "ArrowRight":
+          case "Right":
+            if (event.ctrlKey) {
+              return;
+            } else {
+              target.x++;
+            }
+            break;
+          case "ArrowDown":
+          case "Down":
+            if (event.ctrlKey) {
+              if (this.layout.AnnotationLayoutOrder(annotation, -1)) {
+                this.grid_events.Publish({ type: "annotation", event: "move", annotation });
+              }
+              node.focus();
+            } else {
+              target.y++;
+            }
+            break;
+          case "Escape":
+          case "Esc":
+            this.Focus();
+            break;
+          case "Delete":
+          case "Del":
+            this.Focus();
+            this.RemoveAnnotation(annotation);
+            break;
+          default:
+            return;
+        }
+        event.stopPropagation();
+        event.preventDefault();
+        target.x = Math.max(target.x, 0);
+        target.y = Math.max(target.y, 0);
+        if (rect.left !== target.x || rect.top !== target.y) {
+          rect.left = Math.round(target.x);
+          rect.top = Math.round(target.y);
+          for (const element of elements) {
+            element.style.top = rect.top + "px";
+            element.style.left = rect.left + "px";
+          }
+          annotation.data.extent = void 0;
+          this.grid_events.Publish({ type: "annotation", event: "move", annotation });
+          annotation.data.layout = this.layout.RectToAnnotationLayout(rect);
+        }
+      });
     }
-    view.node.classList.add("annotation");
     if (add_to_layout) {
       this.layout.AddAnnotation(annotation);
       if (annotation.data.layout) {
@@ -20004,7 +20018,9 @@ var Grid = class extends GridBase {
           return;
         default:
           if (!selection.empty) {
-            this.OverlayEditCell(selection, true, event);
+            if (event.key !== "Escape") {
+              this.OverlayEditCell(selection, true, event);
+            }
           }
           return;
       }
@@ -28946,7 +28962,7 @@ var Dialog = class {
       }
     }
     if (this.model.about) {
-      const html = [`<div>TREB version ${"27.12.2"}`];
+      const html = [`<div>TREB version ${"27.12.3"}`];
       if (true) {
         html.push(`<small>(development build)</small>`);
       }
@@ -33585,7 +33601,7 @@ changes in the sidebar.`,
     const grid_data = this.grid.Serialize(options);
     const serialized = {
       app: "@trebco/treb",
-      version: "27.12.2",
+      version: "27.12.3",
       revision: this.file_version,
       name: this.grid.model.document_name,
       // may be undefined
@@ -34290,26 +34306,29 @@ changes in the sidebar.`,
    */
   SelectFile2(accept, operation) {
     if (!this.file_chooser) {
-      this.file_chooser = DOMUtilities.Create("input");
-      this.file_chooser.type = "file";
-      const file_chooser = this.file_chooser;
-      file_chooser.addEventListener("change", () => {
-        if (file_chooser.files && file_chooser.files[0]) {
-          const file = file_chooser.files[0];
-          file_chooser.value = "";
-          switch (this.file_chooser_operation) {
-            case 2 /* InsertImage */:
-              this.InsertImageInternal(file);
-              break;
-            case 1 /* LoadFile */:
-              this.LoadFileInternal(file, "local-file" /* LOCAL_FILE */, true);
-              break;
-            default:
-              console.warn("file chooser: no operation");
-              break;
+      const file_chooser = DOMUtilities.Create("input", void 0, void 0, {
+        attrs: { type: "file" },
+        events: {
+          change: () => {
+            if (file_chooser.files && file_chooser.files[0]) {
+              const file = file_chooser.files[0];
+              file_chooser.value = "";
+              switch (this.file_chooser_operation) {
+                case 2 /* InsertImage */:
+                  this.InsertImageInternal(file);
+                  break;
+                case 1 /* LoadFile */:
+                  this.LoadFileInternal(file, "local-file" /* LOCAL_FILE */, true);
+                  break;
+                default:
+                  console.warn("file chooser: no operation");
+                  break;
+              }
+            }
           }
         }
       });
+      this.file_chooser = file_chooser;
     }
     if (!this.file_chooser) {
       throw new Error("could not create file chooser");
@@ -34858,10 +34877,10 @@ changes in the sidebar.`,
   ImportDocumentData(data, override_sheet) {
     this.file_version = data.revision || 0;
     let sheets = [];
-    const compare = this.CompareVersions(data.version, "27.12.2");
+    const compare = this.CompareVersions(data.version, "27.12.3");
     if (compare.match > 0) {
       if (compare.level === 0 /* major */ || compare.level === 1 /* minor */) {
-        console.warn(`The file you are opening was created with a newer version of TREB (${data.version} vs ${"27.12.2"}).
+        console.warn(`The file you are opening was created with a newer version of TREB (${data.version} vs ${"27.12.3"}).
 You may encounter compatibility errors.`);
       }
     }
@@ -38565,8 +38584,8 @@ var SpreadsheetConstructor = class {
       let mask;
       let resizer;
       const resize_handle = root.querySelector(".treb-layout-resize-handle");
-      const mouse_up = () => finish();
-      const mouse_move = (event) => {
+      const mouseup = () => finish();
+      const mousemove = (event) => {
         if (event.buttons === 0) {
           finish();
         } else {
@@ -38587,8 +38606,8 @@ var SpreadsheetConstructor = class {
           root.style.height = rect.height + delta.y + "px";
         }
         if (mask) {
-          mask.removeEventListener("mouseup", mouse_up);
-          mask.removeEventListener("mousemove", mouse_move);
+          mask.removeEventListener("mouseup", mouseup);
+          mask.removeEventListener("mousemove", mousemove);
           mask.parentElement?.removeChild(mask);
           mask = void 0;
         }
@@ -38603,10 +38622,9 @@ var SpreadsheetConstructor = class {
         mask = DOMUtilities.Div("treb-resize-mask", resize_parent, {
           attrs: {
             style: "cursor: nw-resize;"
-          }
+          },
+          events: { mouseup, mousemove }
         });
-        mask.addEventListener("mouseup", mouse_up);
-        mask.addEventListener("mousemove", mouse_move);
         position.x = event.screenX;
         position.y = event.screenY;
         delta.x = 0;
@@ -39214,7 +39232,7 @@ var TREBGlobal = class {
    * esbuild (or any other compiler) should remove the default value after 
    * building so it won't cost us anything.
    */
-  version = "27.12.2";
+  version = "27.12.3";
   /** 
    * create a spreadsheet instance
    */

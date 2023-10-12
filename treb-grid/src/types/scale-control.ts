@@ -26,7 +26,6 @@ import { EventSource } from 'treb-utils';
 
 export interface ScaleEvent {
   type: 'scale';
-  // action: 'increase'|'decrease'|number;
   value: number;
   keep_focus?: boolean;
 }
@@ -50,92 +49,81 @@ export class ScaleControl extends EventSource<ScaleEvent> {
 
     this.format = NumberFormatCache.Get('0.0');
 
-    // not sure what this extra div was for, we don't need it
-    // const div = DOM.CreateDiv('treb-scale-control-2', container);
+    this.input = DOM.Create('input', 'treb-scale-input', container, {
+      events: {
 
-    this.input = DOM.Create('input', 'treb-scale-input', /* div */ container);
-    const popup = DOM.Div('treb-slider-container', /* div */ container);
+        // is this for some x-browser issue? or did we just not 
+        // know which event to use and this is old junk?
 
-    /*
-    this.input.addEventListener('keyup', (event) => {
-      switch (event.key) {
-        case 'ArrowUp':
-        case 'ArrowDown':
+        keypress: (event) => {
+          switch (event.key) {
+            case 'ArrowUp':
+            case 'ArrowDown':
+              event.stopPropagation();
+              event.preventDefault();
+              console.info('mark?');
+              break;
+          }
+        },
+
+        keydown: (event) => {
+
+          switch (event.key) {
+            case 'Enter':
+              this.input.blur();
+              break;
+
+            case 'ArrowUp':
+              this.Tick(-1);
+              break;
+
+            case 'ArrowDown':
+              this.Tick(1);
+              break;
+
+            case 'Escape':
+              this.input.value = this.format.Format(this.scale) + '%';
+              this.input.blur();
+              break;
+
+            default:
+              return;
+
+          }
+
           event.stopPropagation();
           event.preventDefault();
-          break;
+
+        },
+
+        // select text on click
+        focusin: () => this.input.select(),
+
+        change: () => {
+
+          // what we're doing here is a little unusual. we always treat
+          // the value as a percent, even if there's no percent sign.
+
+          // for that to work, if there is a percent sign, we need to remove
+          // it before we continue. then try to parse as a number.
+
+          let text = this.input.value;
+          text = text.replace(/%/g, '');
+
+          const value = ValueParser.TryParse(text);
+          if (value.type === ValueType.number) {
+            this.UpdateScale(Number(value.value), true);
+          }
+          else {
+            this.input.value = this.format.Format(this.scale) + '%';
+          }
+
+        },
+
       }
     });
-    */
 
-    // is this for some x-browser issue? or did we just not 
-    // know which event to use and this is old junk?
-
-    this.input.addEventListener('keypress', (event) => {
-      switch (event.key) {
-        case 'ArrowUp':
-        case 'ArrowDown':
-          event.stopPropagation();
-          event.preventDefault();
-          console.info('mark?');
-          break;
-      }
-    })
-
-    // this is the one we want
-
-    this.input.addEventListener('keydown', (event) => {
-      switch (event.key) {
-        case 'Enter':
-          this.input.blur();
-          break;
-
-        case 'ArrowUp':
-          this.Tick(-1);
-          break;
-
-        case 'ArrowDown':
-          this.Tick(1);
-          break;
-
-        case 'Escape':
-          this.input.value = this.format.Format(this.scale) + '%';
-          this.input.blur();
-          break;
-
-        default:
-          return;
-
-      }
-
-      event.stopPropagation();
-      event.preventDefault();
-
-    });
-
-    // select text on click
-    this.input.addEventListener('focusin', () => this.input.select());
-
-    this.input.addEventListener('change', () => {
-
-      // what we're doing here is a little unusual. we always treat
-      // the value as a percent, even if there's no percent sign.
-
-      // for that to work, if there is a percent sign, we need to remove
-      // it before we continue. then try to parse as a number.
-
-      let text = this.input.value;
-      text = text.replace(/%/g, '');
-
-      const value = ValueParser.TryParse(text);
-      if (value.type === ValueType.number) {
-        this.UpdateScale(Number(value.value), true);
-      }
-      else {
-        this.input.value = this.format.Format(this.scale) + '%';
-      }
-
-    });
+    const popup = DOM.Div('treb-slider-container', container);
 
     this.slider = DOM.Create('input', undefined, popup, {
       attrs: {
@@ -144,14 +132,13 @@ export class ScaleControl extends EventSource<ScaleEvent> {
         max: '200',
         value: '100',
         step: '2.5',
+      },
+      events: {
+        input: () => this.UpdateScale(Number(this.slider.value), true),
       }
     });
 
-    this.slider.addEventListener('input', () => {
-      this.UpdateScale(Number(this.slider.value), true);
-    });
-
-    /* div */ container.addEventListener('wheel', (event: WheelEvent) => {
+    container.addEventListener('wheel', (event: WheelEvent) => {
       event.stopPropagation();
       event.preventDefault();
       this.Tick(event.deltaY)
@@ -160,9 +147,6 @@ export class ScaleControl extends EventSource<ScaleEvent> {
   }
 
   public Tick(value: number): void {
-
-    // not sure what alternate case I am worried about here,
-    // sideways wheel? shift key?
 
     // normalize
 

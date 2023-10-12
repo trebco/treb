@@ -270,20 +270,24 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     this.RegisterListener(descriptor, 'keyup', this.FormulaKeyUp.bind(this));
 
     if (this.options.expand_formula_button) {
-      this.expand_button = DOMUtilities.Create('button', 'expand-button', inner_node);
-      this.expand_button.addEventListener('click', (event: MouseEvent) => {
-        event.stopPropagation();
-        event.preventDefault();
-        if (this.active_editor) {
-          this.active_editor.node.scrollTop = 0;
-        }
-        if (inner_node.hasAttribute('expanded')) {
-          inner_node.removeAttribute('expanded');
-        }
-        else {
-          inner_node.setAttribute('expanded', '');
-        }
+      this.expand_button = DOMUtilities.Create('button', 'expand-button', inner_node, { 
+        events: {
+          click: (event: MouseEvent) => {
+            event.stopPropagation();
+            event.preventDefault();
+            if (this.active_editor) {
+              this.active_editor.node.scrollTop = 0;
+            }
+            if (inner_node.hasAttribute('expanded')) {
+              inner_node.removeAttribute('expanded');
+            }
+            else {
+              inner_node.setAttribute('expanded', '');
+            }
+          },
+        },
       });
+
     }
 
   }

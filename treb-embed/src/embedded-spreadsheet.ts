@@ -4707,27 +4707,29 @@ export class EmbeddedSpreadsheet {
   protected SelectFile2(accept: string, operation: FileChooserOperation) {
 
     if (!this.file_chooser) {
-      this.file_chooser = DOMUtilities.Create('input');
-      this.file_chooser.type = 'file';
-
-      const file_chooser = this.file_chooser;      
-      file_chooser.addEventListener('change', () => {
-        if (file_chooser.files && file_chooser.files[0]) {
-          const file = file_chooser.files[0];
-          file_chooser.value = '';
-          switch (this.file_chooser_operation) {
-            case FileChooserOperation.InsertImage:
-              this.InsertImageInternal(file);
-              break;
-            case FileChooserOperation.LoadFile:
-              this.LoadFileInternal(file, LoadSource.LOCAL_FILE, true);
-              break;
-            default:
-              console.warn('file chooser: no operation');
-              break;
-          }
-        }
+      const file_chooser = DOMUtilities.Create('input', undefined, undefined, {
+        attrs: { type: 'file' },
+        events: {
+          change: () => {
+            if (file_chooser.files && file_chooser.files[0]) {
+              const file = file_chooser.files[0];
+              file_chooser.value = '';
+              switch (this.file_chooser_operation) {
+                case FileChooserOperation.InsertImage:
+                  this.InsertImageInternal(file);
+                  break;
+                case FileChooserOperation.LoadFile:
+                  this.LoadFileInternal(file, LoadSource.LOCAL_FILE, true);
+                  break;
+                default:
+                  console.warn('file chooser: no operation');
+                  break;
+              }
+            }
+          },
+        },
       });
+      this.file_chooser = file_chooser;
     }
 
     if (!this.file_chooser) {

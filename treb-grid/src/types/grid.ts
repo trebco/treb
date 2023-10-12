@@ -571,84 +571,83 @@ export class Grid extends GridBase {
 
       // FIXME: why is this not in layout? it is layout.
 
-      view.node = DOMUtilities.Div();
-      view.node.dataset.scale = this.layout.scale.toString();
-      view.node.style.fontSize = `${10 * this.layout.scale}pt`;
+      const node = DOMUtilities.Div('annotation', undefined, {
+        data: { scale: this.layout.scale.toString() },
+        style: { fontSize: `${10 * this.layout.scale}pt` },
+        attrs: { tabindex: '-1', },
+        events: {
 
-      view.content_node = DOMUtilities.Div('annotation-content', view.node);
-      const move_target = DOMUtilities.Div('annotation-move-target', view.node);
-      const resize_target = DOMUtilities.Div('annotation-resize-target', view.node);
+          mousedown: (event) => {
 
-      if (view.node) {
-        const node = view.node;
-
-        // support focus
-        node.setAttribute('tabindex', '-1');
-
-        node.addEventListener('mousedown', (event) => {
-
-          if (event.button !== 0) {
-            return;
-          }
-
-          // this.AnnotationMouseDown(annotation, event, move_target, resize_target);
-          this.layout.AnnotationMouseDown(annotation, node, event, move_target, resize_target).then(event => {
-            // console.info('resolved', event);
-            if (event) {
-              this.grid_events.Publish(event);
+            if (event.button !== 0) {
+              return;
             }
+  
+            this.layout.AnnotationMouseDown(annotation, node, event, move_target, resize_target).then(event => {
+              // console.info('resolved', event);
+              if (event) {
+                this.grid_events.Publish(event);
+              }
+  
+              if (annotation.data.layout) {
+                this.EnsureAddress(annotation.data.layout.br.address, 1);
+              }
+  
+            });
+          },
 
-            if (annotation.data.layout) {
-              this.EnsureAddress(annotation.data.layout.br.address, 1);
+          focusin: () => {
+  
+            for (const element of this.layout.GetFrozenAnnotations(annotation)) {
+              element.classList.add('clone-focus');
             }
+  
+            this.selected_annotation = annotation;
+            this.primary_selection.empty = true; // FIXME: not using method? (...)
+  
+            // this is done for the side-effect when we start editing, we
+            // capture the sheet of the primary selection. if you switch
+            // sheets while editing, the selection won't be set so it persists.
+            // we need that to switch back to the correct sheet when an edit ends.
+  
+            this.primary_selection.target = { row: -1, column: -1, sheet_id: this.active_sheet.id };
+            this.HideGridSelection();
 
-          });
-        });
+          },
 
-        node.addEventListener('focusin', () => {
+          focusout: (event) => {
 
-          // console.info('annotation focusin', annotation);
-
-          for (const element of this.layout.GetFrozenAnnotations(annotation)) {
-            element.classList.add('clone-focus');
-          }
-
-          this.selected_annotation = annotation;
-          this.primary_selection.empty = true; // FIXME: not using method? (...)
-
-          // this is done for the side-effect when we start editing, we
-          // capture the sheet of the primary selection. if you switch
-          // sheets while editing, the selection won't be set so it persists.
-          // we need that to switch back to the correct sheet when an edit ends.
-
-          this.primary_selection.target = { row: -1, column: -1, sheet_id: this.active_sheet.id };
-          this.HideGridSelection();
-        });
-
-        node.addEventListener('focusout', (event) => {
-
-          // console.info('annotation focusout', annotation);
-
-          for (const element of this.layout.GetFrozenAnnotations(annotation)) {
-            element.classList.remove('clone-focus');
-          }
-          
-          if (this.formula_bar && this.formula_bar.IsElement((event as FocusEvent).relatedTarget as HTMLElement)) {
-            // console.info('editing...');
-            this.primary_selection.empty = true;
-            this.RenderSelections();
-            this.editing_annotation = annotation;
-            this.layout.ShowSelections(true);
-          }
-          else {
-            if (this.selected_annotation === annotation) {
-              this.selected_annotation = undefined;
+            // console.info('annotation focusout', annotation);
+  
+            for (const element of this.layout.GetFrozenAnnotations(annotation)) {
+              element.classList.remove('clone-focus');
             }
-            this.ShowGridSelection();
-          }
-        });
+            
+            if (this.formula_bar && this.formula_bar.IsElement((event as FocusEvent).relatedTarget as HTMLElement)) {
+              // console.info('editing...');
+              this.primary_selection.empty = true;
+              this.RenderSelections();
+              this.editing_annotation = annotation;
+              this.layout.ShowSelections(true);
+            }
+            else {
+              if (this.selected_annotation === annotation) {
+                this.selected_annotation = undefined;
+              }
+              this.ShowGridSelection();
+            }
+          },
 
-        node.addEventListener('keydown', (event) => {
+        }
+      });
+
+      view.node = node;
+
+      view.content_node = DOMUtilities.Div('annotation-content', node);
+      const move_target = DOMUtilities.Div('annotation-move-target', node);
+      const resize_target = DOMUtilities.Div('annotation-resize-target', node);
+
+      node.addEventListener('keydown', (event) => {
       
           const rect = annotation.scaled_rect;
           if (!rect) {
@@ -748,14 +747,8 @@ export class Grid extends GridBase {
           }
 
         });
-      }
-    }
 
-    view.node.classList.add('annotation');
-    
-    // if (annotation.class_name) {
-    //   annotation.node.classList.add(annotation.class_name);
-    // }
+    }
 
     if (add_to_layout) {
       this.layout.AddAnnotation(annotation);
@@ -4678,7 +4671,9 @@ export class Grid extends GridBase {
           // console.info('ek', event.key);
 
           if (!selection.empty) {
-            this.OverlayEditCell(selection, true, event);
+            if (event.key !== 'Escape') {
+              this.OverlayEditCell(selection, true, event);
+            }
           }
 
           return;

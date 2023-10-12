@@ -79,19 +79,23 @@ export class Autocomplete {
     this.completion_list = DOMUtilities.Div(
       'treb-cell-editor-ac-list treb-autocomplete',
       options.container || document.body,
-      ); // this.scope);
+      { 
+        events: {
+          mousedown: (event) => this.ListMouseDown(event),
+          mousemove: (event) => this.ListMouseMove(event)
+        }
+      }
+    );
 
-    this.completion_list.addEventListener('mousedown', (event) => this.ListMouseDown(event));
+    // this.completion_list.addEventListener('mousedown', (event) => this.ListMouseDown(event));
 
     // FIXME: should we add/remove listener based on visibility? (...)
 
-    this.completion_list.addEventListener('mousemove', (event) => this.ListMouseMove(event));
+    // this.completion_list.addEventListener('mousemove', (event) => this.ListMouseMove(event));
 
-    this.tooltip = DOMUtilities.Div('treb-cell-editor-ac-tooltip treb-autocomplete-tooltip',
-      options.container || document.body,
-      ); // this.scope);
-
-    // this.UpdateTheme();
+    this.tooltip = DOMUtilities.Div(
+      'treb-cell-editor-ac-tooltip treb-autocomplete-tooltip',
+      options.container || document.body);
 
   }
 

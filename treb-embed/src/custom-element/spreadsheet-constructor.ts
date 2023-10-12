@@ -495,10 +495,10 @@ export class SpreadsheetConstructor {
       const resize_handle = root.querySelector('.treb-layout-resize-handle') as HTMLElement;
 
       // mouse up handler added to mask (when created)
-      const mouse_up = () => finish();
+      const mouseup = () => finish();
 
       // mouse move handler added to mask (when created)
-      const mouse_move = ((event: MouseEvent) => {
+      const mousemove = ((event: MouseEvent) => {
         if (event.buttons === 0) {
           finish();
         }
@@ -526,8 +526,8 @@ export class SpreadsheetConstructor {
         }
 
         if (mask) {
-          mask.removeEventListener('mouseup', mouse_up);
-          mask.removeEventListener('mousemove', mouse_move);
+          mask.removeEventListener('mouseup', mouseup);
+          mask.removeEventListener('mousemove', mousemove);
           mask.parentElement?.removeChild(mask);
           mask = undefined;
         }
@@ -550,10 +550,11 @@ export class SpreadsheetConstructor {
           attrs: { 
             style: 'cursor: nw-resize;' 
           },
+          events: { mouseup, mousemove },
         });
 
-        mask.addEventListener('mouseup', mouse_up);
-        mask.addEventListener('mousemove', mouse_move);
+        // mask.addEventListener('mouseup', mouse_up);
+        // mask.addEventListener('mousemove', mouse_move);
 
         // resize_handle.classList.add('retain-opacity'); // we're not using this anymore
                 
@@ -829,7 +830,6 @@ export class SpreadsheetConstructor {
 
     const fragment = document.createDocumentFragment();
     fragment.append(...number_formats.map(format => Button(format)));
-    // fragment.append(Element('div', undefined, {}, {separator: ''}));
     fragment.append(DOMUtilities.Div(undefined, undefined, { attrs: { separator: '' }}));
     fragment.append(...date_formats.map(format => Button(format)));
 

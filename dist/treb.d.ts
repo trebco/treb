@@ -86,6 +86,9 @@ export interface EmbeddedSpreadsheetOptions {
     /** add resizable wrapper */
     resizable?: boolean;
 
+    /** even if we allow resizing, constrain width. this is to support fixed width columns. */
+    constrain_width?: boolean;
+
     /** export to xlsx, now optional */
     export?: boolean;
 
@@ -247,6 +250,12 @@ export interface EmbeddedSpreadsheetOptions {
      * was renamed from `revert` to avoid any ambiguity.
      */
     revert_button?: boolean;
+
+    /**
+     * show the revert indicator. this is an indicator that shows on the
+     * top-left of the spreadsheet when a network document has local changes.
+     */
+    revert_indicator?: boolean;
 }
 
 /**
@@ -301,6 +310,22 @@ export declare class EmbeddedSpreadsheet {
      * state is an atomically-incrementing integer but rolls over at 2^16.
      */
     get state(): number;
+
+    /**
+     * this flag indicates we can revert the document. what that means is
+     * we loaded a user-created version from localStorage, but there's a
+     * backing network or inline document. or we did load the original version
+     * but the user has made some document changes.
+     *
+     * it's like `dirty`, but that uses the load source as the ground truth,
+     * which means if you load a modified document from localStorage it's
+     * initially considered not-dirty (which is maybe just a bad design?)
+     *
+     * the intent of this field is to support enabling/disabling revert
+     * logic, or to add a visual indicator that you are not looking at the
+     * canonical version.
+     */
+    get can_revert(): boolean;
 
     /**
      * indicates the current revision of the document is not equal to the
@@ -550,8 +575,11 @@ export declare class EmbeddedSpreadsheet {
     UnmergeCells(range?: RangeReference): void;
 
     /**
-     * revert to the network version of this document, if both `local_storage`
-     * and `network_document` are set.
+     * revert to the network version of this document, if `local_storage`
+     * is set and the create options had either `document` or `inline-document`
+     * set.
+     *
+     * FIXME: we should adjust for documents that fail to load.
      */
     Revert(): void;
 
