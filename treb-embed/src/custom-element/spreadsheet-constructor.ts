@@ -11,6 +11,9 @@ import { ColorFunctions, type Color } from 'treb-base-types';
 import { Measurement } from 'treb-utils';
 import type { ToolbarMessage } from '../toolbar-message';
 
+import { DOMUtilities } from 'treb-base-types';
+
+/*
 interface ElementOptions {
   data: Record<string, string>;
   text: string;
@@ -19,9 +22,9 @@ interface ElementOptions {
   classes: string|string[];
 }
 
-/**
+/ * *
  * FIXME: unify this with DOMUtils
- */
+ * /
 const Element = <K extends keyof HTMLElementTagNameMap>(tag: K, parent?: HTMLElement|DocumentFragment, options: Partial<ElementOptions> = {}, attrs: Record<string, string> = {}): HTMLElementTagNameMap[K] => {
   const element = document.createElement(tag);
   if (options.classes) {
@@ -60,6 +63,7 @@ const Element = <K extends keyof HTMLElementTagNameMap>(tag: K, parent?: HTMLEle
   }
   return element;
 }
+*/
 
 /** @internal */
 export class SpreadsheetConstructor {
@@ -120,10 +124,13 @@ export class SpreadsheetConstructor {
 
       const style_node = document.head.querySelector('style[treb-stylesheet]');
       if (!style_node) {
-        const style = Element('style');
-        style.setAttribute('treb-stylesheet', '');
-        style.textContent = css;
-        document.head.prepend(style);
+        document.head.prepend(
+          DOMUtilities.Create('style', undefined, undefined, { text: css, attrs: { 'treb-stylesheet': '' } }));
+
+        // const style = Element('style');
+        // style.setAttribute('treb-stylesheet', '');
+        // style.textContent = css;
+        // document.head.prepend(style);
       }
 
     }
@@ -537,11 +544,12 @@ export class SpreadsheetConstructor {
 
         const resize_parent = root.querySelector('.treb-main') as HTMLElement; // was document.body
 
-        resizer = Element('div', resize_parent, { classes: 'treb-resize-rect' });
+        resizer = DOMUtilities.Div('treb-resize-rect', resize_parent);
 
-        mask = Element('div', resize_parent, { 
-          classes: 'treb-resize-mask', 
-          style: 'cursor: nw-resize;',
+        mask = DOMUtilities.Div('treb-resize-mask', resize_parent, { 
+          attrs: { 
+            style: 'cursor: nw-resize;' 
+          },
         });
 
         mask.addEventListener('mouseup', mouse_up);
@@ -752,7 +760,12 @@ export class SpreadsheetConstructor {
               }
 
             }
-            Element('button', fragment, { style, title, data: { command: 'set-color', color: JSON.stringify(entry.color) } });
+
+            DOMUtilities.Create('button', undefined, fragment, {
+              attrs: { style, title },
+              data: { command: 'set-color', color: JSON.stringify(entry.color) },
+            });
+
           }
         }
 
@@ -761,11 +774,10 @@ export class SpreadsheetConstructor {
       this.swatch_lists.theme?.replaceChildren(fragment);
 
       fragment = document.createDocumentFragment();
-      Element('button', fragment, { 
-        classes: 'treb-default-color',
-        title: 'Default color', 
+      DOMUtilities.Create('button', 'treb-default-color', fragment, {
+        attrs: { title: 'Default color' },
         data: { command: 'set-color', color: JSON.stringify({}) },
-       });
+      });
 
       const colors = ['Black', 'White', 'Gray', 'Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Violet'];
 
@@ -776,7 +788,12 @@ export class SpreadsheetConstructor {
 
       for (const text of [...colors, ...additional_colors]) {
         const style = `background: ${text.toLowerCase()};`;
-        Element('button', fragment, { style, title: text, data: { command: 'set-color', color: JSON.stringify({text: text.toLowerCase()})}});
+        DOMUtilities.Create('button', undefined, fragment, {
+          attrs: { style, title: text, },
+          data: { command: 'set-color', color: JSON.stringify({text: text.toLowerCase()})},
+        });
+
+        // Element('button', fragment, { style, title: text, data: { command: 'set-color', color: JSON.stringify({text: text.toLowerCase()})}});
       }
 
       this.swatch_lists.other?.replaceChildren(fragment);
@@ -804,16 +821,16 @@ export class SpreadsheetConstructor {
       }
     }
 
-    const Button = (format: string) => {
-      return Element('button', undefined, {
-        text: format, data: { format, command: 'number-format' },
+    const Button = (format: string) => 
+      DOMUtilities.Create('button', undefined, undefined, {
+        text: format, 
+        data: { format, command: 'number-format' },
       });
-    };
 
     const fragment = document.createDocumentFragment();
     fragment.append(...number_formats.map(format => Button(format)));
-
-    fragment.append(Element('div', undefined, {}, {separator: ''}));
+    // fragment.append(Element('div', undefined, {}, {separator: ''}));
+    fragment.append(DOMUtilities.Div(undefined, undefined, { attrs: { separator: '' }}));
     fragment.append(...date_formats.map(format => Button(format)));
 
     format_menu.textContent = '';

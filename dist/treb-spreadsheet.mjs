@@ -2224,8 +2224,8 @@ var ColorFunctions = {
 var SVGNS = "http://www.w3.org/2000/svg";
 var DOMUtilities = class {
   /** creates a div and assigns class name/names */
-  static Div(classes, parent, scope) {
-    return this.Create("div", classes, parent, scope);
+  static Div(classes, parent, options) {
+    return this.Create("div", classes, parent, options);
   }
   static ClassNames(element, classes) {
     element.classList.add(...(Array.isArray(classes) ? classes : [classes]).reduce((arr, entry) => [...arr, ...entry.split(/\s+/g)], []));
@@ -2241,18 +2241,27 @@ var DOMUtilities = class {
     return element;
   }
   /** better typing */
-  static Create(tag, classes, parent, scope, attrs) {
+  static Create(tag, classes, parent, options) {
     const element = document.createElement(tag);
     if (classes) {
       this.ClassNames(element, classes);
     }
-    if (scope) {
-      element.setAttribute(scope, "");
-    }
-    if (attrs) {
-      const keys = Object.keys(attrs);
-      for (const key of keys) {
-        element.setAttribute(key, attrs[key]);
+    if (options) {
+      if (options.attrs) {
+        for (const [key, value] of Object.entries(options.attrs)) {
+          element.setAttribute(key, value);
+        }
+      }
+      if (options.data) {
+        for (const [key, value] of Object.entries(options.data)) {
+          element.dataset[key] = value;
+        }
+      }
+      if (options.text) {
+        element.textContent = options.text;
+      }
+      if (options.html) {
+        element.innerHTML = options.html;
       }
     }
     if (parent) {
@@ -6828,12 +6837,14 @@ var ScaleControl = class extends EventSource {
         this.input.value = this.format.Format(this.scale) + "%";
       }
     });
-    this.slider = DOMUtilities.Create("input", void 0, popup, void 0, {
-      type: "range",
-      min: "50",
-      max: "200",
-      value: "100",
-      step: "2.5"
+    this.slider = DOMUtilities.Create("input", void 0, popup, {
+      attrs: {
+        type: "range",
+        min: "50",
+        max: "200",
+        value: "100",
+        step: "2.5"
+      }
     });
     this.slider.addEventListener("input", () => {
       this.UpdateScale(Number(this.slider.value), true);
@@ -6939,10 +6950,12 @@ var TabBar = class extends EventSource {
     if (this.stats_panel) {
       this.stats_panel.innerText = "";
       for (const entry of value) {
-        const label = DOMUtilities.Create("span", "treb-stats-label", this.stats_panel);
-        label.textContent = entry.label;
-        const figure = DOMUtilities.Create("span", "treb-stats-value", this.stats_panel);
-        figure.textContent = entry.value;
+        DOMUtilities.Create("span", "treb-stats-label", this.stats_panel, {
+          text: entry.label
+        });
+        DOMUtilities.Create("span", "treb-stats-value", this.stats_panel, {
+          text: entry.value
+        });
       }
     }
   }
@@ -9503,8 +9516,9 @@ var BaseLayout = class {
         this.dropdown_list.focus();
       }
     });
-    this.dropdown_list = DOMUtilities.Div("treb-dropdown-list");
-    this.dropdown_list.setAttribute("tabindex", "-1");
+    this.dropdown_list = DOMUtilities.Div("treb-dropdown-list", void 0, {
+      attrs: { tabindex: "-1" }
+    });
     this.dropdown_list.addEventListener("keydown", (event) => {
       let delta = 0;
       switch (event.key) {
@@ -9578,16 +9592,16 @@ var BaseLayout = class {
       target.classList.add("selected");
       this.dropdown_selected = target;
     });
-    this.mock_selection = DOMUtilities.Div("mock-selection-node");
-    this.mock_selection.innerHTML = "&nbsp;";
+    this.mock_selection = DOMUtilities.Div("mock-selection-node", void 0, {
+      html: "&nbsp;"
+    });
     this.note_node = DOMUtilities.Div("treb-note");
     this.title_node = DOMUtilities.Div("treb-hover-title");
     this.sort_button = DOMUtilities.Create(
       "button",
       "treb-sort-button",
       void 0,
-      void 0,
-      { title: "Sort table", tabindex: "-1" }
+      { attrs: { title: "Sort table", tabindex: "-1" } }
     );
     this.HideNote();
   }
@@ -28974,8 +28988,9 @@ var Dialog = class {
 var Spinner = class {
   constructor(container) {
     this.container = container;
-    this.node = DOMUtilities.Div("treb-spinner", container);
-    this.node.innerHTML = `<div><div></div><div></div><div></div><div></div></div>`;
+    this.node = DOMUtilities.Div("treb-spinner", container, {
+      html: `<div><div></div><div></div><div></div><div></div></div>`
+    });
   }
   node;
   visible = false;
@@ -38292,37 +38307,6 @@ var toolbar_default = `
 `;
 
 // treb-embed/src/custom-element/spreadsheet-constructor.ts
-var Element2 = (tag, parent, options = {}, attrs = {}) => {
-  const element = document.createElement(tag);
-  if (options.classes) {
-    if (Array.isArray(options.classes)) {
-      element.classList.add(...options.classes);
-    } else {
-      element.classList.add(options.classes);
-    }
-  }
-  if (options.title) {
-    element.title = options.title;
-  }
-  if (options.text) {
-    element.textContent = options.text;
-  }
-  if (options.style) {
-    element.setAttribute("style", options.style);
-  }
-  if (options.data) {
-    for (const [key, value] of Object.entries(options.data)) {
-      element.dataset[key] = value;
-    }
-  }
-  for (const [key, value] of Object.entries(attrs)) {
-    element.setAttribute(key, value);
-  }
-  if (parent) {
-    parent.appendChild(element);
-  }
-  return element;
-};
 var SpreadsheetConstructor = class {
   /** container, if any */
   root;
@@ -38358,10 +38342,9 @@ var SpreadsheetConstructor = class {
       this.root = root;
       const style_node = document.head.querySelector("style[treb-stylesheet]");
       if (!style_node) {
-        const style = Element2("style");
-        style.setAttribute("treb-stylesheet", "");
-        style.textContent = treb_spreadsheet_element_default;
-        document.head.prepend(style);
+        document.head.prepend(
+          DOMUtilities.Create("style", void 0, void 0, { text: treb_spreadsheet_element_default, attrs: { "treb-stylesheet": "" } })
+        );
       }
     }
   }
@@ -38616,10 +38599,11 @@ var SpreadsheetConstructor = class {
         event.stopPropagation();
         event.preventDefault();
         const resize_parent = root.querySelector(".treb-main");
-        resizer = Element2("div", resize_parent, { classes: "treb-resize-rect" });
-        mask = Element2("div", resize_parent, {
-          classes: "treb-resize-mask",
-          style: "cursor: nw-resize;"
+        resizer = DOMUtilities.Div("treb-resize-rect", resize_parent);
+        mask = DOMUtilities.Div("treb-resize-mask", resize_parent, {
+          attrs: {
+            style: "cursor: nw-resize;"
+          }
         });
         mask.addEventListener("mouseup", mouse_up);
         mask.addEventListener("mousemove", mouse_move);
@@ -38766,15 +38750,17 @@ var SpreadsheetConstructor = class {
                 this.color_bar_elements.border?.style.setProperty("--treb-default-color", entry.resolved);
               }
             }
-            Element2("button", fragment2, { style, title, data: { command: "set-color", color: JSON.stringify(entry.color) } });
+            DOMUtilities.Create("button", void 0, fragment2, {
+              attrs: { style, title },
+              data: { command: "set-color", color: JSON.stringify(entry.color) }
+            });
           }
         }
       }
       this.swatch_lists.theme?.replaceChildren(fragment2);
       fragment2 = document.createDocumentFragment();
-      Element2("button", fragment2, {
-        classes: "treb-default-color",
-        title: "Default color",
+      DOMUtilities.Create("button", "treb-default-color", fragment2, {
+        attrs: { title: "Default color" },
         data: { command: "set-color", color: JSON.stringify({}) }
       });
       const colors = ["Black", "White", "Gray", "Red", "Orange", "Yellow", "Green", "Blue", "Violet"];
@@ -38784,7 +38770,10 @@ var SpreadsheetConstructor = class {
       });
       for (const text of [...colors, ...additional_colors]) {
         const style = `background: ${text.toLowerCase()};`;
-        Element2("button", fragment2, { style, title: text, data: { command: "set-color", color: JSON.stringify({ text: text.toLowerCase() }) } });
+        DOMUtilities.Create("button", void 0, fragment2, {
+          attrs: { style, title: text },
+          data: { command: "set-color", color: JSON.stringify({ text: text.toLowerCase() }) }
+        });
       }
       this.swatch_lists.other?.replaceChildren(fragment2);
     }
@@ -38814,15 +38803,13 @@ var SpreadsheetConstructor = class {
         number_formats.push(format);
       }
     }
-    const Button = (format) => {
-      return Element2("button", void 0, {
-        text: format,
-        data: { format, command: "number-format" }
-      });
-    };
+    const Button = (format) => DOMUtilities.Create("button", void 0, void 0, {
+      text: format,
+      data: { format, command: "number-format" }
+    });
     const fragment = document.createDocumentFragment();
     fragment.append(...number_formats.map((format) => Button(format)));
-    fragment.append(Element2("div", void 0, {}, { separator: "" }));
+    fragment.append(DOMUtilities.Div(void 0, void 0, { attrs: { separator: "" } }));
     fragment.append(...date_formats.map((format) => Button(format)));
     format_menu.textContent = "";
     format_menu.append(fragment);

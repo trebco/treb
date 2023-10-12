@@ -247,8 +247,10 @@ export abstract class BaseLayout {
     });
     */
 
-    this.dropdown_list = DOMUtilities.Div('treb-dropdown-list');
-    this.dropdown_list.setAttribute('tabindex', '-1'); // focusable
+    this.dropdown_list = DOMUtilities.Div('treb-dropdown-list', undefined, {
+      attrs: { tabindex: '-1' },
+    });
+    // this.dropdown_list.setAttribute('tabindex', '-1'); // focusable
 
     // this.dropdown_caret.addEventListener('keydown', (event) => {
     this.dropdown_list.addEventListener('keydown', (event) => {
@@ -346,15 +348,17 @@ export abstract class BaseLayout {
       this.dropdown_selected = target as HTMLElement;
     });
 
-    this.mock_selection = DOMUtilities.Div('mock-selection-node');
-    this.mock_selection.innerHTML = '&nbsp;';
+    this.mock_selection = DOMUtilities.Div('mock-selection-node', undefined, {
+      html: '&nbsp;',
+    });
+    // this.mock_selection.innerHTML = '&nbsp;';
 
     this.note_node = DOMUtilities.Div('treb-note');
     this.title_node = DOMUtilities.Div('treb-hover-title');
 
     this.sort_button = DOMUtilities.Create(
       'button', 
-      'treb-sort-button', undefined, undefined, { title: 'Sort table', tabindex: '-1'});
+      'treb-sort-button', undefined, { attrs: { title: 'Sort table', tabindex: '-1' }});
 
     this.HideNote();
 

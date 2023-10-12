@@ -113,11 +113,14 @@ export class TabBar extends EventSource<TabEvent> {
       this.stats_panel.innerText = ''; // clear
       for (const entry of value) {
 
-        const label = DOMUtilities.Create('span', 'treb-stats-label', this.stats_panel);
-        label.textContent = entry.label;
+        DOMUtilities.Create('span', 'treb-stats-label', this.stats_panel, {
+          text: entry.label
+        });
 
-        const figure = DOMUtilities.Create('span', 'treb-stats-value', this.stats_panel);
-        figure.textContent = entry.value;
+        DOMUtilities.Create('span', 'treb-stats-value', this.stats_panel, {
+          text: entry.value,
+        });
+
       }
     }
   }

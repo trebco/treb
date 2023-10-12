@@ -27,8 +27,9 @@ export class Spinner {
   private visible = false;
 
   constructor(public container: HTMLElement) {
-    this.node = DOMUtilities.Div('treb-spinner', container);
-    this.node.innerHTML = `<div><div></div><div></div><div></div><div></div></div>`;
+    this.node = DOMUtilities.Div('treb-spinner', container, {
+      html: `<div><div></div><div></div><div></div><div></div></div>`,
+    });
   }
 
   public Show(): void {

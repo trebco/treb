@@ -21,11 +21,18 @@
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
+export interface CreateElementOptions {
+  attrs?: Record<string, string>;
+  data?: Record<string, string>;
+  text?: string;
+  html?: string;
+}
+
 export class DOMUtilities {
 
   /** creates a div and assigns class name/names */
-  public static Div(classes?: string|string[], parent?: HTMLElement, scope?: string): HTMLDivElement {
-    return this.Create('div', classes, parent, scope);
+  public static Div(classes?: string|string[], parent?: HTMLElement, options?: CreateElementOptions): HTMLDivElement {
+    return this.Create('div', classes, parent, options);
   }
 
   public static ClassNames(element: HTMLElement|SVGElement, classes: string|string[]) {
@@ -35,7 +42,7 @@ export class DOMUtilities {
   public static SVG<K extends keyof SVGElementTagNameMap>(
       tag: K, 
       classes?: string|string[],
-      parent?: HTMLElement|SVGElement
+      parent?: HTMLElement|SVGElement|DocumentFragment
     ): SVGElementTagNameMap[K] {
 
     const element = document.createElementNS(SVGNS, tag);
@@ -55,9 +62,9 @@ export class DOMUtilities {
   public static Create<K extends keyof HTMLElementTagNameMap>(
       tag: K, 
       classes?: string|string[], 
-      parent?: HTMLElement, 
-      scope?: string, 
-      attrs?: Record<string, string>): HTMLElementTagNameMap[K] {
+      parent?: HTMLElement|DocumentFragment, 
+      options?: CreateElementOptions
+    ): HTMLElementTagNameMap[K] {
  
     const element = document.createElement(tag);
 
@@ -65,14 +72,22 @@ export class DOMUtilities {
       this.ClassNames(element, classes);
     }
 
-    if (scope) {
-      element.setAttribute(scope, ''); // scope?
-    }
-
-    if (attrs) {
-      const keys = Object.keys(attrs);
-      for (const key of keys) {
-        element.setAttribute(key, attrs[key]);
+    if (options) {
+      if (options.attrs) {
+        for (const [key, value] of Object.entries(options.attrs)) {
+          element.setAttribute(key, value);
+        }
+      }
+      if (options.data) {
+        for (const [key, value] of Object.entries(options.data)) {
+          element.dataset[key] = value;
+        }
+      }
+      if (options.text) {
+        element.textContent = options.text;
+      }
+      if (options.html) {
+        element.innerHTML = options.html;
       }
     }
 
