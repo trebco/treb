@@ -266,6 +266,12 @@ export interface EmbeddedSpreadsheetOptions {
    */
   revert_button?: boolean;
 
+  /**
+   * show the revert indicator. this is an indicator that shows on the 
+   * top-left of the spreadsheet when a network document has local changes.
+   */
+  revert_indicator?: boolean;
+
 }
 
 /**

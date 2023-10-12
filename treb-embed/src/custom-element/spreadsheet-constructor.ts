@@ -82,6 +82,18 @@ export class SpreadsheetConstructor {
   /** root layout element */
   protected layout_element?: HTMLElement;
 
+  /** views container */
+  protected views?: HTMLElement;
+
+  /** 
+   * handle to the revert button, so we can adjust it. we can use
+   * container classes for the most part but we are updating the title.
+   * (FIXME: double-up the button, no reference required)
+   */
+  protected revert_button?: HTMLElement;
+
+  protected revert_state = false;
+
   /** cached controls */
   protected toolbar_controls: Record<string, HTMLElement> = {};
 
@@ -367,6 +379,22 @@ export class SpreadsheetConstructor {
       this.layout_element?.setAttribute('collapsed', '');
     }
 
+    // --- revert indicator ----------------------------------------------------
+
+    const revert_indicator = root.querySelector('[data-command=revert-indicator]');
+    if (revert_indicator instanceof HTMLElement) {
+      if (sheet.options.revert_indicator) {
+        revert_indicator.addEventListener('click', () => {
+          sheet.HandleToolbarMessage({
+            command: 'revert-indicator',
+          });
+        });
+      }
+      else {
+        revert_indicator.style.display = 'none';
+      }
+    }
+
     // --- toolbar/sidebar -----------------------------------------------------
     
     const sidebar = root.querySelector('.treb-layout-sidebar');
@@ -439,6 +467,10 @@ export class SpreadsheetConstructor {
       }
     }
 
+    if (sheet.options.revert_button) {
+      this.revert_button = this.layout_element.querySelector('[data-command=revert]') || undefined;
+    }
+
     // --- resize --------------------------------------------------------------
 
     if (sheet.options.resizable) {
@@ -448,7 +480,7 @@ export class SpreadsheetConstructor {
       const delta = { x: 0, y: 0 };
 
       // const resize_container = root.querySelector('.treb-layout-resize-container');
-      const views = root.querySelector('.treb-views');
+      this.views = root.querySelector('.treb-views') || undefined;
 
       let mask: HTMLElement|undefined;
       let resizer: HTMLElement|undefined;
@@ -521,7 +553,7 @@ export class SpreadsheetConstructor {
         delta.x = 0;
         delta.y = 0;
 
-        const layouts = views?.querySelectorAll('.treb-spreadsheet-body');
+        const layouts = this.views?.querySelectorAll('.treb-spreadsheet-body');
         const rects = Array.from(layouts||[]).map(element => element.getBoundingClientRect());
         if (rects.length) {
 
@@ -785,6 +817,48 @@ export class SpreadsheetConstructor {
     format_menu.textContent = '';
     format_menu.append(fragment);
     
+  }
+
+  /**
+   * setting explicit state on the revert button (if enabled).
+   * 
+   * @param sheet 
+   */
+  public UpdateRevertState(sheet: EmbeddedSpreadsheet) {
+
+    const state = sheet.can_revert;
+
+    if (this.revert_state === state) {
+      return; // nothing to do
+    }
+
+    this.revert_state = state;
+
+    if (this.revert_button || sheet.options.revert_indicator) {
+
+      if (this.revert_state) {
+        this.views?.classList.add('treb-can-revert');
+      }
+      else {
+        this.views?.classList.remove('treb-can-revert');
+      }
+
+      if (this.revert_button) {
+        this.revert_button.dataset.canRevert = state ? 'true' : 'false'; // FIXME: remove
+
+        // FIXME: container classes, double up button
+
+        if (state) {
+          this.revert_button.classList.remove('sidebar-disabled');
+          this.revert_button.title = 'Revert to original version'; // FIXME: strings
+        }
+        else {
+          this.revert_button.classList.add('sidebar-disabled');
+          this.revert_button.title = 'This is the original version of the document'; // FIXME: strings
+        }
+      }
+    }
+
   }
 
   /**
@@ -1288,6 +1362,7 @@ export class SpreadsheetConstructor {
           case 'reset':
             this.UpdateDocumentStyles(sheet, format_menu);
             this.UpdateSelectionStyle(sheet, toolbar, comment_box);
+            this.UpdateRevertState(sheet);
             break;
 
           case 'selection':

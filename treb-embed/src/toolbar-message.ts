@@ -76,6 +76,10 @@ export interface UIToolbarMessage {
   command: 'toggle-toolbar'|'show-toolbar'|'hide-toolbar'|'toggle-sidebar'|'show-sidebar'|'hide-sidebar';
 }
 
+export interface RevertIndicatorMessage {
+  command: 'revert-indicator';
+}
+
 export type ToolbarMessage 
   = SetColorToolbarMessage 
   | CommentToolbarMessage 
@@ -87,6 +91,7 @@ export type ToolbarMessage
   | AnnotationToolbarMessage
   | PrecisionToolbarMessage
   | JustifyToolbarMessage
+  | RevertIndicatorMessage
   | AlignToolbarMessage
   | TableToolbarMessage
   | CommandToolbarMessage

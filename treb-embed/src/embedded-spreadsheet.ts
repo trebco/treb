@@ -334,6 +334,39 @@ export class EmbeddedSpreadsheet {
    */
   protected last_save_version = 0;
 
+  /* *
+   * this is an attempt to improve our recordkeeping for stuff that
+   * has user-generated changes. it means "this is the version that
+   * was in the network document or inline document".  it has no 
+   * meaning in sheets that start empty.
+   * 
+   * we use "network version" to mean both network documents and inline
+   * documents (Which technically come from the network).
+   * 
+   * the problem with this is that the only way for it to work would
+   * be to store it in the document, but once we start storing this 
+   * value it will get stuck and cause problems. there's no way to
+   * "only store it in some contexts". I guess in theory we could wipe
+   * it if necesssary, but that's weak... something like 
+   * 
+   * (1) if this document comes from anywhere but local storage, 
+   *     dump the value
+   * 
+   * (2) never save this value unless you're writing to local storage
+   * 
+   * it's still going to get stuck in places it shouldn't be but we can
+   * mitigate problems with it. I'll think about it. we can do the 
+   * "can revert" thing in a different way.
+   * 
+   * /
+  protected canonical_network_version = 0;
+  */
+
+  /**
+   * simpler flag for testing if we can revert
+   */
+  protected initial_load_source: LoadSource|undefined = undefined;
+
   /**
    * calculator instance. we may share this if we're in a split view.
    */
@@ -485,6 +518,50 @@ export class EmbeddedSpreadsheet {
    */
   public get state() {
     return this.file_version;
+  }
+
+  /**
+   * this flag indicates we can revert the document. what that means is 
+   * we loaded a user-created version from localStorage, but there's a 
+   * backing network or inline document. or we did load the original version
+   * but the user has made some document changes.
+   * 
+   * it's like `dirty`, but that uses the load source as the ground truth,
+   * which means if you load a modified document from localStorage it's 
+   * initially considered not-dirty (which is maybe just a bad design?)
+   * 
+   * the intent of this field is to support enabling/disabling revert 
+   * logic, or to add a visual indicator that you are not looking at the
+   * canonical version.
+   * 
+   * @privateRemarks
+   * for that to work we need to know that we loaded from localStorage --
+   * that's not something we're keeping track of at the moment. 
+   * 
+   * it might be good to include the "canonical version" when we put stuff
+   * in localStorage...
+   * 
+   */
+  public get can_revert(): boolean {
+
+    // first check we came from a network source.
+
+    if (!this.options.inline_document && !this.options.document) {
+      return false;
+    }
+
+    // next check if we actually loaded from localStorage. for the purposes
+    // of this state check we only care about the initial load, so we can
+    // store that.
+
+    if (this.initial_load_source === LoadSource.LOCAL_STORAGE) {
+      return true;
+    }
+
+    // last check dirty -- that's everything else
+
+    return this.dirty;
+
   }
 
   /**
@@ -1872,6 +1949,17 @@ export class EmbeddedSpreadsheet {
           this.ShowSidebar(event.command === 'toggle-sidebar' ? undefined : event.command === 'show-sidebar');
           break;
 
+        case 'revert-indicator':
+          this.dialog?.ShowDialog({
+            title:  `This is a modified version of the document.\n` +
+                    `You can revert to the original or save your\n` +
+                    `changes in the sidebar.`,
+            close_box: true,
+            timeout: 5000,
+            type: DialogType.info,
+          });
+          break;
+
         default:
           console.info('unhandled', event.command);
           break;
@@ -2676,13 +2764,18 @@ export class EmbeddedSpreadsheet {
   }
 
   /**
-   * revert to the network version of this document, if both `local_storage` 
-   * and `network_document` are set.
+   * revert to the network version of this document, if `local_storage` 
+   * is set and the create options had either `document` or `inline-document`
+   * set.
+   * 
+   * FIXME: we should adjust for documents that fail to load.
    */
   public Revert(): void {
 
     if (this.options.inline_document) {
       this.LoadDocument(this.options.inline_document);
+      this.initial_load_source = LoadSource.INLINE_DOCUMENT; // update this flag, even though it's not "initial"
+
       if (this.options.local_storage) {
         this.SaveLocalStorage('reverted_backup');
         localStorage.removeItem(this.options.local_storage);
@@ -2704,6 +2797,7 @@ export class EmbeddedSpreadsheet {
       */
 
       this.LoadNetworkDocument(canonical);
+      this.initial_load_source = LoadSource.NETWORK_FILE; // update this flag, even though it's not "initial"
 
       // flush storage? what about mistakes? maybe we should 
       // back it up somewhere? (...)
@@ -3201,6 +3295,10 @@ export class EmbeddedSpreadsheet {
 
     if (this.parent_view) {
       return this.parent_view.LoadDocument(data, options);
+    }
+
+    if (!this.initial_load_source) {
+      this.initial_load_source = options.source;
     }
 
     // API v1 OK

@@ -187,6 +187,13 @@
   
   }
 
+  .treb-views.treb-can-revert .treb-view {
+    .treb-revert-indicator {
+      opacity: 1;
+      pointer-events: initial;
+    }
+  }
+
   .treb-view {
 
     position: relative;
@@ -217,6 +224,50 @@
 
     .treb-layout-resize-handle {
       display: none;
+    }
+
+    .treb-revert-indicator {
+      display: none;
+    }
+
+    &:first-of-type {
+
+      .treb-revert-indicator {
+        display: block;
+        grid-area: 2/1/3/2; // overlap the grid body
+        justify-self: start;
+        align-self: start;
+        width: 1rem;
+        height: 1rem;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        transition: opacity .125s ease;
+        pointer-events: none;
+
+        /* rounded style
+        &::after {
+          content: '';
+          position: absolute;
+          display: block;
+          top: -1rem;
+          left: -1rem;
+          border-radius: 1rem;
+          border: 1rem solid orange;
+        }
+        */
+
+        /* triangular style */
+
+        border: .5em solid orange;
+        border-right-color: transparent;
+        border-bottom-color: transparent;
+
+        /* end styles */
+
+        z-index: 20; // FIXME: use stack
+      }
+
     }
 
     &:last-of-type {
@@ -331,8 +382,21 @@
       -webkit-mask-image: var(--icon);
     }
   
+    // working on how to alter the revert button depending on state...
+    // remove hover effect? remove the button? (...)
+
+    /*
+    &:not(.sidebar-disabled):hover::after{
+      background: #666; // FIXME
+    }
+    */
+
+    &[data-can-revert=false] {
+      display: none;
+    }
+
     &:hover::after {
-      background: #666;
+      background: #666; // FIXME
     }
 
     &[data-command=recalculate] {
