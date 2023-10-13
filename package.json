@@ -12,7 +12,7 @@
   "type": "module",
   "devDependencies": {
     "@types/html-minifier": "^4.0.2",
-    "@types/node": "^20.4.0",
+    "@types/node": "^20.8.5",
     "@typescript-eslint/eslint-plugin": "^6.1.0",
     "@typescript-eslint/parser": "^6.1.0",
     "archiver": "^6.0.1",
@@ -22,7 +22,7 @@
     "fast-xml-parser": "^4.0.7",
     "html-minifier": "^4.0.0",
     "jszip": "^3.6.0",
-    "sass": "^1.53.0",
+    "sass": "^1.69.3",
     "treb-base-types": "file:treb-base-types",
     "treb-calculator": "file:treb-calculator",
     "treb-charts": "file:treb-charts",

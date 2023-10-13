@@ -3,6 +3,7 @@
 import * as esbuild from 'esbuild';
 
 import { SassPlugin, WorkerPlugin, NotifyPlugin, HTMLPlugin } from './esbuild-utils.mjs';
+import { promises as fs } from 'fs';
 
 import pkg from './package.json' assert { type: 'json' }; 
 
@@ -90,5 +91,6 @@ if (options.watch) {
   await context.watch();
 }
 else {
-  await esbuild.build(build_options);
+  const result = await esbuild.build(build_options);
+  await fs.writeFile('esbuild-metafile.json', JSON.stringify(result.metafile), { encoding: 'utf-8' });
 }
