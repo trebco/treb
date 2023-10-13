@@ -95,6 +95,10 @@ export const SerializeHTML = (node: Element) => {
 
     const defaults: StringMap = {};
 
+    // regarding document, in this case we're creating an iframe 
+    // specifically for isolation, and adding it to "document". 
+    // there's no reason to require the context document here (I think).
+
     const iframe = document.createElement('iframe');
     iframe.style.width = '10px';
     iframe.style.height = '10px';

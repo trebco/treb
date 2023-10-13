@@ -20,7 +20,7 @@
  */
 
 import type { Theme, ICellAddress } from 'treb-base-types';
-import { DOMUtilities, Rectangle } from 'treb-base-types';
+import { DOMContext, Rectangle } from 'treb-base-types';
 import type { BaseLayout } from '../layout/base_layout';
 import type { SelectionOffset } from './svg_selection_block';
 import { SVGSelectionBlock } from './svg_selection_block';
@@ -289,7 +289,7 @@ export class SelectionRenderer {
 
     let selection_block: SVGSelectionBlock = node_set[index];
     if (!selection_block) {
-      selection_block = new SVGSelectionBlock(!index, this.theme);
+      selection_block = new SVGSelectionBlock(!index, this.theme, undefined, node);
       node_set[index] = selection_block;
 
       if (index) { 
@@ -302,7 +302,7 @@ export class SelectionRenderer {
 
         let group: SVGElement = node.querySelector('.alternate-selections') as SVGElement;
         if (!group) {
-          group = DOMUtilities.SVG('g', 'alternate-selections');
+          group = this.layout.DOM.SVG('g', 'alternate-selections');
           node.appendChild(group);
         }
         group?.appendChild(selection_block.g);

@@ -209,7 +209,7 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
     // by default the editor is at (0, 0), so we need to move it before we 
     // focus on it (but only in this case).
 
-    if (this.edit_node !== document.activeElement) {
+    if (this.edit_node !== this.edit_node.ownerDocument.activeElement) {
 
       // this was not correct, but should we add those 2 pixels back?
 

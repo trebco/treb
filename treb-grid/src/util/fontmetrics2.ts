@@ -63,6 +63,9 @@ export class FontMetricsFactory {
     // what we're doing now is calculating -- we get the base size
     // from theme and if we see em or % we scale manually.
 
+    // based on the above, we don't need to worry about which
+    // document we're using. but we probably should just to be consistent.
+
   }
 
   /* *

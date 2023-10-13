@@ -65,10 +65,10 @@ import type {
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
-  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, ValueType, DOMUtilities, 
+  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, ValueType, DOMContext, 
 } from 'treb-base-types';
 
-import { EventSource, Yield, ValidateURI } from 'treb-utils';
+import { EventSource, ValidateURI } from 'treb-utils';
 import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
 
 
@@ -240,6 +240,8 @@ export class EmbeddedSpreadsheet {
 
   /** @internal */
   public static one_time_warnings: Record<string, boolean> = {};
+
+  protected DOM = DOMContext.GetInstance(); // default
 
   /**
    * this flag will be set on LoadDocument. the intent is to be able to
@@ -749,6 +751,7 @@ export class EmbeddedSpreadsheet {
     if (options.model) {
       this.model = options.model.model;
       this.calculator = options.model.calculator; // as CalcType;
+      this.DOM = options.model.DOM;
     }
     else {
 
@@ -769,11 +772,15 @@ export class EmbeddedSpreadsheet {
     //this.extra_calculator = //new Calculator(this.model);
     //  this.CreateCalculator(this.model);
 
+    if (container) {
+      this.DOM = DOMContext.GetInstance(container.ownerDocument);
+    }
+
     // update: tell the grid if we don't want to initialize the DOM,
     // if we don't have a container. that's distinct (at the moment)
     // from headless, which is a state that can change.
 
-    this.grid = new Grid(grid_options, this.model, undefined, !!container);
+    this.grid = new Grid(grid_options, this.model, undefined, !!container, this.DOM);
 
     if (this.options.headless) {
       this.grid.headless = true; // FIXME: move into grid options
@@ -782,6 +789,8 @@ export class EmbeddedSpreadsheet {
     // we're now gating this on container to support fully headless operation
 
     if (container) {
+
+      this.DOM = DOMContext.GetInstance(container.ownerDocument);
 
       // if this is the first one, update UA classes (used to be in grid)
 
@@ -3396,7 +3405,7 @@ export class EmbeddedSpreadsheet {
    
     if (options.scroll) {
       const scroll = options.scroll;
-      Yield().then(() => this.ScrollTo(scroll));
+      Promise.resolve().then(() => this.ScrollTo(scroll));
     }
 
   }
@@ -4441,7 +4450,7 @@ export class EmbeddedSpreadsheet {
    */
   protected SaveAs(blob: Blob, filename: string) {
 
-    const a = DOMUtilities.Create('a');
+    const a = this.DOM.Create('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
     a.click();
@@ -4566,7 +4575,7 @@ export class EmbeddedSpreadsheet {
             return;
           }
 
-          const a = DOMUtilities.Create('a');
+          const a = this.DOM.Create('a');
           a.setAttribute('target', this.options.hyperlinks);
           a.setAttribute('href', data);
           a.setAttribute('noreferrer', 'true');
@@ -4707,7 +4716,7 @@ export class EmbeddedSpreadsheet {
   protected SelectFile2(accept: string, operation: FileChooserOperation) {
 
     if (!this.file_chooser) {
-      const file_chooser = DOMUtilities.Create('input', undefined, undefined, {
+      const file_chooser = this.DOM.Create('input', undefined, undefined, {
         attrs: { type: 'file' },
         events: {
           change: () => {
@@ -4786,7 +4795,7 @@ export class EmbeddedSpreadsheet {
               }
             }
 
-            const img = DOMUtilities.Create('img');
+            const img = this.DOM.Create('img');
             img.src = contents;
 
             // this is to let the browser figure out the image size.
@@ -5151,7 +5160,7 @@ export class EmbeddedSpreadsheet {
           const reference = ValidateURI(annotation.data.data.src);
           if (reference) {
  
-            const img = DOMUtilities.Create('img');
+            const img = this.DOM.Create('img');
             img.src = reference;
 
             if (annotation.data.data.scale === 'fixed') {
@@ -5181,7 +5190,7 @@ export class EmbeddedSpreadsheet {
    */
   protected DocumentChange(undo_selection?: string): void {
 
-    Yield().then(() => {
+    Promise.resolve().then(() => {
 
       // console.info('serializing');
 

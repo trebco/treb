@@ -26,7 +26,7 @@ import type { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import type { GridOptions } from './grid_options';
 import { type ScaleEvent, ScaleControl } from './scale-control';
-import { DOMUtilities } from 'treb-base-types';
+import { DOMContext } from 'treb-base-types';
 
 export interface ActivateSheetEvent {
   type: 'activate-sheet';
@@ -113,11 +113,11 @@ export class TabBar extends EventSource<TabEvent> {
       this.stats_panel.innerText = ''; // clear
       for (const entry of value) {
 
-        DOMUtilities.Create('span', 'treb-stats-label', this.stats_panel, {
+        this.DOM.Create('span', 'treb-stats-label', this.stats_panel, {
           text: entry.label
         });
 
-        DOMUtilities.Create('span', 'treb-stats-value', this.stats_panel, {
+        this.DOM.Create('span', 'treb-stats-value', this.stats_panel, {
           text: entry.value,
         });
 
@@ -126,6 +126,8 @@ export class TabBar extends EventSource<TabEvent> {
   }
 
   private container: HTMLElement;
+
+  private DOM: DOMContext;
 
   constructor(
       private layout: BaseLayout,
@@ -137,6 +139,8 @@ export class TabBar extends EventSource<TabEvent> {
     ) {
 
     super();
+
+    this.DOM = DOMContext.GetInstance(view_node.ownerDocument);
 
     this.container = view_node.querySelector('.treb-spreadsheet-footer') as HTMLElement;
     if (!this.container) {
@@ -198,6 +202,10 @@ export class TabBar extends EventSource<TabEvent> {
       clearTimeout(this.double_click_data.timeout);
     }
     this.double_click_data.index = index;
+
+    // I don't think the window instance matters for this,
+    // but perhaps it's worth using DOM just for consistency
+
     this.double_click_data.timeout = window.setTimeout(() => {
       this.double_click_data.index = undefined;
       this.double_click_data.timeout = undefined;
@@ -245,14 +253,17 @@ export class TabBar extends EventSource<TabEvent> {
 
     tab.contentEditable = 'true';
 
-    // OK for shadow, seems to work as expected in all browsers
-    const selection = window.getSelection(); // OK for shadow
+    if (this.DOM.doc) {
 
-    if (selection) {
-      selection.removeAllRanges();
-      const range = document.createRange();
-      range.selectNodeContents(tab);
-      selection.addRange(range);
+      const selection = this.DOM.GetSelection(); 
+
+      if (selection) {
+        selection.removeAllRanges();
+        const range = this.DOM.doc.createRange();
+        range.selectNodeContents(tab);
+        selection.addRange(range);
+      }
+
     }
 
     tab.addEventListener('keydown', (inner_event: KeyboardEvent) => {
@@ -451,7 +462,7 @@ export class TabBar extends EventSource<TabEvent> {
       if (!sheet.visible) { continue; }
 
       const index = tabs.length;
-      const tab = DOMUtilities.Create('li');
+      const tab = this.DOM.Create('li');
       tab.setAttribute('tabindex', '0');
 
       // tab.classList.add('tab');

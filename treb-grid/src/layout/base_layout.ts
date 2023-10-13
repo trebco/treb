@@ -19,7 +19,7 @@
  * 
  */
 
-import { DOMUtilities } from 'treb-base-types';
+import { DOMContext } from 'treb-base-types';
 import type { DataModel, ViewModel } from '../types/data_model';
 
 import type { Tile } from '../types/tile';
@@ -185,10 +185,14 @@ export abstract class BaseLayout {
   private initialized = false;
 
 
-  constructor(protected model: DataModel, protected view: ViewModel, mock = false) {
+  constructor(protected model: DataModel, protected view: ViewModel, mock = false, public DOM = DOMContext.GetInstance()) {
 
     if (mock) {
       return;
+    }
+
+    if (!DOM) {
+      throw new Error('missing DOM context');
     }
 
     this.dpr = Math.max(1, self.devicePixelRatio || 1);
@@ -201,16 +205,14 @@ export abstract class BaseLayout {
     // contexts; the mask will be under the next sheet. so either
     // global in body, or instance local.
 
-    this.mask = DOMUtilities.Div('treb-mouse-mask');
-    this.tooltip = DOMUtilities.Div('treb-tooltip');
+    this.mask = DOM.Div('treb-mouse-mask');
+    this.tooltip = DOM.Div('treb-tooltip');
 
-    // this.error_highlight = DOMUtilities.CreateDiv('treb-error-highlight');
-
-    this.dropdown_caret = DOMUtilities.SVG('svg', 'treb-dropdown-caret');
+    this.dropdown_caret = DOM.SVG('svg', 'treb-dropdown-caret');
     this.dropdown_caret.setAttribute('viewBox', '0 0 24 24');
     this.dropdown_caret.tabIndex = -1;
 
-    const caret =DOMUtilities.SVG('path');
+    const caret = DOM.SVG('path');
     caret.setAttribute('d', 'M5,7 L12,17 L19,7');
     this.dropdown_caret.appendChild(caret);
 
@@ -247,7 +249,7 @@ export abstract class BaseLayout {
     });
     */
 
-    this.dropdown_list = DOMUtilities.Div('treb-dropdown-list', undefined, {
+    this.dropdown_list = DOM.Div('treb-dropdown-list', undefined, {
       attrs: { tabindex: '-1' },
     });
     // this.dropdown_list.setAttribute('tabindex', '-1'); // focusable
@@ -348,15 +350,15 @@ export abstract class BaseLayout {
       this.dropdown_selected = target as HTMLElement;
     });
 
-    this.mock_selection = DOMUtilities.Div('mock-selection-node', undefined, {
+    this.mock_selection = DOM.Div('mock-selection-node', undefined, {
       html: '&nbsp;',
     });
     // this.mock_selection.innerHTML = '&nbsp;';
 
-    this.note_node = DOMUtilities.Div('treb-note');
-    this.title_node = DOMUtilities.Div('treb-hover-title');
+    this.note_node = DOM.Div('treb-note');
+    this.title_node = DOM.Div('treb-hover-title');
 
-    this.sort_button = DOMUtilities.Create(
+    this.sort_button = DOM.Create(
       'button', 
       'treb-sort-button', undefined, { attrs: { title: 'Sort table', tabindex: '-1' }});
 
@@ -1171,15 +1173,18 @@ export abstract class BaseLayout {
 
     // FIXME: limit to edge (causing problems in chrome? ...)
 
-    const selection = window.getSelection();
+    if (this.DOM.doc) {
 
-    if (selection) {
-      const range = document.createRange();
-      range.selectNodeContents(this.mock_selection);
-      selection.removeAllRanges();
-      selection.addRange(range);
+      const selection = this.DOM.GetSelection();
 
-      // selection.collapseToEnd();
+      if (selection) {
+        const range = this.DOM.doc.createRange();
+        range.selectNodeContents(this.mock_selection);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+      }
+
     }
 
   }
@@ -1198,7 +1203,7 @@ export abstract class BaseLayout {
     parent: HTMLElement,
     mark_dirty = true): Tile {
 
-    const tile = DOMUtilities.Create('canvas') as Tile;
+    const tile = this.DOM.Create('canvas') as Tile;
     tile.setAttribute('class', classes);
     tile.logical_size = size;
     tile.width = size.width * this.dpr;
@@ -1407,7 +1412,7 @@ export abstract class BaseLayout {
 
     this.dropdown_list.textContent = '';
     for (const value of list) {
-      const entry = DOMUtilities.Div(undefined, this.dropdown_list);
+      const entry = this.DOM.Div(undefined, this.dropdown_list);
       if (current === value) {
         this.dropdown_selected = entry;
         entry.classList.add('selected');

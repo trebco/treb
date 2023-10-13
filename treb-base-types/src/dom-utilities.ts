@@ -58,24 +58,90 @@ export interface CreateElementOptions {
 
 }
 
-export class DOMUtilities {
+/**
+ * NOTE: I did this wrong. this is not correct. if you use a static 
+ * instance and then call create for instances in two contexts, the second 
+ * will overwrite the first.
+ * 
+ * we need a local or cached instance per sheet instance, plus we need 
+ * somewhere to put that.
+ * 
+ * hmmm how about a lookup, instead of passing it around? or we could 
+ * just have multiple instances. do we need a null instance? (...)
+ */
+
+export class DOMContext {
+
+  protected static instances: DOMContext[] = [];
+  
+  /** 
+   * FIXME: how about we default to document, so it won't break? 
+   * that will make it harder to debug though. 
+   */
+  public static GetInstance(doc?: Document) {
+    
+    for (const instance of this.instances) {
+      if (instance.doc === doc) {
+        return instance;
+      }
+    }
+
+    // not found, create
+    const instance = new DOMContext(doc);
+    this.instances.push(instance);
+    return instance;
+
+  }
+
+  /** ugh sloppy */
+  public doc?: Document; // placeholder temp
+
+  /** ugh sloppy */
+  public view?: (Window & typeof globalThis) | null;
+
+  /*
+  public get document(): Document {
+    return this.doc;
+  }
+
+  public get window(): (Window & typeof globalThis) {
+    return this.view;
+  }
+  */
+
+  /** class for `instanceof` comparison */
+  public get HTMLElement() {
+    return this.view?.HTMLElement;
+  }
+
+  protected constructor(doc?: Document) {
+    if (doc) {
+      this.doc = doc;
+      this.view = doc?.defaultView;
+    }
+  }
+
+  /** wrapper for window.getSelection */
+  public GetSelection() {
+    return this.view?.getSelection();
+  }
 
   /** creates a div and assigns class name/names */
-  public static Div(classes?: string|string[], parent?: HTMLElement, options?: CreateElementOptions): HTMLDivElement {
+  public Div(classes?: string|string[], parent?: HTMLElement, options?: CreateElementOptions): HTMLDivElement {
     return this.Create('div', classes, parent, options);
   }
 
-  public static ClassNames(element: HTMLElement|SVGElement, classes: string|string[]) {
+  public ClassNames(element: HTMLElement|SVGElement, classes: string|string[]) {
     element.classList.add(...(Array.isArray(classes) ? classes : [classes]).reduce((arr: string[], entry) => [...arr, ...entry.split(/\s+/g)], []));
   }
 
-  public static SVG<K extends keyof SVGElementTagNameMap>(
+  public SVG<K extends keyof SVGElementTagNameMap>(
       tag: K, 
       classes?: string|string[],
       parent?: HTMLElement|SVGElement|DocumentFragment
     ): SVGElementTagNameMap[K] {
 
-    const element = document.createElementNS(SVGNS, tag);
+    const element = (this.doc as Document).createElementNS(SVGNS, tag);
 
     if (classes) {
       this.ClassNames(element, classes);
@@ -88,15 +154,32 @@ export class DOMUtilities {
     return element;
   }
 
+  /**
+   * this is a wrapper for createTextNode. but if we want to expose 
+   * the element/node classes (@see HTMLElement, above) then this 
+   * should properly be the Text class and not a method. So we should
+   * rename it. 
+   * 
+   * @param data 
+   * @returns 
+   */
+  public Text(data: string) {
+    return (this.doc as Document).createTextNode(data);
+  }
+
+  public Fragment() {
+    return (this.doc as Document).createDocumentFragment();
+  }
+
   /** better typing */
-  public static Create<K extends keyof HTMLElementTagNameMap>(
+  public Create<K extends keyof HTMLElementTagNameMap>(
       tag: K, 
       classes?: string|string[], 
       parent?: HTMLElement|DocumentFragment, 
       options?: CreateElementOptions
     ): HTMLElementTagNameMap[K] {
  
-    const element = document.createElement(tag);
+    const element = (this.doc as Document).createElement(tag);
 
     if (classes) {
       this.ClassNames(element, classes);

@@ -19,7 +19,7 @@
  * 
  */
 
-import { Yield } from './dispatch';
+// import { Yield } from './dispatch';
 // import { IEventSource } from './ievent_source';
 
 let subscription_token_generator = 1000;
@@ -90,7 +90,7 @@ export class EventSource<T> { // implements IEventSource<T> {
     if (!this.dispatched) {
       this.dispatched = true;
 
-      Yield().then(() => {
+      Promise.resolve().then(() => {
 
         const events = this.queue.slice(0);
         this.dispatched = false;

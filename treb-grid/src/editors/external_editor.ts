@@ -70,7 +70,7 @@ export class ExternalEditor extends Editor {
 
       // if it's already focused, set as active
 
-      if (document.activeElement === descriptor.node) {
+      if (descriptor.node.ownerDocument.activeElement === descriptor.node) {
         this.active_editor = descriptor;
       }
 

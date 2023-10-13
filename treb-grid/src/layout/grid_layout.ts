@@ -21,7 +21,7 @@
 
 import { BaseLayout } from './base_layout';
 import type { Tile } from '../types/tile';
-import { DOMUtilities } from 'treb-base-types';
+import { DOMContext } from 'treb-base-types';
 import type { DataModel, ViewModel } from '../types/data_model';
 
 
@@ -32,8 +32,8 @@ import type { DataModel, ViewModel } from '../types/data_model';
  */
 export class GridLayout extends BaseLayout {
 
-  constructor(model: DataModel, view: ViewModel){
-    super(model, view);
+  constructor(model: DataModel, view: ViewModel, DOM: DOMContext){
+    super(model, view, false, DOM);
 
     // nodes always exist
 
@@ -41,37 +41,37 @@ export class GridLayout extends BaseLayout {
     // mask needs to get attached to a container, when it's
     // available
 
-    this.column_header = DOMUtilities.Div('treb-top-header');
-    this.row_header = DOMUtilities.Div('treb-left-header');
+    this.column_header = DOM.Div('treb-top-header');
+    this.row_header = DOM.Div('treb-left-header');
     
-    this.corner = DOMUtilities.Div('treb-corner');
-    this.corner_canvas = DOMUtilities.Create('canvas');
+    this.corner = DOM.Div('treb-corner');
+    this.corner_canvas = DOM.Create('canvas');
     this.corner.appendChild(this.corner_canvas);
 
-    this.contents = DOMUtilities.Div('treb-contents');
-    this.buffer_canvas = DOMUtilities.Create('canvas', 'treb-buffer-canvas', this.contents);
+    this.contents = DOM.Div('treb-contents');
+    this.buffer_canvas = DOM.Create('canvas', 'treb-buffer-canvas', this.contents);
 
     // selection node attached to contents
-    this.grid_selection = DOMUtilities.SVG('svg', 'treb-grid-selection', this.contents);
+    this.grid_selection = DOM.SVG('svg', 'treb-grid-selection', this.contents);
 
     // selection node for frozen rows
-    this.row_header_selection = DOMUtilities.SVG('svg', ['frozen-selection', 'frozen-selection-rows'], this.column_header);
-    this.row_header_annotations = DOMUtilities.Div('frozen-annotation-container frozen-annotation-container-rows', this.column_header);
+    this.row_header_selection = DOM.SVG('svg', ['frozen-selection', 'frozen-selection-rows'], this.column_header);
+    this.row_header_annotations = DOM.Div('frozen-annotation-container frozen-annotation-container-rows', this.column_header);
 
     // ...columns
-    this.column_header_selection = DOMUtilities.SVG('svg', ['frozen-selection', 'frozen-selection-columns'], this.row_header);
-    this.column_header_annotations = DOMUtilities.Div('frozen-annotation-container frozen-annotation-container-columns', this.row_header);
+    this.column_header_selection = DOM.SVG('svg', ['frozen-selection', 'frozen-selection-columns'], this.row_header);
+    this.column_header_annotations = DOM.Div('frozen-annotation-container frozen-annotation-container-columns', this.row_header);
 
     // ...corner
-    this.corner_selection = DOMUtilities.SVG('svg', 'frozen-selection', this.corner);
-    this.corner_annotations = DOMUtilities.Div('frozen-annotation-container frozen-annotation-container-corner', this.corner);
+    this.corner_selection = DOM.SVG('svg', 'frozen-selection', this.corner);
+    this.corner_annotations = DOM.Div('frozen-annotation-container frozen-annotation-container-corner', this.corner);
 
 
-    this.annotation_container = DOMUtilities.Div('treb-annotation-container');
+    this.annotation_container = DOM.Div('treb-annotation-container');
 
-    this.grid_cover = DOMUtilities.Div('tile-cover grid-cover');
-    this.column_header_cover = DOMUtilities.Div('tile-cover column-header-cover');
-    this.row_header_cover = DOMUtilities.Div('tile-cover row-header-cover');
+    this.grid_cover = DOM.Div('tile-cover grid-cover');
+    this.column_header_cover = DOM.Div('tile-cover column-header-cover');
+    this.row_header_cover = DOM.Div('tile-cover row-header-cover');
 
   }
 

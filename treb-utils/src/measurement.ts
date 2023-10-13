@@ -120,7 +120,7 @@ export class Measurement {
 
   }
 
-  /**
+  /* *
    * check if font is loaded, based on the theory that the alternatives
    * will be different sizes. note that this probably doesn't test weights
    * or italics properly, as those can be emulated without the specific face.
@@ -131,7 +131,7 @@ export class Measurement {
    * @param font_face
    * @param italic
    * @param bold
-   */
+   * /
   public static FontLoaded(font_face: string, italic = false, weight = 400): boolean {
     const face = `${italic ? 'italic' : ''} ${weight} 20pt ${font_face}`;
     const m1 = this.MeasureText(`${face}, sans-serif`, `check font`);
@@ -139,6 +139,7 @@ export class Measurement {
     const m3 = this.MeasureText(`${face}, monospace`, `check font`);
     return (m1.width === m2.width && m2.width === m3.width);
   }
+  */
 
   /**
    * measure width, height of text, accounting for rotation
@@ -168,7 +169,6 @@ export class Measurement {
     };
     
   }
-
 
 }
 

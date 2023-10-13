@@ -19,7 +19,7 @@
  * 
  */
 
-import { DOMUtilities } from 'treb-base-types';
+import { DOMContext } from 'treb-base-types';
 import type { Theme, Rectangle } from 'treb-base-types';
 import type { AutocompleteExecResult, DescriptorType } from './autocomplete_matcher';
 
@@ -72,13 +72,20 @@ export class Autocomplete {
 
   private active_element?: HTMLElement;
 
+  private DOM: DOMContext;
+
   constructor(private options: AutocompleteOptions = {}){
+
+    this.DOM = DOMContext.GetInstance(options.container?.ownerDocument);
+    if (!this.DOM.doc) {
+      throw new Error('invalid context');
+    }
 
     // this.scope = 'AC' + Math.round(Math.random() * Math.pow(10, 10)).toString(16);
 
-    this.completion_list = DOMUtilities.Div(
+    this.completion_list = this.DOM.Div(
       'treb-cell-editor-ac-list treb-autocomplete',
-      options.container || document.body,
+      options.container || this.DOM.doc.body,
       { 
         events: {
           mousedown: (event) => this.ListMouseDown(event),
@@ -93,9 +100,9 @@ export class Autocomplete {
 
     // this.completion_list.addEventListener('mousemove', (event) => this.ListMouseMove(event));
 
-    this.tooltip = DOMUtilities.Div(
+    this.tooltip = this.DOM.Div(
       'treb-cell-editor-ac-tooltip treb-autocomplete-tooltip',
-      options.container || document.body);
+      options.container || this.DOM.doc.body);
 
   }
 
@@ -364,8 +371,8 @@ export class Autocomplete {
         // compiler thinks this is possibly undefined, but vs code does
         // not -- I thought vs code used the same tsc we use to compile?
 
-        if (document.documentElement) {
-          const viewport_height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+        if (this.DOM.doc?.documentElement) {
+          const viewport_height = Math.max(this.DOM.doc.documentElement.clientHeight, this.DOM.view?.innerHeight || 0);
           if (viewport_height - position.bottom < 200 ){
             layout_top = true;
           }

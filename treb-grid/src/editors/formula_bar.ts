@@ -25,7 +25,7 @@ import { Parser } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
 import type { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
-import { DOMUtilities } from 'treb-base-types';
+import { DOMContext } from 'treb-base-types';
 
 // --- from formula_bar ---
 
@@ -162,6 +162,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     ) {
 
     super(model, view, autocomplete);
+    const DOM = DOMContext.GetInstance(container.ownerDocument);
 
     const inner_node = container.querySelector('.treb-formula-bar') as HTMLElement;
     inner_node.removeAttribute('hidden');
@@ -172,7 +173,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     this.InitAddressLabel();
 
     if (this.options.insert_function_button) {
-      this.button = DOMUtilities.Create('button', 'formula-button', inner_node);
+      this.button = DOM.Create('button', 'formula-button', inner_node);
       this.button.addEventListener('click', () => {
         const formula: string = this.active_editor ? this.active_editor.node.textContent || '' : '';
         this.Publish({ type: 'formula-button', formula });
@@ -270,7 +271,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     this.RegisterListener(descriptor, 'keyup', this.FormulaKeyUp.bind(this));
 
     if (this.options.expand_formula_button) {
-      this.expand_button = DOMUtilities.Create('button', 'expand-button', inner_node, { 
+      this.expand_button = DOM.Create('button', 'expand-button', inner_node, { 
         events: {
           click: (event: MouseEvent) => {
             event.stopPropagation();
@@ -307,24 +308,19 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
 
     this.address_label.addEventListener('focusin', (event) => {
 
+      const doc = this.address_label.ownerDocument;
+
       // FIXME: close any open editors? (...)
 
       // we're now doing this async for all browsers... it's only really
       // necessary for IE11 and safari, but doesn't hurt
 
       requestAnimationFrame(() => {
-        if ((document.body as any).createTextRange) {
-          const range = (document.body as any).createTextRange();
-          range.moveToElementText(this.address_label);
-          range.select();
-        }
-        else {
-          const selection = window.getSelection();
-          const range = document.createRange();
+          const selection = (doc.defaultView as (Window & typeof globalThis)).getSelection();
+          const range = doc.createRange();
           range.selectNodeContents(this.address_label);
           selection?.removeAllRanges();
           selection?.addRange(range);
-        }
       });
 
     });

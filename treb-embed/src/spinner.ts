@@ -19,7 +19,7 @@
  * 
  */
 
-import { DOMUtilities } from 'treb-base-types';
+import { DOMContext } from 'treb-base-types';
 
 export class Spinner {
 
@@ -27,7 +27,8 @@ export class Spinner {
   private visible = false;
 
   constructor(public container: HTMLElement) {
-    this.node = DOMUtilities.Div('treb-spinner', container, {
+    const DOM = DOMContext.GetInstance(container.ownerDocument);
+    this.node = DOM.Div('treb-spinner', container, {
       html: `<div><div></div><div></div><div></div><div></div></div>`,
     });
   }

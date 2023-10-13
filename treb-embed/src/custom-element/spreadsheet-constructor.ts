@@ -11,59 +11,7 @@ import { ColorFunctions, type Color } from 'treb-base-types';
 import { Measurement } from 'treb-utils';
 import type { ToolbarMessage } from '../toolbar-message';
 
-import { DOMUtilities } from 'treb-base-types';
-
-/*
-interface ElementOptions {
-  data: Record<string, string>;
-  text: string;
-  style: string;
-  title: string;
-  classes: string|string[];
-}
-
-/ * *
- * FIXME: unify this with DOMUtils
- * /
-const Element = <K extends keyof HTMLElementTagNameMap>(tag: K, parent?: HTMLElement|DocumentFragment, options: Partial<ElementOptions> = {}, attrs: Record<string, string> = {}): HTMLElementTagNameMap[K] => {
-  const element = document.createElement(tag);
-  if (options.classes) {
-
-    // you can't use an array destructure in a ternary expression? TIL
-
-    if (Array.isArray(options.classes)) {
-      element.classList.add(...options.classes);
-    }
-    else {
-      element.classList.add(options.classes);
-    }
-
-  }
-  if (options.title) {
-    element.title = options.title;
-  }
-  if (options.text) {
-    element.textContent = options.text;
-  }
-  if (options.style) {
-    element.setAttribute('style', options.style);
-  }
-  if (options.data) {
-    for (const [key, value] of Object.entries(options.data)) {
-      element.dataset[key] = value;
-    }
-  }
-
-  for (const [key, value] of Object.entries(attrs)) {
-    element.setAttribute(key, value);
-  }
-
-  if (parent) {
-    parent.appendChild(element);
-  }
-  return element;
-}
-*/
+import { DOMContext } from 'treb-base-types';
 
 /** @internal */
 export class SpreadsheetConstructor {
@@ -107,6 +55,8 @@ export class SpreadsheetConstructor {
     other?: HTMLDivElement,
   } = {};
 
+  protected DOM: DOMContext;
+
   // 
 
   constructor(root?: HTMLElement|string) {
@@ -115,22 +65,22 @@ export class SpreadsheetConstructor {
       root = document.querySelector(root) as HTMLElement;
     }
 
+    this.DOM = DOMContext.GetInstance(root?.ownerDocument);
+
     // there's a possibility this could be running in a node environment. 
     // in that case (wihtout a shim) HTMLElement will not exist, so we can't
     // check type.
 
-    if (typeof HTMLElement !== 'undefined' && root instanceof HTMLElement) {
+    // but in that case what would root be? (...)
+
+    if (this.DOM.view && root instanceof this.DOM.view.HTMLElement) {
+
       this.root = root;
-
-      const style_node = document.head.querySelector('style[treb-stylesheet]');
+      
+      const style_node = this.DOM.doc?.head.querySelector('style[treb-stylesheet]');
       if (!style_node) {
-        document.head.prepend(
-          DOMUtilities.Create('style', undefined, undefined, { text: css, attrs: { 'treb-stylesheet': '' } }));
-
-        // const style = Element('style');
-        // style.setAttribute('treb-stylesheet', '');
-        // style.textContent = css;
-        // document.head.prepend(style);
+        this.DOM.doc?.head.prepend(
+          this.DOM.Create('style', undefined, undefined, { text: css, attrs: { 'treb-stylesheet': '' } }));
       }
 
     }
@@ -292,7 +242,7 @@ export class SpreadsheetConstructor {
       if (this.root.hasAttribute('inline-document')) {
         const inline_name = this.root.getAttribute('inline-document') || '';
         for (const element of Array.from(this.root.children)) {
-          if (element instanceof HTMLScriptElement) {
+          if (this.DOM.view && element instanceof this.DOM.view.HTMLScriptElement) {
             if (element.type === 'application/json') {
               const name = element.getAttribute('name') || '';
 
@@ -389,7 +339,7 @@ export class SpreadsheetConstructor {
     // --- revert indicator ----------------------------------------------------
 
     const revert_indicator = root.querySelector('[data-command=revert-indicator]');
-    if (revert_indicator instanceof HTMLElement) {
+    if (this.DOM.view && revert_indicator instanceof this.DOM.view.HTMLElement) {
       if (sheet.options.revert_indicator) {
         revert_indicator.addEventListener('click', () => {
           sheet.HandleToolbarMessage({
@@ -544,9 +494,9 @@ export class SpreadsheetConstructor {
 
         const resize_parent = root.querySelector('.treb-main') as HTMLElement; // was document.body
 
-        resizer = DOMUtilities.Div('treb-resize-rect', resize_parent);
+        resizer = this.DOM.Div('treb-resize-rect', resize_parent);
 
-        mask = DOMUtilities.Div('treb-resize-mask', resize_parent, { 
+        mask = this.DOM.Div('treb-resize-mask', resize_parent, { 
           attrs: { 
             style: 'cursor: nw-resize;' 
           },
@@ -731,7 +681,7 @@ export class SpreadsheetConstructor {
     
     {
       
-      let fragment = document.createDocumentFragment();
+      let fragment = this.DOM.Fragment();
      
       const length = sheet.document_styles.theme_colors.length;
       const themes = ['Background', 'Text', 'Background', 'Text', 'Accent'];
@@ -762,7 +712,7 @@ export class SpreadsheetConstructor {
 
             }
 
-            DOMUtilities.Create('button', undefined, fragment, {
+            this.DOM.Create('button', undefined, fragment, {
               attrs: { style, title },
               data: { command: 'set-color', color: JSON.stringify(entry.color) },
             });
@@ -774,8 +724,8 @@ export class SpreadsheetConstructor {
 
       this.swatch_lists.theme?.replaceChildren(fragment);
 
-      fragment = document.createDocumentFragment();
-      DOMUtilities.Create('button', 'treb-default-color', fragment, {
+      fragment = this.DOM.Fragment();
+      this.DOM.Create('button', 'treb-default-color', fragment, {
         attrs: { title: 'Default color' },
         data: { command: 'set-color', color: JSON.stringify({}) },
       });
@@ -789,7 +739,7 @@ export class SpreadsheetConstructor {
 
       for (const text of [...colors, ...additional_colors]) {
         const style = `background: ${text.toLowerCase()};`;
-        DOMUtilities.Create('button', undefined, fragment, {
+        this.DOM.Create('button', undefined, fragment, {
           attrs: { style, title: text, },
           data: { command: 'set-color', color: JSON.stringify({text: text.toLowerCase()})},
         });
@@ -823,14 +773,14 @@ export class SpreadsheetConstructor {
     }
 
     const Button = (format: string) => 
-      DOMUtilities.Create('button', undefined, undefined, {
+    this.DOM.Create('button', undefined, undefined, {
         text: format, 
         data: { format, command: 'number-format' },
       });
 
-    const fragment = document.createDocumentFragment();
+    const fragment = this.DOM.Fragment();
     fragment.append(...number_formats.map(format => Button(format)));
-    fragment.append(DOMUtilities.Div(undefined, undefined, { attrs: { separator: '' }}));
+    fragment.append(this.DOM.Div(undefined, undefined, { attrs: { separator: '' }}));
     fragment.append(...date_formats.map(format => Button(format)));
 
     format_menu.textContent = '';
@@ -1226,8 +1176,8 @@ export class SpreadsheetConstructor {
 
     if (/firefox/i.test(navigator.userAgent)) {
       scroller.addEventListener('scroll', () => {
-        if (document.activeElement instanceof HTMLElement ) {
-          document.activeElement.blur();
+        if (this.DOM.view && this.DOM.doc?.activeElement instanceof this.DOM.view.HTMLElement ) {
+          this.DOM.doc.activeElement?.blur();
         }
       });
     }

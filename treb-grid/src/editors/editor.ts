@@ -32,9 +32,15 @@
  * 
  * subclasses or callers can handle those.
  * 
+ * ---
+ * 
+ * NOTE: external editors might run in a different realm (in the js meaning
+ * of that term). so we don't necessarily want to use the spreadsheet's context
+ * for everything. this is going to be extremely confusing.
+ * 
  */
 
-import { Area, type IArea, type ICellAddress, IsCellAddress, Localization, type Theme, Rectangle, type Cell, DOMUtilities } from 'treb-base-types';
+import { Area, type IArea, type ICellAddress, IsCellAddress, Localization, type Theme, Rectangle, type Cell, DOMContext } from 'treb-base-types';
 import type { ExpressionUnit, ParseResult, UnitAddress, UnitRange } from 'treb-parser';
 import { Parser, QuotedSheetNameRegex } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
@@ -221,15 +227,16 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
     // handles that but this will return false. the test is "is the 
     // cursor in or at the end of a reference?"
 
-    if (this.active_editor && this.active_editor.node === document.activeElement) {
+    if (this.active_editor && this.active_editor.node === this.active_editor.node.ownerDocument.activeElement) {
 
-      const selection = window.getSelection();
+      const view = this.active_editor.node.ownerDocument.defaultView as (Window & typeof globalThis);
+      const selection = view.getSelection();
       const count = selection?.rangeCount;
 
       if (count) {
 
         const range = selection?.getRangeAt(0);
-        const element = range?.endContainer instanceof HTMLElement ? range.endContainer :
+        const element = range?.endContainer instanceof view.HTMLElement ? range.endContainer :
           range.endContainer?.parentElement;
 
         // this is a reference, assume we're selecting (we will replace)
@@ -249,7 +256,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
         // start, not end
 
-        if (range?.startContainer instanceof Text) {
+        if (range?.startContainer instanceof view.Text) {
           const str = (range.startContainer.textContent?.substring(0, range.startOffset) || '').trim();
           if (str.length && Editor.FormulaChars.includes(str[str.length - 1])) {
             return true;
@@ -315,8 +322,9 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
   }
 
   protected SelectAll(node: HTMLElement) {
-    const selection = window.getSelection();
-    const range = document.createRange();
+    const view = node.ownerDocument.defaultView as (Window & typeof globalThis);
+    const selection = view.getSelection();
+    const range = node.ownerDocument.createRange();
     range.selectNode(node);
     selection?.removeAllRanges();
     selection?.addRange(range);
@@ -326,12 +334,15 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
       start: { node: ChildNode, offset: number }, 
       end?: { node: ChildNode, offset: number }) {
 
-    const selection = window.getSelection();
-    const range = document.createRange();
+    const doc = start.node.ownerDocument;
+    const view = doc?.defaultView as (Window & typeof globalThis);
+
+    const selection = view.getSelection();
+    const range = doc?.createRange();
 
     const FirstTextNode = (node: ChildNode) => {
       let target: Node = node;
-      while (target && !(target instanceof Text) && !!target.firstChild) {
+      while (target && !(target instanceof view.Text) && !!target.firstChild) {
         target = target.firstChild;
       }
       return target;
@@ -369,7 +380,9 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
       return;
     }
 
-    const selection = window.getSelection();
+    const view = this.active_editor.node.ownerDocument.defaultView as (Window & typeof globalThis);
+
+    const selection = view.getSelection();
     if (!selection) {
       throw new Error('error getting selection');
     }
@@ -401,7 +414,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
     // might include _more_ than an existing reference, and we want to 
     // replace the entire range selection.
 
-    if (range.startContainer instanceof Text) {
+    if (range.startContainer instanceof view.Text) {
 
       // first case: range selected
       if (!range.collapsed && range.startOffset < range.endOffset) {
@@ -436,7 +449,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
         // check if we're in a reference node; if so, replace
 
         const parent = range.startContainer.parentElement;
-        if (parent instanceof HTMLElement && parent.dataset.reference) {
+        if (parent instanceof view.HTMLElement && parent.dataset.reference) {
 
           // console.info('case 2');
 
@@ -508,7 +521,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
       // the text. we'll want to create a node, and we'll want to set the 
       // cursor at the end.
 
-      if (range.startContainer instanceof HTMLElement) {
+      if (range.startContainer instanceof view.HTMLElement) {
         range.startContainer.textContent = reference;
         this.SetCaret({
           node: range.startContainer, 
@@ -556,6 +569,8 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
    */
   protected UpdateColors(force_event = false) {
 
+    const view = this.active_editor?.node.ownerDocument.defaultView as (Window & typeof globalThis);
+
     // create a map of canonical label -> area 
 
     const map: Map<string, Area> = new Map();
@@ -582,7 +597,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     for (const entry of this.nodes) {
       for (const node of Array.from(entry.node.childNodes)) {
-        if (node instanceof HTMLElement && node.dataset.reference) {
+        if (node instanceof view.HTMLElement && node.dataset.reference) {
           const index = indexes.get(node.dataset.reference);
           node.dataset.highlightIndex = (typeof index === 'number') ? (index % 5 + 1).toString() : '?';
         }
@@ -765,6 +780,8 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
     const node = descriptor.node;
     const text = node.textContent || '';
 
+    const DOM = DOMContext.GetInstance(node.ownerDocument);
+
     // set this flag so we can use it in `get selected()`
     
     this.text_formula = text[0] === '=';
@@ -843,11 +860,11 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
         let text_index = 0;
         let last_text_node: Text|undefined;
 
-        const fragment = document.createDocumentFragment();
+        const fragment = DOM.Fragment();
 
         const AddNode = (text: string, type = 'text', reference = '', force_selection = false) => {
 
-          const text_node = document.createTextNode(text);
+          const text_node = DOM.Text(text);
 
           if (force_selection || ((caret_start > text_index || (caret_start === 0 && text_index === 0)) && caret_start <= text_index + text.length)) {
             selection_start = {
@@ -865,7 +882,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
           if (type !== 'text') {
 
-            const span = DOMUtilities.Create('span', type);
+            const span = DOM.Create('span', type);
 
             if (reference) {
               span.dataset.reference = reference;
@@ -1101,10 +1118,13 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     const result: [string, string] = ['', ''];
 
-    if (node !== document.activeElement || node !== this.active_editor?.node) {
+    if (node !== node.ownerDocument.activeElement || node !== this.active_editor?.node) {
       return result;
     }
-    
+   
+    const doc = node.ownerDocument;
+    const view = doc.defaultView as (Window & typeof globalThis);
+
     // is there a way to do this without recursing? (...)
     // how about string concat instead of array join, it's faster in 
     // chrome (!)
@@ -1125,7 +1145,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
       // not sure what the offsets are even referring to, since we get
       // offsets > the number of child nodes. is this a bug in firefox?
 
-      if (element === range.startContainer && element === range.endContainer && !(element instanceof Text)) {
+      if (element === range.startContainer && element === range.endContainer && !(element instanceof view.Text)) {
 
         /*
         if (range.startOffset !== 0 || range.endOffset !== 0) {
@@ -1155,7 +1175,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
         return;
       }
 
-      if (element instanceof Text) {
+      if (element instanceof view.Text) {
         const text = element.textContent || '';
         if (!complete[0]) {
           result[0] += text;
@@ -1174,7 +1194,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
       }
     };
 
-    const selection = window.getSelection();
+    const selection = view.getSelection();
     if (selection?.rangeCount ?? 0 > 0) {
       const range = selection?.getRangeAt(0);
       if (range) {
@@ -1184,121 +1204,5 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     return result;
   }
-
-  /* *
-   * get text up to the selection. optionally use the start of the 
-   * selection. new version does not require cloning, we can drop the 
-   * measurement node.
-   * 
-   * @param node 
-   * @param start 
-   * @returns 
-   * /
-  protected SubstringToCaret(node: HTMLElement, start = false): string {
-
-    if (node !== document.activeElement) {
-      return '';
-    }
-
-    // is there a way to do this without recursing? (...)
-    // how about string concat instead of array join, it's faster in chrome (!)
-
-    const Consume = (element: Node, target: Node, offset: number, parts: string[]): boolean => {
-      if (element === target) {
-        parts.push((element.textContent || '').substring(0, offset));
-        return false;
-      }
-      else if (element instanceof Text) {
-        parts.push(element.textContent || '');
-        return true;
-      }
-      else if (element.hasChildNodes()) {
-        for (const child of element.childNodes) {
-          const result = Consume(child, target, offset, parts);
-          if (!result) { 
-            return false; 
-          }
-        }
-        return true;
-      }
-      return false;
-    };
-
-    const selection = window.getSelection();
-    if (selection?.rangeCount ?? 0 > 0) {
-
-      const range = selection?.getRangeAt(0);
-      if (range) {
-        let [target, offset] = start ? 
-            [range.startContainer, range.startOffset] : 
-            [range.endContainer, range.endOffset];
-
-        const parts: string[] = [];
-        Consume(node, target, offset, parts);
-        return parts.join('');
-
-      }
-
-    }
-    
-    return '';
-
-  }
-  */
-
-  /* *
-   * we've been carrying this function around for a while. is this
-   * still the best way to do this in 2023? (...)
-   * 
-   * get text substring to caret position, irrespective of node structure
-   * 
-   * @param start - use the start of the selection instead of the end
-   * /
-  protected SubstringToCaret(node: HTMLElement, start = false): string {
-
-    if (node !== this.editor_node || node !== document.activeElement) {
-      return '';
-    }
-
-    // we could probably shortcut if text is empty
-
-    const selection = window.getSelection();
-    if (!selection) {
-      throw new Error('error getting selection');
-    }
-
-    if (selection.rangeCount === 0) {
-      // console.warn('range count is 0');
-      return '';
-    }
-
-    const range = selection.getRangeAt(0);
-    const preCaretRange = range.cloneRange();
-
-    preCaretRange.selectNodeContents(node);
-    if (start) {
-      preCaretRange.setEnd(range.startContainer, range.startOffset);
-    }
-    else {
-      preCaretRange.setEnd(range.endContainer, range.endOffset);
-    }
-
-    this.measurement_node.textContent = '';
-    this.measurement_node.appendChild(preCaretRange.cloneContents());
-
-    const result = this.measurement_node.textContent || '';
-    const result2 = this.SubstringToCaret2(node, start);
-
-    // console.info('X', result === result2, {result, result2});
-    if (result !== result2) {
-      throw new Error('mismatch');
-    }
-
-    return result;
-
-    // return this.measurement_node.textContent || '';
-
-  }
-  */
 
 }

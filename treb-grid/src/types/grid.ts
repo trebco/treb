@@ -58,7 +58,7 @@ import {
   MDParser,
 } from 'treb-parser';
 
-import { Yield, SerializeHTML } from 'treb-utils';
+import { SerializeHTML } from 'treb-utils';
 import type { ParseResult as ParseResult2 } from 'treb-format';
 import { NumberFormatCache, LotusDate, ValueParser, type Hints, NumberFormat } from 'treb-format';
 import { SelectionRenderer } from '../render/selection-renderer';
@@ -111,7 +111,7 @@ import { CommandKey
 
 import type { DataModel, SerializedModel } from './data_model';
 
-import { DOMUtilities } from 'treb-base-types';
+import { DOMContext } from 'treb-base-types';
 import { GridBase } from './grid_base';
 import type { SetRangeOptions } from './set_range_options';
 import type { ClipboardCellData } from './clipboard_data';
@@ -360,6 +360,8 @@ export class Grid extends GridBase {
 
   private tab_bar?: TabBar;
 
+  private DOM = DOMContext.GetInstance();
+
   // --- constructor -----------------------------------------------------------
 
   /**
@@ -369,7 +371,8 @@ export class Grid extends GridBase {
     options: GridOptions = {}, 
     model: DataModel,
     theme: Theme = DefaultTheme,
-    initialze_dom = true ) {
+    initialze_dom = true,
+    DOM: DOMContext ) {
 
     super(options, model);  
 
@@ -385,7 +388,8 @@ export class Grid extends GridBase {
       return;
     }
 
-    this.layout = new GridLayout(this.model, this.view);
+    this.DOM = DOM;
+    this.layout = new GridLayout(this.model, this.view, DOM);
 
     if (options.initial_scale) {
       if (typeof options.initial_scale === 'string') {
@@ -571,7 +575,7 @@ export class Grid extends GridBase {
 
       // FIXME: why is this not in layout? it is layout.
 
-      const node = DOMUtilities.Div('annotation', undefined, {
+      const node = this.DOM.Div('annotation', undefined, {
         data: { scale: this.layout.scale.toString() },
         style: { fontSize: `${10 * this.layout.scale}pt` },
         attrs: { tabindex: '-1', },
@@ -643,9 +647,9 @@ export class Grid extends GridBase {
 
       view.node = node;
 
-      view.content_node = DOMUtilities.Div('annotation-content', node);
-      const move_target = DOMUtilities.Div('annotation-move-target', node);
-      const resize_target = DOMUtilities.Div('annotation-resize-target', node);
+      view.content_node = this.DOM.Div('annotation-content', node);
+      const move_target = this.DOM.Div('annotation-move-target', node);
+      const resize_target = this.DOM.Div('annotation-resize-target', node);
 
       node.addEventListener('keydown', (event) => {
       
@@ -2406,7 +2410,7 @@ export class Grid extends GridBase {
    */
   private ActivateSheetTasks() {
 
-    this.active_sheet.Activate();
+    this.active_sheet.Activate(this.DOM);
     
     if (this.active_sheet.image && !this.active_sheet.image.complete) {
 
@@ -2778,7 +2782,7 @@ export class Grid extends GridBase {
 
     if (!this.render_token) {
       this.render_token = 1;
-      Yield().then(() => {
+      Promise.resolve().then(() => {
         this.render_token = 0;
         this.Repaint(force, full_tile);
       });
@@ -3839,7 +3843,7 @@ export class Grid extends GridBase {
       if (cell.hyperlink) {
         if (this.PointInTextPart(address, offset_point, cell)) {
           const link = cell.hyperlink;
-           Yield().then(() => {
+           Promise.resolve().then(() => {
             this.grid_events.Publish({
               type: 'cell-event',
               data: {

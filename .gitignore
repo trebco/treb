@@ -14,5 +14,10 @@ etc
 #
 doc 
 
+#
+# we now generate metafile by default. don't commit it.
+#
+esbuild-metafile.json
+
 treb-export/test
 treb-parser/test

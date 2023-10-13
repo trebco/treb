@@ -21,7 +21,7 @@
 
 import type { Color, CellStyle } from './style';
 import { ColorFunctions } from './color';
-import { DOMUtilities } from './dom-utilities';
+import { DOMContext } from './dom-utilities';
 
 /*
  * so this is a little strange. we use CSS to populate a theme object,
@@ -493,13 +493,14 @@ export const ThemeColorTable = (theme_color: number, tint = .7): TableTheme => {
 export const LoadThemeProperties = (container: HTMLElement): Theme => {
     
   const theme: Theme = JSON.parse(JSON.stringify(DefaultTheme));
+  const DOM = DOMContext.GetInstance(container.ownerDocument);
 
   const Append = (parent: HTMLElement, classes: string): HTMLDivElement => {
-    return DOMUtilities.Div(classes, parent);
+    return DOM.Div(classes, parent);
   }
 
   const ElementCSS = (parent: HTMLElement, classes: string): CSSStyleDeclaration => {
-    return window.getComputedStyle(Append(parent, classes));
+    return DOM.view?.getComputedStyle(Append(parent, classes)) as CSSStyleDeclaration;
   }
 
   const node = Append(container, '');
@@ -572,7 +573,7 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   // we could just parse, we know the returned css format is going
   // to be an rgb triple (I think?)
 
-  const canvas = DOMUtilities.Create('canvas');
+  const canvas = DOM.Create('canvas');
 
   canvas.width = 3;
   canvas.height = 3;

@@ -33,33 +33,6 @@ export interface Metrics {
   y_offset: number;
 }
 
-// const trident = /trident/i.test(navigator?.userAgent || '');
-
-/*
-let dom_parser: DOMParser | undefined;
-const SetSVG = trident ? (node: SVGElement, svg: string) => {
-
-  if (!dom_parser) {
-    dom_parser = new DOMParser();
-    (dom_parser as any).async = false;
-  }
-
-  const element = dom_parser.parseFromString(
-    '<svg xmlns=\'http://www.w3.org/2000/svg\' xmlns:xlink=\'http://www.w3.org/1999/xlink\'>' + svg + '</svg>',
-    'text/xml').documentElement;
-
-  node.textContent = '';
-
-  let child = element.firstChild;
-
-  while (child) {
-    node.appendChild(document.importNode(child, true));
-    child = child.nextSibling;
-  }
-
-} : (node: SVGElement, svg: string) => node.innerHTML = svg;
-*/
-
 const SVGNode = (tag: string, attribute_map: {[index: string]: any} = {}, text?: string): SVGElement => {
   const node = document.createElementNS(SVGNS, tag);
   for (const key of Object.keys(attribute_map)) {
@@ -115,7 +88,6 @@ export class ChartRenderer {
     this.svg_node.style.width = '100%';
     this.svg_node.style.height = '100%';
 
-    // this.group = document.createElementNS(SVGNS, 'g');
     this.svg_node.appendChild(this.container_group);
 
     // FIXME: validate parent is relative/absolute
@@ -676,8 +648,6 @@ export class ChartRenderer {
     titles?: string[],
     classes?: string | string[]): void {
 
-
-    // const node = document.createElementNS(SVGNS, 'path');
     const group = SVGNode('g');
 
     const d1: string[] = [];
@@ -853,7 +823,7 @@ export class ChartRenderer {
     // circles...
 
     if (titles && circles.length) {
-      const circle_group = document.createElementNS(SVGNS, 'g');
+      const circle_group = SVGNode('g');
       for (const circle of circles) {
 
         const shape = SVGNode('circle', {cx: circle.x, cy: circle.y, r: step});
@@ -880,8 +850,7 @@ export class ChartRenderer {
     titles?: string[],
     classes?: string | string[]) {
 
-    // const node = document.createElementNS(SVGNS, 'path');
-    const group = document.createElementNS(SVGNS, 'g');
+    const group = SVGNode('g');
 
     const d1: string[] = [];
     const d2: string[] = [];
@@ -952,17 +921,10 @@ export class ChartRenderer {
     // circles...
 
     if (titles && circles.length) {
-      const circle_group = document.createElementNS(SVGNS, 'g');
+      const circle_group = SVGNode('g');
       for (const circle of circles) {
 
         const shape = SVGNode('circle', { cx: circle.x, cy: circle.y, r: step });
-
-        /*
-        const shape = document.createElementNS(SVGNS, 'circle');
-        shape.setAttribute('cx', circle.x.toString());
-        shape.setAttribute('cy', circle.y.toString());
-        shape.setAttribute('r', (step).toString());
-        */
 
         shape.addEventListener('mouseenter', (event) => {
           this.parent.setAttribute('title', titles[circle.i] || '');
@@ -1255,15 +1217,6 @@ export class ChartRenderer {
     const d: string[] = [];
     const areas: string[] = [];
 
-    /*
-    const group = document.createElementNS(SVGNS, 'g');
-    if (typeof classes !== 'undefined') {
-      if (typeof classes === 'string') {
-        classes = [classes];
-      }
-      group.setAttribute('class', classes.join(' '));
-    }
-    */
     const group = SVGNode('g', {class: classes});
 
     // if (title) node.setAttribute('title', title);
@@ -1392,7 +1345,6 @@ export class ChartRenderer {
 
   public RenderPoints(area: Area, x: number[], y: number[], classes?: string | string[]) {
 
-    // const node = document.createElementNS(SVGNS, 'path');
     const d: string[] = [];
 
     for (let i = 0; i < x.length; i++) {
@@ -1693,12 +1645,6 @@ export class ChartRenderer {
         d.push(`M${PointOnCircle(center, inner_radius + (outer_radius - inner_radius) / 2, half_angle)}`);
         d.push(`L${anchor}`);
 
-        /*
-        const callout = document.createElementNS(SVGNS, 'path');
-        callout.setAttribute('d', d.join(' '));
-        callout.setAttribute('class', 'callout');
-        donut.appendChild(callout);
-        */
         donut.appendChild(SVGNode('path', { d, class: 'callout' }));
 
         const text_parts: string[] = [];
@@ -1793,7 +1739,7 @@ export class ChartRenderer {
 
           callout_label.textContent = '';
           for (const part of parts) {
-            const tspan = document.createElementNS(SVGNS, 'tspan');
+            const tspan = SVGNode('tspan');
             tspan.textContent = part.text;
 
             const part_x = (corrected > Math.PI) ?

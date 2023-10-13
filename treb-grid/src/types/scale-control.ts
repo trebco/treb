@@ -19,7 +19,7 @@
  * 
  */
 
-import { DOMUtilities as DOM } from 'treb-base-types';
+import { DOMContext } from 'treb-base-types';
 import { NumberFormat, NumberFormatCache, ValueParser } from 'treb-format';
 import { ValueType } from 'treb-base-types';
 import { EventSource } from 'treb-utils';
@@ -48,6 +48,8 @@ export class ScaleControl extends EventSource<ScaleEvent> {
     super();
 
     this.format = NumberFormatCache.Get('0.0');
+
+    const DOM = DOMContext.GetInstance(container.ownerDocument);
 
     this.input = DOM.Create('input', 'treb-scale-input', container, {
       events: {

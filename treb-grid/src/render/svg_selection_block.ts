@@ -19,7 +19,7 @@
  * 
  */
 
-import { type Theme, type Rectangle, DOMUtilities } from 'treb-base-types';
+import { type Theme, type Rectangle, DOMContext } from 'treb-base-types';
 
 /**
  * the original selections -- a canvas overlaid over the tile canvases --
@@ -44,12 +44,15 @@ export class SVGSelectionBlock {
 
   constructor( primary: boolean,
                private theme: Theme,
-               private offset: SelectionOffset = {x: 0, y: 0}) {
+               private offset: SelectionOffset = {x: 0, y: 0},
+               node: SVGElement) {
 
-    this.g = DOMUtilities.SVG('g');
+    const DOM = DOMContext.GetInstance(node.ownerDocument);
+
+    this.g = DOM.SVG('g');
     this.g.setAttribute('transform', `translate(${offset.x}, ${offset.y})`);
     
-    this.outline = DOMUtilities.SVG('rect', 'outline');
+    this.outline = DOM.SVG('rect', 'outline');
 
     if (primary) {
 
@@ -58,8 +61,8 @@ export class SVGSelectionBlock {
       // primary selections have a separate fill, plus the nub. separate
       // fill because the "target" is unfilled.
 
-      this.fill = DOMUtilities.SVG('path', 'fill');
-      this.nub = DOMUtilities.SVG('rect', 'nub');
+      this.fill = DOM.SVG('path', 'fill');
+      this.nub = DOM.SVG('rect', 'nub');
 
       this.g.appendChild(this.fill);
       this.g.appendChild(this.outline);
@@ -75,7 +78,7 @@ export class SVGSelectionBlock {
       // and use currentColor, but we can't set opacity separately so we
       // need another node. which is a waste, but ergonomics ftw!
 
-      this.fill = DOMUtilities.SVG('rect', 'fill');
+      this.fill = DOM.SVG('rect', 'fill');
 
       // this.SetThemeColor(0);
       // if (theme.additional_selection_line_dash_array) {

@@ -26,7 +26,7 @@ import { ValueType, Cells, Style,
   type PropertyKeys,
   type Color,
   Area, IsFlatDataArray, 
-  IsNestedRowArray, IsCellAddress, DOMUtilities
+  IsNestedRowArray, IsCellAddress, DOMContext
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement, ValidateURI } from 'treb-utils';
@@ -741,14 +741,14 @@ export class Sheet {
   }
 
 
-  public Activate() {
+  public Activate(DOM: DOMContext) {
 
     // load background image, if set
 
     if (this.background_image) {
       const resource = ValidateURI(this.background_image);
       if (resource) {
-        this._image = DOMUtilities.Create('img');
+        this._image = DOM.Create('img');
         this._image.src = resource;
       }
 
@@ -1591,55 +1591,6 @@ export class Sheet {
     this.SetRowHeight(row, height);
 
   }
-
-  /* *
-   * auto-sizes the column, but if the allow_shrink parameter is not set
-   * it will only enlarge, never shrink the column.
-   *
-   * UPDATE: since the only caller calls with inline = true, removing 
-   * parameter, test, and extra behavior.
-   * 
-   * UPDATE: moving to grid, for reasons of canvas...
-   * /
-  public AutoSizeColumn(column: number, allow_shrink = true): void {
-
-    if (!Sheet.measurement_canvas) {
-      Sheet.measurement_canvas = document.createElement('canvas');
-    }
-    Sheet.measurement_canvas.style.font = Style.Font(this.default_style_properties);
-    console.info("SMC", Sheet.measurement_canvas.style.font);
-    (self as any).SMC = Sheet.measurement_canvas;
-
-    document
-
-    const context = Sheet.measurement_canvas.getContext('2d');
-    if (!context) return;
-
-    let width = 12;
-    const padding = 4 * 2; // FIXME: parameterize
-
-    if (!allow_shrink) width = this.GetColumnWidth(column);
-
-    for (let row = 0; row < this.cells.rows; row++) {
-      const cell = this.CellData({ row, column });
-      let text = cell.formatted || '';
-      if (typeof text !== 'string') {
-        text = text.map((part) => part.text).join('');
-      }
-
-      if (text && text.length) {
-        context.font = Style.Font(cell.style || {});
-
-        console.info({text, style: Style.Font(cell.style||{}), cf: context.font});
-
-        width = Math.max(width, Math.ceil(context.measureText(text).width) + padding);
-      }
-    }
-
-    this.SetColumnWidth(column, width);
-
-  }
-  */
 
   /** returns the style properties for a given style index */
   public GetStyle(index: number): CellStyle {
