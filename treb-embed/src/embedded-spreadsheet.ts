@@ -232,11 +232,11 @@ export class EmbeddedSpreadsheet {
   /** @internal */
   public static treb_embedded_script_path = '';
 
-  /** @internal */
-  public static enable_engine = false;
+  /* * @internal */
+  // public static enable_engine = false;
 
-  /** @internal */
-  public static enable_formatter = false;
+  /* * @internal */
+  // public static enable_formatter = false;
 
   /** @internal */
   public static one_time_warnings: Record<string, boolean> = {};
@@ -255,10 +255,10 @@ export class EmbeddedSpreadsheet {
    */
   public loaded = false;
 
-  /**
+  /* *
    * @internal
    */
-  public toolbar_ctl?: ToolbarCtl;
+  // public toolbar_ctl?: ToolbarCtl;
 
   /**
    * this is a cache of number formats and colors used in the document. it's
@@ -1087,80 +1087,6 @@ export class EmbeddedSpreadsheet {
       this.dialog = new Dialog(container);
     }
 
-  }
-
-  /**
-   * we need to load relative resources. we can't access the path of this
-   * script, but because it has to be added via a script tag -- either
-   * statically or dynamically -- we should be able to get it.
-   *
-   * it is possible that the script tag goes away, but if we sniff on first
-   * script execution, we can probably assume it's still there -- because the
-   * client won't have had a chance to remove it yet.
-   * 
-   * @internal
-   */
-  public static BuildPath(): void {
-    const tags = (typeof document === 'undefined') ? [] : document.querySelectorAll('script');
-
-    // FIXME: fragile!
-    const default_script_name = process.env.BUILD_ENTRY_MAIN || '';
-    let rex = new RegExp(default_script_name);
-
-    // tslint:disable-next-line:prefer-for-of
-    for (let i = 0; i < tags.length; i++) {
-
-      const tag = tags[i];
-      const src = tag.src; // fully-qualified here [FIXME: IE11?]
-
-      /*
-      if (src && /\?.*?engine/i.test(src)) {
-        console.info('s', src);
-        this.enable_engine = true;
-      }
-      */
-
-      if (src && rex.test(src)) {
-
-        /*
-        if (src && /\?.*?utils/i.test(src)) {
-          this.enable_utils = true;
-        }
-        */
-
-        if (src && /\?.*?engine/i.test(src)) {
-          this.enable_engine = true;
-        }
-
-        if (src && /\?.*?format/i.test(src)) {
-          this.enable_formatter = true;
-        }
-
-        this.treb_embedded_script_path = src;
-        this.treb_base_path = src.replace(new RegExp(default_script_name + '.*$'), '');
-
-        return;
-      }
-
-    }
-
-    // to support .mjs imports, look for the import line
-
-    rex = new RegExp(`import.*?from.*?['"](.*?${default_script_name}.*?)['"]`);
-    for (let i = 0; i < tags.length; i++) {
-      const tag = tags[i];
-      if (!tag.src) {
-        const text = tag.textContent;
-        const match = (text||'').match(rex);
-        if (match) {
-          const src = match[1];
-          this.treb_embedded_script_path = src;
-          this.treb_base_path = src.replace(new RegExp(default_script_name + '.*$'), '');
-          return;
-        }
-      }
-    }
-    
   }
 
   /**
