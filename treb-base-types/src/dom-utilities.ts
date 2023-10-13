@@ -59,17 +59,10 @@ export interface CreateElementOptions {
 }
 
 /**
- * NOTE: I did this wrong. this is not correct. if you use a static 
- * instance and then call create for instances in two contexts, the second 
- * will overwrite the first.
+ * we still need a good way to represent the 'no-DOM' context,
+ * ideally without throwing exceptions.
  * 
- * we need a local or cached instance per sheet instance, plus we need 
- * somewhere to put that.
- * 
- * hmmm how about a lookup, instead of passing it around? or we could 
- * just have multiple instances. do we need a null instance? (...)
  */
-
 export class DOMContext {
 
   protected static instances: DOMContext[] = [];
