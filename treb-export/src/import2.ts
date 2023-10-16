@@ -22,8 +22,9 @@
 // import JSZip from 'jszip';
 
 import UZip from 'uzip';
+import Base64JS from 'base64-js';
 
-import type { AnchoredChartDescription} from './workbook2';
+import type { AnchoredChartDescription, AnchoredImageDescription} from './workbook2';
 import { ChartType, ConditionalFormatOperators, Workbook } from './workbook2';
 import type { ParseResult } from 'treb-parser';
 import { Parser } from 'treb-parser';
@@ -800,8 +801,10 @@ export class Importer {
 
     const drawings = FindAll('worksheet/drawing');
     const chart_descriptors: AnchoredChartDescription[] = [];
+    const image_descriptors: AnchoredImageDescription[] = [];
 
     for (const child of drawings) {
+      
       const rel = child.a$ ? child.a$['r:id'] : undefined;
       if (rel) {
 
@@ -815,7 +818,16 @@ export class Importer {
         if (reference) {
           const drawing = this.workbook.ReadDrawing(reference);
           if (drawing && drawing.length) {
-            chart_descriptors.push(...drawing);
+            for (const entry of drawing) {
+              switch (entry.type) {
+                case 'chart':
+                  chart_descriptors.push(entry);
+                  break;
+                case 'image':
+                  image_descriptors.push(entry);
+                  break;
+              }
+            }
           }
         }
 
@@ -854,6 +866,40 @@ export class Importer {
       return result;
 
     };
+
+    for (const descriptor of image_descriptors) {
+      if (descriptor && descriptor.image) {
+
+        const layout: AnnotationLayout = {
+          tl: AnchorToCorner(descriptor.anchor.from),
+          br: AnchorToCorner(descriptor.anchor.to),
+        };
+        
+        let type: AnnotationType = 'image';
+        const data = Base64JS.fromByteArray(descriptor.image);
+        let imagetype: string = '';
+
+        if (descriptor.filename) {
+          if (/jpe*g$/i.test(descriptor.filename)) {
+            imagetype = 'jpeg';
+          }
+          else if (/png$/i.test(descriptor.filename)) {
+            imagetype = 'png';
+          }
+          else if (/gif$/i.test(descriptor.filename)) {
+            imagetype = 'gif';
+          }
+        }
+
+        if (imagetype && data) {
+          const src = 'data:image/' + imagetype + ';base64,' + data;
+          annotations.push({
+            layout, type, data: { src },
+          });
+        }
+
+      }
+    }
 
     for (const descriptor of chart_descriptors) {
       if (descriptor && descriptor.chart) {

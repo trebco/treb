@@ -46,6 +46,7 @@ export interface AnchoredAnnotation {
   layout: AnnotationLayout;
   type?: AnnotationType;
   formula?: string;
+  data?: any;
 }
 
 /**

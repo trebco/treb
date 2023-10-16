@@ -1754,8 +1754,8 @@ export interface ImageAnnotationData {
     src: string;
 
     /**/
-    scale: string;
-    original_size: ImageSize;
+    scale?: string;
+    original_size?: ImageSize;
 }
 
 /**

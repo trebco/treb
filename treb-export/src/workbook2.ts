@@ -84,10 +84,20 @@ export interface ChartDescription {
   series?: ChartSeries[];
 }
 
+export interface AnchoredImageDescription {
+  type: 'image';
+  image?: Uint8Array;
+  filename?: string;
+  anchor: TwoCellAnchor,
+}
+
 export interface AnchoredChartDescription {
+  type: 'chart';
   chart?: ChartDescription, 
   anchor: TwoCellAnchor,
 }
+
+export type AnchoredDrawingPart = AnchoredChartDescription|AnchoredImageDescription;
 
 export interface TableFooterType {
   type: 'label'|'formula';
@@ -180,7 +190,7 @@ export class Workbook {
     this.rels = this.ReadRels( 'xl/_rels/workbook.xml.rels');
 
     // shared strings
-    let data = this.zip.Get('xl/sharedStrings.xml');
+    let data = this.zip.Has('xl/sharedStrings.xml') ? this.zip.Get('xl/sharedStrings.xml') : '';
     let xml = xmlparser2.parse(data || '');
     this.shared_strings.FromXML(xml);
 
@@ -284,7 +294,7 @@ export class Workbook {
 
   }
 
-  public ReadDrawing(reference: string): AnchoredChartDescription[] | undefined {
+  public ReadDrawing(reference: string): AnchoredDrawingPart[] | undefined {
 
     const data = this.zip.Get(reference.replace(/^../, 'xl'));
     
@@ -295,7 +305,7 @@ export class Workbook {
 
     const drawing_rels = this.ReadRels(reference.replace(/^..\/drawings/, 'xl/drawings/_rels') + '.rels');
 
-    const results: AnchoredChartDescription[] = [];
+    const results: AnchoredDrawingPart[] = [];
     const anchor_nodes = XMLUtils.FindAll(xml, 'xdr:wsDr/xdr:twoCellAnchor');
 
     /* FIXME: move to drawing? */
@@ -315,18 +325,46 @@ export class Workbook {
         from: ParseAnchor(anchor_node['xdr:from']), 
         to: ParseAnchor(anchor_node['xdr:to']),
       };
-      const result: AnchoredChartDescription = { anchor };
 
       const chart_reference = XMLUtils.FindAll(anchor_node, `xdr:graphicFrame/a:graphic/a:graphicData/c:chart`)[0];
 
       if (chart_reference && chart_reference.a$ && chart_reference.a$['r:id']) {
+        const result: AnchoredChartDescription = { type: 'chart', anchor };
         const chart_rel = drawing_rels[chart_reference.a$['r:id']];
         if (chart_rel && chart_rel.target) {
           result.chart = this.ReadChart(chart_rel.target);
         }
+        results.push(result);
       }
+      else {
 
-      results.push(result);
+        const media_reference = XMLUtils.FindAll(anchor_node, `xdr:pic/xdr:blipFill/a:blip`)[0];
+        if (media_reference && media_reference.a$['r:embed']) {
+          const media_rel = drawing_rels[media_reference.a$['r:embed']];
+
+          // const chart_rel = drawing_rels[chart_reference.a$['r:id']];
+          // console.info("Maybe an image?", media_reference, media_rel)
+
+          if (media_rel && media_rel.target) {
+            if (/(?:jpg|jpeg|png|gif)$/i.test(media_rel.target)) {
+
+              // const result: AnchoredImageDescription = { type: 'image' };
+              const path = media_rel.target.replace(/^\.\./, 'xl');
+              const filename = path.replace(/^.*\//, '');
+              
+              const result: AnchoredImageDescription = {
+                type: 'image', anchor, image: this.zip.GetBinary(path), filename
+              }
+
+              results.push(result);
+
+            }
+          }
+
+        }
+
+
+      }
 
     }
 

@@ -91,9 +91,9 @@ export interface ImageAnnotationData {
    * @privateRemarks
    * why is this a string?
    */
-  scale: string; 
+  scale?: string; 
   
-  original_size: ImageSize;
+  original_size?: ImageSize;
   
 }
 

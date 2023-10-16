@@ -63,6 +63,14 @@ export class ZipWrapper {
     }
   }
 
+  public GetBinary(path: string) {
+    const data = this.records[path];
+    if (data) {
+      return new Uint8Array(data);
+    }
+    throw new Error('path not in records: ' + path);
+  }
+
   public Get(path: string) {
 
     let text = this.text.get(path);
@@ -78,6 +86,8 @@ export class ZipWrapper {
       delete this.records[path];
       return text;
     }
+
+    console.info(this);
 
     throw new Error('path not in zip file: ' + path);
 
