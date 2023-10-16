@@ -19,8 +19,9 @@
  * 
  */
 
-//import * as JSZip from 'jszip';
-import JSZip from 'jszip';
+// import JSZip from 'jszip';
+
+import UZip from 'uzip';
 
 import type { AnchoredChartDescription} from './workbook2';
 import { ChartType, ConditionalFormatOperators, Workbook } from './workbook2';
@@ -38,6 +39,7 @@ import { XMLUtils } from './xml-utils';
 // import { one_hundred_pixels } from './constants';
 import { ColumnWidthToPixels } from './column-width';
 import type { AnnotationType, ConditionalFormat } from 'treb-grid';
+import { ZipWrapper } from './zip-wrapper';
 
 interface SharedFormula {
   row: number;
@@ -55,22 +57,14 @@ export class Importer {
 
   public workbook?: Workbook;
 
-  public archive?: JSZip;
+  // public archive?: JSZip;
 
-  public async Init(data: string | JSZip): Promise<void> {
+  public zip?: ZipWrapper;
 
-    if (typeof data === 'string') {
-      this.archive = await JSZip().loadAsync(data);
-    }
-    else {
-      this.archive = data;
-    }
-
-    if (this.archive) {
-      this.workbook = new Workbook(this.archive);
-      await this.workbook.Init();
-    }
-
+  public Init(data: ArrayBuffer) {
+    this.zip = new ZipWrapper(data);
+    this.workbook = new Workbook(this.zip);
+    this.workbook.Init();
   }
 
   /** FIXME: accessor */
@@ -465,7 +459,7 @@ export class Importer {
     return undefined;
   }
 
-  public async GetSheet(index = 0): Promise<ImportedSheetData> {
+  public GetSheet(index = 0): ImportedSheetData {
 
     if (!this.workbook) {
       throw new Error('missing workbook');
@@ -764,7 +758,7 @@ export class Importer {
         const relationship = sheet.rels[rel];
         if (relationship) {
           reference = relationship.target || '';
-          const description = await this.workbook.ReadTable(reference);
+          const description = this.workbook.ReadTable(reference);
           if (description) {
 
             // console.info({description});
@@ -819,7 +813,7 @@ export class Importer {
         }
 
         if (reference) {
-          const drawing = await this.workbook.ReadDrawing(reference);
+          const drawing = this.workbook.ReadDrawing(reference);
           if (drawing && drawing.length) {
             chart_descriptors.push(...drawing);
           }

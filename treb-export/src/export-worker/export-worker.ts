@@ -27,27 +27,22 @@ import { Importer } from '../import2';
 const ctx: Worker = self as any;
 const exporter = new Exporter();
 
-const ExportSheets = async (data: any) => {
+const ExportSheets = (data: any) => {
 
   if (data.sheet) {
-    await exporter.Init(data.decorated || []);
-    await exporter.Export(data.sheet);
-
-    const blob = await exporter.AsBlob(1);
-    const corrected = (blob as Blob).slice(0, (blob as Blob).size,
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-
-    ctx.postMessage({ status: 'complete', blob: corrected });
+    exporter.Init(data.decorated || []);
+    exporter.Export(data.sheet);
+    ctx.postMessage({ status: 'complete', blob: exporter.Blob() });
   }
 
 };
 
-const ImportSheet = async (data: any) => {
+const ImportSheet = (data: any) => {
 
   const importer = new Importer();
 
   try {
-    await importer.Init(data.data);
+    importer.Init(data.data);
 
     const count = importer.SheetCount();
     const results = {
@@ -57,7 +52,7 @@ const ImportSheet = async (data: any) => {
     };
 
     for (let i = 0; i < count; i++) {
-      const result = await importer.GetSheet(i);
+      const result = importer.GetSheet(i);
       if (result) {
         results.sheets.push(result);
       }

@@ -25,7 +25,10 @@
  * run, but it will take a bit more work.
  */
 
-import JSZip from 'jszip';
+// import JSZip from 'jszip';
+
+import UZip from 'uzip';
+import * as Base64JS from 'base64-js';
 
 import { PixelsToColumnWidth } from './column-width';
 
@@ -62,10 +65,12 @@ import type { TwoCellAnchor } from './drawing2/drawing2';
 import { Drawing } from './drawing2/drawing2';
 import { ConditionalFormatOperators, type TableDescription, type TableFooterType } from './workbook2';
 import type { AnnotationData } from 'treb-grid/src/types/annotation';
+import { ZipWrapper } from './zip-wrapper';
 
 export class Exporter {
 
-  public zip?: JSZip;
+  // public zip?: JSZip;
+  public zip?: ZipWrapper;
 
   public xmloptions: Partial<XmlBuilderOptions> = {
     format: true,
@@ -129,19 +134,18 @@ export class Exporter {
    * 
    * @param decorated_functions 
    */
-  public async Init(decorated_functions: Record<string, string> = {}): Promise<void> {
-
-    // this.decorated_functions = decorated_functions.map(name => name.toLowerCase()); // normalized
+  public Init(decorated_functions: Record<string, string> = {}) {
 
     for (const key of Object.keys(decorated_functions)) {
       this.decorated_functions[key.toLowerCase()] = decorated_functions[key]; // normalized
     }
 
-    this.zip = await new JSZip().loadAsync(template, {base64: true});
+    const parsed = Base64JS.toByteArray(template);
+    this.zip = new ZipWrapper(parsed);
 
   }
 
-  public async WriteRels(rels: RelationshipMap, path: string, dump = false): Promise<void> {
+  public WriteRels(rels: RelationshipMap, path: string, dump = false) {
 
     if (!this.zip) {
       throw new Error('missing zip');
@@ -176,14 +180,15 @@ export class Exporter {
     if (dump) {
       console.info(xml);
     }
-    await this.zip?.file(path, xml);
+    
+    this.zip.Set(path, xml);
 
   }
 
   /**
    * format and write styles
    */
-  public async WriteStyleCache(style_cache: StyleCache): Promise<void> {
+  public WriteStyleCache(style_cache: StyleCache) {
 
     if (!this.zip) {
       throw new Error('missing zip');
@@ -501,7 +506,7 @@ export class Exporter {
     const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
     // console.info(xml);
     
-    await this.zip?.file('xl/styles.xml', xml);
+    this.zip?.Set('xl/styles.xml', xml);
 
   }
 
@@ -509,7 +514,7 @@ export class Exporter {
    * format and write shared strings file to the zip archive. this will
    * replace any existing shared strings file.
    */
-  public async WriteSharedStrings(shared_strings: SharedStrings): Promise<void> {
+  public WriteSharedStrings(shared_strings: SharedStrings) {
 
     // console.info({shared_strings});
 
@@ -534,7 +539,7 @@ export class Exporter {
 
     // console.info(xml);
 
-    await this.zip?.file('xl/sharedStrings.xml', xml);
+    this.zip.Set('xl/sharedStrings.xml', xml);
 
   }
 
@@ -1157,13 +1162,13 @@ export class Exporter {
    
   }
 
-  public async Export(source: {
+  public Export(source: {
       sheet_data: SerializedSheet[];
       active_sheet?: number;
       named_ranges?: {[index: string]: IArea};
       named_expressions?: Array<{ name: string, expression: string }>;
       decimal_mark: ','|'.';
-    }): Promise<void> {
+    }) {
       
     // --- create a map --------------------------------------------------------
 
@@ -1198,11 +1203,11 @@ export class Exporter {
     const style_cache = new StyleCache();
     const theme = new Theme();
 
-    let data = await this.zip?.file('xl/theme/theme1.xml')?.async('text') as string;
+    let data = this.zip?.Get('xl/theme/theme1.xml');
     theme.FromXML(this.xmlparser2.parse(data || ''));
     // console.info({data, xml: this.xmlparser2.parse(data)})
 
-    data = await this.zip?.file('xl/styles.xml')?.async('text') as string;
+    data = this.zip?.Get('xl/styles.xml');
     style_cache.FromXML(this.xmlparser2.parse(data || ''), theme);
 
     // reset counters
@@ -2037,7 +2042,7 @@ export class Exporter {
         };
 
         const xml = XMLDeclaration + this.xmlbuilder1.build(table_dom);
-        await this.zip?.file(`xl/tables/table${table.index}.xml`, xml);
+        this.zip?.Set(`xl/tables/table${table.index}.xml`, xml);
 
       }
 
@@ -2304,25 +2309,27 @@ export class Exporter {
         }
 
         for (const {image} of drawing.images) {
-          // console.info({image}, `xl/media/image${image.index}.${image.extension}`);
-          await this.zip?.file(`xl/media/image${image.index}.${image.extension}`, image.options.data||'', {
-            base64: image.options.encoding === 'base64'
-          });
+          if (image.options.data) {
+            this.zip?.SetBinary(
+              `xl/media/image${image.index}.${image.extension}`, 
+              image.options.data, 
+              image.options.encoding);
+          }
           // no media rels!
         }
 
         for (const {chart} of drawing.charts) {
           const dom = chart.toJSON();
           const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
-          await this.zip?.file(`xl/charts/chart${chart.index}.xml`, xml);
-          await this.WriteRels(chart.relationships, `xl/charts/_rels/chart${chart.index}.xml.rels`);
+          this.zip?.Set(`xl/charts/chart${chart.index}.xml`, xml);
+          this.WriteRels(chart.relationships, `xl/charts/_rels/chart${chart.index}.xml.rels`);
         }
 
-        await this.WriteRels(drawing.relationships, `xl/drawings/_rels/drawing${drawing.index}.xml.rels`);
+        this.WriteRels(drawing.relationships, `xl/drawings/_rels/drawing${drawing.index}.xml.rels`);
 
         const xml = XMLDeclaration + this.xmlbuilder1.build(drawing.toJSON());
 
-        await this.zip?.file(`xl/drawings/drawing${drawing.index}.xml`, xml);
+        this.zip?.Set(`xl/drawings/drawing${drawing.index}.xml`, xml);
 
         drawings.push(drawing); // for [ContentTypes]
 
@@ -2358,7 +2365,7 @@ export class Exporter {
 
       // write this into the file
 
-      await this.zip?.file(`xl/worksheets/sheet${sheet_index + 1}.xml`, xml);
+       this.zip?.Set(`xl/worksheets/sheet${sheet_index + 1}.xml`, xml);
       if (Object.keys(sheet_rels).length) {
         this.WriteRels(sheet_rels, `xl/worksheets/_rels/sheet${sheet_index + 1}.xml.rels`);
       }
@@ -2369,8 +2376,8 @@ export class Exporter {
 
     // these are workbook global so after all sheets are done
 
-    await this.WriteSharedStrings(shared_strings);
-    await this.WriteStyleCache(style_cache);
+    this.WriteSharedStrings(shared_strings);
+    this.WriteStyleCache(style_cache);
 
     // now have to write/update
     //
@@ -2389,7 +2396,7 @@ export class Exporter {
       `worksheets/sheet${index + 1}.xml`,
     ));
 
-    await this.WriteRels(workbook_rels, `xl/_rels/workbook.xml.rels`);
+    this.WriteRels(workbook_rels, `xl/_rels/workbook.xml.rels`);
 
     let definedNames: any = {definedName: []};
     if (source.named_ranges) {
@@ -2480,7 +2487,7 @@ export class Exporter {
 
     const workbook_xml = XMLDeclaration + this.xmlbuilder1.build(workbook_dom);
     // console.info(workbook_xml);
-    await this.zip?.file(`xl/workbook.xml`, workbook_xml);
+    this.zip?.Set(`xl/workbook.xml`, workbook_xml);
 
     // const extensions: Array<{ Extension: string, ContentType: string }> = [];
     const extensions: Record<string, string> = {};
@@ -2560,11 +2567,26 @@ export class Exporter {
 
     const content_types_xml = XMLDeclaration + this.xmlbuilder1.build(content_types_dom);
     // console.info(content_types_xml);
-    await this.zip?.file(`[Content_Types].xml`, content_types_xml);
+    this.zip?.Set(`[Content_Types].xml`, content_types_xml);
 
   }
 
-  /** zip -> binary string */
+  public ArrayBuffer() {
+    if (!this.zip) {
+      throw new Error('missing zip');
+    }
+    return this.zip.ArrayBuffer();
+  }
+
+  public Blob() {
+    if (!this.zip) {
+      throw new Error('missing zip');
+    }
+    const buffer = this.zip.ArrayBuffer();
+    return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+
+  /* * zip -> binary string * /
   public async AsBinaryString(compression_level?: number) {
     if (!this.zip) {
       throw new Error('missing zip');
@@ -2578,7 +2600,7 @@ export class Exporter {
     return output;
   }
 
-  /** zip -> blob */
+  /* * zip -> blob * /
   public async AsBlob(compression_level?: number) {
     if (!this.zip) {
       throw new Error('missing zip');
@@ -2591,5 +2613,7 @@ export class Exporter {
     const output = await this.zip.generateAsync(opts);
     return output;
   }
+  */
+
 
 }

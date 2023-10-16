@@ -4390,7 +4390,8 @@ export class EmbeddedSpreadsheet {
   /**
    *
    */
-   protected async ImportXLSX(data: string, source: LoadSource): Promise<Blob | void> {
+   protected async ImportXLSX( // data: string, source: LoadSource): Promise<Blob | void> {
+    data: ArrayBuffer, source: LoadSource): Promise<Blob | void> {
 
     // this is inlined to ensure the code will be tree-shaken properly
     if (!process.env.XLSX_SUPPORT) {
@@ -4819,30 +4820,12 @@ export class EmbeddedSpreadsheet {
               this.LoadCSV(reader.result as string, source);
             }
             else if (process.env.XLSX_SUPPORT &&  /\.xls[xm]$/i.test(file.name)) {
-              let contents: string;
-
               if (typeof reader.result === 'string') {
-                contents = reader.result;
+                finalize('Unsupported file');
               }
-              else {  // IE11
-
-                /* can break on large blob
-                contents = String.fromCharCode.apply(null,
-                  (new Uint8Array(reader.result as ArrayBuffer) as any));
-                */
-
-                // FIXME: chunk
-
-                contents = '';
-                const bytes = new Uint8Array(reader.result);
-                for (let i = 0; i < bytes.byteLength; i++) {
-                  contents += String.fromCharCode(bytes[i]);
-                }
-
+              else {
+                this.ImportXLSX(reader.result, source).then(() => finalize()).catch(err => finalize(err));
               }
-
-              this.ImportXLSX(contents, source).then(() => finalize()).catch(err => finalize(err));
-
               return;
             }
             else {
@@ -4864,13 +4847,8 @@ export class EmbeddedSpreadsheet {
       // FIXME: this should be done async, possibly in a worker
 
       setTimeout(() => {
-        if (/\.xlsx$/i.test(file.name)) {
-          if (reader.readAsBinaryString) {
-            reader.readAsBinaryString(file);
-          }
-          else {
-            reader.readAsArrayBuffer(file); // IE11
-          }
+        if (/\.xls[xm]$/i.test(file.name)) {
+          reader.readAsArrayBuffer(file);
         }
         else {
           reader.readAsText(file);

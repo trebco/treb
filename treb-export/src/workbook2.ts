@@ -19,8 +19,12 @@
  * 
  */
 
-import type JSZip from 'jszip';
+import UZip from 'uzip';
+
+// import type JSZip from 'jszip';
 // import * as xmlparser from 'fast-xml-parser';
+
+
 import { XMLParser } from 'fast-xml-parser';
 import { XMLUtils, XMLOptions, XMLOptions2 } from './xml-utils';
 
@@ -39,6 +43,7 @@ import { StyleCache } from './workbook-style2';
 import { Theme } from './workbook-theme2';
 import { Sheet, VisibleState } from './workbook-sheet2';
 import type { RelationshipMap } from './relationship';
+import { ZipWrapper } from './zip-wrapper';
 
 
 /*
@@ -138,17 +143,17 @@ export class Workbook {
     return this.sheets.length;
   }
 
-  constructor(public zip: JSZip) {
+  constructor(public zip: ZipWrapper) {
 
   }
 
   /**
    * given a path in the zip file, read and parse the rels file
    */
-  public async ReadRels(path: string): Promise<RelationshipMap> {
+  public ReadRels(path: string): RelationshipMap {
 
     const rels: RelationshipMap = {};
-    const data = await this.zip.file(path)?.async('text') as string;
+    const data = this.zip.Has(path) ? this.zip.Get(path) : '';
 
     //
     // force array on <Relationship/> elements, but be slack on the rest
@@ -169,30 +174,30 @@ export class Workbook {
 
   }
 
-  public async Init(): Promise<void> {
+  public Init() {
 
     // read workbook rels
-    this.rels = await this.ReadRels( 'xl/_rels/workbook.xml.rels');
-    
+    this.rels = this.ReadRels( 'xl/_rels/workbook.xml.rels');
+
     // shared strings
-    let data = await this.zip.file('xl/sharedStrings.xml')?.async('text') as string;
+    let data = this.zip.Get('xl/sharedStrings.xml');
     let xml = xmlparser2.parse(data || '');
     this.shared_strings.FromXML(xml);
 
     // theme
-    data = await this.zip.file('xl/theme/theme1.xml')?.async('text') as string;
+    data = this.zip.Get('xl/theme/theme1.xml');
     xml = xmlparser2.parse(data);
     this.theme.FromXML(xml);
 
     // styles
-    data = await this.zip.file('xl/styles.xml')?.async('text') as string;
+    data = this.zip.Get('xl/styles.xml');
     xml = xmlparser2.parse(data);
     this.style_cache.FromXML(xml, this.theme);
 
     // console.info({c: this.style_cache});
 
     // read workbook
-    data = await this.zip.file('xl/workbook.xml')?.async('text') as string;
+    data = this.zip.Get('xl/workbook.xml');
     xml = xmlparser2.parse(data);
 
     // defined names
@@ -240,9 +245,9 @@ export class Workbook {
         worksheet.path = `xl/${this.rels[rid].target}`;
         worksheet.rels_path = worksheet.path.replace('worksheets', 'worksheets/_rels') + '.rels';
 
-        data = await this.zip.file(worksheet.path)?.async('text') as string;
+        data = this.zip.Get(worksheet.path);
         worksheet.sheet_data = xmlparser2.parse(data || '');
-        worksheet.rels = await this.ReadRels(worksheet.rels_path);
+        worksheet.rels = this.ReadRels(worksheet.rels_path);
 
         worksheet.Parse();
         // console.info("TS", worksheet);
@@ -256,9 +261,9 @@ export class Workbook {
 
   }
 
-  public async ReadTable(reference: string): Promise<TableDescription|undefined> {
+  public ReadTable(reference: string): TableDescription|undefined {
 
-    const data = await this.zip.file(reference.replace(/^../, 'xl'))?.async('text') as string;
+    const data = this.zip.Get(reference.replace(/^../, 'xl'));
 
     if (!data) {
       return undefined;
@@ -276,17 +281,19 @@ export class Workbook {
     };
 
     return table;
+
   }
 
-  public async ReadDrawing(reference: string): Promise<AnchoredChartDescription[] | undefined> {
+  public ReadDrawing(reference: string): AnchoredChartDescription[] | undefined {
 
-    const data = await this.zip.file(reference.replace(/^../, 'xl'))?.async('text') as string;
+    const data = this.zip.Get(reference.replace(/^../, 'xl'));
+    
     if (!data) {
       return undefined;
     }
     const xml = xmlparser2.parse(data);
 
-    const drawing_rels = await this.ReadRels(reference.replace(/^..\/drawings/, 'xl/drawings/_rels') + '.rels');
+    const drawing_rels = this.ReadRels(reference.replace(/^..\/drawings/, 'xl/drawings/_rels') + '.rels');
 
     const results: AnchoredChartDescription[] = [];
     const anchor_nodes = XMLUtils.FindAll(xml, 'xdr:wsDr/xdr:twoCellAnchor');
@@ -315,7 +322,7 @@ export class Workbook {
       if (chart_reference && chart_reference.a$ && chart_reference.a$['r:id']) {
         const chart_rel = drawing_rels[chart_reference.a$['r:id']];
         if (chart_rel && chart_rel.target) {
-          result.chart = await this.ReadChart(chart_rel.target);
+          result.chart = this.ReadChart(chart_rel.target);
         }
       }
 
@@ -332,9 +339,9 @@ export class Workbook {
    * FIXME: this is using the old options with old structure, just have
    * not updated it yet
    */
-  public async ReadChart(reference: string): Promise<ChartDescription|undefined> {
+  public ReadChart(reference: string): ChartDescription|undefined {
 
-    const data = await this.zip.file(reference.replace(/^../, 'xl'))?.async('text') as string;
+    const data = this.zip.Get(reference.replace(/^../, 'xl'));
     if (!data) { return undefined; }
 
     const xml = xmlparser1.parse(data);
