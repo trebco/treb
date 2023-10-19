@@ -6252,6 +6252,17 @@ export class Grid extends GridBase {
       }
     }
 
+    const SelectFormat = (value: number) => {
+      const log = Math.floor(Math.log10(value));
+      if (log < -6 || log > 10) {
+        return NumberFormatCache.Get('Exponential');
+      }
+      if (log <= -1) {
+        return NumberFormatCache.Get('General');
+      }
+      return NumberFormatCache.Get('Number');
+    };
+
     if (count > 1) {
       if (numbers > 0) {
         const general = NumberFormatCache.Get('General')
@@ -6264,28 +6275,13 @@ export class Grid extends GridBase {
             { label: 'Average', value: NumberFormat.FormatPartsAsText(general.FormatComplex(average)) },
           ];
 
-          /*
-          return `Count: ${count} Sum: ${
-            NumberFormat.FormatPartsAsText(general.FormatComplex(sum))
-          } Average: ${
-            NumberFormat.FormatPartsAsText(general.FormatComplex(average))
-          }`;
-          */
         }
         else {
           return [
             { label: 'Count', value: count.toString() }, 
-            { label: 'Sum', value: general.Format(sum.real) },
-            { label: 'Average', value: general.Format(sum.real/numbers) },
+            { label: 'Sum', value: (SelectFormat(sum.real)).Format(sum.real) },
+            { label: 'Average', value: (SelectFormat(sum.real/numbers)).Format(sum.real/numbers) },
           ];
-
-          /*
-          return `Count: ${count} Sum: ${
-            general.Format(sum.real)
-          } Average: ${
-            general.Format(sum.real/numbers)
-          }`;
-          */
         }
       }
       else {
