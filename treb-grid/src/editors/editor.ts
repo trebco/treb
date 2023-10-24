@@ -569,7 +569,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
    */
   protected UpdateColors(force_event = false) {
 
-    const view = this.active_editor?.node.ownerDocument.defaultView as (Window & typeof globalThis);
+    // const view = this.active_editor?.node.ownerDocument.defaultView as (Window & typeof globalThis);
 
     // create a map of canonical label -> area 
 
@@ -597,7 +597,8 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     for (const entry of this.nodes) {
       for (const node of Array.from(entry.node.childNodes)) {
-        if (node instanceof view.HTMLElement && node.dataset.reference) {
+        const view = node.ownerDocument?.defaultView as (Window & typeof globalThis);
+        if (view && node instanceof view.HTMLElement && node.dataset.reference) {
           const index = indexes.get(node.dataset.reference);
           node.dataset.highlightIndex = (typeof index === 'number') ? (index % 5 + 1).toString() : '?';
         }
