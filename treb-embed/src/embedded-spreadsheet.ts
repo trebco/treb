@@ -475,7 +475,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /** opaque user data (metadata) */
-  public get user_data(): USER_DATA_TYPE {
+  public get user_data(): USER_DATA_TYPE|undefined {
     return this.grid.model.user_data;
   }
 

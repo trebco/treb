@@ -26,7 +26,7 @@ export declare class TREBGlobal {
     /**
      * create a spreadsheet instance
      */
-    CreateSpreadsheet(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet;
+    CreateSpreadsheet<USER_DATA_TYPE = unknown>(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet<USER_DATA_TYPE>;
 }
 
 /** single instance of factory class */
@@ -285,7 +285,7 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     set document_name(name: string | undefined);
 
     /** opaque user data (metadata) */
-    get user_data(): USER_DATA_TYPE;
+    get user_data(): USER_DATA_TYPE | undefined;
 
     /** opaque user data (metadata) */
     set user_data(data: USER_DATA_TYPE);
