@@ -221,7 +221,7 @@ export type TableFilterFunction = (value: CellValue, calculated_value: CellValue
 /**
  * embedded spreadsheet
  */
-export class EmbeddedSpreadsheet { 
+export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> { 
 
   /** @internal */
   public static treb_base_path = '';
@@ -475,12 +475,12 @@ export class EmbeddedSpreadsheet {
   }
 
   /** opaque user data (metadata) */
-  public get user_data(): unknown {
+  public get user_data(): USER_DATA_TYPE {
     return this.grid.model.user_data;
   }
 
   /** opaque user data (metadata) */
-  public set user_data(data: unknown) {
+  public set user_data(data: USER_DATA_TYPE) {
     this.grid.model.user_data = data;
     this.DocumentChange();
   }
@@ -1172,7 +1172,7 @@ export class EmbeddedSpreadsheet {
    * create the correct type
    */
   protected CreateView(): EmbeddedSpreadsheet {
-    const child = new EmbeddedSpreadsheet({
+    const child = new EmbeddedSpreadsheet<USER_DATA_TYPE>({
       ...this.options,
       global_name: undefined, // don't overwrite
       model: this,

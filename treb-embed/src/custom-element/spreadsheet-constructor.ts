@@ -14,13 +14,13 @@ import type { ToolbarMessage } from '../toolbar-message';
 import { DOMContext } from 'treb-base-types';
 
 /** @internal */
-export class SpreadsheetConstructor {
+export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
   /** container, if any */
   public root?: HTMLElement;
 
   /** spreadsheet instance */
-  public sheet?: EmbeddedSpreadsheet
+  public sheet?: EmbeddedSpreadsheet<USER_DATA_TYPE>;
 
   /** current border color. will be applied to new borders. */
   protected border_color?: Color;
@@ -278,7 +278,7 @@ export class SpreadsheetConstructor {
 
     // set a local variable so we don't have to keep testing the member
 
-    this.sheet = new EmbeddedSpreadsheet(options);
+    this.sheet = new EmbeddedSpreadsheet<USER_DATA_TYPE>(options);
 
     if (this.root) {
       this.CreateLayout(this.sheet, this.root);

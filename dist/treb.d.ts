@@ -1,4 +1,4 @@
-/*! API v28.2. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v28.3. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -276,7 +276,7 @@ export interface ICellAddress {
 /**
  * embedded spreadsheet
  */
-export declare class EmbeddedSpreadsheet {
+export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     /** document name (metadata) */
     get document_name(): string | undefined;
@@ -285,10 +285,10 @@ export declare class EmbeddedSpreadsheet {
     set document_name(name: string | undefined);
 
     /** opaque user data (metadata) */
-    get user_data(): unknown;
+    get user_data(): USER_DATA_TYPE;
 
     /** opaque user data (metadata) */
-    set user_data(data: unknown);
+    set user_data(data: USER_DATA_TYPE);
 
     /** current grid scale */
     get scale(): number;

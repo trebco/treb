@@ -27,9 +27,9 @@ export class TREBGlobal {
   /** 
    * create a spreadsheet instance
    */
-  public CreateSpreadsheet(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet {
+  public CreateSpreadsheet<USER_DATA_TYPE = unknown>(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet<USER_DATA_TYPE> {
     const container = options.container;
-    const instance = new SpreadsheetConstructor(container);
+    const instance = new SpreadsheetConstructor<USER_DATA_TYPE>(container);
     instance.AttachElement(options);
     if (!instance.sheet) {
       throw new Error('construction failed');
