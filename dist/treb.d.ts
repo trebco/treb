@@ -334,6 +334,12 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     get dirty(): boolean;
 
     /**
+     * explicitly set or clear the dirty flag. it's intended for use by clients
+     * that have their own save routine.
+     */
+    set dirty(value: boolean);
+
+    /**
      * returns the names of all sheets in the current document
      */
     get sheet_names(): string[];

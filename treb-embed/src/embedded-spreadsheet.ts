@@ -575,6 +575,19 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
+   * explicitly set or clear the dirty flag. it's intended for use by clients 
+   * that have their own save routine.
+   */
+  public set dirty(value: boolean) {
+    if (value) {
+      this.file_version++;
+    }
+    else {
+      this.last_save_version = this.file_version;
+    }
+  }
+
+  /**
    * returns the names of all sheets in the current document
    */
   public get sheet_names() {
@@ -3303,6 +3316,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     // UPDATE: recalculate if there are volatile cells in the model.
     // FIXME: optional? parameter? (...)
+
+    console.info("DRC", data.rendered_values, "OR", options.recalculate);
 
     if (data.rendered_values && !options.recalculate) {
       this.calculator.RebuildClean(true);
