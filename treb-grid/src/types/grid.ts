@@ -5062,7 +5062,7 @@ export class Grid extends GridBase {
             if (found_number_format) {
 
               const style: CellStyle = {
-                number_format: found_number_format,
+                number_format: NumberFormatCache.SymbolicName(found_number_format) || found_number_format,
               };
 
               commands.push({
