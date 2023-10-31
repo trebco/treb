@@ -3317,8 +3317,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // UPDATE: recalculate if there are volatile cells in the model.
     // FIXME: optional? parameter? (...)
 
-    console.info("DRC", data.rendered_values, "OR", options.recalculate);
-
     if (data.rendered_values && !options.recalculate) {
       this.calculator.RebuildClean(true);
       this.ApplyConditionalFormats(this.grid.active_sheet, false);
