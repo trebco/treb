@@ -652,7 +652,7 @@ export class Grid extends GridBase {
       const resize_target = this.DOM.Div('annotation-resize-target', node);
 
       node.addEventListener('keydown', (event) => {
-      
+    
           const rect = annotation.scaled_rect;
           if (!rect) {
             console.info('missing scaled rect!');
@@ -712,6 +712,13 @@ export class Grid extends GridBase {
             case 'Escape':
             case 'Esc':
               this.Focus();
+              break;
+
+            case 'Backspace':
+              if (event.metaKey && UA.is_mac) {
+                this.Focus();
+                this.RemoveAnnotation(annotation);  
+              }
               break;
 
             case 'Delete':
@@ -4468,6 +4475,8 @@ export class Grid extends GridBase {
 
     // handle some specific control-key combinations
 
+    console.info("K", event);
+
     if (event.ctrlKey || (UA.is_mac && event.metaKey)) {
 
       // handle ctrl+shift+arrow AND ctrl+arrow (we used to just handle
@@ -4492,6 +4501,14 @@ export class Grid extends GridBase {
         case 'ArrowRight':
         case 'Right':
           delta.columns++;
+          break;
+
+        case 'Backspace':
+          if (event.metaKey && UA.is_mac) {
+            if (!selection.empty) {
+              this.DeleteSelection(selection);
+            }  
+          }
           break;
 
         case 'Delete':
