@@ -4475,8 +4475,6 @@ export class Grid extends GridBase {
 
     // handle some specific control-key combinations
 
-    console.info("K", event);
-
     if (event.ctrlKey || (UA.is_mac && event.metaKey)) {
 
       // handle ctrl+shift+arrow AND ctrl+arrow (we used to just handle
