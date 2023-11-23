@@ -451,6 +451,18 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   private last_selection?: string;
 
+  /**
+   * convenience function returns the name of the active sheet. if the 
+   * sheet name has spaces or other characters that require quoting, it
+   * will be quoted using single quotes.
+   */
+  public get active_sheet(): string {
+    const name = this.grid.active_sheet.name;
+    if (QuotedSheetNameRegex.test(name)) {
+      return `'${name}'`;
+    }
+    return name;
+  }
 
   /** 
    * this was added for riskamp.com; it doesn't track modified, really, because
@@ -3715,6 +3727,21 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.dialog?.ShowDialog({
       type: DialogType.about,
     });
+  }
+
+  /**
+   * scroll the given address into view. it could be at either side
+   * of the window. optionally use smooth scrolling.
+   */
+  public ScrollIntoView(address: AddressReference, smooth = false): void {
+
+    if (typeof address === 'string') {
+      const reference = this.model.ResolveAddress(address, this.grid.active_sheet);
+      address = IsCellAddress(reference) ? reference : reference.start;
+    }
+
+    this.grid.ScrollIntoView(address, smooth);
+
   }
 
   /** 

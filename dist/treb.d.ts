@@ -1,4 +1,4 @@
-/*! API v28.3. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v28.4. Copyright 2018-2023 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -277,6 +277,13 @@ export interface ICellAddress {
  * embedded spreadsheet
  */
 export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
+
+    /**
+     * convenience function returns the name of the active sheet. if the
+     * sheet name has spaces or other characters that require quoting, it
+     * will be quoted using single quotes.
+     */
+    get active_sheet(): string;
 
     /** document name (metadata) */
     get document_name(): string | undefined;
@@ -768,6 +775,12 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      * @public
      */
     About(): void;
+
+    /**
+     * scroll the given address into view. it could be at either side
+     * of the window. optionally use smooth scrolling.
+     */
+    ScrollIntoView(address: AddressReference, smooth?: boolean): void;
 
     /**
      * Scroll to the given address. In the current implementation this method

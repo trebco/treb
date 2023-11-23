@@ -2087,9 +2087,9 @@ export class Grid extends GridBase {
    * FIXME: we need a way to do this without scrolling the containing
    * page, in the event we do a scroll-on-load. small problem.
    */
-  public ScrollIntoView(address: ICellAddress): void {
+  public ScrollIntoView(address: ICellAddress, smooth = false): void {
     if (this.options.scrollbars) {
-      this.layout.ScrollIntoView(address);
+      this.layout.ScrollIntoView(address, smooth);
     }
   }
 

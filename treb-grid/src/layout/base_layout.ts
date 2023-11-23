@@ -1484,7 +1484,7 @@ export abstract class BaseLayout {
    * scroll address into view, at top-left or bottom-right depending on
    * target and current position. also offsets for frozen rows, columns.
    */
-  public ScrollIntoView(address: ICellAddress): void {
+  public ScrollIntoView(address: ICellAddress, smooth = false): void {
 
     const target_rect = this.CellAddressToRectangle(address);
 
@@ -1519,23 +1519,33 @@ export abstract class BaseLayout {
     // in two scroll events. however in practice this is called on key events,
     // so it's unlikely.
 
+    let options: ScrollToOptions = {
+      behavior: smooth ? 'smooth' : 'auto',
+    };
+
     if (address.row !== Infinity) {
       if (target_rect.top < viewport.top + offset.y && !lock.y) {
-        this.scroll_reference_node.scrollTop = target_rect.top - offset.y;
+        // this.scroll_reference_node.scrollTop = target_rect.top - offset.y;
+        options.top = target_rect.top - offset.y;
       }
       else if (target_rect.bottom > viewport.bottom) {
-        this.scroll_reference_node.scrollTop = target_rect.bottom - height;
+        // this.scroll_reference_node.scrollTop = target_rect.bottom - height;
+        options.top = target_rect.bottom - height;
       }
     }
 
     if (address.column !== Infinity) {
       if (target_rect.left < viewport.left + offset.x && !lock.x) {
-        this.scroll_reference_node.scrollLeft = target_rect.left - offset.x;
+        // this.scroll_reference_node.scrollLeft = target_rect.left - offset.x;
+        options.left = target_rect.left - offset.x;
       }
       else if (target_rect.right > viewport.right) {
-        this.scroll_reference_node.scrollLeft = target_rect.right - width;
+        // this.scroll_reference_node.scrollLeft = target_rect.right - width;
+        options.left = target_rect.right - width;
       }
     }
+
+    this.scroll_reference_node.scrollTo(options);
 
   }
 
