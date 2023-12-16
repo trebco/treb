@@ -29,6 +29,12 @@
 
     grid-area: 3/1/4/2;
 
+    .treb-spreadsheet-tab-container {
+      align-self: flex-start;
+      overflow: hidden;
+      height: 2.2em;
+    }
+
     &,
     .treb-spreadsheet-tabs {
       display: flex;
@@ -39,6 +45,14 @@
       color: var(--treb-ui-color, inherit);
       list-style-type: none;
       padding-inline-start: 0;
+    }
+  
+    .treb-spreadsheet-tabs {
+      height: auto;
+      margin-block-start: 0;
+      margin: 0;
+      overflow-x: scroll;
+      overflow-y: hidden;
     }
 
     &[hidden] {
@@ -74,6 +88,12 @@
       border: 1px solid var(--treb-tab-bar-tab-border-color, var(--treb-ui-border-color, #ccc));
       border-top-width: 0px;
       z-index: 1;
+
+      // the negative margins here (plus some correction below) makes the
+      // active tab overlap just a little bit, very tab like. we have to
+      // stop at the last one or it causes problems for the containing node
+      // (forces a 2-pixel scroll which is infuriating)
+
       margin-right: -2px;
 
       &:active, &:focus {
@@ -81,7 +101,22 @@
       }
 
     }
+
+    & .treb-spreadsheet-tabs>li {
+      height: 2.2em;
+      overflow: visible;
+      overflow-x: visible;
+
+      &:last-of-type {
+        margin-right: 0;
+      }
+
+    }
     
+    & .treb-add-tab {
+      margin-left: -1px;
+    }
+
     /** don't overflow/ellipsis the add tab button */
 
     /**
@@ -93,7 +128,7 @@
      & .treb-spreadsheet-tabs>li {
 
       white-space: nowrap;
-      overflow-x: hidden;
+      // overflow-x: hidden;
 
       &[selected] {
         z-index: 2;
@@ -190,6 +225,8 @@
       margin-right: -2px;
       /* margin-right: 1em; */
 
+      min-width: 2.5em; 
+
       svg {
         width: 1em;
         height: 1em;
@@ -216,15 +253,9 @@
 
     .treb-stats-panel {
 
-      /** 
-       * instead of having a junk node with flex-grow to take up space,
-       * we can use margin:auto to consume all available space -- as long
-       * as this node is in the layout. 
-       *
-       * in the declarative layout, we always have this node, but if it's
-       * not used it will just be empty.
-       */
-      margin-left: auto;
+      flex: 1 1;
+
+      text-align: end;
 
       white-space: nowrap;
       overflow: hidden;
