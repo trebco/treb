@@ -15,7 +15,7 @@ import { Util } from './util';
 
 const DEFAULT_FORMAT = '#,##0.00'; // why not use "general", or whatever the usual default is?
 
-const ReadSeries = (data: Array<any>): SeriesType => {
+export const ReadSeries = (data: Array<any>): SeriesType => {
 
   // in this case it's (label, X, Y)
   const series: SeriesType = {
@@ -83,7 +83,7 @@ const ReadSeries = (data: Array<any>): SeriesType => {
 
 };
 
-const ArrayToSeries = (array_data: ArrayUnion): SeriesType => {
+export const ArrayToSeries = (array_data: ArrayUnion): SeriesType => {
 
   // this is an array of Y, X not provided
 
@@ -160,7 +160,7 @@ const ArrayToSeries = (array_data: ArrayUnion): SeriesType => {
  * NOTE: (1) could be an array of boxed (union) values...
  * 
  */
-const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValue): SeriesType[] => {
+export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValue): SeriesType[] => {
 
   if (!raw_data) { return []; }
 
@@ -266,7 +266,7 @@ const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValue): Ser
 };
 
 /** get a unified scale, and formats */
-const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: number) => {
+export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: number) => {
 
   let x_format = '';
   let y_format = '';
