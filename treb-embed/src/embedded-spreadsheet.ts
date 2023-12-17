@@ -1996,18 +1996,23 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   /** 
    * Create (and return) a Chart object.
-   * 
-   * @privateRemarks
-   * 
-   * This method was created for RAW, no one else should need it. But it's
-   * not really an internal method, because it's used by outside clients.
-   * 
    * @internal
    */
   public CreateChart(): Chart {
+    
     if (this.calculator.RegisterLibrary('treb-charts', ChartFunctions)) {
       this.UpdateAC();
     }
+
+    if (this.options.chart_renderer) {
+      if (typeof this.options.chart_renderer === 'function') {
+        return new Chart(this.options.chart_renderer());
+      }
+      else {
+        return new Chart(this.options.chart_renderer);
+      }
+    }
+
     return new Chart();
   }
 
@@ -5035,7 +5040,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         {
 
           const chart = this.CreateChart();
-          // const chart = new Chart();
           chart.Initialize(view.content_node);
 
           //if (this.calculator.RegisterLibrary('treb-charts', ChartFunctions)) {

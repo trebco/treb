@@ -21,6 +21,12 @@
 
 import type { ICellAddress } from 'treb-base-types';
 import type { TREBDocument } from './types';
+import type { ChartRenderer } from 'treb-charts';
+
+/**
+ * factory type for chart renderer, if you want instances (pass a constructor)
+ */
+export type ChartRendererFactory = () => ChartRenderer;
 
 /**
  * options for exporting CSV/TSV
@@ -277,13 +283,21 @@ export interface EmbeddedSpreadsheetOptions {
 
   /**
    * @internal
+   * overload the chart renderer with your own type (or a type factory method).
+   * use a factory if you are going to persist state in the renderer, otherwise
+   * you can just use a single instance.
+   */
+  chart_renderer?: ChartRenderer|ChartRendererFactory;
+
+  /**
+   * @internal
    * 
    * optional function to run before loading data. this is useful for example
    * if you want to load some custom functions before a document is loaded
    * from local storage. otherwise you'll get #NAME errors when an unknown
    * function is loaded (I suppose you could recalc, but this is better).
    * 
-   * @internalRemarks
+   * @privateRemarks
    * I'd prefer to pass the instance as a parameter, but I don't want a 
    * circular reference here. maybe that's not an issue? for the time being
    * we'll treat it as opaque.
