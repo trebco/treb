@@ -1030,10 +1030,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       // this.grid.headless = true; // ensure
     }
 
-    // moved up so we can share parser w/ grid
-
-    // this.calculator = this.InitCalculator();
-    // this.calculator = new type();
+    if (options.preload) {
+      options.preload.call(0, this);
+    }
 
     // FIXME: this should yield so we can subscribe to events before the initial load
 

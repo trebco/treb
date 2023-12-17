@@ -275,6 +275,21 @@ export interface EmbeddedSpreadsheetOptions {
    */
   revert_indicator?: boolean;
 
+  /**
+   * @internal
+   * 
+   * optional function to run before loading data. this is useful for example
+   * if you want to load some custom functions before a document is loaded
+   * from local storage. otherwise you'll get #NAME errors when an unknown
+   * function is loaded (I suppose you could recalc, but this is better).
+   * 
+   * @internalRemarks
+   * I'd prefer to pass the instance as a parameter, but I don't want a 
+   * circular reference here. maybe that's not an issue? for the time being
+   * we'll treat it as opaque.
+   */
+  preload?: (instance: unknown) => void;
+
 }
 
 /**
