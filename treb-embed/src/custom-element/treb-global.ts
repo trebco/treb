@@ -31,6 +31,9 @@ export class TREBGlobal {
    * files. 
    * 
    * Just ignore this parameter if you don't need it.
+   * 
+   * @typeParam USER_DATA_TYPE - type for the `user_data` field in the 
+   * spreadsheet instance
    */
   public CreateSpreadsheet<USER_DATA_TYPE = unknown>(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet<USER_DATA_TYPE> {
     const container = options.container;
