@@ -19,12 +19,17 @@ declare global {
 export declare class TREBGlobal {
 
     /**
-     * build version
+     * Package version
      */
     version: string;
 
     /**
-     * create a spreadsheet instance
+     * Create a spreadsheet. The `USER_DATA_TYPE` template parameter is the type
+     * assigned to the `user_data` field of the spreadsheet instance -- it can
+     * help simplify typing if you are storing extra data in spreadsheet
+     * files.
+     *
+     * Just ignore this parameter if you don't need it.
      */
     CreateSpreadsheet<USER_DATA_TYPE = unknown>(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet<USER_DATA_TYPE>;
 }
@@ -291,11 +296,17 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     /** document name (metadata) */
     set document_name(name: string | undefined);
 
-    /** opaque user data (metadata) */
+    /**
+     * opaque user data (metadata). `USER_DATA_TYPE` is a template
+     * parameter you can set when creating the spreadsheet.
+     */
     get user_data(): USER_DATA_TYPE | undefined;
 
-    /** opaque user data (metadata) */
-    set user_data(data: USER_DATA_TYPE);
+    /**
+     * opaque user data (metadata). `USER_DATA_TYPE` is a template
+     * parameter you can set when creating the spreadsheet.
+     */
+    set user_data(data: USER_DATA_TYPE | undefined);
 
     /** current grid scale */
     get scale(): number;

@@ -848,6 +848,17 @@ export const BaseFunctionLibrary: FunctionMap = {
       }),
     },
 
+    RoundUp: {
+      fn: Utils.ApplyAsArray2((a, digits = 0) => {
+        const m = Math.pow(10, digits);
+        const positive = a >= 0;
+        return { 
+          type: ValueType.number, 
+          value: positive ? Math.ceil(m * a) / m : Math.floor(m * a) / m,
+        };
+      }),
+    },
+
     /*
 
     Round: {

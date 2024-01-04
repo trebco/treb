@@ -486,13 +486,19 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.DocumentChange();
   }
 
-  /** opaque user data (metadata) */
+  /** 
+   * opaque user data (metadata). `USER_DATA_TYPE` is a template
+   * parameter you can set when creating the spreadsheet.
+   */
   public get user_data(): USER_DATA_TYPE|undefined {
     return this.grid.model.user_data;
   }
 
-  /** opaque user data (metadata) */
-  public set user_data(data: USER_DATA_TYPE) {
+  /** 
+   * opaque user data (metadata). `USER_DATA_TYPE` is a template
+   * parameter you can set when creating the spreadsheet.
+   */
+  public set user_data(data: USER_DATA_TYPE|undefined) {
     this.grid.model.user_data = data;
     this.DocumentChange();
   }

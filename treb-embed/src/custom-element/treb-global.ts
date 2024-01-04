@@ -10,7 +10,7 @@ import type { EmbeddedSpreadsheet } from '../embedded-spreadsheet';
 export class TREBGlobal {
 
   /** 
-   * build version 
+   * Package version 
    * 
    * @privateRemarks
    * 
@@ -25,7 +25,12 @@ export class TREBGlobal {
   public version = process.env.BUILD_VERSION || '';
 
   /** 
-   * create a spreadsheet instance
+   * Create a spreadsheet. The `USER_DATA_TYPE` template parameter is the type 
+   * assigned to the `user_data` field of the spreadsheet instance -- it can
+   * help simplify typing if you are storing extra data in spreadsheet
+   * files. 
+   * 
+   * Just ignore this parameter if you don't need it.
    */
   public CreateSpreadsheet<USER_DATA_TYPE = unknown>(options: EmbeddedSpreadsheetOptions): EmbeddedSpreadsheet<USER_DATA_TYPE> {
     const container = options.container;
