@@ -3232,62 +3232,6 @@ export class Sheet {
 
   }
 
-  /*
-  public ApplyConditionalFormats() {
-
-    this.FlushConditionalFormatCache();
-
-    for (const entry of this.conditional_formats) {
-
-      console.info({entry});
-
-      if (entry.applied) {
-        this.ApplyConditionalFormatCache(entry);
-      }
-    }
-
-  }
-
-  public FlushConditionalFormatCache() {
-
-    // FIXME: need to flush any styles that are set, unless they match;
-    // perhaps we should use an alternate cache so we can compare? TODO/FIXME
-
-    for (const [row, row_data] of this.conditional_format_cache.entries()) {
-      if (row_data) {
-        for (const [column, column_data] of row_data.entries()) {
-          if (column_data) {
-
-            this.CellData({row, column}).FlushStyle();
-
-          }
-        }
-      }
-    }
-
-    this.conditional_format_cache = [];
-
-  }
-
-  public ApplyConditionalFormatCache(format: ConditionalFormat) {
-    
-    for (let row = format.area.start.row; row <= format.area.end.row; row++ ) {
-      for (let column = format.area.start.column; column <= format.area.end.column; column++ ) {
-        if (!this.conditional_format_cache[row]) {
-          this.conditional_format_cache[row] = [];
-        }
-        if (!this.conditional_format_cache[row][column]) {
-          this.conditional_format_cache[row][column] = [];
-        }
-        this.conditional_format_cache[row][column].push(format.style);
-        this.CellData({row, column}).FlushStyle();
-
-      }
-    }
-
-  }
-  */
-
   private ConditionalFormatForCell(address: ICellAddress): CellStyle[] {
     if (this.conditional_format_cache[address.row]) {
       return this.conditional_format_cache[address.row][address.column] || [];

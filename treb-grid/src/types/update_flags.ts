@@ -64,6 +64,7 @@ export interface UpdateFlags {
 
   data_event?: boolean;
   style_event?: boolean;
+  conditional_formatting_event?: boolean;
   structure_event?: boolean;
   structure_rebuild_required?: boolean;
 

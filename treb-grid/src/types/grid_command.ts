@@ -22,6 +22,7 @@
 import type { ICellAddress, IArea, Style, CellStyle, Color, CellValue, Table, TableSortType, TableTheme } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import type { BorderConstants } from './border_constants';
+import type { ConditionalFormat } from './conditional_format';
 
 /**
  * switching to an exec-command based model, so we can serialize
@@ -72,6 +73,9 @@ export enum CommandKey {
   SortTable,
   InsertTable,
   RemoveTable,
+
+  AddConditionalFormat,
+  RemoveConditionalFormat,
 
 }
 
@@ -419,6 +423,32 @@ export interface ReorderSheetCommand {
 }
 
 /**
+ * add conditional format
+ */
+export interface AddConditionalFormatCommand {
+  key: CommandKey.AddConditionalFormat;
+  format: ConditionalFormat;
+}
+
+/**
+ * remove conditional format, either as an object or from a target 
+ * area. as an object, we'll match using object equivalence and not 
+ * identity. 
+ */
+export interface RemoveConditionalFormatCommand {
+
+  key: CommandKey.RemoveConditionalFormat;
+
+  /** if format is omitted, we will remove all formats from the target range */
+  format?: ConditionalFormat;
+
+  /** one of area or format should be supplied */
+  area?: IArea; 
+
+}
+
+
+/**
  * ephemeral flag added to commands.
  * /
 export interface Ephemeral {
@@ -459,6 +489,8 @@ export type Command =
   | ActivateSheetCommand
   | DataValidationCommand
   | DuplicateSheetCommand
+  | AddConditionalFormatCommand
+  | RemoveConditionalFormatCommand
   ) ; // & Ephemeral;
 
 /**

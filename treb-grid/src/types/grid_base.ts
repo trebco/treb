@@ -67,6 +67,10 @@ interface PatchOptions extends PatchAreaOptions {
   sheet: Sheet;
 }
 
+const AssertNever = (value: never) => {
+  console.error('invalid case');
+};
+
 export class GridBase {
 
   // --- public members --------------------------------------------------------
@@ -159,6 +163,24 @@ export class GridBase {
   }
 
   // --- API methods -----------------------------------------------------------
+
+  public RemoveConditionalFormat(options: {
+        format?: ConditionalFormat;
+        area?: IArea;
+      }) {
+
+    this.ExecCommand({
+      key: CommandKey.RemoveConditionalFormat,
+      ...options,
+    });
+  }
+
+  public AddConditionalFormat(format: ConditionalFormat) {
+    this.ExecCommand({
+      key: CommandKey.AddConditionalFormat,
+      format,
+    });
+  }
 
   /** remove a table. doesn't remove any data, just removes the overlay. */
   public RemoveTable(table: Table) {
@@ -1887,11 +1909,17 @@ export class GridBase {
           break;
         */
 
-        // special case
+        // special cases
         case CommandKey.SortTable:
         case CommandKey.RemoveTable:
           if (!command.table.area.start.sheet_id) {
             command.table.area.start.sheet_id = id;
+          }
+          break;
+
+        case CommandKey.AddConditionalFormat:
+          if (!command.format.area.start.sheet_id) {
+            command.format.area.start.sheet_id = id;
           }
           break;
 
@@ -1920,6 +1948,14 @@ export class GridBase {
         case CommandKey.Select:
         case CommandKey.InsertTable:
 
+        // note that remove conditional format could have a format
+        // object (with an area) instead of an area. but in that case,
+        // the format object must match an existing format, so it would
+        // have to have a proper area. there's no case where we would
+        // want to add it. so we only handle the area case.
+
+        case CommandKey.RemoveConditionalFormat:
+
           if (command.area) {
             if (IsCellAddress(command.area)) {
               if (!command.area.sheet_id) {
@@ -1934,10 +1970,13 @@ export class GridBase {
           }
           break;
 
-        // default:
-        //  // command key here should be `never` if we've covered all the 
-        //  // cases (ts will complain)
-        //  // console.warn('unhandled command key', command.key);
+        default:
+
+          // this is intended to check that we've handled all cases. if you
+          // add additional commands and they're not handled, this should 
+          // raise a ts error.
+
+          AssertNever(command);
 
       }
     }
@@ -3534,6 +3573,88 @@ export class GridBase {
 
           break;
 
+        case CommandKey.AddConditionalFormat:
+          {
+
+            const sheet = this.FindSheet(command.format.area);
+            sheet.conditional_formats.push(command.format);
+
+            sheet.Invalidate(new Area(command.format.area.start, command.format.area.end));
+
+            if (sheet === this.active_sheet) {
+              // flags.style_area = Area.Join(command.format.area, flags.style_area);
+              flags.render_area = Area.Join(command.format.area, flags.render_area);
+            }
+            else {
+              // flags.style_event = true;
+            }
+
+            flags.structure_event = true;
+            flags.conditional_formatting_event = true;
+
+          }
+          break;
+
+        case CommandKey.RemoveConditionalFormat:
+
+          {
+            let sheet: Sheet|undefined;
+            let count = 0;
+
+            if (command.format) {
+
+              // we're removing by object equivalence, not strict equality.
+              // this is in case we're switching contexts and the objects
+              // are not strictly equal. may be unecessary. do we need to
+              // normalize in some way? (...)
+
+              const format = JSON.stringify(command.format);
+
+              sheet = this.FindSheet(command.format.area);
+              sheet.conditional_formats = sheet.conditional_formats.filter(test => {
+                // if (test === command.format) {
+                if (JSON.stringify(test) === format) {
+                  count++;
+                  flags.render_area = Area.Join(test.area, flags.render_area);
+                  return false;
+                }
+                return true;
+              });
+
+            }
+            else if (command.area) {
+              const area = new Area(command.area.start, command.area.end);
+              sheet = this.FindSheet(command.area);
+
+              sheet.conditional_formats = sheet.conditional_formats.filter(test => {
+                const compare = new Area(test.area.start, test.area.end);
+                if (compare.Intersects(area)) {
+                  count++;
+                  flags.render_area = Area.Join(compare, flags.render_area);
+                  return false;
+                }
+                return true;
+              });
+        
+            }
+
+            if (sheet && count) {
+              sheet.FlushConditionalFormats();
+              flags.structure_event = true;
+
+              // this will flush leaf vertices. but it's expensive because
+              // it's rebuilding the whole graph. we could maybe reduce a 
+              // bit... the question is what's worse: rebuilding the graph
+              // or leaving orphans for a while?
+
+              // flags.structure_rebuild_required = true;
+
+              flags.conditional_formatting_event = true;
+            }
+
+          }
+          break;
+
         case CommandKey.InsertTable:
 
           // the most important thing here is validating that we can
@@ -4170,6 +4291,7 @@ export class GridBase {
       events.push({
         type: 'structure',
         rebuild_required: flags.structure_rebuild_required,
+        conditional_format: flags.conditional_formatting_event,
       });
     }
 

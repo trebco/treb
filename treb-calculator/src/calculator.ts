@@ -1769,7 +1769,25 @@ export class Calculator extends Graph {
 
   public UpdateConditionals(list?: ConditionalFormat|ConditionalFormat[], context?: Sheet): void {
 
+    // this method is (1) relying on the leaf vertex Set to avoid duplication,
+    // and (2) leaving orphansed conditionals in place. we should look to 
+    // cleaning things up. 
+
+    // is it also (3) adding unecessary calculations (building the expression,
+    // below)?
+
     if (!list) {
+
+      // we could in theory remove all of the leaves (the ones we know to
+      // be used for conditionals), because they will be added back below.
+      // how wasteful is that?
+      
+      // or maybe we could change the mark, and then use invalid marks 
+      // to check?
+
+      // the alternative is just to leave them as orphans until the graph
+      // is rebuilt. which is lazy, but probably not that bad... 
+
       for (const sheet of this.model.sheets.list) {
         if (sheet.conditional_formats?.length) {
           this.UpdateConditionals(sheet.conditional_formats, sheet);
@@ -1833,7 +1851,11 @@ export class Calculator extends Graph {
         entry.internal = {};
       }
       if (!entry.internal.vertex) {
-        entry.internal.vertex = new CalculationLeafVertex();
+
+        const vertex = new CalculationLeafVertex();
+        vertex.use = 'conditional';
+
+        entry.internal.vertex = vertex;
 
         let options: EvaluateOptions|undefined;
         if (entry.type !== 'gradient' && entry.type !== 'duplicate-values') {
@@ -1850,35 +1872,6 @@ export class Calculator extends Graph {
       const vertex = entry.internal.vertex as LeafVertex;
       this.AddLeafVertex(vertex);
       this.UpdateLeafVertex(vertex, expression, context);
-
-      /*
-      if (entry.type === 'cell-match') {
-        if (!entry.internal) {
-          entry.internal = {};
-        }
-        if (!entry.internal.vertex) {
-          entry.internal.vertex = new CalculationLeafVertex();
-        }
-        const vertex = entry.internal.vertex as LeafVertex;
-        this.AddLeafVertex(vertex);
-        this.UpdateLeafVertex(vertex, entry.expression, context);
-      }
-      else if (entry.type === 'expression') {
-        if (!entry.internal) {
-          entry.internal = {};
-        }
-        if (!entry.internal.vertex) {
-          entry.internal.vertex = new CalculationLeafVertex();
-
-          // set initial state based on current state
-          entry.internal.vertex.result = { type: ValueType.boolean, value: !!entry.applied };
-
-        }
-        const vertex = entry.internal.vertex as LeafVertex;
-        this.AddLeafVertex(vertex);
-        this.UpdateLeafVertex(vertex, entry.expression, context);
-      }
-      */
 
     }
 

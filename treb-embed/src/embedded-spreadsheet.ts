@@ -889,6 +889,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       this.grid.grid_events.Subscribe((event) => {
 
+        // console.info({event});
+
         switch (event.type) {
 
           case 'error':
@@ -992,7 +994,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
           case 'structure':
             {
+              // console.info("S event", event);
+
               const cached_selection = this.last_selection;
+              if (event.conditional_format) {
+                this.calculator.UpdateConditionals();
+                this.ApplyConditionalFormats(this.grid.active_sheet, false);
+              }
+
               if (event.rebuild_required) {
                 this.calculator.Reset();
 
@@ -1418,12 +1427,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       ...options,
     };
 
-    // we need to calculate the formula once, to get an initial state
-    // update: internal
-    // let result = this.Evaluate(this.Unresolve(area, true, false) + ' ' + options.expression, options.options);
-
-    // ... apply ...
-
     this.AddConditionalFormat(format);
     return format;
 
@@ -1451,18 +1454,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       ...options,
     };
 
-    /*
-    // we need to calculate the formula once, to get an initial state
-    let result = this.Evaluate(options.expression, options.options);
-
-    if (Array.isArray(result)) {
-      result = result[0][0];
-    }
-    const applied = !!result;
-    
-    this.AddConditionalFormat({...format, applied });
-    */
-
     this.AddConditionalFormat(format);
 
     return format;
@@ -1476,20 +1467,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   public AddConditionalFormat(format: ConditionalFormat) {
 
-    const sheet = this.model.sheets.Find(format.area.start.sheet_id||0);
-    
-    if (!sheet) {
-      throw new Error('invalid reference in format');
-    }
-
-    sheet.conditional_formats.push(format);
-
-    this.calculator.UpdateConditionals(format, sheet);
-
-    // call update if it's the current sheet
-    this.ApplyConditionalFormats(sheet, sheet === this.grid.active_sheet);
-
-    this.PushUndo();
+    this.grid.AddConditionalFormat(format);
 
     // fluent
     return format;
@@ -1502,40 +1480,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * @internal
    */
   public RemoveConditionalFormat(format: ConditionalFormat) {
-    const area = format.area;
-    const sheet = area.start.sheet_id ? this.model.sheets.Find(area.start.sheet_id) : this.grid.active_sheet;
-
-    if (!sheet) {
-      throw new Error('invalid reference in format');
-    }
-
-    let count = 0;
-    sheet.conditional_formats = sheet.conditional_formats.filter(test => {
-      if (test === format) {
-        count++;
-        this.calculator.RemoveConditional(test);
-        return false;
-      }
-      return true;
-    });
-
-    if (count) {
-      sheet.FlushConditionalFormats();
-    }
-
-    // we want to call update if it's the current sheet,
-    // but we want a full repaint
-
-    this.ApplyConditionalFormats(sheet, false);
-
-    if (sheet === this.grid.active_sheet) {
-      this.grid.Update(true);
-    }
-
-    if (count) {
-      this.PushUndo();
-    }
-
+    this.grid.RemoveConditionalFormat({ format });
   }
 
   /**
@@ -1554,37 +1499,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       }
       range = ref.area;
     }
+
     const area = this.model.ResolveArea(range, this.grid.active_sheet);
-    const sheet = area.start.sheet_id ? this.model.sheets.Find(area.start.sheet_id) : this.grid.active_sheet;
-
-    if (sheet) {
-      let count = 0;
-
-      sheet.conditional_formats = sheet.conditional_formats.filter(test => {
-        const compare = new Area(test.area.start, test.area.end);
-        if (compare.Intersects(area)) {
-          count++;
-          this.calculator.RemoveConditional(test);
-          return false;
-        }
-        return true;
-      });
-
-      if (count) {
-
-        sheet.FlushConditionalFormats();
-
-        this.ApplyConditionalFormats(sheet, false);
-    
-        if (sheet === this.grid.active_sheet) {
-          this.grid.Update(true);
-        }
-
-        this.PushUndo();
-      }
-
-    }
-
+    this.grid.RemoveConditionalFormat({ area });
 
   }
 
@@ -4617,7 +4534,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     this.UpdateAnnotations();
 
+    // we don't really need to call UpdateConditionals here unless
+    // something has changed in a previously inactive sheet -- right?
+
     this.calculator.UpdateConditionals();
+
+    // we do need to call apply (I think)
+
     this.ApplyConditionalFormats(event.activate, true);
 
   }

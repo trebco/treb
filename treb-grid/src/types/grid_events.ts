@@ -23,6 +23,7 @@ import type { GridSelection } from './grid_selection';
 import type { Annotation } from './annotation';
 import type { Sheet } from './sheet';
 import type { Area } from 'treb-base-types';
+import type { ConditionalFormat } from './conditional_format';
 
 export enum ErrorCode {
 
@@ -80,6 +81,12 @@ export interface StructureEvent {
    * FIXME: merge/unmerge? (...) I think yes
    */
   rebuild_required?: boolean;
+
+  /** 
+   * we can use this when conditional formats are modified/added/removed 
+   */
+  conditional_format?: boolean;
+  
 }
 
 export interface AnnotationEvent {

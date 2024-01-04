@@ -42,6 +42,13 @@ export class CalculationLeafVertex extends SpreadsheetVertex {
   
   public address = { row: -1, column: -1 }; // fake address
 
+  /**
+   * this type is currently only used for conditional formatting.
+   * but that might change in the future. I want to identify what
+   * it's used for so we can selectively prune them when necessary.
+   */
+  public use?: string;
+
   /** 
    * flag, to reduce unecessary application. work in progress. this
    * indicates that we reached the calculation step. that means either
