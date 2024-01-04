@@ -411,6 +411,43 @@ $swatch-size: 18px;
 
     }
 
+    .treb-font-scale {
+      padding-left: 2em;
+      width: 5em;
+      text-align: right;
+    }
+
+    [composite][font-scale] {
+      position: relative;
+    }
+
+    .treb-font-scale-icon {
+      position: absolute;
+      top: 50%;
+      left: .5em;
+      transform: translateY(-50%);
+      opacity: .9;
+      // border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+      border-radius: 3px;
+      // background: color-mix(in srgb, currentColor 10%, transparent);
+
+      pointer-events: none;
+      line-height: 1;
+
+      &::before, &::after {
+        content: 'A';
+        position: relative;
+      }
+
+      &::before {
+        font-size: 1.2em;
+      }
+      &::after {
+        font-size: .9em;
+        left: -.125em;
+      }
+    }
+
   }
 
 }

@@ -66,6 +66,27 @@
   </div>
 
   <div composite>
+    <button data-command="border-bottom" data-target="border" title="Bottom border"></button>
+    <div class="treb-menu">
+      <button dropdown title="Border options"></button>
+      <div class="treb-icon-buttons" data-replace="border">
+        <button data-command="border-top" title="Top border"></button>        
+        <button data-command="border-left" title="Left border"></button>        
+        <button data-command="border-right" title="Right border"></button>        
+        <button data-command="border-bottom" title="Bottom border"></button>        
+        <button data-command="border-double-bottom" title="Double bottom border"></button>        
+        <button data-command="border-outside" title="Outside borders"></button>        
+        <button data-command="border-all" title="All borders"></button>        
+        <button data-command="border-none" title="Clear borders"></button>        
+        <div separator></div>
+        <div class="treb-menu treb-color-menu treb-submenu" data-color-command="border-color" data-replace-color="border" title="Border color" data-default-color-text="Default border color">
+          <button data-icon="palette" data-color-bar="border" data-color="{}"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div composite>
     <button data-command="fill-color" data-color-bar="fill" data-color="{}" title="Fill color"></button>
     <div class="treb-menu treb-color-menu" data-color-command="fill-color" data-replace-color="fill" data-default-color-text="No fill">
       <button dropdown title="Color options"></button>
@@ -94,28 +115,8 @@
     </div>
   </div>
 
-  <div composite>
-    <button data-command="border-bottom" data-target="border" title="Bottom border"></button>
-    <div class="treb-menu">
-      <button dropdown title="Border options"></button>
-      <div class="treb-icon-buttons" data-replace="border">
-        <button data-command="border-top" title="Top border"></button>        
-        <button data-command="border-left" title="Left border"></button>        
-        <button data-command="border-right" title="Right border"></button>        
-        <button data-command="border-bottom" title="Bottom border"></button>        
-        <button data-command="border-double-bottom" title="Double bottom border"></button>        
-        <button data-command="border-outside" title="Outside borders"></button>        
-        <button data-command="border-all" title="All borders"></button>        
-        <button data-command="border-none" title="Clear borders"></button>        
-        <div separator></div>
-        <div class="treb-menu treb-color-menu treb-submenu" data-color-command="border-color" data-replace-color="border" title="Border color" data-default-color-text="Default border color">
-          <button data-icon="palette" data-color-bar="border" data-color="{}"></button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div composite font-scale>
+    <div class="treb-font-scale-icon"></div>
     <input class="treb-font-scale" title="Font scale">
     <div class="treb-menu">
       <button dropdown title="Font scale options"></button>
