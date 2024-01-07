@@ -817,9 +817,11 @@ export abstract class Graph implements GraphCallbacks {
    */
   public AddLeafVertex(vertex: LeafVertex): void {
 
+    /*
     if (this.leaf_vertices.has(vertex)) {
       console.info("TLV already has", vertex);
     }
+    */
 
     this.leaf_vertices.add(vertex); 
   }
