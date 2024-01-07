@@ -15,7 +15,7 @@ export class Gradient {
 
   public mapped: Array<GradientStop & { resolved: number[] }>;
 
-  constructor(stops: GradientStop[], theme: Theme, public color_space: ColorSpace = 'HSL') {
+  constructor(stops: GradientStop[], theme: Theme, public color_space: ColorSpace = 'RGB') {
 
     this.mapped = stops.map(stop => {
 
