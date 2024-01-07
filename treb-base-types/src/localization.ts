@@ -98,6 +98,12 @@ export class Localization {
 
     }
 
+    // don't allow the "C" locale
+    if (this.locale === 'C') {
+      console.warn('Locale not set, defaulting to en-us');
+      this.locale = 'en-us';
+    }
+   
     const decimal_separator = new Intl.NumberFormat(this.locale,
       {minimumFractionDigits: 1}).format(3.3).replace(/\d/g, '');
 
