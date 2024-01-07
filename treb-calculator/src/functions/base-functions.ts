@@ -1270,13 +1270,31 @@ export const BaseFunctionLibrary: FunctionMap = {
           columns = area.value[0]?.length || 0;
 
           const result: UnionValue[][] = [];
+
           for (let r = 0; r < rows; r++) {
             const row: UnionValue[] = [];
             for (let c = 0; c < columns; c++) {
               const src = area.value[r][c];
               if (src.type === ValueType.number) {
                 let calc = 0;
-                if (range > 0) {
+
+                // special case: max === min. this can be used to do binary 
+                // coloring over a set of data (ignoring the pivot).
+
+                // FIXME: use a separate loop?
+
+                if (max === min) {
+                  if (src.value > max) {
+                    calc = 1;
+                  }
+                  else if (src.value < max) {
+                    calc = 0;
+                  }
+                  else {
+                    calc = 0.5
+                  }
+                }
+                else if (range > 0) {
                   calc = (src.value - min) / range;
                 }
                 row.push({ type: ValueType.number, value: calc });
