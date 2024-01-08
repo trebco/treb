@@ -5733,6 +5733,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   protected HandleKeyDown(event: KeyboardEvent): void {
 
+    console.info("HKD embed");
+
     // can we drop the event.code stuff in 2024? (YES)
 
     if (event.ctrlKey && (event.code === 'KeyZ' || event.key === 'z')) {

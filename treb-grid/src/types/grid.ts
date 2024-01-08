@@ -4627,6 +4627,13 @@ export class Grid extends GridBase {
       }
     }
     else {
+
+      // ignore function keys 
+      
+      if (/^F\d+$/.test(event.key)) {
+        return;
+      }
+
       switch (event.key) {
         case 'Tab':
           if (event.shiftKey) delta.columns--;
