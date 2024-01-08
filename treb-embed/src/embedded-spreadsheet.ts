@@ -5727,15 +5727,25 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   /**
    * handle key down to intercept ctrl+z (undo)
-   *
+   * UPDATE: we're also handling F9 for recalc (optionally)
+   * 
    * FIXME: redo (ctrl+y or ctrl+shift+z)
    */
   protected HandleKeyDown(event: KeyboardEvent): void {
+
+    // can we drop the event.code stuff in 2024? (YES)
+
     if (event.ctrlKey && (event.code === 'KeyZ' || event.key === 'z')) {
       event.stopPropagation();
       event.preventDefault();
       this.Undo();
     }
+    else if (event.key === 'F9' && this.options.recalculate_on_f9) {
+      event.stopPropagation();
+      event.preventDefault();
+      this.Recalculate();
+    }
+
   }
 
 

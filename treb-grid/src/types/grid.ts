@@ -4687,7 +4687,10 @@ export class Grid extends GridBase {
           return;
 
         default:
-          // console.info('ek', event.key);
+
+          // FIXME: we're handling F9 (optionally) in the embedded
+          // component. this handler should ignore all function keys.
+          // not sure there's a good global for that, though. regex?
 
           if (!selection.empty) {
             if (event.key !== 'Escape') {

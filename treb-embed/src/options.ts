@@ -304,6 +304,13 @@ export interface EmbeddedSpreadsheetOptions {
    */
   preload?: (instance: unknown) => void;
 
+  /**
+   * handle the F9 key and recalculate the spreadsheet. for compatibility.
+   * we're leaving this option to default `false` for now, but that may 
+   * change in the future. key modifiers have no effect.
+   */
+  recalculate_on_f9?: boolean;
+
 }
 
 /**

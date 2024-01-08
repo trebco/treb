@@ -24,6 +24,14 @@ import type { StatsEntry } from './tab_bar';
 
 export type StatsFunction = (data: CellValue|CellValue[][]|undefined) => StatsEntry[];
 
+
+/**
+ * @internalRemarks
+ * 
+ * why are there two levels of options? can we consolidate this with
+ * the embedded spreadsheet options? they are never (AFAICT) used 
+ * independently. maybe that's recent.
+ */
 export interface GridOptions {
 
   /** can expand rows/columns */

@@ -1,4 +1,4 @@
-/*! API v28.8. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v28.9. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -264,6 +264,13 @@ export interface EmbeddedSpreadsheetOptions {
      * top-left of the spreadsheet when a network document has local changes.
      */
     revert_indicator?: boolean;
+
+    /**
+     * handle the F9 key and recalculate the spreadsheet. for compatibility.
+     * we're leaving this option to default `false` for now, but that may
+     * change in the future. key modifiers have no effect.
+     */
+    recalculate_on_f9?: boolean;
 }
 
 /**
