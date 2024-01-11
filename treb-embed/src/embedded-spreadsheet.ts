@@ -69,7 +69,7 @@ import {
 } from 'treb-base-types';
 
 import { EventSource, ValidateURI } from 'treb-utils';
-import { NumberFormatCache, ValueParser, NumberFormat } from 'treb-format';
+import { NumberFormatCache, ValueParser, NumberFormat, LotusDate, UnlotusDate } from 'treb-format';
 
 
 
@@ -3898,6 +3898,23 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // API v1 OK
 
     return NumberFormatCache.Get(format).Format(value);
+  }
+
+  /**
+   * convert a javascript date (or timestamp) to a spreadsheet date
+   */
+  public SpreadsheetDate(javascript_date: number|Date) {
+    if (javascript_date instanceof Date) {
+      javascript_date = javascript_date.getTime();
+    }
+    return UnlotusDate(javascript_date, true);
+  }
+
+  /**
+   * convert a spreadsheet date to a javascript date
+   */
+  public JavascriptDate(spreadsheet_date: number) {
+    return LotusDate(spreadsheet_date).getTime();
   }
 
   /**

@@ -871,6 +871,16 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     FormatNumber(value: number, format?: string): string;
 
     /**
+     * convert a javascript date (or timestamp) to a spreadsheet date
+     */
+    SpreadsheetDate(javascript_date: number | Date): number;
+
+    /**
+     * convert a spreadsheet date to a javascript date
+     */
+    JavascriptDate(spreadsheet_date: number): number;
+
+    /**
      * Apply borders to range.
      *
      * @param range pass `undefined` as range to apply to current selection.
