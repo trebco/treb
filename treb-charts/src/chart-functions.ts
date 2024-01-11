@@ -153,4 +153,15 @@ export const ChartFunctions: FunctionMap = {
     fn: Identity,
   },
 
+  'Bubble.Chart': {
+    arguments: [
+      { name: 'X', metadata: true, },
+      { name: 'Y', metadata: true, },
+      { name: 'Z', metadata: true, },
+      { name: 'Categories' },
+      { name: 'Chart Title' },
+    ],
+    fn: Identity,
+  },
+
 };

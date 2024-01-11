@@ -364,6 +364,93 @@ const ApplyLabels = (series_list: SeriesType[], pattern: string, category_labels
 
 //------------------------------------------------------------------------------
 
+export const CreateBubbleChart = (args: UnionValue[]): ChartData => {
+
+  const [x, y, z] = [0,1,2].map(index => {
+    const arg = args[index];
+    if (arg.type === ValueType.array) {
+      return ArrayToSeries(arg).y;
+    }
+    return undefined;
+  });
+
+  let c: string[]|undefined = undefined;
+  if (Array.isArray(args[3])) {
+    c = Util.Flatten(args[3]).map(value => (value||'').toString());
+  }
+ 
+  const title = args[4]?.toString() || undefined;
+
+  // FIXME: need to pad out the axes by the values at the edges,
+  // so the whole circle is included in the chart area. 
+
+  const [x_scale, y_scale] = [x, y].map(subseries => {
+
+    let series_min = 0;
+    let series_max = 1;
+    let first = false;
+
+    if (subseries?.data) {
+
+      for (const [index, value] of subseries.data.entries()) {
+        if (typeof value === 'number') {
+
+          if (!first) {
+            first = true;
+            series_min = value;
+            series_max = value;
+          }
+
+          const size = (z?.data?.[index]) || 0;
+          series_min = Math.min(series_min, value - size / 2);
+          series_max = Math.max(series_max, value + size / 2);
+        }      
+      }
+    }
+
+    return Util.Scale(series_min, series_max, 7);
+
+  });
+
+  let x_labels: string[] | undefined;
+  let y_labels: string[] | undefined;
+
+  if (x?.format) {
+    x_labels = [];
+    const format = NumberFormatCache.Get(x.format);
+    for (let i = 0; i <= x_scale.count; i++) {
+      x_labels.push(format.Format(x_scale.min + i * x_scale.step));
+    }
+  }
+
+  if (y?.format) {
+    y_labels = [];
+    const format = NumberFormatCache.Get(y.format);
+    for (let i = 0; i <= y_scale.count; i++) {
+      y_labels.push(format.Format(y_scale.min + i * y_scale.step));
+    }
+  }
+
+  return {
+
+    type: 'bubble',
+
+    title,
+
+    x,
+    y,
+    z,
+    c,
+    
+    x_scale,
+    y_scale,
+
+    x_labels, 
+    y_labels,
+
+  };
+
+};
 
 /**
  * args is [data, title, options]

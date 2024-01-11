@@ -161,6 +161,14 @@
     }
   }
 
+  .bubble-chart {
+
+    stroke-width: 3;
+    fill: color-mix(in srgb, currentColor 75%, transparent);
+    stroke: currentColor;
+    
+  }
+
   /* scatter plot line (and marker -- change that class name) */
   .scatter-plot {
 

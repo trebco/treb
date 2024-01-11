@@ -95,6 +95,7 @@ export class DefaultChartRenderer implements ChartRendererType {
         || chart_data.type === 'histogram2'
         || chart_data.type === 'bar'
         || chart_data.type === 'scatter2'
+        || chart_data.type === 'bubble'
         ) {
 
       // we need to measure first, then lay out the other axis, then we
@@ -122,7 +123,7 @@ export class DefaultChartRenderer implements ChartRendererType {
         let max_width = 0;
         let max_height = 0;
 
-        const scale = (chart_data.type === 'scatter2') ? chart_data.y_scale : chart_data.scale;
+        const scale = (chart_data.type === 'scatter2' || chart_data.type === 'bubble') ? chart_data.y_scale : chart_data.scale;
         
         const count = (chart_data.type === 'bar') ? 
           chart_data.y_labels.length :
@@ -163,6 +164,7 @@ export class DefaultChartRenderer implements ChartRendererType {
           chart_data.type !== 'area' && 
           chart_data.type !== 'bar' && 
           chart_data.type !== 'scatter2' && 
+          chart_data.type !== 'bubble' && 
           chart_data.type !== 'histogram2' 
           );
 
@@ -197,6 +199,29 @@ export class DefaultChartRenderer implements ChartRendererType {
     switch (chart_data.type) {
     case 'scatter':
       this.renderer.RenderPoints(area, chart_data.x, chart_data.y, 'mc mc-correlation series-1');
+      break;
+
+    case 'bubble':
+
+      this.renderer.RenderGrid(area, 
+        chart_data.y_scale.count, 
+        chart_data.x_scale.count + 1, // (sigh)
+        'chart-grid');
+
+      if (chart_data.x && chart_data.y && chart_data.z) {
+        this.renderer.RenderBubbleSeries(area,
+            chart_data.x.data,
+            chart_data.y.data,
+            chart_data.z.data,
+            chart_data.c || [],
+            chart_data.x_scale,
+            chart_data.y_scale,
+            undefined,
+            undefined,
+            'bubble-chart',
+          );
+      }
+
       break;
 
     case 'scatter2':

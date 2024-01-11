@@ -64,6 +64,10 @@ export class Chart {
         this.chart_data = ChartUtils.CreateScatterChart(args, 'line');
         break;
   
+      case 'bubble.chart':
+        this.chart_data = ChartUtils.CreateBubbleChart(args);
+        break;
+
       default:
         this.Clear();
         break;

@@ -1193,6 +1193,87 @@ export class ChartRenderer {
 
   }
 
+  public RenderBubbleSeries(area: Area,
+        x: Array<number | undefined>,
+        y: Array<number | undefined>,
+        z: Array<number | undefined>,
+        c: any[] = [],
+        x_scale: RangeScale,
+        y_scale: RangeScale,
+        min = 10,
+        max = 30,
+        classes?: string | string[]): void {
+
+    const count = Math.max(x.length, y.length, z.length);
+    const xrange = (x_scale.max - x_scale.min) || 1;
+    const yrange = (y_scale.max - y_scale.min) || 1;
+
+    // const marker_elements: string[] = [];
+    const points: Array<{x: number, y: number, z: number, series: number} | undefined> = [];
+
+    const d: string[] = [];
+    const areas: string[] = [];
+
+    const group = SVGNode('g', {class: classes});
+
+    // if (title) node.setAttribute('title', title);
+    this.group.appendChild(group);
+
+    let z_min = z[0] || 0;
+    let z_max = z[0] || 0;
+
+    const map: Map<string, number> = new Map();
+
+    for (let i = 0; i < count; i++) {
+
+      const a = x[i];
+      const b = y[i];
+
+      if (typeof a === 'undefined' || typeof b === 'undefined') {
+        points.push(undefined);
+      }
+      else {
+
+        const series_key = c[i] || '';
+        let series = map.get(series_key);
+
+        if (typeof series === 'undefined') {
+
+          series = map.size + 1;
+
+          map.set(series_key, series);
+        }
+
+        let size = z[i] || 0;
+        if (size) {
+          const size_x = size / xrange * area.width;
+          const size_y = size / yrange * area.height;
+          size = Math.min(size_x, size_y);
+        }
+
+        points.push({
+          x: area.left + ((a - x_scale.min) / xrange) * area.width,
+          y: area.bottom - ((b - y_scale.min) / yrange) * area.height,
+          z: size,
+          series,
+        });
+
+      }
+
+    }
+     
+    {
+      for (const point of points) {
+        if (point) {
+          group.appendChild(SVGNode('circle', {cx: point.x, cy: point.y, r: point.z / 2, class: `point series-${point.series}`}));
+        }
+      }
+
+    }
+
+
+  }
+
   public RenderScatterSeries(area: Area,
     x: Array<number | undefined>,
     y: Array<number | undefined>,

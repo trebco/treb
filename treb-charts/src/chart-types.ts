@@ -107,6 +107,23 @@ export interface ScatterData2 extends ChartDataBaseType {
 
 }
 
+export interface BubbleChartData extends ChartDataBaseType {
+
+  type: 'bubble';
+
+  x?: SubSeries;
+  y?: SubSeries;
+  z?: SubSeries;
+  c?: any[];
+
+  x_scale: RangeScale;
+  y_scale: RangeScale;
+
+  x_labels?: string[];
+  y_labels?: string[];
+
+}
+
 /** base for column types (FIXME: probably common to scatter/line/area also) */
 export interface ColumnDataBaseType extends ChartDataBaseType {
   column_width: number;
@@ -190,6 +207,7 @@ export type ChartData
   | AreaData
   | ColumnData
   | BarData
+  | BubbleChartData
   ;
 
 export enum LegendLayout {
