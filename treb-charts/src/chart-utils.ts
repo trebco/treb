@@ -204,10 +204,13 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
   if (raw_data.type === ValueType.object) {
     if (raw_data.key === 'group') {
       if (Array.isArray(raw_data.value)) {
-        for (const entry of raw_data.value) {
+        for (const [series_index, entry] of raw_data.value.entries()) {
           if (!!entry && (typeof entry === 'object')) {
             if (entry.key === 'series') {
               const series = ReadSeries(entry.value);
+              if (typeof series.index === 'undefined') {
+                series.index = series_index;
+              }
               list.push(series);
             }
             else if (entry.type === ValueType.array) {
@@ -433,7 +436,7 @@ export const CreateBubbleChart = (args: UnionValue[]): ChartData => {
   const title = args[1]?.toString() || undefined;
   const options = args[2]?.toString() || undefined;
 
-  console.info({ series, common, title, options });
+  // console.info({ series, common, title, options });
 
   const chart_data: BubbleChartData = {
 
