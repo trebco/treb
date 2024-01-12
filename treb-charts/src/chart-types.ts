@@ -111,10 +111,14 @@ export interface BubbleChartData extends ChartDataBaseType {
 
   type: 'bubble';
 
+  /*
   x?: SubSeries;
   y?: SubSeries;
   z?: SubSeries;
   c?: any[];
+  */
+  series: SeriesType[];
+
 
   x_scale: RangeScale;
   y_scale: RangeScale;
@@ -243,6 +247,7 @@ export interface SeriesType {
   subtype?: string;
   x: SubSeries;
   y: SubSeries;
+  z?: SubSeries;
   index?: number;
 }
 

@@ -208,18 +208,8 @@ export class DefaultChartRenderer implements ChartRendererType {
         chart_data.x_scale.count + 1, // (sigh)
         'chart-grid');
 
-      if (chart_data.x && chart_data.y && chart_data.z) {
-        this.renderer.RenderBubbleSeries(area,
-            chart_data.x.data,
-            chart_data.y.data,
-            chart_data.z.data,
-            chart_data.c || [],
-            chart_data.x_scale,
-            chart_data.y_scale,
-            undefined,
-            undefined,
-            'bubble-chart',
-          );
+      for (const [index, series] of chart_data.series.entries()) {
+        this.renderer.RenderBubbleSeries(area, series, chart_data.x_scale, chart_data.y_scale, `bubble-chart series-${index + 1}`);
       }
 
       break;

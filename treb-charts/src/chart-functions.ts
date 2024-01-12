@@ -66,6 +66,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'Label' }, // , metadata: true, },
       { name: 'X', metadata: true, },
       { name: 'Y', metadata: true, },
+      { name: 'Z', metadata: true, },
       { name: 'index', },
       { name: 'subtype', },
     ],
@@ -155,10 +156,7 @@ export const ChartFunctions: FunctionMap = {
 
   'Bubble.Chart': {
     arguments: [
-      { name: 'X', metadata: true, },
-      { name: 'Y', metadata: true, },
-      { name: 'Z', metadata: true, },
-      { name: 'Categories' },
+      { name: 'Data', metadata: true, },
       { name: 'Chart Title' },
     ],
     fn: Identity,

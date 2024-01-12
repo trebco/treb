@@ -21,7 +21,7 @@
 
 import type { Size, Point } from './rectangle';
 import { Area } from './rectangle';
-import type { DonutSlice, LegendOptions} from './chart-types';
+import type { DonutSlice, LegendOptions, SeriesType} from './chart-types';
 import { LegendLayout, LegendPosition, LegendStyle } from './chart-types';
 import type { RangeScale } from 'treb-utils';
 
@@ -1193,23 +1193,18 @@ export class ChartRenderer {
 
   }
 
-  public RenderBubbleSeries(area: Area,
-        x: Array<number | undefined>,
-        y: Array<number | undefined>,
-        z: Array<number | undefined>,
-        c: any[] = [],
+  public RenderBubbleSeries(
+        area: Area,
+        series: SeriesType,
         x_scale: RangeScale,
         y_scale: RangeScale,
-        min = 10,
-        max = 30,
         classes?: string | string[]): void {
 
-    const count = Math.max(x.length, y.length, z.length);
     const xrange = (x_scale.max - x_scale.min) || 1;
     const yrange = (y_scale.max - y_scale.min) || 1;
 
     // const marker_elements: string[] = [];
-    const points: Array<{x: number, y: number, z: number, series: number} | undefined> = [];
+    const points: Array<{x: number, y: number, z: number} | undefined> = [];
 
     const d: string[] = [];
     const areas: string[] = [];
@@ -1218,6 +1213,30 @@ export class ChartRenderer {
 
     // if (title) node.setAttribute('title', title);
     this.group.appendChild(group);
+
+    if (series.z) {
+      for (const [index, z] of series.z.data.entries()) {
+
+        const x = series.x.data[index];
+        const y = series.y.data[index];
+
+        if (typeof x !== 'undefined' && typeof y !== 'undefined' && typeof z !== 'undefined' && z > 0) {
+
+          const size_x = z / xrange * area.width;
+          const size_y = z / yrange * area.height;
+          const size = Math.min(size_x, size_y);
+
+          points.push({
+            x: area.left + ((x - x_scale.min) / xrange) * area.width, 
+            y: area.bottom - ((y - y_scale.min) / yrange) * area.height, 
+            z: size,
+          });
+        }
+
+      }
+    }
+    
+    /*
 
     let z_min = z[0] || 0;
     let z_max = z[0] || 0;
@@ -1262,10 +1281,12 @@ export class ChartRenderer {
 
     }
      
+    */
+
     {
       for (const point of points) {
         if (point) {
-          group.appendChild(SVGNode('circle', {cx: point.x, cy: point.y, r: point.z / 2, class: `point series-${point.series}`}));
+          group.appendChild(SVGNode('circle', {cx: point.x, cy: point.y, r: point.z / 2, class: `point`}));
         }
       }
 

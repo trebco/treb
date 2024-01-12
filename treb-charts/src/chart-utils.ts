@@ -1,7 +1,7 @@
 
 import { type UnionValue, ValueType, type ArrayUnion } from 'treb-base-types';
 import { LegendStyle } from './chart-types';
-import type { SubSeries, SeriesType, BarData, ChartDataBaseType, ChartData, ScatterData2, LineData, DonutSlice } from './chart-types';
+import type { SubSeries, SeriesType, BarData, ChartDataBaseType, ChartData, ScatterData2, LineData, DonutSlice, BubbleChartData } from './chart-types';
 import { NumberFormatCache } from 'treb-format';
 import { Util } from './util';
 
@@ -17,17 +17,27 @@ const DEFAULT_FORMAT = '#,##0.00'; // why not use "general", or whatever the usu
 
 export const ReadSeries = (data: Array<any>): SeriesType => {
 
+  // series type is (now)
+  //
+  // [0] label, string
+  // [1] X, array, metadata [* could be single value?]
+  // [2] Y, array, metadata [* could be single value?]
+  // [3] Z, array, metadata [* could be single value?]
+  // [4] index, number
+  // [5] subtype, string
+  //
+  
   // in this case it's (label, X, Y)
   const series: SeriesType = {
     x: { data: [] },
     y: { data: [] },
   };
 
-  if (data[3] && typeof data[3] === 'number') {
-    series.index = data[3];
+  if (data[4] && typeof data[4] === 'number') {
+    series.index = data[4];
   }
-  if (data[4]) {
-    series.subtype = data[4].toString();
+  if (data[5]) {
+    series.subtype = data[5].toString();
   }
 
   if (data[0]) {
@@ -47,6 +57,17 @@ export const ReadSeries = (data: Array<any>): SeriesType => {
     }
   }
 
+  // convert single value series to arrays so we can just use the old routine
+
+  for (let i = 1; i < 4; i++) {
+    if (data[i] && typeof data[i] === 'object' && data[i].key === 'metadata') {
+      data[i] = {
+        type: ValueType.array,
+        value: [data[i]],
+      }
+    }
+  }
+  
   // read [2] first, so we can default for [1] if necessary
 
   if (!!data[2] && (typeof data[2] === 'object') && data[2].type === ValueType.array) {
@@ -67,7 +88,21 @@ export const ReadSeries = (data: Array<any>): SeriesType => {
     }
   }
 
-  for (const subseries of [series.x, series.y]) {
+  const entries = [series.x, series.y]
+
+  // try reading [3]
+
+  if (!!data[3] && (typeof data[3] === 'object') && data[3].type === ValueType.array) {
+    const flat = Util.Flatten(data[3].value);
+    series.z = { data: [] };
+    series.z.data = flat.map(item => typeof item.value.value === 'number' ? item.value.value : undefined);
+    if (flat[0].value.format) {
+      series.z.format = flat[0].value.format;
+    }
+  }
+
+
+  for (const subseries of entries) {
 
     // in case of no values
     if (subseries.data.length) {
@@ -285,13 +320,40 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
   }
 
   const x = series.filter(test => test.x.range);
-  const x_min = Math.min.apply(0, x.map(test => test.x.range?.min || 0));
-  const x_max = Math.max.apply(0, x.map(test => test.x.range?.max || 0));
+  let x_min = Math.min.apply(0, x.map(test => test.x.range?.min || 0));
+  let x_max = Math.max.apply(0, x.map(test => test.x.range?.max || 0));
 
   const y = series.filter(test => test.y.range);
   let y_min = Math.min.apply(0, x.map(test => test.y.range?.min || 0));
   let y_max = Math.max.apply(0, x.map(test => test.y.range?.max || 0));
 
+  // if there's z data (used for bubble size), adjust x/y min/max to
+  // account for the z size so bubbles are contained within the grid
+
+  for (const subseries of series) {
+    if (subseries.z) {
+      for (const [index, z] of subseries.z.data.entries()) {
+        if (typeof z !== 'undefined') {
+          const x = subseries.x.data[index];
+          
+          const half = Math.max(0, z/2); // accounting for negative values (which we don't use)
+
+          if (typeof x !== 'undefined') {
+            x_min = Math.min(x_min, x - half);
+            x_max = Math.max(x_max, x + half);
+          }
+
+          const y = subseries.y.data[index];
+          if (typeof y !== 'undefined') {
+            y_min = Math.min(y_min, y - half);
+            y_max = Math.max(y_max, y + half);
+          }
+
+        }
+      }
+    }
+  }
+  
   if (typeof y_floor !== 'undefined') {
     y_min = Math.min(y_min, y_floor);
   }
@@ -366,6 +428,31 @@ const ApplyLabels = (series_list: SeriesType[], pattern: string, category_labels
 
 export const CreateBubbleChart = (args: UnionValue[]): ChartData => {
 
+  const series: SeriesType[] = TransformSeriesData(args[0]);
+  const common = CommonData(series);
+  const title = args[1]?.toString() || undefined;
+  const options = args[2]?.toString() || undefined;
+
+  console.info({ series, common, title, options });
+
+  const chart_data: BubbleChartData = {
+
+    legend: common.legend,
+    type: 'bubble',
+    series,
+    title,
+
+    x_scale: common.x.scale,
+    x_labels: common.x.labels,
+
+    y_scale: common.y.scale,
+    y_labels: common.y.labels,
+
+  };
+  
+  return chart_data;
+
+  /*
   const [x, y, z] = [0,1,2].map(index => {
     const arg = args[index];
     if (arg.type === ValueType.array) {
@@ -449,6 +536,8 @@ export const CreateBubbleChart = (args: UnionValue[]): ChartData => {
     y_labels,
 
   };
+
+  */
 
 };
 
