@@ -88,7 +88,7 @@ import { Chart, ChartFunctions } from 'treb-charts';
 import type { SetRangeOptions } from 'treb-grid';
 
 import type { StateLeafVertex } from 'treb-calculator';
-import type { ConnectedElementType } from 'treb-grid/src/types/data_model';
+import type { ConnectedElementType } from 'treb-grid';
 
 
 // --- worker ------------------------------------------------------------------

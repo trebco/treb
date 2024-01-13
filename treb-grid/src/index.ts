@@ -22,7 +22,7 @@
 export { Grid } from './types/grid';
 export { GridBase } from './types/grid_base';
 export { Sheet } from './types/sheet';
-export { DataModel, type MacroFunction } from './types/data_model';
+export { DataModel, type MacroFunction, type ConnectedElementType } from './types/data_model';
 export type { SerializedNamedExpression, SerializedModel } from './types/data_model';
 export * from './types/grid_events';
 export type { SerializedSheet, FreezePane } from './types/sheet_types';

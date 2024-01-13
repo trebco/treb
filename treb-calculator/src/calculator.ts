@@ -55,7 +55,7 @@ import type { LeafVertex } from './dag/graph';
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError } from './function-error';
 import { StateLeafVertex } from './dag/state_leaf_vertex';
 import { CalculationLeafVertex } from './dag/calculation_leaf_vertex';
-import { ConnectedElementType } from 'treb-grid/src/types/data_model';
+import type { ConnectedElementType } from 'treb-grid';
 
 /**
  * breaking this out so we can use it for export (TODO)
