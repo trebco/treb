@@ -36,6 +36,7 @@ export const ReadSeries = (data: Array<any>): SeriesType => {
   if (data[4] && typeof data[4] === 'number') {
     series.index = data[4];
   }
+
   if (data[5]) {
     series.subtype = data[5].toString();
   }
@@ -209,7 +210,7 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
             if (entry.key === 'series') {
               const series = ReadSeries(entry.value);
               if (typeof series.index === 'undefined') {
-                series.index = series_index;
+                series.index = series_index + 1;
               }
               list.push(series);
             }
