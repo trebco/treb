@@ -1224,7 +1224,7 @@ export class ChartRenderer {
 
           const size_x = z / xrange * area.width;
           const size_y = z / yrange * area.height;
-          const size = Math.min(size_x, size_y);
+          const size = Math.max(size_x, size_y);
 
           points.push({
             x: area.left + ((x - x_scale.min) / xrange) * area.width, 
