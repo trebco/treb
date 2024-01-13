@@ -26,6 +26,12 @@ import { NamedRangeCollection } from './named_range';
 import { type ExpressionUnit, type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex } from 'treb-parser';
 import { Area, IsCellAddress, Style } from 'treb-base-types';
 
+export interface ConnectedElementType {
+  formula: string;
+  update?: (instance: ConnectedElementType) => void;
+  internal?: unknown; // opaque type to prevent circular dependencies
+}
+
 export interface SerializedMacroFunction {
   name: string;
   function_def: string;
@@ -444,6 +450,32 @@ export class DataModel {
     return address; // already range or address
 
   }
+  
+  public AddConnectedElement(connected_element: ConnectedElementType): number {
+    const id = this.connected_element_id++;
+    this.connected_elements.set(id, connected_element);
+    return id;
+  }
+
+  public RemoveConnectedElement(id: number) {
+    const element = this.connected_elements.get(id);
+    this.connected_elements.delete(id);
+    return element;
+  }
+
+  /** 
+   * identifier for connected elements, used to manage. these need to be 
+   * unique in the lifetime of a model instance, but no more than that.
+   */
+  protected connected_element_id = 100;
+
+  /** 
+   * these are intentionally NOT serialized. they're ephemeral, created 
+   * at runtime and not persistent.
+   * 
+   * @internal
+   */
+  public connected_elements: Map<number, ConnectedElementType> = new Map();
 
 }
 

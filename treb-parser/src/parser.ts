@@ -33,7 +33,8 @@ import type {
   UnitLiteralNumber,
   ParserFlags,
   UnitStructuredReference,
-  RenderOptions} from './parser-types';
+  RenderOptions,
+  PersistedParserConfig} from './parser-types';
 import {
   ArgumentSeparatorType,
   DecimalMarkType
@@ -247,6 +248,52 @@ export class Parser {
    * them; for now we are just listing names.
    */
   protected full_reference_list: Array<UnitAddress | UnitRange | UnitIdentifier | UnitStructuredReference> = [];
+
+  protected parser_state: string[] = [];
+
+  /**
+   * save local configuration to a buffer, so it can be restored. we're doing
+   * this because in a lot of places we're caching parser flagss, changing
+   * them, and then restoring them. that's become repetitive, fragile to 
+   * changes or new flags, and annoying.
+   * 
+   * config is managed in a list with push/pop semantics. we store it as 
+   * JSON so there's no possibility we'll accidentally mutate.
+   * 
+   * FIXME: while we're at it why not migrate the separators -> flags, so
+   * there's a single location for this kind of state? (...TODO)
+   * 
+   */
+  public Save() {
+    const config: PersistedParserConfig = {
+      flags: this.flags,
+      argument_separator: this.argument_separator,
+      decimal_mark: this.decimal_mark,
+    }
+    this.parser_state.push(JSON.stringify(config));
+  }
+
+  /**
+   * restore persisted config
+   * @see Save
+   */
+  public Restore() {
+    const json = this.parser_state.shift();
+    if (json) {
+      try {
+        const config = JSON.parse(json) as PersistedParserConfig;
+        this.flags = config.flags;
+        this.argument_separator = config.argument_separator;
+        this.decimal_mark = config.decimal_mark;
+      }
+      catch (err) {
+        console.error(err);
+      }
+    }
+    else {
+      console.warn("No parser state to restore");
+    }
+  }
 
   /**
    * recursive tree walk.

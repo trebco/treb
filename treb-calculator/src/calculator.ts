@@ -55,6 +55,7 @@ import type { LeafVertex } from './dag/graph';
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError } from './function-error';
 import { StateLeafVertex } from './dag/state_leaf_vertex';
 import { CalculationLeafVertex } from './dag/calculation_leaf_vertex';
+import { ConnectedElementType } from 'treb-grid/src/types/data_model';
 
 /**
  * breaking this out so we can use it for export (TODO)
@@ -1291,6 +1292,7 @@ export class Calculator extends Graph {
       subset = undefined;
       this.UpdateAnnotations();
       this.UpdateConditionals();
+      this.UpdateConnectedElements();
       // this.UpdateNotifiers();
       this.full_rebuild_required = false; // unset
     }
@@ -1488,6 +1490,7 @@ export class Calculator extends Graph {
 
     this.UpdateAnnotations(); // all
     this.UpdateConditionals();
+    this.UpdateConnectedElements();
 
     // and notifiers
 
@@ -1764,6 +1767,43 @@ export class Calculator extends Graph {
         vertex.Reset();
         this.RemoveLeafVertex(vertex);
       }
+    }
+  }
+
+  public RemoveConnectedELement(element: ConnectedElementType) {
+    let internal = element.internal as { vertex: StateLeafVertex };
+    if (internal?.vertex) {
+      this.RemoveLeafVertex(internal.vertex);
+      return true;
+    }
+    return false;
+  }
+
+  public UpdateConnectedElements(context?: Sheet) {
+
+    // we have a problem here in that these elements are not bound
+    // to sheets, so we might have no context. for now we'll 
+    // just grab the first sheet, although that's not necessarily
+    // what you want. we should enforce that these have hard sheet 
+    // references when created.
+    
+    if (!context) {
+      context = this.model.sheets.list[0];
+    }
+
+    for (const element of this.model.connected_elements.values()) {
+      let internal = element.internal as { vertex: StateLeafVertex };
+      if (!internal) {
+        internal = {
+          vertex: new StateLeafVertex(),
+        };
+        element.internal = internal;
+      }
+
+      const vertex = internal.vertex as LeafVertex;
+      this.AddLeafVertex(vertex);
+      this.UpdateLeafVertex(vertex, element.formula, context);
+
     }
   }
 

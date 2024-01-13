@@ -395,3 +395,9 @@ export interface RenderOptions {
   long_structured_references: boolean;
   table_name: string;
 }
+
+export interface PersistedParserConfig {
+  flags: Partial<ParserFlags>;
+  argument_separator: ArgumentSeparatorType;
+  decimal_mark: DecimalMarkType;
+}

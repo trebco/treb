@@ -31,6 +31,7 @@ import type { DataModel } from 'treb-grid';
 import { CalculationLeafVertex } from './calculation_leaf_vertex';
 
 export type LeafVertex = StateLeafVertex|CalculationLeafVertex;
+export type { StateLeafVertex };
 
 // FIXME: this is a bad habit if you're testing on falsy for OK.
 

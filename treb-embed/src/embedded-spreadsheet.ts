@@ -87,6 +87,10 @@ import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
 import { Chart, ChartFunctions } from 'treb-charts';
 import type { SetRangeOptions } from 'treb-grid';
 
+import type { StateLeafVertex } from 'treb-calculator';
+import type { ConnectedElementType } from 'treb-grid/src/types/data_model';
+
+
 // --- worker ------------------------------------------------------------------
 
 /**
@@ -95,7 +99,6 @@ import type { SetRangeOptions } from 'treb-grid';
  * the script so we can run it as a worker.
  */
 import * as export_worker_script from 'worker:../../treb-export/src/export-worker/index.worker';
-import { StateLeafVertex } from 'treb-calculator/src/dag/state_leaf_vertex';
 
 // --- types -------------------------------------------------------------------
 
@@ -2197,6 +2200,96 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   }
 
+  public RemoveConnectedChart(id: number) {
+    const element = this.model.RemoveConnectedElement(id);
+    if (element) {
+      const removed = this.calculator.RemoveConnectedELement(element);
+      if (removed) {
+        // ... actually don't need to update here
+      }
+    }
+  }
+
+  /**
+   * @internal
+   * 
+   * @returns an id that can be used to manage the reference
+   */
+  public CreateConnectedChart(formula: string, target: HTMLElement, options: EvaluateOptions): number {
+
+    // FIXME: merge w/ insert annotation?
+
+    let r1c1 = options?.r1c1 || false;
+    let argument_separator = options?.argument_separator || this.parser.argument_separator; // default to current
+
+    this.parser.Save();
+    this.parser.flags.r1c1 = r1c1;
+
+    if (argument_separator === ',') {
+      this.parser.argument_separator = ArgumentSeparatorType.Comma;
+      this.parser.decimal_mark = DecimalMarkType.Period;
+    }
+    else {
+      this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+      this.parser.decimal_mark = DecimalMarkType.Comma;
+    }
+
+    const result = this.parser.Parse(formula);
+
+    this.parser.Restore();
+
+    if (result.expression) {
+      formula = '=' + this.parser.Render(result.expression, { missing: '' });
+    }
+    else {
+      console.warn("invalid formula", result.error);
+    }
+
+    const chart = this.CreateChart();
+    chart.Initialize(target);
+
+    const id = this.model.AddConnectedElement({
+      formula,
+
+      // this is circular, but I want to leave `this` bound to the sheet
+      // instance in case we need it -- so what's a better approach? pass
+      // in the formula explicitly, and update if we need to make changes?
+
+      update: (instance: ConnectedElementType) => {
+
+        const parse_result = this.parser.Parse(instance.formula);
+
+        if (parse_result &&
+          parse_result.expression &&
+          parse_result.expression.type === 'call') {
+
+          // FIXME: make a method for doing this
+
+          this.parser.Walk(parse_result.expression, (unit) => {
+            if (unit.type === 'address' || unit.type === 'range') {
+              this.model.ResolveSheetID(unit, undefined, this.grid.active_sheet);
+            }
+            return true;
+          });
+
+          const expr_name = parse_result.expression.name.toLowerCase();
+          const result = this.calculator.CalculateExpression(parse_result.expression);
+          chart.Exec(expr_name, result as ExtendedUnion); // FIXME: type?
+        }
+
+        chart.Update();
+
+      },
+
+    });
+
+    this.calculator.UpdateConnectedElements(this.grid.active_sheet);
+    this.UpdateConnectedElements();
+
+    return id;
+
+  }
+
   /**
    * Insert an annotation node. Usually this means inserting a chart. Regarding
    * the argument separator, see the Evaluate function.
@@ -2226,11 +2319,21 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       target = Rectangle.IsRectangle(rect) ? rect : this.model.ResolveArea(rect, this.grid.active_sheet);
     }
 
+    // FIXME: with the new parser save/restore semantics we should 
+    // just always do this. also I don't think the r1c1 logic works
+    // properly here... unless we're assuming that the default state
+    // is always off
+
     if (argument_separator && argument_separator !== this.parser.argument_separator || r1c1) {
+
+      this.parser.Save();
+
+      /*
       const current = {
         argument_separator: this.parser.argument_separator, 
         decimal_mark: this.parser.decimal_mark,
       };
+      */
 
       if (argument_separator === ',') {
         this.parser.argument_separator = ArgumentSeparatorType.Comma;
@@ -2241,17 +2344,21 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         this.parser.decimal_mark = DecimalMarkType.Comma;
       }
 
-      const r1c1_state = this.parser.flags.r1c1;
-      if (r1c1) {
-        this.parser.flags.r1c1 = r1c1;
-      }
+      // const r1c1_state = this.parser.flags.r1c1;
+      // if (r1c1) 
+      // {
+        this.parser.flags.r1c1 = !!r1c1;
+      // }
 
       const result = this.parser.Parse(formula);
       
+      /*
       // reset
       this.parser.argument_separator = current.argument_separator;
       this.parser.decimal_mark = current.decimal_mark;
       this.parser.flags.r1c1 = r1c1_state;
+      */
+      this.parser.Restore();
 
       if (result.expression) {
         formula = '=' + this.parser.Render(result.expression, { missing: '' });
@@ -4856,6 +4963,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * (just sparklines atm) and update if necessary.
    */
   protected UpdateAnnotations(): void {
+
     for (const annotation of this.grid.active_sheet.annotations) {
       if (annotation.temp.vertex) {
         const vertex = annotation.temp.vertex as StateLeafVertex;
@@ -4892,6 +5000,27 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       }
 
+    }
+
+    this.UpdateConnectedElements();
+
+  }
+
+  protected UpdateConnectedElements() {
+    for (const element of this.model.connected_elements.values()) {
+      const internal = (element.internal) as { vertex: StateLeafVertex, state: any };
+      if (internal?.vertex && internal.vertex.state_id !== internal.state ) {
+        internal.state = internal.vertex.state_id;
+        const fn = element.update; 
+        if (fn) {
+
+          // FIXME: what if there are multiple calls pending? some 
+          // kind of a dispatch system might be useful
+
+          Promise.resolve().then(() => fn.call(0, element));
+
+        }
+      }
     }
   }
 

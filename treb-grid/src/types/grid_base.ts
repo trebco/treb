@@ -2270,6 +2270,16 @@ export class GridBase {
       }
     }
 
+    for (const element of this.model.connected_elements.values()) {
+      if (element.formula) {
+        const updated = this.PatchExpressionSheetName(element.formula, old_name, name);
+        if (updated) {
+          element.formula = updated;
+          changes++;
+        }
+      }
+    }
+
     return changes;
 
   }
@@ -2850,6 +2860,18 @@ export class GridBase {
         row_count: command.count
       });
 
+    // connected elements
+    for (const external of this.model.connected_elements.values()) {
+      if (external.formula) {
+        const modified = this.PatchFormulasInternal(external.formula,
+          command.before_row, command.count, 0, 0,
+          target_sheet.name.toLowerCase(), false);
+        if (modified) {
+          external.formula = modified;
+        }
+      }
+    }
+
     // see InsertColumnsInternal re: tables. rows are less complicated,
     // except that if you delete the header row we want to remove the 
     // table entirely.
@@ -3171,6 +3193,18 @@ export class GridBase {
       column_count: command.count, 
       before_row: 0, 
       row_count: 0 });
+
+    // connected elements
+    for (const element of this.model.connected_elements.values()) {
+      if (element.formula) {
+        const modified = this.PatchFormulasInternal(element.formula,
+          0, 0, command.before_column, command.count,
+          target_sheet.name.toLowerCase(), false);
+        if (modified) {
+          element.formula = modified;
+        }
+      }
+    }
 
     // patch tables. we removed this from the sheet routine entirely,
     // we need to rebuild any affected tables now.
