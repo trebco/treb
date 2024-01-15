@@ -1779,7 +1779,7 @@ export class Calculator extends Graph {
     return false;
   }
 
-  public UpdateConnectedElements(context?: Sheet) {
+  public UpdateConnectedElements(context?: Sheet, element?: ConnectedElementType) {
 
     // we have a problem here in that these elements are not bound
     // to sheets, so we might have no context. for now we'll 
@@ -1791,7 +1791,16 @@ export class Calculator extends Graph {
       context = this.model.sheets.list[0];
     }
 
-    for (const element of this.model.connected_elements.values()) {
+    if (element) {
+      let internal = element.internal as { vertex: StateLeafVertex };
+      if (internal?.vertex) {
+        this.RemoveLeafVertex(internal.vertex);
+      }
+    }
+
+    const elements = element ? [element] : this.model.connected_elements.values();
+
+    for (const element of elements) {
       let internal = element.internal as { vertex: StateLeafVertex };
       if (!internal) {
         internal = {

@@ -2210,6 +2210,24 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
   }
 
+  public UpdateConnectedChart(id: number, formula: string) {
+    const element = this.model.connected_elements.get(id);
+    if (element) {
+      element.formula = formula;
+      const internal = (element.internal) as { vertex: StateLeafVertex, state: any };
+
+      if (internal?.state) {
+        internal.state = undefined;
+      }
+      this.calculator.UpdateConnectedElements(this.grid.active_sheet, element);     
+      
+      if (element.update) {
+        element.update.call(0, element);
+      }
+
+    }
+  }
+
   /**
    * @internal
    * 

@@ -15,6 +15,8 @@ web page, and they only exist for the lifetime of that page.
 Still TODO:
 
  - clean up junk (when?)
+    As long as we remove the leaf nodes from the graph, it should be
+    clean. 
 
  - deal with model rebuild (elements are getting orphaned here)
     I think this is handled? still maybe an issue on Reset()
