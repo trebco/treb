@@ -196,6 +196,8 @@ export class DefaultChartRenderer implements ChartRendererType {
 
     // now do type-specific rendering
 
+    let zeros: number[]|undefined = [];
+
     switch (chart_data.type) {
     case 'scatter':
       this.renderer.RenderPoints(area, chart_data.x, chart_data.y, 'mc mc-correlation series-1');
@@ -203,10 +205,17 @@ export class DefaultChartRenderer implements ChartRendererType {
 
     case 'bubble':
 
+      if (chart_data.x_scale.min <= 0 && chart_data.x_scale.max >= 0) {
+        zeros[0] = Math.round(Math.abs(chart_data.x_scale.min / chart_data.x_scale.step));
+      }      
+      if (chart_data.y_scale.min <= 0 && chart_data.y_scale.max >= 0) {
+        zeros[1] = Math.round(Math.abs(chart_data.y_scale.max / chart_data.y_scale.step));
+      }
+
       this.renderer.RenderGrid(area, 
         chart_data.y_scale.count, 
         chart_data.x_scale.count + 1, // (sigh)
-        'chart-grid');
+        'chart-grid', zeros);
 
       for (const [index, series] of chart_data.series.entries()) {
         const series_index = (typeof series.index === 'number') ? series.index : index + 1;

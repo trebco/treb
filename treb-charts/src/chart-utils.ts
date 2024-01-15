@@ -310,7 +310,7 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
 };
 
 /** get a unified scale, and formats */
-export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: number) => {
+export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: number, x_floor?: number, x_ceiling?: number) => {
 
   let x_format = '';
   let y_format = '';
@@ -362,13 +362,22 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
       }
     }
   }
-  
+
+  if (typeof x_floor !== 'undefined') {
+    x_min = Math.min(x_min, x_floor);
+  }
+  if (typeof x_ceiling !== 'undefined') {
+    x_min = Math.max(x_min, x_ceiling);
+  }
+
   if (typeof y_floor !== 'undefined') {
     y_min = Math.min(y_min, y_floor);
   }
   if (typeof y_ceiling !== 'undefined') {
     y_max = Math.max(y_max, y_ceiling);
   }
+
+  console.info("RS", {x_floor, x_min, x_max, y_floor, y_min, y_max});
 
   const x_scale = Util.Scale(x_min, x_max, 7);
   const y_scale = Util.Scale(y_min, y_max, 7);
@@ -438,7 +447,23 @@ const ApplyLabels = (series_list: SeriesType[], pattern: string, category_labels
 export const CreateBubbleChart = (args: UnionValue[]): ChartData => {
 
   const series: SeriesType[] = TransformSeriesData(args[0]);
-  const common = CommonData(series);
+
+  let y_floor: number|undefined = undefined;
+  let x_floor: number|undefined = undefined;
+  
+  for (const entry of series) {
+
+    if (typeof entry.x.range?.min === 'number' && entry.x.range.min > 0 && entry.x.range.min < 50) {
+      x_floor = 0;
+    }
+    if (typeof entry.y.range?.min === 'number' && entry.y.range.min > 0 && entry.y.range.min < 50) {
+      y_floor = 0;
+    }
+  }
+
+  console.info("Calling CD with", x_floor, y_floor);
+
+  const common = CommonData(series, y_floor, undefined, x_floor);
   const title = args[1]?.toString() || undefined;
   const options = args[2]?.toString() || undefined;
 

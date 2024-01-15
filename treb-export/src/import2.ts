@@ -917,6 +917,27 @@ export class Importer {
         const series = descriptor.chart?.series;
 
         switch(descriptor.chart.type) {
+
+          case ChartType.Bubble:
+            type = 'treb-chart';
+            func = 'Bubble.Chart';
+
+            if (series && series.length) {
+              args[0] = `Group(${series.map(s => `Series(${
+                [
+                  s.title || '',
+                  s.values || '',
+                  s.categories || '',
+                  s.bubble_size || '',
+
+                ].join(', ')
+              })`).join(', ')})`;
+            }
+           
+            args[1] = descriptor.chart.title;
+
+            break;
+
           case ChartType.Scatter:
             type = 'treb-chart';
             func = 'Scatter.Line';

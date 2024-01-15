@@ -69,12 +69,13 @@ export const ConditionalFormatOperators: Record<string, string> = {
 };
 
 export enum ChartType {
-  Unknown = 0, Column, Bar, Line, Scatter, Donut, Pie
+  Unknown = 0, Column, Bar, Line, Scatter, Donut, Pie, Bubble
 }
 
 export interface ChartSeries {
   values?: string;
   categories?: string;
+  bubble_size?: string;
   title?: string;
 }
 
@@ -411,7 +412,7 @@ export class Workbook {
 
     }
 
-    const ParseSeries = (node: any, scatter = false): ChartSeries[] => {
+    const ParseSeries = (node: any, type?: ChartType): ChartSeries[] => {
 
       const series: ChartSeries[] = [];
 
@@ -447,7 +448,7 @@ export class Workbook {
           }
         }
 
-        if (scatter) {
+        if (type === ChartType.Scatter || type === ChartType.Bubble) {
           const x = XMLUtils.FindChild(series_node, 'c:xVal/c:numRef/c:f');
           if (x) {
             series_data.categories = x; // .text?.toString();
@@ -456,6 +457,14 @@ export class Workbook {
           if (y) {
             series_data.values = y; // .text?.toString();
           }
+
+          if (type === ChartType.Bubble) {
+            const z = XMLUtils.FindChild(series_node, 'c:bubbleSize/c:numRef/c:f');
+            if (z) {
+              series_data.bubble_size = z; // .text?.toString();
+            }
+          }
+
         }
         else {
           const value_node = XMLUtils.FindChild(series_node, 'c:val/c:numRef/c:f');
@@ -522,9 +531,23 @@ export class Workbook {
       node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:scatterChart');
       if (node) {
         result.type = ChartType.Scatter;
-        result.series = ParseSeries(node, true);
+        result.series = ParseSeries(node, ChartType.Scatter);
       }
     }
+
+    if (!node) {
+      node = XMLUtils.FindChild(xml, 'c:chartSpace/c:chart/c:plotArea/c:bubbleChart');
+      if (node) {
+        result.type = ChartType.Bubble;
+        result.series = ParseSeries(node, ChartType.Bubble);
+        console.info("Bubble series?", result.series);
+      }
+    }
+
+    if (!node) {
+      console.info("Chart type not handled");
+    }
+
     // console.info("RX?", result);
 
     return result;

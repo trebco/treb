@@ -104,6 +104,11 @@
   /* grid */
   .chart-grid, .chart-ticks {
     stroke: var(--treb-chart-grid-color, #ddd);
+
+    &.zero {
+      stroke: var(--treb-chart-grid-zero-color, var(--treb-chart-grid-color, #999));
+    }
+
   }
 
   /* mouse elements */

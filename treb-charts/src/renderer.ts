@@ -968,23 +968,54 @@ export class ChartRenderer {
 
   }
 
-  public RenderGrid(area: Area, y_count: number, x_count = 0, classes?: string | string[]): void {
+  public RenderGrid(area: Area, y_count: number, x_count = 0, classes?: string | string[], zeros?: number[]): void {
 
     const d: string[] = [];
+    const d2: string[] = [];
 
     let step = area.height / y_count;
     for (let i = 0; i <= y_count; i++) {
+
       const y = Math.round(area.top + step * i) - 0.5;
-      d.push(`M${area.left} ${y} L${area.right} ${y}`);
+
+      if (zeros && zeros[1] === i) {
+        d2.push(`M${area.left} ${y} L${area.right} ${y}`);
+      }
+      else {
+        d.push(`M${area.left} ${y} L${area.right} ${y}`);
+      }
     }
 
     step = area.width / (x_count - 1);
     for (let i = 0; i < x_count; i++) {
+
       const x = Math.round(area.left + step * i) - 0.5;
-      d.push(`M${x} ${area.top} L${x} ${area.bottom}`);
+
+      if (zeros && zeros[0] === i) {
+        d2.push(`M${x} ${area.top} L${x} ${area.bottom}`);
+      }
+      else {
+        d.push(`M${x} ${area.top} L${x} ${area.bottom}`);
+      }
     }
 
     this.group.appendChild(SVGNode('path', {d, class: classes}));
+    if (d2.length) {
+
+      if (classes) {
+        if (!Array.isArray(classes)) {
+          classes = classes + ' zero';
+        }
+        else {
+          classes.push('zero');
+        }
+      }
+      else {
+        classes = 'zero';
+      }
+
+      this.group.appendChild(SVGNode('path', {d: d2, class: classes}));
+    }
 
   }
 
