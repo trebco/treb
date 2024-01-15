@@ -60,6 +60,10 @@ export const ChartFunctions: FunctionMap = {
    * more general "group" if you just want to group things.
    * 
    * boxing properly as "extended" type
+   * 
+   * this is getting too specific to bubble charts, which have a lot
+   * of requirements that other charts don't have. can we split? 
+   * 
    */
   Series: {
     arguments: [
@@ -69,6 +73,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'Z', metadata: true, },
       { name: 'index', },
       { name: 'subtype', },
+      { name: 'Labels', description: 'Labels for bubble charts only (atm)' },
     ],
     fn: (...args: any) => {
       return {

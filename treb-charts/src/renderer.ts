@@ -196,14 +196,22 @@ export class ChartRenderer {
         group.appendChild(SVGNode('text', {
           'dominant-baseline': 'middle', x: x + marker_width, y, dy: (trident ? '.3em' : undefined) }, label.label));
 
-        if (options.style === LegendStyle.marker) {
-          group.appendChild(SVGNode('rect', { 
-            class: `series-${color}`, x, y: marker_y - 4, width: 8, height: 8 }));
-        }
-        else {
-          group.appendChild(SVGNode('rect', { 
-            class: `series-${color}`, x, y: marker_y - 1, width: marker_width - 3, height: 2}));
-        }
+        switch (options.style) {
+          case LegendStyle.marker:
+            group.appendChild(SVGNode('rect', { 
+              class: `series-${color}`, x, y: marker_y - 4, width: 8, height: 8 }));
+            break;
+
+          case LegendStyle.bubble:
+            group.appendChild(SVGNode('circle', { 
+              class: `series-${color}`, cx: x + marker_width - 11, cy: marker_y - 4 + 3, /* r: '0.25em' */ }));
+            break;
+                  
+          default:
+            group.appendChild(SVGNode('rect', { 
+              class: `series-${color}`, x, y: marker_y - 1, width: marker_width - 3, height: 2}));
+            break;
+          }
 
         h = Math.max(h, text_metrrics.height);
         x += text_metrrics.width + marker_width + padding;
@@ -1205,6 +1213,12 @@ export class ChartRenderer {
 
     // const marker_elements: string[] = [];
     const points: Array<{x: number, y: number, z: number} | undefined> = [];
+    const labels: Array<{
+      x: number,
+      y: number,
+      text: string,
+      offset: number,
+    }> = [];
 
     const d: string[] = [];
     const areas: string[] = [];
@@ -1226,11 +1240,24 @@ export class ChartRenderer {
           const size_y = z / yrange * area.height;
           const size = Math.max(size_x, size_y);
 
-          points.push({
+          const point: Point & { z: number } = {
             x: area.left + ((x - x_scale.min) / xrange) * area.width, 
             y: area.bottom - ((y - y_scale.min) / yrange) * area.height, 
             z: size,
-          });
+          };
+
+          points.push(point);
+
+          if (series.labels?.[index]) {
+            const r = point.z/2;
+            labels.push({
+              x: point.x, //  + Math.cos(Math.PI/4) * r, 
+              y: point.y, //  + Math.sin(Math.PI/4) * r, 
+              text: series.labels?.[index] || '',
+              offset: Math.cos(Math.PI/4) * r,
+            });
+          }
+
         }
 
       }
@@ -1283,13 +1310,57 @@ export class ChartRenderer {
      
     */
 
-    {
-      for (const point of points) {
-        if (point) {
-          group.appendChild(SVGNode('circle', {cx: point.x, cy: point.y, r: point.z / 2, class: `point`}));
+    for (const point of points) {
+      if (point) {
+        group.appendChild(SVGNode('circle', {
+          cx: point.x, 
+          cy: point.y, 
+          r: point.z / 2, 
+          class: `point`,
+        }));
+      }
+    }
+
+    if (labels.length) {
+      const container = this.label_group.getBoundingClientRect();
+
+      for (const entry of labels) {
+        if (entry.text) {
+
+          const group = this.label_group.appendChild(SVGNode('g', {
+            class: 'bubble-label',
+          }));
+
+          const rect = group.appendChild(SVGNode('rect', {
+            x: entry.x, // + entry.offset, 
+            y: entry.y, // + entry.offset, 
+            // rx: `3px`,
+            // fill: 'Canvas',
+            // 'fill-opacity': '60%',
+            // stroke: `none`,
+            // 'style': `--translate-offset: ${Math.round(entry.offset)}px`,
+            class: 'label-background'
+          }));
+
+          const label = group.appendChild(SVGNode('text', { 
+            x: entry.x, // + entry.offset, 
+            y: entry.y, // + entry.offset, 
+            offset: entry.offset,
+            class: 'label-text', 
+            'text-anchor': 'middle',
+            'alignment-baseline': 'middle',
+            'style': `--translate-offset: ${Math.round(entry.offset)}px`,
+           }, entry.text));
+
+           const bounds = label.getBoundingClientRect();
+
+           rect.setAttribute('x', (bounds.left - container.left - 2).toString());
+           rect.setAttribute('y', (bounds.top - container.top - 1).toString());
+           rect.style.height = (bounds.height + 2) + `px`;
+           rect.style.width = (bounds.width + 4) + `px`;
+
         }
       }
-
     }
 
 

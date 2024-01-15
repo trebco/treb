@@ -223,7 +223,7 @@ export enum LegendPosition {
 }
 
 export enum LegendStyle {
-  line, marker
+  line, marker, bubble
 }
 
 export interface LegendOptions {
@@ -249,5 +249,6 @@ export interface SeriesType {
   y: SubSeries;
   z?: SubSeries;
   index?: number;
+  labels?: string[];
 }
 

@@ -439,6 +439,7 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      */
     AddSheet(name?: string): number;
     RemoveConnectedChart(id: number): void;
+    UpdateConnectedChart(id: number, formula: string): void;
 
     /**
      * Insert an annotation node. Usually this means inserting a chart. Regarding

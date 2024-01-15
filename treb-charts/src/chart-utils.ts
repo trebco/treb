@@ -41,6 +41,11 @@ export const ReadSeries = (data: Array<any>): SeriesType => {
     series.subtype = data[5].toString();
   }
 
+  if (data[6]) {
+    const labels = Util.Flatten(Array.isArray(data[6]) ? data[6] : [data[6]]);
+    series.labels = labels.map(value => (typeof value === 'undefined') ? '' : value.toString());
+  }
+
   if (data[0]) {
 
     const flat = Util.Flatten(data[0]);
@@ -442,6 +447,7 @@ export const CreateBubbleChart = (args: UnionValue[]): ChartData => {
   const chart_data: BubbleChartData = {
 
     legend: common.legend,
+    legend_style: LegendStyle.bubble,
     type: 'bubble',
     series,
     title,

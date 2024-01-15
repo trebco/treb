@@ -92,6 +92,13 @@
     rect {
       fill: currentColor;
     }
+    circle {
+      fill: currentColor;
+      fill-opacity: .5;
+      stroke: currentColor;
+      stroke-width: 2px;
+      r: .25em;
+    }
   }
 
   /* grid */
@@ -166,7 +173,31 @@
     stroke-width: 3;
     fill: color-mix(in srgb, currentColor 75%, transparent);
     stroke: currentColor;
-    
+  }
+
+  .bubble-label {
+
+    .label-background {
+      stroke: none;
+      fill: none;
+
+      /*
+      fill: Canvas;
+      fill-opacity: .5;
+      rx: 2px;
+      */
+    }
+
+    .label-text {
+
+      /**
+      * default translate to lower-right. you can calc() to switch 
+      * to a different position.
+      */
+      transform: translate(var(--translate-offset), var(--translate-offset));
+
+    }
+
   }
 
   /* scatter plot line (and marker -- change that class name) */
