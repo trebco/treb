@@ -1101,7 +1101,7 @@ export class Exporter {
           }
           else if (type === 'bubble') {
             // ...
-            console.info({parse_result});
+            // console.info({parse_result});
           }
 
           // FIXME: fix this type (this happened when we switched from annotation
