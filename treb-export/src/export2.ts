@@ -714,6 +714,9 @@ export class Exporter {
   /** overload for return type */
   public NormalizeAddress(unit: UnitRange, sheet: SerializedSheet): UnitRange;
 
+  /** extra overload */
+  public NormalizeAddress<UNIT = UnitAddress|UnitRange>(unit: UNIT, sheet: SerializedSheet): UNIT;
+
   /**
    * for charts we need addresses to be absolute ($)  and ensure there's
    * a sheet name -- use the active sheet if it's not explicitly referenced
@@ -738,6 +741,19 @@ export class Exporter {
 
   }
 
+  public EnsureRange(unit: UnitAddress|UnitRange): UnitRange {
+    if (unit.type === 'range') {
+      return unit;
+    }
+    return {
+      type: 'range',
+      start: unit,
+      end: unit,
+      label: unit.label,
+      id: unit.id,
+      position: unit.position,
+    };
+  }
 
   /** 
    * new-style annotation layout (kind of a two-cell anchor) to two-cell anchor
@@ -909,10 +925,13 @@ export class Exporter {
         }
         else if (/series/i.test(arg.name)) {
 
-          const [label, x, y] = arg.args; // y is required
+          const [label, x, y, z] = arg.args; // y is required
           
-          if (y && y.type === 'range') {
-            options.data.push(this.NormalizeAddress(y, sheet_source));
+          // FIXME: could be address also [x, y]
+
+          if (y && (y.type === 'range' || y.type === 'address')) {
+
+            options.data.push(this.EnsureRange(this.NormalizeAddress(y, sheet_source)));
 
             if (label) {
 
@@ -933,9 +952,16 @@ export class Exporter {
             }
 
             if (!options.labels2) { options.labels2 = []; }
-            if (x && x.type === 'range') {
-              options.labels2[options.data.length - 1] = this.NormalizeAddress(x, sheet_source);
+
+            if (x && (x.type === 'range' || x.type === 'address')) {
+              options.labels2[options.data.length - 1] = this.EnsureRange(this.NormalizeAddress(x, sheet_source));
             }
+
+            if (z && (z.type === 'range' || z.type === 'address')) {
+              if (!options.labels3) { options.labels3 = []; }
+              options.labels3[options.data.length - 1] = this.EnsureRange(this.NormalizeAddress(z, sheet_source));
+            }
+            
           }
           else {
             console.info('invalid series missing Y', {y, arg, ref});
@@ -951,30 +977,39 @@ export class Exporter {
       const parse_result = this.parser.Parse(annotation.formula || '');
       if (parse_result.expression && parse_result.expression.type === 'call') {
         
-        let type = '';
+        let type = ''; // FIXME
+
         switch (parse_result.expression.name.toLowerCase()) {
           case 'line.chart':
             type = 'scatter';
             break;
+
+          case 'bubble.chart':
+            type = 'bubble';
+            break;
+
           case 'scatter.line':
             type = 'scatter2';
             break;
+
           case 'donut.chart':
             type = 'donut';
             break;
+
           case 'bar.chart':
             type = 'bar';
             break;
+
           case 'column.chart':
             type = 'column';
             break;
         }
 
-        if (type === 'column' || type === 'donut' || type === 'bar' || type === 'scatter' || type === 'scatter2') {
+        if (type === 'column' || type === 'donut' || type === 'bar' || type === 'scatter' || type === 'scatter2' || type === 'bubble') {
 
           const options: ChartOptions = { type, data: [] };
 
-          const title_index = (type === 'scatter2') ? 1 : 2;
+          const title_index = (type === 'scatter2' || type === 'bubble') ? 1 : 2;
           const title_arg = parse_result.expression.args[title_index];
 
           if (title_arg && title_arg.type === 'literal') {
@@ -1000,7 +1035,7 @@ export class Exporter {
 
           if (parse_result.expression.args[0]) {
             const arg0 = parse_result.expression.args[0];
-            if (type === 'scatter2' || type === 'bar' || type === 'column' || type === 'scatter') {
+            if (type === 'scatter2' || type === 'bar' || type === 'column' || type === 'scatter' || type === 'bubble') {
               parse_series(arg0, options, sheet_source.name);
             }
             else if (arg0.type === 'range') {
@@ -1045,7 +1080,7 @@ export class Exporter {
             */
           }
 
-          if (type !== 'scatter2') {
+          if (type !== 'scatter2' && type !== 'bubble') {
             if (parse_result.expression.args[1] && parse_result.expression.args[1].type === 'range') {
               options.labels = this.NormalizeAddress(parse_result.expression.args[1], sheet_source);
             }
@@ -1063,6 +1098,10 @@ export class Exporter {
                 && /smooth/i.test(parse_result.expression.args[2].value.toString())) {
               options.smooth = true;
             }
+          }
+          else if (type === 'bubble') {
+            // ...
+            console.info({parse_result});
           }
 
           // FIXME: fix this type (this happened when we switched from annotation

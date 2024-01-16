@@ -27,6 +27,7 @@ import { static_title, ref_title, chart_template } from './chart-template-compon
 import { column_json, column_series } from './column-chart-template2';
 import { donut_json } from './donut-chart-template2';
 import { scatter_json, scatter_series } from './scatter-chart-template2';
+import { bubble_json, bubble_series } from './bubble-chart-template';
 
 import { XMLUtils } from '../xml-utils';
 
@@ -44,11 +45,12 @@ import { Localization } from 'treb-base-types';
 import type { RelationshipMap } from '../relationship';
 
 export interface ChartOptions {
-  type: 'donut'|'column'|'bar'|'scatter'|'scatter2';
+  type: 'donut'|'column'|'bar'|'scatter'|'scatter2' | 'bubble';
   title?: UnitLiteral | UnitAddress;
   data: UnitRange[];
   labels?: UnitRange;
   labels2?: UnitRange[];
+  labels3?: UnitRange[];
   names?: ExpressionUnit[];
   smooth?: boolean;
 }
@@ -110,6 +112,9 @@ export class Chart {
       case 'scatter2':
         return this.CreateScatterChart();
 
+      case 'bubble':
+        return this.CreateBubbleChart();
+        
       case 'donut':
         return this.CreateDonutChart();
 
@@ -120,6 +125,84 @@ export class Chart {
     return this.CreateBarChart();
 
   }
+
+  public CreateBubbleChart() {
+
+    const template = JSON.parse(JSON.stringify(chart_template)); 
+    const chartspace = template['c:chartSpace'];
+    const bubble = JSON.parse(JSON.stringify(bubble_json)); 
+
+    chartspace['c:chart'] = bubble;
+
+    this.UpdateChartTitle(chartspace['c:chart']);
+
+    const cser = chartspace['c:chart']['c:plotArea']['c:bubbleChart']['c:ser']; // this.FindNode('c:ser', template);
+
+    let legend = false;
+
+    for (let i = 0; i < this.options.data.length; i++) {
+
+      const series = JSON.parse(JSON.stringify(bubble_series));
+
+      series['c:idx'] = { a$: { val: i.toString() }};
+      series['c:order'] = { a$: { val: i.toString() }};
+
+      if (this.options.names && this.options.names[i]) {
+
+        const name = this.options.names[i];
+        switch (name.type) {
+          case 'literal':
+            series['c:tx'] = {
+              'c:v': name.value.toString(),
+            };
+            legend = true;
+            break;
+
+          case 'range':
+          case 'address':
+            series['c:tx'] = {
+              'c:strRef': {
+                'c:f': name.label,
+              }
+            };
+            legend = true;
+            break;
+        }
+      }
+
+      // "accent7" will break 
+
+      if (i < 6) {
+        series['c:spPr']['a:solidFill']['a:schemeClr'].a$['val'] = `accent${i+1}`;
+      }
+
+      series['c:yVal']['c:numRef']['c:f'] = this.options.data[i]?.label;
+
+      if (this.options.labels2 && this.options.labels2[i]) {
+        series['c:xVal']['c:numRef']['c:f'] = this.options.labels2[i]?.label;
+      }
+
+      if (this.options.labels3 && this.options.labels3[i]) {
+        series['c:bubbleSize']['c:numRef']['c:f'] = this.options.labels3[i]?.label;
+      }
+
+      // console.info("SER", JSON.stringify(series, undefined, 2));
+
+      cser.push(series);
+
+    }
+
+    if (legend) {
+      chartspace['c:chart']['c:legend'] = {
+        'c:legendPos': { a$: {val: 'b'}, },
+        'c:overlay': { a$: {val: '0'}, },
+      };
+    }
+
+    return template;
+
+  }
+
 
   public CreateScatterChart() {
     

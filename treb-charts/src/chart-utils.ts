@@ -377,8 +377,6 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
     y_max = Math.max(y_max, y_ceiling);
   }
 
-  console.info("RS", {x_floor, x_min, x_max, y_floor, y_min, y_max});
-
   const x_scale = Util.Scale(x_min, x_max, 7);
   const y_scale = Util.Scale(y_min, y_max, 7);
 
@@ -460,8 +458,6 @@ export const CreateBubbleChart = (args: UnionValue[]): ChartData => {
       y_floor = 0;
     }
   }
-
-  console.info("Calling CD with", x_floor, y_floor);
 
   const common = CommonData(series, y_floor, undefined, x_floor);
   const title = args[1]?.toString() || undefined;
