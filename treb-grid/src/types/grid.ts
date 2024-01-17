@@ -4439,7 +4439,10 @@ export class Grid extends GridBase {
 
           if (this.overlay_editor?.selection) {
             const value = this.overlay_editor?.edit_node.textContent || undefined;
-            const array = (event.key === 'Enter' && event.ctrlKey && event.shiftKey);
+
+            // let's support command+shift+enter on mac
+            const array = (event.key === 'Enter' && (event.ctrlKey || (UA.is_mac && event.metaKey)) && event.shiftKey);
+
             this.SetInferredType(this.overlay_editor.selection, value, array);
           }
           
