@@ -671,6 +671,19 @@ export class StyleCache {
 
     // borders
 
+    const BorderEdgeToColor = (edge: BorderEdge): Color|undefined => {
+
+      // TODO: indexed
+
+      if (typeof edge.theme !== 'undefined') {
+        return {
+          theme: edge.theme,
+          tint: edge.tint,
+        };
+      }
+
+    };
+
     const border = this.borders[xf.border || 0];
     if (border) {
       if (border.bottom.style) {
@@ -680,10 +693,20 @@ export class StyleCache {
         else {
           props.border_bottom = 1;
         }
+        props.border_bottom_fill = BorderEdgeToColor(border.bottom);
       }
-      if (border.left.style) props.border_left = 1;
-      if (border.top.style) props.border_top = 1;
-      if (border.right.style) props.border_right = 1;
+      if (border.left.style) {
+        props.border_left = 1;
+        props.border_left_fill = BorderEdgeToColor(border.left);
+      }
+      if (border.top.style) {
+        props.border_top = 1;
+        props.border_top_fill = BorderEdgeToColor(border.top);
+      }
+      if (border.right.style) {
+        props.border_right = 1;
+        props.border_right_fill = BorderEdgeToColor(border.right);
+      }
     }
 
     return props;
@@ -1158,31 +1181,58 @@ export class StyleCache {
 
     composite = FindAll('styleSheet/borders/border');
 
+    const ElementToBorderEdge = (element: any, edge: BorderEdge) => {
+
+      if (element?.a$) {
+        edge.style = element.a$.style;
+        if (typeof element.color === 'object') {
+          if (typeof element.color.a$?.indexed !== 'undefined') {
+            edge.color = Number(element.color.a$.indexed);
+          }
+          if (typeof element.color.a$?.theme !== 'undefined') {
+            edge.theme = Number(element.color.a$.theme);
+          }
+          if (typeof element.color.a$?.tint !== 'undefined') {
+            edge.tint = Number(element.color.a$.tint);
+          }
+        }
+      }
+
+    };
+    
+
     this.borders = composite.map(element => {
 
       const border: BorderStyle = JSON.parse(JSON.stringify(default_border));
 
+      /*
       // we're relying on these being empty strings -> falsy, not a good look
 
       if (element.left) {
-        border.left.style = element.left.a$.style;
-        border.left.color = Number(element.left.color?.a$?.indexed);
+        // border.left.style = element.left.a$.style;
+        // border.left.color = Number(element.left.color?.a$?.indexed);
       }
 
       if (element.right) {
-        border.right.style = element.right.a$.style;
-        border.right.color = Number(element.right.color?.a$?.indexed);
+        // border.right.style = element.right.a$.style;
+        // border.right.color = Number(element.right.color?.a$?.indexed);
       }
 
       if (element.top) {
-        border.top.style = element.top.a$.style;
-        border.top.color = Number(element.top.color?.a$?.indexed);
+        // border.top.style = element.top.a$.style;
+        // border.top.color = Number(element.top.color?.a$?.indexed);
       }
 
       if (element.bottom) {
-        border.bottom.style = element.bottom.a$.style;
-        border.bottom.color = Number(element.bottom.color?.a$?.indexed);
+        // border.bottom.style = element.bottom.a$.style;
+        // border.bottom.color = Number(element.bottom.color?.a$?.indexed);
       }
+      */
+
+      ElementToBorderEdge(element.left, border.left);
+      ElementToBorderEdge(element.right, border.right);
+      ElementToBorderEdge(element.top, border.top);
+      ElementToBorderEdge(element.bottom, border.bottom);
       
       return border;
 
