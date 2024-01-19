@@ -81,7 +81,10 @@ export class Importer {
         t?: string;
         s?: string;
       };
-      v?: string|number; // is this never an object? (note: booleans are numbers in Excel)
+      v?: string|number|{
+        t$: string;
+        a$?: any;
+      }; 
       f?: string|{ 
         t$: string;
         a$?: {
@@ -214,14 +217,17 @@ export class Importer {
         }
 
         if (typeof element.v !== 'undefined') {
-          const num = Number(element.v.toString());
+
+          const V = (typeof element.v === 'object') ? element.v?.t$ : element.v;
+
+          const num = Number(V.toString());
           if (!isNaN(num)) {
             calculated_type = 'number'; // ValueType.number;
             calculated_value = num;
           }
           else {
             calculated_type = 'string'; // ValueType.string;
-            calculated_value = element.v.toString();
+            calculated_value = V.toString();
           }
         }
 
