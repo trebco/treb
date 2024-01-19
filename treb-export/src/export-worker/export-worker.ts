@@ -58,8 +58,6 @@ const ImportSheet = (data: any) => {
       }
     }
 
-    console.info({results});
-
     ctx.postMessage({ status: 'complete', results });
 
   }
