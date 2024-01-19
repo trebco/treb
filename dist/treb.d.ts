@@ -1105,6 +1105,11 @@ export interface SerializeOptions {
 
     /** share resources (images, for now) to prevent writing data URIs more than once */
     share_resources?: boolean;
+
+    /**
+     * if a function has an export() handler, call that
+     */
+    export_functions?: boolean;
 }
 
 /**
