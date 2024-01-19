@@ -42,6 +42,8 @@ import type {
   CondifionalFormatExpressionOptions,
   ConditionalFormatCellMatchOptions,
   ConditionalFormatCellMatch,
+  MacroFunction,
+  SerializedNamedExpression,
 } from 'treb-grid';
 
 import {
@@ -2749,7 +2751,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
         // FIXME: type
 
-        const serialized: SerializedModel = this.grid.Serialize({
+        const serialized: SerializedModel = this.Serialize({ // this.grid.Serialize({
           rendered_values: true,
           expand_arrays: true,
           export_colors: true,
@@ -3592,7 +3594,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       ...options,
     };
 
-    const grid_data = this.grid.Serialize(options);
+    // const grid_data = this.grid.Serialize(options);
+    const grid_data = this.Serialize(options);
 
     // NOTE: these are not really env vars. we replace them at build time
     // via a webpack plugin. using the env syntax lets them look "real" at
@@ -4404,6 +4407,128 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   // --- internal (protected) methods ------------------------------------------
+
+  // --- moved from grid/grid base ---------------------------------------------
+
+  
+  /**
+   * serialize data. this function used to (optionally) stringify
+   * by typescript has a problem figuring this out, so we will simplify
+   * the function.
+   */
+  protected Serialize(options: SerializeOptions = {}): SerializedModel {
+
+    // (removed UI stuff, that goes in subclass)
+
+    // selection moved to sheet, but it's not "live"; so we need to
+    // capture the primary selection in the current active sheet before
+    // we serialize it
+
+    // this.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
+
+    // same for scroll offset
+
+    // this.active_sheet.scroll_offset = this.layout.scroll_offset;
+
+    // --- moved back, when we moved this function from grid/grid base ---
+
+
+    this.grid.active_sheet.selection = JSON.parse(JSON.stringify(this.grid.GetSelection()));
+
+    // same for scroll offset
+
+    const scroll_offset = this.grid.ScrollOffset();
+    if (scroll_offset) {
+      this.grid.active_sheet.scroll_offset = scroll_offset; // this.grid.layout.scroll_offset;
+    }    
+
+    // NOTE: annotations moved to sheets, they will be serialized in the sheets
+
+    const sheet_data = this.model.sheets.list.map((sheet) => sheet.toJSON(options));
+
+    // OK, not serializing tables in cells anymore. old comment about this:
+    // 
+    // at the moment, tables are being serialized in cells. if we put them
+    // in here, then we have two records of the same data. that would be bad.
+    // I think this is probably the correct place, but if we put them here
+    // we need to stop serializing in cells. and I'm not sure that there are 
+    // not some side-effects to that. hopefully not, but (...)
+    // 
+
+    let tables: Table[] | undefined;
+    if (this.model.tables.size > 0) {
+      tables = Array.from(this.model.tables.values());
+    }
+
+    // NOTE: moving into a structured object (the sheet data is also structured,
+    // of course) but we are moving things out of sheet (just  named ranges atm))
+
+    let macro_functions: MacroFunction[] | undefined;
+
+    if (this.model.macro_functions.size) {
+      macro_functions = [];
+      for (const macro of this.model.macro_functions.values()) {
+        macro_functions.push({
+          ...macro,
+          expression: undefined,
+        });
+      }
+    }
+
+    // when serializing named expressions, we have to make sure
+    // that there's a sheet name in any address/range. 
+
+    const named_expressions: SerializedNamedExpression[] = [];
+    if (this.model.named_expressions) {
+
+      for (const [name, expr] of this.model.named_expressions) {
+        this.parser.Walk(expr, unit => {
+          if (unit.type === 'address' || unit.type === 'range') {
+            const test = unit.type === 'range' ? unit.start : unit;
+
+            test.absolute_column = test.absolute_row = true;
+
+            if (!test.sheet) {
+              if (test.sheet_id) {
+                const sheet = this.model.sheets.Find(test.sheet_id);
+                if (sheet) {
+                  test.sheet = sheet.name;
+                }
+              }
+              if (!test.sheet) {
+                test.sheet = this.grid.active_sheet.name;
+              }
+            }
+
+            if (unit.type === 'range') {
+              unit.end.absolute_column = unit.end.absolute_row = true;
+            }
+
+            return false;
+          }
+          return true;
+        });
+        const rendered = this.parser.Render(expr, { missing: '' });
+        named_expressions.push({
+          name, expression: rendered
+        });
+      }
+    }
+
+    return {
+      sheet_data,
+      active_sheet: this.grid.active_sheet.id,
+      named_ranges: this.model.named_ranges.Count() ?
+        this.model.named_ranges.Serialize() :
+        undefined,
+      macro_functions,
+      tables,
+      named_expressions: named_expressions.length ? named_expressions : undefined,
+    };
+
+  }
+
+  // --- /moved ----------------------------------------------------------------
 
   /**
    * 
