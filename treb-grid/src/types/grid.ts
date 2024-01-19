@@ -835,9 +835,9 @@ export class Grid extends GridBase {
     }
   }
 
-  /**
+  /* *
    * specialization: update selection, scroll offset
-   */
+   * /
   public Serialize(options: SerializeOptions = {}): SerializedModel {
 
     // selection moved to sheet, but it's not "live"; so we need to
@@ -855,6 +855,7 @@ export class Grid extends GridBase {
     return super.Serialize(options);
 
   }
+  */
 
   /**
    * show or hide headers

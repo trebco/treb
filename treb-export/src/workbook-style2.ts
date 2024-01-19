@@ -29,6 +29,9 @@ import { XMLUtils } from './xml-utils';
 
 import { Unescape } from './unescape_xml';
 
+// what's the default font size? ... 11pt?
+const DEFAULT_FONT_SIZE = 11;
+
 export interface Font {
   size?: number;
   name?: string;
@@ -269,13 +272,24 @@ export class StyleCache {
 
     }
 
+
     if (composite.font_size?.unit && composite.font_size.value) {
-      if (composite.font_size.unit !== 'pt') {
-        console.warn(`can't handle non-point font (FIXME)`);
+      if (composite.font_size.unit === 'em') {
+        font.size = composite.font_size.value * DEFAULT_FONT_SIZE;
       }
-      else {
+      else if (composite.font_size.unit === '%') {
+        font.size = composite.font_size.value * DEFAULT_FONT_SIZE / 100;
+      }
+      else if (composite.font_size.unit === 'pt' ){
         font.size = composite.font_size.value;
       }
+      else if (composite.font_size.unit === 'px' ){
+        font.size = composite.font_size.value * .75; // ?
+      }
+      else {
+        console.warn(`Unhandled font size unit`, composite.font_size);
+      }
+
     }
 
     if (composite.bold) font.bold = true;

@@ -149,6 +149,11 @@ export interface CompositeFunctionDescriptor {
    */
   return_type?: ReturnType;
 
+  /**
+   * @internal
+   */
+  export?: (...args: any[]) => string;
+
 }
 
 export interface FunctionMap {

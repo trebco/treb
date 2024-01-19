@@ -415,7 +415,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /** for destruction */
-  protected view?: HTMLElement;
+  protected view_node?: HTMLElement;
 
   /** for destruction */
   protected key_listener?: (event: KeyboardEvent) => void;
@@ -846,7 +846,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       // elements. but we don't add a default; rather we use a template
 
       const template = container.querySelector('.treb-view-template') as HTMLTemplateElement;
-      this.view = template.content.firstElementChild?.cloneNode(true) as HTMLElement;
+      this.view_node = template.content.firstElementChild?.cloneNode(true) as HTMLElement;
 
       // this is a little weird but we're inserting at the front. the 
       // reason for this is that we only want to use one resize handle,
@@ -854,13 +854,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       // we could work around this, really we're just being lazy.
 
-      container.prepend(this.view);
+      container.prepend(this.view_node);
 
       
       // this.node = container;
       // this.node = this.view;
 
-      this.view.addEventListener('focusin', () => {
+      this.view_node.addEventListener('focusin', () => {
         if (this.focus_target !== this) {
           this.Publish({ type: 'focus-view' });
           this.focus_target = this;
@@ -880,14 +880,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       // const view = container.querySelector('.treb-view') as HTMLElement;
 
-      this.grid.Initialize(this.view, toll_initial_render);
+      this.grid.Initialize(this.view_node, toll_initial_render);
 
       // dnd
 
       if (this.options.dnd) {
-        this.view.addEventListener('dragenter', (event) => this.HandleDrag(event));
-        this.view.addEventListener('dragover', (event) => this.HandleDrag(event));
-        this.view.addEventListener('drop', (event) => this.HandleDrop(event));
+        this.view_node.addEventListener('dragenter', (event) => this.HandleDrag(event));
+        this.view_node.addEventListener('dragover', (event) => this.HandleDrag(event));
+        this.view_node.addEventListener('drop', (event) => this.HandleDrop(event));
       }
 
       // set up grid events
@@ -1246,19 +1246,19 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       sheet.grid.grid_events.CancelAll();
       sheet.events.CancelAll();
       
-      if (sheet.view?.parentElement) {
+      if (sheet.view_node?.parentElement) {
 
         // remove listener
         if (sheet.key_listener) {
-          sheet.view.parentElement.removeEventListener('keydown', sheet.key_listener);
+          sheet.view_node.parentElement.removeEventListener('keydown', sheet.key_listener);
         }
 
         // remove node
-        sheet.view.parentElement.removeChild(sheet.view);
+        sheet.view_node.parentElement.removeChild(sheet.view_node);
       }            
 
       // in case other view was focused
-      this.view?.focus();
+      this.view_node?.focus();
 
       // usually this results in us getting larger, we may need to update
       this.Resize();
@@ -1287,7 +1287,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     const view = this.CreateView();
     view.grid.EnsureActiveSheet(true);
 
-    view.view?.addEventListener('focusin', () => {
+    view.view_node?.addEventListener('focusin', () => {
       if (this.focus_target !== view) {
         this.Publish({ type: 'focus-view' });
         this.focus_target = view;
@@ -2758,6 +2758,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           decorated_cells: true,
           tables: true,
           share_resources: false,
+          export_functions: true,
         });
 
         // why do _we_ put this in, instead of the grid method? 
@@ -4412,34 +4413,24 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   
   /**
-   * serialize data. this function used to (optionally) stringify
-   * by typescript has a problem figuring this out, so we will simplify
-   * the function.
+   * serialize data model. moved from grid/grid base. this is moved so we 
+   * have access to the calculator, which we want so we can do function 
+   * translation on some new functions that don't necessarily map 1:1 to 
+   * XLSX functions. we can also do cleanup on functions where we're less
+   * strict about arguments (ROUND, for example).
+   * 
    */
   protected Serialize(options: SerializeOptions = {}): SerializedModel {
 
-    // (removed UI stuff, that goes in subclass)
+    const active_sheet = this.grid.active_sheet; // I thought this was in view? (...)
 
-    // selection moved to sheet, but it's not "live"; so we need to
-    // capture the primary selection in the current active sheet before
-    // we serialize it
-
-    // this.active_sheet.selection = JSON.parse(JSON.stringify(this.primary_selection));
-
-    // same for scroll offset
-
-    // this.active_sheet.scroll_offset = this.layout.scroll_offset;
-
-    // --- moved back, when we moved this function from grid/grid base ---
-
-
-    this.grid.active_sheet.selection = JSON.parse(JSON.stringify(this.grid.GetSelection()));
+    active_sheet.selection = JSON.parse(JSON.stringify(this.grid.GetSelection()));
 
     // same for scroll offset
 
     const scroll_offset = this.grid.ScrollOffset();
     if (scroll_offset) {
-      this.grid.active_sheet.scroll_offset = scroll_offset; // this.grid.layout.scroll_offset;
+      active_sheet.scroll_offset = scroll_offset; // this.grid.layout.scroll_offset;
     }    
 
     // NOTE: annotations moved to sheets, they will be serialized in the sheets
@@ -4496,7 +4487,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
                 }
               }
               if (!test.sheet) {
-                test.sheet = this.grid.active_sheet.name;
+                test.sheet = active_sheet.name;
               }
             }
 
@@ -4505,6 +4496,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             }
 
             return false;
+          }
+          else if (unit.type === 'call' && options.export_functions) {
+            // ...
           }
           return true;
         });
@@ -4517,7 +4511,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     return {
       sheet_data,
-      active_sheet: this.grid.active_sheet.id,
+      active_sheet: active_sheet.id,
       named_ranges: this.model.named_ranges.Count() ?
         this.model.named_ranges.Serialize() :
         undefined,
