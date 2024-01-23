@@ -242,6 +242,92 @@ export class Calculator extends Graph {
 
     // special functions... need reference to the graph (this)
 
+    // moving countif here so we can reference it in COUNTIFS... 
+
+    const CountIfInternal = (range: any, criteria: any): UnionValue => {
+
+      const data = Utilities.FlattenUnboxed(range);
+
+      // console.info({range, data});
+
+      // console.info({range});
+
+      if (typeof criteria !== 'string') {
+        criteria = '=' + (criteria || 0).toString();
+      }
+      else {
+        criteria = criteria.trim();
+        if (!/^[=<>]/.test(criteria)) {
+          criteria = '=' + criteria;
+        }
+      }
+
+      // switching to an array. doesn't actually seem to be any 
+      // faster... more appropriate, though.
+
+      // so there's a thing here -- if criteria is a naked string
+      // we (might?) want to treat it as a string... Excel has
+      // strange rules here
+
+      // let's do it like this -- convert identifier to a string
+      // literal.
+      
+      const parse_result = this.parser.Parse('{}' + criteria);
+      const expression = parse_result.expression;
+
+      if (parse_result.error || !expression) {
+        return ExpressionError();
+      }
+      if (expression.type !== 'binary') {
+        // console.warn('invalid expression [1]', expression);
+        return ExpressionError();
+      }
+      if (expression.left.type !== 'array') {
+        // console.warn('invalid expression [1]', expression);
+        return ExpressionError();
+      }
+
+      if (expression.right.type === 'identifier') {
+        expression.right = {
+          ...expression.right,
+          type: 'literal',
+          value: expression.right.name,
+        }
+      }
+
+      expression.left.values = [data];
+      const result = this.CalculateExpression(expression);
+
+      // console.info({expression, result});
+
+      // this is no longer the case because we're getting 
+      // a boxed result (union)
+
+      /*
+      if (Array.isArray(result)) {
+        let count = 0;
+        for (const column of result) {
+          for (const cell of column) {
+            if (cell.value) { count++; }
+          }
+        }
+        return { type: ValueType.number, value: count };
+      }
+      */
+
+      if (result.type === ValueType.array) {
+        let count = 0;
+        for (const column of (result as ArrayUnion).value) {
+          for (const cell of column) {
+            if (cell.value) { count++; }
+          }
+        }
+        return { type: ValueType.number, value: count };
+      }
+
+      return result; // error?
+    };
+
     this.library.Register({
 
       /**
@@ -404,6 +490,39 @@ export class Calculator extends Graph {
       },
 
       /**
+       * anything I said about COUNTIF applies here, but worse.
+       */
+      CountIfs: {
+        arguments: [
+          { name: 'range1', },
+          { name: 'criteria1', },
+          { name: 'range2', },
+          { name: 'criteria2', }
+        ],
+        fn: (...args): UnionValue => {
+
+          let count = 0;
+
+          for (let i = 0; i < args.length; i += 2) {
+            if (args[i] && args[i + 1]) {
+
+              const result = CountIfInternal(args[i], args[i+1]);
+              if (result.type !== ValueType.number) {
+                return result;
+              }
+              count += result.value;
+            }
+          }
+
+          return {
+            type: ValueType.number,
+            value: count,
+          }
+
+        },
+      },
+
+      /**
        * this function is here so it has access to the parser.
        * this is crazy expensive. is there a way to reduce cost?
        * 
@@ -425,6 +544,7 @@ export class Calculator extends Graph {
         ],
         fn: (range, criteria): UnionValue => {
 
+          /*
           const data = Utilities.FlattenUnboxed(range);
 
           // console.info({range, data});
@@ -467,7 +587,7 @@ export class Calculator extends Graph {
           // this is no longer the case because we're getting 
           // a boxed result (union)
 
-          /*
+          / *
           if (Array.isArray(result)) {
             let count = 0;
             for (const column of result) {
@@ -477,7 +597,7 @@ export class Calculator extends Graph {
             }
             return { type: ValueType.number, value: count };
           }
-          */
+          * /
 
           if (result.type === ValueType.array) {
             let count = 0;
@@ -490,6 +610,9 @@ export class Calculator extends Graph {
           }
 
           return result; // error?
+          */
+
+          return CountIfInternal(range, criteria);
 
         },
       },

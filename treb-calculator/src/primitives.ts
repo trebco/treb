@@ -309,6 +309,17 @@ export const Equals = (a: UnionValue, b: UnionValue): UnionValue => {
 
   }
 
+  // this is standard (icase) string equality. we might also need
+  // to handle wildcard string matching, although it's not the 
+  // default case for = operators.
+
+  if (a.type === ValueType.string && b.type === ValueType.string) {
+    return { 
+      type: ValueType.boolean, 
+      value: a.value.toLowerCase() === b.value.toLowerCase(),
+    };
+  }
+
   return { type: ValueType.boolean, value: a.value == b.value }; // note ==
 };
 

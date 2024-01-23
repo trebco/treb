@@ -129,6 +129,20 @@ export const TextFunctionLibrary: FunctionMap = {
     category: ['text'],
   },
 
+  Exact: {
+    arguments: [
+      { name: 'text', boxed: true, },
+      { name: 'text', boxed: true, },
+    ],
+    category: ['text'],
+    fn: Utils.ApplyAsArray2((a: UnionValue, b: UnionValue): UnionValue => {
+      return {
+        type: ValueType.boolean,
+        value: (a?.value?.toString()) === (b?.value?.toString()),
+      };
+    }),
+  },
+
   Left: {
     arguments: [
       { name: 'string' },
