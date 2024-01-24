@@ -23,7 +23,7 @@ import type { Cell, ICellAddress, ICellAddress2, UnionValue, EvaluateOptions,
          ArrayUnion, IArea, CellDataWithAddress, CellValue} from 'treb-base-types';
 import { Localization, Area, ValueType, IsCellAddress} from 'treb-base-types';
          
-import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier } from 'treb-parser';
+import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier, ParseResult } from 'treb-parser';
 import { Parser,
          DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 
@@ -56,6 +56,8 @@ import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionErro
 import { StateLeafVertex } from './dag/state_leaf_vertex';
 import { CalculationLeafVertex } from './dag/calculation_leaf_vertex';
 import type { ConnectedElementType } from 'treb-grid';
+
+import { ValueParser } from 'treb-format';
 
 /**
  * breaking this out so we can use it for export (TODO)
@@ -241,79 +243,139 @@ export class Calculator extends Graph {
     }
 
     // special functions... need reference to the graph (this)
-
     // moving countif here so we can reference it in COUNTIFS... 
+
+    const FlattenBooleans = (value: ArrayUnion) => {
+      const result: boolean[] = [];
+      for (const col of value.value) {
+        for (const entry of col) {
+          result.push(entry.type === ValueType.boolean && entry.value);
+        }
+      }
+      return result;
+    };
 
     const CountIfInternal = (range: any, criteria: any): UnionValue => {
 
       const data = Utilities.FlattenUnboxed(range);
 
-      // console.info({range, data});
+      let parse_result: ParseResult|undefined;
+      let expression: ExpressionUnit|undefined;
 
-      // console.info({range});
+      // we'll handle operator and operand separately
 
-      if (typeof criteria !== 'string') {
-        criteria = '=' + (criteria || 0).toString();
+      let operator = '=';
+
+      // handle wildcards first. if we have a wildcard we use a
+      // matching function so we can centralize. 
+      
+      if (typeof criteria === 'string') {
+
+        // normalize first, pull out operator
+
+        criteria = criteria.trim();
+        const match = criteria.match(/^([=<>]+)/);
+        if (match) {
+          operator = match[1];
+          criteria = criteria.substring(operator.length);
+        }
+
+        const value_parser_result = ValueParser.TryParse(criteria);
+        if (value_parser_result?.type === ValueType.string) {
+          criteria = `"${value_parser_result.value}"`;
+        }
+        else {
+          criteria = value_parser_result?.value?.toString() || '';
+        }
+
+        // console.info({operator, criteria});
+
+        // check for wildcards (this will false-positive on escaped 
+        // wildcards, which will not break but will waste cycles. we 
+        // could check. TOOD/FIXME)
+
+        if (/[?*]/.test(criteria)) {
+
+          // NOTE: we're not specifying an argument separator when writing
+          // functions, because that might break numbers passed as strings.
+          // so we write the function based on the current separator.
+
+          const separator = this.parser.argument_separator;
+
+          if (operator === '=' || operator === '<>') {
+
+            parse_result = this.parser.Parse(`=WildcardMatch({}${separator} ${criteria}${separator} ${operator === '<>'})`);
+            expression = parse_result.expression;
+
+            if (parse_result.error || !expression) {
+              return ExpressionError();
+            }
+
+            if (expression?.type === 'call' && expression.args[0]?.type === 'array') {
+              expression.args[0].values = [data];
+            }
+
+          }
+          
+        }
+
       }
       else {
-        criteria = criteria.trim();
-        if (!/^[=<>]/.test(criteria)) {
-          criteria = '=' + criteria;
-        }
+
+        // if it's not a string, by definition it doesn't have an 
+        // operator so use equality (default). it does not need 
+        // escaping.
+
+        criteria = (criteria || 0).toString();
+
       }
-
-      // switching to an array. doesn't actually seem to be any 
-      // faster... more appropriate, though.
-
-      // so there's a thing here -- if criteria is a naked string
-      // we (might?) want to treat it as a string... Excel has
-      // strange rules here
-
-      // let's do it like this -- convert identifier to a string
-      // literal.
       
-      const parse_result = this.parser.Parse('{}' + criteria);
-      const expression = parse_result.expression;
+      if (!parse_result) {
 
-      if (parse_result.error || !expression) {
-        return ExpressionError();
-      }
-      if (expression.type !== 'binary') {
-        // console.warn('invalid expression [1]', expression);
-        return ExpressionError();
-      }
-      if (expression.left.type !== 'array') {
-        // console.warn('invalid expression [1]', expression);
-        return ExpressionError();
-      }
+        parse_result = this.parser.Parse('{}' + operator + criteria);
+        expression = parse_result.expression;
 
-      if (expression.right.type === 'identifier') {
-        expression.right = {
-          ...expression.right,
-          type: 'literal',
-          value: expression.right.name,
+        if (parse_result.error || !expression) {
+          return ExpressionError();
         }
-      }
+        if (expression.type !== 'binary') {
+          console.warn('invalid expression [1]', expression);
+          return ExpressionError();
+        }
+        if (expression.left.type !== 'array') {
+          console.warn('invalid expression [1]', expression);
+          return ExpressionError();
+        }
 
-      expression.left.values = [data];
-      const result = this.CalculateExpression(expression);
+        // this is only going to work for binary left/right. it won't
+        // work if we change this to a function (wildcard match)
+        
+        // this will not happen anymore, we can remove
 
-      // console.info({expression, result});
+        if (expression.right.type === 'identifier') {
 
-      // this is no longer the case because we're getting 
-      // a boxed result (union)
+          console.warn('will never happen');
 
-      /*
-      if (Array.isArray(result)) {
-        let count = 0;
-        for (const column of result) {
-          for (const cell of column) {
-            if (cell.value) { count++; }
+          expression.right = {
+            ...expression.right,
+            type: 'literal',
+            value: expression.right.name,
           }
         }
-        return { type: ValueType.number, value: count };
+
+        expression.left.values = [data];
+
       }
-      */
+
+      if (!expression) {
+        return ValueError();
+      }
+
+      const result = this.CalculateExpression(expression);
+      return result;
+
+      /*
+      // console.info({expression, result});
 
       if (result.type === ValueType.array) {
         let count = 0;
@@ -326,6 +388,8 @@ export class Calculator extends Graph {
       }
 
       return result; // error?
+      */
+
     };
 
     this.library.Register({
@@ -491,6 +555,8 @@ export class Calculator extends Graph {
 
       /**
        * anything I said about COUNTIF applies here, but worse.
+       * COUNTIFS is an AND operation across separate COUNTIFs.
+       * presumably they have to be the same shape.
        */
       CountIfs: {
         arguments: [
@@ -503,17 +569,33 @@ export class Calculator extends Graph {
 
           let count = 0;
 
-          for (let i = 0; i < args.length; i += 2) {
+          let result = CountIfInternal(args[0], args[1]);
+          if (result.type !== ValueType.array) {
+            return result; // error
+          }
+
+          const base = FlattenBooleans(result);
+
+          for (let i = 2; i < args.length; i += 2) {
             if (args[i] && args[i + 1]) {
 
               const result = CountIfInternal(args[i], args[i+1]);
-              if (result.type !== ValueType.number) {
+              if (result.type !== ValueType.array) {
                 return result;
               }
-              count += result.value;
+
+              const step = FlattenBooleans(result);
+              for (const [index, value] of base.entries()) {
+                base[index] = value && step[index];
+              }
+              
             }
           }
 
+          for (const element of base) {
+            if (element) { count++; }
+          }
+          
           return {
             type: ValueType.number,
             value: count,
@@ -544,60 +626,7 @@ export class Calculator extends Graph {
         ],
         fn: (range, criteria): UnionValue => {
 
-          /*
-          const data = Utilities.FlattenUnboxed(range);
-
-          // console.info({range, data});
-
-          // console.info({range});
-
-          if (typeof criteria !== 'string') {
-            criteria = '=' + (criteria || 0).toString();
-          }
-          else {
-            criteria = criteria.trim();
-            if (!/^[=<>]/.test(criteria)) {
-              criteria = '=' + criteria;
-            }
-          }
-
-          // switching to an array. doesn't actually seem to be any 
-          // faster... more appropriate, though.
-          
-          const parse_result = this.parser.Parse('{}' + criteria);
-          const expression = parse_result.expression;
-
-          if (parse_result.error || !expression) {
-            return ExpressionError();
-          }
-          if (expression.type !== 'binary') {
-            // console.warn('invalid expression [1]', expression);
-            return ExpressionError();
-          }
-          if (expression.left.type !== 'array') {
-            // console.warn('invalid expression [1]', expression);
-            return ExpressionError();
-          }
-
-          expression.left.values = [data];
-          const result = this.CalculateExpression(expression);
-
-          // console.info({expression, result});
-
-          // this is no longer the case because we're getting 
-          // a boxed result (union)
-
-          / *
-          if (Array.isArray(result)) {
-            let count = 0;
-            for (const column of result) {
-              for (const cell of column) {
-                if (cell.value) { count++; }
-              }
-            }
-            return { type: ValueType.number, value: count };
-          }
-          * /
+          const result = CountIfInternal(range, criteria);
 
           if (result.type === ValueType.array) {
             let count = 0;
@@ -609,10 +638,7 @@ export class Calculator extends Graph {
             return { type: ValueType.number, value: count };
           }
 
-          return result; // error?
-          */
-
-          return CountIfInternal(range, criteria);
+          return result; // error
 
         },
       },

@@ -24461,6 +24461,34 @@ var ApplyAsArray2 = (base) => {
     return base(a, b, ...rest);
   };
 };
+var ParseWildcards = (text) => {
+  const result = [];
+  const length = text.length;
+  const escaped_chars = "[\\^$.|?*+()";
+  for (let i = 0; i < length; i++) {
+    let char = text[i];
+    switch (char) {
+      case "*":
+        result.push(".", "*");
+        break;
+      case "?":
+        result.push(".");
+        break;
+      case "~":
+        char = text[++i] || "";
+      default:
+        for (let j = 0; j < escaped_chars.length; j++) {
+          if (char === escaped_chars[j]) {
+            result.push("\\");
+            break;
+          }
+        }
+        result.push(char);
+        break;
+    }
+  }
+  return result.join("");
+};
 
 // treb-calculator/src/function-library.ts
 var FunctionLibrary = class {
@@ -26229,34 +26257,6 @@ var FinanceFunctionLibrary = {
 };
 
 // treb-calculator/src/functions/text-functions.ts
-var ParseWildcards = (text) => {
-  const result = [];
-  const length = text.length;
-  const escaped_chars = "[\\^$.|?*+()";
-  for (let i = 0; i < length; i++) {
-    let char = text[i];
-    switch (char) {
-      case "*":
-        result.push(".", "*");
-        break;
-      case "?":
-        result.push(".");
-        break;
-      case "~":
-        char = text[++i] || "";
-      default:
-        for (let j = 0; j < escaped_chars.length; j++) {
-          if (char === escaped_chars[j]) {
-            result.push("\\");
-            break;
-          }
-        }
-        result.push(char);
-        break;
-    }
-  }
-  return result.join("");
-};
 var TextFunctionLibrary = {
   Char: {
     arguments: [{
@@ -26298,6 +26298,30 @@ var TextFunctionLibrary = {
       return { type: 2 /* string */, value: NumberFormatCache.Get(format).Format(value || 0) };
     },
     category: ["text"]
+  },
+  WildcardMatch: {
+    visibility: "internal",
+    arguments: [
+      { name: "text" },
+      { name: "text" },
+      // the invert parameter is optional, defaults to false. we add this
+      // so we can invert wirhout requiring an extra function call.
+      { name: "invert" }
+    ],
+    fn: ApplyAsArray2((a, b, invert = false) => {
+      if (typeof a === "string" && typeof b === "string") {
+        const pattern = ParseWildcards(b);
+        const match = new RegExp("^" + pattern + "$", "i").exec(a);
+        return {
+          type: 4 /* boolean */,
+          value: invert ? !match : !!match
+        };
+      }
+      return {
+        type: 4 /* boolean */,
+        value: a === b || a?.toString() === b?.toString()
+      };
+    })
   },
   Exact: {
     arguments: [
@@ -27252,47 +27276,77 @@ var Calculator = class extends Graph {
     for (const key of Object.keys(TextFunctionAliases)) {
       this.library.Alias(key, TextFunctionAliases[key]);
     }
-    const CountIfInternal = (range, criteria) => {
-      const data = FlattenUnboxed(range);
-      if (typeof criteria !== "string") {
-        criteria = "=" + (criteria || 0).toString();
-      } else {
-        criteria = criteria.trim();
-        if (!/^[=<>]/.test(criteria)) {
-          criteria = "=" + criteria;
+    const FlattenBooleans = (value) => {
+      const result = [];
+      for (const col of value.value) {
+        for (const entry of col) {
+          result.push(entry.type === 4 /* boolean */ && entry.value);
         }
       }
-      const parse_result = this.parser.Parse("{}" + criteria);
-      const expression = parse_result.expression;
-      if (parse_result.error || !expression) {
-        return ExpressionError();
-      }
-      if (expression.type !== "binary") {
-        return ExpressionError();
-      }
-      if (expression.left.type !== "array") {
-        return ExpressionError();
-      }
-      if (expression.right.type === "identifier") {
-        expression.right = {
-          ...expression.right,
-          type: "literal",
-          value: expression.right.name
-        };
-      }
-      expression.left.values = [data];
-      const result = this.CalculateExpression(expression);
-      if (result.type === 8 /* array */) {
-        let count = 0;
-        for (const column of result.value) {
-          for (const cell of column) {
-            if (cell.value) {
-              count++;
+      return result;
+    };
+    const CountIfInternal = (range, criteria) => {
+      const data = FlattenUnboxed(range);
+      let parse_result;
+      let expression;
+      let operator = "=";
+      if (typeof criteria === "string") {
+        criteria = criteria.trim();
+        const match = criteria.match(/^([=<>]+)/);
+        if (match) {
+          operator = match[1];
+          criteria = criteria.substring(operator.length);
+        }
+        const value_parser_result = ValueParser.TryParse(criteria);
+        if (value_parser_result?.type === 2 /* string */) {
+          criteria = `"${value_parser_result.value}"`;
+        } else {
+          criteria = value_parser_result?.value?.toString() || "";
+        }
+        if (/[?*]/.test(criteria)) {
+          const separator = this.parser.argument_separator;
+          if (operator === "=" || operator === "<>") {
+            parse_result = this.parser.Parse(`=WildcardMatch({}${separator} ${criteria}${separator} ${operator === "<>"})`);
+            expression = parse_result.expression;
+            if (parse_result.error || !expression) {
+              return ExpressionError();
+            }
+            if (expression?.type === "call" && expression.args[0]?.type === "array") {
+              expression.args[0].values = [data];
             }
           }
         }
-        return { type: 3 /* number */, value: count };
+      } else {
+        criteria = (criteria || 0).toString();
       }
+      if (!parse_result) {
+        parse_result = this.parser.Parse("{}" + operator + criteria);
+        expression = parse_result.expression;
+        if (parse_result.error || !expression) {
+          return ExpressionError();
+        }
+        if (expression.type !== "binary") {
+          console.warn("invalid expression [1]", expression);
+          return ExpressionError();
+        }
+        if (expression.left.type !== "array") {
+          console.warn("invalid expression [1]", expression);
+          return ExpressionError();
+        }
+        if (expression.right.type === "identifier") {
+          console.warn("will never happen");
+          expression.right = {
+            ...expression.right,
+            type: "literal",
+            value: expression.right.name
+          };
+        }
+        expression.left.values = [data];
+      }
+      if (!expression) {
+        return ValueError();
+      }
+      const result = this.CalculateExpression(expression);
       return result;
     };
     this.library.Register({
@@ -27420,6 +27474,8 @@ var Calculator = class extends Graph {
       },
       /**
        * anything I said about COUNTIF applies here, but worse.
+       * COUNTIFS is an AND operation across separate COUNTIFs.
+       * presumably they have to be the same shape.
        */
       CountIfs: {
         arguments: [
@@ -27430,13 +27486,26 @@ var Calculator = class extends Graph {
         ],
         fn: (...args) => {
           let count = 0;
-          for (let i = 0; i < args.length; i += 2) {
+          let result = CountIfInternal(args[0], args[1]);
+          if (result.type !== 8 /* array */) {
+            return result;
+          }
+          const base = FlattenBooleans(result);
+          for (let i = 2; i < args.length; i += 2) {
             if (args[i] && args[i + 1]) {
-              const result = CountIfInternal(args[i], args[i + 1]);
-              if (result.type !== 3 /* number */) {
-                return result;
+              const result2 = CountIfInternal(args[i], args[i + 1]);
+              if (result2.type !== 8 /* array */) {
+                return result2;
               }
-              count += result.value;
+              const step = FlattenBooleans(result2);
+              for (const [index, value] of base.entries()) {
+                base[index] = value && step[index];
+              }
+            }
+          }
+          for (const element of base) {
+            if (element) {
+              count++;
             }
           }
           return {
@@ -27466,7 +27535,19 @@ var Calculator = class extends Graph {
           { name: "criteria" }
         ],
         fn: (range, criteria) => {
-          return CountIfInternal(range, criteria);
+          const result = CountIfInternal(range, criteria);
+          if (result.type === 8 /* array */) {
+            let count = 0;
+            for (const column of result.value) {
+              for (const cell of column) {
+                if (cell.value) {
+                  count++;
+                }
+              }
+            }
+            return { type: 3 /* number */, value: count };
+          }
+          return result;
         }
       },
       /** like indirect, this creates dependencies at calc time */

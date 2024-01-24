@@ -302,3 +302,58 @@ export const ApplyAsArray2 = (base: (a: any, b: any, ...rest: any[]) => UnionVal
   }
 };
 
+
+/**
+ * parse a string with wildcards into a regex pattern
+ * 
+ * from
+ * https://exceljet.net/glossary/wildcard
+ * 
+ * Excel has 3 wildcards you can use in your formulas:
+ *
+ * Asterisk (*) - zero or more characters
+ * Question mark (?) - any one character
+ * Tilde (~) - escape for literal character (~*) a literal question mark (~?), or a literal tilde (~~)
+ * 
+ * they're pretty liberal with escaping, nothing is an error, just roll with it
+ * 
+ */
+export const ParseWildcards = (text: string): string => {
+
+  const result: string[] = [];
+  const length = text.length;
+
+  const escaped_chars = '[\\^$.|?*+()';
+
+  for (let i = 0; i < length; i++) {
+    let char = text[i];
+    switch (char) {
+
+      case '*':
+        result.push('.', '*');
+        break;
+
+      case '?':
+        result.push('.');
+        break;
+
+      case '~':
+        char = text[++i] || '';
+      
+      // eslint-disable-next-line no-fallthrough
+      default:
+        for (let j = 0; j < escaped_chars.length; j++) {
+          if (char === escaped_chars[j]) {
+            result.push('\\');
+            break;
+          }
+        }
+        result.push(char);
+        break;
+
+    }
+  }
+
+  return result.join('');
+
+};

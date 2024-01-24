@@ -26,60 +26,6 @@ import { Localization, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
 import { ArgumentError, ValueError } from '../function-error';
 
-/**
- * parse a string with wildcards into a regex pattern
- * 
- * from
- * https://exceljet.net/glossary/wildcard
- * 
- * Excel has 3 wildcards you can use in your formulas:
- *
- * Asterisk (*) - zero or more characters
- * Question mark (?) - any one character
- * Tilde (~) - escape for literal character (~*) a literal question mark (~?), or a literal tilde (~~)
- * 
- * they're pretty liberal with escaping, nothing is an error, just roll with it
- * 
- */
-const ParseWildcards = (text: string): string => {
-
-  const result: string[] = [];
-  const length = text.length;
-
-  const escaped_chars = '[\\^$.|?*+()';
-
-  for (let i = 0; i < length; i++) {
-    let char = text[i];
-    switch (char) {
-
-      case '*':
-        result.push('.', '*');
-        break;
-
-      case '?':
-        result.push('.');
-        break;
-
-      case '~':
-        char = text[++i] || '';
-      
-      // eslint-disable-next-line no-fallthrough
-      default:
-        for (let j = 0; j < escaped_chars.length; j++) {
-          if (char === escaped_chars[j]) {
-            result.push('\\');
-            break;
-          }
-        }
-        result.push(char);
-        break;
-
-    }
-  }
-
-  return result.join('');
-
-};
 
 export const TextFunctionLibrary: FunctionMap = {
 
@@ -127,6 +73,36 @@ export const TextFunctionLibrary: FunctionMap = {
       return { type: ValueType.string, value: NumberFormatCache.Get(format).Format(value || 0) };
     },
     category: ['text'],
+  },
+
+  WildcardMatch: {
+    visibility: 'internal',
+    arguments: [
+      { name: 'text', },
+      { name: 'text', },
+
+      // the invert parameter is optional, defaults to false. we add this
+      // so we can invert wirhout requiring an extra function call.
+
+      { name: 'invert' }, 
+    ],
+    fn: Utils.ApplyAsArray2((a: any, b: any, invert = false) => {
+
+      if (typeof a === 'string' && typeof b === 'string') {
+        const pattern = Utils.ParseWildcards(b);
+        const match = new RegExp('^' + pattern + '$', 'i').exec(a);
+
+        return {
+          type: ValueType.boolean,
+          value: invert ? !match : !!match,
+        };
+      }
+
+      return {
+        type: ValueType.boolean,
+        value: (a === b || a?.toString() === b?.toString()),
+      }
+    }),
   },
 
   Exact: {
@@ -239,7 +215,7 @@ export const TextFunctionLibrary: FunctionMap = {
         // can we get by with regexes? should we have some sort of cache
         // for common patterns?
 
-        const pattern = ParseWildcards(needle);
+        const pattern = Utils.ParseWildcards(needle);
         // console.info('n', needle, 'p', pattern);
         const match = new RegExp(pattern, 'i').exec(haystack.substr(start - 1));
 
