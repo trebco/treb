@@ -789,6 +789,13 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     if (this.active_editor && !this.assume_formula) {
       this.active_editor.node.spellcheck = !(this.text_formula);
+
+      // if not assuming formula, and it's not a formula, then exit.
+
+      if (!this.text_formula) {
+        return;
+      }
+
     }
 
     // this is a short-circuit so we don't format the same text twice. 

@@ -257,6 +257,12 @@ export class Calculator extends Graph {
 
     const CountIfInternal = (range: any, criteria: any): UnionValue => {
 
+      // do we really need parser/calculator for this? I think
+      // we've maybe gone overboard here, could we just use valueparser
+      // on the criteria and then calculate normally? I think we might...
+      // in any event there are no dynamic dependencies with this 
+      // function.
+
       const data = Utilities.FlattenUnboxed(range);
 
       let parse_result: ParseResult|undefined;
