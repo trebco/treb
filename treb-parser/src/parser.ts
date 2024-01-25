@@ -160,6 +160,11 @@ const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
  * results directly, caller can store if necessary.
  * 
  * FIXME: split rendering into a separate class? would be a little cleaner.
+ * 
+ * FIXME: we don't currently handle full-width punctuation. it would be 
+ * simple to parse, a little more complicated to keep track of if we wanted
+ * to be able to rewrite. TODO/FIXME.
+ * 
  */
 export class Parser {
  
@@ -186,6 +191,9 @@ export class Parser {
     ...DefaultParserConfig,
   };
 
+  /** 
+   * FIXME: why is this a class member? at a minimum it could be static 
+   */
   protected r1c1_regex = /[rR]((?:\[[-+]{0,1}\d+\]|\d+))[cC]((?:\[[-+]{0,1}\d+\]|\d+))$/;
 
   /**
