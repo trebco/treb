@@ -1831,18 +1831,23 @@ export class Grid extends GridBase {
         argument_separator: this.parser.argument_separator,
         decimal_mark: this.parser.decimal_mark,
       }
+
+      this.parser.Save();
+
       let convert = false;
 
       if (options.argument_separator === ',' && this.parser.argument_separator !== ArgumentSeparatorType.Comma) {
-        this.parser.argument_separator = ArgumentSeparatorType.Comma;
-        this.parser.decimal_mark = DecimalMarkType.Period;
+        // this.parser.argument_separator = ArgumentSeparatorType.Comma;
+        // this.parser.decimal_mark = DecimalMarkType.Period;
+        this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
 
         convert = true;
       }
        
       if (options.argument_separator === ';' && this.parser.argument_separator !== ArgumentSeparatorType.Semicolon) {
-        this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-        this.parser.decimal_mark = DecimalMarkType.Comma;
+        // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+        // this.parser.decimal_mark = DecimalMarkType.Comma;
+        this.parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
 
         convert = true;
       }
@@ -1883,8 +1888,10 @@ export class Grid extends GridBase {
 
       // reset
 
-      this.parser.argument_separator = current.argument_separator;
-      this.parser.decimal_mark = current.decimal_mark;
+      // this.parser.argument_separator = current.argument_separator;
+      // this.parser.decimal_mark = current.decimal_mark;
+
+      this.parser.Restore();
 
     }
       

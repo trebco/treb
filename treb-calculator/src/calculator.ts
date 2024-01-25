@@ -1305,12 +1305,16 @@ export class Calculator extends Graph {
     // don't assume default, always set
 
     if (Localization.decimal_separator === ',') {
-      this.parser.decimal_mark = DecimalMarkType.Comma;
-      this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+      this.parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+
+      // this.parser.decimal_mark = DecimalMarkType.Comma;
+      // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
     }
     else {
-      this.parser.decimal_mark = DecimalMarkType.Period;
-      this.parser.argument_separator = ArgumentSeparatorType.Comma;
+      this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+
+      // this.parser.decimal_mark = DecimalMarkType.Period;
+      // this.parser.argument_separator = ArgumentSeparatorType.Comma;
     }
 
     // this.expression_calculator.UpdateLocale();
@@ -1536,17 +1540,23 @@ export class Calculator extends Graph {
   /** moved from embedded sheet */
   public Evaluate(expression: string, active_sheet?: Sheet, options: EvaluateOptions = {}, raw_result = false) {
     
-    const current = this.parser.argument_separator;
-    const r1c1_state = this.parser.flags.r1c1;
+    // const current = this.parser.argument_separator;
+    // const r1c1_state = this.parser.flags.r1c1;
+
+    this.parser.Save();
 
     if (options.argument_separator) {
       if (options.argument_separator === ',') {
-        this.parser.argument_separator = ArgumentSeparatorType.Comma;
-        this.parser.decimal_mark = DecimalMarkType.Period;
+        this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+
+        // this.parser.argument_separator = ArgumentSeparatorType.Comma;
+        // this.parser.decimal_mark = DecimalMarkType.Period;
       }
       else {
-        this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-        this.parser.decimal_mark = DecimalMarkType.Comma;
+        this.parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+
+        // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+        // this.parser.decimal_mark = DecimalMarkType.Comma;
       }
     }
 
@@ -1558,9 +1568,11 @@ export class Calculator extends Graph {
 
     // reset
 
-    this.parser.argument_separator = current;
-    this.parser.decimal_mark = (current === ArgumentSeparatorType.Comma) ? DecimalMarkType.Period : DecimalMarkType.Comma;
-    this.parser.flags.r1c1 = r1c1_state;
+    // this.parser.argument_separator = current;
+    // this.parser.decimal_mark = (current === ArgumentSeparatorType.Comma) ? DecimalMarkType.Period : DecimalMarkType.Comma;
+    // this.parser.flags.r1c1 = r1c1_state;
+
+    this.parser.Restore();
 
     // OK
 

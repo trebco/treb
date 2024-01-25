@@ -2246,12 +2246,16 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.parser.flags.r1c1 = r1c1;
 
     if (argument_separator === ',') {
-      this.parser.argument_separator = ArgumentSeparatorType.Comma;
-      this.parser.decimal_mark = DecimalMarkType.Period;
+      this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+
+      // this.parser.argument_separator = ArgumentSeparatorType.Comma;
+      // this.parser.decimal_mark = DecimalMarkType.Period;
     }
     else {
-      this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-      this.parser.decimal_mark = DecimalMarkType.Comma;
+      this.parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+
+      // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+      // this.parser.decimal_mark = DecimalMarkType.Comma;
     }
 
     const result = this.parser.Parse(formula);
@@ -2356,12 +2360,16 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       */
 
       if (argument_separator === ',') {
-        this.parser.argument_separator = ArgumentSeparatorType.Comma;
-        this.parser.decimal_mark = DecimalMarkType.Period;
+        this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+
+        // this.parser.argument_separator = ArgumentSeparatorType.Comma;
+        // this.parser.decimal_mark = DecimalMarkType.Period;
       }
       else {
-        this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-        this.parser.decimal_mark = DecimalMarkType.Comma;
+        this.parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+
+        // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+        // this.parser.decimal_mark = DecimalMarkType.Comma;
       }
 
       // const r1c1_state = this.parser.flags.r1c1;
@@ -3525,6 +3533,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   /**
    * Create a macro function.
+   * 
+   * FIXME: this needs a control for argument separator, like other
+   * functions that use formulas (@see SetRange)
    * 
    * @public
    */
@@ -5650,14 +5661,18 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // FIXME: also we should unify on types for decimal, argument separator
 
     if (data.decimal_mark === '.') {
-      parser.decimal_mark = DecimalMarkType.Period;
-      parser.argument_separator = ArgumentSeparatorType.Comma;
+      // parser.decimal_mark = DecimalMarkType.Period;
+      // parser.argument_separator = ArgumentSeparatorType.Comma;
+      parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+
       target_decimal_mark = DecimalMarkType.Comma;
       target_argument_separator = ArgumentSeparatorType.Semicolon;
     }
     else {
-      parser.decimal_mark = DecimalMarkType.Comma;
-      parser.argument_separator = ArgumentSeparatorType.Semicolon;
+      // parser.decimal_mark = DecimalMarkType.Comma;
+      // parser.argument_separator = ArgumentSeparatorType.Semicolon;
+      parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+
       target_decimal_mark = DecimalMarkType.Period;
       target_argument_separator = ArgumentSeparatorType.Comma;
     }

@@ -305,9 +305,19 @@ export interface ParseResult {
   full_reference_list?: Array<UnitRange | UnitAddress | UnitIdentifier | UnitStructuredReference>;
 }
 
+/**
+ * moving these settings into flags, but we want to ensure that 
+ * they're available so we'll have some required flags
+ * 
+ */
+export interface RequiredParserFlags {
+  decimal_mark: DecimalMarkType;
+  argument_separator: ArgumentSeparatorType;
+}
+
 // 
 
-export interface ParserFlags {
+export interface OptionalParserFlags {
 
   /**
    * flag: support spreadsheet addresses (e.g. "A1"). this is the default,
@@ -386,6 +396,8 @@ export interface ParserFlags {
 
 }
 
+export type ParserFlags = Partial<OptionalParserFlags> & RequiredParserFlags;
+
 export interface RenderOptions {
   offset: { rows: number; columns: number };
   missing: string;
@@ -396,8 +408,19 @@ export interface RenderOptions {
   table_name: string;
 }
 
+/*
 export interface PersistedParserConfig {
-  flags: Partial<ParserFlags>;
-  argument_separator: ArgumentSeparatorType;
-  decimal_mark: DecimalMarkType;
+  flags: Partial<ParserFlags> & RequiredParserFlags;
+  // argument_separator: ArgumentSeparatorType;
+  // decimal_mark: DecimalMarkType;
 }
+*/
+
+export const DefaultParserConfig: ParserFlags = {
+  spreadsheet_semantics: true,
+  dimensioned_quantities: false,
+  fractions: true,
+  decimal_mark: DecimalMarkType.Period,
+  argument_separator: ArgumentSeparatorType.Comma,
+};
+

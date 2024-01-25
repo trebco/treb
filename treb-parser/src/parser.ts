@@ -34,10 +34,11 @@ import type {
   ParserFlags,
   UnitStructuredReference,
   RenderOptions,
-  PersistedParserConfig} from './parser-types';
+} from './parser-types';
 import {
   ArgumentSeparatorType,
-  DecimalMarkType
+  DecimalMarkType,
+  DefaultParserConfig
 } from './parser-types';
 
 interface PrecedenceList {
@@ -152,29 +153,41 @@ const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
  * which runs synchronously). one benefit of using a singleton would be
  * consistency in decimal mark, we'd only have to set once.
  *
+ * FIXME: the internal state is starting to grate. there's no reason for
+ * it and it just confuses things because parsing is stateless (except for
+ * configuration). internal state just keeps results from the last parse
+ * operation. we should refactor so parsing is clean and returns all 
+ * results directly, caller can store if necessary.
+ * 
  * FIXME: split rendering into a separate class? would be a little cleaner.
  */
 export class Parser {
  
-  /**
+  public get argument_separator(): ArgumentSeparatorType {
+    return this.flags.argument_separator;
+  }
+
+  /* *
    * argument separator. this can be changed prior to parsing/rendering.
    * FIXME: use an accessor to ensure type, outside of ts?
    */
-  public argument_separator = ArgumentSeparatorType.Comma;
+  // protected __argument_separator = ArgumentSeparatorType.Comma;
 
-  /**
+  public get decimal_mark(): DecimalMarkType {
+    return this.flags.decimal_mark;
+  }
+
+  /* *
    * decimal mark. this can be changed prior to parsing/rendering.
    * FIXME: use an accessor to ensure type, outside of ts?
    */
-  public decimal_mark = DecimalMarkType.Period;
+  // protected __decimal_mark = DecimalMarkType.Period;
 
   /**
    * unifying flags
    */
-  public flags: Partial<ParserFlags> = {
-    spreadsheet_semantics: true,
-    dimensioned_quantities: false,
-    fractions: true,
+  public flags: ParserFlags = {
+    ...DefaultParserConfig,
   };
 
   protected r1c1_regex = /[rR]((?:\[[-+]{0,1}\d+\]|\d+))[cC]((?:\[[-+]{0,1}\d+\]|\d+))$/;
@@ -252,6 +265,27 @@ export class Parser {
   protected parser_state: string[] = [];
 
   /**
+   * step towards protecting these values and setting them in one
+   * operation
+   * 
+   * @param argument_separator 
+   * @param decimal_mark 
+   */
+  public SetLocaleSettings(argument_separator: ArgumentSeparatorType, decimal_mark: DecimalMarkType) {
+
+    // I suppose semicolon and period is allowable, although no one 
+    // uses it. this test only works because we know the internal type
+    // representation, but that's fragile and not a good idea. FIXME
+
+    if ((argument_separator as any) === (decimal_mark as any)) {
+      throw new Error('invalid locale setting');
+    }
+
+    this.flags.argument_separator = argument_separator;
+    this.flags.decimal_mark = decimal_mark;
+  }
+
+  /**
    * save local configuration to a buffer, so it can be restored. we're doing
    * this because in a lot of places we're caching parser flagss, changing
    * them, and then restoring them. that's become repetitive, fragile to 
@@ -265,12 +299,7 @@ export class Parser {
    * 
    */
   public Save() {
-    const config: PersistedParserConfig = {
-      flags: this.flags,
-      argument_separator: this.argument_separator,
-      decimal_mark: this.decimal_mark,
-    }
-    this.parser_state.push(JSON.stringify(config));
+    this.parser_state.push(JSON.stringify(this.flags));
   }
 
   /**
@@ -281,10 +310,7 @@ export class Parser {
     const json = this.parser_state.shift();
     if (json) {
       try {
-        const config = JSON.parse(json) as PersistedParserConfig;
-        this.flags = config.flags;
-        this.argument_separator = config.argument_separator;
-        this.decimal_mark = config.decimal_mark;
+        this.flags = JSON.parse(json) as ParserFlags;
       }
       catch (err) {
         console.error(err);
@@ -421,7 +447,7 @@ export class Parser {
 
     // use default separator, unless we're explicitly converting.
 
-    let separator = this.argument_separator + ' ';
+    let separator = this.flags.argument_separator + ' ';
     if (convert_argument_separator === ArgumentSeparatorType.Comma) {
       separator = ', ';
     }
@@ -438,13 +464,13 @@ export class Parser {
 
     const decimal = convert_decimal === DecimalMarkType.Comma ? ',' : '.';
     const decimal_rex =
-      this.decimal_mark === DecimalMarkType.Comma ? /,/ : /\./;
+      this.flags.decimal_mark === DecimalMarkType.Comma ? /,/ : /\./;
 
     // we need this for complex numbers, but I don't want to change the 
     // original at the moment, just in case. we can run through that later.
 
     const decimal_rex_g = 
-      this.decimal_mark === DecimalMarkType.Comma ? /,/g : /\./g;
+      this.flags.decimal_mark === DecimalMarkType.Comma ? /,/g : /\./g;
 
     switch (unit.type) {
       case 'address':
@@ -517,13 +543,13 @@ export class Parser {
           // and convert if necessary.
 
           let imaginary_text = Math.abs(unit.imaginary).toString();
-          if (convert_decimal === DecimalMarkType.Comma || this.decimal_mark === DecimalMarkType.Comma) {
+          if (convert_decimal === DecimalMarkType.Comma || this.flags.decimal_mark === DecimalMarkType.Comma) {
             imaginary_text = imaginary_text.replace(/\./, ',');
           }
 
           if (unit.real) {
             let real_text = unit.real.toString();
-            if (convert_decimal === DecimalMarkType.Comma || this.decimal_mark === DecimalMarkType.Comma) {
+            if (convert_decimal === DecimalMarkType.Comma || this.flags.decimal_mark === DecimalMarkType.Comma) {
               real_text = real_text.replace(/\./, ',');
             }
   
@@ -568,7 +594,7 @@ export class Parser {
             let text = unit.text;
             if (
               convert_decimal === DecimalMarkType.Comma &&
-              this.decimal_mark === DecimalMarkType.Period
+              this.flags.decimal_mark === DecimalMarkType.Period
             ) {
               text = text.replace(/,/g, ''); // remove grouping
             }
@@ -699,7 +725,7 @@ export class Parser {
     this.id_counter = 0;
 
     // set separator
-    switch (this.argument_separator) {
+    switch (this.flags.argument_separator) {
       case ArgumentSeparatorType.Semicolon:
         this.argument_separator_char = SEMICOLON;
         break;
@@ -709,7 +735,7 @@ export class Parser {
     }
 
     // and decimal mark
-    switch (this.decimal_mark) {
+    switch (this.flags.decimal_mark) {
       case DecimalMarkType.Comma:
         this.decimal_mark_char = COMMA;
         break;
@@ -765,8 +791,8 @@ export class Parser {
       error: this.error,
       error_position: this.error_position,
       dependencies: this.dependencies,
-      separator: this.argument_separator,
-      decimal_mark: this.decimal_mark,
+      separator: this.flags.argument_separator,
+      decimal_mark: this.flags.decimal_mark,
       full_reference_list: this.full_reference_list.slice(0),
     };
   }

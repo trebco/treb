@@ -461,13 +461,19 @@ export class GridBase {
     // CSV assumes dot-decimal, correct? if we want to use the
     // parser we will have to check (and set/reset) the separator
 
+    this.parser.Save();
+    this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+
+    /*
     const toggle_separator = this.parser.decimal_mark === DecimalMarkType.Comma;
 
-    if (toggle_separator) {
+    if (toggle_separator) 
+    {
       // swap
       this.parser.argument_separator = ArgumentSeparatorType.Comma;
       this.parser.decimal_mark = DecimalMarkType.Period;
     }
+    */
 
     const records = ParseCSV(text);
     const arr = records.map((record) =>
@@ -481,11 +487,14 @@ export class GridBase {
         return ValueParser.TryParse(field).value;
       }));
 
+    /*
     if (toggle_separator) {
       // reset
       this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
       this.parser.decimal_mark = DecimalMarkType.Comma;
     }
+    */
+   this.parser.Restore();
   
     const end = {
       row: Math.max(0, arr.length - 1),
