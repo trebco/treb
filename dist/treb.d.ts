@@ -1,4 +1,4 @@
-/*! API v28.12. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v28.13. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -755,6 +755,9 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     /**
      * Create a macro function.
+     *
+     * FIXME: this needs a control for argument separator, like other
+     * functions that use formulas (@see SetRange)
      *
      * @public
      */
