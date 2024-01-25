@@ -2246,13 +2246,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.parser.flags.r1c1 = r1c1;
 
     if (argument_separator === ',') {
-      this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+      this.parser.SetLocaleSettings(DecimalMarkType.Period);
 
       // this.parser.argument_separator = ArgumentSeparatorType.Comma;
       // this.parser.decimal_mark = DecimalMarkType.Period;
     }
     else {
-      this.parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+      this.parser.SetLocaleSettings(DecimalMarkType.Comma);
 
       // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
       // this.parser.decimal_mark = DecimalMarkType.Comma;
@@ -2360,13 +2360,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       */
 
       if (argument_separator === ',') {
-        this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+        this.parser.SetLocaleSettings(DecimalMarkType.Period);
 
         // this.parser.argument_separator = ArgumentSeparatorType.Comma;
         // this.parser.decimal_mark = DecimalMarkType.Period;
       }
       else {
-        this.parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+        this.parser.SetLocaleSettings(DecimalMarkType.Comma);
 
         // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
         // this.parser.decimal_mark = DecimalMarkType.Comma;
@@ -5663,7 +5663,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     if (data.decimal_mark === '.') {
       // parser.decimal_mark = DecimalMarkType.Period;
       // parser.argument_separator = ArgumentSeparatorType.Comma;
-      parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+      parser.SetLocaleSettings(DecimalMarkType.Period);
 
       target_decimal_mark = DecimalMarkType.Comma;
       target_argument_separator = ArgumentSeparatorType.Semicolon;
@@ -5671,7 +5671,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     else {
       // parser.decimal_mark = DecimalMarkType.Comma;
       // parser.argument_separator = ArgumentSeparatorType.Semicolon;
-      parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+      parser.SetLocaleSettings(DecimalMarkType.Comma);
 
       target_decimal_mark = DecimalMarkType.Period;
       target_argument_separator = ArgumentSeparatorType.Comma;

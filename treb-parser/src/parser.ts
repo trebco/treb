@@ -163,25 +163,21 @@ const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
  */
 export class Parser {
  
+  /** 
+   * accessor replacing old field. the actual value is moved to flags,
+   * and should be set via the SetLocaleSettings method.
+   */
   public get argument_separator(): ArgumentSeparatorType {
     return this.flags.argument_separator;
   }
 
-  /* *
-   * argument separator. this can be changed prior to parsing/rendering.
-   * FIXME: use an accessor to ensure type, outside of ts?
+  /** 
+   * accessor replacing old field. the actual value is moved to flags,
+   * and should be set via the SetLocaleSettings method.
    */
-  // protected __argument_separator = ArgumentSeparatorType.Comma;
-
   public get decimal_mark(): DecimalMarkType {
     return this.flags.decimal_mark;
   }
-
-  /* *
-   * decimal mark. this can be changed prior to parsing/rendering.
-   * FIXME: use an accessor to ensure type, outside of ts?
-   */
-  // protected __decimal_mark = DecimalMarkType.Period;
 
   /**
    * unifying flags
@@ -262,16 +258,24 @@ export class Parser {
    */
   protected full_reference_list: Array<UnitAddress | UnitRange | UnitIdentifier | UnitStructuredReference> = [];
 
-  protected parser_state: string[] = [];
+  /**
+   * cache for storing/restoring parser state, if we toggle it
+   */
+  protected parser_state_cache: string[] = [];
 
   /**
    * step towards protecting these values and setting them in one
-   * operation
+   * operation. 
    * 
-   * @param argument_separator 
-   * @param decimal_mark 
+   * UPDATE: switch order. argument separator is optional and implied.
    */
-  public SetLocaleSettings(argument_separator: ArgumentSeparatorType, decimal_mark: DecimalMarkType) {
+  public SetLocaleSettings(decimal_mark: DecimalMarkType, argument_separator?: ArgumentSeparatorType) {
+
+    if (typeof argument_separator === 'undefined') {
+      argument_separator = (decimal_mark === DecimalMarkType.Comma) ? 
+        ArgumentSeparatorType.Semicolon : 
+        ArgumentSeparatorType.Comma ;
+    }
 
     // I suppose semicolon and period is allowable, although no one 
     // uses it. this test only works because we know the internal type
@@ -299,7 +303,7 @@ export class Parser {
    * 
    */
   public Save() {
-    this.parser_state.push(JSON.stringify(this.flags));
+    this.parser_state_cache.push(JSON.stringify(this.flags));
   }
 
   /**
@@ -307,7 +311,7 @@ export class Parser {
    * @see Save
    */
   public Restore() {
-    const json = this.parser_state.shift();
+    const json = this.parser_state_cache.shift();
     if (json) {
       try {
         this.flags = JSON.parse(json) as ParserFlags;

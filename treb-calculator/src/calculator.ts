@@ -1305,13 +1305,13 @@ export class Calculator extends Graph {
     // don't assume default, always set
 
     if (Localization.decimal_separator === ',') {
-      this.parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+      this.parser.SetLocaleSettings(DecimalMarkType.Comma);
 
       // this.parser.decimal_mark = DecimalMarkType.Comma;
       // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
     }
     else {
-      this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+      this.parser.SetLocaleSettings(DecimalMarkType.Period);
 
       // this.parser.decimal_mark = DecimalMarkType.Period;
       // this.parser.argument_separator = ArgumentSeparatorType.Comma;
@@ -1547,13 +1547,13 @@ export class Calculator extends Graph {
 
     if (options.argument_separator) {
       if (options.argument_separator === ',') {
-        this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+        this.parser.SetLocaleSettings(DecimalMarkType.Period);
 
         // this.parser.argument_separator = ArgumentSeparatorType.Comma;
         // this.parser.decimal_mark = DecimalMarkType.Period;
       }
       else {
-        this.parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+        this.parser.SetLocaleSettings(DecimalMarkType.Comma);
 
         // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
         // this.parser.decimal_mark = DecimalMarkType.Comma;

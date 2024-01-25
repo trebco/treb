@@ -1839,7 +1839,7 @@ export class Grid extends GridBase {
       if (options.argument_separator === ',' && this.parser.argument_separator !== ArgumentSeparatorType.Comma) {
         // this.parser.argument_separator = ArgumentSeparatorType.Comma;
         // this.parser.decimal_mark = DecimalMarkType.Period;
-        this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+        this.parser.SetLocaleSettings(DecimalMarkType.Period);
 
         convert = true;
       }
@@ -1847,7 +1847,7 @@ export class Grid extends GridBase {
       if (options.argument_separator === ';' && this.parser.argument_separator !== ArgumentSeparatorType.Semicolon) {
         // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
         // this.parser.decimal_mark = DecimalMarkType.Comma;
-        this.parser.SetLocaleSettings(ArgumentSeparatorType.Semicolon, DecimalMarkType.Comma);
+        this.parser.SetLocaleSettings(DecimalMarkType.Comma);
 
         convert = true;
       }

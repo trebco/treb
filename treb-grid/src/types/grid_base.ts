@@ -462,7 +462,7 @@ export class GridBase {
     // parser we will have to check (and set/reset) the separator
 
     this.parser.Save();
-    this.parser.SetLocaleSettings(ArgumentSeparatorType.Comma, DecimalMarkType.Period);
+    this.parser.SetLocaleSettings(DecimalMarkType.Period);
 
     /*
     const toggle_separator = this.parser.decimal_mark === DecimalMarkType.Comma;
