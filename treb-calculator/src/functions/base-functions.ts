@@ -241,6 +241,51 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
   },
 
+  YearFrac: {
+    description: 'Returns the fraction of a year between two dates',
+    arguments: [
+      { name: 'Start', }, 
+      { name: 'End', },
+      { name: 'Basis', default: 0 },
+    ],
+    fn: (start: number, end: number, basis: number): UnionValue => {
+
+      // is this in the spec? should it not be negative here? (...)
+
+      if (end < start) {
+        const temp = start;
+        start = end;
+        end = temp;
+      }
+
+      const delta = Math.max(0, end - start);
+      let divisor = 360;
+
+      if (basis && basis < 0 || basis > 4) {
+        return ArgumentError();
+      }
+
+      // console.info({start, end, basis, delta});
+
+      switch (basis) {
+        case 1:
+          break;
+        case 2:
+          break;
+        case 3:
+          divisor = 365;
+          break;
+      }
+
+      return {
+        type: ValueType.number,
+        value: delta / divisor,
+      };
+
+      return NAError();
+    },
+  },
+
   Date: {
     description: 'Constructs a Lotus date from parts',
     arguments: [
@@ -296,6 +341,25 @@ export const BaseFunctionLibrary: FunctionMap = {
         return { value: value_if_error, type: GetValueType(value_if_error) } as UnionValue;
       }
       return ref;
+    },
+  },
+
+  IsNA: {
+    description: 'Checks if another cell contains a #NA error',
+    arguments: [{ name: 'reference', allow_error: true, boxed: true }],
+    fn: (...args: UnionValue[]): UnionValue => {
+
+      const values = Utils.FlattenBoxed(args);
+      for (const value of values) {
+        if (value.type === ValueType.error) {
+          if (value.value === 'N/A') {
+            return { type: ValueType.boolean, value: true };
+          }
+        }
+      }
+
+      return { type: ValueType.boolean, value: false };
+
     },
   },
 
@@ -744,16 +808,42 @@ export const BaseFunctionLibrary: FunctionMap = {
      * that, anyway? nearest? price is right style? what about ties?)
      */
     VLookup: {
+
+      arguments: [
+        {
+          name: "Lookup value",
+        },
+        {
+          name: "Table",
+        },
+        {
+          name: "Result index",
+        },
+        {
+          name: "Inexact",
+          default: true,
+        },
+      ],
+
       fn: (value: any, table: any[][], col: number, inexact = true): UnionValue => {
 
         col = Math.max(0, col - 1);
+
+        // console.info({value, table, col, inexact});
+
+        // this is not correct. there's an assumption about the order
+        // of the table that's not handled here.
 
         if (inexact) {
 
           let min = Math.abs(value - table[0][0]);
           let result: any = table[col][0];
-
+         
           for (let i = 1; i < table[0].length; i++) {
+
+            if (table[col][0] == value) {
+              return Box(table[col][i]);
+            }
 
             const abs = Math.abs(table[0][i] - value);
 
@@ -767,9 +857,9 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         }
         else {
-          for (let i = 1; i < table[0].length; i++) {
+          for (let i = 0; i < table[0].length; i++) {
             if (table[0][i] == value) { // ==
-              return table[col][i];
+              return Box(table[col][i]);
             }
           }
           return NAError();
