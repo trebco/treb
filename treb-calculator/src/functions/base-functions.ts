@@ -829,28 +829,50 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         col = Math.max(0, col - 1);
 
-        // console.info({value, table, col, inexact});
-
-        // this is not correct. there's an assumption about the order
-        // of the table that's not handled here.
-
+        // inexact is the default. this assumes that the data is sorted,
+        // either numerically or alphabetically. it returns the closest
+        // value without going over -- meaning walk the list, and when
+        // you're over return the _previous_ item. except if there's an
+        // exact match, I guess, in that case return the exact match.
+        
         if (inexact) {
 
-          let min = Math.abs(value - table[0][0]);
           let result: any = table[col][0];
-         
-          for (let i = 1; i < table[0].length; i++) {
 
-            if (table[col][0] == value) {
-              return Box(table[col][i]);
+          if (typeof value === 'number') {
+
+            let compare = Number(table[0][0]);
+            if (isNaN(compare) || compare > value) {
+              return NAError();
             }
 
-            const abs = Math.abs(table[0][i] - value);
-
-            if (abs < min) { // implies first match
-              min = abs;
+            for (let i = 1; i < table[0].length; i++) {
+              compare = Number(table[0][i]);
+              if (isNaN(compare) || compare > value) {
+                break;
+              }
               result = table[col][i];
+
             }
+
+          }
+          else {
+
+            value = value.toLowerCase(); // ?
+            let compare: string = (table[0][0] || '').toString().toLowerCase();
+            if (compare.localeCompare(value) > 0) {
+              return NAError();
+            }
+
+            for (let i = 1; i < table[0].length; i++) {
+              compare = (table[0][i] || '').toString().toLowerCase();
+              if (compare.localeCompare(value) > 0) {
+                break;
+              }
+              result = table[col][i];
+
+            }
+
           }
 
           return Box(result);
