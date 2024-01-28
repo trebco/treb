@@ -88,6 +88,98 @@ const inverse_normal = (q: number): number => {
 
 };
 
+const zlookup_arguments = [
+  {
+    name: "Lookup value",
+  },
+  {
+    name: "Table",
+  },
+  {
+    name: "Result index",
+  },
+  {
+    name: "Inexact",
+    default: true,
+  },
+];
+
+/**
+ * unified VLOOKUP/HLOOKUP. ordinarily we'd call it XLOOKUP but that's taken.
+ * FIXME: can't use use that function for this? 
+ */
+const ZLookup = (value: any, table: any[][], col: number, inexact = true, transpose = false): UnionValue => {
+
+  if (transpose) {
+    table = Utils.TransposeArray(table);
+  }
+
+  col = Math.max(0, col - 1);
+
+  // inexact is the default. this assumes that the data is sorted,
+  // either numerically or alphabetically. it returns the closest
+  // value without going over -- meaning walk the list, and when
+  // you're over return the _previous_ item. except if there's an
+  // exact match, I guess, in that case return the exact match.
+  
+  // FIXME: there's a hint in the docs for XLOOKUP that this might
+  // be using a binary search. not sure why, but that might be 
+  // correct.
+
+  if (inexact) {
+
+    let result: any = table[col][0];
+
+    if (typeof value === 'number') {
+
+      let compare = Number(table[0][0]);
+      if (isNaN(compare) || compare > value) {
+        return NAError();
+      }
+
+      for (let i = 1; i < table[0].length; i++) {
+        compare = Number(table[0][i]);
+        if (isNaN(compare) || compare > value) {
+          break;
+        }
+        result = table[col][i];
+
+      }
+
+    }
+    else {
+
+      value = value.toLowerCase(); // ?
+      let compare: string = (table[0][0] || '').toString().toLowerCase();
+      if (compare.localeCompare(value) > 0) {
+        return NAError();
+      }
+
+      for (let i = 1; i < table[0].length; i++) {
+        compare = (table[0][i] || '').toString().toLowerCase();
+        if (compare.localeCompare(value) > 0) {
+          break;
+        }
+        result = table[col][i];
+
+      }
+
+    }
+
+    return Box(result);
+
+  }
+  else {
+    for (let i = 0; i < table[0].length; i++) {
+      if (table[0][i] == value) { // ==
+        return Box(table[col][i]);
+      }
+    }
+    return NAError();
+  }
+
+};
+
 /**
  * alternate functions. these are used (atm) only for changing complex 
  * behavior.
@@ -1054,89 +1146,23 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     /**
+     * copied from HLOOKUP, fix that one first
+     */
+    HLookup: {
+      arguments: [...zlookup_arguments],
+      fn: (value: any, table: any[][], col: number, inexact = true): UnionValue => {
+        return ZLookup(value, table, col, inexact, true);
+      },
+    },
+
+    /**
      * FIXME: does not implement inexact matching (what's the algo for
      * that, anyway? nearest? price is right style? what about ties?)
      */
     VLookup: {
-
-      arguments: [
-        {
-          name: "Lookup value",
-        },
-        {
-          name: "Table",
-        },
-        {
-          name: "Result index",
-        },
-        {
-          name: "Inexact",
-          default: true,
-        },
-      ],
-
+      arguments: [...zlookup_arguments],
       fn: (value: any, table: any[][], col: number, inexact = true): UnionValue => {
-
-        col = Math.max(0, col - 1);
-
-        // inexact is the default. this assumes that the data is sorted,
-        // either numerically or alphabetically. it returns the closest
-        // value without going over -- meaning walk the list, and when
-        // you're over return the _previous_ item. except if there's an
-        // exact match, I guess, in that case return the exact match.
-        
-        if (inexact) {
-
-          let result: any = table[col][0];
-
-          if (typeof value === 'number') {
-
-            let compare = Number(table[0][0]);
-            if (isNaN(compare) || compare > value) {
-              return NAError();
-            }
-
-            for (let i = 1; i < table[0].length; i++) {
-              compare = Number(table[0][i]);
-              if (isNaN(compare) || compare > value) {
-                break;
-              }
-              result = table[col][i];
-
-            }
-
-          }
-          else {
-
-            value = value.toLowerCase(); // ?
-            let compare: string = (table[0][0] || '').toString().toLowerCase();
-            if (compare.localeCompare(value) > 0) {
-              return NAError();
-            }
-
-            for (let i = 1; i < table[0].length; i++) {
-              compare = (table[0][i] || '').toString().toLowerCase();
-              if (compare.localeCompare(value) > 0) {
-                break;
-              }
-              result = table[col][i];
-
-            }
-
-          }
-
-          return Box(result);
-
-        }
-        else {
-          for (let i = 0; i < table[0].length; i++) {
-            if (table[0][i] == value) { // ==
-              return Box(table[col][i]);
-            }
-          }
-          return NAError();
-        }
-
+        return ZLookup(value, table, col, inexact, false);
       },
     },
 
