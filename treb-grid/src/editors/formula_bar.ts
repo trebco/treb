@@ -270,6 +270,8 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     this.RegisterListener(descriptor, 'keydown', this.FormulaKeyDown.bind(this));
     this.RegisterListener(descriptor, 'keyup', this.FormulaKeyUp.bind(this));
 
+    // why is this here, instead of in markup? just an oversight?
+
     if (this.options.expand_formula_button) {
       this.expand_button = DOM.Create('button', 'expand-button', inner_node, { 
         events: {
