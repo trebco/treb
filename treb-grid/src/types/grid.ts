@@ -634,6 +634,14 @@ export class Grid extends GridBase {
               this.editing_annotation = annotation;
               this.layout.ShowSelections(true);
             }
+            else if (this.formula_bar?.IsExpandButton(event.relatedTarget as HTMLElement)) {
+
+              // for this particular case, do nothing. basically you are 
+              // expanding/contracting the formula bar. we want to preserve
+              // the selected annotation, if any. after the operation we'll
+              // restore focus.
+
+            }
             else {
               if (this.selected_annotation === annotation) {
                 this.selected_annotation = undefined;

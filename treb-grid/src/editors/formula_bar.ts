@@ -29,9 +29,11 @@ import { DOMContext } from 'treb-base-types';
 
 // --- from formula_bar ---
 
+/*
 export interface FormulaBarResizeEvent {
   type: 'formula-bar-resize';
 }
+*/
 
 export interface FormulaButtonEvent {
   type: 'formula-button';
@@ -46,7 +48,7 @@ export interface AddressLabelEvent {
 
 export type FormulaBar2Event
   = FormulaButtonEvent
-  | FormulaBarResizeEvent
+  // | FormulaBarResizeEvent
   | AddressLabelEvent
   ;
 
@@ -172,6 +174,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
 
     this.InitAddressLabel();
 
+    /*
     if (this.options.insert_function_button) {
       this.button = DOM.Create('button', 'formula-button', inner_node);
       this.button.addEventListener('click', () => {
@@ -179,6 +182,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
         this.Publish({ type: 'formula-button', formula });
       });
     }
+    */
 
     this.container_node = container.querySelector('.treb-editor-container') as HTMLDivElement;
     const target = this.container_node.firstElementChild as HTMLDivElement;
@@ -273,8 +277,15 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     // why is this here, instead of in markup? just an oversight?
 
     if (this.options.expand_formula_button) {
+
+      let focus_related_target: HTMLElement|undefined;
+
       this.expand_button = DOM.Create('button', 'expand-button', inner_node, { 
         events: {
+          focus: (event: FocusEvent) => {
+            focus_related_target = event.relatedTarget instanceof HTMLElement ? event.relatedTarget : undefined;
+          },
+
           click: (event: MouseEvent) => {
             event.stopPropagation();
             event.preventDefault();
@@ -287,6 +298,11 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
             else {
               inner_node.setAttribute('expanded', '');
             }
+
+            if (focus_related_target) {
+              focus_related_target.focus();
+            }
+
           },
         },
       });
@@ -297,6 +313,10 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
 
   public IsElement(element: HTMLElement): boolean {
     return element === this.active_editor?.node;
+  }
+
+  public IsExpandButton(element: HTMLElement): boolean {
+    return this.expand_button && (element === this.expand_button);
   }
 
   public InitAddressLabel() {
