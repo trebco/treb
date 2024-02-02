@@ -68,8 +68,9 @@ export interface GridOptions {
   /* * show delete tab in the tab bar */
   // delete_tab?: boolean;
 
-  /** show the "insert function" button. requires formula bar. */
+  /* * show the "insert function" button. requires formula bar. * /
   insert_function_button?: boolean;
+  */
 
   /** button to increase/reduce size of formula editor */
   expand_formula_button?: boolean;
@@ -97,7 +98,7 @@ export const DefaultGridOptions: GridOptions = {
   formula_bar: true,
   add_tab: false,
   tab_bar: 'auto',
-  insert_function_button: false,
+  // insert_function_button: false,
   expand_formula_button: false,
   expand: true,
   repaint_on_cell_change: true,

@@ -25,11 +25,10 @@
 
       grid-area: 1/1/2/2;
       
-      // min-height: 3em; // FIXME
-
       display: flex;
       flex-direction: row;
       text-align: left;
+      gap: .5em;
 
       &[hidden] {
         display: none;
@@ -39,7 +38,6 @@
 
       max-width: 100%;
       overflow-x: hidden;
-      /* last ditch for IE11 */
 
       /** label for selection address */
       .treb-address-label {
@@ -56,7 +54,7 @@
         justify-content: center;
         padding-left: 3px;
 
-        margin-right: 6px;
+        // margin-right: 6px;
 
         &>div {
           outline: none;
@@ -66,6 +64,20 @@
         }
       }
 
+      .treb-insert-function-button {
+        min-height: 1.5em;
+        height: 1.75em;
+        border: 1px solid var(--treb-formula-bar-border-color, var(--treb-ui-border-color, #ccc));
+        border-radius: 2px;
+        background: transparent;
+
+        &[hidden] {
+          display: none;
+        }
+
+      }
+
+      /** expand formula box -- caret/arrow */
       .expand-button {
         background: transparent;
         border: 0;
@@ -160,7 +172,7 @@
 
       }
 
-      /** f(x) button, optional */
+      /* * f(x) button, optional * /
       .formula-button {
         border: 1px solid #ccc;
         border-radius: 2px;
@@ -188,8 +200,9 @@
         }
 
       }
-    }
+      */
 
-  
+
+    }
 
 }

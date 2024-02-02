@@ -38,7 +38,7 @@
         <div data-bind='message' class='treb-embed-dialog-message'></div>
         <div data-bind='about' class='treb-embed-dialog-body'></div>
       </div>
-      <button type='button' title='Close dialog' data-bind='close' class='treb-close-box'>
+      <button type='button' data-title='close_dialog' data-bind='close' class='treb-close-box'>
         <svg viewBox='0 0 16 16'>
           <path d='M11.854 4.146a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708-.708l7-7a.5.5 0 0 1 .708 0z'/>
           <path d='M4.146 4.146a.5.5 0 0 0 0 .708l7 7a.5.5 0 0 0 .708-.708l-7-7a.5.5 0 0 0-.708 0z'/>
@@ -62,7 +62,9 @@
 
         <div class="treb-formula-bar notranslate" hidden>
           <div class="treb-address-label"><div></div></div>
-          <div class="treb-insert-function-button"></div>
+          <button class="treb-insert-function-button"
+                  data-title="insert_function" 
+                  data-conditional="insert-function">𝑓<small>(x)</small></button>
           <div class="treb-editor-container">
             <div contenteditable="true"></div>
           </div>
@@ -96,7 +98,7 @@
           -->
   
           <!-- converted to button, more appropriate -->
-          <button class="treb-delete-tab" title="Delete current sheet" data-command="delete-tab" data-conditional="delete-tab">
+          <button class="treb-delete-tab" data-title="delete_sheet" data-command="delete-tab" data-conditional="delete-tab">
             <svg tabindex="-1" viewbox='0 0 16 16'><path d='M4,4 L12,12 M12,4 L4,12'/></svg>
           </button>
   
@@ -106,7 +108,8 @@
           </div>
 
           <!-- converted to button, more appropriate -->
-          <button class="treb-add-tab" data-command="add-tab" data-conditional="add-tab" title="Add sheet">+</button>
+          <button class="treb-add-tab" data-command="add-tab" data-conditional="add-tab" 
+                  data-title="add_sheet">+</button>
   
           <!-- 
             we removed the junk node with "flex grow" to split the layout, in
@@ -126,7 +129,8 @@
         
         <div class="treb-revert-indicator" 
               data-command="revert-indicator"
-              title="This document has been modified from the original version."></div>
+              data-title="document_modified"
+              ></div>
 
       </div> <!-- /treb-view -->
     </template>
@@ -134,13 +138,13 @@
   </div>
 
   <div class="treb-layout-sidebar treb-animate">
-    <button data-command="recalculate" title="Recalculate"></button>
-    <button data-command="toggle-toolbar" data-conditional="toolbar" title="Toggle toolbar"></button>
-    <button data-command="export-xlsx" data-conditional="export" title="Export as XLSX"></button>
-    <button data-command="revert" data-conditional="revert" title="Revert to original version"></button>
-    <button data-command="about" title="What's this?"></button>
+    <button data-command="recalculate" data-title="recalculate"></button>
+    <button data-command="toggle-toolbar" data-conditional="toolbar" data-title="toggle_toolbar"></button>
+    <button data-command="export-xlsx" data-conditional="export" data-title="export"></button>
+    <button data-command="revert" data-conditional="revert" data-title="revert"></button>
+    <button data-command="about" data-title="about"></button>
   </div>
 
-  <button class="treb-toggle-sidebar-button" title="Toggle sidebar"></button>
+  <button class="treb-toggle-sidebar-button" data-title="toggle_sidebar"></button>
 
 </div>

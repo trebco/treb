@@ -723,8 +723,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     const grid_options: GridOptions = {
       // expand: false,
-
-      insert_function_button: false, // do we have this?
+      // insert_function_button: false, // do we have this?
       in_cell_editor: true, // if this is always true, why is it an option?
       repaint_on_cell_change: false,
       scrollbars: this.options.scrollbars,

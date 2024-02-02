@@ -13,6 +13,23 @@ import type { ToolbarMessage } from '../toolbar-message';
 
 import { DOMContext } from 'treb-base-types';
 
+/** with a view towards i18n */
+const default_titles: Record<string, string> = {
+
+  close_dialog: 'Close dialog',
+  insert_function: 'Insert function...',
+  delete_sheet: 'Delete current sheet',
+  add_sheet: 'Add sheet',
+  document_modified: 'This document has been modified from the original version.',
+  recalculate: 'Recalculate',
+  toggle_toolbar: 'Toggle toolbar',
+  export: 'Export as XLSX',
+  revert: 'Revert to original version',
+  about: `What's this?`,
+  toggle_sidebar: 'Toggle sidebar',
+
+};
+
 /** @internal */
 export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
@@ -391,6 +408,7 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
       'revert': !!sheet.options.revert_button,
       'toolbar': !!sheet.options.toolbar,
       'export': !!sheet.options.export,
+      'insert-function': !!sheet.options.insert_function_button,
 
       // the following won't work as expected in split, because this
       // code won't be run when the new view is created -- do something
@@ -545,6 +563,24 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
     }
 
+    // --- titles --------------------------------------------------------------
+
+    const elements = Array.from(this.layout_element.querySelectorAll('[data-title]'));
+    for (const element of elements) {
+      if (element instanceof HTMLElement) {
+
+        // temp workaround
+        if (element.dataset.activeTitle) {
+          continue;
+        }
+
+        if (element.dataset.title && default_titles[element.dataset.title]) {
+          element.title = default_titles[element.dataset.title];
+        }
+
+      }
+    }
+
     // --- animated ------------------------------------------------------------
 
     // requestAnimationFrame(() => {
@@ -580,8 +616,8 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
       if (value) {
         // value.classList.remove('treb-active');
         value.removeAttribute('active');
-        if (value.dataset.title) {
-          value.title = value.dataset.title;
+        if (value.dataset.inactiveTitle) {
+          value.title = value.dataset.inactiveTitle;
         } 
       }
     }

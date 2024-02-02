@@ -311,6 +311,11 @@ export interface EmbeddedSpreadsheetOptions {
    */
   recalculate_on_f9?: boolean;
 
+  /**
+   * @internal
+   */
+  insert_function_button?: boolean;
+
 }
 
 /**
