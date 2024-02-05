@@ -44,7 +44,7 @@ import { Theme } from './workbook-theme2';
 import { Sheet, VisibleState } from './workbook-sheet2';
 import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
-import { CellStyle } from 'treb-base-types';
+import type { CellStyle } from 'treb-base-types';
 
 
 /*

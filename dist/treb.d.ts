@@ -1,4 +1,4 @@
-/*! API v28.13. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v28.14. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -1077,7 +1077,7 @@ export interface FreezePane {
     rows: number;
     columns: number;
 }
-export type AnnotationType = 'treb-chart' | 'image' | 'external';
+export type AnnotationType = 'treb-chart' | 'image' | 'textbox' | 'external';
 export declare type BorderConstants = "none" | "all" | "outside" | "top" | "bottom" | "left" | "right";
 
 /**
@@ -1805,7 +1805,7 @@ export interface SerializedGridSelection {
     /** for cacheing addtional selections. optimally don't serialize */
     rendered?: boolean;
 }
-export type AnnotationData = AnnotationChartData | AnnotationImageData | AnnotationExternalData;
+export type AnnotationData = AnnotationChartData | AnnotationImageData | AnnotationExternalData | AnnotationTextBoxData;
 export interface ImageSize {
     width: number;
     height: number;
@@ -1887,6 +1887,19 @@ export interface AnnotationImageData extends AnnotationDataBase {
 }
 export interface AnnotationChartData extends AnnotationDataBase {
     type: 'treb-chart';
+}
+export interface AnnotationTextBoxData extends AnnotationDataBase {
+    type: 'textbox';
+    data: {
+        style?: CellStyle;
+        paragraphs: {
+            style?: CellStyle;
+            content: {
+                text: string;
+                style?: CellStyle;
+            }[];
+        }[];
+    };
 }
 export interface AnnotationExternalData extends AnnotationDataBase {
     type: 'external';
