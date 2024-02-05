@@ -24,7 +24,7 @@
 import UZip from 'uzip';
 import Base64JS from 'base64-js';
 
-import type { AnchoredChartDescription, AnchoredImageDescription} from './workbook2';
+import type { AnchoredChartDescription, AnchoredImageDescription, AnchoredTextBoxDescription} from './workbook2';
 import { ChartType, ConditionalFormatOperators, Workbook } from './workbook2';
 import type { ParseResult } from 'treb-parser';
 import { Parser } from 'treb-parser';
@@ -390,6 +390,20 @@ export class Importer {
 
       case 'expression':
         if (rule.formula) {
+
+          if (typeof rule.formula !== 'string') {
+            console.info("conditional expression", {rule});
+            if (rule.formula.t$) {
+
+              // the only case (to date) we've seen here is that the attribute 
+              // is "xml:space=preserve", which we can ignore (are you sure?)
+              // (should we check that?)
+
+              rule.formula = rule.formula.t$;
+
+            }
+          }
+
           let style = {};
           
           if (rule.a$.dxfId) {
@@ -498,6 +512,26 @@ export class Importer {
     const conditional_formatting = FindAll('worksheet/conditionalFormatting');
     for (const element of conditional_formatting) {
       if (element.a$?.sqref ){
+
+        // FIXME: this attribute might include multiple ranges? e.g.:
+        //
+        // <conditionalFormatting sqref="B31:I31 B10:E30 G10:I30 F14:F15">
+
+        const parts = element.a$.sqref.split(/\s+/);
+        for (const part of parts) {
+          const area = sheet.TranslateAddress(part);
+          if (element.cfRule) {
+            const rules = Array.isArray(element.cfRule) ? element.cfRule : [element.cfRule];
+            for (const rule of rules) {
+              const format = this.ParseConditionalFormat(area, rule);
+              if (format) {
+                conditional_formats.push(format);
+              }
+            }
+          }
+        }
+
+        /*
         const area = sheet.TranslateAddress(element.a$.sqref);
         if (element.cfRule) {
           const rules = Array.isArray(element.cfRule) ? element.cfRule : [element.cfRule];
@@ -508,6 +542,7 @@ export class Importer {
             }
           }
         }
+        */
       }
     }
     
@@ -808,6 +843,7 @@ export class Importer {
     const drawings = FindAll('worksheet/drawing');
     const chart_descriptors: AnchoredChartDescription[] = [];
     const image_descriptors: AnchoredImageDescription[] = [];
+    const textbox_descriptors: AnchoredTextBoxDescription[] = [];
 
     for (const child of drawings) {
       
@@ -831,6 +867,9 @@ export class Importer {
                   break;
                 case 'image':
                   image_descriptors.push(entry);
+                  break;
+                case 'textbox':
+                  textbox_descriptors.push(entry);
                   break;
               }
             }
@@ -872,6 +911,26 @@ export class Importer {
       return result;
 
     };
+
+    for (const descriptor of textbox_descriptors) {
+
+      const layout: AnnotationLayout = {
+        tl: AnchorToCorner(descriptor.anchor.from),
+        br: AnchorToCorner(descriptor.anchor.to),
+      };
+
+      // console.info({descriptor});
+
+      annotations.push({
+        layout, 
+        type: 'textbox',
+        data: {
+          style: descriptor.style,
+          paragraphs: descriptor.paragraphs,
+        }
+      });
+      
+    }
 
     for (const descriptor of image_descriptors) {
       if (descriptor && descriptor.image) {

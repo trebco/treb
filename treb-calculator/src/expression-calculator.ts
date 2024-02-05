@@ -806,14 +806,10 @@ export class ExpressionCalculator {
 
   }
 
-  //protected ElementwiseBinaryExpression(fn: Primitives.PrimitiveBinaryExpression, left: UnionValue[][], right: UnionValue[][]): UnionValue[][] {
   protected ElementwiseBinaryExpression(fn: Primitives.PrimitiveBinaryExpression, left: ArrayUnion, right: ArrayUnion): ArrayUnion {
 
     const columns = Math.max(left.value.length, right.value.length);
     const rows = Math.max(left.value[0].length, right.value[0].length);
-
-    // const columns = Math.max(left.length, right.length);
-    // const rows = Math.max(left[0].length, right[0].length);
 
     const left_values = this.RecycleArray(left.value, columns, rows);
     const right_values = this.RecycleArray(right.value, columns, rows);
@@ -822,8 +818,16 @@ export class ExpressionCalculator {
 
     for (let c = 0; c < columns; c++) {
       const col: UnionValue[] = [];
+
       for (let r = 0; r < rows; r++ ) {
-        col[r] = fn(left_values[c][r], right_values[c][r]);
+
+        // handle undefineds. this is unfortunate. shouldn't the recycle 
+        // function do that? ...CHECK/TODO/FIXME
+
+        col[r] = fn(
+          left_values[c][r] || { type: ValueType.undefined }, 
+          right_values[c][r] || { type: ValueType.undefined });
+        
       }
       value.push(col);
     }

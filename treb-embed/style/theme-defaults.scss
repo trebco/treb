@@ -519,4 +519,24 @@ $text-reference-color-5: rgb(254, 47, 1);
     font-family: var(--treb-grid-font-family-osx, var(--treb-grid-font-family, inherit));
   }
 
+  /**
+   *
+   */
+  .treb-annotation-textbox {
+    background: Canvas;
+    position: relative;
+    top: 0px;
+    left: 0px;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    padding: .5em; // ?
+
+    p {
+      margin-block-start: 0;
+      margin-block-end: 0;
+    }
+
+  }
+
 }

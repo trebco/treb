@@ -19,7 +19,7 @@
  * 
  */
 
-import type { ICellAddress, AnnotationLayout, IRectangle } from 'treb-base-types';
+import type { ICellAddress, AnnotationLayout, IRectangle, CellStyle } from 'treb-base-types';
 import { Rectangle } from 'treb-base-types';
 
 /**
@@ -97,7 +97,7 @@ export interface ImageAnnotationData {
   
 }
 
-export type AnnotationType = 'treb-chart'|'image'|'external';
+export type AnnotationType = 'treb-chart'|'image'|'textbox'|'external';
 
 /**
  * splitting persisted data from the annotation class. that class might
@@ -182,12 +182,26 @@ export interface AnnotationChartData extends AnnotationDataBase {
   type: 'treb-chart';
 }
 
+export interface AnnotationTextBoxData extends AnnotationDataBase {
+  type: 'textbox';
+  data: {
+    style?: CellStyle;
+    paragraphs: { 
+      style?: CellStyle,
+      content: {
+        text: string, 
+        style?: CellStyle 
+      }[],
+    }[];
+  };
+};
+
 export interface AnnotationExternalData extends AnnotationDataBase {
   type: 'external';
   data: Record<string, string>;
 }
 
-export type AnnotationData = AnnotationChartData | AnnotationImageData | AnnotationExternalData;
+export type AnnotationData = AnnotationChartData | AnnotationImageData | AnnotationExternalData | AnnotationTextBoxData;
 
 /**
  * why is this a class? it doesn't do anything.

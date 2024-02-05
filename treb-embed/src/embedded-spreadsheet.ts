@@ -2077,6 +2077,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       for (const format of sheet.conditional_formats) {
         format.internal = undefined;
       }
+      for (const annotation of sheet.annotations) {
+        if (annotation.view && annotation.data.type === 'textbox') {
+          const view: AnnotationViewData = annotation.view[this.grid.view_index] || {};
+          if (view.update_callback) {
+            view.update_callback();
+          }
+        }
+      }
     }
 
     this.calculator.UpdateConditionals();
@@ -5348,6 +5356,60 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         }
 
       }
+      else if (annotation.data.type === 'textbox') {
+
+        if (annotation.data.data) {
+          const container = document.createElement('div');
+          container.classList.add('treb-annotation-textbox');
+
+          for (const paragraph of annotation.data.data.paragraphs) {
+            const p = document.createElement('p');
+            if (paragraph.style) {
+              if (paragraph.style.horizontal_align === 'right' || 
+                  paragraph.style.horizontal_align === 'center') {
+                p.style.textAlign = paragraph.style.horizontal_align;
+              }
+            }
+
+            for (const entry of paragraph.content) {
+              const span = document.createElement('span');
+              span.textContent = entry.text || '';
+              if (entry.style?.bold) {
+                span.style.fontWeight = '600';
+              }
+              p.appendChild(span);
+            }
+            container.append(p);
+          }
+
+          view.content_node.append(container);
+
+          if (annotation.data.data.style) {
+
+            const style = annotation.data.data.style;
+            const update_textbox = () => {
+
+              if (style.fill) {
+                const color = ThemeColor2(this.grid.theme, style.fill);
+                container.style.background = color;
+              }
+
+            };
+
+            view.update_callback = () => {
+              if (!this.grid.headless) {
+                update_textbox();
+              }
+            };
+
+            update_textbox();
+
+          }
+
+        }
+
+      }
+
     }
   }
 
