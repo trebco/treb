@@ -913,6 +913,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         { name: 'Match mode', default: 0, },
         { name: 'Search mode', default: 1, },
       ],
+      xlfn: true,
       fn: (
           lookup_value: any, 
           lookup_array: any[][], 
