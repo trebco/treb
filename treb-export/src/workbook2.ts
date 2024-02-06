@@ -434,6 +434,9 @@ export class Workbook {
                 if (appr.a$?.algn === 'r') {
                   style.horizontal_align = 'right';
                 }
+                else if (appr.a$?.algn === 'ctr') {
+                  style.horizontal_align = 'center';
+                }
               }
 
               let ar = paragraph['a:r'];
@@ -453,6 +456,9 @@ export class Workbook {
                     entry.style = {};
                     if (fmt.a$?.b === '1') {
                       entry.style.bold = true;
+                    }
+                    if (fmt.a$?.i === '1') {
+                      entry.style.italic = true;
                     }
                   }
 

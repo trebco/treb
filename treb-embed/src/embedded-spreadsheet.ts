@@ -5377,6 +5377,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               if (entry.style?.bold) {
                 span.style.fontWeight = '600';
               }
+              if (entry.style?.italic) {
+                span.style.fontStyle = 'italic';
+              }
               p.appendChild(span);
             }
             container.append(p);

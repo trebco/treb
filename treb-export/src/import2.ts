@@ -170,8 +170,13 @@ export class Importer {
           const parse_result = this.parser.Parse(formula); // l10n?
           if (parse_result.expression) {
             this.parser.Walk(parse_result.expression, (unit) => {
-              if (unit.type === 'call' && /^_xll\./.test(unit.name)) {
-                unit.name = unit.name.substr(5);
+              if (unit.type === 'call') {
+                if (/^_xll\./.test(unit.name)) {
+                  unit.name = unit.name.substring(5);
+                }
+                else if (/^_xlfn\./.test(unit.name)) {
+                  unit.name = unit.name.substring(6);
+                }
               }
               return true;
             });

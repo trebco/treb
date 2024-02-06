@@ -44,7 +44,7 @@ export class SharedStrings {
       //   <t>text here!</t>
       // </si>
 
-      if (si.t) {
+      if (si.t !== undefined) {
 
         // seen recently in the wild, text with leading (or trailing) spaces
         // has an attribute xml:space=preserve (which makes sense, but was not
