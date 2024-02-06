@@ -92,10 +92,17 @@ export class NamedRangeCollection {
       console.warn('invalid name');
       return false;
     }
+
+    // why is this considered invalid here? I've seen it done. 
+    // maybe something we're doing with these ranges doesn't 
+    // collapse them? (...)
+
     if (range.entire_column || range.entire_row) {
-      console.warn('invalid range');
+      console.info({range});
+      console.warn(`invalid range`);
       return false;
     }
+
     this.forward[validated] = range;
     if (apply) {
       this.RebuildList();
