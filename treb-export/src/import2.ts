@@ -93,7 +93,7 @@ export class Importer {
           ref?: string;
         },
       };
-    }, // ElementTree.Element,
+    },
     shared_formulae: SharedFormulaMap,
     arrays: RangeType[],
     merges: RangeType[],
@@ -117,11 +117,9 @@ export class Importer {
     // console.info(element);
 
     let value: undefined | number | boolean | string;
-    // let type: ValueType = ValueType.undefined;
     let type: SerializedValueType = 'undefined';
 
     let calculated_value: undefined | number | boolean | string;
-    // let calculated_type: ValueType = ValueType.undefined;
     let calculated_type: SerializedValueType = 'undefined';
     
     // QUESTIONS:
@@ -397,7 +395,6 @@ export class Importer {
         if (rule.formula) {
 
           if (typeof rule.formula !== 'string') {
-            console.info("conditional expression", {rule});
             if (rule.formula.t$) {
 
               // the only case (to date) we've seen here is that the attribute 
@@ -405,6 +402,10 @@ export class Importer {
               // (should we check that?)
 
               rule.formula = rule.formula.t$;
+
+            }
+            else {
+              console.info("unexpected conditional expression", {rule});
 
             }
           }
@@ -536,18 +537,6 @@ export class Importer {
           }
         }
 
-        /*
-        const area = sheet.TranslateAddress(element.a$.sqref);
-        if (element.cfRule) {
-          const rules = Array.isArray(element.cfRule) ? element.cfRule : [element.cfRule];
-          for (const rule of rules) {
-            const format = this.ParseConditionalFormat(area, rule);
-            if (format) {
-              conditional_formats.push(format);
-            }
-          }
-        }
-        */
       }
     }
     

@@ -669,7 +669,7 @@ export class StyleCache {
 
     // indent
 
-    props.indent = xf.indent;
+    props.indent = (typeof xf.indent === 'string') ? Number(xf.indent) : xf.indent;
 
     // wrap
 
@@ -722,6 +722,19 @@ export class StyleCache {
 
   /** map all cell xfs to styles; retain order */
   public CellXfToStyles(): CellStyle[] {
+
+    /*
+    const mapped = this.cell_xfs.map((xf, index) => {
+      const style = this.CellXfToStyle(xf);
+      if (style.font_size?.value && style.font_size.value > 200) {
+        console.info({index, fs: JSON.stringify(style.font_size), style, xf});
+        console.info(this);
+      }
+      return style;
+    });
+    return mapped;
+    */
+
     return this.cell_xfs.map((xf) => this.CellXfToStyle(xf));
   }
 
@@ -1174,32 +1187,7 @@ export class StyleCache {
     
 
     this.borders = composite.map(element => {
-
       const border: BorderStyle = JSON.parse(JSON.stringify(default_border));
-
-      /*
-      // we're relying on these being empty strings -> falsy, not a good look
-
-      if (element.left) {
-        // border.left.style = element.left.a$.style;
-        // border.left.color = Number(element.left.color?.a$?.indexed);
-      }
-
-      if (element.right) {
-        // border.right.style = element.right.a$.style;
-        // border.right.color = Number(element.right.color?.a$?.indexed);
-      }
-
-      if (element.top) {
-        // border.top.style = element.top.a$.style;
-        // border.top.color = Number(element.top.color?.a$?.indexed);
-      }
-
-      if (element.bottom) {
-        // border.bottom.style = element.bottom.a$.style;
-        // border.bottom.color = Number(element.bottom.color?.a$?.indexed);
-      }
-      */
 
       ElementToBorderEdge(element.left, border.left);
       ElementToBorderEdge(element.right, border.right);
@@ -1207,7 +1195,6 @@ export class StyleCache {
       ElementToBorderEdge(element.bottom, border.bottom);
       
       return border;
-
     });
 
     // ---
@@ -1313,6 +1300,7 @@ export class StyleCache {
         if (element.color.a$?.rgb) {
           font.color_argb = element.color.a$.rgb;
         }
+
       }
 
       return font;
