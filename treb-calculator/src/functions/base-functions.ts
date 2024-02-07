@@ -729,6 +729,68 @@ export const BaseFunctionLibrary: FunctionMap = {
       })
     },
 
+    Large: {
+      description: 'Returns the nth numeric value from the data, in descending order',
+      arguments: [
+        {
+          name: 'values',
+        }, 
+        {
+          name: 'index',
+        }
+      ],
+      fn: (data: any, index: number) => {
+
+        if (index <= 0) {
+          return ArgumentError();
+        }
+
+        const flat = Utils.FlattenUnboxed(data);
+        const numeric: number[] = flat.filter(test => typeof test === 'number');
+        numeric.sort((a, b) => b - a);
+
+        if (index <= numeric.length) {
+          return {
+            type: ValueType.number,
+            value: numeric[index - 1],
+          };
+        }
+
+        return ArgumentError();
+      },
+    },
+
+    Small: {
+      description: 'Returns the nth numeric value from the data, in ascending order',
+      arguments: [
+        {
+          name: 'values',
+        }, 
+        {
+          name: 'index',
+        }
+      ],
+      fn: (data: any, index: number) => {
+
+        if (index <= 0) {
+          return ArgumentError();
+        }
+
+        const flat = Utils.FlattenUnboxed(data);
+        const numeric: number[] = flat.filter(test => typeof test === 'number');
+        numeric.sort((a, b) => a - b);
+
+        if (index <= numeric.length) {
+          return {
+            type: ValueType.number,
+            value: numeric[index - 1],
+          };
+        }
+
+        return ArgumentError();
+      },
+    },
+
     /**
      * sort arguments, but ensure we return empty strings to
      * fill up the result array
