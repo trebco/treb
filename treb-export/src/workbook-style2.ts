@@ -76,6 +76,7 @@ export interface CellXf {
   horizontal_alignment?: string;
   vertical_alignment?: string;
   xfid?: number;
+  indent?: number;
 
   // FIXME // apply_font?: boolean;
   // FIXME // apply_border?: boolean;
@@ -157,6 +158,7 @@ export interface StyleOptions {
   vertical_alignment?: string;
   wrap?: boolean;
   fill?: Fill;
+  indent?: number;
 }
 
 
@@ -434,6 +436,8 @@ export class StyleCache {
         break;
     }
 
+    options.indent = composite.indent;
+
     if (composite.fill) {
       fill.pattern_type = 'solid';
       if (composite.fill.text) {
@@ -662,6 +666,10 @@ export class StyleCache {
         props.vertical_align = 'bottom'; // Style.VerticalAlign.Bottom;
         break;
     }
+
+    // indent
+
+    props.indent = xf.indent;
 
     // wrap
 
@@ -1091,6 +1099,7 @@ export class StyleCache {
           xf.border === border_index &&
           xf.number_format === number_format_index &&
           !!xf.wrap_text === !!options.wrap &&
+          xf.indent === options.indent &&
           ((!options.horizontal_alignment && !xf.horizontal_alignment) || options.horizontal_alignment === xf.horizontal_alignment) &&
           ((!options.vertical_alignment && !xf.vertical_alignment) || options.vertical_alignment === xf.vertical_alignment)) {
           
@@ -1106,6 +1115,7 @@ export class StyleCache {
       fill: fill_index,
       border: border_index,
       number_format: number_format_index,
+      indent: options.indent,
     };
 
     if (options.horizontal_alignment) {
@@ -1119,44 +1129,6 @@ export class StyleCache {
     }
 
     this.cell_xfs.push(new_xf);
-
-    /*
-
-    // add the node structure
-
-    if (!this.dom) throw new Error('missing dom');
-    const xfs = this.dom.find('./cellXfs');
-
-    if (!xfs) throw new Error('xfs not found');
-    xfs.attrib.count = (Number(xfs.attrib.count || 0) + 1).toString();
-
-    const new_element = Element('xf', {
-      borderId: new_xf.border.toString(),
-      fillId: new_xf.fill.toString(),
-      fontId: new_xf.font.toString(),
-      numFmtId: new_xf.number_format.toString(),
-    });
-
-    if (new_xf.horizontal_alignment || new_xf.vertical_alignment) {
-      const attrs: {[index: string]: string} = {};
-      if (new_xf.horizontal_alignment) {
-        attrs.horizontal = new_xf.horizontal_alignment;
-      }
-      if (new_xf.vertical_alignment) {
-        attrs.vertical = new_xf.vertical_alignment;
-      }
-      if (new_xf.wrap_text) {
-        attrs.wrapText = '1';
-      }
-      new_element.append(Element('alignment', attrs));
-    }
-
-    if (typeof new_xf.xfid !== 'undefined') {
-      new_element.attrib.xfId = new_xf.xfid.toString();
-    }
-
-    xfs.append(new_element);
-    */
 
     return this.cell_xfs.length - 1;
 
@@ -1255,6 +1227,7 @@ export class StyleCache {
         xf.horizontal_alignment = element.alignment.a$.horizontal;
         xf.vertical_alignment = element.alignment.a$.vertical;
         xf.wrap_text = !!element.alignment.a$.wrapText;
+        xf.indent = element.alignment.a$.indent || undefined;
       }
 
       return xf;

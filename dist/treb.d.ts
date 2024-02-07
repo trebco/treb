@@ -1,4 +1,4 @@
-/*! API v28.14. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v28.15. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -1273,6 +1273,9 @@ export interface CellStyle {
 
     /** border color */
     border_bottom_fill?: Color;
+
+    /** text indent */
+    indent?: number;
 
     /**
      * cell is locked for editing

@@ -34,6 +34,7 @@ import type { BaseLayout, TileRange } from '../layout/base_layout';
 import type { DataModel, ViewModel } from '../types/data_model';
 import type { GridOptions } from '../types/grid_options';
 
+const DEFAULT_INDENT = '  '; // two spaces in the current font
 const BASELINE = 'bottom';
 const WK = /webkit/i.test(typeof navigator === 'undefined' ? '' : navigator?.userAgent || '') ? 1 : 0;
 
@@ -723,6 +724,15 @@ export class TileRenderer {
     let override_formatting: string | undefined;
     let formatted = cell.editing ? '' : cell.formatted; // <-- empty on editing, to remove overflows
 
+    // precalculate indent as string so we can use layout
+
+    let indent = '';
+    if (style.indent) {
+      for (let i = 0; i < style.indent; i++) {
+        indent += DEFAULT_INDENT;
+      }
+    }
+
     if (Array.isArray(formatted)) {
 
       // type 1 is a multi-part formatted string; used for number formats.
@@ -732,6 +742,15 @@ export class TileRenderer {
       // (potentially yes? what happens if you have a string in a number-formatted cell?)
 
       // this is a single line, with number formatting
+
+      if (indent) {
+        if (style.horizontal_align === 'left') {
+          formatted.unshift({ text: indent });
+        }
+        else if (style.horizontal_align === 'right') {
+          formatted.push({ text: indent });
+        }
+      }
 
       for (const part of formatted) {
         if (part.flag === TextPartFlag.formatting) {
@@ -810,10 +829,13 @@ export class TileRenderer {
 
       // for wrapping
 
-      const bound = cell_width - (2 * this.cell_edge_buffer);
+      let bound = cell_width - (2 * this.cell_edge_buffer);
       const strings: RenderTextPart[][] = [];
 
       if (style.wrap) {
+
+        const indent_width = (indent && style.horizontal_align !== 'center') ? context.measureText(indent).width : 0;
+        bound -= indent_width;
 
         for (const line of md) {
 
@@ -921,14 +943,25 @@ export class TileRenderer {
 
             max_width = Math.max(max_width, last.width);
 
-            strings.push(line2.map((metric) => {
+            const line_string = line2.map((metric) => {
               return {
                 ...metric.part,
                 hidden: false, 
                 width: metric.width, 
                 text: metric.text, 
               };
-            }));
+            });
+
+            if (style.indent) {
+              if (style.horizontal_align === 'left') {
+                line_string.unshift({ text: indent, hidden: false, width: indent_width });
+              }
+              else if (style.horizontal_align === 'right') {
+                line_string.push({ text: indent, hidden: false, width: indent_width });
+              }
+            }
+
+            strings.push(line_string);
 
           }
 
@@ -939,8 +972,18 @@ export class TileRenderer {
 
         // simple case
 
+
         for (const line of md) {
           const parts: RenderTextPart[] = [];
+
+          if (style.indent) {
+            if (style.horizontal_align === 'left') {
+              line.unshift({ text: indent });
+            }
+            else if (style.horizontal_align === 'right') {
+              line.push({ text: indent });
+            }
+          }
 
           let line_width = 0;
 

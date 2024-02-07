@@ -145,6 +145,9 @@ export interface CellStyle {
   /** border color */
   border_bottom_fill?: Color;
 
+  /** text indent */
+  indent?: number;
+
   /**
    * cell is locked for editing
    * 

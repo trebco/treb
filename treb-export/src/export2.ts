@@ -224,9 +224,10 @@ export class Exporter {
         },
       };
 
-      if (xf.horizontal_alignment || xf.vertical_alignment || xf.wrap_text) {
+      if (xf.horizontal_alignment || xf.vertical_alignment || xf.wrap_text || xf.indent) {
         // block.a$.applyAlignment = 1;
         block.alignment = { a$: {}};
+
         if (xf.horizontal_alignment) {
           block.alignment.a$.horizontal = xf.horizontal_alignment;
         }
@@ -236,6 +237,10 @@ export class Exporter {
         if (xf.wrap_text) {
           block.alignment.a$.wrapText = 1;
         }
+        if (xf.indent && xf.horizontal_alignment !== 'center') {
+          block.alignment.a$.indent = xf.indent;
+        }
+
       }
 
       return block;
