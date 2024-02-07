@@ -978,7 +978,7 @@ export class Grid extends GridBase {
 
         const validated = this.model.named_ranges.ValidateNamed(name);
         if (!validated) {
-          console.warn(`invalid name: ${name}`);
+          console.warn(`invalid name: ${name}`, import_data.names[name]);
           continue;
         }
 
