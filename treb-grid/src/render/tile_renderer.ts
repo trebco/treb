@@ -744,11 +744,11 @@ export class TileRenderer {
       // this is a single line, with number formatting
 
       if (indent) {
-        if (style.horizontal_align === 'left') {
-          formatted.unshift({ text: indent });
-        }
-        else if (style.horizontal_align === 'right') {
+        if (style.horizontal_align === 'right') {
           formatted.push({ text: indent });
+        }
+        else if (style.horizontal_align !== 'center') {
+          formatted.unshift({ text: indent });
         }
       }
 
@@ -953,12 +953,13 @@ export class TileRenderer {
             });
 
             if (style.indent) {
-              if (style.horizontal_align === 'left') {
-                line_string.unshift({ text: indent, hidden: false, width: indent_width });
-              }
-              else if (style.horizontal_align === 'right') {
+              if (style.horizontal_align === 'right') {
                 line_string.push({ text: indent, hidden: false, width: indent_width });
               }
+              else if (style.horizontal_align !== 'center') {
+                line_string.unshift({ text: indent, hidden: false, width: indent_width });
+              }
+    
             }
 
             strings.push(line_string);
@@ -977,12 +978,13 @@ export class TileRenderer {
           const parts: RenderTextPart[] = [];
 
           if (style.indent) {
-            if (style.horizontal_align === 'left') {
-              line.unshift({ text: indent });
-            }
-            else if (style.horizontal_align === 'right') {
+            if (style.horizontal_align === 'right') {
               line.push({ text: indent });
             }
+            else if (style.horizontal_align !== 'center') {
+              line.unshift({ text: indent });
+            }
+    
           }
 
           let line_width = 0;
