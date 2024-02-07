@@ -739,7 +739,12 @@ export const BaseFunctionLibrary: FunctionMap = {
           name: 'index',
         }
       ],
-      fn: (data: any, index: number) => {
+
+      // OK a little tricky here -- we're going to reverse the arguments
+      // so we can call apply as array, but applying against the trailing
+      // arguments.
+
+      fn: Utils.ApplyAsArraySwap((data: any, index: number) => {
 
         if (index <= 0) {
           return ArgumentError();
@@ -757,7 +762,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return ArgumentError();
-      },
+      }),
     },
 
     Small: {
@@ -770,7 +775,10 @@ export const BaseFunctionLibrary: FunctionMap = {
           name: 'index',
         }
       ],
-      fn: (data: any, index: number) => {
+
+      // see large, above
+
+      fn: Utils.ApplyAsArraySwap((data: any, index: number) => {
 
         if (index <= 0) {
           return ArgumentError();
@@ -788,7 +796,8 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return ArgumentError();
-      },
+
+      }),
     },
 
     /**

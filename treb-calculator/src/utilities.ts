@@ -193,22 +193,52 @@ export const ApplyArrayFunc = (base: (...args: any[]) => any) => {
   };
 };
 
+export const ApplyAsArraySwap = (base: (...args: any[]) => UnionValue) => {
+  return (...args: any[]): UnionValue => {
+
+    // swap here
+    args.reverse();
+    const [a, ...rest] = args;
+
+    if (Array.isArray(a)) {
+      return {
+        type: ValueType.array,
+        value: a.map(row => row.map((element: any) => {
+
+          // swap back
+          const swapped = [...rest, element];
+          return base(...swapped);
+
+        })),
+      };
+    }
+    else if (typeof a === 'object' && !!a && a.type === ValueType.array ) {
+      return {
+        type: ValueType.array,
+        value: (a as ArrayUnion).value.map(row => row.map((element: any) => {
+
+          const swapped = [...rest, element];
+          return base(...swapped);
+
+        })),
+      };
+      
+    }
+    else {
+      return base(...rest, a);
+    }
+  }
+};
+
 export const ApplyAsArray = (base: (a: any, ...rest: any[]) => UnionValue) => {
   return (a: any, ...rest: any[]): UnionValue => {
     if (Array.isArray(a)) {
-
       return {
         type: ValueType.array,
         value: a.map(row => row.map((element: any) => {
           return base(element, ...rest);
         })),
       };
-
-      /*
-      return a.map(row => row.map((element: any) => {
-        return base(element, ...rest);
-      }));
-      */
     }
     else if (typeof a === 'object' && !!a && a.type === ValueType.array ) {
       return {
@@ -280,23 +310,6 @@ export const ApplyAsArray2 = (base: (a: any, b: any, ...rest: any[]) => UnionVal
       };
     }
 
-    /*
-    if (Array.isArray(a)) {
-      if (Array.isArray(b)) {
-        return a.map((row, i: number) => row.map((element: any, j: number) => {
-          return base(element, b[i][j], ...rest);
-        }));
-      }
-      else {
-        return a.map(row => row.map((element: any) => {
-          return base(element, b, ...rest);
-        }));
-      }
-    }
-    else {
-      return base(a, b, ...rest);
-    }
-    */
     return base(a, b, ...rest);
 
   }
