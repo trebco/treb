@@ -317,9 +317,7 @@ export interface EmbeddedSpreadsheetOptions {
   insert_function_button?: boolean;
 
   /**
-   * default false
-   * 
-   * @internal
+   * indent/outdent buttons; default false
    */
   indent_buttons?: boolean;
 

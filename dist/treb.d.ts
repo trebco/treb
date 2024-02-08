@@ -271,6 +271,11 @@ export interface EmbeddedSpreadsheetOptions {
      * change in the future. key modifiers have no effect.
      */
     recalculate_on_f9?: boolean;
+
+    /**
+     * indent/outdent buttons; default false
+     */
+    indent_buttons?: boolean;
 }
 
 /**
