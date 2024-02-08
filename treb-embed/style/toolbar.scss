@@ -264,6 +264,9 @@ $swatch-size: 18px;
     [data-command=justify-right] { --icon: var(--icon-text-align-right); }
     [data-command=justify-center] { --icon: var(--icon-text-align-center); }
 
+    [data-command=indent] { --icon: var(--icon-text-indent); }
+    [data-command=outdent] { --icon: var(--icon-text-outdent); }
+
     [data-command=align-top] { --icon: var(--icon-text-align-top); }
     [data-command=align-middle] { --icon: var(--icon-text-align-middle); }
     [data-command=align-bottom] { --icon: var(--icon-text-align-bottom); }

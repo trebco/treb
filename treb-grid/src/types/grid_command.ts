@@ -52,6 +52,7 @@ export enum CommandKey {
   SetRange,
   UpdateStyle,
   UpdateBorders,
+  Indent,
   MergeCells,
   UnmergeCells,
   Clear,
@@ -278,6 +279,12 @@ export interface UpdateBordersCommand {
   width?: number;
 }
 
+export interface IndentCommand {
+  key: CommandKey.Indent,
+  area: IArea,
+  delta: number,
+}
+
 /** update style in area. area can be cell(s), sheet, row(s), column(s) */
 export interface UpdateStyleCommand {
   key: CommandKey.UpdateStyle;
@@ -465,6 +472,7 @@ export type Command =
   | ResetCommand
   | SelectCommand
   | FreezeCommand
+  | IndentCommand
   | SetNoteCommand
   | SetLinkCommand
   | SetNameCommand

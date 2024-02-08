@@ -1846,6 +1846,18 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           });
           break;
 
+        case 'indent':
+        case 'outdent':
+
+          // hmmm. we should actually adjust selection cell-by-cell so
+          // all entries get +1/-1 from their current level. we don't 
+          // want to normalize here. this is unusual.
+
+          // let's make a method here in case we want to use this again
+
+          this.grid.Indent(undefined, (event.command === 'indent') ? 1 : -1);
+          break;
+
         default:
           console.info('unhandled', event.command);
           break;

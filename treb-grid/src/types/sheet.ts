@@ -2048,6 +2048,15 @@ export class Sheet {
 
   }
 
+  /** specialization */
+  public GetCellStyle(area: ICellAddress, apply_theme?: boolean): CellStyle;
+
+  /** specialization */
+  public GetCellStyle(area: IArea, apply_theme?: boolean): CellStyle[][];
+
+  /** extra specialization */
+  public GetCellStyle<K extends ICellAddress|IArea>(area: K, apply_theme?: boolean): CellStyle|CellStyle[][];
+
   /**
    * this is a new GetCellStyle function, used for external access
    * to style (for API access). there was an old GetCellStyle function

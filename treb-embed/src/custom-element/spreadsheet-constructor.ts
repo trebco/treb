@@ -910,6 +910,9 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
     if (!sheet.options.file_menu) {
       remove.push(toolbar.querySelector('[file-menu]'));
     }
+    if (!sheet.options.indent_buttons) {
+      remove.push(toolbar.querySelector('[indent-group]'));
+    }
     if (!sheet.options.font_scale) {
       remove.push(toolbar.querySelector('[font-scale]'));
     }

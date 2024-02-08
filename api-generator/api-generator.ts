@@ -592,10 +592,14 @@ function CollectDependencyTransformer<T extends ts.Node>(
         // must be public).
 
         if (ts.isIdentifier(node.name)) {
-
           if (!is_public || internal) {
             return undefined; // don't recurse
           }
+        }
+        else if (ts.isComputedPropertyName(node.name)) {
+
+          // this is probably [Symbol.iterator] -- are there other
+          // computed property names? should we check? (...)
 
         }
         else {

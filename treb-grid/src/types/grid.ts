@@ -2044,6 +2044,21 @@ export class Grid extends GridBase {
   }
   */
 
+  public Indent(area?: Area, delta = 0): void {
+
+    if (!area) {
+      if (this.primary_selection.empty) { return; }
+      area = this.primary_selection.area;
+    }
+
+    this.ExecCommand({
+      key: CommandKey.Indent,
+      area, 
+      delta,
+    });
+
+  }
+
   /** updated API method, probably change the name */
   public ApplyBorders2(area?: Area, borders: BorderConstants = BorderConstants.None, color?: Color, width = 1): void {
 

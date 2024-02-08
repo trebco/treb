@@ -80,6 +80,10 @@ export interface RevertIndicatorMessage {
   command: 'revert-indicator';
 }
 
+export interface IndentMessage {
+  command: 'indent'|'outdent';
+}
+
 export type ToolbarMessage 
   = SetColorToolbarMessage 
   | CommentToolbarMessage 
@@ -96,6 +100,7 @@ export type ToolbarMessage
   | TableToolbarMessage
   | CommandToolbarMessage
   | StyleToolbarMessage
+  | IndentMessage
   | NumberFormatToolbarMessage
   | FontScaleToolbarMessage
   ;

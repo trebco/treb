@@ -1843,6 +1843,7 @@ export class GridBase {
         case CommandKey.Clear:
         case CommandKey.SetNote:
         case CommandKey.SetLink:
+        case CommandKey.Indent:
         case CommandKey.UpdateBorders:
         case CommandKey.MergeCells:
         case CommandKey.UnmergeCells:
@@ -3792,6 +3793,39 @@ export class GridBase {
 
             flags.structure_event = true;
             flags.structure_rebuild_required = true;
+          }
+          break;
+
+        case CommandKey.Indent:
+          {
+            let area: Area|undefined;
+            const sheet = this.FindSheet(command.area);
+
+            if (IsCellAddress(command.area)) {
+              area = new Area(command.area);
+              const style = sheet.GetCellStyle(command.area, true);
+              sheet.UpdateCellStyle(command.area, {
+                indent: Math.max(0, (style.indent || 0) + command.delta),
+              }, true);
+            }
+            else {
+              area = new Area(command.area.start, command.area.end);
+              for (const address of area) {
+                const style = sheet.GetCellStyle(address, true);
+                sheet.UpdateCellStyle(address, {
+                  indent: Math.max(0, (style.indent || 0) + command.delta),
+                }, true);
+              };
+            }
+
+            if (sheet === this.active_sheet) {
+              flags.style_area = Area.Join(area, flags.style_area);
+              flags.render_area = Area.Join(area, flags.render_area);
+            }
+            else {
+              flags.style_event = true;
+            }
+
           }
           break;
 

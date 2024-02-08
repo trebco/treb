@@ -637,6 +637,38 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
     return this; // fluent
   }
 
+  /** modernizing */
+  public [Symbol.iterator](): Iterator<ICellAddress> {
+
+    if (this.entire_row || this.entire_column) {
+      throw new Error(`don't iterate infinite area`);
+    }
+    
+    let r = this.start_.row;
+    let c = this.start_.column;
+
+    return {
+      next: () => {
+
+        const value = { column: c, row: r, sheet_id: this.start_.sheet_id };
+        const done = c > this.end_.column;
+
+        if (++r > this.end_.row) {
+          r = this.start_.row;
+          c++;
+        }
+        
+        return { 
+          value, 
+          done,
+        };
+
+      },
+    };
+
+  };
+
+  /** @deprecated */
   public Iterate(f: (...args: any[]) => any): void {
     if (this.entire_column || this.entire_row) {
       console.warn(`don't iterate infinite area`);

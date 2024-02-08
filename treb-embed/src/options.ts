@@ -316,6 +316,13 @@ export interface EmbeddedSpreadsheetOptions {
    */
   insert_function_button?: boolean;
 
+  /**
+   * default false
+   * 
+   * @internal
+   */
+  indent_buttons?: boolean;
+
 }
 
 /**
