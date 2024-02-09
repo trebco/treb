@@ -2475,9 +2475,15 @@ export class Calculator extends Graph {
         const unit = dependencies.ranges[key];
         const range = new Area(unit.start, unit.end);
 
+        for (const address of range) {
+          this.AddLeafVertexEdge(address, vertex);
+        }
+
+        /*
         range.Iterate((address: ICellAddress) => {
           this.AddLeafVertexEdge(address, vertex);
         });
+        */
 
         /*
         for (const address of range) {
@@ -2709,7 +2715,13 @@ export class Calculator extends Graph {
             this.AddArrayEdge(range, address);
           }
           else {
-            range.Iterate((target: ICellAddress) => this.AddEdge(target, address));
+
+            for (const target of range) {
+              this.AddEdge(target, address);
+            }
+
+            // range.Iterate((target: ICellAddress) => this.AddEdge(target, address));
+            
           }
 
 

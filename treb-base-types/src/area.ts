@@ -101,7 +101,7 @@ export interface Dimensions {
  * sheet class has a method for reducing infinite ranges to actual
  * populated ranges.
  */
-export class Area implements IArea { // }, IterableIterator<ICellAddress> {
+export class Area implements IArea {
 
   // tslint:disable-next-line:variable-name
   private start_: ICellAddress;
@@ -562,6 +562,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
     return new Area(this.start, this.end); // ensure copies
   }
 
+  /* removed, use iterator
   public Array(): ICellAddress[] {
     if (this.entire_column || this.entire_row) throw new Error('can\'t convert infinite area to array');
     const array: ICellAddress[] = new Array<ICellAddress>(this.rows * this.columns);
@@ -578,6 +579,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
     }
     return array;
   }
+  */
 
   get left(): Area{
     const area = new Area(this.start_, this.end_);
@@ -671,8 +673,9 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
   */
 
   /** 
-   * modernizing 
-   * 
+   * modernizing. this is a proper iterator. generators are prettier
+   * but there's at least some performance cost -- I'm not sure how 
+   * much, but it's non-zero.
    */
   public [Symbol.iterator](): Iterator<ICellAddress> {
 
@@ -680,31 +683,38 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
       throw new Error(`don't iterate infinite area`);
     }
     
-    let r = this.start_.row;
-    let c = this.start_.column;
+    let row = this.start_.row;
+    let column = this.start_.column;
+
+    // this now uses "live" references, so if the object were mutated
+    // during iteration the iterator would reflect those changes. which
+    // seems bad, but also correct.
 
     return {
       next: () => {
 
-        const value = { column: c, row: r, sheet_id: this.start_.sheet_id };
-        const done = c > this.end_.column;
+        const value = { column, row, sheet_id: this.start_.sheet_id };
 
-        if (++r > this.end_.row) {
-          r = this.start_.row;
-          c++;
+        if (column > this.end_.column) {
+          return { 
+            done: true, 
+            value: undefined,
+          };
+        }
+
+        if (++row > this.end_.row) {
+          row = this.start_.row;
+          column++;
         }
         
-        return { 
-          value, 
-          done,
-        };
+        return { value };
 
       },
     };
 
   };
 
-  /** @deprecated */
+  /* * @deprecated * /
   public Iterate(f: (...args: any[]) => any): void {
     if (this.entire_column || this.entire_row) {
       console.warn(`don't iterate infinite area`);
@@ -716,6 +726,7 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
       }
     }
   }
+  */
 
   /* *
    * testing: we may have to polyfill for IE11, or just not use it at

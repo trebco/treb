@@ -795,7 +795,7 @@ export class Sheet {
       if (index) {
         cell.Reset();
       }
-      
+
     }      
 
 
@@ -1171,7 +1171,15 @@ export class Sheet {
         this.UpdateRowStyle(row, style, delta);
       }
     }
-    else area.Array().forEach((address) => this.UpdateCellStyle(address, style, delta));
+    else {
+
+      // area.Array().forEach((address) => this.UpdateCellStyle(address, style, delta));
+
+      for (const address of area) {
+        this.UpdateCellStyle(address, style, delta);
+      }
+
+    }
 
   }
 
@@ -1752,10 +1760,18 @@ export class Sheet {
       const patched = new Area(
         { row: head.start.row + count, column: head.start.column },
         { row: head.end.row + count, column: head.end.column });
+
+      for (const address of patched) {
+        const cell = this.cells.GetCell(address, true);
+        cell.area = patched;
+      }
+
+      /*
       patched.Iterate((address) => {
         const cell = this.cells.GetCell(address, true);
         cell.area = patched;
       });
+      */
     }
 
     /*
@@ -1787,10 +1803,18 @@ export class Sheet {
       const patched = new Area(
         patched_start,
         { row: head.end.row + count, column: head.end.column });
+
+      for (const address of patched) {
+        const cell = this.cells.GetCell(address, true);
+        cell.merge_area = patched;
+      }
+
+      /*
       patched.Iterate((address) => {
         const cell = this.cells.GetCell(address, true);
         cell.merge_area = patched;
       });
+      */
     }
 
     // row styles
@@ -1906,10 +1930,18 @@ export class Sheet {
       const patched = new Area(
         { row: head.start.row, column: head.start.column + count },
         { row: head.end.row, column: head.end.column + count });
+
+      for (const address of patched) {
+        const cell = this.cells.GetCell(address, true);
+        cell.area = patched;
+      }
+
+      /*
       patched.Iterate((address) => {
         const cell = this.cells.GetCell(address, true);
         cell.area = patched;
       });
+      */
     }
 
     for (const key of Object.keys(merge_heads)) {
@@ -1919,10 +1951,19 @@ export class Sheet {
       const patched = new Area(
         patched_start,
         { row: head.end.row, column: head.end.column + count });
+
+      for (const address of patched) {
+        const cell = this.cells.GetCell(address, true);
+        cell.merge_area = patched;
+      }
+
+      /*
       patched.Iterate((address) => {
         const cell = this.cells.GetCell(address, true);
         cell.merge_area = patched;
       });
+      */
+     
     }
 
     // column styles

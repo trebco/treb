@@ -796,40 +796,33 @@ export class Cells {
     return this.GetRange({row: 0, column: 0}, {row: this.rows_ - 1, column: this.columns_ - 1}, transpose);
   }
 
-  /** simply cannot make this work with overloads (prove me wrong) */
-  public Normalize2(from: ICellAddress, to: ICellAddress): {from: ICellAddress, to: ICellAddress} {
+  /** overload */
+  public Normalize(from: ICellAddress, to: ICellAddress): { from: ICellAddress, to: ICellAddress };
 
-    if (from.column === Infinity) {
-      from = { ...from, column: 0, };
+  /** overload */
+  public Normalize(from: ICellAddress): { from: ICellAddress };
+
+  /** overload */
+  public Normalize<K extends ICellAddress|undefined>(from: ICellAddress, to: K): { from: ICellAddress, to: K };
+
+  /** base */
+  public Normalize(from: ICellAddress, to?: ICellAddress): { from: ICellAddress, to?: ICellAddress } {
+
+    from = {
+      ...from,
+      row: from.row == Infinity ? 0 : from.row,
+      column: from.column == Infinity ? 0 : from.column,
     }
 
-    if (from.row === Infinity) {
-      from = { ...from, row: 0, };
+    if (to) {
+      to = {
+        ...to,
+        row: to.row == Infinity ? this.rows_ - 1 : to.row,
+        column: to.column == Infinity ? this.columns_ - 1 : to.column,
+      }
     }
 
-    if (to.column === Infinity) {
-      to = { ...to, column: this.columns_ - 1};
-    }
-
-    if (to.row === Infinity) {
-      to = { ...to, row: this.rows_ - 1};
-    }
-
-    return {from, to};
-  }
-
-  /** simply cannot make this work with overloads (prove me wrong) */
-  public Normalize1(from: ICellAddress): ICellAddress {
-
-    if (from.column === Infinity) {
-      from = { ...from, column: 0, };
-    }
-
-    if (from.row === Infinity) {
-      from = { ...from, row: 0, };
-    }
-
-    return from;
+    return { from, to };
 
   }
 
@@ -851,7 +844,7 @@ export class Cells {
    */
   public RawValue(from: ICellAddress, to: ICellAddress = from): CellValue | CellValue[][] | undefined {
 
-    ({from, to} = this.Normalize2(from, to));
+    ({from, to} = this.Normalize(from, to));
 
     if (from.row === to.row && from.column === to.column) {
       if (this.data[from.row] && this.data[from.row][from.column]) {
@@ -885,12 +878,7 @@ export class Cells {
   /** gets range as values */
   public GetRange(from: ICellAddress, to?: ICellAddress, transpose = false){
 
-    if (to) {
-      ({from, to} = this.Normalize2(from, to));
-    }
-    else {
-      from = this.Normalize1(from);
-    }
+    ({from, to} = this.Normalize(from, to));
 
     // console.info("getrange", from, to, transpose);
 
@@ -972,7 +960,7 @@ export class Cells {
 
   public GetRange4(from: ICellAddress, to: ICellAddress = from, transpose = false): UnionValue {
 
-    ({from, to} = this.Normalize2(from, to));
+    ({from, to} = this.Normalize(from, to));
 
     if (from.row === to.row && from.column === to.column) {
       if (this.data[from.row] && this.data[from.row][from.column]){
@@ -1212,6 +1200,9 @@ export class Cells {
    * of iterating all and iterating an area. I want to remove the
    * other method, but there are still some calls that use the
    * cell address.
+   * 
+   * Q: is it possible to use Symbol.iterator with arguments?
+   * A: apparently it is, but how would you call it? (...)
    */
   public *Iterate(area?: Area|ICellAddress, create_missing_cells = false) {
 
@@ -1223,8 +1214,8 @@ export class Cells {
         row: 0,
         column: 0,
       }, {
-        row: this.rows,
-        column: this.columns,
+        row: this.rows_ - 1,
+        column: this.columns - 1,
       });
     }
 
@@ -1238,8 +1229,20 @@ export class Cells {
       }
 
       // why not just cap? (...)
+      // if (area.entire_column || area.entire_row) {
+      //  throw new Error(`don't iterate infinite cells`);
+      //}
+
       if (area.entire_column || area.entire_row) {
-        throw new Error(`don't iterate infinite cells`);
+        area = new Area(area.start, area.end);
+        if (area.start.column === Infinity) {
+          area.start.column = 0;
+          area.end.column = this.columns_ - 1;
+        }
+        if (area.start.row === Infinity) {
+          area.start.row = 0;
+          area.end.row = this.rows_ - 1;
+        }
       }
 
       const start = area.start;
