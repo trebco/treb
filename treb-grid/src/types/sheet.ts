@@ -781,6 +781,35 @@ export class Sheet {
     // assuming we're good to go...
 
     area = area.Clone();
+
+    // so this needs the address, in order to test if it's the head;
+    // but we know the head will always be the first one tested (correct?)
+
+    const cells = [...this.cells.Iterate(area, true)];
+
+    for (const [index, cell] of cells.entries()) {
+
+      cell.merge_area = area;
+      cell.render_clean = [];
+
+      if (index) {
+        cell.Reset();
+      }
+      
+    }      
+
+
+    /*
+    for (const {column, row, cell} of this.cells.IterateArea(area, true)) {
+      cell.merge_area = area;
+      cell.render_clean = [];
+
+      // clear data in !head
+      if (column !== area.start.column || row !== area.start.row) cell.Reset();
+    }
+    */
+
+    /*
     this.cells.Apply(area, (cell, c, r) => {
       cell.merge_area = area;
       cell.render_clean = [];
@@ -788,6 +817,7 @@ export class Sheet {
       // clear data in !head
       if (c !== area.start.column || r !== area.start.row) cell.Reset();
     }, true);
+    */
 
   }
 
@@ -798,7 +828,16 @@ export class Sheet {
 
     // let's check:
 
+    for (const cell of this.cells.Iterate(area, false)) {
+      if (!cell.merge_area || !area.Equals(cell.merge_area)) {
+        console.warn('area mismatch');
+        return;
+      }
+    }
+
+    /*
     let match = true;
+
     this.cells.Apply(area, (cell) => {
       match = match && !!cell.merge_area && area.Equals(cell.merge_area);
     }, false);
@@ -807,11 +846,19 @@ export class Sheet {
       console.warn('area mismatch');
       return;
     }
+    */
 
+    for (const cell of this.cells.Iterate(area, false)) {
+      cell.merge_area = undefined;
+      cell.render_clean = [];
+    }
+
+    /*
     this.cells.Apply(area, (cell) => {
       cell.merge_area = undefined;
       cell.render_clean = [];
     }, false);
+    */
 
   }
 
@@ -1091,7 +1138,13 @@ export class Sheet {
    * neighboring cells.
    */
   public Invalidate(area: Area): void {
-    this.cells.Apply(this.RealArea(area), cell => cell.render_clean = []);
+    
+    // this.cells.Apply(this.RealArea(area), cell => cell.render_clean = []);
+
+    for (const cell of this.cells.Iterate(this.RealArea(area), false)) {
+      cell.render_clean = [];
+    }
+
   }
 
   /**
@@ -1925,8 +1978,12 @@ export class Sheet {
 
     // assuming it's ok, :
 
-    area = this.RealArea(area);
-    this.cells.Apply(area, (cell) => cell.Reset());
+    // area = this.RealArea(area);
+    // this.cells.Apply(area, (cell) => cell.Reset());
+
+    for (const cell of this.cells.Iterate(this.RealArea(area), false)) {
+      cell.Reset();
+    }
 
   }
 
@@ -1957,7 +2014,13 @@ export class Sheet {
    */
   public SetArrayValue(area: Area, value: CellValue): void {
     area = this.RealArea(area);
-    this.cells.Apply(area, (element) => element.SetArray(area), true);
+
+    // this.cells.Apply(area, (element) => element.SetArray(area), true);
+
+    for (const cell of this.cells.Iterate(area, true)) {
+      cell.SetArray(area);
+    }
+
     const cell = this.cells.GetCell(area.start, true);
     cell.SetArrayHead(area, value);
   }
@@ -2979,7 +3042,10 @@ export class Sheet {
 
     // FIXME: ROW PATTERN
 
-    this.cells.Apply(this.RealArea(Area.FromRow(row)), (cell) => cell.FlushStyle());
+    // this.cells.Apply(this.RealArea(Area.FromRow(row)), (cell) => cell.FlushStyle());
+    for (const cell of this.cells.Iterate(this.RealArea(Area.FromRow(row)))) {
+      cell.FlushStyle();
+    }
 
   }
 
@@ -3028,7 +3094,11 @@ export class Sheet {
       }
     }
 
-    this.cells.Apply(this.RealArea(Area.FromColumn(column)), (cell) => cell.FlushStyle());
+    // this.cells.Apply(this.RealArea(Area.FromColumn(column)), (cell) => cell.FlushStyle());
+
+    for (const cell of this.cells.Iterate(this.RealArea(Area.FromColumn(column)))) {
+      cell.FlushStyle();
+    }
 
     // FIXME: ROW PATTERN
 

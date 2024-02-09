@@ -841,6 +841,28 @@ export class GridBase {
 
       let valid = true;
 
+      for (const cell of sheet.cells.Iterate(area)) {
+
+        if (cell.style?.locked)  {
+          console.info('invalid: locked cells');
+          return false;
+        }
+        if (cell.merge_area) {
+          if (!area.Contains(cell.merge_area.start) || !area.Contains(cell.merge_area.end)) {
+            console.info('invalid: merge area');
+            return false;
+          }
+        }
+        if (cell.area) {
+          if (!area.Contains(cell.area.start) || !area.Contains(cell.area.end)) {
+            console.info('invalid: array');
+            return false;
+          }
+        }
+        
+      }
+
+      /*
       sheet.cells.Apply2(area, cell => {
         if (cell.style?.locked)  {
           console.info('invalid: locked cells');
@@ -858,16 +880,10 @@ export class GridBase {
             valid = false;
           }
         }
-        /* ok for paste
-        if (cell.table) {
-          if (!area.Contains(cell.table.area.start) || !area.Contains(cell.table.area.end)) {
-            console.info('invalid: table');
-            valid = false;
-          }
-        }
-        */
+       
         return valid;
       });
+      */
 
       if (!valid) {
         return false;
@@ -1406,6 +1422,46 @@ export class GridBase {
             // duh, no we don't. if the cell is in the table it will have
             // a reference.
 
+            for (const cell of sheet.cells.Iterate()) {
+
+              if (cell.ValueIsFormula()) {
+                let updated_formula = false;
+                const parse_result = this.parser.Parse(cell.value);
+                if (parse_result.expression) {
+
+                  this.parser.Walk(parse_result.expression, (unit) => {
+                    if (unit.type === 'structured-reference') {
+
+                      if (unit.table.toLowerCase() === table_name || 
+                          (!unit.table && cell.table === table)) {
+                        
+                        // we may need to rewrite...
+                        for (const [key, value] of update.entries()) {
+                          if (unit.column.toLowerCase() === key) {
+
+                            // ok we need to update
+                            unit.column = value;
+                            updated_formula = true;
+
+                          }
+                        }
+
+                      }
+                    }
+                    return true;
+                  });
+                  if (updated_formula) {
+                    console.info('updating value');
+                    cell.value = '=' + this.parser.Render(parse_result.expression, {
+                      missing: '',
+                    });
+                  }
+                }
+              }
+
+            }
+
+            /*
             sheet.cells.IterateAll(cell => {
               if (cell.ValueIsFormula()) {
                 let updated_formula = false;
@@ -1442,6 +1498,7 @@ export class GridBase {
                 }
               }
             });
+            */
 
           }
         }
@@ -2136,6 +2193,17 @@ export class GridBase {
     for (const sheet of sheets) {
 
       // cells
+      for (const cell of sheet.cells.Iterate()) {
+        if (cell.ValueIsFormula()) {
+          const updated = this.PatchExpressionSheetName(cell.value||'', old_name, name);
+          if (updated) {
+            cell.value = updated;
+            changes++;
+          }          
+        }
+      }
+
+      /*
       sheet.cells.IterateAll((cell: Cell) => {
         if (cell.ValueIsFormula()) {
           const updated = this.PatchExpressionSheetName(cell.value||'', old_name, name);
@@ -2145,6 +2213,7 @@ export class GridBase {
           }          
         }
       });
+      */
 
       // conditionals
       if (sheet.conditional_formats?.length) {
@@ -2449,12 +2518,21 @@ export class GridBase {
     let error = false;
     area = sheet.RealArea(area); // collapse
 
+    for (const cell of sheet.cells.Iterate(area)) {
+      if (cell.area && !area.ContainsArea(cell.area)) {
+        this.Error(ErrorCode.array);
+        return;
+      }
+    }
+
+    /*
     sheet.cells.Apply(area, (cell) => {
       if (cell.area && !area.ContainsArea(cell.area)) {
         // throw new Error('can\'t change part of an array');
         error = true;
       }
     });
+    */
 
     // if the area completely encloses a table, delete the table
     const table_keys = this.model.tables.keys();
@@ -2871,6 +2949,18 @@ export class GridBase {
     for (const sheet of this.model.sheets.list) {
       const is_target = sheet === target_sheet;
 
+      for (const cell of sheet.cells.Iterate()) {
+        if (cell.ValueIsFormula()) {
+          const modified = this.PatchFormulasInternal(cell.value || '',
+            command.before_row, command.count, 0, 0,
+            target_sheet_name, is_target);
+          if (modified) {
+            cell.value = modified;
+          }
+        }
+      }
+
+      /*
       sheet.cells.IterateAll((cell: Cell) => {
         if (cell.ValueIsFormula()) {
           const modified = this.PatchFormulasInternal(cell.value || '',
@@ -2881,6 +2971,7 @@ export class GridBase {
           }
         }
       });
+      */
 
       for (const annotation of sheet.annotations) {
         if (annotation.data.formula) {
@@ -3217,6 +3308,18 @@ export class GridBase {
     for (const sheet of this.model.sheets.list) {
       const is_target = sheet === target_sheet;
 
+      for (const cell of sheet.cells.Iterate()) {
+        if (cell.ValueIsFormula()) {
+          const modified = this.PatchFormulasInternal(cell.value || '', 0, 0,
+            command.before_column, command.count,
+            target_sheet_name, is_target);
+          if (modified) {
+            cell.value = modified;
+          }
+        }
+      }
+
+      /*
       sheet.cells.IterateAll((cell: Cell) => {
         if (cell.ValueIsFormula()) {
           const modified = this.PatchFormulasInternal(cell.value || '', 0, 0,
@@ -3227,6 +3330,7 @@ export class GridBase {
           }
         }
       });
+      */
 
       for (const annotation of sheet.annotations) {
         if (annotation.data.formula) {
@@ -3761,6 +3865,15 @@ export class GridBase {
             const list: Record<string, Area> = {};
             const area = new Area(command.area.start, command.area.end);
 
+            for (const cell of sheet.cells.Iterate(area, false)) {
+              if (cell.merge_area) {
+                const label = Area.CellAddressToLabel(cell.merge_area.start) + ':'
+                  + Area.CellAddressToLabel(cell.merge_area.end);
+                list[label] = cell.merge_area;
+              }
+            }
+
+            /*
             sheet.cells.Apply(area, (cell: Cell) => {
               if (cell.merge_area) {
                 const label = Area.CellAddressToLabel(cell.merge_area.start) + ':'
@@ -3768,6 +3881,7 @@ export class GridBase {
                 list[label] = cell.merge_area;
               }
             }, false);
+            */
 
             const keys = Object.keys(list);
 

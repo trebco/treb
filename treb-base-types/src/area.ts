@@ -637,7 +637,43 @@ export class Area implements IArea { // }, IterableIterator<ICellAddress> {
     return this; // fluent
   }
 
-  /** modernizing */
+  /* * 
+   * preferred to straight iterator. actually in this class iterator
+   * is OK but in some other cases we'll want to generate like this
+   * 
+   * eh I don't know about this inline function, is that going to be
+   * optimized out? ...
+   * /
+  public get contents(): Generator<{ row: number, column: number, sheet_id?: number }> { 
+
+    if (this.entire_row || this.entire_column) {
+      throw new Error(`don't iterate infinite area`);
+    }
+
+    const sheet_id = this.start_.sheet_id;
+    const start_column = this.start_.column;
+    const end_column = this.end_.column;
+    const start_row = this.start_.row;
+    const end_row = this.end_.row;
+
+
+    function *generator() {
+      for (let column = start_column; column <= end_column; column++){
+        for (let row = start_row; row <= end_row; row++){
+          yield {column, row, sheet_id};
+        }
+      }
+    }
+  
+    return generator();    
+
+  }
+  */
+
+  /** 
+   * modernizing 
+   * 
+   */
   public [Symbol.iterator](): Iterator<ICellAddress> {
 
     if (this.entire_row || this.entire_column) {

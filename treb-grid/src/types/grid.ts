@@ -4987,6 +4987,15 @@ export class Grid extends GridBase {
       }
     }
     else if (array) {
+
+      for (const cell of this.active_sheet.cells.Iterate(selection.area, false)) {
+        if (cell.area) {
+          this.Error(ErrorCode.array);
+          return;
+        }
+      }
+
+      /*
       let existing_array = false;
       this.active_sheet.cells.Apply(selection.area, (element: Cell) => {
         if (element.area) {
@@ -4997,6 +5006,8 @@ export class Grid extends GridBase {
         this.Error(ErrorCode.array);
         return;
       }
+      */
+
     }
 
     if (cell.validation && cell.validation.error) {
@@ -6114,9 +6125,28 @@ export class Grid extends GridBase {
       let real_area = this.active_sheet.RealArea(area);
       if (!target) target = real_area.start;
 
-      let recheck = true;
+      // there has to be a better way to do this... 
 
-      // there has to be a better way to do this...
+      // the operation here is composing the selection by adding all merge
+      // areas. the issue is that when you do that, you might be adding other
+      // cells that are not in the merge area (because the selection has to
+      // be a rectangle) and one of those new cells might itself be merged.
+      // so we need to iterate. there's a lot of duplication here, though.
+
+      recheck_loop: while (true) {
+        for (const cell of this.active_sheet.cells.Iterate(real_area, false)) {
+          if (cell.merge_area && !real_area.ContainsArea(cell.merge_area)) {
+            area.ConsumeArea(cell.merge_area);
+            real_area = this.active_sheet.RealArea(area);
+            continue recheck_loop;
+          }
+        }
+        break;
+      }
+
+      /*
+
+      let recheck = true;
 
       while (recheck) {
         recheck = false;
@@ -6128,6 +6158,7 @@ export class Grid extends GridBase {
           }
         });
       }
+      */
 
       selection.area = new Area({ ...area.start, sheet_id: this.active_sheet.id }, area.end);
       if (target) {

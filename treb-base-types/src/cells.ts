@@ -1008,10 +1008,10 @@ export class Cells {
 
   }
 
-  /**
+  /* *
    * apply function to address/area
    * @deprecated - use Apply2
-   */
+   * /
   public Apply(area: Area|ICellAddress, f: (cell: Cell, c?: number, r?: number) => void, create_missing_cells = false): void {
 
     // allow single address
@@ -1050,12 +1050,71 @@ export class Cells {
       }
     }
   }
+  */
 
-  /**
+  /* *
+   * as a replacement for the Apply functions. testing
+   * 
+   * (1) it seems like almost no one uses the cell address, so returning
+   *     it just adds a wasteful destructuring to every loop iteration.
+   * 
+   *     actually there's exactly one, and we could work around it. but
+   *     it seems like it might be useful in some cases, so... ?
+   * 
+   * (2) can we consolidate with the IterateAll method (named Iterate)? 
+   *     that would only work if we had the same return type, meaning either
+   *     drop the address from this one or add it to the other one
+   * 
+   * @deprecated use Iterate, if possible
+   * 
+   * /
+  public *IterateArea(area: Area|ICellAddress, create_missing_cells = false) {
+
+    // allow single address
+    if (IsCellAddress(area)) {
+      area = new Area(area);
+    }
+
+    // why not just cap? (...)
+    if (area.entire_column || area.entire_row) {
+      throw new Error(`don't iterate infinite cells`);
+    }
+
+    const start = area.start;
+    const end = area.end;
+
+    if (create_missing_cells){
+      for ( let r = start.row; r <= end.row; r++ ){
+        if (!this.data[r]) this.data[r] = [];
+        const row = this.data[r];
+        for ( let c = start.column; c <= end.column; c++ ){
+          if (!row[c]) row[c] = new Cell();
+          yield { row: r, column: c, cell: row[c] };
+        }
+      }
+    }
+    else {
+      // we can loop over indexes that don't exist, just check for existence
+      for ( let r = start.row; r <= end.row; r++ ){
+        if (this.data[r]){
+          const row = this.data[r];
+          for ( let c = start.column; c <= end.column; c++ ){
+            if (row[c]) {
+              yield { row: r, column: c, cell: row[c] };
+            }
+          }
+        }
+      }
+    }    
+
+  }
+  */
+
+  /* *
    * apply function to address/area
    * 
    * this version lets you abort by returning false from the callback function
-   */
+   * /
   public Apply2(area: Area|ICellAddress, func: (cell: Cell, c?: number, r?: number) => boolean, create_missing_cells = false): void {
 
     // allow single address
@@ -1100,6 +1159,7 @@ export class Cells {
       }
     }
   }
+  */
 
   /**
    * set area. shortcut to reduce overhead. consolidates single value
@@ -1148,11 +1208,93 @@ export class Cells {
   }
 
   /**
+   * replacement for old callback iterator. this is a composite 
+   * of iterating all and iterating an area. I want to remove the
+   * other method, but there are still some calls that use the
+   * cell address.
+   */
+  public *Iterate(area?: Area|ICellAddress, create_missing_cells = false) {
+
+    // special case. normally iterating over all cells
+    // doesn't create missing, so we use a simpler loop.
+
+    if (!area && create_missing_cells) {
+      area = new Area({
+        row: 0,
+        column: 0,
+      }, {
+        row: this.rows,
+        column: this.columns,
+      });
+    }
+
+    // if we have an area, iterate over the area. we need indexes.
+
+    if (area) {
+      
+      // allow single address
+      if (IsCellAddress(area)) {
+        area = new Area(area);
+      }
+
+      // why not just cap? (...)
+      if (area.entire_column || area.entire_row) {
+        throw new Error(`don't iterate infinite cells`);
+      }
+
+      const start = area.start;
+      const end = area.end;
+
+      if (create_missing_cells){
+        for ( let r = start.row; r <= end.row; r++ ){
+          if (!this.data[r]) this.data[r] = [];
+          const row = this.data[r];
+          for ( let c = start.column; c <= end.column; c++ ){
+            if (!row[c]) row[c] = new Cell();
+            yield row[c]; // { row: r, column: c, cell: row[c] };
+          }
+        }
+      }
+      else {
+        // we can loop over indexes that don't exist, just check for existence
+        for ( let r = start.row; r <= end.row; r++ ){
+          if (this.data[r]){
+            const row = this.data[r];
+            for ( let c = start.column; c <= end.column; c++ ){
+              if (row[c]) {
+                yield row[c]; // { row: r, column: c, cell: row[c] };
+              }
+            }
+          }
+        }
+      }
+
+    }
+    else {
+
+      // no area; just iterate all cells. implicitly skip undefined cells.
+
+      for (const row of this.data) {
+        if (row) {
+          for (const cell of row) {
+            if (cell) {
+              yield cell;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* *
    * iterates over all cells (using loops) and runs function per-cell.
    * FIXME: switch to indexing on empty indexes? (...)
-   */
+   * 
+   * removed in favor of generator-based function
+   * 
+   * /
   public IterateAll(func: (cell: Cell) => void){
-    /*
+    / *
     const row_keys = Object.keys(this.data);
     for (const row of row_keys){
       const n_row = Number(row) || 0;
@@ -1161,7 +1303,7 @@ export class Cells {
         f(this.data[n_row][Number(column_key)]);
       }
     }
-    */
+    * /
     for (const row of this.data) {
       if (row) {
         for (const cell of row) {
@@ -1173,6 +1315,7 @@ export class Cells {
     }
 
   }
+  */
 
   /** moved from sheet, so we can do it non-functional style (for perf) */
   public FlushCellStyles() {

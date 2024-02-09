@@ -146,12 +146,22 @@ export class TileRenderer {
     // flush all, mark dirty and drop areas.
 
     const cells = this.view.active_sheet.cells;
+
+    for (const cell of cells.Iterate()) {
+      if (cell.renderer_data?.overflowed) {
+        cell.renderer_data = undefined;
+        cell.render_clean[this.view.view_index] = false;
+      }
+    }
+
+    /*
     cells.IterateAll(cell => {
       if (cell.renderer_data?.overflowed) {
         cell.renderer_data = undefined;
         cell.render_clean[this.view.view_index] = false;
       }
     });
+    */
 
     for (const overflow_area of this.overflow_areas) {
       overflow_area.tile.dirty = true;
