@@ -23,7 +23,8 @@ import type { ICellAddress,
          PreparedText, RenderTextPart,
          Cell, Size, 
          CellStyle,
-         Theme} from 'treb-base-types';
+         Theme,
+         HorizontalAlign} from 'treb-base-types';
 import { TextPartFlag, Style, ValueType, Area, Rectangle, ThemeColor, ThemeColor2 } from 'treb-base-types';
 
 import type { Tile } from '../types/tile';
@@ -737,10 +738,22 @@ export class TileRenderer {
     // precalculate indent as string so we can use layout
 
     let indent = '';
+    let align: HorizontalAlign|undefined;
+
     if (style.indent) {
+
       for (let i = 0; i < style.indent; i++) {
         indent += DEFAULT_INDENT;
       }
+
+      align = style.horizontal_align;
+
+      // default might be left or right based on type
+
+      if (!align) {
+        align = (cell.type === ValueType.number || cell.calculated_type === ValueType.number) ? 'right' : 'left';
+      }
+      
     }
 
     if (Array.isArray(formatted)) {
@@ -754,10 +767,11 @@ export class TileRenderer {
       // this is a single line, with number formatting
 
       if (indent) {
-        if (style.horizontal_align === 'right') {
+
+        if (align === 'right') {
           formatted.push({ text: indent });
         }
-        else if (style.horizontal_align !== 'center') {
+        else if (align === 'left') {
           formatted.unshift({ text: indent });
         }
       }
@@ -963,13 +977,12 @@ export class TileRenderer {
             });
 
             if (style.indent) {
-              if (style.horizontal_align === 'right') {
+              if (align === 'right') {
                 line_string.push({ text: indent, hidden: false, width: indent_width });
               }
-              else if (style.horizontal_align !== 'center') {
+              else if (align === 'left') {
                 line_string.unshift({ text: indent, hidden: false, width: indent_width });
               }
-    
             }
 
             strings.push(line_string);
@@ -988,13 +1001,12 @@ export class TileRenderer {
           const parts: RenderTextPart[] = [];
 
           if (style.indent) {
-            if (style.horizontal_align === 'right') {
+            if (align === 'right') {
               line.push({ text: indent });
             }
-            else if (style.horizontal_align !== 'center') {
+            else if (align === 'left') {
               line.unshift({ text: indent });
             }
-    
           }
 
           let line_width = 0;
