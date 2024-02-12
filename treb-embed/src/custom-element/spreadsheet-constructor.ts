@@ -112,6 +112,8 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
    */
   public CoerceAttributeValue(value: string|null): number|boolean|string {
 
+    console.info("CAV", value);
+
     if (value === null || value.toString().toLowerCase() === 'true' || value === '') {
       return true;
     }
@@ -146,6 +148,7 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
     if (this.root) {
 
       const names = this.root.getAttributeNames();
+      console.info({names});
 
       for (let name of names) {
 
@@ -202,8 +205,7 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
         // attrtibute options are in kebab-case while our internal
         // options are still in snake_case.
 
-        name = name.replace(/-/g, '_');
-        attribute_options[name] = this.CoerceAttributeValue(this.root.getAttribute(name));
+        attribute_options[name.replace(/-/g, '_')] = this.CoerceAttributeValue(this.root.getAttribute(name));
 
       }
     }
