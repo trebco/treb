@@ -112,8 +112,6 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
    */
   public CoerceAttributeValue(value: string|null): number|boolean|string {
 
-    console.info("CAV", value);
-
     if (value === null || value.toString().toLowerCase() === 'true' || value === '') {
       return true;
     }
