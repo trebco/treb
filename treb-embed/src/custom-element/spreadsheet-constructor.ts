@@ -146,7 +146,6 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
     if (this.root) {
 
       const names = this.root.getAttributeNames();
-      console.info({names});
 
       for (let name of names) {
 
