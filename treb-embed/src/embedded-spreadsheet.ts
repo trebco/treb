@@ -2250,11 +2250,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
+   * this is a generic version that takes a callback, so we can use
+   * separately from charts. however (atm) we're using leaf vertices that
+   * don't actually calculate, they just indicate the dirty state. so we
+   * won't have access to the result of a calculation in the callback.
+   * 
    * @internal
    * 
-   * @returns an id that can be used to manage the reference
    */
-  public CreateConnectedChart(formula: string, target: HTMLElement, options: EvaluateOptions): number {
+  public CreateConnectedFormula(formula: string, callback?: (instance: ConnectedElementType) => void, options: EvaluateOptions = {}): number {
 
     // FIXME: merge w/ insert annotation?
 
@@ -2266,15 +2270,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     if (argument_separator === ',') {
       this.parser.SetLocaleSettings(DecimalMarkType.Period);
-
-      // this.parser.argument_separator = ArgumentSeparatorType.Comma;
-      // this.parser.decimal_mark = DecimalMarkType.Period;
     }
     else {
       this.parser.SetLocaleSettings(DecimalMarkType.Comma);
-
-      // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-      // this.parser.decimal_mark = DecimalMarkType.Comma;
     }
 
     const result = this.parser.Parse(formula);
@@ -2286,19 +2284,41 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
     else {
       console.warn("invalid formula", result.error);
+      throw new Error(`invalid formula`);
     }
 
-    const chart = this.CreateChart();
-    chart.Initialize(target);
-
     const id = this.model.AddConnectedElement({
+
       formula,
 
       // this is circular, but I want to leave `this` bound to the sheet
       // instance in case we need it -- so what's a better approach? pass
       // in the formula explicitly, and update if we need to make changes?
 
-      update: (instance: ConnectedElementType) => {
+      update: callback ? (instance: ConnectedElementType) => {
+        callback.call(0, instance);
+      } : undefined,
+
+    });
+
+    this.calculator.UpdateConnectedElements(this.grid.active_sheet);
+    this.UpdateConnectedElements();
+
+    return id;
+
+  }
+
+  /**
+   * @internal
+   * 
+   * @returns an id that can be used to manage the reference
+   */
+  public CreateConnectedChart(formula: string, target: HTMLElement, options: EvaluateOptions): number {
+
+    const chart = this.CreateChart();
+    chart.Initialize(target);
+
+    const callback = (instance: ConnectedElementType) => {
 
         const parse_result = this.parser.Parse(instance.formula);
 
@@ -2322,14 +2342,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
         chart.Update();
 
-      },
+    };
 
-    });
-
-    this.calculator.UpdateConnectedElements(this.grid.active_sheet);
-    this.UpdateConnectedElements();
-
-    return id;
+    return this.CreateConnectedFormula(formula, callback, options);
 
   }
 
