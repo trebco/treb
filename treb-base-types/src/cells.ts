@@ -170,10 +170,8 @@ export class Cells {
   /** switching to row-major */
   public data: Cell[][] = [];
 
-  // tslint:disable-next-line:variable-name
   private rows_ = 0;
 
-  // tslint:disable-next-line:variable-name
   private columns_ = 0;
 
   get rows(): number { return this.rows_; }

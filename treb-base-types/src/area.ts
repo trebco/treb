@@ -809,7 +809,7 @@ export class Area implements IArea {
    * the start.
    * 
    */
-  public toJSON(): any {
+  public toJSON(): IArea {
 
     return {
       start: { ...this.start_ },
