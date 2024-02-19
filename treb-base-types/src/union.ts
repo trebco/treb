@@ -76,7 +76,7 @@ export interface UndefinedUnion {
 
 export interface ExtendedUnion {
   type: ValueType.object;
-  value: any;
+  value: unknown; // any;
   key?: string;
 }
 

@@ -21,7 +21,7 @@
 
 import type { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
-import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError, NameError } from '../function-error';
+import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
 import type { UnionValue, 
          RenderFunctionResult, RenderFunctionOptions, Complex } from 'treb-base-types';
 import { Box, ValueType, GetValueType, ComplexOrReal, IsComplex } from 'treb-base-types';
@@ -209,12 +209,22 @@ export const AltFunctionLibrary: FunctionMap = {
           value,
         }
       }
-      else {
+      else if (ref.type === ValueType.number) {
         const value = Math.sqrt(ref.value);
         if (isNaN(value)) {
           return ValueError();
         }
         return { type: ValueType.number, value };
+      }
+      else {
+        /*
+        const value = Math.sqrt(ref.value);
+        if (isNaN(value)) {
+          return ValueError();
+        }
+        return { type: ValueType.number, value };
+        */
+        return ValueError();
       }
     }),
   },
@@ -1608,8 +1618,8 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         if (area.type === ValueType.array) {
 
-          const cols = area.value.length;
-          const rows = area.value[0]?.length;
+          // const cols = area.value.length;
+          // const rows = area.value[0]?.length;
 
           // how is uniqueness defined in this context? (...)
 
@@ -1690,7 +1700,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         const tmp = Utils.FlattenBoxed([area]);
 
-        let sum = 0;
+        // let sum = 0;
         let count = 0;
         let min = 0; 
         let max = 0;
@@ -1719,7 +1729,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           min = static_min;
         }
 
-        let range = max - min;
+        const range = max - min;
 
         let rows = 1;
         let columns = 1;
@@ -1838,6 +1848,7 @@ for (const name of Object.getOwnPropertyNames(Math)) {
   case 'function':
     // console.info("MATH FUNC", name);
     BaseFunctionLibrary[name] = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       fn: (...args: any) => {
         return Box(value(...args));
       },

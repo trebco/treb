@@ -19,7 +19,7 @@
  * 
  */
 
-import type { UnionValue} from 'treb-base-types';
+import type { ErrorUnion, UnionValue} from 'treb-base-types';
 import { ValueType } from 'treb-base-types';
 
 export enum ErrorType {
@@ -70,7 +70,7 @@ export const ArgumentError = (): UnionValue => {
   return { type: ValueType.error, value: ErrorType.Argument };
 };
 
-export const ValueError = (): UnionValue => {
+export const ValueError = (): /* UnionValue */ ErrorUnion => {
   return { type: ValueType.error, value: ErrorType.Value };
 };
 

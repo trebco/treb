@@ -712,7 +712,7 @@ export class Area implements IArea {
       },
     };
 
-  };
+  }
 
   /* * @deprecated * /
   public Iterate(f: (...args: any[]) => any): void {

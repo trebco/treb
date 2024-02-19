@@ -22,7 +22,7 @@
 // import { Parser } from 'treb-parser';
 
 import type { Area, IArea } from './area';
-import type { Style, CellStyle } from './style';
+import type { CellStyle } from './style';
 import type { TextPart } from './text_part';
 import type { Complex } from './value-type';
 import { ValueType, GetValueType } from './value-type';

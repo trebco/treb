@@ -22,7 +22,7 @@
 const SVGNS = 'http://www.w3.org/2000/svg';
 
 type EventHandlerMap = {
-  [key in keyof HTMLElementEventMap]: (event: HTMLElementEventMap[key]) => any;
+  [key in keyof HTMLElementEventMap]: (event: HTMLElementEventMap[key]) => unknown;
 }
 
 type StyleMap = {
@@ -202,12 +202,14 @@ export class DOMContext {
 
       if (options.events) {
         for (const [key, value] of Object.entries(options.events)) {
-          element.addEventListener(key, value as any); // typing works well up until this point
+          element.addEventListener(key, value as (event: unknown) => void); // typing works well up until this point
         }
       }
 
       if (options.style) {
         for (const [key, value] of Object.entries(options.style)) {
+          
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (element.style as any)[key] = value; // more sloppy typing
         }
       }

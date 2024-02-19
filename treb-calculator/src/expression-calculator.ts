@@ -25,7 +25,8 @@ import type { Cell, ICellAddress,
          ArrayUnion,
          NumberUnion,
          UndefinedUnion,
-         ComplexUnion } from 'treb-base-types';
+         ComplexUnion, 
+         DimensionedQuantityUnion} from 'treb-base-types';
 import { ValueType, GetValueType } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
@@ -35,6 +36,7 @@ import { ReturnType } from './descriptors';
 
 import * as Primitives from './primitives';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ExtendedExpressionUnit = ExpressionUnit & { user_data: any }; // export for MC overload
 
 // FIXME: move
@@ -216,6 +218,7 @@ export class ExpressionCalculator {
   }
 
   /** breaking this out to de-dupe */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected GetMetadata(arg: ExpressionUnit, map_result: (cell_data: Cell, address: ICellAddress) => any): UnionValue /*UnionOrArray*/ {
 
     // FIXME: we used to restrict this to non-cell functions, now
@@ -726,7 +729,7 @@ export class ExpressionCalculator {
           value: expression.value,
           unit: expr.unit.name,
         },
-      };
+      } as DimensionedQuantityUnion;
     };
 
   }
@@ -1052,16 +1055,11 @@ export class ExpressionCalculator {
         return (expr.user_data = () => {
           return { 
             type: ValueType.array,
-            value: expr.values.map((row: any) => (Array.isArray(row) ? row : [row]).map((value: any) => {
+            value: expr.values.map((row) => (Array.isArray(row) ? row : [row]).map((value) => {
               return { type: GetValueType(value), value } as UnionValue;
             })),
           } as ArrayUnion;
         })();
-        /*
-        return (expr.user_data = () => expr.values.map(row => (Array.isArray(row) ? row : [row]).map(value => {
-          return { value, type: GetValueType(value) }
-        })))(); // check
-        */
       }
 
     default:

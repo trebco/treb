@@ -19,7 +19,7 @@
  * 
  */
 
-import type { Complex, UnionValue} from 'treb-base-types';
+import type { Complex, ComplexUnion, UnionValue} from 'treb-base-types';
 import { ValueType } from 'treb-base-types';
 import { DivideByZeroError, ValueError } from './function-error';
 
@@ -30,7 +30,13 @@ import * as ComplexLib from './complex-math';
 
 export type PrimitiveBinaryExpression = (a: UnionValue, b: UnionValue) => UnionValue;
 
-type NumericTuple = [number, number, UnionValue?, UnionValue?, UnionValue?];
+type NumericTuple = [
+  number, 
+  number, 
+  UnionValue?, // FIXME: should be error type?
+  ComplexUnion?, // UnionValue?, 
+  ComplexUnion?, // UnionValue?
+];
 
 /** 
  * a is either a complex union value or undefined. if it's defined,
@@ -282,31 +288,16 @@ export const Equals = (a: UnionValue, b: UnionValue): UnionValue => {
     return { type: ValueType.boolean, value: true, };
   }
 
-  if (a.type === ValueType.complex || b.type === ValueType.complex) {
-
-    // complex can equal real or complex
-    
-    let equals = false;
-
-    if (a.type === b.type) {
-      equals = 
-        a.value.real == b.value.real &&         // == ?
-        a.value.imaginary == b.value.imaginary  // == ?
-        ;
+  if (a.type === ValueType.complex) {
+    if (b.type === ValueType.complex) {
+      return { type: ValueType.boolean, value: ((a.value.imaginary === b.value.imaginary) && (a.value.real === b.value.real)) };
     }
-    else if (a.type === ValueType.number) {
-      equals = 
-        b.value.real == a.value  &&
-        !b.value.imaginary;
+    else {
+      return { type: ValueType.boolean, value: ((!a.value.imaginary) && (a.value.real === b.value)) };
     }
-    else if (b.type === ValueType.number) {
-      equals = 
-        a.value.real == b.value  &&
-        !a.value.imaginary;
-    }
-
-    return { type: ValueType.boolean, value: equals };
-
+  }
+  else if (b.type === ValueType.complex) {
+    return { type: ValueType.boolean, value: ((!b.value.imaginary) && (a.value === b.value.real)) };
   }
 
   // this is standard (icase) string equality. we might also need
@@ -380,37 +371,57 @@ export const GreaterThan = (a: UnionValue, b: UnionValue): UnionValue => {
   return { type: ValueType.boolean, value: (a.value||0) > (b.value||0) };
 };
 
+const Comparable = (a: UnionValue, b: UnionValue) => {
+
+  if (a.type === ValueType.complex ||
+    a.type === ValueType.array ||
+    a.type === ValueType.dimensioned_quantity ||
+    a.type === ValueType.object ||
+    b.type === ValueType.complex ||
+    b.type === ValueType.array ||
+    b.type === ValueType.dimensioned_quantity ||
+    b.type === ValueType.object 
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 export const GreaterThanEqual = (a: UnionValue, b: UnionValue): UnionValue => {
   if (a.type === ValueType.error) { return a; }
   if (b.type === ValueType.error) { return b; }
 
-  if (a.type === ValueType.complex || b.type === ValueType.complex) {
-    return ValueError();
-  }
+  if (!Comparable(a, b)) { return ValueError(); }
 
-  return { type: ValueType.boolean, value: a.value >= b.value };
+  return { type: ValueType.boolean, value: (a.value||0) >= (b.value||0) };
+
 };
 
 export const LessThan = (a: UnionValue, b: UnionValue): UnionValue => {
   if (a.type === ValueType.error) { return a; }
   if (b.type === ValueType.error) { return b; }
 
-  if (a.type === ValueType.complex || b.type === ValueType.complex) {
-    return ValueError();
-  }
+  if (!Comparable(a, b)) { return ValueError(); }
 
-  return { type: ValueType.boolean, value: a.value < b.value };
+  //if (a.type === ValueType.complex || b.type === ValueType.complex) {
+  //  return ValueError();
+  //}
+
+  return { type: ValueType.boolean, value: (a.value||0) < (b.value||0) };
 };
 
 export const LessThanEqual = (a: UnionValue, b: UnionValue): UnionValue => {
   if (a.type === ValueType.error) { return a; }
   if (b.type === ValueType.error) { return b; }
 
-  if (a.type === ValueType.complex || b.type === ValueType.complex) {
-    return ValueError();
-  }
+  //if (a.type === ValueType.complex || b.type === ValueType.complex) {
+  //  return ValueError();
+  //}
 
-  return { type: ValueType.boolean, value: a.value <= b.value };
+  if (!Comparable(a, b)) { return ValueError(); }
+
+  return { type: ValueType.boolean, value: (a.value||0) <= (b.value||0) };
 };
 
 export const UseComplex = () => {

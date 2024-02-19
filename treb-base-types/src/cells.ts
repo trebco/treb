@@ -31,7 +31,7 @@ import { Cell } from './cell';
 import type { Table } from './table';
 import { type SerializedValueType, ValueType, GetValueType, ValueTypeList } from './value-type';
 import type { CellValue, UnionValue } from './union';
-import type { Style, CellStyle } from './style';
+import type { CellStyle } from './style';
 
 export interface CellSerializationOptions {
   preserve_type?: boolean;
@@ -204,7 +204,7 @@ export class Cells {
    */
   public InsertColumns(before = 0, count = 1): void {
 
-    const pre = JSON.parse(JSON.stringify(this.data[13]));
+    // const pre = JSON.parse(JSON.stringify(this.data[13]));
 
     // NOTE: iterating a sparse array, in chrome at least, only
     // hits populated keys. the returned array has the same
@@ -402,6 +402,8 @@ export class Cells {
     return type ? ValueTypeList[type] : undefined;
   }
 
+
+
   /**
    * this method is used for importing legacy data validation types. in those
    * those we used a numeric enum. we're just dropping that altogether (c.f.
@@ -420,9 +422,12 @@ export class Cells {
    */
   public ImportDataValidation(value: DataValidation): DataValidation|undefined {
 
-    if (typeof (value as any).type === 'number') {
-      const types = ['list', 'date', 'range', 'number', 'boolean'];
-      (value as any).type = types[(value as any).type];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const type: DataValidation['type']|number = (value as any).type;
+
+    if (typeof type === 'number') {
+      const types: Array<DataValidation['type']> = ['list', 'date', 'range', 'number', 'boolean'];
+      value.type = types[type];
       if (!value.type) {
         return undefined;
       }
@@ -753,6 +758,11 @@ export class Cells {
         const new_data: NestedRowData[] = [];
 
         for (const element of data) {
+
+          // the construction here seems to be removing the 
+          // "row" key -- is there a better way to do that? 
+
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const {row, ...remainder} = element;
           if (!cells[element.row]) cells[element.row] = [];
           cells[element.row].push(remainder);
@@ -772,6 +782,7 @@ export class Cells {
         const new_data: NestedColumnData[] = [];
 
         for (const element of data) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const {column, ...remainder} = element;
           if (!cells[element.column]) cells[element.column] = [];
           cells[element.column].push(remainder);
