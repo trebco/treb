@@ -19,7 +19,7 @@
  * 
  */
 
-import type { FunctionMap } from '../descriptors';
+import type { FunctionMap, IntrinsicValue } from '../descriptors';
 import { NumberFormatCache, ValueParser } from 'treb-format';
 import type { UnionValue} from 'treb-base-types';
 import { Localization, ValueType } from 'treb-base-types';
@@ -86,7 +86,7 @@ export const TextFunctionLibrary: FunctionMap = {
 
       { name: 'invert' }, 
     ],
-    fn: Utils.ApplyAsArray2((a: any, b: any, invert = false) => {
+    fn: Utils.ApplyAsArray2((a: IntrinsicValue, b: IntrinsicValue, invert = false) => {
 
       if (typeof a === 'string' && typeof b === 'string') {
         const pattern = Utils.ParseWildcards(b);
@@ -258,7 +258,7 @@ export const TextFunctionLibrary: FunctionMap = {
   /** canonical should be CONCAT; concatenate can be an alias */
  Concat: {
   description: 'Pastes strings together',
-  fn: (...args: unknown[]): UnionValue => {
+  fn: (...args: IntrinsicValue[]): UnionValue => {
 
     const values = Utils.FlattenUnboxed(args) as unknown[];
     const value = values.map((arg) => {
@@ -266,7 +266,7 @@ export const TextFunctionLibrary: FunctionMap = {
       // this is used when concatenating cells that contain numbers
       // FIXME: get cell number format? we'd need to use metadata
 
-      const string_arg = (arg as any)?.toString() || '';
+      const string_arg = arg?.toString() || '';
 
       if (typeof arg === 'number' && Localization.decimal_separator === ',') {
         return string_arg.replace(/\./, ',');
