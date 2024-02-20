@@ -1191,6 +1191,15 @@ export class Grid extends GridBase {
   }
 
   /**
+   * we need this method for split views
+   */
+  public UpdateTabBar(): void {
+    if (this.tab_bar) {
+      this.tab_bar.Update();
+    }
+  }
+
+  /**
    * @param initial first call, from the grid Initialize() method
    */
   public UpdateTheme(initial = false, additional_properties?: Partial<Theme /*ExtendedTheme*/ >): void {

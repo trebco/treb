@@ -33,7 +33,7 @@ import type {
   AnnotationType, 
   ExternalEditorConfig,
   ConditionalFormatDuplicateValuesOptions,
-  ConditionalFormatDuplicateValues,
+  // ConditionalFormatDuplicateValues,
   ConditionalFormatGradientOptions,
   ConditionalFormat, 
   ConditionalFormatGradient, 
@@ -55,19 +55,19 @@ import {
   Parser, DecimalMarkType, 
   ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
 
-import { Calculator, type LeafVertex } from 'treb-calculator';
+import { Calculator } from 'treb-calculator';
 
 import type {
   ICellAddress, 
   EvaluateOptions,
   IArea, CellValue, Point,
   Complex, ExtendedUnion, IRectangle,
-  AddressReference, RangeReference, TableSortOptions, Table, TableTheme, GradientStop,
+  AddressReference, RangeReference, TableSortOptions, Table, TableTheme,
 } from 'treb-base-types';
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
-  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, ValueType, DOMContext, 
+  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext, 
 } from 'treb-base-types';
 
 import { EventSource, ValidateURI } from 'treb-utils';
@@ -693,7 +693,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     if (this.options.local_storage && !options.model ) {
 
-      window.addEventListener('visibilitychange', event => {
+      window.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
           if (this.options.local_storage && this.dirty) {
             this.SaveLocalStorage(this.options.local_storage);
@@ -946,7 +946,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
           case 'style':
             this.DocumentChange();
-            this.UpdateDocumentStyles(false);
+            this.UpdateDocumentStyles();
             this.UpdateSelectionStyle();
             break;
 
@@ -1297,7 +1297,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       if (event.type === 'structure') {
         this.grid.EnsureActiveSheet();
         this.grid.UpdateLayout();
-        (this.grid as any).tab_bar?.Update();
+        // (this.grid as any).tab_bar?.Update();
+        this.grid.UpdateTabBar();
       }
     });
 
@@ -1315,7 +1316,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       if (event.type === 'structure') {
         view.grid.EnsureActiveSheet();
         view.grid.UpdateLayout();
-        (view.grid as any).tab_bar?.Update();
+        // (view.grid as any).tab_bar?.Update();
+        view.grid.UpdateTabBar();
       }
     });
 
@@ -2235,7 +2237,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     const element = this.model.connected_elements.get(id);
     if (element) {
       element.formula = formula;
-      const internal = (element.internal) as { vertex: StateLeafVertex, state: any };
+
+      const internal = (element.internal) as { vertex: StateLeafVertex, state: unknown };
 
       if (internal?.state) {
         internal.state = undefined;
@@ -2262,8 +2265,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     // FIXME: merge w/ insert annotation?
 
-    let r1c1 = options?.r1c1 || false;
-    let argument_separator = options?.argument_separator || this.parser.argument_separator; // default to current
+    const r1c1 = options?.r1c1 || false;
+    const argument_separator = options?.argument_separator || this.parser.argument_separator; // default to current
 
     this.parser.Save();
     this.parser.flags.r1c1 = r1c1;
@@ -2776,7 +2779,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     if (!this.export_worker) {
-      this.export_worker = await this.LoadWorker('export');
+      this.export_worker = await this.LoadWorker();
     }
 
     return new Promise<Blob>((resolve, reject) => {
@@ -3295,7 +3298,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     if (text && filename) {
-      const blob = new Blob([text as any], { type: 'text/plain;charset=utf-8' });
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
       this.SaveAs(blob, filename);
     }
 
@@ -4297,7 +4300,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     let resolved: Area|undefined = undefined; 
 
-    if (!!range) {
+    if (range) {
       resolved = this.model.ResolveArea(range, this.grid.active_sheet);
       if (resolved.start.sheet_id) {
         if (resolved.start.sheet_id !== this.grid.active_sheet.id) {
@@ -4677,7 +4680,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     if (!this.export_worker) {
-      this.export_worker = await this.LoadWorker('export');
+      this.export_worker = await this.LoadWorker();
     }
 
     // this originally returned a Promise<Blob> but the actual
@@ -5013,7 +5016,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             // probably because there are some async calls; hence the
             // src attribute is set before it's inflated. 
 
-            const annotation = this.grid.CreateAnnotation({
+            // const annotation = 
+            this.grid.CreateAnnotation({
               type: 'image',
               formula: '',
               data: {
@@ -5190,7 +5194,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   protected UpdateConnectedElements() {
     for (const element of this.model.connected_elements.values()) {
-      const internal = (element.internal) as { vertex: StateLeafVertex, state: any };
+      const internal = (element.internal) as { vertex: StateLeafVertex, state: unknown };
       if (internal?.vertex && internal.vertex.state_id !== internal.state ) {
         internal.state = internal.vertex.state_id;
         const fn = element.update; 
@@ -5666,7 +5670,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   }
 
-  protected UpdateDocumentStyles(update = true): void {
+  protected UpdateDocumentStyles(): void {
 
     const number_format_map: Record<string, number> = {};
     const color_map: Record<string, number> = {};
@@ -5941,6 +5945,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     this.grid.UpdateSheets(sheets, undefined, override_sheet || data.active_sheet);
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const [name, table] of this.model.tables.entries()) {
       if (table.area.start.sheet_id) {
         const sheet = model.sheets.Find(table.area.start.sheet_id);
@@ -6028,7 +6033,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * load worker. optionally uses an ambient path as prefix; intended for
    * loading in different directories (or different hosts?)
    */
-  protected async LoadWorker(name: string): Promise<Worker> {
+  protected async LoadWorker(): Promise<Worker> {
 
     // this is inlined to ensure the code will be tree-shaken properly
     // (we're trying to force it to remove the imported worker script)
@@ -6042,7 +6047,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       if (export_worker_script) {
         try {
           const worker = new Worker(
-              URL.createObjectURL(new Blob([(export_worker_script as any).default], { type: 'application/javascript' })));
+              URL.createObjectURL(new Blob([(export_worker_script as {default: string}).default], { type: 'application/javascript' })));
           return worker;
         }
         catch (err) {
@@ -6057,60 +6062,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     throw new Error('creating worker failed');
-
-    /*
-
-    if (!EmbeddedSpreadsheet.treb_base_path) {
-      console.warn('worker path is not set. it you are loading TREB in an ESM module, please either '
-        + 'include the script in a document <script/> tag, or call the method TREB.SetScriptPath() to '
-        + 'set the load path for workers (this should be the path to TREB script files).');
-      throw new Error('worker path not set');
-    }
-
-    if (!/\.js$/.test(name)) name += ('-' + process.env.BUILD_VERSION + '.js');
-
-    let worker: Worker;
-    let treb_path = EmbeddedSpreadsheet.treb_base_path;
-
-    if (treb_path) {
-      if (!/\/$/.test(treb_path)) treb_path += '/';
-      name = treb_path + name;
-    }
-
-    // for remote workers, fetch and construct as blob. for local
-    // workers we can just create.
-
-    // actually we're now getting a fully-qualified URL, so it will
-    // always have a network prefix (or a file prefix)
-
-    // FIXME: testing... in particular URL.createObjectURL and new Blob
-
-    if (/^(http:|https:|\/\/)/.test(name)) {
-      const response = await fetch(name);
-
-      if (!response.ok) {
-        throw new Error('Error loading worker script');
-      }
-      
-      const script = await response.text();
-
-      // const script = await this.Fetch(name);
-      worker = new Worker(URL.createObjectURL(new Blob([script], { type: 'application/javascript' })));
-    }
-    else if (/^file:/.test(name)) {
-      throw new Error('invalid URI');
-    }
-    else {
-
-      // this was intended for relative URIs but now it is applied
-      // to file:// URIs, which won't work anyway (in chrome, at least)
-
-      worker = new Worker(name);
-
-    }
-
-    return worker;
-    */
 
   }
 
