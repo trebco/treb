@@ -36,11 +36,12 @@
  */
 
 import { EventSource } from 'treb-utils';
-import type { DataModel, MacroFunction, SerializedModel, SerializedNamedExpression, ViewModel } from './data_model';
+import type { DataModel, // MacroFunction, SerializedModel, SerializedNamedExpression, 
+              ViewModel } from './data_model';
 import type { Parser, UnitAddress} from 'treb-parser';
-import { type ExpressionUnit, IllegalSheetNameRegex, ParseCSV, ArgumentSeparatorType, DecimalMarkType } from 'treb-parser';
+import { type ExpressionUnit, IllegalSheetNameRegex, ParseCSV, DecimalMarkType } from 'treb-parser';
 import { Area, IsCellAddress, ValidationType, ValueType, DefaultTableSortOptions } from 'treb-base-types';
-import type { ICellAddress, IArea, Cell, CellValue , Style, CellStyle, Table, TableSortOptions, TableTheme, Complex, PatchOptions as PatchAreaOptions } from 'treb-base-types';
+import type { ICellAddress, IArea, Cell, CellValue, CellStyle, Table, TableSortOptions, TableTheme, Complex, PatchOptions as PatchAreaOptions } from 'treb-base-types';
 import { Sheet } from './sheet';
 import type { FunctionDescriptor} from '../editors/autocomplete_matcher';
 import { AutocompleteMatcher, DescriptorType } from '../editors/autocomplete_matcher';
@@ -67,6 +68,11 @@ interface PatchOptions extends PatchAreaOptions {
   sheet: Sheet;
 }
 
+// this is an assert, bascially, for completeness. we could probably
+// resolve the eslint issue (there's no type option) but not sure it's
+// useful to do so
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const AssertNever = (value: never) => {
   console.error('invalid case');
 };
@@ -666,6 +672,7 @@ export class GridBase {
    *
    * this is non-UI; specialization should handle the UI part
    */
+   // eslint-disable-next-line @typescript-eslint/no-unused-vars
    public UpdateSheets(data: LegacySerializedSheet[], render = false, activate_sheet?: number | string): void {
 
     Sheet.Reset(); // reset ID generation
@@ -839,7 +846,7 @@ export class GridBase {
         return false;
       }
 
-      let valid = true;
+      // let valid = true;
 
       for (const cell of sheet.cells.Iterate(area)) {
 
@@ -885,9 +892,9 @@ export class GridBase {
       });
       */
 
-      if (!valid) {
-        return false;
-      }
+      // if (!valid) {
+      //  return false;
+      // }
 
     }
     return true;
@@ -1917,6 +1924,7 @@ export class GridBase {
         // have to have a proper area. there's no case where we would
         // want to add it. so we only handle the area case.
 
+        // eslint-disable-next-line no-fallthrough
         case CommandKey.RemoveConditionalFormat:
 
           if (command.area) {
@@ -2515,7 +2523,7 @@ export class GridBase {
       return;
     }
 
-    let error = false;
+    // let error = false;
     area = sheet.RealArea(area); // collapse
 
     for (const cell of sheet.cells.Iterate(area)) {
@@ -2554,13 +2562,17 @@ export class GridBase {
       }
     }
     
+    /*
     if (error) {
       this.Error(ErrorCode.array); // `You can't change part of an array.`
     }
     else {
       sheet.ClearArea(area);
     }
-    
+    */
+
+    sheet.ClearArea(area);
+
   }
 
   /**
@@ -2678,6 +2690,7 @@ export class GridBase {
    * 
    * @param command 
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected SelectInternal(command: SelectCommand) {
     // does nothing
   }
@@ -3929,7 +3942,7 @@ export class GridBase {
                 sheet.UpdateCellStyle(address, {
                   indent: Math.max(0, (style.indent || 0) + command.delta),
                 }, true);
-              };
+              }
             }
 
             if (sheet === this.active_sheet) {

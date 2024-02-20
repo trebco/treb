@@ -76,7 +76,12 @@ export interface UndefinedUnion {
 
 export interface ExtendedUnion {
   type: ValueType.object;
-  value: unknown; // any;
+
+  // this needs to come out but it's costly; we apparently relied
+  // pretty heavily on this any leaking in and allowing lots of 
+  // sloppy comparisons. work in progress.
+
+  value: any;
   key?: string;
 }
 

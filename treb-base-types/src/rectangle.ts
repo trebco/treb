@@ -45,11 +45,11 @@ export class Rectangle implements IRectangle {
   }
 
   public static IsRectangle(obj: unknown): obj is IRectangle {
-    return (typeof obj === 'object') &&
-      (typeof (obj as any)?.left === 'number') && 
-      (typeof (obj as any)?.top === 'number') && 
-      (typeof (obj as any)?.width === 'number') && 
-      (typeof (obj as any)?.height === 'number');
+    return (!!obj && typeof obj === 'object') &&
+      (typeof (obj as Record<string, unknown>).left === 'number') && 
+      (typeof (obj as Record<string, unknown>).top === 'number') && 
+      (typeof (obj as Record<string, unknown>).width === 'number') && 
+      (typeof (obj as Record<string, unknown>).height === 'number');
   }
 
   constructor(  public left = 0,

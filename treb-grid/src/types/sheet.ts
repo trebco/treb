@@ -2506,6 +2506,7 @@ export class Sheet {
       }
     }
 
+    /*
     const translate_border_color = (color: string | undefined, default_color: string | undefined): string | undefined => {
       if (typeof color !== 'undefined' && color !== 'none') {
         if (color === default_color) {
@@ -2517,6 +2518,7 @@ export class Sheet {
       }
       return undefined;
     }
+    */
 
     const translate_border_fill = (color: Color = {}, default_color: Color = {}) => {
       const result: Color = {
@@ -3070,6 +3072,12 @@ export class Sheet {
 
         for (const key of keys) {
           if (typeof column_style[key] !== 'undefined') {
+
+            // what's the correct pattern (if any) for this? these
+            // are the same type so the type of the indexed value should
+            // be equivalent... no? maybe there is no correct way
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (overrides as any)[key] = properties[key];
           }
         }
@@ -3171,8 +3179,8 @@ export class Sheet {
 
   public BleedFlush(area: IArea) {
 
-    let rows = [Math.max(0, area.start.row - 1), area.end.row + 1];
-    let cols = [Math.max(0, area.start.column - 1), area.end.column + 1];
+    const rows = [Math.max(0, area.start.row - 1), area.end.row + 1];
+    const cols = [Math.max(0, area.start.column - 1), area.end.column + 1];
 
     for (let row = rows[0]; row <= rows[1]; row++) {
       for (let column = cols[0]; column <= cols[1]; column++) {
@@ -3323,7 +3331,7 @@ export class Sheet {
           }
           else {
             if (result.type === ValueType.boolean || result.type === ValueType.number) {
-              if(!!result.value) {
+              if(result.value) {
                 for (let row = area.start.row; row <= area.end.row; row++) {
                   if (!temp[row]) { temp[row] = []; }
                   for (let column = area.start.column; column <= area.end.column; column++) {

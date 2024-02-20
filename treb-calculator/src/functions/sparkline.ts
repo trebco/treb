@@ -30,7 +30,7 @@
  */
 
 
-import type { Cell, Style, CellStyle } from 'treb-base-types';
+import type { Cell, CellStyle } from 'treb-base-types';
 
 export interface SparklineRenderOptions {
   context: CanvasRenderingContext2D;
@@ -62,7 +62,7 @@ export class Sparkline {
    * representation (loading file); in that case it's an object with numeric
    * indexes (sadly)
    */
-  protected static UnpackValues(underlying: any): number[] {
+  protected static UnpackValues(underlying: unknown): number[] {
 
     if (Array.isArray(underlying)) {
       const test = underlying[0];
@@ -85,7 +85,9 @@ export class Sparkline {
       // if (keys.every(key => !isNaN(Number(key)))) {
 
       // check first, last
-      if (typeof underlying['0'] !== 'undefined' && typeof underlying[(len - 1).toString()] !== 'undefined') {
+      if (typeof ((underlying as Record<string, number>)['0']) !== 'undefined' && 
+          typeof (underlying as Record<string, number>)[(len - 1).toString()] !== 'undefined') {
+            
         const data: number[] = [];
 
         // we probably don't have to explicitly use strings -- although it's not
@@ -93,7 +95,7 @@ export class Sparkline {
         // conversion
 
         for (let i = 0; i < len; i++) {
-          data[i] = underlying[i.toString()];
+          data[i] = (underlying as Record<string, number>)[i.toString()];
         }
         return data;
       }

@@ -23,7 +23,7 @@ import type { GridSelection } from './grid_selection';
 import type { Annotation } from './annotation';
 import type { Sheet } from './sheet';
 import type { Area } from 'treb-base-types';
-import type { ConditionalFormat } from './conditional_format';
+// import type { ConditionalFormat } from './conditional_format';
 
 export enum ErrorCode {
 
@@ -95,9 +95,18 @@ export interface AnnotationEvent {
   event?: 'move'|'resize'|'create'|'delete'|'update';
 }
 
+export interface HyperlinkCellEventData {
+  type: 'hyperlink';
+  reference: string;
+}
+
 export interface CellEvent {
-  type: 'cell-event',
-  data?: any,
+  type: 'cell-event';
+
+  // theoretically we're going to extend this with additional types,
+  // but for now it's only used for hyperlinks.
+
+  data?: HyperlinkCellEventData;
 }
 
 export interface DataEvent {

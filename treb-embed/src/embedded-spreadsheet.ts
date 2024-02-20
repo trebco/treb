@@ -4763,11 +4763,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   protected HandleCellEvent(event: CellEvent): void {
 
-    const type = event.data?.type;
-    if (type === 'hyperlink') {
+    // const type = event.data?.type;
+    if (event.data?.type === 'hyperlink') {
 
       const hyperlink_error = 'hyperlink invalid target';
-      const data = event.data.data || '';
+      const data = event.data.reference || '';
 
       if (typeof data === 'string') {
 

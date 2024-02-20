@@ -147,7 +147,7 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
       const names = this.root.getAttributeNames();
 
-      for (let name of names) {
+      for (const name of names) {
 
         switch (name) {
 
@@ -611,7 +611,7 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
 
     comment_box.value = '';
 
-    for (const [key, value] of Object.entries(this.toolbar_controls)) {
+    for (const value of Object.values(this.toolbar_controls)) {
       if (value) {
         // value.classList.remove('treb-active');
         value.removeAttribute('active');

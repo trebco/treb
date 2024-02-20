@@ -48,9 +48,7 @@ import {
   TextPartFlag,
 } from 'treb-base-types';
 
-import type {
-  Parser, 
-  ExpressionUnit} from 'treb-parser';
+import type { ExpressionUnit } from 'treb-parser';
 import { 
   DecimalMarkType, 
   ArgumentSeparatorType, 
@@ -91,7 +89,7 @@ import { FormulaBar } from '../editors/formula_bar';
 
 import type { GridOptions } from './grid_options';
 import { BorderConstants } from './border_constants';
-import type { SerializeOptions } from './serialize_options';
+// import type { SerializeOptions } from './serialize_options';
 import { UA } from '../util/ua';
 import { Annotation, type AnnotationData } from './annotation';
 import { Autocomplete } from '../editors/autocomplete';
@@ -109,7 +107,7 @@ import type {
 import { CommandKey
 } from './grid_command';
 
-import type { DataModel, SerializedModel } from './data_model';
+import type { DataModel } from './data_model';
 
 import { DOMContext } from 'treb-base-types';
 import { GridBase } from './grid_base';
@@ -1709,7 +1707,7 @@ export class Grid extends GridBase {
           // should this persist, or should we only subscribe when we're active? (...)
           // in theory, at least, it won't send any events unless something changes
 
-          editor.Subscribe(event => this.HighlightDependencies(editor.dependencies));
+          editor.Subscribe(() => this.HighlightDependencies(editor.dependencies));
         }
 
         this.external_editor.AttachNodes(config.nodes, config.assume_formula ?? true);
@@ -3895,7 +3893,7 @@ export class Grid extends GridBase {
               type: 'cell-event',
               data: {
                 type: 'hyperlink',
-                data: link,
+                reference: link,
               }
             });
           });
@@ -3947,17 +3945,6 @@ export class Grid extends GridBase {
             this.UpdateFormulaBarFormula();
 
           }
-
-          /*
-          if (result.event) {
-            Yield().then(() => {
-              this.grid_events.Publish({
-                type: 'cell-event',
-                data: result.event,
-              });
-            });
-          }
-          */
 
           return;
         }
@@ -6142,6 +6129,7 @@ export class Grid extends GridBase {
       // be a rectangle) and one of those new cells might itself be merged.
       // so we need to iterate. there's a lot of duplication here, though.
 
+      // eslint-disable-next-line no-constant-condition
       recheck_loop: while (true) {
         for (const cell of this.active_sheet.cells.Iterate(real_area, false)) {
           if (cell.merge_area && !real_area.ContainsArea(cell.merge_area)) {
