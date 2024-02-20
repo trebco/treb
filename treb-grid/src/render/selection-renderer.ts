@@ -20,7 +20,7 @@
  */
 
 import type { Theme, ICellAddress } from 'treb-base-types';
-import { DOMContext, Rectangle } from 'treb-base-types';
+import { Rectangle } from 'treb-base-types';
 import type { BaseLayout } from '../layout/base_layout';
 import type { SelectionOffset } from './svg_selection_block';
 import { SVGSelectionBlock } from './svg_selection_block';

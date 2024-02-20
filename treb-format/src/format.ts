@@ -19,6 +19,8 @@
  * 
  */
 
+/* eslint-disable no-irregular-whitespace */
+
 import { FormatParser } from './format_parser';
 import { NumberFormatSection } from './number_format_section';
 import type { TextPart, Complex, DimensionedQuantity, CellValue} from 'treb-base-types';
@@ -534,7 +536,7 @@ export class NumberFormat {
       if (has_imaginary_value) {
 
         // also has imaginary part
-        const i = Math.abs(value.imaginary);
+        // const i = Math.abs(value.imaginary);
         parts.push({ text: value.imaginary < 0 ? ` ${NumberFormat.minus_character} ` : ' + ' });
 
         const reformatted_imaginary = drop_imaginary_coefficient ?
@@ -559,7 +561,7 @@ export class NumberFormat {
    * states. it's intended for graphical representation where things
    * like hidden characters and padding require multiple passes or measurement.
    */
-  public FormatParts(value: any): TextPart[] {
+  public FormatParts(value: CellValue): TextPart[] {
 
     // new, shortcut
     if (typeof value !== 'number' && !this.sections[3]) {
@@ -567,7 +569,7 @@ export class NumberFormat {
       // NOTE: that note (next line) seems to be incorrect, not sure why
       // ofc if that was true there'd be no point to this block...
 
-      return [{ text: value.toString() }] as TextPart[]; // unreachable because we ensure 4 sections
+      return [{ text: (value??'').toString() }] as TextPart[]; // unreachable because we ensure 4 sections
     }
 
     const { parts, section } = this.BaseFormat(value);
@@ -621,7 +623,7 @@ export class NumberFormat {
    * FIXME: date, string (this is lagging)
    * UPDATE: unifying, basing this on the text part functionality
    */
-  public Format(value: any, text_width = 0): string {
+  public Format(value: CellValue, text_width = 0): string {
 
     /*
     const parts = this.FormatParts(value);
@@ -857,14 +859,14 @@ export class NumberFormat {
 
   }
 
-  public BaseFormat(value: any) {
+  public BaseFormat(value: CellValue) {
 
     if (this.sections[0].date_format) {
       return this.DateFormat(Number(value));
     }
 
     if (typeof value !== 'number') {
-      return this.StringFormat(value.toString(), this.sections[3]);
+      return this.StringFormat((value??'').toString(), this.sections[3]);
     }
 
     let section = this.sections[0];

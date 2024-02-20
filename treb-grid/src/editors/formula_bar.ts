@@ -19,9 +19,9 @@
  * 
  */
 
-import type { Area, Cell, Theme } from 'treb-base-types';
+// import type { Area, Cell, Theme } from 'treb-base-types';
 import { Editor, type NodeDescriptor, type FormulaEditorEvent } from './editor';
-import { Parser } from 'treb-parser';
+// import { Parser } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
 import type { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
@@ -250,7 +250,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
 
     });
 
-    this.RegisterListener(descriptor, 'focusout', (event: FocusEvent) => {
+    this.RegisterListener(descriptor, 'focusout', () => {
 
       if (this.selecting) {
         console.info('focusout, but selecting...');
@@ -328,7 +328,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     // Q: do we do this in other places? we should consolidate
     // A: I don't think we do just this, usually there's additional logic for % and such
 
-    this.address_label.addEventListener('focusin', (event) => {
+    this.address_label.addEventListener('focusin', () => {
 
       const doc = this.address_label.ownerDocument;
 

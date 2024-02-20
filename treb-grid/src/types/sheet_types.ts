@@ -19,8 +19,8 @@
  * 
  */
 
-import type { IArea, SerializedCellData, Style, CellStyle } from 'treb-base-types';
-import type { Annotation, AnnotationData } from './annotation';
+import type { IArea, SerializedCellData, CellStyle } from 'treb-base-types';
+import type { AnnotationData } from './annotation';
 import type { GridSelection, SerializedGridSelection } from './grid_selection';
 import type { ConditionalFormatList } from './conditional_format';
 

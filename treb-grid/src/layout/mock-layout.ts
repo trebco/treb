@@ -1,6 +1,5 @@
 
 import type { DataModel, ViewModel } from '../types/data_model';
-import type { Tile } from '../types/tile';
 import { BaseLayout } from './base_layout';
 
 export class MockLayout extends BaseLayout {
@@ -9,15 +8,15 @@ export class MockLayout extends BaseLayout {
     super(model, view, true);
   }
 
-  public InitializeInternal(container: HTMLElement, scroll_callback: () => void): void {
+  public InitializeInternal(): void {
     
   }
 
-  protected UpdateGridTemplates(columns: boolean, rows: boolean): void {
+  protected UpdateGridTemplates(): void {
     
   }
 
-  protected UpdateTileGridPosition(tile: Tile): void {
+  protected UpdateTileGridPosition(): void {
     
   }
 
@@ -25,7 +24,7 @@ export class MockLayout extends BaseLayout {
     
   }
 
-  public ResizeCursor(resize?: 'row' | 'column' | undefined): void {
+  public ResizeCursor(): void {
     
   }
 

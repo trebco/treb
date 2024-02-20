@@ -66,7 +66,7 @@ export interface TREBDocument {
    * opaque user data. we don't read or parse this, but applications can
    * use it to store arbitrary data.
    */
-  user_data?: any;
+  user_data?: unknown;
 
   /**
    * per-sheet data. this should be an array, but for historical reasons

@@ -151,7 +151,7 @@ export class GridLayout extends BaseLayout {
 
   }
 
-  protected UpdateGridTemplates(columns = true, rows = true): void {
+  protected UpdateGridTemplates(): void {
 
     let width = 0;
     let height = 0;

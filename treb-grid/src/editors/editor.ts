@@ -40,9 +40,9 @@
  * 
  */
 
-import { Area, type IArea, type ICellAddress, IsCellAddress, Localization, type Theme, Rectangle, type Cell, DOMContext } from 'treb-base-types';
+import { Area, type ICellAddress, IsCellAddress, Localization, Rectangle, type Cell, DOMContext } from 'treb-base-types';
 import type { ExpressionUnit, ParseResult, UnitAddress, UnitRange } from 'treb-parser';
-import { Parser, QuotedSheetNameRegex } from 'treb-parser';
+import { Parser } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
 import type { Autocomplete, AutocompleteResult } from './autocomplete';
 import { EventSource } from 'treb-utils';
@@ -56,7 +56,7 @@ export interface UpdateTextOptions {
   toll_events: boolean;
 }
 
-type GenericEventListener = (event: Event) => any;
+type GenericEventListener = (event: Event) => unknown;
 
 // ----------------
 
@@ -313,7 +313,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
    * 
    * listeners moved to node descriptors so we can have multiple sets.
    */
-  protected RegisterListener<K extends keyof HTMLElementEventMap>(descriptor: NodeDescriptor, key: K, handler: (event: HTMLElementEventMap[K]) => any) {
+  protected RegisterListener<K extends keyof HTMLElementEventMap>(descriptor: NodeDescriptor, key: K, handler: (event: HTMLElementEventMap[K]) => unknown) {
     descriptor.node.addEventListener(key, handler);
     if (!descriptor.listeners) {
       descriptor.listeners = new Map();
@@ -369,12 +369,12 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
       }
     }
 
-  };
+  }
 
   /**
-   * not sure what the ID was, we don't use it atm
+   * 
    */
-  public InsertReference(reference: string, id?: number) {
+  public InsertReference(reference: string) {
 
     if (!this.active_editor) {
       return;
@@ -392,7 +392,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
       return '';
     }
 
-    let range = selection.getRangeAt(0);
+    const range = selection.getRangeAt(0);
     const text = this.active_editor.node.textContent || '';
 
     // so what we are doing here depends on where the caret is.
@@ -472,9 +472,9 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
           const substring = this.SubstringToCaret2(this.active_editor.node)[1];
 
           let leader = '';
-          let trailer = '';
+          // let trailer = '';
 
-          let trimmed = substring.trim();
+          const trimmed = substring.trim();
           if (trimmed.length) {
             const char = trimmed[trimmed.length - 1];
             if (!Editor.FormulaChars.includes(char)) {
@@ -730,7 +730,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     for (const entry of reference_list) {
 
-      const label = this.model.AddressToLabel(entry, this.view.active_sheet);
+      const label = this.model.AddressToLabel(entry); // , this.view.active_sheet);
       const area = IsCellAddress(entry) ? 
           new Area(entry) : 
           new Area(entry.start, entry.end);
@@ -834,7 +834,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     // console.info({text, substr, substr2});
 
-    let caret_start = substring_start.length;
+    const caret_start = substring_start.length;
     let caret_end = substring_end.length;
 
     // this is a little hacky
@@ -1077,7 +1077,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     const text = this.active_editor.node.textContent || '';
     let adjusted = text.substring(0, start) + insertion;
-    let caret = adjusted.length;
+    const caret = adjusted.length;
     adjusted += text.substring(end);
 
     this.active_editor.node.textContent = adjusted;
@@ -1137,7 +1137,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
     // how about string concat instead of array join, it's faster in 
     // chrome (!)
 
-    let complete = [ false, false ];
+    const complete = [ false, false ];
 
     const Consume = (element: Node, range: Range) => {
 

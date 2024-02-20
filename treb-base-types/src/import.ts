@@ -20,7 +20,7 @@
  */
 
 import type { CellStyle } from './style';
-import type { SerializedValueType, ValueType } from './value-type';
+import type { SerializedValueType } from './value-type';
 import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
 import type { DataValidation } from './cell';

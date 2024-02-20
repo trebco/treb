@@ -282,7 +282,9 @@ export abstract class BaseLayout {
         this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
         if (event.key === 'Enter' && this.dropdown_callback) {
           if (this.dropdown_selected) {
-            this.dropdown_callback.call(0, (this.dropdown_selected as any).dropdown_value);
+            const value = this.dropdown_selected.dataset.dropdown_value;
+            // this.dropdown_callback.call(0, (this.dropdown_selected as any).dropdown_value);
+            this.dropdown_callback.call(0, value ? JSON.parse(value) : undefined);
           }
         }
       }
@@ -333,7 +335,11 @@ export abstract class BaseLayout {
       this.dropdown_caret.setAttribute('class', 'treb-dropdown-caret');
 
       if (this.dropdown_callback) {
-        this.dropdown_callback.call(0, (target as any).dropdown_value);
+        // this.dropdown_callback.call(0, (target as any).dropdown_value);
+
+        const value = target.dataset.dropdown_value;
+        this.dropdown_callback.call(0, value ? JSON.parse(value) : undefined);
+
       }
     });
 
@@ -608,7 +614,7 @@ export abstract class BaseLayout {
    * 
    */
   public PointToAnnotationCorner(point: Point): Corner {
-    const address = this.PointToAddress_Grid(point, undefined, false);
+    const address = this.PointToAddress_Grid(point, false);
     const cell_rect = this.CellAddressToRectangle(address);
 
     return {
@@ -1417,7 +1423,14 @@ export abstract class BaseLayout {
         this.dropdown_selected = entry;
         entry.classList.add('selected');
       }
-      (entry as any).dropdown_value = value;
+
+      // we're attaching random data to DOM nodes here. that works, but
+      // it's sloppy. I think the reason is we want to preserve type, and
+      // this is simpler than any other solution.
+
+      // (entry as any).dropdown_value = value;
+      entry.dataset.dropdown_value = JSON.stringify(value);
+
       entry.textContent = value?.toString() || '';
     }
 
@@ -1519,7 +1532,7 @@ export abstract class BaseLayout {
     // in two scroll events. however in practice this is called on key events,
     // so it's unlikely.
 
-    let options: ScrollToOptions = {
+    const options: ScrollToOptions = {
       behavior: smooth ? 'smooth' : 'auto',
     };
 
@@ -1662,7 +1675,7 @@ export abstract class BaseLayout {
    * 
    * FIXME: implement cap_maximum parameter (not sure where we would need it)
    */
-  public PointToAddress_Grid(point: Point, cap_maximum = false, offset_freeze = true): ICellAddress {
+  public PointToAddress_Grid(point: Point, offset_freeze = true): ICellAddress {
 
     // offset for freeze pane
 

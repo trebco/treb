@@ -332,7 +332,7 @@ export class DataModel {
    * @param address 
    * @param active_sheet 
    */
-  public AddressToLabel(address: ICellAddress|IArea, active_sheet?: Sheet) {
+  public AddressToLabel(address: ICellAddress|IArea) {
 
     const start = IsCellAddress(address) ? address : address.start;
     const parts = IsCellAddress(address) ? 

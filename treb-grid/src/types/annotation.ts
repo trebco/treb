@@ -194,7 +194,7 @@ export interface AnnotationTextBoxData extends AnnotationDataBase {
       }[],
     }[];
   };
-};
+}
 
 export interface AnnotationExternalData extends AnnotationDataBase {
   type: 'external';

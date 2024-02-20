@@ -104,7 +104,7 @@ const UC_Z = 0x5a;
 const LC_Z = 0x7a;
 
 const LC_I = 0x69;
-const LC_J = 0x6a;
+// const LC_J = 0x6a;
 
 const ACCENTED_RANGE_START = 192;
 const ACCENTED_RANGE_END = 312;
@@ -289,7 +289,7 @@ export class Parser {
     // uses it. this test only works because we know the internal type
     // representation, but that's fragile and not a good idea. FIXME
 
-    if ((argument_separator as any) === (decimal_mark as any)) {
+    if ((argument_separator as string) === (decimal_mark as string)) {
       throw new Error('invalid locale setting');
     }
 
@@ -452,7 +452,7 @@ export class Parser {
     const { 
       convert_decimal, 
       convert_argument_separator, 
-      convert_imaginary_number, 
+      // convert_imaginary_number, 
       long_structured_references, 
       table_name 
     } = options;
@@ -467,10 +467,12 @@ export class Parser {
       separator = '; ';
     }
 
+    /*
     let imaginary_character = this.imaginary_number;
     if (convert_imaginary_number) {
       imaginary_character = convert_imaginary_number;
     }
+    */
 
     // this is only used if we're converting.
 
@@ -1821,7 +1823,7 @@ export class Parser {
       }
       else {
         this.error = `multiple expressions`;
-        this.error_position = (element as any).position;
+        this.error_position = (element as {position?: number}).position;
         this.valid = false;
         return {
           type: 'group',
@@ -2258,7 +2260,7 @@ export class Parser {
     // whitespace around column names is also ignored, but spaces within
     // a column name are OK, at least within the second set of brackets. 
 
-    const index = position;
+    // const index = position;
     const token_length = token.length;
 
     const label = token;

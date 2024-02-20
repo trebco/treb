@@ -24,8 +24,7 @@ import type { Cell, ICellAddress, ICellAddress2, UnionValue, EvaluateOptions,
 import { Localization, Area, ValueType, IsCellAddress} from 'treb-base-types';
          
 import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier, ParseResult } from 'treb-parser';
-import { Parser,
-         DecimalMarkType, ArgumentSeparatorType, QuotedSheetNameRegex } from 'treb-parser';
+import { Parser, DecimalMarkType, QuotedSheetNameRegex } from 'treb-parser';
 
 import { Graph } from './dag/graph';
 import type { SpreadsheetVertex } from './dag/spreadsheet_vertex';
@@ -35,7 +34,7 @@ import { ExpressionCalculator, UnionIsMetadata } from './expression-calculator';
 import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
-import type { FunctionMap} from './descriptors';
+import type { FunctionMap, IntrinsicValue} from './descriptors';
 import { ReturnType } from './descriptors';
 import { AltFunctionLibrary, BaseFunctionLibrary } from './functions/base-functions';
 import { FinanceFunctionLibrary } from './functions/finance-functions';
@@ -255,7 +254,7 @@ export class Calculator extends Graph {
       return result;
     };
 
-    const CountIfInternal = (range: any, criteria: any): UnionValue => {
+    const CountIfInternal = (range: IntrinsicValue[][], criteria: IntrinsicValue): UnionValue => {
 
       // do we really need parser/calculator for this? I think
       // we've maybe gone overboard here, could we just use valueparser
@@ -410,7 +409,7 @@ export class Calculator extends Graph {
           { name: 'type' },
           { name: 'range', metadata: true, }
         ],
-        fn: (type: number|string, ...args: any[]): UnionValue => {
+        fn: (type: number|string, ...args: UnionValue[]): UnionValue => {
 
           type = TranslateSubtotalType(type);
 
@@ -575,7 +574,7 @@ export class Calculator extends Graph {
 
           let count = 0;
 
-          let result = CountIfInternal(args[0], args[1]);
+          const result = CountIfInternal(args[0], args[1]);
           if (result.type !== ValueType.array) {
             return result; // error
           }
@@ -753,7 +752,7 @@ export class Calculator extends Graph {
         ],
         return_type: ReturnType.reference,
         volatile: true, // necessary?
-        fn: ((reference: string) => {
+        fn: ((reference: string): UnionValue => {
 
           if (!reference || (typeof reference !== 'string')) {
             return ArgumentError();
@@ -780,7 +779,7 @@ export class Calculator extends Graph {
             return { type: ValueType.undefined, value: undefined };
           }
 
-          return { type: ValueType.object, value: parse_result.expression as any };
+          return { type: ValueType.object, value: parse_result.expression };
 
         }).bind(this),
 
@@ -1031,7 +1030,7 @@ export class Calculator extends Graph {
    * values to followers.
    */
   public ExportCalculatedValues(): Record<number, CellDataWithAddress[]> {
-    const data: any = {};
+    const data: Record<number, CellDataWithAddress[]> = {};
     for (const sheet of this.model.sheets.list) {
       const calculated = sheet.cells.toJSON({calculated_value: true}).data as CellDataWithAddress[];
       data[sheet.id] = calculated.filter(test => test.calculated !== undefined);
@@ -1938,7 +1937,7 @@ export class Calculator extends Graph {
   }
 
   public RemoveConnectedELement(element: ConnectedElementType) {
-    let internal = element.internal as { vertex: StateLeafVertex };
+    const internal = element.internal as { vertex: StateLeafVertex };
     if (internal?.vertex) {
       this.RemoveLeafVertex(internal.vertex);
       return true;
@@ -1959,7 +1958,7 @@ export class Calculator extends Graph {
     }
 
     if (element) {
-      let internal = element.internal as { vertex: StateLeafVertex };
+      const internal = element.internal as { vertex: StateLeafVertex };
       if (internal?.vertex) {
         this.RemoveLeafVertex(internal.vertex);
       }

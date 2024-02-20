@@ -3973,7 +3973,7 @@ export class Grid extends GridBase {
         y: move_event.offsetY - offset.y,
       };
       const testpoint = grid_rect.Clamp(point.x, point.y);
-      const address = this.layout.PointToAddress_Grid(testpoint, true);
+      const address = this.layout.PointToAddress_Grid(testpoint);
 
       const scroll_node = this.layout.scroll_reference_node;
 
@@ -4371,16 +4371,16 @@ export class Grid extends GridBase {
     // for now, we might update that in the future.
 
     if (this.overlay_editor?.editing && this.overlay_editor.selecting) {
-      this.overlay_editor.InsertReference(label, 0);
+      this.overlay_editor.InsertReference(label);
     }
     else if (this.formula_bar && this.formula_bar.selecting) {
-      this.formula_bar.InsertReference(label, 0);
+      this.formula_bar.InsertReference(label);
     }
     else if (this.external_editor_config) {
 
       if (this.external_editor?.active) {
         this.external_editor.FocusEditor();
-        this.external_editor.InsertReference(label, 0);
+        this.external_editor.InsertReference(label);
       }
 
       if (this.external_editor_config.update) {
