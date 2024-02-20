@@ -19,9 +19,7 @@
  * 
  */
 
-import type { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
-import type { Vertex} from './vertex';
 import { Color } from './vertex';
 
 /**
@@ -93,7 +91,7 @@ export class StateLeafVertex extends SpreadsheetVertex {
   }
 
   /** overrides calculate function */
-  public Calculate(graph: GraphCallbacks): void {
+  public Calculate(): void {
 
     // if we are not dirty, nothing to do
     if (!this.dirty) return;
@@ -112,7 +110,7 @@ export class StateLeafVertex extends SpreadsheetVertex {
     // we are not allowed to have edges out, so nothing to do
   }
 
-  public AddDependent(edge: Vertex): void {
+  public AddDependent(): void {
     throw(new Error('leaf vertex cannot have dependents'));
   }
 

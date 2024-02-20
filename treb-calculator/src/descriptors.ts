@@ -34,7 +34,7 @@ export interface ArgumentDescriptor {
 
   name?: string;
   description?: string;
-  default?: any;
+  default?: number|string|boolean;
 
   // moved from function arrays:
 
@@ -109,7 +109,8 @@ export interface CompositeFunctionDescriptor {
    * the actual function. if this is an object member and needs access
    * to the containing instance, make sure to bind it to that instance.
    */
-  fn: (...args: any[]) => UnionValue; // UnionOrArray; // |UnitAddress|UnitRange;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fn: (...args: any[]) => UnionValue; 
 
   /**
    * limited visibility
@@ -152,6 +153,7 @@ export interface CompositeFunctionDescriptor {
   /**
    * @internal
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export?: (...args: any[]) => string;
 
 }
@@ -172,3 +174,5 @@ export interface ExtendedFunctionDescriptor extends CompositeFunctionDescriptor 
 export interface ExtendedFunctionMap {
   [index: string]: ExtendedFunctionDescriptor;
 }
+
+export type IntrinsicValue = number|string|boolean|undefined;

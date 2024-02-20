@@ -20,7 +20,6 @@
  */
 
 import type { RenderFunctionOptions, ClickFunctionOptions, ClickFunctionResult, RenderFunctionResult } from 'treb-base-types';
-import { Style } from 'treb-base-types';
 
 export const ClickCheckbox = (options: ClickFunctionOptions): ClickFunctionResult => {
   const { x, y, width, height, cell } = options;

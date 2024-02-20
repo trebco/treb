@@ -21,7 +21,7 @@
 
 import type { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertexBase } from './spreadsheet_vertex_base';
-import type { Cell, ICellAddress, UnionValue } from 'treb-base-types';
+import type { Cell, CellValue, ICellAddress, UnionValue } from 'treb-base-types';
 import { Box, ValueType } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import { Color } from './vertex';
@@ -237,7 +237,7 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
         // whitelist types. or blacklist types. or something.
 
         {
-          this.reference.SetCalculatedValue(single.value as any, single.type);
+          this.reference.SetCalculatedValue(single.value as CellValue, single.type);
         }
 
         /*

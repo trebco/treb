@@ -696,7 +696,7 @@ export abstract class Graph implements GraphCallbacks {
   }
 
   /** adds an edge from u -> v */
-  public AddEdge(u: ICellAddress, v: ICellAddress, tag?: string): void {
+  public AddEdge(u: ICellAddress, v: ICellAddress, /* tag?: string */ ): void {
 
     const v_u = this.GetVertex(u, true);
     const v_v = this.GetVertex(v, true);
@@ -732,7 +732,7 @@ export abstract class Graph implements GraphCallbacks {
         ...u,
         row: v_u.reference.area.start.row,
         column: v_u.reference.area.start.column,
-      }, v, 'implicit');
+      }, v); // , 'implicit');
     }
 
     this.loop_check_required = true; // because new edges

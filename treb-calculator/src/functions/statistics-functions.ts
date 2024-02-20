@@ -22,7 +22,7 @@
 import type { FunctionMap } from '../descriptors';
 import * as Utils from '../utilities';
 import { ValueError, ArgumentError, NAError } from '../function-error';
-import { type Complex, type UnionValue, ValueType } from 'treb-base-types';
+import { type Complex, type UnionValue, ValueType, type CellValue } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
 
 export const Variance = (data: number[], sample = false) => {
@@ -58,7 +58,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
   'StDev.P': {
     description: 'Returns the standard deviation of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
-    fn: (...args: any[]): UnionValue => {
+    fn: (...args: CellValue[]): UnionValue => {
       return { type: ValueType.number, value: Math.sqrt(Variance(Utils.FlattenUnboxed(args), false)) };
     },
   },
@@ -66,7 +66,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
   'StDev.S': {
     description: 'Returns the standard deviation of a set of values, corresponding to a sample of a population',
     arguments: [{ name: 'data', }],
-    fn: (...args: any[]): UnionValue => {
+    fn: (...args: CellValue[]): UnionValue => {
       return { type: ValueType.number, value: Math.sqrt(Variance(Utils.FlattenUnboxed(args), true)) };
     },
   },
@@ -74,7 +74,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
   'Var.P': {
     description: 'Returns the variance of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
-    fn: (...args: any[]): UnionValue => {
+    fn: (...args: CellValue[]): UnionValue => {
       return { type: ValueType.number, value: Variance(Utils.FlattenUnboxed(args), false) };
     },
   },
@@ -82,7 +82,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
   'Var.S': {
     description: 'Returns the variance of a set of values, corresponding to a sample of a population',
     arguments: [{ name: 'data', }],
-    fn: (...args: any[]): UnionValue => {
+    fn: (...args: CellValue[]): UnionValue => {
       return { type: ValueType.number, value: Variance(Utils.FlattenUnboxed(args), true) };
     },
   },
@@ -94,7 +94,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     }, {
       name: 'B',
     }],
-    fn: (x: any[], y: any[]): UnionValue => {
+    fn: (x: number[][], y: number[][]): UnionValue => {
 
       // both must be 2d arrays, we're assuming the same or mostly similar shape
       if (!Array.isArray(x) || !Array.isArray(y)) { return ValueError(); }
@@ -153,7 +153,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     }, {
       name: 'B',
     }],
-    fn: (x: any[], y: any[]): UnionValue => {
+    fn: (x: number[][], y: number[][]): UnionValue => {
 
       // both must be 2d arrays, we're assuming the same or mostly similar shape
       if (!Array.isArray(x) || !Array.isArray(y)) { return ValueError(); }
@@ -201,7 +201,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the geometric mean of all numeric arguments',
     arguments: [{ boxed: true }],
 
-    fn: (...args: any[]): UnionValue => {
+    fn: (...args: UnionValue[]): UnionValue => {
 
       args = Utils.FlattenBoxed(args); 
 
@@ -210,7 +210,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       let complex = false;
       let negative = false;
 
-      for (const arg of args as UnionValue[]) {
+      for (const arg of args) {
         
         if (arg.type === ValueType.complex) {
           complex = true;
@@ -265,7 +265,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the arithmetic mean of all numeric arguments',
     arguments: [{ boxed: true }],
 
-    fn: (...args: any[]): UnionValue => {
+    fn: (...args: UnionValue[]): UnionValue => {
       args = Utils.FlattenBoxed(args);
 
       const result = { real: 0, imaginary: 0 };
@@ -326,7 +326,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     arguments: [
       { name: 'range' },
     ],
-    fn: (...args: any[]): UnionValue => {
+    fn: (...args: number[]): UnionValue => {
 
       const flat = Utils.FlattenUnboxed(args).filter((test) => typeof test === 'number');
       flat.sort((a, b) => a - b);

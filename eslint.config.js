@@ -12,7 +12,10 @@ export default tseslint.config(
       // allow destructuring to use garbage variables. prefix name with 
       // underscore (or just use underscore).
 
-      "@typescript-eslint/no-unused-vars": ["error", { "destructuredArrayIgnorePattern": "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error", { 
+          "destructuredArrayIgnorePattern": "^_",
+        }],
     },
   },
 );

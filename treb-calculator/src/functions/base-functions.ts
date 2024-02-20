@@ -19,7 +19,7 @@
  * 
  */
 
-import type { FunctionMap } from '../descriptors';
+import type { FunctionMap, IntrinsicValue } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
 import type { UnionValue, 
@@ -108,7 +108,7 @@ const zlookup_arguments = [
  * unified VLOOKUP/HLOOKUP. ordinarily we'd call it XLOOKUP but that's taken.
  * FIXME: can't use use that function for this? 
  */
-const ZLookup = (value: any, table: any[][], col: number, inexact = true, transpose = false): UnionValue => {
+const ZLookup = (value: number|string|boolean|undefined, table: (number|string|boolean|undefined)[][], col: number, inexact = true, transpose = false): UnionValue => {
 
   if (transpose) {
     table = Utils.TransposeArray(table);
@@ -128,7 +128,7 @@ const ZLookup = (value: any, table: any[][], col: number, inexact = true, transp
 
   if (inexact) {
 
-    let result: any = table[col][0];
+    let result: number|string|boolean|undefined = table[col][0];
 
     if (typeof value === 'number') {
 
@@ -149,7 +149,7 @@ const ZLookup = (value: any, table: any[][], col: number, inexact = true, transp
     }
     else {
 
-      value = value.toLowerCase(); // ?
+      value = (value||'').toString().toLowerCase(); // ?
       let compare: string = (table[0][0] || '').toString().toLowerCase();
       if (compare.localeCompare(value) > 0) {
         return NAError();
@@ -754,7 +754,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       // so we can call apply as array, but applying against the trailing
       // arguments.
 
-      fn: Utils.ApplyAsArraySwap((data: any, index: number) => {
+      fn: Utils.ApplyAsArraySwap((data: IntrinsicValue[], index: number) => {
 
         if (index <= 0) {
           return ArgumentError();
@@ -788,7 +788,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       // see large, above
 
-      fn: Utils.ApplyAsArraySwap((data: any, index: number) => {
+      fn: Utils.ApplyAsArraySwap((data: IntrinsicValue[], index: number) => {
 
         if (index <= 0) {
           return ArgumentError();
@@ -821,12 +821,12 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [
         { name: 'values' }
       ],
-      fn: (...args: any[]): UnionValue => {
+      fn: (...args: IntrinsicValue[]): UnionValue => {
 
         args = Utils.FlattenUnboxed(args);
 
         if(args.every(test => typeof test === 'number')) {
-          args.sort((a, b) => a - b);
+          (args as number[]).sort((a, b) => a - b);
         }
         else {
           args.sort(); // lexical
@@ -860,7 +860,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Max: {
-      fn: (...args: any[]): UnionValue => {
+      fn: (...args: number[]): UnionValue => {
         return { 
           type: ValueType.number, 
           value: Math.max.apply(0, Utils.FlattenUnboxed(args).filter(x => typeof x === 'number')),
@@ -869,7 +869,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Min: {
-      fn: (...args: any[]): UnionValue => {
+      fn: (...args: number[]): UnionValue => {
         return { 
           type: ValueType.number, 
           value: Math.min.apply(0, Utils.FlattenUnboxed(args).filter(x => typeof x === 'number')),
@@ -915,7 +915,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     SumProduct: {
       description: 'Returns the sum of pairwise products of two or more ranges',
-      fn: (...args: any[]): UnionValue  => {
+      fn: (...args: IntrinsicValue[][]): UnionValue  => {
 
         const flattened = args.map(arg => Utils.FlattenUnboxed(arg));
         const len = Math.max.apply(0, flattened.map(x => x.length));
@@ -996,9 +996,9 @@ export const BaseFunctionLibrary: FunctionMap = {
       ],
       xlfn: true,
       fn: (
-          lookup_value: any, 
-          lookup_array: any[][], 
-          return_array: any[][],
+          lookup_value: IntrinsicValue, 
+          lookup_array: IntrinsicValue[][], 
+          return_array: IntrinsicValue[][],
           not_found?: UnionValue,
           match_mode = 0,
           search_mode = 1,
@@ -1031,7 +1031,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           return ValueError();
         }
 
-        let transpose = (lookup_array.length === 1);
+        const transpose = (lookup_array.length === 1);
         if (transpose) {
           lookup_array = Utils.TransposeArray(lookup_array);
           return_array = Utils.TransposeArray(return_array);
@@ -1125,11 +1125,11 @@ export const BaseFunctionLibrary: FunctionMap = {
               // wildcard string match. we only handle strings for 
               // this case (see above).
 
-              const pattern = Utils.ParseWildcards(lookup_value);
+              const pattern = Utils.ParseWildcards(lookup_value?.toString() || '');
               const regex = new RegExp('^' + pattern + '$', 'i'); //.exec(lookup_value);
 
               for (let i = 0; i < lookup_array.length; i++) {
-                let value = lookup_array[i][0];
+                const value = lookup_array[i][0];
                 if (typeof value === 'string' && regex.exec(value)) {
                   return ReturnIndex(i);
                 }
@@ -1232,7 +1232,7 @@ export const BaseFunctionLibrary: FunctionMap = {
      */
     HLookup: {
       arguments: [...zlookup_arguments],
-      fn: (value: any, table: any[][], col: number, inexact = true): UnionValue => {
+      fn: (value: number|boolean|string|undefined, table: (number|boolean|string|undefined)[][], col: number, inexact = true): UnionValue => {
         return ZLookup(value, table, col, inexact, true);
       },
     },
@@ -1243,14 +1243,14 @@ export const BaseFunctionLibrary: FunctionMap = {
      */
     VLookup: {
       arguments: [...zlookup_arguments],
-      fn: (value: any, table: any[][], col: number, inexact = true): UnionValue => {
+      fn: (value: number|boolean|string|undefined, table: (number|boolean|string|undefined)[][], col: number, inexact = true): UnionValue => {
         return ZLookup(value, table, col, inexact, false);
       },
     },
 
     Product: {
       arguments: [{boxed: true}],
-      fn: (...args: any[]): UnionValue => {
+      fn: (...args: UnionValue[]): UnionValue => {
 
         let product: Complex = { real: 1, imaginary: 0 };
 

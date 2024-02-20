@@ -21,7 +21,6 @@
 
 import type { GraphCallbacks } from './spreadsheet_vertex_base';
 import { SpreadsheetVertex } from './spreadsheet_vertex';
-import type { Vertex} from './vertex';
 import { Color } from './vertex';
 
 /**
@@ -97,7 +96,7 @@ export class CalculationLeafVertex extends SpreadsheetVertex {
 
   }
 
-  public AddDependent(edge: Vertex): void {
+  public AddDependent(): void {
     throw(new Error('leaf vertex cannot have dependents'));
   }
 

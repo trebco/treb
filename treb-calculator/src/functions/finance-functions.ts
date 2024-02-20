@@ -23,7 +23,7 @@ import type { FunctionMap } from '../descriptors';
 import { type CellValue, type UnionValue, ValueType } from 'treb-base-types';
 import { FlattenUnboxed } from '../utilities';
 
-import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError } from '../function-error';
+import { ArgumentError, ValueError } from '../function-error';
 
 // use a single, static object for base functions
 
@@ -98,7 +98,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
       { name: 'Rate' },
       { name: 'Cashflow' },
     ],
-    fn: (rate = 0, ...args: any[]): UnionValue => {
+    fn: (rate = 0, ...args: CellValue[]): UnionValue => {
 
       let result = 0;
 
@@ -123,7 +123,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
       { name: 'Values', },
       { name: 'Dates', },
     ],
-    fn: (rate: UnionValue, input_values: CellValue[], input_dates: CellValue[]): UnionValue => {
+    fn: (rate: CellValue, input_values: CellValue[], input_dates: CellValue[]): UnionValue => {
 
       if (typeof rate !== 'number') {
         return ArgumentError();
