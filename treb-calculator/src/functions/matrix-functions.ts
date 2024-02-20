@@ -37,11 +37,18 @@ const ComplexMatrix = (input: UnionValue): ComplexMatrixType => {
 
   // ensure array
 
+  // hmmm... this is confusing. what is this doing? is this for scalars?
+  // if that were the case shouldn't it wrap up the outer value, and not 
+  // the value property? ...
+
   if (input.type === ValueType.array) {
     a = input.value;
   }
   else {
-    a = [[input.value]];
+
+    // a = [[input.value]];
+    a = [[input]];
+
   }
 
   // if (!Array.isArray(a)) { a = [[a]]; }

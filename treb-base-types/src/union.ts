@@ -81,7 +81,7 @@ export interface ExtendedUnion {
   // pretty heavily on this any leaking in and allowing lots of 
   // sloppy comparisons. work in progress.
 
-  value: any;
+  value: unknown; // any;
   key?: string;
 }
 

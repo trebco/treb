@@ -20,11 +20,13 @@
  */
 
 import type { FunctionMap } from '../descriptors';
-import type { NumberUnion, UnionValue} from 'treb-base-types';
+import type { CellValue, NumberUnion, UnionValue} from 'treb-base-types';
 import { IsComplex, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
 import { ValueError } from '../function-error';
 import { RectangularToPolar } from '../complex-math';
+
+import { CoerceComplex } from './function-utilities';
 
 export const ComplexFunctionLibrary: FunctionMap = {
 
@@ -37,7 +39,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
     fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
       return { 
         type: ValueType.boolean, 
-        value: ref?.value && IsComplex(ref.value.value),
+        value: !!(ref?.value) && IsComplex((ref.value as {value?: CellValue}).value),
       };
     }),
   },
@@ -98,23 +100,28 @@ export const ComplexFunctionLibrary: FunctionMap = {
       { boxed: true },
     ],
     fn: Utils.ApplyAsArray((arg: UnionValue): UnionValue => {
-      if (arg.type === ValueType.complex) {
+
+      const complex = CoerceComplex(arg);
+
+      if (!complex) {
+        return ValueError();
+      }
+
+      if (complex.imaginary) {
         return {
           type: ValueType.complex,
           value: {
-            real: arg.value.real,
-            imaginary: -arg.value.imaginary,
+            real: complex.real,
+            imaginary: -complex.imaginary,
           },
-        };
+        }
       }
-      else if (arg.type === ValueType.number || arg.type === ValueType.undefined || !arg.value) {
-        return {
-          type: ValueType.number, value: arg.value || 0,
-        };
-      }
-      else {
-        return ValueError();
-      }
+
+      return {
+        type: ValueType.number,
+        value: complex.real,
+      };
+
     }),
   },
 
@@ -172,18 +179,12 @@ export const ComplexFunctionLibrary: FunctionMap = {
 
     fn: Utils.ApplyAsArray((a: UnionValue): UnionValue => {
       
-      if (a.type === ValueType.complex) {
-        return a;
-      }
-      
-      if (a.type === ValueType.number || a.type === ValueType.undefined || !a.value) {
-        return { 
-          type: ValueType.complex, 
-          value: {
-            imaginary: 0,
-            real: a.value || 0,
-          },
-        }
+      const complex = CoerceComplex(a);
+      if (complex) {
+        return {
+          type: ValueType.complex,
+          value: complex,
+        };
       }
 
       return ValueError();

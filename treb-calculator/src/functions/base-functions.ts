@@ -32,6 +32,7 @@ import { ClickCheckbox, RenderCheckbox } from './checkbox';
 import { UnionIsMetadata } from '../expression-calculator';
 
 import { Exp as ComplexExp, Power as ComplexPower, Multiply as ComplexMultply } from '../complex-math';
+import { CoerceComplex } from './function-utilities';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -266,14 +267,24 @@ export const AltFunctionLibrary: FunctionMap = {
       }
       */
 
+      const a = CoerceComplex(base);
+      const b = CoerceComplex(exponent);
+
+      /*
       const a = base.type === ValueType.complex ? base.value : 
         { real: base.value || 0, imaginary: 0, };
 
       const b = exponent.type === ValueType.complex ? exponent.value :
         { real: exponent.value || 0, imaginary: 0, };
+      */
 
-      const value = ComplexPower(a, b);
-      return ComplexOrReal(value);
+      if (a && b) {
+        const value = ComplexPower(a, b);
+        return ComplexOrReal(value);
+      }
+
+      return ValueError();
+
 
     }),
   },
@@ -706,20 +717,18 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
         */
 
+        const a = CoerceComplex(base);
+        const b = CoerceComplex(exponent);
+
+        if (!a || !b) {
+          return ValueError();
+        }
+
         if (base.type === ValueType.complex || exponent.type === ValueType.complex) {
-
-          const a = base.type === ValueType.complex ? base.value : 
-            { real: base.value || 0, imaginary: 0, };
-          const b = exponent.type === ValueType.complex ? exponent.value :
-            { real: exponent.value || 0, imaginary: 0, };
-
-          const value = ComplexPower(a, b);
-
-          return ComplexOrReal(value);
-
+          return ComplexOrReal(ComplexPower(a, b));
         }
         else {
-          const value = Math.pow(base.value, exponent.value);
+          const value = Math.pow(a.real, b.real);
           if (isNaN(value)) {
             return ValueError();
           }
@@ -1383,7 +1392,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         return { 
           type: ValueType.string, 
-          value: a.value.toString().split('').reverse().join(''),
+          value: (a.value??'').toString().split('').reverse().join(''),
         };
       },
     },
@@ -1396,11 +1405,17 @@ export const BaseFunctionLibrary: FunctionMap = {
         { boxed: true },
       ],
       fn: Utils.ApplyAsArray((x: UnionValue) => {
+        
         if (x.type === ValueType.complex) {
           const value = ComplexExp(x.value);
           return ComplexOrReal(value);
         }
-        return { type: ValueType.number, value: Math.exp(x.value || 0) };
+
+        if (x.type !== ValueType.number) {
+          return ValueError();
+        }
+
+        return { type: ValueType.number, value: Math.exp(x.value) };
       }),
     },
 
@@ -1419,6 +1434,11 @@ export const BaseFunctionLibrary: FunctionMap = {
             value: Math.sqrt(a.value.real * a.value.real + a.value.imaginary * a.value.imaginary), 
           };
         }
+
+        if (a.type !== ValueType.number) {
+          return ValueError();
+        }
+
         return { type: ValueType.number, value: Math.abs(a.value || 0) };
       }),
     },
@@ -1545,6 +1565,15 @@ export const BaseFunctionLibrary: FunctionMap = {
           }
         }
         */
+        else if (ref.type === ValueType.number) {
+          return { 
+            type: ValueType.number, value: Math.sqrt(ref.value),
+          };
+        }
+
+        return ValueError();
+
+        /*
         else {
           const value = Math.sqrt(ref.value);
           if (isNaN(value)) {
@@ -1552,6 +1581,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           }
           return { type: ValueType.number, value };
         }
+        */
       }),
     },
 

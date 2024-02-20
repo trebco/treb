@@ -446,7 +446,8 @@ export class Calculator extends Graph {
 
             // where is the metadata type? sigh
 
-            const address = (entry.value?.address) as UnitAddress;
+            const address = ((entry.value as {address?: UnitAddress})?.address) as UnitAddress;
+
             if (!address) {
               return ReferenceError();
             }
@@ -471,7 +472,7 @@ export class Calculator extends Graph {
               continue;
             }
 
-            const entry_value = entry.value?.value;
+            const entry_value = (entry.value as {value?: CellValue})?.value;
 
             // counta includes empty strings
 
@@ -1000,9 +1001,11 @@ export class Calculator extends Graph {
           // this is wasteful because we know that the range will all
           // be in the same sheet... we don't need to look up every time
 
-          const sheet = this.model.sheets.Find(ref?.value?.address?.sheet_id || 0);
-          if (sheet) {
-            const cell = sheet.cells.GetCell(ref.value.address, false);
+          const addr = (ref?.value as {address?: UnitAddress})?.address;
+
+          const sheet = this.model.sheets.Find(addr?.sheet_id || 0);
+          if (addr && sheet) {
+            const cell = sheet.cells.GetCell(addr, false);
             return { 
               type: ValueType.boolean, 
               value: cell?.type === ValueType.formula,
@@ -1097,7 +1100,39 @@ export class Calculator extends Graph {
           if (values[row]) {
             let column = 0;
             for (; column < columns && column < values[row].length; column++) {
-              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(values[row][column].value, values[row][column].type);
+
+              // if there's a nested array, take the first value. but
+              // don't recurse; if there's another array in there set
+              // as undefined (should be error?)
+
+              let indexed_value = values[row][column];
+              if (indexed_value.type === ValueType.array) {
+                indexed_value = indexed_value.value[0][0];
+              }
+
+              switch (indexed_value.type) {
+                case ValueType.array:
+                case ValueType.object:
+                  cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined); // error?
+                    break;
+
+                default:
+                  cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(
+                    indexed_value.value, indexed_value.type);
+  
+              }
+             
+              /*
+              if (indexed_value.type !== ValueType.object) {
+                cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(
+                  indexed_value.value, indexed_value.type);
+              }
+
+              cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(
+                values[row][column].value, 
+                values[row][column].type);
+                */
+
             }
             for (; column < columns; column++) {
               cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(undefined, ValueType.undefined);
@@ -1115,9 +1150,15 @@ export class Calculator extends Graph {
 
         // single, recycle
 
+        let applied: UnionValue = { ...value };
+        
+        if (applied.type === ValueType.object) {
+          applied = { type: ValueType.undefined, value: undefined };
+        }
+
         for (let row = 0; row < rows; row++) {
           for (let column = 0; column < columns; column++) {
-            cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(value.value, value.type);
+            cells.data[row + area.start.row][column + area.start.column].SetCalculatedValue(applied.value, applied.type);
           }
         }
         
