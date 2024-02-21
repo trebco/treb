@@ -1,7 +1,7 @@
 
 import { type UnionValue, ValueType, type ArrayUnion } from 'treb-base-types';
 import { LegendStyle } from './chart-types';
-import type { SubSeries, SeriesType, BarData, ChartDataBaseType, ChartData, ScatterData2, LineData, DonutSlice, BubbleChartData } from './chart-types';
+import type { SubSeries, SeriesType, BarData, ChartDataBaseType, ChartData, ScatterData2, DonutSlice, BubbleChartData } from './chart-types';
 import { NumberFormatCache } from 'treb-format';
 import { Util } from './util';
 
@@ -15,7 +15,9 @@ import { Util } from './util';
 
 const DEFAULT_FORMAT = '#,##0.00'; // why not use "general", or whatever the usual default is?
 
-export const ReadSeries = (data: Array<any>): SeriesType => {
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const ReadSeries = (data: any[]): SeriesType => {
 
   // series type is (now)
   //
@@ -227,7 +229,8 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
       }
     }
     else if (raw_data.key === 'series') {
-      const series = ReadSeries(raw_data.value);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const series = ReadSeries(raw_data.value as any[]);
       list.push(series);
     }
   }
@@ -332,7 +335,7 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
   let x_min = Math.min.apply(0, x.map(test => test.x.range?.min || 0));
   let x_max = Math.max.apply(0, x.map(test => test.x.range?.max || 0));
 
-  const y = series.filter(test => test.y.range);
+  // const y = series.filter(test => test.y.range);
   let y_min = Math.min.apply(0, x.map(test => test.y.range?.min || 0));
   let y_max = Math.max.apply(0, x.map(test => test.y.range?.max || 0));
 
@@ -461,7 +464,7 @@ export const CreateBubbleChart = (args: UnionValue[]): ChartData => {
 
   const common = CommonData(series, y_floor, undefined, x_floor);
   const title = args[1]?.toString() || undefined;
-  const options = args[2]?.toString() || undefined;
+  // const options = args[2]?.toString() || undefined;
 
   // console.info({ series, common, title, options });
 
@@ -583,7 +586,7 @@ export const CreateBubbleChart = (args: UnionValue[]): ChartData => {
  * 
  * @param args 
  */
-export const CreateScatterChart = (args: any[], style: 'plot' | 'line' = 'plot'): ChartData => {
+export const CreateScatterChart = (args: [UnionValue, string, string], style: 'plot' | 'line' = 'plot'): ChartData => {
 
   // FIXME: transform the data, then have this function
   // operate on clean data. that way the transform can
@@ -734,7 +737,7 @@ export const CreateColumnChart = (args: [UnionValue?, UnionValue?, string?, stri
 /**
  * args: data, labels, title, callouts, "smooth"
  */
-export const CreateLineChart = (args: any[], type: 'line' | 'area'): ChartData => {
+export const CreateLineChart = (args: [UnionValue, UnionValue, string, string], type: 'line' | 'area'): ChartData => {
 
   const series: SeriesType[] = TransformSeriesData(args[0], args[1]);
   const common = CommonData(series, 0, 0);

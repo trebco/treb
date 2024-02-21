@@ -31,7 +31,8 @@ export class Chart {
 
   public Exec(func: string, union: ExtendedUnion) {
 
-    const args: any[] = union?.value || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const args: any[] = (union?.value as any[]) || [];
     
     switch (func.toLowerCase()) {
 
@@ -44,11 +45,11 @@ export class Chart {
         break;
               
       case 'line.chart':
-        this.chart_data = ChartUtils.CreateLineChart(args, 'line');
+        this.chart_data = ChartUtils.CreateLineChart(args as Parameters<typeof ChartUtils.CreateLineChart>[0], 'line');
         break;
 
       case 'area.chart':
-        this.chart_data = ChartUtils.CreateLineChart(args, 'area');
+        this.chart_data = ChartUtils.CreateLineChart(args as Parameters<typeof ChartUtils.CreateLineChart>[0], 'area');
         break;
 
       case 'donut.chart':
@@ -57,11 +58,11 @@ export class Chart {
         break;
 
       case 'scatter.plot':
-        this.chart_data = ChartUtils.CreateScatterChart(args, 'plot');
+        this.chart_data = ChartUtils.CreateScatterChart(args as Parameters<typeof ChartUtils.CreateScatterChart>[0], 'plot');
         break;
 
       case 'scatter.line':
-        this.chart_data = ChartUtils.CreateScatterChart(args, 'line');
+        this.chart_data = ChartUtils.CreateScatterChart(args as Parameters<typeof ChartUtils.CreateScatterChart>[0], 'line');
         break;
   
       case 'bubble.chart':

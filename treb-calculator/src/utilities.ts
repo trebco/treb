@@ -24,7 +24,7 @@ import { ValueType } from 'treb-base-types';
 
 export const DAY_MS = 1000 * 60 * 60 * 24;
 
-export const IsArrayOrTypedArray = (test: any): boolean => {
+export const IsArrayOrTypedArray = (test: unknown): boolean => {
   return Array.isArray(test) || (test instanceof Float64Array) || (test instanceof Float64Array);
 };
 
@@ -101,7 +101,7 @@ export const ColumnToString = (column: number) => {
 
 export const OffsetFormula = (formula: string, offset: {columns: number, rows: number}) => {
 
-  const cache: any = {};
+  const cache: Record<string, string> = {};
   formula = formula.replace(/\b([A-Za-z]+)(\d+)\b/g, (m, p1, p2) => {
     if (!cache[m]) {
       const c = ColumnToString(StringToColumn(p1) + offset.columns);
@@ -161,6 +161,10 @@ export const FlattenUnboxed = (args: any[]): any[] => {
   }, []);
 };
 
+/*
+
+// anyone using this? (...) removing
+
 export const UndefinedToEmptyString = (args: any[]): any[] => {
   for (let i = 0; i < args.length; i++) {
     if (Array.isArray(args[i])) {
@@ -172,199 +176,12 @@ export const UndefinedToEmptyString = (args: any[]): any[] => {
   }
   return args;
 };
-
-/* *
- * returns a function that applies the given function to a scalar or a matrix
- * @param base the underlying function
- * /
-export const ApplyArrayFunc = (base: (...args: any[]) => any) => {
-  return (a: any) => {
-    if (Array.isArray(a)) {
-      const tmp: any[] = [];
-      const rows = a[0].length;
-      for (let c = 0; c < a.length; c++) {
-        const col: any[] = [];
-        for (let r = 0; r < rows; r++) col[r] = base(a[c][r]);
-        tmp.push(col);
-      }
-      return tmp;
-    }
-    return base(a);
-  };
-};
 */
 
-/*
-export const ApplyAsArraySwap = (base: (...args: any[]) => UnionValue) => {
-  return (...args: any[]): UnionValue => {
-
-    // swap here
-    args.reverse();
-    const [a, ...rest] = args;
-
-    if (Array.isArray(a)) {
-      return {
-        type: ValueType.array,
-        value: a.map(row => row.map((element: any) => {
-
-          // swap back
-          const swapped = [...rest, element];
-          return base(...swapped);
-
-        })),
-      };
-    }
-    else if (typeof a === 'object' && !!a && a.type === ValueType.array ) {
-      return {
-        type: ValueType.array,
-        value: (a as ArrayUnion).value.map(row => row.map((element: any) => {
-
-          const swapped = [...rest, element];
-          return base(...swapped);
-
-        })),
-      };
-      
-    }
-    else {
-      return base(...rest, a);
-    }
-  }
-};
-*/
-
-/*
-export const ApplyAsArray = (base: (a: any, ...rest: any[]) => UnionValue) => {
-  return (a: any, ...rest: any[]): UnionValue => {
-    if (Array.isArray(a)) {
-      return {
-        type: ValueType.array,
-        value: a.map(row => row.map((element: any) => {
-          return base(element, ...rest);
-        })),
-      };
-    }
-    else if (typeof a === 'object' && !!a && a.type === ValueType.array ) {
-      return {
-        type: ValueType.array,
-        value: (a as ArrayUnion).value.map(row => row.map((element: any) => {
-          return base(element, ...rest);
-        })),
-      };
-      
-    }
-    else {
-      return base(a, ...rest);
-    }
-  }
-};
-*/
-
+/** type guard. FIXME: move */
 const IsArrayUnion = (value: unknown): value is ArrayUnion => {
   return (!!value && typeof value === 'object' && (value as { type: ValueType, value?: Array<unknown> }).type === ValueType.array);
 };
-
-/* *
- * cleaner (type-wise) application function. we're still dealing with
- * the any[] parameters but it will be easy to fix this part
- * 
- * /
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const ApplyAsArray = <TFunc extends (...args: any[]) => UnionValue>(base: TFunc): (...args: Parameters<TFunc>) => UnionValue => {
-
-  return (...args: Parameters<TFunc>) => {
-
-    const [a, ...rest] = args;
-
-    if (Array.isArray(a)) {
-
-      // array: walk
-
-      return {
-        type: ValueType.array,
-        value: a.map((row: Array<Parameters<TFunc>[0]>) => row.map((element: Parameters<TFunc>[0]) => {
-          return base(element, ...rest);
-        })),
-      };
-
-    }
-    else if (IsArrayUnion(a)) {
-     
-      // union array type, deref and walk [FIXME: this could be consolidated, no?]
-
-      return {
-        type: ValueType.array,
-        value: a.value.map((row: Array<Parameters<TFunc>[0]>) => row.map((element: Parameters<TFunc>[0]) => {
-          return base(element, ...rest);
-        })),
-      }
-
-    }
-    else {
-
-      // scalar
-
-      return base(a, ...rest);
-    }
-
-  };
-
-};
-*/
-
-/**
- * two-parameter optional array application. 
- * 
- * note that we're not applying this combinatorially; if there are two arrays,
- * then we apply the function (array-1-length) times and at each step we call
- * the function with the values from each array at the same index. 
- * 
- * /
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const ApplyAsArray2 = <TFunc extends (...args: any[]) => UnionValue>(base: TFunc): (...args: Parameters<TFunc>) => UnionValue => {
-  
-  return (...args: Parameters<TFunc>) => {
-
-    const [a, b, ...rest] = args;
-
-    // a or b or both can be arrays. apply as necessary.
-
-    const a_arr: (Parameters<TFunc>[0])[][] | undefined = Array.isArray(a) ? a : IsArrayUnion(a) ? a.value : undefined;
-    const b_arr: (Parameters<TFunc>[1])[][] | undefined = Array.isArray(b) ? b : IsArrayUnion(b) ? b.value : undefined;
-
-    if (a_arr && b_arr) {
-      return {
-        type: ValueType.array,
-        value: a_arr.map((row, i) => row.map((element, j) => {
-          return base(element, b_arr[i][j], ...rest);
-        })),
-      };
-    }
-
-    if (a_arr) {
-      return {
-        type: ValueType.array,
-        value: a_arr.map(row => row.map(element => {
-          return base(element, b, ...rest);
-        })),
-      };
-    }
-
-    if (b_arr) {
-      return {
-        type: ValueType.array,
-        value: b_arr.map(row => row.map(element => {
-          return base(a, element, ...rest);
-        })),
-      };
-    }
-
-    return base(a, b, ...rest);
-    
-  };
-
-};
-*/
 
 /**
  * this is an attempt at a generalized array application wrapper 
@@ -436,69 +253,6 @@ export const ApplyArrayX = <TFunc extends (...args: any[]) => UnionValue>(map: b
   };
 
 };
-  
-/*
-
-export const ApplyAsArray2 = (base: (a: any, b: any, ...rest: any[]) => UnionValue) => {
-  return (a: any, b: any, ...rest: any[]): UnionValue => {
-
-    // do we need to worry about unboxed values? probably
-    // what about combinations of boxed/unboxed (implying there are 4)
-
-    // we could simplify this by pulling out the lists...
-
-    let a_array = false;
-    let b_array = false;
-
-    if (!!a && typeof a === 'object' && a.type === ValueType.array) {
-      a = (a as ArrayUnion).value;
-      a_array = true; // don't test again
-    }
-    else {
-      a_array = Array.isArray(a);
-    }
-
-    if (!!b && typeof b === 'object' && b.type === ValueType.array) {
-      b = (b as ArrayUnion).value;
-      b_array = true; // don't test again
-    }
-    else {
-      b_array = Array.isArray(b);
-    }
-
-    if (a_array){
-      if (b_array) {
-        // a and b are arrays
-        return {
-          type: ValueType.array,
-          value: a.map((row: any[], i: number) => row.map((element: any, j: number) => {
-            return base(element, b[i][j], ...rest);
-          })),
-        };
-      }
-      // a is array, b is scalar
-      return {
-        type: ValueType.array,
-        value: a.map((row: any[]) => row.map((element: any) => {
-          return base(element, b, ...rest);
-        })),
-      };
-    }
-    else if (b_array) {
-      // a is scalar, b is array
-      return {
-        type: ValueType.array,
-        value: b.map((row: any[]) => row.map((element: any) => {
-          return base(a, element, ...rest);
-        })),
-      };
-    }
-
-    return base(a, b, ...rest);
-
-  }
-};
-*/
 
 /**
  * parse a string with wildcards into a regex pattern
