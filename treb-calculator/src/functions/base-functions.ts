@@ -190,9 +190,9 @@ export const AltFunctionLibrary: FunctionMap = {
   Sqrt: {
     description: 'Returns the square root of the argument',
     arguments: [
-      {boxed: true},
+      { boxed: true, unroll: true },
     ],
-    fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
+    fn: (ref: UnionValue): UnionValue => {
 
       if (ref.type === ValueType.complex) {
         const value = ComplexPower(ref.value, {real: 0.5, imaginary: 0});
@@ -227,16 +227,16 @@ export const AltFunctionLibrary: FunctionMap = {
         */
         return ValueError();
       }
-    }),
+    },
   },
   
   Power: {
     description: 'Returns base raised to the given power',
     arguments: [
-      { name: 'base', boxed: true, },
-      { name: 'exponent', boxed: true, }
+      { name: 'base', boxed: true, unroll: true, },
+      { name: 'exponent', boxed: true, unroll: true, }
     ],
-    fn: Utils.ApplyAsArray2((base: UnionValue, exponent: UnionValue): UnionValue => {
+    fn: (base: UnionValue, exponent: UnionValue): UnionValue => {
 
       // we're leaking complex numbers here because our functions are
       // very slightly imprecise. I would like to stop doing that. try to
@@ -258,25 +258,8 @@ export const AltFunctionLibrary: FunctionMap = {
         }
       }
       
-      /*
-      if (base.type === ValueType.number) {
-        base = {
-          type: ValueType.complex,
-          value: { imaginary: 0, real: base.value },
-        };
-      }
-      */
-
       const a = CoerceComplex(base);
       const b = CoerceComplex(exponent);
-
-      /*
-      const a = base.type === ValueType.complex ? base.value : 
-        { real: base.value || 0, imaginary: 0, };
-
-      const b = exponent.type === ValueType.complex ? exponent.value :
-        { real: exponent.value || 0, imaginary: 0, };
-      */
 
       if (a && b) {
         const value = ComplexPower(a, b);
@@ -286,7 +269,7 @@ export const AltFunctionLibrary: FunctionMap = {
       return ValueError();
 
 
-    }),
+    },
   },
 
 };
@@ -402,9 +385,9 @@ export const BaseFunctionLibrary: FunctionMap = {
   Date: {
     description: 'Constructs a Lotus date from parts',
     arguments: [
-      { name: 'year' },
-      { name: 'month' },
-      { name: 'day' },
+      { name: 'year', unroll: true },
+      { name: 'month', unroll: true },
+      { name: 'day', unroll: true },
     ],
     fn: (year: number, month: number, day: number) => {
       const date = new Date();
@@ -511,8 +494,8 @@ export const BaseFunctionLibrary: FunctionMap = {
     Cell: {
       description: 'Returns data about a cell',
       arguments: [
-        { name: 'type', description: 'Type of data to return' },
-        { name: 'reference', description: 'Cell reference', metadata: true },
+        { name: 'type', description: 'Type of data to return', unroll: true,  },
+        { name: 'reference', description: 'Cell reference', metadata: true, unroll: true,  },
       ],
 
       // there's no concept of "structure volatile", and structure events
@@ -521,7 +504,7 @@ export const BaseFunctionLibrary: FunctionMap = {
       
       // volatile: true, 
 
-      fn: Utils.ApplyAsArray2((type: string, reference: UnionValue): UnionValue => {
+      fn: (type: string, reference: UnionValue): UnionValue => {
 
         if (!UnionIsMetadata(reference)) {
           return ReferenceError();
@@ -539,13 +522,14 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         return { type: ValueType.error, value: NotImplError.error };
 
-      }),
+      },
+
     },
 
     Year: {
       description: 'Returns year from date',
       arguments: [{
-        name: 'date',
+        name: 'date', unroll: true,
       }],
       fn: (source: number): UnionValue => {
         return Box(new Date(LotusDate(source)).getUTCFullYear());
@@ -556,7 +540,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     Month: {
       description: 'Returns month from date',
       arguments: [{
-        name: 'date',
+        name: 'date', unroll: true,
       }],
       fn: (source: number): UnionValue => {
         return Box(new Date(LotusDate(source)).getUTCMonth() + 1); // 0-based
@@ -567,7 +551,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     Day: {
       description: 'Returns day of month from date',
       arguments: [{
-        name: 'date',
+        name: 'date', unroll: true,
       }],
       fn: (source: number): UnionValue => {
         return Box(new Date(LotusDate(source)).getUTCDate());
@@ -576,18 +560,18 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     Radians: {
       description: 'Converts degrees to radians',
-      arguments: [{ name: 'Degrees', description: 'Angle in degrees' }],
-      fn: Utils.ApplyAsArray((degrees: number): UnionValue => {
+      arguments: [{ name: 'Degrees', description: 'Angle in degrees', unroll: true }],
+      fn: (degrees: number): UnionValue => {
         return Box(degrees * Math.PI / 180);
-      }),
+      },
     },
 
     Degrees: {
       description: 'Converts radians to degrees',
-      arguments: [{ name: 'Radians', description: 'Angle in radians' }],
-      fn: Utils.ApplyAsArray((radians: number): UnionValue => {
+      arguments: [{ name: 'Radians', description: 'Angle in radians', unroll: true }],
+      fn: (radians: number): UnionValue => {
         return Box(radians / Math.PI * 180);
-      }),
+      },
     },
 
     CountA: {
@@ -633,7 +617,8 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Not: {
-      fn: Utils.ApplyAsArray((...args: unknown[]): UnionValue => {
+      arguments: [{ unroll: true }],
+      fn: (...args: unknown[]): UnionValue => {
         if (args.length === 0) {
           return ArgumentError();
         }
@@ -641,7 +626,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           return Box(!args[0]);
         }
         return Box(true);
-      })
+      },
     },
 
     If: {
@@ -684,10 +669,11 @@ export const BaseFunctionLibrary: FunctionMap = {
     Fact: {
       description: 'Returns the factorial of a number',
       arguments: [
-        { name: 'number' },
+        { name: 'number', unroll: true },
       ],
-      fn: Utils.ApplyAsArray((number: number): UnionValue => {
-        number = Math.floor(number);
+      fn: (number: number): UnionValue => {
+        number = Math.round(number);
+
         let value = 1;
         while (number > 1) {
           value *= number;
@@ -697,26 +683,17 @@ export const BaseFunctionLibrary: FunctionMap = {
           type: ValueType.number,
           value,
         }
-      }),
+      },
     },
 
     Power: {
       description: 'Returns base raised to the given power',
       arguments: [
-        { name: 'base', boxed: true, },
-        { name: 'exponent', boxed: true, }
+        { name: 'base', boxed: true, unroll: true, },
+        { name: 'exponent', boxed: true, unroll: true, }
       ],
-      fn: Utils.ApplyAsArray2((base: UnionValue, exponent: UnionValue): UnionValue => {
-
-        /*
-        if (base.type === ValueType.number) {
-          base = {
-            type: ValueType.complex,
-            value: { imaginary: 0, real: base.value },
-          };
-        }
-        */
-
+      fn: (base: UnionValue, exponent: UnionValue): UnionValue => {
+      
         const a = CoerceComplex(base);
         const b = CoerceComplex(exponent);
 
@@ -736,16 +713,20 @@ export const BaseFunctionLibrary: FunctionMap = {
           // return Box(Math.pow(base.value, exponent.value))
         }
 
-      }),
+      },
     },
 
     Mod: {
-      fn: Utils.ApplyAsArray2((num: number, divisor: number): UnionValue => {
+      arguments: [
+        { unroll: true },
+        { unroll: true },
+      ],
+      fn: (num: number, divisor: number): UnionValue => {
         if (!divisor) { 
           return DivideByZeroError();
         }
         return Box(num % divisor);
-      })
+      },
     },
 
     Large: {
@@ -755,15 +736,11 @@ export const BaseFunctionLibrary: FunctionMap = {
           name: 'values',
         }, 
         {
-          name: 'index',
+          name: 'index', unroll: true,
         }
       ],
 
-      // OK a little tricky here -- we're going to reverse the arguments
-      // so we can call apply as array, but applying against the trailing
-      // arguments.
-
-      fn: Utils.ApplyAsArraySwap((data: IntrinsicValue[], index: number) => {
+      fn: (data: IntrinsicValue[], index: number) => {
 
         if (index <= 0) {
           return ArgumentError();
@@ -781,7 +758,8 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return ArgumentError();
-      }),
+      },
+
     },
 
     Small: {
@@ -791,13 +769,11 @@ export const BaseFunctionLibrary: FunctionMap = {
           name: 'values',
         }, 
         {
-          name: 'index',
+          name: 'index', unroll: true,
         }
       ],
 
-      // see large, above
-
-      fn: Utils.ApplyAsArraySwap((data: IntrinsicValue[], index: number) => {
+      fn: (data: IntrinsicValue[], index: number) => {
 
         if (index <= 0) {
           return ArgumentError();
@@ -816,7 +792,8 @@ export const BaseFunctionLibrary: FunctionMap = {
 
         return ArgumentError();
 
-      }),
+      },
+
     },
 
     /**
@@ -1288,54 +1265,64 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Log: {
+      arguments: [ { unroll: true }, { unroll: true } ], 
+
       /** default is base 10; allow specific base */
-      fn: Utils.ApplyAsArray2((a: number, base = 10): UnionValue => {
+      fn: (a: number, base = 10): UnionValue => {
         return { type: ValueType.number, value: Math.log(a) / Math.log(base) };
-      }),
+      },
     },
 
     Log10: {
-      fn: Utils.ApplyAsArray((a: number): UnionValue => {
+      arguments: [{ unroll: true }], 
+      fn: (a: number): UnionValue => {
         return { type: ValueType.number, value: Math.log(a) / Math.log(10) };
-      }),
+      },
     },
 
     Ln: {
-      fn: Utils.ApplyAsArray((a: number): UnionValue => {
+      arguments: [{ unroll: true }], 
+      fn: (a: number): UnionValue => {
         return { type: ValueType.number, value: Math.log(a) };
-      }),
+      },
     },
 
     Round: {
-      fn: Utils.ApplyAsArray2((a, digits = 0) => {
+      arguments: [ { unroll: true }, { unroll: true } ], // FIXME: lazy
+
+      fn: (a, digits = 0) => {
         const m = Math.pow(10, digits);
         return { 
           type: ValueType.number, 
           value: Math.round(m * a) / m,
         };
-      }),
+      },
     },
 
     RoundDown: {
-      fn: Utils.ApplyAsArray2((a, digits = 0) => {
+      arguments: [ { unroll: true }, { unroll: true } ], // FIXME: lazy
+
+      fn: (a, digits = 0) => {
         const m = Math.pow(10, digits);
         const positive = a >= 0;
         return { 
           type: ValueType.number, 
           value: positive ? Math.floor(m * a) / m : Math.ceil(m * a) / m,
         };
-      }),
+      },
     },
 
     RoundUp: {
-      fn: Utils.ApplyAsArray2((a, digits = 0) => {
+      arguments: [ { unroll: true }, { unroll: true } ], // FIXME: lazy
+
+      fn: (a, digits = 0) => {
         const m = Math.pow(10, digits);
         const positive = a >= 0;
         return { 
           type: ValueType.number, 
           value: positive ? Math.ceil(m * a) / m : Math.floor(m * a) / m,
         };
-      }),
+      },
     },
 
     /*
@@ -1402,9 +1389,9 @@ export const BaseFunctionLibrary: FunctionMap = {
      */
     Exp: {
       arguments: [
-        { boxed: true },
+        { boxed: true, unroll: true },
       ],
-      fn: Utils.ApplyAsArray((x: UnionValue) => {
+      fn: (x: UnionValue) => {
         
         if (x.type === ValueType.complex) {
           const value = ComplexExp(x.value);
@@ -1416,7 +1403,7 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return { type: ValueType.number, value: Math.exp(x.value) };
-      }),
+      },
     },
 
     /**
@@ -1425,9 +1412,9 @@ export const BaseFunctionLibrary: FunctionMap = {
      */
     Abs: {
       arguments: [
-        { boxed: true },
+        { boxed: true, unroll: true },
       ],
-      fn: Utils.ApplyAsArray((a: UnionValue) => {
+      fn: (a: UnionValue) => {
         if (a.type === ValueType.complex) {
           return { 
             type: ValueType.number, 
@@ -1440,15 +1427,15 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
 
         return { type: ValueType.number, value: Math.abs(a.value || 0) };
-      }),
+      },
     },
 
     Simplify: {
       arguments: [
-        { name: 'value' }, 
-        { name: 'significant digits' },
+        { name: 'value', unroll: true, }, 
+        { name: 'significant digits', unroll: true, },
       ],
-      fn: Utils.ApplyAsArray2((value: number, significant_digits = 2): UnionValue => {
+      fn: (value: number, significant_digits = 2): UnionValue => {
         significant_digits = significant_digits || 2;
         if (value === 0) {
           return { type: ValueType.number, value };
@@ -1460,7 +1447,7 @@ export const BaseFunctionLibrary: FunctionMap = {
           type: ValueType.number,
           value: Math.round(value / x) * x * negative
         };
-      }),
+      },
     },
  
     Erf: {
@@ -1538,9 +1525,9 @@ export const BaseFunctionLibrary: FunctionMap = {
     Sqrt: {
       description: 'Returns the square root of the argument',
       arguments: [
-        {boxed: true},
+        { boxed: true, unroll: true },
       ],
-      fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
+      fn: (ref: UnionValue): UnionValue => {
 
         // little bit torn on this. what should sqrt(-1) return? a complex 
         // number, or NaN? or should we control that with a flag? 
@@ -1582,18 +1569,18 @@ export const BaseFunctionLibrary: FunctionMap = {
           return { type: ValueType.number, value };
         }
         */
-      }),
+      },
     },
 
     HexToDec: {
-      arguments: [{ description: 'hexadecimal string' }],
+      arguments: [{ description: 'hexadecimal string', unroll: true }],
       fn: (hex: string): UnionValue => {
         return { type: ValueType.number, value: parseInt(hex, 16) };
       },
     },
 
     DecToHex: {
-      arguments: [{ description: 'number' }],
+      arguments: [{ description: 'number', unroll: true }],
       fn: (num: number): UnionValue => {
         return { type: ValueType.string, value: num.toString(16) };
       },

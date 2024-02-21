@@ -21,7 +21,6 @@
 
 import type { FunctionMap } from '../descriptors';
 import { type UnionValue, ValueType } from 'treb-base-types';
-import * as Utils from '../utilities';
 
 const MatchType = (type: string, ref: UnionValue): UnionValue => {
   return { 
@@ -33,6 +32,7 @@ const MatchType = (type: string, ref: UnionValue): UnionValue => {
 const match_arguments = [{
   name: 'Reference',
   metadata: true,
+  unroll: true,
 }];
 
 export const InformationFunctionLibrary: FunctionMap = {
@@ -40,25 +40,25 @@ export const InformationFunctionLibrary: FunctionMap = {
   IsBlank: {
     description: 'Returns true if the reference is blank',
     arguments: match_arguments,
-    fn: Utils.ApplyAsArray(MatchType.bind(0, 'undefined')),
+    fn: MatchType.bind(0, 'undefined'),
   },
 
   IsNumber: {
     description: 'Returns true if the reference is a number',
     arguments: match_arguments,
-    fn: Utils.ApplyAsArray(MatchType.bind(0, 'number')),
+    fn: MatchType.bind(0, 'number'),
   },
 
   IsLogical: {
     description: 'Returns true if the reference is a logical TRUE or FALSE',
     arguments: match_arguments,
-    fn: Utils.ApplyAsArray(MatchType.bind(0, 'boolean')),
+    fn: MatchType.bind(0, 'boolean'),
   },
 
   IsText: {
     description: 'Returns true if the reference is text',
     arguments: match_arguments,
-    fn: Utils.ApplyAsArray(MatchType.bind(0, 'string')),
+    fn: MatchType.bind(0, 'string'),
   },
 
   /* needs more data

@@ -960,13 +960,18 @@ export class Calculator extends Graph {
       },
 
 
-  /** not sure when this one appeared, but it's what I was looking for */
+      /** 
+       * not sure when this one appeared, but it's what I was looking for 
+       * 
+       * ---
+       * what an odd comment. what does that mean? 
+       */
       FormulaText: {
         description: 'Returns a formula as a string',
         arguments: [
-          { name: 'reference', description: 'Cell reference', metadata: true, },
+          { name: 'reference', description: 'Cell reference', metadata: true, unroll: true },
         ],
-        fn: Utilities.ApplyAsArray((reference: UnionValue): UnionValue => {
+        fn: (reference: UnionValue): UnionValue => {
 
           if (!UnionIsMetadata(reference)) {
             return ReferenceError();
@@ -983,7 +988,7 @@ export class Calculator extends Graph {
           
           return ReferenceError();
 
-        }),
+        },
       },
 
       /**
@@ -994,9 +999,10 @@ export class Calculator extends Graph {
         description: 'Returns true if the reference is a formula',
         arguments: [{
           name: 'Reference',
+          unroll: true,
           metadata: true, /* OK with array metadata */
         }],
-        fn: Utilities.ApplyAsArray((ref: UnionValue): UnionValue => {
+        fn: (ref: UnionValue): UnionValue => {
 
           // this is wasteful because we know that the range will all
           // be in the same sheet... we don't need to look up every time
@@ -1016,7 +1022,7 @@ export class Calculator extends Graph {
             type: ValueType.boolean, value: false,
           };
 
-        }),
+        },
       },
 
     });
@@ -1442,9 +1448,10 @@ export class Calculator extends Graph {
   public RegisterFunction(map: FunctionMap): void {
 
     for (const name of Object.keys(map)) {
+
       const descriptor = map[name];
       const original_function = descriptor.fn;
-
+     
       // we don't bind to the actual context because that would allow
       // functions to change it, and potentially break subsequent functions
       // that rely on it. which is a pretty far-fetched scenario, but we might

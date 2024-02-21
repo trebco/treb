@@ -78,15 +78,15 @@ export const TextFunctionLibrary: FunctionMap = {
   WildcardMatch: {
     visibility: 'internal',
     arguments: [
-      { name: 'text', },
-      { name: 'text', },
+      { name: 'text', unroll: true },
+      { name: 'text', unroll: true },
 
       // the invert parameter is optional, defaults to false. we add this
       // so we can invert wirhout requiring an extra function call.
 
       { name: 'invert' }, 
     ],
-    fn: Utils.ApplyAsArray2((a: IntrinsicValue, b: IntrinsicValue, invert = false) => {
+    fn: (a: IntrinsicValue, b: IntrinsicValue, invert = false) => {
 
       if (typeof a === 'string' && typeof b === 'string') {
         const pattern = Utils.ParseWildcards(b);
@@ -102,21 +102,22 @@ export const TextFunctionLibrary: FunctionMap = {
         type: ValueType.boolean,
         value: (a === b || a?.toString() === b?.toString()),
       }
-    }),
+    },
+    
   },
 
   Exact: {
     arguments: [
-      { name: 'text', boxed: true, },
-      { name: 'text', boxed: true, },
+      { name: 'text', boxed: true, unroll: true },
+      { name: 'text', boxed: true, unroll: true },
     ],
     category: ['text'],
-    fn: Utils.ApplyAsArray2((a: UnionValue, b: UnionValue): UnionValue => {
+    fn: (a: UnionValue, b: UnionValue): UnionValue => {
       return {
         type: ValueType.boolean,
         value: (a?.value?.toString()) === (b?.value?.toString()),
       };
-    }),
+    },
   },
 
   Left: {

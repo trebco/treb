@@ -173,10 +173,10 @@ export const UndefinedToEmptyString = (args: any[]): any[] => {
   return args;
 };
 
-/**
+/* *
  * returns a function that applies the given function to a scalar or a matrix
  * @param base the underlying function
- */
+ * /
 export const ApplyArrayFunc = (base: (...args: any[]) => any) => {
   return (a: any) => {
     if (Array.isArray(a)) {
@@ -192,7 +192,9 @@ export const ApplyArrayFunc = (base: (...args: any[]) => any) => {
     return base(a);
   };
 };
+*/
 
+/*
 export const ApplyAsArraySwap = (base: (...args: any[]) => UnionValue) => {
   return (...args: any[]): UnionValue => {
 
@@ -229,7 +231,9 @@ export const ApplyAsArraySwap = (base: (...args: any[]) => UnionValue) => {
     }
   }
 };
+*/
 
+/*
 export const ApplyAsArray = (base: (a: any, ...rest: any[]) => UnionValue) => {
   return (a: any, ...rest: any[]): UnionValue => {
     if (Array.isArray(a)) {
@@ -254,6 +258,186 @@ export const ApplyAsArray = (base: (a: any, ...rest: any[]) => UnionValue) => {
     }
   }
 };
+*/
+
+const IsArrayUnion = (value: unknown): value is ArrayUnion => {
+  return (!!value && typeof value === 'object' && (value as { type: ValueType, value?: Array<unknown> }).type === ValueType.array);
+};
+
+/* *
+ * cleaner (type-wise) application function. we're still dealing with
+ * the any[] parameters but it will be easy to fix this part
+ * 
+ * /
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const ApplyAsArray = <TFunc extends (...args: any[]) => UnionValue>(base: TFunc): (...args: Parameters<TFunc>) => UnionValue => {
+
+  return (...args: Parameters<TFunc>) => {
+
+    const [a, ...rest] = args;
+
+    if (Array.isArray(a)) {
+
+      // array: walk
+
+      return {
+        type: ValueType.array,
+        value: a.map((row: Array<Parameters<TFunc>[0]>) => row.map((element: Parameters<TFunc>[0]) => {
+          return base(element, ...rest);
+        })),
+      };
+
+    }
+    else if (IsArrayUnion(a)) {
+     
+      // union array type, deref and walk [FIXME: this could be consolidated, no?]
+
+      return {
+        type: ValueType.array,
+        value: a.value.map((row: Array<Parameters<TFunc>[0]>) => row.map((element: Parameters<TFunc>[0]) => {
+          return base(element, ...rest);
+        })),
+      }
+
+    }
+    else {
+
+      // scalar
+
+      return base(a, ...rest);
+    }
+
+  };
+
+};
+*/
+
+/**
+ * two-parameter optional array application. 
+ * 
+ * note that we're not applying this combinatorially; if there are two arrays,
+ * then we apply the function (array-1-length) times and at each step we call
+ * the function with the values from each array at the same index. 
+ * 
+ * /
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const ApplyAsArray2 = <TFunc extends (...args: any[]) => UnionValue>(base: TFunc): (...args: Parameters<TFunc>) => UnionValue => {
+  
+  return (...args: Parameters<TFunc>) => {
+
+    const [a, b, ...rest] = args;
+
+    // a or b or both can be arrays. apply as necessary.
+
+    const a_arr: (Parameters<TFunc>[0])[][] | undefined = Array.isArray(a) ? a : IsArrayUnion(a) ? a.value : undefined;
+    const b_arr: (Parameters<TFunc>[1])[][] | undefined = Array.isArray(b) ? b : IsArrayUnion(b) ? b.value : undefined;
+
+    if (a_arr && b_arr) {
+      return {
+        type: ValueType.array,
+        value: a_arr.map((row, i) => row.map((element, j) => {
+          return base(element, b_arr[i][j], ...rest);
+        })),
+      };
+    }
+
+    if (a_arr) {
+      return {
+        type: ValueType.array,
+        value: a_arr.map(row => row.map(element => {
+          return base(element, b, ...rest);
+        })),
+      };
+    }
+
+    if (b_arr) {
+      return {
+        type: ValueType.array,
+        value: b_arr.map(row => row.map(element => {
+          return base(a, element, ...rest);
+        })),
+      };
+    }
+
+    return base(a, b, ...rest);
+    
+  };
+
+};
+*/
+
+/**
+ * this is an attempt at a generalized array application wrapper 
+ * for functions. the rules are the same -- we apply functions pairwise
+ * (or tuple-wise), not combinatorially.
+ * 
+ * we could simplify a bit if we require that functions used boxed
+ * values. we should do that anyway, and be consistent across functions.
+ * also we could get the `any`s out.
+ * 
+ * (swapping param order, so we don't have hanging param after inline 
+ * function definition -- shades of window.setTimeout)
+ * 
+ * @param map - a list of parameters, by index, that can be unrolled. this
+ * allows us to support both out-of-order application and functions that take
+ * mixes of scalars and arrays.
+ * 
+ * @param base - the underlying function. for any parameters that can
+ * be applied/unrolled, it should take a scalar. 
+ * 
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const ApplyArrayX = <TFunc extends (...args: any[]) => UnionValue>(map: boolean[], base: TFunc): (...args: Parameters<TFunc>) => UnionValue => {
+
+  return (...args: Parameters<TFunc>) => {
+
+    // we need to look at the actual parameters passed, not the signature.
+    // spreadsheet language supports "extra" parameters. we usually just 
+    // repeat the tail parameter, but in this case we will NOT repeat the 
+    // application (why not?)
+
+    const arrays: unknown[][][] = [];
+
+    // the result needs to be the same shape as the input. so we use the 
+    // first array we find to create this map.
+
+    let shape: unknown[][] = [];
+    
+    for (const [i, arg] of args.entries()) {
+      if (arg && map[i]) {
+        const arr = Array.isArray(arg) ? arg : IsArrayUnion(arg) ? arg.value : undefined;
+        if (arr) {
+          arrays[i] = arr;
+          if (!shape.length) {
+            shape = arr;
+          }
+        }
+      }
+    }
+
+    if (arrays.length) {
+
+      // this is pretty, but 3 functional loops? ouch
+
+      return {
+        type: ValueType.array,
+        value: shape.map((_, i) => _.map((_, j) => {
+          const apply = args.map((arg, index) => arrays[index] ? (arrays[index][i][j] || { type: ValueType.undefined }) : arg);
+          return base(...apply as Parameters<TFunc>);
+        })),
+      };
+
+    }
+
+    // scalar case
+
+    return base(...args);
+
+  };
+
+};
+  
+/*
 
 export const ApplyAsArray2 = (base: (a: any, b: any, ...rest: any[]) => UnionValue) => {
   return (a: any, b: any, ...rest: any[]): UnionValue => {
@@ -314,7 +498,7 @@ export const ApplyAsArray2 = (base: (a: any, b: any, ...rest: any[]) => UnionVal
 
   }
 };
-
+*/
 
 /**
  * parse a string with wildcards into a regex pattern

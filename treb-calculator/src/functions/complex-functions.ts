@@ -35,22 +35,23 @@ export const ComplexFunctionLibrary: FunctionMap = {
     arguments: [{
       name: 'Reference',
       metadata: true, /* OK with array metadata */
+      unroll: true,
     }],
-    fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
+    fn: (ref: UnionValue): UnionValue => {
       return { 
         type: ValueType.boolean, 
         value: !!(ref?.value) && IsComplex((ref.value as {value?: CellValue}).value),
       };
-    }),
+    },
   },
 
 
   Real: {
     description: 'Returns the real part of a complex number',
     arguments: [
-      { boxed: true },
+      { boxed: true, unroll: true },
     ],
-    fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
+    fn: (ref: UnionValue): UnionValue => {
       if (ref.type === ValueType.number) {
         return { ...ref };
       }
@@ -67,15 +68,15 @@ export const ComplexFunctionLibrary: FunctionMap = {
         };
       }
       return ValueError();
-    }),
+    },
   },
 
   Imaginary: {
     description: 'Returns the imaginary part of a complex number (as real)',
     arguments: [
-      { boxed: true },
+      { boxed: true, unroll: true, },
     ],
-    fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
+    fn: (ref: UnionValue): UnionValue => {
       if (ref.type === ValueType.complex) {
         return {
           type: ValueType.number,
@@ -91,15 +92,15 @@ export const ComplexFunctionLibrary: FunctionMap = {
         };
       }
       return ValueError();
-    }),
+    },
   },
 
   Conjugate: {
     description: 'Returns the conjugate of a complex number',
     arguments: [
-      { boxed: true },
+      { boxed: true, unroll: true },
     ],
-    fn: Utils.ApplyAsArray((arg: UnionValue): UnionValue => {
+    fn: (arg: UnionValue): UnionValue => {
 
       const complex = CoerceComplex(arg);
 
@@ -122,15 +123,15 @@ export const ComplexFunctionLibrary: FunctionMap = {
         value: complex.real,
       };
 
-    }),
+    },
   },
 
   Arg: {
     description: 'Returns the principal argument of a complex number (in radians)',
     arguments: [
-      { boxed: true },
+      { boxed: true, unroll: true },
     ],
-    fn: Utils.ApplyAsArray((ref: UnionValue): UnionValue => {
+    fn: (ref: UnionValue): UnionValue => {
       
       if (ref.type === ValueType.complex) {
         return {
@@ -149,7 +150,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
       }
 
       return ValueError();
-    }),
+    },
   },
 
   Rectangular: {
@@ -172,12 +173,12 @@ export const ComplexFunctionLibrary: FunctionMap = {
   Complex: {
     description: 'Ensures that the given value will be treated as a complex number',
     arguments: [
-      { boxed: true },
+      { boxed: true, unroll: true },
     ],
 
     // FIXME: this should use flatten? not sure
 
-    fn: Utils.ApplyAsArray((a: UnionValue): UnionValue => {
+    fn: (a: UnionValue): UnionValue => {
       
       const complex = CoerceComplex(a);
       if (complex) {
@@ -189,7 +190,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
 
       return ValueError();
 
-    }),
+    },
   },
 
   /**
@@ -204,9 +205,9 @@ export const ComplexFunctionLibrary: FunctionMap = {
   ComplexLog: {
     description: 'Returns the principal value Log(z) of a complex number z',
     arguments: [
-      { boxed: true },
+      { boxed: true, unroll: true },
     ],
-    fn: Utils.ApplyAsArray((a: UnionValue): UnionValue => {
+    fn: (a: UnionValue): UnionValue => {
 
       // real -> complex
       if (a.type === ValueType.number) {
@@ -248,7 +249,7 @@ export const ComplexFunctionLibrary: FunctionMap = {
       
       return ValueError();
 
-    }),
+    },
   },
 
 };

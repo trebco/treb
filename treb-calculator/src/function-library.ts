@@ -22,6 +22,7 @@
 import type { 
   ExtendedFunctionDescriptor, CompositeFunctionDescriptor,
   FunctionMap, ExtendedFunctionMap } from './descriptors';
+import { ApplyArrayX } from './utilities';
 
 /**
  * singleton (static instance) of function library; includes utility methods
@@ -65,6 +66,21 @@ export class FunctionLibrary {
 
         const descriptor = map[name] as ExtendedFunctionDescriptor;
         descriptor.canonical_name = name;
+
+        if (!descriptor.unrolled) {
+
+          // potentially apply a wrapper to unroll loops
+
+          const unroll = descriptor.arguments?.map(test => !!test.unroll);
+          if (unroll?.some(value => !!value)) {
+            descriptor.fn = ApplyArrayX(unroll, descriptor.fn);
+            descriptor.unrolled = true;
+          }
+
+          // we could set that flag even if we don't do anything,
+          // sp we don't check again (minor optimization)
+
+        }
 
         this.functions[normalized] = descriptor;
       }
