@@ -59,7 +59,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the standard deviation of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
     fn: (...args: CellValue[]): UnionValue => {
-      return { type: ValueType.number, value: Math.sqrt(Variance(Utils.FlattenUnboxed(args), false)) };
+      return { type: ValueType.number, value: Math.sqrt(Variance(Utils.FlattenNumbers(args), false)) };
     },
   },
 
@@ -67,7 +67,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the standard deviation of a set of values, corresponding to a sample of a population',
     arguments: [{ name: 'data', }],
     fn: (...args: CellValue[]): UnionValue => {
-      return { type: ValueType.number, value: Math.sqrt(Variance(Utils.FlattenUnboxed(args), true)) };
+      return { type: ValueType.number, value: Math.sqrt(Variance(Utils.FlattenNumbers(args), true)) };
     },
   },
 
@@ -75,7 +75,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the variance of a set of values, corresponding to a population',
     arguments: [{ name: 'data', }],
     fn: (...args: CellValue[]): UnionValue => {
-      return { type: ValueType.number, value: Variance(Utils.FlattenUnboxed(args), false) };
+      return { type: ValueType.number, value: Variance(Utils.FlattenNumbers(args), false) };
     },
   },
 
@@ -83,7 +83,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     description: 'Returns the variance of a set of values, corresponding to a sample of a population',
     arguments: [{ name: 'data', }],
     fn: (...args: CellValue[]): UnionValue => {
-      return { type: ValueType.number, value: Variance(Utils.FlattenUnboxed(args), true) };
+      return { type: ValueType.number, value: Variance(Utils.FlattenNumbers(args), true) };
     },
   },
 
@@ -305,7 +305,9 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     ],
     fn: (range: number[][], percentile: number): UnionValue => {
 
-      const flat = Utils.FlattenUnboxed(range).filter((test) => typeof test === 'number');
+      // const flat = Utils.FlattenCellValues(range).filter((test): test is number => typeof test === 'number');
+      const flat = Utils.FlattenNumbers(range);
+
       flat.sort((a, b) => a - b);
       const n = flat.length;
 
@@ -328,7 +330,9 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     ],
     fn: (...args: number[]): UnionValue => {
 
-      const flat = Utils.FlattenUnboxed(args).filter((test) => typeof test === 'number');
+      // const flat = Utils.FlattenCellValues(args).filter((test): test is number => typeof test === 'number');
+      const flat = Utils.FlattenNumbers(args);
+
       flat.sort((a, b) => a - b);
       const n = flat.length;
 

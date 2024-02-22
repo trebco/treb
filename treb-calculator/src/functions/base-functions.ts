@@ -23,7 +23,7 @@ import type { FunctionMap, IntrinsicValue } from '../descriptors';
 import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
 import type { UnionValue, 
-         RenderFunctionResult, RenderFunctionOptions, Complex } from 'treb-base-types';
+         RenderFunctionResult, RenderFunctionOptions, Complex, CellValue } from 'treb-base-types';
 import { Box, ValueType, GetValueType, ComplexOrReal, IsComplex } from 'treb-base-types';
 import { Sparkline } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
@@ -576,8 +576,8 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     CountA: {
       description: 'Counts cells that are not empty',
-      fn: (...args: unknown[]): UnionValue => {
-        return Box(Utils.FlattenUnboxed(args).reduce((a: number, b: unknown) => {
+      fn: (...args: CellValue[]): UnionValue => {
+        return Box(Utils.FlattenCellValues(args).reduce((a: number, b: unknown) => {
           if (typeof b === 'undefined') return a;
           return a + 1;
         }, 0));
@@ -586,8 +586,8 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     Count: {
       description: 'Counts cells that contain numbers',
-      fn: (...args: unknown[]): UnionValue => {
-        return Box(Utils.FlattenUnboxed(args).reduce((a: number, b: unknown) => {
+      fn: (...args: CellValue[]): UnionValue => {
+        return Box(Utils.FlattenCellValues(args).reduce((a: number, b: unknown) => {
           if (typeof b === 'number' || IsComplex(b)) return a + 1;
           return a;
         }, 0));
@@ -595,9 +595,9 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     Or: {
-      fn: (...args: unknown[]): UnionValue => {
+      fn: (...args: CellValue[]): UnionValue => {
         let result = false;
-        args = Utils.FlattenUnboxed(args);
+        args = Utils.FlattenCellValues(args);
         for (const arg of args) {
           result = result || !!arg;
         }
@@ -606,9 +606,9 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     And: {
-      fn: (...args: unknown[]): UnionValue => {
+      fn: (...args: CellValue[]): UnionValue => {
         let result = true;
-        args = Utils.FlattenUnboxed(args);
+        args = Utils.FlattenCellValues(args);
         for (const arg of args) {
           result = result && !!arg;
         }
@@ -740,14 +740,15 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
       ],
 
-      fn: (data: IntrinsicValue[], index: number) => {
+      fn: (data: CellValue[], index: number) => {
 
         if (index <= 0) {
           return ArgumentError();
         }
 
-        const flat = Utils.FlattenUnboxed(data);
-        const numeric: number[] = flat.filter(test => typeof test === 'number');
+        // const flat = Utils.FlattenCellValues(data);
+        // const numeric: number[] = flat.filter((test): test is number => typeof test === 'number');
+        const numeric = Utils.FlattenNumbers(data);
         numeric.sort((a, b) => b - a);
 
         if (index <= numeric.length) {
@@ -773,14 +774,15 @@ export const BaseFunctionLibrary: FunctionMap = {
         }
       ],
 
-      fn: (data: IntrinsicValue[], index: number) => {
+      fn: (data: CellValue[], index: number) => {
 
         if (index <= 0) {
           return ArgumentError();
         }
 
-        const flat = Utils.FlattenUnboxed(data);
-        const numeric: number[] = flat.filter(test => typeof test === 'number');
+        // const flat = Utils.FlattenCellValues(data);
+        // const numeric: number[] = flat.filter((test): test is number => typeof test === 'number');
+        const numeric = Utils.FlattenNumbers(data);
         numeric.sort((a, b) => a - b);
 
         if (index <= numeric.length) {
@@ -807,9 +809,9 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [
         { name: 'values' }
       ],
-      fn: (...args: IntrinsicValue[]): UnionValue => {
+      fn: (...args: CellValue[]): UnionValue => {
 
-        args = Utils.FlattenUnboxed(args);
+        args = Utils.FlattenCellValues(args);
 
         if(args.every(test => typeof test === 'number')) {
           (args as number[]).sort((a, b) => a - b);
@@ -849,7 +851,8 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: (...args: number[]): UnionValue => {
         return { 
           type: ValueType.number, 
-          value: Math.max.apply(0, Utils.FlattenUnboxed(args).filter(x => typeof x === 'number')),
+          // value: Math.max.apply(0, Utils.FlattenCellValues(args).filter((x): x is number => typeof x === 'number')),
+          value: Math.max.apply(0, Utils.FlattenNumbers(args)),
         };
       },
     },
@@ -858,7 +861,8 @@ export const BaseFunctionLibrary: FunctionMap = {
       fn: (...args: number[]): UnionValue => {
         return { 
           type: ValueType.number, 
-          value: Math.min.apply(0, Utils.FlattenUnboxed(args).filter(x => typeof x === 'number')),
+          // value: Math.min.apply(0, Utils.FlattenCellValues(args).filter((x): x is number => typeof x === 'number')),
+          value: Math.min.apply(0, Utils.FlattenNumbers(args)),
         };
       },
     },
@@ -901,15 +905,19 @@ export const BaseFunctionLibrary: FunctionMap = {
 
     SumProduct: {
       description: 'Returns the sum of pairwise products of two or more ranges',
-      fn: (...args: IntrinsicValue[][]): UnionValue  => {
+      fn: (...args: CellValue[][]): UnionValue  => {
 
-        const flattened = args.map(arg => Utils.FlattenUnboxed(arg));
+        const flattened = args.map(arg => Utils.FlattenCellValues(arg));
         const len = Math.max.apply(0, flattened.map(x => x.length));
 
         let sum = 0;
         for (let i = 0; i < len; i++) {
           sum += flattened.reduce((a, arg) => {
-            return a * (arg[i] || 0);
+            let ai: CellValue = arg[i];
+            if (ai === true) {
+              ai = 1;
+            }
+            return (typeof ai === 'number') ? a * ai : 0;
           }, 1);
         }        
 
@@ -1142,68 +1150,6 @@ export const BaseFunctionLibrary: FunctionMap = {
             break;
         }
 
-        /*
-        const flat_lookup = Utils.FlattenUnboxed(lookup_array);
-        const flat_return = Utils.FlattenUnboxed(return_array);
-
-        // maybe reverse... 
-
-        if (search_mode < 0) {
-          flat_lookup.reverse();
-          flat_return.reverse();
-        }
-
-        // if value is not a string, then we can ignore wildcards.
-        // in that case convert to exact match.
-
-        if (match_mode === 2 && typeof lookup_value !== 'string') {
-          match_mode = 0;
-        }
-
-        switch (match_mode) {
-          case 2:
-
-            {
-
-              // wildcard string match. we only handle strings
-              // for wildcard matching (handled above).
-
-              const pattern = Utils.ParseWildcards(lookup_value);
-              const regex = new RegExp('^' + pattern + '$', 'i'); //.exec(lookup_value);
-
-              for (let i = 0; i < flat_lookup.length; i++) {
-                let value = flat_lookup[i];
-                if (typeof value === 'string' && regex.exec(value)) {
-                  return Box(flat_return[i]);
-                }
-              }
- 
-
-            }
-
-            break;
-
-          case 0: 
-          
-            // return exact match or NA/default. in this case
-            // "exact" means icase (but not wildcard)
-
-            if (typeof lookup_value === 'string') {
-              lookup_value = lookup_value.toLowerCase();
-            }
-            for (let i = 0; i < flat_lookup.length; i++) {
-              let value = flat_lookup[i];
-              if (typeof value === 'string') {
-                value = value.toLowerCase();
-              }
-              if (value === lookup_value) {
-                return Box(flat_return[i]);
-              }
-            }
-
-            break;
-        }
-        */
 
         // FIXME: if we're expecting to return an array maybe we should
         // pack it up as an array? if it's not already an array? (...)

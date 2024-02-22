@@ -21,7 +21,7 @@
 
 import type { FunctionMap } from '../descriptors';
 import { type CellValue, type UnionValue, ValueType } from 'treb-base-types';
-import { FlattenUnboxed } from '../utilities';
+import { FlattenCellValues } from '../utilities';
 
 import { ArgumentError, ValueError } from '../function-error';
 
@@ -102,7 +102,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
 
       let result = 0;
 
-      const flat = FlattenUnboxed(args);
+      const flat = FlattenCellValues(args);
       for (let i = 0; i < flat.length; i++) {
         const arg = flat[i];
         if (typeof arg === 'number') {
@@ -129,8 +129,8 @@ export const FinanceFunctionLibrary: FunctionMap = {
         return ArgumentError();
       }
 
-      input_values = FlattenUnboxed(input_values);
-      input_dates = FlattenUnboxed(input_dates);
+      input_values = FlattenCellValues(input_values);
+      input_dates = FlattenCellValues(input_dates);
 
       // some validation...
 
@@ -186,8 +186,8 @@ export const FinanceFunctionLibrary: FunctionMap = {
     ],
     fn: (input_values: CellValue[], input_dates: CellValue[], guess = .1): UnionValue => {
 
-      input_values = FlattenUnboxed(input_values);
-      input_dates = FlattenUnboxed(input_dates);
+      input_values = FlattenCellValues(input_values);
+      input_dates = FlattenCellValues(input_dates);
 
       // some validation...
 
@@ -307,7 +307,7 @@ export const FinanceFunctionLibrary: FunctionMap = {
     ],
     fn: (args: CellValue[], guess = .1): UnionValue => {
 
-      const flat = FlattenUnboxed(args).map(value => typeof value === 'number' ? value : 0);
+      const flat = FlattenCellValues(args).map(value => typeof value === 'number' ? value : 0);
 
       const step = .1; // initial step
 

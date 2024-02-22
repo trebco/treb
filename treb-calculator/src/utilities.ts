@@ -19,7 +19,7 @@
  * 
  */
 
-import type { ArrayUnion, UnionValue} from 'treb-base-types';
+import type { ArrayUnion, CellValue, UnionValue} from 'treb-base-types';
 import { ValueType } from 'treb-base-types';
 
 export const DAY_MS = 1000 * 60 * 60 * 24;
@@ -45,19 +45,21 @@ export const Transpose2 = <T> (arr: T[][]): T[][] => {
 
 };
 
-export const TransposeArray = (arr: any[][]) => {
+export const TransposeArray = <T>(arr: T[][]): T[][] => {
 
   if (!arr) return [];
   if (typeof arr[0] === 'undefined') return [];
 
+  /*
   if (!IsArrayOrTypedArray(arr[0])) {
     if (arr instanceof Float32Array || arr instanceof Float64Array){
-      return Array.prototype.slice.call(arr).map((x: any) => [x]);
+      return Array.prototype.slice.call(arr).map((x: T) => [x]);
     }
     return arr.map((x) => [x]);
   }
+  */
 
-  const tmp: any = [];
+  const tmp: T[][] = [];
   const cols = arr.length;
   const rows = arr[0].length;
   for (let r = 0; r < rows; r++) {
@@ -66,6 +68,7 @@ export const TransposeArray = (arr: any[][]) => {
       tmp[r][c] = arr[c][r];
     }
   }
+
   return tmp;
 
 };
@@ -145,20 +148,62 @@ export const FlattenBoxed = (args: UnionValue[]): UnionValue[] => {
 
 };
 
-/**
+/* *
  * flatten a set of arguments
  * UPDATE: we no longer accept the "arguments" object. must be an array.
  * callers can use rest spread to collect arguments.
- */
-export const FlattenUnboxed = (args: any[]): any[] => {
+ * 
+ * @deprecated - use a better-typed version
+ * /
+export const FlattenCellValues = (args: any[]): any[] => {
   if (!Array.isArray(args)) { return [args]; } // special case
   return args.reduce((a: any[], b: any) => {
     if (typeof b === 'undefined') return a;
-    if (Array.isArray(b)) return a.concat(FlattenUnboxed(b));
+    if (Array.isArray(b)) return a.concat(FlattenCellValues(b));
     if (b instanceof Float32Array) return a.concat(Array.from(b));
     if (b instanceof Float64Array) return a.concat(Array.from(b));
     return a.concat([b]);
   }, []);
+};
+*/
+
+/**
+ * specialization using the CellValue type. this should be preferable
+ * to using any, although we're still kind of hacking at it. also we
+ * need to allow typed arrays (I think we've mostly gotten those out?)
+ */
+export const FlattenCellValues = (args: (CellValue|CellValue[]|CellValue[][]|Float32Array|Float64Array)[]): CellValue[] => {
+
+  if (!Array.isArray(args)) { return [args]; } // special case
+  return args.reduce((a: CellValue[], b) => {
+    if (typeof b === 'undefined') return a;
+    if (Array.isArray(b)) return a.concat(FlattenCellValues(b));
+    if (b instanceof Float32Array) return a.concat(Array.from(b));
+    if (b instanceof Float64Array) return a.concat(Array.from(b));
+    return a.concat([b]);
+  }, []);
+
+};
+
+/**
+ * flatten cell values, and filter out any non-numbers. this version does
+ * not account for booleans (you might want TRUE = 1). we do this a lot so
+ * combining the two operations seems like a useful place to reuse code.
+ */
+export const FlattenNumbers = (args: Parameters<typeof FlattenCellValues>[0]) => 
+  (FlattenCellValues(args)).filter((value): value is number => typeof value === 'number');
+
+export const FilterIntrinsics = (data: unknown[]): (string|number|boolean|undefined)[] => {
+  return data.filter((value): value is number|boolean|undefined|string => {
+    switch (typeof value) {
+      case 'number':
+      case 'undefined':
+      case 'string':
+      case 'boolean':
+        return true;
+    }
+    return false;
+  });
 };
 
 /*

@@ -21,7 +21,7 @@
 
 import type { FunctionMap, IntrinsicValue } from '../descriptors';
 import { NumberFormatCache, ValueParser } from 'treb-format';
-import type { UnionValue} from 'treb-base-types';
+import type { CellValue, UnionValue} from 'treb-base-types';
 import { Localization, ValueType } from 'treb-base-types';
 import * as Utils from '../utilities';
 import { ArgumentError, ValueError } from '../function-error';
@@ -259,9 +259,9 @@ export const TextFunctionLibrary: FunctionMap = {
   /** canonical should be CONCAT; concatenate can be an alias */
  Concat: {
   description: 'Pastes strings together',
-  fn: (...args: IntrinsicValue[]): UnionValue => {
+  fn: (...args: CellValue[]): UnionValue => {
 
-    const values = Utils.FlattenUnboxed(args) as unknown[];
+    const values = Utils.FlattenCellValues(args);
     const value = values.map((arg) => {
 
       // this is used when concatenating cells that contain numbers

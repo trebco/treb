@@ -34,7 +34,7 @@ import { ExpressionCalculator, UnionIsMetadata } from './expression-calculator';
 import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
-import type { FunctionMap, IntrinsicValue} from './descriptors';
+import type { FunctionMap } from './descriptors';
 import { ReturnType } from './descriptors';
 import { AltFunctionLibrary, BaseFunctionLibrary } from './functions/base-functions';
 import { FinanceFunctionLibrary } from './functions/finance-functions';
@@ -254,7 +254,7 @@ export class Calculator extends Graph {
       return result;
     };
 
-    const CountIfInternal = (range: IntrinsicValue[][], criteria: IntrinsicValue): UnionValue => {
+    const CountIfInternal = (range: CellValue[][], criteria: CellValue): UnionValue => {
 
       // do we really need parser/calculator for this? I think
       // we've maybe gone overboard here, could we just use valueparser
@@ -262,7 +262,7 @@ export class Calculator extends Graph {
       // in any event there are no dynamic dependencies with this 
       // function.
 
-      const data = Utilities.FlattenUnboxed(range);
+      const data = Utilities.FlattenCellValues(range);
 
       let parse_result: ParseResult|undefined;
       let expression: ExpressionUnit|undefined;
@@ -317,7 +317,7 @@ export class Calculator extends Graph {
             }
 
             if (expression?.type === 'call' && expression.args[0]?.type === 'array') {
-              expression.args[0].values = [data];
+              expression.args[0].values = [Utilities.FilterIntrinsics(data)];
             }
 
           }
@@ -368,7 +368,7 @@ export class Calculator extends Graph {
           }
         }
 
-        expression.left.values = [data];
+        expression.left.values = [Utilities.FilterIntrinsics(data)];
 
       }
 
