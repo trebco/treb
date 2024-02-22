@@ -28,18 +28,35 @@ interface StringMap {
  */
 let default_properties: StringMap|undefined;
 
+const PropertyMap = (source: CSSStyleDeclaration): StringMap => {
+
+  const map: StringMap = {};
+
+  // you can iterate this thing, although apparently ts won't allow
+  // it because it's not in the spec? should probably play ball
+
+  for (let i = 0; i < source.length; i++) {
+    const key = source[i];
+    map[key] = source.getPropertyValue(key);
+  }
+
+  return map;
+
+}
+
 /**
  * get applied style as text (for attribute)
  */
 const GetAppliedStyle = (node: Element, computed: CSSStyleDeclaration, defaults: StringMap) => {
 
   const applied: StringMap = {};
-
-  Array.prototype.forEach.call(computed, (key) => {
-    if (computed[key] !== defaults[key]) {
-      applied[key] = computed[key];
+  const computed_map = PropertyMap(computed);
+  
+  for (const key of Object.keys(computed_map)) {
+    if (computed_map[key] !== defaults[key]) {
+      applied[key] = defaults[key];
     }
-  });
+  }
 
   return (Object.keys(applied).map((key) => `${key}: ${applied[key]}`).join('; ') +
     '; ' + (node.getAttribute('style') || '')).trim().replace(/"/g, '\'');
@@ -58,13 +75,21 @@ const RenderNode = (node: Element, defaults: StringMap) => {
   (clone as HTMLElement).removeAttribute('class');
   (clone as HTMLElement).setAttribute('style', style);
 
+  let computed_map: StringMap|undefined;
+
   Array.prototype.forEach.call(node.childNodes, (child: Node) => {
 
     switch (child.nodeType) {
 
       case Node.ELEMENT_NODE:
+
         // here we use the parent as the default style, assuming the child will inherit
-        clone.appendChild(RenderNode(child as Element, computed as any));
+
+        // create on demand, if necessary
+        if (!computed_map) {
+          computed_map = PropertyMap(computed);          
+        }
+        clone.appendChild(RenderNode(child as Element, computed_map));
         break;
 
       case Node.TEXT_NODE:

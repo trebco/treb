@@ -25,7 +25,7 @@
 let subscription_token_generator = 1000;
 
 interface EventSubscription<T> {
-  subscriber: (event: T) => any;
+  subscriber: (event: T) => void;
   token: number;
 }
 
