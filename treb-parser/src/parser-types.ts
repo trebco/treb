@@ -95,7 +95,8 @@ export interface UnitImaginary extends BaseUnit {
 /**
  * expression unit representing an array of primitive values. array
  * can contain mixed values, and holes. array cannot contain arrays,
- * or any other complex type.
+ * or any other complex type (including complex, apparently. we should
+ * remedy that).
  */
 export interface UnitArray extends BaseUnit {
   type: 'array';
