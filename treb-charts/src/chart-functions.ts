@@ -27,7 +27,7 @@ import type { FunctionMap } from 'treb-calculator/src/descriptors';
  * 
  * UPDATE: box this properly as "extended" type 
  */
-const Identity = (...args: any[]): UnionValue => {
+const Identity = (...args: unknown[]): UnionValue => {
   return {
     type: ValueType.object,
     value: args,
@@ -45,7 +45,7 @@ export const ChartFunctions: FunctionMap = {
     arguments: [
       { name: 'Array...', metadata: true, },
     ],
-    fn: (...args: any) => {
+    fn: (...args: unknown[]) => {
       return {
         type: ValueType.object,
         value: args,
@@ -75,7 +75,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'subtype', },
       { name: 'Labels', description: 'Labels for bubble charts only (atm)' },
     ],
-    fn: (...args: any) => {
+    fn: (...args: unknown[]) => {
       return {
         type: ValueType.object,
         value: args,

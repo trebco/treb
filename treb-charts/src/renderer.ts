@@ -33,11 +33,11 @@ export interface Metrics {
   y_offset: number;
 }
 
-const SVGNode = (tag: string, attribute_map: {[index: string]: any} = {}, text?: string): SVGElement => {
+const SVGNode = (tag: string, attribute_map: {[index: string]: string|number|unknown} = {}, text?: string): SVGElement => {
   const node = document.createElementNS(SVGNS, tag);
   for (const key of Object.keys(attribute_map)) {
     if (attribute_map[key] !== undefined) {
-      const value = attribute_map[key];
+      const value = attribute_map[key] ?? '';
       node.setAttribute(key, Array.isArray(value) ? value.join(' ') : value.toString());
     }
   }
@@ -836,10 +836,10 @@ export class ChartRenderer {
 
         const shape = SVGNode('circle', {cx: circle.x, cy: circle.y, r: step});
 
-        shape.addEventListener('mouseenter', (event) => {
+        shape.addEventListener('mouseenter', () => {
           this.parent.setAttribute('title', titles[circle.i] || '');
         });
-        shape.addEventListener('mouseleave', (event) => {
+        shape.addEventListener('mouseleave', () => {
           this.parent.setAttribute('title', '');
         });
 
@@ -934,10 +934,10 @@ export class ChartRenderer {
 
         const shape = SVGNode('circle', { cx: circle.x, cy: circle.y, r: step });
 
-        shape.addEventListener('mouseenter', (event) => {
+        shape.addEventListener('mouseenter', () => {
           this.parent.setAttribute('title', titles[circle.i] || '');
         });
-        shape.addEventListener('mouseleave', (event) => {
+        shape.addEventListener('mouseleave', () => {
           this.parent.setAttribute('title', '');
         });
 
@@ -1251,8 +1251,8 @@ export class ChartRenderer {
       offset: number,
     }> = [];
 
-    const d: string[] = [];
-    const areas: string[] = [];
+    // const d: string[] = [];
+    // const areas: string[] = [];
 
     const group = SVGNode('g', {class: classes});
 
@@ -1652,10 +1652,10 @@ export class ChartRenderer {
     });
 
     if (title) {
-      node.addEventListener('mouseenter', (event) => {
+      node.addEventListener('mouseenter', () => {
         this.parent.setAttribute('title', title);
       });
-      node.addEventListener('mouseleave', (event) => {
+      node.addEventListener('mouseleave', () => {
         this.parent.setAttribute('title', '');
       });
     }
@@ -1894,7 +1894,8 @@ export class ChartRenderer {
           let break_index = -1;
           let break_value = 1;
 
-          const indices: number[] = [];
+          // const indices: number[] = [];
+
           for (let i = 0; i < text.length; i++) {
             if (break_regex.test(text[i])) {
               const index_value = Math.abs(0.5 - (i / text.length));

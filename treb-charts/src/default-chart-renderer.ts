@@ -23,6 +23,7 @@ export class DefaultChartRenderer implements ChartRendererType {
 
   private margin = { top: 0.025, left: 0.05, bottom: 0.025, right: 0.075 };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public Resize(target: HTMLElement, data: ChartData) {
     this.renderer.Resize();
   }
@@ -196,7 +197,7 @@ export class DefaultChartRenderer implements ChartRendererType {
 
     // now do type-specific rendering
 
-    let zeros: number[]|undefined = [];
+    const zeros: number[] = [];
 
     switch (chart_data.type) {
     case 'scatter':
@@ -384,7 +385,7 @@ export class DefaultChartRenderer implements ChartRendererType {
 
                 let x = 0;
                 let width = 0;
-                let negative = false;
+                // let negative = false;
 
                 if (zero) {
                   if (value > 0) {
@@ -394,7 +395,7 @@ export class DefaultChartRenderer implements ChartRendererType {
                   else {
                     width = Util.ApplyScale(chart_data.scale.min - value, area.width, chart_data.scale);
                     x = area.left + zero - width;
-                    negative = true;
+                    // negative = true;
                   }
                 }
                 else {
@@ -484,7 +485,7 @@ export class DefaultChartRenderer implements ChartRendererType {
                 
                 let height = 0;
                 let y = 0;
-                let negative = false;
+                // let negative = false;
 
                 if (zero) {
                   if (value > 0) {
@@ -494,7 +495,7 @@ export class DefaultChartRenderer implements ChartRendererType {
                   else {
                     height = Util.ApplyScale(chart_data.scale.min - value, area.height, chart_data.scale);
                     y = area.bottom - zero; // // area.bottom - height - zero;
-                    negative = true;
+                    // negative = true;
                   }
                 }
                 else {

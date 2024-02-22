@@ -21,6 +21,47 @@
 
 import type { RangeScale } from 'treb-utils';
 import type { Area } from './rectangle';
+import type { UnitAddress } from 'treb-parser';
+import { ValueType, type ArrayUnion, type CellValue, type ExtendedUnion, type UnionValue } from 'treb-base-types';
+
+export interface ReferenceMetadata {
+  type: 'metadata';
+  address: UnitAddress;
+  value: CellValue;
+  format?: string;
+}
+
+export interface ReferenceSeries extends ExtendedUnion {
+  key: 'series',
+  value: [
+    CellValue?, // { name: 'Label' }, // , metadata: true, },
+    UnionValue?, // { name: 'X', metadata: true, },
+    UnionValue?, // { name: 'Y', metadata: true, },
+    UnionValue?, // { name: 'Z', metadata: true, },
+    CellValue?, // { name: 'index', },
+    CellValue?, // { name: 'subtype', },
+    CellValue?, // { name: 'Labels', description: 'Labels for bubble charts only (atm)' },
+  ];
+}
+
+export const IsMetadata = (value?: unknown): value is ExtendedUnion & { value: ReferenceMetadata } => {
+  return (!!value && (typeof value === 'object') 
+    && (value as ExtendedUnion).key === 'metadata'
+    && !!(value as ExtendedUnion).value
+    && (value as { value: ReferenceMetadata}).value.type === 'metadata');
+};
+
+export const IsSeries = (value?: unknown): value is ReferenceSeries => {
+  return (!!value && (typeof value === 'object')
+    && (value as ReferenceSeries).key === 'series'
+    && Array.isArray((value as ReferenceSeries).value));
+};
+
+export const IsArrayUnion = (value?: unknown): value is ArrayUnion => {
+  return (!!value && (typeof value === 'object')
+    && (value as UnionValue).type === ValueType.array
+    && Array.isArray((value as ArrayUnion).value));
+};
 
 export type NumberOrUndefinedArray = Array<number|undefined>;
 
@@ -44,7 +85,7 @@ export interface CalloutType {
 
 export interface CellData {
   address: { row: number; column: number };
-  value?: any;
+  value?: unknown;
   format?: string;
 }
 
