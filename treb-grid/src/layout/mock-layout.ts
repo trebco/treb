@@ -1,5 +1,5 @@
 
-import type { DataModel, ViewModel } from '../types/data_model';
+import type { DataModel, ViewModel } from 'treb-data-model';
 import { BaseLayout } from './base_layout';
 
 export class MockLayout extends BaseLayout {

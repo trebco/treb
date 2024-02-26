@@ -32,7 +32,7 @@ import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
 import type { FormattedString} from 'treb-parser';
 import { MDParser } from 'treb-parser';
 import type { BaseLayout, TileRange } from '../layout/base_layout';
-import type { DataModel, ViewModel } from '../types/data_model';
+import type { DataModel, ViewModel } from 'treb-data-model';
 import type { GridOptions } from '../types/grid_options';
 
 const DEFAULT_INDENT = '  '; // two spaces in the current font

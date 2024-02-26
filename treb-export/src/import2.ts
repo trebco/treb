@@ -21,7 +21,7 @@
 
 // import JSZip from 'jszip';
 
-import UZip from 'uzip';
+// import UZip from 'uzip';
 import Base64JS from 'base64-js';
 
 import type { AnchoredChartDescription, AnchoredImageDescription, AnchoredTextBoxDescription} from './workbook2';
@@ -31,7 +31,7 @@ import { Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
 import { is_range, ShiftRange, InRange, is_address } from './address-type';
 import type { ImportedSheetData, AnchoredAnnotation, CellParseResult, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, IArea, GradientStop, Color } from 'treb-base-types/src';
-import { type ValueType, ValidationType, type SerializedValueType } from 'treb-base-types/src';
+import { ValidationType, type SerializedValueType } from 'treb-base-types/src';
 import type { Sheet} from './workbook-sheet2';
 import { VisibleState } from './workbook-sheet2';
 import type { CellAnchor } from './drawing2/drawing2';
@@ -39,8 +39,9 @@ import { XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';
 import { ColumnWidthToPixels } from './column-width';
-import type { AnnotationType, ConditionalFormat } from 'treb-grid';
+import type { AnnotationType } from 'treb-data-model';
 import { ZipWrapper } from './zip-wrapper';
+import type { ConditionalFormat } from 'treb-data-model';
 
 interface SharedFormula {
   row: number;

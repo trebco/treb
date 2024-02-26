@@ -64,7 +64,6 @@ import { SelectionRenderer } from '../render/selection-renderer';
 import { TabBar } from './tab_bar';
 import type { StatsEntry } from './tab_bar';
 
-import { Sheet } from './sheet';
 import { MockLayout } from '../layout/mock-layout';
 import type { BaseLayout } from '../layout/base_layout';
 import { TileRange } from '../layout/base_layout';
@@ -77,21 +76,22 @@ import { TileRange } from '../layout/base_layout';
 
 import { GridLayout } from '../layout/grid_layout';
 
-import type { GridSelection } from './grid_selection';
 import { OverlayEditor } from '../editors/overlay_editor';
 
 import { TileRenderer } from '../render/tile_renderer';
 import type { GridEvent } from './grid_events';
 import { ErrorCode } from './grid_events';
-import type { LegacySerializedSheet } from './sheet_types';
-// import { FormulaBar } from '../editors/formula_bar';
-import { FormulaBar } from '../editors/formula_bar';
 
+import type { 
+  DataModel, 
+  GridSelection,
+  LegacySerializedSheet } from 'treb-data-model';
+import { Annotation, type AnnotationData, Sheet } from 'treb-data-model';
+
+import { FormulaBar } from '../editors/formula_bar';
 import type { GridOptions } from './grid_options';
 import { BorderConstants } from './border_constants';
-// import type { SerializeOptions } from './serialize_options';
 import { UA } from '../util/ua';
-import { Annotation, type AnnotationData } from './annotation';
 import { Autocomplete } from '../editors/autocomplete';
 
 import { MouseDrag } from './drag_mask';
@@ -106,8 +106,6 @@ import type {
 } from './grid_command';
 import { CommandKey
 } from './grid_command';
-
-import type { DataModel } from './data_model';
 
 import { DOMContext } from 'treb-base-types';
 import { GridBase } from './grid_base';

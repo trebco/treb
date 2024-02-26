@@ -20,8 +20,10 @@
  */
 
 import type { IArea, Table, TableTheme } from 'treb-base-types';
-import type { SerializedNamedExpression, SerializedSheet } from 'treb-grid';
-import type { SerializedMacroFunction } from 'treb-grid/src/types/data_model';
+import type { 
+  SerializedNamedExpression, 
+  SerializedSheet,
+  SerializedMacroFunction } from 'treb-data-model';
 
 export enum SaveFileType {
   json = 'json',

@@ -22,7 +22,7 @@
 import { BaseLayout } from './base_layout';
 import type { Tile } from '../types/tile';
 import { DOMContext } from 'treb-base-types';
-import type { DataModel, ViewModel } from '../types/data_model';
+import type { DataModel, ViewModel } from 'treb-data-model';
 
 
 /**

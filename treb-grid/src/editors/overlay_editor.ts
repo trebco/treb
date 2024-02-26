@@ -21,10 +21,9 @@
 
 import { Editor, type NodeDescriptor } from './editor';
 import { Area, Cell, type CellStyle, type CellValue, Rectangle, Style, type Theme, ThemeColor2 } from 'treb-base-types';
-import { DataModel, type ViewModel } from '../types/data_model';
+import { DataModel, type ViewModel, type GridSelection } from 'treb-data-model';
 import { Autocomplete } from './autocomplete';
 import { UA } from '../util/ua';
-import type { GridSelection } from '../types/grid_selection';
 
 export type OverlayEditorResult = 'handled' | 'commit' | 'discard';
 

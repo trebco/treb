@@ -22,7 +22,7 @@
 // import type { Area, Cell, Theme } from 'treb-base-types';
 import { Editor, type NodeDescriptor, type FormulaEditorEvent } from './editor';
 // import { Parser } from 'treb-parser';
-import type { DataModel, ViewModel } from '../types/data_model';
+import type { DataModel, ViewModel } from 'treb-data-model';
 import type { GridOptions } from '../types/grid_options';
 import { Autocomplete } from './autocomplete';
 import { DOMContext } from 'treb-base-types';

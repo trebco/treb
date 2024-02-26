@@ -6,6 +6,7 @@
     "../treb-utils/**/*.ts",
     "../treb-grid/**/*.ts",
     "../treb-charts/**/*.ts",
+    "../treb-data-model/**/*.ts",
     "../treb-export/**/*.ts",
     "../treb-format/**/*.ts",
     "../treb-parser/**/*.ts",

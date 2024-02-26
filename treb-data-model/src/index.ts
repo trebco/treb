@@ -19,14 +19,26 @@
  * 
  */
 
-export { Grid } from './types/grid';
-export { GridBase } from './types/grid_base';
-export * from './types/grid_events';
-export type { GridOptions } from './types/grid_options';
-export { CommandKey } from './types/grid_command';
-export type { Command } from './types/grid_command';
-export { BorderConstants } from './types/border_constants';
-export type { FunctionDescriptor, ArgumentDescriptor } from './editors/autocomplete_matcher';
-export { UA } from './util/ua';
-export type { SetRangeOptions } from './types/set_range_options';
-export type { ExternalEditorConfig, DependencyList, ExternalEditorCallback } from './types/external_editor_config';
+export { DataModel } from './data_model';
+
+export type { 
+  MacroFunction, 
+  ConnectedElementType,
+  SerializedNamedExpression, 
+  SerializedModel, 
+  ViewModel, 
+  SerializedMacroFunction 
+} from './data_model';
+
+export { Sheet } from './sheet';
+export type { SerializedSheet, FreezePane, LegacySerializedSheet } from './sheet_types';
+export { NamedRangeCollection } from './named_range';
+export * from './conditional_format';
+export type { GridSelection } from './sheet_selection';
+export type { SerializeOptions } from './serialize_options';
+
+export { Annotation } from './annotation';
+export type { ViewData as AnnotationViewData } from './annotation';
+export type { AnnotationData, AnnotationType } from './annotation';
+
+

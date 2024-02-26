@@ -24,9 +24,8 @@ import { Rectangle } from 'treb-base-types';
 import type { BaseLayout } from '../layout/base_layout';
 import type { SelectionOffset } from './svg_selection_block';
 import { SVGSelectionBlock } from './svg_selection_block';
-import type { GridSelection } from '../types/grid_selection';
 import { HeaderOverlay, Orientation } from './svg_header_overlay';
-import type { DataModel, ViewModel } from '../types/data_model';
+import type { GridSelection, DataModel, ViewModel } from 'treb-data-model';
 
 // const SVGNS = 'http://www.w3.org/2000/svg';
 

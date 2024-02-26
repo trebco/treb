@@ -19,9 +19,8 @@
  * 
  */
 
-import type { DataModel, ViewModel } from './data_model';
+import type { DataModel, ViewModel, Sheet } from 'treb-data-model';
 import { EventSource } from 'treb-utils';
-import type { Sheet } from './sheet';
 import type { BaseLayout } from '../layout/base_layout';
 import { MouseDrag } from './drag_mask';
 import type { GridOptions } from './grid_options';

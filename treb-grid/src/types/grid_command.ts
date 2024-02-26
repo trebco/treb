@@ -22,7 +22,7 @@
 import type { ICellAddress, IArea, CellStyle, Color, CellValue, Table, TableSortType, TableTheme } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 import type { BorderConstants } from './border_constants';
-import type { ConditionalFormat } from './conditional_format';
+import type { ConditionalFormat } from 'treb-data-model';
 
 /**
  * switching to an exec-command based model, so we can serialize

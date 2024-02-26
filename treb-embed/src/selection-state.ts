@@ -1,5 +1,5 @@
 
-import type { GridSelection } from 'treb-grid';
+import type { GridSelection } from 'treb-data-model';
 import type { CellStyle } from 'treb-base-types';
 
 /**

@@ -19,11 +19,8 @@
  * 
  */
 
-import type { GridSelection } from './grid_selection';
-import type { Annotation } from './annotation';
-import type { Sheet } from './sheet';
+import type { Annotation, GridSelection, Sheet } from 'treb-data-model';
 import type { Area } from 'treb-base-types';
-// import type { ConditionalFormat } from './conditional_format';
 
 export enum ErrorCode {
 

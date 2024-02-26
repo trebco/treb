@@ -27,7 +27,6 @@
 
 // import JSZip from 'jszip';
 
-import UZip from 'uzip';
 import * as Base64JS from 'base64-js';
 
 import { PixelsToColumnWidth } from './column-width';
@@ -35,7 +34,7 @@ import { PixelsToColumnWidth } from './column-width';
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`;
 
 import { template } from './template-2';
-import type { SerializedSheet } from 'treb-grid';
+import type { SerializedSheet } from 'treb-data-model';
 
 import type { IArea, ICellAddress, CellValue, DataValidation, CellStyle,
          AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle } from 'treb-base-types';
@@ -64,7 +63,7 @@ import type { ImageOptions } from './drawing2/embedded-image';
 import type { TwoCellAnchor } from './drawing2/drawing2';
 import { Drawing } from './drawing2/drawing2';
 import { ConditionalFormatOperators, type TableDescription, type TableFooterType } from './workbook2';
-import type { AnnotationData } from 'treb-grid/src/types/annotation';
+import type { AnnotationData } from 'treb-data-model/src/annotation';
 import { ZipWrapper } from './zip-wrapper';
 
 export class Exporter {

@@ -30,7 +30,7 @@ import type { Cell, ICellAddress,
 import { ValueType, GetValueType } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
-import type { DataModel, MacroFunction, Sheet } from 'treb-grid';
+import type { DataModel, MacroFunction, Sheet } from 'treb-data-model';
 import { NameError, ReferenceError, ExpressionError, UnknownError } from './function-error';
 import { ReturnType } from './descriptors';
 

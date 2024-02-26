@@ -20,7 +20,7 @@
  */
 
 import { DOMContext } from 'treb-base-types';
-import type { DataModel, ViewModel } from '../types/data_model';
+import type { DataModel, ViewModel, Annotation } from 'treb-data-model';
 
 import type { Tile } from '../types/tile';
 import type { Theme, Point, Extent, Size, Position, ICellAddress, Table, IArea } from 'treb-base-types';
@@ -42,7 +42,6 @@ import type { GridEvent } from '../types/grid_events';
 
 import type { CellValue, AnnotationLayout, Corner } from 'treb-base-types';
 import { Area as TileRange } from 'treb-base-types';
-import type { Annotation } from '../types/annotation';
 
 export { Area as TileRange } from 'treb-base-types';
 

@@ -27,7 +27,7 @@ import type { SpreadsheetVertexBase, CalculationResult, GraphCallbacks } from '.
 import type { StateLeafVertex } from './state_leaf_vertex';
 import type { ICellAddress, ICellAddress2, IArea, UnionValue } from 'treb-base-types';
 import { Area } from 'treb-base-types';
-import type { DataModel } from 'treb-grid';
+import type { DataModel } from 'treb-data-model';
 import { CalculationLeafVertex } from './calculation_leaf_vertex';
 
 export type LeafVertex = StateLeafVertex|CalculationLeafVertex;

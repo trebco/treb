@@ -39,8 +39,8 @@ import type { TextPart ,
 
 import type { FreezePane, SerializedSheet, ScrollOffset } from './sheet_types';
 import type { SerializeOptions } from './serialize_options';
-import type { GridSelection } from './grid_selection';
-import { CreateSelection } from './grid_selection';
+import type { GridSelection } from './sheet_selection';
+import { CreateSelection } from './sheet_selection';
 import { Annotation } from './annotation';
 import type { ConditionalFormatList } from './conditional_format';
 

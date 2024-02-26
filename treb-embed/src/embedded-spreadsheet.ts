@@ -25,30 +25,40 @@
 /// <reference path="./content-types.d.ts" />
 
 import type {
-  GridEvent, SerializeOptions, Annotation,
-  SerializedModel, FreezePane, SerializedSheet,
+  GridEvent, 
   SheetChangeEvent, GridOptions, 
-  GridSelection, CellEvent, FunctionDescriptor, 
-  AnnotationViewData,
-  AnnotationType, 
+  CellEvent, FunctionDescriptor, 
   ExternalEditorConfig,
-  ConditionalFormatDuplicateValuesOptions,
-  // ConditionalFormatDuplicateValues,
-  ConditionalFormatGradientOptions,
-  ConditionalFormat, 
-  ConditionalFormatGradient, 
-  ConditionalFormatExpression,
-  StandardGradient,
-  CondifionalFormatExpressionOptions,
-  ConditionalFormatCellMatchOptions,
-  ConditionalFormatCellMatch,
-  MacroFunction,
-  SerializedNamedExpression,
 } from 'treb-grid';
 
+import { DataModel, Sheet, StandardGradientsList } from 'treb-data-model';
+import type { 
+    SerializeOptions, 
+    Annotation,
+    AnnotationViewData,
+    AnnotationType, 
+    MacroFunction, 
+    GridSelection, 
+    ConnectedElementType, 
+    SerializedNamedExpression, 
+    SerializedModel, 
+    SerializedSheet, 
+    FreezePane,
+    ConditionalFormatDuplicateValuesOptions,
+    ConditionalFormatGradientOptions,
+    ConditionalFormat, 
+    ConditionalFormatGradient, 
+    ConditionalFormatExpression,
+    StandardGradient,
+    CondifionalFormatExpressionOptions,
+    ConditionalFormatCellMatchOptions,
+    ConditionalFormatCellMatch,
+  
+   } from 'treb-data-model';
+
+
 import {
-  DataModel, Grid, BorderConstants, Sheet, ErrorCode, UA,
-  StandardGradientsList,
+  Grid, BorderConstants, ErrorCode, UA,
 } from 'treb-grid';
 
 import { 
@@ -90,7 +100,6 @@ import { Chart, ChartFunctions } from 'treb-charts';
 import type { SetRangeOptions } from 'treb-grid';
 
 import type { StateLeafVertex } from 'treb-calculator';
-import type { ConnectedElementType } from 'treb-grid';
 
 
 // --- worker ------------------------------------------------------------------
@@ -496,7 +505,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * parameter you can set when creating the spreadsheet.
    */
   public get user_data(): USER_DATA_TYPE|undefined {
-    return this.grid.model.user_data;
+    return this.grid.model.user_data as USER_DATA_TYPE;
   }
 
   /** 
@@ -784,7 +793,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     if (options.model) {
-      this.model = options.model.model;
+      this.model = options.model.model as DataModel;
       this.calculator = options.model.calculator; // as CalcType;
       this.DOM = options.model.DOM;
     }
@@ -5124,10 +5133,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   protected UpdateAnnotations(): void {
 
     for (const annotation of this.grid.active_sheet.annotations) {
-      if (annotation.temp.vertex) {
-        const vertex = annotation.temp.vertex as StateLeafVertex;
-        if (vertex.state_id !== annotation.temp.state) {
-          annotation.temp.state = vertex.state_id;
+
+      const vertex_data = annotation.temp as { vertex?: StateLeafVertex, state?: number };
+
+      if (vertex_data.vertex) {
+        if (vertex_data.vertex.state_id !== vertex_data.state) {
+          vertex_data.state = vertex_data.vertex.state_id;
 
           // set all views dirty in this case
           for (const view of annotation.view) {

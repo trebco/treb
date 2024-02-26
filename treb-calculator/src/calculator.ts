@@ -48,13 +48,15 @@ import { Variance } from './functions/statistics-functions';
 
 import * as Primitives from './primitives';
 
-import type { DataModel, Annotation, FunctionDescriptor, Sheet, ConditionalFormat } from 'treb-grid';
+import type { FunctionDescriptor } from 'treb-grid';
 import type { LeafVertex } from './dag/graph';
 
 import { ArgumentError, ReferenceError, UnknownError, ValueError, ExpressionError, NAError, DivideByZeroError } from './function-error';
 import { StateLeafVertex } from './dag/state_leaf_vertex';
 import { CalculationLeafVertex } from './dag/calculation_leaf_vertex';
-import type { ConnectedElementType } from 'treb-grid';
+
+import { Sheet } from 'treb-data-model';
+import type { Annotation, DataModel, ConnectedElementType, ConditionalFormat } from 'treb-data-model';
 
 import { ValueParser } from 'treb-format';
 
@@ -2143,10 +2145,11 @@ export class Calculator extends Graph {
   }
 
   public RemoveAnnotation(annotation: Annotation): void {
-    const vertex = (annotation.temp.vertex as LeafVertex);
-    if (!vertex) { return; }
-    vertex.Reset();
-    this.RemoveLeafVertex(vertex);
+    const vertex_data = annotation.temp as { vertex?: LeafVertex };
+    if (vertex_data.vertex) {
+      vertex_data.vertex.Reset();
+      this.RemoveLeafVertex(vertex_data.vertex);
+    }
   }
 
   public UpdateAnnotations(list?: Annotation|Annotation[], context?: Sheet): void {
@@ -2175,12 +2178,15 @@ export class Calculator extends Graph {
 
     for (const entry of list) {
       if (entry.data.formula) {
-        if (!entry.temp.vertex) {
-          entry.temp.vertex = new StateLeafVertex();
+
+        const vertex_data = entry.temp as { vertex?: LeafVertex };
+
+        if (!vertex_data.vertex) {
+          vertex_data.vertex = new StateLeafVertex();
         }
-        const vertex = entry.temp.vertex as LeafVertex;
-        this.AddLeafVertex(vertex);
-        this.UpdateLeafVertex(vertex, entry.data.formula, context);
+
+        this.AddLeafVertex(vertex_data.vertex);
+        this.UpdateLeafVertex(vertex_data.vertex, entry.data.formula, context);
       }
     }
 

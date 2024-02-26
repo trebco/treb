@@ -25,7 +25,7 @@ import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
 import type { DataValidation } from './cell';
 import type { Table } from './table';
-import type { AnnotationType, ConditionalFormat } from 'treb-grid';
+import type { AnnotationType, ConditionalFormat } from 'treb-data-model';
 
 export interface CellParseResult {
   row: number,

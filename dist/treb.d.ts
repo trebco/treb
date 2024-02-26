@@ -929,8 +929,9 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     /**
      * Create a named range or named expression. A named range refers to an
-     * address or range. A named expression can be a value or formula, basically
-     * anything you would type into a cell.
+     * address or range. A named expression can be any value or formula. To set
+     * the value as a literal string, enclose the string in double-quotes (as
+     * you would when using a string as a function argument).
      *
      * @param value range, value or expression
      *
@@ -943,7 +944,7 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      *
      * @public
      */
-    DefineName(name: string, value: RangeReference | CellValue): void;
+    DefineName(name: string, value: RangeReference | CellValue, overwrite?: boolean): void;
 
     /**
      * Set or remove a link in a cell.
@@ -1082,8 +1083,24 @@ export interface FreezePane {
     rows: number;
     columns: number;
 }
-export type AnnotationType = 'treb-chart' | 'image' | 'textbox' | 'external';
-export declare type BorderConstants = "none" | "all" | "outside" | "top" | "bottom" | "left" | "right";
+export declare const StandardGradientsList: {
+    readonly 'red-green': {
+        readonly color_space: "RGB";
+        readonly stops: GradientStop[];
+    };
+    readonly 'red-yellow-green': {
+        readonly color_space: "RGB";
+        readonly stops: GradientStop[];
+    };
+    readonly 'green-red': {
+        readonly color_space: "RGB";
+        readonly stops: GradientStop[];
+    };
+    readonly 'green-yellow-red': {
+        readonly color_space: "RGB";
+        readonly stops: GradientStop[];
+    };
+};
 
 /**
  * options for serializing data
@@ -1119,73 +1136,7 @@ export interface SerializeOptions {
      */
     export_functions?: boolean;
 }
-
-/**
- * options for the SetRange method
- */
-export interface SetRangeOptions {
-
-    /** transpose rectangular array before inserting */
-    transpose?: boolean;
-
-    /** recycle values (R-style) */
-    recycle?: boolean;
-
-    /** apply as an array (as if you pressed ctrl+shift+enter) */
-    array?: boolean;
-
-    /** spill over */
-    spill?: boolean;
-
-    /**
-     * argument separator to use when parsing the input formula. set this
-     * option to call SetRange with a consistent argument separator,
-     * independent of current locale.
-     */
-    argument_separator?: ',' | ';';
-
-    /**
-     * allow R1C1-style references; these can be either absolute
-     * addresses (e.g. R2C4) or relative to the cell (e.g. R[-3]C[0]).
-     */
-    r1c1?: boolean;
-}
-export interface ExternalEditorConfig {
-
-    /**
-     * list of dependencies to highlight. we support undefined entries in
-     * this list so you can use the result of `EmbeddedSpreadsheet.Resolve`,
-     * which may return undefined.
-     */
-    dependencies: DependencyList;
-
-    /**
-     * this callback will be called when the selection changes in the
-     * spreadsheet and this external editor is active. return an updated
-     * list of dependencies to highlight.
-     *
-     * NOTE: this is currently synchronous, but don't rely on that. it
-     * might switch to async in the future depending on how it works in
-     * practice.
-     */
-    update: ExternalEditorCallback;
-
-    /**
-     * a list of nodes that will serve as editors. when you attach, we will do
-     * an initial pass of context highlighting. we highlight on text changes
-     * and insert references if you make a selection in the spreadsheet while
-     * an editor is focused.
-     */
-    nodes: HTMLElement[];
-
-    /**
-     * assume that we're editing a formula. does not require leading `=`.
-     * defaults to `true` for historical reasons.
-     */
-    assume_formula?: boolean;
-}
-export type DependencyList = Array<IArea | ICellAddress | undefined>;
-export type ExternalEditorCallback = (selection?: string) => DependencyList | undefined;
+export type AnnotationType = 'treb-chart' | 'image' | 'textbox' | 'external';
 
 /**
  * Structure represents a 2d range of cells.
@@ -1408,6 +1359,74 @@ export interface EvaluateOptions {
      */
     r1c1?: boolean;
 }
+export declare type BorderConstants = "none" | "all" | "outside" | "top" | "bottom" | "left" | "right";
+
+/**
+ * options for the SetRange method
+ */
+export interface SetRangeOptions {
+
+    /** transpose rectangular array before inserting */
+    transpose?: boolean;
+
+    /** recycle values (R-style) */
+    recycle?: boolean;
+
+    /** apply as an array (as if you pressed ctrl+shift+enter) */
+    array?: boolean;
+
+    /** spill over */
+    spill?: boolean;
+
+    /**
+     * argument separator to use when parsing the input formula. set this
+     * option to call SetRange with a consistent argument separator,
+     * independent of current locale.
+     */
+    argument_separator?: ',' | ';';
+
+    /**
+     * allow R1C1-style references; these can be either absolute
+     * addresses (e.g. R2C4) or relative to the cell (e.g. R[-3]C[0]).
+     */
+    r1c1?: boolean;
+}
+export interface ExternalEditorConfig {
+
+    /**
+     * list of dependencies to highlight. we support undefined entries in
+     * this list so you can use the result of `EmbeddedSpreadsheet.Resolve`,
+     * which may return undefined.
+     */
+    dependencies: DependencyList;
+
+    /**
+     * this callback will be called when the selection changes in the
+     * spreadsheet and this external editor is active. return an updated
+     * list of dependencies to highlight.
+     *
+     * NOTE: this is currently synchronous, but don't rely on that. it
+     * might switch to async in the future depending on how it works in
+     * practice.
+     */
+    update: ExternalEditorCallback;
+
+    /**
+     * a list of nodes that will serve as editors. when you attach, we will do
+     * an initial pass of context highlighting. we highlight on text changes
+     * and insert references if you make a selection in the spreadsheet while
+     * an editor is focused.
+     */
+    nodes: HTMLElement[];
+
+    /**
+     * assume that we're editing a formula. does not require leading `=`.
+     * defaults to `true` for historical reasons.
+     */
+    assume_formula?: boolean;
+}
+export type DependencyList = Array<IArea | ICellAddress | undefined>;
+export type ExternalEditorCallback = (selection?: string) => DependencyList | undefined;
 
 /**
  * this is the document type used by TREB. it has a lot of small variations
@@ -1565,6 +1584,12 @@ export interface SelectionEvent {
  */
 export interface FocusViewEvent {
     type: 'focus-view';
+}
+export interface SerializedMacroFunction {
+    name: string;
+    function_def: string;
+    argument_names?: string[];
+    description?: string;
 }
 export interface SerializedNamedExpression {
     name: string;
@@ -1936,12 +1961,6 @@ export interface AddressOffset {
 export interface Corner {
     address: ICellAddress;
     offset: AddressOffset;
-}
-export interface SerializedMacroFunction {
-    name: string;
-    function_def: string;
-    argument_names?: string[];
-    description?: string;
 }
 
 /**

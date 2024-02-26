@@ -230,7 +230,7 @@ export class Annotation {
   public scaled_rect?: Rectangle;
 
   /** also opaque data, but not serialized. */
-  public temp: any = {};
+  public temp: unknown = {};
 
   public view: ViewData[] = [];
 

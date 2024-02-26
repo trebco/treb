@@ -21,7 +21,7 @@
 
 import type { IArea, SerializedCellData, CellStyle } from 'treb-base-types';
 import type { AnnotationData } from './annotation';
-import type { GridSelection, SerializedGridSelection } from './grid_selection';
+import type { GridSelection, SerializedGridSelection } from './sheet_selection';
 import type { ConditionalFormatList } from './conditional_format';
 
 export interface UpdateHints {
@@ -142,5 +142,8 @@ export interface SerializedSheet {
 /**
  * support for legacy sheet data
  * (I think we can drop)
+ * 
+ * @internal
+ * @deprecated
  */
 export type LegacySerializedSheet = SerializedSheet & { primary_selection?: GridSelection }

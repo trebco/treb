@@ -25,6 +25,7 @@
     "treb-base-types": "file:treb-base-types",
     "treb-calculator": "file:treb-calculator",
     "treb-charts": "file:treb-charts",
+    "treb-data-model": "file:treb-data-model",
     "treb-export": "file:treb-export",
     "treb-format": "file:treb-format",
     "treb-grid": "file:treb-grid",
