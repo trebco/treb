@@ -189,6 +189,10 @@ export class NamedRangeCollection {
 
   /**
    * fix named range references after row/column insert/delete
+   * 
+   * surely there's overlap between this function and what we do in
+   * grid when columns are added/removed. can we consolidate? (FIXME/TODO)
+   * 
    */
   public PatchNamedRanges(sheet_id: number, before_column: number, column_count: number, before_row: number, row_count: number) {
 

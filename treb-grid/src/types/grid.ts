@@ -965,14 +965,17 @@ export class Grid extends GridBase {
     }
 
     this.model.sheets.UpdateIndexes();
-    this.model.named_ranges.Reset();
-    this.model.named_expressions.clear();
+
+    this.model.named.Reset();
+    // this.model.named_ranges.Reset();
+    // this.model.named_expressions.clear();
 
     if (import_data.names) {
       
       for (const name of Object.keys(import_data.names)) {
 
-        const validated = this.model.named_ranges.ValidateNamed(name);
+        const validated = this.model.named.ValidateNamed(name);
+
         if (!validated) {
           console.warn(`invalid name: ${name}`, import_data.names[name]);
           continue;
@@ -990,14 +993,22 @@ export class Grid extends GridBase {
               const sheet_id = name_map[parse_result.expression.start.sheet || ''];
               if (sheet_id) {
                 parse_result.expression.start.sheet_id = sheet_id;
-                this.model.named_ranges.SetName(validated, new Area(parse_result.expression.start, parse_result.expression.end), false);
+                this.model.named.SetName(validated, {
+                  type: 'range',
+                  name: validated,
+                  area: new Area(parse_result.expression.start, parse_result.expression.end),
+                });
               }
             }
             else if (parse_result.expression.type === 'address') {
               const sheet_id = name_map[parse_result.expression.sheet || ''];
               if (sheet_id) {
                 parse_result.expression.sheet_id = sheet_id;
-                this.model.named_ranges.SetName(validated, new Area(parse_result.expression), false);
+                this.model.named.SetName(validated, {
+                  type: 'range',
+                  name: validated,
+                  area: new Area(parse_result.expression), 
+                });
               }
             }
             else {
@@ -1018,12 +1029,17 @@ export class Grid extends GridBase {
                 }
                 return true;
               });
-              this.model.named_expressions.set(validated, expr);
+
+              this.model.named.SetName(validated, {
+                type: 'expression',
+                expression: expr, 
+                name: validated,
+              })
             }
           }
         }
       }
-      this.model.named_ranges.RebuildList();
+      // this.model.named_ranges.RebuildList();
     }
 
     // FIXME: do we need to rebuild autocomplete here (A: yes)
@@ -1584,7 +1600,7 @@ export class Grid extends GridBase {
 
     // validate/translate name first
 
-    const validated = this.model.named_ranges.ValidateNamed(name);
+    const validated = this.model.named.ValidateNamed(name);
 
     if (!validated) {
       throw new Error('invalid name');
@@ -2578,7 +2594,10 @@ export class Grid extends GridBase {
 
           case 'identifier':
             {
-              target_area = this.model.named_ranges.Get(parse_result.expression.name);
+              const named = this.model.named.Get(parse_result.expression.name);
+              if (named?.type === 'range') {
+                target_area = named.area;
+              }
               if (!target_area) {
                 if (!this.primary_selection.empty) {
                   this.SetName(parse_result.expression.name.toUpperCase(), this.primary_selection.area);
@@ -4352,7 +4371,7 @@ export class Grid extends GridBase {
     const data = this.active_sheet.CellData(selection.area.start);
     const target = new Area(data.merge_area ? data.merge_area.start : selection.target);
 
-    let label = this.model.named_ranges.MatchSelection(selection.area, target);
+    let label = this.model.named.MatchSelection(selection.area, target);
 
     if (!label) {
 
@@ -5341,8 +5360,11 @@ export class Grid extends GridBase {
             break;
 
           case 'identifier':
-            if (this.model.named_ranges.Get(unit.name)) {
-              unit.name = unit.name.toUpperCase();
+            {
+              const named_range = this.model.named.Get(unit.name);
+              if (named_range?.type === 'range') {
+                unit.name = unit.name.toUpperCase();
+              }
             }
             break;
 
@@ -6424,8 +6446,8 @@ export class Grid extends GridBase {
       const target = new Area(data.merge_area ? data.merge_area.start : selection.target);
 
       this.formula_bar.label = 
-      this.model.named_ranges.MatchSelection(selection.area, target)
-        || Area.CellAddressToLabel(target.start);
+        this.model.named.MatchSelection(selection.area, target)
+          || Area.CellAddressToLabel(target.start);
 
     }
 

@@ -675,12 +675,12 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
         case 'identifier':
         {
-          const named_range = this.model.named_ranges.Get(unit.name);
-          if (named_range) {
-            if (named_range.count === 1) {
+          const named_range = this.model.named.Get(unit.name);
+          if (named_range?.type === 'range') {
+            if (named_range.area.count === 1) {
               reference_list.push({
                 type: 'address',
-                ...named_range.start,
+                ...named_range.area.start,
                 label: unit.name,
                 position: unit.position,
                 id: unit.id,
@@ -694,14 +694,14 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
                   position: unit.position,
                   id: unit.id,
                   label: unit.name,
-                    ...named_range.start,
+                    ...named_range.area.start,
                 },
                 end: {
                   type: 'address',
                   position: unit.position,
                   label: unit.name,
                   id: unit.id,
-                    ...named_range.end,
+                    ...named_range.area.end,
                 },
                 label: unit.name,
                 position: unit.position,

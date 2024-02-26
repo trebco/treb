@@ -23,9 +23,10 @@ import type { Sheet } from './sheet';
 import { SheetCollection } from './sheet_collection';
 import type { IArea, ICellAddress, Table, CellStyle } from 'treb-base-types';
 import type { SerializedSheet } from './sheet_types';
-import { NamedRangeCollection } from './named_range';
+// import { NamedRangeCollection } from './named_range';
 import { type ExpressionUnit, type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex } from 'treb-parser';
 import { Area, IsCellAddress, Style } from 'treb-base-types';
+import { NamedRangeManager2 } from './named2';
 
 export interface ConnectedElementType {
   formula: string;
@@ -71,18 +72,20 @@ export class DataModel {
    */
   public readonly sheets = new SheetCollection();
 
-  /** named ranges are document-scope, we don't support sheet-scope names */
-  public readonly named_ranges = new NamedRangeCollection;
+  /* * named ranges are document-scope, we don't support sheet-scope names */
+  // public readonly named_ranges = new NamedRangeCollection;
+
+  /** new composite collection */
+  public readonly named = new NamedRangeManager2();
 
   /** macro functions are functions written in spreadsheet language */
   // public macro_functions: Record<string, MacroFunction> = {};
   public readonly macro_functions: Map<string, MacroFunction> = new Map();
 
-  /** 
+  /* * 
    * new, for parametric. these might move to a different construct. 
    */
-  //public named_expressions: Record<string, ExpressionUnit> = {};
-  public readonly named_expressions: Map<string, ExpressionUnit> = new Map();
+  // public readonly named_expressions: Map<string, ExpressionUnit> = new Map();
 
   /** index for views */
   public view_count = 0;
@@ -252,15 +255,6 @@ export class DataModel {
         return true;
       }
 
-      /*
-      const lc = target.sheet.toLowerCase();
-      for (const sheet of this.model.sheets.list) {
-        if (sheet.name.toLowerCase() === lc) {
-          target.sheet_id = sheet.id;
-          return true;
-        }
-      }
-      */
     }
     else if (context?.sheet_id) {
       target.sheet_id = context.sheet_id;
@@ -318,12 +312,20 @@ export class DataModel {
       }
       else if (parse_result.expression && parse_result.expression.type === 'identifier') {
 
+        const named = this.named.Get(parse_result.expression.name);
+        if (named?.type === 'range') {
+          return named.area;
+        }
+
+        /*
         // is named range guaranteed to have a sheet ID? (I think yes...)
 
         const named_range = this.named_ranges.Get(parse_result.expression.name);
         if (named_range) {
           return named_range;
         }
+        */
+
       }
 
       return { row: 0, column: 0 }; // default for string types -- broken

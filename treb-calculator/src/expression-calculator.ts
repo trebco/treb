@@ -21,7 +21,7 @@
 
 import type { FunctionLibrary } from './function-library';
 import type { Cell, ICellAddress,
-         Area, UnionValue, CellValue,
+         UnionValue, CellValue,
          ArrayUnion,
          NumberUnion,
          UndefinedUnion,
@@ -98,7 +98,7 @@ export class ExpressionCalculator {
   // protected sheet_name_map: {[index: string]: number} = {};
 
   // local reference
-  protected named_range_map: {[index: string]: Area} = {};
+  // protected named_range_map: {[index: string]: Area} = {};
 
   // protected bound_name_stack: Array<Record<string, ExpressionUnit>> = [];
 
@@ -125,7 +125,7 @@ export class ExpressionCalculator {
     */
 
     this.data_model = model;
-    this.named_range_map = model.named_ranges.Map();
+    // this.named_range_map = model.named_ranges.Map();
     this.context.model = model;
     
   }
@@ -253,13 +253,14 @@ export class ExpressionCalculator {
 
     case 'identifier':
       {
-        const named_range = this.named_range_map[arg.name.toUpperCase()];
-        if (named_range) {
-          if (named_range.count === 1) {
-            address = named_range.start; // FIXME: range?
+        // const named_range = this.named_range_map[arg.name.toUpperCase()];
+        const named_range = this.data_model.named.Get(arg.name);
+        if (named_range?.type === 'range') {
+          if (named_range.area.count === 1) {
+            address = named_range.area.start; // FIXME: range?
           }
           else {
-            range = named_range;
+            range = named_range.area;
           }
         }
       }
@@ -941,30 +942,22 @@ export class ExpressionCalculator {
       }
       */
 
-      const named_range = this.named_range_map[upper_case];
+      // const named_range = this.named_range_map[upper_case];
+      const named_range = this.data_model.named.Get(upper_case);
 
-      if (named_range) {
-        if (named_range.count === 1) {
-          return this.CellFunction4(named_range.start, named_range.start);
+      if (named_range?.type === 'range') {
+        if (named_range.area.count === 1) {
+          return this.CellFunction4(named_range.area.start, named_range.area.start);
         }
         else {
-          return this.CellFunction4(named_range.start, named_range.end);
+          return this.CellFunction4(named_range.area.start, named_range.area.end);
         }
       }
 
-      const named_expression = this.data_model.named_expressions.get(upper_case); 
-      if (named_expression) {
-        return this.CalculateExpression(named_expression as ExtendedExpressionUnit);
+      const named2 = this.data_model.named.Get(identifier);
+      if (named2 && named2.type === 'expression') {
+        return this.CalculateExpression(named2.expression as ExtendedExpressionUnit);
       }
-
-      /*
-      const bound_names = this.context.name_stack[0];
-
-      if (bound_names && bound_names[upper_case]) {
-        const bound_expression = bound_names[upper_case];
-        return this.CalculateExpression(bound_expression);
-      }
-      */
 
       // console.info( '** identifier', {identifier, expr, context: this.context});
       

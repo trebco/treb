@@ -728,6 +728,15 @@ export class GridBase {
 
     const expressions: FunctionDescriptor[] = [];
 
+    for (const entry of this.model.named.list) {
+      expressions.push({
+        name: entry.name,
+        named: true,
+        type: 'token',
+      });
+    }
+
+    /*
     for (const name of this.model.named_expressions.keys()) {
       expressions.push({
         name, 
@@ -735,7 +744,11 @@ export class GridBase {
         type: 'token',
       });
     }
+    */
 
+    const consolidated= functions.slice(0).concat(expressions);
+
+    /*
     const consolidated = functions.slice(0).concat(
       this.model.named_ranges.List().map((named_range) => {
         return { 
@@ -746,6 +759,7 @@ export class GridBase {
       }),
       expressions,
     );
+    */
 
     this.autocomplete_matcher.SetFunctions(consolidated);
 
@@ -825,8 +839,9 @@ export class GridBase {
 
     Sheet.Reset();
     this.UpdateSheets([], true);
-    this.model.named_ranges.Reset();
-    this.model.named_expressions.clear();
+    
+    this.model.named.Reset();
+    
     this.model.macro_functions.clear(); //  = {};
     this.model.tables.clear();
 
@@ -997,7 +1012,7 @@ export class GridBase {
       if (i === command.index || sheet.id === command.id || sheet.name.toLowerCase() === named_sheet) {
         is_active = (sheet === this.active_sheet);
 
-        this.model.named_ranges.RemoveRangesForSheet(sheet.id);
+        this.model.named.RemoveRangesForSheet(sheet.id);
         target_name = sheet.name;
 
         index = i;
@@ -2960,7 +2975,7 @@ export class GridBase {
     }
     
 
-    this.model.named_ranges.PatchNamedRanges(target_sheet.id, 0, 0, command.before_row, command.count);
+    this.model.named.PatchNamedRanges(target_sheet.id, 0, 0, command.before_row, command.count);
 
     const target_sheet_name = target_sheet.name.toLowerCase();
 
@@ -3302,7 +3317,7 @@ export class GridBase {
     }
 
 
-    this.model.named_ranges.PatchNamedRanges(target_sheet.id, command.before_column, command.count, 0, 0);
+    this.model.named.PatchNamedRanges(target_sheet.id, command.before_column, command.count, 0, 0);
 
     // FIXME: we need an event here? 
 
@@ -4031,13 +4046,14 @@ export class GridBase {
 
           if (command.area) {
 
-            //if (this.model.named_expressions[command.name]) {
-            //  delete this.model.named_expressions[command.name];
-            //}
-            this.model.named_expressions.delete(command.name);
+            // this.model.named_expressions.delete(command.name);
+            // this.model.named.ClearName(command.name);
 
-            this.model.named_ranges.SetName(command.name,
-              new Area(command.area.start, command.area.end));
+            this.model.named.SetName(command.name, {
+              type: 'range',
+              area: new Area(command.area.start, command.area.end),
+              name: command.name,
+            });
             this.autocomplete_matcher.AddFunctions({
               type: 'token', // DescriptorType.Token,
               named: true,
@@ -4045,8 +4061,14 @@ export class GridBase {
             });
           }
           else if (command.expression) {
-            this.model.named_ranges.ClearName(command.name);
-            this.model.named_expressions.set(command.name, command.expression);
+            // this.model.named_ranges.ClearName(command.name);
+            // this.model.named_expressions.set(command.name, command.expression);
+            this.model.named.SetName(command.name, {
+              type: 'expression',
+              expression: command.expression,
+              name: command.name,
+            });
+
             this.autocomplete_matcher.AddFunctions({
               type: 'token', // DescriptorType.Token,
               named: true,
@@ -4054,11 +4076,7 @@ export class GridBase {
             });
           }
           else {
-            this.model.named_ranges.ClearName(command.name);
-            //if (this.model.named_expressions[command.name]) {
-            //  delete this.model.named_expressions[command.name];
-            //}
-            this.model.named_expressions.delete(command.name);
+            this.model.named.ClearName(command.name);
 
             this.autocomplete_matcher.RemoveFunctions({
               type: 'token', // DescriptorType.Token,

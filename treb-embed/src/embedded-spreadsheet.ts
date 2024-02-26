@@ -4500,51 +4500,71 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // that there's a sheet name in any address/range. 
 
     const named_expressions: SerializedNamedExpression[] = [];
-    if (this.model.named_expressions) {
+    // if (this.model.named_expressions) 
+    {
+      for (const entry of this.model.named.list) {
+      // for (const [name, expr] of this.model.named_expressions) {
 
-      for (const [name, expr] of this.model.named_expressions) {
-        this.parser.Walk(expr, unit => {
-          if (unit.type === 'address' || unit.type === 'range') {
-            const test = unit.type === 'range' ? unit.start : unit;
+        if (entry.type === 'expression') {
 
-            test.absolute_column = test.absolute_row = true;
+          this.parser.Walk(entry.expression, unit => {
+            if (unit.type === 'address' || unit.type === 'range') {
+              const test = unit.type === 'range' ? unit.start : unit;
 
-            if (!test.sheet) {
-              if (test.sheet_id) {
-                const sheet = this.model.sheets.Find(test.sheet_id);
-                if (sheet) {
-                  test.sheet = sheet.name;
+              test.absolute_column = test.absolute_row = true;
+
+              if (!test.sheet) {
+                if (test.sheet_id) {
+                  const sheet = this.model.sheets.Find(test.sheet_id);
+                  if (sheet) {
+                    test.sheet = sheet.name;
+                  }
+                }
+                if (!test.sheet) {
+                  test.sheet = active_sheet.name;
                 }
               }
-              if (!test.sheet) {
-                test.sheet = active_sheet.name;
+
+              if (unit.type === 'range') {
+                unit.end.absolute_column = unit.end.absolute_row = true;
               }
-            }
 
-            if (unit.type === 'range') {
-              unit.end.absolute_column = unit.end.absolute_row = true;
+              return false;
             }
+            else if (unit.type === 'call' && options.export_functions) {
+              // ...
+            }
+            return true;
+          });
+          const rendered = this.parser.Render(entry.expression, { missing: '' });
+          named_expressions.push({
+            name: entry.name,
+            expression: rendered
+          });
 
-            return false;
-          }
-          else if (unit.type === 'call' && options.export_functions) {
-            // ...
-          }
-          return true;
-        });
-        const rendered = this.parser.Render(expr, { missing: '' });
-        named_expressions.push({
-          name, expression: rendered
-        });
+        }
+      }
+    }
+
+    // converting from old-style
+    const named_range_records: Record<string, IArea> = {};
+    let named_range_count = 0;
+    for (const entry of this.model.named.list) {
+      if (entry.type === 'range') {
+        named_range_records[entry.name] = entry.area;
+        named_range_count++;
       }
     }
 
     return {
       sheet_data,
       active_sheet: active_sheet.id,
+      named_ranges: named_range_count ? named_range_records : undefined,
+      /*
       named_ranges: this.model.named_ranges.Count() ?
         this.model.named_ranges.Serialize() :
         undefined,
+        */
       macro_functions,
       tables,
       named_expressions: named_expressions.length ? named_expressions : undefined,
@@ -5946,7 +5966,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     model.document_name = data.name;
     model.user_data = data.user_data;
-    model.named_ranges.Reset();
+
+    // resets for both named ranges and named expressions, until we consolidate
+    model.named.Reset(); 
+
+    // model.named_ranges.Reset();
 
     // old models have it in sheet, new models have at top level -- we can
     // support old models, but write in the new syntax
@@ -5957,14 +5981,22 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     if (named_range_data) {
-      model.named_ranges.Deserialize(named_range_data);
+      // model.named_ranges.Deserialize(named_range_data);
+      for (const [name, value] of Object.entries(named_range_data)) {
+        model.named.SetName(name, {
+          name: name,
+          type: 'range',
+          area: new Area(value.start, value.end),
+        });
+      }
     }
 
     // when importing named expressions, we have to make sure there's a
     // sheet ID attached to each range/address. hopefully we have serialized
     // it with a sheet name so we can look up.
 
-    model.named_expressions.clear(); // = {};
+    // model.named_expressions.clear(); // already reset (composite w/ named ranges)
+
     if (data.named_expressions) {
       for (const pair of data.named_expressions) {
         const parse_result = this.parser.Parse('' || pair.expression);
@@ -5989,7 +6021,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             }
             return true;
           });
-          model.named_expressions.set(pair.name.toUpperCase(), parse_result.expression);
+
+          // model.named_expressions.set(pair.name.toUpperCase(), parse_result.expression);
+          model.named.SetName(pair.name, {
+            type: 'expression',
+            name: pair.name,
+            expression: parse_result.expression
+          });
+
         }
       }
     }

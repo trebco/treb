@@ -163,10 +163,10 @@ const default_calculator_options: CalculatorOptions = {
  */
 export class Calculator extends Graph {
 
-  // FIXME: need a way to share/pass parser flags
-
-  // public readonly parser: Parser = new Parser();
-  /** localized parser instance. we're sharing. */
+  /** 
+   * localized parser instance. we're sharing. 
+   * FIXME: remove local references so we can remove this accessor 
+   */
   protected get parser(): Parser {
     return this.model.parser;
   }
@@ -174,19 +174,6 @@ export class Calculator extends Graph {
   protected readonly library = new FunctionLibrary();
 
   protected registered_libraries: Record<string, boolean> = {};
-
-//  protected notifier_id_source = 100;
-//  protected notifiers: InternalNotifierType[] = [];
-
-  // protected graph: Graph = new Graph(); // |null = null;
-  // protected status: GraphStatus = GraphStatus.OK;
-
-  /*
-  // FIXME: why is this a separate class? [actually is this a composition issue?]
-  protected expression_calculator = new ExpressionCalculator(
-      this.library,
-      this.parser);
-    */
 
   protected expression_calculator: ExpressionCalculator;
 
@@ -1937,7 +1924,7 @@ export class Calculator extends Graph {
     const area = IsCellAddress(ref) ? new Area(ref) : new Area(ref.start, ref.end);
 
     if (named) {
-      const named_range = this.model.named_ranges.MatchSelection(area);
+      const named_range = this.model.named.MatchSelection(area);
       if (named_range) {
         return named_range;
       }
@@ -2217,9 +2204,9 @@ export class Calculator extends Graph {
       case 'identifier':
         {
           const named_range =
-            this.model.named_ranges.Get(expr.name.toUpperCase());
-          if (named_range) {
-            return new Area(named_range.start, named_range.end);
+            this.model.named.Get(expr.name);
+          if (named_range && named_range.type === 'range') {
+            return new Area(named_range.area.start, named_range.area.end);
           }
         }
         break;
@@ -2232,16 +2219,16 @@ export class Calculator extends Graph {
   protected NamedRangeToAddressUnit(unit: UnitIdentifier): UnitAddress|UnitRange|undefined {
 
     const normalized = unit.name.toUpperCase();
-    const named_range = this.model.named_ranges.Get(normalized);
-    if (named_range) {
-      if (named_range.count === 1) {
-        return this.ConstructAddressUnit(named_range.start, normalized, unit.id, unit.position);
+    const named_range = this.model.named.Get(normalized);
+    if (named_range && named_range.type === 'range') {
+      if (named_range.area.count === 1) {
+        return this.ConstructAddressUnit(named_range.area.start, normalized, unit.id, unit.position);
       }
       else {
         return {
           type: 'range',
-          start: this.ConstructAddressUnit(named_range.start, normalized, unit.id, unit.position),
-          end: this.ConstructAddressUnit(named_range.end, normalized, unit.id, unit.position),
+          start: this.ConstructAddressUnit(named_range.area.start, normalized, unit.id, unit.position),
+          end: this.ConstructAddressUnit(named_range.area.end, normalized, unit.id, unit.position),
           label: normalized,
           id: unit.id,
           position: unit.position,
@@ -2306,13 +2293,10 @@ export class Calculator extends Graph {
           // update to handle named expressions. just descend into
           // the expression as if it were inline.
           
-          const normalized = unit.name.toUpperCase();
+          const fetched = this.model.named.Get(unit.name);
 
-          if (this.model.named_expressions.has(normalized)) {
-            const expr = this.model.named_expressions.get(normalized);
-            if (expr) {
-              this.RebuildDependencies(expr, relative_sheet_id, relative_sheet_name, dependencies, context_address);
-            }
+          if (fetched?.type === 'expression') {
+            this.RebuildDependencies(fetched.expression, relative_sheet_id, relative_sheet_name, dependencies, context_address);
           }
           else {
             const resolved = this.NamedRangeToAddressUnit(unit);
