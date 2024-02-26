@@ -44,7 +44,7 @@ import { Area, IsCellAddress, ValidationType, ValueType, DefaultTableSortOptions
 import type { ICellAddress, IArea, Cell, CellValue, CellStyle, Table, TableSortOptions, TableTheme, Complex, PatchOptions as PatchAreaOptions } from 'treb-base-types';
 import { Sheet } from './sheet';
 import type { FunctionDescriptor} from '../editors/autocomplete_matcher';
-import { AutocompleteMatcher, DescriptorType } from '../editors/autocomplete_matcher';
+import { AutocompleteMatcher } from '../editors/autocomplete_matcher';
 import { NumberFormat, ValueParser } from 'treb-format';
 
 import type { GridEvent } from './grid_events';
@@ -726,24 +726,29 @@ export class GridBase {
    */
    public SetAutocompleteFunctions(functions: FunctionDescriptor[]): void {
 
-    // why does iterable support forEach but not map? 
-
     const expressions: FunctionDescriptor[] = [];
+
     for (const name of this.model.named_expressions.keys()) {
       expressions.push({
-        name, type: DescriptorType.Function,
+        name, 
+        named: true,
+        type: 'token',
       });
     }
 
     const consolidated = functions.slice(0).concat(
       this.model.named_ranges.List().map((named_range) => {
-        return { name: named_range.name, type: DescriptorType.Token };
+        return { 
+          name: named_range.name, 
+          named: true,
+          type: 'token' 
+        };
       }),
       expressions,
     );
 
-    //this.autocomplete_matcher.SetFunctions(functions);
     this.autocomplete_matcher.SetFunctions(consolidated);
+
   }
 
   public ResetMetadata(): void {
@@ -4034,7 +4039,8 @@ export class GridBase {
             this.model.named_ranges.SetName(command.name,
               new Area(command.area.start, command.area.end));
             this.autocomplete_matcher.AddFunctions({
-              type: DescriptorType.Token,
+              type: 'token', // DescriptorType.Token,
+              named: true,
               name: command.name,
             });
           }
@@ -4042,7 +4048,8 @@ export class GridBase {
             this.model.named_ranges.ClearName(command.name);
             this.model.named_expressions.set(command.name, command.expression);
             this.autocomplete_matcher.AddFunctions({
-              type: DescriptorType.Token,
+              type: 'token', // DescriptorType.Token,
+              named: true,
               name: command.name,
             });
           }
@@ -4054,7 +4061,8 @@ export class GridBase {
             this.model.named_expressions.delete(command.name);
 
             this.autocomplete_matcher.RemoveFunctions({
-              type: DescriptorType.Token,
+              type: 'token', // DescriptorType.Token,
+              named: true,
               name: command.name,
             });
           }

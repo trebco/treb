@@ -21,7 +21,7 @@
 
 import { DOMContext } from 'treb-base-types';
 import type { Theme, Rectangle } from 'treb-base-types';
-import type { AutocompleteExecResult, DescriptorType } from './autocomplete_matcher';
+import type { AutocompleteExecResult, FunctionDescriptor } from './autocomplete_matcher';
 
 export interface AutocompleteResult {
   handled: boolean;
@@ -29,7 +29,7 @@ export interface AutocompleteResult {
   data?: AutocompleteExecResult;
   value?: string;
   click?: boolean;
-  type?: DescriptorType;
+  type?: FunctionDescriptor['type'];
 }
 
 /*

@@ -139,7 +139,6 @@ export type SerializedValueType = // typeof ValueTypeList[number];
  * properly. I can't arrive at a good way of doing that automatically. 
  * 
  * old comments:
- * ---
  * 
  * undefined is 0 so we can test it as falsy.
  *
@@ -157,6 +156,7 @@ export enum ValueType {
   boolean = 4,
 
   // we don't actually use this type, it's here for matching only
+  // OK we use it all the time now
   object = 5,
 
   // error is a STRING VALUE... object errors are layered on top? is that 

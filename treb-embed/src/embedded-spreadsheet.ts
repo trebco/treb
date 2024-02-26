@@ -4165,8 +4165,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   /**
    * Create a named range or named expression. A named range refers to an
-   * address or range. A named expression can be a value or formula, basically
-   * anything you would type into a cell. 
+   * address or range. A named expression can be any value or formula. To set 
+   * the value as a literal string, enclose the string in double-quotes (as
+   * you would when using a string as a function argument).
    * 
    * @param value range, value or expression
    * 
@@ -4179,7 +4180,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @public
    */
-  public DefineName(name: string, value: RangeReference|CellValue): void {
+  public DefineName(name: string, value: RangeReference|CellValue, overwrite = false): void {
 
     // how can we unify named ranges and named expressions?
     //
@@ -4221,45 +4222,17 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       switch (parse_result.expression.type) {
         case 'address':
         case 'range':
-          this.grid.SetName(name, this.model.ResolveArea(parse_result.expression, this.grid.active_sheet));
+          this.grid.SetName(name, this.model.ResolveArea(parse_result.expression, this.grid.active_sheet), undefined, overwrite);
           return;
       }
-      this.grid.SetName(name, undefined, value);
+      this.grid.SetName(name, undefined, value, overwrite);
       
     }
     else {
-      this.grid.SetName(name, undefined, value.toString());
+      this.grid.SetName(name, undefined, value.toString(), overwrite);
     }
     
-
-    /*
-    // API v1 OK
-
-    if (!range) {
-      const selection = this.GetSelectionReference();
-      if (!selection.empty) {
-        range = selection.area;
-      }
-      else {
-        throw new Error('invalid reference');
-      }
-    }
-
-    // NOTE: AC is handled internally
-
-    this.grid.SetName(name, this.model.ResolveArea(range, this.grid.active_sheet));
-    */
   }
-
-  /* *
-   * define a named expression
-   * 
-   * @internal
-   * /
-  public DefineNamedExpression(name: string, expression: string): void {
-    this.grid.SetName(name, undefined, expression);
-  }
-  */
 
   /**
    * Set or remove a link in a cell. 

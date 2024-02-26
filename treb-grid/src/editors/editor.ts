@@ -46,7 +46,7 @@ import { Parser } from 'treb-parser';
 import type { DataModel, ViewModel } from '../types/data_model';
 import type { Autocomplete, AutocompleteResult } from './autocomplete';
 import { EventSource } from 'treb-utils';
-import { type AutocompleteExecResult, AutocompleteMatcher, DescriptorType } from './autocomplete_matcher';
+import { type AutocompleteExecResult, AutocompleteMatcher, type FunctionDescriptor } from './autocomplete_matcher';
 
 export interface UpdateTextOptions {
   rewrite_addresses: boolean;
@@ -1053,11 +1053,13 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     if (!this.active_editor) return;
 
-    let type = DescriptorType.Function;
+    // let type = DescriptorType.Function;
+    let type: FunctionDescriptor['type'];
+
     if (ac_result.data && ac_result.data.completions) {
       for (const completion of ac_result.data.completions) {
         if (completion.name.toLowerCase() === ac_result.value?.toLowerCase()) {
-          type = completion.type || DescriptorType.Function;
+          type = completion.type ; // || DescriptorType.Function;
           break;
         }
       }
@@ -1073,7 +1075,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
     const start = ac_result.data?.position || 0;
     const end = start + (ac_result.data?.token?.length || 0);
 
-    const insertion = (type === DescriptorType.Token) ? ac_result.value : ac_result.value + '(';
+    const insertion = (type === 'token') ? ac_result.value : ac_result.value + '(';
 
     const text = this.active_editor.node.textContent || '';
     let adjusted = text.substring(0, start) + insertion;

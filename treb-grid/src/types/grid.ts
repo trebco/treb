@@ -1570,11 +1570,19 @@ export class Grid extends GridBase {
   }
 
   /**
-   * set or clear name
+   * set or clear name. optionally overwrite existing name. note that
+   * you cannot overwrite function names, only existing named ranges/expressions.
+   * 
+   * set name to refer to a range (named range) or expression/value (named 
+   * expression). range has priority if you set both (FIXME: make that impossible)
+   * 
+   * note that expression here must be a valid expression in SL. if you want 
+   * to set a literal string, enclose it in double quotes (as you would when 
+   * using a string as an argument to a function).
    */
-  public SetName(name: string, range?: ICellAddress | Area, expression?: string): void {
+  public SetName(name: string, range?: ICellAddress | Area, expression?: string, overwrite = false): void {
 
-    // console.info('setname', name, range, expression);
+    // console.info('setname', name, range, expression, overwrite);
 
     // validate/translate name first
 
@@ -1584,35 +1592,24 @@ export class Grid extends GridBase {
       throw new Error('invalid name');
     }
 
-    // check against functions
+    name = validated;
 
-    // console.info('checking...', name, this.autocomplete_matcher?.function_map);
+    // check against functions. also an error if the name exists
+    // but the overwrite flag is not set.
 
-    const compare = name.trim().toUpperCase();
     if (this.autocomplete_matcher) {
-      for (const name of Object.keys(this.autocomplete_matcher.function_map)) {
-        if (compare === name.toUpperCase()) {
-          // const descriptor = this.autocomplete_matcher.function_map[name];
 
-          // hmmm... we're not actually setting this type 
-          // (DescriptorType.Function). it seems like we only 
-          // set the _other_ type. sloppy.
-
+      const ac_entry = this.autocomplete_matcher.Get(name);
+      if (ac_entry) {
+        if (!ac_entry.named || !overwrite) {
           if (range || expression) {
             throw new Error('name already defined');
           }
-
-          //if (descriptor.type !== DescriptorType.Token) {
-          //  throw new Error('invalid name');
-          //}
-
-          break; // since we can't have two with the same name
         }
       }
-    }
-    
-    name = validated;
 
+    }
+        
     const command: SetNameCommand = {
       key: CommandKey.SetName,
       name,
@@ -1636,7 +1633,19 @@ export class Grid extends GridBase {
 
     }
     else if (expression) {
+
       const parse_result = this.parser.Parse(expression);
+      
+      // there's a case we're missing here: if you pass a literal
+      // string, not as a function, that should be interpreted as 
+      // a string. we still want to use the parser on functions 
+      // and literal types... how to distinguish?
+
+      // actually, check that: let's require strings to be quoted,
+      // so they get interpreted as literals. if you want to do fancy
+      // switching do that at a higher level.
+
+      // ...
 
       // resolve sheet. otherwise we wind up with dangling
       // references. NOTE: need to do this on import as well

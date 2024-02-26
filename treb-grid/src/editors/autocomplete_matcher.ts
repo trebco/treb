@@ -41,15 +41,25 @@ export interface ArgumentDescriptor {
   name?: string;
 }
 
+/*
 export enum DescriptorType {
   Function, Token
 }
+*/
 
 export interface FunctionDescriptor {
   name: string;
   description?: string;
   arguments?: ArgumentDescriptor[];
-  type?: DescriptorType;
+
+  /** switching to literals */
+  type?: 'function'|'token';
+
+  /** this is a named range or named expression. meaning a user/non-system name. */
+  named?: boolean;
+
+  /** scope refers to sheet IDs. names may be scoped. */
+  scope?: number;
 }
 
 export interface AutocompleteMatchData {
@@ -77,43 +87,61 @@ export interface TooltipParserResult {
 export class AutocompleteMatcher {
 
   private function_names: string[] = [];
-
-  //private function_map: {[index: string]: FunctionDescriptor} = {};
+  // private function_map: {[index: string]: FunctionDescriptor} = {};
 
   private argument_separator = Localization.argument_separator.charCodeAt(0);
 
   /**
    * making this public (and scrubbing the type). we need it public so we 
    * can check collisions. I'm not sure why it was originally private...
+   * 
+   * that's backwards. this should be private, and anyone checking 
+   * collisions should ask. also updating to modern type.
+   * 
+   * OK so now a map. all names should be lower-cased for consistency (they
+   * can maintain canonical names inside the object).
    */
-  public function_map: Record<string, FunctionDescriptor> = {};
+  private function_map: Map<string, FunctionDescriptor> = new Map();
 
   public RemoveFunctions(functions: FunctionDescriptor|FunctionDescriptor[]): void {
     if (!Array.isArray(functions)) { functions = [functions]; }
-    let list = Object.keys(this.function_map).map((key) => this.function_map[key]);
-    for (const func of functions) {
-      list = list.filter(test => test.name !== func.name);
+    for (const entry of functions) {
+      this.function_map.delete(entry.name.toLowerCase());
     }
-    this.SetFunctions(list);
+    this.UpdateNameList();
   }
 
   public AddFunctions(functions: FunctionDescriptor|FunctionDescriptor[]): void {
     if (!Array.isArray(functions)) { functions = [functions]; }
-    const list = Object.keys(this.function_map).map((key) => this.function_map[key]).concat(...functions);
-    this.SetFunctions(list);
+    for (const entry of functions) {
+      this.function_map.set(entry.name.toLowerCase(), entry);
+    }
+    this.UpdateNameList();
   }
 
   public SetFunctions(functions: FunctionDescriptor[]): void {
-    this.function_map = {};
-    this.function_names = functions.map((fn) => {
-      this.function_map[fn.name.toLowerCase()] = fn;
-      return fn.name;
-    }).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    this.function_map.clear();
+    for (const entry of functions) {
+      this.function_map.set(entry.name.toLowerCase(), entry);
+    }
+    this.UpdateNameList();
   }
 
+  /**
+   * returns the canonical version of the name, if it exists.
+   * @param name 
+   * @returns 
+   */
   public NormalizeIdentifier(name: string): string|undefined {
-    const identifier = this.function_map[name.toLowerCase()];
-    return identifier ? identifier.name : undefined;
+    return this.function_map.get(name.toLowerCase())?.name;
+  }
+
+  /** 
+   * accessor for entries. we're not stopping you from modifying 
+   * in place, for now, but don't do that. 
+   */
+  public Get(name: string): FunctionDescriptor|undefined {
+    return this.function_map.get(name.toLowerCase());
   }
 
   public Exec(data: AutocompleteMatchData): AutocompleteExecResult {
@@ -139,7 +167,9 @@ export class AutocompleteMatcher {
       if (match) {
         const token = match[1];
         const rex = new RegExp('^' + token.replace('.', '\\.'), 'i');
-        const list = this.function_names.filter((name) => rex.test(name)).map((name) => this.function_map[name.toLowerCase()]);
+        const list = this.function_names.filter((name) => 
+          rex.test(name)).map((name) => 
+            this.function_map.get(name.toLowerCase())).filter((test): test is FunctionDescriptor => !!test);
 
         result = {
           completions: list, 
@@ -154,7 +184,7 @@ export class AutocompleteMatcher {
     const parsed = this.ParseTooltip(data.text.substr(0, data.cursor));
 
     if (parsed.function) {
-      const func = this.function_map[parsed.function.toLowerCase()];
+      const func = this.function_map.get(parsed.function.toLowerCase());
       if (func) {
         // if (func.canonical_name) result.tooltip = func.canonical_name;
         // else result.tooltip = tt.toUpperCase();
@@ -255,6 +285,14 @@ export class AutocompleteMatcher {
       argument,
     };
 
+  }
+
+  /**
+   * we maintain a sorted list of names. this needs to get updated
+   * when the list changes.
+   */
+  private UpdateNameList() {
+    this.function_names = [...this.function_map.keys()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
   }
 
 }

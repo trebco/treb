@@ -1389,7 +1389,7 @@ export class Calculator extends Graph {
 
     const list = this.library.List();
 
-    const function_list = Object.keys(list).map((key) => {
+    const function_list: FunctionDescriptor[] = Object.keys(list).map((key) => {
       let name = list[key].canonical_name;
       if (!name) name = key.replace(/_/g, '.');
       return {
@@ -1398,6 +1398,7 @@ export class Calculator extends Graph {
         arguments: (list[key].arguments || []).map((argument) => {
           return { name: argument.name || '' };
         }),
+        type: 'function', // DescriptorType.Function,
       };
     });
 
@@ -1408,6 +1409,7 @@ export class Calculator extends Graph {
         arguments: (macro.argument_names || []).map(argument => {
           return { name: argument };
         }),
+        type: 'function', // DescriptorType.Function,
       });
     }
 
