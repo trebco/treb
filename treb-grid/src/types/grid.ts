@@ -83,9 +83,11 @@ import type { GridEvent } from './grid_events';
 import { ErrorCode } from './grid_events';
 
 import type { 
+  CompositeNamed,
   DataModel, 
   GridSelection,
-  LegacySerializedSheet } from 'treb-data-model';
+  LegacySerializedSheet, 
+} from 'treb-data-model';
 import { Annotation, type AnnotationData, Sheet } from 'treb-data-model';
 
 import { FormulaBar } from '../editors/formula_bar';
@@ -887,7 +889,8 @@ export class Grid extends GridBase {
   public FromImportData(
     import_data: {
       sheets: ImportedSheetData[],
-      names?: Record<string, string|number>,
+      // names?: Record<string, string|number>,
+      named?: CompositeNamed[],
       active_tab?: number,
     },
     render = false,
@@ -970,8 +973,17 @@ export class Grid extends GridBase {
     // this.model.named_ranges.Reset();
     // this.model.named_expressions.clear();
 
+    console.info({IDX: import_data.named});
+
+    if (import_data.named) {
+      this.model.UnserializeComposite(import_data.named, this.active_sheet);
+    }
+
+    /*
     if (import_data.names) {
       
+      console.info("IDN", { names: import_data.names })
+
       for (const name of Object.keys(import_data.names)) {
 
         const validated = this.model.named.ValidateNamed(name);
@@ -993,22 +1005,14 @@ export class Grid extends GridBase {
               const sheet_id = name_map[parse_result.expression.start.sheet || ''];
               if (sheet_id) {
                 parse_result.expression.start.sheet_id = sheet_id;
-                this.model.named.SetName(validated, {
-                  type: 'range',
-                  name: validated,
-                  area: new Area(parse_result.expression.start, parse_result.expression.end),
-                });
+                this.model.named.SetNamedRange(validated, new Area(parse_result.expression.start, parse_result.expression.end));
               }
             }
             else if (parse_result.expression.type === 'address') {
               const sheet_id = name_map[parse_result.expression.sheet || ''];
               if (sheet_id) {
                 parse_result.expression.sheet_id = sheet_id;
-                this.model.named.SetName(validated, {
-                  type: 'range',
-                  name: validated,
-                  area: new Area(parse_result.expression), 
-                });
+                this.model.named.SetNamedRange(validated, new Area(parse_result.expression));
               }
             }
             else {
@@ -1030,17 +1034,15 @@ export class Grid extends GridBase {
                 return true;
               });
 
-              this.model.named.SetName(validated, {
-                type: 'expression',
-                expression: expr, 
-                name: validated,
-              })
+              this.model.named.SetNamedExpression(validated, expr);
+
             }
           }
         }
       }
       // this.model.named_ranges.RebuildList();
     }
+    */
 
     // FIXME: do we need to rebuild autocomplete here (A: yes)
     // ...
@@ -1594,9 +1596,9 @@ export class Grid extends GridBase {
    * to set a literal string, enclose it in double quotes (as you would when 
    * using a string as an argument to a function).
    */
-  public SetName(name: string, range?: ICellAddress | Area, expression?: string, overwrite = false): void {
+  public SetName(name: string, range?: ICellAddress | Area, expression?: string, scope?: number, overwrite = false): void {
 
-    // console.info('setname', name, range, expression, overwrite);
+    // console.info('setname', name, range, expression, scope, overwrite);
 
     // validate/translate name first
 
@@ -1627,6 +1629,7 @@ export class Grid extends GridBase {
     const command: SetNameCommand = {
       key: CommandKey.SetName,
       name,
+      scope,
     };
    
     if (range) {
@@ -2594,7 +2597,7 @@ export class Grid extends GridBase {
 
           case 'identifier':
             {
-              const named = this.model.named.Get(parse_result.expression.name);
+              const named = this.model.named.Get(parse_result.expression.name, this.active_sheet.id); // assuming it's in the active sheet? what if it's qualified?
               if (named?.type === 'range') {
                 target_area = named.area;
               }
@@ -5361,7 +5364,7 @@ export class Grid extends GridBase {
 
           case 'identifier':
             {
-              const named_range = this.model.named.Get(unit.name);
+              const named_range = this.model.named.Get(unit.name, this.active_sheet.id); // FIXME: is this the correct sheet ref?
               if (named_range?.type === 'range') {
                 unit.name = unit.name.toUpperCase();
               }

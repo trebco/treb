@@ -34,7 +34,7 @@ import { PixelsToColumnWidth } from './column-width';
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`;
 
 import { template } from './template-2';
-import type { SerializedSheet } from 'treb-data-model';
+import type { SerializedModel, SerializedSheet } from 'treb-data-model';
 
 import type { IArea, ICellAddress, CellValue, DataValidation, CellStyle,
          AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle } from 'treb-base-types';
@@ -65,6 +65,12 @@ import { Drawing } from './drawing2/drawing2';
 import { ConditionalFormatOperators, type TableDescription, type TableFooterType } from './workbook2';
 import type { AnnotationData } from 'treb-data-model/src/annotation';
 import { ZipWrapper } from './zip-wrapper';
+
+/*
+interface NestedDOMType {
+  [index: string]: string|number|NestedDOMType|NestedDOMType[];
+}
+*/
 
 export class Exporter {
 
@@ -1205,13 +1211,17 @@ export class Exporter {
    
   }
 
-  public Export(source: {
+  public Export(source: /* {
       sheet_data: SerializedSheet[];
       active_sheet?: number;
       named_ranges?: {[index: string]: IArea};
       named_expressions?: Array<{ name: string, expression: string }>;
-      decimal_mark: ','|'.';
-    }) {
+      decimal_mark?: ','|'.';
+    }*/
+
+      SerializedModel
+
+    ) {
       
     // --- create a map --------------------------------------------------------
 
@@ -2442,6 +2452,52 @@ export class Exporter {
     this.WriteRels(workbook_rels, `xl/_rels/workbook.xml.rels`);
 
     let definedNames: any = {definedName: []};
+
+    if (source.named) {
+      for (const entry of source.named) {
+        if (entry.area) {
+          let sheet_name = '';
+          const area = new Area(entry.area.start, entry.area.end);
+          area.start.absolute_column = area.start.absolute_row = true;
+          area.end.absolute_column = area.end.absolute_row = true;
+
+          if (entry.area.start.sheet) {
+            sheet_name = entry.area.start.sheet;
+          }
+          else if (entry.area.start.sheet_id) {
+            for (const sheet of source.sheet_data) {
+              if (sheet.id === area.start.sheet_id) {
+                sheet_name = sheet.name || '';
+                break;
+              }
+            }
+          }
+  
+          if (sheet_name) {
+            if (QuotedSheetNameRegex.test(sheet_name)) {
+              sheet_name = `'${sheet_name}'`;
+            }
+            sheet_name += '!';
+          }
+  
+          // console.info({key, area, lx: area.spreadsheet_label, sheet_name });
+          definedNames.definedName.push({
+            a$: { name: entry.name },
+            t$: sheet_name + area.spreadsheet_label,
+          });
+  
+        }
+        else if (entry.expression) {
+          definedNames.definedName.push({
+            a$: { name: entry.name },
+            t$: entry.expression,
+          });
+        }
+
+      }
+    }
+
+    /*
     if (source.named_ranges) {
       const keys = Object.keys(source.named_ranges);
       for (const key of keys) {
@@ -2482,10 +2538,13 @@ export class Exporter {
         });
       }
     }
+    */
+
     if (!definedNames.definedName.length) {
       definedNames = undefined;
     }
-
+    // else { console.info({definedNames}); }
+    
     const workbook_dom: any = {
       workbook: {
         a$: {

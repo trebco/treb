@@ -220,6 +220,7 @@ export interface SetNameCommand {
   name: string;
   area?: IArea;
   expression?: ExpressionUnit;
+  scope?: number;
 }
 
 export interface DataValidationCommand {

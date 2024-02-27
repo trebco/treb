@@ -55,6 +55,8 @@ export interface IArea {
   end: ICellAddress;
 }
 
+export type SerializedArea = IArea & { start: ICellAddress & { sheet: string }};
+
 export interface PatchOptions {
   before_column: number;
   column_count: number;

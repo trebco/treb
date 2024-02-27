@@ -147,7 +147,7 @@ export class Importer {
 
     if (element.a$?.t && element.a$.t === 's') {
       type = 'string'; // ValueType.string;
-      if (typeof element.v !== undefined) {
+      if (typeof element.v !== 'undefined') {
         const index = Number(element.v);
         if (!isNaN(index) && sheet.shared_strings) {
           value = sheet.shared_strings.Get(index) || '';
@@ -935,7 +935,7 @@ export class Importer {
           br: AnchorToCorner(descriptor.anchor.to),
         };
         
-        let type: AnnotationType = 'image';
+        const type: AnnotationType = 'image';
         const data = Base64JS.fromByteArray(descriptor.image);
         let imagetype: string = '';
 

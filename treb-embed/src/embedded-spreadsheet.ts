@@ -40,7 +40,6 @@ import type {
     MacroFunction, 
     GridSelection, 
     ConnectedElementType, 
-    SerializedNamedExpression, 
     SerializedModel, 
     SerializedSheet, 
     FreezePane,
@@ -3939,37 +3938,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     return this.calculator.Unresolve(ref, this.grid.active_sheet, qualified, named);
 
-    /*
-    let range = '';
-    const area = IsCellAddress(ref) ? new Area(ref) : new Area(ref.start, ref.end);
-
-    if (named) {
-      const named_range = this.model.named_ranges.MatchSelection(area);
-      if (named_range) {
-        return named_range;
-      }
-    }
-
-    if (area.count > 1) {
-      range = Area.CellAddressToLabel(area.start) + ':' + Area.CellAddressToLabel(area.end);
-    }
-    else {
-      range = Area.CellAddressToLabel(area.start);
-    }
-
-    if (!qualified) {
-      return range;
-    }
-
-    // is there a function to resolve sheet? actually, don't we know that
-    // the active selection must be on the active sheet? (...)
-
-    const sheet_id = area.start.sheet_id || this.grid.active_sheet.id;
-    const sheet_name = this.calculator.ResolveSheetName(sheet_id, true);
-
-    return sheet_name ? sheet_name + '!' + range : range;
-    */
-
   }
   
   /**
@@ -4189,7 +4157,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @public
    */
-  public DefineName(name: string, value: RangeReference|CellValue, overwrite = false): void {
+  public DefineName(name: string, value: RangeReference|CellValue, scope?: string|number, overwrite = false): void {
 
     // how can we unify named ranges and named expressions?
     //
@@ -4212,9 +4180,19 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       throw new Error('invalid value (null or undefined)');
     }
 
+    if (typeof scope === 'string') {
+      const id = this.model.sheets.ID(scope);
+      if (typeof id === 'number') {
+        scope = id;
+      }
+      else {
+        throw new Error('invalid scope; use a sheet name or sheet id');
+      }
+    }
+
     if (typeof value === 'object') {
       if (IsCellAddress(value) || IsArea(value)) {
-        this.grid.SetName(name, this.model.ResolveArea(value, this.grid.active_sheet));
+        this.grid.SetName(name, this.model.ResolveArea(value, this.grid.active_sheet), undefined, scope, overwrite);
         return;
       }
     }
@@ -4231,14 +4209,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       switch (parse_result.expression.type) {
         case 'address':
         case 'range':
-          this.grid.SetName(name, this.model.ResolveArea(parse_result.expression, this.grid.active_sheet), undefined, overwrite);
+          this.grid.SetName(name, this.model.ResolveArea(parse_result.expression, this.grid.active_sheet), undefined, scope, overwrite);
           return;
       }
-      this.grid.SetName(name, undefined, value, overwrite);
+      this.grid.SetName(name, undefined, value, scope, overwrite);
       
     }
     else {
-      this.grid.SetName(name, undefined, value.toString(), overwrite);
+      this.grid.SetName(name, undefined, value.toString(), scope, overwrite);
     }
     
   }
@@ -4496,78 +4474,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       }
     }
 
-    // when serializing named expressions, we have to make sure
-    // that there's a sheet name in any address/range. 
-
-    const named_expressions: SerializedNamedExpression[] = [];
-    // if (this.model.named_expressions) 
-    {
-      for (const entry of this.model.named.list) {
-      // for (const [name, expr] of this.model.named_expressions) {
-
-        if (entry.type === 'expression') {
-
-          this.parser.Walk(entry.expression, unit => {
-            if (unit.type === 'address' || unit.type === 'range') {
-              const test = unit.type === 'range' ? unit.start : unit;
-
-              test.absolute_column = test.absolute_row = true;
-
-              if (!test.sheet) {
-                if (test.sheet_id) {
-                  const sheet = this.model.sheets.Find(test.sheet_id);
-                  if (sheet) {
-                    test.sheet = sheet.name;
-                  }
-                }
-                if (!test.sheet) {
-                  test.sheet = active_sheet.name;
-                }
-              }
-
-              if (unit.type === 'range') {
-                unit.end.absolute_column = unit.end.absolute_row = true;
-              }
-
-              return false;
-            }
-            else if (unit.type === 'call' && options.export_functions) {
-              // ...
-            }
-            return true;
-          });
-          const rendered = this.parser.Render(entry.expression, { missing: '' });
-          named_expressions.push({
-            name: entry.name,
-            expression: rendered
-          });
-
-        }
-      }
-    }
-
-    // converting from old-style
-    const named_range_records: Record<string, IArea> = {};
-    let named_range_count = 0;
-    for (const entry of this.model.named.list) {
-      if (entry.type === 'range') {
-        named_range_records[entry.name] = entry.area;
-        named_range_count++;
-      }
-    }
+    const named = this.model.SerializeNames(active_sheet);
 
     return {
       sheet_data,
       active_sheet: active_sheet.id,
-      named_ranges: named_range_count ? named_range_records : undefined,
-      /*
-      named_ranges: this.model.named_ranges.Count() ?
-        this.model.named_ranges.Serialize() :
-        undefined,
-        */
+      named: named.length ? named : undefined,
       macro_functions,
       tables,
-      named_expressions: named_expressions.length ? named_expressions : undefined,
     };
 
   }
@@ -4888,24 +4802,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       }
     }
   }
-
-  /* *
-   * replacement for fetch
-   * FIXME: move to utils or other lib
-   * FIXME: we don't need to do this for ES6, presumably...
-   * can this move into the legacy/modern code? or is there a polyfill? (...)
-   * /
-  protected async Fetch(uri: string): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = () => resolve(xhr.response);
-      xhr.onerror = () => reject('load error');
-      xhr.ontimeout = () => reject('timeout');
-      xhr.open('GET', uri);
-      xhr.send();
-    });
-  }
-  */
 
   /**
    * I'm restructuring the select file routine to simplify, in service
@@ -5970,67 +5866,52 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     // resets for both named ranges and named expressions, until we consolidate
     model.named.Reset(); 
 
-    // model.named_ranges.Reset();
-
-    // old models have it in sheet, new models have at top level -- we can
-    // support old models, but write in the new syntax
-
-    let named_range_data = data.named_ranges;
-    if (!named_range_data && sheets[0] && sheets[0].named_ranges) {
-      named_range_data = sheets[0].named_ranges;
+    if (data.named) {
+      this.model.UnserializeNames(data.named, this.grid.active_sheet);
     }
+    else {
 
-    if (named_range_data) {
-      // model.named_ranges.Deserialize(named_range_data);
-      for (const [name, value] of Object.entries(named_range_data)) {
-        model.named.SetName(name, {
-          name: name,
-          type: 'range',
-          area: new Area(value.start, value.end),
-        });
+      // console.info("using old-style name import")
+
+      //------------------------------------------------------------------------
+      //
+      // old style handling of named ranges and expressions. we'll leave
+      // this here for the time being. [update: rewriting slightly to share 
+      // some code]
+      //
+      //------------------------------------------------------------------------
+
+      // old models have it in sheet, new models have at top level -- we can
+      // support old models, but write in the new syntax
+
+      let named_range_data = data.named_ranges;
+      if (!named_range_data && sheets[0] && sheets[0].named_ranges) {
+        named_range_data = sheets[0].named_ranges;
       }
-    }
 
-    // when importing named expressions, we have to make sure there's a
-    // sheet ID attached to each range/address. hopefully we have serialized
-    // it with a sheet name so we can look up.
+      if (named_range_data) {
+        for (const [name, value] of Object.entries(named_range_data)) {
+          model.named.SetNamedRange(name, new Area(value.start, value.end));
+        }
+      }
 
-    // model.named_expressions.clear(); // already reset (composite w/ named ranges)
+      // when importing named expressions, we have to make sure there's a
+      // sheet ID attached to each range/address. hopefully we have serialized
+      // it with a sheet name so we can look up.
 
-    if (data.named_expressions) {
-      for (const pair of data.named_expressions) {
-        const parse_result = this.parser.Parse('' || pair.expression);
-        if (parse_result.valid && parse_result.expression) {
-          this.parser.Walk(parse_result.expression, unit => {
-            if (unit.type === 'address' || unit.type === 'range') {
-              if (unit.type === 'range') {
-                unit = unit.start;
-              }
-              if (!unit.sheet_id) {
-                if (unit.sheet) {
-                  const sheet = this.model.sheets.Find(unit.sheet);
-                  if (sheet) {
-                    unit.sheet_id = sheet.id;
-                  }
-                }
-              }
-              if (!unit.sheet_id) {
-                unit.sheet_id = this.grid.active_sheet.id;
-              }
-              return false; // don't continue in ranges
-            }
-            return true;
-          });
+      // model.named_expressions.clear(); // already reset (composite w/ named ranges)
 
-          // model.named_expressions.set(pair.name.toUpperCase(), parse_result.expression);
-          model.named.SetName(pair.name, {
-            type: 'expression',
+      if (data.named_expressions) {
+        for (const pair of data.named_expressions) {
+
+          this.model.UnserializeNames([{
             name: pair.name,
-            expression: parse_result.expression
-          });
+            expression: pair.expression,
+          }], this.grid.active_sheet);
 
         }
       }
+
     }
 
     model.macro_functions.clear();

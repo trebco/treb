@@ -675,7 +675,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
         case 'identifier':
         {
-          const named_range = this.model.named.Get(unit.name);
+          const named_range = this.model.named.Get(unit.name, this.view.active_sheet.id); // FIXME: scoped?
           if (named_range?.type === 'range') {
             if (named_range.area.count === 1) {
               reference_list.push({

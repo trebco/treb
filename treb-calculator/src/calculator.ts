@@ -2204,7 +2204,7 @@ export class Calculator extends Graph {
       case 'identifier':
         {
           const named_range =
-            this.model.named.Get(expr.name);
+            this.model.named.Get(expr.name, context?.sheet_id || 0);
           if (named_range && named_range.type === 'range') {
             return new Area(named_range.area.start, named_range.area.end);
           }
@@ -2216,10 +2216,10 @@ export class Calculator extends Graph {
 
   }
 
-  protected NamedRangeToAddressUnit(unit: UnitIdentifier): UnitAddress|UnitRange|undefined {
+  protected NamedRangeToAddressUnit(unit: UnitIdentifier, context: ICellAddress): UnitAddress|UnitRange|undefined {
 
     const normalized = unit.name.toUpperCase();
-    const named_range = this.model.named.Get(normalized);
+    const named_range = this.model.named.Get(normalized, context.sheet_id || 0);
     if (named_range && named_range.type === 'range') {
       if (named_range.area.count === 1) {
         return this.ConstructAddressUnit(named_range.area.start, normalized, unit.id, unit.position);
@@ -2293,13 +2293,13 @@ export class Calculator extends Graph {
           // update to handle named expressions. just descend into
           // the expression as if it were inline.
           
-          const fetched = this.model.named.Get(unit.name);
+          const fetched = this.model.named.Get(unit.name, context_address.sheet_id || 0);
 
           if (fetched?.type === 'expression') {
             this.RebuildDependencies(fetched.expression, relative_sheet_id, relative_sheet_name, dependencies, context_address);
           }
           else {
-            const resolved = this.NamedRangeToAddressUnit(unit);
+            const resolved = this.NamedRangeToAddressUnit(unit, context_address);
             if (resolved) {
               if (resolved.type === 'address') {
                 dependencies.addresses[resolved.label] = resolved;

@@ -19,15 +19,19 @@
  * 
  */
 
-import type { ImportedSheetData } from 'treb-base-types/src';
+import type { ImportedSheetData } from 'treb-base-types';
+import type { SerializedModel } from 'treb-data-model';
 
 import { Exporter } from '../export2';
 import { Importer } from '../import2';
 
-const ctx: Worker = self as any;
+const ctx: Worker = self as unknown as Worker;
 const exporter = new Exporter();
 
-const ExportSheets = (data: any) => {
+const ExportSheets = (data: {
+  sheet: SerializedModel,
+  decorated: Record<string, string>,
+}) => {
 
   if (data.sheet) {
     exporter.Init(data.decorated || []);
@@ -37,17 +41,19 @@ const ExportSheets = (data: any) => {
 
 };
 
-const ImportSheet = (data: any) => {
+const ImportSheet = (data: { data: ArrayBuffer }) => {
 
   const importer = new Importer();
 
   try {
     importer.Init(data.data);
 
+    const named = importer.workbook?.GetNamedRanges();
+
     const count = importer.SheetCount();
     const results = {
       sheets: [] as ImportedSheetData[],
-      names: importer.workbook?.GetNamedRanges(),
+      named,
       active_tab: importer.workbook?.active_tab,
     };
 
@@ -55,6 +61,15 @@ const ImportSheet = (data: any) => {
       const result = importer.GetSheet(i);
       if (result) {
         results.sheets.push(result);
+      }
+    }
+
+    for (const entry of named || []) {
+      if (typeof entry.local_scope === 'number') {
+        const sheet = results.sheets[entry.local_scope];
+        if (sheet) {
+          entry.scope = sheet.name;
+        }
       }
     }
 
@@ -72,9 +87,9 @@ const ImportSheet = (data: any) => {
 // initialize message handler
 ctx.addEventListener('message', (event) => {
   if (event.data && event.data.command === 'export'){
-    ExportSheets(event.data);
+    ExportSheets(event.data as { sheet: SerializedModel, decorated: Record<string, string>});
   }
   else if (event.data && event.data.command === 'import'){
-    ImportSheet(event.data);
+    ImportSheet(event.data as { data: ArrayBuffer });
   }
 });

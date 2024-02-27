@@ -4044,48 +4044,25 @@ export class GridBase {
           // FOR THE TIME BEING we're going to add that restriction to
           // the calling function, which (atm) is the only way to get here.
 
-          if (command.area) {
+          {
+            const ac_token: FunctionDescriptor = { type: 'token', named: true, name: command.name, scope: command.scope };
+            if (command.area || command.expression) {
+              if (command.area) {
+                this.model.named.SetNamedRange(command.name, new Area(command.area.start, command.area.end), command.scope);
+              }
+              else if (command.expression) {
+                this.model.named.SetNamedExpression(command.name, command.expression, command.scope);
+              }
+              this.autocomplete_matcher.AddFunctions(ac_token);
+            }
+            else {
+              this.model.named.ClearName(command.name, command.scope);
+              this.autocomplete_matcher.RemoveFunctions(ac_token);
+            }
 
-            // this.model.named_expressions.delete(command.name);
-            // this.model.named.ClearName(command.name);
-
-            this.model.named.SetName(command.name, {
-              type: 'range',
-              area: new Area(command.area.start, command.area.end),
-              name: command.name,
-            });
-            this.autocomplete_matcher.AddFunctions({
-              type: 'token', // DescriptorType.Token,
-              named: true,
-              name: command.name,
-            });
+            flags.structure_event = true;
+            flags.structure_rebuild_required = true;
           }
-          else if (command.expression) {
-            // this.model.named_ranges.ClearName(command.name);
-            // this.model.named_expressions.set(command.name, command.expression);
-            this.model.named.SetName(command.name, {
-              type: 'expression',
-              expression: command.expression,
-              name: command.name,
-            });
-
-            this.autocomplete_matcher.AddFunctions({
-              type: 'token', // DescriptorType.Token,
-              named: true,
-              name: command.name,
-            });
-          }
-          else {
-            this.model.named.ClearName(command.name);
-
-            this.autocomplete_matcher.RemoveFunctions({
-              type: 'token', // DescriptorType.Token,
-              named: true,
-              name: command.name,
-            });
-          }
-          flags.structure_event = true;
-          flags.structure_rebuild_required = true;
           break;
 
         case CommandKey.UpdateBorders:

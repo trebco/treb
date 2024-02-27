@@ -45,6 +45,7 @@ import { Sheet, VisibleState } from './workbook-sheet2';
 import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
 import type { CellStyle } from 'treb-base-types';
+import type { CompositeNamed } from 'treb-data-model';
 
 
 /*
@@ -157,8 +158,10 @@ export class Workbook {
   /** theme */
   public theme = new Theme();
 
-  /** defined names. these can be ranges or expressions. */
-  public defined_names: Record<string, string> = {};
+  /* * defined names. these can be ranges or expressions. */
+  // public defined_names: Record<string, string> = {};
+
+  public named: CompositeNamed[] = [];
 
   /** the workbook "rels" */
   public rels: RelationshipMap = {};
@@ -229,15 +232,34 @@ export class Workbook {
     xml = xmlparser2.parse(data);
 
     // defined names
-    this.defined_names = {};
+    this.named = [];
     const defined_names = XMLUtils.FindAll(xml, 'workbook/definedNames/definedName');
     for (const defined_name of defined_names) {
       const name = defined_name.a$?.name;
       const expression = defined_name.t$ || '';
+      const sheet_index = (defined_name.a$?.localSheetId) ? Number(defined_name.a$.localSheetId) : undefined;
+
+      // console.info({defined_name, name, expression, sheet_index});
+      this.named.push({
+        name, 
+        expression: typeof expression === 'string' ? expression : expression?.toString() || '',  
+        local_scope: sheet_index,
+      });
+
+    }
+
+    /*
+    this.defined_names = {};
+    const defined_names = XMLUtils.FindAll(xml, 'workbook/definedNames/definedName');
+
+    console.info({defined_names});
+
+    for (const defined_name of defined_names) {
       if (name && expression) {
         this.defined_names[name] = expression;
       }
     }
+    */
 
     const workbook_views = XMLUtils.FindAll(xml, 'workbook/bookViews/workbookView');
 
@@ -673,13 +695,15 @@ export class Workbook {
   }
 
   /** FIXME: accessor */
-  public GetNamedRanges(): Record<string, string> {
+  public GetNamedRanges(): CompositeNamed[] { // Record<string, string> {
     
     // ... what does this do, not do, or what is it supposed to do?
     // note that this is called by the import routine, so it probably
     // expects to do something
 
-    return this.defined_names;
+    // return this.defined_names;
+
+    return this.named;
 
   }
 

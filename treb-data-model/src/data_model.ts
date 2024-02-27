@@ -23,10 +23,10 @@ import type { Sheet } from './sheet';
 import { SheetCollection } from './sheet_collection';
 import type { IArea, ICellAddress, Table, CellStyle } from 'treb-base-types';
 import type { SerializedSheet } from './sheet_types';
-// import { NamedRangeCollection } from './named_range';
-import { type ExpressionUnit, type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex } from 'treb-parser';
+import { type ExpressionUnit, type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { Area, IsCellAddress, Style } from 'treb-base-types';
-import { NamedRangeManager2 } from './named2';
+import type { CompositeNamed, SerializedNamed } from './named';
+import { NamedRangeManager } from './named';
 
 export interface ConnectedElementType {
   formula: string;
@@ -72,20 +72,11 @@ export class DataModel {
    */
   public readonly sheets = new SheetCollection();
 
-  /* * named ranges are document-scope, we don't support sheet-scope names */
-  // public readonly named_ranges = new NamedRangeCollection;
-
-  /** new composite collection */
-  public readonly named = new NamedRangeManager2();
+  /** new composite collection (TODO: add macro functions too?) */
+  public readonly named = new NamedRangeManager();
 
   /** macro functions are functions written in spreadsheet language */
-  // public macro_functions: Record<string, MacroFunction> = {};
   public readonly macro_functions: Map<string, MacroFunction> = new Map();
-
-  /* * 
-   * new, for parametric. these might move to a different construct. 
-   */
-  // public readonly named_expressions: Map<string, ExpressionUnit> = new Map();
 
   /** index for views */
   public view_count = 0;
@@ -102,6 +93,184 @@ export class DataModel {
    * icase so we lc the names before inserting.
    */
   public tables: Map<string, Table> = new Map();
+
+  /**
+   * from import, we get ranges and expressions in the same format. we 
+   * need to check if something is a range -- if so, it will just be 
+   * a single address or range. in that case store it as a named range.
+   */
+  public UnserializeComposite(names: CompositeNamed[], active_sheet?: Sheet) {
+
+    console.info("UC", names);
+
+    this.parser.Save();
+    this.parser.SetLocaleSettings(DecimalMarkType.Period, ArgumentSeparatorType.Comma);
+    
+    const sorted = names.map(named => {
+      const parse_result = this.parser.Parse(named.expression); 
+      if (parse_result.expression) {
+        if (parse_result.expression.type === 'address' || parse_result.expression.type === 'range') {
+          return {
+            ...named,
+            expression: undefined,
+            area: parse_result.expression.type === 'address' ? {
+              start: parse_result.expression,
+              end: parse_result.expression,
+            } : parse_result.expression,
+          } as SerializedNamed;
+        }
+        return {
+          ...named
+        } as SerializedNamed;
+      }
+      return undefined;
+    }).filter((test): test is SerializedNamed => !!test);
+
+    this.parser.Restore();
+    this.UnserializeNames(sorted, active_sheet);
+
+  }
+
+  public UnserializeNames(names: SerializedNamed[], active_sheet?: Sheet) {
+
+    console.info("USN", names);
+
+    for (const entry of names) {
+
+      const scope = (typeof entry.scope === 'string') ? this.sheets.ID(entry.scope) : undefined;
+
+      if (entry.expression) {
+
+        const parse_result = this.parser.Parse(entry.expression);
+
+        if (parse_result.valid && parse_result.expression) {
+          this.parser.Walk(parse_result.expression, unit => {
+            if (unit.type === 'address' || unit.type === 'range') {
+              if (unit.type === 'range') {
+                unit = unit.start;
+              }
+              if (!unit.sheet_id) {
+                if (unit.sheet) {
+                  unit.sheet_id = this.sheets.ID(unit.sheet);
+                }
+              }
+              if (!unit.sheet_id) {
+                unit.sheet_id = active_sheet?.id;
+              }
+              return false; // don't continue in ranges
+            }
+            return true;
+          });
+
+          this.named.SetNamedExpression(entry.name, parse_result.expression, scope);
+          
+        }
+
+      }
+      else if (entry.area) {
+        if (entry.area.start.sheet) {
+
+          const area = new Area({
+            ...entry.area.start,
+            sheet_id: this.sheets.ID(entry.area.start.sheet),
+          }, entry.area.end);
+
+          if (area.start.sheet_id) {
+            this.named.SetNamedRange(entry.name, area, scope);
+          }
+          else {
+            console.warn("missing sheet ID?", entry.area.start.sheet);
+          }
+        }
+        else {
+          console.warn("missing sheet name?");
+        }
+      }
+    }
+
+  }
+
+  /**
+   * serialize names. ranges are easy, but make sure there's a sheet name
+   * in each address (and remove the ID). expressions are a little more 
+   * complicated.
+   */
+  public SerializeNames(active_sheet?: Sheet): SerializedNamed[] {
+    const list: SerializedNamed[] = [];
+
+    for (const entry of this.named.list) {
+
+      const named: SerializedNamed = {
+        name: entry.name,
+        // scope: entry.scope,
+      };
+
+      if (entry.scope) {
+        named.scope = this.sheets.Name(entry.scope);
+      }
+
+      if (entry.type === 'expression') {
+
+        this.parser.Walk(entry.expression, unit => {
+          if (unit.type === 'address' || unit.type === 'range') {
+
+            const test = unit.type === 'range' ? unit.start : unit;
+            test.absolute_column = test.absolute_row = true;
+
+            if (!test.sheet) {
+              if (test.sheet_id) {
+                test.sheet = this.sheets.Name(test.sheet_id);
+              }
+              if (!test.sheet) {
+                test.sheet = active_sheet?.name;
+              }
+            }
+
+            if (unit.type === 'range') {
+              unit.end.absolute_column = unit.end.absolute_row = true;
+            }
+
+            return false;
+          }
+          /*
+
+          // if we do the function export thing, we need to call that here
+          // (exporting functions to fix missing arguments or add decorators).
+          // we're not doing that, at least not yet.
+
+          else if (unit.type === 'call' && options.export_functions) {
+            // ...
+          }
+          */
+          return true;
+        });
+
+        named.expression = this.parser.Render(entry.expression, { missing: '' });
+
+      }
+      else {
+        named.area = {
+          start: {
+            ...entry.area.start,
+            sheet: this.sheets.Name(entry.area.start.sheet_id || 0) || '',
+            sheet_id: undefined, // in favor of name
+            absolute_column: true,
+            absolute_row: true,
+          },
+          end: {
+            ...entry.area.end,
+            absolute_column: true,
+            absolute_row: true,
+          },
+        };
+      }
+
+      list.push(named);
+
+    }
+
+    return list;
+  }
 
   /**
    * putting this here temporarily. it should probably move into a table
@@ -312,7 +481,7 @@ export class DataModel {
       }
       else if (parse_result.expression && parse_result.expression.type === 'identifier') {
 
-        const named = this.named.Get(parse_result.expression.name);
+        const named = this.named.Get(parse_result.expression.name, active_sheet.id);
         if (named?.type === 'range') {
           return named.area;
         }
@@ -380,9 +549,21 @@ export interface SerializedNamedExpression {
 export interface SerializedModel {
   sheet_data: SerializedSheet[];
   active_sheet: number;
+
+  /** @deprecated */
   named_ranges?: Record<string, IArea>;
+
+  /** @deprecated */
+  named_expressions?: SerializedNamedExpression[];
+
+  /** 
+   * new type for consolidated named ranges & expressions. the old
+   * types are retained for backwards compatibility on import but we won't 
+   * export them anymore.
+   */
+  named?: SerializedNamed[];
+
   macro_functions?: MacroFunction[];
   tables?: Table[];
-  named_expressions?: SerializedNamedExpression[];
   decimal_mark?: ','|'.';
 }

@@ -23,7 +23,8 @@ import type { IArea, Table, TableTheme } from 'treb-base-types';
 import type { 
   SerializedNamedExpression, 
   SerializedSheet,
-  SerializedMacroFunction } from 'treb-data-model';
+  SerializedMacroFunction,
+  SerializedNamed } from 'treb-data-model';
 
 export enum SaveFileType {
   json = 'json',
@@ -88,11 +89,16 @@ export interface TREBDocument {
    */
   rendered_values?: boolean;
   
-  /** document named ranges */
+  /** document named ranges @deprecated */
   named_ranges?: Record<string, IArea>;
 
-  /** document named expressions */
+  /** document named expressions @deprecated */
   named_expressions?: SerializedNamedExpression[];
+
+  /**
+   * new consolidated named ranges & expressions
+   */
+  named?: SerializedNamed[];
 
   /** document macro functions */
   macro_functions?: SerializedMacroFunction[];

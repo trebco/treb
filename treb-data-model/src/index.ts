@@ -27,12 +27,13 @@ export type {
   SerializedNamedExpression, 
   SerializedModel, 
   ViewModel, 
-  SerializedMacroFunction 
+  SerializedMacroFunction,
 } from './data_model';
+
+export type { SerializedNamed, CompositeNamed } from './named';
 
 export { Sheet } from './sheet';
 export type { SerializedSheet, FreezePane, LegacySerializedSheet } from './sheet_types';
-export { NamedRangeCollection } from './named_range';
 export * from './conditional_format';
 export type { GridSelection } from './sheet_selection';
 export type { SerializeOptions } from './serialize_options';

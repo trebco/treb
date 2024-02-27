@@ -19,34 +19,83 @@
  * 
  */
 
-import { Area, type IArea } from 'treb-base-types';
+import { Area } from 'treb-base-types';
+import type { SerializedArea, IArea } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 
-export interface NamedExpression2 {
+export interface NamedExpression {
   type: 'expression';
   expression: ExpressionUnit;
 }
 
-export interface NamedRange2 {
+export interface NamedRange {
   type: 'range';
   area: Area;
 }
 
-export type Named = (NamedExpression2 | NamedRange2) & {
+export type Named = (NamedExpression | NamedRange) & {
   name: string;     // canonical name
   scope?: number;   // scope to sheet by ID
 };
+
+/** 
+ * serialized type 
+ * 
+ * @privateRemarks
+ * 
+ * for the external type we switch on the presence of the area
+ * or the expression. area uses a type that includes sheet names
+ * (IArea should allow that?). expression here is a string.
+ * 
+ * we could theoretically switch the internal type the same way
+ * and drop the string keys. something to think about.
+ * 
+ * when serialized, scope is either the sheet name or nothing 
+ * (implicit global scope).
+ */
+export interface SerializedNamed {
+  name: string;
+  area?: SerializedArea;
+  expression?: string;
+  scope?: string;
+}
+
+/**
+ * this is a type we're using in imports. it consolidates the 
+ * two types. we should maybe switch as well, at least for
+ * serialized representation? something to think about.
+ */
+export interface CompositeNamed {
+
+  /** index into ordered list... we'll need to translate */
+  local_scope?: number;
+
+  /** resolved sheet name */
+  scope?: string;
+
+  name: string;
+
+  /** could be a address/range or a function expression */
+  expression: string;
+
+}
 
 /**
  * this is a replacement for the name manager, which handles 
  * operations relating to named ranges. 
  */
-export class NamedRangeManager2 {
+export class NamedRangeManager {
 
   /** 
    * this map is stored with normalized names. normalized names
    * here means we call `toLowerCase`. the objects themselves 
    * contain canonical names.
+   * 
+   * ...we've always had a map for this, for fast lookups. but
+   * with scoping, we can't necessarily look up by name. let's try
+   * using scope:name keys. that way we can search for scope:name
+   * and then name and return the first match, if any. 
+   * 
    */
   protected named: Map<string, Named> = new Map();
   
@@ -54,9 +103,19 @@ export class NamedRangeManager2 {
     return this.named.values();
   }
 
+  /** shorthand for setting named expression */
+  public SetNamedExpression(name: string, expression: ExpressionUnit, scope?: number) {
+    return this.SetName({
+      type: 'expression',
+      name,
+      expression,
+      scope,
+    });
+  }
+
   /** shorthand for setting named range */
   public SetNamedRange(name: string, area: IArea, scope?: number) {
-    return this.SetName(name, {
+    return this.SetName({
       type: 'range',
       name, 
       area: new Area(area.start, area.end),
@@ -70,7 +129,10 @@ export class NamedRangeManager2 {
    * 
    * update: returns success (FIXME: proper errors)
    */
-  public SetName(name: string, named: Named): boolean {
+  private SetName(named: Named): boolean {
+
+    const name = named.name;
+    // console.info('set name', named.name, {named});
 
     const validated = this.ValidateNamed(name);
     if (!validated) {
@@ -92,13 +154,27 @@ export class NamedRangeManager2 {
 
     }
 
-    this.named.set(name.toLowerCase(), named);
+    // this.named.set(name.toLowerCase(), named);
+    this.named.set(this.ScopedName(name, named.scope), named);
 
     return true;
   }
 
-  public ClearName(name: string): void {
-    this.named.delete(name.toLowerCase());
+  private ScopedName(name: string, scope?: number) {
+    if (typeof scope === 'number') {
+      return scope + ':' + name.toLowerCase();
+    }
+    return name.toLowerCase();
+  }
+
+  public ClearName(name: string, scope?: number): void {
+
+    if (typeof scope === 'number') {
+      this.named.delete(this.ScopedName(name, scope));
+    }
+    else {
+      this.named.delete(name.toLowerCase());
+    }
   }
 
   /**
@@ -127,8 +203,13 @@ export class NamedRangeManager2 {
     this.named.clear();
   }
 
-  public Get(name: string) {
-    return this.named.get(name.toLowerCase());
+  /**
+   * requiring scope to help propgogate changes. we check the scoped 
+   * version first; if that's not found, we default to the global version.
+   * that implies that if there are both, we'll prefer the scoped name.
+   */
+  public Get(name: string, scope: number) {
+    return this.named.get(this.ScopedName(name, scope)) || this.named.get(name.toLowerCase());
   }
 
   /**
@@ -255,7 +336,7 @@ export class NamedRangeManager2 {
 
           else if (before_column <= range.start.column) {
             const last_column = before_column - column_count - 1;
-            this.SetName(key, {
+            this.SetName({
               type: 'range', area: new Area({
               row: range.start.row, column: last_column + 1 + column_count, sheet_id }, {
                 row: range.end.row, column: range.end.column + column_count }), name: key, });
@@ -265,12 +346,12 @@ export class NamedRangeManager2 {
             const last_column = before_column - column_count - 1;
 
             if (last_column >= range.end.column) {
-              this.SetName(key, { type: 'range', area: new Area({
+              this.SetName({ type: 'range', area: new Area({
                 row: range.start.row, column: range.start.column, sheet_id }, {
                   row: range.end.row, column: before_column - 1 }), name: key });
             }
             else {
-              this.SetName(key, { type: 'range', name: key, area: new Area({
+              this.SetName({ type: 'range', name: key, area: new Area({
                 row: range.start.row, column: range.start.column, sheet_id }, {
                   row: range.end.row, column: range.start.column + range.columns + column_count - 1})});
             }
