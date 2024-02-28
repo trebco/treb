@@ -51,7 +51,7 @@ import { Theme } from './workbook-theme2';
 
 import type { RelationshipMap} from './relationship';
 import { AddRel } from './relationship';
-import { XMLOptions2 } from './xml-utils';
+import { type DOMContent, XMLOptions2 } from './xml-utils';
 
 import type { UnitAddress, UnitRange, ExpressionUnit} from 'treb-parser';
 import { Parser, QuotedSheetNameRegex } from 'treb-parser';
@@ -158,14 +158,14 @@ export class Exporter {
 
     const keys = Object.keys(rels);
 
-    const dom = {
+    const dom: DOMContent = {
       Relationships: {
         a$: {
           xmlns: 'http://schemas.openxmlformats.org/package/2006/relationships',
         },
         Relationship: keys.map(key => {
           const rel = rels[key];
-          const a$: any = {
+          const a$: DOMContent = {
             Id: rel.id,
             Target: rel.target,
             Type: rel.type,
@@ -203,7 +203,8 @@ export class Exporter {
 
       // we could just pass through except that we have argb and excel has rgb
 
-      const attrs: any = {};
+      const attrs: XlColor & { rgb?: string } = {};
+
       if (color.indexed !== undefined) {
         attrs.indexed = color.indexed;
       }
@@ -217,10 +218,11 @@ export class Exporter {
         attrs.rgb = color.argb;
       }
       return attrs;
+
     };
 
     const xfs = style_cache.cell_xfs.map(xf => {
-      const block: any = {
+      const block: DOMContent = {
         a$: {
           numFmtId: xf.number_format,
           fontId: xf.font,
@@ -230,21 +232,23 @@ export class Exporter {
       };
 
       if (xf.horizontal_alignment || xf.vertical_alignment || xf.wrap_text || xf.indent) {
-        // block.a$.applyAlignment = 1;
-        block.alignment = { a$: {}};
+
+        const attrs: DOMContent = {};
 
         if (xf.horizontal_alignment) {
-          block.alignment.a$.horizontal = xf.horizontal_alignment;
+          attrs.horizontal = xf.horizontal_alignment;
         }
         if (xf.vertical_alignment) {
-          block.alignment.a$.vertical = xf.vertical_alignment;
+          attrs.vertical = xf.vertical_alignment;
         }
         if (xf.wrap_text) {
-          block.alignment.a$.wrapText = 1;
+          attrs.wrapText = 1;
         }
         if (xf.indent && xf.horizontal_alignment !== 'center') {
-          block.alignment.a$.indent = xf.indent;
+          attrs.indent = xf.indent;
         }
+
+        block.alignment = { a$: attrs };
 
       }
 
@@ -382,7 +386,7 @@ export class Exporter {
       return block;
     });
 
-    const dom: any = {
+    const dom: DOMContent = {
       styleSheet: {
         a$: {
           'xmlns':        'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
@@ -401,14 +405,14 @@ export class Exporter {
 
     if (style_cache.number_formats.length) {
 
-      dom.styleSheet.numFmts = {
+      (dom.styleSheet as DOMContent).numFmts = {
         a$: { count: style_cache.number_formats.length },
         numFmt: style_cache.number_formats.map(format => {
           return {
             a$: {
               numFmtId: format.id,
               formatCode: format.format,
-            },  
+            } as DOMContent,  
           };
         }),
       };
@@ -419,21 +423,21 @@ export class Exporter {
     }
 
     if (fonts.length) {
-      dom.styleSheet.fonts = {
+      (dom.styleSheet as DOMContent).fonts = {
         a$: { count: fonts.length },
         font: fonts,
       };
     }
 
     if (fills.length) {
-      dom.styleSheet.fills = {
+      (dom.styleSheet as DOMContent).fills = {
         a$: { count: fills.length },
         fill: fills,
       };
     }
 
     if (borders.length) {
-      dom.styleSheet.borders = {
+      (dom.styleSheet as DOMContent).borders = {
         a$: { count: borders.length },
         border: borders,
       };
@@ -442,27 +446,27 @@ export class Exporter {
     // console.info("B", borders, JSON.stringify(dom.styleSheet.borders, undefined, 2))
 
     if (xfs.length) {
-      dom.styleSheet.cellXfs = {
+      (dom.styleSheet as DOMContent).cellXfs = {
         a$: { count: xfs.length },
         xf: xfs,
       };
     }
 
     if (style_cache.dxf_styles.length) {
-      const dxf: any[] = [];
+      const dxf: DOMContent[] = [];
       for (const style of style_cache.dxf_styles) {
-        const entry: any = {};
+        const entry: DOMContent = {};
         if (style.text || style.bold || style.italic || style.underline) {
-          const font: any = {};
+          const font: DOMContent = {};
           if (style.text) {
             font.color = { a$: {}};
             if (style.text.text) {
-              font.color.a$.rgb = `FF` + style.text.text.substring(1);
+              (font.color.a$ as DOMContent).rgb = `FF` + style.text.text.substring(1);
             }
             else if (style.text.theme) {
-              font.color.a$.theme = style.text.theme;
+              (font.color.a$ as DOMContent).theme = style.text.theme;
               if (style.text.tint) {
-                font.color.a$.tint = style.text.tint;
+                (font.color.a$ as DOMContent).tint = style.text.tint;
               }
             }
           }
@@ -481,23 +485,24 @@ export class Exporter {
           entry.font = font;
         }
         if (style.fill) {
-          const color: any = { a$: {}};
+          const attrs: DOMContent = {};
           if (style.fill.text) {
-            color.a$.rgb = `FF` + style.fill.text.substring(1);
+            attrs.rgb = `FF` + style.fill.text.substring(1);
           }
           else if (style.fill.theme) {
-            color.a$.theme = style.fill.theme;
+            attrs.theme = style.fill.theme;
             if (style.fill.tint) {
-              color.a$.tint = style.fill.tint;
+              attrs.tint = style.fill.tint;
             }
           }
+          const color: DOMContent = { a$: attrs };
           entry.fill = { patternFill: { bgColor: color }};
         }
         dxf.push(entry);
       }
 
       if (dxf.length) {
-        dom.styleSheet.dxfs = {
+        (dom.styleSheet as DOMContent).dxfs = {
           a$: { count: dxf.length },
           dxf,
         };
@@ -532,7 +537,7 @@ export class Exporter {
       throw new Error('missing zip');
     }
 
-    const dom: any = {
+    const dom: DOMContent = {
       sst: {
         a$: {
           'xmlns': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',

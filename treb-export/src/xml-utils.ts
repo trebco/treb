@@ -24,6 +24,10 @@ import type { X2jOptions } from 'fast-xml-parser';
 
 export const XMLTagProcessor = (name: string, value: string): string => Unescape(value);
 
+export interface DOMContent {
+  [index: string]: string|DOMContent|string[]|DOMContent[]|number|number[];
+}
+
 export const XMLOptions: Partial<X2jOptions> = {
   ignoreAttributes: false,
   attributeNamePrefix: '__',
@@ -48,7 +52,7 @@ export const XMLOptions2: Partial<X2jOptions> = {
 
   // arrayMode: false, // this was removed in FXP, but false is default anyway
 
-  isArray: (tagName: string, jPath: string, isLeafNode: boolean, isAttribute: boolean) => {
+  isArray: (tagName: string) => {
     return /Relationship$/.test(tagName);
   },
 

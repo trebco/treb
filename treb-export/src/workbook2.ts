@@ -19,12 +19,6 @@
  * 
  */
 
-import UZip from 'uzip';
-
-// import type JSZip from 'jszip';
-// import * as xmlparser from 'fast-xml-parser';
-
-
 import { XMLParser } from 'fast-xml-parser';
 import { XMLUtils, XMLOptions, XMLOptions2 } from './xml-utils';
 
@@ -161,7 +155,7 @@ export class Workbook {
   /* * defined names. these can be ranges or expressions. */
   // public defined_names: Record<string, string> = {};
 
-  public named: CompositeNamed[] = [];
+  public named: Array<CompositeNamed & {local_scope?: number}> = [];
 
   /** the workbook "rels" */
   public rels: RelationshipMap = {};
@@ -412,7 +406,7 @@ export class Workbook {
             const fill = sppr['a:solidFill'];
             if (fill) {
               if (fill['a:schemeClr']?.a$?.val) {
-                let m = (fill['a:schemeClr'].a$.val).match(/accent(\d+)/);
+                const m = (fill['a:schemeClr'].a$.val).match(/accent(\d+)/);
                 if (m) {
                   style.fill = { theme: Number(m[1]) + 3 }
                   if (fill['a:schemeClr']['a:lumOff']?.a$?.val) {
@@ -450,7 +444,7 @@ export class Workbook {
               const para: { text: string, style?: CellStyle }[] = [];
               let style: CellStyle|undefined;
 
-              let appr = paragraph['a:pPr'];
+              const appr = paragraph['a:pPr'];
               if (appr) {
                 style = {};
                 if (appr.a$?.algn === 'r') {
@@ -695,7 +689,7 @@ export class Workbook {
   }
 
   /** FIXME: accessor */
-  public GetNamedRanges(): CompositeNamed[] { // Record<string, string> {
+  public GetNamedRanges() {
     
     // ... what does this do, not do, or what is it supposed to do?
     // note that this is called by the import routine, so it probably

@@ -67,16 +67,16 @@ export interface SerializedNamed {
  */
 export interface CompositeNamed {
 
-  /** index into ordered list... we'll need to translate */
-  local_scope?: number;
+  name: string;
+
+  /** 
+   * could be a address/range or a function expression. we'll distinguish
+   * when we parse it.
+   */
+  expression: string;
 
   /** resolved sheet name */
   scope?: string;
-
-  name: string;
-
-  /** could be a address/range or a function expression */
-  expression: string;
 
 }
 
