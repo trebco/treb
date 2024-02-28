@@ -101,8 +101,6 @@ export class DataModel {
    */
   public UnserializeComposite(names: CompositeNamed[], active_sheet?: Sheet) {
 
-    console.info("UC", names);
-
     this.parser.Save();
     this.parser.SetLocaleSettings(DecimalMarkType.Period, ArgumentSeparatorType.Comma);
     
@@ -132,8 +130,6 @@ export class DataModel {
   }
 
   public UnserializeNames(names: SerializedNamed[], active_sheet?: Sheet) {
-
-    console.info("USN", names);
 
     for (const entry of names) {
 

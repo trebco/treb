@@ -1211,17 +1211,7 @@ export class Exporter {
    
   }
 
-  public Export(source: /* {
-      sheet_data: SerializedSheet[];
-      active_sheet?: number;
-      named_ranges?: {[index: string]: IArea};
-      named_expressions?: Array<{ name: string, expression: string }>;
-      decimal_mark?: ','|'.';
-    }*/
-
-      SerializedModel
-
-    ) {
+  public Export(source: SerializedModel) {
       
     // --- create a map --------------------------------------------------------
 
@@ -2455,6 +2445,20 @@ export class Exporter {
 
     if (source.named) {
       for (const entry of source.named) {
+
+        let scope: string|undefined = undefined;
+
+        if (entry.scope) {
+
+          const test = entry.scope.toLowerCase();
+          for (const [index, sheet] of source.sheet_data.entries()) {
+            if (sheet.name?.toLowerCase() === test) {
+              scope = index.toString();
+              break;
+            }
+          }
+        }
+
         if (entry.area) {
           let sheet_name = '';
           const area = new Area(entry.area.start, entry.area.end);
@@ -2482,20 +2486,22 @@ export class Exporter {
   
           // console.info({key, area, lx: area.spreadsheet_label, sheet_name });
           definedNames.definedName.push({
-            a$: { name: entry.name },
+            a$: { name: entry.name, localSheetId: scope },
             t$: sheet_name + area.spreadsheet_label,
           });
   
         }
         else if (entry.expression) {
           definedNames.definedName.push({
-            a$: { name: entry.name },
+            a$: { name: entry.name, localSheetId: scope },
             t$: entry.expression,
           });
         }
 
       }
     }
+
+    console.info("DB", definedNames);
 
     /*
     if (source.named_ranges) {
