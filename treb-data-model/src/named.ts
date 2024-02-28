@@ -207,8 +207,15 @@ export class NamedRangeManager {
    * requiring scope to help propgogate changes. we check the scoped 
    * version first; if that's not found, we default to the global version.
    * that implies that if there are both, we'll prefer the scoped name.
+   * 
+   * now possible to require scope, for qualified scoped names 
    */
-  public Get(name: string, scope: number) {
+  public Get_(name: string, scope: number, require_scope = false) {
+
+    if (require_scope) {
+      return this.named.get(this.ScopedName(name, scope));
+    }
+   
     return this.named.get(this.ScopedName(name, scope)) || this.named.get(name.toLowerCase());
   }
 

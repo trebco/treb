@@ -94,6 +94,39 @@ export class DataModel {
    */
   public tables: Map<string, Table> = new Map();
 
+  /** 
+   * we're wrapping up the get name method so we can check for a sheet
+   * name -- we have the list of sheet names. we could pass that to the 
+   * name list manager but it's easier for us to intercept the call.
+   * I thought about wrapping up more API functions here, but that seems
+   * unecessary atm.
+   */
+  public GetName(name: string, scope: number) {
+
+    // helpfully this is not a legal character in names or sheets, so
+    // we don't need a full parser to handle the split. watch out for
+    // quoted sheet names.
+
+    const parts = name.split(/!/);
+
+    if (parts.length === 1) {
+      return this.named.Get_(name, scope);
+    }
+
+    let sheet_name = parts[0];
+
+    // can we just test with indexes? surely faster
+
+    if (/^'.*?'$/.test(sheet_name)) {
+      sheet_name = sheet_name.substring(1, sheet_name.length - 1);
+    }
+    
+    const sheet = this.sheets.ID(sheet_name);
+    return this.named.Get_(parts[1], sheet || 0, true); // require scope in this case
+
+
+  }
+
   /**
    * from import, we get ranges and expressions in the same format. we 
    * need to check if something is a range -- if so, it will just be 
@@ -477,7 +510,7 @@ export class DataModel {
       }
       else if (parse_result.expression && parse_result.expression.type === 'identifier') {
 
-        const named = this.named.Get(parse_result.expression.name, active_sheet.id);
+        const named = this.GetName(parse_result.expression.name, active_sheet.id);
         if (named?.type === 'range') {
           return named.area;
         }

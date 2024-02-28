@@ -254,7 +254,7 @@ export class ExpressionCalculator {
     case 'identifier':
       {
         // const named_range = this.named_range_map[arg.name.toUpperCase()];
-        const named_range = this.data_model.named.Get(arg.name, this.context.address.sheet_id || 0);
+        const named_range = this.data_model.GetName(arg.name, this.context.address.sheet_id || 0);
         if (named_range?.type === 'range') {
           if (named_range.area.count === 1) {
             address = named_range.area.start; // FIXME: range?
@@ -943,7 +943,7 @@ export class ExpressionCalculator {
       */
 
       // const named_range = this.named_range_map[upper_case];
-      const named_range = this.data_model.named.Get(upper_case, this.context.address.sheet_id || 0);
+      const named_range = this.data_model.GetName(upper_case, this.context.address.sheet_id || 0);
 
       if (named_range?.type === 'range') {
         if (named_range.area.count === 1) {
@@ -954,7 +954,7 @@ export class ExpressionCalculator {
         }
       }
 
-      const named2 = this.data_model.named.Get(identifier, this.context.address.sheet_id || 0);
+      const named2 = this.data_model.GetName(identifier, this.context.address.sheet_id || 0);
       if (named2 && named2.type === 'expression') {
         return this.CalculateExpression(named2.expression as ExtendedExpressionUnit);
       }

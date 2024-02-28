@@ -1,4 +1,4 @@
-/*! API v29.0. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v29.1. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -944,7 +944,7 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      *
      * @public
      */
-    DefineName(name: string, value: RangeReference | CellValue, overwrite?: boolean): void;
+    DefineName(name: string, value: RangeReference | CellValue, scope?: string | number, overwrite?: boolean): void;
 
     /**
      * Set or remove a link in a cell.
@@ -1475,11 +1475,16 @@ export interface TREBDocument {
      */
     rendered_values?: boolean;
 
-    /** document named ranges */
+    /** document named ranges @deprecated */
     named_ranges?: Record<string, IArea>;
 
-    /** document named expressions */
+    /** document named expressions @deprecated */
     named_expressions?: SerializedNamedExpression[];
+
+    /**
+     * new consolidated named ranges & expressions
+     */
+    named?: SerializedNamed[];
 
     /** document macro functions */
     macro_functions?: SerializedMacroFunction[];
@@ -1595,6 +1600,21 @@ export interface SerializedNamedExpression {
     name: string;
     expression: string;
 }
+
+/**
+ * serialized type
+ */
+export interface SerializedNamed {
+    name: string;
+    area?: SerializedArea;
+    expression?: string;
+    scope?: string;
+}
+export type SerializedArea = IArea & {
+    start: ICellAddress & {
+        sheet: string;
+    };
+};
 export interface SerializedSheet {
 
     /** cell data */

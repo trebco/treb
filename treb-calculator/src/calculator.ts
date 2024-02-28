@@ -2204,7 +2204,7 @@ export class Calculator extends Graph {
       case 'identifier':
         {
           const named_range =
-            this.model.named.Get(expr.name, context?.sheet_id || 0);
+            this.model.GetName(expr.name, context?.sheet_id || 0);
           if (named_range && named_range.type === 'range') {
             return new Area(named_range.area.start, named_range.area.end);
           }
@@ -2219,7 +2219,7 @@ export class Calculator extends Graph {
   protected NamedRangeToAddressUnit(unit: UnitIdentifier, context: ICellAddress): UnitAddress|UnitRange|undefined {
 
     const normalized = unit.name.toUpperCase();
-    const named_range = this.model.named.Get(normalized, context.sheet_id || 0);
+    const named_range = this.model.GetName(normalized, context.sheet_id || 0);
     if (named_range && named_range.type === 'range') {
       if (named_range.area.count === 1) {
         return this.ConstructAddressUnit(named_range.area.start, normalized, unit.id, unit.position);
@@ -2293,7 +2293,7 @@ export class Calculator extends Graph {
           // update to handle named expressions. just descend into
           // the expression as if it were inline.
           
-          const fetched = this.model.named.Get(unit.name, context_address.sheet_id || 0);
+          const fetched = this.model.GetName(unit.name, context_address.sheet_id || 0);
 
           if (fetched?.type === 'expression') {
             this.RebuildDependencies(fetched.expression, relative_sheet_id, relative_sheet_name, dependencies, context_address);
@@ -2544,96 +2544,6 @@ export class Calculator extends Graph {
     // vertex.UpdateState();
 
   }
-
-  /* *
-   * we're passing model here to skip the test on each call
-   * 
-   * @param unit 
-   * @param model 
-   * /
-  protected ApplyMacroFunctionInternal(
-      unit: ExpressionUnit, 
-      model: DataModel, 
-      name_stack: Array<{[index: string]: ExpressionUnit}>,
-    ): ExpressionUnit { 
-
-      switch (unit.type) {
-
-        case 'identifier':
-          if (name_stack[0]) {
-            const value = name_stack[0][(unit.name || '').toUpperCase()];
-            if (value) {
-              return JSON.parse(JSON.stringify(value)) as ExpressionUnit;
-            }
-          }
-          break;
-
-        case 'binary':
-          unit.left = this.ApplyMacroFunctionInternal(unit.left, model, name_stack);
-          unit.right = this.ApplyMacroFunctionInternal(unit.right, model, name_stack);
-          break;
-  
-        case 'unary':
-          unit.operand = this.ApplyMacroFunctionInternal(unit.operand, model, name_stack);
-          break;
-  
-        case 'group':
-          unit.elements = unit.elements.map(element => this.ApplyMacroFunctionInternal(element, model, name_stack));
-          break;
-  
-        case 'call':
-          {
-            // do this first, so we can pass through directly
-            unit.args = unit.args.map(arg => this.ApplyMacroFunctionInternal(arg, model, name_stack));
-
-            const func = this.library.Get(unit.name);
-            if (!func) { 
-              const macro = model.macro_functions[unit.name.toUpperCase()];
-              if (macro && macro.expression) {
-
-                // clone
-                const expression = JSON.parse(JSON.stringify(macro.expression));
-
-                const bound_names: {[index: string]: ExpressionUnit} = {};
-
-                if (macro.argument_names) {
-                  for (let i = 0; i < macro.argument_names.length; i++) {
-                    const name = macro.argument_names[i].toUpperCase();
-          
-                    // temp just pass in
-                    bound_names[name] = unit.args[i] ? unit.args[i] : {type: 'missing'} as UnitMissing;
-                  }
-                }
-
-                // replace arguments
-                name_stack.unshift(bound_names);
-                const replacement = this.ApplyMacroFunctionInternal(expression, model, name_stack);                
-                name_stack.shift();
-                return replacement;
-
-              }
-            }
-          }
-
-          break;
-
-      }
-
-      return unit;
-
-  }
-
-  protected ApplyMacroFunctions(expression: ExpressionUnit): ExpressionUnit|undefined {
-
-    if (!this.model) { return; }
-
-    const count = Object.keys(this.model.macro_functions).length;
-    if (!count) { return; }
-
-    return this.ApplyMacroFunctionInternal(expression, this.model, []);
-
-  }
-  */
 
   /** 
    * 

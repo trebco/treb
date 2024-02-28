@@ -2597,7 +2597,7 @@ export class Grid extends GridBase {
 
           case 'identifier':
             {
-              const named = this.model.named.Get(parse_result.expression.name, this.active_sheet.id); // assuming it's in the active sheet? what if it's qualified?
+              const named = this.model.GetName(parse_result.expression.name, this.active_sheet.id); // assuming it's in the active sheet? what if it's qualified?
               if (named?.type === 'range') {
                 target_area = named.area;
               }
@@ -5364,7 +5364,7 @@ export class Grid extends GridBase {
 
           case 'identifier':
             {
-              const named_range = this.model.named.Get(unit.name, this.active_sheet.id); // FIXME: is this the correct sheet ref?
+              const named_range = this.model.GetName(unit.name, this.active_sheet.id); // FIXME: is this the correct sheet ref?
               if (named_range?.type === 'range') {
                 unit.name = unit.name.toUpperCase();
               }
