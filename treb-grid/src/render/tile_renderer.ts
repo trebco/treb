@@ -735,11 +735,17 @@ export class TileRenderer {
     let override_formatting: string | undefined;
     let formatted = cell.editing ? '' : cell.formatted; // <-- empty on editing, to remove overflows
 
+    // remove existing indent, if any
+    
+    if (Array.isArray(formatted)) {
+      formatted = formatted.filter(test => test.flag !== TextPartFlag.indent);
+    }
+
     // precalculate indent as string so we can use layout
 
     let indent = '';
     let align: HorizontalAlign|undefined;
-
+   
     if (style.indent) {
 
       for (let i = 0; i < style.indent; i++) {
@@ -751,9 +757,14 @@ export class TileRenderer {
       // default might be left or right based on type
 
       if (!align) {
-        align = (cell.type === ValueType.number || cell.calculated_type === ValueType.number) ? 'right' : 'left';
+        align = (
+          cell.type === ValueType.number || 
+          cell.calculated_type === ValueType.number ||
+          cell.type === ValueType.complex || 
+          cell.calculated_type === ValueType.complex
+        ) ? 'right' : 'left';
       }
-      
+     
     }
 
     if (Array.isArray(formatted)) {
@@ -767,12 +778,11 @@ export class TileRenderer {
       // this is a single line, with number formatting
 
       if (indent) {
-
         if (align === 'right') {
-          formatted.push({ text: indent });
+          formatted.push({ text: indent, flag: TextPartFlag.indent });
         }
-        else if (align === 'left') {
-          formatted.unshift({ text: indent });
+        else if (align === 'left' || typeof align === 'undefined') {
+          formatted.unshift({ text: indent, flag: TextPartFlag.indent });
         }
       }
 

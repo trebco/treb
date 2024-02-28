@@ -46,6 +46,13 @@ export enum TextPartFlag {
   italic = 7,
   */
 
+  /** 
+   * this is an indent component. we want to keep track of this
+   * so we don't add it more than once if we're indenting dynamically.
+   * maybe this is not the way to indent.
+   */
+  indent = 8,
+
 }
 
 export interface TextPart {
