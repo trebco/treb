@@ -1,5 +1,5 @@
 
-import { type UnionValue, ValueType, type ArrayUnion, IsComplex, type ExtendedUnion, type CellValue } from 'treb-base-types';
+import { type UnionValue, ValueType, type ArrayUnion, IsComplex, type CellValue } from 'treb-base-types';
 import { IsArrayUnion, IsMetadata, IsSeries, LegendStyle } from './chart-types';
 import type { SubSeries, SeriesType, BarData, ChartDataBaseType, ChartData, ScatterData2, DonutSlice, BubbleChartData } from './chart-types';
 import { NumberFormatCache } from 'treb-format';
