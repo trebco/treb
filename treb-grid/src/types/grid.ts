@@ -2081,7 +2081,7 @@ export class Grid extends GridBase {
 
     if (!area) {
       if (this.primary_selection.empty) { return; }
-      area = this.primary_selection.area;
+      area = this.active_sheet.RealArea(this.primary_selection.area);
     }
 
     this.ExecCommand({
