@@ -416,7 +416,12 @@ export const BaseFunctionLibrary: FunctionMap = {
         case 1: // feb, special
           {
             const year = date.getUTCFullYear();
-            if (year % 4 === 0 && (year === 1900 || (year % 100 !== 0))) {
+
+            // it's a leap year if it is divisible by 4, unless it's also 
+            // divisible by 100 AND NOT divisible by 400. 1900 is grand-
+            // fathered in via an error in Lotus. 
+
+            if (year % 4 === 0 && (year === 1900 || (year % 400 === 0) || (year % 100 !== 0))) {
               date.setUTCDate(29);
             } 
             else {
