@@ -2834,6 +2834,16 @@ export class Sheet {
       }
     }
 
+    // and row styles...
+    
+    if (data.row_styles) {
+      for (const [row, style] of data.row_styles.entries()) {
+        if (style) {
+          this.UpdateAreaStyle(new Area({ row, column: Infinity }), styles[style]);
+        }
+      }
+    }
+
     // this.cells.FromJSON(cell_data);
     this.cells.FromJSON(data.cells);
     if (data.name) {

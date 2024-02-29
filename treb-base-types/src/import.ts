@@ -65,6 +65,8 @@ export interface ImportedSheetData {
   sheet_style?: number;
   column_styles?: number[];
 
+  row_styles?: number[];
+
   // new
   annotations?: AnchoredAnnotation[];
 

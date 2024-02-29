@@ -506,6 +506,7 @@ export class Importer {
     const merges: RangeType[] = [];
     const conditional_formats: ConditionalFormat[] = [];
     const links: HyperlinkType[] = [];
+    const row_styles: number[] = []; // may be sparse
     const validations: Array<{
       address: ICellAddress,
       validation: DataValidation,
@@ -693,6 +694,13 @@ export class Importer {
         const num = Number(row.a$.outlineLevel);
         if (!isNaN(num)) {
           outline[row_index - 1] = num;
+        }
+      }
+
+      if (row.a$?.s) {
+        const style_reference = Number(row.a$?.s);
+        if (!isNaN(style_reference)) {
+          row_styles[row_index - 1] = style_reference;
         }
       }
 
@@ -1162,6 +1170,7 @@ export class Importer {
       default_column_width,
       column_widths,
       row_heights,
+      row_styles,
       annotations,
       conditional_formats,
       styles: this.workbook?.style_cache?.CellXfToStyles() || [],
