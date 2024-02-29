@@ -140,6 +140,8 @@ export class NamedRangeManager {
       return false;
     }
 
+    /*
+
     if (named.type === 'range') {
 
       // why is this considered invalid here? I've seen it done. 
@@ -148,11 +150,13 @@ export class NamedRangeManager {
 
       if (named.area.entire_column || named.area.entire_row) {
         console.info({named});
-        console.warn(`invalid range`);
+        console.warn('invalid range');
         return false;
       }
 
     }
+
+    */
 
     // this.named.set(name.toLowerCase(), named);
     this.named.set(this.ScopedName(name, named.scope), named);

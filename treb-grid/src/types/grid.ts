@@ -970,9 +970,6 @@ export class Grid extends GridBase {
     this.model.sheets.UpdateIndexes();
 
     this.model.named.Reset();
-    // this.model.named_ranges.Reset();
-    // this.model.named_expressions.clear();
-    // console.info({IDX: import_data.named});
 
     if (import_data.named) {
       this.model.UnserializeComposite(import_data.named, this.active_sheet);
@@ -1597,7 +1594,7 @@ export class Grid extends GridBase {
    */
   public SetName(name: string, range?: ICellAddress | Area, expression?: string, scope?: number, overwrite = false): void {
 
-    // console.info('setname', name, range, expression, scope, overwrite);
+    // console.info('setname', { name, range, expression, scope, overwrite });
 
     // validate/translate name first
 
