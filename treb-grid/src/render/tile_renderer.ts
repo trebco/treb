@@ -594,15 +594,10 @@ export class TileRenderer {
 
     const scale = this.layout.dpr;
 
-    // const render_list: Array<{row: number, column: number, cell: Cell}> = [];
-
-    // this.last_font = undefined;
     context.setTransform(scale, 0, 0, scale, 0, 0);
 
     let left = 0;
     let top = 0;
-
-    // console.info('r', tile.first_cell);
 
     for (let column = tile.first_cell.column; column <= tile.last_cell.column; column++) {
       const width = this.layout.ColumnWidth(column);
@@ -1126,7 +1121,6 @@ export class TileRenderer {
     // (moved to sheet, using numpad naming)
 
     const numpad = this.view.active_sheet.SurroundingStyle(address, this.theme.table);
-    
 
     // --- start with fills ----------------------------------------------------
 
@@ -1253,7 +1247,7 @@ export class TileRenderer {
     // paint right border?
 
     if (numpad[6].border_left) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[4].border_left_fill, 1);
+      context.fillStyle = ThemeColor2(this.theme, numpad[6].border_left_fill, 1);
       context.fillRect(left + width - 1, top - 1, 1, height + 1);
     }
 

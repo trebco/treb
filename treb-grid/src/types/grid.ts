@@ -972,8 +972,7 @@ export class Grid extends GridBase {
     this.model.named.Reset();
     // this.model.named_ranges.Reset();
     // this.model.named_expressions.clear();
-
-    console.info({IDX: import_data.named});
+    // console.info({IDX: import_data.named});
 
     if (import_data.named) {
       this.model.UnserializeComposite(import_data.named, this.active_sheet);
