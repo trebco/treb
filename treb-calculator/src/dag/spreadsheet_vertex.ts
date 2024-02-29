@@ -226,71 +226,13 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
         // handle it properly regardless.
 
         const single = (this.result.type === ValueType.array) ? this.result.value[0][0] : this.result;
-        /*
-        if (single.type === ValueType.object) {
-          this.reference.SetCalculationError('OBJECT');
-        }
-        else */
 
         // we are using object type in the returned value for sparklines...
         // so we can't drop it here. we could change rendering though. or
         // whitelist types. or blacklist types. or something.
 
-        {
-          this.reference.SetCalculatedValue(single.value as CellValue, single.type);
-        }
+        this.reference.SetCalculatedValue(single.value as CellValue, single.type);
 
-        /*
-        console.info("T2", t2);
-
-        // because we let sloppy data filter through, it's possible
-        // that we get some random stuff at this point. generally this
-        // shoudl not happen but if you use (e.g.) one of the chart
-        // functions in a spreadsheet cell, you'll get a 1d array.
-
-        // so we need to validate that what we have is either a UnionValue
-        // or a 2d UnionValue[][] array.
-
-        // don't know the performance cost of this.
-
-        // FIXME: don't let sloppy data through.
-
-        let test: any = this.result;
-
-        if (Array.isArray(test)) {
-          if (test[0] && Array.isArray(test[0])) {
-            test = test[0][0];
-          }
-          else {
-            // console.warn('error 1');
-            test = undefined;
-          }
-        }
-
-        if (!test || typeof (test as any).type === undefined) {
-          // console.warn('error 2/3');
-          this.reference.SetCalculationError('UNK');
-        }
-        else {
-          this.reference.SetCalculatedValue((test as UnionValue).value, (test as UnionValue).type);
-        }
-        */
-
-        /*
-        const single = Array.isArray(this.result) ? this.result[0][0] : this.result;
-
-        // error is implicit
-        this.reference.SetCalculatedValue(single.value, single.type);
-        */
-
-        /*
-        if (typeof this.result === 'object' && this.result.error) {
-          this.reference.SetCalculationError(this.result.error);
-        }
-        else {
-          this.reference.SetCalculatedValue(this.result);
-        }
-        */
       }
 
     }
@@ -318,7 +260,6 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
     // 
 
     for (const edge of this.edges_out as Set<SpreadsheetVertexBase>){
-      // (edge as SpreadsheetVertex).Calculate(graph);
       if (edge.dirty) {
         graph.calculation_list.push(edge);
       }

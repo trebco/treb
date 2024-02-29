@@ -101,11 +101,9 @@ export class ArrayVertex extends SpreadsheetVertexBase {
    * returns a list of arrays that contain this address
    */
   public static GetContainingArrays(address: ICellAddress2): ArrayVertex[] {
-    // console.info('av2 get arrays:', address.row, address.column);
     const list: ArrayVertex[] = [];
     for (const entry of this.list) {
       if ((entry.area.start.sheet_id === address.sheet_id) && entry.area.Contains(address)) {
-        // console.info("match", entry.area.spreadsheet_label);
         list.push(entry);
       }
     }

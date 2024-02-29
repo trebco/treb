@@ -613,9 +613,91 @@ export abstract class Graph implements GraphCallbacks {
   /** 
    * new array vertices
    */
-  public AddArrayEdge(u: Area, v: ICellAddress): void {
+  protected CompositeAddArrayEdge(u: Area, vertex: Vertex): void {
 
-    // console.info('add array edge', u, v);
+    if (!u.start.sheet_id) {
+      throw new Error('AddArrayEdge called without sheet ID');
+    }
+
+    // create or use existing
+    const [array_vertex, created] = ArrayVertex.GetVertex(u);
+
+    // add an edge
+    vertex.DependsOn(array_vertex);
+
+    // force a check on next calculation pass
+    this.loop_check_required = true;
+
+    if (!created) {
+      // console.info('reusing, so not adding edges');
+      return;
+    }
+
+    // now add edges from/to nodes THAT ALREADY EXIST
+
+    // range can't span sheets, so we only need one set to look up
+
+    const map = this.vertices[u.start.sheet_id];
+
+    // this might happen on create, we can let it go because the 
+    // references will be added when the relevant sheet is added
+
+    if (!map) {
+      return;
+    }
+
+    // ...
+
+    if (u.entire_row) {
+      // console.group('entire row(s)')
+      for (let column = 0; column < map.length; column++) {
+        if (map[column]) {
+          for (let row = u.start.row; row <= u.end.row; row++ ) {
+            const vertex = map[column][row];
+            if (vertex) {
+              // console.info('add', column, row);
+              array_vertex.DependsOn(vertex);
+            }
+          }
+        }
+      }
+      // console.groupEnd();
+    }
+    else if (u.entire_column) {
+      // console.group('entire column(s)');
+      for (let column = u.start.column; column <= u.end.column; column++) {
+        if(map[column]) {
+          for (const vertex of map[column]) {
+            if (vertex?.address) {
+              // console.info('add', vertex.address);
+              array_vertex.DependsOn(vertex);
+            }
+          }
+        }
+      }
+      // console.groupEnd();
+    }
+    else {
+      for (let row = u.start.row; row <= u.end.row; row++) {
+        for (let column = u.start.column; column <= u.end.column; column++) {
+          const vertex = map[column][row];
+          if (vertex) {
+            array_vertex.DependsOn(vertex);
+          }
+        }
+      }
+    }
+
+  }
+
+  public AddLeafVertexArrayEdge(u: Area, vertex: LeafVertex) {
+    this.CompositeAddArrayEdge(u, vertex);
+  }
+
+  /** 
+   * new array vertices
+   */
+  public AddArrayEdge(u: Area, v: ICellAddress): void {
 
     if (!u.start.sheet_id) {
       throw new Error('AddArrayEdge called without sheet ID');
@@ -624,6 +706,9 @@ export abstract class Graph implements GraphCallbacks {
     // this should have already been added...
     const v_v = this.GetVertex(v, true);
 
+    this.CompositeAddArrayEdge(u, v_v);
+
+    /*
     // create or use existing
     const [array_vertex, created] = ArrayVertex.GetVertex(u);
 
@@ -692,6 +777,7 @@ export abstract class Graph implements GraphCallbacks {
         }
       }
     }
+    */
 
   }
 

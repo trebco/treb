@@ -102,6 +102,9 @@ export interface Dimensions {
  * start/end value for row/column/both, so watch out on loops. the
  * sheet class has a method for reducing infinite ranges to actual
  * populated ranges.
+ * 
+ * infinitiy is turning into a headache because it doesn't serialize
+ * to json properly. should we switch to a flag, or -1, or something?
  */
 export class Area implements IArea {
 
@@ -165,6 +168,10 @@ export class Area implements IArea {
   }
 
   public static CellAddressToLabel(address: ICellAddress, sheet_id = false): string {
+
+    if (address.row === Infinity || address.column === Infinity) {
+      throw new Error('this is going to break something');
+    }
 
     const prefix = sheet_id ? `${address.sheet_id || 0}!` : '';
 

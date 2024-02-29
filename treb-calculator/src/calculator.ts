@@ -1930,12 +1930,15 @@ export class Calculator extends Graph {
       }
     }
 
+    /*
     if (area.count > 1) {
       range = Area.CellAddressToLabel(area.start) + ':' + Area.CellAddressToLabel(area.end);
     }
     else {
       range = Area.CellAddressToLabel(area.start);
     }
+    */
+    range = area.spreadsheet_label;
 
     if (!qualified) {
       return range;
@@ -2514,21 +2517,20 @@ export class Calculator extends Graph {
         const unit = dependencies.ranges[key];
         const range = new Area(unit.start, unit.end);
 
-        for (const address of range) {
-          this.AddLeafVertexEdge(address, vertex);
+        if (range.entire_column || range.entire_row || range.count > 1) {
+          // this.AddLeafVertexEdge(range.start, vertex);
+          this.AddLeafVertexArrayEdge(range, vertex);
+        }
+        else {
+          this.AddLeafVertexEdge(range.start, vertex);
         }
 
         /*
-        range.Iterate((address: ICellAddress) => {
-          this.AddLeafVertexEdge(address, vertex);
-        });
-        */
-
-        /*
         for (const address of range) {
           this.AddLeafVertexEdge(address, vertex);
         }
         */
+
       }
 
       for (const key of Object.keys(dependencies.addresses)){

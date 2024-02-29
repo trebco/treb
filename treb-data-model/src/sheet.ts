@@ -3282,9 +3282,20 @@ export class Sheet {
       // stop rule. if you go forwards, you need some sort of indicator 
       // or flag).
 
+      const area = JSON.parse(JSON.stringify(format.area));
+      
+      if (area.start.row === null || area.end.row === null) {
+        area.start.row = 0;
+        area.end.row = this.cells.rows - 1;
+      }
+      if (area.start.column === null || area.end.column === null) {
+        area.start.column = 0;
+        area.end.column = this.cells.columns - 1;
+      }
+
+      const result = format.internal?.vertex?.result;
+
       if (format.type === 'gradient') {
-        const area = JSON.parse(JSON.stringify(format.area));
-        const result = format.internal?.vertex?.result;
 
         if (result && format.internal?.gradient) {
           const property: 'fill'|'text' = format.property ?? 'fill';
@@ -3322,16 +3333,13 @@ export class Sheet {
 
         // handle types expression, cell-match and duplicate-values
 
-        const area = JSON.parse(JSON.stringify(format.area));
-        const result = format.internal?.vertex?.result;
-
         if (result) {
 
           if (result.type === ValueType.array) {
             for (let row = area.start.row; row <= area.end.row; row++) {
               for (let column = area.start.column; column <= area.end.column; column++) {
                 const value = result.value[column - area.start.column][row - area.start.row];
-                if ((value.type === ValueType.boolean || value.type === ValueType.number) && !!value.value) {
+                if (value && (value.type === ValueType.boolean || value.type === ValueType.number) && !!value.value) {
                   if (!temp[row]) { temp[row] = []; }
                   if (!temp[row][column] ) { temp[row][column] = []; }
                   temp[row][column].push(format.style);
