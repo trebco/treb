@@ -501,6 +501,9 @@ export class ExpressionCalculator {
     const func = this.library.Get(outer.name);
 
     if (!func) {
+
+      // console.info('missing function', outer.name);
+
       return () => NameError();
     }
 

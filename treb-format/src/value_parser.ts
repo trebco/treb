@@ -322,7 +322,7 @@ class ValueParserType {
           }
 
           return {
-            value: UnlotusDate(date),
+            value: UnlotusDate(date, true),
             type: ValueType.number,
             hints,
           };

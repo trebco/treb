@@ -397,7 +397,7 @@ export class Importer {
       case 'containsErrors':
       case 'notContainsErrors':
       case 'expression':
-        
+
         if (rule.formula) {
 
           if (typeof rule.formula !== 'string') {
@@ -441,7 +441,7 @@ export class Importer {
           const stops: GradientStop[] = [];
           for (const [index, entry] of rule.colorScale.cfvo.entries()) {
             let value = 0;
-            let color: Color = {};
+            const color: Color = {};
 
             const color_element = rule.colorScale.color[index];
             if (color_element.a$.rgb) {

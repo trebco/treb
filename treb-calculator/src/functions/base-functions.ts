@@ -89,6 +89,45 @@ const inverse_normal = (q: number): number => {
 
 };
 
+const edate_calc = (start: number, months: number) => {
+  
+  let date = new Date(LotusDate(start));
+  let month = date.getUTCMonth() + months;
+  let year = date.getUTCFullYear();
+
+  // if we don't ensure the time we'll wind up hitting boundary cases
+
+  date.setUTCHours(12);
+  date.setUTCMinutes(0);
+  date.setUTCSeconds(0);
+  date.setUTCMilliseconds(0);
+
+  while (month < 0) {
+    month += 12;
+    year--;
+  }
+  while (month > 11) {
+    month -= 12;
+    year++;
+  }
+
+  date.setUTCMonth(month);
+  date.setUTCFullYear(year);
+
+  // if this rolls over the month, then we need to go back to the 
+  // last valid day of the month. so jan 31 + 1 month needs to equal
+  // feb 28 (feb 29 in leap year).
+
+  const check_month = date.getUTCMonth();
+  if (check_month !== month) {
+    const days = date.getUTCDate();
+    date = new Date(date.getTime() - (days * 86400 * 1000));
+  }
+
+  return date;
+
+};
+
 const zlookup_arguments = [
   {
     name: "Lookup value",
@@ -329,6 +368,85 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
   },
 
+  // --- FIXME: break out date functions? --------------------------------------
+
+  EDate: {
+    arguments: [
+      { 
+        name: 'Start date',
+        unroll: true,
+      },
+      {
+        name: 'Months',
+        unroll: true,
+      },
+    ],
+    fn: (start: number, months = 0) => {
+      if (typeof start !== 'number' || typeof months !== 'number') {
+        return ArgumentError();
+      }
+      const date = edate_calc(start, months);
+      return { type: ValueType.number, value: UnlotusDate(date.getTime(), false) };
+    }
+  },
+
+  EOMonth: {
+    arguments: [
+      { 
+        name: 'Start date',
+        unroll: true,
+      },
+      {
+        name: 'Months',
+        unroll: true,
+      },
+    ],
+    fn: (start: number, months = 0) => {
+
+      // this is the same as edate, except it advances to the end of the
+      // month. so jan 15, 2023 plus one month -> feb 28, 2023 (last day).
+
+      if (typeof start !== 'number' || typeof months !== 'number') {
+        return ArgumentError();
+      }
+      const date = edate_calc(start, months);
+
+      const month = date.getUTCMonth();
+      switch (month) {
+        case 1: // feb, special
+          {
+            const year = date.getUTCFullYear();
+            if (year % 4 === 0 && (year === 1900 || (year % 100 !== 0))) {
+              date.setUTCDate(29);
+            } 
+            else {
+              date.setUTCDate(28);
+            }
+          }
+          break;
+
+        case 0: // jan
+        case 2:
+        case 4:
+        case 6: // july
+        case 7: // august
+        case 9:
+        case 11: // dec
+          date.setUTCDate(31);
+          break;
+
+        default:
+          date.setUTCDate(30);
+          break;
+      }
+      
+
+      
+      return { type: ValueType.number, value: UnlotusDate(date.getTime(), false) };
+
+    }
+  },
+
   Now: {
     description: 'Returns current time',
     volatile: true,
@@ -428,6 +546,8 @@ export const BaseFunctionLibrary: FunctionMap = {
       return { type: ValueType.number, value: UnlotusDate(date.getTime()) };
     },
   },
+
+  // ---------------------------------------------------------------------------
 
   IfError: {
     description: 'Returns the original value, or the alternate value if the original value contains an error',

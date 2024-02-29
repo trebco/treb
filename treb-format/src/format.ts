@@ -70,15 +70,17 @@ export const UnlotusDate = (value: number, local = true): number => {
   if (local) {
 
     const local_date = new Date(value);
-    const utc_date = new Date();
+    const utc_date = new Date(
+      local_date.getFullYear(),
+      local_date.getMonth(),
+      local_date.getDate(),
+      local_date.getHours(),
+      local_date.getMinutes(),
+      local_date.getSeconds(),
+      local_date.getMilliseconds(),
+    );
 
-    utc_date.setUTCMilliseconds(local_date.getUTCMilliseconds());
-    utc_date.setUTCSeconds(local_date.getUTCSeconds());
-    utc_date.setUTCMinutes(local_date.getUTCMinutes());
-    utc_date.setUTCHours(local_date.getHours());
-    utc_date.setUTCDate(local_date.getDate());
-    utc_date.setUTCMonth(local_date.getMonth());
-    utc_date.setUTCFullYear(local_date.getFullYear());
+    // console.info("Converting local", utc_date.toUTCString());
 
     value = utc_date.getTime();
 
