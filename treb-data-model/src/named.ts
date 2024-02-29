@@ -136,7 +136,7 @@ export class NamedRangeManager {
 
     const validated = this.ValidateNamed(name);
     if (!validated) {
-      console.warn('invalid name');
+      console.warn('invalid name', {name});
       return false;
     }
 
@@ -230,14 +230,26 @@ export class NamedRangeManager {
    * - must start with letter or underscore (not a number or dot).
    * - cannot look like a spreadsheet address, which is 1-3 letters followed by numbers.
    *
+   * - apparently questuon marks are legal, but not in first position. atm 
+   *   our parser will reject.
+   * 
    * returns a normalized name (just caps, atm)
    */
   public ValidateNamed(name: string): string|false {
     name = name.trim();
+
+    // can't be empty
     if (!name.length) return false;
+
+    // can't look like a spreadsheet address
     if (/^[A-Za-z]{1,3}\d+$/.test(name)) return false;
-    if (/[^A-Za-z\d_.]/.test(name)) return false;
+
+    // can only contain legal characters
+    if (/[^A-Za-z\d_.?]/.test(name)) return false;
+
+    // must start with ascii letter or underscore
     if (/^[^A-Za-z_]/.test(name)) return false;
+
     return name.toUpperCase();
   }
 

@@ -89,6 +89,7 @@ const CLOSE_BRACE = 0x7d;
 const OPEN_SQUARE_BRACKET = 0x5b;
 const CLOSE_SQUARE_BRACKET = 0x5d;
 
+const QUESTION_MARK = 0x3f;
 const EXCLAMATION_MARK = 0x21;
 // const COLON = 0x3a; // became an operator
 const SEMICOLON = 0x3b;
@@ -2099,6 +2100,11 @@ export class Parser {
         || (square_bracket > 1)
 
         // I think that's all the rules for structured references.
+
+        // testing question marks, which are legal in defined names
+        // (but I think not in table names or column names)
+
+        || (char === QUESTION_MARK && square_bracket === 0)
 
         /*
 
