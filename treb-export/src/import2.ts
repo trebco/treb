@@ -348,21 +348,23 @@ export class Importer {
       case 'duplicateValues':
       case 'uniqueValues':
 
-        let style = {};
+        {
+          let style = {};
 
-        if (rule.a$.dxfId) {
-          const index = Number(rule.a$.dxfId);
-          if (!isNaN(index)) {
-            style = this.workbook?.style_cache.dxf_styles[index] || {};
+          if (rule.a$.dxfId) {
+            const index = Number(rule.a$.dxfId);
+            if (!isNaN(index)) {
+              style = this.workbook?.style_cache.dxf_styles[index] || {};
+            }
           }
-        }
 
-        return {
-          type: 'duplicate-values',
-          area,
-          style,
-          unique: (rule.a$.type === 'uniqueValues'),
-        };
+          return {
+            type: 'duplicate-values',
+            area,
+            style,
+            unique: (rule.a$.type === 'uniqueValues'),
+          };
+        }
 
       case 'cellIs':
         if (rule.a$.operator && rule.formula) {
@@ -392,7 +394,10 @@ export class Importer {
         }
         break;
 
+      case 'containsErrors':
+      case 'notContainsErrors':
       case 'expression':
+        
         if (rule.formula) {
 
           if (typeof rule.formula !== 'string') {
