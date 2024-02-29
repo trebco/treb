@@ -502,7 +502,9 @@ export class ExpressionCalculator {
 
     if (!func) {
 
-      // console.info('missing function', outer.name);
+      if (process.env.NODE_ENV !== 'production') {
+        console.info('(dev) missing function', outer.name);
+      }
 
       return () => NameError();
     }
