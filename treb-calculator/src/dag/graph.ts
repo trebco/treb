@@ -639,6 +639,8 @@ export abstract class Graph implements GraphCallbacks {
 
     const map = this.vertices[u.start.sheet_id];
 
+    // console.info({u});
+
     // this might happen on create, we can let it go because the 
     // references will be added when the relevant sheet is added
 
@@ -680,10 +682,17 @@ export abstract class Graph implements GraphCallbacks {
     else {
       for (let row = u.start.row; row <= u.end.row; row++) {
         for (let column = u.start.column; column <= u.end.column; column++) {
-          const vertex = map[column][row];
-          if (vertex) {
-            array_vertex.DependsOn(vertex);
+          if (map[column]) {
+            const vertex = map[column][row];
+            if (vertex) {
+              array_vertex.DependsOn(vertex);
+            }
           }
+          /*
+          else {
+            console.info("HERE", column, row);
+          }
+          */
         }
       }
     }
