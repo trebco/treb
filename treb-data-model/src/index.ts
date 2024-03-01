@@ -30,7 +30,7 @@ export type {
   SerializedMacroFunction,
 } from './data_model';
 
-export type { SerializedNamed, CompositeNamed } from './named';
+export type { SerializedNamed } from './named';
 
 export { Sheet } from './sheet';
 export type { SerializedSheet, FreezePane, LegacySerializedSheet } from './sheet_types';

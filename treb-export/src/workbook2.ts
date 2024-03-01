@@ -39,7 +39,7 @@ import { Sheet, VisibleState } from './workbook-sheet2';
 import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
 import type { CellStyle } from 'treb-base-types';
-import type { CompositeNamed } from 'treb-data-model';
+import type { SerializedNamed } from 'treb-data-model';
 
 
 /*
@@ -155,7 +155,7 @@ export class Workbook {
   /* * defined names. these can be ranges or expressions. */
   // public defined_names: Record<string, string> = {};
 
-  public named: Array<CompositeNamed & {local_scope?: number}> = [];
+  public named: Array<SerializedNamed & {local_scope?: number}> = [];
 
   /** the workbook "rels" */
   public rels: RelationshipMap = {};

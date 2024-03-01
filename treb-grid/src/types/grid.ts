@@ -83,7 +83,7 @@ import type { GridEvent } from './grid_events';
 import { ErrorCode } from './grid_events';
 
 import type { 
-  CompositeNamed,
+  SerializedNamed,
   DataModel, 
   GridSelection,
   LegacySerializedSheet, 
@@ -890,7 +890,7 @@ export class Grid extends GridBase {
     import_data: {
       sheets: ImportedSheetData[],
       // names?: Record<string, string|number>,
-      named?: CompositeNamed[],
+      named?: SerializedNamed[],
       active_tab?: number,
     },
     render = false,
@@ -972,7 +972,7 @@ export class Grid extends GridBase {
     this.model.named.Reset();
 
     if (import_data.named) {
-      this.model.UnserializeComposite(import_data.named, this.active_sheet);
+      this.model.UnserializeNames(import_data.named, this.active_sheet);
     }
 
     // FIXME: do we need to rebuild autocomplete here (A: yes)

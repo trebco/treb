@@ -25,7 +25,7 @@ import type { IArea, ICellAddress, Table, CellStyle } from 'treb-base-types';
 import type { SerializedSheet } from './sheet_types';
 import { type ExpressionUnit, type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
 import { Area, IsCellAddress, Style } from 'treb-base-types';
-import type { CompositeNamed, SerializedNamed } from './named';
+import type { SerializedNamed } from './named';
 import { NamedRangeManager } from './named';
 
 export interface ConnectedElementType {
@@ -132,36 +132,72 @@ export class DataModel {
    * need to check if something is a range -- if so, it will just be 
    * a single address or range. in that case store it as a named range.
    */
-  public UnserializeComposite(names: CompositeNamed[], active_sheet?: Sheet) {
+  public UnserializeNames(names: SerializedNamed[], active_sheet?: Sheet) {
 
     this.parser.Save();
     this.parser.SetLocaleSettings(DecimalMarkType.Period, ArgumentSeparatorType.Comma);
     
-    const sorted = names.map(named => {
+    //const sorted = names.map(named => {
+    for (const named of names) {
       const parse_result = this.parser.Parse(named.expression); 
       if (parse_result.expression) {
+
+        const scope = (typeof named.scope === 'string') ? this.sheets.ID(named.scope) : undefined;
+
         if (parse_result.expression.type === 'address' || parse_result.expression.type === 'range') {
-          return {
-            ...named,
-            expression: undefined,
-            area: parse_result.expression.type === 'address' ? {
-              start: parse_result.expression,
-              end: parse_result.expression,
-            } : parse_result.expression,
-          } as SerializedNamed;
+
+          const [start, end] = parse_result.expression.type === 'range' ? 
+            [ parse_result.expression.start, parse_result.expression.end, ] : 
+            [ parse_result.expression, parse_result.expression ];
+
+          if (start.sheet) {
+            const area = new Area({...start, sheet_id: this.sheets.ID(start.sheet), }, end);
+  
+            if (area.start.sheet_id) {
+              this.named.SetNamedRange(named.name, area, scope);
+            }
+            else {
+              console.warn("missing sheet ID?", start);
+            }
+
+          }
+          else {
+            console.warn("missing sheet name?", start);
+          }
+
         }
-        return {
-          ...named
-        } as SerializedNamed;
+        else {
+          this.parser.Walk(parse_result.expression, unit => {
+            if (unit.type === 'address' || unit.type === 'range') {
+              if (unit.type === 'range') {
+                unit = unit.start;
+              }
+              if (!unit.sheet_id) {
+                if (unit.sheet) {
+                  unit.sheet_id = this.sheets.ID(unit.sheet);
+                }
+              }
+              if (!unit.sheet_id) {
+                unit.sheet_id = active_sheet?.id;
+              }
+              return false; // don't continue in ranges
+            }
+            return true;
+          });
+
+          this.named.SetNamedExpression(named.name, parse_result.expression, scope);
+        }
+
       }
       return undefined;
-    }).filter((test): test is SerializedNamed => !!test);
+    } // ).filter((test): test is SerializedNamed => !!test);
 
     this.parser.Restore();
-    this.UnserializeNames(sorted, active_sheet);
+    // this.UnserializeNames(sorted, active_sheet);
 
   }
 
+  /*
   public UnserializeNames(names: SerializedNamed[], active_sheet?: Sheet) {
 
     for (const entry of names) {
@@ -218,6 +254,7 @@ export class DataModel {
     }
 
   }
+  */
 
   /**
    * serialize names. ranges are easy, but make sure there's a sheet name
@@ -231,7 +268,7 @@ export class DataModel {
 
       const named: SerializedNamed = {
         name: entry.name,
-        // scope: entry.scope,
+        expression: '',
       };
 
       if (entry.scope) {
@@ -278,11 +315,10 @@ export class DataModel {
 
       }
       else {
-        named.area = {
+
+        const area = {
           start: {
             ...entry.area.start,
-            sheet: this.sheets.Name(entry.area.start.sheet_id || 0) || '',
-            sheet_id: undefined, // in favor of name
             absolute_column: true,
             absolute_row: true,
           },
@@ -292,6 +328,9 @@ export class DataModel {
             absolute_row: true,
           },
         };
+
+        named.expression = this.AddressToLabel(area);
+
       }
 
       list.push(named);

@@ -54,7 +54,7 @@ import { AddRel } from './relationship';
 import { type DOMContent, XMLOptions2 } from './xml-utils';
 
 import type { UnitAddress, UnitRange, ExpressionUnit} from 'treb-parser';
-import { Parser, QuotedSheetNameRegex } from 'treb-parser';
+import { Parser } from 'treb-parser';
 
 // FIXME: move
 import type { ChartOptions } from './drawing2/chart2';
@@ -2464,92 +2464,13 @@ export class Exporter {
           }
         }
 
-        if (entry.area) {
-          let sheet_name = '';
-          const area = new Area(entry.area.start, entry.area.end);
-          area.start.absolute_column = area.start.absolute_row = true;
-          area.end.absolute_column = area.end.absolute_row = true;
-
-          if (entry.area.start.sheet) {
-            sheet_name = entry.area.start.sheet;
-          }
-          else if (entry.area.start.sheet_id) {
-            for (const sheet of source.sheet_data) {
-              if (sheet.id === area.start.sheet_id) {
-                sheet_name = sheet.name || '';
-                break;
-              }
-            }
-          }
-  
-          if (sheet_name) {
-            if (QuotedSheetNameRegex.test(sheet_name)) {
-              sheet_name = `'${sheet_name}'`;
-            }
-            sheet_name += '!';
-          }
-  
-          // console.info({key, area, lx: area.spreadsheet_label, sheet_name });
-          definedNames.definedName.push({
-            a$: { name: entry.name, localSheetId: scope },
-            t$: sheet_name + area.spreadsheet_label,
-          });
-  
-        }
-        else if (entry.expression) {
-          definedNames.definedName.push({
-            a$: { name: entry.name, localSheetId: scope },
-            t$: entry.expression,
-          });
-        }
-
-      }
-    }
-
-    console.info("DB", definedNames);
-
-    /*
-    if (source.named_ranges) {
-      const keys = Object.keys(source.named_ranges);
-      for (const key of keys) {
-        let sheet_name = '';
-        const area = new Area(source.named_ranges[key].start, source.named_ranges[key].end);
-        area.start.absolute_column = area.start.absolute_row = true;
-        area.end.absolute_column = area.end.absolute_row = true;
-
-        if (area.start.sheet_id) {
-          for (const sheet of source.sheet_data) {
-            if (sheet.id === area.start.sheet_id) {
-              sheet_name = sheet.name || '';
-              break;
-            }
-          }
-        }
-
-        if (sheet_name) {
-          if (QuotedSheetNameRegex.test(sheet_name)) {
-            sheet_name = `'${sheet_name}'`;
-          }
-          sheet_name += '!';
-        }
-
-        // console.info({key, area, lx: area.spreadsheet_label, sheet_name });
         definedNames.definedName.push({
-          a$: { name: key },
-          t$: sheet_name + area.spreadsheet_label,
-        });
-
-      }
-    }
-    if (source.named_expressions) {
-      for (const entry of source.named_expressions) {
-        definedNames.definedName.push({
-          a$: { name: entry.name },
+          a$: { name: entry.name, localSheetId: scope },
           t$: entry.expression,
         });
+
       }
     }
-    */
 
     if (!definedNames.definedName.length) {
       definedNames = undefined;

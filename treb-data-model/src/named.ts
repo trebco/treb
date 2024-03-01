@@ -20,15 +20,15 @@
  */
 
 import { Area } from 'treb-base-types';
-import type { SerializedArea, IArea } from 'treb-base-types';
+import type { IArea } from 'treb-base-types';
 import type { ExpressionUnit } from 'treb-parser';
 
-export interface NamedExpression {
+interface NamedExpression {
   type: 'expression';
   expression: ExpressionUnit;
 }
 
-export interface NamedRange {
+interface NamedRange {
   type: 'range';
   area: Area;
 }
@@ -38,44 +38,23 @@ export type Named = (NamedExpression | NamedRange) & {
   scope?: number;   // scope to sheet by ID
 };
 
-/** 
- * serialized type 
+/**
+ * serialized type is a composite of expression/range. we determine
+ * what it is when parsing the expression. this simplifies passing these
+ * things around.
  * 
- * @privateRemarks
+ * (named expressions and ranges they have slightly different behavior, 
+ * which is why we have a distinction at all).
  * 
- * for the external type we switch on the presence of the area
- * or the expression. area uses a type that includes sheet names
- * (IArea should allow that?). expression here is a string.
- * 
- * we could theoretically switch the internal type the same way
- * and drop the string keys. something to think about.
- * 
- * when serialized, scope is either the sheet name or nothing 
- * (implicit global scope).
  */
 export interface SerializedNamed {
-  name: string;
-  area?: SerializedArea;
-  expression?: string;
-  scope?: string;
-}
-
-/**
- * this is a type we're using in imports. it consolidates the 
- * two types. we should maybe switch as well, at least for
- * serialized representation? something to think about.
- */
-export interface CompositeNamed {
 
   name: string;
 
-  /** 
-   * could be a address/range or a function expression. we'll distinguish
-   * when we parse it.
-   */
+  /** expression or address/area */
   expression: string;
 
-  /** resolved sheet name */
+  /** scope is a sheet name (not ID) */
   scope?: string;
 
 }

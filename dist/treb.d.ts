@@ -1,4 +1,4 @@
-/*! API v29.2. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v29.3. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -1602,19 +1602,23 @@ export interface SerializedNamedExpression {
 }
 
 /**
- * serialized type
+ * serialized type is a composite of expression/range. we determine
+ * what it is when parsing the expression. this simplifies passing these
+ * things around.
+ *
+ * (named expressions and ranges they have slightly different behavior,
+ * which is why we have a distinction at all).
+ *
  */
 export interface SerializedNamed {
     name: string;
-    area?: SerializedArea;
-    expression?: string;
+
+    /** expression or address/area */
+    expression: string;
+
+    /** scope is a sheet name (not ID) */
     scope?: string;
 }
-export type SerializedArea = IArea & {
-    start: ICellAddress & {
-        sheet: string;
-    };
-};
 export interface SerializedSheet {
 
     /** cell data */
