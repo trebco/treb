@@ -24,6 +24,7 @@ import * as Utils from '../utilities';
 import { ValueError, ArgumentError, NAError } from '../function-error';
 import { type Complex, type UnionValue, ValueType, type CellValue } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
+import { Util } from 'treb-charts';
 
 export const Variance = (data: number[], sample = false) => {
 
@@ -343,7 +344,37 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       return { type: ValueType.number, value: (flat[lo-1] + flat[hi-1]) / 2 };
 
     },
-  }
+  },
+
+  Rank: {
+    arguments: [
+      { name: 'Value', },
+      { name: 'Source', },
+      { name: 'Order', },
+    ],
+    fn: (value: number, source: CellValue[], order = 0) => {
+
+      if (typeof value !== 'number') {
+        return ArgumentError();
+      }
+
+      const numbers = Utils.FlattenNumbers(source);
+      numbers.sort(order ? (a, b) => a - b : (a, b) => b - a);
+
+      for (let i = 0; i < numbers.length; i++) {
+        if (numbers[i] === value) {
+          return {
+            type: ValueType.number,
+            value: i + 1,
+          };
+        }
+      }
+
+      return ValueError();
+
+    },
+  },
+
 
 };
 
