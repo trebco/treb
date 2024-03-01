@@ -234,6 +234,7 @@ export class Workbook {
       const sheet_index = (defined_name.a$?.localSheetId) ? Number(defined_name.a$.localSheetId) : undefined;
 
       // console.info({defined_name, name, expression, sheet_index});
+
       this.named.push({
         name, 
         expression: typeof expression === 'string' ? expression : expression?.toString() || '',  

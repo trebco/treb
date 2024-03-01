@@ -190,7 +190,7 @@ export class DataModel {
         }
 
       }
-      return undefined;
+
     }
     
     this.parser.Restore();
