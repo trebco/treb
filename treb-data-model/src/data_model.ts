@@ -51,7 +51,7 @@ export interface MacroFunction extends SerializedMacroFunction {
 }
 
 /**
- * FIXME: this should move out of the grid module, grid should be focused on view
+ * 
  */
 export class DataModel {
 
@@ -128,9 +128,7 @@ export class DataModel {
   }
 
   /**
-   * from import, we get ranges and expressions in the same format. we 
-   * need to check if something is a range -- if so, it will just be 
-   * a single address or range. in that case store it as a named range.
+   * 
    */
   public UnserializeNames(names: SerializedNamed[], active_sheet?: Sheet) {
 
@@ -139,6 +137,9 @@ export class DataModel {
     
     //const sorted = names.map(named => {
     for (const named of names) {
+
+      if (!named.expression) { continue; }
+
       const parse_result = this.parser.Parse(named.expression); 
       if (parse_result.expression) {
 
@@ -190,71 +191,11 @@ export class DataModel {
 
       }
       return undefined;
-    } // ).filter((test): test is SerializedNamed => !!test);
-
-    this.parser.Restore();
-    // this.UnserializeNames(sorted, active_sheet);
-
-  }
-
-  /*
-  public UnserializeNames(names: SerializedNamed[], active_sheet?: Sheet) {
-
-    for (const entry of names) {
-
-      const scope = (typeof entry.scope === 'string') ? this.sheets.ID(entry.scope) : undefined;
-
-      if (entry.expression) {
-
-        const parse_result = this.parser.Parse(entry.expression);
-
-        if (parse_result.valid && parse_result.expression) {
-          this.parser.Walk(parse_result.expression, unit => {
-            if (unit.type === 'address' || unit.type === 'range') {
-              if (unit.type === 'range') {
-                unit = unit.start;
-              }
-              if (!unit.sheet_id) {
-                if (unit.sheet) {
-                  unit.sheet_id = this.sheets.ID(unit.sheet);
-                }
-              }
-              if (!unit.sheet_id) {
-                unit.sheet_id = active_sheet?.id;
-              }
-              return false; // don't continue in ranges
-            }
-            return true;
-          });
-
-          this.named.SetNamedExpression(entry.name, parse_result.expression, scope);
-          
-        }
-
-      }
-      else if (entry.area) {
-        if (entry.area.start.sheet) {
-
-          const area = new Area({
-            ...entry.area.start,
-            sheet_id: this.sheets.ID(entry.area.start.sheet),
-          }, entry.area.end);
-
-          if (area.start.sheet_id) {
-            this.named.SetNamedRange(entry.name, area, scope);
-          }
-          else {
-            console.warn("missing sheet ID?", entry.area.start.sheet);
-          }
-        }
-        else {
-          console.warn("missing sheet name?");
-        }
-      }
     }
+    
+    this.parser.Restore();
 
   }
-  */
 
   /**
    * serialize names. ranges are easy, but make sure there's a sheet name

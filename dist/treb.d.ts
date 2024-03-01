@@ -1596,6 +1596,13 @@ export interface SerializedMacroFunction {
     argument_names?: string[];
     description?: string;
 }
+
+/**
+ * this type is no longer in use, but we retain it to parse old documents
+ * that use it.
+ *
+ * @deprecated
+ */
 export interface SerializedNamedExpression {
     name: string;
     expression: string;
