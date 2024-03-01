@@ -169,11 +169,28 @@ export class Area implements IArea {
 
   public static CellAddressToLabel(address: ICellAddress, sheet_id = false): string {
 
-    if (address.row === Infinity || address.column === Infinity) {
+    if (address.row === Infinity && address.column === Infinity) {
       throw new Error('this is going to break something');
     }
 
     const prefix = sheet_id ? `${address.sheet_id || 0}!` : '';
+
+    if (address.row === Infinity) {
+      return prefix
+        + (address.absolute_column ? '$' : '')
+        + this.ColumnToLabel(address.column)
+        // + (address.absolute_row ? '$' : '')
+        // + (address.row + 1);
+        ;
+    }
+    if (address.column === Infinity) {
+      return prefix
+        // + (address.absolute_column ? '$' : '')
+        // + this.ColumnToLabel(address.column)
+        + (address.absolute_row ? '$' : '')
+        + (address.row + 1)
+        ;
+    }
 
     return prefix
       + (address.absolute_column ? '$' : '')

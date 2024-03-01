@@ -408,7 +408,7 @@ export class DataModel {
         (QuotedSheetNameRegex.test(sheet.name) ? `'${sheet.name}'` : sheet.name) : '';
     
     return name + (name ? '!' : '') + (parts[0] === parts[1] ? parts[0] : parts.join(':'));
-    
+
   }
 
   // --- resolution api, moved from calculator ---------------------------------
