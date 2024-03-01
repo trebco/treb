@@ -409,7 +409,7 @@ export class Parser {
     for (let i = 0; i < n; i++) {
       transposed[i] = [];
       for (let j = 0; j < m; j++) {
-        transposed[i][j] = arr[j][i];
+        transposed[i][j] = arr[j] ? arr[j][i] : undefined;
       }
     }
 
