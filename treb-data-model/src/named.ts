@@ -21,7 +21,7 @@
 
 import { Area } from 'treb-base-types';
 import type { IArea } from 'treb-base-types';
-import type { ExpressionUnit } from 'treb-parser';
+import type { ExpressionUnit, Parser } from 'treb-parser';
 
 interface NamedExpression {
   type: 'expression';
@@ -81,6 +81,8 @@ export class NamedRangeManager {
   public get list() {
     return this.named.values();
   }
+
+  constructor(public parser: Parser) {}
 
   /** shorthand for setting named expression */
   public SetNamedExpression(name: string, expression: ExpressionUnit, scope?: number) {
@@ -206,30 +208,53 @@ export class NamedRangeManager {
    * named range rules:
    *
    * - legal characters are alphanumeric, underscore and dot.
+   * 
    * - must start with letter or underscore (not a number or dot).
+   *   UPDATE: also possibly a backslash? not sure if that's escaping or not.
+   * 
    * - cannot look like a spreadsheet address, which is 1-3 letters followed by numbers.
-   *
+   *   UPDATE: actually this is legal if the number is "0". that's the only
+   *   number. I don't think our parser will process this correctly, so until
+   *   then keep it illegal.
+   * 
    * - apparently questuon marks are legal, but not in first position. atm 
    *   our parser will reject.
+   * 
+   * - FIXME: we should block R1C1-looking notation as well
    * 
    * returns a normalized name (just caps, atm)
    */
   public ValidateNamed(name: string): string|false {
-    name = name.trim();
+
+    // normalize
+    name = name.trim().toUpperCase();
 
     // can't be empty
     if (!name.length) return false;
 
-    // can't look like a spreadsheet address
-    if (/^[A-Za-z]{1,3}\d+$/.test(name)) return false;
-
-    // can only contain legal characters
-    if (/[^A-Za-z\d_.?]/.test(name)) return false;
+    // can only contain legal characters [FIXME: backslash is legal?]
+    if (/[^A-Z\d_.?]/.test(name)) return false;
 
     // must start with ascii letter or underscore
-    if (/^[^A-Za-z_]/.test(name)) return false;
+    if (/^[^A-Z_]/.test(name)) return false;
 
-    return name.toUpperCase();
+    // these are not legal for some reason -- they look like R1C1?
+    if (name === 'R' || name === 'C') {
+      return false;
+    }
+
+    // FIXME: should we just use a parser? we're adding more and more regexes.
+
+    // can't look like a spreadsheet address, unless the row is === 0
+    if (/^[A-Z]{1,3}[1-9]\d*$/.test(name)) return false;
+
+    // can't look like R1C1 either (we already checked for R and C)
+    if (/^R[[\]\d]+C/.test(name)) {
+      return false;
+    }
+
+    return name;
+    
   }
 
   /**

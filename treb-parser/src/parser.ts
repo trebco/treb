@@ -2415,8 +2415,11 @@ export class Parser {
     if (!c) return null;
     position = c.position;
 
+    // things that look like an address but have row 0 are legal
+    // as names. so this should be a token if r === 0.
+
     const r = this.ConsumeAddressRow(position);
-    if (!r) return null;
+    if (!r) return null; 
     position = r.position;
 
     const label = sheet ?
@@ -2460,7 +2463,11 @@ export class Parser {
 
   /**
    * consumes a row, possibly absolute ($). returns the numeric row
-   * (0-based) and metadata
+   * (0-based) and metadata. 
+   * 
+   * note that something like "X0" is a legal token, because 0 is not
+   * a valid row. but at the same time it can't have a $ in it. although
+   * maybe "X$0" is a token but not a valid name? dunno
    */
   protected ConsumeAddressRow(position: number): 
     { 
@@ -2484,7 +2491,18 @@ export class Parser {
       else break;
     }
 
-    if (start === position) return false;
+    if (start === position) {
+      return false;
+    }
+
+    // handle token X0. should ~maybe~ handle this only if !absolute
+    // temp leaving this separate from the above test just so it's clear
+    // what we are doing
+
+    if (value === 0) {
+      return false; 
+    }
+
     return { absolute, row: value - 1, position };
   }
 

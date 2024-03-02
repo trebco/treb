@@ -73,7 +73,7 @@ export class DataModel {
   public readonly sheets = new SheetCollection();
 
   /** new composite collection (TODO: add macro functions too?) */
-  public readonly named = new NamedRangeManager();
+  public readonly named = new NamedRangeManager(this.parser);
 
   /** macro functions are functions written in spreadsheet language */
   public readonly macro_functions: Map<string, MacroFunction> = new Map();
@@ -152,15 +152,19 @@ export class DataModel {
             [ parse_result.expression, parse_result.expression ];
 
           if (start.sheet) {
-            const area = new Area({...start, sheet_id: this.sheets.ID(start.sheet), }, end);
-  
-            if (area.start.sheet_id) {
-              this.named.SetNamedRange(named.name, area, scope);
+            if (/^\[\d+\]/.test(start.sheet)) {
+              console.warn('named range refers to an external file');
             }
             else {
-              console.warn("missing sheet ID?", start);
+              const area = new Area({...start, sheet_id: this.sheets.ID(start.sheet), }, end);
+    
+              if (area.start.sheet_id) {
+                this.named.SetNamedRange(named.name, area, scope);
+              }
+              else {
+                console.warn("missing sheet ID?", start);
+              }
             }
-
           }
           else {
             console.warn("missing sheet name?", start);
