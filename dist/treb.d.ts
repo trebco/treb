@@ -743,13 +743,13 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     /**
      * set or clear cell valiation.
      *
-     * @param address - target cell
+     * @param target - target cell/area
      * @param validation - a spreadsheet range, list of data, or undefined. pass
      * undefined to remove existing cell validation.
      * @param error - setting an invalid value in the target cell is an error (and
      * is blocked). defaults to false.
      */
-    SetValidation(address: AddressReference, validation?: RangeReference | CellValue[], error?: boolean): void;
+    SetValidation(target: RangeReference, validation?: RangeReference | CellValue[], error?: boolean): void;
 
     /**
      * Delete a macro function.
@@ -1727,7 +1727,6 @@ export interface BaseCellData {
     table?: Table;
     area?: IArea;
     merge_area?: IArea;
-    validation?: DataValidation;
     calculated_type?: SerializedValueType;
     note?: string;
     hyperlink?: string;
@@ -1816,27 +1815,6 @@ export interface Table {
      * can toggle asc/desc, for example. atm this will not survive serialization.
      */
     sort?: TableSortOptions;
-}
-export type DataValidation = DataValidationList | DataValidationRange | DataValidationNumber | DataValidationDate | DataValidationBoolean;
-export interface DataValidationBase {
-    error?: boolean;
-}
-export interface DataValidationRange extends DataValidationBase {
-    type: 'range';
-    area: IArea;
-}
-export interface DataValidationList extends DataValidationBase {
-    type: 'list';
-    list: CellValue[];
-}
-export interface DataValidationDate extends DataValidationBase {
-    type: 'date';
-}
-export interface DataValidationNumber extends DataValidationBase {
-    type: 'number';
-}
-export interface DataValidationBoolean extends DataValidationBase {
-    type: 'boolean';
 }
 
 /**
