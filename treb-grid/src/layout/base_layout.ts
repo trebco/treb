@@ -1295,19 +1295,8 @@ export abstract class BaseLayout {
       }
     }
 
-    /*
-    this.tooltip.style.fontFamily = theme.tooltip_font_face || '';
-    this.tooltip.style.fontSize = theme.tooltip_font_size ? `${theme.tooltip_font_size}pt` : '';
-    this.tooltip.style.backgroundColor = theme.tooltip_background || '';
-    this.tooltip.style.borderColor = theme.tooltip_background || ''; // for arrow
-    this.tooltip.style.color = theme.tooltip_color || '';
-    */
-
     // TODO: dropdown caret
 
-    // this.dropdown_list.style.fontFamily = theme.cell_font || '';
-    // const font_size = (theme.cell_font_size_value || 10) * this.scale;
-    // this.dropdown_list.style.fontSize = (font_size) + (theme.cell_font_size_unit || 'pt');
     this.dropdown_list.style.font = Style.Font(theme.grid_cell || {});
 
   }
@@ -1414,6 +1403,8 @@ export abstract class BaseLayout {
     this.dropdown_list.style.top = `${target_rect.bottom + 2}px`;
     this.dropdown_list.style.left = `${target_rect.left + 2}px`;
     this.dropdown_list.style.minWidth = `${target_rect.width}px`;
+
+    this.dropdown_list.style.fontSize = (this.scale.toFixed(2) + 'em');
 
     this.dropdown_list.textContent = '';
     for (const value of list) {
