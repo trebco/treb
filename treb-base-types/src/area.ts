@@ -584,6 +584,13 @@ export class Area implements IArea {
       && area.end_.column === this.end_.column;
   }
 
+  public Equals2(area: IArea): boolean {
+    return area.start.row === this.start_.row
+      && area.start.column === this.start_.column
+      && area.end.row === this.end_.row
+      && area.end.column === this.end_.column;
+  }
+
   public Clone(): Area {
     return new Area(this.start, this.end); // ensure copies
   }

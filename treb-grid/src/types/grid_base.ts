@@ -37,11 +37,12 @@
 
 import { EventSource } from 'treb-utils';
 import type { DataModel, ConditionalFormat, // MacroFunction, SerializedModel, SerializedNamedExpression, 
-              ViewModel } from 'treb-data-model';
+              ViewModel, 
+              DataValidation} from 'treb-data-model';
 
 import type { Parser, UnitAddress} from 'treb-parser';
 import { type ExpressionUnit, IllegalSheetNameRegex, ParseCSV, DecimalMarkType } from 'treb-parser';
-import { Area, IsCellAddress, ValidationType, ValueType, DefaultTableSortOptions } from 'treb-base-types';
+import { Area, IsCellAddress, ValueType, DefaultTableSortOptions } from 'treb-base-types';
 import type { ICellAddress, IArea, Cell, CellValue, CellStyle, Table, TableSortOptions, TableTheme, Complex, PatchOptions as PatchAreaOptions } from 'treb-base-types';
 
 import { Sheet, type SerializeOptions, type Annotation } from 'treb-data-model';
@@ -922,34 +923,54 @@ export class GridBase {
 
   protected SetValidationInternal(command: DataValidationCommand): void {
 
-    let cell: Cell|undefined;
-
     const sheet = this.FindSheet(command.area);
-
-    if (sheet) {
-      cell = sheet.cells.GetCell(command.area, true);
+    if (!sheet) {
+      throw new Error('invalid sheet in set validation');
     }
 
-    if (!cell) {
-      throw new Error('invalid cell in set validation');
-    }
+    const target = {start: command.area.start, end: command.area.end };
 
     if (command.range) {
+
+      sheet.AddValidation({
+        type: 'range',
+        error: !!command.error,
+        area: command.range,
+        target: [target],
+      });
+
+      /*
       cell.validation = {
         type: ValidationType.Range,
         area: command.range,
         error: !!command.error,
       };
+      */
+
     }
     else if (command.list) {
+
+      sheet.AddValidation({
+        type: 'list',
+        error: !!command.error,
+        list: JSON.parse(JSON.stringify(command.list)),
+        target: [target],
+      });
+
+      /*
       cell.validation = {
         type: ValidationType.List,
         list: JSON.parse(JSON.stringify(command.list)),
         error: !!command.error,
       }
+      */
+
     }
     else {
-      cell.validation = undefined;
+      // cell.validation = undefined;
+
+      sheet.RemoveValidations(target);
+
     }
 
   }
@@ -2794,8 +2815,54 @@ export class GridBase {
   /**
    * patch sheet conditionals for insert/delete row/column operations.
    * some of them may be deleted.
+   * 
+   * UPDATE: using this routine to also patch data validations
    */
-  protected PatchConditionals(options: PatchOptions) {
+  protected PatchConditionalsAndValidations(options: PatchOptions) {
+
+    if (options.sheet.data_validation.length) {
+
+      const delete_list: Set<DataValidation> = new Set();
+      for (const validation of options.sheet.data_validation) {
+
+        const targets: IArea[] = [];
+        for (const area of validation.target) {
+          const updated = Area.PatchArea(area, options);
+          if (updated) {
+            targets.push(updated);
+          }
+        }
+
+        if (targets.length > 0) {
+
+          validation.target = targets;
+
+          // format the range, if necessary
+
+          if (validation.type === 'range') {
+            if (validation.area.start.sheet_id === options.sheet.id) {
+              const updated = Area.PatchArea(validation.area, options);
+              if (updated) {
+                validation.area = updated;
+              }
+              else {
+                delete_list.add(validation);
+              }
+            }
+          }
+
+        }
+        else {
+          delete_list.add(validation);
+        }
+        
+      }
+
+      if (delete_list.size) {
+        options.sheet.data_validation = options.sheet.data_validation.filter(test => !delete_list.has(test));
+      }
+
+    }
 
     if (options.sheet.conditional_formats?.length) {
 
@@ -2869,7 +2936,7 @@ export class GridBase {
     }
 
     // conditionals
-    this.PatchConditionals({
+    this.PatchConditionalsAndValidations({
         sheet: target_sheet, 
         before_column: 0, 
         column_count: 0, 
@@ -3217,7 +3284,7 @@ export class GridBase {
     }
     
     // conditionals
-    this.PatchConditionals({
+    this.PatchConditionalsAndValidations({
       sheet: target_sheet, 
       before_column: command.before_column, 
       column_count: command.count, 
@@ -4029,8 +4096,8 @@ export class GridBase {
           // COEDITING: ok
 
           this.SetValidationInternal(command);
-          if (!command.area.sheet_id || command.area.sheet_id === this.active_sheet.id) {
-            flags.render_area = Area.Join(new Area(command.area), flags.render_area);
+          if (!command.area.start.sheet_id || command.area.start.sheet_id === this.active_sheet.id) {
+            flags.render_area = Area.Join(new Area(command.area.start, command.area.end), flags.render_area);
           }
           break;
 

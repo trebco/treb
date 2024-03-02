@@ -23,6 +23,7 @@ import type { IArea, SerializedCellData, CellStyle } from 'treb-base-types';
 import type { AnnotationData } from './annotation';
 import type { GridSelection, SerializedGridSelection } from './sheet_selection';
 import type { ConditionalFormatList } from './conditional_format';
+import type { DataValidation } from './data-validation';
 
 export interface UpdateHints {
   data?: boolean;
@@ -71,6 +72,9 @@ export interface SerializedSheet {
 
   /** @internal */
   conditional_formats?: ConditionalFormatList;
+
+  /** @internal */
+  data_validations?: DataValidation[];
 
   /** 
    * @deprecated use `styles` instead

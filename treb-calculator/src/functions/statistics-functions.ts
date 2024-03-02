@@ -24,7 +24,6 @@ import * as Utils from '../utilities';
 import { ValueError, ArgumentError, NAError } from '../function-error';
 import { type Complex, type UnionValue, ValueType, type CellValue } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
-import { Util } from 'treb-charts';
 
 export const Variance = (data: number[], sample = false) => {
 

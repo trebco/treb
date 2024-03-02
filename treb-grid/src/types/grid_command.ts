@@ -225,7 +225,8 @@ export interface SetNameCommand {
 
 export interface DataValidationCommand {
   key: CommandKey.DataValidation;
-  area: ICellAddress;
+  area: IArea;
+
   range?: IArea;
   list?: CellValue[];
   error?: boolean;

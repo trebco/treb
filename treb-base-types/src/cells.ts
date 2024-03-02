@@ -26,7 +26,9 @@
 
 import type { IArea, ICellAddress} from './area';
 import { Area, IsCellAddress } from './area';
-import type { DataValidation } from './cell';
+
+// import type { DataValidation } from './cell';
+
 import { Cell } from './cell';
 import type { Table } from './table';
 import { type SerializedValueType, ValueType, GetValueType, ValueTypeList } from './value-type';
@@ -79,7 +81,7 @@ export interface BaseCellData {
   table?: Table;
   area?: IArea;
   merge_area?: IArea;
-  validation?: DataValidation;
+  // validation?: DataValidation;
   calculated_type?: SerializedValueType; //  ValueType;
   note?: string;
   hyperlink?: string;
@@ -404,7 +406,7 @@ export class Cells {
 
 
 
-  /**
+  /* *
    * this method is used for importing legacy data validation types. in those
    * those we used a numeric enum. we're just dropping that altogether (c.f.
    * ValueType, which we're keeping) so we need to translate for backcompat. 
@@ -419,7 +421,8 @@ export class Cells {
    *   Boolean = 'boolean',
    * }
    * 
-   */
+   * OK, removed
+   * /
   public ImportDataValidation(value: DataValidation): DataValidation|undefined {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -435,6 +438,7 @@ export class Cells {
 
     return value;
   }
+  */
 
   /**
    * UPDATE: adding optional style refs, for export
@@ -572,6 +576,7 @@ export class Cells {
         }
       }
 
+      /*
       if (obj.validation) {
 
         // the old type used a numeric enum. we just dropped that in favor
@@ -581,6 +586,7 @@ export class Cells {
         cell.validation = this.ImportDataValidation(obj.validation);
 
       }
+      */
 
     }
 
@@ -678,7 +684,7 @@ export class Cells {
               (merge_head || cell.type || (cell.calculated_type && options.expand_arrays) ||
                 (cell.calculated_type && options.calculated_value) ||
                 (cell.note) ||
-                (cell.validation) ||
+                // (cell.validation) ||
                 (options.decorated_cells && cell.style &&
                   ( cell.style.fill || cell.style.border_bottom ||
                     cell.style.border_top || cell.style.border_left || cell.style.border_right)))){
@@ -715,9 +721,9 @@ export class Cells {
             if (cell.merge_area) {
               obj.merge_area = cell.merge_area.toJSON();
             }
-            if (cell.validation) {
-              obj.validation = cell.validation; // safe? 
-            }
+            // if (cell.validation) {
+            //   obj.validation = cell.validation; // safe? 
+            // }
 
             if (options.cell_style_refs &&
                 options.cell_style_refs[column] &&

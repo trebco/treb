@@ -3491,25 +3491,30 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   /**
    * set or clear cell valiation.
    * 
-   * @param address - target cell
+   * @param target - target cell/area
    * @param validation - a spreadsheet range, list of data, or undefined. pass
    * undefined to remove existing cell validation. 
    * @param error - setting an invalid value in the target cell is an error (and
    * is blocked). defaults to false.
    */
-  public SetValidation(address: AddressReference, validation?: RangeReference|CellValue[], error?: boolean) {
+  public SetValidation(target: RangeReference, validation?: RangeReference|CellValue[], error?: boolean) {
 
-    if (typeof address === 'string') {
-      const reference = this.model.ResolveAddress(address, this.grid.active_sheet);
-      address = IsCellAddress(reference) ? reference : reference.start;
+    if (typeof target === 'string') {
+      const reference = this.model.ResolveAddress(target, this.grid.active_sheet);
+      target = IsArea(reference) ? new Area(reference.start, reference.end) : new Area(reference);
+      // address = IsCellAddress(reference) ? reference : reference.start;
+    }
+
+    if (IsCellAddress(target)) {
+      target = new Area(target);
     }
 
     if (typeof validation === 'undefined' || Array.isArray(validation)) {
-      this.grid.SetValidation(address, validation, error);
+      this.grid.SetValidation(target, validation, error);
     }
     else {
       const range = this.model.ResolveArea(validation, this.grid.active_sheet);
-      this.grid.SetValidation(address, range, error);
+      this.grid.SetValidation(target, range, error);
     }
 
   }

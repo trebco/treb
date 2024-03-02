@@ -42,4 +42,4 @@ export { Annotation } from './annotation';
 export type { ViewData as AnnotationViewData } from './annotation';
 export type { AnnotationData, AnnotationType } from './annotation';
 
-
+export * from './data-validation';

@@ -40,7 +40,6 @@ import {
   ValueType, 
   Localization, 
   IsCellAddress, 
-  ValidationType, 
   LoadThemeProperties,
   DefaultTheme,
   ComplexToString,
@@ -1465,20 +1464,22 @@ export class Grid extends GridBase {
    * and will render as a dropdown; the list can be a list of values or
    * a range reference.
    */
-  public SetValidation(target?: ICellAddress, data?: CellValue[]|IArea, error?: boolean): void {
+  public SetValidation(target?: IArea, data?: CellValue[]|IArea, error?: boolean): void {
 
     if (!target) {
       if (this.primary_selection.empty) {
         throw new Error('invalid target in set validation');
       }
-      target = this.primary_selection.target;
+      target = this.primary_selection.area;
     }
+
+    const area = new Area(target.start, target.end);
 
     // console.info({target, data});
 
     const command: DataValidationCommand = {
       key: CommandKey.DataValidation,
-      area: target,
+      area: { start: area.start, end: area.end },
       error,
     };
     
@@ -1502,9 +1503,11 @@ export class Grid extends GridBase {
     //
 
     if (!this.primary_selection.empty &&
-        (!target.sheet_id || target.sheet_id === this.active_sheet.id) && 
-        (this.primary_selection.target.row === target.row) && 
-        (this.primary_selection.target.column === target.column)) {
+        (!target.start.sheet_id || target.start.sheet_id === this.active_sheet.id) && 
+        area.Contains(this.primary_selection.target)) {
+
+        // (this.primary_selection.target.row === target.start.row) && 
+        // (this.primary_selection.target.column === target.start.column)) {
 
       // console.info('repaint selection');
 
@@ -4966,15 +4969,19 @@ export class Grid extends GridBase {
 
     }
 
-    if (cell.validation && cell.validation.error) {
+    const validation = this.active_sheet.GetValidation(target)[0];
+
+    // only consider the first result
+
+    if (validation && validation.error) {
       
       let list: CellValue[]|undefined;
       
-      if (cell.validation.type === ValidationType.List) {
-        list = cell.validation.list;
+      if (validation.type === 'list') {
+        list = validation.list;
       }
-      else if (cell.validation.type === ValidationType.Range) {
-        list = this.GetValidationRange(cell.validation.area);
+      else if (validation.type === 'range') {
+        list = this.GetValidationRange(validation.area);
       }
 
       if (list && list.length) {
@@ -6216,15 +6223,19 @@ export class Grid extends GridBase {
       // sync up, so it would be a separate function but called at the
       // same time.
 
-      if (data.validation && !data.style?.locked) {
+      // less true now that they're maintained separately
+      
+      const validation = this.active_sheet.GetValidation(this.primary_selection.target)[0];
+
+      if (validation && !data.style?.locked) {
         
         let list: CellValue[] | undefined;
         
-        if (data.validation.type === ValidationType.List) {
-          list = data.validation.list;
+        if (validation.type === 'list') {
+          list = validation.list;
         }
-        else if (data.validation.type === ValidationType.Range) {
-          list = this.GetValidationRange(data.validation.area);
+        else if (validation.type === 'range') {
+          list = this.GetValidationRange(validation.area);
         }
 
         if (list && list.length) {

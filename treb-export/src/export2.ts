@@ -34,11 +34,11 @@ import { PixelsToColumnWidth } from './column-width';
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`;
 
 import { template } from './template-2';
-import type { SerializedModel, SerializedSheet } from 'treb-data-model';
+import type { SerializedModel, SerializedSheet, DataValidation } from 'treb-data-model';
 
-import type { IArea, ICellAddress, CellValue, DataValidation, CellStyle,
+import type { IArea, ICellAddress, CellValue, CellStyle,
          AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle } from 'treb-base-types';
-import { Area, Cells, ValueType, Style, ValidationType } from 'treb-base-types';
+import { Area, Cells, ValueType, Style } from 'treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
 import type { XmlBuilderOptions} from 'fast-xml-parser';
@@ -1417,10 +1417,12 @@ export class Exporter {
       const merges: Area[] = [];
       const tables: TableDescription[] = [];
       
+      /*
       const validations: Array<{
         address: ICellAddress,
         validation: DataValidation,
       }> = [];
+      */
 
       // --
 
@@ -1606,12 +1608,14 @@ export class Exporter {
                 });
               }
 
+              /*
               if (cell.validation && (cell.validation.type === ValidationType.List || cell.validation.type === ValidationType.Range)) {
                 validations.push({
                   address: {row: r, column: c},
                   validation: cell.validation,
                 });
               }
+              */
 
               // short-circuit here
               if (cell.type === ValueType.formula && /^=?sparkline\./i.test(cell.value as string)) {
@@ -1929,36 +1933,45 @@ export class Exporter {
 
       // --- validation ----------------------------------------------------------
 
-      if (validations.length) {
+      if (sheet.data_validations?.length) {
 
         dom.worksheet.dataValidations = {
-          a$: { count: validations.length },
-          dataValidation: validations.map(validation => {
+          a$: { count: sheet.data_validations.length },
+          dataValidation: sheet.data_validations.map(validation => {
+
+            const sqref = validation.target.map(target => {
+              return new Area(target.start, target.end).spreadsheet_label;
+            }).join(' ');
+
             const entry: any = { 
               a$: {
                 type: 'list',
                 allowBlank: 1, 
                 showInputMessage: 1, 
                 showErrorMessage: 1, 
-                sqref: new Area(validation.address).spreadsheet_label,
+                sqref, // : new Area(validation.address).spreadsheet_label,
               },
             };
-            if (validation.validation.type === ValidationType.Range) {
+            if (validation.type === 'range') {
 
               const range: UnitRange = {
                 id: 0,
                 type: 'range',
                 label: '', position: 0, 
                 start: 
-                  {...validation.validation.area.start, absolute_column: true, absolute_row: true, id: 0, label: '', position: 0, type: 'address', }, 
+                  {...validation.area.start, absolute_column: true, absolute_row: true, id: 0, label: '', position: 0, type: 'address', }, 
                 end: 
-                  {...validation.validation.area.end, absolute_column: true, absolute_row: true, id: 0, label: '', position: 0, type: 'address', }
+                  {...validation.area.end, absolute_column: true, absolute_row: true, id: 0, label: '', position: 0, type: 'address', }
                 ,
               }
 
-              if (typeof validation.validation.area.start.sheet_id !== 'undefined') {
-                range.start.sheet = sheet_name_map[validation.validation.area.start.sheet_id];
+              console.info("AA", {validation});              
+
+              if (typeof validation.area.start.sheet_id !== 'undefined') {
+                range.start.sheet = sheet_name_map[validation.area.start.sheet_id];
               }
+
+              console.info("m1");
 
               /*
               const area = new Area(
@@ -1971,8 +1984,8 @@ export class Exporter {
               entry.formula1 = this.parser.Render(range);
 
             }
-            else if (validation.validation.type === ValidationType.List) {
-              entry.formula1 = `"${validation.validation.list.join(',')}"`;
+            else if (validation.type === 'list') {
+              entry.formula1 = `"${validation.list.join(',')}"`;
             }
             return entry;
           }),

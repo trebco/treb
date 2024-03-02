@@ -43,6 +43,7 @@ import type { GridSelection } from './sheet_selection';
 import { CreateSelection } from './sheet_selection';
 import { Annotation } from './annotation';
 import type { ConditionalFormatList } from './conditional_format';
+import type { DataValidation } from './data-validation';
 
 // --- constants --------------------------------------------------------------
 
@@ -165,6 +166,11 @@ export class Sheet {
 
   /**
    * @internal
+   */
+  public data_validation: DataValidation[] = [];
+
+  /**
+   * @internal
    * 
    * testing, not serialized atm
    */
@@ -254,6 +260,7 @@ export class Sheet {
    * update: using areas
    */
   private conditional_format_checklist: IArea[] = [];
+
 
   // --- accessors ------------------------------------------------------------
 
@@ -382,6 +389,11 @@ export class Sheet {
     if (source.conditional_formats) {
       sheet.conditional_formats = source.conditional_formats;
     }
+
+    sheet.data_validation = (source.data_validations || []).map(validation => ({
+      ...validation,
+      target: (validation.target||[]).map(target => new Area(target.start, target.end)),
+    }));
 
     // persist ID, name
 
@@ -740,6 +752,45 @@ export class Sheet {
 
   }
 
+  /** add a data validation. */
+  public AddValidation(validation: DataValidation) {
+    this.data_validation.push({
+      ...validation,
+      target: (validation.target||[]).map(target => new Area(target.start, target.end)), // ensure class instance
+    });
+  }
+
+  /** 
+   * remove validations from area. must be an exact match (FIXME).
+   * if there are multiple areas, only remove the matching area.
+   */
+  public RemoveValidations(area: IArea) {
+
+    const check = new Area(area.start, area.end);
+    this.data_validation = this.data_validation.filter(validation => {
+      validation.target = validation.target.filter(compare => !check.Equals2(compare));
+      return validation.target.length > 0;
+    });
+  }
+
+  /** return data validation(s) that apply to a given address */
+  public GetValidation(address: ICellAddress) {
+
+    // switch to imperative
+
+    const list: DataValidation[] = [];
+    for (const entry of this.data_validation) {
+      for (const area of entry.target) {
+        if ((area as Area).Contains(address)) {
+          list.push(entry);
+          break;
+        }
+      }
+    }
+
+    return list;
+
+  }
 
   public Activate(DOM: DOMContext) {
 
@@ -2665,6 +2716,11 @@ export class Sheet {
       JSON.parse(JSON.stringify(this.conditional_formats.map(format => ({...format, internal: undefined })))) : 
       undefined;
 
+    // yes, here. we should have a serialized type so we know to convert. TODO
+
+    const data_validations = this.data_validation.length ? JSON.parse(JSON.stringify(this.data_validation)) : undefined;
+     
+
     const result: SerializedSheet = {
 
       // not used atm, but in the event we need to gate
@@ -2688,6 +2744,7 @@ export class Sheet {
       column_style,
 
       conditional_formats,
+      data_validations,
 
       row_pattern: row_pattern.length ? row_pattern : undefined,
 
@@ -2884,6 +2941,10 @@ export class Sheet {
 
     for (const format of data.conditional_formats || []) {
       this.conditional_formats.push(format);
+    }
+
+    for (const validation of data.data_validations || []) {
+      this.AddValidation(validation);
     }
 
     if (data.hidden) {

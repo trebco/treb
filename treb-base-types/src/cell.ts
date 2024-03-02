@@ -21,7 +21,7 @@
 
 // import { Parser } from 'treb-parser';
 
-import type { Area, IArea } from './area';
+import type { Area } from './area';
 import type { CellStyle } from './style';
 import type { TextPart } from './text_part';
 import type { Complex } from './value-type';
@@ -116,50 +116,6 @@ export type ClickFunction = (options: ClickFunctionOptions) => ClickFunctionResu
  * things that are NOT in the cell class:
  *  - raw per-cell style information. this is in a separate array (object).
  */
-
-/**
- * validation TODO: date, number, boolean, &c
- */
-export enum ValidationType {
-  List = 'list',
-  Date = 'date',
-  Range = 'range',
-  Number = 'number',
-  Boolean = 'boolean',
-}
-
-export interface DataValidationBase {
-  error?: boolean;
-}
-
-export interface DataValidationRange extends DataValidationBase {
-  type: 'range'; // ValidationType.Range;
-  area: IArea;
-}
-
-export interface DataValidationList extends DataValidationBase {
-  type: 'list'; // ValidationType.List;
-  list: CellValue[];
-}
-
-export interface DataValidationDate extends DataValidationBase {
-  type: 'date'; // ValidationType.Date;
-}
-
-export interface DataValidationNumber extends DataValidationBase {
-  type: 'number'; // ValidationType.Number;
-}
-
-export interface DataValidationBoolean extends DataValidationBase {
-  type: 'boolean'; // ValidationType.Boolean;
-}
-
-export type DataValidation 
-  = DataValidationList
-  | DataValidationRange
-  | DataValidationNumber
-  | DataValidationDate
-  | DataValidationBoolean;
 
 export class Cell {
 
@@ -342,7 +298,7 @@ export class Cell {
   /** not editable */
   // public locked?: boolean;
 
-  public validation?: DataValidation;
+  // public validation?: DataValidation;
 
   // --- class methods --------------------------------------------------------
 

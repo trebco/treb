@@ -23,9 +23,8 @@ import type { CellStyle } from './style';
 import type { SerializedValueType } from './value-type';
 import type { IArea } from './area';
 import type { AnnotationLayout } from './layout';
-import type { DataValidation } from './cell';
 import type { Table } from './table';
-import type { AnnotationType, ConditionalFormat } from 'treb-data-model';
+import type { DataValidation, AnnotationType, ConditionalFormat } from 'treb-data-model';
 
 export interface CellParseResult {
   row: number,
@@ -60,6 +59,7 @@ export interface ImportedSheetData {
   row_heights: number[];
   styles: CellStyle[];
   conditional_formats: ConditionalFormat[];
+  data_validations?: DataValidation[];
 
   // optional, for backcompat
   sheet_style?: number;

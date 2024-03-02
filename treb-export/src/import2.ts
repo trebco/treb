@@ -30,8 +30,8 @@ import type { ParseResult } from 'treb-parser';
 import { Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
 import { is_range, ShiftRange, InRange, is_address } from './address-type';
-import type { ImportedSheetData, AnchoredAnnotation, CellParseResult, AnnotationLayout, Corner as LayoutCorner, ICellAddress, DataValidation, IArea, GradientStop, Color } from 'treb-base-types/src';
-import { ValidationType, type SerializedValueType } from 'treb-base-types/src';
+import type { ImportedSheetData, AnchoredAnnotation, CellParseResult, AnnotationLayout, Corner as LayoutCorner, IArea, GradientStop, Color } from 'treb-base-types/src';
+import { Area, type SerializedValueType } from 'treb-base-types/src';
 import type { Sheet} from './workbook-sheet2';
 import { VisibleState } from './workbook-sheet2';
 import type { CellAnchor } from './drawing2/drawing2';
@@ -39,7 +39,7 @@ import { XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';
 import { ColumnWidthToPixels } from './column-width';
-import type { AnnotationType } from 'treb-data-model';
+import type { DataValidation, AnnotationType } from 'treb-data-model';
 import { ZipWrapper } from './zip-wrapper';
 import type { ConditionalFormat } from 'treb-data-model';
 
@@ -99,7 +99,7 @@ export class Importer {
     arrays: RangeType[],
     merges: RangeType[],
     links: HyperlinkType[],
-    validations: Array<{ address: ICellAddress, validation: DataValidation }>,
+    // validations: Array<{ address: ICellAddress, validation: DataValidation }>,
     ): CellParseResult | undefined {
 
     // must have, at minimum, an address (must be a single cell? FIXME)
@@ -285,12 +285,14 @@ export class Importer {
       }
     }
 
+    /*
     for (const validation of validations) {
       if (validation.address.row === shifted.row && validation.address.column === shifted.col) {
         result.validation = validation.validation;
         break;
       }
     }
+    */
 
     for (const range of merges) {
       if (InRange(range, shifted)) {
@@ -512,10 +514,15 @@ export class Importer {
     const conditional_formats: ConditionalFormat[] = [];
     const links: HyperlinkType[] = [];
     const row_styles: number[] = []; // may be sparse
+
+    /*
     const validations: Array<{
       address: ICellAddress,
       validation: DataValidation,
     }> = [];
+    */
+    const validations: DataValidation[] = [];
+
     const annotations: AnchoredAnnotation[] = [];
 
     const FindAll: (path: string) => any[] = XMLUtils.FindAll.bind(XMLUtils, sheet.sheet_data);
@@ -569,33 +576,68 @@ export class Importer {
       const formula = entry.formula1;
 
       if (ref && formula && type === 'list') {
-        let address: ICellAddress|undefined;
+        // let address: ICellAddress|undefined;
         let validation: DataValidation|undefined;
         let parse_result = this.parser.Parse(ref);
+        const target: IArea[] = [];
 
         // apparently these are encoded as ranges for merged cells...
 
+        // NOTE: actually you can have a range, then validation applies
+        // to every cell in the range. also you can have multiple ranges,
+        // apparently separated by spaces.
+
         if (parse_result.expression) {
           if (parse_result.expression.type === 'address') {
-            address = parse_result.expression;
+            // address = parse_result.expression;
+            target.push({start: parse_result.expression, end: parse_result.expression});
           }
           else if (parse_result.expression.type === 'range') {
-            address = parse_result.expression.start;
+            // address = parse_result.expression.start;
+            target.push(parse_result.expression);
           }
         }
 
         parse_result = this.parser.Parse(formula);
+
         if (parse_result.expression) {
           if (parse_result.expression.type === 'range') {
             validation = {
-              type: ValidationType.Range,
+              type: 'range',
               area: parse_result.expression,
+              target,
             };
           }
           else if (parse_result.expression.type === 'literal') {
             validation = {
-              type: ValidationType.List,
+              type: 'list',
+              target,
               list: parse_result.expression.value.toString().split(/,/).map(value => {
+
+                // there are no formulas here. value is a string, separated
+                // by commas. there is no way to escape a comma (AFAICT; not
+                // official, but search). if you did want a comma, you'd need
+                // to use a range.
+
+                // but the uptake is split on commas. after that you can try
+                // to check for numbers or bools, but they will be in the string.
+
+                // I think excel might sort the entries? not sure. don't do it
+                // for now.
+
+                const num = Number(value);
+                if (!isNaN(num)) {
+                  return num;
+                }
+                if (value.toLowerCase() === 'true') {
+                  return true;
+                }
+                if (value.toLowerCase() === 'false') {
+                  return false;
+                }
+                return value; // string
+
+                /*
                 const tmp = this.parser.Parse(value);
                 
                 // if type is "group", that means we saw some spaces. this 
@@ -612,13 +654,16 @@ export class Importer {
                   return tmp.expression.name;
                 }
                 return undefined;
+                */
+
               }),
             };
           }
         }
 
-        if (address && validation) {
-          validations.push({address, validation});
+        if (target.length && validation) {
+          // validations.push({address, validation});
+          validations.push(validation);
         }
 
       }
@@ -730,7 +775,7 @@ export class Importer {
       if (!Array.isArray(cells)) { cells = [cells]; }
 
       for (const element of cells) {
-        const cell = this.ParseCell(sheet, element, shared_formulae, arrays, merges, links, validations);
+        const cell = this.ParseCell(sheet, element, shared_formulae, arrays, merges, links); // , validations);
         if (cell) {
           data.push(cell);
         }
@@ -1178,6 +1223,7 @@ export class Importer {
       row_styles,
       annotations,
       conditional_formats,
+      data_validations: validations,
       styles: this.workbook?.style_cache?.CellXfToStyles() || [],
     };
 
