@@ -36,8 +36,26 @@ import { ReturnType } from './descriptors';
 
 import * as Primitives from './primitives';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ExtendedExpressionUnit = ExpressionUnit & { user_data: any }; // export for MC overload
+//////////
+
+/**
+ * dynamically adding a user data field to the expression so we can
+ * cache a function call, avoiding type switching and function lookups.
+ * 
+ * we use the generic type so we can cover the composite type as well
+ * before specifying
+ */
+type AttachCachedFunction<T> = (T & { fn: (arg0: T) => UnionValue });
+
+/**
+ * expression unit with cached function
+ */
+type ExpressionWithCachedFunction<T extends ExpressionUnit> = T extends { type: T['type'] } ? AttachCachedFunction<T> : never;
+
+/**
+ * @internal
+ */
+export type ExtendedExpressionUnit = ExpressionWithCachedFunction<ExpressionUnit>;
 
 // FIXME: move
 export const UnionIsExpressionUnit = (test: UnionValue /*UnionOrArray*/): test is { type: ValueType.object, value: ExpressionUnit } => {
@@ -962,7 +980,7 @@ export class ExpressionCalculator {
     return (expr: UnitGroup) => this.CalculateExpression(expr.elements[0] as ExtendedExpressionUnit);
   }
 
-  protected CalculateExpression(expr: ExtendedExpressionUnit, return_reference = false): UnionValue /*UnionOrArray*/ {
+  protected CalculateExpression(expr: ExtendedExpressionUnit, return_reference = false): UnionValue {
 
     // user data is a generated function for the expression, at least
     // for the simple ones (atm). see BinaryExpression for more. the
@@ -970,8 +988,8 @@ export class ExpressionCalculator {
 
     // may be over-optimizing here.
 
-    if (expr.user_data) {
-      return expr.user_data(expr);
+    if ((expr as AttachCachedFunction<ExpressionUnit>).fn) {
+      return (expr as AttachCachedFunction<ExpressionUnit>).fn(expr);
     }
 
     switch (expr.type){
@@ -979,52 +997,52 @@ export class ExpressionCalculator {
       {
         const macro = this.data_model.macro_functions.get(expr.name.toUpperCase());
         if (macro) {
-          return (expr.user_data = this.CallMacro(expr, macro))(expr);
+          return (expr.fn = this.CallMacro(expr, macro))(expr);
         }
-        return (expr.user_data = this.CallExpression(expr, return_reference))(expr);
+        return (expr.fn = this.CallExpression(expr, return_reference))(expr);
       }
 
     case 'address':
-      return (expr.user_data = this.CellFunction2(expr))(); // check
+      return (expr.fn = this.CellFunction2(expr))(); // check
 
     case 'range':
-      return (expr.user_data = (x: UnitRange) => this.CellFunction4(x.start, x.end))(expr); // check
+      return (expr.fn = (x: UnitRange) => this.CellFunction4(x.start, x.end))(expr); // check
 
     case 'binary':
-      return (expr.user_data = this.BinaryExpression(expr))(expr); // check
+      return (expr.fn = this.BinaryExpression(expr))(expr); // check
 
     case 'unary':
-      return (expr.user_data = this.UnaryExpression(expr))(expr); // check
+      return (expr.fn = this.UnaryExpression(expr))(expr); // check
 
     case 'identifier':
-      return (expr.user_data = this.Identifier(expr))(); // check
+      return (expr.fn = this.Identifier(expr))(); // check
 
     case 'missing':
-      return (expr.user_data = () => { return { value: undefined, type: ValueType.undefined } as UndefinedUnion })(); // check
+      return (expr.fn = () => { return { value: undefined, type: ValueType.undefined } as UndefinedUnion })(); // check
 
     case 'dimensioned':
-      return (expr.user_data = this.ResolveDimensionedQuantity())(expr);
+      return (expr.fn = this.ResolveDimensionedQuantity())(expr);
 
     case 'literal':
       {
         const literal = { value: expr.value, type: GetValueType(expr.value) } as UnionValue;
-        return (expr.user_data = () => literal)();  // check
+        return (expr.fn = () => literal)();  // check
       }
     case 'group':
-      return (expr.user_data = this.GroupExpression(expr))(expr); // check
+      return (expr.fn = this.GroupExpression(expr))(expr); // check
 
     case 'complex':
       {
         const literal = {value: {real: expr.real, imaginary: expr.imaginary}, type: ValueType.complex } as ComplexUnion;
-        return (expr.user_data = () => literal)();  // check
+        return (expr.fn = () => literal)();  // check
       }
 
     case 'structured-reference':
-      return (expr.user_data = this.ResolveStructuredReference(expr))();
+      return (expr.fn = this.ResolveStructuredReference(expr))();
 
     case 'array':
       {
-        return (expr.user_data = () => {
+        return (expr.fn = () => {
           return { 
             type: ValueType.array,
             value: expr.values.map((row) => (Array.isArray(row) ? row : [row]).map((value) => {
