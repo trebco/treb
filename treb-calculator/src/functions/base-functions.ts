@@ -1936,8 +1936,8 @@ for (const name of Object.getOwnPropertyNames(Math)) {
   case 'function':
     // console.info("MATH FUNC", name);
     BaseFunctionLibrary[name] = {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      fn: (...args: any) => {
+      // description: 'Math function',
+      fn: (...args: unknown[]) => {
         return Box(value(...args));
       },
       category: ['Math Functions'],

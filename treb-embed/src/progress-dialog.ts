@@ -57,7 +57,6 @@ export type ResolutionFunction = () => void;
  */
 export class Dialog {
 
-  // private model: NodeModel;
   private model: Record<string, HTMLElement> = {};
 
   private layout_element: HTMLElement;
@@ -190,6 +189,10 @@ export class Dialog {
     });
  
 
+  }
+
+  public Node(name: string): HTMLElement|undefined {
+    return this.model[name];
   }
 
   public Update(options: Partial<MessageDialogOptions>, delta = true): void {

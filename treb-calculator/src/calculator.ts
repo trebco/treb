@@ -184,7 +184,7 @@ export class Calculator extends Graph {
 
     super();
 
-    this.expression_calculator = new ExpressionCalculator(this.library, this.parser);
+    this.expression_calculator = new ExpressionCalculator(this.model, this.library, this.parser);
 
 
     // at the moment options are only used here; in the future
@@ -1448,8 +1448,7 @@ export class Calculator extends Graph {
       // that rely on it. which is a pretty far-fetched scenario, but we might
       // as well protect against it.
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      descriptor.fn = (...args: any[]) => {
+      descriptor.fn = (...args: unknown[]) => {
         return original_function.apply({
           address: { ...this.expression_calculator.context.address},
         }, args);
@@ -1460,22 +1459,23 @@ export class Calculator extends Graph {
 
   }
 
-  /**
+  /* *
    * wrap the attachdata function so we can update the expression calculator
    * at the same time (we should unwind this a little bit, it's an artifact
    * of graph being a separate class)
-   */
+   * /
   public AttachModel(): void {
     // this.RebuildMap();
-    this.expression_calculator.SetModel(this.model);
+    // this.expression_calculator.SetModel(this.model);
   }
+  */
 
   /**
    * wrapper method for calculation
    */
   public Calculate(subset?: Area): void {
 
-    this.AttachModel();
+    // this.AttachModel();
 
     // this gets checked later, now... it would be better if we could
     // check it here are skip the later check, but that field is optional
@@ -1539,7 +1539,7 @@ export class Calculator extends Graph {
   public Reset(): void {
 
     this.FlushTree();
-    this.AttachModel();
+    // this.AttachModel();
 
     this.full_rebuild_required = true;
   }
@@ -1687,7 +1687,7 @@ export class Calculator extends Graph {
 
     this.full_rebuild_required = false; // unset
 
-    this.AttachModel();
+    // this.AttachModel();
 
     this.RebuildGraph();
 
@@ -2792,7 +2792,6 @@ export class Calculator extends Graph {
 
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected IsNativeOrTypedArray(val: unknown): boolean {
     return Array.isArray(val) || (val instanceof Float64Array) || (val instanceof Float32Array);
   }

@@ -27,7 +27,7 @@ import type { Cell, ICellAddress,
          UndefinedUnion,
          ComplexUnion, 
          DimensionedQuantityUnion} from 'treb-base-types';
-import { ValueType, GetValueType } from 'treb-base-types';
+import { ValueType, GetValueType, Area } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
 import type { DataModel, MacroFunction, Sheet } from 'treb-data-model';
@@ -61,16 +61,18 @@ export const UnionIsMetadata = (test: UnionValue /*UnionOrArray*/): test is { ty
 // FIXME: move
 export interface ReferenceMetadata {
   type: 'metadata';
+  
+  // what's the context in which I was using the unit address (parse expression?)
   address: UnitAddress; // ICellAddress;
+  
   value: CellValue;
   format?: string;
 }
 
 export interface CalculationContext {
   address: ICellAddress;
-  model?: DataModel;
+  // model?: DataModel;
   volatile: boolean;
-  call_index: number;
 }
 
 export class ExpressionCalculator {
@@ -78,57 +80,30 @@ export class ExpressionCalculator {
   public context: CalculationContext = {
     address: { row: -1, column: -1 },
     volatile: false,
-    call_index: 0,
   };
 
-  /**
-   * this refers to the number of function call within a single cell.
-   * so if you have a function like
-   *
-   * =A(B())
-   *
-   * then when calculating A call index should be set to 1; and when
-   * calculating B, call index is 2. and so on. 
-   */
-  protected call_index = 0;
-
-  // local reference
-  // protected cells: Cells = new Cells();
-  // protected cells_map: {[index: number]: Cells} = {};
-  // protected sheet_name_map: {[index: string]: number} = {};
-
-  // local reference
-  // protected named_range_map: {[index: string]: Area} = {};
-
-  // protected bound_name_stack: Array<Record<string, ExpressionUnit>> = [];
-
   //
-  protected data_model!: DataModel;
+  // protected data_model!: DataModel; // can we set in ctor? I think this is a legacy hack
 
 
   // --- public API -----------------------------------------------------------
 
   constructor(
+    protected readonly data_model: DataModel,
     protected readonly library: FunctionLibrary,
     protected readonly parser: Parser) {}
 
+  /*
   public SetModel(model: DataModel): void {
 
-    // this.cells_map = {};
-    // this.sheet_name_map = {};
-
-    /*
-    for (const sheet of model.sheets.list) {
-      // this.cells_map[sheet.id] = sheet.cells;
-      // this.sheet_name_map[sheet.name.toLowerCase()] = sheet.id;
-    }
-    */
+    // is this kept around for some side-effects or something? does 
+    // the model ever change?
 
     this.data_model = model;
-    // this.named_range_map = model.named_ranges.Map();
     this.context.model = model;
     
   }
+  */
 
   /**
    * there's a case where we are calling this from within a function
@@ -141,10 +116,6 @@ export class ExpressionCalculator {
 
       this.context.address = addr;
       this.context.volatile = false;
-      this.context.call_index = 0;
-
-      // reset for this cell
-      this.call_index = 0; // why not in model? A: timing (nested)
 
     }
 
@@ -218,8 +189,7 @@ export class ExpressionCalculator {
   }
 
   /** breaking this out to de-dupe */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected GetMetadata(arg: ExpressionUnit, map_result: (cell_data: Cell, address: ICellAddress) => any): UnionValue /*UnionOrArray*/ {
+  protected GetMetadata<T>(arg: ExpressionUnit, transform: (cell_data: Cell, address: ICellAddress) => T): UnionValue {
 
     // FIXME: we used to restrict this to non-cell functions, now
     // we are using it for the cell function (we used to use address,
@@ -328,10 +298,24 @@ export class ExpressionCalculator {
 
       const metadata: ReferenceMetadata = {
         type: 'metadata',
-        address: {...address},
+
+        // metadata is expecting a parse expression instead of an addresss.
+        // note we're not setting the label properly here, which could be 
+        // an issue? not sure who's calling it in this case
+
+        // UPDATE: "Cell" is calling it, so it needs a label
+
+        address: {
+          ...address,
+          position: 0,
+          id: 0,
+          type: 'address',
+          label: new Area(address).spreadsheet_label,
+        },
+
         value,
         format: cell_data.style ? cell_data.style.number_format : undefined,
-        ...map_result(cell_data, address),
+        ...transform(cell_data, address),
       };
 
       return { type: ValueType.object, value: metadata, key: 'metadata' };
@@ -378,7 +362,7 @@ export class ExpressionCalculator {
             address,
             value,
             format: cell_data.style ? cell_data.style.number_format : undefined,
-            ...map_result(cell_data, address),
+            ...transform(cell_data, address),
           };
 
           column_result.push({
@@ -510,11 +494,6 @@ export class ExpressionCalculator {
     }
 
     return (expr: UnitCall) => {
-
-      // get an index we can use for this call (we may recurse when
-      // calculating arguments), then increment for the next call.
-
-      const call_index = this.call_index++;
 
       // yeah so this is clear. just checking volatile.
 
@@ -655,11 +634,6 @@ export class ExpressionCalculator {
       if (argument_error) {
         return argument_error;
       }
-
-      // if we have any nested calls, they may have updated the index so
-      // we use the captured value here.
-
-      this.context.call_index = call_index;
 
       // I thought we were passing the model as this (...) ? actually
       // now we bind functions that need this, so maybe we should pass

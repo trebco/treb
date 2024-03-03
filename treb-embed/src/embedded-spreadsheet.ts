@@ -21,6 +21,9 @@
 
 // --- imports -----------------------------------------------------------------
 
+// this is for our fake worker: context type. is there a better way to 
+// import the type/make ts recognize it? (...)
+
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="./content-types.d.ts" />
 
@@ -3005,7 +3008,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     this.grid.Reset();
     this.ResetInternal();
-    this.calculator.AttachModel();
+    // this.calculator.AttachModel();
     this.UpdateAC();
 
     this.Publish({ type: 'reset' });
@@ -4631,7 +4634,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
             // this one _is_ the grid cells
 
-            this.calculator.AttachModel();
+            // this.calculator.AttachModel();
             this.Publish({ type: 'load', source, });
             this.UpdateDocumentStyles();
 
@@ -5850,9 +5853,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     this.grid.UpdateSheets(sheets, undefined, override_sheet || data.active_sheet);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for (const [name, table] of this.model.tables.entries()) {
-      if (table.area.start.sheet_id) {
+    for (const table of this.model.tables.values()) {
+        if (table.area.start.sheet_id) {
         const sheet = model.sheets.Find(table.area.start.sheet_id);
         if (sheet) {
           for (let row = table.area.start.row; row <= table.area.end.row; row++) {
