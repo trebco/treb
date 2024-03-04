@@ -208,6 +208,9 @@ export class Calculator extends Graph {
 
     }
 
+    // FIXME: why is this called here, if model now owns it?
+    // TODO: move to model
+
     this.UpdateLocale(); // for parser
 
     // base functions
@@ -1391,6 +1394,11 @@ export class Calculator extends Graph {
       };
     });
 
+    // FIXME: this doesn't need to be here, if it's owned by model.
+    // we should have model responsible for retrieving these names
+    // (along with named ranges/expressions). also, should macro 
+    // functions support scoping?
+
     for (const macro of this.model.macro_functions.values()) {
       function_list.push({
         name: macro.name,
@@ -1572,7 +1580,10 @@ export class Calculator extends Graph {
     return map;
   }
 
+  /** overload */
   public Evaluate(expression: string, active_sheet?: Sheet, options?: EvaluateOptions, raw_result?: false): CellValue|CellValue[][];
+
+  /** overload */
   public Evaluate(expression: string, active_sheet?: Sheet, options?: EvaluateOptions, raw_result?: true): UnionValue;
 
   /** moved from embedded sheet */
@@ -1686,8 +1697,6 @@ export class Calculator extends Graph {
   public RebuildClean(recalculate_if_volatile = false): void {
 
     this.full_rebuild_required = false; // unset
-
-    // this.AttachModel();
 
     this.RebuildGraph();
 
@@ -1955,7 +1964,7 @@ export class Calculator extends Graph {
   }
 
   /**
-   * 
+   * FIXME: just add a quote option to the model method and we can drop this function
    */
   public ResolveSheetName(id: number, quote = false): string | undefined {
     const sheet = this.model.sheets.Find(id);
