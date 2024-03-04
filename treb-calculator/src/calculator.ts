@@ -2792,9 +2792,11 @@ export class Calculator extends Graph {
 
   }
 
+  /*
   protected IsNativeOrTypedArray(val: unknown): boolean {
     return Array.isArray(val) || (val instanceof Float64Array) || (val instanceof Float32Array);
   }
+  */
 
   /**
    * check if a cell is volatile. normally this falls out of the calculation,

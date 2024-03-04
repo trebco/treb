@@ -21,12 +21,6 @@
 
 // --- imports -----------------------------------------------------------------
 
-// this is for our fake worker: context type. is there a better way to 
-// import the type/make ts recognize it? (...)
-
-// eslint-disable-next-line @typescript-eslint/triple-slash-reference
-/// <reference path="./content-types.d.ts" />
-
 import type {
   GridEvent, 
   SheetChangeEvent, GridOptions, 
@@ -105,6 +99,11 @@ import type { StateLeafVertex } from 'treb-calculator';
 
 
 // --- worker ------------------------------------------------------------------
+
+/**
+ * import type for our worker, plus markup files
+ */
+import './content-types.d.ts';
 
 /**
  * import the worker as a script file. tsc will read this on typecheck but 
