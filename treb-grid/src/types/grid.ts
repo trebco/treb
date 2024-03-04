@@ -6552,7 +6552,7 @@ export class Grid extends GridBase {
           // tsv_row.push(cell.formatted);
 
           let text_value = '';
-          if (cell.calculated) {
+          if (cell.calculated !== undefined) {
             if (cell.calculated_type === ValueType.complex) {
               text_value = ComplexToString(cell.calculated as Complex);
             }
