@@ -25,8 +25,10 @@ import type { X2jOptions } from 'fast-xml-parser';
 export const XMLTagProcessor = (name: string, value: string): string => Unescape(value);
 
 export interface DOMContent {
-  [index: string]: string|DOMContent|string[]|DOMContent[]|number|number[];
+  [index: string]: string|DOMContent|string[]|DOMContent[]|number|number[]|undefined;
 }
+
+//////////////////
 
 export const XMLOptions: Partial<X2jOptions> = {
   ignoreAttributes: false,

@@ -34,11 +34,11 @@ import { PixelsToColumnWidth } from './column-width';
 const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`;
 
 import { template } from './template-2';
-import type { SerializedModel, SerializedSheet, DataValidation } from 'treb-data-model';
+import type { SerializedModel, SerializedSheet } from 'treb-data-model';
 
 import type { IArea, ICellAddress, CellValue, CellStyle,
-         AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle } from 'treb-base-types';
-import { Area, Cells, ValueType, Style, IsHTMLColor, IsThemeColor } from 'treb-base-types';
+         AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle, Color } from 'treb-base-types';
+import { Area, Cells, ValueType, Style, IsHTMLColor, IsThemeColor, ThemeColorIndex } from 'treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
 import type { XmlBuilderOptions} from 'fast-xml-parser';
@@ -71,6 +71,39 @@ interface NestedDOMType {
   [index: string]: string|number|NestedDOMType|NestedDOMType[];
 }
 */
+
+/**
+ * utility function. given a Color object (our Color, from Style) returns 
+ * an XML structure like 
+ * 
+ * { a$: { rgb: '123456 }}
+ * 
+ * or
+ * 
+ * { a$: { theme: 1, tint: .5 }}
+ * 
+ */
+const ColorAttrs = (color?: Color): DOMContent|undefined => {
+
+  if (IsHTMLColor(color)) {
+    return { 
+      a$: {
+        rgb: `FF` + color.text.substring(1),
+      },
+    };
+  }
+  if (IsThemeColor(color)) {
+    return {
+      a$: {
+        theme: ThemeColorIndex(color),
+        tint: color.tint,
+      },
+    };
+  }
+
+  return undefined;
+  
+};
 
 export class Exporter {
 
@@ -217,7 +250,8 @@ export class Exporter {
       if (color.argb !== undefined) {
         attrs.rgb = color.argb;
       }
-      return attrs;
+
+      return attrs as DOMContent;
 
     };
 
@@ -255,7 +289,7 @@ export class Exporter {
       return block;
     });
 
-    const BorderColorAttributes = (edge: BorderEdge) => {
+    const BorderColorAttributes= (edge: BorderEdge): DOMContent|undefined  => {
       if (edge.color) {
         return { indexed: edge.color };
       }
@@ -263,13 +297,10 @@ export class Exporter {
         return { rgb: edge.rgba };
       }
       if (edge.theme) {
-        const attrs: any = {
+        return {
           theme: edge.theme,
-        }
-        if (edge.tint) {
-          attrs.tint = edge.tint;
-        }
-        return attrs;
+          tint: edge.tint,
+        };
       }
       return undefined;
     };
@@ -326,68 +357,108 @@ export class Exporter {
       return block;
     });
 
-    // console.info("SC", style_cache);
+    const fills: DOMContent[] = style_cache.fills.map(fill => ({
+      patternFill: {
+        a$: { 
+          patternType: (fill.pattern_gray !== undefined) ? `gray${fill.pattern_gray}` : fill.pattern_type,
+        },
 
-    const fills = style_cache.fills.map(fill => {
-      const block: any = {
-        a$: { patternType: fill.pattern_type },
+        bgColor: fill.bg_color ? {
+          a$: ColorAttributes(fill.bg_color),
+        } : undefined,
+
+        fgColor: fill.fg_color ? {
+          a$: ColorAttributes(fill.fg_color),
+        } : undefined,
+      },
+    }));
+
+    const ValProp = (prop: string|number|undefined) => {
+      
+      if (typeof prop === 'undefined') {
+        return undefined;
+      }
+
+      return {
+        a$: {
+          val: prop,
+        },
       };
 
-      if (fill.pattern_gray !== undefined) {
-        block.a$.patternType = `gray${fill.pattern_gray}`;
-      }
-      if (fill.bg_color) {
-        block.bgColor = { a$: ColorAttributes(fill.bg_color) };
-      }
-      if (fill.fg_color) {
-        block.fgColor = { a$: ColorAttributes(fill.fg_color) };
-      }
+    };
 
-      return {patternFill: block};
+    const fonts: DOMContent[] = style_cache.fonts.map(font => {
+
+      return {
+
+        // flags 
+
+        b: font.bold ? '' : undefined,
+        i: font.italic ? '' : undefined,
+        u: font.underline ? '' : undefined,
+        strike: font.strike ? '' : undefined,
+
+        // 'val' props
+
+        sz: ValProp(font.size),
+        family: ValProp(font.family),
+        name: ValProp(font.name),
+        scheme: ValProp(font.scheme),
+
+        color: font.color_argb ? {
+          a$: { rgb: font.color_argb },
+        } : font.color_theme ? {
+          a$: { 
+            theme: font.color_theme,
+            tint: font.color_tint,
+          },
+        } : undefined,
+
+      };
+
     });
 
-    const fonts = style_cache.fonts.map(font => {
-      const block: any = {};
-
-      // flags
-
-      if (font.bold) { block.b = ''; }
-      if (font.italic) { block.i = ''; }
-      if (font.underline) { block.u = ''; }
-      if (font.strike) { block.strike = ''; }
-
-      // "val" props
-
-      if (font.size !== undefined) {
-        block.sz = { a$: { val: font.size }};
+    const WithCount = (key: string, source: DOMContent[]) => {
+      if (source.length) {
+        return {
+          a$: { count: source.length },
+          [key]: source,
+        };
       }
-      if (font.family !== undefined) {
-        block.family = { a$: { val: font.family }};
-      }
-      if (font.name !== undefined) {
-        block.name = { a$: { val: font.name }};
-      }
-      if (font.scheme !== undefined) {
-        block.scheme = { a$: { val: font.scheme }};
-      }
+      return undefined;
+    };
 
-      // color
 
-      if (font.color_argb !== undefined) {
-        block.color = { a$: { rgb: font.color_argb }};
-      }
-      else if (font.color_theme !== undefined) {
-        block.color = { a$: { theme: font.color_theme }};
-        if (font.color_tint) {
-          block.color.a$.tint = font.color_tint;
-        }
+    const dxf: DOMContent[] = style_cache.dxf_styles.map(style => {
+
+      const entry: DOMContent = {
+        fill: style.fill ? {
+          patternFill: {
+            bgColor: ColorAttrs(style.fill),
+          },
+        } : undefined,
+      };
+
+      if (style.text || style.bold || style.italic || style.underline) {
+        entry.font = {
+          b: style.bold ? {} : undefined,
+          i: style.italic ? {} : undefined,
+          u: style.underline ? {} : undefined,
+          strike: style.strike ? {} : undefined,
+          color: ColorAttrs(style.text),
+        };
       }
 
-      return block;
+      return entry;
+
     });
+
+    console.info({dxf});
 
     const dom: DOMContent = {
+
       styleSheet: {
+
         a$: {
           'xmlns':        'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
           'xmlns:mc':     'http://schemas.openxmlformats.org/markup-compatibility/2006',
@@ -396,119 +467,34 @@ export class Exporter {
           'xmlns:x16r2':  'http://schemas.microsoft.com/office/spreadsheetml/2015/02/main', 
           'xmlns:xr':     'http://schemas.microsoft.com/office/spreadsheetml/2014/revision',
         },
+
+        // we're only adding elements here if they are not empty, but in 
+        // practice only numFmts can be empty (because there are implicit 
+        // formats); everything else has a default 0 entry
+
+        numFmts: style_cache.number_formats.length ? {
+          a$: { count: style_cache.number_formats.length },
+          numFmt: style_cache.number_formats.map(format => {
+            return {
+              a$: {
+                numFmtId: format.id,
+                formatCode: format.format,
+              } as DOMContent,  
+            };
+          }),
+        } : undefined,
+  
+        fonts: WithCount('font', fonts),
+        fills: WithCount('fill', fills),
+        borders: WithCount('border', borders),
+        cellXfs: WithCount('xf', xfs),
+        dxfs: WithCount('dxf', dxf),
+
       },
+
     };
 
-    // we're only adding elements here if they are not empty, but in 
-    // practice only numFmts can be empty (because there are implicit 
-    // formats); everything else has a default 0 entry
 
-    if (style_cache.number_formats.length) {
-
-      (dom.styleSheet as DOMContent).numFmts = {
-        a$: { count: style_cache.number_formats.length },
-        numFmt: style_cache.number_formats.map(format => {
-          return {
-            a$: {
-              numFmtId: format.id,
-              formatCode: format.format,
-            } as DOMContent,  
-          };
-        }),
-      };
-
-      // console.info(style_cache.number_formats);
-      // console.info(dom.styleSheet.numFmts);
-
-    }
-
-    if (fonts.length) {
-      (dom.styleSheet as DOMContent).fonts = {
-        a$: { count: fonts.length },
-        font: fonts,
-      };
-    }
-
-    if (fills.length) {
-      (dom.styleSheet as DOMContent).fills = {
-        a$: { count: fills.length },
-        fill: fills,
-      };
-    }
-
-    if (borders.length) {
-      (dom.styleSheet as DOMContent).borders = {
-        a$: { count: borders.length },
-        border: borders,
-      };
-    }
-
-    // console.info("B", borders, JSON.stringify(dom.styleSheet.borders, undefined, 2))
-
-    if (xfs.length) {
-      (dom.styleSheet as DOMContent).cellXfs = {
-        a$: { count: xfs.length },
-        xf: xfs,
-      };
-    }
-
-    if (style_cache.dxf_styles.length) {
-      const dxf: DOMContent[] = [];
-      for (const style of style_cache.dxf_styles) {
-        const entry: DOMContent = {};
-        if (style.text || style.bold || style.italic || style.underline) {
-          const font: DOMContent = {};
-          if (style.text) {
-            font.color = { a$: {}};
-            if (IsHTMLColor(style.text)) {
-              (font.color.a$ as DOMContent).rgb = `FF` + style.text.text.substring(1);
-            }
-            else if (IsThemeColor(style.text)) {
-              (font.color.a$ as DOMContent).theme = style.text.theme;
-              if (style.text.tint) {
-                (font.color.a$ as DOMContent).tint = style.text.tint;
-              }
-            }
-          }
-          if (style.bold) {
-            font.b = {};
-          }
-          if (style.italic) {
-            font.i = {};
-          }
-          if (style.underline) {
-            font.u = {};
-          }
-          if (style.strike) {
-            font.strike = {};
-          }
-          entry.font = font;
-        }
-        if (style.fill) {
-          const attrs: DOMContent = {};
-          if (IsHTMLColor(style.fill)) {
-            attrs.rgb = `FF` + style.fill.text.substring(1);
-          }
-          else if (IsThemeColor(style.fill)) {
-            attrs.theme = style.fill.theme;
-            if (style.fill.tint) {
-              attrs.tint = style.fill.tint;
-            }
-          }
-          const color: DOMContent = { a$: attrs };
-          entry.fill = { patternFill: { bgColor: color }};
-        }
-        dxf.push(entry);
-      }
-
-      if (dxf.length) {
-        (dom.styleSheet as DOMContent).dxfs = {
-          a$: { count: dxf.length },
-          dxf,
-        };
-      }
-
-    }
 
     // not used:
     //
@@ -1806,7 +1792,7 @@ export class Exporter {
 
         }
 
-        let style = column_style_map[c];
+        const style = column_style_map[c];
         if (style && style !== sheet_style) {
           entry.style = style;
         }
@@ -1965,13 +1951,9 @@ export class Exporter {
                 ,
               }
 
-              console.info("AA", {validation});              
-
               if (typeof validation.area.start.sheet_id !== 'undefined') {
                 range.start.sheet = sheet_name_map[validation.area.start.sheet_id];
               }
-
-              console.info("m1");
 
               /*
               const area = new Area(
@@ -2026,39 +2008,24 @@ export class Exporter {
             count: (table.columns || []).length,
           },
           tableColumn: [],
-          /*
-          tableColumn: (table.columns||[]).map((column, index) => ({
-            a$: {
-              id: index + 1,
-              // 'xr3:uid': GUID(),
-              name: column || ('Column' + (index + 1)),
-            },
-          })),
-          */
         };
 
         if (table.columns) {
+
           for (let i = 0; i < table.columns.length; i++) {
+            
             const column = table.columns[i];
             const footer = (table.footers || [])[i];
-            const obj: any = {
+
+            tableColumns.tableColumn.push({
               a$: {
                 id: i + 1,
                 name: column || `Column${i + 1}`,
+                totalsRowLabel: footer?.type === 'label' ? footer.value : undefined,
+                totalsRowFunction: footer?.type === 'formula' ? 'custom' : undefined, 
               },
-            };
-            
-            if (footer) {
-              if (footer.type === 'label') {
-                obj.a$.totalsRowLabel = footer.value;
-              }
-              else if (footer.type === 'formula') {
-                obj.a$.totalsRowFunction = 'custom';
-                obj.totalsRowFormula = footer.value;
-              }
-            }
-
-            tableColumns.tableColumn.push(obj);
+              totalsRowFormula: footer?.type === 'formula' ? footer.value : undefined,
+            });
 
           }
         }
@@ -2110,7 +2077,7 @@ export class Exporter {
       // --- conditional formats -----------------------------------------------
 
       if (sheet.conditional_formats?.length) {
-        const conditionalFormatting: any[] = [];
+        const conditionalFormatting: DOMContent[] = [];
         let priority_index = 1;
 
         const reverse_operator_map: Record<string, string> = {};
@@ -2182,10 +2149,11 @@ export class Exporter {
 
             case 'gradient':
               {
-                let cfvo: any[] = [];
-                let color: any[] = [];
+                const cfvo: DOMContent[] = [];
+                const color: DOMContent[] = [];
 
                 for (const stop of format.stops) {
+
                   if (stop.value === 0) {
                     cfvo.push({ a$: { type: 'min' }}); 
                   }
@@ -2195,18 +2163,13 @@ export class Exporter {
                   else {
                     cfvo.push({ a$: { type: 'percentile', val: stop.value * 100 }}); 
                   }
-                  const stop_color: any = { a$: {}};
-                  if (IsHTMLColor(stop.color)) {
-                    stop_color.a$.rgb = 'FF' + stop.color.text.substring(1);
-                  }
-                  else if (IsThemeColor(stop.color)) {
-                    stop_color.a$.theme = stop.color.theme;
-                    stop_color.a$.tint = stop.color.tint || undefined;
-                  }
-                  color.push(stop_color);
+
+                  const attrs = ColorAttrs(stop.color);
+                  if (attrs) { color.push(attrs); }
+                  
                 }
 
-                const generated = {
+                const generated: DOMContent = {
                   a$: { sqref: new Area(format.area.start, format.area.end).spreadsheet_label },
                   cfRule: {
                     a$: { type: 'colorScale', priority: priority_index++ },
@@ -2298,16 +2261,11 @@ export class Exporter {
               }
             }
 
-            const a$: any = {
-              displayEmptyCellsAs: 'gap',
-            };
-
-            if (/column/i.test(sparkline.formula)) {
-              a$.type = 'column';
-            }
-
             return {
-              a$,
+              a$: {
+                displayEmptyCellsAs: 'gap',
+                type: /column/i.test(sparkline.formula) ? 'column' : undefined,
+              },
               'x14:colorSeries': { a$: { rgb: 'FF376092' }},
               'x14:sparklines': {
                 'x14:sparkline': {
@@ -2459,15 +2417,12 @@ export class Exporter {
 
     this.WriteRels(workbook_rels, `xl/_rels/workbook.xml.rels`);
 
-    let definedNames: any = {definedName: []};
-
-    if (source.named) {
-      for (const entry of source.named) {
+    const definedNames: DOMContent|undefined = source.named?.length ? {
+      definedName: (source.named||[]).map(entry => {
 
         let scope: string|undefined = undefined;
 
         if (entry.scope) {
-
           const test = entry.scope.toLowerCase();
           for (const [index, sheet] of source.sheet_data.entries()) {
             if (sheet.name?.toLowerCase() === test) {
@@ -2477,20 +2432,16 @@ export class Exporter {
           }
         }
 
-        definedNames.definedName.push({
+        return {
           a$: { name: entry.name, localSheetId: scope },
           t$: entry.expression,
-        });
+        };
 
-      }
-    }
-
-    if (!definedNames.definedName.length) {
-      definedNames = undefined;
-    }
-    // else { console.info({definedNames}); }
+      }),
+    } : undefined;
     
-    const workbook_dom: any = {
+    
+    const workbook_dom: DOMContent = {
       workbook: {
         a$: {
           'xmlns': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main',
@@ -2516,17 +2467,14 @@ export class Exporter {
           },
         },
         sheets: {
-          sheet: source.sheet_data.map((sheet, index) => {
-            const a$: any = {
+          sheet: source.sheet_data.map((sheet, index) => ({
+            a$: {
               name: sheet.name || `Sheet${index + 1}`,
               sheetId: index + 1,
               'r:id': worksheet_rels_map[index],
-            };
-            if (sheet.visible === false) {
-              a$.state = 'hidden';
+              state: (sheet.visible === false) ? 'hidden' : undefined,
             }
-            return { a$ };
-          }),
+          })),
         },
         definedNames,
       },
@@ -2554,7 +2502,7 @@ export class Exporter {
       }
     }
 
-    const content_types_dom: any = {
+    const content_types_dom: DOMContent = {
       Types: {
         a$: {
           'xmlns': 'http://schemas.openxmlformats.org/package/2006/content-types',
@@ -2578,7 +2526,7 @@ export class Exporter {
           }),
 
           // charts and drawings
-          ...drawings.reduce((a: any, drawing) => {
+          ...drawings.reduce((a: DOMContent[], drawing) => {
             return a.concat([
               ...drawing.charts.map(chart => {
                 return { a$: {
