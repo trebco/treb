@@ -1254,20 +1254,19 @@ export interface FontSize {
     unit: 'pt' | 'px' | 'em' | '%';
     value: number;
 }
-
-/**
- * color for cell style. color is used for foreground, background and
- * borders in the cell style. can be either a theme color (theme index
- * plus tint), or CSS text.
- */
-export interface Color {
-    theme?: number;
-    tint?: number;
-    text?: string;
-
-    /** @deprecated */
-    none?: boolean;
+export interface HTMLColor {
+    text: string;
 }
+export interface ThemeColor {
+    theme: number;
+    tint?: number;
+}
+export interface NullColor {
+}
+export type Color = ThemeColor | HTMLColor | NullColor;
+export declare const IsHTMLColor: (color?: Color) => color is HTMLColor;
+export declare const IsThemeColor: (color?: Color) => color is ThemeColor;
+export declare const IsDefinedColor: (color?: Color) => color is HTMLColor | ThemeColor;
 export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
 /**

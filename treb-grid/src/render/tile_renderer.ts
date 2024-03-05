@@ -25,7 +25,7 @@ import type { ICellAddress,
          CellStyle,
          Theme,
          HorizontalAlign} from 'treb-base-types';
-import { TextPartFlag, Style, ValueType, Area, Rectangle, ResolveThemeColor } from 'treb-base-types';
+import { TextPartFlag, Style, ValueType, Area, Rectangle, ResolveThemeColor, IsDefinedColor } from 'treb-base-types';
 
 import type { Tile } from '../types/tile';
 import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
@@ -1871,7 +1871,8 @@ export class TileRenderer {
     for (const element of overflow_backgrounds) {
 
       if ( element.cell.style?.fill &&
-           (element.cell.style.fill.text || element.cell.style.fill.theme || element.cell.style.fill.theme === 0) &&
+            IsDefinedColor(element.cell.style.fill) &&
+          // (element.cell.style.fill.text || element.cell.style.fill.theme || element.cell.style.fill.theme === 0) &&
           !this.options.grid_over_background) {
         
         context.fillStyle = ResolveThemeColor(this.theme, element.cell.style.fill, 0);

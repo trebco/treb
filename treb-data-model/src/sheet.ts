@@ -26,7 +26,7 @@ import { ValueType, Cells, Style,
   type PropertyKeys,
   type Color,
   Area, IsFlatDataArray, 
-  IsNestedRowArray, IsCellAddress, DOMContext
+  IsNestedRowArray, IsCellAddress, DOMContext, IsHTMLColor, IsThemeColor
 } from 'treb-base-types';
 import { NumberFormatCache } from 'treb-format';
 import { Measurement, ValidateURI } from 'treb-utils';
@@ -2311,12 +2311,11 @@ export class Sheet {
         number_format_map[style.number_format] = 1;
       }
 
-      if (style.text?.text && style.text.text !== 'none') {
-        // const color = Measurement.MeasureColorARGB(style.text_color);
+      if (IsHTMLColor(style.text)) {
         color_map[style.text.text] = 1;
       }
 
-      if (style.fill?.text) {
+      if (IsHTMLColor(style.fill)) {
         color_map[style.fill.text] = 1;
       }
 
@@ -2324,16 +2323,16 @@ export class Sheet {
       //  color_map[style.background] = 1;
       //}
 
-      if (style.border_top_fill?.text) {
+      if (IsHTMLColor(style.border_top_fill)) {
         color_map[style.border_top_fill.text] = 1;
       }
-      if (style.border_left_fill?.text) {
+      if (IsHTMLColor(style.border_left_fill)) {
         color_map[style.border_left_fill.text] = 1;
       }
-      if (style.border_right_fill?.text) {
+      if (IsHTMLColor(style.border_right_fill)) {
         color_map[style.border_right_fill.text] = 1;
       }
-      if (style.border_bottom_fill?.text) {
+      if (IsHTMLColor(style.border_bottom_fill)) {
         color_map[style.border_bottom_fill.text] = 1;
       }
 
@@ -2576,13 +2575,15 @@ export class Sheet {
         ...default_color,
         ...color,
       };
-      if (result.text) {
+
+      if (IsHTMLColor(result)) {
         result.text = Measurement.MeasureColorARGB(result.text);
         return result;
       }
-      else if (typeof result.theme === 'number') {
+      else if (IsThemeColor(result)) {
         return result;
       }
+
       return undefined;
     };
 
@@ -2617,7 +2618,7 @@ export class Sheet {
         fill = translate_border_fill(style.border_bottom_fill, Style.DefaultProperties.border_bottom_fill);
         if (fill !== undefined) { style.border_bottom_fill = fill; }
 
-        if (style.fill?.text) {
+        if (IsHTMLColor(style.fill)) {
           style.fill.text = Measurement.MeasureColorARGB(style.fill.text);
         }
 
@@ -2625,10 +2626,8 @@ export class Sheet {
         //  style.background = Measurement.MeasureColorARGB(style.background);
         //}
 
-        if (style.text) {
-          if (style.text.text && style.text.text !== 'none') {
-            style.text.text = Measurement.MeasureColorARGB(style.text.text);
-          }
+        if (IsHTMLColor(style.text)) {
+          style.text.text = Measurement.MeasureColorARGB(style.text.text);
         }
 
       }

@@ -30,7 +30,7 @@
  */
 
 
-import type { Cell, CellStyle } from 'treb-base-types';
+import { IsHTMLColor, type Cell, type CellStyle } from 'treb-base-types';
 
 export interface SparklineRenderOptions {
   context: CanvasRenderingContext2D;
@@ -120,7 +120,7 @@ export class Sparkline {
     // theme default _should_ always be passed in, so we should (theoretically)
     // never need our default.
    
-    const text_color = style.text?.text || this.default_color;
+    const text_color = IsHTMLColor(style.text) ? style.text.text : this.default_color;
     const colors: string[] = [ text_color, text_color ];
 
     if (Array.isArray(cell.calculated)) {

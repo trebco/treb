@@ -38,7 +38,7 @@ import type { SerializedModel, SerializedSheet, DataValidation } from 'treb-data
 
 import type { IArea, ICellAddress, CellValue, CellStyle,
          AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle } from 'treb-base-types';
-import { Area, Cells, ValueType, Style } from 'treb-base-types';
+import { Area, Cells, ValueType, Style, IsHTMLColor, IsThemeColor } from 'treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
 import type { XmlBuilderOptions} from 'fast-xml-parser';
@@ -460,10 +460,10 @@ export class Exporter {
           const font: DOMContent = {};
           if (style.text) {
             font.color = { a$: {}};
-            if (style.text.text) {
+            if (IsHTMLColor(style.text)) {
               (font.color.a$ as DOMContent).rgb = `FF` + style.text.text.substring(1);
             }
-            else if (style.text.theme) {
+            else if (IsThemeColor(style.text)) {
               (font.color.a$ as DOMContent).theme = style.text.theme;
               if (style.text.tint) {
                 (font.color.a$ as DOMContent).tint = style.text.tint;
@@ -486,10 +486,10 @@ export class Exporter {
         }
         if (style.fill) {
           const attrs: DOMContent = {};
-          if (style.fill.text) {
+          if (IsHTMLColor(style.fill)) {
             attrs.rgb = `FF` + style.fill.text.substring(1);
           }
-          else if (style.fill.theme) {
+          else if (IsThemeColor(style.fill)) {
             attrs.theme = style.fill.theme;
             if (style.fill.tint) {
               attrs.tint = style.fill.tint;
@@ -2196,10 +2196,10 @@ export class Exporter {
                     cfvo.push({ a$: { type: 'percentile', val: stop.value * 100 }}); 
                   }
                   const stop_color: any = { a$: {}};
-                  if (stop.color.text) {
+                  if (IsHTMLColor(stop.color)) {
                     stop_color.a$.rgb = 'FF' + stop.color.text.substring(1);
                   }
-                  else if (stop.color.theme) {
+                  else if (IsThemeColor(stop.color)) {
                     stop_color.a$.theme = stop.color.theme;
                     stop_color.a$.tint = stop.color.tint || undefined;
                   }

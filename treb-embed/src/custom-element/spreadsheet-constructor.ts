@@ -7,7 +7,7 @@ import html from '../../markup/layout.html';
 import toolbar_html from '../../markup/toolbar.html';
 
 import { NumberFormatCache } from 'treb-format';
-import { ColorFunctions, type Color } from 'treb-base-types';
+import { ColorFunctions, type Color, IsThemeColor } from 'treb-base-types';
 import { Measurement } from 'treb-utils';
 import type { ToolbarMessage } from '../toolbar-message';
 
@@ -729,8 +729,7 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
             const entry = sheet.document_styles.theme_colors[j][i];
             const style = `background: ${entry.resolved};`;
             let title = themes[j] || themes[4];
-            if (entry.color.tint) {
-              // title += ` (${Math.abs(entry.color.tint) * 100}% ${ entry.color.tint > 0 ? 'lighter' : 'darker'})`;
+            if (IsThemeColor(entry.color) && entry.color.tint) {
               title += ` (${(entry.color.tint > 0 ? '+' : '') + (entry.color.tint) * 100}%)`;
             }
             else {
@@ -1370,6 +1369,11 @@ export class SpreadsheetConstructor<USER_DATA_TYPE = unknown> {
             this.UpdateDocumentStyles(sheet, format_menu);
             this.UpdateSelectionStyle(sheet, toolbar, comment_box);
             this.UpdateRevertState(sheet);
+            break;
+
+          case 'theme-change':
+            this.UpdateDocumentStyles(sheet, format_menu);
+            this.UpdateSelectionStyle(sheet, toolbar, comment_box);
             break;
 
           case 'selection':

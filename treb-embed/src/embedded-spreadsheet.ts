@@ -2115,6 +2115,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     this.ApplyConditionalFormats(this.grid.active_sheet, false);
     this.grid.Update(true);
 
+    this.Publish({ type: 'theme-change' });
+
   }
 
   /**

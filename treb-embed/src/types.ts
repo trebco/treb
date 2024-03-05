@@ -145,6 +145,14 @@ export interface ViewChangeEvent {
 }
 
 /**
+ * this event is sent when the theme is updated. it's intended for any 
+ * subscribers to update corresponding colors or fonts.
+ */
+export interface ThemeChangeEvent {
+  type: 'theme-change';
+}
+
+/**
  * This event is sent when a document is loaded, and also on undo. The 
  * source field can help determine if it was triggered by an undo operation.
  */
@@ -206,6 +214,7 @@ export type EmbeddedSheetEvent
   = DocumentChangeEvent
   | DocumentResetEvent
   | DocumentLoadEvent
+  | ThemeChangeEvent
   | ViewChangeEvent
   | DataChangeEvent
   | FocusViewEvent

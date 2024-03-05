@@ -27,6 +27,34 @@ export type HorizontalAlign = '' | 'left' | 'center' | 'right';
 /** vertical align constants for cell style */
 export type VerticalAlign = '' | 'top' | 'bottom' | 'middle';
 
+const ThemeColorList = [
+  'Background',
+  'Text',
+  'Background2',
+  'Text2',
+  'Accent',
+  'Accent2',
+  'Accent3',
+  'Accent4',
+  'Accent5',
+  'Accent6',
+] as const;
+
+export type ThemeColorType = typeof ThemeColorList[number];
+
+const ThemeColorMap: Record<string, number> = {};
+
+for (const [index, entry] of ThemeColorList.entries()) {
+  ThemeColorMap[entry] = index;
+}
+
+export const ThemeColorIndex = (color: ThemeColor) => {
+  if (typeof color.theme === 'number') {
+    return color.theme;
+  }
+  return ThemeColorMap[color.theme] || 0;
+};
+
 /** 
  * font size for cell style. we generally prefer relative sizes
  * (percent or em) because they are relative to the default theme
@@ -37,25 +65,61 @@ export interface FontSize {
   value: number;
 }
 
-/** 
+/* * 
  * color for cell style. color is used for foreground, background and 
  * borders in the cell style. can be either a theme color (theme index 
  * plus tint), or CSS text.
  * 
  * @privateRemarks
  * FIXME: this should be a union type. we do a lot of if switching anyway.
- */
+ * /
 export interface Color {
 
   theme?: number;
   tint?: number;
   text?: string;
 
+  / ** @internal * /
+  offset?: Color;
+
+  / ** @deprecated * /
+  none?: boolean;
+}
+*/
+
+export interface HTMLColor {
+  text: string;
+
   /** @internal */
   offset?: Color;
 
-  /** @deprecated */
-  none?: boolean;
+}
+
+export interface ThemeColor {
+  theme: number|ThemeColorType;
+  tint?: number;
+
+  /** @internal */
+  offset?: Color;
+
+}
+
+export interface NullColor {}
+
+export type Color = ThemeColor|HTMLColor|NullColor;
+
+export const IsHTMLColor = (color?: Color): color is HTMLColor => {
+  return !!color && (typeof (color as HTMLColor).text === 'string');
+};
+
+export const IsThemeColor = (color?: Color): color is ThemeColor => {
+  return !!color && (typeof (color as ThemeColor).theme !== 'undefined');
+};
+
+export const IsDefinedColor = (color?: Color): color is (ThemeColor|HTMLColor) => {
+  return !!color && (
+    (typeof (color as HTMLColor).text === 'string') ||
+    (typeof (color as ThemeColor).theme !== 'undefined'));
 }
 
 /** @internal */
@@ -258,15 +322,19 @@ export const Style = {
     return JSON.stringify(style) === empty_json;
   },
 
-  /** 
+  /* * 
    * this looks like a type guard, we should switch to a union
    * type and then add real type guards
    * 
    * @internal 
-   */
+   * /
   ValidColor: (color?: Color): boolean => {
     return !!(color && (!color.none) && (color.text || color.theme || color.theme === 0));
   },
+  */
+
+
+
 
   /** @internal */
    ParseFontSize: (text = '', default_unit = 'em'): CellStyle => {

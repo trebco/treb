@@ -19,7 +19,7 @@
  * 
  */
 
-import type { Color, CellStyle } from './style';
+import { type Color, type CellStyle, IsDefinedColor, IsHTMLColor, IsThemeColor, ThemeColorIndex, type ThemeColor } from './style';
 import { ColorFunctions } from './color';
 import { DOMContext } from './dom-utilities';
 
@@ -186,7 +186,10 @@ export const ThemeColor = (theme: Theme, color?: Color): string => {
  * 
  * because this is ephemeral it won't impact export.
  */
-const TintedColor = (theme: Theme, index: number, tint: number) => {
+const TintedColor = (theme: Theme, source: ThemeColor) => {
+
+  const index = ThemeColorIndex(source);
+  let tint = (source.tint || 0);
 
   if (theme.mode === 'dark') {
     tint = -tint; // invert;
@@ -231,7 +234,7 @@ const TintedColor = (theme: Theme, index: number, tint: number) => {
  */
 export const ResolveThemeColor = (theme: Theme, color?: Color, default_index?: number): string => {
 
-  if (color?.offset) {
+  if (IsDefinedColor(color) && IsDefinedColor(color.offset)) {
 
     // don't do this
     if (color.offset.offset) {
@@ -277,17 +280,17 @@ export const ResolveThemeColor = (theme: Theme, color?: Color, default_index?: n
 
   // explicit color, or none
 
-  if (color?.text) {
+  if (IsHTMLColor(color)) {
     return color.text === 'none' ? '' : color.text;
   }
 
   // theme color. we need a way to cache these lookups, especially for tinting
 
-  if (color?.theme || color?.theme === 0) {
+  if (IsThemeColor(color)) {
     if (color.tint) {
-      return TintedColor(theme, color.theme, color.tint);
+      return TintedColor(theme, color);
     }
-    return theme.theme_colors ? theme.theme_colors[color.theme] : '';
+    return theme.theme_colors ? theme.theme_colors[ThemeColorIndex(color)] : '';
   }
 
   // default from argument
@@ -433,11 +436,11 @@ const DeriveColorScheme = (theme: Theme, context: CanvasRenderingContext2D): 'li
 
   // because these are rendered to a canvas, we know that A is 255
 
-  context.fillStyle = foreground_color?.text || '';
+  context.fillStyle = IsHTMLColor(foreground_color) ? foreground_color.text : '';
   context.fillRect(0, 0, 3, 3);
   const fg = ColorFunctions.RGBToHSL(...(Array.from(context.getImageData(1, 1, 1, 1).data) as [number, number, number]));
 
-  context.fillStyle = background_color?.text || '';
+  context.fillStyle = IsHTMLColor(background_color) ? background_color.text : '';
   context.fillRect(0, 0, 3, 3);
   const bg = ColorFunctions.RGBToHSL(...(Array.from(context.getImageData(1, 1, 1, 1).data) as [number, number, number]));
 
@@ -564,8 +567,8 @@ export const LoadThemeProperties = (container: HTMLElement): Theme => {
   const compare = css.color;
 
   theme.theme_colors = [
-    theme.grid_cell.fill?.text || 'rgb(255, 255, 255)',
-    theme.grid_cell.text?.text || 'rgb(51, 51, 51)',
+    IsHTMLColor(theme.grid_cell.fill) ? theme.grid_cell.fill.text : 'rgb(255, 255, 255)',
+    IsHTMLColor(theme.grid_cell.text) ? theme.grid_cell.text.text : 'rgb(51, 51, 51)',
   ];
 
   for (let i = 1; i < 32; i++) {

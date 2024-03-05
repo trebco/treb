@@ -22,7 +22,7 @@
 // import * as ElementTree from 'elementtree';
 // import { Element, ElementTree as Tree } from 'elementtree';
 
-import { type CompositeBorderEdge, Style, type CellStyle, type PropertyKeys, type Color } from 'treb-base-types';
+import { type CompositeBorderEdge, Style, type CellStyle, type PropertyKeys, type Color, IsHTMLColor, IsThemeColor, type ThemeColor, type HTMLColor, ThemeColorIndex } from 'treb-base-types';
 import { Theme } from './workbook-theme2';
 import { NumberFormatCache } from 'treb-format';
 import { XMLUtils } from './xml-utils';
@@ -85,12 +85,14 @@ export interface CellXf {
 
 }
 
+/*
 interface ColorAttributes {
   indexed?: string;
   rgb?: string;
   theme?: string;
   tint?: string;
 }
+*/
 
 export interface BorderEdge {
   style?: string;
@@ -303,11 +305,11 @@ export class StyleCache {
     //}
 
     if (composite.text) {
-      if (composite.text.text) {
+      if (IsHTMLColor(composite.text)) {
         font.color_argb = composite.text.text;
       }
-      else if (typeof composite.text.theme === 'number') {
-        font.color_theme = composite.text.theme;
+      else if (IsThemeColor(composite.text)) {
+        font.color_theme = ThemeColorIndex(composite.text);
         if (composite.text.tint) {
           font.color_tint = composite.text.tint;
         }
@@ -317,11 +319,11 @@ export class StyleCache {
     const TranslateBorder = (src: CompositeBorderEdge, dest: BorderEdge) => {
       if (src.width) {
         dest.style = 'thin';
-        if (src.color.text) {
+        if (IsHTMLColor(src.color)) {
           dest.rgba =src.color.text;
         }
-        else if (typeof src.color.theme === 'number') {
-          dest.theme = src.color.theme;
+        else if (IsThemeColor(src.color)) {
+          dest.theme = ThemeColorIndex(src.color);
           if (src.color.tint) {
             dest.tint = src.color.tint;
           }
@@ -440,12 +442,12 @@ export class StyleCache {
 
     if (composite.fill) {
       fill.pattern_type = 'solid';
-      if (composite.fill.text) {
+      if (IsHTMLColor(composite.fill)) {
         fill.fg_color = { argb: composite.fill.text };  
         options.fill = fill;
       }
-      else if (typeof composite.fill.theme === 'number') {
-        fill.fg_color = { theme: composite.fill.theme };
+      else if (IsThemeColor(composite.fill)) {
+        fill.fg_color = { theme: ThemeColorIndex(composite.fill) };
         if (composite.fill.tint) {
           fill.fg_color.tint = composite.fill.tint;
         }
@@ -619,7 +621,7 @@ export class StyleCache {
             };
 
             if (fill.fg_color.tint) {
-              props.fill.tint = Math.round(fill.fg_color.tint * 1000) / 1000;
+              (props.fill as ThemeColor).tint = Math.round(fill.fg_color.tint * 1000) / 1000;
             }
 
             /*
@@ -1317,12 +1319,12 @@ export class StyleCache {
     const ParseDXFColor = (element: any) => {
       const color: Color = {};
       if (element.a$.rgb) {
-        color.text = '#' + element.a$.rgb.substring(2);
+        (color as HTMLColor).text = '#' + element.a$.rgb.substring(2);
       }
       else if (element.a$.theme) {
-        color.theme = Number(element.a$.theme) || 0;
+        (color as ThemeColor).theme = Number(element.a$.theme) || 0;
         if (element.a$.tint) {
-          color.tint = Math.round(element.a$.tint * 1000) / 1000;
+          (color as ThemeColor).tint = Math.round(element.a$.tint * 1000) / 1000;
         }
       }
       return color;

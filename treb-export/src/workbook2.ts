@@ -38,7 +38,7 @@ import { Theme } from './workbook-theme2';
 import { Sheet, VisibleState } from './workbook-sheet2';
 import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
-import type { CellStyle } from 'treb-base-types';
+import type { CellStyle, ThemeColor } from 'treb-base-types';
 import type { SerializedNamed } from 'treb-data-model';
 
 
@@ -413,7 +413,7 @@ export class Workbook {
                   if (fill['a:schemeClr']['a:lumOff']?.a$?.val) {
                     const num = Number(fill['a:schemeClr']['a:lumOff'].a$.val);
                     if (!isNaN(num)) {
-                      style.fill.tint = num / 1e5;
+                      (style.fill as ThemeColor).tint = num / 1e5;
                     }
                   }
                 }

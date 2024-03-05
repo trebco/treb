@@ -30,7 +30,7 @@ import type { ParseResult } from 'treb-parser';
 import { Parser } from 'treb-parser';
 import type { RangeType, AddressType, HyperlinkType } from './address-type';
 import { is_range, ShiftRange, InRange, is_address } from './address-type';
-import type { ImportedSheetData, AnchoredAnnotation, CellParseResult, AnnotationLayout, Corner as LayoutCorner, IArea, GradientStop, Color } from 'treb-base-types';
+import type { ImportedSheetData, AnchoredAnnotation, CellParseResult, AnnotationLayout, Corner as LayoutCorner, IArea, GradientStop, Color, HTMLColor, ThemeColor } from 'treb-base-types';
 import type { SerializedValueType } from 'treb-base-types';
 import type { Sheet} from './workbook-sheet2';
 import { VisibleState } from './workbook-sheet2';
@@ -447,12 +447,12 @@ export class Importer {
 
             const color_element = rule.colorScale.color[index];
             if (color_element.a$.rgb) {
-              color.text = '#' + color_element.a$.rgb.substring(2);
+              (color as HTMLColor).text = '#' + color_element.a$.rgb.substring(2);
             } 
             else if (color_element.a$.theme) {
-              color.theme = Number(color_element.a$.theme) || 0;
+              (color as ThemeColor).theme = Number(color_element.a$.theme) || 0;
               if (color_element.a$.tint) {
-                color.tint = Math.round(color_element.a$.tint * 1000) / 1000;
+                (color as ThemeColor).tint = Math.round(color_element.a$.tint * 1000) / 1000;
               }
             }           
 
