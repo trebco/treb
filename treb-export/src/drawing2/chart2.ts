@@ -19,8 +19,6 @@
  * 
  */
 
-// import * as ElementTree from 'elementtree';
-// import { Element, ElementTree as Tree } from 'elementtree';
 import type { UnitAddress, UnitRange, UnitLiteral, ExpressionUnit } from 'treb-parser';
 
 import { static_title, ref_title, chart_template } from './chart-template-components2';
@@ -28,18 +26,6 @@ import { column_json, column_series } from './column-chart-template2';
 import { donut_json } from './donut-chart-template2';
 import { scatter_json, scatter_series } from './scatter-chart-template2';
 import { bubble_json, bubble_series } from './bubble-chart-template';
-
-import { XMLUtils } from '../xml-utils';
-
-/*
-import { donut_json } from './donut-chart-template';
-import { static_title, ref_title, chart_template } from './chart-template-components';
-import { column_json, column_series } from './column-chart-template';
-import { scatter_json, scatter_series } from './scatter-chart-template';
-import { scatter_series as scatter2_series } from './scatter2-chart-template';
-*/
-
-// import { v4 as uuidv4 } from 'uuid';
 
 import { Localization } from 'treb-base-types';
 import type { RelationshipMap } from '../relationship';
@@ -73,31 +59,27 @@ export class Chart {
       type: 'literal', value: '',
     };
 
-    // const CC = this.FindNode('c:chart', obj);
-    // if (CC) {
-      if (unit && unit.type === 'literal') {
-        const title = JSON.parse(JSON.stringify(static_title));
-        //const AP = this.FindNode('a:p', title);
-        const AP = title['c:tx']['c:rich']['a:p'];
+    if (unit && unit.type === 'literal') {
+      const title = JSON.parse(JSON.stringify(static_title));
+      const AP = title['c:tx']['c:rich']['a:p'];
 
-        AP['a:r'] = {
-          'a:rPr': {
-            a$: {
-              lang: Localization.locale,
-            },
+      AP['a:r'] = {
+        'a:rPr': {
+          a$: {
+            lang: Localization.locale,
           },
-          'a:t': unit.value,
-        };
-        chartnode['c:title'] = title;
-      }
-      else if (unit) {
-        const title = JSON.parse(JSON.stringify(ref_title));
-        //const CF = title['c:tx']['c:strRef']['c:f'];
-        //CF.t$ = unit.label;
-        title['c:tx']['c:strRef']['c:f'] = unit.label;
-        chartnode['c:title'] = title;
-      }
-    //}
+        },
+        'a:t': unit.value,
+      };
+      chartnode['c:title'] = title;
+    }
+    else if (unit) {
+      const title = JSON.parse(JSON.stringify(ref_title));
+      //const CF = title['c:tx']['c:strRef']['c:f'];
+      //CF.t$ = unit.label;
+      title['c:tx']['c:strRef']['c:f'] = unit.label;
+      chartnode['c:title'] = title;
+    }
 
   }
 
