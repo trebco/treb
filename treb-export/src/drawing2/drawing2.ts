@@ -25,7 +25,7 @@ import type { ChartOptions} from './chart2';
 import { Chart} from './chart2';
 import type { RelationshipMap} from '../relationship';
 import { AddRel } from '../relationship';
-import { DOMContent } from '../xml-utils';
+import type { DOMContent } from '../xml-utils';
 
 const pixel_offset = 9525;
 
