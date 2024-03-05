@@ -2588,9 +2588,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * @public
    */
   public SetColumnWidth(column?: number | number[], width?: number): void {
-
-    // API v1 OK
-
+   
     this.grid.SetColumnWidth(column, width);
   }
 

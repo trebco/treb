@@ -593,7 +593,7 @@ export class GridBase {
    * @param column column, columns, or undefined means all columns
    * @param width target width, or undefined means auto-size
    */
-  public SetColumnWidth(column?: number | number[], width = 0): void {
+  public SetColumnWidth(column?: number | number[], width?: number): void {
     this.ExecCommand({
       key: CommandKey.ResizeColumns,
       column,

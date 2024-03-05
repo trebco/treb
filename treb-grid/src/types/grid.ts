@@ -2224,12 +2224,13 @@ export class Grid extends GridBase {
     // const context = Sheet.measurement_canvas.getContext('2d');
     // if (!context) return;
 
-    let width = 12;
-    const padding = 4 * 2; // FIXME: parameterize
+    let width = 0;
+    const padding = 12; // 4 * 2; // FIXME: parameterize
 
     if (!allow_shrink) width = sheet.GetColumnWidth(column);
 
     for (let row = 0; row < sheet.cells.rows; row++) {
+
       const cell = sheet.CellData({ row, column });
       let text = cell.formatted || '';
       if (typeof text !== 'string') {
@@ -2246,7 +2247,9 @@ export class Grid extends GridBase {
       }
     }
 
-    sheet.SetColumnWidth(column, width);
+    if (width > padding + 2) {
+      sheet.SetColumnWidth(column, width);
+    }
 
   }
 
@@ -7141,7 +7144,7 @@ export class Grid extends GridBase {
 
     if (auto) {
       for (const entry of column) {
-        this.AutoSizeColumn(sheet, entry, false);
+        this.AutoSizeColumn(sheet, entry, true);
       }
     }
     else {
