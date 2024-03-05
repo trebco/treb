@@ -161,14 +161,20 @@ export const DefaultTheme: Theme = {
   offset_dark: '#000',
 };
 
-/**
+/* *
  * now just a wrapper, we should remove
+ * 
+ * the only difference between this and the other function (ThemeColor2)
+ * is that this has a default for "defaultindex" => 0; calls can just 
+ * call the second method with the extra argument.
+ * 
  * @deprecated
  * @internal
- */
+ * /
 export const ThemeColor = (theme: Theme, color?: Color): string => {
   return ThemeColor2(theme, color, 0);
 };
+*/
 
 /**
  * we cache values in the theme object so that we can dump it when we 
@@ -223,7 +229,7 @@ const TintedColor = (theme: Theme, index: number, tint: number) => {
  * 
  * @internal
  */
-export const ThemeColor2 = (theme: Theme, color?: Color, default_index?: number): string => {
+export const ResolveThemeColor = (theme: Theme, color?: Color, default_index?: number): string => {
 
   if (color?.offset) {
 
@@ -233,7 +239,7 @@ export const ThemeColor2 = (theme: Theme, color?: Color, default_index?: number)
       return ''; 
     }
 
-    const resolved = ThemeColor2(theme, color.offset);
+    const resolved = ResolveThemeColor(theme, color.offset);
 
     // check cache
     if (theme.offset_cache && theme.offset_cache[resolved]) {

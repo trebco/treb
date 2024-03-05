@@ -1,7 +1,7 @@
 
 import { Measurement } from 'treb-utils';
 import { type Color } from './style';
-import { type Theme, ThemeColor2 } from './theme';
+import { type Theme, ResolveThemeColor } from './theme';
 import { ColorFunctions } from './color';
 
 export interface GradientStop {
@@ -23,7 +23,7 @@ export class Gradient {
         throw new Error('invalid stop value');
       }
 
-      const rgb = Measurement.MeasureColor(ThemeColor2(theme, stop.color));
+      const rgb = Measurement.MeasureColor(ResolveThemeColor(theme, stop.color));
 
       let resolved: number[] = [];
 

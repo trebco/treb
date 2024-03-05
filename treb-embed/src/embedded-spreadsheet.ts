@@ -73,7 +73,7 @@ import type {
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
-  Localization, Style, type Color, ThemeColor2, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext, 
+  Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext, 
 } from 'treb-base-types';
 
 import { EventSource, ValidateURI } from 'treb-utils';
@@ -5329,7 +5329,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             const update_textbox = () => {
 
               if (style.fill) {
-                const color = ThemeColor2(this.grid.theme, style.fill);
+                const color = ResolveThemeColor(this.grid.theme, style.fill);
                 container.style.background = color;
               }
 
@@ -5595,7 +5595,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     for (let i = 0; i < 10; i++) {
       this.document_styles.theme_colors.push(tints.map(tint => {
         const color: Color = { theme: i, tint };
-        const resolved = ThemeColor2(this.grid.theme, color);
+        const resolved = ResolveThemeColor(this.grid.theme, color);
         return { color, resolved };
       }));
     }

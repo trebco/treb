@@ -20,7 +20,7 @@
  */
 
 import { Editor, type NodeDescriptor } from './editor';
-import { Area, Cell, type CellStyle, type CellValue, Rectangle, Style, type Theme, ThemeColor2 } from 'treb-base-types';
+import { Area, Cell, type CellStyle, type CellValue, Rectangle, Style, type Theme, ResolveThemeColor } from 'treb-base-types';
 import { DataModel, type ViewModel, type GridSelection } from 'treb-data-model';
 import { Autocomplete } from './autocomplete';
 import { UA } from '../util/ua';
@@ -287,8 +287,8 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
     const style: CellStyle = cell.style || {};
 
     this.edit_node.style.font = Style.Font(style, this.scale);
-    this.edit_node.style.color = ThemeColor2(this.theme, style.text, 1);
-    this.edit_inset.style.backgroundColor = ThemeColor2(this.theme, style.fill, 0);
+    this.edit_node.style.color = ResolveThemeColor(this.theme, style.text, 1);
+    this.edit_inset.style.backgroundColor = ResolveThemeColor(this.theme, style.fill, 0);
 
     // NOTE: now that we dropped support for IE11, we can probably 
     // remove more than one class at the same time.

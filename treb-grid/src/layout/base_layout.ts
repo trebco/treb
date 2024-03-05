@@ -24,7 +24,7 @@ import type { DataModel, ViewModel, Annotation } from 'treb-data-model';
 
 import type { Tile } from '../types/tile';
 import type { Theme, Point, Extent, Size, Position, ICellAddress, Table, IArea } from 'treb-base-types';
-import { Style, Area, Rectangle, ThemeColor } from 'treb-base-types';
+import { Style, Area, Rectangle, ResolveThemeColor } from 'treb-base-types';
 
 import { MouseDrag } from '../types/drag_mask';
 import type { GridEvent } from '../types/grid_events';
@@ -1279,7 +1279,7 @@ export abstract class BaseLayout {
     this.row_header.style.backgroundColor =
       this.column_header.style.backgroundColor =
       this.corner.style.backgroundColor =
-      theme.headers?.fill ? ThemeColor(theme, theme.headers.fill) : '';
+      theme.headers?.fill ? ResolveThemeColor(theme, theme.headers.fill, 0) : '';
 
     // theme.headers?.background || '';
     // theme.header_background_color || ''; // this.theme.header_background;
@@ -1291,7 +1291,7 @@ export abstract class BaseLayout {
 
     for (const row of this.grid_tiles) {
       for (const tile of row) {
-        tile.style.backgroundColor = ThemeColor(theme, theme.grid_cell?.fill) || '#fff';
+        tile.style.backgroundColor = ResolveThemeColor(theme, theme.grid_cell?.fill, 0) || '#fff';
       }
     }
 

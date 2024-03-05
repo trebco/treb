@@ -25,7 +25,7 @@ import type { ICellAddress,
          CellStyle,
          Theme,
          HorizontalAlign} from 'treb-base-types';
-import { TextPartFlag, Style, ValueType, Area, Rectangle, ThemeColor, ThemeColor2 } from 'treb-base-types';
+import { TextPartFlag, Style, ValueType, Area, Rectangle, ResolveThemeColor } from 'treb-base-types';
 
 import type { Tile } from '../types/tile';
 import { FontMetricsCache as FontMetricsCache2 } from '../util/fontmetrics2';
@@ -307,7 +307,7 @@ export class TileRenderer {
     }
 
     context.setTransform(scale, 0, 0, scale, 0, 0);
-    context.fillStyle = this.theme.headers?.fill ? ThemeColor2(this.theme, this.theme.headers.fill) : '';
+    context.fillStyle = this.theme.headers?.fill ? ResolveThemeColor(this.theme, this.theme.headers.fill) : '';
 
     context.fillRect(0, 0, x, header_size.y);
     context.fillRect(0, 0, header_size.x, y);
@@ -354,7 +354,7 @@ export class TileRenderer {
     context.textBaseline = 'middle';
     context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
 
-    context.fillStyle = ThemeColor2(this.theme, this.theme.headers?.text);
+    context.fillStyle = ResolveThemeColor(this.theme, this.theme.headers?.text);
 
     if (this.view.active_sheet.freeze.rows && this.layout.header_offset.x > 1) {
 
@@ -407,7 +407,7 @@ export class TileRenderer {
       return;
     }
 
-    context.fillStyle = ThemeColor2(this.theme, this.theme.headers?.text, 0);
+    context.fillStyle = ResolveThemeColor(this.theme, this.theme.headers?.text, 0);
 
     context.beginPath();
 
@@ -434,7 +434,7 @@ export class TileRenderer {
       return;
     }
     
-    context.fillStyle = ThemeColor2(this.theme, this.theme.headers?.text, 0);
+    context.fillStyle = ResolveThemeColor(this.theme, this.theme.headers?.text, 0);
     
     context.beginPath();
 
@@ -473,7 +473,7 @@ export class TileRenderer {
         context.textBaseline = 'middle';
         context.font = Style.Font(this.theme.headers||{}, this.layout.scale);
 
-        context.fillStyle = this.theme.headers?.fill ? ThemeColor2(this.theme, this.theme.headers.fill) : '';
+        context.fillStyle = this.theme.headers?.fill ? ResolveThemeColor(this.theme, this.theme.headers.fill) : '';
         context.fillRect(0, 0, tile.logical_size.width, this.layout.header_offset.y);
 
         // context.strokeStyle = this.theme.grid_color || '';
@@ -507,7 +507,7 @@ export class TileRenderer {
 
         const context = tile.getContext('2d', { alpha: false });
         if (!context) continue;
-        context.fillStyle = this.theme.headers?.fill ? ThemeColor2(this.theme, this.theme.headers.fill) : '';
+        context.fillStyle = this.theme.headers?.fill ? ResolveThemeColor(this.theme, this.theme.headers.fill) : '';
 
         context.setTransform(scale, 0, 0, scale, 0, 0);
 
@@ -1065,7 +1065,7 @@ export class TileRenderer {
   protected ResolveColors(style: CellStyle): CellStyle {
 
     const resolved = {...style};
-    resolved.text = { text: ThemeColor2(this.theme, style.text, 1) };
+    resolved.text = { text: ResolveThemeColor(this.theme, style.text, 1) };
 
     // TODO: other colors
 
@@ -1126,7 +1126,7 @@ export class TileRenderer {
 
     // paint top background
 
-    let color = ThemeColor2(this.theme, numpad[8].fill);
+    let color = ResolveThemeColor(this.theme, numpad[8].fill);
     if (color) {
       context.fillStyle = color
       context.fillRect(left + 0, top - 1, width, 1);
@@ -1134,7 +1134,7 @@ export class TileRenderer {
 
     // paint left background
 
-    color = ThemeColor2(this.theme, numpad[4].fill);
+    color = ResolveThemeColor(this.theme, numpad[4].fill);
     if (color) {
       context.fillStyle = color
       context.fillRect(left - 1, top, 1, height);
@@ -1142,7 +1142,7 @@ export class TileRenderer {
 
     // paint our background. note this one goes up, left
 
-    color = ThemeColor2(this.theme, style.fill);
+    color = ResolveThemeColor(this.theme, style.fill);
     if (color) {
       context.fillStyle = color;
       context.fillRect(left - 1, top - 1, width + 1, height + 1);
@@ -1150,7 +1150,7 @@ export class TileRenderer {
 
     // fill of cell to the right
 
-    color = ThemeColor2(this.theme, numpad[6].fill);
+    color = ResolveThemeColor(this.theme, numpad[6].fill);
     if (color) {
       context.fillStyle = color;
       context.fillRect(left + width - 1, top - 1, 1, height + 1);
@@ -1159,7 +1159,7 @@ export class TileRenderer {
 
     // fill of cell underneath
 
-    color = ThemeColor2(this.theme, numpad[2].fill);
+    color = ResolveThemeColor(this.theme, numpad[2].fill);
     if (color) {
       context.fillStyle = color;
       context.fillRect(left - 1, top + height - 1, width + 1, 1);
@@ -1168,54 +1168,54 @@ export class TileRenderer {
     // --- corner borders ------------------------------------------------------
 
     if (numpad[6].border_top && !numpad[6].border_left) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[6].border_top_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[6].border_top_fill, 1);
       context.fillRect(left + width - 1, top - 2 + numpad[6].border_top, 1, 1);
     }
     if (numpad[9].border_left) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[9].border_left_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[9].border_left_fill, 1);
       context.fillRect(left + width - 1, top - 1, 1, 1);
     }
     if (numpad[9].border_bottom) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[9].border_bottom_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[9].border_bottom_fill, 1);
       context.fillRect(left + width - 1, top - 2 + numpad[9].border_bottom, 1, 1);
     }
 
     if (numpad[4].border_top && !numpad[4].border_right) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[4].border_right_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[4].border_right_fill, 1);
       context.fillRect(left - 1, top - 2 + numpad[4].border_top, 1, 1);
     }
     if (numpad[7].border_right) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[7].border_right_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[7].border_right_fill, 1);
       context.fillRect(left - 1, top - 1, 1, 1);
     }
     if (numpad[7].border_bottom) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[7].border_bottom_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[7].border_bottom_fill, 1);
       context.fillRect(left - 1, top - 2 + numpad[7].border_bottom, 1, 1);
     }
 
     if (numpad[6].border_bottom && !numpad[6].border_left) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[6].border_bottom_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[6].border_bottom_fill, 1);
       context.fillRect(left + width - 1, top + height - numpad[6].border_bottom, 1, 1);
     }
     if (numpad[3].border_left) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[3].border_left_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[3].border_left_fill, 1);
       context.fillRect(left + width - 1, top + height - 1, 1, 1);
     }
     if (numpad[3].border_top) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[3].border_top_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[3].border_top_fill, 1);
       context.fillRect(left + width - 1, top + height - numpad[3].border_top, 1, 1);
     }
 
     if (numpad[4].border_bottom && !numpad[4].border_right) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[4].border_bottom_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[4].border_bottom_fill, 1);
       context.fillRect(left - 1, top + height - numpad[4].border_bottom, 1, 1);
     }
     if (numpad[1].border_right) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[1].border_right_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[1].border_right_fill, 1);
       context.fillRect(left - 1, top + height - 1, 1, 1);
     }
     if (numpad[1].border_top) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[1].border_top_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[1].border_top_fill, 1);
       context.fillRect(left - 1, top + height - numpad[1].border_top, 1, 1);
     }
 
@@ -1224,12 +1224,12 @@ export class TileRenderer {
     // paint top border
 
     if (numpad[8].border_bottom) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[8].border_bottom_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[8].border_bottom_fill, 1);
       if (numpad[8].border_bottom === 2) {
         context.fillRect(left - 1, top - 2, width + 1, 1);
         context.fillRect(left - 1, top - 0, width + 1, 1);
-        context.fillStyle = ThemeColor2(this.theme, numpad[8].fill) 
-          || ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        context.fillStyle = ResolveThemeColor(this.theme, numpad[8].fill) 
+          || ResolveThemeColor(this.theme, this.theme.grid_cell?.fill, 0) || '#fff';
         context.fillRect(left - 1, top - 1, width + 1, 1);
       }
       else {
@@ -1240,26 +1240,26 @@ export class TileRenderer {
     // paint left border
 
     if (numpad[4].border_right) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[4].border_right_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[4].border_right_fill, 1);
       context.fillRect(left - 1, top - 1, 1, height + 1);
     }
 
     // paint right border?
 
     if (numpad[6].border_left) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[6].border_left_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[6].border_left_fill, 1);
       context.fillRect(left + width - 1, top - 1, 1, height + 1);
     }
 
     // bottom? (...)
 
     if (numpad[2].border_top) {
-      context.fillStyle = ThemeColor2(this.theme, numpad[2].border_top_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, numpad[2].border_top_fill, 1);
       if (numpad[2].border_top === 2) {
         context.fillRect(left - 1, top + height - 2, width + 1, 1);
         context.fillRect(left - 1, top + height - 0, width + 1, 1);
-        context.fillStyle = ThemeColor2(this.theme, numpad[2].fill) 
-          || ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        context.fillStyle = ResolveThemeColor(this.theme, numpad[2].fill) 
+          || ResolveThemeColor(this.theme, this.theme.grid_cell?.fill, 0) || '#fff';
         context.fillRect(left - 1, top + height - 1, width + 1, 1);
       }
       else {
@@ -1270,12 +1270,12 @@ export class TileRenderer {
     // -- our borders ----------------------------------------------------------
 
     if (style.border_top) {
-      context.fillStyle = ThemeColor2(this.theme, style.border_top_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, style.border_top_fill, 1);
       if (style.border_top === 2) {
         context.fillRect(left - 1, top - 2, width + 1, 1);
         context.fillRect(left - 1, top + 0, width + 1, 1);
-        context.fillStyle = ThemeColor2(this.theme, style.fill) 
-          || ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        context.fillStyle = ResolveThemeColor(this.theme, style.fill) 
+          || ResolveThemeColor(this.theme, this.theme.grid_cell?.fill, 0) || '#fff';
         context.fillRect(left - 1, top - 1, width + 1, 1);
       }
       else {
@@ -1284,22 +1284,22 @@ export class TileRenderer {
     }
 
     if (style.border_left) {
-      context.fillStyle = ThemeColor2(this.theme, style.border_left_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, style.border_left_fill, 1);
       context.fillRect(left - 1, top - 1, 1, height + 1);
     }
 
     if (style.border_right) {
-      context.fillStyle = ThemeColor2(this.theme, style.border_right_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, style.border_right_fill, 1);
       context.fillRect(left + width - 1, top - 1, 1, height + 1);
     }
 
     if (style.border_bottom) {
-      context.fillStyle = ThemeColor2(this.theme, style.border_bottom_fill, 1);
+      context.fillStyle = ResolveThemeColor(this.theme, style.border_bottom_fill, 1);
       if (style.border_bottom === 2) {
         context.fillRect(left - 1, top + height - 2, width + 1, 1);
         context.fillRect(left - 1, top + height + 0, width + 1, 1);
-        context.fillStyle = ThemeColor2(this.theme, style.fill) 
-          || ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        context.fillStyle = ResolveThemeColor(this.theme, style.fill) 
+          || ResolveThemeColor(this.theme, this.theme.grid_cell?.fill, 0) || '#fff';
         context.fillRect(left - 1, top + height - 1, width + 1, 1);
       }
       else {
@@ -1412,14 +1412,14 @@ export class TileRenderer {
     }
     else {
 
-      const fill = ThemeColor2(this.theme, style.fill);
+      const fill = ResolveThemeColor(this.theme, style.fill);
 
       if (fill) {
         context.fillStyle = fill;
         context.fillRect(0, 0, width - 1, height - 1);
       }
       else {
-        context.fillStyle = ThemeColor(this.theme, this.theme.grid_cell?.fill) || '#fff';
+        context.fillStyle = ResolveThemeColor(this.theme, this.theme.grid_cell?.fill, 0) || '#fff';
         context.fillRect(0, 0, width - 1, height - 1);
       }
 
@@ -1578,7 +1578,7 @@ export class TileRenderer {
         width, 
         height);
 
-      context.strokeStyle = context.fillStyle = ThemeColor2(this.theme, style.text, 1);
+      context.strokeStyle = context.fillStyle = ResolveThemeColor(this.theme, style.text, 1);
 
       // there's an issue with theme colors, the function may not be able
       // to translate so we need to update the style (using a copy) to
@@ -1874,7 +1874,7 @@ export class TileRenderer {
            (element.cell.style.fill.text || element.cell.style.fill.theme || element.cell.style.fill.theme === 0) &&
           !this.options.grid_over_background) {
         
-        context.fillStyle = ThemeColor(this.theme, element.cell.style.fill);
+        context.fillStyle = ResolveThemeColor(this.theme, element.cell.style.fill, 0);
         context.fillRect(element.grid.left, element.grid.top, element.grid.width, element.grid.height);
       }
       else {
@@ -1894,7 +1894,7 @@ export class TileRenderer {
                 0 );
         }
         else {
-          context.fillStyle = this.theme.grid_cell?.fill ? ThemeColor(this.theme, this.theme.grid_cell.fill) : '';
+          context.fillStyle = this.theme.grid_cell?.fill ? ResolveThemeColor(this.theme, this.theme.grid_cell.fill, 0) : '';
           context.fillRect(element.background.left, element.background.top,
             element.background.width, element.background.height);
         }
@@ -1924,7 +1924,7 @@ export class TileRenderer {
     context.lineWidth = 1;
 
     context.strokeStyle = context.fillStyle =
-      text_data.format ? text_data.format : ThemeColor2(this.theme, style.text, 1);
+      text_data.format ? text_data.format : ResolveThemeColor(this.theme, style.text, 1);
 
     context.beginPath();
 
