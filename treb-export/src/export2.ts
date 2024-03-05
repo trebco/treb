@@ -1244,19 +1244,6 @@ export class Exporter {
 
       const default_row_height = sheet.default_row_height ? (sheet.default_row_height / 20 * 15) : 15;
 
-      // DOM was here...
-
-      /*
-      const column_styles = (sheet.column_style as any) || {};
-
-      for (const key of Object.keys(column_styles)) {
-        console.info(key, '=>', column_styles[key]);
-
-      }
-
-      return;
-      */
-
       // data has different representations. it is either blocked into rows or 
       // columns, or a set of individual cells. we could theoretically guarantee
       // a particular encoding if we wanted to (by row would be optimal for excel).
@@ -1309,13 +1296,6 @@ export class Exporter {
       const merges: Area[] = [];
       const tables: TableDescription[] = [];
       
-      /*
-      const validations: Array<{
-        address: ICellAddress,
-        validation: DataValidation,
-      }> = [];
-      */
-
       // --
 
       // 
@@ -1500,15 +1480,6 @@ export class Exporter {
                 });
               }
 
-              /*
-              if (cell.validation && (cell.validation.type === ValidationType.List || cell.validation.type === ValidationType.Range)) {
-                validations.push({
-                  address: {row: r, column: c},
-                  validation: cell.validation,
-                });
-              }
-              */
-
               // short-circuit here
               if (cell.type === ValueType.formula && /^=?sparkline\./i.test(cell.value as string)) {
                 sparklines.push({
@@ -1605,6 +1576,7 @@ export class Exporter {
 
               row.push({
                 a$: {
+
                   r: Area.CellAddressToLabel({row: r, column: c}),
                   t,
 
@@ -2232,8 +2204,8 @@ export class Exporter {
 
       //------------------------------------------------------------------------
       //
-      // NOTE: order matters. that's why we predefine the layout
-      // here. we can't just append entries to the worksheet object. 
+      // NOTE: order matters. that's why we define the layout here. we 
+      // can't just append entries to the worksheet object. 
       //
       //------------------------------------------------------------------------
 
@@ -2253,7 +2225,7 @@ export class Exporter {
               },
             },
           },
-          
+
           sheetFormatPr,
           cols: dom_cols,
           sheetData: { row: sheet_rows },
@@ -2488,35 +2460,5 @@ export class Exporter {
     const buffer = this.zip.ArrayBuffer();
     return new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   }
-
-  /* * zip -> binary string * /
-  public async AsBinaryString(compression_level?: number) {
-    if (!this.zip) {
-      throw new Error('missing zip');
-    }
-    const opts: JSZip.JSZipGeneratorOptions = { type: 'binarystring' };
-    if (typeof compression_level !== 'undefined') {
-      opts.compression = 'DEFLATE';
-      opts.compressionOptions = {level: compression_level };
-    }
-    const output = await this.zip.generateAsync(opts);
-    return output;
-  }
-
-  /* * zip -> blob * /
-  public async AsBlob(compression_level?: number) {
-    if (!this.zip) {
-      throw new Error('missing zip');
-    }
-    const opts: JSZip.JSZipGeneratorOptions = { type: 'blob' };
-    if (typeof compression_level !== 'undefined') {
-      opts.compression = 'DEFLATE';
-      opts.compressionOptions = {level: compression_level };
-    }
-    const output = await this.zip.generateAsync(opts);
-    return output;
-  }
-  */
-
 
 }

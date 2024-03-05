@@ -35,7 +35,7 @@ import type { SerializedValueType } from 'treb-base-types';
 import type { Sheet} from './workbook-sheet2';
 import { VisibleState } from './workbook-sheet2';
 import type { CellAnchor } from './drawing2/drawing2';
-import { XMLUtils } from './xml-utils';
+import { type DOMContent, XMLUtils } from './xml-utils';
 
 // import { one_hundred_pixels } from './constants';
 import { ColumnWidthToPixels } from './column-width';
@@ -84,7 +84,7 @@ export class Importer {
       };
       v?: string|number|{
         t$: string;
-        a$?: any;
+        a$?: DOMContent;
       }; 
       f?: string|{ 
         t$: string;
@@ -761,15 +761,6 @@ export class Importer {
       if (height !== default_row_height) {
         row_heights[row_index - 1] = height;
       }
-
-      /*
-      if (row.a$?.ht && row.a$?.customHeight) {
-        const num = Number(row.a$.ht);
-        if (!isNaN(num)) {
-          row_heights[row_index - 1] = Math.round(num * 4 / 3); // seems to be the excel unit -> pixel ratio
-        }
-      }
-      */
 
       let cells = row.c || [];
       if (!Array.isArray(cells)) { cells = [cells]; }

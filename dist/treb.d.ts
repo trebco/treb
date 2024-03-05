@@ -1244,6 +1244,7 @@ export type HorizontalAlign = '' | 'left' | 'center' | 'right';
 
 /** vertical align constants for cell style */
 export type VerticalAlign = '' | 'top' | 'bottom' | 'middle';
+export type ThemeColorType = typeof ThemeColorList[number];
 
 /**
  * font size for cell style. we generally prefer relative sizes
@@ -1258,15 +1259,16 @@ export interface HTMLColor {
     text: string;
 }
 export interface ThemeColor {
-    theme: number;
+    theme: number | ThemeColorType;
     tint?: number;
 }
 export interface NullColor {
 }
 export type Color = ThemeColor | HTMLColor | NullColor;
+export declare const ThemeColorIndex: (color: ThemeColor) => number;
 export declare const IsHTMLColor: (color?: Color) => color is HTMLColor;
 export declare const IsThemeColor: (color?: Color) => color is ThemeColor;
-export declare const IsDefinedColor: (color?: Color) => color is HTMLColor | ThemeColor;
+export declare const IsDefinedColor: (color?: Color) => color is ThemeColor | HTMLColor;
 export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
 /**
@@ -1500,7 +1502,7 @@ export declare type LoadSource = "drag-and-drop" | "local-file" | "network-file"
  * EmbeddedSheetEvent is a discriminated union. Switch on the `type` field
  * of the event.
  */
-export type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | ViewChangeEvent | DataChangeEvent | FocusViewEvent | SelectionEvent | ResizeEvent;
+export type EmbeddedSheetEvent = DocumentChangeEvent | DocumentResetEvent | DocumentLoadEvent | ThemeChangeEvent | ViewChangeEvent | DataChangeEvent | FocusViewEvent | SelectionEvent | ResizeEvent;
 
 /**
  * options when inserting a table into a sheet
@@ -1537,6 +1539,14 @@ export declare type LoadType = "treb" | "csv" | "xlsx";
  */
 export interface ViewChangeEvent {
     type: 'view-change';
+}
+
+/**
+ * this event is sent when the theme is updated. it's intended for any
+ * subscribers to update corresponding colors or fonts.
+ */
+export interface ThemeChangeEvent {
+    type: 'theme-change';
 }
 
 /**

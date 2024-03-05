@@ -58,7 +58,7 @@ export class ZipWrapper {
   public Set(path: string, text: string) {
 
     this.text.set(path, text);
-    if (!!this.records[path]) {
+    if (this.records[path]) {
       delete this.records[path];
     }
   }
