@@ -36,13 +36,13 @@ const XMLDeclaration = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\
 import { template } from './template-2';
 import type { SerializedModel, SerializedSheet } from 'treb-data-model';
 
-import type { IArea, ICellAddress, CellValue, CellStyle,
+import type { IArea, ICellAddress, CellStyle,
          AnnotationLayout, Corner as LayoutCorner, Cell, Rectangle, Color } from 'treb-base-types';
 import { Area, Cells, ValueType, Style, IsHTMLColor, IsThemeColor, ThemeColorIndex } from 'treb-base-types';
 
 // import * as xmlparser from 'fast-xml-parser';
 import type { XmlBuilderOptions} from 'fast-xml-parser';
-import { XMLParser, XMLBuilder } from 'fast-xml-parser';
+import { XMLParser } from 'fast-xml-parser';
 
 import { SharedStrings } from './shared-strings2';
 import type { XlColor, BorderEdge } from './workbook-style2';
@@ -51,7 +51,7 @@ import { Theme } from './workbook-theme2';
 
 import type { RelationshipMap} from './relationship';
 import { AddRel } from './relationship';
-import { type DOMContent, XMLOptions2 } from './xml-utils';
+import { type DOMContent, XMLOptions2, PatchXMLBuilder } from './xml-utils';
 
 import type { UnitAddress, UnitRange, ExpressionUnit} from 'treb-parser';
 import { Parser } from 'treb-parser';
@@ -152,7 +152,7 @@ export class Exporter {
   };
 
   // public xmlparser = new xmlparser.j2xParser(this.xmloptions);
-  public xmlbuilder1 = new XMLBuilder(this.xmloptions);
+  public xmlbuilder1 = PatchXMLBuilder(this.xmloptions);
   public xmlparser2 = new XMLParser(XMLOptions2);
 
   // FIXME: need a way to share/pass parser flags
@@ -306,55 +306,61 @@ export class Exporter {
     };
 
     const borders = style_cache.borders.map(border => {
-      const block: any = {
-        left: {},
-        right: {},
-        top: {},
-        bottom: {},
-        diagonal: {},
-      };
+
+      const top: DOMContent = {};
+      const left: DOMContent = {};
+      const right: DOMContent = {};
+      const bottom: DOMContent = {};
+      const diagonal: DOMContent = {};
 
       if (border.top.style) {
-        block.top.a$ = {
+        top.a$ = {
           style: border.top.style,
         };
         const attrs = BorderColorAttributes(border.top);
-        if (attrs) { block.top.color = {a$: attrs}; }
+        if (attrs) { top.color = {a$: attrs}; }
       }
 
       if (border.left.style) {
-        block.left.a$ = {
+        left.a$ = {
           style: border.left.style,
         };
         const attrs = BorderColorAttributes(border.left);
-        if (attrs) { block.left.color = {a$: attrs}; }
+        if (attrs) { left.color = {a$: attrs}; }
       }
 
       if (border.bottom.style) {
-        block.bottom.a$ = {
+        bottom.a$ = {
           style: border.bottom.style,
         };
         const attrs = BorderColorAttributes(border.bottom);
-        if (attrs) { block.bottom.color = {a$: attrs}; }
+        if (attrs) { bottom.color = {a$: attrs}; }
       }
 
       if (border.right.style) {
-        block.right.a$ = {
+        right.a$ = {
           style: border.right.style,
         };
         const attrs = BorderColorAttributes(border.right);
-        if (attrs) { block.right.color = {a$: attrs}; }
+        if (attrs) { right.color = {a$: attrs}; }
       }
 
       if (border.diagonal.style) {
-        block.diagonal.a$ = {
+        diagonal.a$ = {
           style: border.diagonal.style,
         };
         const attrs = BorderColorAttributes(border.diagonal);
-        if (attrs) { block.diagonal.color = {a$: attrs}; }
+        if (attrs) { diagonal.color = {a$: attrs}; }
       }
 
-      return block;
+      return {
+        left,
+        right,
+        top,
+        bottom,
+        diagonal,
+      };
+
     });
 
     const fills: DOMContent[] = style_cache.fills.map(fill => ({
@@ -494,19 +500,7 @@ export class Exporter {
 
     };
 
-
-
-    // not used:
-    //
-    //  cellStyleXfs
-    //  cellStyles
-    //  tableStyles
-    
-    // ------------
-
     const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
-    // console.info(xml);
-    
     this.zip?.Set('xl/styles.xml', xml);
 
   }
@@ -543,34 +537,6 @@ export class Exporter {
     this.zip.Set('xl/sharedStrings.xml', xml);
 
   }
-
-  /**
-   * FIXME: merge with workbook function (put somewhere else)
-   * /
-  public async ReadRels(zip?: JSZip, path = ''): Promise<RelationshipMap> {
-
-    const rels: RelationshipMap = {};
-    const data = await zip?.file(path)?.async('text') as string;
-    //
-    // force array on <Relationship/> elements, but be slack on the rest
-    // (we know they are single elements)
-    //
-    const xml = this.xmlparser2.parse(data || '');
-    console.info(path, xml);
-
-    for (const relationship of xml.Relationships?.Relationship || []) {
-      const id = relationship.a$.Id;
-      rels[id] = {
-        id, 
-        type: relationship.a$.Type,
-        target: relationship.a$.Target,
-      };
-    }
-
-    return rels;
-
-  }
-  */
 
   /**
    * FIXME: we might not always need this. 
@@ -1278,68 +1244,7 @@ export class Exporter {
 
       const default_row_height = sheet.default_row_height ? (sheet.default_row_height / 20 * 15) : 15;
 
-      const dom: any = {
-        worksheet: {
-          a$: {
-            ...sheet_attributes,
-          },
-          dimension: {
-            a$: {
-              ref: 'A1',
-            },
-          },
-          sheetViews: {
-            sheetView: {
-              a$: {
-                // tabSelected: (sheet_index === active_sheet ? 1 : 0),
-                workbookViewId: 0,
-              },
-            },
-          },
-          sheetFormatPr: {
-            a$: default_row_height === 15 ? {
-              'x14ac:dyDescent': 0.25,
-            } : {
-              defaultRowHeight: default_row_height,
-              customHeight: 1,
-              'x14ac:dyDescent': 0.25,
-            },
-          },
-          cols: {},
-          sheetData: {},
-          mergeCells: {
-            a$: { count: 0 },
-          },
-          dataValidations: {},
-          hyperlinks: {},
-          conditionalFormatting: {},
-          pageMargins: {
-            a$: {
-              left: 0.7,
-              right: 0.7,
-              top: 0.75,
-              bottom: 0.75,
-              header: 0.3,
-              footer: 0.3,
-            },
-          },
-          drawing: {},
-          tableParts: {
-            a$: {
-              count: 0,
-            },
-          },
-          extLst: {
-            ext: {
-              a$: {
-                uri: '{05C60535-1F16-4fd2-B633-F4F36F0B64E0}',
-                'xmlns:x14': 'http://schemas.microsoft.com/office/spreadsheetml/2009/9/main',
-              },
-            },
-          },
-
-        },
-      };
+      // DOM was here...
 
       /*
       const column_styles = (sheet.column_style as any) || {};
@@ -1386,7 +1291,8 @@ export class Exporter {
 
       // cells data is row-major, and sparse.
 
-      const sheet_data: any = { row: [] };
+      // const sheet_data: any = { row: [] };
+      const sheet_rows: DOMContent[] = [];
 
       const hyperlinks: Array<{
         rel: string,
@@ -1435,7 +1341,7 @@ export class Exporter {
 
           // row span
           const span = {start: -1, end: -1};
-          const row: any = [];
+          const row: DOMContent[] = [];
 
           for (let c = 0; c < cells.data[r].length; c++) {
 
@@ -1642,21 +1548,22 @@ export class Exporter {
               }
 
               // v (child element) is the value
-              let v: CellValue = undefined;
+
+              let v: string|number|undefined;
               let t: string|undefined;
-              let f: any; // string|undefined;
+              let f: DOMContent|string|undefined; // string|undefined;
 
               switch (cell.type) {
                 case ValueType.formula:
                   f = this.FormulaText(cell.value as string, cell);
                   switch (cell.calculated_type) {
                     case ValueType.string:
-                      v = cell.calculated;
+                      v = cell.calculated as string;
                       t = 'str';
                       break;
 
                     case ValueType.number:
-                      v = cell.calculated;
+                      v = cell.calculated as number;
                       break;
 
                     case ValueType.boolean:
@@ -1672,7 +1579,7 @@ export class Exporter {
                   break;
 
                 case ValueType.number:
-                  v = cell.value;
+                  v = cell.value as number;
                   break;
 
                 case ValueType.boolean:
@@ -1696,63 +1603,62 @@ export class Exporter {
                 }
               }
 
-              // zerp
-              const element: any = {
+              row.push({
                 a$: {
                   r: Area.CellAddressToLabel({row: r, column: c}),
-                  // t,
-                  // s,
+                  t,
+
+                  // old comment regarding `s`:
+
+                  // we could skip this if it's equal to row style,
+                  // or there is no row style and it's equal to column style
+                  // or there is no column style and it's equal to sheet style
+
+                  s,
                 },
-                // v,
-              };
 
-              if (t !== undefined) {
-                element.a$.t = t;
-              }
-              if (s !== undefined) {
+                f,
+                v,
 
-                // we could skip this if it's equal to row style,
-                // or there is no row style and it's equal to column style
-                // or there is no column style and it's equal to sheet style
-
-                element.a$.s = s;
-
-              }
-              if (f !== undefined) {
-                element.f = f;              
-              }
-              if (v !== undefined) {
-                element.v = v;
-              }
-
-              row.push(element);
+              });
 
             }
           }
 
           if (row.length || (row_style && row_style !== sheet_style)) {
 
-            const row_data: any = {
-              a$: {
-                r: r + 1,
-                spans: `${span.start + 1}:${span.end + 1}`, // this works out to 0:0 for an empty row, will that work?
-              },
-              c: row,
-            };
+            let customHeight: number|undefined = undefined;
+            let ht: number|undefined = undefined;
+
+            let s: number|undefined = undefined;
+            let customFormat: number|undefined = undefined;
+
             if (sheet.row_height 
-                && (typeof sheet.row_height[r] === 'number') 
-                && sheet.row_height[r] !== sheet.default_row_height) {
-              
-              row_data.a$.customHeight = 1;
-              row_data.a$.ht = sheet.row_height[r] * 3 / 4;
+              && (typeof sheet.row_height[r] === 'number') 
+              && sheet.row_height[r] !== sheet.default_row_height) {
+
+              customHeight = 1;
+              ht = sheet.row_height[r] * 3 / 4;
             }
 
             if (row_style && row_style !== sheet_style) {
-              row_data.a$.s = row_style;
-              row_data.a$.customFormat = 1;
+              s = row_style;
+              customFormat = 1;
             }
 
-            sheet_data.row.push(row_data);
+            // sheet_data.row.
+            sheet_rows.push({
+              a$: {
+                r: r + 1,
+                spans: `${span.start + 1}:${span.end + 1}`, // this works out to 0:0 for an empty row, will that work?
+                customHeight,
+                ht,
+                s,
+                customFormat,
+              },
+              c: row,
+            });
+
           }
 
         }
@@ -1773,11 +1679,6 @@ export class Exporter {
       // because we'll have a default entry for columns that have the 
       // sheet style. this is only for columns that are different.
 
-      if (sheet.default_column_width) {
-        dom.worksheet.sheetFormatPr.a$.defaultColWidth = // sheet.default_column_width * one_hundred_pixels / 100;
-          PixelsToColumnWidth(sheet.default_column_width);
-      }
-
       for (let c = 0; c < sheet.columns; c++) {
         const entry: { style?: number, width?: number, index: number } = { index: c };
         if (sheet.column_width 
@@ -1785,35 +1686,13 @@ export class Exporter {
             && (typeof sheet.column_width[c] === 'number')
             && sheet.column_width[c] !== sheet.default_column_width) {
 
-          entry.width = // sheet.column_width[c] * one_hundred_pixels / 100;
-            PixelsToColumnWidth(sheet.column_width[c]);
-
-          // console.info("COLUMN", c, 'width', sheet.column_width[c], 'calc?', entry.width, '100p', one_hundred_pixels);
-
+          entry.width = PixelsToColumnWidth(sheet.column_width[c]);
         }
 
         const style = column_style_map[c];
         if (style && style !== sheet_style) {
           entry.style = style;
         }
-
-        /*
-        let style = sheet.column_style[c];
-       
-        if (typeof style === 'number') {
-          style = cell_style_refs[style];
-          if (style) {
-            entry.style = style_cache.EnsureStyle(style_cache.StyleOptionsFromProperties(style));
-          }
-        }
-        else if (style) {
-          entry.style = style_cache.EnsureStyle(style_cache.StyleOptionsFromProperties(style));
-        }
-        */
-
-        //if (sheet.column_style[c]) {
-        //  entry.style = style_cache.EnsureStyle(style_cache.StyleOptionsFromProperties(sheet.column_style[c]));
-        //}
 
         if (entry.style !== undefined || entry.width !== undefined) {
           column_entries[c] = entry;
@@ -1823,9 +1702,11 @@ export class Exporter {
       // we're short-cutting here, these should be arranged in blocks if
       // there's overlap. not sure how much of an issue that is though.
       
+      let dom_cols: DOMContent|undefined;
+
       if (column_entries.length || sheet_style) {
 
-        const filled: any[] = [];
+        const filled: DOMContent[] = [];
         const default_column_width = PixelsToColumnWidth(sheet.default_column_width || 90);
 
         // FIXME: can merge these two branches
@@ -1849,25 +1730,13 @@ export class Exporter {
               });
             }
 
-            const a$: any = { 
+            filled.push({a$: { 
               min: entry.index + 1, 
               max: entry.index + 1,
-            };
-            if (entry.style === undefined) {
-              a$.style = sheet_style;
-            }
-            else {
-              a$.style = entry.style;
-            }
-            if (entry.width !== undefined) {
-              a$.width = entry.width;
-              a$.customWidth = 1;
-            }
-            else {
-              a$.width = default_column_width;
-            }
-
-            filled.push({a$});
+              style: entry.style === undefined ? sheet_style : entry.style,
+              width: entry.width === undefined ? default_column_width : entry.width,
+              customWidth: entry.width === undefined ? undefined : 1,
+            }});
 
             start_index = entry.index;
             
@@ -1884,44 +1753,20 @@ export class Exporter {
             });
           }
 
-          dom.worksheet.cols.col = filled;
+          dom_cols = { col: filled };
 
         }
 
-        /*
-        else {
-          dom.worksheet.cols.col = column_entries.map(entry => {
-            const a$: any = { 
-              min: entry.index + 1, 
-              max: entry.index + 1,
-            };
-            if (entry.style !== undefined) {
-              a$.style = entry.style;
-            }
-            if (entry.width !== undefined) {
-              a$.width = entry.width;
-              a$.customWidth = 1;
-            }
-            else {
-              a$.width = // (sheet.default_column_width || 100) / 100 * one_hundred_pixels;
-                default_column_width; // PixelsToColumnWidth(sheet.default_column_width || 90);
-            }
-            return {a$};
-          });
-        }
-        console.info({cols: dom.worksheet.cols});
-      */
-      }
-
-      else {
-        delete dom.worksheet.cols;
       }
 
       // --- validation ----------------------------------------------------------
 
+      let dataValidations: DOMContent|undefined;
+
       if (sheet.data_validations?.length) {
 
-        dom.worksheet.dataValidations = {
+        dataValidations = {
+
           a$: { count: sheet.data_validations.length },
           dataValidation: sheet.data_validations.map(validation => {
 
@@ -1929,15 +1774,8 @@ export class Exporter {
               return new Area(target.start, target.end).spreadsheet_label;
             }).join(' ');
 
-            const entry: any = { 
-              a$: {
-                type: 'list',
-                allowBlank: 1, 
-                showInputMessage: 1, 
-                showErrorMessage: 1, 
-                sqref, // : new Area(validation.address).spreadsheet_label,
-              },
-            };
+            let formula1: string|undefined = undefined;
+
             if (validation.type === 'range') {
 
               const range: UnitRange = {
@@ -1955,46 +1793,50 @@ export class Exporter {
                 range.start.sheet = sheet_name_map[validation.area.start.sheet_id];
               }
 
-              /*
-              const area = new Area(
-                {...validation.validation.area.start, absolute_column: true, absolute_row: true}, 
-                {...validation.validation.area.end, absolute_column: true, absolute_row: true},
-              );
-
-              entry.formula1 = `${area.spreadsheet_label}`;
-              */
-              entry.formula1 = this.parser.Render(range);
+              formula1 = this.parser.Render(range);
 
             }
             else if (validation.type === 'list') {
-              entry.formula1 = `"${validation.list.join(',')}"`;
+              formula1 = `"${validation.list.join(',')}"`;
             }
-            return entry;
+
+            return { 
+              a$: {
+                type: 'list',
+                allowBlank: 1, 
+                showInputMessage: 1, 
+                showErrorMessage: 1, 
+                sqref, // : new Area(validation.address).spreadsheet_label,
+              },
+              formula1,
+            };
+
           }),
         };
 
       }
-      else {
-        delete dom.worksheet.dataValidations;
-      }
 
       // --- tables ------------------------------------------------------------
 
+      let tableParts: DOMContent|undefined;
+
       if (tables.length) {
-        dom.worksheet.tableParts.a$.count = tables.length;
-        dom.worksheet.tableParts.tablePart = tables.map(table => {
-          return {
-            a$: { 
-              'r:id': table.rel || '',
-            }
-          };
-        });
-      }
-      else {
-        delete dom.worksheet.tableParts;
+
+        tableParts = {
+          a$: {
+            count: tables.length,
+          },
+          tablePart: tables.map(table => {
+            return {
+              a$: { 
+                'r:id': table.rel || '',
+              }
+            };
+          }),
+        };
+
       }
 
-      // const GUID = () => '{' + uuidv4().toUpperCase() + '}';
 
       for (const table of tables) {
 
@@ -2003,32 +1845,23 @@ export class Exporter {
           totals_attributes.totalsRowCount = 1;
         }
         
-        const tableColumns: any = {
+        const tableColumns: DOMContent = {
           a$: {
             count: (table.columns || []).length,
           },
-          tableColumn: [],
-        };
-
-        if (table.columns) {
-
-          for (let i = 0; i < table.columns.length; i++) {
-            
-            const column = table.columns[i];
+          tableColumn: (table.columns||[]).map((column, i) => {
             const footer = (table.footers || [])[i];
-
-            tableColumns.tableColumn.push({
+            return {
               a$: {
                 id: i + 1,
                 name: column || `Column${i + 1}`,
                 totalsRowLabel: footer?.type === 'label' ? footer.value : undefined,
-                totalsRowFunction: footer?.type === 'formula' ? 'custom' : undefined, 
+                totalsRowFunction: footer?.type === 'formula' ? 'custom' : undefined,
               },
               totalsRowFormula: footer?.type === 'formula' ? footer.value : undefined,
-            });
-
-          }
-        }
+            };
+          }),
+        };
 
         const table_dom = {
           table: {
@@ -2039,18 +1872,15 @@ export class Exporter {
               'xmlns:xr': 'http://schemas.microsoft.com/office/spreadsheetml/2014/revision',
               'xmlns:xr3': 'http://schemas.microsoft.com/office/spreadsheetml/2016/revision3',
               id: table.index || 0, 
-              // 'xr:uid': '{676B775D-AA84-41B6-8450-8515A94D2D7B}',
               name: table.name, 
               displayName: table.display_name,
               ...totals_attributes,
               ref: table.ref,
-              // 'xr:uid': GUID(),
             },
 
             autoFilter: {
               a$: {
                 ref: table.filterRef || table.ref,
-                // 'xr:uid': GUID(),
               },
             },
 
@@ -2070,14 +1900,19 @@ export class Exporter {
         };
 
         const xml = XMLDeclaration + this.xmlbuilder1.build(table_dom);
+        // console.info(xml);
+
         this.zip?.Set(`xl/tables/table${table.index}.xml`, xml);
 
       }
 
       // --- conditional formats -----------------------------------------------
 
+      let conditionalFormatting: DOMContent|DOMContent[]|undefined;
+
       if (sheet.conditional_formats?.length) {
-        const conditionalFormatting: DOMContent[] = [];
+
+        const format_list: DOMContent[] = [];
         let priority_index = 1;
 
         const reverse_operator_map: Record<string, string> = {};
@@ -2117,7 +1952,7 @@ export class Exporter {
                 }
                 if (operator) {
 
-                  conditionalFormatting.push({
+                  format_list.push({
                     a$: { sqref: new Area(format.area.start, format.area.end).spreadsheet_label },
                     cfRule: {
                       a$: { type: 'cellIs', dxfId: dxf_index, operator, priority: priority_index++ },
@@ -2129,7 +1964,7 @@ export class Exporter {
               break;
 
             case 'expression':
-              conditionalFormatting.push({
+              format_list.push({
                 a$: { sqref: new Area(format.area.start, format.area.end).spreadsheet_label },
                 cfRule: {
                   a$: { type: 'expression', dxfId: dxf_index, priority: priority_index++ },
@@ -2139,7 +1974,7 @@ export class Exporter {
               break;
 
             case 'duplicate-values':
-              conditionalFormatting.push({
+              format_list.push({
                 a$: { sqref: new Area(format.area.start, format.area.end).spreadsheet_label },
                 cfRule: {
                   a$: { type: format.unique ? 'uniqueValues' : 'duplicateValues', dxfId: dxf_index, priority: priority_index++ },
@@ -2180,60 +2015,60 @@ export class Exporter {
                   } 
                 };
 
-                conditionalFormatting.push(generated);
+                format_list.push(generated);
 
               }
               break;
           }
         }
 
-        if (conditionalFormatting.length) {
-          dom.worksheet.conditionalFormatting = (conditionalFormatting.length > 1) ? conditionalFormatting : conditionalFormatting[0];
-        }
-        else {
-          delete dom.worksheet.conditionalFormatting;
+        if (format_list.length) {
+          conditionalFormatting = (format_list.length > 1) ? format_list : format_list[0];
         }
 
-      }
-      else {
-        delete dom.worksheet.conditionalFormatting;
       }
 
       // --- merges ------------------------------------------------------------
 
+      let mergeCells: DOMContent|undefined;
       if (merges.length) {
-        dom.worksheet.mergeCells.a$.count = merges.length;
-        dom.worksheet.mergeCells.mergeCell = merges.map(merge => {
-          return {
-            a$: { ref: merge.spreadsheet_label }
-          };
-        });
-      }
-      else {
-        delete dom.worksheet.mergeCells;
+
+        mergeCells = {
+          a$: { count: merges.length },
+          mergeCell: merges.map(merge => {
+            return {
+              a$: { ref: merge.spreadsheet_label }
+            };
+          }),
+        };
+
       }
 
       // --- hyperlinks --------------------------------------------------------
 
+      let dom_hyperlinks: DOMContent|undefined;
+
       if (hyperlinks.length) {
-        dom.worksheet.hyperlinks.hyperlink = hyperlinks.map(link => {
-          return {
-            a$: {
-              'r:id': link.rel,
-              ref: new Area(link.address).spreadsheet_label,
-              'xr:uid': '{0C6B7792-7EA0-4932-BF15-D49C453C565D}',
-            },
-          };
-        });
-      }
-      else {
-        delete dom.worksheet.hyperlinks;
+        dom_hyperlinks = {
+          hyperlink: hyperlinks.map(link => {
+            return {
+              a$: {
+                'r:id': link.rel,
+                ref: new Area(link.address).spreadsheet_label,
+                'xr:uid': '{0C6B7792-7EA0-4932-BF15-D49C453C565D}',
+              },
+            };
+          }),
+        };
       }
 
       // --- sparklines --------------------------------------------------------
 
+      let extLst: DOMContent|undefined;
+
       if (sparklines.length) {
-        dom.worksheet.extLst.ext['x14:sparklineGroups'] = {
+
+        const groups: DOMContent = {
           a$: {
             'xmlns:xm': 'http://schemas.microsoft.com/office/excel/2006/main',
           },
@@ -2276,14 +2111,24 @@ export class Exporter {
             }
           }),
         };
-      }
-      else {
-        delete dom.worksheet.extLst;
+
+        extLst = {
+          ext: {
+            a$: {
+              uri: '{05C60535-1F16-4fd2-B633-F4F36F0B64E0}',
+              'xmlns:x14': 'http://schemas.microsoft.com/office/spreadsheetml/2009/9/main',
+            },
+            'x14:sparklineGroups': groups
+          }
+        };
+
+
       }
 
-      dom.worksheet.sheetData = sheet_data;
 
       // --- charts ------------------------------------------------------------
+
+      let dom_drawing: DOMContent|undefined;
 
       const charts = this.ParseCharts(sheet);
       const images = this.ParseImages(sheet);
@@ -2356,7 +2201,8 @@ export class Exporter {
             `http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing`, 
             `../drawings/drawing${drawing.index}.xml`);
 
-        dom.worksheet.drawing = {
+        // dom.worksheet.drawing = {
+        dom_drawing = {
           a$: {
             'r:id': drawing_rel,
           },
@@ -2364,7 +2210,7 @@ export class Exporter {
 
       }
       else {
-        delete dom.worksheet.drawing;
+        // delete dom.worksheet.drawing;
       }
 
       // --- move page margins -------------------------------------------------
@@ -2375,12 +2221,74 @@ export class Exporter {
 
       // --- end? --------------------------------------------------------------
 
+      const sheetFormatPr: DOMContent = {
+        a$: {
+          'x14ac:dyDescent': 0.25,
+          defaultRowHeight: default_row_height === 15 ? undefined : default_row_height,
+          customHeight: default_row_height === 15 ? undefined : 1,
+          defaultColWidth: sheet.default_column_width ? PixelsToColumnWidth(sheet.default_column_width) : undefined,
+        },
+      }
+
+      //------------------------------------------------------------------------
+      //
+      // NOTE: order matters. that's why we predefine the layout
+      // here. we can't just append entries to the worksheet object. 
+      //
+      //------------------------------------------------------------------------
+
+      const dom: DOMContent = {
+
+        worksheet: {
+          a$: { ...sheet_attributes },
+          dimension: {
+            a$: {
+              ref: new Area(extent.start, extent.end).spreadsheet_label,
+            },
+          },
+          sheetViews: {
+            sheetView: {
+              a$: {
+                workbookViewId: 0,
+              },
+            },
+          },
+          
+          sheetFormatPr,
+          cols: dom_cols,
+          sheetData: { row: sheet_rows },
+
+          mergeCells,
+          conditionalFormatting,
+          dataValidations,
+          hyperlinks: dom_hyperlinks,
+
+          pageMargins: {
+            a$: {
+              left: 0.7,
+              right: 0.7,
+              top: 0.75,
+              bottom: 0.75,
+              header: 0.3,
+              footer: 0.3,
+            },
+          },
+          drawing: dom_drawing,
+          tableParts,
+          extLst,
+
+        },
+      };
+
+      // -----------------------------------------------------------------------
+
       // it seems like chrome, at least, will maintain order. but this is 
       // not gauranteed and we can't rely on it. the best thing to do might
       // be to use the renderer on blocks and then assemble the blocks ourselves.
-
-      dom.worksheet.dimension.a$.ref = new Area(extent.start, extent.end).spreadsheet_label;
+     
       const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
+
+      // console.info(xml);
 
       // write this into the file
 

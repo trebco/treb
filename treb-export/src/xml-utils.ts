@@ -20,13 +20,59 @@
  */
 
 import { Unescape } from './unescape_xml';
-import type { X2jOptions } from 'fast-xml-parser';
+import { type X2jOptions, XMLBuilder, type XmlBuilderOptions } from 'fast-xml-parser';
 
 export const XMLTagProcessor = (name: string, value: string): string => Unescape(value);
 
 export interface DOMContent {
   [index: string]: string|DOMContent|string[]|DOMContent[]|number|number[]|undefined;
 }
+
+/**
+ * not sure why we have to do this, but filter attributes that 
+ * have value === undefined
+ */
+export const ScrubXML = (dom: DOMContent) => {
+  if (dom) {
+    if (Array.isArray(dom)) {
+      for (const entry of dom) {
+        ScrubXML(entry);
+      }
+    }
+    else if (typeof dom === 'object') {
+      for (const [key, value] of Object.entries(dom)) {
+        if (key === 'a$') {
+          if (typeof value === 'object') {
+            const replacement: DOMContent = {};
+            for (const [attr_name, attr_value] of Object.entries(value)) {
+              if (attr_value !== undefined) {
+                replacement[attr_name] = attr_value;
+              }
+            }
+            dom[key] = replacement;
+          }
+        }
+        else {
+          ScrubXML(value as DOMContent);
+        }
+      }
+    }
+  }
+  return dom;
+};
+
+export const PatchXMLBuilder = (options: Partial<XmlBuilderOptions>) => {
+
+  const builder = new XMLBuilder(options);
+  const build = builder.build;
+
+  builder.build = (arg: DOMContent) => {
+    return build.call(builder, ScrubXML(arg)); // get the "this" value right
+  }
+
+  return builder;
+
+};
 
 //////////////////
 

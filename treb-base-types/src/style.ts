@@ -104,7 +104,12 @@ export interface ThemeColor {
 
 }
 
-export interface NullColor {}
+export interface NullColor {
+
+  /** @internal */
+  offset?: Color;
+
+}
 
 export type Color = ThemeColor|HTMLColor|NullColor;
 

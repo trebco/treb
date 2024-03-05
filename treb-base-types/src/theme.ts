@@ -19,7 +19,7 @@
  * 
  */
 
-import { type Color, type CellStyle, IsDefinedColor, IsHTMLColor, IsThemeColor, ThemeColorIndex, type ThemeColor } from './style';
+import { type Color, type CellStyle, IsHTMLColor, IsThemeColor, ThemeColorIndex, type ThemeColor } from './style';
 import { ColorFunctions } from './color';
 import { DOMContext } from './dom-utilities';
 
@@ -234,7 +234,7 @@ const TintedColor = (theme: Theme, source: ThemeColor) => {
  */
 export const ResolveThemeColor = (theme: Theme, color?: Color, default_index?: number): string => {
 
-  if (IsDefinedColor(color) && IsDefinedColor(color.offset)) {
+  if (color && color.offset) {
 
     // don't do this
     if (color.offset.offset) {
