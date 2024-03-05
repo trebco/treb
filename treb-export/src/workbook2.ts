@@ -28,10 +28,8 @@ const xmlparser2 = new XMLParser(XMLOptions2);
 
 // import * as he from 'he';
 
-//import { Drawing, TwoCellAnchor, CellAnchor } from './drawing/drawing';
 import type { TwoCellAnchor, CellAnchor } from './drawing2/drawing2';
 
-// import { ImportedSheetData, IArea } from 'treb-base-types/src';
 import { SharedStrings } from './shared-strings2';
 import { StyleCache } from './workbook-style2';
 import { Theme } from './workbook-theme2';
@@ -40,20 +38,6 @@ import type { RelationshipMap } from './relationship';
 import { ZipWrapper } from './zip-wrapper';
 import type { CellStyle, ThemeColor } from 'treb-base-types';
 import type { SerializedNamed } from 'treb-data-model';
-
-
-/*
-const XMLTypeMap = {
-  'sheet':          'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
-  'theme':          'application/vnd.openxmlformats-officedocument.theme+xml',
-  'drawing':        'application/vnd.openxmlformats-officedocument.drawing+xml',
-  'chart':          'application/vnd.openxmlformats-officedocument.drawingml.chart+xml',
-  'themeOverride':  'application/vnd.openxmlformats-officedocument.themeOverride+xml',
-  'ctrlProp':       'application/vnd.ms-excel.controlproperties+xml',
-  'style':          'application/vnd.ms-office.chartstyle+xml',
-  'colors':         'application/vnd.ms-office.chartcolorstyle+xml',
-};
-*/
 
 export const ConditionalFormatOperators: Record<string, string> = {
   greaterThan: '>',
