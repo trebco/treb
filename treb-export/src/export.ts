@@ -296,7 +296,7 @@ export class Exporter {
       if (edge.rgba) {
         return { rgb: edge.rgba };
       }
-      if (edge.theme) {
+      if (typeof edge.theme !== 'undefined') {
         return {
           theme: edge.theme,
           tint: edge.tint,
@@ -393,6 +393,8 @@ export class Exporter {
 
     };
 
+    // console.info({style_cache});
+
     const fonts: DOMContent[] = style_cache.fonts.map(font => {
 
       return {
@@ -413,7 +415,7 @@ export class Exporter {
 
         color: font.color_argb ? {
           a$: { rgb: font.color_argb },
-        } : font.color_theme ? {
+        } : (typeof font.color_theme !== 'undefined') ? {
           a$: { 
             theme: font.color_theme,
             tint: font.color_tint,
@@ -501,6 +503,8 @@ export class Exporter {
     };
 
     const xml = XMLDeclaration + this.xmlbuilder1.build(dom);
+    // console.info(xml);
+
     this.zip?.Set('xl/styles.xml', xml);
 
   }

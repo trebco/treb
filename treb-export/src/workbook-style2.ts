@@ -274,6 +274,10 @@ export class StyleCache {
         symbolic_name: composite.number_format, // for reference later
       };
 
+      if (/Scientific/i.test(composite.number_format)) {
+        options.number_format.format = '0.00E+00'
+      }
+
     }
 
 
@@ -305,6 +309,7 @@ export class StyleCache {
     //}
 
     if (composite.text) {
+
       if (IsHTMLColor(composite.text)) {
         font.color_argb = composite.text.text;
       }
