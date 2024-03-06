@@ -27,26 +27,36 @@ export type HorizontalAlign = '' | 'left' | 'center' | 'right';
 /** vertical align constants for cell style */
 export type VerticalAlign = '' | 'top' | 'bottom' | 'middle';
 
-const ThemeColorList = [
-  'Background',
-  'Text',
-  'Background2',
-  'Text2',
-  'Accent',
-  'Accent2',
-  'Accent3',
-  'Accent4',
-  'Accent5',
-  'Accent6',
-] as const;
+export type ThemeColorType =   
+  'Background'|
+  'Text'|
+  'Background2'|
+  'Text2'|
+  'Accent'|
+  'Accent2'|
+  'Accent3'|
+  'Accent4'|
+  'Accent5'|
+  'Accent6';
 
-export type ThemeColorType = typeof ThemeColorList[number];
+const ThemeColorMap: Record<string, number> = {
+  'Background': 0,
+  'Text': 1,
+  'Background2': 2,
+  'Text2': 3,
+  'Accent': 4,
+  'Accent2': 5,
+  'Accent3': 6,
+  'Accent4': 7,
+  'Accent5': 8,
+  'Accent6': 9,
+};
 
-const ThemeColorMap: Record<string, number> = {};
-
+/*
 for (const [index, entry] of ThemeColorList.entries()) {
   ThemeColorMap[entry] = index;
 }
+*/
 
 export const ThemeColorIndex = (color: ThemeColor) => {
   if (typeof color.theme === 'number') {

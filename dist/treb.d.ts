@@ -1091,24 +1091,6 @@ export interface FreezePane {
     rows: number;
     columns: number;
 }
-export declare const StandardGradientsList: {
-    readonly 'red-green': {
-        readonly color_space: "RGB";
-        readonly stops: GradientStop[];
-    };
-    readonly 'red-yellow-green': {
-        readonly color_space: "RGB";
-        readonly stops: GradientStop[];
-    };
-    readonly 'green-red': {
-        readonly color_space: "RGB";
-        readonly stops: GradientStop[];
-    };
-    readonly 'green-yellow-red': {
-        readonly color_space: "RGB";
-        readonly stops: GradientStop[];
-    };
-};
 
 /**
  * options for serializing data
@@ -1252,7 +1234,7 @@ export type HorizontalAlign = '' | 'left' | 'center' | 'right';
 
 /** vertical align constants for cell style */
 export type VerticalAlign = '' | 'top' | 'bottom' | 'middle';
-export type ThemeColorType = typeof ThemeColorList[number];
+export type ThemeColorType = 'Background' | 'Text' | 'Background2' | 'Text2' | 'Accent' | 'Accent2' | 'Accent3' | 'Accent4' | 'Accent5' | 'Accent6';
 
 /**
  * font size for cell style. we generally prefer relative sizes

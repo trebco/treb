@@ -67,7 +67,14 @@ export interface ConditionalFormatGradientOptions {
 
 }
 
-
+/**
+ * @internal
+ * 
+ * @privateRemarks
+ * 
+ * this is marked internal temporarily while I figure out why our API
+ * generator is not exporting the gradient stop type
+ */
 export const StandardGradientsList = {
   'red-green': {
     color_space: 'RGB',
