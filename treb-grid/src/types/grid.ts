@@ -45,9 +45,10 @@ import {
   ComplexToString,
   IsComplex,
   TextPartFlag,
+  IsArea,
 } from 'treb-base-types';
 
-import type { ExpressionUnit } from 'treb-parser';
+import type { ExpressionUnit, UnitAddress } from 'treb-parser';
 import { 
   DecimalMarkType, 
   ArgumentSeparatorType, 
@@ -1747,15 +1748,79 @@ export class Grid extends GridBase {
   }
 
   /**
+   * render the given data as R1C1. the source address is a base for 
+   * rendering relative addresses (is there a case for this method
+   * handling absolute offsets as well? ...)
+   * 
+   * NOTE: this method modifies the input data (at least it does if
+   * it's an array). so this method should only be called with scratchpad
+   * data.
+   * 
+   */
+  public FormatR1C1(data: CellValue|CellValue[][], source: ICellAddress|IArea) {
+
+    // normalize
+
+    if (IsArea(source)) {
+      source = source.start;
+    }
+
+    if (!Array.isArray(data)) {
+      data = [[data]];
+    }
+
+    const base: UnitAddress = {
+      type: 'address',
+      label: '',
+      row: source.row,
+      column: source.column, 
+      sheet: source.sheet_id ? this.model.sheets.Name(source.sheet_id) : this.active_sheet.name,
+      position: 0,
+      id: 0,
+    };
+
+    for (let r = 0; r < data.length; r++) {
+      const row = data[r];
+      for (let c = 0; c < row.length; c++) {
+        const cell = row[c];
+        if (typeof cell === 'string' && cell[0] === '=') {
+
+          const parse_result = this.parser.Parse(cell);
+          if (parse_result.expression) {
+            row[c] = '=' + this.parser.Render(parse_result.expression, {
+              missing: '',
+              r1c1: true,
+              r1c1_base: {
+                ...base,
+                row: source.row + r,
+                column: source.column + c,
+              },
+            });
+          }
+        }
+      }
+    }
+
+    return data;
+    
+  }
+
+  /**
    * get data in a given range, optionally formulas
    * API method
    */
-   public GetRange(range: ICellAddress | IArea, type?: 'formula'|'formatted'): CellValue|CellValue[][]|undefined {
+   public GetRange(range: ICellAddress | IArea, type?: 'formatted'|'A1'|'R1C1'): CellValue|CellValue[][]|undefined {
 
     if (IsCellAddress(range)) {
       const sheet = this.model.sheets.Find(range.sheet_id || this.active_sheet.id);
       if (sheet) {
-        if (type === 'formula') { return sheet.cells.RawValue(range); }
+        if (type === 'A1' || type === 'R1C1') { 
+          const data = sheet.cells.RawValue(range); 
+          if (type === 'R1C1') {
+            return this.FormatR1C1(data, range);
+          }
+          return data;
+        }
         if (type === 'formatted') { return sheet.GetFormattedRange(range); }
         return sheet.cells.GetRange(range);
       }
@@ -1764,7 +1829,13 @@ export class Grid extends GridBase {
 
     const sheet = this.model.sheets.Find(range.start.sheet_id || this.active_sheet.id);
     if (sheet) {
-      if (type === 'formula') { return sheet.cells.RawValue(range.start, range.end); }
+      if (type === 'A1' || type === 'R1C1') { 
+        const data = sheet.cells.RawValue(range.start, range.end); 
+        if (type === 'R1C1') {
+          return this.FormatR1C1(data, range);
+        }
+        return data;
+      }
       if (type === 'formatted') { return sheet.GetFormattedRange(range.start, range.end); }
       return sheet.cells.GetRange(range.start, range.end);
     }
@@ -1889,6 +1960,9 @@ export class Grid extends GridBase {
 
       if (!Is2DArray(data)) {
 
+        // we don't allow this anymore (at least we say we don't)
+
+
         // flat array -- we can recycle. recycling is R style (values, not rows).
         // in any event convert to [][]
 
@@ -1919,6 +1993,56 @@ export class Grid extends GridBase {
           data = [data];
         }
 
+      }
+      else {
+        if (recycle) {
+
+          // recycle 2D array. we'll do this if the target range is a multiple
+          // (or larger) of the source array. in blocks.
+
+          if (range.rows > data.length) {
+            const recycle_rows = Math.floor(range.rows / data.length);
+            if (recycle_rows > 1) {
+              const source = [...data];
+              for (let i = 0; i < recycle_rows; i++) {
+                const clone = JSON.parse(JSON.stringify(source));
+                data.push(...clone);
+              }  
+            }
+          }
+
+          let cols = 0;
+          for (const row of data) {
+            cols = Math.max(cols, row.length);
+          }
+
+          if (range.columns > cols) {
+            const recycle_columns = Math.floor(range.columns / cols);
+            if (recycle_columns > 1) {
+
+              for (const row of data) {
+
+                // pad out all rows first, jic
+                while (row.length < cols) {
+                  row.push(undefined);
+                }
+
+                // now recycle
+                const source = [...row];
+                for (let i = 0; i < recycle_columns; i++) {
+                  const clone = JSON.parse(JSON.stringify(source));
+                  row.push(...clone);
+                }
+
+              }
+
+              // ...
+
+              // console.info({recycle_columns});
+            }
+          }
+
+        }
       }
 
       if (transpose) { data = this.Transpose(data); }

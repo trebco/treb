@@ -489,14 +489,12 @@ export class Parser {
 
     switch (unit.type) {
       case 'address':
-        return this.AddressLabel(unit, offset);
+        return options.r1c1 ? this.R1C1Label(unit, options.r1c1_base) : this.AddressLabel(unit, offset);
 
       case 'range':
-        return (
-          this.AddressLabel(unit.start, offset) +
-          ':' +
-          this.AddressLabel(unit.end, offset)
-        );
+        return options.r1c1 ? 
+          this.R1C1Label(unit.start, options.r1c1_base) + ':' + this.R1C1Label(unit.end, options.r1c1_base) : 
+          this.AddressLabel(unit.start, offset) + ':' + this.AddressLabel(unit.end, offset);
 
       case 'missing':
         return missing;
@@ -823,7 +821,35 @@ export class Parser {
     return s;
   }
 
-  /** generates address label ("C3") from address (0-based) */
+  /**
+   * generates absolute or relative R1C1 address
+   */
+  protected R1C1Label(
+    address: UnitAddress,
+    base?: UnitAddress,
+  ): string {
+
+    let label = '';
+
+    if (address.sheet) { // && (!base?.sheet || base?.sheet !== address.sheet)) {
+      label = (QuotedSheetNameRegex.test(address.sheet) ?
+        '\'' + address.sheet + '\'' : address.sheet) + '!';
+    }
+
+    const row = (address.absolute_row || !base) ? (address.row + 1).toString() : `[${address.row - base.row}]`;
+    const column = (address.absolute_column || !base) ? (address.column + 1).toString() : `[${address.column - base.column}]`;
+
+    label += `R${row}C${column}`;
+
+    return label;
+  }
+
+  /** 
+   * generates address label ("C3") from address (0-based).
+   * 
+   * @param offset - offset by some number of rows or columns 
+   * @param r1c1 - if set, return data in R1C1 format. 
+   */
   protected AddressLabel(
     address: UnitAddress,
     offset: { rows: number; columns: number },
@@ -838,12 +864,6 @@ export class Parser {
 
     let label = '';
     if (address.sheet) {
-
-      /*
-      if (address.sheet === '__REF') {
-        return '#REF'; // magic
-      }
-      */
 
       label = (QuotedSheetNameRegex.test(address.sheet) ?
         '\'' + address.sheet + '\'' : address.sheet) + '!';

@@ -194,14 +194,22 @@ export interface LoadDocumentOptions {
   formula?: boolean;
 
   /**
-   * optional style for returned values (replaces old flags).
+   * by default, GetRange returns cell values. the optional type field 
+   * can be used to returns data in different formats.
    * 
    * @remarks
    * 
    * `formatted` returns formatted values, applying number formatting and
-   * returning strings. `formula` returns cell formulas instead of values.
+   * returning strings.
+   * 
+   * `A1` returns cell formulas instead of values, in A1 format.
+   * 
+   * `R1C1` returns cell formauls in R1C1 format.
+   * 
+   * `formula` is an alias for 'A1', for backwards compatibility.
+   * 
    */
-  type?: 'formatted'|'formula';
+  type?: 'formatted'|'A1'|'R1C1'|'formula';
 
 }
 
@@ -4301,16 +4309,24 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     // handle the old flags and the precedence rule. type takes precedence.
 
-    if (!options.type) {
+    let type = options.type;
+
+    if (!type) {
       if (options.formatted) {
-        options.type = 'formatted';
+        type = 'formatted';
       }
       if (options.formula) {
-        options.type = 'formula';
+        type = 'A1';
       }
     }
 
-    return this.grid.GetRange(this.model.ResolveAddress(range, this.grid.active_sheet), options.type);
+    // alias
+    
+    if (type === 'formula') {
+      type = 'A1';
+    }
+
+    return this.grid.GetRange(this.model.ResolveAddress(range, this.grid.active_sheet), type);
 
   }
 

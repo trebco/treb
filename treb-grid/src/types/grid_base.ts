@@ -2514,10 +2514,19 @@ export class GridBase {
 
             // translate...
             if (unit.offset_column) {
+              unit.absolute_column = false;
               unit.column = unit.column + address.column;
             }
+            else {
+              unit.absolute_column = true;
+            }
+
             if (unit.offset_row) {
+              unit.absolute_row = false;
               unit.row = unit.row + address.row;
+            }
+            else {
+              unit.absolute_row = true;
             }
 
           }

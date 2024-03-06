@@ -401,6 +401,16 @@ export type ParserFlags = Partial<OptionalParserFlags> & RequiredParserFlags;
 
 export interface RenderOptions {
   offset: { rows: number; columns: number };
+
+  /** 
+   * render in R1C1 format. this will be relative if the R1C1 base
+   * address is set; otherwise absolute. 
+   */
+  r1c1?: boolean;
+
+  /** base for offsetting relative R1C1 addresses */
+  r1c1_base?: UnitAddress;
+
   missing: string;
   convert_decimal: DecimalMarkType;
   convert_argument_separator: ArgumentSeparatorType;

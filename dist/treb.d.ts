@@ -1,4 +1,4 @@
-/*! API v29.4. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v29.5. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -1042,14 +1042,22 @@ export interface GetRangeOptions {
     formula?: boolean;
 
     /**
-     * optional style for returned values (replaces old flags).
+     * by default, GetRange returns cell values. the optional type field
+     * can be used to returns data in different formats.
      *
      * @remarks
      *
      * `formatted` returns formatted values, applying number formatting and
-     * returning strings. `formula` returns cell formulas instead of values.
+     * returning strings.
+     *
+     * `A1` returns cell formulas instead of values, in A1 format.
+     *
+     * `R1C1` returns cell formauls in R1C1 format.
+     *
+     * `formula` is an alias for 'A1', for backwards compatibility.
+     *
      */
-    type?: 'formatted' | 'formula';
+    type?: 'formatted' | 'A1' | 'R1C1' | 'formula';
 }
 
 /**
