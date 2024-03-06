@@ -2519,8 +2519,6 @@ export class Sheet {
 
     // same here (note broken naming)
     const sheet_style = JSON.parse(JSON.stringify(this.sheet_style));
-    // const row_style = JSON.parse(JSON.stringify(this.row_styles));
-    // const column_style = JSON.parse(JSON.stringify(this.column_styles));
     const row_pattern = JSON.parse(JSON.stringify(this.row_pattern));
 
     // row and column styles are Record<number, props> and not arrays.
@@ -2545,13 +2543,36 @@ export class Sheet {
       }
     }
 
-    for (const key of Object.keys(this.row_styles)) {
-      const index = Number(key);
-      const style = this.row_styles[index];
-      if (style) {
-        const reference = StyleToRef(style);
+    if (this.row_pattern && this.row_pattern.length && options.apply_row_pattern) {
+
+      let count = this.rows + 1;
+
+      for (const key of Object.keys(this.row_styles)) {
+        const index = Number(key);
+        if (!isNaN(index) && index >= count) { count = index + 1; }
+      }
+
+      for (let i = 0; i< count; i++) {
+        const pattern = this.row_pattern[i % this.row_pattern.length];
+        const style = this.row_styles[i] || {}; 
+        const composite = Style.Composite([pattern, style]);      
+        const reference = StyleToRef(composite);
+
         if (reference) {
-          row_style[index] = reference;
+          row_style[i] = reference;
+        }
+      }
+      
+    }
+    else {
+      for (const key of Object.keys(this.row_styles)) {
+        const index = Number(key);
+        const style = this.row_styles[index];
+        if (style) {
+          const reference = StyleToRef(style);
+          if (reference) {
+            row_style[index] = reference;
+          }
         }
       }
     }

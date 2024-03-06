@@ -74,4 +74,9 @@ export interface SerializeOptions {
    */
   export_functions?: boolean;
 
+  /**
+   * @internal
+   */
+  apply_row_pattern?: boolean;
+
 }

@@ -2822,6 +2822,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           tables: true,
           share_resources: false,
           export_functions: true,
+          apply_row_pattern: true, // if there's a row pattern, set it on rows so they export properly
         });
 
         // why do _we_ put this in, instead of the grid method? 

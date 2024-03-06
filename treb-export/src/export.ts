@@ -611,9 +611,13 @@ export class Exporter {
 
     const list: CellStyle[] = [sheet.sheet_style];
 
+    /*
+    // should apply to rows, not cells 
+
     if (sheet.row_pattern && sheet.row_pattern.length) {
       list.push(sheet.row_pattern[row % sheet.row_pattern.length]);
     }
+    */
 
     // is this backwards, vis a vis our rendering? I think it might be...
     // YES: should be row pattern -> row -> column -> cell [corrected]
