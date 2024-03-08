@@ -20,16 +20,6 @@
  */
 
 export { DataModel } from './data_model';
-
-export type { 
-  MacroFunction, 
-  ConnectedElementType,
-  SerializedNamedExpression, 
-  SerializedModel, 
-  ViewModel, 
-  SerializedMacroFunction,
-} from './data_model';
-
 export type { SerializedNamed } from './named';
 
 export { Sheet } from './sheet';
@@ -43,3 +33,5 @@ export type { ViewData as AnnotationViewData } from './annotation';
 export type { AnnotationData, AnnotationType } from './annotation';
 
 export * from './data-validation';
+export * from './types';
+

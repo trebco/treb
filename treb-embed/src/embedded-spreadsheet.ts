@@ -73,7 +73,7 @@ import type {
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
-  Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext, 
+  Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext 
 } from 'treb-base-types';
 
 import { EventSource, ValidateURI } from 'treb-utils';
@@ -113,6 +113,60 @@ import './content-types.d.ts';
 import * as export_worker_script from 'worker:../../treb-export/src/export-worker/index.worker';
 
 // --- types -------------------------------------------------------------------
+
+/**
+ * this is a structure for copy/paste data. clipboard data may include 
+ * relative formauls and resolved styles, so it's suitable for pasting into 
+ * other areas of the spreadsheet.
+ * 
+ * @privateRemarks
+ * work in progress. atm we're not using the system clipboard, although it 
+ * might be useful to merge this with grid copy/paste routines in the future.
+ * 
+ * if it hits the clipboard this should use mime type `application/x-treb-data`
+ * 
+ */
+export interface ClipboardDataElement {
+
+  /** calculated cell value */
+  calculated: CellValue,
+
+  /** the actual cell value or formula */
+  value: CellValue,
+
+  /** cell style. this may include row/column styles from the copy source */
+  style?: CellStyle,
+
+}
+
+/** clipboard data is a 2d array */
+export type ClipboardData = ClipboardDataElement[][];
+
+/** 
+ * optional paste options. we can paste formulas or values, and we 
+ * can use the source style, target style, or just use the source
+ * number formats.
+ */
+export interface PasteOptions {
+
+  /**
+   * when clipboard data includes formulas, optionally paste calculated
+   * values instead of the original formulas. defaults to false.
+   */
+  paste_values?: boolean;
+
+  /** 
+   * when pasting data from the clipboard, we can copy formatting/style 
+   * from the original data, or we can retain the target range formatting
+   * and just paste data. a third option allows pasting source number 
+   * formats but dropping other style information.
+   * 
+   * defaults to "source", meaning paste source styles.
+   */
+
+  formatting?: 'source'|'target'|'number-formats'
+
+}
 
 /**
  * options for saving files. we add the option for JSON formatting.
@@ -263,6 +317,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   /** @internal */
   public static one_time_warnings: Record<string, boolean> = {};
+
+  /** @internal */
+  protected static clipboard?: ClipboardData;
 
   protected DOM = DOMContext.GetInstance(); // default
 
@@ -4289,6 +4346,139 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   }
 
+  /**
+   * 
+   * @param target - the target to paste data into. this can be larger 
+   * than the clipboard data, in which case values will be recycled in 
+   * blocks. if the target is smaller than the source data, we will expand
+   * it.
+   * 
+   * @param data - clipboard data to paste.
+   * 
+   * @param style - optional paste style. default is to paste formulas and
+   * source formatting. setting the paste style flag can paste values, values
+   * and number formats, or retain the target formatting.
+   * 
+   * @privateRemarks LLM API
+   */
+  public async Paste(target?: RangeReference, data = EmbeddedSpreadsheet.clipboard, options: PasteOptions = {}) {
+
+    if (!data) {
+      throw new Error('no clipboad data');
+    }
+
+    if (!target) {
+      const selection = this.GetSelectionReference();
+      if (!selection.empty) {
+        target = selection.area;
+      }
+      else {
+        throw new Error('no range and no selection');
+      }
+    }
+
+    const resolved = this.model.ResolveArea(target, this.grid.active_sheet);
+
+    // paste has some special semantics. if the target smaller than the
+    // source data, we write the full data irrespective of size (similar 
+    // to "spill"). otherwise, we recycle in blocks. 
+
+    // the setrange method will recycle, but we also need to recycle styles.
+
+    // start with data length
+
+    const rows = data.length;
+    const columns = data[0]?.length || 0;
+
+    // target -> block size
+
+    resolved.Resize(
+      Math.max(1, Math.floor(resolved.rows / rows)) * rows, 
+      Math.max(1, Math.floor(resolved.columns / columns)) * columns );
+
+    const sheet = (resolved.start.sheet_id ? this.model.sheets.Find(resolved.start.sheet_id) : this.grid.active_sheet) || this.grid.active_sheet;
+      
+    const values: CellValue[][] = [];
+
+    // optionally collect calculated values, instead of raw values
+
+    if (options.paste_values) {
+      for (const [index, row] of data.entries()) {
+        values[index] = [];
+        for (const cell of row) {
+          values[index].push(cell.calculated);
+        }
+      }
+    }
+    else {
+      for (const [index, row] of data.entries()) {
+        values[index] = [];
+        for (const cell of row) {
+          values[index].push(cell.value);
+        }
+      }
+    }
+
+    // batch to limit events, sync up undo
+
+    return this.Batch(() => {
+
+      this.grid.SetRange(resolved, values, {
+        r1c1: true, recycle: true,
+      });
+
+      if (options.formatting === 'number-formats') {
+
+        // number format only, and apply delta
+
+        for (const address of resolved) {
+          const r = (address.row - resolved.start.row) % rows;
+          const c = (address.column - resolved.start.column) % columns;
+          const number_format = (data[r][c].style || {}).number_format;
+          sheet.UpdateCellStyle(address, { number_format }, true);
+        }
+      }
+      else if (options.formatting !== 'target') {
+
+        // use source formatting (default)
+        for (const address of resolved) {
+          const r = (address.row - resolved.start.row) % rows;
+          const c = (address.column - resolved.start.column) % columns;
+          sheet.UpdateCellStyle(address, data[r][c].style || {}, false);
+        }
+
+      }
+
+    }, true);
+
+
+  }
+
+  /**
+   * copy data. this method returns the copied data. it does not put it on
+   * the system clipboard. this is for API access when the system clipboard 
+   * might not be available.
+   * 
+   * @privateRemarks LLM API
+   */
+  public Copy(source?: RangeReference): ClipboardData {
+    return this.CopyInternal(source, 'copy');
+  }
+
+  /**
+   * cut data. this method returns the cut data. it does not put it on the 
+   * system clipboard. this method is similar to the Copy method, with 
+   * two differences: (1) we remove the source data, effectively clearing
+   * the source range; and (2) the clipboard data retains references, meaning
+   * if you paste the data in a different location it will refer to the same
+   * cells.
+   * 
+   * @privateRemarks LLM API
+   */
+  public Cut(source?: RangeReference): ClipboardData {
+    return this.CopyInternal(source, 'cut');
+  }
+ 
   /** 
    * 
    * @param range target range. leave undefined to use current selection.
@@ -4440,6 +4630,67 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   // --- internal (protected) methods ------------------------------------------
+
+  /**
+   * internal composite for cut/copy. mostly identical except we 
+   * read data as A1 for cut, so it will retain references. also
+   * cut clears the data.
+   * 
+   * FIXME: merge with grid cut/copy/paste routines. we already
+   * handle recycling and relative addressing, the only thing missing
+   * is alternate formats.
+   */
+  protected CopyInternal(source?: RangeReference, semantics: 'cut'|'copy' = 'copy'): ClipboardData {
+
+    if (!source) {
+      const selection = this.GetSelectionReference();
+      if (!selection.empty) {
+        source = selection.area;
+      }
+      else {
+        throw new Error('no range and no selection');
+      }
+    }
+
+    // resolve range so we can use it later -> Area
+    const resolved = this.model.ResolveArea(source, this.grid.active_sheet);
+    const sheet = (resolved.start.sheet_id ? this.model.sheets.Find(resolved.start.sheet_id) : this.grid.active_sheet) || this.grid.active_sheet;
+
+    // get cell data as R1C1 for copy but A1 for cut. 
+    const r1c1 = this.grid.GetRange(resolved, semantics === 'cut' ? 'A1' : 'R1C1') as CellValue[][];
+
+    // get style data, !apply theme but do apply r/c styles
+    const styles = sheet.GetCellStyle(resolved, false);
+
+    // get calculated values
+    let calculated = sheet.cells.GetRange(resolved.start, resolved.end);
+    if (!Array.isArray(calculated)) {
+      calculated = [[calculated]];
+    }
+
+    const data: ClipboardData = [];
+
+    for (const [r, row] of r1c1.entries()) {
+      data[r] = [];
+      for (const [c, value] of row.entries()) {
+
+        data[r][c] = {
+          value,
+          calculated: calculated[r][c],
+          style: styles[r]?.[c],
+        };
+      }
+    } 
+
+    EmbeddedSpreadsheet.clipboard = structuredClone(data);
+
+    if (semantics === 'cut') {
+      this.grid.SetRange(resolved, undefined, { recycle: true }); // clear
+    }
+
+    return data;
+        
+  }
 
   // --- moved from grid/grid base ---------------------------------------------
 

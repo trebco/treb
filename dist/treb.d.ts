@@ -1,4 +1,4 @@
-/*! API v29.5. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v29.6. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -966,6 +966,38 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     /**
      *
+     * @param target - the target to paste data into. this can be larger
+     * than the clipboard data, in which case values will be recycled in
+     * blocks. if the target is smaller than the source data, we will expand
+     * it.
+     *
+     * @param data - clipboard data to paste.
+     *
+     * @param style - optional paste style. default is to paste formulas and
+     * source formatting. setting the paste style flag can paste values, values
+     * and number formats, or retain the target formatting.
+     */
+    Paste(target?: RangeReference, data?: ClipboardData | undefined, options?: PasteOptions): Promise<void>;
+
+    /**
+     * copy data. this method returns the copied data. it does not put it on
+     * the system clipboard. this is for API access when the system clipboard
+     * might not be available.
+     */
+    Copy(source?: RangeReference): ClipboardData;
+
+    /**
+     * cut data. this method returns the cut data. it does not put it on the
+     * system clipboard. this method is similar to the Copy method, with
+     * two differences: (1) we remove the source data, effectively clearing
+     * the source range; and (2) the clipboard data retains references, meaning
+     * if you paste the data in a different location it will refer to the same
+     * cells.
+     */
+    Cut(source?: RangeReference): ClipboardData;
+
+    /**
+     *
      * @param range target range. leave undefined to use current selection.
      *
      * @public
@@ -1002,6 +1034,50 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      * @param token - the token returned from `Subscribe`
      */
     Cancel(token: number): void;
+}
+
+/**
+ * this is a structure for copy/paste data. clipboard data may include
+ * relative formauls and resolved styles, so it's suitable for pasting into
+ * other areas of the spreadsheet.
+ */
+export interface ClipboardDataElement {
+
+    /** calculated cell value */
+    calculated: CellValue;
+
+    /** the actual cell value or formula */
+    value: CellValue;
+
+    /** cell style. this may include row/column styles from the copy source */
+    style?: CellStyle;
+}
+
+/** clipboard data is a 2d array */
+export type ClipboardData = ClipboardDataElement[][];
+
+/**
+ * optional paste options. we can paste formulas or values, and we
+ * can use the source style, target style, or just use the source
+ * number formats.
+ */
+export interface PasteOptions {
+
+    /**
+     * when clipboard data includes formulas, optionally paste calculated
+     * values instead of the original formulas. defaults to false.
+     */
+    paste_values?: boolean;
+
+    /**
+     * when pasting data from the clipboard, we can copy formatting/style
+     * from the original data, or we can retain the target range formatting
+     * and just paste data. a third option allows pasting source number
+     * formats but dropping other style information.
+     *
+     * defaults to "source", meaning paste source styles.
+     */
+    formatting?: 'source' | 'target' | 'number-formats';
 }
 
 /**
@@ -1087,46 +1163,6 @@ export interface SheetScrollOptions {
  * function type used for filtering tables
  */
 export type TableFilterFunction = (value: CellValue, calculated_value: CellValue, style: CellStyle) => boolean;
-export interface FreezePane {
-    rows: number;
-    columns: number;
-}
-
-/**
- * options for serializing data
- */
-export interface SerializeOptions {
-
-    /** optimize for size */
-    optimize?: 'size' | 'speed';
-
-    /** include the rendered/calculated value in export */
-    rendered_values?: boolean;
-
-    /** translate colors to xlsx-friendly values */
-    export_colors?: boolean;
-
-    /** export cells that have no value, but have a border or background color */
-    decorated_cells?: boolean;
-
-    /** prune unused rows/columns */
-    shrink?: boolean;
-
-    /**
-     * include tables. tables will be serialized in the model, so we can
-     * drop them from cells. but you can leave them in if that's useful.
-     */
-    tables?: boolean;
-
-    /** share resources (images, for now) to prevent writing data URIs more than once */
-    share_resources?: boolean;
-
-    /**
-     * if a function has an export() handler, call that
-     */
-    export_functions?: boolean;
-}
-export type AnnotationType = 'treb-chart' | 'image' | 'textbox' | 'external';
 
 /**
  * Structure represents a 2d range of cells.
@@ -1350,6 +1386,46 @@ export interface EvaluateOptions {
      */
     r1c1?: boolean;
 }
+export interface FreezePane {
+    rows: number;
+    columns: number;
+}
+
+/**
+ * options for serializing data
+ */
+export interface SerializeOptions {
+
+    /** optimize for size */
+    optimize?: 'size' | 'speed';
+
+    /** include the rendered/calculated value in export */
+    rendered_values?: boolean;
+
+    /** translate colors to xlsx-friendly values */
+    export_colors?: boolean;
+
+    /** export cells that have no value, but have a border or background color */
+    decorated_cells?: boolean;
+
+    /** prune unused rows/columns */
+    shrink?: boolean;
+
+    /**
+     * include tables. tables will be serialized in the model, so we can
+     * drop them from cells. but you can leave them in if that's useful.
+     */
+    tables?: boolean;
+
+    /** share resources (images, for now) to prevent writing data URIs more than once */
+    share_resources?: boolean;
+
+    /**
+     * if a function has an export() handler, call that
+     */
+    export_functions?: boolean;
+}
+export type AnnotationType = 'treb-chart' | 'image' | 'textbox' | 'external';
 export declare type BorderConstants = "none" | "all" | "outside" | "top" | "bottom" | "left" | "right";
 
 /**
@@ -1588,23 +1664,6 @@ export interface SelectionEvent {
  */
 export interface FocusViewEvent {
     type: 'focus-view';
-}
-export interface SerializedMacroFunction {
-    name: string;
-    function_def: string;
-    argument_names?: string[];
-    description?: string;
-}
-
-/**
- * this type is no longer in use, but we retain it to parse old documents
- * that use it.
- *
- * @deprecated
- */
-export interface SerializedNamedExpression {
-    name: string;
-    expression: string;
 }
 
 /**
@@ -1969,6 +2028,23 @@ export interface AddressOffset {
 export interface Corner {
     address: ICellAddress;
     offset: AddressOffset;
+}
+export interface SerializedMacroFunction {
+    name: string;
+    function_def: string;
+    argument_names?: string[];
+    description?: string;
+}
+
+/**
+ * this type is no longer in use, but we retain it to parse old documents
+ * that use it.
+ *
+ * @deprecated
+ */
+export interface SerializedNamedExpression {
+    name: string;
+    expression: string;
 }
 
 /**
