@@ -388,8 +388,6 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      * Use this function to batch multiple document changes. Essentially the
      * grid stops broadcasting events for the duration of the function call,
      * and collects them instead. After the function call we update as necessary.
-     *
-     * @public
      */
     Batch(func: () => void, paint?: boolean): Promise<void>;
 
@@ -974,7 +972,7 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      * @param data - clipboard data to paste.
      *
      * @param style - optional paste style. default is to paste formulas and
-     * source formatting. setting the paste style flag can paste values, values
+     * source formatting. paste options can be usef to paste values, values
      * and number formats, or retain the target formatting.
      */
     Paste(target?: RangeReference, data?: ClipboardData | undefined, options?: PasteOptions): Promise<void>;
@@ -1067,7 +1065,7 @@ export interface PasteOptions {
      * when clipboard data includes formulas, optionally paste calculated
      * values instead of the original formulas. defaults to false.
      */
-    paste_values?: boolean;
+    values?: boolean;
 
     /**
      * when pasting data from the clipboard, we can copy formatting/style

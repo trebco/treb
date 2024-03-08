@@ -153,7 +153,7 @@ export interface PasteOptions {
    * when clipboard data includes formulas, optionally paste calculated
    * values instead of the original formulas. defaults to false.
    */
-  paste_values?: boolean;
+  values?: boolean;
 
   /** 
    * when pasting data from the clipboard, we can copy formatting/style 
@@ -2066,7 +2066,25 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * grid stops broadcasting events for the duration of the function call, 
    * and collects them instead. After the function call we update as necessary.
    * 
-   * @public
+   * @privateRemarks
+   * 
+   * FIXME: we need to consider the case where this is nested, since we now
+   * call it from the Paste method. that might be batched by a caller. we
+   * need a batch stack, and we need to consolidate any options (paint is the
+   * only option) and keep the top-of-stack last selection.
+   * 
+   * Q: why does this work the way it does, anyway? why not just rely
+   * on the actual events? if grid published them after a batch, wouldn't 
+   * everything just work? or is the problem that we normally handle events
+   * serially? maybe we need to rethink how we handle events coming from
+   * the grid.
+   * 
+   * ---
+   * 
+   * OK so now, grid will handle nested batching. it won't return anything
+   * until the last batch is complete. so this should work in the case of 
+   * nested calls, because nothing will happen until the last one is complete.
+   * 
    */
   public async Batch(func: () => void, paint = false): Promise<void> {
 
@@ -2077,6 +2095,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     let recalc = false;
     let reset = false;
+
+    // FIXME (2024): are these FIXMEs below still a thing? (...)
 
     // FIXME: annotation events
     // TODO: annotation events
@@ -4402,7 +4422,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     // optionally collect calculated values, instead of raw values
 
-    if (options.paste_values) {
+    if (options.values) {
       for (const [index, row] of data.entries()) {
         values[index] = [];
         for (const cell of row) {

@@ -2176,21 +2176,40 @@ export class Grid extends GridBase {
   /**
    * batch updates. returns all the events that _would_ have been sent.
    * also does a paint (can disable).
+   * 
+   * update for nesting/stacking. we won't return events until the last
+   * batch is complete. paint will similarly toll until the last batch
+   * is complete, and we'll carry forward any paint requirement from 
+   * inner batch funcs.
+   * 
    * @param func 
    */
   public Batch(func: () => void, paint = true): GridEvent[] {
     
-    this.batch = true;
-    func();
-    this.batch = false;
-    const events = this.batch_events.slice(0);
-    this.batch_events = [];
-
-    if (paint) {
-      this.DelayedRender(false);
+    if (this.batch === 0) {
+      this.batch_paint = paint; // clear any old setting
+    }
+    else {
+      this.batch_paint = this.batch_paint || paint; // ensure we honor it at the end
     }
 
-    return events;
+    this.batch++;
+    func();
+    this.batch--;
+
+    if (this.batch === 0) {
+      const events = this.batch_events.slice(0);
+      this.batch_events = [];
+
+      if (this.batch_paint) {
+        this.DelayedRender(false);
+      }
+
+      return events;
+    }
+
+    return []; // either nothing happened or we're not done
+
   }
 
 

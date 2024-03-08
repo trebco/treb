@@ -109,7 +109,19 @@ export class GridBase {
 
   // --- protected members -----------------------------------------------------
 
-  protected batch = false;
+  /** 
+   * switching to a stack, in case batching is nested. we don't need
+   * actual data so (atm) just count the depth.
+   */
+  protected batch = 0; // false;
+
+  /** 
+   * if any batch method along the way requests a paint update, we 
+   * want to toll it until the last batch call is complete, but we don't
+   * want to lose it. just remember to reset. [FIXME: isn't tolling this
+   * paint implicit, since it's async? ...]
+   */
+  protected batch_paint = false;
 
   protected batch_events: GridEvent[] = [];
 
@@ -4474,7 +4486,7 @@ export class GridBase {
       });
     }
 
-    if (this.batch) {
+    if (this.batch > 0) {
       this.batch_events.push(...events);
     }
     else {
