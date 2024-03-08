@@ -4356,7 +4356,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * @param data - clipboard data to paste.
    * 
    * @param style - optional paste style. default is to paste formulas and
-   * source formatting. setting the paste style flag can paste values, values
+   * source formatting. paste options can be usef to paste values, values
    * and number formats, or retain the target formatting.
    * 
    * @privateRemarks LLM API
