@@ -1069,7 +1069,16 @@ const Run = async () => {
   // an extra empty line in the comment, which is unfortunate but not
   // the end of the world.
 
-  printed = printed.replace(/(\s*\*)\s*@privateRemarks[\s\S]*?((?: @|\*\/))/g, '$1$2');
+  // FIXME: this doesn't work if there are 2 @privateRemarks blocks? 
+  // ...is there a lookahead in js regex? or do we need to loop this?
+
+  for (;;) {
+    const updated = printed.replace(/(\s*\*)\s*@privateRemarks[\s\S]*?((?: @|\*\/))/g, '$1$2');
+    if (updated === printed) {
+      break;
+    }
+    printed = updated;
+  }
 
   // 
   // attempting to clean up... this somewhat confusing regexp
