@@ -147,7 +147,7 @@ export const MatrixFunctionLibrary: FunctionMap = {
   },
 
   MMult: {
-    description: 'Returns the dot product of A and B',
+    description: 'Returns the dot product A ⋅ B',
     arguments: [
       { name: 'A', boxed: true }, 
       { name: 'B', boxed: true }, 
