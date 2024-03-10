@@ -105,15 +105,6 @@ export type UnionValue
     | ErrorUnion
     ;
 
-// common types
-
-/** 
- * this is a factory instead of a constant value to prevent any accidental pollution
- */
-// export const CreateUndefinedUnion = (): UnionValue => { 
-//  return { type: ValueType.undefined, value: undefined };
-//};
-
 /** 
  * shortcut, although this is wasteful 
  * 
@@ -135,8 +126,6 @@ export const Box = (value: unknown, type?: ValueType): UnionValue => {
   } as UnionValue;
   
 };
-
-// export type UnionOrArray = UnionValue|UnionValue[][];
 
 /**
  * box a complex value in a union, potentially switching to a real if

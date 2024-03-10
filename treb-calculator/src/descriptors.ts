@@ -76,6 +76,8 @@ export interface ArgumentDescriptor {
    * 
    * if this flag is set in any argument descriptor in a function, we'll
    * apply arrays. that's done when the function is installed. 
+   * 
+   * FIXME: this should maybe be the default, and we have an !unroll flag
    */
   unroll?: boolean;
 

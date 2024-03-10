@@ -19,9 +19,6 @@
  * 
  */
 
-// split from cell for separate import, 
-// @see format-index.ts
-
 /**
  * Complex number type
  */
@@ -67,6 +64,9 @@ export const ComplexToString = (value: Complex): string => {
   }
 };
 
+/**
+ * dimensioned quantity: 3.2 m/s, 2kg, 5m, &c.
+ */
 export interface DimensionedQuantity {
   value: number;
   unit: string;

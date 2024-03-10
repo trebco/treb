@@ -4367,11 +4367,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
+   * paste clipboard data into a target range. this method does not use
+   * the system clipboard; pass in clipboard data returned from the Cut or
+   * Copy method.
    * 
    * @param target - the target to paste data into. this can be larger 
    * than the clipboard data, in which case values will be recycled in 
    * blocks. if the target is smaller than the source data, we will expand
-   * it.
+   * it to fit the data.
    * 
    * @param data - clipboard data to paste.
    * 

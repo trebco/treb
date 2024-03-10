@@ -58,6 +58,7 @@ type ExpressionWithCachedFunction<T extends ExpressionUnit> = T extends { type: 
 export type ExtendedExpressionUnit = ExpressionWithCachedFunction<ExpressionUnit>;
 
 // FIXME: move
+// FIXME: this is sloppy
 export const UnionIsExpressionUnit = (test: UnionValue /*UnionOrArray*/): test is { type: ValueType.object, value: ExpressionUnit } => {
   return !Array.isArray(test) 
       && test.type === ValueType.object
@@ -65,15 +66,9 @@ export const UnionIsExpressionUnit = (test: UnionValue /*UnionOrArray*/): test i
 };
 
 // FIXME: move
+// FIXME: this is sloppy
 export const UnionIsMetadata = (test: UnionValue /*UnionOrArray*/): test is { type: ValueType.object, value: ReferenceMetadata } => {
-
   return test.type === ValueType.object && test.key === 'metadata';
-
-  /*
-  return !Array.isArray(test) 
-      && test.type === ValueType.object
-      && ((test.value as ReferenceMetadata).type === 'metadata');
-    */
 };
 
 // FIXME: move
@@ -89,7 +84,6 @@ export interface ReferenceMetadata {
 
 export interface CalculationContext {
   address: ICellAddress;
-  // model?: DataModel;
   volatile: boolean;
 }
 
@@ -100,28 +94,12 @@ export class ExpressionCalculator {
     volatile: false,
   };
 
-  //
-  // protected data_model!: DataModel; // can we set in ctor? I think this is a legacy hack
-
-
   // --- public API -----------------------------------------------------------
 
   constructor(
     protected readonly data_model: DataModel,
     protected readonly library: FunctionLibrary,
     protected readonly parser: Parser) {}
-
-  /*
-  public SetModel(model: DataModel): void {
-
-    // is this kept around for some side-effects or something? does 
-    // the model ever change?
-
-    this.data_model = model;
-    this.context.model = model;
-    
-  }
-  */
 
   /**
    * there's a case where we are calling this from within a function
@@ -131,10 +109,8 @@ export class ExpressionCalculator {
       value: UnionValue /*UnionOrArray*/, volatile: boolean }{
 
     if (!preserve_flags) {
-
       this.context.address = addr;
       this.context.volatile = false;
-
     }
 
     return {
@@ -154,8 +130,6 @@ export class ExpressionCalculator {
     if (!expr.sheet_id) {
       if (expr.sheet) {
         expr.sheet_id = this.data_model.sheets.ID(expr.sheet) || 0;
-
-        // expr.sheet_id = this.sheet_name_map[expr.sheet.toLowerCase()];
       }
       else {
         return () => ReferenceError();
@@ -178,7 +152,6 @@ export class ExpressionCalculator {
 
     if (!cell) {
       return () => { 
-        // return { type: ValueType.undefined, value: undefined } 
         return { type: ValueType.number, value: 0 };
       };
     }
@@ -199,9 +172,7 @@ export class ExpressionCalculator {
       // throw new Error('missing sheet id in CellFunction4');
     }
 
-    //const cells = this.cells_map[start.sheet_id];
     const cells = this.data_model.sheets.Find(start.sheet_id)?.cells;
-
     return cells?.GetRange4(start, end, true) || ReferenceError();
 
   }
@@ -241,7 +212,6 @@ export class ExpressionCalculator {
 
     case 'identifier':
       {
-        // const named_range = this.named_range_map[arg.name.toUpperCase()];
         const named_range = this.data_model.GetName(arg.name, this.context.address.sheet_id || 0);
         if (named_range?.type === 'range') {
           if (named_range.area.count === 1) {
@@ -290,29 +260,18 @@ export class ExpressionCalculator {
 
       // don't we have a map? [...] only for names?
 
-      let sheet: Sheet|undefined; // = this.data_model.active_sheet;
-      if (address.sheet_id) { // && address.sheet_id !== sheet.id) {
+      let sheet: Sheet|undefined;
+      if (address.sheet_id) {
         sheet = this.data_model.sheets.Find(address.sheet_id);
-
-        /*
-        for (const test of this.data_model.sheets) {
-          if (test.id === address.sheet_id) {
-            sheet = test;
-            break;
-          }
-        }
-        */
       }
 
       if (!sheet) {
-        // throw new Error('missing sheet [ac8]');
         console.error('missing sheet [ac8]');
         return ReferenceError();
       }
 
       const cell_data = sheet.CellData(address);
-      const value = // (cell_data.type === ValueType.formula) ? cell_data.calculated : cell_data.value;
-        cell_data.calculated_type ? cell_data.calculated : cell_data.value;
+      const value = cell_data.calculated_type ? cell_data.calculated : cell_data.value;
 
       const metadata: ReferenceMetadata = {
         type: 'metadata',
@@ -345,22 +304,12 @@ export class ExpressionCalculator {
         return ReferenceError();
       }
 
-      let sheet: Sheet|undefined; // = this.data_model.active_sheet;
-      if (range.start.sheet_id) { // && range.start.sheet_id !== sheet.id) {
+      let sheet: Sheet|undefined;
+      if (range.start.sheet_id) {
         sheet = this.data_model.sheets.Find(range.start.sheet_id);
-        /*
-        for (const test of this.data_model.sheets) {
-          if (test.id === range.start.sheet_id) {
-            sheet = test;
-            break;
-          }
-        }
-        */
       }
 
       if (!sheet) {
-        // console.info({range, context: JSON.stringify(this.context.address)});
-        // console.info({arg});
         throw new Error('missing sheet [ac9]');
       }
 
@@ -372,8 +321,7 @@ export class ExpressionCalculator {
           const cell_data = sheet.CellData({row, column});
           address = {...range.start, row, column};
 
-          const value = // (cell_data.type === ValueType.formula) ? cell_data.calculated : cell_data.value;
-            cell_data.calculated_type ? cell_data.calculated : cell_data.value;
+          const value = cell_data.calculated_type ? cell_data.calculated : cell_data.value;
 
           const metadata = {
             type: 'metadata',
@@ -464,35 +412,7 @@ export class ExpressionCalculator {
   }
 
   /** 
-   * excutes a function call 
-   *
-   * the return type of functions has never been locked down, and as a result
-   * there are a couple of things we need to handle. 
-   * 
-   * return type can be any value, essentially, or array, error object, or 
-   * (in the case of some of the reference/lookup functions) an address or 
-   * range expression. array must be 2d, I think? not sure that that is true.
-   * 
-   * this wrapper function returns a function which returns one of those
-   * things, i.e. it returns (expr) => return type
-   * 
-   * it will only return address/range if the parameter flag is set, so we
-   * could in theory lock it down a bit with overloads.
-   * 
-   * ---
-   * 
-   * UPDATE: that's no longer the case. we require that functions return 
-   * a UnionValue type (union), which can itself contain an array.
-   * 
-   * ---
-   * 
-   * FIXME: there is far too much duplication between this and the MC version
-   * (in simulation-expression-calculator). we need to find a way to consolidate
-   * these.
-   * 
-   * I think the problem is that we don't want a lot of switches, but the cost
-   * is an almost complete duplicate of this function in the subclass.
-   * 
+   * excute a function call 
    */
   protected CallExpression(outer: UnitCall, return_reference = false): (expr: UnitCall) => UnionValue /*UnionOrArray*/ {
 
@@ -513,45 +433,18 @@ export class ExpressionCalculator {
 
     return (expr: UnitCall) => {
 
-      // yeah so this is clear. just checking volatile.
-
-      // FIXME: should this be set later, at the same time as the
-      // calculation index? I think it should, since we may recurse.
-
-      // BEFORE YOU DO THAT, track down all references that read this field
-
-      // from what I can tell, the only place this is read is after the
-      // external (outer) Calculate() call. so we should move this assignment,
-      // and we should also be able to get it to fail:
-      //
-      // RandBetween() should be volatile, but if we have a nonvolatile function
-      // as an argument that should unset it, and remove the volatile flag.
-      // Check?
-
-      // actually this works, because it only sets the flag (does not unset).
-      // volatile applies to the _cell_, not just the function -- so as long
-      // as the outer function sets the flag, it's not material if an inner
-      // function is nonvolatile. similarly an inner volatile function will
-      // make the outer function volatile.
-
-      // this does mean that the nonvolatile function will be treated differently
-      // if it's an argument to a volatile function, but I think that's reasonable
-      // behavior; also it's symmetric with the opposite case (inner volatile.)
-
-      // so leave this as-is, or you can move it -- should be immaterial
-
+      // set context volatile if this function is volatile. it will bubble
+      // through nested function calls, so the entire cell will be volatile 
+      // if there's a volatile function in there somewhere
+      
       this.context.volatile = this.context.volatile || (!!func.volatile);
 
-      // NOTE: the argument logic is (possibly) calculating unecessary operations,
-      // if there's a conditional (like an IF function). although that is the
-      // exception rather than the rule...
-
-      // ok we can handle IF functions, at the expense of some tests... 
-      // is it worth it? 
-
+      // we recurse calculation, but in the specific case of IF functions
+      // we can short-circuit and skip the unused code path. doesn't apply
+      // anywhere else atm
+      
       const if_function = outer.name.toLowerCase() === 'if';
       let skip_argument_index = -1;
-
       let argument_error: UnionValue|undefined;
 
       const argument_descriptors = func.arguments || []; // map
@@ -593,15 +486,11 @@ export class ExpressionCalculator {
           } : this.parser.Render(arg).replace(/\$/g, '');
         }
         else if (descriptor.metadata) {
-
           return this.GetMetadata(arg, () => { return {}}); // type is UnionOrArray
-
         }
         else {
 
           const result = this.CalculateExpression(arg as ExtendedExpressionUnit);
-
-          // if (!Array.isArray(result) && result.type === ValueType.error) {
 
           if (result.type === ValueType.error) { // array check is implicit since array is a type
             if (descriptor.allow_error) {
@@ -613,11 +502,9 @@ export class ExpressionCalculator {
 
           // can't shortcut if you have an array (or we need to test all the values)
 
-          //if (if_function && arg_index === 0 && !Array.isArray(result)) {
-          if (if_function && arg_index === 0 && result.type !== ValueType.array){ // !Array.isArray(result)) {
-              let result_truthy = false; 
+          if (if_function && arg_index === 0 && result.type !== ValueType.array){
 
-            // if (Array.isArray(result)) { result_truthy = true; }
+            let result_truthy = false; 
 
             if (result.type === ValueType.string) {
               const lowercase = (result.value as string).toLowerCase().trim();
@@ -626,6 +513,7 @@ export class ExpressionCalculator {
             else {
               result_truthy = !!result.value;
             }
+
             skip_argument_index = result_truthy ? 2 : 1;
           }
 
@@ -633,11 +521,6 @@ export class ExpressionCalculator {
             return result;
           }
 
-          /*
-          if (Array.isArray(result)) {
-            return result.map(row => row.map(value => value.value));
-          }
-          */
           if (result.type === ValueType.array) {
             return (result as ArrayUnion).value.map(row => row.map(value => value.value));            
           }
@@ -653,12 +536,6 @@ export class ExpressionCalculator {
         return argument_error;
       }
 
-      // I thought we were passing the model as this (...) ? actually
-      // now we bind functions that need this, so maybe we should pass
-      // null here.
-
-      // return func.fn.apply(null, mapped_args);
-      
       if (func.return_type === ReturnType.reference) {
 
         const result = func.fn.apply(null, mapped_args);
@@ -757,11 +634,6 @@ export class ExpressionCalculator {
               value: (operand as ArrayUnion).value.map(column => column.map(value => func(zero, value))),
             };
           }
-          /*
-          if (Array.isArray(operand)) {
-            return operand.map(column => column.map(value => func(zero, value)));
-          }
-          */
           return func(zero, operand);
         };
 
@@ -929,31 +801,17 @@ export class ExpressionCalculator {
 
     return () => {
 
-      /*
-      if (this.bound_name_stack[0]) {
-        const expr = this.bound_name_stack[0][upper_case];
-        if (expr) {
-          console.info("BOUND", upper_case, expr);
-          return this.CalculateExpression(expr as ExtendedExpressionUnit);
-        }
-      }
-      */
-
-      // const named_range = this.named_range_map[upper_case];
-      const named_range = this.data_model.GetName(upper_case, this.context.address.sheet_id || 0);
-
-      if (named_range?.type === 'range') {
-        if (named_range.area.count === 1) {
-          return this.CellFunction4(named_range.area.start, named_range.area.start);
-        }
-        else {
-          return this.CellFunction4(named_range.area.start, named_range.area.end);
-        }
-      }
-
-      const named2 = this.data_model.GetName(identifier, this.context.address.sheet_id || 0);
-      if (named2 && named2.type === 'expression') {
-        return this.CalculateExpression(named2.expression as ExtendedExpressionUnit);
+      const named = this.data_model.GetName(upper_case, this.context.address.sheet_id || 0);
+      
+      switch (named?.type) {
+        case 'range':
+          if (named.area.count === 1) {
+            return this.CellFunction4(named.area.start, named.area.start);
+          }
+          return this.CellFunction4(named.area.start, named.area.end);
+          
+        case 'expression':
+          return this.CalculateExpression(named.expression as ExtendedExpressionUnit);
       }
 
       // console.info( '** identifier', {identifier, expr, context: this.context});
