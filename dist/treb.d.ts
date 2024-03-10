@@ -963,11 +963,14 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     Select(range?: RangeReference): void;
 
     /**
+     * paste clipboard data into a target range. this method does not use
+     * the system clipboard; pass in clipboard data returned from the Cut or
+     * Copy method.
      *
      * @param target - the target to paste data into. this can be larger
      * than the clipboard data, in which case values will be recycled in
      * blocks. if the target is smaller than the source data, we will expand
-     * it.
+     * it to fit the data.
      *
      * @param data - clipboard data to paste.
      *
@@ -1302,6 +1305,10 @@ export interface Complex {
     real: number;
     imaginary: number;
 }
+
+/**
+ * dimensioned quantity: 3.2 m/s, 2kg, 5m, &c.
+ */
 export interface DimensionedQuantity {
     value: number;
     unit: string;

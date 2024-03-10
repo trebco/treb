@@ -158,7 +158,7 @@ export class XMLUtils {
    * 
    * in either case we want both "c" elements.
    */
-  public static FindAll(root: any = {}, path: string): any[] {
+  public static FindAll(root: DOMContent = {}, path: string): any[] {
 
     const components = path.split('/');
 
@@ -190,12 +190,12 @@ export class XMLUtils {
    * basically if you see a wildcard, just treat every element as a 
    * match -- right?
    */
-  public static FindAllTail(root: any, elements: string[]): any[] {
+  public static FindAllTail(root: DOMContent|DOMContent[], elements: string[]): DOMContent[] {
 
     if (Array.isArray(root)) {
       return root.reduce((composite, element) => {
         return composite.concat(this.FindAllTail(element, elements));
-      }, []);
+      }, [] as DOMContent[]);
     }
 
     for (let i = 0; i < elements.length; i++) {
@@ -209,15 +209,27 @@ export class XMLUtils {
       // maps attributes and text differently... hopefully they won't use 
       // wildcards
 
+      if (element === '*') {
+
+        const pairs = Object.entries(root) as Array<[string, DOMContent]>;
+        root = pairs.reduce((result, [key, value]) => {
+          if (key !== 'a$' && key !== 't$')  {
+            result.push(value);
+          }
+          return result;
+        }, [] as DOMContent[]);
+
+        /*
       // two loops, really? come on
 
-      if (element === '*') {
-        root = Object.keys(root).
+        root = Object.keys(flat).
             filter(key => (key !== 'a$' && key !== 't$')).
-            map(key => root[key]);
+            map(key => flat[key]) as DOMContent[];
+        */
+
       }
       else {
-        root = root[element];
+        root = root[element] as DOMContent;
       }
 
       if (!root) {
@@ -237,7 +249,7 @@ export class XMLUtils {
         const step = elements.slice(1);
         return root.reduce((composite, element) => {
           return composite.concat(this.FindAllTail(element, step));
-        }, []);
+        }, [] as DOMContent[]);
 
       }
 

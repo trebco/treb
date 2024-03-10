@@ -23,16 +23,6 @@
 import type { RangeScale} from 'treb-utils';
 import { Scale } from 'treb-utils';
 
-/* * calculated human-friendly scale for rendering axes * /
-export interface RangeScale {
-  scale: number;
-  step: number;
-  count: number;
-  min: number;
-  max: number;
-}
-*/
-
 export class Util {
 
   /**
@@ -63,32 +53,9 @@ export class Util {
     return range * (value - scale.min) / (scale.max - scale.min);
   }
 
-  /* *
-   * flatten. we support holes in data, which means undefined values
-   * in arrays, but don't push an empty value at the top level (if
-   * that makes sense).
-   *
-   * @deprecated
-   * /
-  public static Flatten(args: any) {
-    let flat: any[] = [];
-    if (Array.isArray(args)) {
-      for (const element of args) {
-        if (Array.isArray(element)) {
-          flat = flat.concat(this.Flatten(element));
-        }
-        else {
-          flat.push(element);
-        }
-      }
-    }
-    else if (typeof args !== 'undefined') {
-      flat.push(args);
-    }
-    return flat;
-  }
-  */
-
+  /**
+   * can we replace this with Array.flatMap?
+   */
   public static Flatten<T>(args?: T|T[]|T[][]) {
     let flat: T[] = [];
     if (Array.isArray(args)) {
