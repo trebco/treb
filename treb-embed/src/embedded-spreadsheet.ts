@@ -4378,13 +4378,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @param data - clipboard data to paste.
    * 
-   * @param style - optional paste style. default is to paste formulas and
-   * source formatting. paste options can be usef to paste values, values
-   * and number formats, or retain the target formatting.
-   * 
    * @privateRemarks LLM API
+   * 
+   * @privateRemarks this was async when we were thinking of using the 
+   * system clipboard, but that's pretty broken so we're not going to
+   * bother atm.
    */
-  public async Paste(target?: RangeReference, data = EmbeddedSpreadsheet.clipboard, options: PasteOptions = {}) {
+  public Paste(target?: RangeReference, data = EmbeddedSpreadsheet.clipboard, options: PasteOptions = {}) {
 
     if (!data) {
       throw new Error('no clipboad data');

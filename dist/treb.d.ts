@@ -973,10 +973,6 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      * it to fit the data.
      *
      * @param data - clipboard data to paste.
-     *
-     * @param style - optional paste style. default is to paste formulas and
-     * source formatting. paste options can be usef to paste values, values
-     * and number formats, or retain the target formatting.
      */
     Paste(target?: RangeReference, data?: ClipboardData | undefined, options?: PasteOptions): Promise<void>;
 

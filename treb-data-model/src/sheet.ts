@@ -2225,8 +2225,14 @@ export class Sheet {
       return this.CompositeStyleForCell(area, true, false, apply_theme);
     }
 
+    // the contract says this should return an array, not a single value.
+    // 
+    // I can fix it, but will anyone break? (...) check the indent buttons
+    // (update: looks OK)
+    // 
+
     if (area.start.row === area.end.row && area.start.column === area.end.column) {
-      return this.CompositeStyleForCell(area.start, true, false, apply_theme);
+      return [[this.CompositeStyleForCell(area.start, true, false, apply_theme)]];
     }
 
     const result: CellStyle[][] = [];
@@ -2234,8 +2240,6 @@ export class Sheet {
     for (let r = area.start.row; r <= area.end.row; r++) {
       const row: CellStyle[] = [];
       for (let c = area.start.column; c <= area.end.column; c++) {
-        // const cell = this.CellData({row: r, column: c});
-        // row.push(cell.style || {});
         row.push(this.CompositeStyleForCell({row: r, column: c}, true, false, apply_theme));
       }
       result.push(row);
