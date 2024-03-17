@@ -34,6 +34,7 @@ import type {
   ParserFlags,
   UnitStructuredReference,
   RenderOptions,
+  BaseExpressionUnit,
 } from './parser-types';
 import {
   ArgumentSeparatorType,
@@ -334,6 +335,77 @@ export class Parser {
     }
   }
 
+  /** 
+   * recursive tree walk that allows substitution. this should be 
+   * a drop-in replacement for the original Walk function but I'm
+   * keeping it separate temporarily just in case it breaks something.
+   * 
+   * @param func - in this version function can return `true` (continue
+   * walking subtree), `false` (don't walk subtree), or an ExpressionUnit.
+   * in the last case, we'll replace the original unit with the substitution.
+   * obviously in that case we don't recurse.
+   */
+  public Walk2(unit: ExpressionUnit, func: (unit: ExpressionUnit) => boolean|ExpressionUnit|undefined): ExpressionUnit {
+
+    const result = func(unit);
+    if (typeof result === 'object') {
+      return result;
+    }
+
+    switch (unit.type) {
+      case 'address':
+      case 'missing':
+      case 'literal':
+      case 'complex':
+      case 'identifier':
+      case 'operator':
+      case 'structured-reference':
+        break;
+
+      case 'dimensioned':
+        if (result) {
+          unit.expression = this.Walk2(unit.expression, func) as BaseExpressionUnit; // could be an issue
+          unit.unit = this.Walk2(unit.unit, func) as UnitIdentifier; // could be an issue
+        }
+        break;
+
+      case 'range':
+        if (func(unit)) {
+          unit.start = this.Walk2(unit.start, func) as UnitAddress; // could be an issue
+          unit.end = this.Walk2(unit.end, func) as UnitAddress; // could be an issue
+        }
+        break;
+
+      case 'binary':
+        if (func(unit)) {
+          unit.left = this.Walk2(unit.left, func);
+          unit.right = this.Walk2(unit.right, func);
+        }
+        break;
+
+      case 'unary':
+        if (func(unit)) {
+          unit.operand = this.Walk2(unit.operand, func);
+        }
+        break;
+
+      case 'group':
+        if (func(unit)) {
+          unit.elements = unit.elements.map(source => this.Walk2(source, func));
+        }
+        break;
+
+      case 'call':
+        if (func(unit)) {
+          unit.args = unit.args.map(source => this.Walk2(source, func));
+        }
+        break;
+    }
+
+    return unit;
+
+  }
+
   /**
    * recursive tree walk.
    *
@@ -382,13 +454,19 @@ export class Parser {
 
       case 'group':
         if (func(unit)) {
-          unit.elements.forEach((element) => this.Walk(element, func));
+          // unit.elements.forEach((element) => this.Walk(element, func));
+          for (const element of unit.elements) {
+            this.Walk(element, func);
+          }
         }
         return;
 
       case 'call':
         if (func(unit)) {
-          unit.args.forEach((arg) => this.Walk(arg, func));
+          for (const arg of unit.args) {
+            this.Walk(arg, func);
+          }
+          // unit.args.forEach((arg) => this.Walk(arg, func));
         }
     }
   }
