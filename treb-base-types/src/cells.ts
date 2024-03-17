@@ -1211,6 +1211,22 @@ export class Cells {
   }
 
   /**
+   * yet another iterator, this one returns cell and address. 
+   * iterates all cells; does not create missing cells.
+   */
+  public *IterateRC() {
+    for (const [row, r] of this.data.entries()) {
+      if (r) {
+        for (const [column, cell] of r.entries()) {
+          if (cell) {
+            yield { cell, row, column };
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * replacement for old callback iterator. this is a composite 
    * of iterating all and iterating an area. I want to remove the
    * other method, but there are still some calls that use the
