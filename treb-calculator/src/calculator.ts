@@ -1589,45 +1589,54 @@ export class Calculator extends Graph {
   /** moved from embedded sheet */
   public Evaluate(expression: string, active_sheet?: Sheet, options: EvaluateOptions = {}, raw_result = false) {
     
-    // const current = this.parser.argument_separator;
-    // const r1c1_state = this.parser.flags.r1c1;
+    let parse_expression = options?.preparsed;
 
-    this.parser.Save();
+    if (!parse_expression) {
 
-    if (options.argument_separator) {
-      if (options.argument_separator === ',') {
-        this.parser.SetLocaleSettings(DecimalMarkType.Period);
+      this.parser.Save();
 
-        // this.parser.argument_separator = ArgumentSeparatorType.Comma;
-        // this.parser.decimal_mark = DecimalMarkType.Period;
+      if (options.argument_separator) {
+        if (options.argument_separator === ',') {
+          this.parser.SetLocaleSettings(DecimalMarkType.Period);
+
+          // this.parser.argument_separator = ArgumentSeparatorType.Comma;
+          // this.parser.decimal_mark = DecimalMarkType.Period;
+        }
+        else {
+          this.parser.SetLocaleSettings(DecimalMarkType.Comma);
+
+          // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
+          // this.parser.decimal_mark = DecimalMarkType.Comma;
+        }
       }
-      else {
-        this.parser.SetLocaleSettings(DecimalMarkType.Comma);
 
-        // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-        // this.parser.decimal_mark = DecimalMarkType.Comma;
+      if (options.r1c1) {
+        this.parser.flags.r1c1 = options.r1c1;
       }
+
+      const parse_result = this.parser.Parse(expression);
+
+      // reset
+
+      // this.parser.argument_separator = current;
+      // this.parser.decimal_mark = (current === ArgumentSeparatorType.Comma) ? DecimalMarkType.Period : DecimalMarkType.Comma;
+      // this.parser.flags.r1c1 = r1c1_state;
+
+      this.parser.Restore();
+
+      parse_expression = parse_result.expression;
+
+      if (parse_result.error) {
+        throw new Error(parse_result.error);
+      }
+
     }
-
-    if (options.r1c1) {
-      this.parser.flags.r1c1 = options.r1c1;
-    }
-
-    const parse_result = this.parser.Parse(expression);
-
-    // reset
-
-    // this.parser.argument_separator = current;
-    // this.parser.decimal_mark = (current === ArgumentSeparatorType.Comma) ? DecimalMarkType.Period : DecimalMarkType.Comma;
-    // this.parser.flags.r1c1 = r1c1_state;
-
-    this.parser.Restore();
 
     // OK
 
-    if (parse_result && parse_result.expression ){ 
+    if (parse_expression ){ 
 
-      this.parser.Walk(parse_result.expression, (unit) => {
+      this.parser.Walk(parse_expression, (unit) => {
         if (unit.type === 'address' || unit.type === 'range') {
 
           // don't allow offset references, even in R1C1
@@ -1648,7 +1657,7 @@ export class Calculator extends Graph {
       });
 
       // console.info({expression: parse_result.expression})
-      const result = this.CalculateExpression(parse_result.expression);
+      const result = this.CalculateExpression(parse_expression, options.address);
       if (raw_result) {
         return result;
       }
@@ -1663,10 +1672,6 @@ export class Calculator extends Graph {
     }
 
     // or? (...)
-
-    if (parse_result.error) {
-      throw new Error(parse_result.error);
-    }
 
     throw new Error('invalid expression');
 
