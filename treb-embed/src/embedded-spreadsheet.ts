@@ -1000,10 +1000,20 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
               const cached_selection = this.last_selection;
 
+              /*
               ((this.calculation === CalculationOptions.automatic) ?
                 this.Recalculate(event) : Promise.resolve()).then(() => {
                   this.DocumentChange(cached_selection);
                 });
+              */
+
+              // recalc is no longer async
+
+              if (this.calculation === CalculationOptions.automatic) {
+                this.Recalculate(event);
+              }
+
+              this.DocumentChange(cached_selection);
 
               /*
               if (this.calculation === CalculationOptions.automatic) {
@@ -1084,10 +1094,19 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               if (event.rebuild_required) {
                 this.calculator.Reset();
 
+                /*
                 ((this.calculation === CalculationOptions.automatic) ?
                   this.Recalculate(event) : Promise.resolve()).then(() => {
                     this.DocumentChange(cached_selection);
                   });
+                */
+
+                // recalculate is no longer async
+
+                if (this.calculation === CalculationOptions.automatic) {
+                  this.Recalculate(event);
+                }
+                this.DocumentChange(cached_selection);
 
               }
               else {
@@ -2086,7 +2105,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * nested calls, because nothing will happen until the last one is complete.
    * 
    */
-  public async Batch(func: () => void, paint = false): Promise<void> {
+  public Batch(func: () => void, paint = false): void {
 
     // API v1 OK
 
@@ -2118,7 +2137,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     if (recalc || reset) {
-      await this.Recalculate();
+      this.Recalculate();
       this.DocumentChange(cached_selection);
     }
 
@@ -3816,10 +3835,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * the event parameter should not be used if this is called
    * as an API function, remove it from typings
-   * 
+   *
+   * why is this async? it doesn't do anything async.
+   *  
    * @public
    */
-  public async Recalculate(event?: GridEvent): Promise<void> {
+  public Recalculate(event?: GridEvent) {
 
     // API v1 OK
 
@@ -4366,6 +4387,20 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   }
 
+  /** 
+   * override for paste method omits the data parameter. 
+   */
+  public Paste(target?: RangeReference, options?: PasteOptions): void;
+
+  /**
+   * standard paste method accepts data argument
+   * 
+   * @param target 
+   * @param data 
+   * @param options 
+   */
+  public Paste(target?: RangeReference, data?: ClipboardData, options?: PasteOptions): void;
+
   /**
    * paste clipboard data into a target range. this method does not use
    * the system clipboard; pass in clipboard data returned from the Cut or
@@ -4384,8 +4419,28 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * system clipboard, but that's pretty broken so we're not going to
    * bother atm.
    */
-  public Paste(target?: RangeReference, data = EmbeddedSpreadsheet.clipboard, options: PasteOptions = {}) {
+  public Paste(target?: RangeReference, ...args: unknown[]): void {
 
+    let data = EmbeddedSpreadsheet.clipboard; // default to "global" clipboard
+    let options: PasteOptions = {}; // default
+
+    switch (args.length) {
+      case 1:
+        if (args[0] && typeof args[0] === 'object') {
+          options = args[0] as PasteOptions;
+        }
+        break;
+
+      case 2:
+        if (args[0] && Array.isArray(args[0])) {
+          data = args[0] as ClipboardData;
+        }
+        if (args[1] && typeof args[1] === 'object') {
+          options = args[1] as PasteOptions;
+        }
+        break;
+    }
+    
     if (!data) {
       throw new Error('no clipboad data');
     }
@@ -4442,9 +4497,16 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       }
     }
 
+    // this is to resolve the reference in the callback,
+    // but we should copy -- there's a possibility that
+    // this points to the static member, which could get
+    // overwritten. FIXME
+    
+    const local = data; 
+
     // batch to limit events, sync up undo
 
-    return this.Batch(() => {
+    this.Batch(() => {
 
       this.grid.SetRange(resolved, values, {
         r1c1: true, recycle: true,
@@ -4457,7 +4519,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         for (const address of resolved) {
           const r = (address.row - resolved.start.row) % rows;
           const c = (address.column - resolved.start.column) % columns;
-          const number_format = (data[r][c].style || {}).number_format;
+          const number_format = (local[r][c].style || {}).number_format;
           sheet.UpdateCellStyle(address, { number_format }, true);
         }
       }
@@ -4467,7 +4529,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         for (const address of resolved) {
           const r = (address.row - resolved.start.row) % rows;
           const c = (address.column - resolved.start.column) % columns;
-          sheet.UpdateCellStyle(address, data[r][c].style || {}, false);
+          sheet.UpdateCellStyle(address, local[r][c].style || {}, false);
         }
 
       }
