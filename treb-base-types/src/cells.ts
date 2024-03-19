@@ -1213,13 +1213,31 @@ export class Cells {
   /**
    * yet another iterator, this one returns cell and address. 
    * iterates all cells; does not create missing cells.
+   * 
+   * UPDATE: adding area parameter; not shrinking it (don't call w/ infinities)
    */
-  public *IterateRC() {
-    for (const [row, r] of this.data.entries()) {
-      if (r) {
-        for (const [column, cell] of r.entries()) {
-          if (cell) {
-            yield { cell, row, column };
+  public *IterateRC(area?: IArea) {
+
+    if (area) {
+      for (let row = area.start.row; row <= area.end.row; row++) {
+        const block = this.data[row];
+        if (block) {
+          for (let column = area.start.column; column <= area.end.column; column++) {
+            const cell = block[column];
+            if (cell) {
+              yield { cell, row, column };
+            }
+          }
+        }
+      }
+    }
+    else {
+      for (const [row, r] of this.data.entries()) {
+        if (r) {
+          for (const [column, cell] of r.entries()) {
+            if (cell) {
+              yield { cell, row, column };
+            }
           }
         }
       }

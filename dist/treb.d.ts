@@ -389,7 +389,7 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      * grid stops broadcasting events for the duration of the function call,
      * and collects them instead. After the function call we update as necessary.
      */
-    Batch(func: () => void, paint?: boolean): Promise<void>;
+    Batch(func: () => void, paint?: boolean): void;
 
     /** set freeze area */
     Freeze(rows?: number, columns?: number): void;
@@ -781,7 +781,7 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      *
      * @public
      */
-    Recalculate(): Promise<void>;
+    Recalculate(): void;
 
     /**
      * Save document to local storage.
@@ -963,18 +963,18 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     Select(range?: RangeReference): void;
 
     /**
-     * paste clipboard data into a target range. this method does not use
-     * the system clipboard; pass in clipboard data returned from the Cut or
-     * Copy method.
-     *
-     * @param target - the target to paste data into. this can be larger
-     * than the clipboard data, in which case values will be recycled in
-     * blocks. if the target is smaller than the source data, we will expand
-     * it to fit the data.
-     *
-     * @param data - clipboard data to paste.
+     * override for paste method omits the data parameter.
      */
-    Paste(target?: RangeReference, data?: ClipboardData | undefined, options?: PasteOptions): Promise<void>;
+    Paste(target?: RangeReference, options?: PasteOptions): void;
+
+    /**
+     * standard paste method accepts data argument
+     *
+     * @param target
+     * @param data
+     * @param options
+     */
+    Paste(target?: RangeReference, data?: ClipboardData, options?: PasteOptions): void;
 
     /**
      * copy data. this method returns the copied data. it does not put it on
@@ -1048,6 +1048,9 @@ export interface ClipboardDataElement {
 
     /** cell style. this may include row/column styles from the copy source */
     style?: CellStyle;
+
+    /** area. if this cell is part of an array, this is the array range */
+    area?: IArea;
 }
 
 /** clipboard data is a 2d array */

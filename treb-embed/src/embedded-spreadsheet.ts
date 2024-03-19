@@ -73,7 +73,7 @@ import type {
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
-  Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext 
+  Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext, ValueType 
 } from 'treb-base-types';
 
 import { EventSource, ValidateURI } from 'treb-utils';
@@ -136,6 +136,13 @@ export interface ClipboardDataElement {
 
   /** cell style. this may include row/column styles from the copy source */
   style?: CellStyle,
+
+  /** area. if this cell is part of an array, this is the array range */
+  area?: IArea,
+
+  /* TODO: merge, like area */
+
+  /* TODO: table */
 
 }
 
@@ -4484,10 +4491,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       for (const [index, row] of data.entries()) {
         values[index] = [];
         for (const cell of row) {
-          values[index].push(cell.calculated);
+          values[index].push(typeof cell.calculated === 'undefined' ? cell.value : cell.calculated);
         }
       }
     }
+
+    /*
     else {
       for (const [index, row] of data.entries()) {
         values[index] = [];
@@ -4496,6 +4505,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         }
       }
     }
+    */
 
     // this is to resolve the reference in the callback,
     // but we should copy -- there's a possibility that
@@ -4508,9 +4518,45 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     this.Batch(() => {
 
-      this.grid.SetRange(resolved, values, {
-        r1c1: true, recycle: true,
-      });
+      // this needs to change to support arrays (and potentially merges...)
+
+      // actually we could leave as is for just calculated values
+
+      if (options.values) {
+        this.grid.SetRange(resolved, values, {
+          r1c1: true, recycle: true,
+        });
+      }
+      else {
+
+        // so this is for formulas only now
+
+        // start by clearing... (but leave styles as-is for now)
+
+        // probably a better way to do this
+        this.grid.SetRange(resolved, undefined, { recycle: true });
+
+        for (const address of resolved) {
+          const r = (address.row - resolved.start.row) % rows;
+          const c = (address.column - resolved.start.column) % columns;
+          
+          const cell_data = local[r][c];
+
+          if (cell_data.area) {
+            // only the head
+            if (cell_data.area.start.row === r && cell_data.area.start.column === c) {
+              const array_target = new Area(cell_data.area.start, cell_data.area.end);
+              array_target.Shift(resolved.start.row, resolved.start.column);
+              this.grid.SetRange(array_target, cell_data.value, { r1c1: true, array: true });
+            }
+          }
+          else if (cell_data.value) {
+            this.grid.SetRange(new Area(address), cell_data.value, { r1c1: true });
+          }
+
+        }
+
+      }
 
       if (options.formatting === 'number-formats') {
 
@@ -4741,11 +4787,72 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     const resolved = this.model.ResolveArea(source, this.grid.active_sheet);
     const sheet = (resolved.start.sheet_id ? this.model.sheets.Find(resolved.start.sheet_id) : this.grid.active_sheet) || this.grid.active_sheet;
 
-    // get cell data as R1C1 for copy but A1 for cut. 
-    const r1c1 = this.grid.GetRange(resolved, semantics === 'cut' ? 'A1' : 'R1C1') as CellValue[][];
-
     // get style data, !apply theme but do apply r/c styles
-    const styles = sheet.GetCellStyle(resolved, false);
+    const style_data = sheet.GetCellStyle(resolved, false);
+
+    // flag we want R1C1 (copy)
+    const r1c1 = (semantics !== 'cut');
+
+    // NOTE: we're losing arrays here. need to fix. also think
+    // about merges? we'll reimplement what grid does (only in part)
+
+    const data: ClipboardData = [];
+
+    for (const { cell, row, column } of sheet.cells.IterateRC(resolved)) {
+
+      // raw value
+      let value = cell.value;
+
+      // seems like we're using a loop function unecessarily
+      if (r1c1 && value && cell.type === ValueType.formula) {
+        value = this.grid.FormatR1C1(value, { row, column })[0][0];
+      }
+
+      const r = row - resolved.start.row;
+      const c = column - resolved.start.column;
+
+      if (!data[r]) { 
+        data[r] = [];
+      }
+
+      let array_head: IArea|undefined;
+      if (cell.area) {
+
+        // scrubbing to just area (and unlinking)
+        array_head = {
+          start: {
+            row: cell.area.start.row - resolved.start.row,
+            column: cell.area.start.column - resolved.start.column,
+          },
+          end: {
+            row: cell.area.end.row - resolved.start.row,
+            column: cell.area.end.column - resolved.start.column,
+          },
+        };
+
+      }
+
+      data[r][c] = {
+        value,
+        calculated: cell.calculated,
+        style: style_data[r][c],
+        area: array_head,
+      };
+      
+    }     
+
+    /*
+      const data = sheet.cells.RawValue(resolved.start, resolved.end); 
+      if (type === 'R1C1') {
+        return this.FormatR1C1(data, range);
+      }
+      return data;
+    }
+    */
+
+    /*
+    // get cell data as R1C1 for copy but A1 for cut. 
+    const cell_data = this.grid.GetRange(resolved, semantics === 'cut' ? 'A1' : 'R1C1') as CellValue[][];
 
     // get calculated values
     let calculated = sheet.cells.GetRange(resolved.start, resolved.end);
@@ -4755,17 +4862,18 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     const data: ClipboardData = [];
 
-    for (const [r, row] of r1c1.entries()) {
+    for (const [r, row] of cell_data.entries()) {
       data[r] = [];
       for (const [c, value] of row.entries()) {
 
         data[r][c] = {
           value,
           calculated: calculated[r][c],
-          style: styles[r]?.[c],
+          style: style_data[r]?.[c],
         };
       }
     } 
+    */
 
     EmbeddedSpreadsheet.clipboard = structuredClone(data);
 
