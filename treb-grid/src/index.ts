@@ -22,6 +22,7 @@
 export { Grid } from './types/grid';
 export { GridBase } from './types/grid_base';
 export * from './types/grid_events';
+export * from './types/clipboard_data2';
 export type { GridOptions } from './types/grid_options';
 export { CommandKey } from './types/grid_command';
 export type { Command } from './types/grid_command';

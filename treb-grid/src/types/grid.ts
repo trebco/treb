@@ -116,6 +116,7 @@ import type { ClipboardCellData } from './clipboard_data';
 
 import type { ExternalEditorConfig } from './external_editor_config';
 import { ExternalEditor } from '../editors/external_editor';
+import type { ClipboardData, PasteOptions } from './clipboard_data2';
 
 interface DoubleClickData {
   timeout?: number;
@@ -414,6 +415,227 @@ export class Grid extends GridBase {
         this.primary_selection,
         this.additional_selections);
         
+  }
+
+
+  // --- Copy/paste API methods ------------------------------------------------
+  //
+  // moving here with a view towards (eventually) merging with the UI/browser
+  // copy/paste routines (in grid)
+  //
+
+
+  /**
+   * internal composite for cut/copy. mostly identical except we 
+   * read data as A1 for cut, so it will retain references. also
+   * cut clears the data.
+   * 
+   * FIXME: merge with grid cut/copy/paste routines. we already
+   * handle recycling and relative addressing, the only thing missing
+   * is alternate formats.
+   */
+  public CopyArea(resolved: Area, semantics: 'cut'|'copy' = 'copy'): ClipboardData {
+
+    // resolve range so we can use it later -> Area
+    const sheet = (resolved.start.sheet_id ? this.model.sheets.Find(resolved.start.sheet_id) : this.active_sheet) || this.active_sheet;
+
+    // get style data, !apply theme but do apply r/c styles
+    const style_data = sheet.GetCellStyle(resolved, false);
+
+    // flag we want R1C1 (copy)
+    const r1c1 = (semantics !== 'cut');
+
+    // NOTE: we're losing arrays here. need to fix. also think
+    // about merges? we'll reimplement what grid does (only in part)
+
+    const data: ClipboardData = [];
+
+    for (const { cell, row, column } of sheet.cells.IterateRC(resolved)) {
+
+      // raw value
+      let value = cell.value;
+
+      // seems like we're using a loop function unecessarily
+      if (r1c1 && value && cell.type === ValueType.formula) {
+        value = this.FormatR1C1(value, { row, column })[0][0];
+      }
+
+      const r = row - resolved.start.row;
+      const c = column - resolved.start.column;
+
+      if (!data[r]) { 
+        data[r] = [];
+      }
+
+      let array_head: IArea|undefined;
+      if (cell.area) {
+
+        // scrubbing to just area (and unlinking)
+        array_head = {
+          start: {
+            row: cell.area.start.row - resolved.start.row,
+            column: cell.area.start.column - resolved.start.column,
+          },
+          end: {
+            row: cell.area.end.row - resolved.start.row,
+            column: cell.area.end.column - resolved.start.column,
+          },
+        };
+
+      }
+
+      data[r][c] = {
+        value,
+        calculated: cell.calculated,
+        style: style_data[r][c],
+        area: array_head,
+      };
+      
+    }     
+
+    // EmbeddedSpreadsheet.clipboard = structuredClone(data);
+
+    if (semantics === 'cut') {
+      this.SetRange(resolved, undefined, { recycle: true }); // clear
+    }
+
+    return data;
+        
+  }  
+  
+  /**
+   * paste clipboard data into a target range. this method does not use
+   * the system clipboard; pass in clipboard data returned from the Cut or
+   * Copy method.
+   * 
+   * @param target - the target to paste data into. this can be larger 
+   * than the clipboard data, in which case values will be recycled in 
+   * blocks. if the target is smaller than the source data, we will expand
+   * it to fit the data.
+   * 
+   * @param data - clipboard data to paste.
+   * 
+   * @privateRemarks LLM API
+   * 
+   * @privateRemarks this was async when we were thinking of using the 
+   * system clipboard, but that's pretty broken so we're not going to
+   * bother atm.
+   */
+  public PasteArea(resolved: Area, data: ClipboardData, options: PasteOptions = {}): void {
+
+    if (!data) {
+      throw new Error('no clipboad data');
+    }
+
+    // paste has some special semantics. if the target smaller than the
+    // source data, we write the full data irrespective of size (similar 
+    // to "spill"). otherwise, we recycle in blocks. 
+
+    // the setrange method will recycle, but we also need to recycle styles.
+
+    // start with data length
+
+    const rows = data.length;
+    const columns = data[0]?.length || 0;
+
+    // target -> block size
+
+    resolved.Resize(
+      Math.max(1, Math.floor(resolved.rows / rows)) * rows, 
+      Math.max(1, Math.floor(resolved.columns / columns)) * columns );
+
+    const sheet = (resolved.start.sheet_id ? this.model.sheets.Find(resolved.start.sheet_id) : this.active_sheet) || this.active_sheet;
+      
+    const values: CellValue[][] = [];
+
+    // optionally collect calculated values, instead of raw values
+
+    if (options.values) {
+      for (const [index, row] of data.entries()) {
+        values[index] = [];
+        for (const cell of row) {
+          values[index].push(typeof cell.calculated === 'undefined' ? cell.value : cell.calculated);
+        }
+      }
+    }
+
+    // this is to resolve the reference in the callback,
+    // but we should copy -- there's a possibility that
+    // this points to the static member, which could get
+    // overwritten. FIXME
+    
+    const local = data; 
+
+    // batch to limit events, sync up undo
+
+    const events = this.Batch(() => {
+
+      // this needs to change to support arrays (and potentially merges...)
+
+      // actually we could leave as is for just calculated values
+
+      if (options.values) {
+        this.SetRange(resolved, values, {
+          r1c1: true, recycle: true,
+        });
+      }
+      else {
+
+        // so this is for formulas only now
+
+        // start by clearing... (but leave styles as-is for now)
+
+        // probably a better way to do this
+        this.SetRange(resolved, undefined, { recycle: true });
+
+        for (const address of resolved) {
+          const r = (address.row - resolved.start.row) % rows;
+          const c = (address.column - resolved.start.column) % columns;
+          
+          const cell_data = local[r][c];
+
+          if (cell_data.area) {
+            // only the head
+            if (cell_data.area.start.row === r && cell_data.area.start.column === c) {
+              const array_target = new Area(cell_data.area.start, cell_data.area.end);
+              array_target.Shift(resolved.start.row, resolved.start.column);
+              this.SetRange(array_target, cell_data.value, { r1c1: true, array: true });
+            }
+          }
+          else if (cell_data.value) {
+            this.SetRange(new Area(address), cell_data.value, { r1c1: true });
+          }
+
+        }
+
+      }
+
+      if (options.formatting === 'number-formats') {
+
+        // number format only, and apply delta
+
+        for (const address of resolved) {
+          const r = (address.row - resolved.start.row) % rows;
+          const c = (address.column - resolved.start.column) % columns;
+          const number_format = (local[r][c].style || {}).number_format;
+          sheet.UpdateCellStyle(address, { number_format }, true);
+        }
+      }
+      else if (options.formatting !== 'target') {
+
+        // use source formatting (default)
+        for (const address of resolved) {
+          const r = (address.row - resolved.start.row) % rows;
+          const c = (address.column - resolved.start.column) % columns;
+          sheet.UpdateCellStyle(address, local[r][c].style || {}, false);
+        }
+
+      }
+
+    }, true);
+
+    this.grid_events.Publish(events);
+
   }
 
   // --- public methods --------------------------------------------------------

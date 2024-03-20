@@ -73,7 +73,7 @@ import type {
 
 import {
   IsArea, ThemeColorTable, ComplexToString, Rectangle, IsComplex, type CellStyle,
-  Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext, ValueType 
+  Localization, Style, type Color, ResolveThemeColor, IsCellAddress, Area, IsFlatData, IsFlatDataArray, Gradient, DOMContext 
 } from 'treb-base-types';
 
 import { EventSource, ValidateURI } from 'treb-utils';
@@ -93,7 +93,7 @@ import type { SelectionState } from './selection-state';
 import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
 
 import { Chart, ChartFunctions } from 'treb-charts';
-import type { SetRangeOptions } from 'treb-grid';
+import type { SetRangeOptions, ClipboardData, PasteOptions } from 'treb-grid';
 
 import type { StateLeafVertex } from 'treb-calculator';
 
@@ -113,67 +113,6 @@ import './content-types.d.ts';
 import * as export_worker_script from 'worker:../../treb-export/src/export-worker/index.worker';
 
 // --- types -------------------------------------------------------------------
-
-/**
- * this is a structure for copy/paste data. clipboard data may include 
- * relative formauls and resolved styles, so it's suitable for pasting into 
- * other areas of the spreadsheet.
- * 
- * @privateRemarks
- * work in progress. atm we're not using the system clipboard, although it 
- * might be useful to merge this with grid copy/paste routines in the future.
- * 
- * if it hits the clipboard this should use mime type `application/x-treb-data`
- * 
- */
-export interface ClipboardDataElement {
-
-  /** calculated cell value */
-  calculated: CellValue,
-
-  /** the actual cell value or formula */
-  value: CellValue,
-
-  /** cell style. this may include row/column styles from the copy source */
-  style?: CellStyle,
-
-  /** area. if this cell is part of an array, this is the array range */
-  area?: IArea,
-
-  /* TODO: merge, like area */
-
-  /* TODO: table */
-
-}
-
-/** clipboard data is a 2d array */
-export type ClipboardData = ClipboardDataElement[][];
-
-/** 
- * optional paste options. we can paste formulas or values, and we 
- * can use the source style, target style, or just use the source
- * number formats.
- */
-export interface PasteOptions {
-
-  /**
-   * when clipboard data includes formulas, optionally paste calculated
-   * values instead of the original formulas. defaults to false.
-   */
-  values?: boolean;
-
-  /** 
-   * when pasting data from the clipboard, we can copy formatting/style 
-   * from the original data, or we can retain the target range formatting
-   * and just paste data. a third option allows pasting source number 
-   * formats but dropping other style information.
-   * 
-   * defaults to "source", meaning paste source styles.
-   */
-
-  formatting?: 'source'|'target'|'number-formats'
-
-}
 
 /**
  * options for saving files. we add the option for JSON formatting.
@@ -1470,18 +1409,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
   /** @internal */
   public ConditionalFormatDuplicateValues(range: RangeReference|undefined, options: ConditionalFormatDuplicateValuesOptions): ConditionalFormat {
-       
-    if (range === undefined) {
-      const ref = this.GetSelectionReference();
-      if (ref.empty) {
-        throw new Error('invalid range (no selection)');
-      }
-      range = ref.area;
-    }
-    
+      
     return this.AddConditionalFormat({
         type: 'duplicate-values',
-        area: this.model.ResolveArea(range, this.grid.active_sheet),
+        area: this.RangeOrSelection(range, 'invalid range (no selection)'),
         ...options,
       });
 
@@ -1492,15 +1423,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   public ConditionalFormatGradient(range: RangeReference|undefined, options: ConditionalFormatGradientOptions|StandardGradient): ConditionalFormat {
 
-    if (range === undefined) {
-      const ref = this.GetSelectionReference();
-      if (ref.empty) {
-        throw new Error('invalid range (no selection)');
-      }
-      range = ref.area;
-    }
-    
-    const area = this.model.ResolveArea(range, this.grid.active_sheet);
+    const area = this.RangeOrSelection(range, 'invalid range (no selection)');
 
     const format: ConditionalFormatGradient = (typeof options === 'object') ?
       {
@@ -1518,19 +1441,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   /** @internal */
   public ConditionalFormatCellMatch(range: RangeReference|undefined, options: ConditionalFormatCellMatchOptions): ConditionalFormat {
 
-    if (range === undefined) {
-      const ref = this.GetSelectionReference();
-      if (ref.empty) {
-        throw new Error('invalid range (no selection)');
-      }
-      range = ref.area;
-    }
-    
-    const area = this.model.ResolveArea(range, this.grid.active_sheet);
-
     const format: ConditionalFormatCellMatch = {
       type: 'cell-match',
-      area,
+      area: this.RangeOrSelection(range, 'invalid range (no selection)'),
       ...options,
     };
 
@@ -1545,19 +1458,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   public ConditionalFormatExpression(range: RangeReference|undefined, options: CondifionalFormatExpressionOptions): ConditionalFormat {
 
-    if (range === undefined) {
-      const ref = this.GetSelectionReference();
-      if (ref.empty) {
-        throw new Error('invalid range (no selection)');
-      }
-      range = ref.area;
-    }
-    
-    const area = this.model.ResolveArea(range, this.grid.active_sheet);
-
     const format: ConditionalFormatExpression = {
       type: 'expression',
-      area,
+      area: this.RangeOrSelection(range, 'invalid range (no selection)'),
       ...options,
     };
 
@@ -1598,18 +1501,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * @internal
    */
   public RemoveConditionalFormats(range?: RangeReference) {
-
-    if (range === undefined) {
-      const ref = this.GetSelectionReference();
-      if (ref.empty) {
-        throw new Error('invalid range (no selection)');
-      }
-      range = ref.area;
+    const area = this.RangeOrSelection(range);
+    if (area) {
+      this.grid.RemoveConditionalFormat({ area });
     }
-
-    const area = this.model.ResolveArea(range, this.grid.active_sheet);
-    this.grid.RemoveConditionalFormat({ area });
-
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -4428,20 +4323,32 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   public Paste(target?: RangeReference, ...args: unknown[]): void {
 
+    // support for the dynamic overload (not sure that's actually a good idea)
+
     let data = EmbeddedSpreadsheet.clipboard; // default to "global" clipboard
     let options: PasteOptions = {}; // default
 
     switch (args.length) {
       case 1:
-        if (args[0] && typeof args[0] === 'object') {
+
+        // could be either
+
+        if (Array.isArray(args[0])) {
+          data = args[0] as ClipboardData;
+        }
+        else if (typeof args[0] === 'object') {
           options = args[0] as PasteOptions;
         }
         break;
 
       case 2:
+
+        // check if it exists, could be undef/null
         if (args[0] && Array.isArray(args[0])) {
           data = args[0] as ClipboardData;
         }
+
+        // 1 should exist if len is 2
         if (args[1] && typeof args[1] === 'object') {
           options = args[1] as PasteOptions;
         }
@@ -4452,136 +4359,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       throw new Error('no clipboad data');
     }
 
-    if (!target) {
-      const selection = this.GetSelectionReference();
-      if (!selection.empty) {
-        target = selection.area;
-      }
-      else {
-        throw new Error('no range and no selection');
-      }
-    }
-
-    const resolved = this.model.ResolveArea(target, this.grid.active_sheet);
-
-    // paste has some special semantics. if the target smaller than the
-    // source data, we write the full data irrespective of size (similar 
-    // to "spill"). otherwise, we recycle in blocks. 
-
-    // the setrange method will recycle, but we also need to recycle styles.
-
-    // start with data length
-
-    const rows = data.length;
-    const columns = data[0]?.length || 0;
-
-    // target -> block size
-
-    resolved.Resize(
-      Math.max(1, Math.floor(resolved.rows / rows)) * rows, 
-      Math.max(1, Math.floor(resolved.columns / columns)) * columns );
-
-    const sheet = (resolved.start.sheet_id ? this.model.sheets.Find(resolved.start.sheet_id) : this.grid.active_sheet) || this.grid.active_sheet;
-      
-    const values: CellValue[][] = [];
-
-    // optionally collect calculated values, instead of raw values
-
-    if (options.values) {
-      for (const [index, row] of data.entries()) {
-        values[index] = [];
-        for (const cell of row) {
-          values[index].push(typeof cell.calculated === 'undefined' ? cell.value : cell.calculated);
-        }
-      }
-    }
-
-    /*
-    else {
-      for (const [index, row] of data.entries()) {
-        values[index] = [];
-        for (const cell of row) {
-          values[index].push(cell.value);
-        }
-      }
-    }
-    */
-
-    // this is to resolve the reference in the callback,
-    // but we should copy -- there's a possibility that
-    // this points to the static member, which could get
-    // overwritten. FIXME
-    
-    const local = data; 
-
-    // batch to limit events, sync up undo
-
-    this.Batch(() => {
-
-      // this needs to change to support arrays (and potentially merges...)
-
-      // actually we could leave as is for just calculated values
-
-      if (options.values) {
-        this.grid.SetRange(resolved, values, {
-          r1c1: true, recycle: true,
-        });
-      }
-      else {
-
-        // so this is for formulas only now
-
-        // start by clearing... (but leave styles as-is for now)
-
-        // probably a better way to do this
-        this.grid.SetRange(resolved, undefined, { recycle: true });
-
-        for (const address of resolved) {
-          const r = (address.row - resolved.start.row) % rows;
-          const c = (address.column - resolved.start.column) % columns;
-          
-          const cell_data = local[r][c];
-
-          if (cell_data.area) {
-            // only the head
-            if (cell_data.area.start.row === r && cell_data.area.start.column === c) {
-              const array_target = new Area(cell_data.area.start, cell_data.area.end);
-              array_target.Shift(resolved.start.row, resolved.start.column);
-              this.grid.SetRange(array_target, cell_data.value, { r1c1: true, array: true });
-            }
-          }
-          else if (cell_data.value) {
-            this.grid.SetRange(new Area(address), cell_data.value, { r1c1: true });
-          }
-
-        }
-
-      }
-
-      if (options.formatting === 'number-formats') {
-
-        // number format only, and apply delta
-
-        for (const address of resolved) {
-          const r = (address.row - resolved.start.row) % rows;
-          const c = (address.column - resolved.start.column) % columns;
-          const number_format = (local[r][c].style || {}).number_format;
-          sheet.UpdateCellStyle(address, { number_format }, true);
-        }
-      }
-      else if (options.formatting !== 'target') {
-
-        // use source formatting (default)
-        for (const address of resolved) {
-          const r = (address.row - resolved.start.row) % rows;
-          const c = (address.column - resolved.start.column) % columns;
-          sheet.UpdateCellStyle(address, local[r][c].style || {}, false);
-        }
-
-      }
-
-    }, true);
-
+    this.grid.PasteArea(
+      this.RangeOrSelection(target, 'no range and no selection'), 
+      data, 
+      options);
 
   }
 
@@ -4593,7 +4374,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * @privateRemarks LLM API
    */
   public Copy(source?: RangeReference): ClipboardData {
-    return this.CopyInternal(source, 'copy');
+    const area = this.RangeOrSelection(source);
+    const data: ClipboardData = area ? this.grid.CopyArea(area, 'copy') : [];
+    EmbeddedSpreadsheet.clipboard = structuredClone(data);
+    return data;
   }
 
   /**
@@ -4607,7 +4391,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * @privateRemarks LLM API
    */
   public Cut(source?: RangeReference): ClipboardData {
-    return this.CopyInternal(source, 'cut');
+    const area = this.RangeOrSelection(source);
+    const data: ClipboardData = area ? this.grid.CopyArea(area, 'cut') : [];
+    EmbeddedSpreadsheet.clipboard = structuredClone(data);
+    return data;
   }
  
   /** 
@@ -4620,14 +4407,11 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     // API v1 OK
 
-    if (!range) {
-      const selection = this.GetSelectionReference();
-      if (!selection.empty) {
-        range = selection.area;
-      }
-    }
+    const resolved = this.RangeOrSelection(range);
 
-    if (!range) { return undefined; }
+    if (!resolved) {
+      return undefined;
+    }
 
     // handle the old flags and the precedence rule. type takes precedence.
 
@@ -4648,7 +4432,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       type = 'A1';
     }
 
-    return this.grid.GetRange(this.model.ResolveAddress(range, this.grid.active_sheet), type);
+    return this.grid.GetRange(resolved, type);
 
   }
 
@@ -4668,16 +4452,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     // API v1 OK
 
-    if (!range) {
-      const selection = this.GetSelectionReference();
-      if (!selection.empty) {
-        range = selection.area;
-      }
+    const resolved = this.RangeOrSelection(range);
+    if (!resolved) {
+      return undefined;
     }
 
-    if (!range) { return undefined; }
-
-    return this.grid.GetRangeStyle(this.model.ResolveAddress(range, this.grid.active_sheet), apply_theme);
+    return this.grid.GetRangeStyle(resolved, apply_theme);
     
   }
 
@@ -4698,15 +4478,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     // API v1 OK
 
-    if (!range) {
-      const selection = this.GetSelectionReference();
-      if (!selection.empty) {
-        range = selection.area;
-      }
-    }
+    const area = this.RangeOrSelection(range);
 
-    if (range) {
-      const area = this.model.ResolveArea(range, this.grid.active_sheet);
+    if (area) {
+      // const area = this.model.ResolveArea(range, this.grid.active_sheet);
 
       if (options.spill && Array.isArray(data)) {
         const rows = data.length;
@@ -4763,127 +4538,40 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   // --- internal (protected) methods ------------------------------------------
 
   /**
-   * internal composite for cut/copy. mostly identical except we 
-   * read data as A1 for cut, so it will retain references. also
-   * cut clears the data.
-   * 
-   * FIXME: merge with grid cut/copy/paste routines. we already
-   * handle recycling and relative addressing, the only thing missing
-   * is alternate formats.
+   * overload returns undefined if no range and no selection
    */
-  protected CopyInternal(source?: RangeReference, semantics: 'cut'|'copy' = 'copy'): ClipboardData {
+  protected RangeOrSelection(source: RangeReference|undefined): Area|undefined;
+
+  /**
+   * overload throws if no range and no selection (pass the error to throw)
+   */
+  protected RangeOrSelection(source: RangeReference|undefined, error: string): Area;
+
+  /**
+   * this is a common pattern, start with a range reference; if it's 
+   * undefined, check selection; then resolve. if there's no selection 
+   * and no range passed in, returns undefined or if the error parameter
+   * is set, throws.
+   */
+  protected RangeOrSelection(source: RangeReference|undefined, error?: string): Area|undefined {
 
     if (!source) {
       const selection = this.GetSelectionReference();
       if (!selection.empty) {
-        source = selection.area;
+        return selection.area.Clone(); // Area
       }
       else {
-        throw new Error('no range and no selection');
+        if (error) {
+          throw error;
+        }
+        // throw new Error('no range and no selection');
+        return undefined;
       }
     }
 
-    // resolve range so we can use it later -> Area
-    const resolved = this.model.ResolveArea(source, this.grid.active_sheet);
-    const sheet = (resolved.start.sheet_id ? this.model.sheets.Find(resolved.start.sheet_id) : this.grid.active_sheet) || this.grid.active_sheet;
+    return this.model.ResolveArea(source, this.grid.active_sheet);
 
-    // get style data, !apply theme but do apply r/c styles
-    const style_data = sheet.GetCellStyle(resolved, false);
-
-    // flag we want R1C1 (copy)
-    const r1c1 = (semantics !== 'cut');
-
-    // NOTE: we're losing arrays here. need to fix. also think
-    // about merges? we'll reimplement what grid does (only in part)
-
-    const data: ClipboardData = [];
-
-    for (const { cell, row, column } of sheet.cells.IterateRC(resolved)) {
-
-      // raw value
-      let value = cell.value;
-
-      // seems like we're using a loop function unecessarily
-      if (r1c1 && value && cell.type === ValueType.formula) {
-        value = this.grid.FormatR1C1(value, { row, column })[0][0];
-      }
-
-      const r = row - resolved.start.row;
-      const c = column - resolved.start.column;
-
-      if (!data[r]) { 
-        data[r] = [];
-      }
-
-      let array_head: IArea|undefined;
-      if (cell.area) {
-
-        // scrubbing to just area (and unlinking)
-        array_head = {
-          start: {
-            row: cell.area.start.row - resolved.start.row,
-            column: cell.area.start.column - resolved.start.column,
-          },
-          end: {
-            row: cell.area.end.row - resolved.start.row,
-            column: cell.area.end.column - resolved.start.column,
-          },
-        };
-
-      }
-
-      data[r][c] = {
-        value,
-        calculated: cell.calculated,
-        style: style_data[r][c],
-        area: array_head,
-      };
-      
-    }     
-
-    /*
-      const data = sheet.cells.RawValue(resolved.start, resolved.end); 
-      if (type === 'R1C1') {
-        return this.FormatR1C1(data, range);
-      }
-      return data;
-    }
-    */
-
-    /*
-    // get cell data as R1C1 for copy but A1 for cut. 
-    const cell_data = this.grid.GetRange(resolved, semantics === 'cut' ? 'A1' : 'R1C1') as CellValue[][];
-
-    // get calculated values
-    let calculated = sheet.cells.GetRange(resolved.start, resolved.end);
-    if (!Array.isArray(calculated)) {
-      calculated = [[calculated]];
-    }
-
-    const data: ClipboardData = [];
-
-    for (const [r, row] of cell_data.entries()) {
-      data[r] = [];
-      for (const [c, value] of row.entries()) {
-
-        data[r][c] = {
-          value,
-          calculated: calculated[r][c],
-          style: style_data[r]?.[c],
-        };
-      }
-    } 
-    */
-
-    EmbeddedSpreadsheet.clipboard = structuredClone(data);
-
-    if (semantics === 'cut') {
-      this.grid.SetRange(resolved, undefined, { recycle: true }); // clear
-    }
-
-    return data;
-        
-  }
+  } 
 
   // --- moved from grid/grid base ---------------------------------------------
 

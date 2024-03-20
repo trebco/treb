@@ -1034,53 +1034,6 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 }
 
 /**
- * this is a structure for copy/paste data. clipboard data may include
- * relative formauls and resolved styles, so it's suitable for pasting into
- * other areas of the spreadsheet.
- */
-export interface ClipboardDataElement {
-
-    /** calculated cell value */
-    calculated: CellValue;
-
-    /** the actual cell value or formula */
-    value: CellValue;
-
-    /** cell style. this may include row/column styles from the copy source */
-    style?: CellStyle;
-
-    /** area. if this cell is part of an array, this is the array range */
-    area?: IArea;
-}
-
-/** clipboard data is a 2d array */
-export type ClipboardData = ClipboardDataElement[][];
-
-/**
- * optional paste options. we can paste formulas or values, and we
- * can use the source style, target style, or just use the source
- * number formats.
- */
-export interface PasteOptions {
-
-    /**
-     * when clipboard data includes formulas, optionally paste calculated
-     * values instead of the original formulas. defaults to false.
-     */
-    values?: boolean;
-
-    /**
-     * when pasting data from the clipboard, we can copy formatting/style
-     * from the original data, or we can retain the target range formatting
-     * and just paste data. a third option allows pasting source number
-     * formats but dropping other style information.
-     *
-     * defaults to "source", meaning paste source styles.
-     */
-    formatting?: 'source' | 'target' | 'number-formats';
-}
-
-/**
  * options for saving files. we add the option for JSON formatting.
  */
 export interface SaveOptions extends SerializeOptions {
@@ -1163,6 +1116,46 @@ export interface SheetScrollOptions {
  * function type used for filtering tables
  */
 export type TableFilterFunction = (value: CellValue, calculated_value: CellValue, style: CellStyle) => boolean;
+export interface FreezePane {
+    rows: number;
+    columns: number;
+}
+
+/**
+ * options for serializing data
+ */
+export interface SerializeOptions {
+
+    /** optimize for size */
+    optimize?: 'size' | 'speed';
+
+    /** include the rendered/calculated value in export */
+    rendered_values?: boolean;
+
+    /** translate colors to xlsx-friendly values */
+    export_colors?: boolean;
+
+    /** export cells that have no value, but have a border or background color */
+    decorated_cells?: boolean;
+
+    /** prune unused rows/columns */
+    shrink?: boolean;
+
+    /**
+     * include tables. tables will be serialized in the model, so we can
+     * drop them from cells. but you can leave them in if that's useful.
+     */
+    tables?: boolean;
+
+    /** share resources (images, for now) to prevent writing data URIs more than once */
+    share_resources?: boolean;
+
+    /**
+     * if a function has an export() handler, call that
+     */
+    export_functions?: boolean;
+}
+export type AnnotationType = 'treb-chart' | 'image' | 'textbox' | 'external';
 
 /**
  * Structure represents a 2d range of cells.
@@ -1390,46 +1383,53 @@ export interface EvaluateOptions {
      */
     r1c1?: boolean;
 }
-export interface FreezePane {
-    rows: number;
-    columns: number;
+
+/** clipboard data is a 2d array */
+export type ClipboardData = ClipboardDataElement[][];
+
+/**
+ * optional paste options. we can paste formulas or values, and we
+ * can use the source style, target style, or just use the source
+ * number formats.
+ */
+export interface PasteOptions {
+
+    /**
+     * when clipboard data includes formulas, optionally paste calculated
+     * values instead of the original formulas. defaults to false.
+     */
+    values?: boolean;
+
+    /**
+     * when pasting data from the clipboard, we can copy formatting/style
+     * from the original data, or we can retain the target range formatting
+     * and just paste data. a third option allows pasting source number
+     * formats but dropping other style information.
+     *
+     * defaults to "source", meaning paste source styles.
+     */
+    formatting?: 'source' | 'target' | 'number-formats';
 }
 
 /**
- * options for serializing data
+ * this is a structure for copy/paste data. clipboard data may include
+ * relative formauls and resolved styles, so it's suitable for pasting into
+ * other areas of the spreadsheet.
  */
-export interface SerializeOptions {
+export interface ClipboardDataElement {
 
-    /** optimize for size */
-    optimize?: 'size' | 'speed';
+    /** calculated cell value */
+    calculated: CellValue;
 
-    /** include the rendered/calculated value in export */
-    rendered_values?: boolean;
+    /** the actual cell value or formula */
+    value: CellValue;
 
-    /** translate colors to xlsx-friendly values */
-    export_colors?: boolean;
+    /** cell style. this may include row/column styles from the copy source */
+    style?: CellStyle;
 
-    /** export cells that have no value, but have a border or background color */
-    decorated_cells?: boolean;
-
-    /** prune unused rows/columns */
-    shrink?: boolean;
-
-    /**
-     * include tables. tables will be serialized in the model, so we can
-     * drop them from cells. but you can leave them in if that's useful.
-     */
-    tables?: boolean;
-
-    /** share resources (images, for now) to prevent writing data URIs more than once */
-    share_resources?: boolean;
-
-    /**
-     * if a function has an export() handler, call that
-     */
-    export_functions?: boolean;
+    /** area. if this cell is part of an array, this is the array range */
+    area?: IArea;
 }
-export type AnnotationType = 'treb-chart' | 'image' | 'textbox' | 'external';
 export declare type BorderConstants = "none" | "all" | "outside" | "top" | "bottom" | "left" | "right";
 
 /**
