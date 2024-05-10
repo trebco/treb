@@ -567,9 +567,15 @@ export class Parser {
 
     switch (unit.type) {
       case 'address':
+        if (options.pass_through_addresses) { 
+          return unit.label;
+        }
         return options.r1c1 ? this.R1C1Label(unit, options.r1c1_base) : this.AddressLabel(unit, offset);
 
       case 'range':
+        if (options.pass_through_addresses) { 
+          return unit.label;
+        }
         return options.r1c1 ? 
           this.R1C1Label(unit.start, options.r1c1_base) + ':' + this.R1C1Label(unit.end, options.r1c1_base) : 
           this.AddressLabel(unit.start, offset) + ':' + this.AddressLabel(unit.end, offset);

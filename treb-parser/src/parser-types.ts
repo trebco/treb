@@ -411,6 +411,9 @@ export interface RenderOptions {
   /** base for offsetting relative R1C1 addresses */
   r1c1_base?: UnitAddress;
 
+  /** if we're just translating, don't have to render addresses */
+  pass_through_addresses?: boolean;
+
   missing: string;
   convert_decimal: DecimalMarkType;
   convert_argument_separator: ArgumentSeparatorType;

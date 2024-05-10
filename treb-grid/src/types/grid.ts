@@ -2105,22 +2105,18 @@ export class Grid extends GridBase {
       let convert = false;
 
       if (options.argument_separator === ',' && this.parser.argument_separator !== ArgumentSeparatorType.Comma) {
-        // this.parser.argument_separator = ArgumentSeparatorType.Comma;
-        // this.parser.decimal_mark = DecimalMarkType.Period;
         this.parser.SetLocaleSettings(DecimalMarkType.Period);
-
         convert = true;
       }
        
       if (options.argument_separator === ';' && this.parser.argument_separator !== ArgumentSeparatorType.Semicolon) {
-        // this.parser.argument_separator = ArgumentSeparatorType.Semicolon;
-        // this.parser.decimal_mark = DecimalMarkType.Comma;
         this.parser.SetLocaleSettings(DecimalMarkType.Comma);
-
         convert = true;
       }
 
       if (convert) {
+
+        this.parser.flags.r1c1 = r1c1;
 
         const Convert = (value: CellValue): CellValue => {
           if (typeof value === 'string' && value[0] === '=') {
@@ -2130,8 +2126,10 @@ export class Grid extends GridBase {
                 missing: '', 
                 convert_decimal: current.decimal_mark, 
                 convert_argument_separator: current.argument_separator,
+                pass_through_addresses: true,
               });
             }
+            // console.info("CVT", this.parser.flags, result.expression, value);
           }
           return value;
         };
