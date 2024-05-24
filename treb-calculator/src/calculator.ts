@@ -43,6 +43,7 @@ import { InformationFunctionLibrary } from './functions/information-functions';
 import { StatisticsFunctionLibrary, StatisticsFunctionAliases } from './functions/statistics-functions';
 import { ComplexFunctionLibrary } from './functions/complex-functions';
 import { MatrixFunctionLibrary } from './functions/matrix-functions';
+import { RegexFunctionLibrary } from './functions/regex-functions';
 
 import { Variance } from './functions/statistics-functions';
 
@@ -222,7 +223,7 @@ export class Calculator extends Graph {
       InformationFunctionLibrary, // etc
       ComplexFunctionLibrary,
       MatrixFunctionLibrary,
-
+      RegexFunctionLibrary,
       );
    
     // aliases
