@@ -924,6 +924,91 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
 
     /**
+     * 
+     */
+    Filter: {
+      description: "Filter an array using a second array.",
+      arguments: [
+        { name: 'source', description: 'Source array' },
+        { name: 'filter', description: 'Filter array' },
+        // if_empty
+      ],
+
+      fn: (source: CellValue|CellValue[][], filter: CellValue|CellValue[][]) => {
+
+        if (typeof source === 'undefined' || typeof filter === 'undefined') {
+          return ArgumentError();
+        }
+
+        if (!Array.isArray(source)) {
+          source = [[source]];
+        }
+        if (!Array.isArray(filter)) {
+          filter = [[filter]];
+        }
+
+        const source_cols = source.length;
+        const source_rows = source[0].length;
+
+        const filter_cols = filter.length;
+        const filter_rows = filter[0].length;
+
+        // prefer rows
+
+        if (source_rows === filter_rows) {
+
+          const result: UnionValue[][] = [];
+
+          for (let i = 0; i < source_cols; i++) {
+            result.push([]);
+          }
+
+          for (const [index, entry] of filter[0].entries()) {
+
+            // FIXME: don't allow strings? errors? (...)
+
+            if (entry) {
+              for (let i = 0; i < source_cols; i++) {
+                result[i].push(Box(source[i][index]));
+              }
+            }
+ 
+          }
+          
+          return {
+            type: ValueType.array,
+            value: result,
+          }
+
+        }
+        else if (source_cols === filter_cols) {
+
+          const result: UnionValue[][] = [];
+
+          for (const [index, [entry]] of filter.entries()) {
+
+            // FIXME: don't allow strings? errors? (...)
+
+            if (entry) {
+              result.push(source[index].map(value => Box(value)));
+            }
+ 
+          }
+          
+          return {
+            type: ValueType.array,
+            value: result,
+          }
+
+        }
+
+        return ArgumentError();
+
+      },
+
+    },
+
+    /**
      * sort arguments, but ensure we return empty strings to
      * fill up the result array
      * 
