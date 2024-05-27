@@ -6885,6 +6885,27 @@ export class Grid extends GridBase {
     else {
 
       const area = this.active_sheet.RealArea(this.primary_selection.area);
+
+      const column_width: number[] = [];
+      const row_height: number[] = [];
+
+      if (this.primary_selection.area.entire_column) {
+        for (let c = area.start.column; c <= area.end.column; c++) {
+          const width = this.active_sheet.GetColumnWidth(c);
+          if (width !== this.active_sheet.default_column_width) {
+            column_width[c - area.start.column] = width;
+          }
+        }
+      }
+      if (this.primary_selection.area.entire_row) {
+        for (let r = area.start.row; r <= area.end.row; r++) {
+          const height = this.active_sheet.GetRowHeight(r);
+          if (height !== this.active_sheet.default_row_height) {
+            row_height[r - area.start.row] = height;
+          }
+        }
+      }
+
       const columns = area.columns;
       const rows = area.rows;
 
@@ -6961,7 +6982,12 @@ export class Grid extends GridBase {
       if (event.clipboardData) {
         event.clipboardData.clearData();
         event.clipboardData.setData('text/plain', tsv);
-        event.clipboardData.setData('text/x-treb', JSON.stringify({ source: area, data: treb_data }));
+        event.clipboardData.setData('text/x-treb', JSON.stringify({ 
+          source: area, 
+          data: treb_data,
+          column_width, 
+          row_height,
+        }));
       }
     }
 
@@ -7114,7 +7140,14 @@ export class Grid extends GridBase {
     if (treb_data) {
 
       try {
-        const object_data = JSON.parse(treb_data);
+
+        const object_data: {
+          source: Area, 
+          data: ClipboardCellData[],
+          column_width?: number[], 
+          row_height?: number[],
+        } = JSON.parse(treb_data);
+
         const source_area = new Area(object_data.source.start, object_data.source.end);
 
         // recycle...
@@ -7220,6 +7253,32 @@ export class Grid extends GridBase {
 
           });
 
+          if (object_data.column_width?.length) {
+            for (const [index, width] of object_data.column_width.entries()) {
+              if (typeof width === 'number') {
+                const column = index + paste_area.start.column;
+                commands.push({
+                  key: CommandKey.ResizeColumns, 
+                  column, 
+                  width,
+                });
+              }
+            }
+          }
+
+          if (object_data.row_height?.length) {
+            for (const [index, height] of object_data.row_height.entries()) {
+              if (typeof height === 'number') {
+                const row = index + paste_area.start.row;
+                commands.push({
+                  key: CommandKey.ResizeRows,
+                  row,
+                  height,
+                });
+              }
+            }
+          }
+          
         }
 
       }
