@@ -48,7 +48,7 @@ import {
   IsArea,
 } from 'treb-base-types';
 
-import type { ExpressionUnit, UnitAddress } from 'treb-parser';
+import type { ExpressionUnit, RenderOptions, UnitAddress } from 'treb-parser';
 import { 
   DecimalMarkType, 
   ArgumentSeparatorType, 
@@ -4614,9 +4614,17 @@ export class Grid extends GridBase {
         }
 
         for (let row = start; row >= 0 && row < target_rows; row += step, offset += step, pattern_increment += pattern) {
+
+          const render_options: Partial<RenderOptions> = {
+            offset: transposed ? {
+              rows: 0, columns: offset,
+            } : {
+              rows: offset, columns: 0,
+            }
+          };
+
           if (translate) {
-            data[row][column] = '=' + this.parser.Render(translate, {
-              offset: { rows: offset, columns: 0 }});
+            data[row][column] = '=' + this.parser.Render(translate, render_options);
           }
           else {
             const cell = cells[source_row][column];
