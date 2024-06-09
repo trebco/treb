@@ -97,6 +97,7 @@ export class DefaultChartRenderer implements ChartRendererType {
         || chart_data.type === 'bar'
         || chart_data.type === 'scatter2'
         || chart_data.type === 'bubble'
+        || chart_data.type === 'box'
         ) {
 
       // we need to measure first, then lay out the other axis, then we
@@ -115,6 +116,19 @@ export class DefaultChartRenderer implements ChartRendererType {
           return metrics;
         });
       }
+
+      let x_metrics2: Metrics[] = [];
+      let max_x_height2 = 0;
+
+      if (chart_data.type === 'box' && chart_data.series_names?.length) {
+        x_metrics2 = chart_data.series_names.map((text) => {
+          const metrics = this.renderer.MeasureText(text, ['axis-label', 'x-axis-label', 'series-name'], true);
+          max_x_height2 = Math.max(max_x_height2, metrics.height);
+          return metrics;
+        });
+      }
+
+      const extra_padding = max_x_height && max_x_height2 ? 4 : 0;
 
       // measure & render y axis
 
@@ -144,6 +158,12 @@ export class DefaultChartRenderer implements ChartRendererType {
         if (x_metrics.length) {
           area.bottom -= (max_x_height + chart_margin.bottom);
         }
+        if (x_metrics2.length) {
+          area.bottom -= (max_x_height2 + chart_margin.bottom);
+        }
+        if (extra_padding) {
+          area.bottom -= extra_padding;
+        }
 
         if (chart_data.type === 'bar') {
           this.renderer.RenderYAxisBar(area, area.left + max_width, y_labels, ['axis-label', 'y-axis-label']);
@@ -157,7 +177,7 @@ export class DefaultChartRenderer implements ChartRendererType {
 
       // now render x axis
 
-      if (x_metrics.length && chart_data.x_labels && chart_data.x_labels.length) {
+      if (x_metrics.length && chart_data.x_labels?.length) {
 
         const tick = (chart_data.type === 'histogram2');
         const offset_tick = (
@@ -193,6 +213,31 @@ export class DefaultChartRenderer implements ChartRendererType {
 
       }
 
+      if (extra_padding) {
+        area.bottom += extra_padding;
+      }
+
+      if (chart_data.type === 'box' && x_metrics2.length && chart_data.series_names?.length) {
+
+        console.info({chart_data, x_metrics2});
+
+        if (chart_data.y_labels) {
+          // undo, temp
+          area.bottom += (max_x_height + max_x_height2 + extra_padding + chart_margin.bottom);
+        }
+
+        // render
+        this.renderer.RenderXAxis(area, 
+          true, // offset_tick,
+          chart_data.series_names, 
+          x_metrics2, 
+          ['axis-label', 'x-axis-label', 'series-name']);
+
+        // update bottom (either we unwound for labels, or we need to do it the first time)
+        area.bottom -= (max_x_height + max_x_height2 + chart_margin.bottom);
+
+      }
+
     }
 
     // now do type-specific rendering
@@ -202,6 +247,27 @@ export class DefaultChartRenderer implements ChartRendererType {
     switch (chart_data.type) {
     case 'scatter':
       this.renderer.RenderPoints(area, chart_data.x, chart_data.y, 'mc mc-correlation series-1');
+      break;
+
+    case 'box':
+      this.renderer.RenderGrid(area, 
+        chart_data.scale.count, 
+        undefined, // chart_data.x_scale.count + 1, // (sigh)
+        'chart-grid', zeros);
+
+      // FIXME: override index for coloring
+
+      for (const [index, data] of chart_data.data.entries()) {
+        this.renderer.RenderBoxAndWhisker(
+            area, 
+            data, 
+            index, 
+            chart_data.max_n,
+            chart_data.scale, 
+            chart_data.data.length, 
+            `box-plot series-${index}`);
+      }
+
       break;
 
     case 'bubble':

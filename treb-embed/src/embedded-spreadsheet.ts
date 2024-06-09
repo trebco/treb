@@ -92,7 +92,7 @@ import type { LanguageModel, TranslatedFunctionDescriptor } from './language-mod
 import type { SelectionState } from './selection-state';
 import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
 
-import { Chart, ChartFunctions } from 'treb-charts';
+import { Chart, ChartFunctions, type ChartFunction } from 'treb-charts';
 import type { SetRangeOptions, ClipboardData, PasteOptions } from 'treb-grid';
 
 import type { StateLeafVertex } from 'treb-calculator';
@@ -2356,7 +2356,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
             return true;
           });
 
-          const expr_name = parse_result.expression.name.toLowerCase();
+          const expr_name = parse_result.expression.name.toLowerCase() as ChartFunction;
           const result = this.calculator.CalculateExpression(parse_result.expression);
           chart.Exec(expr_name, result as ExtendedUnion); // FIXME: type?
         }
@@ -5380,7 +5380,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
                   return true;
                 });
 
-                const expr_name = parse_result.expression.name.toLowerCase();
+                const expr_name = parse_result.expression.name.toLowerCase() as ChartFunction;
 
                 const result = this.calculator.CalculateExpression(parse_result.expression);
 

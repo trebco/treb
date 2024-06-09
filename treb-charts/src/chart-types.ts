@@ -199,6 +199,28 @@ export interface LineBaseData extends ChartDataBaseType {
   smooth?: boolean;
 }
 
+export interface BoxPlotData extends ChartDataBaseType {
+  type: 'box';
+  series: SeriesType[];
+  x_labels?: string[];
+  series_names?: string[];
+  y_labels?: string[];
+  scale: RangeScale;
+  max_n: number,
+
+  data: {
+    data: number[], 
+    quartiles: [number, number, number], 
+    whiskers: [number, number],
+    iqr: number,
+    n: number, 
+    min: number, 
+    max: number,
+    mean: number,
+  }[];
+
+}
+
 export interface LineData extends LineBaseData {
   type: 'line';
 }
@@ -253,6 +275,7 @@ export type ChartData
   | ColumnData
   | BarData
   | BubbleChartData
+  | BoxPlotData
   ;
 
 export enum LegendLayout {

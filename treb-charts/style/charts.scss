@@ -78,6 +78,11 @@
   /* axis labels */
   .axis-group {
     font-size: .9em;
+
+    .series-name {
+      font-size: 1.3em;
+    }
+
   }
 
   /* default text color */
@@ -171,6 +176,42 @@
       fill: currentColor;
       opacity: .5;
     }
+  }
+
+  .box-plot {
+
+    .iqr {
+      fill: none;
+      stroke: CanvasText;
+      stroke-width: 1px;
+    }
+
+    .median {
+      stroke-width: 3px;
+      stroke: CanvasText;
+      fill: none;
+    }
+
+    .outlier {
+      stroke-width: 1px;
+      stroke: CanvasText;
+      fill: none;
+      r: 3;
+    }
+
+    .whisker {
+      stroke-width: 1px;
+      stroke: CanvasText;
+      fill: none;
+    }
+
+    .whisker-extent {
+      stroke-width: 1px;
+      stroke: CanvasText;
+      fill: none;
+      stroke-dasharray: 3 3;
+    }
+
   }
 
   .bubble-chart {

@@ -20,7 +20,7 @@
  */
 
 import { type UnionValue, ValueType } from 'treb-base-types';
-import type { FunctionMap } from 'treb-calculator/src/descriptors';
+import type { CompositeFunctionDescriptor } from 'treb-calculator/src/descriptors';
 
 /** 
  * function returns its arguments 
@@ -35,10 +35,25 @@ const Identity = (...args: unknown[]): UnionValue => {
   };
 };
 
+export type ChartFunction
+  = 'Bar.Chart'
+  | 'Line.Chart'
+  | 'Area.Chart'
+  | 'Column.Chart'
+  | 'Bubble.Chart'
+  | 'Donut.Chart'
+  | 'Pie.Chart'
+  | 'Scatter.Line'
+  | 'Scatter.Plot'
+  | 'Box.Plot'
+  ;
+
+type SupportFunction = 'Group'|'Series';
+
 /**
  * chart functions for registration
  */
-export const ChartFunctions: FunctionMap = {
+export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunctionDescriptor> = {
 
   /* new: also helper */
   Group: {
@@ -52,7 +67,8 @@ export const ChartFunctions: FunctionMap = {
         key: 'group',
       };
 
-    }
+    },
+    category: ['grouping'],
   },
 
   /**
@@ -81,8 +97,8 @@ export const ChartFunctions: FunctionMap = {
         value: args,
         key: 'series',
       };
-    }
-
+    },
+    category: ['chart functions'],
   },
 
   'Bar.Chart': {
@@ -92,6 +108,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'ChartTitle' },
     ],
     fn: Identity,
+    category: ['chart functions'],
   },
 
   'Line.Chart': {
@@ -101,6 +118,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'ChartTitle' },
     ],
     fn: Identity,
+    category: ['chart functions'],
   },
 
   'Area.Chart': {
@@ -110,6 +128,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'ChartTitle' },
     ],
     fn: Identity,
+    category: ['chart functions'],
   },
 
   'Pie.Chart': {
@@ -121,6 +140,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'Label' },
     ],
     fn: Identity,
+    category: ['chart functions'],
   },
 
   'Donut.Chart': {
@@ -132,6 +152,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'Label' },
     ],
     fn: Identity,
+    category: ['chart functions'],
   },
 
  'Scatter.Line': {
@@ -140,6 +161,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'ChartTitle' },
     ],
     fn: Identity,
+    category: ['chart functions'],
   },
 
   'Scatter.Plot': {
@@ -148,6 +170,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'ChartTitle' },
     ],
     fn: Identity,
+    category: ['chart functions'],
   },
 
  'Column.Chart': {
@@ -157,6 +180,7 @@ export const ChartFunctions: FunctionMap = {
       { name: 'Chart Title' },
     ],
     fn: Identity,
+    category: ['chart functions'],
   },
 
   'Bubble.Chart': {
@@ -165,6 +189,16 @@ export const ChartFunctions: FunctionMap = {
       { name: 'Chart Title' },
     ],
     fn: Identity,
+    category: ['chart functions'],
+  },
+
+  'Box.Plot': {
+    arguments: [
+      { name: 'Data', metadata: true, },
+      { name: 'Chart Title' },
+    ],
+    fn: Identity,
+    category: ['chart functions'],
   },
 
 };

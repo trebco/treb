@@ -21,7 +21,7 @@
 
 import type { Size, Point } from './rectangle';
 import { Area } from './rectangle';
-import type { DonutSlice, LegendOptions, SeriesType} from './chart-types';
+import type { BoxPlotData, DonutSlice, LegendOptions, SeriesType} from './chart-types';
 import { LegendLayout, LegendPosition, LegendStyle } from './chart-types';
 import type { RangeScale } from 'treb-utils';
 
@@ -1231,6 +1231,102 @@ export class ChartRenderer {
     }
 
   }
+
+  public RenderBoxAndWhisker(
+      area: Area, 
+      data: BoxPlotData['data'][0], 
+      index: number, 
+      max_n: number, 
+      scale: RangeScale, 
+      n: number, 
+      classes?: string|string[]){
+
+    const group = SVGNode('g', {class: classes});
+    this.group.appendChild(group);
+
+    // space for each box is 1/n of the chart area. we'll allocate margin on a box basis.
+    const width = area.width / n;
+    const margin = width * .20; // ??
+    const box_default_width = Math.min(width - 2 * margin, 90);
+
+    let box_width = box_default_width;
+
+    if (max_n > 0) {
+      box_width = box_width * Math.sqrt(data.n) / Math.sqrt(max_n);
+    }
+
+    const Y = (value: number) => area.top + area.height - (value - scale.min) / (scale.max - scale.min) * area.height; // wtf? 
+
+    const center = area.left + index * width + width / 2;
+
+    const q1 = Y(data.quartiles[0]);
+    const q3 = Y(data.quartiles[2]);
+   
+    group.appendChild(SVGNode('rect', {
+      class: `iqr`,
+      x: area.left + index * width + (width - box_width) / 2,
+      y: q3,
+      width: box_width,
+      height: q1 - q3,
+    }));
+
+    group.appendChild(SVGNode('line', {
+      class: `median`,
+      x1: center - box_width * .5,
+      x2: center + box_width * .5,
+      y1: Y(data.quartiles[1]),
+      y2: Y(data.quartiles[1]),
+    }));
+
+    group.appendChild(SVGNode('line', {
+      class: `whisker`,
+      x1: center - box_width * .25,
+      x2: center + box_width * .25,
+      y1: Y(data.whiskers[0]),
+      y2: Y(data.whiskers[0]),
+    }));
+
+    group.appendChild(SVGNode('line', {
+      class: `whisker-extent`,
+      x1: center,
+      x2: center,
+      y1: Y(data.whiskers[0]) - 2,
+      y2: Y(data.quartiles[0]) + 2,
+    }));
+
+    group.appendChild(SVGNode('line', {
+      class: `whisker`,
+      x1: center - box_width * .25,
+      x2: center + box_width * .25,
+      y1: Y(data.whiskers[1]),
+      y2: Y(data.whiskers[1]),
+    }));
+
+    group.appendChild(SVGNode('line', {
+      class: `whisker-extent`,
+      x1: center,
+      x2: center,
+      y1: Y(data.whiskers[1]) + 2,
+      y2: Y(data.quartiles[2]) - 2,
+    }));
+
+    for (const point of data.data) {
+      if (point < data.whiskers[0]) {
+        group.appendChild(SVGNode('circle', {
+          class: `outlier`,
+          cx: center,
+          cy: Y(point),
+          r: 3, // default; we can override in css
+        }));
+      }
+      else {
+        break;
+      }
+    }
+
+
+  }
+
 
   public RenderBubbleSeries(
         area: Area,

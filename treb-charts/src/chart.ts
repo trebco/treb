@@ -4,6 +4,7 @@ import type { ChartData } from './chart-types';
 import type { ExtendedUnion, UnionValue } from 'treb-base-types';
 import * as ChartUtils from './chart-utils';
 import { DefaultChartRenderer } from './default-chart-renderer';
+import type { ChartFunction } from './chart-functions';
 
 /**
  * transitioning to new structure, this should mirror the old chart 
@@ -29,7 +30,7 @@ export class Chart {
     this.renderer.Initialize(node);
   }
 
-  public Exec(func: string, union: ExtendedUnion) {
+  public Exec(func: ChartFunction, union: ExtendedUnion) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const args: any[] = (union?.value as any[]) || [];
@@ -67,6 +68,10 @@ export class Chart {
   
       case 'bubble.chart':
         this.chart_data = ChartUtils.CreateBubbleChart(args);
+        break;
+
+      case 'box.plot':
+        this.chart_data = ChartUtils.CreateBoxPlot(args);
         break;
 
       default:
