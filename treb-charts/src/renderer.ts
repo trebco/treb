@@ -1311,16 +1311,13 @@ export class ChartRenderer {
     }));
 
     for (const point of data.data) {
-      if (point < data.whiskers[0]) {
+      if (point < data.whiskers[0] || point > data.whiskers[1]) {
         group.appendChild(SVGNode('circle', {
           class: `outlier`,
           cx: center,
           cy: Y(point),
           r: 3, // default; we can override in css
         }));
-      }
-      else {
-        break;
       }
     }
 
