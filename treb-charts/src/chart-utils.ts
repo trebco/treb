@@ -5,7 +5,7 @@ import type { SubSeries, SeriesType, BarData, ChartDataBaseType, ChartData, Scat
 import { NumberFormatCache } from 'treb-format';
 import { Util } from './util';
 import type { ReferenceSeries } from './chart-types';
-import { RangeScale } from 'treb-utils';
+import type { RangeScale } from 'treb-utils';
 
 /**
  * this file is the concrete translation from function arguments
