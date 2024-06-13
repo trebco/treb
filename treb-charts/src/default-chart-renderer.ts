@@ -219,7 +219,7 @@ export class DefaultChartRenderer implements ChartRendererType {
 
       if (chart_data.type === 'box' && x_metrics2.length && chart_data.series_names?.length) {
 
-        console.info({chart_data, x_metrics2});
+        // console.info({chart_data, x_metrics2});
 
         if (chart_data.y_labels) {
           // undo, temp
