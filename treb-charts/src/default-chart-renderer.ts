@@ -234,7 +234,7 @@ export class DefaultChartRenderer implements ChartRendererType {
           ['axis-label', 'x-axis-label', 'series-name']);
 
         // update bottom (either we unwound for labels, or we need to do it the first time)
-        area.bottom -= (max_x_height + max_x_height2 + chart_margin.bottom);
+        area.bottom -= (max_x_height + max_x_height2 + chart_margin.bottom + chart_margin.bottom);
 
       }
 

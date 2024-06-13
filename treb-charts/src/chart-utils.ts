@@ -5,6 +5,7 @@ import type { SubSeries, SeriesType, BarData, ChartDataBaseType, ChartData, Scat
 import { NumberFormatCache } from 'treb-format';
 import { Util } from './util';
 import type { ReferenceSeries } from './chart-types';
+import { RangeScale } from 'treb-utils';
 
 /**
  * this file is the concrete translation from function arguments
@@ -320,8 +321,38 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
   return list;
 };
 
+const AutoFormat = (scale: RangeScale): string => {
+
+  const zep = Math.abs(scale.step) % 1;
+  if (!zep) {
+    const log10 = Math.log10(Math.abs(scale.step));
+    if (log10 >= 5) {
+      return 'Scientific';
+    }
+    return '#,##0';
+  }
+  else {
+    const log10 = Math.log10(Math.abs(zep));
+    if (log10 < -4) {
+      return 'Scientific';
+    }
+    let count = 0;
+    for (let i = 0; i < scale.count; i++) {
+      const value = ((scale.min + scale.step * i) % 1).toFixed(6).replace(/0+$/, '');
+      count = Math.max(count, value.length - 2);
+    }
+    let format = '#,##0.';
+    for (let i = 0; i < count; i++) {
+      format += '0';
+    }
+    return format;
+  }
+
+
+};
+
 /** get a unified scale, and formats */
-export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: number, x_floor?: number, x_ceiling?: number) => {
+export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: number, x_floor?: number, x_ceiling?: number, auto_number_format?: boolean) => {
 
   let x_format = '';
   let y_format = '';
@@ -402,6 +433,11 @@ export const CommonData = (series: SeriesType[], y_floor?: number, y_ceiling?: n
     }
   }
 
+  if (!y_format && auto_number_format) {
+    // y_format = default_number_format;
+    y_format = AutoFormat(y_scale);
+  }
+
   if (y_format) {
     y_labels = [];
     const format = NumberFormatCache.Get(y_format);
@@ -457,26 +493,9 @@ export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
 
   const series: SeriesType[] = TransformSeriesData(args[0]);
 
- 
-  /*
+  // console.info({args, series});
 
-  let y_floor: number|undefined = undefined;
-  let x_floor: number|undefined = undefined;
-
-  for (const entry of series) {
-
-    if (typeof entry.x.range?.min === 'number' && entry.x.range.min > 0 && entry.x.range.min < 50) {
-      x_floor = 0;
-    }
-    if (typeof entry.y.range?.min === 'number' && entry.y.range.min > 0 && entry.y.range.min < 50) {
-      y_floor = 0;
-    }
-  }
-
-  const common = CommonData(series, y_floor, undefined, x_floor);
-  */
-
-  const common = CommonData(series);
+  const common = CommonData(series, undefined, undefined, undefined, undefined, true);
 
   // median of SORTED data
   const data_median = (data: number[]) => {
@@ -545,7 +564,7 @@ export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
 
   });
 
-  console.info( {series, common, stats})
+  // console.info( {series, common, stats})
 
   const title = args[1]?.toString() || undefined;
   // const options = args[2]?.toString() || '';
@@ -557,8 +576,11 @@ export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
   const x_labels: string[] = [];
   const series_names: string[] = [];
 
+  const format = NumberFormatCache.Get('#,##0');
+
   for (const [index, entry] of stats.entries()) {
-    x_labels.push(entry.n.toString());
+    // x_labels.push(entry.n.toString());
+    x_labels.push(format.Format(entry.n));
     const s = series[index];
     series_names.push(s.label || `Series ${index + 1}`);
   }
