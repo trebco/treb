@@ -268,7 +268,7 @@ export class ChartRenderer {
   }
 
   public Resize(): void {
-    const bounds = this.parent.getBoundingClientRect();
+    const bounds = this.svg_node.getBoundingClientRect();
     this.svg_node.setAttribute('width', bounds.width.toString());
     this.svg_node.setAttribute('height', bounds.height.toString());
     this.size = {

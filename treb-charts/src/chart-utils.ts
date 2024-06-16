@@ -487,18 +487,31 @@ const ApplyLabels = (series_list: SeriesType[], pattern: string, category_labels
 
 };
 
-//------------------------------------------------------------------------------
+/**
+ * return quartiles. we use the Tukey hinge-style. See
+ * 
+ * https://en.wikipedia.org/wiki/Quartile
+ * 
+ * Specifically,
+ * 
+ * - Use the median to divide the ordered data set into two halves. The median 
+ *   becomes the second quartiles.
+ * 
+ *   - If there are an odd number of data points in the original ordered data 
+ *     set, include the median (the central value in the ordered list) in both 
+ *     halves.
+ * 
+ *   - If there are an even number of data points in the original ordered data 
+ *     set, split this data set exactly in half.
+ * 
+ * - The lower quartile value is the median of the lower half of the data. The 
+ *   upper quartile value is the median of the upper half of the data.
+ * 
+ * @param data - must be sorted with no holes
+ */
+export const BoxStats = (data: number[]) => {
 
-export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
-
-  const series: SeriesType[] = TransformSeriesData(args[0]);
-
-  // console.info({args, series});
-
-  const common = CommonData(series, undefined, undefined, undefined, undefined, true);
-
-  // median of SORTED data
-  const data_median = (data: number[]) => {
+  const median = (data: number[]) => {
     const n = data.length;
     if (n % 2) {
       return data[Math.floor(n/2)];
@@ -508,103 +521,93 @@ export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
     }
   };
 
+  const n = data.length;
+  const quartiles: [number, number, number] = [0, median(data), 0];
+
+  if (n % 2) {
+    quartiles[0] = median(data.slice(0, Math.ceil(n/2)));
+    quartiles[2] = median(data.slice(Math.floor(n/2)));
+  }
+  else {
+    quartiles[0] = median(data.slice(0, n/2));
+    quartiles[2] = median(data.slice(n/2));
+  }
+
+  const iqr = quartiles[2] - quartiles[0];
+  const whiskers: [number, number] = [0, 0];
+
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    sum += data[i];
+  }
+      
+  for (let i = 0; i < n; i++) {
+    const pt = data[i];
+    if (pt >= quartiles[0] - iqr * 1.5) {
+      whiskers[0] = pt;
+      break;
+    }
+  }
+
+  for (let i = n-1; i >= 0; i--) {
+    const pt = data[i];
+    if (pt <= quartiles[2] + iqr * 1.5) {
+      whiskers[1] = pt;
+      break;
+    }
+  }
+  
+  return {
+    data, 
+    quartiles, 
+    whiskers,
+    iqr,
+    n, 
+    mean: n ? sum/n : 0,
+    min: data[0], 
+    max: data[n-1],
+  };
+
+};
+
+//------------------------------------------------------------------------------
+
+export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
+
+  const series: SeriesType[] = TransformSeriesData(args[0]);
+
+  const common = CommonData(series, undefined, undefined, undefined, undefined, true);
+
   let max_n = 0;
 
   const stats: BoxPlotData['data'] = series.map(series => {
-
     const data = series.y.data.slice(0).filter((test): test is number => test !== undefined).sort((a, b) => a - b);
-    const n = data.length;
-    const quartiles: [number, number, number] = [0, data_median(data), 0];
-
-    max_n = Math.max(max_n, n);
-
-    if (n % 2) {
-      quartiles[0] = data_median(data.slice(0, Math.ceil(n/2)));
-      quartiles[2] = data_median(data.slice(Math.floor(n/2)));
-    }
-    else {
-      quartiles[0] = data_median(data.slice(0, n/2));
-      quartiles[2] = data_median(data.slice(n/2));
-    }
-
-    const iqr = quartiles[2] - quartiles[0];
-    const whiskers: [number, number] = [0, 0];
-
-    let sum = 0;
-    for (let i = 0; i < n; i++) {
-      sum += data[i];
-    }
-        
-    for (let i = 0; i < n; i++) {
-      const pt = data[i];
-      if (pt >= quartiles[0] - iqr * 1.5) {
-        whiskers[0] = pt;
-        break;
-      }
-    }
-
-    for (let i = n-1; i >= 0; i--) {
-      const pt = data[i];
-      if (pt <= quartiles[2] + iqr * 1.5) {
-        whiskers[1] = pt;
-        break;
-      }
-    }
-    
-    return {
-      data, 
-      quartiles, 
-      whiskers,
-      iqr,
-      n, 
-      mean: n ? sum/n : 0,
-      min: data[0], 
-      max: data[n-1],
-    };
-
+    const result = BoxStats(data);
+    max_n = Math.max(max_n, result.n);
+    return result;
   });
 
-  // console.info( {series, common, stats})
-
   const title = args[1]?.toString() || undefined;
-  // const options = args[2]?.toString() || '';
-
-  // const options = args[2]?.toString() || undefined;
-
-  // console.info({ series, common, title, options });
-
   const x_labels: string[] = [];
   const series_names: string[] = [];
-
   const format = NumberFormatCache.Get('#,##0');
 
   for (const [index, entry] of stats.entries()) {
-    // x_labels.push(entry.n.toString());
     x_labels.push(format.Format(entry.n));
     const s = series[index];
     series_names.push(s.label || `Series ${index + 1}`);
   }
 
   const chart_data: BoxPlotData = {
-
-    // legend: common.legend,
-    // legend_style: LegendStyle.bubble,
-
     type: 'box',
     series,
     title,
-
     max_n,
     data: stats,
-
-    x_labels, // : /\bn\b/.test(options) ? x_labels : undefined, 
-    series_names: // series.length > 1 || series[0].label ? series_names : undefined, // : /\blabels\b/.test(options) ? series_names : undefined, 
-      series.some(test => !!test.label) ? series_names : undefined,
-
-    // y_scale: common.y.scale,
+    x_labels, 
+    series_names: series.some(test => !!test.label) ? series_names : undefined,
     scale: common.y.scale,
     y_labels: common.y.labels,
-
   };
   
   return chart_data;
