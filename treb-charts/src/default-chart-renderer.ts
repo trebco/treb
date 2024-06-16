@@ -258,14 +258,17 @@ export class DefaultChartRenderer implements ChartRendererType {
       // FIXME: override index for coloring
 
       for (const [index, data] of chart_data.data.entries()) {
-        this.renderer.RenderBoxAndWhisker(
-            area, 
-            data, 
-            index, 
-            chart_data.max_n,
-            chart_data.scale, 
-            chart_data.data.length, 
-            `box-plot series-${index}`);
+
+        if (data.iqr > 0) {
+          this.renderer.RenderBoxAndWhisker(
+              area, 
+              data, 
+              index, 
+              chart_data.max_n,
+              chart_data.scale, 
+              chart_data.data.length, 
+              `box-plot series-${index}`);
+          }
       }
 
       break;
