@@ -49,7 +49,7 @@ export const ConditionalFormatOperators: Record<string, string> = {
 };
 
 export enum ChartType {
-  Unknown = 0, Column, Bar, Line, Scatter, Donut, Pie, Bubble
+  Unknown = 0, Column, Bar, Line, Scatter, Donut, Pie, Bubble, Box
 }
 
 export interface ChartSeries {
@@ -345,7 +345,14 @@ export class Workbook {
         to: ParseAnchor(anchor_node['xdr:to']),
       };
 
-      const chart_reference = XMLUtils.FindAll(anchor_node, `xdr:graphicFrame/a:graphic/a:graphicData/c:chart`)[0];
+      let chart_reference = XMLUtils.FindAll(anchor_node, `xdr:graphicFrame/a:graphic/a:graphicData/c:chart`)[0];
+
+      // check for an "alternate content" chart/chartex (wtf ms). we're 
+      // supporting this for box charts only (atm) 
+
+      if (!chart_reference) {
+        chart_reference = XMLUtils.FindAll(anchor_node, `mc:AlternateContent/mc:Choice/xdr:graphicFrame/a:graphic/a:graphicData/cx:chart`)[0];
+      }
 
       if (chart_reference && chart_reference.a$ && chart_reference.a$['r:id']) {
         const result: AnchoredChartDescription = { type: 'chart', anchor };
@@ -659,7 +666,64 @@ export class Workbook {
       if (node) {
         result.type = ChartType.Bubble;
         result.series = ParseSeries(node, ChartType.Bubble);
-        console.info("Bubble series?", result.series);
+        // console.info("Bubble series?", result.series);
+      }
+    }
+
+    if (!node) {
+
+      // box plot uses "extended chart" which is totally different... but we 
+      // might need it again later? for the time being it's just inlined
+
+      const ex_series = XMLUtils.FindAll(xml, 'cx:chartSpace/cx:chart/cx:plotArea/cx:plotAreaRegion/cx:series');
+      if (ex_series?.length) {
+        if (ex_series.every(test => test.__layoutId === 'boxWhisker')) {
+          result.type = ChartType.Box;
+          result.series = [];
+          const data = XMLUtils.FindAll(xml, 'cx:chartSpace/cx:chartData/cx:data'); // /cx:data/cx:numDim/cx:f');
+
+          // console.info({ex_series, data})
+
+          for (const entry of ex_series) {
+
+            const series: ChartSeries = {};
+
+            const id = Number(entry['cx:dataId']?.['__val']);
+            for (const data_series of data) {
+              if (Number(data_series.__id) === id) {
+                series.values = data_series['cx:numDim']?.['cx:f'] || '';
+                break;
+              }
+            }
+
+            const label = XMLUtils.FindAll(entry, 'cx:tx/cx:txData');
+            if (label) {
+              if (label[0]?.['cx:f']) {
+                series.title = label[0]['cx:f'];
+              }
+              else if (label[0]?.['cx:v']) {
+                series.title = '"' + label[0]['cx:v'] + '"';
+              }
+            }
+
+            const title = XMLUtils.FindAll(xml, 'cx:chartSpace/cx:chart/cx:title/cx:tx/cx:txData');
+            if (title) {
+              if (title[0]?.['cx:f']) {
+                result.title = title[0]['cx:f'];
+              }
+              else if (title[0]?.['cx:v']) {
+                result.title = '"' + title[0]['cx:v'] + '"';
+              }
+            }
+
+            result.series.push(series);
+
+          }          
+
+          // console.info({result});
+          return result; 
+
+        }
       }
     }
 

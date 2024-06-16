@@ -1047,6 +1047,15 @@ export class Importer {
 
             break;
 
+          case ChartType.Box:
+            type = 'treb-chart';
+            func = 'Box.Plot';
+            if (series?.length) {
+              args[0] = `Group(${series.map(s => `Series(${s.title || ''},,${s.values||''})` || '').join(', ')})`;
+            }
+            args[1] = descriptor.chart.title;
+            break;
+
           case ChartType.Scatter:
             type = 'treb-chart';
             func = 'Scatter.Line';
