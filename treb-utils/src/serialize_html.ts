@@ -19,25 +19,33 @@
  * 
  */
 
+/*
 interface StringMap {
   [index: string]: string;
 }
+*/
+
+type StringMap = Map<string, string>;
+
 
 /**
  * defaults are global, since we assume they never change. created on demand.
  */
 let default_properties: StringMap|undefined;
 
+/**
+ * convert CSSStyleDeclaration to map
+ */
 const PropertyMap = (source: CSSStyleDeclaration): StringMap => {
 
-  const map: StringMap = {};
+  const map: StringMap = new Map();
 
   // you can iterate this thing, although apparently ts won't allow
   // it because it's not in the spec? should probably play ball
 
   for (let i = 0; i < source.length; i++) {
     const key = source[i];
-    map[key] = source.getPropertyValue(key);
+    map.set(key, source.getPropertyValue(key));
   }
 
   return map;
@@ -49,16 +57,17 @@ const PropertyMap = (source: CSSStyleDeclaration): StringMap => {
  */
 const GetAppliedStyle = (node: Element, computed: CSSStyleDeclaration, defaults: StringMap) => {
 
-  const applied: StringMap = {};
+  const applied: StringMap = new Map();
   const computed_map = PropertyMap(computed);
   
-  for (const key of Object.keys(computed_map)) {
-    if (computed_map[key] !== defaults[key]) {
-      applied[key] = defaults[key];
+  for (const [key, value] of computed_map.entries()) {
+    if (value !== defaults.get(key)) {
+      applied.set(key, value);
     }
   }
 
-  return (Object.keys(applied).map((key) => `${key}: ${applied[key]}`).join('; ') +
+  const arr = Array.from(applied.entries());
+  return (arr.map(([key, value]) => `${key}: ${value}`).join('; ') +
     '; ' + (node.getAttribute('style') || '')).trim().replace(/"/g, '\'');
 
 };
@@ -118,7 +127,7 @@ export const SerializeHTML = (node: Element) => {
 
   if (!default_properties) {
 
-    const defaults: StringMap = {};
+    const defaults: StringMap = new Map();
 
     // regarding document, in this case we're creating an iframe 
     // specifically for isolation, and adding it to "document". 
@@ -137,7 +146,7 @@ export const SerializeHTML = (node: Element) => {
       const div = frame_document.createElement('div');
       frame_document.body.appendChild(div);
       const computed = getComputedStyle(div);
-      Array.prototype.forEach.call(computed, (key) => defaults[key] = computed[key]);
+      Array.prototype.forEach.call(computed, key => defaults.set(key, computed[key]));
     }
 
     document.body.removeChild(iframe);
@@ -145,7 +154,23 @@ export const SerializeHTML = (node: Element) => {
 
   }
 
-  return RenderNode(node, default_properties);
+  const rendered = RenderNode(node, default_properties);
+  if (rendered instanceof Element && rendered.tagName === 'svg') {
+    if (!rendered.hasAttribute('version')) {
+      rendered.setAttribute('version', '1.1');
+    }
+
+    if (!rendered.hasAttribute('xmlns')) {
+      rendered.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    }
+
+    if (!rendered.hasAttribute('xmlns:xlink')) {
+      rendered.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    }
+
+  }
+
+  return rendered;
 
 };
 

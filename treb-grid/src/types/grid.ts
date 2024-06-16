@@ -6877,14 +6877,20 @@ export class Grid extends GridBase {
 
           if (view && view.node) {
             // this.selected_annotation.node.innerHTML;
-            const node = view.node.firstChild;
+            const node = view.node.firstChild?.firstChild;
+
             if (node) {
+
+              // trying to put svg on the clipboard here, which works, but
+              // is basically useless. the underlying method is good, though,
+              // clients could use it for better UX in saving images
+
               const html = (SerializeHTML(node as Element) as HTMLElement).outerHTML;
 
-              // no other format supported? (...)
-              const type = 'text/plain';
-              event.clipboardData.setData(type, html);
-              // console.info(html);
+              event.clipboardData.setData('text/uri-list', `data:image/svg+xml;base64,` + btoa(html)); // <-- does this work? seems no
+              event.clipboardData.setData('text/html', html); // <-- does this work? (also no)
+              event.clipboardData.setData('text/plain', html);
+              
             }
           }
         }
