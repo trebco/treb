@@ -726,7 +726,8 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
     const list: Set<string> = new Set();
 
     // for the result, map of reference to normalized address label
-    const map: Map<ExpressionUnit, string> = new Map();
+    // const map: Map<ExpressionUnit, string> = new Map();
+    const map: Map<string, string> = new Map();
 
     for (const entry of reference_list) {
 
@@ -743,11 +744,13 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
       }
 
       // but keep a map
-      map.set(entry, label);
+      map.set(entry.label, label);
 
     }
 
     this.UpdateReferences(descriptor, references);
+
+    // console.info({map});
 
     return map;
     
@@ -851,7 +854,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
       if (parse_result.expression) {
 
         const normalized_labels = this.UpdateDependencies(descriptor, parse_result);
-        
+
         // the parser will drop a leading = character, so be
         // sure to add that back if necessary
 
@@ -925,8 +928,12 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
           switch (unit.type) {
             case 'identifier':
-            case 'call':
+              // FIXME: canonicalize (optionally)
+              label = text.substring(pos, pos + unit.name.length);
+              reference = normalized_labels.get(unit.name) || '';
+              break;
 
+            case 'call':
               // FIXME: canonicalize (optionally)
               label = text.substring(pos, pos + unit.name.length);
               break;
@@ -944,7 +951,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
             case 'address':
             case 'range':
             case 'structured-reference':
-              reference = normalized_labels.get(unit) || '???';
+              reference = normalized_labels.get(unit.label) || '???';
 
               /*
               {
