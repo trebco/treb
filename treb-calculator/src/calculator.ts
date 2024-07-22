@@ -202,6 +202,8 @@ export class Calculator extends Graph {
       ...calculator_options,
     };
 
+    console.info("TO", this.options);
+
     if (this.options.complex_numbers === 'on') {
 
       // complex number handling: we need to change SQRT, POWER and ^
