@@ -87,6 +87,7 @@ export interface BaseCellData {
   hyperlink?: string;
   type?: SerializedValueType; // ValueType;
   sheet_id?: number;
+  spill?: IArea;
   // locked?: boolean;
 }
 
@@ -507,6 +508,9 @@ export class Cells {
         // cell.calculated = obj.calculated;
         // cell.calculated_type = obj.calculated_type;
         cell.SetCalculatedValue(obj.calculated, this.SerializedTypeToValueType(obj.calculated_type));
+        if (obj.spill) {
+          cell.spill = new Area(obj.spill.start, obj.spill.end);
+        }
       }
 
       if (style_refs) {
@@ -704,6 +708,9 @@ export class Cells {
             if (options.calculated_value &&
                 typeof cell.calculated !== 'undefined') { // && cell.calculated_type !== ValueType.error) {
               obj.calculated = cell.calculated;
+              if (cell.spill) {
+                obj.spill = cell.spill;
+              }
 
               // always preserve error type, because we can't infer
               if (options.preserve_type || cell.calculated_type === ValueType.error) {

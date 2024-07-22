@@ -1801,6 +1801,7 @@ export interface BaseCellData {
     hyperlink?: string;
     type?: SerializedValueType;
     sheet_id?: number;
+    spill?: IArea;
 }
 
 /**

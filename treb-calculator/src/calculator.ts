@@ -202,8 +202,6 @@ export class Calculator extends Graph {
       ...calculator_options,
     };
 
-    console.info("TO", this.options);
-
     if (this.options.complex_numbers === 'on') {
 
       // complex number handling: we need to change SQRT, POWER and ^
@@ -2743,7 +2741,20 @@ export class Calculator extends Graph {
    */
   protected RebuildGraphCell(cell: Cell, address: ICellAddress2): void {
 
-    // console.info("RGC", cell, address);
+    // FIXME/TODO: if spill is not enabled, we'll need to clean up
+    // rendered values from the spill here
+
+    if (cell.spill) {
+      if (this.options.spill) {
+        if (cell.spill.start.row === address.row && cell.spill.start.column === address.column) {
+          this.spills.push(new Area(cell.spill.start, cell.spill.end));
+        }
+        else {
+          // ... 
+          this.AddEdge(cell.spill.start, address);
+        }
+      }
+    }
 
     // array head
     if (cell.area && cell.area.start.column === address.column && cell.area.start.row === address.row) {
