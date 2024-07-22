@@ -55,6 +55,9 @@ export abstract class Graph implements GraphCallbacks {
 
   public calculation_list: SpreadsheetVertexBase[] = [];
 
+  // list of spills we have created
+  public spills: IArea[] = [];
+
   // public cells_map: {[index: number]: Cells} = {};
 
   protected abstract readonly model: DataModel;
@@ -109,6 +112,9 @@ export abstract class Graph implements GraphCallbacks {
     this.vertices = [[]];
     this.leaf_vertices.clear(); 
     // this.cells_map = {};
+
+    // can we flush spills here without cleaning up? (...)
+    // this.spills = [];
 
     /** array vertex maintains its own list */
     ArrayVertex.Clear();
@@ -717,77 +723,6 @@ export abstract class Graph implements GraphCallbacks {
 
     this.CompositeAddArrayEdge(u, v_v);
 
-    /*
-    // create or use existing
-    const [array_vertex, created] = ArrayVertex.GetVertex(u);
-
-    // add an edge
-    v_v.DependsOn(array_vertex);
-
-    // force a check on next calculation pass
-    this.loop_check_required = true;
-
-    if (!created) {
-      // console.info('reusing, so not adding edges');
-      return;
-    }
-
-    // now add edges from/to nodes THAT ALREADY EXIST
-
-    // range can't span sheets, so we only need one set to look up
-
-    const map = this.vertices[u.start.sheet_id];
-
-    // this might happen on create, we can let it go because the 
-    // references will be added when the relevant sheet is added
-
-    if (!map) {
-      return;
-    }
-
-    // ...
-
-    if (u.entire_row) {
-      // console.group('entire row(s)')
-      for (let column = 0; column < map.length; column++) {
-        if (map[column]) {
-          for (let row = u.start.row; row <= u.end.row; row++ ) {
-            const vertex = map[column][row];
-            if (vertex) {
-              // console.info('add', column, row);
-              array_vertex.DependsOn(vertex);
-            }
-          }
-        }
-      }
-      // console.groupEnd();
-    }
-    else if (u.entire_column) {
-      // console.group('entire column(s)');
-      for (let column = u.start.column; column <= u.end.column; column++) {
-        if(map[column]) {
-          for (const vertex of map[column]) {
-            if (vertex?.address) {
-              // console.info('add', vertex.address);
-              array_vertex.DependsOn(vertex);
-            }
-          }
-        }
-      }
-      // console.groupEnd();
-    }
-    else {
-      for (let row = u.start.row; row <= u.end.row; row++) {
-        for (let column = u.start.column; column <= u.end.column; column++) {
-          const vertex = map[column][row];
-          if (vertex) {
-            array_vertex.DependsOn(vertex);
-          }
-        }
-      }
-    }
-    */
-
   }
 
   /** adds an edge from u -> v */
@@ -1018,6 +953,27 @@ export abstract class Graph implements GraphCallbacks {
 
     }
 
+    ////////////////////////////////////////
+
+    for (const spill of this.spills) {
+      if (spill.start.sheet_id) {
+        const cells = this.model.sheets.Find(spill.start.sheet_id)?.cells;
+        if (cells) {
+          for (const cell of cells.Iterate(new Area(spill.start, spill.end), false)) {
+            if (cell.spill) {
+              if (typeof cell.value !== 'undefined') {
+                cell.spill = undefined;
+              }
+              else {
+                cell.Reset();
+              }
+            }
+          }
+        }
+      }
+    }
+    this.spills = [];
+
     // console.info("CL", calculation_list)
 
     // recalculate everything that's dirty. FIXME: optimize path
@@ -1036,9 +992,8 @@ export abstract class Graph implements GraphCallbacks {
   }
 
   public abstract CalculationCallback(vertex: SpreadsheetVertexBase): CalculationResult;
-
   public abstract SpreadCallback(vertex: SpreadsheetVertexBase, value: UnionValue): void;
-
+  public abstract SpillCallback(vertex: SpreadsheetVertexBase, value: UnionValue): void;
   protected abstract CheckVolatile(vertex: SpreadsheetVertex): boolean;
 
 }

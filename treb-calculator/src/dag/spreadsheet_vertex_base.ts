@@ -34,6 +34,7 @@ export interface CalculationResult {
 export interface GraphCallbacks {
   CalculationCallback: (vertex: SpreadsheetVertexBase) => CalculationResult;
   SpreadCallback: (vertex: SpreadsheetVertexBase, value: UnionValue) => void;
+  SpillCallback: (vertex: SpreadsheetVertexBase, value: UnionValue) => Vertex[]|void;
   volatile_list: SpreadsheetVertexBase[];
   calculation_list: SpreadsheetVertexBase[];
 }

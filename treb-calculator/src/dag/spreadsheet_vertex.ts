@@ -219,20 +219,49 @@ export class SpreadsheetVertex extends SpreadsheetVertexBase {
       }
       else if (this.reference.type === ValueType.formula) {
 
-        // data should now be clean when it gets here (famous last words)
+        // adding check for spill, not withstanding the below
 
-        // we're now sometimes getting 0-length arrays here. that's a 
-        // function of our new polynomial methods, BUT, we should probably
-        // handle it properly regardless.
+        if (this.result.type === ValueType.array) {
 
-        const single = (this.result.type === ValueType.array) ? this.result.value[0][0] : this.result;
+          // note array of length 1 should not trigger spill behavior
+          // (moved to callback method)
 
-        // we are using object type in the returned value for sparklines...
-        // so we can't drop it here. we could change rendering though. or
-        // whitelist types. or blacklist types. or something.
+          const recalc = graph.SpillCallback.call(graph, this, this.result);
+          if (recalc) {
+            // console.info("RC", recalc);
+            for (const entry of (recalc as SpreadsheetVertex[])) {
 
-        this.reference.SetCalculatedValue(single.value as CellValue, single.type);
+              // will this work properly with loops? (...)
 
+              for (const edge of entry.edges_out) {
+                (edge as SpreadsheetVertex).dirty = true;
+                (edge as SpreadsheetVertex).Calculate(graph);
+              }
+
+            }
+          }
+
+        }
+        else {
+
+          // ---
+
+
+          // data should now be clean when it gets here (famous last words)
+
+          // we're now sometimes getting 0-length arrays here. that's a 
+          // function of our new polynomial methods, BUT, we should probably
+          // handle it properly regardless.
+
+          // neven // const single = (this.result.type === ValueType.array) ? this.result.value[0][0] : this.result;
+
+          // we are using object type in the returned value for sparklines...
+          // so we can't drop it here. we could change rendering though. or
+          // whitelist types. or blacklist types. or something.
+
+          this.reference.SetCalculatedValue(this.result.value as CellValue, this.result.type);
+
+        }
       }
 
     }

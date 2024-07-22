@@ -9,6 +9,15 @@ export default tseslint.config(
   {
     rules: {
 
+      // allow destructuring to use let if some vars are changed
+
+      "prefer-const": [
+        "error", { 
+          "destructuring": "all",
+        },
+      ],
+
+
       // allow destructuring to use garbage variables. prefix name with 
       // underscore (or just use underscore).
 

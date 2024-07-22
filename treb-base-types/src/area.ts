@@ -659,6 +659,13 @@ export class Area implements IArea {
     }
   }
 
+  /** Resizes range in place to be the requested shape */
+  public Reshape(rows: number, columns: number): Area {
+    this.end_.row = this.start_.row + rows - 1;
+    this.end_.column = this.start_.column + columns - 1;
+    return this; // fluent
+  }
+
   /** Resizes range in place so that it includes the given area (merge) */
   public ConsumeArea(area: IArea): void {
     this.ConsumeAddress(area.start);

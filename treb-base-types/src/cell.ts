@@ -236,6 +236,9 @@ export class Cell {
   /** if this cell is part of an array, pointer to the area. */
   public area?: Area;
 
+  /** testing spill */
+  public spill?: Area;
+
   /**
    * if this cell is merged, pointer to the area
    */
@@ -354,6 +357,7 @@ export class Cell {
   public Reset(): void{
     this.type = ValueType.undefined;
     this.value
+      = this.spill
       = this.note
       = this.hyperlink
       = this.formatted
@@ -372,7 +376,8 @@ export class Cell {
   public Set(value: CellValue, type = GetValueType(value)): void {
     this.value = value;
     this.type = type;
-    this.formatted =
+    this.spill = // added
+      this.formatted =
       this.rendered_type =
       this.style =
       this.calculated =

@@ -276,6 +276,13 @@ export interface EmbeddedSpreadsheetOptions {
      * indent/outdent buttons; default false
      */
     indent_buttons?: boolean;
+
+    /**
+     * spill is in testing. while it's in testing it defaults to `false`,
+     * so spill is disabled. you can enable spill by setting it to `true`.
+     * once it's stable the default will switch to `true`.
+     */
+    spill?: boolean;
 }
 
 /**

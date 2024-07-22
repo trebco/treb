@@ -149,6 +149,7 @@ export abstract class BaseLayout {
   }
 
   protected dropdown_caret!: SVGSVGElement;
+  protected spill_border!: SVGSVGElement;
 
   /** we have to disable mock selection for IE or it breaks key handling */
   private trident = ((typeof navigator !== 'undefined') &&
@@ -206,6 +207,9 @@ export abstract class BaseLayout {
 
     this.mask = DOM.Div('treb-mouse-mask');
     this.tooltip = DOM.Div('treb-tooltip');
+
+    this.spill_border = DOM.SVG('svg', 'treb-spill-border');
+    this.spill_border.tabIndex = -1;
 
     this.dropdown_caret = DOM.SVG('svg', 'treb-dropdown-caret');
     this.dropdown_caret.setAttribute('viewBox', '0 0 24 24');
@@ -1099,6 +1103,10 @@ export abstract class BaseLayout {
 
     // FIXME: -> instance specific, b/c trident
 
+    if (!this.spill_border.parentElement) {
+      container.appendChild(this.spill_border);
+    }
+
     if (!this.dropdown_caret.parentElement) {
       container.appendChild(this.dropdown_caret);
     }
@@ -1429,6 +1437,39 @@ export abstract class BaseLayout {
 
     this.dropdown_caret.style.display = 'block';
     this.dropdown_caret_visible = true;
+  }
+
+  public ShowSpillBorder(area?: IArea) {
+    this.spill_border.textContent = '';
+    if (area) {
+      const resolved = new Area(area.start, area.end);  
+      
+      let target_rect = this.OffsetCellAddressToRectangle(resolved.start);
+
+      if (resolved.count > 1) {
+        target_rect = target_rect.Combine(this.OffsetCellAddressToRectangle(resolved.end));
+      }
+  
+      target_rect = target_rect.Shift(
+        this.header_size.width, this.header_size.height);
+
+      this.spill_border.style.display = 'block';
+      this.spill_border.style.top = (target_rect.top - 5).toString();
+      this.spill_border.style.left = (target_rect.left - 5).toString();
+      this.spill_border.style.width = (target_rect.width + 10).toString();
+      this.spill_border.style.height = (target_rect.height + 10).toString();
+  
+      const rect = this.DOM.SVG('rect', undefined, this.spill_border);
+      rect.setAttribute('x', '4.5');
+      rect.setAttribute('y', '4.5');
+      rect.setAttribute('width', (target_rect.width + 1).toString());
+      rect.setAttribute('height', (target_rect.height + 1).toString());
+      
+    }
+    else {
+      this.spill_border.style.display = 'none';
+    }
+
   }
 
   public HideDropdownCaret(): void {

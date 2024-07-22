@@ -311,6 +311,13 @@ export class Grid extends GridBase {
     empty: true,
   };
 
+  /** reusing type. FIXME? we don't need a target */
+  private readonly spill_selection: GridSelection = {
+    target: { row: 0, column: 0 },
+    area: new Area({ row: 0, column: 0 }),
+    empty: true,
+  };
+
   /**
    * active selection when selecting arguments (while editing)
    */
@@ -5099,12 +5106,15 @@ export class Grid extends GridBase {
 
     const cell = this.active_sheet.CellData(this.primary_selection.target);
 
-    if (!cell || (!cell.area && !cell.table)) {
+    if (!cell || (!cell.area && !cell.table && !cell.spill)) {
       return;
     }
 
     if (cell.area) {
       this.Select(this.primary_selection, cell.area, cell.area.start);
+    }
+    if (cell.spill) {
+      this.Select(this.primary_selection, cell.spill, cell.spill.start);
     }
     if (cell.table) {
       const area = new Area(cell.table.area.start, cell.table.area.end);
@@ -5123,7 +5133,12 @@ export class Grid extends GridBase {
 
     const show_primary_selection = this.hide_selection ? false :
       (!this.editing_state) || (this.editing_cell.sheet_id === this.active_sheet.id);
-  
+
+    const data = this.primary_selection.empty ? undefined :
+      this.active_sheet.CellData(this.primary_selection.target);
+ 
+    this.layout.ShowSpillBorder(data?.spill);
+
     this.selection_renderer?.RenderSelections(show_primary_selection, rerender);
   }
 
@@ -5172,7 +5187,7 @@ export class Grid extends GridBase {
     const cells = this.active_sheet.cells;
 
     let cell = cells.GetCell(selection.target, false);
-    if (!cell || (cell.type === ValueType.undefined && !cell.area)) {
+    if (!cell || (cell.type === ValueType.undefined && !cell.area && !cell.spill)) {
       return false;
     }
 
@@ -5206,20 +5221,20 @@ export class Grid extends GridBase {
       if (rows) {
         for (let column = selection.area.start.column; !has_value && column <= selection.area.end.column; column++) {
           cell = cells.GetCell({ row: test.row, column }, false);
-          has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
+          has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area || !!cell.spill));
           if (!has_value && cell && cell.merge_area) {
             cell = cells.GetCell(cell.merge_area.start, false);
-            has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
+            has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area || !!cell.spill));
           }
         }
       }
       else {
         for (let row = selection.area.start.row; !has_value && row <= selection.area.end.row; row++) {
           cell = cells.GetCell({ row, column: test.column }, false);
-          has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
+          has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area || !!cell.spill));
           if (!has_value && cell && cell.merge_area) {
             cell = cells.GetCell(cell.merge_area.start, false);
-            has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area));
+            has_value = has_value || (!!cell && (cell.type !== ValueType.undefined || !!cell.area || !!cell.spill));
           }
         }
       }
@@ -6565,15 +6580,24 @@ export class Grid extends GridBase {
    */
   private UpdateFormulaBarFormula(override?: string) {
 
-    if (!this.formula_bar) { return; }
+    this.layout.HideDropdownCaret();
+
+    // NOTE: this means we won't set validation carets... that needs
+    // to be handled separately (FIXME)
+
+    // if (!this.formula_bar) { return; }
 
     if (override) {
-      this.formula_bar.formula = override;
+      if (this.formula_bar) {
+        this.formula_bar.formula = override;
+      }
       return;
     }
 
     if (this.primary_selection.empty) {
-      this.formula_bar.formula = '';
+      if (this.formula_bar) {
+        this.formula_bar.formula = '';
+      }
     }
     else {
       let data = this.active_sheet.CellData(this.primary_selection.target);
@@ -6589,7 +6613,10 @@ export class Grid extends GridBase {
         }
       }
 
-      this.formula_bar.editable = !data.style?.locked;
+      if (this.formula_bar) {
+        this.formula_bar.editable = !data.style?.locked;
+      }
+
       const value = this.NormalizeCellValue(data);
 
       // this isn't necessarily the best place for this, except that
@@ -6619,17 +6646,19 @@ export class Grid extends GridBase {
         }
 
       }
-      else {
-        this.layout.HideDropdownCaret();
+
+      if (this.formula_bar) {
+
+        // add braces for area
+        if (data.area) {
+          this.formula_bar.formula = '{' + (value || '') + '}';
+        }
+        else {
+          this.formula_bar.formula = (typeof value !== 'undefined') ? value.toString() : ''; // value || ''; // what about zero?
+        }
+
       }
 
-      // add braces for area
-      if (data.area) {
-        this.formula_bar.formula = '{' + (value || '') + '}';
-      }
-      else {
-        this.formula_bar.formula = (typeof value !== 'undefined') ? value.toString() : ''; // value || ''; // what about zero?
-      }
     }
 
   }

@@ -66,16 +66,6 @@ export class ArrayVertex extends SpreadsheetVertexBase {
   /** the target area */
   public area: Area;
 
-  /* * temporary method, we should clean up explicitly * /
-  public static CheckOutbound(): void {
-    for (const vertex of this.list) {
-      if (vertex.edges_out.length === 0) {
-        console.info('no outbound edges', vertex);
-      }
-    }
-  }
-  */
-
   /** 
    * factory/lookup method: creates a vertex if it does not exist, or 
    * returns existing vertex. returns the vertex and a flag indicating

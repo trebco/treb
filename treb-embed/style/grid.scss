@@ -38,6 +38,21 @@
 
 .treb-main.treb-main {
 
+  .treb-spill-border {
+
+    position: absolute;
+    pointer-events: none;
+
+    rect {
+      stroke: var(--treb-spill-border-color, rgb(64, 64, 255));
+      stroke-dasharray: var(--treb-spill-border-dasharray, 0);
+      fill: none;
+      stroke-width: var(--treb-spill-border-width, 1px);
+      z-index: $z-index-spill-border;
+      filter: var(--treb-spill-border-filter, drop-shadow( 3px 3px 2px rgba(0, 0, 0, .5)));
+    }
+  }
+
 
   /* 
     * new: we need the rendering buffer to inherit font size. so 

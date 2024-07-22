@@ -1203,7 +1203,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   protected CreateCalculator(model: DataModel, options: EmbeddedSpreadsheetOptions) {
     return new Calculator(model, {
-      complex_numbers: options.complex
+      complex_numbers: options.complex,
+      spill: options.spill,
     });
   }
 

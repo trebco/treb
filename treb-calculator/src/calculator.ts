@@ -140,10 +140,14 @@ export interface CalculatorOptions {
    */
   complex_numbers: 'on'|'off';
 
+  /** enable spill arrays */
+  spill?: boolean;
+
 }
 
 const default_calculator_options: CalculatorOptions = {
   complex_numbers: 'off',
+  spill: false, 
 };
 
 /**
@@ -181,6 +185,8 @@ export class Calculator extends Graph {
   /** the next calculation must do a full rebuild -- set on reset */
   protected full_rebuild_required = false;
 
+  protected options: CalculatorOptions;
+
   constructor(protected readonly model: DataModel, calculator_options: Partial<CalculatorOptions> = {}) {
 
     super();
@@ -191,12 +197,12 @@ export class Calculator extends Graph {
     // at the moment options are only used here; in the future
     // we may need to extend handling.
 
-    const options: CalculatorOptions = {
+    this.options = {
       ...default_calculator_options, 
       ...calculator_options,
     };
 
-    if (options.complex_numbers === 'on') {
+    if (this.options.complex_numbers === 'on') {
 
       // complex number handling: we need to change SQRT, POWER and ^
 
@@ -1063,6 +1069,174 @@ export class Calculator extends Graph {
         }
       }
     }
+  }
+
+  public SpillCallback(vertex: SpreadsheetVertex, result: ArrayUnion): SpreadsheetVertex[] {
+
+    const { reference, address } = vertex;
+    const { value } = result;
+
+    const recalculate_list: SpreadsheetVertex[] = [];
+
+    if (!reference) {
+      // should throw but this is new and I don't want to break stuff rn
+      console.error("invalid reference in spill callback");
+      return recalculate_list;
+    }
+
+    if (!address || !address.sheet_id) {
+      // should throw but this is new and I don't want to break stuff rn
+      console.error("invalid address in spill callback");
+      return recalculate_list;
+    }
+
+    // I guess we could do the one-cell version here
+
+    if (value.length === 1 && value[0].length === 1) {
+      reference.SetCalculatedValue(value[0][0].value as CellValue);
+      return recalculate_list;
+    }
+
+    if (!this.options.spill) {
+      reference.SetCalculatedValue(value[0][0].value as CellValue);
+      return recalculate_list;
+    }
+
+    const cells = this.model.sheets.Find(address.sheet_id)?.cells;
+
+    if (cells) {
+
+      // first thing we do is check for empty. if !empty, that's a 
+      // spill error and we can stop. also check for area, spill and 
+      // merge (and table).
+
+      const columns = result.value.length;
+      const rows = result.value[0].length;
+      const area = new Area(address).Reshape(rows, columns);
+
+      let counter = 0;
+      for (const cell of cells.Iterate(area, true)) {
+        if (counter++ && (cell.type !== ValueType.undefined || cell.area || cell.merge_area || cell.table)) {
+
+          // spill error
+
+          reference.SetCalculationError('SPILL');
+          return recalculate_list;
+        }
+      }
+
+      const sheet_id = address.sheet_id;
+      // let dirty = false;
+
+      for (const {row, column} of cells.IterateRC(area)) {
+        if (row === address.row && column === address.column) { continue; }
+
+        const vertex = this.GetVertex({sheet_id, row, column}, false) as SpreadsheetVertex;
+
+        if (vertex) {
+          // onsole.info("Have vertex @", row, column, "dirty?", vertex.dirty);
+
+          if (!(vertex as SpreadsheetVertex).dirty) {
+            recalculate_list.push(vertex);
+          }
+        }
+
+        this.AddEdge(address, {sheet_id, row, column});
+
+      }
+
+      /*
+      // ok, now we can go on: copying a little from dynamic dependencies, 
+      // we're going to add vertices and check for dirty:
+      
+      const sheet_id = address.sheet_id;
+      let dirty = false;
+
+      for (const {row, column} of cells.IterateRC(area)) {
+
+        if (row === address.row && column === address.column) { continue; }
+
+        const vertex = this.GetVertex({sheet_id, row, column}, true);
+        if (vertex && vertex.dirty) {
+
+          console.info(`Adding edge from ${{row: address.row, column: address.column}} -> ${{row, column}}`)
+
+          // see comments in DynamicDependencies()
+          
+          this.AddEdge(address, {row, column, sheet_id});
+          dirty = true;
+
+        }
+
+      }
+
+      console.info("DIRTY?", dirty);
+
+      if (dirty) {
+        const current_vertex = this.GetVertex(address, true) as SpreadsheetVertex;
+        current_vertex.short_circuit = true;
+        return;
+      }
+      */
+
+      //
+
+
+      // maybe we could use a vertex here?
+      // actually we also need to do a loop check
+     
+      // so I think the approach is 
+      //
+      // 1 - create a vertex (spill -- array vertex?)
+      // 2 - check for loops
+      // 3 - if no loop, check for empty
+      // 4 - if empty, fill in values
+      //
+
+      // and then we need to flush spill vertices at
+      // some point, either always on recalc, or on 
+      // recalc if something is dirty. flushing spill
+      // vertices implies removing all spilled values 
+      // so they will be empty if something changes
+
+      // PLAN: start by flushing all spill vertices on
+      // every recalc, and then we can trim it back
+      
+      // spill ok, set values
+
+      this.spills.push(new Area(area.start, area.end));
+
+      for (let {cell, row, column} of cells.IterateRC(area)) {
+
+        cell.spill = area;
+
+        row -= address.row;
+        column -= address.column;
+
+        const v = result.value[column][row];
+
+        switch (v.type) {
+          case ValueType.object:
+          case ValueType.array:
+            break;
+          default:
+            cell.SetCalculatedValue(v.value, v.type);
+            break;
+        }
+
+      }
+
+      return recalculate_list;
+
+    }
+
+    // 
+
+    console.error("invalid cell reference in spill callback");
+    reference.SetCalculationError('SPILL');
+
+    return [];
+    
   }
 
   /**
