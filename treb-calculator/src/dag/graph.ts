@@ -30,6 +30,8 @@ import { Area } from 'treb-base-types';
 import type { DataModel } from 'treb-data-model';
 import { CalculationLeafVertex } from './calculation_leaf_vertex';
 
+import { AreaUtils } from 'treb-base-types';
+
 export type LeafVertex = StateLeafVertex|CalculationLeafVertex;
 export type { StateLeafVertex };
 
@@ -56,7 +58,8 @@ export abstract class Graph implements GraphCallbacks {
   public calculation_list: SpreadsheetVertexBase[] = [];
 
   // list of spills we have created
-  public spills: IArea[] = [];
+  // public spills: IArea[] = [];
+  public spill_data: { area: IArea, vertex: StateLeafVertex }[] = [];
 
   // public cells_map: {[index: number]: Cells} = {};
 
@@ -146,6 +149,24 @@ export abstract class Graph implements GraphCallbacks {
 
     return address;
 
+  }
+
+  /**
+   * iterate vertices
+   * @param area 
+   */
+  public *IterateVertices(area: IArea, create = false): Generator<SpreadsheetVertex> {
+
+    // this is wasteful because it repeatedly gets the cells, but
+    // for a contiguous area we know they're in the same sheet. we
+    // cal also skip the repeated tests. FIXME
+
+    for (const address of AreaUtils.Iterate(area)) {
+      const vertex = this.GetVertex(address, create);
+      if (vertex) {
+        yield vertex;
+      }
+    }
   }
 
   /** overload */
@@ -932,6 +953,90 @@ export abstract class Graph implements GraphCallbacks {
     //  vertex.SetDirty();
     // }
 
+    
+    ////////////////////////////////////////
+
+    // (moving this up so it comes before we slice the dirty list)
+
+    // the problem with flushing all the spills here
+    // is that if we're not calculating a range that
+    // intersects with the spill, it will disappear.
+    // options are (1) to dirty the spill root, so it
+    // calculates, or (2) to check for intersection.
+
+    // checking for intersection might work because 
+    // we should have vertices and they should be marked
+    // as dirty...
+
+    // eh that's not going to work, because edges point
+    // the wrong way. if you edit a cell within a spill 
+    // range, it won't dirty the spill source because
+    // the edge goes from spill source -> spill cell.
+
+    // we could create a special leaf vertex to watch the 
+    // range. or we could just check here. vertices is 
+    // more elegant (and more memory), this is clumsier (and 
+    // more calc). 
+    
+    this.spill_data = this.spill_data.filter(({area, vertex}) => {
+      if (vertex.dirty) {
+        vertex.Reset(); 
+        const cells = area.start.sheet_id ? this.model.sheets.Find(area.start.sheet_id)?.cells : undefined;
+        if (cells) {
+          for (const {cell, row, column} of cells.IterateRC(new Area(area.start, area.end))) {
+            if (cell.spill) {
+              cell.spill = undefined;
+              if (typeof cell.value === 'undefined') {
+                cell.Reset();
+              }
+            }
+
+            // this is necessary for non-head cells in case the cell has deps
+            this.SetDirty({row, column, sheet_id: area.start.sheet_id});
+
+          }
+          // this.SetDirty(area.start);
+        }
+        return false; // drop
+      }
+      return true; // keep
+    });
+
+    /*
+    this.spills = this.spills.filter(spill => {
+      let dirty = false;
+      for (const vertex of this.IterateVertices(spill)) {
+        if (vertex.dirty) {
+          console.info("spill is dirty (it)");
+          dirty = true;
+          break;
+        }
+      }
+
+      if (dirty) {
+        const cells = spill.start.sheet_id ? this.model.sheets.Find(spill.start.sheet_id)?.cells : undefined;
+        if (cells) {
+          for (const {cell, row, column} of cells.IterateRC(new Area(spill.start, spill.end))) {
+            if (cell.spill) {
+              cell.spill = undefined;
+              if (typeof cell.value === 'undefined') {
+                cell.Reset();
+              }
+              else {
+                this.SetDirty({row, column, sheet_id: spill.start.sheet_id})
+              }
+            }
+          }
+        }
+        return false; // drop
+      }
+
+      return true; // keep
+    });
+    */
+
+    //////////////////////////////////////////
+
     // const calculation_list = this.volatile_list.slice(0).concat(this.dirty_list);
 
     // we do this using the local function so we can trace back arrays
@@ -941,6 +1046,8 @@ export abstract class Graph implements GraphCallbacks {
     }
     // const calculation_list = this.dirty_list.slice(0);
     this.calculation_list = this.dirty_list.slice(0);
+
+    // console.info("CL", this.calculation_list);
 
     this.volatile_list = [];
     this.dirty_list = [];
@@ -953,26 +1060,6 @@ export abstract class Graph implements GraphCallbacks {
 
     }
 
-    ////////////////////////////////////////
-
-    for (const spill of this.spills) {
-      if (spill.start.sheet_id) {
-        const cells = this.model.sheets.Find(spill.start.sheet_id)?.cells;
-        if (cells) {
-          for (const cell of cells.Iterate(new Area(spill.start, spill.end), false)) {
-            if (cell.spill) {
-              if (typeof cell.value !== 'undefined') {
-                cell.spill = undefined;
-              }
-              else {
-                cell.Reset();
-              }
-            }
-          }
-        }
-      }
-    }
-    this.spills = [];
 
     // console.info("CL", calculation_list)
 

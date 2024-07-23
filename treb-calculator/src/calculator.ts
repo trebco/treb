@@ -20,7 +20,8 @@
  */
 
 import type { Cell, ICellAddress, ICellAddress2, UnionValue, EvaluateOptions,
-         ArrayUnion, IArea, CellDataWithAddress, CellValue} from 'treb-base-types';
+         ArrayUnion, IArea, CellDataWithAddress, CellValue,
+         Cells} from 'treb-base-types';
 import { Localization, Area, ValueType, IsCellAddress} from 'treb-base-types';
          
 import type { ExpressionUnit, DependencyList, UnitRange, UnitAddress, UnitIdentifier, ParseResult } from 'treb-parser';
@@ -186,6 +187,13 @@ export class Calculator extends Graph {
   protected full_rebuild_required = false;
 
   protected options: CalculatorOptions;
+
+  /**
+   * this is a flag we're using to communicate back to the embedded
+   * sheet, when the grid has expanded as a result of a calculation 
+   * (because of a spill).
+   */
+  public grid_expanded = false;
 
   constructor(protected readonly model: DataModel, calculator_options: Partial<CalculatorOptions> = {}) {
 
@@ -1071,6 +1079,35 @@ export class Calculator extends Graph {
     }
   }
 
+  public AttachSpillData(area: Area, cells?: Cells) {
+
+    if (!cells) {
+      const sheet = area.start.sheet_id ? this.model.sheets.Find(area.start.sheet_id) : undefined;
+      cells = sheet?.cells;
+    }
+
+    if (!cells) {
+      throw new Error('invalid sheet ID in attach spill data');
+    }
+
+    const vertex = new StateLeafVertex();
+    let counter = 0;
+    let error = false;
+
+    for (const {cell, row, column} of cells.IterateRC(area, true)) {
+      if (counter++ && (cell.type !== ValueType.undefined || cell.area || cell.merge_area || cell.table)) {
+        error = true; // spill error.
+      }
+      this.AddLeafVertexEdge({row, column, sheet_id: area.start.sheet_id}, vertex);
+    }
+
+    // console.info("storing spill data");
+    this.spill_data.push({area, vertex});
+
+    return { vertex, area, error };
+
+  }
+
   public SpillCallback(vertex: SpreadsheetVertex, result: ArrayUnion): SpreadsheetVertex[] {
 
     const { reference, address } = vertex;
@@ -1102,7 +1139,10 @@ export class Calculator extends Graph {
       return recalculate_list;
     }
 
-    const cells = this.model.sheets.Find(address.sheet_id)?.cells;
+    // console.info("SPILLING");
+
+    const sheet = this.model.sheets.Find(address.sheet_id);
+    const cells = sheet?.cells;
 
     if (cells) {
 
@@ -1114,16 +1154,50 @@ export class Calculator extends Graph {
       const rows = result.value[0].length;
       const area = new Area(address).Reshape(rows, columns);
 
+
+      /*
       let counter = 0;
-      for (const cell of cells.Iterate(area, true)) {
+      let error = false;
+      const leaf = new StateLeafVertex();
+
+      for (const {cell, row, column} of cells.IterateRC(area, true)) {
         if (counter++ && (cell.type !== ValueType.undefined || cell.area || cell.merge_area || cell.table)) {
-
-          // spill error
-
-          reference.SetCalculationError('SPILL');
-          return recalculate_list;
+          error = true; // spill error.
         }
+        this.AddLeafVertexEdge({row, column, sheet_id: area.start.sheet_id}, leaf);
       }
+
+      console.info("storing spill data");
+
+      // this.spills.push(new Area(area.start, area.end));
+      this.spill_data.push({area, vertex: leaf});
+      */
+
+      const { error } = this.AttachSpillData(area, cells);
+
+      if (error) {
+        // console.info("returning error");
+        reference.SetCalculationError('SPILL');
+        return recalculate_list;
+      }
+
+      // expand the sheet, if necessary (+1)
+
+      if (sheet.rows < area.end.row + 1) {
+        sheet.cells.EnsureRow(area.end.row + 1);
+        this.grid_expanded = true;
+      }
+      if (sheet.columns < area.end.column + 1) {
+        sheet.cells.EnsureColumn(area.end.column + 1);
+        this.grid_expanded = true;
+      }
+
+      // hmmm... we need the grid to update... how can we ensure that?
+      // we could use a flag that the embedded sheet checks after 
+      // calculation... which is kind of sloppy but I don't have a better
+      // idea
+
+
 
       const sheet_id = address.sheet_id;
       // let dirty = false;
@@ -1141,7 +1215,12 @@ export class Calculator extends Graph {
           }
         }
 
-        this.AddEdge(address, {sheet_id, row, column});
+        // do we need these edges? if so, what for? (...)
+        // I guess to propagate dirty if there's a dependent?
+        // apparently not, although I'm not sure why...
+
+
+        // this.AddEdge(address, {sheet_id, row, column});
 
       }
 
@@ -1204,7 +1283,6 @@ export class Calculator extends Graph {
       
       // spill ok, set values
 
-      this.spills.push(new Area(area.start, area.end));
 
       for (let {cell, row, column} of cells.IterateRC(area)) {
 
@@ -1680,6 +1758,8 @@ export class Calculator extends Graph {
     // this.expression_calculator.SetModel(model);
 
     this.RebuildGraph(subset);
+
+    this.grid_expanded = false; // unset
 
     try {
       this.Recalculate();
@@ -2747,7 +2827,10 @@ export class Calculator extends Graph {
     if (cell.spill) {
       if (this.options.spill) {
         if (cell.spill.start.row === address.row && cell.spill.start.column === address.column) {
-          this.spills.push(new Area(cell.spill.start, cell.spill.end));
+
+          // this.spills.push(new Area(cell.spill.start, cell.spill.end));
+          this.AttachSpillData(new Area(cell.spill.start, cell.spill.end));
+
         }
         else {
           // ... 

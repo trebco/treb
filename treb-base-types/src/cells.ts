@@ -1223,16 +1223,40 @@ export class Cells {
    * 
    * UPDATE: adding area parameter; not shrinking it (don't call w/ infinities)
    */
-  public *IterateRC(area?: IArea) {
+  public *IterateRC(area?: IArea, create_missing_cells = false) {
+
+    if (!area && create_missing_cells) {
+      area = new Area({
+        row: 0,
+        column: 0,
+      }, {
+        row: this.rows_ - 1,
+        column: this.columns - 1,
+      });
+    }
 
     if (area) {
-      for (let row = area.start.row; row <= area.end.row; row++) {
-        const block = this.data[row];
-        if (block) {
+      if (create_missing_cells) {
+        for (let row = area.start.row; row <= area.end.row; row++) {
+          if (!this.data[row]) this.data[row] = [];
+          const block = this.data[row];
           for (let column = area.start.column; column <= area.end.column; column++) {
-            const cell = block[column];
-            if (cell) {
-              yield { cell, row, column };
+            if (!block[column]) {
+              block[column] = new Cell();
+            }
+            yield { cell: block[column], row, column };
+          }
+        }
+      }
+      else {
+        for (let row = area.start.row; row <= area.end.row; row++) {
+          const block = this.data[row];
+          if (block) {
+            for (let column = area.start.column; column <= area.end.column; column++) {
+              const cell = block[column];
+              if (cell) {
+                yield { cell, row, column };
+              }
             }
           }
         }

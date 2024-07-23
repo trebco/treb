@@ -1360,6 +1360,7 @@ export class Grid extends GridBase {
    */
   public UpdateLayout(): void {
     this.layout.UpdateTiles();
+    this.layout.UpdateContentsSize();
     this.render_tiles = this.layout.VisibleTiles();
     this.Repaint(true);
   }

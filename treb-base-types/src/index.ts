@@ -40,6 +40,8 @@ export * from './gradient';
 export * from './evaluate-options';
 export * from './dom-utilities';
 
+export * as AreaUtils from './area-utils';
+
 // import * as Style from './style';
 // export { Style };
 

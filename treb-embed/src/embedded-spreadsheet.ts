@@ -3753,6 +3753,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     this.calculator.Calculate(area);
+
+    if (this.calculator.grid_expanded) {
+      // console.info("GRID EXPANDED");
+      this.grid.UpdateLayout();
+    }
+
     this.ApplyConditionalFormats(this.grid.active_sheet, false);
 
     this.grid.Update(true); // , area);
