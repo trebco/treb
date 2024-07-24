@@ -208,6 +208,9 @@ export interface UnitAddress extends BaseUnit {
   absolute_row?: boolean;
   absolute_column?: boolean;
 
+  /** spill flag (address ends with #) */
+  spill?: boolean;
+
   /** 
    * this means the row is a relative offset from the current row. this 
    * happens if you use R1C1 syntax with square brackets. 

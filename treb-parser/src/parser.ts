@@ -970,7 +970,8 @@ export class Parser {
       (address.absolute_column ? '$' : '') +
       this.ColumnLabel(column) +
       (address.absolute_row ? '$' : '') +
-      (row + 1)
+      (row + 1) + 
+      (address.spill ? '#' : '')
     );
   }
 
@@ -2210,6 +2211,9 @@ export class Parser {
 
         || (char === QUESTION_MARK && square_bracket === 0)
 
+        // moving
+        // || (char === HASH) // FIXME: this should only be allowed at the end...
+
         /*
 
         || (this.flags.r1c1 && (
@@ -2241,6 +2245,11 @@ export class Parser {
       }
 
       else break;
+    }
+
+    // hash at end only
+    if (this.data[this.index] === HASH) {
+      token.push(this.data[this.index++]);
     }
 
     const str = token.map((num) => String.fromCharCode(num)).join('');
@@ -2523,6 +2532,7 @@ export class Parser {
     // as names. so this should be a token if r === 0.
 
     const r = this.ConsumeAddressRow(position);
+
     if (!r) return null; 
     position = r.position;
 
@@ -2544,6 +2554,7 @@ export class Parser {
       absolute_column: c.absolute,
       position: index,
       sheet,
+      spill: r.spill,
     };
 
     // if that's not the complete token, then it's invalid
@@ -2578,6 +2589,8 @@ export class Parser {
       absolute: boolean;
       row: number;
       position: number;
+      spill?: boolean; // spill reference
+
     }|false {
 
     const absolute = this.data[position] === DOLLAR_SIGN;
@@ -2607,7 +2620,13 @@ export class Parser {
       return false; 
     }
 
-    return { absolute, row: value - 1, position };
+    let spill = false;
+    if (this.data[position] === HASH) {
+      position++;
+      spill = true;
+    }
+
+    return { absolute, row: value - 1, position, spill };
   }
 
   /**

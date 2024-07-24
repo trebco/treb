@@ -33,6 +33,10 @@ export interface ICellAddress {
   absolute_row?: boolean;
   absolute_column?: boolean;
   sheet_id?: number;
+
+  /** spill reference */
+  spill?: boolean;
+
 }
 
 /**

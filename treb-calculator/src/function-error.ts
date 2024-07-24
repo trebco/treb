@@ -34,6 +34,7 @@ export enum ErrorType {
   Div0 =        'DIV/0',
   NA =          'N/A',
   Loop =        'LOOP', // circular reference
+  Spill =       'SPILL',
 }
 
 export interface FunctionError {
@@ -74,6 +75,10 @@ export const NameError = (): UnionValue => {
   return { type: ValueType.error, value: ErrorType.Name };
 };
 
+export const SpillError = (): UnionValue => {
+  return { type: ValueType.error, value: ErrorType.Spill };
+};
+
 export const UnknownError = (): UnionValue => {
   return { type: ValueType.error, value: ErrorType.Unknown };
 };
@@ -94,6 +99,7 @@ export const IsError = (test: unknown): test is FunctionError => {
     (test as FunctionError).error === ErrorType.Unknown ||
     (test as FunctionError).error === ErrorType.NotImpl ||
     (test as FunctionError).error === ErrorType.Value ||
+    (test as FunctionError).error === ErrorType.Spill ||
     (test as FunctionError).error === ErrorType.Div0
   );
 };

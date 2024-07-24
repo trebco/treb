@@ -31,7 +31,7 @@ import { ValueType, GetValueType, Area } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
 import type { DataModel, MacroFunction, Sheet } from 'treb-data-model';
-import { NameError, ReferenceError, ExpressionError, UnknownError } from './function-error';
+import { NameError, ReferenceError, ExpressionError, UnknownError, SpillError } from './function-error';
 import { ReturnType } from './descriptors';
 
 import * as Primitives from './primitives';
@@ -136,7 +136,6 @@ export class ExpressionCalculator {
       }
     }
 
-    // const cells = this.cells_map[expr.sheet_id];
     const cells = this.data_model.sheets.Find(expr.sheet_id)?.cells;
 
     if (!cells) {
@@ -154,6 +153,12 @@ export class ExpressionCalculator {
       return () => { 
         return { type: ValueType.number, value: 0 };
       };
+    }
+
+    if (expr.spill && cell.spill && cell.spill.start.row === expr.row && cell.spill.start.column === expr.column) {
+      return () => {
+        return cell.spill ? cells.GetRange4(cell.spill.start, cell.spill.end, true) || ReferenceError() : SpillError();
+      }
     }
 
     // close
