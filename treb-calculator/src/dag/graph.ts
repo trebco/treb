@@ -953,7 +953,14 @@ export abstract class Graph implements GraphCallbacks {
     //  vertex.SetDirty();
     // }
 
+    // we do this using the local function so we can trace back arrays.
+    // be sure to do this _before_ checking spills
+
+    for (const vertex of this.volatile_list) {
+      this.SetVertexDirty(vertex as SpreadsheetVertex);
+    }
     
+
     ////////////////////////////////////////
 
     // (moving this up so it comes before we slice the dirty list)
@@ -1037,14 +1044,6 @@ export abstract class Graph implements GraphCallbacks {
 
     //////////////////////////////////////////
 
-    // const calculation_list = this.volatile_list.slice(0).concat(this.dirty_list);
-
-    // we do this using the local function so we can trace back arrays
-
-    for (const vertex of this.volatile_list) {
-      this.SetVertexDirty(vertex as SpreadsheetVertex);
-    }
-    // const calculation_list = this.dirty_list.slice(0);
     this.calculation_list = this.dirty_list.slice(0);
 
     // console.info("CL", this.calculation_list);

@@ -111,9 +111,9 @@
   --treb-toolbar-color: rgb(221,221,221);
   
   --treb-spill-border-color: pink;
-  --treb-spill-border-filter: none;
-  --treb-spill-border-dasharray: 4 2;
-  --treb-spill-border-width: 2px;
+  --treb-spill-border-filter: drop-shadow( 3px 3px 2px rgba(255, 255, 255, .95));
+  // --treb-spill-border-dasharray: 4 2;
+  // --treb-spill-border-width: 2px;
 
 }
 
