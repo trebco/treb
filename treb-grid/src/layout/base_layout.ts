@@ -1454,10 +1454,10 @@ export abstract class BaseLayout {
         this.header_size.width, this.header_size.height);
 
       this.spill_border.style.display = 'block';
-      this.spill_border.style.top = (target_rect.top - 5).toString();
-      this.spill_border.style.left = (target_rect.left - 5).toString();
-      this.spill_border.style.width = (target_rect.width + 10).toString();
-      this.spill_border.style.height = (target_rect.height + 10).toString();
+      this.spill_border.style.top = (target_rect.top - 5).toString() + 'px';
+      this.spill_border.style.left = (target_rect.left - 5).toString() + 'px';
+      this.spill_border.style.width = (target_rect.width + 10).toString() + 'px';
+      this.spill_border.style.height = (target_rect.height + 10).toString() + 'px';
   
       const rect = this.DOM.SVG('rect', undefined, this.spill_border);
       rect.setAttribute('x', '4.5');
