@@ -370,6 +370,6 @@ export const DefaultOptions: EmbeddedSpreadsheetOptions = {
   spinner: false,
   complex: 'off',
 
-  spill: false,
+  spill: true,
 
 };
