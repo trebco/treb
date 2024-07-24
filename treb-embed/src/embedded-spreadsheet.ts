@@ -821,7 +821,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       // create calculator instance
 
-      this.calculator = this.CreateCalculator(this.model, options);
+      this.calculator = this.CreateCalculator(this.model, this.options);
 
     }
 
