@@ -6385,6 +6385,14 @@ export class Grid extends GridBase {
       if ((area.start.row === Infinity || area.start.row < this.active_sheet.rows) &&
         (area.start.column === Infinity || area.start.column < this.active_sheet.columns)) {
 
+          if (area.start.spill && area.end.row === area.start.row && area.end.column === area.start.column) {
+            const sheet = this.model.sheets.Find(area.start.sheet_id || -1);
+            const cell = sheet?.CellData(area.start);
+            if (cell?.spill && cell.spill.start.row === area.start.row && cell.spill.start.column === area.start.column) {
+              area.ConsumeArea(cell.spill);
+            }
+          }
+
           area = this.active_sheet.RealArea(area);
           const label = area.spreadsheet_label;
 

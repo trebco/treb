@@ -200,7 +200,8 @@ export class Area implements IArea {
       + (address.absolute_column ? '$' : '')
       + this.ColumnToLabel(address.column)
       + (address.absolute_row ? '$' : '')
-      + (address.row + 1);
+      + (address.row + 1)
+      + (address.spill ? '#' : '');
 
   }
 
