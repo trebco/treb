@@ -194,7 +194,27 @@ export class ExpressionCalculator {
 
     switch (arg.type) {
     case 'address':
-      address = arg;
+
+      if (arg.spill) {
+        let sheet: Sheet|undefined;
+        if (arg.sheet_id) {
+          sheet = this.data_model.sheets.Find(arg.sheet_id);
+        }
+
+        if (!sheet) {
+          console.error('missing sheet [da6]');
+          return ReferenceError();
+        }
+
+        const cell_data = sheet.CellData(arg);
+        if (cell_data.spill) {
+          range = cell_data.spill;
+        }
+        
+      }
+      else {
+        address = arg;
+      }
       break;
 
     case 'range':
