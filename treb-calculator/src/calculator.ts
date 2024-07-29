@@ -36,7 +36,8 @@ import * as Utilities from './utilities';
 
 import { FunctionLibrary } from './function-library';
 import type { FunctionMap } from './descriptors';
-import { ReturnType } from './descriptors';
+// import * as Utils from './utilities';
+
 import { AltFunctionLibrary, BaseFunctionLibrary } from './functions/base-functions';
 import { FinanceFunctionLibrary } from './functions/finance-functions';
 import { TextFunctionLibrary, TextFunctionAliases } from './functions/text-functions';
@@ -666,7 +667,7 @@ export class Calculator extends Graph {
           name: 'width', },
 
         ],
-        return_type: ReturnType.reference,
+        return_type: 'reference',
         volatile: true,
         fn: ((reference: UnionValue, rows = 0, columns = 0, height?: number, width?: number): UnionValue => {
 
@@ -758,7 +759,7 @@ export class Calculator extends Graph {
         arguments: [
           { name: 'reference', description: 'Cell reference (string)' },
         ],
-        return_type: ReturnType.reference,
+        return_type: 'reference',
         volatile: true, // necessary?
         fn: ((reference: string): UnionValue => {
 

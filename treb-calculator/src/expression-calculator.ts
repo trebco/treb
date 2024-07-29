@@ -32,7 +32,6 @@ import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
 import type { DataModel, MacroFunction, Sheet } from 'treb-data-model';
 import { NameError, ReferenceError, ExpressionError, UnknownError, SpillError } from './function-error';
-import { ReturnType } from './descriptors';
 
 import * as Primitives from './primitives';
 
@@ -561,7 +560,7 @@ export class ExpressionCalculator {
         return argument_error;
       }
 
-      if (func.return_type === ReturnType.reference) {
+      if (func.return_type === 'reference') {
 
         const result = func.fn.apply(null, mapped_args);
         
@@ -751,6 +750,52 @@ export class ExpressionCalculator {
     const fn = Primitives.MapOperator(x.operator);
 
     if (!fn) {
+
+      // support dynamically-constructed ranges, as long as the 
+      // arguments are both addresses (we might see ranges, but
+      // if they are 1x1 then we can accept them)
+
+      if (x.operator === ':') {
+        return (expr: UnitBinary) => {
+
+          const left = this.CalculateExpression(expr.left as ExtendedExpressionUnit, true);
+          const right = this.CalculateExpression(expr.right as ExtendedExpressionUnit, true);
+  
+          let start: UnitAddress|undefined;
+          let end: UnitAddress|undefined;
+
+          // console.info({expr, left, right});
+
+          if (UnionIsExpressionUnit(left) && UnionIsExpressionUnit(right)) {
+
+            if (left.value.type === 'range') {
+              if (left.value.start.row === left.value.end.row && left.value.start.column === left.value.end.column) {
+                start = left.value.start;
+              }
+            }
+            else if (left.value.type === 'address') {
+              start = left.value;
+            }
+
+            if (right.value.type === 'range') {
+              if (right.value.start.row === right.value.end.row && right.value.start.column === right.value.end.column) {
+                end = right.value.start;
+              }
+            }
+            else if (right.value.type === 'address') {
+              end = right.value;
+            }
+
+            if (start && end) {
+              return this.CellFunction4(start, end);
+            }
+
+          }
+          
+          return ExpressionError();
+        };
+      }
+
       return () => { // expr: UnitBinary) => {
         console.info(`(unexpected binary operator: ${x.operator})`);
         return ExpressionError();

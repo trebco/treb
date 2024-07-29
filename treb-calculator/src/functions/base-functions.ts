@@ -24,7 +24,7 @@ import * as Utils from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
 import type { UnionValue, 
          RenderFunctionResult, RenderFunctionOptions, Complex, CellValue } from 'treb-base-types';
-import { Box, ValueType, GetValueType, ComplexOrReal, IsComplex } from 'treb-base-types';
+import { Box, ValueType, GetValueType, ComplexOrReal, IsComplex, Area } from 'treb-base-types';
 import { Sparkline } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
 
@@ -33,6 +33,7 @@ import { UnionIsMetadata } from '../expression-calculator';
 
 import { Exp as ComplexExp, Power as ComplexPower, Multiply as ComplexMultply } from '../complex-math';
 import { CoerceComplex } from './function-utilities';
+import type { UnitAddress, UnitRange } from 'treb-parser';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -1180,7 +1181,11 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
     */
    
+
     /*
+     * rewrite of xlookup to return a reference. better compatibility.
+     * ---
+     *
      * unsaid anywhere (that I can locate) aboud XLOOKUP is that lookup 
      * array must be one-dimensional. it can be either a row or a column,
      * but one dimension must be one. that simplifies things quite a bit.
@@ -1193,20 +1198,330 @@ export const BaseFunctionLibrary: FunctionMap = {
       arguments: [
         { name: 'Lookup value', },
         { name: 'Lookup array',  },
-        { name: 'Return array',  },
+        { name: 'Return array', metadata: true, },
         { name: 'Not found', boxed: true },
         { name: 'Match mode', default: 0, },
         { name: 'Search mode', default: 1, },
       ],
+      return_type: 'reference',
       xlfn: true,
       fn: (
           lookup_value: IntrinsicValue, 
           lookup_array: IntrinsicValue[][], 
-          return_array: IntrinsicValue[][],
+          return_array: UnionValue,
           not_found?: UnionValue,
           match_mode = 0,
           search_mode = 1,
           ): UnionValue => {
+
+        ////////
+
+        if (!return_array) {
+          return ArgumentError();
+        }
+
+        // const parse_result = this.parser.Parse(reference);
+        // if (parse_result.error || !parse_result.expression) {
+        //  return ReferenceError;
+        //}
+
+        let rng: Area|undefined;
+
+        if (return_array.type === ValueType.array) {
+          // console.info({return_array});
+
+          const arr = return_array.value;
+          const r = arr.length;
+          const c = arr[0].length;
+
+          const start = arr[0][0];
+          const end = arr[r-1][c-1];
+
+          if (UnionIsMetadata(start) && UnionIsMetadata(end)) {
+            rng = new Area(start.value.address, end.value.address);
+          }
+
+        }
+
+        if (!rng) {
+          console.info('invalid range');
+          return ReferenceError(); 
+        }
+        
+        // console.info({rng});
+
+        /*
+        if (return_array.type === ValueType.array) {
+
+          // subset array. this is constructed, so we can take ownership
+          // and modify it, although it would be safer to copy. also, what's
+          // the cost of functional vs imperative loops these days?
+
+          const end_row = typeof height === 'number' ? (rows + height) : undefined;
+          const end_column = typeof width === 'number' ? (columns + width) : undefined;
+
+          const result: UnionValue = {
+            type: ValueType.array,
+            value: reference.value.slice(rows, end_row).map(row => row.slice(columns, end_column)),
+          };
+
+          return result;
+
+        }
+        */
+
+        // FIXME: we could I suppose be more graceful about single values
+        // if passed instead of arrays
+
+        if (!Array.isArray(lookup_array)) {
+          console.info("lookup is not an array");
+          return ValueError();
+        }
+
+        const first = lookup_array[0];
+        if (!Array.isArray(first)) {
+          console.info("lookup is not a 2d array");
+          return ValueError();
+        }
+
+        if (lookup_array.length !== 1 && first.length !== 1) {
+          console.info("lookup array has invalid dimensions");
+          return ValueError();
+        }
+
+        // FIXME: is it required that the return array be (at least) the 
+        // same size? we can return undefineds, but maybe we should error
+
+        /*
+        if (!Array.isArray(return_array)) {
+          console.info("return array is not an array");
+          return ValueError();
+        }
+        */
+
+        const transpose = (lookup_array.length === 1);
+        if (transpose) {
+          lookup_array = Utils.TransposeArray(lookup_array);
+          // return_array = Utils.TransposeArray(return_array);
+        }
+
+        // maybe reverse...
+
+        if (search_mode < 0) {
+          lookup_array.reverse();
+          // return_array.reverse();
+        }
+
+        //
+        // return value at index, transpose if necessary, and return
+        // an array. we might prefer to return a scalar if there's only 
+        // one value, not sure what's the intended behavior
+        // 
+        const ReturnIndex = (rng: Area, index: number): UnionValue => {
+
+          // console.info("transpose?", transpose, {rng}, 'shape', rng.rows, rng.columns);
+
+          let start: UnitAddress|undefined;
+          let end: UnitAddress|undefined;
+
+          // I guess "transpose" in this context means "return a row from column(s)"? rename
+
+          if (transpose) {
+         
+            if (search_mode < 0) {
+              index = rng.rows - 1 - index; // invert FIXME: test
+            }
+
+            if (index >= 0 && index < rng.rows) {
+              start = {
+                type: 'address',
+                position: 0, id: 1, label: '',
+                row: rng.start.row + index,
+                column: rng.start.column,
+                sheet_id: rng.start.sheet_id,
+              };
+
+              end = {
+                type: 'address',
+                position: 0, id: 2, label: '',
+                row: rng.start.row + index,
+                column: rng.end.column,
+                sheet_id: rng.start.sheet_id,
+              };
+            }
+
+          }
+          else {
+
+            if (search_mode < 0) {
+              index = rng.columns - 1 - index; // invert FIXME: test
+            }
+
+            if (index >= 0 && index < rng.columns) {
+              start = {
+                type: 'address',
+                position: 0, id: 1, label: '',
+                row: rng.start.row,
+                column: rng.start.column + index,
+                sheet_id: rng.start.sheet_id,
+              };
+
+              end = {
+                type: 'address',
+                position: 0, id: 2, label: '',
+                row: rng.end.row,
+                column: rng.start.column + index,
+                sheet_id: rng.start.sheet_id,
+              };
+            }
+          }
+
+          if (start && end) {
+
+            const expr: UnitRange = {
+              type: 'range',
+              position: 0,
+              id: 0,
+              label: '',
+              start, end,
+            };
+
+            // console.info({expr});
+
+            return {
+              type: ValueType.object,
+              value: expr,
+            }
+            
+          }
+
+          return { type: ValueType.undefined };
+
+        };
+      
+        // if value is not a string, then we can ignore wildcards.
+        // in that case convert to exact match.
+
+        if (match_mode === 2 && typeof lookup_value !== 'string') {
+          match_mode = 0;
+        }
+
+        // what does inexact matching mean in this case if the lookup
+        // value is a string or boolean? (...)
+
+        if ((match_mode === 1 || match_mode === -1) && typeof lookup_value === 'number') {
+
+          let min_delta = 0;
+          let index = -1;
+
+          for (let i = 0; i < lookup_array.length; i++) {
+            const value = lookup_array[i][0];
+           
+
+            if (typeof value === 'number') {
+
+              // check for exact match first, just in case
+              if (value === lookup_value) {
+                return ReturnIndex(rng, i); 
+              }
+
+              const delta = Math.abs(value - lookup_value);
+
+              if ((match_mode === 1 && value > lookup_value) || (match_mode === -1 && value < lookup_value)){
+                if (index < 0 || delta < min_delta) {
+                  min_delta = delta;
+                  index = i;
+                }
+              }
+
+            }
+          }
+
+          if (index >= 0) {
+            return ReturnIndex(rng, index);
+          }
+
+        }
+        
+        switch (match_mode) {
+
+          case 2:
+            {
+              // wildcard string match. we only handle strings for 
+              // this case (see above).
+
+              const pattern = Utils.ParseWildcards(lookup_value?.toString() || '');
+              const regex = new RegExp('^' + pattern + '$', 'i'); //.exec(lookup_value);
+
+              for (let i = 0; i < lookup_array.length; i++) {
+                const value = lookup_array[i][0];
+                if (typeof value === 'string' && regex.exec(value)) {
+                  return ReturnIndex(rng, i);
+                }
+              }
+
+            }
+            break;
+
+          case 0:
+            if (typeof lookup_value === 'string') {
+              lookup_value = lookup_value.toLowerCase();
+            }
+            for (let i = 0; i < lookup_array.length; i++) {
+              let value = lookup_array[i][0];
+ 
+              if (typeof value === 'string') {
+                value = value.toLowerCase();
+              }
+              if (value === lookup_value) {
+                return ReturnIndex(rng, i);
+              }
+            }
+
+            break;
+        }
+
+
+        // FIXME: if we're expecting to return an array maybe we should
+        // pack it up as an array? if it's not already an array? (...)
+
+        return (not_found && not_found.type !== ValueType.undefined) ? not_found : NAError();
+
+      },
+    },
+
+
+    /*
+     * unsaid anywhere (that I can locate) aboud XLOOKUP is that lookup 
+     * array must be one-dimensional. it can be either a row or a column,
+     * but one dimension must be one. that simplifies things quite a bit.
+     * 
+     * there's a note in the docs about binary search over the data -- 
+     * that might explain how inexact VLOOKUP works as well. seems an odd
+     * choice but maybe back in the day it made sense
+     * /
+    XLOOKUP: {
+      arguments: [
+        { name: 'Lookup value', },
+        { name: 'Lookup array',  },
+        { name: 'Return array', address: true, },
+        { name: 'Not found', boxed: true },
+        { name: 'Match mode', default: 0, },
+        { name: 'Search mode', default: 1, },
+      ],
+      return_type: 'reference',
+      xlfn: true,
+      fn: (
+          lookup_value: IntrinsicValue, 
+          lookup_array: IntrinsicValue[][], 
+          return_array: string,
+          not_found?: UnionValue,
+          match_mode = 0,
+          search_mode = 1,
+          ): UnionValue => {
+
+        console.info({return_array});
+            
 
         // FIXME: we could I suppose be more graceful about single values
         // if passed instead of arrays
@@ -1368,6 +1683,7 @@ export const BaseFunctionLibrary: FunctionMap = {
 
       },
     },
+    */
 
     /**
      * copied from HLOOKUP, fix that one first

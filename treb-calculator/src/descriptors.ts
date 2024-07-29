@@ -23,9 +23,11 @@ import type { RenderFunction, ClickFunction, UnionValue } from 'treb-base-types'
 
 // FIXME: at least some of this could move to base types
 
+/*
 export enum ReturnType {
   value, reference
 }
+*/
 
 /**
  * descriptor for an individual argument
@@ -161,9 +163,9 @@ export interface CompositeFunctionDescriptor {
   xlfn?: boolean;
 
   /**
-   * support returning references
+   * support returning references. 'value' is default. FIXME: could just be a bool?
    */
-  return_type?: ReturnType;
+  return_type?: 'reference'|'value';
 
   /**
    * @internal
