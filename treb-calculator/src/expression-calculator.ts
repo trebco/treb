@@ -733,21 +733,25 @@ export class ExpressionCalculator {
 
   }
 
-  protected AsReference(x: ExpressionUnit): ICellAddress|undefined {
+  /**
+   * convert expr to a cell address, possibly calculating the contents.
+   * returns single address only (ranges with len > 1 will fail)
+   */
+  protected AsReference(expr: ExpressionUnit): ICellAddress|undefined {
 
-    switch (x.type) {
+    switch (expr.type) {
       case 'address':
-        return x;
+        return expr;
 
       case 'range':
-        if (x.start.row === x.end.row && x.start.column === x.end.column) {
-          return x.start;
+        if (expr.start.row === expr.end.row && expr.start.column === expr.end.column) {
+          return expr.start;
         }
         break;
 
       default:
         {
-          const union = this.CalculateExpression(x as ExtendedExpressionUnit, true);
+          const union = this.CalculateExpression(expr as ExtendedExpressionUnit, true);
           if (UnionIsExpressionUnit(union)) {
             if (union.value.type === 'address') {
               return union.value;
@@ -788,7 +792,7 @@ export class ExpressionCalculator {
 
       if (x.operator === ':') {
         return (expr: UnitBinary) => {
-          
+
           const start = this.AsReference(expr.left);
           const end = this.AsReference(expr.right);
 
