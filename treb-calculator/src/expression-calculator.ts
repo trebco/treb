@@ -733,6 +733,37 @@ export class ExpressionCalculator {
 
   }
 
+  protected AsReference(x: ExpressionUnit): ICellAddress|undefined {
+
+    switch (x.type) {
+      case 'address':
+        return x;
+
+      case 'range':
+        if (x.start.row === x.end.row && x.start.column === x.end.column) {
+          return x.start;
+        }
+        break;
+
+      default:
+        {
+          const union = this.CalculateExpression(x as ExtendedExpressionUnit, true);
+          if (UnionIsExpressionUnit(union)) {
+            if (union.value.type === 'address') {
+              return union.value;
+            }
+            if (union.value.type === 'range' && union.value.start.row === union.value.end.row && union.value.start.column === union.value.end.column) {
+              return union.value.start;
+            }
+          } 
+        }
+        break;
+    }
+
+    return undefined;
+
+  }
+
   protected BinaryExpression(x: UnitBinary): (expr: UnitBinary) => UnionValue /*UnionOrArray*/ {
 
     // we are constructing and caching functions for binary expressions.
@@ -757,41 +788,14 @@ export class ExpressionCalculator {
 
       if (x.operator === ':') {
         return (expr: UnitBinary) => {
-
-          const left = this.CalculateExpression(expr.left as ExtendedExpressionUnit, true);
-          const right = this.CalculateExpression(expr.right as ExtendedExpressionUnit, true);
-  
-          let start: UnitAddress|undefined;
-          let end: UnitAddress|undefined;
-
-          // console.info({expr, left, right});
-
-          if (UnionIsExpressionUnit(left) && UnionIsExpressionUnit(right)) {
-
-            if (left.value.type === 'range') {
-              if (left.value.start.row === left.value.end.row && left.value.start.column === left.value.end.column) {
-                start = left.value.start;
-              }
-            }
-            else if (left.value.type === 'address') {
-              start = left.value;
-            }
-
-            if (right.value.type === 'range') {
-              if (right.value.start.row === right.value.end.row && right.value.start.column === right.value.end.column) {
-                end = right.value.start;
-              }
-            }
-            else if (right.value.type === 'address') {
-              end = right.value;
-            }
-
-            if (start && end) {
-              return this.CellFunction4(start, end);
-            }
-
-          }
           
+          const start = this.AsReference(expr.left);
+          const end = this.AsReference(expr.right);
+
+          if (start && end) {
+            return this.CellFunction4(start, end);
+          }
+         
           return ExpressionError();
         };
       }
