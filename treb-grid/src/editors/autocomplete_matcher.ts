@@ -151,6 +151,8 @@ export class AutocompleteMatcher {
       return {};
     }
 
+    // console.info(data);
+
     let match;
     let result: AutocompleteExecResult = {};
 
@@ -162,7 +164,8 @@ export class AutocompleteMatcher {
       // if it's a token, and ends with a legal character
       // UPDATE: adding the negative leading \d to fix entering complex numbers
 
-      match = data.text.match(/(?:^|[^A-Za-z_\d])([A-Za-z_][\w\d_.]*)\s*$/);
+      // match = data.text.match(/(?:^|[^A-Za-z_\d])([A-Za-z_][\w\d_.]*)\s*$/);
+      match = data.text.match(/(?:^|[^a-zA-Z\u00C0-\u024F_\d])([a-zA-Z\u00C0-\u024F_][\w\d\u00C0-\u024F_.]*)\s*$/);
 
       if (match) {
         const token = match[1];
@@ -177,6 +180,9 @@ export class AutocompleteMatcher {
           position: data.cursor - token.length,
         };
 
+      }
+      else {
+        // console.info("NOP");
       }
 
     }
@@ -261,6 +267,7 @@ export class AutocompleteMatcher {
             if ( (char >= 0x61 && char <= 0x7a) // a-z
               || (char >= 0x41 && char <= 0x5a) // A-Z
               || (char >= 0x30 && char <= 0x39) // 0-9
+              || (char >= 0x00C0 && char <= 0x024F) // accented characters
               || (char === 0x5f)                // _
               || (char === 0x2e)) {             // .
     
