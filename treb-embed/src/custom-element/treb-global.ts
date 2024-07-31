@@ -87,6 +87,9 @@ export class TREBGlobal {
 
         // @ts-expect-error: module not found error
         await import('./languages/treb-i18n-no.mjs');
+
+        // @ts-expect-error: module not found error
+        await import('./languages/treb-i18n-pl.mjs');
         
       }
       catch (err) {
