@@ -22,6 +22,7 @@
 import type { ICellAddress } from 'treb-base-types';
 import type { TREBDocument } from './types';
 import type { ChartRenderer } from 'treb-charts';
+import type { TREBPlugin } from './plugin';
 
 /**
  * factory type for chart renderer, if you want instances (pass a constructor)
@@ -326,6 +327,12 @@ export interface EmbeddedSpreadsheetOptions {
    * starting in 30.1.0. set to false to disable.
    */
   spill?: boolean;
+
+  /** 
+   * @internal 
+   * testing plugins
+   */
+  plugins?: TREBPlugin[];
 
 }
 

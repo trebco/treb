@@ -646,8 +646,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   constructor(options: EmbeddedSpreadsheetOptions & { model?: EmbeddedSpreadsheet }) { 
 
-    // super();
-
     // we renamed this option, default to the new name
 
     if (options.storage_key && !options.local_storage) {
@@ -841,6 +839,18 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     if (this.options.headless) {
       this.grid.headless = true; // FIXME: move into grid options
     }
+
+    // --- testing plugins -----------------------------------------------------
+
+    // FIXME: when to do this? could it wait? should it be async? (...)
+
+    if (options.plugins) {
+      for (const plugin of options.plugins) {
+        plugin.Attach(this);
+      }
+    }
+
+    // -------------------------------------------------------------------------
 
     // we're now gating this on container to support fully headless operation
 
@@ -1180,7 +1190,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     let list: FunctionDescriptor[] = this.calculator.SupportedFunctions();
 
-    if (this.language_model) {
+    if (this.language_model?.functions) {
 
       const map: Record<string, TranslatedFunctionDescriptor> = {};
       for (const entry of this.language_model.functions || []) {
@@ -1188,7 +1198,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       }
 
       list = list.map(descriptor => {
-        return map[descriptor.name.toUpperCase()] || descriptor;
+        const partial = map[descriptor.name.toUpperCase()];
+        if (partial) {
+          return {
+            ...descriptor,
+            ...partial, 
+          };
+        }
+        return descriptor;
       });
 
     }
@@ -1973,10 +1990,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       // create a name map for grid
 
       const map: Record< string, string > = {};
-      for (const entry of model.functions || []) {
-        map[entry.base] = entry.name;
+
+      if (model.functions) {
+        for (const entry of model.functions || []) {
+          map[entry.base] = entry.name;
+        }
       }
+
       this.grid.SetLanguageMap(map);
+
     }
 
     this.UpdateAC();
