@@ -255,6 +255,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   /** @internal */
   public static treb_embedded_script_path = '';
 
+  /** 
+   * @internal 
+   * 
+   * keep track of modules we've tried to load dynamically, so we don't
+   * do it again. not sure if this is strictly necessary but especially if
+   * we're logging I don't want to see it again 
+   */
+  protected static failed_dynamic_modules: string[] = [];
+
   /* * @internal */
   // public static enable_engine = false;
 
@@ -840,6 +849,25 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       this.grid.headless = true; // FIXME: move into grid options
     }
 
+    // --- testing dynamic loading ---------------------------------------------
+
+    this.LoadLanguage(options.language);
+
+    /*
+    try {
+      console.info("loading spanish language module");
+      const path = "./languages/treb-i18n-es.mjs";
+      import(path).then((mod) => {
+        console.info("OK?", mod);
+      }).catch(err => {
+        console.error(err);
+      });
+    }
+    catch (err) {
+      console.error(err);
+    }
+    */
+
     // --- testing plugins -----------------------------------------------------
 
     // FIXME: when to do this? could it wait? should it be async? (...)
@@ -1199,6 +1227,12 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       list = list.map(descriptor => {
         const partial = map[descriptor.name.toUpperCase()];
+
+        // FIXME: this is not deep enough if we are going to modify
+        // argument names. we will need to keep other elements of the 
+        // argument entries. this is sufficient for now if we're just
+        // setting function names / descriptions.
+
         if (partial) {
           return {
             ...descriptor,
@@ -1972,6 +2006,39 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   // --- public API methods ----------------------------------------------------
+
+  /** dynamically load language module */
+  public async LoadLanguage(language = '') {
+
+    if (!language || language === 'locale') {
+      const locale = Localization.locale || '';
+      const parts = locale.split(/-/).map(part => part.toLowerCase());
+      language = parts[0];
+    }
+
+    language = language.toLowerCase();
+
+    if (language.length === 2 && language !== 'en') {
+
+      // FIXME: we need a list
+
+      const module_path = `./languages/treb-i18n-${language}.mjs`;
+      if (!EmbeddedSpreadsheet.failed_dynamic_modules.includes(module_path)) {
+        try {
+          const language_module = await import(module_path);
+          if (language_module) {
+            // console.info('loading language module for ' + language);
+            this.SetLanguage(language_module.LanguageMap);
+          }
+        }
+        catch (err) {
+          console.warn('loading language module failed for language ' + language);
+          EmbeddedSpreadsheet.failed_dynamic_modules.push(module_path);
+        }
+      }
+    }
+
+  }
 
   /** 
    * this is not public _yet_ 

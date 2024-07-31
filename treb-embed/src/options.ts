@@ -334,6 +334,18 @@ export interface EmbeddedSpreadsheetOptions {
    */
   plugins?: TREBPlugin[];
 
+  /**
+   * language. at the moment this controls spreadsheet function names
+   * only; the plan is to expand to the rest of the interface over time.
+   * should be an ISO 639-1 language code, like "en", "fr" or "sv" (case
+   * insensitive). we only support a limited subset of languages at the 
+   * moment.
+   * 
+   * leave blank or set to "locale" to use the current locale.
+   */
+  language?: string;
+
+
 }
 
 /**

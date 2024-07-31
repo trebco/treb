@@ -5,7 +5,7 @@ import * as esbuild from 'esbuild';
 import { SassPlugin, WorkerPlugin, NotifyPlugin, HTMLPlugin } from './esbuild-utils.mjs';
 import { promises as fs } from 'fs';
 
-import pkg from './package.json' assert { type: 'json' }; 
+import pkg from './package.json' with { type: 'json' }; 
 
 
 /**

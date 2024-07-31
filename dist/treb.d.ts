@@ -1,4 +1,4 @@
-/*! API v30.1. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
+/*! API v30.2. Copyright 2018-2024 trebco, llc. All rights reserved. LGPL: https://treb.app/license */
 
 /**
  * add our tag to the map
@@ -282,6 +282,17 @@ export interface EmbeddedSpreadsheetOptions {
      * starting in 30.1.0. set to false to disable.
      */
     spill?: boolean;
+
+    /**
+     * language. at the moment this controls spreadsheet function names
+     * only; the plan is to expand to the rest of the interface over time.
+     * should be an ISO 639-1 language code, like "en", "fr" or "sv" (case
+     * insensitive). we only support a limited subset of languages at the
+     * moment.
+     *
+     * leave blank or set to "locale" to use the current locale.
+     */
+    language?: string;
 }
 
 /**
@@ -392,6 +403,9 @@ export declare class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
      * responding to selection.
      */
     ExternalEditor(config?: Partial<ExternalEditorConfig>): void;
+
+    /** dynamically load language module */
+    LoadLanguage(language?: string): Promise<void>;
 
     /**
      * Use this function to batch multiple document changes. Essentially the
