@@ -260,6 +260,140 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     },
   },
 
+  LCM: {
+    description: 'Retuns the least common mulitple of the arguments',
+    arguments: [{ boxed: true }],
+    fn: (...args: UnionValue[]): UnionValue => {
+      args = Utils.FlattenBoxed(args);
+      const list: number[] = [];
+
+      for (const ref of args as UnionValue[]) {
+        if (ref.type === ValueType.error) {
+          return ref;
+        }
+        if (ref.type === ValueType.number) {
+          list.push(ref.value);
+        }
+        else if (ref.type !== ValueType.undefined ) {
+          console.info("RT", ref.type);
+          return ArgumentError();
+        }
+      }
+
+      const gcd = (x: number, y: number): number => {
+        if (x % y == 0) {
+          return y;               // Base case
+        }
+        else {
+          return gcd(y, x % y);   // Recusrsive case
+        }
+      };
+
+      if (list.length === 0) {
+        return { type: ValueType.number, value: 0 };
+      }
+
+      let lcm = list[0];
+
+      for (let i = 1; i < list.length; i++) {
+        lcm = (lcm * list[i]) / gcd(lcm, list[i]);
+      }
+
+      return {
+        type: ValueType.number,
+        value: lcm,
+      }
+
+    },
+  },
+
+  GCD: {
+    description: 'Finds the greatest common divisor of the arguments',
+    arguments: [{ boxed: true }],
+    fn: (...args: UnionValue[]): UnionValue => {
+      args = Utils.FlattenBoxed(args);
+      const list: number[] = [];
+
+      for (const ref of args as UnionValue[]) {
+        if (ref.type === ValueType.error) {
+          return ref;
+        }
+        if (ref.type === ValueType.number) {
+          list.push(ref.value);
+        }
+        else if (ref.type !== ValueType.undefined ) {
+          console.info("RT", ref.type);
+          return ArgumentError();
+        }
+      }
+
+      const gcd = (x: number, y: number): number => {
+        if (x % y == 0) {
+          return y;               // Base case
+        }
+        else {
+          return gcd(y, x % y);   // Recusrsive case
+        }
+      };
+
+      if (list.length === 0) {
+        return ValueError();
+      }
+
+      if (list.length === 1) {
+        return {
+          type: ValueType.number, 
+          value: list[0],
+        };
+      }
+
+      let value = list[0];
+      for (let i = 1; i < list.length; i++) {
+        value = gcd(value, list[i]);
+      }
+      
+      return {
+        type: ValueType.number,
+        value,
+      };
+
+
+    }
+  },
+
+  HarMean: {
+    description: 'Returns the harmonic mean of the arguments',
+    arguments: [{ boxed: true }],
+    fn: (...args: UnionValue[]): UnionValue => {
+      args = Utils.FlattenBoxed(args);
+      const result = { real: 0, imaginary: 0 };
+      let count = 0;
+
+      for (const ref of args as UnionValue[]) {
+        if (ref.type === ValueType.error) {
+          return ref;
+        }
+        if (ref.type === ValueType.number) {
+          result.real += (1/ref.value);
+          count++;
+        }
+        if (ref.type === ValueType.complex) {
+          const reciprocal = ComplexMath.Divide({real: 1, imaginary: 0}, ref.value);
+          result.real += reciprocal.real;
+          result.imaginary += reciprocal.imaginary;
+          count++;
+        }
+      }
+
+      if (result.imaginary) {
+        return { type: ValueType.complex, value: ComplexMath.Divide({real: count, imaginary: 0}, result), };
+      }
+
+      return { type: ValueType.number, value: count/result.real };
+
+    },
+  },
+
   Average: {
 
     description: 'Returns the arithmetic mean of all numeric arguments',

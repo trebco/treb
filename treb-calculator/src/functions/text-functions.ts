@@ -120,6 +120,51 @@ export const TextFunctionLibrary: FunctionMap = {
     },
   },
 
+  Len: {
+    arguments: [
+      { name: 'string', unroll: true },
+    ],
+    fn: (str: string): UnionValue => {
+      return {
+        type: ValueType.number,
+        value: str.toString().length,
+      }
+    },
+  },
+
+  Substitute: {
+    arguments: [
+      { name: 'text' },
+      { name: 'search' },
+      { name: 'replacement' },
+      { name: 'index' },
+    ],
+    fn: (text: string, search: string, replacement: string, index?: number): UnionValue => {
+      if (typeof index === 'number') {
+        if (index < 1) {
+          return ValueError();
+        }
+      
+        let counter = 1;
+        return {
+          type: ValueType.string,
+          value: text.replaceAll(search, (...args) => {
+            console.info(args);
+            return (counter++) === index ? replacement : search;
+          }),
+        };
+
+      }
+      else {
+        return {
+          type: ValueType.string,
+          value: text.replaceAll(search, replacement),
+        };
+      }
+
+    },
+  },  
+
   Left: {
     arguments: [
       { name: 'string' },

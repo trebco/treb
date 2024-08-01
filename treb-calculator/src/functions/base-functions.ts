@@ -585,6 +585,37 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
   },
 
+  IsErr: {
+    description: 'Checks if another cell contains an error',
+    arguments: [{ name: 'reference', allow_error: true, boxed: true }],
+    fn: (...args: UnionValue[]): UnionValue => {
+
+      const values = Utils.FlattenBoxed(args);
+      for (const value of values) {
+        if (value.type === ValueType.error && value.value !== 'N/A') {
+          return { type: ValueType.boolean, value: true };
+        }
+      }
+
+      /*
+      if (Array.isArray(ref)) {
+        const values = Utils.Flatten(ref) as UnionValue[];
+        for (const value of values) {
+          if (value.type === ValueType.error) {
+            return { type: ValueType.boolean, value: true };
+          }
+        }
+      }
+      else if (ref) {
+        return { type: ValueType.boolean, value: ref.type === ValueType.error };
+      }
+      */
+
+      return { type: ValueType.boolean, value: false };
+
+    },
+  },
+
   IsError: {
     description: 'Checks if another cell contains an error',
     arguments: [{ name: 'reference', allow_error: true, boxed: true }],
@@ -1181,6 +1212,125 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
     */
    
+    Row: {
+      arguments: [{ name: 'reference', metadata: true }],
+      fn: (ref: UnionValue): UnionValue => {
+        if (ref.type === ValueType.array) {
+          const arr = ref.value;
+          const first = arr[0][0];
+
+          if (UnionIsMetadata(first)) {
+            return {
+              type: ValueType.array,
+              value: [arr[0].map((row, index) => ({
+                type: ValueType.number,
+                value: index + first.value.address.row + 1
+              }))],
+            };
+          }
+
+        }
+        else if (UnionIsMetadata(ref)) {
+          return {
+            type: ValueType.number, value: ref.value.address.row + 1,
+          }
+        }
+        return ArgumentError();
+      },
+    },
+
+    Column: {
+      arguments: [{ name: 'reference', metadata: true }],
+      fn: (ref: UnionValue): UnionValue => {
+        if (ref.type === ValueType.array) {
+          const arr = ref.value;
+          const first = arr[0][0];
+
+          if (UnionIsMetadata(first)) {
+            return {
+              type: ValueType.array,
+              value: arr.map((row, index) => [{
+                type: ValueType.number,
+                value: index + first.value.address.column + 1
+              }]),
+            };
+          }
+
+        }
+        else if (UnionIsMetadata(ref)) {
+          return {
+            type: ValueType.number, value: ref.value.address.row + 1,
+          }
+        }
+        return ArgumentError();
+      },
+    },
+    
+    Choose: {
+      arguments: [
+        { name: 'Selected index', },
+        { name: 'Choice 1...', metadata: true },
+      ],
+      return_type: 'reference',
+      description: 'Returns one of a list of choices',
+      fn: (selected: number, ...choices: UnionValue[]): UnionValue => {
+
+        if (selected < 1 || selected > choices.length) {
+          return ValueError();
+        }
+
+        const value = choices[selected - 1];
+
+        // this should be metadata. is there a different object we 
+        // might run into? maybe we should refactor how metadata works
+
+        if (UnionIsMetadata(value)) {
+          return {
+            type: ValueType.object,
+            value: value.value.address,
+          }
+        }
+
+        // check if array is metadata. if it's a literal array
+        // we just want to return it.
+
+        if (value.type === ValueType.array) {
+          const arr = value.value;
+          const rows = arr.length;
+          const cols = arr[0].length;
+          const first = arr[0][0];
+          const last = arr[rows - 1][cols - 1];
+
+          if (rows === 1 && cols === 1) {
+            if (UnionIsMetadata(first)) {
+              return {
+                type: ValueType.object,
+                value: first.value.address,
+              };
+            }
+          }
+          else {
+            if (UnionIsMetadata(first) && UnionIsMetadata(last)) {
+              return {
+                type: ValueType.object,
+                value: {
+                  type: 'range',
+                  position: 0, id: 0, label: '',
+                  start: first.value.address,
+                  end: last.value.address,
+                }
+              }
+            }
+
+          }
+        }
+        
+        return {
+          ...value, // should we deep-copy in case of an array?
+        };
+
+      },
+    },
 
     /*
      * rewrite of xlookup to return a reference. better compatibility.
