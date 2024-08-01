@@ -45,60 +45,6 @@ export class TREBGlobal {
     return instance.sheet;
   }
 
-  /**
-   * this function is not intended to be called. it's for static analyzers
-   * (vite) that try to figure out what modules we are going to load. having
-   * this function here (for now, at least) ensures we can dynamically load
-   * the listed modules at runtime, if they are available.
-   * 
-   * this is fragile. also we have to manually update when new languages 
-   * are available (FIXME: we could script that, at least).
-   * 
-   */
-  private async PreloadLanguages() {
-
-    if (Math.random() === 1) { // I guess that could happen? at least in theory
-
-      try {
-
-        // @ts-expect-error: module not found error
-        await import('./languages/treb-i18n-es.mjs');
-
-        // @ts-expect-error: module not found error
-        await import('./languages/treb-i18n-nl.mjs');
-
-        // @ts-expect-error: module not found error
-        await import('./languages/treb-i18n-it.mjs');
-
-        // @ts-expect-error: module not found error
-        await import('./languages/treb-i18n-pt.mjs');
-
-        // @ts-expect-error: module not found error
-        await import('./languages/treb-i18n-fr.mjs');
-
-        // @ts-expect-error: module not found error
-        await import('./languages/treb-i18n-de.mjs');
-
-        // @ts-expect-error: module not found error
-        await import('./languages/treb-i18n-da.mjs');
-
-        // @ts-expect-error: module not found error
-        await import('./languages/treb-i18n-sv.mjs');
-
-        // @ts-expect-error: module not found error
-        await import('./languages/treb-i18n-no.mjs');
-
-        // @ts-expect-error: module not found error
-        await import('./languages/treb-i18n-pl.mjs');
-        
-      }
-      catch (err) {
-        console.error(err);
-      }
-
-    }
-  }
-
 }
 
 /** single instance of factory class */

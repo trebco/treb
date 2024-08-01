@@ -58,6 +58,26 @@ for (let i = 0; i < process.argv.length; i++) {
   }
 }
 
+/**
+ * thanks to
+ * https://github.com/evanw/esbuild/issues/3337#issuecomment-2085394950
+ */
+function RewriteIgnoredImports() {
+  return {
+    name: 'RewriteIgnoredImports',
+    setup(build) {
+      build.onEnd(async (result) => {
+        if (result.outputFiles) {
+          for (const file of result.outputFiles) {
+            const { path, text } = file;
+            await fs.writeFile(path, text.replace(/esbuild-ignore-import:/, ''));
+          }
+        }
+      });
+    },
+  };
+}
+
 /** @type esbuild.BuildOptions */
 const build_options = {
   entryPoints: [
@@ -78,7 +98,9 @@ const build_options = {
     'process.env.BUILD_VERSION': `"${pkg.version}"`,
     'process.env.BUILD_NAME': `"${pkg.name}"`,
   },
+  write: false,
   plugins: [
+    RewriteIgnoredImports(),
     NotifyPlugin(),
     WorkerPlugin(options),
     HTMLPlugin(options),

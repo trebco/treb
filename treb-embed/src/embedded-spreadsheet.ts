@@ -170,7 +170,6 @@ export interface LoadDocumentOptions {
   source?: LoadSource,
 }
 
-
 /**
  * options for the GetRange method
  */
@@ -2007,24 +2006,30 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     language = language.toLowerCase();
 
-    if (language.length === 2 && language !== 'en') {
+    let mod: { LanguageMap: LanguageModel } | undefined;
 
-      // FIXME: we need a list
+    if (language && language !== 'en') {
 
-      const module_path = `./languages/treb-i18n-${language}.mjs`;
-      if (!EmbeddedSpreadsheet.failed_dynamic_modules.includes(module_path)) {
-        try {
-          const language_module = await import(module_path);
-          if (language_module) {
-            // console.info('loading language module for ' + language);
-            this.SetLanguage(language_module.LanguageMap);
-          }
-        }
-        catch (err) {
-          console.warn('loading language module failed for language ' + language);
-          EmbeddedSpreadsheet.failed_dynamic_modules.push(module_path);
-        }
+      // FIXME: even though we now have a dynamic import
+      // working, we still probably want to use a filter
+      // list to avoid unnecessary 404s.
+
+      // regarding the import, this is specially crafted to 
+      // work in both esbuild and vite. probably will break
+      // some other bundlers though -- might need some magic
+      // comments
+
+      try {
+        mod = await import(`esbuild-ignore-import:./languages/treb-i18n-${language}.mjs`);
       }
+      catch (err) {
+        console.error(err);
+      }
+
+    }
+
+    if (mod) {
+      this.SetLanguage(mod.LanguageMap);
     }
 
   }

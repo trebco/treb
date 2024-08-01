@@ -198,6 +198,7 @@ export const WorkerPlugin = (options) => ({
   }
 });
 
+
 /** 
  * @function
  * @param {{verbose?: boolean, minify?: boolean}} [options]
