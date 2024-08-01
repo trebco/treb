@@ -22,7 +22,7 @@
 import type { ICellAddress } from 'treb-base-types';
 import type { TREBDocument } from './types';
 import type { ChartRenderer } from 'treb-charts';
-import type { TREBPlugin } from './plugin';
+// import type { TREBPlugin } from './plugin';
 
 /**
  * factory type for chart renderer, if you want instances (pass a constructor)
@@ -328,12 +328,6 @@ export interface EmbeddedSpreadsheetOptions {
    */
   spill?: boolean;
 
-  /** 
-   * @internal 
-   * testing plugins
-   */
-  plugins?: TREBPlugin[];
-
   /**
    * language. at the moment this controls spreadsheet function names
    * only; the plan is to expand to the rest of the interface over time.
@@ -345,6 +339,11 @@ export interface EmbeddedSpreadsheetOptions {
    */
   language?: string;
 
+  /* * 
+   * @internal 
+   * testing plugins
+   */
+  // plugins?: TREBPlugin[];
 
 }
 

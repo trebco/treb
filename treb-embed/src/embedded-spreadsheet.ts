@@ -853,23 +853,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     this.LoadLanguage(options.language);
 
-    /*
-    try {
-      console.info("loading spanish language module");
-      const path = "./languages/treb-i18n-es.mjs";
-      import(path).then((mod) => {
-        console.info("OK?", mod);
-      }).catch(err => {
-        console.error(err);
-      });
-    }
-    catch (err) {
-      console.error(err);
-    }
-    */
-
     // --- testing plugins -----------------------------------------------------
 
+    /*
     // FIXME: when to do this? could it wait? should it be async? (...)
 
     if (options.plugins) {
@@ -877,6 +863,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         plugin.Attach(this);
       }
     }
+    */
 
     // -------------------------------------------------------------------------
 
