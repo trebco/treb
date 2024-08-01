@@ -353,3 +353,7 @@ export const ParseWildcards = (text: string): string => {
   return result.join('');
 
 };
+
+export const StringUnion = (value: string): UnionValue => ({ type: ValueType.string, value });
+export const NumberUnion = (value: number): UnionValue => ({ type: ValueType.number, value });
+

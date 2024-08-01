@@ -33,6 +33,7 @@ import type { CalculationResult } from './dag/spreadsheet_vertex_base';
 
 import { ExpressionCalculator, UnionIsMetadata } from './expression-calculator';
 import * as Utilities from './utilities';
+import { StringUnion } from './utilities';
 
 import { FunctionLibrary } from './function-library';
 import type { FunctionMap } from './descriptors';
@@ -564,6 +565,46 @@ export class Calculator extends Graph {
             value,
           };
 
+        },
+      },
+
+      Address: {
+        arguments: [
+          { name: 'row' }, 
+          { name: 'column' }, 
+          { name: 'absolute' }, 
+          { name: 'a1' },
+          { name: 'sheet name'}
+        ],
+        fn: (row = 1, column = 1, absolute = 1, a1 = true, sheet_name?: string): UnionValue => {
+  
+          const address: UnitAddress = {
+            type: 'address',
+            id: 0, position: 0, label: '',
+            row: row-1, 
+            column: column-1,
+          };
+  
+          switch (absolute) {
+            case 2:
+              address.absolute_row = true;
+              break;
+            case 3:
+              address.absolute_column = true;
+              break;
+            case 4:
+              break;
+            default:
+              address.absolute_column = true;
+              address.absolute_row = true;
+          }
+  
+          if (sheet_name) {
+            address.sheet = sheet_name;
+          }
+
+          return StringUnion(this.parser.Render(address, { r1c1: !a1 }));
+  
         },
       },
 

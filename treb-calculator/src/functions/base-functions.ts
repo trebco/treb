@@ -21,9 +21,12 @@
 
 import type { FunctionMap, IntrinsicValue } from '../descriptors';
 import * as Utils from '../utilities';
+// import { StringUnion, NumberUnion } from '../utilities';
 import { ReferenceError, NotImplError, NAError, ArgumentError, DivideByZeroError, ValueError } from '../function-error';
 import type { UnionValue, 
-         RenderFunctionResult, RenderFunctionOptions, Complex, CellValue } from 'treb-base-types';
+         RenderFunctionResult, RenderFunctionOptions, Complex, CellValue, 
+        // ICellAddress
+        } from 'treb-base-types';
 import { Box, ValueType, GetValueType, ComplexOrReal, IsComplex, Area } from 'treb-base-types';
 import { Sparkline } from './sparkline';
 import { LotusDate, UnlotusDate } from 'treb-format';
@@ -1212,6 +1215,7 @@ export const BaseFunctionLibrary: FunctionMap = {
     },
     */
    
+
     Row: {
       arguments: [{ name: 'reference', metadata: true }],
       fn: (ref: UnionValue): UnionValue => {
