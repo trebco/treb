@@ -18,7 +18,7 @@
     "noEmitHelpers": true,
     "verbatimModuleSyntax": true,
     "lib": [
-      "dom", "ESNext"
+      "dom", "esnext"
     ],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
