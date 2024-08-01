@@ -2003,6 +2003,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       language = parts[0];
     }
 
+    this.SetLanguage(); // clear
+
     language = language.toLowerCase();
 
     if (language.length === 2 && language !== 'en') {
