@@ -533,7 +533,7 @@ export class Parser {
       convert_argument_separator, 
       // convert_imaginary_number, 
       long_structured_references, 
-      table_name 
+      table_name,
     } = options;
 
     // use default separator, unless we're explicitly converting.
@@ -672,6 +672,18 @@ export class Parser {
 
           // escape any quotation marks in string
           return '"' + unit.value.replace(/"/g, '""') + '"';
+        }
+        else if (typeof unit.value === 'boolean') {
+
+          // use render option (replacement) value; then flags value; then a default
+
+          if (unit.value) {
+            return options.boolean_true || this.flags.boolean_true || 'true' ; // default
+          }
+          else {
+            return options.boolean_false || this.flags.boolean_false || 'false' ; // default
+          }
+
         }
         else if (convert_decimal && typeof unit.value === 'number') {
           if (unit.text) {
@@ -2290,6 +2302,8 @@ export class Parser {
       
     }
 
+    /* remove special handling
+
     // special handling
 
     if (str.toLowerCase() === 'true') {
@@ -2308,6 +2322,8 @@ export class Parser {
         position,
       };
     }
+
+    */
 
     // function takes precendence over address? I guess so
 
@@ -2345,8 +2361,27 @@ export class Parser {
 
     }
  
-
+    // move true/false handling here
+    // should we accept english even if it's not the active language? (...)
     
+    if (this.flags.boolean_true && str.toLowerCase() === this.flags.boolean_true.toLowerCase()) {
+      return {
+        type: 'literal',
+        id: this.id_counter++,
+        value: true,
+        position,
+      };
+    }
+    if (this.flags.boolean_false && str.toLowerCase() === this.flags.boolean_false.toLowerCase()) {
+      return {
+        type: 'literal',
+        id: this.id_counter++,
+        value: false,
+        position,
+      };
+    }
+
+
     const identifier: UnitIdentifier = {
       type: 'identifier',
       id: this.id_counter++,

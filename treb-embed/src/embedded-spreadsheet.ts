@@ -49,7 +49,10 @@ import type {
     CondifionalFormatExpressionOptions,
     ConditionalFormatCellMatchOptions,
     ConditionalFormatCellMatch,
-  
+
+    LanguageModel, 
+    TranslatedFunctionDescriptor,
+
    } from 'treb-data-model';
 
 
@@ -88,7 +91,6 @@ import { Spinner } from './spinner';
 import { type EmbeddedSpreadsheetOptions, DefaultOptions, type ExportOptions } from './options';
 import { type TREBDocument, SaveFileType, LoadSource, type EmbeddedSheetEvent, type InsertTableOptions } from './types';
 
-import type { LanguageModel, TranslatedFunctionDescriptor } from './language-model';
 import type { SelectionState } from './selection-state';
 import type { BorderToolbarMessage, ToolbarMessage } from './toolbar-message';
 
@@ -341,8 +343,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     return Localization;
   }
 
-  /** loaded language model, if any */
+  /* * loaded language model, if any (moved to data model) * /
   protected language_model?: LanguageModel;
+  */
 
   /** FIXME: fix type (needs to be extensible) */
   protected events = new EventSource<{ type: string }>();
@@ -1204,10 +1207,10 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
     let list: FunctionDescriptor[] = this.calculator.SupportedFunctions();
 
-    if (this.language_model?.functions) {
+    if (this.model.language_model?.functions) {
 
       const map: Record<string, TranslatedFunctionDescriptor> = {};
-      for (const entry of this.language_model.functions || []) {
+      for (const entry of this.model.language_model.functions || []) {
         map[entry.base.toUpperCase()] = entry;
       }
 
@@ -2002,8 +2005,6 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
       language = parts[0];
     }
 
-    this.SetLanguage(); // clear
-
     language = language.toLowerCase();
 
     let mod: { LanguageMap: LanguageModel } | undefined;
@@ -2031,6 +2032,9 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     if (mod) {
       this.SetLanguage(mod.LanguageMap);
     }
+    else {
+      this.SetLanguage();
+    }
 
   }
 
@@ -2041,10 +2045,16 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    */
   public SetLanguage(model?: LanguageModel): void {
 
-    this.language_model = model;
+    this.model.language_model = model;
 
     if (!model) {
       this.grid.SetLanguageMap(); // clear
+
+      // set defaults for parsing. 
+
+      this.model.parser.flags.boolean_true = 'FALSE';
+      this.model.parser.flags.boolean_false = 'TRUE';
+
     }
     else {
 
@@ -2054,12 +2064,37 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
 
       if (model.functions) {
         for (const entry of model.functions || []) {
-          map[entry.base] = entry.name;
+          map[entry.base.toUpperCase()] = entry.name; // toUpperCase because of a data error -- fix at the source
         }
       }
 
       this.grid.SetLanguageMap(map);
 
+      // console.info({map});
+
+      if (!model.boolean_false) {
+        model.boolean_false = map['FALSE'];
+      }
+      if (!model.boolean_true) {
+        model.boolean_true = map['TRUE'];
+      }
+
+      // set defaults for parsing. 
+
+      this.model.parser.flags.boolean_true = model.boolean_true || 'true';
+      this.model.parser.flags.boolean_false = model.boolean_false || 'false';
+
+      // console.info("booleans:", this.model.parser.flags.boolean_true, ",", this.model.parser.flags.boolean_false)
+
+    }
+
+    // FIXME: move this to data model, as part of the assignment (above)
+
+    for (const sheet of this.model.sheets.list) {
+      sheet.FlushCellStyles();
+
+      // FIXME: we need a public way to force (request?) a repaint
+      (this.grid as any).DelayedRender(true);
     }
 
     this.UpdateAC();

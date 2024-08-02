@@ -27,7 +27,7 @@ import { Area, IsCellAddress, Style } from 'treb-base-types';
 import type { SerializedNamed } from './named';
 import { NamedRangeManager } from './named';
 import type { ConnectedElementType, MacroFunction } from './types';
-
+import type { LanguageModel } from './language-model';
 
 /**
  * 
@@ -35,6 +35,9 @@ import type { ConnectedElementType, MacroFunction } from './types';
 export class DataModel {
 
   public readonly parser: Parser = new Parser();
+
+  /** moved from embedded spreadsheet */
+  public language_model?: LanguageModel;
 
   /** document metadata */
   public document_name?: string;

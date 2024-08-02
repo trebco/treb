@@ -34,4 +34,5 @@ export type { AnnotationData, AnnotationType } from './annotation';
 
 export * from './data-validation';
 export * from './types';
+export * from './language-model';
 

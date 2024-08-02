@@ -321,6 +321,15 @@ export const AltFunctionLibrary: FunctionMap = {
 
 export const BaseFunctionLibrary: FunctionMap = {
 
+  // not sure why there are functions for booleans, but there are
+  True: {
+    fn: () => ({ type: ValueType.boolean, value: true }),
+  },
+
+  False: {
+    fn: () => ({ type: ValueType.boolean, value: false }),
+  },
+
   Int: {
     fn: (value: number) => {
       return {type: ValueType.number, value: Math.floor(value) };

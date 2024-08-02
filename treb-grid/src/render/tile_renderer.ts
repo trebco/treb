@@ -727,6 +727,20 @@ export class TileRenderer {
     let pad_entry: RenderTextPart | undefined;
     let composite_width = 0;
 
+    // -------------------------------------------------------------------------
+
+    // moved translated boolean formatting here. I don't like this. it 
+    // should be in sheet (at least that's where the rest of formatting
+    // is), but sheet doesn't have a reference to data model (and because
+    // sheets are owned by data model, I don't want to add a circular ref).
+
+    if (cell.rendered_type === ValueType.boolean) {
+      const value = cell.calculated_type ? cell.calculated : cell.value;
+      cell.formatted = value ? (this.model.language_model?.boolean_true || 'TRUE') : (this.model.language_model?.boolean_false || 'FALSE');
+    }
+
+    // -------------------------------------------------------------------------
+
     let override_formatting: string | undefined;
     let formatted = cell.editing ? '' : cell.formatted; // <-- empty on editing, to remove overflows
 

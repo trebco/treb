@@ -398,6 +398,12 @@ export interface OptionalParserFlags {
    */
   // complex_numbers: true,
 
+  /** string representing boolean true, for parsing/rendering */
+  boolean_true?: string;
+
+  /** string representing boolean false, for parsing/rendering */
+  boolean_false?: string;
+
 }
 
 export type ParserFlags = Partial<OptionalParserFlags> & RequiredParserFlags;
@@ -423,6 +429,10 @@ export interface RenderOptions {
   convert_imaginary_number: 'i'|'j';
   long_structured_references: boolean;
   table_name: string;
+
+  boolean_true?: string;
+  boolean_false?: string;
+
 }
 
 /*
@@ -439,5 +449,7 @@ export const DefaultParserConfig: ParserFlags = {
   fractions: true,
   decimal_mark: DecimalMarkType.Period,
   argument_separator: ArgumentSeparatorType.Comma,
+  boolean_true: 'TRUE',
+  boolean_false: 'FALSE',
 };
 

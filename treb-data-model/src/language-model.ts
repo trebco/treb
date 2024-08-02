@@ -37,5 +37,8 @@ export interface LanguageModel {
   version?: string;
   locale?: string;
   functions?: TranslatedFunctionDescriptor[];
+  
+  boolean_true?: string;
+  boolean_false?: string;
 }
 

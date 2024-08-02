@@ -807,19 +807,6 @@ export class Sheet {
     }
   }
 
-  /* *
-   * factory method creates a sheet from a 2D array.
-   *
-   * /
-  public static FromArray(data: any[] = [], transpose = false): Sheet {
-    const sheet = new Sheet();
-    sheet.cells.FromArray(data, transpose);
-
-    return sheet;
-  }
-  */
-
-
   // --- public methods -------------------------------------------------------
 
   public MergeCells(area: Area): void {
