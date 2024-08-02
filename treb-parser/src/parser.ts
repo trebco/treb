@@ -108,8 +108,12 @@ const LC_Z = 0x7a;
 const LC_I = 0x69;
 // const LC_J = 0x6a;
 
+// there are a couple of characters we don't want in this 
+// range; we should split into separate ranges. also we 
+// probably have characters we don't need (atm)
+
 const ACCENTED_RANGE_START = 192;
-const ACCENTED_RANGE_END = 312;
+const ACCENTED_RANGE_END = 382; // bumping up for polish // 312;
 
 /**
  * precedence map
@@ -2364,7 +2368,9 @@ export class Parser {
     // move true/false handling here
     // should we accept english even if it's not the active language? (...)
     
-    if (this.flags.boolean_true && str.toLowerCase() === this.flags.boolean_true.toLowerCase()) {
+    const lc = str.toLowerCase();
+
+    if (lc === 'true' || (this.flags.boolean_true && lc === this.flags.boolean_true.toLowerCase())) {
       return {
         type: 'literal',
         id: this.id_counter++,
@@ -2372,7 +2378,8 @@ export class Parser {
         position,
       };
     }
-    if (this.flags.boolean_false && str.toLowerCase() === this.flags.boolean_false.toLowerCase()) {
+    
+    if (lc === 'false' || (this.flags.boolean_false && lc === this.flags.boolean_false.toLowerCase())) {
       return {
         type: 'literal',
         id: this.id_counter++,
@@ -2380,7 +2387,6 @@ export class Parser {
         position,
       };
     }
-
 
     const identifier: UnitIdentifier = {
       type: 'identifier',

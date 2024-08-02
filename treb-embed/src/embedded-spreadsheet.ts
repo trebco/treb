@@ -2030,73 +2030,14 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     if (mod) {
-      this.SetLanguage(mod.LanguageMap);
+      this.model.SetLanguage(mod.LanguageMap);
     }
     else {
-      this.SetLanguage();
+      this.model.SetLanguage();
     }
 
-  }
-
-  /** 
-   * this is not public _yet_ 
-   * 
-   * @internal
-   */
-  public SetLanguage(model?: LanguageModel): void {
-
-    this.model.language_model = model;
-
-    if (!model) {
-      this.grid.SetLanguageMap(); // clear
-
-      // set defaults for parsing. 
-
-      this.model.parser.flags.boolean_true = 'FALSE';
-      this.model.parser.flags.boolean_false = 'TRUE';
-
-    }
-    else {
-
-      // create a name map for grid
-
-      const map: Record< string, string > = {};
-
-      if (model.functions) {
-        for (const entry of model.functions || []) {
-          map[entry.base.toUpperCase()] = entry.name; // toUpperCase because of a data error -- fix at the source
-        }
-      }
-
-      this.grid.SetLanguageMap(map);
-
-      // console.info({map});
-
-      if (!model.boolean_false) {
-        model.boolean_false = map['FALSE'];
-      }
-      if (!model.boolean_true) {
-        model.boolean_true = map['TRUE'];
-      }
-
-      // set defaults for parsing. 
-
-      this.model.parser.flags.boolean_true = model.boolean_true || 'true';
-      this.model.parser.flags.boolean_false = model.boolean_false || 'false';
-
-      // console.info("booleans:", this.model.parser.flags.boolean_true, ",", this.model.parser.flags.boolean_false)
-
-    }
-
-    // FIXME: move this to data model, as part of the assignment (above)
-
-    for (const sheet of this.model.sheets.list) {
-      sheet.FlushCellStyles();
-
-      // FIXME: we need a public way to force (request?) a repaint
-      (this.grid as any).DelayedRender(true);
-    }
-
+    this.grid.Reselect();
+    this.grid.Update(true);
     this.UpdateAC();
 
   }

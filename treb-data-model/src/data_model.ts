@@ -22,7 +22,8 @@
 import type { Sheet } from './sheet';
 import { SheetCollection } from './sheet_collection';
 import { type UnitAddress, type UnitStructuredReference, type UnitRange, Parser, QuotedSheetNameRegex, DecimalMarkType, ArgumentSeparatorType } from 'treb-parser';
-import type { IArea, ICellAddress, Table, CellStyle } from 'treb-base-types';
+import type { IArea, ICellAddress, Table, CellStyle, CellValue } from 'treb-base-types';
+import { Is2DArray } from 'treb-base-types';
 import { Area, IsCellAddress, Style } from 'treb-base-types';
 import type { SerializedNamed } from './named';
 import { NamedRangeManager } from './named';
@@ -525,6 +526,227 @@ export class DataModel {
    * @internal
    */
   public connected_elements: Map<number, ConnectedElementType> = new Map();
+
+
+
+  // --- moving translation here ----------------------------------------------
+
+  
+  /** 
+   * maps common language (english) -> local language. this should 
+   * be passed in (actually set via a function).
+   */
+  private language_map?: Record<string, string>;
+
+  /**
+   * maps local language -> common (english). this should be constructed
+   * when the forward function is passed in, so there's a 1-1 correspondence.
+   */
+ private reverse_language_map?: Record<string, string>;
+
+
+  /**
+   * set the language translation map. this is a set of function names 
+   * (in english) -> the local equivalent. both should be in canonical form,
+   * as that will be used when we translate one way or the other.
+   */
+  public SetLanguageMap(language_map?: Record<string, string>) {
+
+    if (!language_map) {
+      this.language_map = this.reverse_language_map = undefined;
+    }
+    else {
+
+      const keys = Object.keys(language_map);
+
+      // normalize forward
+      this.language_map = {};
+      for (const key of keys) {
+        this.language_map[key.toUpperCase()] = language_map[key];
+      }
+
+      // normalize backward
+      this.reverse_language_map = {};
+      for (const key of keys) {
+        const value = language_map[key];
+        this.reverse_language_map[value.toUpperCase()] = key;
+      }
+
+    }
+
+    /*
+    // we might need to update the current displayed selection. depends
+    // on when we expect languages to be set.
+
+    if (!this.primary_selection.empty) {
+      this.Select(this.primary_selection, this.primary_selection.area, this.primary_selection.target);
+    }
+    */
+
+  }
+
+  /**
+   * translate function from common (english) -> local language. this could
+   * be inlined (assuming it's only called in one place), but we are breaking
+   * it out so we can develop/test/manage it.
+   */
+  public TranslateFunction(value: string): string {
+    if (this.language_map) {
+      return this.TranslateInternal(value, this.language_map, this.language_model?.boolean_true, this.language_model?.boolean_false);
+    }
+    return value;
+  }
+
+  /**
+   * translate from local language -> common (english).
+   * @see TranslateFunction
+   */
+  public UntranslateFunction(value: string): string {
+    if (this.reverse_language_map) {
+      return this.TranslateInternal(value, this.reverse_language_map, 'TRUE', 'FALSE');
+    }
+    return value;
+  }
+
+  public UntranslateData(value: CellValue|CellValue[]|CellValue[][]): CellValue|CellValue[]|CellValue[][] {
+
+    if (Array.isArray(value)) {
+
+      // could be 1d or 2d. typescript is complaining, not sure why...
+
+      if (Is2DArray(value)) {
+        return value.map(row => row.map(entry => {
+          if (entry && typeof entry === 'string' && entry[0] === '=') {
+            return this.UntranslateFunction(entry);
+          }
+          return entry;
+        }));
+      }
+      else {
+        return value.map(entry => {
+          if (entry && typeof entry === 'string' && entry[0] === '=') {
+            return this.UntranslateFunction(entry);
+          }
+          return entry;
+        });
+      }
+
+    }
+    else if (value && typeof value === 'string' && value[0] === '=') {
+
+      // single value
+      value = this.UntranslateFunction(value);
+
+    }
+
+    return value;
+
+  }
+
+
+  /**
+   * translation back and forth is the same operation, with a different 
+   * (inverted) map. although it still might be worth inlining depending
+   * on cost.
+   * 
+   * FIXME: it's about time we started using proper maps, we dropped 
+   * support for IE11 some time ago.
+   */
+  private TranslateInternal(value: string, map: Record<string, string>, boolean_true?: string, boolean_false?: string): string {
+
+    const parse_result = this.parser.Parse(value);
+
+    if (parse_result.expression) {
+      
+      let modified = false;
+      this.parser.Walk(parse_result.expression, unit => {
+        if (unit.type === 'call') {
+          const replacement = map[unit.name.toUpperCase()];
+          if (replacement) {
+            modified = true;
+            unit.name = replacement;
+          }
+        }
+        else if (unit.type === 'literal' && typeof unit.value === 'boolean') {
+
+          // to/from english/locale depends on the direction, but we're not 
+          // passing that in? FIXME, pass it as a parameter. it doesn't matter
+          // here, but later when we render.
+
+          modified = true;
+
+        } 
+
+        return true;
+      });
+
+      if (modified) {
+        return '=' + this.parser.Render(parse_result.expression, { 
+          missing: '', boolean_true, boolean_false,
+        });
+      }
+    }
+
+    return value;
+
+  }
+  
+
+  /** 
+   * this is not public _yet_ 
+   * 
+   * @internal
+   */
+  public SetLanguage(model?: LanguageModel): void {
+
+    this.language_model = model;
+
+    if (!model) {
+      this.SetLanguageMap(); // clear
+
+      // set defaults for parsing. 
+
+      this.parser.flags.boolean_true = 'TRUE';
+      this.parser.flags.boolean_false = 'FALSE';
+
+    }
+    else {
+
+      // create a name map for grid
+
+      const map: Record< string, string > = {};
+
+      if (model.functions) {
+        for (const entry of model.functions || []) {
+          map[entry.base.toUpperCase()] = entry.name; // toUpperCase because of a data error -- fix at the source
+        }
+      }
+
+      this.SetLanguageMap(map);
+
+      // console.info({map});
+
+      if (!model.boolean_false) {
+        model.boolean_false = map['FALSE'];
+      }
+      if (!model.boolean_true) {
+        model.boolean_true = map['TRUE'];
+      }
+
+      // set defaults for parsing. 
+
+      this.parser.flags.boolean_true = model.boolean_true || 'TRUE';
+      this.parser.flags.boolean_false = model.boolean_false || 'FALSE';
+
+      // console.info("booleans:", this.model.parser.flags.boolean_true, ",", this.model.parser.flags.boolean_false)
+
+    }
+
+    for (const sheet of this.sheets.list) {
+      sheet.FlushCellStyles();
+    }
+
+  }
 
 }
 

@@ -175,18 +175,6 @@ export class Grid extends GridBase {
 
   // --- private members -------------------------------------------------------
 
-  /** 
-   * maps common language (english) -> local language. this should 
-   * be passed in (actually set via a function).
-   */
-   private language_map?: Record<string, string>;
-
-   /**
-    * maps local language -> common (english). this should be constructed
-    * when the forward function is passed in, so there's a 1-1 correspondence.
-    */
-  private reverse_language_map?: Record<string, string>;
-
   // testing
   private hover_data: {
     note?: boolean;
@@ -648,33 +636,10 @@ export class Grid extends GridBase {
   // --- public methods --------------------------------------------------------
 
   /**
-   * set the language translation map. this is a set of function names 
-   * (in english) -> the local equivalent. both should be in canonical form,
-   * as that will be used when we translate one way or the other.
+   * re-select the current selection, for side effects. used when switching
+   * languages to update the function view (if any)
    */
-  public SetLanguageMap(language_map?: Record<string, string>) {
-
-    if (!language_map) {
-      this.language_map = this.reverse_language_map = undefined;
-    }
-    else {
-
-      const keys = Object.keys(language_map);
-
-      // normalize forward
-      this.language_map = {};
-      for (const key of keys) {
-        this.language_map[key.toUpperCase()] = language_map[key];
-      }
-
-      // normalize backward
-      this.reverse_language_map = {};
-      for (const key of keys) {
-        const value = language_map[key];
-        this.reverse_language_map[value.toUpperCase()] = key;
-      }
-
-    }
+  public Reselect() {
 
     // we might need to update the current displayed selection. depends
     // on when we expect languages to be set.
@@ -2171,7 +2136,7 @@ export class Grid extends GridBase {
       
 
     // this is public so we need to (un)translate.
-    data = this.UntranslateData(data);
+    data = this.model.UntranslateData(data);
     
      // single value, easiest
     if (!Array.isArray(data)) {
@@ -2481,102 +2446,9 @@ export class Grid extends GridBase {
 
   // --- private methods -------------------------------------------------------
 
-  /**
-   * translation back and forth is the same operation, with a different 
-   * (inverted) map. although it still might be worth inlining depending
-   * on cost.
-   * 
-   * FIXME: it's about time we started using proper maps, we dropped 
-   * support for IE11 some time ago.
-   */
-  private TranslateInternal(value: string, map: Record<string, string>): string {
-
-    const parse_result = this.parser.Parse(value);
-
-    if (parse_result.expression) {
-      
-      let modified = false;
-      this.parser.Walk(parse_result.expression, unit => {
-        if (unit.type === 'call') {
-          const replacement = map[unit.name.toUpperCase()];
-          if (replacement) {
-            modified = true;
-            unit.name = replacement;
-          }
-        }
-        return true;
-      });
-
-      if (modified) {
-        return '=' + this.parser.Render(parse_result.expression, { missing: '' });
-      }
-    }
-
-    return value;
-
-  }
-
   protected RenameSheetInternal(target: Sheet, name: string) {
     super.RenameSheetInternal(target, name);
     this.tab_bar?.Update();
-
-  }
-
-  /**
-   * translate function from common (english) -> local language. this could
-   * be inlined (assuming it's only called in one place), but we are breaking
-   * it out so we can develop/test/manage it.
-   */
-   protected TranslateFunction(value: string): string {
-    if (this.language_map) {
-      return this.TranslateInternal(value, this.language_map);
-    }
-    return value;
-  }
-
-  /**
-   * translate from local language -> common (english).
-   * @see TranslateFunction
-   */
-  protected UntranslateFunction(value: string): string {
-    if (this.reverse_language_map) {
-      return this.TranslateInternal(value, this.reverse_language_map);
-    }
-    return value;
-  }
-
-  protected UntranslateData(value: CellValue|CellValue[]|CellValue[][]): CellValue|CellValue[]|CellValue[][] {
-
-    if (Array.isArray(value)) {
-
-      // could be 1d or 2d. typescript is complaining, not sure why...
-
-      if (Is2DArray(value)) {
-        return value.map(row => row.map(entry => {
-          if (entry && typeof entry === 'string' && entry[0] === '=') {
-            return this.UntranslateFunction(entry);
-          }
-          return entry;
-        }));
-      }
-      else {
-        return value.map(entry => {
-          if (entry && typeof entry === 'string' && entry[0] === '=') {
-            return this.UntranslateFunction(entry);
-          }
-          return entry;
-        });
-      }
-
-    }
-    else if (value && typeof value === 'string' && value[0] === '=') {
-
-      // single value
-      value = this.UntranslateFunction(value);
-
-    }
-
-    return value;
 
   }
 
@@ -5520,15 +5392,26 @@ export class Grid extends GridBase {
 
     }
 
-    const parse_result: ParseResult2 = (expression && expression.type === 'complex') ?
-      {
+    let parse_result: ParseResult2|undefined;
+
+    if (expression?.type === 'complex') {
+      parse_result = {
         type: ValueType.complex,
         value: { 
           real: expression.real, 
           imaginary: expression.imaginary 
         },
-      } :    
-      ValueParser.TryParse(value);
+      };
+    }
+    else if (expression?.type === 'literal' && typeof expression.value === 'boolean') {
+      parse_result = {
+        type: ValueType.boolean,
+        value: expression.value,
+      };
+    }
+    else {
+      parse_result = ValueParser.TryParse(value);
+    }
 
     if (!is_function && parse_result.type === ValueType.number) {
 
@@ -5593,7 +5476,7 @@ export class Grid extends GridBase {
       key: CommandKey.SetRange,
       area: array ? selection.area : target,
       array,
-      value: is_function ? this.UntranslateFunction(value || '') : parse_result.value,
+      value: is_function ? this.model.UntranslateFunction(value || '') : parse_result.value,
     });
 
     if (exec) {
@@ -5778,7 +5661,10 @@ export class Grid extends GridBase {
       }
     }
     else if (cell.ValueIsBoolean()) {
-      return cell.value.toString().toUpperCase(); // ? 'True' : 'False';
+
+      // TRANSLATION: FIXME/CENTRALIZE
+      return cell.value ? (this.model.language_model?.boolean_true || 'TRUE') : (this.model.language_model?.boolean_false || 'FALSE');
+
     }
     else if (cell.ValueIsNumber()) { // no style: I think this is no longer possible
       if (cell_value && Localization.decimal_separator === ',') {
@@ -5821,7 +5707,7 @@ export class Grid extends GridBase {
       // this is where we _render_ translation. so names in function
       // calls shoule be translated before returning.
 
-      cell_value = this.TranslateFunction(cell.value);
+      cell_value = this.model.TranslateFunction(cell.value);
 
     }
 
