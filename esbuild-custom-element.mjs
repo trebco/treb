@@ -1,5 +1,7 @@
 // @ts-check
 
+/* global process */
+
 import * as esbuild from 'esbuild';
 
 import { SassPlugin, WorkerPlugin, NotifyPlugin, HTMLPlugin } from './esbuild-utils.mjs';

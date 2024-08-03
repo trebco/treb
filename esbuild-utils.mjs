@@ -1,6 +1,8 @@
 
 // @ts-check
 
+/* global console */
+
 import * as esbuild from 'esbuild';
 import { promises as fs } from 'fs';
 import { minify } from 'html-minifier';
