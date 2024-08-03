@@ -2008,13 +2008,13 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     language = language.toLowerCase();
     let mod: { LanguageMap: LanguageModel } | undefined;
 
-    // FIXME: this should be generated an included, to allow for changes.
+    // FIXME: this should be generated and included, to allow for changes.
     // for the time being hardcoding as a quick fix
 
     const supported_languages = [
       'es', 'fr', 'pt', 'nl', 'de',
       'pl', 'sv', 'no', 'da', 'it',
-    ]
+    ];
 
     if (language && supported_languages.includes(language)) {
 
