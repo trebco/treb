@@ -2006,10 +2006,17 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
     }
 
     language = language.toLowerCase();
-
     let mod: { LanguageMap: LanguageModel } | undefined;
 
-    if (language && language !== 'en') {
+    // FIXME: this should be generated an included, to allow for changes.
+    // for the time being hardcoding as a quick fix
+
+    const supported_languages = [
+      'es', 'fr', 'pt', 'nl', 'de',
+      'pl', 'sv', 'no', 'da', 'it',
+    ]
+
+    if (language && supported_languages.includes(language)) {
 
       // FIXME: even though we now have a dynamic import
       // working, we still probably want to use a filter
