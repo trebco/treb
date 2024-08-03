@@ -266,6 +266,7 @@ export const Modulo = (a: UnionValue, b: UnionValue): UnionValue => {
   return { value: x % y, type: ValueType.number };
 };
 
+/*
 export const Concatenate = (a: UnionValue, b: UnionValue): UnionValue => {
   if (a.type === ValueType.error) { return a; }
   if (b.type === ValueType.error) { return b; }
@@ -276,6 +277,7 @@ export const Concatenate = (a: UnionValue, b: UnionValue): UnionValue => {
   };
 
 };
+*/
 
 export const Equals = (a: UnionValue, b: UnionValue): UnionValue => {
   if (a.type === ValueType.error) { return a; }
@@ -430,7 +432,7 @@ export const UseComplex = () => {
 
 export const MapOperator = (operator: string) => {
   switch(operator) {
-    case '&': return Concatenate;
+    // case '&': return Concatenate;
     case '+': return Add;
     case '-': return Subtract;
     case '*': return Multiply;

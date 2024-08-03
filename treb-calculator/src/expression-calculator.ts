@@ -782,7 +782,36 @@ export class ExpressionCalculator {
     // unless the expression changes, which will discard the generated
     // function (along with the expression itself).
 
-    const fn = Primitives.MapOperator(x.operator);
+    // pulling out concat so we can bind the model for language values
+
+    const fn = x.operator === '&' ? (a: UnionValue, b: UnionValue): UnionValue => {
+
+      // this works, but it's not volatile so it doesn't update on 
+      // a language change; maybe language change should force a recalc? (...)
+
+      if (a.type === ValueType.error) { return a; }
+      if (b.type === ValueType.error) { return b; }
+    
+      const strings = [a, b].map(x => {
+        if (x.type === ValueType.undefined) { return ''; }
+        if (x.type === ValueType.boolean) {
+          if (x.value) {
+            return this.data_model.language_model?.boolean_true || 'TRUE';
+          }
+          else {
+            return this.data_model.language_model?.boolean_false || 'FALSE';
+          }
+        }
+        return x.value;
+      });
+
+      return {
+        type: ValueType.string, 
+        value: `${strings[0]}${strings[1]}`,
+      };
+    
+
+    } : Primitives.MapOperator(x.operator);
 
     if (!fn) {
 

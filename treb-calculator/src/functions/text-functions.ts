@@ -301,7 +301,7 @@ export const TextFunctionLibrary: FunctionMap = {
     },
   },
 
-  /** canonical should be CONCAT; concatenate can be an alias */
+ /** canonical should be CONCAT; concatenate can be an alias */
  Concat: {
   description: 'Pastes strings together',
   fn: (...args: CellValue[]): UnionValue => {
