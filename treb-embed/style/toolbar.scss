@@ -167,10 +167,10 @@ $swatch-size: 18px;
       gap: 0;
 
       button[data-command] {
+        font-size: $split-font-size;
         &::before {
           display: none;
         }
-        font-size: $split-font-size;
       }
 
       & > button {

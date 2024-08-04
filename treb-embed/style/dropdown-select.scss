@@ -56,6 +56,11 @@
     color: var(--treb-dropdown-color, inherit);
     border: 1px solid var(--treb-dropdown-border-color, unset);
 
+    text-align: left;
+    max-height: 10em;
+    overflow-y: auto;
+    outline: none;
+
     & div {
       padding: 2px;
       cursor: default;
@@ -65,12 +70,6 @@
       background: var(--treb-dropdown-selected-background, #555);
       color: var(--treb-dropdown-selected-color, #fff);
     }
-
-    text-align: left;
-
-    max-height: 10em;
-    overflow-y: auto;
-    outline: none;
 
   }
 

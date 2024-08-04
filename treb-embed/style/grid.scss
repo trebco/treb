@@ -207,23 +207,25 @@
       /** specific layout for column header cover */
       &.column-header-cover {
 
+        z-index: $z-index-header-tile-cover;
+
         /** style is attached when mousing over a column boundary */
         &.resize {
           cursor: col-resize;
         }
 
-        z-index: $z-index-header-tile-cover;
       }
 
       /** specific layout for row header cover */
       &.row-header-cover {
+
+        z-index: $z-index-header-tile-cover;
 
         /** style is attached when mousing over a row boundary */
         &.resize {
           cursor: row-resize;
         }
 
-        z-index: $z-index-header-tile-cover;
       }
 
     }
@@ -233,6 +235,9 @@
       position: absolute;
       top: 0px;
       left: 0px;
+
+      z-index: $z-index-annotations;
+      pointer-events: none;
 
       .annotation {
         position: absolute;
@@ -297,8 +302,6 @@
         cursor: move;
       }
 
-      z-index: $z-index-annotations;
-      pointer-events: none;
     }
 
     /** selection stacks over the grid but under the cover */

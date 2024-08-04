@@ -1310,7 +1310,7 @@ export type Color = ThemeColor | HTMLColor | NullColor;
 export declare const ThemeColorIndex: (color: ThemeColor) => number;
 export declare const IsHTMLColor: (color?: Color) => color is HTMLColor;
 export declare const IsThemeColor: (color?: Color) => color is ThemeColor;
-export declare const IsDefinedColor: (color?: Color) => color is ThemeColor | HTMLColor;
+export declare const IsDefinedColor: (color?: Color) => color is (ThemeColor | HTMLColor);
 export type CellValue = undefined | string | number | boolean | Complex | DimensionedQuantity;
 
 /**

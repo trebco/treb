@@ -68,6 +68,28 @@
 
   line-height: normal;
 
+  // ---------------------------------------------------------------------------
+
+  color-scheme: var(--treb-color-scheme, unset);
+
+  font-family: $font-stack;
+
+  font-style: normal;
+  font-weight: normal;
+  color: inherit;
+  font-size: 14px; // ?
+
+  height: 100%;
+  width: 100%;
+
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
+  // gap: 1em;
+
+  // ---------------------------------------------------------------------------
+
   div, button, input, ul, ol, li, a, textarea, svg {
 
     // maybe this is being too aggressive. we could be a little 
@@ -110,23 +132,6 @@
 
   // ---------------------------------------------------------------------------
 
-  color-scheme: var(--treb-color-scheme, unset);
-
-  font-family: $font-stack;
-
-  font-style: normal;
-  font-weight: normal;
-  color: inherit;
-  font-size: 14px; // ?
-
-  height: 100%;
-  width: 100%;
-
-  position: relative;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  grid-template-columns: minmax(0, 1fr) auto;
-  // gap: 1em;
 
   &[animate] {
     .treb-layout-header {
@@ -354,11 +359,11 @@
         right: 0px;
         border-top-right-radius: 0px;
         border-bottom-right-radius: 0px;
+        background: var(--treb-toolbar-button-background, #fff);
         &::after {
           mask-image: var(--icon-chevron-left);
           -webkit-mask-image: var(--icon-chevron-left);
         }
-        background: var(--treb-toolbar-button-background, #fff);
     
     }
   }

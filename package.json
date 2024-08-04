@@ -1,6 +1,6 @@
 {
   "name": "@trebco/treb",
-  "version": "30.2.11",
+  "version": "30.2.14",
   "license": "LGPL-3.0-or-later",
   "homepage": "https://treb.app",
   "repository": {
@@ -12,13 +12,12 @@
   "type": "module",
   "devDependencies": {
     "@types/html-minifier": "^4.0.2",
-    "@types/node": "^20.8.5",
+    "@types/node": "^22.1.0",
     "@types/uzip": "^0.20201231.0",
-    "archiver": "^6.0.1",
     "base64-js": "^1.5.1",
-    "cssnano": "^6.0.0",
-    "esbuild": "^0.20.1",
-    "eslint": "^8.56.0",
+    "cssnano": "^7.0.4",
+    "esbuild": "^0.23.0",
+    "eslint": "^9.8.0",
     "fast-xml-parser": "^4.0.7",
     "html-minifier": "^4.0.0",
     "sass": "^1.69.3",
@@ -34,7 +33,7 @@
     "ts-node-dev": "^2.0.0",
     "tslib": "^2.2.0",
     "typescript": "^5.3.3",
-    "typescript-eslint": "^7.0.2",
+    "typescript-eslint": "^8.0.0",
     "uzip": "^0.20201231.0"
   },
   "scripts": {

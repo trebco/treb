@@ -234,6 +234,10 @@ $text-reference-color-5: rgb(254, 47, 1);
     color: var(--treb-autocomplete-tooltip-color, inherit);
     border: 1px solid var(--treb-autocomplete-tooltip-border-color, unset);
 
+    padding: 3px 8px;
+    margin: 4px 0px;
+    line-height: normal;
+
     & .active-argument {
       font-weight: 700;
     }
@@ -241,10 +245,6 @@ $text-reference-color-5: rgb(254, 47, 1);
     & .function-description {
       font-style: italic;
     }
-
-    padding: 3px 8px;
-    margin: 4px 0px;
-    line-height: normal;
 
   }
 

@@ -33,7 +33,6 @@
 
 
     box-sizing: border-box;
-    * { box-sizing: border-box; }
 
     position: fixed;
     top: -1000px;
@@ -45,6 +44,8 @@
     max-height: 10em;
     overflow-y: auto;
     z-index: $z-index-autocomplete;
+
+    * { box-sizing: border-box; }
 
     ul {
 
@@ -72,23 +73,6 @@
           color: inherit;
         }
       }
-
-      /*
-      here we unwind the selected style if there's a hover,
-      unless you're hovering over the selection. and so on.
-      * /
-
-      &:hover li a.selected {
-        background: inherit;
-        color: inherit;
-
-        &:hover {
-          background: #339966;
-          color: #fff;
-        }
-
-      }
-      */
 
     }
   }
