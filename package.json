@@ -37,17 +37,16 @@
     "uzip": "^0.20201231.0"
   },
   "scripts": {
-    "build": "node esbuild-custom-element.mjs",
-    "build-worker": "node esbuild-export-worker.mjs",
-    "dev": "node esbuild-custom-element.mjs --dev",
+    "build": "node esbuild-composite.mjs",
+    "dev": "node esbuild-composite.mjs --dev",
     "clean": "rm -fr build dist declaration",
-    "watch": "node --watch esbuild-custom-element.mjs --watch --dev",
-    "watch-production": "node --watch esbuild-custom-element.mjs --watch",
+    "watch": "node --watch esbuild-composite.mjs --watch --dev",
+    "watch-production": "node --watch esbuild-composite.mjs --watch",
     "tsc": "tsc -b treb-embed/modern.tsconfig.json",
     "rebuild-tsc": "tsc -b --force treb-embed/modern.tsconfig.json",
     "watch-tsc": "tsc -b treb-embed/modern.tsconfig.json -w",
     "watch-api": "ts-node-dev --respawn api-generator/api-generator.ts --config api-config.json",
     "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json",
-    "release": "npm run rebuild-tsc && npm run build-worker && npm run build && npm run generate-api"
+    "release": "npm run rebuild-tsc && npm run build && npm run generate-api"
   }
 }

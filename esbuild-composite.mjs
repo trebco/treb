@@ -32,7 +32,7 @@ const options = {
   minify: true, 
   verbose: false,
   xlsx_support: true,
-  output_filename: 'treb-spreadsheet.mjs',
+  output_filename: 'treb-spreadsheet',
 };
 
 //------------------------------------------------------------------------------
@@ -64,13 +64,15 @@ for (let i = 0; i < process.argv.length; i++) {
 /** @type esbuild.BuildOptions */
 const build_options = {
   entryPoints: [
-    'treb-embed/src/index.ts',
+    { in: 'treb-embed/src/index.ts', out: options.output_filename },
+    { in: 'treb-export/src/index.worker.ts', out: 'treb-export-worker' },
   ],
   banner: { 
     js: `/*! TREB v${pkg.version}. Copyright 2018-${new Date().getFullYear()} trebco, llc. All rights reserved. LGPL: https://treb.app/license */`
   },
   bundle: true,
-  outfile: 'dist/' + options.output_filename,
+  outdir: 'dist',
+  // outfile: 'dist/' + options.output_filename,
   outExtension: { '.js': '.mjs' },
   minify: options.minify,
   metafile: true,
