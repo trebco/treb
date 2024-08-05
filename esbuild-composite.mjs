@@ -65,7 +65,7 @@ for (let i = 0; i < process.argv.length; i++) {
 const build_options = {
   entryPoints: [
     { in: 'treb-embed/src/index.ts', out: options.output_filename },
-    { in: 'treb-export/src/index.worker.ts', out: 'treb-export-worker' },
+    { in: 'treb-embed/src/export-worker.ts', out: 'treb-export-worker' },
   ],
   banner: { 
     js: `/*! TREB v${pkg.version}. Copyright 2018-${new Date().getFullYear()} trebco, llc. All rights reserved. LGPL: https://treb.app/license */`

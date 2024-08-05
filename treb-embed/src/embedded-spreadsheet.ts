@@ -6155,35 +6155,21 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
-   * worker now uses a dynamic library, built separately
+   * worker now uses a dynamic import with a module built separately.
+   * see `export-worker.ts` (in this directory) for more detail.
    */
   protected async LoadWorker(): Promise<Worker> {
-
-    //
-    // this code is here so that bundlers (vite) will notice and handle
-    // the worker library. then we can load it as a worker. we also add
-    // the prefix to get esbuild to ignore it, and we use a variable in
-    // the name to get tsc to ignore it.
-    //
-    // we do need to ensure that esbuild does not remove it. not sure
-    // why it doesn't, since it's not called, but seems to work for now.
-    // 
-
-    const _dummy = async () => {
-
-      try {
-        const worker = `export`;
-        await import(`esbuild-ignore-import:./treb-${worker}-worker.mjs`);
-      }
-      catch(err) {
-        console.error(err);
-      }
-  
-    };
-  
-    // this can throw
-    return new Worker(new URL('treb-export-worker.mjs', import.meta.url), { type: 'module' });
-
+    try {
+      const worker = `export`;
+      const mod = await import(`esbuild-ignore-import:./treb-${worker}-worker.mjs`) as {
+        CreateWorker: () => Promise<Worker>;
+      };
+      return await mod.CreateWorker();
+    }
+    catch (err) {
+      console.error(err);
+      throw(err);
+    }
   }
 
   /**
