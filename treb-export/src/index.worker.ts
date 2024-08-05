@@ -22,8 +22,8 @@
 import type { ImportedSheetData } from 'treb-base-types';
 import type { SerializedModel } from 'treb-data-model';
 
-import { Exporter } from '../export';
-import { Importer } from '../import2';
+import { Exporter } from './export';
+import { Importer } from './import2';
 
 const ctx: Worker = self as unknown as Worker;
 const exporter = new Exporter();

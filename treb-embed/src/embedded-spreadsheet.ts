@@ -107,13 +107,6 @@ import type { StateLeafVertex } from 'treb-calculator';
  */
 import './content-types.d.ts';
 
-/**
- * import the worker as a script file. tsc will read this on typecheck but 
- * that's actually to the good; when we build with esbuild we will inline
- * the script so we can run it as a worker.
- */
-import * as export_worker_script from 'worker:../../treb-export/src/export-worker/index.worker';
-
 // --- types -------------------------------------------------------------------
 
 /**
@@ -6162,38 +6155,34 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   }
 
   /**
-   * load worker. optionally uses an ambient path as prefix; intended for
-   * loading in different directories (or different hosts?)
+   * worker now uses a dynamic library, built separately
    */
   protected async LoadWorker(): Promise<Worker> {
 
-    // this is inlined to ensure the code will be tree-shaken properly
-    // (we're trying to force it to remove the imported worker script)
+    //
+    // this code is here so that bundlers (vite) will notice and handle
+    // the worker library. then we can load it as a worker. we also add
+    // the prefix to get esbuild to ignore it, and we use a variable in
+    // the name to get tsc to ignore it.
+    //
+    // we do need to ensure that esbuild does not remove it. not sure
+    // why it doesn't, since it's not called, but seems to work for now.
+    // 
 
-    if (process.env.XLSX_SUPPORT) {
-    
-      // for esm we now support embedding the worker as a blob
-      // (as text, actually); we can construct it from the text 
-      // as necessary.
+    const _dummy = async () => {
 
-      if (export_worker_script) {
-        try {
-          const worker = new Worker(
-              URL.createObjectURL(new Blob([(export_worker_script as {default: string}).default], { type: 'application/javascript' })));
-          return worker;
-        }
-        catch (err) {
-          console.info('embedded worker failed');
-          console.error(err);
-        }
+      try {
+        const worker = `export`;
+        await import(`esbuild-ignore-import:./treb-${worker}-worker.mjs`);
       }
-
-    } 
-    else {
-      console.warn('this build does not include xlsx support.');
-    }
-
-    throw new Error('creating worker failed');
+      catch(err) {
+        console.error(err);
+      }
+  
+    };
+  
+    // this can throw
+    return new Worker(new URL('treb-export-worker.mjs', import.meta.url), { type: 'module' });
 
   }
 

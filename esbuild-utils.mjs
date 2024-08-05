@@ -299,7 +299,7 @@ export const RewriteIgnoredImports = () => {
         if (result.outputFiles) {
           for (const file of result.outputFiles) {
             const { path, text } = file;
-            await fs.writeFile(path, text.replace(/esbuild-ignore-import:/, ''));
+            await fs.writeFile(path, text.replace(/esbuild-ignore-import:/g, ''));
           }
         }
       });

@@ -12,7 +12,6 @@
     "../treb-parser/**/*.ts",
     "../treb-calculator/**/*.ts",
     "../treb-base-types/**/*.ts",
-    "../treb-export/**/*.ts",
     "src/content-types.d.ts"
   ],
   "exclude": [

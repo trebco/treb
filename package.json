@@ -38,7 +38,7 @@
   },
   "scripts": {
     "build": "node esbuild-custom-element.mjs",
-    "build-light": "node esbuild-custom-element.mjs --no-xlsx --output-filename treb-spreadsheet-light.mjs",
+    "build-worker": "node esbuild-export-worker.mjs",
     "dev": "node esbuild-custom-element.mjs --dev",
     "clean": "rm -fr build dist declaration",
     "watch": "node --watch esbuild-custom-element.mjs --watch --dev",
@@ -48,6 +48,6 @@
     "watch-tsc": "tsc -b treb-embed/modern.tsconfig.json -w",
     "watch-api": "ts-node-dev --respawn api-generator/api-generator.ts --config api-config.json",
     "generate-api": "ts-node-dev api-generator/api-generator.ts --config api-config.json",
-    "release": "npm run rebuild-tsc && npm run build && npm run generate-api && npm run build-light"
+    "release": "npm run rebuild-tsc && npm run build-worker && npm run build && npm run generate-api"
   }
 }

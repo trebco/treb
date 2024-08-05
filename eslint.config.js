@@ -23,7 +23,8 @@ export default tseslint.config(
 
       "@typescript-eslint/no-unused-vars": [
         "error", { 
-          "destructuredArrayIgnorePattern": "^_",
+          destructuredArrayIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
         }],
     },
   },
