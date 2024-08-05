@@ -803,7 +803,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               const obj = JSON.parse(json);
               grid_options.initial_scale = obj.scale || 1;
             }
-            catch (e) {
+            catch {
               console.warn('parsing persisted scale failed');
             }
           }
