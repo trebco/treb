@@ -5,7 +5,7 @@
 
 import * as esbuild from 'esbuild';
 import { promises as fs } from 'fs';
-import { minify } from 'html-minifier';
+import { minify } from 'html-minifier-terser';
 import path from 'path';
 import * as sass from 'sass';
 import cssnano from 'cssnano';
@@ -219,10 +219,14 @@ export const HTMLPlugin = (options) => ({
       }
 
       const text = await fs.readFile(args.path, 'utf8');
+
       return {
-        contents: options?.minify ? minify(text, html_minifier_options) : text,
+        contents: options?.minify ? await minify(text, html_minifier_options) : text,
         loader: 'text',
       };
+
+
+
     });
   },
 });
