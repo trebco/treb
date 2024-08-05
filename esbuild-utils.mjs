@@ -116,7 +116,7 @@ export const WorkerPlugin = (options) => ({
         resolveDir: args.resolveDir,
       });
       return { path: result.path, namespace: 'worker', };
-    }),
+    });
 
     // for some reason I can't get the filter to work here, but using
     // namespace works. as long as we don't collide with anybody else.
@@ -286,3 +286,24 @@ export const SassPlugin = (options) => ({
     });
   },
 });
+
+/**
+ * thanks to
+ * https://github.com/evanw/esbuild/issues/3337#issuecomment-2085394950
+ */
+export const RewriteIgnoredImports = () => {
+  return {
+    name: 'RewriteIgnoredImports',
+    setup(build) {
+      build.onEnd(async (result) => {
+        if (result.outputFiles) {
+          for (const file of result.outputFiles) {
+            const { path, text } = file;
+            await fs.writeFile(path, text.replace(/esbuild-ignore-import:/, ''));
+          }
+        }
+      });
+    },
+  };
+};
+

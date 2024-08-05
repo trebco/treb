@@ -4,7 +4,7 @@
 
 import * as esbuild from 'esbuild';
 
-import { SassPlugin, WorkerPlugin, NotifyPlugin, HTMLPlugin } from './esbuild-utils.mjs';
+import { SassPlugin, WorkerPlugin, NotifyPlugin, HTMLPlugin, RewriteIgnoredImports } from './esbuild-utils.mjs';
 import { promises as fs } from 'fs';
 
 import pkg from './package.json' with { type: 'json' }; 
@@ -60,25 +60,6 @@ for (let i = 0; i < process.argv.length; i++) {
   }
 }
 
-/**
- * thanks to
- * https://github.com/evanw/esbuild/issues/3337#issuecomment-2085394950
- */
-function RewriteIgnoredImports() {
-  return {
-    name: 'RewriteIgnoredImports',
-    setup(build) {
-      build.onEnd(async (result) => {
-        if (result.outputFiles) {
-          for (const file of result.outputFiles) {
-            const { path, text } = file;
-            await fs.writeFile(path, text.replace(/esbuild-ignore-import:/, ''));
-          }
-        }
-      });
-    },
-  };
-}
 
 /** @type esbuild.BuildOptions */
 const build_options = {
