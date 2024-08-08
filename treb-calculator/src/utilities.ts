@@ -172,12 +172,12 @@ export const FlattenCellValues = (args: any[]): any[] => {
  * to using any, although we're still kind of hacking at it. also we
  * need to allow typed arrays (I think we've mostly gotten those out?)
  */
-export const FlattenCellValues = (args: (CellValue|CellValue[]|CellValue[][]|Float32Array|Float64Array)[]): CellValue[] => {
+export const FlattenCellValues = (args: (CellValue|CellValue[]|CellValue[][]|Float32Array|Float64Array)[], keep_undefined = false): CellValue[] => {
 
   if (!Array.isArray(args)) { return [args]; } // special case
   return args.reduce((a: CellValue[], b) => {
-    if (typeof b === 'undefined') return a;
-    if (Array.isArray(b)) return a.concat(FlattenCellValues(b));
+    if (typeof b === 'undefined' && !keep_undefined) return a;
+    if (Array.isArray(b)) return a.concat(FlattenCellValues(b, keep_undefined));
     if (b instanceof Float32Array) return a.concat(Array.from(b));
     if (b instanceof Float64Array) return a.concat(Array.from(b));
     return a.concat([b]);
@@ -193,7 +193,21 @@ export const FlattenCellValues = (args: (CellValue|CellValue[]|CellValue[][]|Flo
 export const FlattenNumbers = (args: Parameters<typeof FlattenCellValues>[0]) => 
   (FlattenCellValues(args)).filter((value): value is number => typeof value === 'number');
 
-export const FilterIntrinsics = (data: unknown[]): (string|number|boolean|undefined)[] => {
+export const FilterIntrinsics = (data: unknown[], fill = false): (string|number|boolean|undefined)[] => {
+
+  if (fill) {
+    return data.map((value => {
+      switch (typeof value) {
+        case 'number':
+        case 'undefined':
+        case 'string':
+        case 'boolean':
+          return value;
+      }
+      return undefined;
+    }));
+  }
+
   return data.filter((value): value is number|boolean|undefined|string => {
     switch (typeof value) {
       case 'number':

@@ -25,6 +25,47 @@ import { ValueError, ArgumentError, NAError } from '../function-error';
 import { type Complex, type UnionValue, ValueType, type CellValue } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
 
+const Gamma = (z: Complex): Complex => {
+
+  const coefficients = [
+    0.99999999999980993,
+    676.5203681218851,
+    -1259.1392167224028,
+    771.32342877765313,
+    -176.61502916214059,
+    12.507343278686905,
+    -0.13857109526572012,
+    9.9843695780195716e-6,
+    1.5056327351493116e-7
+  ];
+
+  const pi = Math.PI;
+  const sin = ComplexMath.Sin;
+  const div = ComplexMath.Divide;
+  const mul = ComplexMath.Multiply;
+  const cpx = (a: number) => ({ real: a, imaginary: 0 });
+  const add = (a: Complex, b: Complex): Complex => ({ real: a.real + b.real, imaginary: a.imaginary + b.imaginary });
+  const pow = ComplexMath.Power;
+  const exp = ComplexMath.Exp;
+  const inv = (a: Complex) => ({ real: -a.real, imaginary: -a.imaginary });
+  const prod = ComplexMath.Product;
+
+  if (z.real < 0.5) {
+    return div(cpx(pi), mul(sin(mul(cpx(pi), z)), Gamma({ real: 1 - z.real, imaginary: -z.imaginary })));
+  }
+
+  z.real -= 1;
+  let x = cpx(coefficients[0]);
+
+  for (let i = 1; i < coefficients.length; i++) {
+    x = add(x, div(cpx(coefficients[i]), add(z, cpx(i))));
+  }
+
+  const t = add(z, cpx(7.5));
+  return prod(cpx(Math.sqrt(2 * pi)), pow(t, add(z, cpx(0.5))), exp(inv(t)), x);
+
+};
+
 export const Variance = (data: number[], sample = false) => {
 
   const len = data.length;
@@ -304,6 +345,48 @@ export const StatisticsFunctionLibrary: FunctionMap = {
         value: lcm,
       }
 
+    },
+  },
+
+  Gamma: {
+    description: 'Returns the gamma function for the given value',
+    arguments: [{ name: 'value', boxed: true }],
+    fn: (value: UnionValue) => {
+
+      let complex: Complex = { real: 0, imaginary: 0 };
+
+      if (value.type === ValueType.complex) {
+        complex = {...value.value};
+      }
+      else if (value.type === ValueType.number) {
+        complex.real = value.value;
+      }
+      else {
+        return ArgumentError();
+      }
+
+      if (complex.imaginary === 0 && complex.real % 1 === 0 && complex.real <= 0) {
+        return ValueError();
+      }
+
+      const gamma = Gamma(complex);
+
+      if (Math.abs(gamma.imaginary) <= 1e-7) {
+        return { type: ValueType.number, value: gamma.real };
+      }
+
+      return {type: ValueType.complex, value: gamma};
+      
+    },
+  },
+
+  Delta: {
+    arguments: [{ name: 'number', }, { name: 'number', default: 0 }],
+    fn: (a: CellValue, b: CellValue = 0) => {
+      if (typeof a !== 'number' || typeof b !== 'number') {
+        return ValueError();
+      }
+      return { type: ValueType.number, value: (a === b) ? 1 : 0 };
     },
   },
 

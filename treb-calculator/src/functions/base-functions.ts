@@ -35,8 +35,11 @@ import { ClickCheckbox, RenderCheckbox } from './checkbox';
 import { UnionIsMetadata } from '../expression-calculator';
 
 import { Exp as ComplexExp, Power as ComplexPower, Multiply as ComplexMultply } from '../complex-math';
+import * as ComplexMath from '../complex-math';
+
 import { CoerceComplex } from './function-utilities';
 import type { UnitAddress, UnitRange } from 'treb-parser';
+import { ConstructDate } from './date-utils';
 
 /**
  * BaseFunctionLibrary is a static object that has basic spreadsheet
@@ -77,6 +80,22 @@ const erf = (x: number): number => {
 
 const sqrt2pi = Math.sqrt(2 * Math.PI);
 
+const norm_dist = (x: number, mean: number, stdev: number, cumulative: boolean) => {
+  
+  let value = 0;
+
+  if (cumulative) {
+    const sign = (x < mean) ? -1 : 1;
+    value = 0.5 * (1.0 + sign * erf((Math.abs(x - mean)) / (stdev * Math.sqrt(2))));
+  }
+  else {
+    value = Math.exp(-1/2 * Math.pow((x - mean) / stdev, 2)) / (stdev * sqrt2pi);
+  }
+
+  return value;
+
+}
+
 /** imprecise but reasonably fast normsinv function */
 const inverse_normal = (q: number): number => {
 
@@ -92,6 +111,7 @@ const inverse_normal = (q: number): number => {
   return (q > 0.5 ? x : -x);
 
 };
+
 
 const edate_calc = (start: number, months: number) => {
   
@@ -519,36 +539,18 @@ export const BaseFunctionLibrary: FunctionMap = {
   },
 
   Date: {
-    description: 'Constructs a Lotus date from parts',
+    description: 'Constructs a date from year/month/day',
     arguments: [
       { name: 'year', unroll: true },
       { name: 'month', unroll: true },
       { name: 'day', unroll: true },
     ],
     fn: (year: number, month: number, day: number) => {
-      const date = new Date();
-      date.setMilliseconds(0);
-      date.setSeconds(0);
-      date.setMinutes(0);
-      date.setHours(0);
-      
-      if (year < 0 || year > 10000) { 
+      const date = ConstructDate(year, month, day);
+      if (date === false) {
         return ArgumentError();
       }
-      if (year < 1899) { year += 1900; }
-      date.setFullYear(year);
-
-      if (month < 1 || month > 12) {
-        return ArgumentError();
-      }
-      date.setMonth(month - 1);
-
-      if (day < 1 || day > 31) {
-        return ArgumentError();
-      }
-      date.setDate(day);
-
-      return { type: ValueType.number, value: UnlotusDate(date.getTime()) };
+      return { type: ValueType.number, value: date };
     },
   },
 
@@ -2122,6 +2124,22 @@ export const BaseFunctionLibrary: FunctionMap = {
       }
     },
 
+    'Norm.S.Inv': {
+      description: 'Inverse of the normal cumulative distribution', 
+      arguments: [
+        {name: 'probability'},
+        {name: 'mean', default: 0},
+        {name: 'standard deviation', default: 1},
+      ],
+      xlfn: true,
+      fn: (q: number, mean = 0, stdev = 1): UnionValue => {
+        return {
+          type: ValueType.number,
+          value: inverse_normal(q) * stdev + mean,
+        }
+      }
+    }, 
+
     'Norm.Dist': {
 
       description: 'Cumulative normal distribution',
@@ -2138,22 +2156,22 @@ export const BaseFunctionLibrary: FunctionMap = {
       xlfn: true,
 
       fn: (x: number, mean = 0, stdev = 1, cumulative = true): UnionValue => {
+        return { type: ValueType.number, value: norm_dist(x, mean, stdev, cumulative) };
+      },
+    },
 
-        let value = 0;
+    'Norm.S.Dist': {
 
-        if (cumulative) {
-          const sign = (x < mean) ? -1 : 1;
-          value = 0.5 * (1.0 + sign * erf((Math.abs(x - mean)) / (stdev * Math.sqrt(2))));
-        }
-        else {
-          value = Math.exp(-1/2 * Math.pow((x - mean) / stdev, 2)) / (stdev * sqrt2pi);
-        }
+      description: 'Cumulative normal distribution',
+      arguments: [
+        {name: 'value'},
+        {name: 'cumulative', default: true},
+      ],
 
-        return { 
-          type: ValueType.number, 
-          value,
-        };
+      xlfn: true,
 
+      fn: (x: number, cumulative = true): UnionValue => {
+        return { type: ValueType.number, value: norm_dist(x, 0, 1, cumulative) };
       },
     },
 
@@ -2437,6 +2455,60 @@ export const BaseFunctionLibrary: FunctionMap = {
           return ArgumentError();
         }
   
+      },
+    },
+
+    Sin: {
+      arguments: [
+        { name: 'angle in radians', boxed: true, unroll: true, }
+      ],
+      fn: (a: UnionValue) => {
+
+        if (a.type === ValueType.number) {
+          return { type: ValueType.number, value: Math.sin(a.value) };
+        }
+        if (a.type === ValueType.complex) {
+          return { type: ValueType.complex, value: ComplexMath.Sin(a.value) }; 
+        }
+
+        return ArgumentError();
+
+      },
+    },
+
+    Cos: {
+      arguments: [
+        { name: 'angle in radians', boxed: true, unroll: true, }
+      ],
+      fn: (a: UnionValue) => {
+
+        if (a.type === ValueType.number) {
+          return { type: ValueType.number, value: Math.cos(a.value) };
+        }
+        if (a.type === ValueType.complex) {
+          return { type: ValueType.complex, value: ComplexMath.Cos(a.value) }; 
+        }
+
+        return ArgumentError();
+
+      },
+    },
+    
+    Tan: {
+      arguments: [
+        { name: 'angle in radians', boxed: true, unroll: true, }
+      ],
+      fn: (a: UnionValue) => {
+
+        if (a.type === ValueType.number) {
+          return { type: ValueType.number, value: Math.tan(a.value) };
+        }
+        if (a.type === ValueType.complex) {
+          return { type: ValueType.complex, value: ComplexMath.Tan(a.value) }; 
+        }
+
+        return ArgumentError();
+
       },
     }
 

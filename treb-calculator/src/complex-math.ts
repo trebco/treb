@@ -99,6 +99,54 @@ export const RectangularToPolar = (value: Complex): { r: number, theta: number }
   return { r, theta };
 };
 
+export const Tan = (z: Complex) => {
+
+  // tan(a+bi) = (tan(a) + i tanh(b)) / (1 - i tan(a) tanh(b))
+
+  return Divide({
+    real: Math.tan(z.real),
+    imaginary: Math.tanh(z.imaginary),
+  }, {
+    real: 1,
+    imaginary: -(Math.tan(z.real) * Math.tanh(z.imaginary)),
+  });
+
+};
+
+export const Cos = (z: Complex) => {
+   
+  // sin(a+bi) = cos(a) cosh(b) + i sin(a) sinh(b)
+
+  return {
+    real: Math.cos(z.real) * Math.cosh(z.imaginary),
+    imaginary: Math.sin(z.real) * Math.sinh(z.imaginary),
+  };
+
+};
+
+
+export const Sin = (z: Complex) => {
+   
+  // sin(a+bi) = sin(a) cosh(b) + i cos(a) sinh(b)
+
+  return {
+    real: Math.sin(z.real) * Math.cosh(z.imaginary),
+    imaginary: Math.cos(z.real) * Math.sinh(z.imaginary),
+  };
+
+};
+
+export const Product = (...args: Complex[]): Complex => {
+  let base = args.shift();
+  if (!base) { 
+    return { real: 0, imaginary: 0 };
+  }
+  for (const arg of args) {
+    base = Multiply(base, arg);
+  }
+  return base;
+};
+
 export const Multiply = (a: Complex, b: Complex): Complex => {
   return {
     real: (a.real * b.real) - (a.imaginary * b.imaginary),

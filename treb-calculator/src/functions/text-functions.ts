@@ -301,6 +301,31 @@ export const TextFunctionLibrary: FunctionMap = {
     },
   },
 
+  Upper: {
+    description: 'Converts text to upper case',
+    arguments: [{ name: 'text', unroll: true }],
+    fn: (text?: string) => {
+      if (text === null || text === undefined) {
+        return { type: ValueType.undefined };
+      }
+      return {
+        type: ValueType.string, value: text.toString().toUpperCase(),
+      };
+    },
+  },
+  Lower: {
+    description: 'Converts text to lower case',
+    arguments: [{ name: 'text', unroll: true }],
+    fn: (text?: string) => {
+      if (text === null || text === undefined) {
+        return { type: ValueType.undefined };
+      }
+      return {
+        type: ValueType.string, value: text.toString().toLowerCase(),
+      };
+    },
+  },
+
  /** canonical should be CONCAT; concatenate can be an alias */
  Concat: {
   description: 'Pastes strings together',

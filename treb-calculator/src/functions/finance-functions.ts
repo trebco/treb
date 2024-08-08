@@ -24,6 +24,8 @@ import { type CellValue, type UnionValue, ValueType } from 'treb-base-types';
 import { FlattenCellValues } from '../utilities';
 
 import { ArgumentError, ValueError } from '../function-error';
+import { LotusDate, UnlotusDate } from 'treb-format';
+import { ConstructDate, DaysInYear } from './date-utils';
 
 // use a single, static object for base functions
 
@@ -84,7 +86,67 @@ const ppmt_function = (rate: number, period: number, periods: number, pv = 0, fv
     ipmt_function(rate, period, periods, pv, fv, type);
 };
 
+
+
 export const FinanceFunctionLibrary: FunctionMap = {
+
+  /*
+  CoupNum: {
+    fn: (settlement: CellValue, maturity: CellValue, frequency: CellValue, basis: CellValue = 0) => {
+
+      if (typeof settlement !== 'number' || typeof maturity !== 'number' || settlement > maturity ) {
+        return ArgumentError();
+      }
+
+      if (frequency !== 1 && frequency !== 2 && frequency !== 4) {
+        return ArgumentError();
+      }
+
+      if (basis === 1) {
+        const settlement_date = LotusDate(settlement);
+        const maturity_date = LotusDate(maturity);
+
+        const comparison = ConstructDate(maturity_date.getUTCFullYear(), settlement_date.getUTCMonth() + 1, settlement_date.getUTCDay());
+        let years = Math.max(0, maturity_date.getUTCFullYear() - settlement_date.getUTCFullYear());
+        
+        if (comparison && comparison < maturity) {
+          years += Math.round(maturity - comparison) / DaysInYear(maturity_date.getUTCFullYear());
+        }
+
+        return {
+          type: ValueType.number,
+          value: Math.round(years * frequency),
+        };
+      }
+
+      return { 
+        type: ValueType.number,
+        value: 100,
+      };
+
+    }
+  },
+  */
+
+  /*
+  Price: {
+    fn: (settlement: CellValue, maturity: CellValue, rate: CellValue, yld: CellValue, redemption: CellValue, frequency: CellValue, basis: CellValue = 0) => {
+
+      if (typeof settlement !== 'number' || typeof maturity !== 'number' || typeof rate !== 'number' || typeof yld !== 'number' || typeof redemption !== 'number') {
+        return ArgumentError();
+      }
+
+      if (frequency !== 1 && frequency !== 2 && frequency !== 4) {
+        return ArgumentError();
+      }
+
+      return { 
+        type: ValueType.number,
+        value: 100,
+      };
+    }
+  },
+  */
 
   /**
    * Excel's NPV function is somewhat broken because it assumes the first

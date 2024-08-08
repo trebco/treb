@@ -253,6 +253,7 @@ export class Calculator extends Graph {
     // special functions... need reference to the graph (this)
     // moving countif here so we can reference it in COUNTIFS... 
 
+    /*
     const FlattenBooleans = (value: ArrayUnion) => {
       const result: boolean[] = [];
       for (const col of value.value) {
@@ -262,6 +263,58 @@ export class Calculator extends Graph {
       }
       return result;
     };
+    */
+
+    /**
+     * this is a function that does sumif/averageif/countif.
+     * args is one or more sets of [criteria_range, criteria]
+     */
+    const XIf = (type: 'sum'|'count'|'average', value_range: CellValue[][], ...args: unknown[]): UnionValue => {
+
+      const filter: boolean[] = [];
+
+      for (let i = 0; i < args.length; i += 2) {
+        if (Array.isArray(args[i])) {
+          const step = CountIfInternal(args[i] as CellValue[][], args[i+1] as CellValue);
+          if (step.type !== ValueType.array) {
+            return step;
+          }
+          for (const [r, cell] of step.value[0].entries()) {
+            filter[r] = (!!cell.value && (filter[r] !== false));
+          }
+        }
+      }
+
+      const values = Utilities.FlattenCellValues(value_range, true); // keep undefineds
+        
+      let count = 0;
+      let sum = 0;
+      for (const [index, test] of filter.entries()) {
+      if (test) {
+          count++; 
+          const value = values[index];
+          if (typeof value === 'number') {
+            sum += value;
+          }
+        }
+      }
+
+      switch (type) {
+        case 'count': 
+          return { type: ValueType.number, value: count };
+
+        case 'sum':
+          return { type: ValueType.number, value: sum };
+
+        case 'average':
+          if (count === 0) {
+            return DivideByZeroError();
+          }
+          return { type: ValueType.number, value: sum/count };
+      }
+
+
+    }
 
     const CountIfInternal = (range: CellValue[][], criteria: CellValue): UnionValue => {
 
@@ -271,7 +324,7 @@ export class Calculator extends Graph {
       // in any event there are no dynamic dependencies with this 
       // function.
 
-      const data = Utilities.FlattenCellValues(range);
+      const data = Utilities.FlattenCellValues(range, true); // keep undefineds, important for mapping
 
       let parse_result: ParseResult|undefined;
       let expression: ExpressionUnit|undefined;
@@ -326,7 +379,7 @@ export class Calculator extends Graph {
             }
 
             if (expression?.type === 'call' && expression.args[0]?.type === 'array') {
-              expression.args[0].values = [Utilities.FilterIntrinsics(data)];
+              expression.args[0].values = [Utilities.FilterIntrinsics(data, true)];
             }
 
           }
@@ -377,7 +430,7 @@ export class Calculator extends Graph {
           }
         }
 
-        expression.left.values = [Utilities.FilterIntrinsics(data)];
+        expression.left.values = [Utilities.FilterIntrinsics(data, true)];
 
       }
 
@@ -387,22 +440,6 @@ export class Calculator extends Graph {
 
       const result = this.CalculateExpression(expression);
       return result;
-
-      /*
-      // console.info({expression, result});
-
-      if (result.type === ValueType.array) {
-        let count = 0;
-        for (const column of (result as ArrayUnion).value) {
-          for (const cell of column) {
-            if (cell.value) { count++; }
-          }
-        }
-        return { type: ValueType.number, value: count };
-      }
-
-      return result; // error?
-      */
 
     };
 
@@ -615,47 +652,63 @@ export class Calculator extends Graph {
        */
       CountIfs: {
         arguments: [
-          { name: 'range1', },
-          { name: 'criteria1', },
-          { name: 'range2', },
-          { name: 'criteria2', }
+          { name: 'range', },
+          { name: 'criteria', },
+          { name: 'range', },
+          { name: 'criteria', }
         ],
         fn: (...args): UnionValue => {
+          return XIf('count', args[0], ...args);
+        },
+      },
 
-          let count = 0;
+      /** @see CountIf */
+      AverageIf: {
+        arguments: [
+          { name: 'range', },
+          { name: 'criteria', },
+        ],
+        fn: (range: CellValue[][], criteria: CellValue, average_range?: CellValue[][]) => {
+          return XIf('average', average_range||range, range, criteria);
+        },
+      },
 
-          const result = CountIfInternal(args[0], args[1]);
-          if (result.type !== ValueType.array) {
-            return result; // error
-          }
+      /** @see CountIf */
+      AverageIfs: {
+        arguments: [
+          { name: 'value range', },
+          { name: 'criteria range', },
+          { name: 'criteria', },
+          { name: 'criteria range', },
+          { name: 'criteria', },
+        ],
+        fn: (range: CellValue[][], ...args) => {
+          return XIf('average', range, ...args);
+        },
+      },
 
-          const base = FlattenBooleans(result);
+      /** @see CountIf */
+      SumIf: {
+        arguments: [
+          { name: 'range', },
+          { name: 'criteria', },
+        ],
+        fn: (range: CellValue[][], criteria: CellValue, sum_range?: CellValue[][]) => {
+          return XIf('sum', sum_range||range, range, criteria);
+        },
+      },
 
-          for (let i = 2; i < args.length; i += 2) {
-            if (args[i] && args[i + 1]) {
-
-              const result = CountIfInternal(args[i], args[i+1]);
-              if (result.type !== ValueType.array) {
-                return result;
-              }
-
-              const step = FlattenBooleans(result);
-              for (const [index, value] of base.entries()) {
-                base[index] = value && step[index];
-              }
-              
-            }
-          }
-
-          for (const element of base) {
-            if (element) { count++; }
-          }
-          
-          return {
-            type: ValueType.number,
-            value: count,
-          }
-
+      /** @see CountIf */
+      SumIfs: {
+        arguments: [
+          { name: 'value range', },
+          { name: 'criteria range', },
+          { name: 'criteria', },
+          { name: 'criteria range', },
+          { name: 'criteria', },
+        ],
+        fn: (range: CellValue[][], ...args) => {
+          return XIf('sum', range, ...args);
         },
       },
 
@@ -680,21 +733,7 @@ export class Calculator extends Graph {
           { name: 'criteria', }
         ],
         fn: (range, criteria): UnionValue => {
-
-          const result = CountIfInternal(range, criteria);
-
-          if (result.type === ValueType.array) {
-            let count = 0;
-            for (const column of (result as ArrayUnion).value) {
-              for (const cell of column) {
-                if (cell.value) { count++; }
-              }
-            }
-            return { type: ValueType.number, value: count };
-          }
-
-          return result; // error
-
+          return XIf('count', range, range, criteria);
         },
       },
 
