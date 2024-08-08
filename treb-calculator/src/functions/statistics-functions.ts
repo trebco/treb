@@ -27,6 +27,8 @@ import * as ComplexMath from '../complex-math';
 
 const Gamma = (z: Complex): Complex => {
 
+  // this is a Lanczos approximation. could be cleaned up.
+
   const coefficients = [
     0.99999999999980993,
     676.5203681218851,
@@ -38,6 +40,9 @@ const Gamma = (z: Complex): Complex => {
     9.9843695780195716e-6,
     1.5056327351493116e-7
   ];
+
+  // generally speaking I'm against operator overloading but 
+  // it would be a big help for complex math
 
   const pi = Math.PI;
   const sin = ComplexMath.Sin;
