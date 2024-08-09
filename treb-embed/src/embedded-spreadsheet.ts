@@ -2846,7 +2846,7 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
    * 
    * @internal
    */
-  public async ExportBlob(): Promise<Blob> {
+  public async ExportBlob(serialized?: SerializedModel): Promise<Blob> {
 
     // this is inlined to ensure the code will be tree-shaken properly
     if (!process.env.XLSX_SUPPORT) {
@@ -2870,19 +2870,19 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
           reject(event);
         };
 
-        // FIXME: type
-
-        const serialized: SerializedModel = this.Serialize({ // this.grid.Serialize({
-          rendered_values: true,
-          expand_arrays: true,
-          export_colors: true,
-          decorated_cells: true,
-          tables: true,
-          share_resources: false,
-          export_functions: true,
-          apply_row_pattern: true, // if there's a row pattern, set it on rows so they export properly
-        });
-
+        if (!serialized) {        
+          serialized = this.Serialize({
+            rendered_values: true,
+            expand_arrays: true,
+            export_colors: true,
+            decorated_cells: true,
+            tables: true,
+            share_resources: false,
+            export_functions: true,
+            apply_row_pattern: true, // if there's a row pattern, set it on rows so they export properly
+          });
+        }
+        
         // why do _we_ put this in, instead of the grid method? 
         serialized.decimal_mark = Localization.decimal_separator;
 
