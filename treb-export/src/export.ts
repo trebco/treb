@@ -2076,12 +2076,33 @@ export class Exporter {
               }
             }
 
+            const color_series: {
+              rgb?: string;
+              tint?: string;
+              theme?: string;
+            } = {
+              rgb: 'FF376092' // default
+            };
+
+            if (sparkline.style?.text) {
+              if (IsHTMLColor(sparkline.style.text)) {
+                color_series.rgb = sparkline.style.text.text;
+              }
+              else if (IsThemeColor(sparkline.style.text)) {
+                color_series.rgb = undefined;
+                color_series.theme = sparkline.style.text.theme.toString(); 
+                color_series.tint = typeof sparkline.style.text.tint === 'number' ?
+                  sparkline.style.text.tint.toString() : undefined;
+              }
+            }
+
             return {
               a$: {
                 displayEmptyCellsAs: 'gap',
+                displayHidden: '1',
                 type: /column/i.test(sparkline.formula) ? 'column' : undefined,
               },
-              'x14:colorSeries': { a$: { rgb: 'FF376092' }},
+              'x14:colorSeries': { a$: { ...color_series }},
               'x14:sparklines': {
                 'x14:sparkline': {
                   'xm:f': source,
