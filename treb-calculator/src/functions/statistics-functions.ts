@@ -25,6 +25,49 @@ import { ValueError, ArgumentError, NAError } from '../function-error';
 import { type Complex, type UnionValue, ValueType, type CellValue } from 'treb-base-types';
 import * as ComplexMath from '../complex-math';
 
+const Median = (data: number[]) => {
+  const n = data.length;
+  if (n % 2) {
+    return data[Math.floor(n/2)];
+  }
+  else {
+    return (data[n/2] + data[n/2 - 1])/2;
+  }
+};
+
+const InterpolatedQuartiles = (data: number[], include_median = true) => {
+
+  data.sort((a, b) => a - b);
+  const n = data.length;
+ 
+  const interp = (p: number, base: number, skip: number) => {
+    const index = base * p + skip;
+    const offset = index % 1;
+    if (offset) {
+      const a = data[Math.floor(index)];
+      const b = data[Math.ceil(index)];
+      return a + (b - a) * offset;
+    }
+    else {
+      return data[index];
+    }
+      
+  }
+
+  if (include_median) {
+    return [data[0], interp(.25, n - 1, 0), Median(data), interp(.75, n - 1, 0), data[n-1]];
+  }
+  else {
+    if (n % 1) {
+      return [data[0], interp(.25, n - 2, 0), Median(data), interp(.75, n - 2, 1), data[n-1]];
+    }
+    else {
+      return [data[0], interp(.25, n - 3, 0), Median(data), interp(.75, n - 3, 2), data[n-1]];
+    }
+  }
+
+};
+
 const Gamma = (z: Complex): Complex => {
 
   // this is a Lanczos approximation. could be cleaned up.
@@ -545,6 +588,44 @@ export const StatisticsFunctionLibrary: FunctionMap = {
     },
   },
 
+  'Quartile.Inc': {
+    description: 'Returns the interpolated quartile of the data set (including median)', 
+    arguments: [
+      { name: 'range', },
+      { name: 'quartile' }, 
+    ],
+    fn: (data: CellValue[], quartile: CellValue) => {
+
+      if (typeof quartile !== 'number' || quartile < 0 || quartile > 4 || quartile % 1) {
+        return ArgumentError();
+      }
+
+      const flat = Utils.FlattenNumbers(data);
+      const quartiles = InterpolatedQuartiles(flat, true);
+     
+      return { type: ValueType.number, value: quartiles[quartile] };
+    }
+  },
+
+  'Quartile.Exc': {
+    description: 'Returns the interpolated quartile of the data set (excluding median)', 
+    arguments: [
+      { name: 'range', },
+      { name: 'quartile' }, 
+    ],
+    fn: (data: CellValue[], quartile: CellValue) => {
+
+      if (typeof quartile !== 'number' || quartile < 1 || quartile > 3 || quartile % 1) {
+        return ArgumentError();
+      }
+
+      const flat = Utils.FlattenNumbers(data);
+      const quartiles = InterpolatedQuartiles(flat, false);
+     
+      return { type: ValueType.number, value: quartiles[quartile] };
+    }
+  },
+
   Median: {
     description: 'Returns the median value of the range of data',
     arguments: [
@@ -603,4 +684,5 @@ export const StatisticsFunctionAliases: {[index: string]: string} = {
   Mean: 'Average',
   'StDev': 'StDev.S',
   'Var': 'Var.S',
+  'Quartile': 'Quartile.Inc',
 };

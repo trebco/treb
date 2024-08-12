@@ -48,6 +48,16 @@ export interface SerializedNamedExpression {
 }
 
 export interface SerializedModel {
+
+  // has this been superceded by TREBDocument?
+  // I can't tell why we're still using this.
+
+  // ...
+
+  // it seems like TREBDocument was a replacment,
+  // but it has some required fields that this type
+  // doesn't have. 
+
   sheet_data: SerializedSheet[];
   active_sheet: number;
 
