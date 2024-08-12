@@ -594,6 +594,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       { name: 'range', },
       { name: 'quartile' }, 
     ],
+    xlfn: true,
     fn: (data: CellValue[], quartile: CellValue) => {
 
       if (typeof quartile !== 'number' || quartile < 0 || quartile > 4 || quartile % 1) {
@@ -613,6 +614,7 @@ export const StatisticsFunctionLibrary: FunctionMap = {
       { name: 'range', },
       { name: 'quartile' }, 
     ],
+    xlfn: true,
     fn: (data: CellValue[], quartile: CellValue) => {
 
       if (typeof quartile !== 'number' || quartile < 1 || quartile > 3 || quartile % 1) {
