@@ -179,7 +179,10 @@ export abstract class Graph implements GraphCallbacks {
   public GetVertex(address: ICellAddress, create?: boolean): SpreadsheetVertex | undefined {
 
     if (!address.sheet_id) { 
-      console.info({address, create});
+      console.info(JSON.stringify({address, create}));
+      console.trace();
+
+      
       throw new Error('getvertex with no sheet id'); 
     }
 

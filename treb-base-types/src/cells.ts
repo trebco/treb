@@ -709,7 +709,7 @@ export class Cells {
                 typeof cell.calculated !== 'undefined') { // && cell.calculated_type !== ValueType.error) {
               obj.calculated = cell.calculated;
               if (cell.spill) {
-                obj.spill = cell.spill;
+                obj.spill = cell.spill.toJSON();
               }
 
               // always preserve error type, because we can't infer
