@@ -17,6 +17,26 @@ import type { RangeScale } from 'treb-utils';
 
 const DEFAULT_FORMAT = '#,##0.00'; // why not use "general", or whatever the usual default is?
 
+export const ArrayMinMax = (data: number[]) => {
+
+  let min = data[0];
+  let max = data[0];
+
+  for (const entry of data) { 
+    if (entry < min) { min = entry; }
+    if (entry > max) { max = entry; }
+  }
+
+  return { min, max };
+
+  /*
+  const copy = data.slice(0);
+  copy.sort((a, b) => a - b);
+  return {min: copy[0], max: copy[copy.length - 1]};
+  */
+
+};
+
 export const ReadSeries = (data: ReferenceSeries['value']): SeriesType => {
 
   const [label, x, y, z, index, subtype, data_labels] = data;
@@ -111,10 +131,7 @@ export const ReadSeries = (data: ReferenceSeries['value']): SeriesType => {
     // in case of no values
     if (subseries.data.length) {
       const values = subseries.data.filter(value => value || value === 0) as number[];
-      subseries.range = {
-        min: Math.min.apply(0, values),
-        max: Math.max.apply(0, values),
-      };
+      subseries.range = ArrayMinMax(values);
     }
   }
 
@@ -174,10 +191,7 @@ export const ArrayToSeries = (array_data: ArrayUnion): SeriesType => {
   }
 
   const values = series.y.data.filter(value => value || value === 0) as number[];
-  series.y.range = {
-    min: Math.min.apply(0, values),
-    max: Math.max.apply(0, values),
-  };
+  series.y.range = ArrayMinMax(values);
 
   // experimenting with complex... this should only be set if we populated
   // it from complex values
@@ -185,10 +199,7 @@ export const ArrayToSeries = (array_data: ArrayUnion): SeriesType => {
   if (series.x.data.length) {
 
     const filtered: number[] = series.x.data.filter(test => typeof test === 'number') as number[];
-    series.x.range = {
-      min: Math.min.apply(0, filtered),
-      max: Math.max.apply(0, filtered),
-    }
+    series.x.range = ArrayMinMax(filtered);
 
     if (first_format) {
       series.x.format = first_format;
@@ -281,10 +292,7 @@ export const TransformSeriesData = (raw_data?: UnionValue, default_x?: UnionValu
     baseline_x = {
       data,
       format,
-      range: {
-        min: Math.min.apply(0, filtered),
-        max: Math.max.apply(0, filtered),
-      }
+      range: ArrayMinMax(filtered),
     }
   }
 
