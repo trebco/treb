@@ -519,17 +519,31 @@ const ApplyLabels = (series_list: SeriesType[], pattern: string, category_labels
  */
 export const BoxStats = (data: number[]) => {
 
-  const median = (data: number[]) => {
-    const n = data.length;
+  // removed copying. still has 3 loops though.
+
+  
+  const median2 = (data: number[], start = 0, n = data.length) => {
     if (n % 2) {
-      return data[Math.floor(n/2)];
+      return data[Math.floor(n/2) + start];
     }
     else {
-      return (data[n/2] + data[n/2 - 1])/2;
+      return (data[n/2 + start] + data[n/2 - 1 + start])/2;
     }
   };
 
   const n = data.length;
+  const quartiles: [number, number, number] = [0, median2(data), 0];
+  if (n % 2) {
+    const floor = Math.floor(n/2);
+    quartiles[0] = median2(data, 0, Math.ceil(n/2));
+    quartiles[2] = median2(data, floor, data.length - floor);
+  }
+  else {
+    quartiles[0] = median2(data, 0, n/2);
+    quartiles[2] = median2(data, n/2, data.length - n/2);
+  }
+
+  /*
   const quartiles: [number, number, number] = [0, median(data), 0];
 
   if (n % 2) {
@@ -540,6 +554,25 @@ export const BoxStats = (data: number[]) => {
     quartiles[0] = median(data.slice(0, n/2));
     quartiles[2] = median(data.slice(n/2));
   }
+
+  const test = [0, median2(data), 0];
+  if (n % 2) {
+    const floor = Math.floor(n/2);
+    test[0] = median2(data, 0, Math.ceil(n/2));
+    test[2] = median2(data, floor, data.length - floor);
+  }
+  else {
+    test[0] = median2(data, 0, n/2);
+    test[2] = median2(data, n/2, data.length - n/2);
+  }
+
+  if (test[0] === quartiles[0] && test[2] === quartiles[2] && test[1] === quartiles[1]) {
+    console.info("test ok (n % 2 is", n%2, ")", quartiles, test);
+  }
+  else {
+    console.info("test fail (n % 2 is", n%2, ")", quartiles, test);
+  }
+  */
 
   const iqr = quartiles[2] - quartiles[0];
   const whiskers: [number, number] = [0, 0];
@@ -564,7 +597,7 @@ export const BoxStats = (data: number[]) => {
       break;
     }
   }
-  
+ 
   return {
     data, 
     quartiles, 
@@ -589,7 +622,13 @@ export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
   let max_n = 0;
 
   const stats: BoxPlotData['data'] = series.map(series => {
-    const data = series.y.data.slice(0).filter((test): test is number => test !== undefined).sort((a, b) => a - b);
+    // const data = series.y.data.slice(0).filter((test): test is number => test !== undefined).sort((a, b) => a - b);
+    const data: number[] = [];
+    for (const entry of series.y.data) {
+      if (entry !== undefined) { data.push(entry); }
+    }
+    data.sort((a, b) => a - b);
+
     const result = BoxStats(data);
     max_n = Math.max(max_n, result.n);
     return result;
