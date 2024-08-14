@@ -418,7 +418,7 @@ export class OverlayEditor extends Editor<ResetSelectionEvent> {
       case 'Down':
       case 'Left':
       case 'Right':
-        return this.selecting ? undefined : 'handled';
+        return this.selecting ? undefined : 'commit';
 
     }
 
