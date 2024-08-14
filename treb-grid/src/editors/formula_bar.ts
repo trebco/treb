@@ -57,6 +57,8 @@ export type FormulaBar2Event
 export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
 
 
+  public committed = false;
+
   /** is the _editor_ currently focused */
   // tslint:disable-next-line:variable-name
   public focused_ = false;
@@ -219,7 +221,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
     this.active_editor.node.spellcheck = false; // change the default back
 
     this.RegisterListener(descriptor, 'focusin', () => {
-
+     
       // this.editor_node.addEventListener('focusin', () => {
 
       // can't happen
@@ -239,7 +241,9 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
       this.autocomplete?.ResetBlock();
 
       this.UpdateText(this.active_editor);
-      this.UpdateColors();
+      this.UpdateColors(undefined, true); // toll update event -- we will send in order, below
+
+      this.committed = false;
 
       this.Publish([
         { type: 'start-editing', editor: 'formula-bar' },
@@ -256,11 +260,32 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
         console.info('focusout, but selecting...');
       }
 
-      // console.info('focus out');
-
       this.autocomplete?.Hide();
+      
+      const text = (this.active_editor ? 
+        this.GetTextContent(this.active_editor.node).join('') : '').trim();
+
+      if (this.committed) {
+        this.Publish([
+          { type: 'stop-editing' },
+        ]);
+      }
+      else {
+        this.committed = true;
+        this.Publish({
+          type: 'commit',
+          value: text,
+        });
+      }
+
       this.Publish([
         { type: 'stop-editing' },
+        /*
+        {
+          type: 'commit',
+          value: text,
+        }
+          */
       ]);
 
       this.focused_ = false;
@@ -441,6 +466,7 @@ export class FormulaBar extends Editor<FormulaBar2Event|FormulaEditorEvent> {
         const text = (this.active_editor ? 
           this.GetTextContent(this.active_editor.node).join('') : '').trim();
 
+        this.committed = true;
         this.Publish({
           type: 'commit',
           // selection: this.selection,

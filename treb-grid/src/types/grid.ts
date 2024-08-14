@@ -194,6 +194,9 @@ export class Grid extends GridBase {
   private editing_cell: ICellAddress = { row: -1, column: -1, sheet_id: 0 };
 
   /**  */
+  private editing_selection: GridSelection|undefined;
+
+  /**  */
   private selected_annotation?: Annotation;
 
   /** */
@@ -2859,6 +2862,7 @@ export class Grid extends GridBase {
 
           this.editing_state = EditingState.FormulaBar;
           this.editing_cell = { ...this.primary_selection.target };
+          this.editing_selection = { ...this.primary_selection };
           break;
 
         case 'discard':
@@ -2924,7 +2928,15 @@ export class Grid extends GridBase {
 
           if (this.container) this.Focus();
 
-          this.SetInferredType(this.primary_selection, event.value, event.array);
+          if (event.event) {
+            this.SetInferredType(this.primary_selection, event.value, event.array);
+          }
+          else {
+            if (this.editing_selection) {
+              this.SetInferredType(this.editing_selection, event.value, event.array);
+            }
+          }
+
           this.ClearAdditionalSelections();
           this.ClearSelection(this.active_selection);
 

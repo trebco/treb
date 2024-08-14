@@ -567,7 +567,7 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
    * that's fine, but it needs a new name.
    * 
    */
-  protected UpdateColors(force_event = false) {
+  protected UpdateColors(force_event = false, toll_update = false) {
 
     // const view = this.active_editor?.node.ownerDocument.defaultView as (Window & typeof globalThis);
 
@@ -623,8 +623,10 @@ export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorE
 
     this.composite_dependencies = list;
 
-    this.Publish({ type: 'update', dependencies: this.composite_dependencies });
-
+    if (!toll_update) {
+      this.Publish({ type: 'update', dependencies: this.composite_dependencies });
+    }
+    
   }
 
   /**
