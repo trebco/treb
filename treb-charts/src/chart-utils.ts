@@ -520,9 +520,8 @@ const ApplyLabels = (series_list: SeriesType[], pattern: string, category_labels
 export const BoxStats = (data: number[]) => {
 
   // removed copying. still has 3 loops though.
-
   
-  const median2 = (data: number[], start = 0, n = data.length) => {
+  const median = (data: number[], start = 0, n = data.length) => {
     if (n % 2) {
       return data[Math.floor(n/2) + start];
     }
@@ -532,47 +531,16 @@ export const BoxStats = (data: number[]) => {
   };
 
   const n = data.length;
-  const quartiles: [number, number, number] = [0, median2(data), 0];
-  if (n % 2) {
-    const floor = Math.floor(n/2);
-    quartiles[0] = median2(data, 0, Math.ceil(n/2));
-    quartiles[2] = median2(data, floor, data.length - floor);
-  }
-  else {
-    quartiles[0] = median2(data, 0, n/2);
-    quartiles[2] = median2(data, n/2, data.length - n/2);
-  }
-
-  /*
   const quartiles: [number, number, number] = [0, median(data), 0];
-
-  if (n % 2) {
-    quartiles[0] = median(data.slice(0, Math.ceil(n/2)));
-    quartiles[2] = median(data.slice(Math.floor(n/2)));
-  }
-  else {
-    quartiles[0] = median(data.slice(0, n/2));
-    quartiles[2] = median(data.slice(n/2));
-  }
-
-  const test = [0, median2(data), 0];
   if (n % 2) {
     const floor = Math.floor(n/2);
-    test[0] = median2(data, 0, Math.ceil(n/2));
-    test[2] = median2(data, floor, data.length - floor);
+    quartiles[0] = median(data, 0, Math.ceil(n/2));
+    quartiles[2] = median(data, floor, data.length - floor);
   }
   else {
-    test[0] = median2(data, 0, n/2);
-    test[2] = median2(data, n/2, data.length - n/2);
+    quartiles[0] = median(data, 0, n/2);
+    quartiles[2] = median(data, n/2, data.length - n/2);
   }
-
-  if (test[0] === quartiles[0] && test[2] === quartiles[2] && test[1] === quartiles[1]) {
-    console.info("test ok (n % 2 is", n%2, ")", quartiles, test);
-  }
-  else {
-    console.info("test fail (n % 2 is", n%2, ")", quartiles, test);
-  }
-  */
 
   const iqr = quartiles[2] - quartiles[0];
   const whiskers: [number, number] = [0, 0];
