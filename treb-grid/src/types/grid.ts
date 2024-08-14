@@ -4014,7 +4014,15 @@ export class Grid extends GridBase {
     // unless we're selecting an argument, close the ICE
 
     if (this.overlay_editor?.editing && !this.overlay_editor?.selecting) {
-      this.DismissEditor();
+
+      // commit 
+
+      if (this.overlay_editor?.selection) {
+        const value = this.overlay_editor?.edit_node.textContent || undefined;
+        this.SetInferredType(this.overlay_editor.selection, value, false);
+      }
+
+      this.DismissEditor(); 
     }
 
     const offset_point = {
