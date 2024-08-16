@@ -1,3 +1,23 @@
+/*
+ * This file is part of TREB.
+ *
+ * TREB is free software: you can redistribute it and/or modify it under the 
+ * terms of the GNU General Public License as published by the Free Software 
+ * Foundation, either version 3 of the License, or (at your option) any 
+ * later version.
+ *
+ * TREB is distributed in the hope that it will be useful, but WITHOUT ANY 
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more 
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along 
+ * with TREB. If not, see <https://www.gnu.org/licenses/>. 
+ *
+ * Copyright 2022-2024 trebco, llc. 
+ * info@treb.app
+ * 
+ */
 
 import { type UnionValue, ValueType, type ArrayUnion, IsComplex, type CellValue } from 'treb-base-types';
 import { IsArrayUnion, IsMetadata, IsSeries, LegendStyle } from './chart-types';
@@ -6,6 +26,8 @@ import { NumberFormatCache } from 'treb-format';
 import { Util } from './util';
 import type { ReferenceSeries } from './chart-types';
 import type { RangeScale } from 'treb-utils';
+
+import { QuickSort } from './quicksort';
 
 /**
  * this file is the concrete translation from function arguments
@@ -148,6 +170,48 @@ export const ArrayToSeries = (array_data: ArrayUnion): SeriesType => {
 
   // series.y.data = flat.map(item => typeof item.value === 'number' ? item.value : undefined);
 
+  // console.trace();
+  
+  const values: number[] = []; // filter any undefineds
+
+  for (const [index, item] of flat.entries()) {
+
+    let value = 0;
+
+    // why is this testing type instead of using the union type?
+
+    if (typeof item.value === 'number') {
+      value = item.value;
+      // series.y.data[index] = item.value;
+      values.push(item.value);
+    }
+    else if (IsMetadata(item)) {
+      if (IsComplex(item.value.value)) {
+        series.x.data[index] = item.value.value.real;
+        // series.y.data[index] = item.value.value.imaginary;
+        // values.push(item.value.value.imaginary);
+        value = item.value.value.imaginary;
+      }
+      else if (typeof item.value.value === 'number') {
+        // series.y.data[index] = item.value.value;
+        // values.push(item.value.value);
+        value = item.value.value;
+      }
+      else {
+        continue;
+      }
+    }
+    else {
+      // series.y.data[index] = undefined;
+      continue;
+    }
+
+    series.y.data[index] = value;
+    values.push(value);
+
+  }
+
+  /*
   series.y.data = flat.map((item, index) => {
 
     // if the data is passed in from the output of a function, it will not
@@ -178,6 +242,7 @@ export const ArrayToSeries = (array_data: ArrayUnion): SeriesType => {
     return undefined;
 
   });
+  */
 
   let first_format = '';
   if (IsMetadata(flat[0])) {
@@ -190,7 +255,9 @@ export const ArrayToSeries = (array_data: ArrayUnion): SeriesType => {
     series.y.labels = series.y.data.map(value => (value === undefined) ? undefined : format.Format(value));
   }
 
-  const values = series.y.data.filter(value => value || value === 0) as number[];
+  // moved up, integrated loops
+  // const values = series.y.data.filter(value => value || value === 0) as number[];
+
   series.y.range = ArrayMinMax(values);
 
   // experimenting with complex... this should only be set if we populated
@@ -595,7 +662,13 @@ export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
     for (const entry of series.y.data) {
       if (entry !== undefined) { data.push(entry); }
     }
-    data.sort((a, b) => a - b);
+
+    console.info("sorting, len is", data.length, {data});
+
+    // data.sort((a, b) => a - b);
+    QuickSort(data);
+
+    console.info("sorted");
 
     const result = BoxStats(data);
     max_n = Math.max(max_n, result.n);
