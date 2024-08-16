@@ -663,12 +663,8 @@ export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
       if (entry !== undefined) { data.push(entry); }
     }
 
-    console.info("sorting, len is", data.length, {data});
-
     // data.sort((a, b) => a - b);
     QuickSort(data);
-
-    console.info("sorted");
 
     const result = BoxStats(data);
     max_n = Math.max(max_n, result.n);
