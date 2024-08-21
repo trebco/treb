@@ -196,6 +196,7 @@ export const ChartFunctions: Record<ChartFunction|SupportFunction, CompositeFunc
     arguments: [
       { name: 'Data', metadata: true, },
       { name: 'Chart Title' },
+      { name: 'Min/Max Style' }
     ],
     fn: Identity,
     category: ['chart functions'],

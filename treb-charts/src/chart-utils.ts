@@ -656,6 +656,9 @@ export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
 
   let max_n = 0;
 
+  // change to min-max style
+  const minmax = !!args[2];
+
   const stats: BoxPlotData['data'] = series.map(series => {
     // const data = series.y.data.slice(0).filter((test): test is number => test !== undefined).sort((a, b) => a - b);
     const data: number[] = [];
@@ -668,8 +671,15 @@ export const CreateBoxPlot = (args: UnionValue[]): ChartData => {
 
     const result = BoxStats(data);
     max_n = Math.max(max_n, result.n);
+
+    if (minmax) {
+      result.whiskers[0] = result.min;
+      result.whiskers[1] = result.max;
+    }
+
     return result;
   });
+
 
   const title = args[1]?.toString() || undefined;
   const x_labels: string[] = [];
