@@ -534,7 +534,6 @@ export const BaseFunctionLibrary: FunctionMap = {
         value: delta / divisor,
       };
 
-      return NAError();
     },
   },
 
