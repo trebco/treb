@@ -74,7 +74,7 @@ export const FormatSize = (size, precision = 1) => {
 
 /** 
  * @function
- * @param {{verbose?: boolean, minify?: boolean}} [options]
+ * @param {{verbose?: boolean, minify?: boolean, define?: Record<string, string>}} [options]
  * @returns {esbuild.Plugin}
  * 
  * inlining the worker build. this works out well with one limitation:
@@ -146,6 +146,8 @@ export const WorkerPlugin = (options) => ({
           minify: options?.minify,
           bundle: true,
           format: 'esm',
+
+          define: options?.define,
 
           // don't write to filesystem
           write: false,

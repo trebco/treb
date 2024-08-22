@@ -246,8 +246,8 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
   /* * @internal */
   // public static export_worker_text = '';  
 
-  /** @internal */
-  public static treb_embedded_script_path = '';
+  /* * @internal */
+  // public static treb_embedded_script_path = '';
 
   /** 
    * @internal 
