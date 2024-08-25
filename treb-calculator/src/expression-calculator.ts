@@ -31,7 +31,7 @@ import { ValueType, GetValueType, Area } from 'treb-base-types';
 import type { Parser, ExpressionUnit, UnitBinary, UnitIdentifier,
          UnitGroup, UnitUnary, UnitAddress, UnitRange, UnitCall, UnitDimensionedQuantity, UnitStructuredReference } from 'treb-parser';
 import type { DataModel, MacroFunction, Sheet } from 'treb-data-model';
-import { NameError, ReferenceError, ExpressionError, UnknownError, SpillError } from './function-error';
+import { NameError, ReferenceError, ExpressionError, UnknownError, SpillError, ValueError } from './function-error';
 
 import * as Primitives from './primitives';
 
@@ -633,7 +633,7 @@ export class ExpressionCalculator {
 
   }
 
-  protected UnaryExpression(x: UnitUnary): (expr: UnitUnary) => UnionValue /*UnionOrArray*/ { // operator: string, operand: any){
+  protected UnaryExpression(x: UnitUnary, return_reference = false): (expr: UnitUnary) => UnionValue /*UnionOrArray*/ { // operator: string, operand: any){
 
     // there are basically three code paths here: negate, identity, and error.
     // they have very different semantics so we're going to do them completely
@@ -662,6 +662,110 @@ export class ExpressionCalculator {
         };
 
       }
+
+    case '@':
+      return (expr: UnitUnary) => {
+
+        // if the operand is a range, then we need to do implicit intersection.
+        // otherwise, calculate the expression and return the first value 
+        // if it's an array.
+
+        let address: UnitAddress|undefined;
+
+        switch (expr.operand.type) {
+          case 'address':
+            if (expr.operand.spill) {
+
+              // we need to calculate the result so we know how large the
+              // range is... perhaps there's a way to look this up without
+              // calculating? (TODO/FIXME)
+
+              const calculated = this.CellFunction2(expr.operand)();
+              if (calculated.type === ValueType.array) {
+
+                const row = this.context.address.row ?? -1;
+                const column = this.context.address.column ?? -1;
+
+                // for this verison we already have the result, so unless
+                // we're trying to preserve the address, we could just 
+                // return it
+
+                if (row >= expr.operand.row && row < expr.operand.row + calculated.value[0]?.length && calculated.value.length === 1) {
+
+                  if (!return_reference) {
+                    return calculated.value[0][row - expr.operand.row];
+                  }
+
+                  address = {
+                    ...expr.operand,
+                    row,
+                    spill: false,
+                  };
+                }
+                else if (column >= expr.operand.column && column < expr.operand.column + calculated.value.length && calculated.value[0]?.length === 1) {
+
+                  if (!return_reference) {
+                    return calculated.value[column - expr.operand.column][0];
+                  }
+
+                  address = {
+                    ...expr.operand,
+                    column,
+                    spill: false,
+                  };
+                }
+                else {
+                  return ValueError(); // out of range
+                }
+
+              }
+
+              // return { type: ValueType.string, value: 'implicit (spill)' };
+            }
+            break;
+
+          case 'range':
+            {
+              // how do we intersect, if at all?
+
+              const row = this.context.address.row ?? -1;
+              const column = this.context.address.column ?? -1;
+              if (row >= expr.operand.start.row && row <= expr.operand.end.row && expr.operand.start.column === expr.operand.end.column) {
+                address = {
+                  ...expr.operand.start,
+                  row,
+                  spill: false,
+                };
+              }
+              else if (column >= expr.operand.start.column && column <= expr.operand.end.column && expr.operand.start.row === expr.operand.end.row) {
+                address = {
+                  ...expr.operand.start,
+                  column,
+                  spill: false,
+                };
+              }
+              else {
+                return ValueError(); // out of range
+              }
+            }
+        }
+
+        if (address) {
+          if (return_reference) {
+            return { type: ValueType.object, value: address,
+            }
+          }
+          return this.CellFunction2(address)();
+       }
+
+        const operand = this.CalculateExpression(expr.operand as ExtendedExpressionUnit);
+
+        if (operand.type === ValueType.array) {
+          return operand.value[0][0];
+        }
+
+        return operand;
+      };
 
     default:
       return () => {
@@ -977,7 +1081,7 @@ export class ExpressionCalculator {
       return (expr.fn = this.BinaryExpression(expr))(expr); // check
 
     case 'unary':
-      return (expr.fn = this.UnaryExpression(expr))(expr); // check
+      return (expr.fn = this.UnaryExpression(expr, return_reference))(expr); // check
 
     case 'identifier':
       return (expr.fn = this.Identifier(expr))(); // check

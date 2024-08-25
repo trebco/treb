@@ -163,7 +163,7 @@ export interface NodeDescriptor {
 
 export class Editor<E = FormulaEditorEvent> extends EventSource<E|FormulaEditorEvent> {
 
-  protected static readonly FormulaChars = ('$^&*(-+={[<>/~%' + Localization.argument_separator).split(''); // FIXME: i18n
+  protected static readonly FormulaChars = ('$^&*(-+={[<>/~%@' + Localization.argument_separator).split(''); // FIXME: i18n
 
   /**
    * the current edit cell. in the event we're editing a merged or
