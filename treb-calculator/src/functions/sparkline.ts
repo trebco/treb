@@ -173,6 +173,16 @@ export class Sparkline {
       }
     }
 
+    if (min === max) {
+      if (min) {
+        min -= 1;
+        max += 1;
+      }
+      else {
+        max += 1;
+      }
+    }
+
     if (min !== max) {
 
       const step = (width * (1 - 2 * x_margin)) / (values.length - 1);
@@ -248,6 +258,16 @@ export class Sparkline {
           first_value = true;
           min = max = value;
         }
+      }
+    }
+
+    if (min === max) {
+      if (min) {
+        min -= 1;
+        max += 1;
+      }
+      else {
+        max += 1;
       }
     }
 
