@@ -136,9 +136,10 @@ const binary_operators_precendence: PrecedenceList = {
   ':': 13, // range operator
 };
 
-/**
+/* *
  * binary ops are sorted by length so we can compare long ops first
- */
+   switching to a composite w/ unary operators
+ * /
 const binary_operators = Object.keys(binary_operators_precendence).sort(
   (a, b) => b.length - a.length,
 );
@@ -147,8 +148,17 @@ const binary_operators = Object.keys(binary_operators_precendence).sort(
  * unary operators. atm we have no precedence issues, unary operators
  * always have absolute precedence. (for numbers, these are properly part
  * of the number, but consider `=-SUM(1,2)` -- this is an operator).
+ * 
+ * implicit intersection operator should now have precedence over +/-.
  */
-const unary_operators: PrecedenceList = { '-': 100, '+': 100 };
+const unary_operators: PrecedenceList = { '@': 50, '-': 100, '+': 100 };
+
+/**
+ * to avoid the double - and +, we're just adding our one extra unary
+ * operator. doing this dynamically would be silly, although this does
+ * make this code more fragile.
+ */
+const composite_operators: string[] = [...Object.keys(binary_operators_precendence), '@'].sort((a, b) => b.length - a.length);
 
 /**
  * parser for spreadsheet language.
@@ -2092,7 +2102,7 @@ export class Parser {
   }
 
   protected ConsumeOperator(): ExpressionUnit | null {
-    for (const operator of binary_operators) {
+    for (const operator of composite_operators) {
       if (this.expression.substr(this.index, operator.length) === operator) {
         const position = this.index;
         this.index += operator.length;
