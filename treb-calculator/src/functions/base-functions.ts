@@ -244,6 +244,23 @@ const ZLookup = (value: number|string|boolean|undefined, table: (number|string|b
 
 };
 
+const NumberArgument = (argument?: UnionValue, default_value: number|false = false) => {
+
+  if (!argument) {
+    return default_value;
+  }
+
+  switch (argument.type) {
+    case ValueType.number:
+      return argument.value;
+    case ValueType.undefined:
+      return default_value;
+  }
+
+  return false;
+
+};
+
 /**
  * alternate functions. these are used (atm) only for changing complex 
  * behavior.
@@ -2520,7 +2537,41 @@ export const BaseFunctionLibrary: FunctionMap = {
         return ArgumentError();
 
       },
-    }
+    },
+
+    Sequence: {
+      arguments:[
+        { name: 'rows', boxed: true },
+        { name: 'columns', default: 1, boxed: true },
+        { name: 'start', default: 1, boxed: true },
+        { name: 'step', default: 1, boxed: true }
+      ],
+      fn: (rows: UnionValue, columns: UnionValue, start: UnionValue, step: UnionValue) => {
+
+        const rx = NumberArgument(rows, 1);
+        const cx = NumberArgument(columns, 1);
+        const step_ = NumberArgument(step, 1);
+        const start_ = NumberArgument(start, 1);
+
+        if (rx === false || cx === false || step_ === false || start_ === false) {
+          return ArgumentError();
+        }
+
+        const value: UnionValue[][] = [];
+        for (let c = 0; c < cx; c++) {
+          const col: UnionValue[] = [];
+          for (let r = 0; r < rx; r++) {
+            col.push({ type: ValueType.number, value: start_ + r * step_ * cx + c * step_ });
+          }
+          value.push(col);
+        }
+
+        return { type: ValueType.array, value };
+
+      },
+
+    },
+
 
 };
 
