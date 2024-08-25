@@ -1923,6 +1923,17 @@ export const BaseFunctionLibrary: FunctionMap = {
       },
     },
 
+    Ceiling: {
+      arguments: [ { unroll: true }, { unroll: true } ], // FIXME: lazy
+
+      fn: (a: number) => {
+        return { 
+          type: ValueType.number, 
+          value: Math.ceil(a),
+        };
+      },
+    },
+
     Round: {
       arguments: [ { unroll: true }, { unroll: true } ], // FIXME: lazy
 

@@ -685,6 +685,8 @@ export const StatisticsFunctionLibrary: FunctionMap = {
 export const StatisticsFunctionAliases: {[index: string]: string} = {
   Mean: 'Average',
   'StDev': 'StDev.S',
+  'StDevA': 'StDev.S',
+  'StDevPA': 'StDev.P',
   'Var': 'Var.S',
   'Quartile': 'Quartile.Inc',
 };
