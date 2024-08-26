@@ -439,13 +439,7 @@ export class Exporter {
 
     const dxf: DOMContent[] = style_cache.dxf_styles.map(style => {
 
-      const entry: DOMContent = {
-        fill: style.fill ? {
-          patternFill: {
-            bgColor: ColorAttrs(style.fill),
-          },
-        } : undefined,
-      };
+      const entry: DOMContent = {};
 
       if (style.text || style.bold || style.italic || style.underline) {
         entry.font = {
@@ -456,6 +450,14 @@ export class Exporter {
           color: ColorAttrs(style.text),
         };
       }
+
+      if (style.fill) {
+        entry.fill = {
+          patternFill: {
+            bgColor: ColorAttrs(style.fill),
+          }
+        }
+      };
 
       return entry;
 
