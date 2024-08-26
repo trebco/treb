@@ -4840,6 +4840,53 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
               return reject(event.data.error || 'unknown error');
             }
 
+            if (this.parser.decimal_mark !== DecimalMarkType.Period) {
+              
+              // console.info("IMPORT WARNING 2", event.data);
+
+              // FIXME: unify w/ the convert locale method
+
+              const target_decimal_mark = this.parser.decimal_mark;
+              const target_argument_separator = this.parser.argument_separator;
+              this.parser.Save();
+              this.parser.SetLocaleSettings(DecimalMarkType.Period);
+
+              const translate = (formula: string): string | undefined => {
+                const parse_result = this.parser.Parse(formula);
+                if (!parse_result.expression) { return undefined; }
+                return '=' + this.parser.Render(
+                  parse_result.expression, { 
+                    missing: '', 
+                    convert_decimal: target_decimal_mark, 
+                    convert_argument_separator: target_argument_separator,
+                  });
+              };
+
+              for (const named of event.data.results) {
+                named.expression = translate(named.expression);                
+              }
+
+              for (const sheet of event.data.results.sheets || []) {
+
+                for (const cell of sheet.cells || []) {
+                  if (cell.type === 'formula' && cell.value) {
+                    cell.value = translate(cell.value);
+                  }
+                }
+
+                if (sheet.annotations){
+                  for (const annotation of sheet.annotations) {
+                    if (annotation.formula) {
+                      annotation.formula = translate(annotation.formula);
+                    }
+                  }
+                }
+              }
+
+              this.parser.Restore();
+
+            }
+
             this.grid.FromImportData(event.data.results);
 
             this.ResetInternal();
@@ -5910,6 +5957,15 @@ export class EmbeddedSpreadsheet<USER_DATA_TYPE = unknown> {
         const translated = translate(macro_function.function_def);
         if (translated) {
           macro_function.function_def = translated;
+        }
+      }
+    }
+
+    if (data.named) {
+      for (const named of data.named) {
+        const translated = translate(named.expression);
+        if (translated) {
+          named.expression = translated;
         }
       }
     }
