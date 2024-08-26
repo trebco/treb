@@ -2230,6 +2230,18 @@ export class Exporter {
             }
           };
         }
+        else if (IsHTMLColor(sheet.tab_color)) {
+          const color = sheet.tab_color.text || ''; 
+          if (/^#[0-9a-fA-F]*$/.test(color)) {
+            tab_color_block.sheetPr = {
+              tabColor: {
+                a$: {
+                  rgb: `FF` + color.substring(1)
+                }
+              }
+            };
+          }
+        }
       }
 
       // --- move page margins -------------------------------------------------
