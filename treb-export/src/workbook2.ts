@@ -45,10 +45,10 @@ import type { SerializedNamed } from 'treb-data-model';
 export const ConditionalFormatOperators: Record<string, string> = {
   greaterThan: '>',
   greaterThanOrEqual: '>=',
-  greaterThanOrEquals: '>=',
+  // greaterThanOrEquals: '>=',
   lessThan: '<',
   lessThanOrEqual: '<=',
-  lessThanOrEquals: '<=',
+  // lessThanOrEquals: '<=',
   equal: '=',
   notEqual: '<>',
 };

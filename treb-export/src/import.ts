@@ -166,20 +166,26 @@ export class Importer {
           // doing it like this is sloppy (also does not work properly).
           value = '=' + formula.replace(/^_xll\./g, '');
 
-          const parse_result = this.parser.Parse(formula); // l10n?
-          if (parse_result.expression) {
-            this.parser.Walk(parse_result.expression, (unit) => {
-              if (unit.type === 'call') {
-                if (/^_xll\./.test(unit.name)) {
-                  unit.name = unit.name.substring(5);
+          // drop the formula if it's a ref error, we can't handle this
+          if (/#REF/.test(formula)) {
+            value = formula;
+          }
+          else {
+            const parse_result = this.parser.Parse(formula); // l10n?
+            if (parse_result.expression) {
+              this.parser.Walk(parse_result.expression, (unit) => {
+                if (unit.type === 'call') {
+                  if (/^_xll\./.test(unit.name)) {
+                    unit.name = unit.name.substring(5);
+                  }
+                  else if (/^_xlfn\./.test(unit.name)) {
+                    unit.name = unit.name.substring(6);
+                  }
                 }
-                else if (/^_xlfn\./.test(unit.name)) {
-                  unit.name = unit.name.substring(6);
-                }
-              }
-              return true;
-            });
-            value = '=' + this.parser.Render(parse_result.expression, { missing: '' });
+                return true;
+              });
+              value = '=' + this.parser.Render(parse_result.expression, { missing: '' });
+            }
           }
 
           if (typeof element.f !== 'string') {

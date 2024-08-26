@@ -2216,6 +2216,22 @@ export class Exporter {
         // delete dom.worksheet.drawing;
       }
 
+      // --- tab color ---------------------------------------------------------
+
+      const tab_color_block: DOMContent = {};
+      if (sheet.tab_color) {
+        if (IsThemeColor(sheet.tab_color)) {
+          tab_color_block.sheetPr = {
+            tabColor: {
+              a$: {
+                theme: sheet.tab_color.theme,
+                tint: sheet.tab_color.tint,
+              }
+            }
+          };
+        }
+      }
+
       // --- move page margins -------------------------------------------------
 
       // const margins = dom.worksheet.pageMargins;
@@ -2244,6 +2260,9 @@ export class Exporter {
 
         worksheet: {
           a$: { ...sheet_attributes },
+
+          ...tab_color_block,
+
           dimension: {
             a$: {
               ref: new Area(extent.start, extent.end).spreadsheet_label,
